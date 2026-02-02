@@ -65,25 +65,25 @@ const FileOpenDialog: Component<FileOpenDialogProps> = (props) => {
 
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                e.stopImmediatePropagation();
+                e.stopPropagation();
                 setIsKeyboardNavigating(true);
                 const nextIndex = (currentIndex + 1) % fileList.length;
                 setActiveId(fileList[nextIndex].id);
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                e.stopImmediatePropagation();
+                e.stopPropagation();
                 setIsKeyboardNavigating(true);
                 const prevIndex = (currentIndex - 1 + fileList.length) % fileList.length;
                 setActiveId(fileList[prevIndex].id);
             } else if (e.key === 'Enter') {
                 e.preventDefault();
-                e.stopImmediatePropagation();
+                e.stopPropagation();
                 if (currentId) {
                     props.onSelect(currentId);
                 }
             } else if (e.key === 'Escape') {
                 e.preventDefault();
-                e.stopImmediatePropagation();
+                e.stopPropagation();
                 props.onClose();
             }
         };

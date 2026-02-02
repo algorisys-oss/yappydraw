@@ -30,10 +30,11 @@ import { exportToHtml } from "../utils/export-to-html";
 import "./menu.css";
 
 // Exported signals for App.tsx integration
-export const [drawingId, setDrawingId] = createSignal('default');
+export const [drawingId, setDrawingId] = createSignal('Untitled');
 export const [isDialogOpen, setIsDialogOpen] = createSignal(false);
 export const [isSaveOpen, setIsSaveOpen] = createSignal(false);
 export const [isLoadExportOpen, setIsLoadExportOpen] = createSignal(false);
+export const [loadExportInitialTab, setLoadExportInitialTab] = createSignal<'load' | 'save'>('load');
 export const [showHelp, setShowHelp] = createSignal(false);
 
 // Exported handlers for App.tsx integration
@@ -48,13 +49,12 @@ export const handleSaveRequest = (intent: 'workspace' | 'disk' | 'disk-json') =>
 export const handleNew = (docType: 'infinite' | 'slides' = 'slides') => {
     if (confirm(`Start new ${docType === 'slides' ? 'presentation' : 'sketch'}? Unsaved changes will be lost.`)) {
         resetToNewDocument(docType);
-        setDrawingId('default');
+        setDrawingId('Untitled');
     }
 };
 
 const Menu: Component = () => {
     const [isMenuOpen, setIsMenuOpen] = createSignal(false);
-    const [loadExportInitialTab, setLoadExportInitialTab] = createSignal<'load' | 'save'>('load');
     let fileInputRef: HTMLInputElement | undefined;
 
     const [saveIntent, setSaveIntent] = createSignal<'workspace' | 'disk' | 'disk-json'>('workspace');
@@ -169,7 +169,7 @@ const Menu: Component = () => {
                 // Ensure data is in SlideDocument format (migrate if v2)
                 const doc = isSlideDocument(data) ? data : migrateToSlideFormat(data);
                 loadDocument(doc);
-                setDrawingId(targetId);
+                setDrawingId(doc.metadata?.name || targetId);
                 showToast('Drawing loaded successfully', 'success');
             } else {
                 showToast('Drawing not found', 'error');
@@ -431,6 +431,10 @@ const Menu: Component = () => {
                                         <FilePlus size={16} />
                                         <span class="label">New Presentation</span>
                                     </button>
+                                    <button class="menu-item" onClick={() => { setIsTemplateBrowserOpen(true); setIsMenuOpen(false); }}>
+                                        <Layout size={16} />
+                                        <span class="label">Templates</span>
+                                    </button>
                                     <div class="menu-separator"></div>
                                     <button class="menu-item" onClick={() => { setLoadExportInitialTab('load'); setIsLoadExportOpen(true); setIsMenuOpen(false); }}>
                                         <FolderOpen size={16} />
@@ -529,13 +533,8 @@ const Menu: Component = () => {
                                         </div>
                                     </div>
                                     <div class="menu-separator"></div>
-                                    <button class="menu-item" onClick={() => { setIsTemplateBrowserOpen(true); setIsMenuOpen(false); }}>
-                                        <Layout size={16} />
-                                        <span class="label">Templates</span>
-                                    </button>
-                                    <div class="menu-separator"></div>
                                     <div style={{ padding: '4px 12px', "font-size": '12px', color: 'var(--text-secondary)' }}>
-                                        Found a bug? <a href="https://github.com/rajeshpillai/yappy/issues" target="_blank" rel="noopener noreferrer">Report</a>
+                                        Found a bug? <a href="https://github.com/algorisys-oss/yappydraw/issues" target="_blank" rel="noopener noreferrer">Report</a>
                                     </div>
                                 </div>
                             </Show>

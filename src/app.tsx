@@ -30,8 +30,9 @@ import { WelcomeScreen } from './components/welcome-screen';
 import { features } from './config/features';
 
 import Menu, {
-  handleNew, handleSaveRequest, setIsDialogOpen, setShowHelp,
-  isDialogOpen, isSaveOpen, isLoadExportOpen, showHelp
+  handleNew, handleSaveRequest, setShowHelp,
+  isDialogOpen, isSaveOpen, isLoadExportOpen, showHelp,
+  setIsLoadExportOpen, setLoadExportInitialTab
 } from './components/menu';
 import StatusBar from './components/status-bar';
 import { initAPI } from './api';
@@ -94,7 +95,8 @@ const App: Component = () => {
           return;
         } else if (key === 'o' && e.altKey) {
           e.preventDefault();
-          setIsDialogOpen(true);
+          setLoadExportInitialTab('load');
+          setIsLoadExportOpen(true);
           return;
         } else if (key === 'e' && e.shiftKey) {
           e.preventDefault();
