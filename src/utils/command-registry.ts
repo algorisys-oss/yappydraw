@@ -84,6 +84,7 @@ export const getCommands = (): Command[] => {
                     setStore("selection", []);
                     setStore("layers", [{ id: 'default-layer', name: 'Layer 1', visible: true, locked: false, opacity: 1, order: 0 }]);
                     setStore("activeLayerId", 'default-layer');
+                    setStore("welcomeDismissed", true);
                     clearHistory();
                 }
             },

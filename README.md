@@ -331,4 +331,18 @@ Contributions welcome. Fork, branch, and open a PR.
 
 ## License
 
-MIT
+**Dual Licensed**
+
+YappyDraw is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).
+
+You are free to use, modify, and distribute this software for **personal and non-commercial purposes** under the terms of the AGPL-3.0. Any modified versions must also be released under the AGPL-3.0, and if you run a modified version as a network service, you must make the source code available to its users.
+
+### Commercial & SaaS Use
+
+If you wish to use YappyDraw in a **commercial product, proprietary application, or SaaS offering** without the AGPL-3.0 obligations (including source disclosure), you must obtain a **commercial license** from the Algorisys Open Source Team.
+
+For commercial licensing inquiries, please contact us via [GitHub](https://github.com/algorisys-oss/yappydraw).
+
+### Attribution
+
+Regardless of license type, all usage of YappyDraw must retain visible attribution to the **Algorisys Open Source Team** and a link to the [original repository](https://github.com/algorisys-oss/yappydraw).

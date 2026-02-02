@@ -157,7 +157,7 @@ export default function HelpDialog(props: Props) {
                                 <ExternalLink size={16} />
                                 Documentation
                             </a>
-                            <a href="https://github.com/rajeshpillai" target="_blank" rel="noopener noreferrer" class="social-btn">
+                            <a href="https://github.com/algorisys-oss/yappydraw" target="_blank" rel="noopener noreferrer" class="social-btn">
                                 <Github size={16} />
                                 GitHub
                             </a>

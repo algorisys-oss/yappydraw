@@ -12,7 +12,8 @@ export const WelcomeScreen: Component = () => {
         store.elements.length === 0 &&
         store.selectedTool === 'selection' &&
         store.appMode !== 'presentation' &&
-        !store.zenMode;
+        !store.zenMode &&
+        !store.welcomeDismissed;
 
     // Reactive window dimensions
     const [windowSize, setWindowSize] = createSignal({ width: window.innerWidth, height: window.innerHeight });

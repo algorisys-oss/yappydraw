@@ -76,6 +76,13 @@
     font-variant-numeric: tabular-nums;
 }
 
+.status-doc-name {
+    font-weight: 500;
+    color: var(--text-primary, #111827);
+    opacity: 0.6;
+    font-size: 11px;
+}
+
 .status-tool-name {
     font-weight: 500;
     color: var(--text-primary, #111827);
@@ -90,4 +97,25 @@
 .status-bar .present-btn:hover:not(:disabled) {
     background: var(--primary-color, #3b82f6);
     color: white;
+}
+
+.status-attribution {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.status-attribution a {
+    color: var(--text-secondary, #6b7280);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.status-attribution a:hover {
+    color: var(--primary-color, #3b82f6);
+    text-decoration: underline;
+}
+
+.status-heart {
+    color: #e25555;
+    font-size: 12px;
 }

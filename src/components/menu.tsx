@@ -399,18 +399,6 @@ const Menu: Component = () => {
             </Suspense>
 
             <Show when={!store.zenMode}>
-                <div
-                    class="app-title"
-                    onMouseDown={onLeftMouseDown}
-                    style={{
-                        transform: `translate(calc(-50% + ${leftPos().x}px), ${leftPos().y}px)`
-                    }}
-                >
-                    {drawingId()}
-                </div>
-            </Show>
-
-            <Show when={!store.zenMode}>
                 <>
                     <div
                         style={{

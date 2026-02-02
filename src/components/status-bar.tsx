@@ -1,5 +1,6 @@
 import { type Component, Show } from "solid-js";
 import { store, setViewState, undo, redo, togglePresentationMode } from "../store/app-store";
+import { drawingId } from "./menu";
 import { Plus, Minus, Undo2, Redo2, Play } from "lucide-solid";
 import pkg from '../../package.json';
 import "./status-bar.css";
@@ -69,6 +70,11 @@ const StatusBar: Component = () => {
 
     return (
         <div class="status-bar">
+            {/* Document Name */}
+            <div class="status-section status-doc-name">
+                <span>{drawingId()}</span>
+            </div>
+
             {/* Current Tool */}
             <div class="status-section">
                 <span class="status-tool-name">{toolLabel()}</span>
@@ -151,8 +157,16 @@ const StatusBar: Component = () => {
             </div>
 
             {/* Version */}
-            <div class="status-section" style={{ opacity: 0.5, 'border-right': 'none' }}>
+            <div class="status-section" style={{ opacity: 0.5 }}>
                 v{pkg.version}
+            </div>
+
+            {/* Attribution */}
+            <div class="status-section status-attribution" style={{ 'border-right': 'none' }}>
+                Developed with <span class="status-heart">&hearts;</span> by{' '}
+                <a href="https://github.com/algorisys-oss/yappydraw" target="_blank" rel="noopener noreferrer">
+                    Algorisys Open Source Team
+                </a>
             </div>
         </div>
     );

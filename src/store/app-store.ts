@@ -88,6 +88,7 @@ interface AppState {
 
     readOnly: boolean;
     cursorPosition: { x: number; y: number };
+    welcomeDismissed: boolean;
 }
 
 const initialDoc = createSlideDocument();
@@ -113,6 +114,7 @@ const initialState: AppState = {
     isRecording: false,
     readOnly: false,
     cursorPosition: { x: 0, y: 0 },
+    welcomeDismissed: false,
     defaultElementStyles: {
         strokeColor: (localStorage.getItem('theme') === 'focus') ? '#ffffff' : '#000000',
         backgroundColor: 'transparent',
@@ -1182,6 +1184,7 @@ export const clearHistory = () => {
 export const resetToNewDocument = (docType: 'infinite' | 'slides' = 'slides') => {
     const doc = createSlideDocument('Untitled', docType);
     loadDocument(doc);
+    setStore("welcomeDismissed", true);
     setStore("showSlideToolbar", true);
     setStore("showUtilityToolbar", true);
     // Default to 100% zoom for new documents, centered on the first slide
