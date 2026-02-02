@@ -114,7 +114,7 @@ const initialState: AppState = {
     readOnly: false,
     cursorPosition: { x: 0, y: 0 },
     defaultElementStyles: {
-        strokeColor: (localStorage.getItem('theme') === 'dark') ? '#ffffff' : '#000000',
+        strokeColor: (localStorage.getItem('theme') === 'focus') ? '#ffffff' : '#000000',
         backgroundColor: 'transparent',
         fillStyle: 'solid',
         strokeWidth: 2,
@@ -1314,8 +1314,8 @@ export const setTheme = (theme: 'light' | 'dark' | 'focus') => {
     const cssTheme = theme === 'focus' ? 'focus' : theme;
     document.documentElement.setAttribute('data-theme', cssTheme);
 
-    // Dark and focus both use light strokes on dark backgrounds
-    const isDark = theme === 'dark' || theme === 'focus';
+    // Only focus uses light strokes — dark mode is same as light for canvas
+    const isDark = theme === 'focus';
     const oldStroke = isDark ? '#000000' : '#ffffff';
     const newStroke = isDark ? '#ffffff' : '#000000';
     setStore('defaultElementStyles', 'strokeColor', newStroke);

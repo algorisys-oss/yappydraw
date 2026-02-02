@@ -186,7 +186,7 @@ export function renderSlideBackground(
     y: number,
     w: number,
     h: number,
-    theme: string | boolean
+    _theme: string | boolean
 ): void {
     const type = slide.fillStyle || 'solid';
 
