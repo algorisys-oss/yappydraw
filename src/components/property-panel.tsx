@@ -1,5 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
 import {
@@ -617,7 +617,8 @@ const PropertyPanel: Component = () => {
                 updateElement(id, { [key]: finalValue }, history);
             });
         } else if (target.type === 'canvas') {
-            if (key === 'canvasBackgroundColor') setCanvasBackgroundColor(value);
+            if (key === 'theme') setTheme(value as 'light' | 'dark' | 'focus');
+            else if (key === 'canvasBackgroundColor') setCanvasBackgroundColor(value);
             else if (key === 'gridEnabled') updateGridSettings({ enabled: value });
             else if (key === 'snapToGrid') updateGridSettings({ snapToGrid: value });
             else if (key === 'gridStyle') setGridStyle(value);
@@ -650,6 +651,7 @@ const PropertyPanel: Component = () => {
         if (!target) return undefined;
 
         if (target.type === 'canvas') {
+            if (prop.key === 'theme') return store.theme;
             if (prop.key === 'canvasBackgroundColor') return store.canvasBackgroundColor;
             if (prop.key === 'gridEnabled') return store.gridSettings.enabled;
             if (prop.key === 'gridStyle') return store.gridSettings.style;
@@ -667,7 +669,7 @@ const PropertyPanel: Component = () => {
             if (prop.key === 'transitionType') return slide.transition?.type || 'none';
             if (prop.key === 'transitionDuration') return slide.transition?.duration || 500;
             if (prop.key === 'transitionEasing') return slide.transition?.easing || 'easeInOutQuad';
-            if (prop.key === 'backgroundColor') return slide.backgroundColor || (store.theme === 'dark' ? '#121212' : '#ffffff');
+            if (prop.key === 'backgroundColor') return slide.backgroundColor || (store.theme !== 'light' ? '#121212' : '#ffffff');
             if (prop.key === 'fillStyle') return slide.fillStyle || 'solid';
             if (prop.key === 'backgroundImage') return slide.backgroundImage || '';
             if (prop.key === 'backgroundOpacity') return slide.backgroundOpacity ?? 1;

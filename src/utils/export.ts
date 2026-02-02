@@ -236,7 +236,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
 
             // Background
             if (background) {
-                ctx.fillStyle = slide.backgroundColor || (store.theme === 'dark' ? '#121212' : '#ffffff');
+                ctx.fillStyle = slide.backgroundColor || (store.theme !== 'light' ? '#121212' : '#ffffff');
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
@@ -353,7 +353,7 @@ export const exportToPptx = async (scale: number, background: boolean, onlySelec
             if (!ctx) continue;
 
             if (background) {
-                ctx.fillStyle = slide.backgroundColor || (store.theme === 'dark' ? '#121212' : '#ffffff');
+                ctx.fillStyle = slide.backgroundColor || (store.theme !== 'light' ? '#121212' : '#ffffff');
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 

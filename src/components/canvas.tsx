@@ -194,7 +194,7 @@ const Canvas: Component = () => {
         (window as any).yappyGlobalTime = currentTime;
 
         const { scale, panX, panY } = store.viewState;
-        const isDarkMode = store.theme === 'dark';
+        const isDarkMode = store.theme !== 'light';
         if (!rcInstance) rcInstance = rough.canvas(canvasRef);
         const rc = rcInstance;
         const shouldAnimate = store.appMode === 'presentation' || store.isPreviewing;
@@ -210,8 +210,8 @@ const Canvas: Component = () => {
         decayLaserTrail(pState.laserTrailData, LASER_DECAY_MS);
 
         // 3. Render backgrounds & grids
-        renderWorkspaceBackground(ctx, canvasRef, isDarkMode, store.docType, store.canvasBackgroundColor);
-        renderSlideBoundaries(ctx, rc, store.slides, store.docType, store.activeSlideIndex, scale, panX, panY, isDarkMode);
+        renderWorkspaceBackground(ctx, canvasRef, store.theme, store.docType, store.canvasBackgroundColor);
+        renderSlideBoundaries(ctx, rc, store.slides, store.docType, store.activeSlideIndex, scale, panX, panY, store.theme);
         renderCanvasTexture(ctx, canvasRef, store.canvasTexture, scale, panX, panY, isDarkMode);
 
         // 4. Enter world-space for elements
@@ -334,6 +334,7 @@ const Canvas: Component = () => {
         store.gridSettings.style;
         store.canvasBackgroundColor;
         store.canvasTexture;
+        store.theme;
         snappingGuides();
         // Redraw on reactive changes
         requestAnimationFrame(draw);

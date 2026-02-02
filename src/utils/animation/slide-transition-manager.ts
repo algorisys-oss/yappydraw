@@ -164,7 +164,7 @@ class SlideTransitionManager {
     private executeFade(context: TransitionContext, transition: SlideTransition): Promise<void> {
         return new Promise((resolve) => {
             const halfDuration = transition.duration / 2;
-            const bgColor = context.toSlide.backgroundColor || (store.theme === 'dark' ? '#121212' : '#ffffff');
+            const bgColor = context.toSlide.backgroundColor || (store.theme !== 'light' ? '#121212' : '#ffffff');
 
             // Create fade overlay
             this.fadeOverlay = document.createElement('div');

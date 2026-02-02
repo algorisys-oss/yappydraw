@@ -16,6 +16,19 @@ export interface PropertyConfig {
 
 export const properties: PropertyConfig[] = [
     {
+        key: 'theme',
+        label: 'Theme',
+        type: 'select',
+        options: [
+            { label: 'Light', value: 'light' },
+            { label: 'Dark', value: 'dark' },
+            { label: 'Focus (Dark Canvas)', value: 'focus' }
+        ],
+        group: 'canvas',
+        applicableTo: ['canvas'],
+        defaultValue: 'light'
+    },
+    {
         key: 'showQuickToolbar',
         label: 'Quick Toolbar',
         type: 'toggle',

@@ -80,7 +80,7 @@ export interface SlideDocumentMetadata {
  * Global settings that apply across the entire canvas
  */
 export interface GlobalSettings {
-    theme?: 'light' | 'dark';
+    theme?: 'light' | 'dark' | 'focus';
     defaultStyles?: Partial<DrawingElement>;
     animationEnabled?: boolean; // Global toggle
     reducedMotion?: boolean;    // Accessibility preference

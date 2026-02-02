@@ -164,7 +164,8 @@
 }
 
 /* Ensure dark mode support for explicit color */
-[data-theme="dark"] .template-name {
+[data-theme="dark"] .template-name,
+[data-theme="focus"] .template-name {
     color: #f3f4f6;
 }
 
@@ -181,7 +182,8 @@
     overflow: hidden;
 }
 
-[data-theme="dark"] .template-description {
+[data-theme="dark"] .template-description,
+[data-theme="focus"] .template-description {
     color: #9ca3af;
 }
 
@@ -197,14 +199,17 @@
 }
 
 /* Dark mode adjustments */
-[data-theme="dark"] .template-browser-backdrop {
+[data-theme="dark"] .template-browser-backdrop,
+[data-theme="focus"] .template-browser-backdrop {
     background: rgba(0, 0, 0, 0.7);
 }
 
-[data-theme="dark"] .template-card {
+[data-theme="dark"] .template-card,
+[data-theme="focus"] .template-card {
     background: var(--bg-secondary);
 }
 
-[data-theme="dark"] .template-card:hover {
+[data-theme="dark"] .template-card:hover,
+[data-theme="focus"] .template-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }

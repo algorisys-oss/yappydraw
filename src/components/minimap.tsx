@@ -93,7 +93,7 @@ export const Minimap = (props: MinimapProps) => {
             const layer = store.layers.find(l => l.id === el.layerId);
             if (!layer?.visible) return;
 
-            renderElement(rc, ctx, el, store.theme === 'dark', layer?.opacity ?? 1);
+            renderElement(rc, ctx, el, store.theme !== 'light', layer?.opacity ?? 1);
         });
 
         ctx.restore();
@@ -111,9 +111,9 @@ export const Minimap = (props: MinimapProps) => {
         const vh = viewportWorldHeight * scale;
 
         ctx.save();
-        ctx.strokeStyle = store.theme === 'dark' ? '#60a5fa' : '#3b82f6';
+        ctx.strokeStyle = store.theme !== 'light' ? '#60a5fa' : '#3b82f6';
         ctx.lineWidth = 2;
-        ctx.fillStyle = store.theme === 'dark' ? 'rgba(96, 165, 250, 0.1)' : 'rgba(59, 130, 246, 0.1)';
+        ctx.fillStyle = store.theme !== 'light' ? 'rgba(96, 165, 250, 0.1)' : 'rgba(59, 130, 246, 0.1)';
         ctx.fillRect(vx, vy, vw, vh);
         ctx.strokeRect(vx, vy, vw, vh);
         ctx.restore();

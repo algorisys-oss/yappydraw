@@ -30,7 +30,7 @@ interface AppState {
     selectedTool: ToolType;
     selection: string[]; // IDs of selected elements
     defaultElementStyles: Partial<DrawingElement>; // Styles for new elements
-    theme: 'light' | 'dark';
+    theme: 'light' | 'dark' | 'focus';
     globalSettings: GlobalSettings;
     showCanvasProperties: boolean;
     undoStackLength: number;
@@ -154,8 +154,9 @@ const initialState: AppState = {
         fineliner: { strokeWidth: 4 },
         inkbrush: { strokeWidth: 6 },
     } as Record<string, Partial<any>>,
-    theme: (localStorage.getItem('theme') as 'light' | 'dark') || 'dark',
+    theme: (localStorage.getItem('theme') as 'light' | 'dark' | 'focus') || 'light',
     globalSettings: {
+        theme: (localStorage.getItem('theme') as 'light' | 'dark' | 'focus') || 'light',
         animationEnabled: true,
         reducedMotion: false,
         renderStyle: 'sketch',
@@ -1027,6 +1028,12 @@ export const loadDocument = (doc: any) => {
             delete gs.showMindmapToolbar;
         }
         setStore("globalSettings", gs);
+
+        // Apply theme from document if present, otherwise keep current theme
+        if (gs.theme) {
+            setTheme(gs.theme);
+        }
+
         // Determine docType with version-aware defaults:
         // - v4: use stored docType
         // - v3: default to 'slides' (v3 is inherently slide-based)
@@ -1294,15 +1301,23 @@ export const moveElementZIndex = (id: string, direction: 'front' | 'back' | 'for
     });
 };
 
-export const toggleTheme = () => {
-    const newTheme = store.theme === 'light' ? 'dark' : 'light';
-    setStore('theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
+const FOCUS_CANVAS_BG = '#1a1a2e';
+const DEFAULT_CANVAS_BG = '#ffffff';
 
-    // Swap default stroke color so new shapes are visible on the current canvas
-    const oldStroke = newTheme === 'dark' ? '#000000' : '#ffffff';
-    const newStroke = newTheme === 'dark' ? '#ffffff' : '#000000';
+export const setTheme = (theme: 'light' | 'dark' | 'focus') => {
+    const prevTheme = store.theme;
+    setStore('theme', theme);
+    setStore('globalSettings', 'theme', theme);
+    localStorage.setItem('theme', theme);
+
+    // Focus uses dark UI chrome; map to CSS data-theme accordingly
+    const cssTheme = theme === 'focus' ? 'focus' : theme;
+    document.documentElement.setAttribute('data-theme', cssTheme);
+
+    // Dark and focus both use light strokes on dark backgrounds
+    const isDark = theme === 'dark' || theme === 'focus';
+    const oldStroke = isDark ? '#000000' : '#ffffff';
+    const newStroke = isDark ? '#ffffff' : '#000000';
     setStore('defaultElementStyles', 'strokeColor', newStroke);
 
     // Also update cached per-tool styles that still have the old default
@@ -1312,8 +1327,27 @@ export const toggleTheme = () => {
         }
     }
 
-    // Note: slide/canvas backgrounds are NOT swapped — theme only affects UI chrome,
-    // not the actual canvas content, so slides remain WYSIWYG.
+    // In infinite canvas mode, swap the canvas background when entering/leaving
+    // focus so the stored value matches the visual.  In slides mode the slide
+    // rectangle stays WYSIWYG — only the workspace area around it goes dark.
+    if (store.docType === 'infinite') {
+        if (theme === 'focus' && prevTheme !== 'focus') {
+            if (store.canvasBackgroundColor === DEFAULT_CANVAS_BG) {
+                setStore('canvasBackgroundColor', FOCUS_CANVAS_BG);
+            }
+        } else if (theme !== 'focus' && prevTheme === 'focus') {
+            if (store.canvasBackgroundColor === FOCUS_CANVAS_BG) {
+                setStore('canvasBackgroundColor', DEFAULT_CANVAS_BG);
+            }
+        }
+    }
+};
+
+export const toggleTheme = () => {
+    const order: ('light' | 'dark' | 'focus')[] = ['light', 'dark', 'focus'];
+    const idx = order.indexOf(store.theme);
+    const next = order[(idx + 1) % order.length];
+    setTheme(next);
 };
 
 export const zoomToFit = () => {

@@ -9,7 +9,7 @@ import {
 } from "../store/app-store";
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
-    Moon, Sun, Download, Layout,
+    Moon, Sun, Focus, Download, Layout,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette
 } from "lucide-solid";
 import { P3ColorPicker } from "./p3-color-picker";
@@ -628,8 +628,8 @@ const Menu: Component = () => {
                                     </Show>
                                 </div>
                                 <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 4px' }}></div>
-                                <button class="menu-btn" onClick={toggleTheme} title="Toggle Dark/Light Theme">
-                                    {store.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                                <button class="menu-btn" onClick={toggleTheme} title="Toggle Theme (Light / Dark / Focus)">
+                                    {store.theme === 'light' ? <Moon size={18} /> : store.theme === 'dark' ? <Focus size={18} /> : <Sun size={18} />}
                                 </button>
 
                             </div>

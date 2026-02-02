@@ -89,7 +89,7 @@ export const WelcomeScreen: Component = () => {
                 rc,
                 ctx,
                 element,
-                store.globalSettings.theme === 'dark',
+                store.globalSettings.theme !== 'light',
                 1 // opacity
             );
         };

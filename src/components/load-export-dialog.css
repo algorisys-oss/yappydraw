@@ -231,7 +231,8 @@
 }
 
 /* Dark Mode Overrides */
-[data-theme='dark'] .alert-box.warning {
+[data-theme='dark'] .alert-box.warning,
+[data-theme='focus'] .alert-box.warning {
     background: rgba(124, 45, 18, 0.2);
     border-color: #7c2d12;
     color: #fdba74;

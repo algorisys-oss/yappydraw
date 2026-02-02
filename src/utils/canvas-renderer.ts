@@ -159,16 +159,19 @@ export function decayLaserTrail(
 export function renderWorkspaceBackground(
     ctx: CanvasRenderingContext2D,
     canvas: HTMLCanvasElement,
-    _isDarkMode: boolean,
+    theme: string,
     docType?: string,
     canvasBackgroundColor?: string
 ): void {
-    if (docType === 'infinite' && canvasBackgroundColor) {
-        // Infinite canvas: user's background color fills the entire viewport
-        ctx.fillStyle = canvasBackgroundColor;
+    if (docType === 'infinite') {
+        // Infinite canvas: use the user's background color, but in focus mode
+        // default to dark canvas when the bg hasn't been customised
+        const isDefault = !canvasBackgroundColor || canvasBackgroundColor === '#ffffff';
+        ctx.fillStyle = (theme === 'focus' && isDefault) ? '#1a1a2e' : (canvasBackgroundColor || '#ffffff');
     } else {
         // Slides mode: neutral workspace behind the slide rectangle
-        ctx.fillStyle = "#e2e8f0";
+        // Focus mode uses a dark workspace to match the dark-canvas intent
+        ctx.fillStyle = theme === 'focus' ? '#1a1a2e' : '#e2e8f0';
     }
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
@@ -183,13 +186,13 @@ export function renderSlideBackground(
     y: number,
     w: number,
     h: number,
-    _isDarkMode: boolean
+    theme: string | boolean
 ): void {
     const type = slide.fillStyle || 'solid';
 
-    // Slide backgrounds always use their actual stored color (WYSIWYG).
-    // Theme only affects UI chrome, not canvas/slide content.
-    const defaultBg = "#ffffff";
+    // Slide backgrounds are WYSIWYG — always use white as the fallback
+    // regardless of theme.  Theme only affects the workspace area around slides.
+    const defaultBg = '#ffffff';
 
     if (type === 'solid') {
         let color = slide.backgroundColor || defaultBg;
@@ -282,7 +285,7 @@ export function renderSlideBoundaries(
     scale: number,
     panX: number,
     panY: number,
-    _isDarkMode: boolean
+    theme: string | boolean
 ): void {
     ctx.save();
     ctx.translate(panX, panY);
@@ -304,7 +307,7 @@ export function renderSlideBoundaries(
             ctx.restore();
 
             // Slide surface
-            renderSlideBackground(ctx, rc, activeSlide, sX, sY, sW, sH, false);
+            renderSlideBackground(ctx, rc, activeSlide, sX, sY, sW, sH, theme);
         }
     } else if (docType === 'infinite') {
         // Background is handled by renderWorkspaceBackground for infinite mode

@@ -116,10 +116,12 @@
 }
 
 /* Dark theme adjustments */
-[data-theme='dark'] .command-palette-footer {
+[data-theme='dark'] .command-palette-footer,
+[data-theme='focus'] .command-palette-footer {
     background: rgba(255, 255, 255, 0.02);
 }
 
-[data-theme='dark'] .command-palette-item-shortcut {
+[data-theme='dark'] .command-palette-item-shortcut,
+[data-theme='focus'] .command-palette-item-shortcut {
     background: rgba(255, 255, 255, 0.05);
 }

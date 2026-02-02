@@ -64,9 +64,9 @@ export function setupRecording(getCanvasRef: () => HTMLCanvasElement | undefined
         tCtx.translate(-spatialX, -spatialY); // Focus on the slide's spatial area
 
         // Background
-        const isDarkMode = store.theme === 'dark';
+        const isDarkMode = store.theme !== 'light';
         const rc = rough.canvas(thumbCanvas);
-        renderSlideBackground(tCtx!, rc, slide, spatialX, spatialY, sW, sH, isDarkMode);
+        renderSlideBackground(tCtx!, rc, slide, spatialX, spatialY, sW, sH, store.theme);
 
         // Render elements
         const sortedLayers = [...store.layers].sort((a, b) => a.order - b.order);
