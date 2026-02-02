@@ -1,0 +1,313 @@
+/* Quick Toolbar - Floating toolbar above selected elements */
+.quick-toolbar {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: auto;
+}
+
+/* Main content row */
+.quick-toolbar-content {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    background: var(--bg-panel, #ffffff);
+    border: 2px solid var(--primary-color, #3b82f6);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Quick properties section */
+.quick-props-section {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Divider between sections */
+.qt-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color, #e5e7eb);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+/* ============ Color Dot Control ============ */
+.color-dot-wrapper {
+    position: relative;
+}
+
+.color-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color, #d1d5db);
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+}
+
+.color-dot:hover {
+    transform: scale(1.15);
+    border-color: var(--primary-color, #3b82f6);
+}
+
+.color-dot.active {
+    border-color: var(--primary-color, #3b82f6);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+/* Transparent color indicator (checkerboard) */
+.color-dot.transparent {
+    background: repeating-conic-gradient(#ccc 0% 25%, transparent 0% 50%) 50% / 8px 8px;
+}
+
+/* Color popover */
+.color-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-panel, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    z-index: 10002;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    min-width: 110px;
+}
+
+.color-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+}
+
+.color-swatch:hover {
+    transform: scale(1.15);
+    border-color: var(--primary-color, #3b82f6);
+}
+
+.color-swatch.selected {
+    border-color: var(--primary-color, #3b82f6);
+    box-shadow: 0 0 0 1px var(--primary-color, #3b82f6);
+}
+
+.color-popover-custom {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.color-popover-custom input[type="color"] {
+    width: 22px;
+    height: 22px;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.color-popover-custom span {
+    font-size: 10px;
+    color: var(--text-secondary, #6b7280);
+}
+
+/* ============ Icon Button (shared for toggle/select) ============ */
+.qt-icon-btn {
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--text-secondary, #6b7280);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.qt-icon-btn:hover {
+    background: var(--btn-hover, #f3f4f6);
+    color: var(--text-primary, #374151);
+}
+
+.qt-icon-btn.active {
+    background: var(--primary-color, #3b82f6);
+    color: white;
+    border-color: var(--primary-color, #3b82f6);
+}
+
+.qt-icon-btn svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
+/* Icon select group */
+.qt-icon-select {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+/* ============ Mini Slider ============ */
+.qt-mini-slider {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 70px;
+    flex-shrink: 0;
+}
+
+.qt-mini-slider input[type="range"] {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--border-color, #d1d5db);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+.qt-mini-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary-color, #3b82f6);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.qt-mini-slider input[type="range"]::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary-color, #3b82f6);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.qt-mini-slider-value {
+    font-size: 10px;
+    color: var(--text-secondary, #6b7280);
+    min-width: 18px;
+    text-align: right;
+}
+
+/* ============ Mindmap Action Section ============ */
+/* Reuses the existing toolbar-btn pattern from mindmap toolbar */
+.qt-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary, #6b7280);
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.qt-action-btn:hover {
+    background: var(--btn-hover, #f3f4f6);
+    color: var(--text-primary, #374151);
+}
+
+.qt-action-btn.active {
+    background: var(--primary-color, #3b82f6);
+    color: white;
+}
+
+.qt-action-btn svg {
+    display: block;
+    color: inherit;
+}
+
+/* Layout Dropdown */
+.qt-layout-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    padding: 6px;
+    background: var(--bg-panel, #ffffff);
+    border: 2px solid var(--primary-color, #3b82f6);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10001;
+}
+
+.qt-layout-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    background: var(--bg-secondary, #f9fafb);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 6px;
+    color: var(--text-secondary, #6b7280);
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.qt-layout-btn:hover {
+    background: var(--btn-hover, #f3f4f6);
+    border-color: var(--primary-color, #3b82f6);
+}
+
+.qt-layout-btn svg {
+    display: block;
+    color: inherit;
+}
+
+/* ============ Mobile ============ */
+@media (max-width: 768px) {
+    .quick-toolbar-content {
+        padding: 8px;
+        gap: 6px;
+    }
+
+    .qt-action-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .qt-icon-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .color-dot {
+        width: 28px;
+        height: 28px;
+    }
+}

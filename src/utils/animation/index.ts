@@ -1,0 +1,80 @@
+/**
+ * Animation System - Public Exports
+ */
+
+// Types
+export type {
+    EasingFunction,
+    EasingName,
+    AnimationState,
+    AnimationConfig,
+    Keyframe,
+    KeyframeAnimation,
+    Animation
+} from './animation-types';
+
+// Easing functions
+export { easings, getEasing, lerp, lerpColor, createSpring } from './animation-types';
+
+// Animation Engine
+export { animationEngine, generateAnimationId } from './animation-engine';
+
+// Element Animator
+export {
+    animateElement,
+    animateElements,
+    stopElementAnimation,
+    pauseElementAnimation,
+    resumeElementAnimation,
+    isElementAnimating,
+    // Presets
+    fadeIn,
+    fadeOut,
+    scaleIn,
+    scaleOut,
+    bounce,
+    pulse,
+    shakeX,
+    shakeY,
+    headShake,
+    swing,
+    tada,
+    wobble,
+    jello,
+    heartBeat,
+    slideInLeft,
+    slideInRight,
+    slideInUp,
+    slideInDown,
+    slideOutLeft,
+    slideOutRight,
+    slideOutUp,
+    slideOutDown,
+    // Keyframe animation
+    interpolateKeyframes,
+    animateElementKeyframes,
+    // Play configured animation
+    playEntranceAnimation,
+    playExitAnimation
+} from './element-animator';
+
+export type {
+    AnimatableProperty,
+    AnimatableColorProperty,
+    ElementAnimationTarget,
+    ElementAnimationConfig
+} from './element-animator';
+
+// Timeline
+export { Timeline, createTimeline } from './timeline';
+
+// Sequence Animator
+export { sequenceAnimator } from './sequence-animator';
+
+// State Manager
+export { stateManager } from './state-manager';
+
+// Slide Transition Manager
+export { slideTransitionManager } from './slide-transition-manager';
+export type { TransitionContext, TransitionOptions } from './slide-transition-manager';
+

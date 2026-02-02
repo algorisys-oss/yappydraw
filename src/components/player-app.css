@@ -1,0 +1,28 @@
+.player-app {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+}
+
+.player-app .canvas-container {
+    width: 100%;
+    height: 100%;
+}
+
+.player-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+/* Ensure no selection or editing UI leaks */
+.selection-box,
+.transform-handle,
+.resize-handle {
+    display: none !important;
+}

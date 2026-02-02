@@ -1,0 +1,93 @@
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 28px;
+    background: var(--bg-panel, white);
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    font-size: 11px;
+    color: var(--text-secondary, #6b7280);
+    z-index: 100;
+    user-select: none;
+    gap: 0;
+}
+
+.status-section {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 8px;
+    height: 100%;
+    border-right: 1px solid var(--border-color, #e5e7eb);
+    white-space: nowrap;
+}
+
+.status-section:last-child {
+    border-right: none;
+}
+
+.status-spacer {
+    flex: 1;
+}
+
+.status-label {
+    opacity: 0.6;
+    font-size: 10px;
+}
+
+.status-value {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Zoom buttons inside status bar */
+.status-bar .status-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--text-secondary, #6b7280);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.status-bar .status-btn:hover:not(:disabled) {
+    background: var(--btn-hover, #f3f4f6);
+    color: var(--text-primary, #111827);
+}
+
+.status-bar .status-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.status-bar .status-btn.text-btn {
+    width: auto;
+    padding: 0 4px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+.status-tool-name {
+    font-weight: 500;
+    color: var(--text-primary, #111827);
+}
+
+.status-coords {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 10px;
+    letter-spacing: -0.3px;
+}
+
+.status-bar .present-btn:hover:not(:disabled) {
+    background: var(--primary-color, #3b82f6);
+    color: white;
+}

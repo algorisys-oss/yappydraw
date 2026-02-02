@@ -1,0 +1,106 @@
+.toolbar-container {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    right: auto;
+    margin: 0;
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: var(--bg-panel);
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    z-index: 1000;
+    border: 1px solid var(--border-color);
+    user-select: none;
+    transition: box-shadow 0.2s, background 0.2s;
+}
+
+.toolbar-container.dragging {
+    cursor: grabbing;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.drag-handle {
+    width: 12px;
+    height: 36px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.toolbar-container:hover .drag-handle {
+    opacity: 0.8;
+}
+
+.drag-dots {
+    width: 4px;
+    height: 18px;
+    background-image: radial-gradient(var(--text-secondary) 1px, transparent 1px);
+    background-size: 4px 4px;
+}
+
+/* Mobile: constrain width and enable horizontal scroll */
+@media (max-width: 768px) {
+    .toolbar-container {
+        max-width: calc(100vw - 20px);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        gap: 2px;
+        padding: 6px;
+    }
+
+    .toolbar-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Dropdown layout adjustments for mobile (positioning is handled inline via Portal) */
+    .pen-tool-dropdown {
+        width: calc(100vw - 40px);
+        max-width: 320px;
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+.toolbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background-color: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.toolbar-btn:hover {
+    background-color: var(--btn-hover);
+    color: var(--text-primary);
+}
+
+.toolbar-btn.active {
+    background-color: var(--primary-light);
+    /* Use theme variable */
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Mobile Property Panel Toggle - always visible, provides quick access */
+.mobile-property-toggle {
+    margin-left: 4px;
+    border-left: 1px solid #e5e7eb;
+    padding-left: 8px;
+}

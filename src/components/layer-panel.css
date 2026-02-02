@@ -1,0 +1,428 @@
+.layer-panel {
+    position: absolute;
+    right: 0;
+    bottom: 28px;
+    width: 280px;
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    height: 300px;
+    min-height: 200px;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
+    z-index: 50;
+    pointer-events: auto;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.layer-panel.minimized {
+    height: 48px;
+    min-height: 48px;
+    overflow: hidden;
+}
+
+.layer-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.layer-properties {
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.opacity-control,
+.background-control,
+.color-tag-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.background-control,
+.color-tag-control {
+    margin-top: 4px;
+}
+
+.color-tag-options {
+    display: flex;
+    gap: 4px;
+}
+
+.color-tag-option {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.color-tag-option.active {
+    border-color: var(--text-primary);
+    transform: scale(1.2);
+}
+
+.color-tag-option.none {
+    border: 1px solid var(--border-color);
+    position: relative;
+}
+
+.color-tag-option.none::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #ff0000;
+    transform: rotate(45deg);
+}
+
+.opacity-control input[type="range"] {
+    flex: 1;
+    height: 4px;
+    accent-color: #3b82f6;
+    cursor: pointer;
+}
+
+.color-swatch-mini {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+}
+
+.color-swatch-mini.transparent {
+    background: white;
+}
+
+.color-swatch-mini.transparent::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 45%, #ff0000 45%, #ff0000 55%, transparent 55%);
+}
+
+.color-picker-mini {
+    width: 0;
+    height: 0;
+    opacity: 0;
+    position: absolute;
+    padding: 0;
+}
+
+.layer-panel-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.layer-add-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.layer-add-btn:hover {
+    background: var(--btn-hover);
+    border-color: #3b82f6;
+}
+
+.close-btn,
+.minimize-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover,
+.minimize-btn:hover {
+    background: var(--btn-hover);
+    color: var(--text-primary);
+}
+
+.close-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+}
+
+.layer-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.layer-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 2px;
+    border-radius: 4px;
+    background: var(--bg-panel);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.layer-item:hover {
+    background: var(--btn-hover);
+    border-color: var(--border-color);
+}
+
+.layer-item.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.layer-item.active .layer-name {
+    font-weight: 600;
+}
+
+.drag-handle {
+    cursor: grab;
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    user-select: none;
+    padding: 0 2px;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.layer-item:hover .drag-handle {
+    opacity: 1;
+}
+
+.layer-item.drag-over {
+    border-color: #3b82f6 !important;
+    border-style: dashed !important;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.layer-visibility-btn,
+.layer-lock-btn,
+.layer-delete-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    line-height: 1;
+    transition: transform 0.2s;
+}
+
+.layer-visibility-btn:hover,
+.layer-lock-btn:hover {
+    transform: scale(1.2);
+}
+
+.layer-duplicate-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 2px 4px;
+    line-height: 1;
+    transition: transform 0.2s;
+    opacity: 0.6;
+}
+
+.layer-duplicate-btn:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.layer-delete-btn {
+    margin-left: auto;
+    font-size: 24px;
+    font-weight: 300;
+    opacity: 0.5;
+}
+
+.layer-delete-btn:hover:not(:disabled) {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.layer-delete-btn:disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+}
+
+.layer-name {
+    flex: 1;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    user-select: none;
+}
+
+.layer-name-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.layer-color-tag {
+    width: 3px;
+    height: 16px;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+.master-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+/* Layer Grouping Styles */
+.layer-item.group {
+    font-weight: 600;
+}
+
+.layer-item.nested {
+    /* Removed margin-left to use consistent padding-left in JSX for hierarchy */
+    width: 100%;
+}
+
+.layer-item.nested::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border-color);
+    opacity: 0.3;
+}
+
+.layer-item .expander {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: var(--text-secondary);
+    transition: transform 0.2s;
+}
+
+.layer-item .expander.expanded {
+    transform: rotate(90deg);
+}
+
+.group-mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.group-mode-toggle.active {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+}
+
+.layer-name-input {
+    flex: 1;
+    font-size: 13px;
+    padding: 2px 6px;
+    border: 1px solid #3b82f6;
+    border-radius: 3px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    outline: none;
+    min-width: 0;
+}
+
+.layer-name-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Active layer name color */
+.layer-item.active .layer-name {
+    color: white;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .layer-panel {
+        width: 100%;
+        height: auto;
+        max-height: 80vh;
+        user-select: none;
+        bottom: 0;
+        top: auto;
+        right: 0;
+        left: 0;
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        position: absolute;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .layer-name,
+    .layer-name-input {
+        font-size: 14px;
+        /* Slightly larger for mobile */
+        min-height: 24px;
+        /* Better touch target */
+    }
+}
