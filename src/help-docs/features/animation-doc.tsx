@@ -87,6 +87,10 @@ export const AnimationDoc: Component = () => {
                             <td><strong>Rotate</strong></td>
                             <td>rotateIn, rotateInDownLeft, rotateInDownRight, rotateInUpLeft, rotateInUpRight</td>
                         </tr>
+                        <tr>
+                            <td><strong>Text</strong></td>
+                            <td>typewriter, typewriterCursor, wordByWord, textScramble, lineByLine</td>
+                        </tr>
                     </tbody>
                 </table>
 
@@ -122,6 +126,10 @@ export const AnimationDoc: Component = () => {
                         <tr>
                             <td><strong>Rotate</strong></td>
                             <td>rotateOut, rotateOutDownLeft, rotateOutDownRight, rotateOutUpLeft, rotateOutUpRight</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Text</strong></td>
+                            <td>textDelete</td>
                         </tr>
                     </tbody>
                 </table>
@@ -181,6 +189,201 @@ export const AnimationDoc: Component = () => {
                         </tr>
                     </tbody>
                 </table>
+            </section>
+
+            {/* Text Animations */}
+            <section class="doc-section">
+                <h2>Text Animations</h2>
+                <p>Special animations designed specifically for text elements:</p>
+
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Animation</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>typewriter</strong></td>
+                            <td>Classic letter-by-letter reveal effect, like typing on a keyboard</td>
+                        </tr>
+                        <tr>
+                            <td><strong>typewriterCursor</strong></td>
+                            <td>Letter-by-letter reveal with a blinking cursor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>wordByWord</strong></td>
+                            <td>Reveals text one word at a time</td>
+                        </tr>
+                        <tr>
+                            <td><strong>textScramble</strong></td>
+                            <td>Hacker/decode effect - characters scramble randomly then resolve to the final text</td>
+                        </tr>
+                        <tr>
+                            <td><strong>lineByLine</strong></td>
+                            <td>Reveals text one line at a time - perfect for lists and multi-line content</td>
+                        </tr>
+                        <tr>
+                            <td><strong>textDelete</strong></td>
+                            <td>Exit animation - erases text character by character from the end</td>
+                        </tr>
+                        <tr>
+                            <td><strong>charByChar</strong></td>
+                            <td>Per-character reveal with stagger - like GSAP's SplitText</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="tip-box">
+                    <h5>Note</h5>
+                    <p>
+                        Text animations work on <strong>text elements</strong> and any <strong>shape with container text</strong>
+                        (double-click a shape to add text inside it). For best results, use longer durations (1-3 seconds)
+                        to make the text reveal readable.
+                    </p>
+                </div>
+
+                <h3>API Usage</h3>
+                <div class="code-block">
+{`// Typewriter effect over 2 seconds
+typewriter(textElementId, 2000);
+
+// Word by word reveal
+wordByWord(textElementId, 3000);
+
+// Hacker decode effect
+textScramble(textElementId, 1500);
+
+// Per-character reveal with stagger (GSAP-like)
+charByChar(textElementId, 1500, { each: 50, from: 'center' });
+
+// Count up animation (for numbers)
+textCountUp(textElementId, 0, 1000, 2000, {
+    params: { suffix: '+', useCommas: true }
+});`}
+                </div>
+            </section>
+
+            {/* GSAP-like Stagger Features */}
+            <section class="doc-section">
+                <h2>Advanced Stagger (GSAP-like)</h2>
+                <p>
+                    Yappy includes GSAP-inspired stagger utilities for animating multiple elements
+                    with sophisticated timing patterns.
+                </p>
+
+                <h3>Using Stagger from the UI</h3>
+                <p>Select multiple elements to access stagger animations in the Animation Panel:</p>
+                <ol>
+                    <li><strong>Select multiple elements</strong> - Use Shift+click or drag a selection box</li>
+                    <li><strong>Open Animation Panel</strong> - Located in the right sidebar Properties panel</li>
+                    <li><strong>Configure stagger settings:</strong>
+                        <ul>
+                            <li><strong>Effect</strong> - Choose animation preset (fadeIn, slideInLeft, etc.)</li>
+                            <li><strong>Distribution</strong> - How elements animate (From Start, Center, Edges, Random)</li>
+                            <li><strong>Stagger (ms)</strong> - Delay between each element starting</li>
+                            <li><strong>Duration (ms)</strong> - How long each animation lasts</li>
+                            <li><strong>Easing</strong> - Animation timing curve</li>
+                        </ul>
+                    </li>
+                    <li><strong>Preview</strong> - Test the animation without saving</li>
+                    <li><strong>Apply</strong> - Save animations to elements (works in presentations)</li>
+                </ol>
+
+                <div class="tip-box">
+                    <h5>Tip</h5>
+                    <p>
+                        The <strong>Apply</strong> button saves animations to each element with calculated delays,
+                        so they'll play correctly in presentation mode. Use <strong>Clear All Animations</strong>
+                        to remove animations from all selected elements.
+                    </p>
+                </div>
+
+                <h3>Stagger Distribution Modes</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Mode</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>start</strong></td>
+                            <td>Sequential from first to last element (default)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>end</strong></td>
+                            <td>Sequential from last to first element</td>
+                        </tr>
+                        <tr>
+                            <td><strong>center</strong></td>
+                            <td>Start from center, expand outward</td>
+                        </tr>
+                        <tr>
+                            <td><strong>edges</strong></td>
+                            <td>Start from edges, converge to center</td>
+                        </tr>
+                        <tr>
+                            <td><strong>random</strong></td>
+                            <td>Random order for organic feel</td>
+                        </tr>
+                        <tr>
+                            <td><strong>number</strong></td>
+                            <td>Start from specific index</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Stagger Configuration</h3>
+                <div class="code-block">
+{`// Stagger from center with easing
+animateElementsStagger(elementIds, { opacity: 100 }, { duration: 500 }, {
+    each: 100,        // 100ms between each element
+    from: 'center',   // Start from center
+    ease: 'easeOutQuad'  // Ease the stagger timing
+});
+
+// Grid-based stagger (for elements in a grid layout)
+animateElementsStagger(elementIds, { y: 0 }, { duration: 300 }, {
+    amount: 800,      // Total stagger time
+    grid: [4, 3],     // 4 columns, 3 rows
+    from: 'center'    // Radial from center
+});
+
+// animateFrom - animate FROM a state TO current
+animateFrom(elementId, { opacity: 0, y: 50 }, { duration: 500 });
+
+// animateFromTo - full control
+animateFromTo(elementId,
+    { x: -200, opacity: 0 },
+    { x: 100, opacity: 100 },
+    { duration: 500 }
+);
+
+// Staggered "from" animation
+animateElementsFrom(elementIds,
+    { y: 50, opacity: 0 },
+    { duration: 400 },
+    { each: 100, from: 'start' }
+);`}
+                </div>
+
+                <h3>Random Utilities</h3>
+                <div class="code-block">
+{`// Random value in range
+const delay = random(100, 500);  // 100-500ms
+
+// Random integer
+const count = randomInt(1, 10);  // 1-10
+
+// Pick random from array
+const easing = randomPick(['easeOutQuad', 'easeOutCubic', 'easeOutElastic']);
+
+// Shuffle array
+const shuffledIds = shuffle(elementIds);`}
+                </div>
             </section>
 
             {/* Easing Functions */}
@@ -567,6 +770,50 @@ Yappy.animateElementKeyframes(elementId, 'opacity', [
                         <tr>
                             <td><code>createSpring(stiffness, damping, mass, velocity)</code></td>
                             <td>Create custom spring easing</td>
+                        </tr>
+                        <tr>
+                            <td><code>typewriter(id, duration, config)</code></td>
+                            <td>Letter-by-letter text reveal</td>
+                        </tr>
+                        <tr>
+                            <td><code>wordByWord(id, duration, config)</code></td>
+                            <td>Word-by-word text reveal</td>
+                        </tr>
+                        <tr>
+                            <td><code>textScramble(id, duration, config)</code></td>
+                            <td>Hacker decode text effect</td>
+                        </tr>
+                        <tr>
+                            <td><code>textCountUp(id, start, end, duration, config)</code></td>
+                            <td>Animated number counting</td>
+                        </tr>
+                        <tr>
+                            <td><code>lineByLine(id, duration, config)</code></td>
+                            <td>Line-by-line text reveal</td>
+                        </tr>
+                        <tr>
+                            <td><code>charByChar(id, duration, stagger, config)</code></td>
+                            <td>Per-character reveal with stagger</td>
+                        </tr>
+                        <tr>
+                            <td><code>animateElementsStagger(ids, target, config, stagger)</code></td>
+                            <td>Animate multiple elements with advanced stagger</td>
+                        </tr>
+                        <tr>
+                            <td><code>animateFrom(id, fromValues, config)</code></td>
+                            <td>Animate from specified values to current</td>
+                        </tr>
+                        <tr>
+                            <td><code>animateFromTo(id, from, to, config)</code></td>
+                            <td>Animate between two specified states</td>
+                        </tr>
+                        <tr>
+                            <td><code>animateElementsFrom(ids, from, config, stagger)</code></td>
+                            <td>Staggered "from" animation for multiple elements</td>
+                        </tr>
+                        <tr>
+                            <td><code>random(min, max)</code></td>
+                            <td>Generate random value in range</td>
                         </tr>
                     </tbody>
                 </table>

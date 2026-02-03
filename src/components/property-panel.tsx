@@ -1049,8 +1049,8 @@ const PropertyPanel: Component = () => {
                                     </div>
                                 </Show>
 
-                                {/* Animation Section - Only for single element */}
-                                <Show when={activeTarget()?.type === 'element'}>
+                                {/* Animation Section - for single element or multi-selection */}
+                                <Show when={activeTarget()?.type === 'element' || activeTarget()?.type === 'multi'}>
                                     <div class="property-group">
                                         <AnimationPanel />
                                     </div>

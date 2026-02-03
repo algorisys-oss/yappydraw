@@ -1,6 +1,6 @@
 import { type Component, Show, createSignal, onMount, onCleanup, createMemo } from 'solid-js';
 import { store, togglePresentationMode, advancePresentation, retreatPresentation, setSelectedTool } from '../store/app-store';
-import { ChevronLeft, ChevronRight, X, MousePointer2, Zap, Highlighter, Eraser } from 'lucide-solid';
+import { ChevronLeft, ChevronRight, X, MousePointer2, Zap, Highlighter, Brush, Eraser } from 'lucide-solid';
 
 export const PresentationControls: Component = () => {
     const [isVisible, setIsVisible] = createSignal(true);
@@ -159,6 +159,22 @@ export const PresentationControls: Component = () => {
                         title="Ink Highlighter"
                     >
                         <Highlighter size={18} />
+                    </button>
+                    <button
+                        onClick={() => setSelectedTool('inkbrush')}
+                        style={{
+                            background: store.selectedTool === 'inkbrush' ? 'rgba(139, 92, 246, 0.1)' : 'none',
+                            border: 'none',
+                            color: store.selectedTool === 'inkbrush' ? '#8b5cf6' : '#64748b',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            padding: '8px',
+                            'border-radius': '8px',
+                            transition: 'all 0.2s'
+                        }}
+                        title="Ink Brush"
+                    >
+                        <Brush size={18} />
                     </button>
                     <button
                         onClick={() => setSelectedTool('eraser')}

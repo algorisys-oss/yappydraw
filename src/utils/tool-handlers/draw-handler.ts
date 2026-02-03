@@ -113,6 +113,11 @@ export function drawOnDown(
             : store.defaultElementStyles.strokeStyle,
     } as DrawingElement;
 
+    // Mark freehand strokes as presentation-drawn when in presentation mode
+    if (store.appMode === 'presentation' && (tool === 'fineliner' || tool === 'inkbrush' || tool === 'marker')) {
+        newElement.presentationDrawn = true;
+    }
+
     // Apply specific defaults for Sticky Note
     if (actualType === 'stickyNote') {
         newElement.backgroundColor = '#fef08a';

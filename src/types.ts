@@ -78,7 +78,9 @@ export type EntranceAnimation = 'none' |
     // Zooming entrances
     'zoomIn' | 'zoomInDown' | 'zoomInLeft' | 'zoomInRight' | 'zoomInUp' |
     // Sliding entrances
-    'slideInDown' | 'slideInLeft' | 'slideInRight' | 'slideInUp';
+    'slideInDown' | 'slideInLeft' | 'slideInRight' | 'slideInUp' |
+    // Text animations (for text elements only)
+    'typewriter' | 'typewriterCursor' | 'wordByWord' | 'textScramble' | 'lineByLine' | 'charByChar';
 
 export type ExitAnimation = 'none' |
     // Back exits
@@ -101,7 +103,9 @@ export type ExitAnimation = 'none' |
     // Zooming exits
     'zoomOut' | 'zoomOutDown' | 'zoomOutLeft' | 'zoomOutRight' | 'zoomOutUp' |
     // Sliding exits
-    'slideOutDown' | 'slideOutLeft' | 'slideOutRight' | 'slideOutUp';
+    'slideOutDown' | 'slideOutLeft' | 'slideOutRight' | 'slideOutUp' |
+    // Text exit animations (for text elements only)
+    'textDelete';
 
 export interface DrawingElement {
     id: string;
@@ -254,6 +258,7 @@ export interface DrawingElement {
     orbitSpeed?: number;
     orbitDirection?: 'cw' | 'ccw';
     ttl?: number; // Expiry timestamp (ms)
+    presentationDrawn?: boolean; // Element created during presentation mode (erasable in presentation)
 
     // Pen Specific
     smoothing?: number;

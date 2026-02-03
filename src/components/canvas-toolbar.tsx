@@ -1,6 +1,6 @@
 import { type Component, Show, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, togglePresentationMode, setSelectedTool } from '../store/app-store';
-import { MousePointer2, Zap, Highlighter, Brush, X } from 'lucide-solid';
+import { MousePointer2, Zap, Highlighter, Brush, Eraser, X } from 'lucide-solid';
 
 export const CanvasToolbar: Component = () => {
     const [isVisible, setIsVisible] = createSignal(true);
@@ -78,7 +78,7 @@ export const CanvasToolbar: Component = () => {
                     <button
                         onClick={() => setSelectedTool('ink')}
                         style={toolBtnStyle('ink', '#ef4444')}
-                        title="Ink Overlay"
+                        title="Ink Highlighter"
                     >
                         <Highlighter size={18} />
                     </button>
@@ -88,6 +88,13 @@ export const CanvasToolbar: Component = () => {
                         title="Ink Brush"
                     >
                         <Brush size={18} />
+                    </button>
+                    <button
+                        onClick={() => setSelectedTool('eraser')}
+                        style={toolBtnStyle('eraser', '#475569')}
+                        title="Eraser"
+                    >
+                        <Eraser size={18} />
                     </button>
 
                     <div style={{ width: '1px', height: '24px', background: 'rgba(0,0,0,0.1)', margin: '0 4px' }} />

@@ -1,7 +1,8 @@
 import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
 import { store, updateElement, updateAnimation, reorderAnimation, setPathEditing } from '../store/app-store';
 import { sequenceAnimator } from '../utils/animation/sequence-animator';
-import { Play, Square, Plus, Trash2, ChevronDown, ChevronRight, ChevronUp, Edit3 } from 'lucide-solid';
+import { animateElementsFrom, calculateStaggerDelays, type StaggerConfig } from '../utils/animation';
+import { Play, Square, Plus, Trash2, ChevronDown, ChevronRight, ChevronUp, Edit3, Users } from 'lucide-solid';
 import type { ElementAnimation, PresetAnimation, RotateAnimation, AutoSpinAnimation, KeyframeAnimation, AnimationKeyframe } from '../types/motion-types';
 
 const PRESETS = [
@@ -9,7 +10,9 @@ const PRESETS = [
     'fadeIn', 'fadeOut',
     'slideInLeft', 'slideInRight', 'slideInUp', 'slideInDown',
     'zoomIn', 'zoomOut',
-    'bounce', 'pulse', 'shakeX', 'shakeY', 'revolve'
+    'bounce', 'pulse', 'shakeX', 'shakeY', 'revolve',
+    // Text animations (for text elements)
+    'typewriter', 'typewriterCursor', 'wordByWord', 'textScramble', 'lineByLine', 'textDelete', 'charByChar'
 ];
 
 const KEYFRAME_PROPERTIES = [
@@ -54,8 +57,26 @@ const getKeyframeDefaults = (el: any, property: string): AnimationKeyframe[] => 
     ];
 };
 
+// Stagger distribution modes for UI
+const STAGGER_MODES = [
+    { value: 'start', label: 'From Start' },
+    { value: 'end', label: 'From End' },
+    { value: 'center', label: 'From Center' },
+    { value: 'edges', label: 'From Edges' },
+    { value: 'random', label: 'Random' }
+] as const;
+
+// Stagger presets for quick application
+const STAGGER_PRESETS = [
+    'fadeIn', 'fadeOut',
+    'slideInLeft', 'slideInRight', 'slideInUp', 'slideInDown',
+    'zoomIn', 'zoomOut',
+    'bounce', 'pulse'
+];
+
 export const AnimationPanel: Component = () => {
     const selectedId = createMemo(() => store.selection.length === 1 ? store.selection[0] : null);
+    const multiSelected = createMemo(() => store.selection.length > 1 ? store.selection : null);
     const element = createMemo(() => {
         const id = selectedId();
         return id ? store.elements.find(el => el.id === id) : null;
@@ -63,6 +84,14 @@ export const AnimationPanel: Component = () => {
 
     const [isAdding, setIsAdding] = createSignal(false);
     const [expandedIds, setExpandedIds] = createSignal<Set<string>>(new Set());
+
+    // Stagger animation state
+    const [staggerPreset, setStaggerPreset] = createSignal('fadeIn');
+    const [staggerMode, setStaggerMode] = createSignal<StaggerConfig['from']>('start');
+    const [staggerEach, setStaggerEach] = createSignal(100); // ms between each element
+    const [staggerDuration, setStaggerDuration] = createSignal(500); // animation duration per element
+    const [staggerEasing, setStaggerEasing] = createSignal('easeOutQuad');
+    const [isStaggerPlaying, setIsStaggerPlaying] = createSignal(false);
 
     const toggleExpanded = (id: string) => {
         setExpandedIds(prev => {
@@ -231,6 +260,108 @@ export const AnimationPanel: Component = () => {
         }
     };
 
+    const handlePlayStagger = async () => {
+        const ids = multiSelected();
+        if (!ids || ids.length < 2) return;
+
+        setIsStaggerPlaying(true);
+
+        try {
+            // Prepare animation target based on preset
+            const preset = staggerPreset();
+            let fromValues: Record<string, number> = {};
+
+            // Define "from" values for common presets
+            switch (preset) {
+                case 'fadeIn':
+                    fromValues = { opacity: 0 };
+                    break;
+                case 'fadeOut':
+                    fromValues = { opacity: 100 };
+                    break;
+                case 'slideInLeft':
+                    fromValues = { x: -100, opacity: 0 };
+                    break;
+                case 'slideInRight':
+                    fromValues = { x: 100, opacity: 0 };
+                    break;
+                case 'slideInUp':
+                    fromValues = { y: -100, opacity: 0 };
+                    break;
+                case 'slideInDown':
+                    fromValues = { y: 100, opacity: 0 };
+                    break;
+                case 'zoomIn':
+                    fromValues = { width: 0, height: 0, opacity: 0 };
+                    break;
+                case 'zoomOut':
+                    fromValues = { opacity: 100 };
+                    break;
+                case 'bounce':
+                case 'pulse':
+                    fromValues = { opacity: 50 };
+                    break;
+                default:
+                    fromValues = { opacity: 0 };
+            }
+
+            const staggerConfig: StaggerConfig = {
+                each: staggerEach(),
+                from: staggerMode()
+            };
+
+            await animateElementsFrom(
+                ids,
+                fromValues,
+                {
+                    duration: staggerDuration(),
+                    easing: staggerEasing() as any
+                },
+                staggerConfig
+            );
+        } finally {
+            setIsStaggerPlaying(false);
+        }
+    };
+
+    const handleApplyStagger = () => {
+        const ids = multiSelected();
+        if (!ids || ids.length < 2) return;
+
+        // Calculate stagger delays based on distribution mode
+        const staggerConfig: StaggerConfig = {
+            each: staggerEach(),
+            from: staggerMode()
+        };
+        const delays = calculateStaggerDelays(ids.length, staggerConfig);
+
+        // Replace animations on each element (clears previous, adds new)
+        ids.forEach((elementId, index) => {
+            const newAnim: PresetAnimation = {
+                id: crypto.randomUUID(),
+                type: 'preset',
+                name: staggerPreset(),
+                duration: staggerDuration(),
+                delay: Math.round(delays[index]), // Use calculated stagger delay
+                easing: staggerEasing() as any,
+                trigger: 'on-load' // All start on load, delays handle sequencing
+            };
+
+            // Replace all animations with the new stagger animation
+            updateElement(elementId, { animations: [newAnim] }, true);
+        });
+    };
+
+    const handleClearStagger = () => {
+        const ids = multiSelected();
+        if (!ids || ids.length < 2) return;
+
+        // Remove all animations from selected elements
+        ids.forEach((elementId) => {
+            updateElement(elementId, { animations: [] }, true);
+        });
+    };
+
     return (
         <div class="animation-panel">
             <div class="panel-header" style={{ display: 'flex', 'justify-content': 'space-between', 'align-items': 'center', 'margin-bottom': '10px' }}>
@@ -256,6 +387,166 @@ export const AnimationPanel: Component = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Multi-Element Stagger Section */}
+            <Show when={multiSelected()}>
+                <div style={{
+                    'background': 'var(--bg-secondary)',
+                    'border-radius': '8px',
+                    'padding': '12px',
+                    'border': '1px solid var(--border-color)',
+                    'margin-bottom': '12px'
+                }}>
+                    <div style={{ 'display': 'flex', 'align-items': 'center', 'gap': '8px', 'margin-bottom': '12px' }}>
+                        <Users size={16} style={{ 'opacity': 0.7 }} />
+                        <span style={{ 'font-size': '12px', 'font-weight': 600 }}>
+                            Stagger Animation ({multiSelected()!.length} elements)
+                        </span>
+                    </div>
+
+                    {/* Preset Selection */}
+                    <div style={{ 'display': 'flex', 'align-items': 'center', 'justify-content': 'space-between', 'margin-bottom': '8px' }}>
+                        <label style={{ 'font-size': '11px', 'opacity': 0.7 }}>Effect</label>
+                        <select
+                            value={staggerPreset()}
+                            onChange={(e) => setStaggerPreset(e.currentTarget.value)}
+                            style={{ 'font-size': '11px', 'padding': '4px 8px', 'width': '120px', 'border-radius': '4px' }}
+                        >
+                            <For each={STAGGER_PRESETS}>
+                                {preset => <option value={preset}>{preset}</option>}
+                            </For>
+                        </select>
+                    </div>
+
+                    {/* Distribution Mode */}
+                    <div style={{ 'display': 'flex', 'align-items': 'center', 'justify-content': 'space-between', 'margin-bottom': '8px' }}>
+                        <label style={{ 'font-size': '11px', 'opacity': 0.7 }}>Distribution</label>
+                        <select
+                            value={staggerMode() as string}
+                            onChange={(e) => setStaggerMode(e.currentTarget.value as StaggerConfig['from'])}
+                            style={{ 'font-size': '11px', 'padding': '4px 8px', 'width': '120px', 'border-radius': '4px' }}
+                        >
+                            <For each={STAGGER_MODES}>
+                                {mode => <option value={mode.value}>{mode.label}</option>}
+                            </For>
+                        </select>
+                    </div>
+
+                    {/* Stagger Timing */}
+                    <div style={{ 'display': 'flex', 'align-items': 'center', 'justify-content': 'space-between', 'margin-bottom': '8px' }}>
+                        <label style={{ 'font-size': '11px', 'opacity': 0.7 }}>Stagger (ms)</label>
+                        <input
+                            type="number"
+                            step="25"
+                            min="0"
+                            value={staggerEach()}
+                            onInput={(e) => setStaggerEach(Number(e.currentTarget.value))}
+                            style={{ 'width': '80px', 'font-size': '11px', 'padding': '4px 8px', 'border-radius': '4px' }}
+                        />
+                    </div>
+
+                    {/* Duration */}
+                    <div style={{ 'display': 'flex', 'align-items': 'center', 'justify-content': 'space-between', 'margin-bottom': '8px' }}>
+                        <label style={{ 'font-size': '11px', 'opacity': 0.7 }}>Duration (ms)</label>
+                        <input
+                            type="number"
+                            step="100"
+                            min="100"
+                            value={staggerDuration()}
+                            onInput={(e) => setStaggerDuration(Number(e.currentTarget.value))}
+                            style={{ 'width': '80px', 'font-size': '11px', 'padding': '4px 8px', 'border-radius': '4px' }}
+                        />
+                    </div>
+
+                    {/* Easing */}
+                    <div style={{ 'display': 'flex', 'align-items': 'center', 'justify-content': 'space-between', 'margin-bottom': '12px' }}>
+                        <label style={{ 'font-size': '11px', 'opacity': 0.7 }}>Easing</label>
+                        <select
+                            value={staggerEasing()}
+                            onChange={(e) => setStaggerEasing(e.currentTarget.value)}
+                            style={{ 'font-size': '11px', 'padding': '4px 8px', 'width': '120px', 'border-radius': '4px' }}
+                        >
+                            <For each={EASINGS}>{easing => <option value={easing}>{easing}</option>}</For>
+                        </select>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div style={{ 'display': 'flex', 'gap': '8px' }}>
+                        <button
+                            onClick={handlePlayStagger}
+                            disabled={isStaggerPlaying()}
+                            style={{
+                                'flex': 1,
+                                'padding': '8px',
+                                'display': 'flex',
+                                'justify-content': 'center',
+                                'align-items': 'center',
+                                'gap': '6px',
+                                'background': isStaggerPlaying() ? 'var(--bg-tertiary)' : '#10b981',
+                                'color': 'white',
+                                'border': 'none',
+                                'border-radius': '6px',
+                                'cursor': isStaggerPlaying() ? 'not-allowed' : 'pointer',
+                                'font-size': '12px',
+                                'font-weight': 600
+                            }}
+                            title="Preview the stagger animation"
+                        >
+                            <Play size={14} fill="currentColor" />
+                            Preview
+                        </button>
+                        <button
+                            onClick={handleApplyStagger}
+                            style={{
+                                'flex': 1,
+                                'padding': '8px',
+                                'display': 'flex',
+                                'justify-content': 'center',
+                                'align-items': 'center',
+                                'gap': '6px',
+                                'background': '#3b82f6',
+                                'color': 'white',
+                                'border': 'none',
+                                'border-radius': '6px',
+                                'cursor': 'pointer',
+                                'font-size': '12px',
+                                'font-weight': 600
+                            }}
+                            title="Apply animation to all selected elements (saved for presentations)"
+                        >
+                            <Plus size={14} />
+                            Apply
+                        </button>
+                    </div>
+
+                    <button
+                        onClick={handleClearStagger}
+                        style={{
+                            'width': '100%',
+                            'margin-top': '8px',
+                            'padding': '6px',
+                            'display': 'flex',
+                            'justify-content': 'center',
+                            'align-items': 'center',
+                            'gap': '6px',
+                            'background': 'transparent',
+                            'color': 'var(--text-secondary)',
+                            'border': '1px solid var(--border-color)',
+                            'border-radius': '6px',
+                            'cursor': 'pointer',
+                            'font-size': '11px'
+                        }}
+                        title="Clear all animations from selected elements"
+                    >
+                        <Trash2 size={12} />
+                        Clear All Animations
+                    </button>
+
+                    <div style={{ 'margin-top': '8px', 'font-size': '10px', 'opacity': 0.5, 'text-align': 'center' }}>
+                        Preview to test, Apply to save for presentations
+                    </div>
+                </div>
+            </Show>
 
             {/* Continuous / Physics Animations */}
             <Show when={element()}>
@@ -496,7 +787,17 @@ export const AnimationPanel: Component = () => {
 
                     <button
                         onClick={() => setIsAdding(false)}
-                        style={{ 'width': '100%', 'margin-top': '8px', 'padding': '4px', 'font-size': '11px', 'cursor': 'pointer' }}
+                        style={{
+                            'width': '100%',
+                            'margin-top': '8px',
+                            'padding': '6px',
+                            'font-size': '11px',
+                            'cursor': 'pointer',
+                            'background': 'var(--bg-panel)',
+                            'color': 'var(--text-primary)',
+                            'border': '1px solid var(--border-color)',
+                            'border-radius': '4px'
+                        }}
                     >
                         Cancel
                     </button>

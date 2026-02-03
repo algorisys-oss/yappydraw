@@ -139,6 +139,9 @@ This project stands as proof that **beautiful, complex software still requires e
 - **Shape morphing** — smooth polygon-to-polygon transitions
 - **Draw-in/out** — animated stroke drawing effect
 - **Timeline** — sequence and overlap animations with delay, duration, easing, repeat, yoyo
+- **Text animations** — typewriter, word-by-word, char-by-char, line-by-line, text scramble, count up, delete, replace
+- **GSAP-like stagger** — animate multiple elements with stagger delays (start, end, center, edges, random distribution)
+- **Multi-element stagger UI** — select multiple elements and apply coordinated stagger animations from the property panel
 
 ### Styling & Rendering
 
@@ -188,6 +191,13 @@ Yappy.connect(sourceId, targetId, { curveType: 'elbow' })
 // Animate
 Yappy.fadeIn(elementId, { duration: 800 })
 Yappy.animateElement(id, { type: 'entrance', name: 'bounceIn' })
+
+// Text animations
+Yappy.typewriter(textId, { duration: 2000, cursor: true })
+Yappy.wordByWord(textId, { stagger: 150 })
+
+// Stagger animations (GSAP-like)
+Yappy.animateElementsFrom([id1, id2, id3], { opacity: 0, y: 50 }, { stagger: { each: 100, from: 'start' } })
 
 // Slides
 Yappy.addSlide()

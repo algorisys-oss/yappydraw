@@ -6,7 +6,7 @@
 import { animationEngine, generateAnimationId } from './animation-engine';
 import { PathUtils } from '../math/path-utils';
 import { MorphUtils } from '../math/morph-utils';
-import type { AnimationConfig, EasingFunction } from './animation-types';
+import type { AnimationConfig, EasingFunction, EasingName } from './animation-types';
 import { lerp, lerpColor, getEasing } from './animation-types';
 import type { AnimationKeyframe } from '../../types/motion-types';
 import { store, updateElement, setStore } from '../../store/app-store';
@@ -270,6 +270,444 @@ export function animateElements(
         return animateElement(id, target, {
             ...config,
             delay: (config.delay ?? 0) + (stagger * index)
+        });
+    });
+}
+
+// ============================================
+// GSAP-like Advanced Stagger Utilities
+// ============================================
+
+/**
+ * Stagger configuration for advanced animations
+ * Inspired by GSAP's stagger options
+ */
+export interface StaggerConfig {
+    /** Total stagger duration or per-element delay */
+    each?: number;
+    /** Total amount of stagger time (alternative to each) */
+    amount?: number;
+    /** Distribution mode: where to start the stagger from */
+    from?: 'start' | 'end' | 'center' | 'edges' | 'random' | number;
+    /** Grid dimensions for 2D stagger [columns, rows] */
+    grid?: [number, number];
+    /** Axis for grid stagger: 'x', 'y', or undefined for radial */
+    axis?: 'x' | 'y';
+    /** Easing for the stagger timing itself */
+    ease?: EasingName | EasingFunction;
+}
+
+/**
+ * Calculate stagger delays based on configuration
+ * Returns an array of delay multipliers (0-1) for each element
+ */
+export function calculateStaggerDelays(count: number, config: StaggerConfig): number[] {
+    if (count === 0) return [];
+    if (count === 1) return [0];
+
+    const { from = 'start', grid, axis, ease } = config;
+    let delays: number[] = [];
+
+    if (grid) {
+        // 2D grid-based stagger
+        const [cols, rows] = grid;
+        const centerX = (cols - 1) / 2;
+        const centerY = (rows - 1) / 2;
+
+        for (let i = 0; i < count; i++) {
+            const x = i % cols;
+            const y = Math.floor(i / cols);
+
+            let distance: number;
+            if (axis === 'x') {
+                distance = typeof from === 'number' ? Math.abs(x - from) : Math.abs(x - centerX);
+            } else if (axis === 'y') {
+                distance = typeof from === 'number' ? Math.abs(y - from) : Math.abs(y - centerY);
+            } else {
+                // Radial distance from center
+                const dx = x - centerX;
+                const dy = y - centerY;
+                distance = Math.sqrt(dx * dx + dy * dy);
+            }
+            delays.push(distance);
+        }
+    } else {
+        // Linear stagger
+        switch (from) {
+            case 'end':
+                delays = Array.from({ length: count }, (_, i) => count - 1 - i);
+                break;
+            case 'center': {
+                const center = (count - 1) / 2;
+                delays = Array.from({ length: count }, (_, i) => Math.abs(i - center));
+                break;
+            }
+            case 'edges': {
+                const center = (count - 1) / 2;
+                delays = Array.from({ length: count }, (_, i) => center - Math.abs(i - center));
+                break;
+            }
+            case 'random':
+                delays = Array.from({ length: count }, () => Math.random());
+                break;
+            default:
+                if (typeof from === 'number') {
+                    delays = Array.from({ length: count }, (_, i) => Math.abs(i - from));
+                } else {
+                    // 'start' - default linear
+                    delays = Array.from({ length: count }, (_, i) => i);
+                }
+        }
+    }
+
+    // Normalize to 0-1 range
+    const maxDelay = Math.max(...delays);
+    if (maxDelay > 0) {
+        delays = delays.map(d => d / maxDelay);
+    }
+
+    // Apply easing to stagger timing
+    if (ease) {
+        const easingFn = getEasing(ease);
+        delays = delays.map(d => easingFn(d));
+    }
+
+    return delays;
+}
+
+/**
+ * Animate multiple elements with advanced GSAP-like stagger options
+ *
+ * @param elementIds - Array of element IDs to animate
+ * @param target - Target property values
+ * @param config - Animation configuration
+ * @param stagger - Stagger configuration or simple delay number
+ * @returns Array of animation IDs
+ *
+ * @example
+ * // Stagger from center
+ * animateElementsStagger(ids, { opacity: 100 }, { duration: 500 }, {
+ *     each: 100,
+ *     from: 'center',
+ *     ease: 'easeOutQuad'
+ * });
+ *
+ * @example
+ * // Grid stagger
+ * animateElementsStagger(ids, { y: 0 }, { duration: 300 }, {
+ *     amount: 800,
+ *     grid: [4, 3],
+ *     from: 'center'
+ * });
+ */
+export function animateElementsStagger(
+    elementIds: string[],
+    target: ElementAnimationTarget,
+    config: ElementAnimationConfig,
+    stagger: StaggerConfig | number = 0
+): string[] {
+    if (elementIds.length === 0) return [];
+
+    // Simple number stagger - use basic implementation
+    if (typeof stagger === 'number') {
+        return animateElements(elementIds, target, config, stagger);
+    }
+
+    const { each, amount } = stagger;
+    const delays = calculateStaggerDelays(elementIds.length, stagger);
+
+    // Calculate per-element delay
+    let totalStagger: number;
+    if (amount !== undefined) {
+        totalStagger = amount;
+    } else if (each !== undefined) {
+        totalStagger = each * (elementIds.length - 1);
+    } else {
+        totalStagger = 0;
+    }
+
+    return elementIds.map((id, index) => {
+        const staggerDelay = delays[index] * totalStagger;
+        return animateElement(id, target, {
+            ...config,
+            delay: (config.delay ?? 0) + staggerDelay
+        });
+    });
+}
+
+/**
+ * Animate from a starting state TO current state (reverse of normal animation)
+ * Useful for entrance animations where you want to specify the "from" position
+ *
+ * @example
+ * // Fade in from opacity 0
+ * animateFrom(elementId, { opacity: 0 }, { duration: 500 });
+ *
+ * @example
+ * // Slide in from left
+ * animateFrom(elementId, { x: -100 }, { duration: 300, easing: 'easeOutQuad' });
+ */
+export function animateFrom(
+    elementId: string,
+    fromValues: ElementAnimationTarget,
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return '';
+
+    // Store the current "to" values
+    const toValues: ElementAnimationTarget = {};
+    for (const key of Object.keys(fromValues) as (keyof ElementAnimationTarget)[]) {
+        toValues[key] = (element as any)[key];
+    }
+
+    // Set element to "from" state immediately
+    updateElement(elementId, fromValues as any, false);
+
+    // Animate to original state
+    return animateElement(elementId, toValues, config);
+}
+
+/**
+ * Animate from a specific state TO another specific state
+ * Full control over both start and end values
+ *
+ * @example
+ * // Animate from off-screen to centered
+ * animateFromTo(elementId,
+ *     { x: -200, opacity: 0 },
+ *     { x: 100, opacity: 100 },
+ *     { duration: 500 }
+ * );
+ */
+export function animateFromTo(
+    elementId: string,
+    fromValues: ElementAnimationTarget,
+    toValues: ElementAnimationTarget,
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return '';
+
+    // Set element to "from" state immediately
+    updateElement(elementId, fromValues as any, false);
+
+    // Animate to "to" state
+    return animateElement(elementId, toValues, config);
+}
+
+/**
+ * Generate a random value within a range
+ * Useful for creating variation in animations
+ *
+ * @example
+ * random(100, 500) // Random number between 100 and 500
+ * random(0.5, 1.5) // Random decimal
+ */
+export function random(min: number, max: number): number {
+    return min + Math.random() * (max - min);
+}
+
+/**
+ * Generate a random integer within a range (inclusive)
+ */
+export function randomInt(min: number, max: number): number {
+    return Math.floor(random(min, max + 1));
+}
+
+/**
+ * Pick a random item from an array
+ */
+export function randomPick<T>(array: T[]): T {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+/**
+ * Shuffle an array (Fisher-Yates)
+ */
+export function shuffle<T>(array: T[]): T[] {
+    const result = [...array];
+    for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+}
+
+/**
+ * Per-character text animation - animates each character individually
+ * Like GSAP's SplitText but for canvas text elements
+ *
+ * @param elementId - The text element to animate
+ * @param duration - Total duration for all characters
+ * @param stagger - Stagger configuration for characters
+ * @param config - Animation configuration
+ *
+ * @example
+ * // Wave effect from center
+ * charByChar(textId, 1500, { each: 50, from: 'center' });
+ *
+ * @example
+ * // Random character reveal
+ * charByChar(textId, 2000, { each: 30, from: 'random' });
+ */
+export function charByChar(
+    elementId: string,
+    duration: number = 1000,
+    stagger: StaggerConfig = { each: 50 },
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) {
+        console.warn('charByChar: Element not found');
+        return '';
+    }
+
+    const textInfo = getElementText(element);
+    if (!textInfo) {
+        console.warn('charByChar: Element has no text content');
+        return '';
+    }
+
+    const { text: fullText, property: textProperty } = textInfo;
+    if (!fullText) return '';
+
+    // Get character count (excluding spaces for delay calculation, but include in reveal)
+    const chars = fullText.split('');
+    const nonSpaceIndices = chars.map((c, i) => c !== ' ' ? i : -1).filter(i => i >= 0);
+    const charCount = nonSpaceIndices.length;
+
+    if (charCount === 0) return '';
+
+    const animId = generateAnimationId('charByChar');
+    const targetProps = new Set<string>([textProperty]);
+
+    stopConflictingAnimations(elementId, targetProps);
+    if (!activeAnimations.has(elementId)) {
+        activeAnimations.set(elementId, new Map());
+    }
+    activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Calculate delays for each non-space character
+    const delays = calculateStaggerDelays(charCount, stagger);
+
+    // Calculate total stagger time
+    const { each, amount } = stagger;
+    let totalStagger: number;
+    if (amount !== undefined) {
+        totalStagger = amount;
+    } else if (each !== undefined) {
+        totalStagger = each * (charCount - 1);
+    } else {
+        totalStagger = duration * 0.5; // Default: stagger takes half the duration
+    }
+
+    // Map delays back to all characters (spaces get delay of previous char)
+    const charDelays: number[] = [];
+    let delayIndex = 0;
+    let lastDelay = 0;
+    for (let i = 0; i < chars.length; i++) {
+        if (chars[i] !== ' ') {
+            lastDelay = delays[delayIndex++] * totalStagger;
+        }
+        charDelays.push(lastDelay);
+    }
+
+    // Start with empty text
+    updateElement(elementId, { [textProperty]: '', opacity: 100 }, false);
+
+    // Track which characters are revealed
+    const revealed = new Array(chars.length).fill(false);
+
+    animationEngine.create(
+        animId,
+        (progress: number) => {
+            const elapsed = progress * duration;
+
+            // Check each character
+            for (let i = 0; i < chars.length; i++) {
+                if (!revealed[i] && elapsed >= charDelays[i]) {
+                    revealed[i] = true;
+                }
+            }
+
+            // Build visible text
+            const visibleText = chars
+                .map((char, i) => revealed[i] ? char : (char === ' ' ? ' ' : ''))
+                .join('');
+
+            updateElement(elementId, { [textProperty]: visibleText }, false);
+        },
+        {
+            duration,
+            easing: 'linear',
+            delay: config.delay,
+            onStart: config.onStart,
+            onComplete: () => {
+                updateElement(elementId, { [textProperty]: fullText }, false);
+                const animIds = activeAnimations.get(elementId);
+                if (animIds) {
+                    animIds.delete(animId);
+                    if (animIds.size === 0) activeAnimations.delete(elementId);
+                }
+                config.onComplete?.();
+            },
+            loop: config.loop,
+            loopCount: config.loopCount,
+            alternate: config.alternate
+        }
+    );
+
+    animationEngine.start(animId);
+    return animId;
+}
+
+/**
+ * Animate multiple elements with a "from" animation and stagger
+ * Each element animates FROM the specified values TO their current state
+ *
+ * @example
+ * // Staggered fade in from below
+ * animateElementsFrom(ids, { y: 50, opacity: 0 }, { duration: 400 }, { each: 100, from: 'start' });
+ */
+export function animateElementsFrom(
+    elementIds: string[],
+    fromValues: ElementAnimationTarget,
+    config: ElementAnimationConfig,
+    stagger: StaggerConfig | number = 0
+): string[] {
+    if (elementIds.length === 0) return [];
+
+    // Calculate stagger delays
+    let delays: number[];
+    let totalStagger: number;
+
+    if (typeof stagger === 'number') {
+        delays = elementIds.map((_, i) => i);
+        totalStagger = stagger * (elementIds.length - 1);
+    } else {
+        delays = calculateStaggerDelays(elementIds.length, stagger);
+        const { each, amount } = stagger;
+        if (amount !== undefined) {
+            totalStagger = amount;
+        } else if (each !== undefined) {
+            totalStagger = each * (elementIds.length - 1);
+        } else {
+            totalStagger = 0;
+        }
+    }
+
+    // Normalize delays
+    const maxDelay = Math.max(...delays);
+    if (maxDelay > 0) {
+        delays = delays.map(d => d / maxDelay);
+    }
+
+    return elementIds.map((id, index) => {
+        const staggerDelay = delays[index] * totalStagger;
+        return animateFrom(id, fromValues, {
+            ...config,
+            delay: (config.delay ?? 0) + staggerDelay
         });
     });
 }
@@ -2309,6 +2747,20 @@ export function playEntranceAnimation(elementId: string, options: { isPreview?: 
         case 'drawIn':
             return drawIn(elementId, duration, config);
 
+        // Text animations (for text elements only)
+        case 'typewriter':
+            return typewriter(elementId, duration, config);
+        case 'typewriterCursor':
+            return typewriterCursor(elementId, duration, config);
+        case 'wordByWord':
+            return wordByWord(elementId, duration, config);
+        case 'textScramble':
+            return textScramble(elementId, duration, config);
+        case 'lineByLine':
+            return lineByLine(elementId, duration, config);
+        case 'charByChar':
+            return charByChar(elementId, duration, { each: 50, from: 'start' }, config);
+
         default:
             return '';
     }
@@ -2430,9 +2882,729 @@ export function playExitAnimation(elementId: string, options: { isPreview?: bool
         case 'drawOut':
             return drawOut(elementId, duration, config);
 
+        // Text exit animations (for text elements only)
+        case 'textDelete':
+            return textDelete(elementId, duration, config);
+
         default:
             return '';
     }
+}
+
+// ============================================
+// Text Animations
+// ============================================
+
+/**
+ * Helper to get text content and property name from an element
+ * Works with both text elements (text property) and shapes with containerText
+ */
+function getElementText(element: DrawingElement): { text: string; property: 'text' | 'containerText' } | null {
+    if (element.type === 'text' && element.text) {
+        return { text: element.text, property: 'text' };
+    }
+    if (element.containerText) {
+        return { text: element.containerText, property: 'containerText' };
+    }
+    return null;
+}
+
+/**
+ * Typewriter effect - reveals text letter by letter
+ * Creates a classic typing animation effect
+ * Works on text elements and any shape with containerText
+ *
+ * @param elementId - The ID of the element to animate
+ * @param duration - Total duration of the animation in milliseconds
+ * @param config - Animation configuration
+ * @returns Animation ID for control
+ *
+ * @example
+ * typewriter('text-1', 2000); // Types out text over 2 seconds
+ */
+export function typewriter(elementId: string, duration: number = 1000, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) {
+        console.warn('typewriter: Element not found');
+        return '';
+    }
+
+    const textInfo = getElementText(element);
+    if (!textInfo) {
+        console.warn('typewriter: Element has no text content');
+        return '';
+    }
+
+    const { text: fullText, property: textProperty } = textInfo;
+
+    const animId = generateAnimationId('typewriter');
+    const targetProps = new Set<string>([textProperty]);
+
+    stopConflictingAnimations(elementId, targetProps);
+    if (!activeAnimations.has(elementId)) {
+        activeAnimations.set(elementId, new Map());
+    }
+    activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Start with empty text
+    updateElement(elementId, { [textProperty]: '', opacity: 100 }, false);
+
+    let lastCharIndex = 0;
+
+    animationEngine.create(
+        animId,
+        (progress: number) => {
+            const charIndex = Math.floor(progress * fullText.length);
+            // Only update if character count changed to reduce updates
+            if (charIndex !== lastCharIndex) {
+                lastCharIndex = charIndex;
+                const visibleText = fullText.substring(0, charIndex);
+                updateElement(elementId, { [textProperty]: visibleText }, false);
+            }
+        },
+        {
+            duration,
+            easing: 'linear',
+            delay: config.delay,
+            onStart: config.onStart,
+            onComplete: () => {
+                // Ensure full text is shown at the end
+                updateElement(elementId, { [textProperty]: fullText }, false);
+                const animIds = activeAnimations.get(elementId);
+                if (animIds) {
+                    animIds.delete(animId);
+                    if (animIds.size === 0) activeAnimations.delete(elementId);
+                }
+                config.onComplete?.();
+            },
+            loop: config.loop,
+            loopCount: config.loopCount,
+            alternate: config.alternate
+        }
+    );
+
+    animationEngine.start(animId);
+    return animId;
+}
+
+/**
+ * Typewriter with cursor effect - reveals text letter by letter with blinking cursor
+ * Works on text elements and any shape with containerText
+ *
+ * @param elementId - The ID of the element to animate
+ * @param duration - Total duration of the animation in milliseconds
+ * @param config - Animation configuration
+ * @returns Animation ID for control
+ */
+export function typewriterCursor(elementId: string, duration: number = 1000, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) {
+        console.warn('typewriterCursor: Element not found');
+        return '';
+    }
+
+    const textInfo = getElementText(element);
+    if (!textInfo) {
+        console.warn('typewriterCursor: Element has no text content');
+        return '';
+    }
+
+    const { text: fullText, property: textProperty } = textInfo;
+
+    const animId = generateAnimationId('typewriterCursor');
+    const targetProps = new Set<string>([textProperty]);
+    const cursor = '|';
+    const blinkInterval = 530; // Cursor blink interval in ms
+
+    stopConflictingAnimations(elementId, targetProps);
+    if (!activeAnimations.has(elementId)) {
+        activeAnimations.set(elementId, new Map());
+    }
+    activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Start with cursor only
+    updateElement(elementId, { [textProperty]: cursor, opacity: 100 }, false);
+
+    let lastCharIndex = 0;
+    let showCursor = true;
+
+    animationEngine.create(
+        animId,
+        (progress: number, _elapsed?: number, currentTime?: number) => {
+            const charIndex = Math.floor(progress * fullText.length);
+            const time = currentTime || Date.now();
+
+            // Toggle cursor visibility based on time
+            const blinkPhase = Math.floor(time / blinkInterval) % 2;
+            const newShowCursor = blinkPhase === 0;
+
+            // Update if character count changed or cursor state changed
+            if (charIndex !== lastCharIndex || newShowCursor !== showCursor) {
+                lastCharIndex = charIndex;
+                showCursor = newShowCursor;
+                const visibleText = fullText.substring(0, charIndex);
+                const displayText = visibleText + (showCursor ? cursor : '');
+                updateElement(elementId, { [textProperty]: displayText }, false);
+            }
+        },
+        {
+            duration,
+            easing: 'linear',
+            delay: config.delay,
+            onStart: config.onStart,
+            onComplete: () => {
+                // Show full text without cursor at the end
+                updateElement(elementId, { [textProperty]: fullText }, false);
+                const animIds = activeAnimations.get(elementId);
+                if (animIds) {
+                    animIds.delete(animId);
+                    if (animIds.size === 0) activeAnimations.delete(elementId);
+                }
+                config.onComplete?.();
+            },
+            loop: config.loop,
+            loopCount: config.loopCount,
+            alternate: config.alternate
+        }
+    );
+
+    animationEngine.start(animId);
+    return animId;
+}
+
+/**
+ * Word by word reveal - reveals text one word at a time
+ * Works on text elements and any shape with containerText
+ *
+ * @param elementId - The ID of the element to animate
+ * @param duration - Total duration of the animation in milliseconds
+ * @param config - Animation configuration
+ * @returns Animation ID for control
+ *
+ * @example
+ * wordByWord('text-1', 3000); // Reveals words over 3 seconds
+ */
+export function wordByWord(elementId: string, duration: number = 1000, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) {
+        console.warn('wordByWord: Element not found');
+        return '';
+    }
+
+    const textInfo = getElementText(element);
+    if (!textInfo) {
+        console.warn('wordByWord: Element has no text content');
+        return '';
+    }
+
+    const { text: fullText, property: textProperty } = textInfo;
+
+    // Split into words while preserving whitespace
+    const words = fullText.split(/(\s+)/);
+    const wordCount = words.filter(w => w.trim().length > 0).length;
+    if (wordCount === 0) return '';
+
+    const animId = generateAnimationId('wordByWord');
+    const targetProps = new Set<string>([textProperty]);
+
+    stopConflictingAnimations(elementId, targetProps);
+    if (!activeAnimations.has(elementId)) {
+        activeAnimations.set(elementId, new Map());
+    }
+    activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Start with empty text
+    updateElement(elementId, { [textProperty]: '', opacity: 100 }, false);
+
+    let lastWordIndex = 0;
+
+    animationEngine.create(
+        animId,
+        (progress: number) => {
+            // Calculate how many words should be visible
+            const targetWordCount = Math.floor(progress * wordCount);
+
+            if (targetWordCount !== lastWordIndex) {
+                lastWordIndex = targetWordCount;
+
+                // Build visible text by counting actual words (not whitespace)
+                let visibleText = '';
+                let wordsSeen = 0;
+                for (const word of words) {
+                    if (word.trim().length > 0) {
+                        wordsSeen++;
+                        if (wordsSeen > targetWordCount) break;
+                    }
+                    visibleText += word;
+                }
+
+                updateElement(elementId, { [textProperty]: visibleText }, false);
+            }
+        },
+        {
+            duration,
+            easing: 'linear',
+            delay: config.delay,
+            onStart: config.onStart,
+            onComplete: () => {
+                // Ensure full text is shown at the end
+                updateElement(elementId, { [textProperty]: fullText }, false);
+                const animIds = activeAnimations.get(elementId);
+                if (animIds) {
+                    animIds.delete(animId);
+                    if (animIds.size === 0) activeAnimations.delete(elementId);
+                }
+                config.onComplete?.();
+            },
+            loop: config.loop,
+            loopCount: config.loopCount,
+            alternate: config.alternate
+        }
+    );
+
+    animationEngine.start(animId);
+    return animId;
+}
+
+/**
+ * Text scramble effect - randomly scrambles text then decodes to reveal
+ * Creates a hacker/decode style animation
+ * Works on text elements and any shape with containerText
+ *
+ * @param elementId - The ID of the element to animate
+ * @param duration - Total duration of the animation in milliseconds
+ * @param config - Animation configuration (params.charset for custom characters)
+ * @returns Animation ID for control
+ *
+ * @example
+ * textScramble('text-1', 2000); // Scramble then reveal over 2 seconds
+ */
+export function textScramble(elementId: string, duration: number = 1000, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) {
+        console.warn('textScramble: Element not found');
+        return '';
+    }
+
+    const textInfo = getElementText(element);
+    if (!textInfo) {
+        console.warn('textScramble: Element has no text content');
+        return '';
+    }
+
+    const { text: fullText, property: textProperty } = textInfo;
+
+    const animId = generateAnimationId('textScramble');
+    const targetProps = new Set<string>([textProperty]);
+
+    // Characters to use for scrambling (customizable via params)
+    const defaultCharset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    const charset = config.params?.charset || defaultCharset;
+
+    stopConflictingAnimations(elementId, targetProps);
+    if (!activeAnimations.has(elementId)) {
+        activeAnimations.set(elementId, new Map());
+    }
+    activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Start with scrambled text
+    const getRandomChar = () => charset[Math.floor(Math.random() * charset.length)];
+
+    animationEngine.create(
+        animId,
+        (progress: number) => {
+            const result: string[] = [];
+
+            for (let i = 0; i < fullText.length; i++) {
+                const char = fullText[i];
+
+                // Whitespace always stays as-is
+                if (char === ' ' || char === '\n' || char === '\t') {
+                    result.push(char);
+                    continue;
+                }
+
+                // Calculate when this character should be revealed
+                // Earlier characters reveal earlier
+                const charRevealPoint = i / fullText.length;
+
+                if (progress > charRevealPoint + 0.3) {
+                    // Fully revealed
+                    result.push(char);
+                } else if (progress > charRevealPoint) {
+                    // In transition - sometimes show real, sometimes scrambled
+                    const localProgress = (progress - charRevealPoint) / 0.3;
+                    if (Math.random() < localProgress) {
+                        result.push(char);
+                    } else {
+                        result.push(getRandomChar());
+                    }
+                } else {
+                    // Not yet revealed - show scrambled
+                    result.push(getRandomChar());
+                }
+            }
+
+            updateElement(elementId, { [textProperty]: result.join('') }, false);
+        },
+        {
+            duration,
+            easing: 'linear',
+            delay: config.delay,
+            onStart: config.onStart,
+            onComplete: () => {
+                // Ensure full text is shown at the end
+                updateElement(elementId, { [textProperty]: fullText }, false);
+                const animIds = activeAnimations.get(elementId);
+                if (animIds) {
+                    animIds.delete(animId);
+                    if (animIds.size === 0) activeAnimations.delete(elementId);
+                }
+                config.onComplete?.();
+            },
+            loop: config.loop,
+            loopCount: config.loopCount,
+            alternate: config.alternate
+        }
+    );
+
+    animationEngine.start(animId);
+    return animId;
+}
+
+/**
+ * Text delete effect - erases text character by character from end
+ * Reverse of typewriter
+ * Works on text elements and any shape with containerText
+ *
+ * @param elementId - The ID of the element to animate
+ * @param duration - Total duration of the animation in milliseconds
+ * @param config - Animation configuration
+ * @returns Animation ID for control
+ */
+export function textDelete(elementId: string, duration: number = 1000, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) {
+        console.warn('textDelete: Element not found');
+        return '';
+    }
+
+    const textInfo = getElementText(element);
+    if (!textInfo) {
+        console.warn('textDelete: Element has no text content');
+        return '';
+    }
+
+    const { text: fullText, property: textProperty } = textInfo;
+
+    const animId = generateAnimationId('textDelete');
+    const targetProps = new Set<string>([textProperty]);
+
+    stopConflictingAnimations(elementId, targetProps);
+    if (!activeAnimations.has(elementId)) {
+        activeAnimations.set(elementId, new Map());
+    }
+    activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    let lastCharIndex = fullText.length;
+
+    animationEngine.create(
+        animId,
+        (progress: number) => {
+            const charIndex = Math.floor((1 - progress) * fullText.length);
+            if (charIndex !== lastCharIndex) {
+                lastCharIndex = charIndex;
+                const visibleText = fullText.substring(0, charIndex);
+                updateElement(elementId, { [textProperty]: visibleText }, false);
+            }
+        },
+        {
+            duration,
+            easing: 'linear',
+            delay: config.delay,
+            onStart: config.onStart,
+            onComplete: () => {
+                updateElement(elementId, { [textProperty]: '' }, false);
+                const animIds = activeAnimations.get(elementId);
+                if (animIds) {
+                    animIds.delete(animId);
+                    if (animIds.size === 0) activeAnimations.delete(elementId);
+                }
+                config.onComplete?.();
+            },
+            loop: config.loop,
+            loopCount: config.loopCount,
+            alternate: config.alternate
+        }
+    );
+
+    animationEngine.start(animId);
+    return animId;
+}
+
+/**
+ * Text replace effect - types out new text, replacing old text
+ * Useful for animated text transitions
+ * Works on text elements and any shape with containerText
+ *
+ * @param elementId - The ID of the element to animate
+ * @param newText - The new text to display
+ * @param duration - Total duration of the animation in milliseconds
+ * @param config - Animation configuration
+ * @returns Animation ID for control
+ */
+export function textReplace(elementId: string, newText: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) {
+        console.warn('textReplace: Element not found');
+        return '';
+    }
+
+    const textInfo = getElementText(element);
+    if (!textInfo) {
+        console.warn('textReplace: Element has no text content');
+        return '';
+    }
+
+    const { text: oldText, property: textProperty } = textInfo;
+    if (!newText) return '';
+
+    const animId = generateAnimationId('textReplace');
+    const targetProps = new Set<string>([textProperty]);
+
+    stopConflictingAnimations(elementId, targetProps);
+    if (!activeAnimations.has(elementId)) {
+        activeAnimations.set(elementId, new Map());
+    }
+    activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Phase 1: Delete old text (0 to 0.4)
+    // Phase 2: Brief pause (0.4 to 0.5)
+    // Phase 3: Type new text (0.5 to 1)
+
+    let lastText = oldText;
+
+    animationEngine.create(
+        animId,
+        (progress: number) => {
+            let currentText: string;
+
+            if (progress < 0.4) {
+                // Deleting phase
+                const deleteProgress = progress / 0.4;
+                const charIndex = Math.floor((1 - deleteProgress) * oldText.length);
+                currentText = oldText.substring(0, charIndex);
+            } else if (progress < 0.5) {
+                // Pause phase - empty
+                currentText = '';
+            } else {
+                // Typing phase
+                const typeProgress = (progress - 0.5) / 0.5;
+                const charIndex = Math.floor(typeProgress * newText.length);
+                currentText = newText.substring(0, charIndex);
+            }
+
+            if (currentText !== lastText) {
+                lastText = currentText;
+                updateElement(elementId, { [textProperty]: currentText }, false);
+            }
+        },
+        {
+            duration,
+            easing: 'linear',
+            delay: config.delay,
+            onStart: config.onStart,
+            onComplete: () => {
+                updateElement(elementId, { [textProperty]: newText }, false);
+                const animIds = activeAnimations.get(elementId);
+                if (animIds) {
+                    animIds.delete(animId);
+                    if (animIds.size === 0) activeAnimations.delete(elementId);
+                }
+                config.onComplete?.();
+            },
+            loop: config.loop,
+            loopCount: config.loopCount,
+            alternate: config.alternate
+        }
+    );
+
+    animationEngine.start(animId);
+    return animId;
+}
+
+/**
+ * Text count up effect - animates a number counting up
+ * Great for statistics and metrics displays
+ * Works on text elements and any shape with containerText
+ *
+ * @param elementId - The ID of the element to animate
+ * @param startValue - Starting number
+ * @param endValue - Ending number
+ * @param duration - Total duration of the animation in milliseconds
+ * @param config - Animation configuration (params.prefix, params.suffix, params.decimals)
+ * @returns Animation ID for control
+ *
+ * @example
+ * textCountUp('text-1', 0, 1000, 2000); // Count from 0 to 1000 over 2 seconds
+ * textCountUp('text-1', 0, 100, 1500, { params: { suffix: '%' } }); // "0%" to "100%"
+ */
+export function textCountUp(
+    elementId: string,
+    startValue: number,
+    endValue: number,
+    duration: number = 1000,
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) {
+        console.warn('textCountUp: Element not found');
+        return '';
+    }
+
+    // Determine which text property to use
+    const textProperty: 'text' | 'containerText' = element.type === 'text' ? 'text' : 'containerText';
+
+    const animId = generateAnimationId('textCountUp');
+    const targetProps = new Set<string>([textProperty]);
+
+    const prefix = config.params?.prefix || '';
+    const suffix = config.params?.suffix || '';
+    const decimals = config.params?.decimals ?? 0;
+    const useCommas = config.params?.useCommas ?? true;
+
+    stopConflictingAnimations(elementId, targetProps);
+    if (!activeAnimations.has(elementId)) {
+        activeAnimations.set(elementId, new Map());
+    }
+    activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Format number with commas
+    const formatNumber = (num: number): string => {
+        const fixed = num.toFixed(decimals);
+        if (!useCommas) return fixed;
+
+        const parts = fixed.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+    };
+
+    // Set initial value
+    updateElement(elementId, { [textProperty]: `${prefix}${formatNumber(startValue)}${suffix}`, opacity: 100 }, false);
+
+    let lastValue = startValue;
+
+    animationEngine.create(
+        animId,
+        (progress: number) => {
+            const currentValue = lerp(startValue, endValue, progress);
+            const roundedValue = decimals === 0 ? Math.round(currentValue) : currentValue;
+
+            if (Math.abs(roundedValue - lastValue) >= (decimals === 0 ? 1 : Math.pow(10, -decimals))) {
+                lastValue = roundedValue;
+                updateElement(elementId, { [textProperty]: `${prefix}${formatNumber(roundedValue)}${suffix}` }, false);
+            }
+        },
+        {
+            duration,
+            easing: config.easing || 'easeOutQuad',
+            delay: config.delay,
+            onStart: config.onStart,
+            onComplete: () => {
+                updateElement(elementId, { [textProperty]: `${prefix}${formatNumber(endValue)}${suffix}` }, false);
+                const animIds = activeAnimations.get(elementId);
+                if (animIds) {
+                    animIds.delete(animId);
+                    if (animIds.size === 0) activeAnimations.delete(elementId);
+                }
+                config.onComplete?.();
+            },
+            loop: config.loop,
+            loopCount: config.loopCount,
+            alternate: config.alternate
+        }
+    );
+
+    animationEngine.start(animId);
+    return animId;
+}
+
+/**
+ * Line by line reveal - reveals text one line at a time
+ * Perfect for lists and multi-line content
+ * Works on text elements and any shape with containerText
+ *
+ * @param elementId - The ID of the element to animate
+ * @param duration - Total duration of the animation in milliseconds
+ * @param config - Animation configuration
+ * @returns Animation ID for control
+ */
+export function lineByLine(elementId: string, duration: number = 1000, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) {
+        console.warn('lineByLine: Element not found');
+        return '';
+    }
+
+    const textInfo = getElementText(element);
+    if (!textInfo) {
+        console.warn('lineByLine: Element has no text content');
+        return '';
+    }
+
+    const { text: fullText, property: textProperty } = textInfo;
+
+    const lines = fullText.split('\n');
+    const lineCount = lines.length;
+    if (lineCount === 0) return '';
+
+    const animId = generateAnimationId('lineByLine');
+    const targetProps = new Set<string>([textProperty]);
+
+    stopConflictingAnimations(elementId, targetProps);
+    if (!activeAnimations.has(elementId)) {
+        activeAnimations.set(elementId, new Map());
+    }
+    activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Start with empty text
+    updateElement(elementId, { [textProperty]: '', opacity: 100 }, false);
+
+    let lastLineIndex = 0;
+
+    animationEngine.create(
+        animId,
+        (progress: number) => {
+            const targetLineCount = Math.floor(progress * lineCount) + (progress > 0 ? 1 : 0);
+
+            if (targetLineCount !== lastLineIndex) {
+                lastLineIndex = targetLineCount;
+                const visibleLines = lines.slice(0, targetLineCount);
+                updateElement(elementId, { [textProperty]: visibleLines.join('\n') }, false);
+            }
+        },
+        {
+            duration,
+            easing: 'linear',
+            delay: config.delay,
+            onStart: config.onStart,
+            onComplete: () => {
+                updateElement(elementId, { [textProperty]: fullText }, false);
+                const animIds = activeAnimations.get(elementId);
+                if (animIds) {
+                    animIds.delete(animId);
+                    if (animIds.size === 0) activeAnimations.delete(elementId);
+                }
+                config.onComplete?.();
+            },
+            loop: config.loop,
+            loopCount: config.loopCount,
+            alternate: config.alternate
+        }
+    );
+
+    animationEngine.start(animId);
+    return animId;
 }
 
 /**

@@ -55,8 +55,31 @@ export {
     animateElementKeyframes,
     // Play configured animation
     playEntranceAnimation,
-    playExitAnimation
+    playExitAnimation,
+    // Text animations
+    typewriter,
+    typewriterCursor,
+    wordByWord,
+    textScramble,
+    textDelete,
+    textReplace,
+    textCountUp,
+    lineByLine,
+    // GSAP-like stagger utilities
+    calculateStaggerDelays,
+    animateElementsStagger,
+    animateFrom,
+    animateFromTo,
+    animateElementsFrom,
+    charByChar,
+    // Random utilities
+    random,
+    randomInt,
+    randomPick,
+    shuffle
 } from './element-animator';
+
+export type { StaggerConfig } from './element-animator';
 
 export type {
     AnimatableProperty,

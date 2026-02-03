@@ -269,6 +269,7 @@ export function inkOnDown(
         points: [0, 0],
         pointsEncoding: 'flat',
         ttl: Date.now() + 3000, // 3 seconds
+        presentationDrawn: true, // Mark as drawn during presentation (erasable in presentation mode)
         layerId: store.activeLayerId,
         seed: Math.floor(Math.random() * 2 ** 31)
     } as DrawingElement;
@@ -287,11 +288,14 @@ export function eraserOnDown(
     const threshold = 10 / store.viewState.scale;
     const elementMap = new Map<string, DrawingElement>();
     for (const el of store.elements) elementMap.set(el.id, el);
+    const isPresentation = store.appMode === 'presentation';
 
     for (let i = store.elements.length - 1; i >= 0; i--) {
         const el = store.elements[i];
         if (!helpers.canInteractWithElement(el)) continue;
         if (!isLayerVisible(el.layerId)) continue;
+        // In presentation mode, only erase elements drawn during presentation
+        if (isPresentation && !el.presentationDrawn) continue;
         if (hitTestElement(helpers.applyMasterProjection(el), x, y, threshold, store.elements, elementMap)) {
             deleteElements([el.id]);
         }
@@ -306,11 +310,14 @@ export function eraserOnMove(
     const threshold = 10 / store.viewState.scale;
     const elementMap = new Map<string, DrawingElement>();
     for (const el of store.elements) elementMap.set(el.id, el);
+    const isPresentation = store.appMode === 'presentation';
 
     for (let i = store.elements.length - 1; i >= 0; i--) {
         const el = store.elements[i];
         if (!helpers.canInteractWithElement(el)) continue;
         if (!isLayerVisible(el.layerId)) continue;
+        // In presentation mode, only erase elements drawn during presentation
+        if (isPresentation && !el.presentationDrawn) continue;
         if (hitTestElement(helpers.applyMasterProjection(el), x, y, threshold, store.elements, elementMap)) {
             deleteElements([el.id]);
         }
