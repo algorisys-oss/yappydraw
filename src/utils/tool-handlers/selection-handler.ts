@@ -194,7 +194,7 @@ export function selectionOnDown(
             // Check header cell for sort or column reorder drag
             if (hasHeader) {
                 const hitCell = hitTestTableCell(x, y, cellRects);
-                if (hitCell && hitCell.row === 0) {
+                if (hitCell && hitCell.row === 0 && !e.shiftKey) {
                     // Start potential column drag — will decide sort vs drag on up/move
                     pState.tableDragCol = hitCell.dataCol;
                     pState.tableDragElementId = selEl.id;
@@ -203,6 +203,41 @@ export function selectionOnDown(
                     pState.startY = y;
                     pState.isDragging = true;
                     return;
+                }
+            }
+
+            // Cell selection for merge operations (Shift+click or drag start)
+            const hitCell = hitTestTableCell(x, y, cellRects);
+            if (hitCell) {
+                if (e.shiftKey && pState.tableCellSelection) {
+                    // Extend existing selection with Shift+click
+                    pState.tableCellSelection = {
+                        ...pState.tableCellSelection,
+                        endRow: hitCell.row,
+                        endCol: hitCell.col
+                    };
+                    pState.tableCellSelectionDragging = false;
+                    helpers.setTableCellSelection({ ...pState.tableCellSelection });
+                    return;
+                } else if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                    // Start new selection with modifier key
+                    pState.tableCellSelection = {
+                        startRow: hitCell.row,
+                        startCol: hitCell.col,
+                        endRow: hitCell.row,
+                        endCol: hitCell.col
+                    };
+                    pState.tableCellSelectionElementId = selEl.id;
+                    pState.tableCellSelectionDragging = true;
+                    pState.isDragging = true;
+                    helpers.setTableCellSelection({ ...pState.tableCellSelection });
+                    return;
+                } else if (e.button !== 2) {
+                    // Clear cell selection on regular left-click only (not right-click for context menu)
+                    pState.tableCellSelection = null;
+                    pState.tableCellSelectionElementId = null;
+                    pState.tableCellSelectionDragging = false;
+                    helpers.setTableCellSelection(null);
                 }
             }
         }
@@ -483,6 +518,29 @@ export function selectionOnMove(
             newHeights[ri + 1] = h2;
             updateElement(el.id, { tableRowHeights: newHeights });
             requestAnimationFrame(helpers.draw);
+            return;
+        }
+
+        // Cell selection drag
+        if (pState.tableCellSelectionDragging && pState.tableCellSelection) {
+            const cols = el.tableCols ?? 3;
+            const rows = el.tableRows ?? 3;
+            const hasHeader = el.tableHeaders !== false;
+            const totalVisualRows = hasHeader ? rows + 1 : rows;
+            const colWidths = el.tableColWidths ?? defaultColWidths(cols);
+            const rowHeights = el.tableRowHeights ?? defaultRowHeights(totalVisualRows);
+            const cellRects = computeCellRects(el.x, el.y, el.width, el.height, colWidths, rowHeights, el.tableColOrder, hasHeader);
+
+            const hitCell = hitTestTableCell(x, y, cellRects);
+            if (hitCell) {
+                pState.tableCellSelection = {
+                    ...pState.tableCellSelection,
+                    endRow: hitCell.row,
+                    endCol: hitCell.col
+                };
+                helpers.setTableCellSelection({ ...pState.tableCellSelection });
+                requestAnimationFrame(helpers.draw);
+            }
             return;
         }
     }
@@ -1235,6 +1293,11 @@ export function selectionOnUp(
         pState.tableResizeElementId = null;
         pState.tableResizeInitialWidths = null;
         pState.tableResizeInitialHeights = null;
+    }
+
+    // Cell selection drag cleanup (keep selection, just stop dragging)
+    if (pState.tableCellSelectionDragging) {
+        pState.tableCellSelectionDragging = false;
     }
 
     pState.isDragging = false;

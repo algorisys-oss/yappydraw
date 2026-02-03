@@ -14,8 +14,10 @@ import Toolbar from './components/toolbar';
 import {
   copyToClipboard, cutToClipboard, pasteFromClipboard,
   copyStyle, pasteStyle, lockSelected, flipSelected,
-  pasteImageFromBlob, pasteAsTextElement
+  pasteImageFromBlob, pasteAsTextElement, remapElementBindings
 } from './utils/object-context-actions';
+import { parseClipboardTableData, defaultColWidths, defaultRowHeights } from './utils/table-utils';
+import { updateElement } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
@@ -240,22 +242,35 @@ const App: Component = () => {
           const selectedElements = store.elements.filter(el => store.selection.includes(el.id));
           if (selectedElements.length > 0) {
             pushToHistory();
+
+            // Build ID mapping for elements and groups
+            const idMap = new Map<string, string>();
             const groupMapping = new Map<string, string>();
+
             selectedElements.forEach(el => {
+              idMap.set(el.id, crypto.randomUUID());
               el.groupIds?.forEach((gid: string) => {
                 if (!groupMapping.has(gid)) groupMapping.set(gid, crypto.randomUUID());
               });
             });
+
+            // Merge group mappings into idMap for unified remapping
+            groupMapping.forEach((newId, oldId) => idMap.set(oldId, newId));
+
             const offset = 20 / store.viewState.scale;
-            const newElements = selectedElements.map(el => ({
+            let newElements = selectedElements.map(el => ({
               ...el,
-              id: crypto.randomUUID(),
+              id: idMap.get(el.id)!,
               x: el.x + offset,
               y: el.y + offset,
-              groupIds: el.groupIds?.map((gid: string) => groupMapping.get(gid)!),
-              boundElements: null,
+              groupIds: el.groupIds?.map((gid: string) => groupMapping.get(gid)!) ?? [],
+              boundElements: el.boundElements ?? null,
               seed: Math.floor(Math.random() * 2147483647)
             }));
+
+            // Remap bindings (connectors) and parent relationships (mindmap)
+            newElements = remapElementBindings(newElements as any, idMap) as typeof newElements;
+
             setStore('elements', [...store.elements, ...newElements]);
             setStore('selection', newElements.map(el => el.id));
           }
@@ -430,6 +445,31 @@ const App: Component = () => {
             return;
           }
         } catch { /* not JSON */ }
+
+        // Check if a table is selected - try to paste as table data
+        if (store.selection.length === 1) {
+          const selectedEl = store.elements.find(el => el.id === store.selection[0]);
+          if (selectedEl?.type === 'table') {
+            const parsedData = parseClipboardTableData(text);
+            if (parsedData && parsedData.length > 0 && parsedData[0].length > 1) {
+              // Multi-column data detected - paste as table data
+              pushToHistory();
+              const hasHeader = selectedEl.tableHeaders !== false;
+              const newRows = hasHeader ? parsedData.length - 1 : parsedData.length;
+              const newCols = parsedData[0].length;
+
+              updateElement(selectedEl.id, {
+                tableData: parsedData,
+                tableRows: newRows,
+                tableCols: newCols,
+                tableColWidths: defaultColWidths(newCols),
+                tableRowHeights: defaultRowHeights(parsedData.length),
+              }, false);
+              return;
+            }
+          }
+        }
+
         // Plain text → create text element
         pasteAsTextElement(text);
       }

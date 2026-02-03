@@ -25,6 +25,7 @@ interface ContextMenuProps {
 
 const ContextMenu: Component<ContextMenuProps> = (props) => {
     let menuRef: HTMLDivElement | undefined;
+    let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
     const [position, setPosition] = createSignal({ x: props.x, y: props.y });
     const [activeSubmenu, setActiveSubmenu] = createSignal<number | null>(null);
 
@@ -72,6 +73,9 @@ const ContextMenu: Component<ContextMenuProps> = (props) => {
             onCleanup(() => {
                 document.removeEventListener('mousedown', handleClickOutside);
                 document.removeEventListener('keydown', handleKeyDown);
+                if (hoverTimeout) {
+                    clearTimeout(hoverTimeout);
+                }
             });
         }
     });
@@ -80,8 +84,7 @@ const ContextMenu: Component<ContextMenuProps> = (props) => {
         if (item.disabled || item.separator) return;
 
         if (item.submenu) {
-            // Toggle submenu? Or open on hover?
-            // For click, toggle.
+            // Toggle submenu on click
             setActiveSubmenu(activeSubmenu() === index ? null : index);
         } else {
             item.onClick?.();
@@ -89,12 +92,20 @@ const ContextMenu: Component<ContextMenuProps> = (props) => {
         }
     };
 
-    const handleMouseEnter = (index: number) => {
-        const item = props.items[index];
-        if (item.submenu) {
-            setActiveSubmenu(index);
-        } else {
-            setActiveSubmenu(null);
+    const handleMouseEnter = (_index: number) => {
+        // Submenus only open on click, not on hover
+        // Clear any pending hover timeout
+        if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = null;
+        }
+    };
+
+    const handleMouseLeave = () => {
+        // Clear pending timeout when mouse leaves
+        if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = null;
         }
     };
 
@@ -119,6 +130,7 @@ const ContextMenu: Component<ContextMenuProps> = (props) => {
                         class="menu-item-wrapper"
                         style={{ position: 'relative' }}
                         onMouseEnter={() => handleMouseEnter(index())}
+                        onMouseLeave={handleMouseLeave}
                     >
                         <Show
                             when={!item.separator}

@@ -17,6 +17,7 @@ import { getSelectionBoundingBox } from './handle-detection';
 import { getAnchorPoints } from './anchor-points';
 import { projectMasterPosition } from './slide-utils';
 import { getImage } from './image-cache';
+import { computeCellRects, defaultColWidths, defaultRowHeights, normalizeCellSelection } from './table-utils';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export interface SelectionOverlayParams {
     suggestedBinding: { elementId: string; px: number; py: number; position?: string } | null;
     snappingGuides: SnappingGuide[];
     spacingGuides: SpacingGuide[];
+    tableCellSelection?: { startRow: number; startCol: number; endRow: number; endCol: number } | null;
 }
 
 export interface ConnectionAnchorParams {
@@ -658,7 +660,7 @@ export function renderSelectionOverlays(
     ctx: CanvasRenderingContext2D,
     params: SelectionOverlayParams
 ): void {
-    const { elements, selection, scale, selectionBox, suggestedBinding, snappingGuides, spacingGuides } = params;
+    const { elements, selection, scale, selectionBox, suggestedBinding, snappingGuides, spacingGuides, tableCellSelection } = params;
 
     // Multi-selection bounding box
     if (selection.length > 1) {
@@ -683,6 +685,57 @@ export function renderSelectionOverlays(
     // Snapping & spacing guides
     renderSnappingGuides(ctx, snappingGuides, scale);
     renderSpacingGuides(ctx, spacingGuides, scale);
+
+    // Table cell selection highlight
+    if (tableCellSelection && selection.length === 1) {
+        const tableEl = elements.find(e => e.id === selection[0] && e.type === 'table');
+        if (tableEl) {
+            renderTableCellSelection(ctx, tableEl, tableCellSelection, scale);
+        }
+    }
+}
+
+function renderTableCellSelection(
+    ctx: CanvasRenderingContext2D,
+    tableEl: DrawingElement,
+    cellSelection: { startRow: number; startCol: number; endRow: number; endCol: number },
+    scale: number
+): void {
+    const cols = tableEl.tableCols ?? 3;
+    const rows = tableEl.tableRows ?? 3;
+    const hasHeader = tableEl.tableHeaders !== false;
+    const totalVisualRows = hasHeader ? rows + 1 : rows;
+    const colWidths = tableEl.tableColWidths ?? defaultColWidths(cols);
+    const rowHeights = tableEl.tableRowHeights ?? defaultRowHeights(totalVisualRows);
+    const cellRects = computeCellRects(tableEl.x, tableEl.y, tableEl.width, tableEl.height, colWidths, rowHeights, tableEl.tableColOrder, hasHeader);
+
+    // Normalize the selection
+    const norm = normalizeCellSelection(cellSelection);
+
+    // Find the bounding rect for the selection
+    const topLeftCell = cellRects.find(c => c.row === norm.startRow && c.col === norm.startCol);
+    const bottomRightCell = cellRects.find(c => c.row === norm.endRow && c.col === norm.endCol);
+
+    if (!topLeftCell || !bottomRightCell) return;
+
+    const x = topLeftCell.x;
+    const y = topLeftCell.y;
+    const w = (bottomRightCell.x + bottomRightCell.w) - topLeftCell.x;
+    const h = (bottomRightCell.y + bottomRightCell.h) - topLeftCell.y;
+
+    ctx.save();
+
+    // Draw semi-transparent blue fill
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+    ctx.fillRect(x, y, w, h);
+
+    // Draw selection border
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 2 / scale;
+    ctx.setLineDash([]);
+    ctx.strokeRect(x, y, w, h);
+
+    ctx.restore();
 }
 
 // ─── Connection Anchors ─────────────────────────────────────────────

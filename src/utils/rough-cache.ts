@@ -145,6 +145,9 @@ export function computeElementHash(el: DrawingElement): string {
         h += `|thc${el.tableHeaderColor || ''}|trc${el.tableRowColor || ''}|tarc${el.tableAltRowColor || ''}`;
         h += `|thtc${el.tableHeaderTextColor || ''}|tsc${el.tableSortCol}|tsd${el.tableSortDir}`;
         if (el.tableData) h += `|td${el.tableData.map(r => r.join('\t')).join('\n')}`;
+        if (el.tableMergedCells) h += `|tmc${JSON.stringify(el.tableMergedCells)}`;
+        if (el.tableCellFormats) h += `|tcf${JSON.stringify(el.tableCellFormats)}`;
+        if (el.tableCellBorders) h += `|tcb${JSON.stringify(el.tableCellBorders)}`;
     }
 
     return h;

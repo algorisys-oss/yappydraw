@@ -41,6 +41,10 @@ export interface PointerState {
     tableResizeInitialHeights: number[] | null;
     tableDragCol: number;         // column being dragged for reorder (-1 = none)
     tableDragElementId: string | null;
+    // Cell selection for merge operations
+    tableCellSelection: { startRow: number; startCol: number; endRow: number; endCol: number } | null;
+    tableCellSelectionElementId: string | null;
+    tableCellSelectionDragging: boolean;  // true when drag-selecting cells
 }
 
 export function createPointerState(): PointerState {
@@ -79,5 +83,8 @@ export function createPointerState(): PointerState {
         tableResizeInitialHeights: null,
         tableDragCol: -1,
         tableDragElementId: null,
+        tableCellSelection: null,
+        tableCellSelectionElementId: null,
+        tableCellSelectionDragging: false,
     };
 }

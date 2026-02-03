@@ -5,7 +5,7 @@
  * remain decoupled from the canvas component's internal closures.
  */
 
-import type { DrawingElement } from '../types';
+import type { DrawingElement, TableCellSelection } from '../types';
 import type { SnappingGuide } from './object-snapping';
 import type { SpacingGuide } from './spacing';
 
@@ -24,6 +24,7 @@ export interface PointerHelpers {
     commitText: () => void;
     draw: () => void;
     setCursor: (c: string) => void;
+    setTableCellSelection: (sel: TableCellSelection | null) => void;
 }
 
 /**

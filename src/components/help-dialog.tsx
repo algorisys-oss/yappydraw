@@ -153,7 +153,15 @@ export default function HelpDialog(props: Props) {
 
                     <div class="help-modal-body">
                         <div class="social-links">
-                            <a href="#" class="social-btn">
+                            <a
+                                href="#/help"
+                                class="social-btn"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    props.onClose();
+                                    window.location.hash = '#/help';
+                                }}
+                            >
                                 <ExternalLink size={16} />
                                 Documentation
                             </a>

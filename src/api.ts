@@ -44,6 +44,12 @@ import {
     copyToClipboard, cutToClipboard, pasteFromClipboard,
     copyStyle, pasteStyle
 } from "./utils/object-context-actions";
+import {
+    defaultColWidths, defaultRowHeights,
+    insertTableRow, deleteTableRow, insertTableColumn, deleteTableColumn,
+    sortTableData, tableDataToTSV, tableDataToCSV, parseClipboardTableData,
+    mergeCells as doMergeCells, unmergeCells as doUnmergeCells, getMergedCellAt
+} from "./utils/table-utils";
 
 interface ElementOptions {
     strokeColor?: string;
@@ -141,6 +147,19 @@ interface ElementOptions {
     scale?: [number, number];
     crop?: { x: number; y: number; width: number; height: number } | null;
     mimeType?: string;
+
+    // Table specifics
+    tableRows?: number;
+    tableCols?: number;
+    tableHeaders?: boolean;
+    tableData?: string[][];
+    tableColWidths?: number[];
+    tableRowHeights?: number[];
+    tableColAlignments?: ('left' | 'center' | 'right')[];
+    tableHeaderColor?: string;
+    tableHeaderTextColor?: string;
+    tableRowColor?: string;
+    tableAltRowColor?: string;
 }
 
 export const YappyAPI = {
@@ -374,6 +393,478 @@ export const YappyAPI = {
             dataURL: dataURL,
             status: 'loaded'
         });
+    },
+
+    // --- Table Elements ---
+
+    /**
+     * Create a table element
+     * @param x - X position
+     * @param y - Y position
+     * @param width - Table width
+     * @param height - Table height
+     * @param rows - Number of data rows (default 3)
+     * @param cols - Number of columns (default 3)
+     * @param options - Additional table options
+     */
+    createTable(x: number, y: number, width: number, height: number, rows: number = 3, cols: number = 3, options?: ElementOptions) {
+        const hasHeader = options?.tableHeaders !== false;
+        const totalDataRows = hasHeader ? rows + 1 : rows;
+
+        // Initialize table data with headers
+        const tableData: string[][] = [];
+        if (hasHeader) {
+            tableData.push(Array.from({ length: cols }, (_, i) => `Col ${i + 1}`));
+        }
+        for (let r = 0; r < rows; r++) {
+            tableData.push(Array.from({ length: cols }, () => ''));
+        }
+
+        return this.createElement('table', x, y, width, height, {
+            ...options,
+            tableRows: rows,
+            tableCols: cols,
+            tableHeaders: hasHeader,
+            tableData: options?.tableData ?? tableData,
+            tableColWidths: options?.tableColWidths ?? defaultColWidths(cols),
+            tableRowHeights: options?.tableRowHeights ?? defaultRowHeights(totalDataRows),
+            tableHeaderColor: options?.tableHeaderColor ?? '#e2e8f0',
+        });
+    },
+
+    /**
+     * Set the value of a table cell
+     * @param tableId - Table element ID
+     * @param row - Row index (0-based, includes header if present)
+     * @param col - Column index (0-based)
+     * @param value - Cell value
+     */
+    setTableCell(tableId: string, row: number, col: number, value: string) {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return;
+        }
+
+        const data = table.tableData ? table.tableData.map(r => [...r]) : [];
+        if (data[row]) {
+            data[row][col] = value;
+            updateElement(tableId, { tableData: data }, true);
+        }
+    },
+
+    /**
+     * Get the value of a table cell
+     * @param tableId - Table element ID
+     * @param row - Row index (0-based)
+     * @param col - Column index (0-based)
+     */
+    getTableCell(tableId: string, row: number, col: number): string | null {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') return null;
+        return table.tableData?.[row]?.[col] ?? null;
+    },
+
+    /**
+     * Insert a row into a table
+     * @param tableId - Table element ID
+     * @param atIndex - Index to insert at (in tableData)
+     */
+    insertTableRow(tableId: string, atIndex: number) {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return;
+        }
+
+        const data = table.tableData ?? [];
+        const result = insertTableRow(data, atIndex);
+        const hasHeader = table.tableHeaders !== false;
+        const newRows = hasHeader ? result.data.length - 1 : result.data.length;
+
+        updateElement(tableId, {
+            tableData: result.data,
+            tableRowHeights: result.rowHeights,
+            tableRows: newRows,
+        }, true);
+    },
+
+    /**
+     * Delete a row from a table
+     * @param tableId - Table element ID
+     * @param atIndex - Index to delete (in tableData)
+     */
+    deleteTableRow(tableId: string, atIndex: number) {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return;
+        }
+
+        const data = table.tableData ?? [];
+        const rowHeights = table.tableRowHeights ?? [];
+        const result = deleteTableRow(data, rowHeights, atIndex);
+        const hasHeader = table.tableHeaders !== false;
+        const newRows = hasHeader ? result.data.length - 1 : result.data.length;
+
+        updateElement(tableId, {
+            tableData: result.data,
+            tableRowHeights: result.rowHeights,
+            tableRows: newRows,
+        }, true);
+    },
+
+    /**
+     * Insert a column into a table
+     * @param tableId - Table element ID
+     * @param atIndex - Index to insert at
+     */
+    insertTableColumn(tableId: string, atIndex: number) {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return;
+        }
+
+        const data = table.tableData ?? [];
+        const colWidths = table.tableColWidths ?? [];
+        const hasHeader = table.tableHeaders !== false;
+        const result = insertTableColumn(data, colWidths, atIndex, hasHeader);
+
+        updateElement(tableId, {
+            tableData: result.data,
+            tableColWidths: result.colWidths,
+            tableCols: result.colWidths.length,
+        }, true);
+    },
+
+    /**
+     * Delete a column from a table
+     * @param tableId - Table element ID
+     * @param atIndex - Index to delete
+     */
+    deleteTableColumn(tableId: string, atIndex: number) {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return;
+        }
+
+        const data = table.tableData ?? [];
+        const colWidths = table.tableColWidths ?? [];
+        const result = deleteTableColumn(data, colWidths, atIndex);
+
+        updateElement(tableId, {
+            tableData: result.data,
+            tableColWidths: result.colWidths,
+            tableCols: result.colWidths.length,
+        }, true);
+    },
+
+    /**
+     * Sort table data by a column
+     * @param tableId - Table element ID
+     * @param colIndex - Column index to sort by
+     * @param direction - Sort direction ('asc' or 'desc')
+     */
+    sortTableColumn(tableId: string, colIndex: number, direction: 'asc' | 'desc' = 'asc') {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return;
+        }
+
+        const data = table.tableData ?? [];
+        const hasHeader = table.tableHeaders !== false;
+
+        // Sort only body rows, keep header
+        if (hasHeader && data.length > 1) {
+            const header = data[0];
+            const body = data.slice(1);
+            const sortedBody = sortTableData(body, colIndex, direction);
+            updateElement(tableId, {
+                tableData: [header, ...sortedBody],
+                tableSortCol: colIndex,
+                tableSortDir: direction,
+            }, true);
+        } else if (!hasHeader && data.length > 0) {
+            const sorted = sortTableData(data, colIndex, direction);
+            updateElement(tableId, {
+                tableData: sorted,
+                tableSortCol: colIndex,
+                tableSortDir: direction,
+            }, true);
+        }
+    },
+
+    /**
+     * Set column alignment for a table
+     * @param tableId - Table element ID
+     * @param colIndex - Column index
+     * @param alignment - Alignment ('left', 'center', 'right')
+     */
+    setTableColumnAlignment(tableId: string, colIndex: number, alignment: 'left' | 'center' | 'right') {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return;
+        }
+
+        const cols = table.tableCols ?? 3;
+        const alignments = table.tableColAlignments ? [...table.tableColAlignments] : [];
+
+        // Ensure array is large enough
+        while (alignments.length < cols) {
+            alignments.push('center');
+        }
+
+        alignments[colIndex] = alignment;
+        updateElement(tableId, { tableColAlignments: alignments }, true);
+    },
+
+    /**
+     * Set column width for a table (as fraction of total width)
+     * @param tableId - Table element ID
+     * @param colIndex - Column index
+     * @param width - Width as fraction (0-1)
+     */
+    setTableColumnWidth(tableId: string, colIndex: number, width: number) {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return;
+        }
+
+        const cols = table.tableCols ?? 3;
+        const colWidths = table.tableColWidths ? [...table.tableColWidths] : defaultColWidths(cols);
+
+        const oldWidth = colWidths[colIndex];
+        const otherColsTotal = 1 - oldWidth;
+
+        if (otherColsTotal > 0) {
+            colWidths[colIndex] = Math.max(0.05, Math.min(0.8, width));
+            // Redistribute remaining space proportionally
+            for (let c = 0; c < cols; c++) {
+                if (c !== colIndex) {
+                    colWidths[c] = colWidths[c] * (1 - colWidths[colIndex]) / otherColsTotal;
+                }
+            }
+        }
+
+        updateElement(tableId, { tableColWidths: colWidths }, true);
+    },
+
+    /**
+     * Set table styling options
+     * @param tableId - Table element ID
+     * @param options - Styling options
+     */
+    setTableStyle(tableId: string, options: {
+        headerColor?: string;
+        headerTextColor?: string;
+        rowColor?: string;
+        altRowColor?: string;
+    }) {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return;
+        }
+
+        const updates: Partial<DrawingElement> = {};
+        if (options.headerColor !== undefined) updates.tableHeaderColor = options.headerColor;
+        if (options.headerTextColor !== undefined) updates.tableHeaderTextColor = options.headerTextColor;
+        if (options.rowColor !== undefined) updates.tableRowColor = options.rowColor;
+        if (options.altRowColor !== undefined) updates.tableAltRowColor = options.altRowColor;
+
+        updateElement(tableId, updates, true);
+    },
+
+    /**
+     * Get all table data as a 2D array
+     * @param tableId - Table element ID
+     */
+    getTableData(tableId: string): string[][] | null {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') return null;
+        return table.tableData ?? null;
+    },
+
+    /**
+     * Set all table data at once
+     * @param tableId - Table element ID
+     * @param data - 2D array of cell values
+     */
+    setTableData(tableId: string, data: string[][]) {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return;
+        }
+
+        const hasHeader = table.tableHeaders !== false;
+        const rows = hasHeader ? data.length - 1 : data.length;
+        const cols = data[0]?.length ?? 3;
+
+        updateElement(tableId, {
+            tableData: data,
+            tableRows: rows,
+            tableCols: cols,
+            tableColWidths: defaultColWidths(cols),
+            tableRowHeights: defaultRowHeights(data.length),
+        }, true);
+    },
+
+    /**
+     * Copy table data to clipboard as TSV
+     * @param tableId - Table element ID
+     */
+    async copyTableToClipboard(tableId: string): Promise<boolean> {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table' || !table.tableData) {
+            console.error('Element is not a table or has no data');
+            return false;
+        }
+        try {
+            const tsv = tableDataToTSV(table.tableData);
+            await navigator.clipboard.writeText(tsv);
+            return true;
+        } catch (err) {
+            console.error('Failed to copy table data:', err);
+            return false;
+        }
+    },
+
+    /**
+     * Export table data as CSV string
+     * @param tableId - Table element ID
+     */
+    exportTableAsCSV(tableId: string): string | null {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table' || !table.tableData) {
+            console.error('Element is not a table or has no data');
+            return null;
+        }
+        return tableDataToCSV(table.tableData);
+    },
+
+    /**
+     * Paste clipboard data into a table
+     * @param tableId - Table element ID
+     */
+    async pasteIntoTable(tableId: string): Promise<boolean> {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return false;
+        }
+        try {
+            const text = await navigator.clipboard.readText();
+            const parsedData = parseClipboardTableData(text);
+            if (parsedData && parsedData.length > 0) {
+                const hasHeader = table.tableHeaders !== false;
+                const newRows = hasHeader ? parsedData.length - 1 : parsedData.length;
+                const newCols = parsedData[0].length;
+                updateElement(tableId, {
+                    tableData: parsedData,
+                    tableRows: newRows,
+                    tableCols: newCols,
+                    tableColWidths: defaultColWidths(newCols),
+                    tableRowHeights: defaultRowHeights(parsedData.length),
+                }, true);
+                return true;
+            }
+            return false;
+        } catch (err) {
+            console.error('Failed to paste into table:', err);
+            return false;
+        }
+    },
+
+    /**
+     * Import CSV/TSV string into a table
+     * @param tableId - Table element ID
+     * @param csvData - CSV or TSV string data
+     */
+    importTableFromCSV(tableId: string, csvData: string): boolean {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return false;
+        }
+        const parsedData = parseClipboardTableData(csvData);
+        if (parsedData && parsedData.length > 0) {
+            const hasHeader = table.tableHeaders !== false;
+            const newRows = hasHeader ? parsedData.length - 1 : parsedData.length;
+            const newCols = parsedData[0].length;
+            updateElement(tableId, {
+                tableData: parsedData,
+                tableRows: newRows,
+                tableCols: newCols,
+                tableColWidths: defaultColWidths(newCols),
+                tableRowHeights: defaultRowHeights(parsedData.length),
+            }, true);
+            return true;
+        }
+        return false;
+    },
+
+    /**
+     * Merge a range of cells in a table
+     * @param tableId - Table element ID
+     * @param startRow - Starting row index
+     * @param startCol - Starting column index
+     * @param endRow - Ending row index
+     * @param endCol - Ending column index
+     */
+    mergeCells(tableId: string, startRow: number, startCol: number, endRow: number, endCol: number): boolean {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return false;
+        }
+
+        const mergedCells = table.tableMergedCells ?? [];
+        const newMergedCells = doMergeCells(mergedCells, startRow, startCol, endRow, endCol);
+
+        updateElement(tableId, { tableMergedCells: newMergedCells }, true);
+        return true;
+    },
+
+    /**
+     * Unmerge cells at a given position
+     * @param tableId - Table element ID
+     * @param row - Row index of any cell in the merge
+     * @param col - Column index of any cell in the merge
+     */
+    unmergeCells(tableId: string, row: number, col: number): boolean {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') {
+            console.error('Element is not a table');
+            return false;
+        }
+
+        const mergedCells = table.tableMergedCells ?? [];
+        const mergeAt = getMergedCellAt(mergedCells, row, col);
+
+        if (!mergeAt) {
+            console.warn('No merged cell at this position');
+            return false;
+        }
+
+        const newMergedCells = doUnmergeCells(mergedCells, row, col);
+        updateElement(tableId, { tableMergedCells: newMergedCells }, true);
+        return true;
+    },
+
+    /**
+     * Get merged cells info for a table
+     * @param tableId - Table element ID
+     */
+    getMergedCells(tableId: string): { startRow: number; startCol: number; endRow: number; endCol: number }[] | null {
+        const table = this.getElement(tableId);
+        if (!table || table.type !== 'table') return null;
+        return table.tableMergedCells ?? [];
     },
 
     // --- Actions & Helpers ---

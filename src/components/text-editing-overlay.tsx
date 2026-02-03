@@ -149,11 +149,6 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                 props.onCommitText();
                                 setSelectedTool('selection');
                             }
-                            // Tab to move to next cell for table editing
-                            if (e.key === 'Tab' && props.editingProperty() === 'tableCell') {
-                                e.preventDefault();
-                                props.onCommitText();
-                            }
                         }}
                         style={{
                             position: 'absolute',

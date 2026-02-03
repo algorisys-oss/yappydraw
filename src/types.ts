@@ -274,8 +274,49 @@ export interface DrawingElement {
     tableHeaderTextColor?: string; // header text color
     tableRowColor?: string;       // body row base color (even rows, or all if no alt)
     tableAltRowColor?: string;    // alternating (odd) row color
+    tableColAlignments?: ('left' | 'center' | 'right')[]; // text alignment per column
+    tableMergedCells?: { startRow: number; startCol: number; endRow: number; endCol: number }[]; // merged cell regions
+    tableCellFormats?: TableCellFormat[][];  // per-cell format settings [row][col]
+    tableCellBorders?: TableCellBorders[][]; // per-cell border settings [row][col]
 }
 
+// Helper type for table cell selection
+export interface TableCellSelection {
+    startRow: number;
+    startCol: number;
+    endRow: number;
+    endCol: number;
+}
+
+// Table cell formatting
+export type TableCellFormatType = 'text' | 'number' | 'currency' | 'percentage' | 'date';
+
+export interface TableCellFormat {
+    type: TableCellFormatType;
+    // Number options
+    decimalPlaces?: number;           // 0-10, default 2
+    thousandsSeparator?: boolean;     // default true for number/currency
+    // Currency options
+    currencySymbol?: string;          // '$', '€', '£', '₹', '¥', etc.
+    currencyPosition?: 'before' | 'after'; // default 'before'
+    // Date options
+    datePattern?: string;             // 'MM/DD/YYYY', 'DD-MMM-YYYY', 'YYYY-MM-DD', etc.
+}
+
+// Table cell border styling
+export type TableBorderStyle = 'none' | 'thin' | 'medium' | 'thick';
+
+export interface TableCellBorder {
+    style: TableBorderStyle;
+    color: string;
+}
+
+export interface TableCellBorders {
+    top?: TableCellBorder;
+    bottom?: TableCellBorder;
+    left?: TableCellBorder;
+    right?: TableCellBorder;
+}
 
 export interface Layer {
     id: string;

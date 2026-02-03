@@ -4,7 +4,7 @@
  * Extracted from canvas.tsx getContextMenuItems().
  */
 
-import type { DrawingElement } from '../types';
+import type { DrawingElement, TableCellSelection } from '../types';
 import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
@@ -27,10 +27,20 @@ import {
 import { exportToPng, exportToSvg } from './export';
 import {
     computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData,
-    hitTestTableCell, insertTableRow, deleteTableRow, insertTableColumn, deleteTableColumn
+    hitTestTableCell, insertTableRow, deleteTableRow, insertTableColumn, deleteTableColumn,
+    tableDataToTSV, parseClipboardTableData,
+    getMergedCellAt, mergeCells, unmergeCells, normalizeCellSelection, isMultiCellSelection,
+    setCellFormatRange, setBorderForRange, currencySymbols, datePatterns,
+    type MergedCellRegion
 } from './table-utils';
+import type { TableCellFormat, TableCellBorder, TableBorderStyle } from '../types';
 
-export function getContextMenuItems(redrawFn: () => void, worldX?: number, worldY?: number): MenuItem[] {
+export function getContextMenuItems(
+    redrawFn: () => void,
+    worldX?: number,
+    worldY?: number,
+    cellSelection?: TableCellSelection | null
+): MenuItem[] {
     const selectionCount = store.selection.length;
     const hasSelection = selectionCount > 0;
     const items: MenuItem[] = [];
@@ -252,7 +262,7 @@ export function getContextMenuItems(redrawFn: () => void, worldX?: number, world
                     onClick: () => {
                         pushToHistory();
                         const insertAt = dataRowIndex;
-                        const result = insertTableRow(data, rowHeights, insertAt);
+                        const result = insertTableRow(data, insertAt);
                         updateElement(el.id!, {
                             tableData: result.data,
                             tableRowHeights: result.rowHeights,
@@ -266,7 +276,7 @@ export function getContextMenuItems(redrawFn: () => void, worldX?: number, world
                     onClick: () => {
                         pushToHistory();
                         const insertAt = dataRowIndex + 1;
-                        const result = insertTableRow(data, rowHeights, insertAt);
+                        const result = insertTableRow(data, insertAt);
                         updateElement(el.id!, {
                             tableData: result.data,
                             tableRowHeights: result.rowHeights,
@@ -333,6 +343,180 @@ export function getContextMenuItems(redrawFn: () => void, worldX?: number, world
                                 tableColWidths: result.colWidths,
                                 tableCols: result.colWidths.length,
                             }, false);
+                            requestAnimationFrame(redrawFn);
+                        }
+                    });
+                }
+
+                // Column alignment options
+                tableItems.push({ separator: true });
+                const currentAlignments = el.tableColAlignments ?? [];
+                const currentAlign = currentAlignments[hitCell.dataCol] ?? 'center';
+                const alignmentItems: MenuItem[] = [
+                    {
+                        label: 'Left',
+                        icon: currentAlign === 'left' ? '✓' : undefined,
+                        onClick: () => {
+                            pushToHistory();
+                            const newAlignments = [...currentAlignments];
+                            // Ensure array is large enough
+                            while (newAlignments.length < cols) {
+                                newAlignments.push('center');
+                            }
+                            newAlignments[hitCell.dataCol] = 'left';
+                            updateElement(el.id!, { tableColAlignments: newAlignments }, false);
+                            requestAnimationFrame(redrawFn);
+                        }
+                    },
+                    {
+                        label: 'Center',
+                        icon: currentAlign === 'center' ? '✓' : undefined,
+                        onClick: () => {
+                            pushToHistory();
+                            const newAlignments = [...currentAlignments];
+                            while (newAlignments.length < cols) {
+                                newAlignments.push('center');
+                            }
+                            newAlignments[hitCell.dataCol] = 'center';
+                            updateElement(el.id!, { tableColAlignments: newAlignments }, false);
+                            requestAnimationFrame(redrawFn);
+                        }
+                    },
+                    {
+                        label: 'Right',
+                        icon: currentAlign === 'right' ? '✓' : undefined,
+                        onClick: () => {
+                            pushToHistory();
+                            const newAlignments = [...currentAlignments];
+                            while (newAlignments.length < cols) {
+                                newAlignments.push('center');
+                            }
+                            newAlignments[hitCell.dataCol] = 'right';
+                            updateElement(el.id!, { tableColAlignments: newAlignments }, false);
+                            requestAnimationFrame(redrawFn);
+                        }
+                    }
+                ];
+                tableItems.push({ label: 'Align Column', submenu: alignmentItems });
+
+                // Cell Format options
+                tableItems.push({ separator: true });
+                const formatItems = buildFormatMenuItems(el, hitCell, cellSelection, pushToHistory, updateElement, redrawFn);
+                tableItems.push({ label: 'Format Cells', submenu: formatItems });
+
+                // Cell Border options
+                const borderItems = buildBorderMenuItems(el, hitCell, cellSelection, pushToHistory, updateElement, redrawFn);
+                tableItems.push({ label: 'Cell Borders', submenu: borderItems });
+
+                // Clipboard operations
+                tableItems.push({ separator: true });
+                tableItems.push({
+                    label: 'Copy Table Data',
+                    onClick: async () => {
+                        const tsv = tableDataToTSV(data);
+                        try {
+                            await navigator.clipboard.writeText(tsv);
+                        } catch (err) {
+                            console.error('Failed to copy table data:', err);
+                        }
+                    }
+                });
+                tableItems.push({
+                    label: 'Paste Table Data',
+                    onClick: async () => {
+                        try {
+                            const text = await navigator.clipboard.readText();
+                            const parsedData = parseClipboardTableData(text);
+                            if (parsedData && parsedData.length > 0) {
+                                pushToHistory();
+                                const newRows = hasHeader ? parsedData.length - 1 : parsedData.length;
+                                const newCols = parsedData[0].length;
+                                updateElement(el.id!, {
+                                    tableData: parsedData,
+                                    tableRows: newRows,
+                                    tableCols: newCols,
+                                    tableColWidths: defaultColWidths(newCols),
+                                    tableRowHeights: defaultRowHeights(parsedData.length),
+                                }, false);
+                                requestAnimationFrame(redrawFn);
+                            }
+                        } catch (err) {
+                            console.error('Failed to paste table data:', err);
+                        }
+                    }
+                });
+
+                // Merge/Unmerge operations
+                tableItems.push({ separator: true });
+                const mergedCells = el.tableMergedCells as MergedCellRegion[] | undefined;
+                const clickedMerge = getMergedCellAt(mergedCells, hitCell.row, hitCell.col);
+
+                // Check if we have a multi-cell selection for merging
+                if (cellSelection && isMultiCellSelection(cellSelection)) {
+                    const normalizedSel = normalizeCellSelection(cellSelection);
+                    tableItems.push({
+                        label: 'Merge Cells',
+                        onClick: () => {
+                            pushToHistory();
+                            const newMergedCells = mergeCells(
+                                mergedCells,
+                                normalizedSel.startRow,
+                                normalizedSel.startCol,
+                                normalizedSel.endRow,
+                                normalizedSel.endCol
+                            );
+
+                            // Collect and concatenate data from all cells being merged
+                            const cols = el.tableCols ?? 3;
+                            const rows = el.tableRows ?? 3;
+                            const hasHeader = el.tableHeaders !== false;
+                            const data = el.tableData ?? defaultTableData(rows + (hasHeader ? 1 : 0), cols);
+                            const newData = data.map(row => [...row]);
+
+                            // Gather all non-empty cell contents
+                            const cellTexts: string[] = [];
+                            for (let r = normalizedSel.startRow; r <= normalizedSel.endRow; r++) {
+                                for (let c = normalizedSel.startCol; c <= normalizedSel.endCol; c++) {
+                                    // Get data row index
+                                    const dataRowIdx = hasHeader ? r : r;
+                                    const text = newData[dataRowIdx]?.[c]?.trim() ?? '';
+                                    if (text) {
+                                        cellTexts.push(text);
+                                    }
+                                }
+                            }
+
+                            // Put concatenated text in top-left cell
+                            const topLeftDataRow = hasHeader ? normalizedSel.startRow : normalizedSel.startRow;
+                            if (newData[topLeftDataRow]) {
+                                newData[topLeftDataRow][normalizedSel.startCol] = cellTexts.join('\n');
+                            }
+
+                            // Clear other cells in the merge region
+                            for (let r = normalizedSel.startRow; r <= normalizedSel.endRow; r++) {
+                                for (let c = normalizedSel.startCol; c <= normalizedSel.endCol; c++) {
+                                    if (r === normalizedSel.startRow && c === normalizedSel.startCol) continue;
+                                    const dataRowIdx = hasHeader ? r : r;
+                                    if (newData[dataRowIdx]) {
+                                        newData[dataRowIdx][c] = '';
+                                    }
+                                }
+                            }
+
+                            updateElement(el.id!, { tableMergedCells: newMergedCells, tableData: newData }, false);
+                            requestAnimationFrame(redrawFn);
+                        }
+                    });
+                }
+
+                // Show unmerge option if clicking on a merged cell
+                if (clickedMerge) {
+                    tableItems.push({
+                        label: 'Unmerge Cells',
+                        onClick: () => {
+                            pushToHistory();
+                            const newMergedCells = unmergeCells(mergedCells, hitCell.row, hitCell.col);
+                            updateElement(el.id!, { tableMergedCells: newMergedCells }, false);
                             requestAnimationFrame(redrawFn);
                         }
                     });
@@ -563,5 +747,179 @@ export function getContextMenuItems(redrawFn: () => void, worldX?: number, world
             { label: 'Canvas Settings', onClick: () => setShowCanvasProperties(true) }
         );
     }
+    return items;
+}
+
+/**
+ * Build format menu items for table cells.
+ */
+function buildFormatMenuItems(
+    el: DrawingElement,
+    hitCell: { row: number; col: number; dataRow: number; dataCol: number },
+    cellSelection: TableCellSelection | null | undefined,
+    pushToHistory: () => void,
+    updateElement: (id: string, updates: Partial<DrawingElement>, isUndo: boolean) => void,
+    redrawFn: () => void
+): MenuItem[] {
+    const items: MenuItem[] = [];
+    const cols = el.tableCols ?? 3;
+    const rows = el.tableRows ?? 3;
+    const hasHeader = el.tableHeaders !== false;
+    const totalRows = hasHeader ? rows + 1 : rows;
+
+    // Determine which cells to apply format to (for cell/selection formatting)
+    const getTargetRange = () => {
+        if (cellSelection && isMultiCellSelection(cellSelection)) {
+            return normalizeCellSelection(cellSelection);
+        }
+        return { startRow: hitCell.row, startCol: hitCell.col, endRow: hitCell.row, endCol: hitCell.col };
+    };
+
+    // Get column range (all body cells in the clicked column)
+    const getColumnRange = () => {
+        const startRow = hasHeader ? 1 : 0; // Skip header row
+        return { startRow, startCol: hitCell.col, endRow: totalRows - 1, endCol: hitCell.col };
+    };
+
+    const applyFormat = (format: TableCellFormat, toColumn: boolean = false) => {
+        pushToHistory();
+        const range = toColumn ? getColumnRange() : getTargetRange();
+        const newFormats = setCellFormatRange(
+            el.tableCellFormats,
+            range.startRow, range.startCol,
+            range.endRow, range.endCol,
+            format,
+            totalRows, cols
+        );
+        updateElement(el.id!, { tableCellFormats: newFormats }, false);
+        requestAnimationFrame(redrawFn);
+    };
+
+    // Column-level formatting (most common use case - put first)
+    const columnNumberItems: MenuItem[] = [
+        { label: '0 decimals', onClick: () => applyFormat({ type: 'number', decimalPlaces: 0, thousandsSeparator: true }, true) },
+        { label: '2 decimals', onClick: () => applyFormat({ type: 'number', decimalPlaces: 2, thousandsSeparator: true }, true) },
+        { label: '4 decimals', onClick: () => applyFormat({ type: 'number', decimalPlaces: 4, thousandsSeparator: true }, true) },
+    ];
+    const columnCurrencyItems: MenuItem[] = currencySymbols.map(({ symbol, name }) => ({
+        label: `${symbol} ${name}`,
+        onClick: () => applyFormat({ type: 'currency', currencySymbol: symbol, decimalPlaces: 2, thousandsSeparator: true }, true)
+    }));
+    const columnDateItems: MenuItem[] = datePatterns.map(({ pattern, example }) => ({
+        label: `${pattern} (${example})`,
+        onClick: () => applyFormat({ type: 'date', datePattern: pattern }, true)
+    }));
+
+    items.push({ label: 'Text (Column)', onClick: () => applyFormat({ type: 'text' }, true) });
+    items.push({ label: 'Number (Column)', submenu: columnNumberItems });
+    items.push({ label: 'Currency (Column)', submenu: columnCurrencyItems });
+    items.push({ label: 'Percentage (Column)', onClick: () => applyFormat({ type: 'percentage', decimalPlaces: 0 }, true) });
+    items.push({ label: 'Date (Column)', submenu: columnDateItems });
+
+    // Separator before single cell formatting
+    items.push({ separator: true });
+
+    // Single cell/selection formatting
+    const numberItems: MenuItem[] = [
+        { label: '0 decimals', onClick: () => applyFormat({ type: 'number', decimalPlaces: 0, thousandsSeparator: true }) },
+        { label: '2 decimals', onClick: () => applyFormat({ type: 'number', decimalPlaces: 2, thousandsSeparator: true }) },
+        { label: '4 decimals', onClick: () => applyFormat({ type: 'number', decimalPlaces: 4, thousandsSeparator: true }) },
+        { separator: true },
+        { label: 'No separator', onClick: () => applyFormat({ type: 'number', decimalPlaces: 2, thousandsSeparator: false }) },
+    ];
+    const currencyItems: MenuItem[] = currencySymbols.map(({ symbol, name }) => ({
+        label: `${symbol} ${name}`,
+        onClick: () => applyFormat({ type: 'currency', currencySymbol: symbol, decimalPlaces: 2, thousandsSeparator: true })
+    }));
+    const dateItems: MenuItem[] = datePatterns.map(({ pattern, example }) => ({
+        label: `${pattern} (${example})`,
+        onClick: () => applyFormat({ type: 'date', datePattern: pattern })
+    }));
+
+    items.push({ label: 'Text (Cell)', onClick: () => applyFormat({ type: 'text' }) });
+    items.push({ label: 'Number (Cell)', submenu: numberItems });
+    items.push({ label: 'Currency (Cell)', submenu: currencyItems });
+    items.push({ label: 'Percentage (Cell)', onClick: () => applyFormat({ type: 'percentage', decimalPlaces: 0 }) });
+    items.push({ label: 'Date (Cell)', submenu: dateItems });
+
+    return items;
+}
+
+/**
+ * Build border menu items for table cells.
+ */
+function buildBorderMenuItems(
+    el: DrawingElement,
+    hitCell: { row: number; col: number; dataRow: number; dataCol: number },
+    cellSelection: TableCellSelection | null | undefined,
+    pushToHistory: () => void,
+    updateElement: (id: string, updates: Partial<DrawingElement>, isUndo: boolean) => void,
+    redrawFn: () => void
+): MenuItem[] {
+    const items: MenuItem[] = [];
+    const cols = el.tableCols ?? 3;
+    const rows = el.tableRows ?? 3;
+    const hasHeader = el.tableHeaders !== false;
+    const totalRows = hasHeader ? rows + 1 : rows;
+
+    // Determine which cells to apply border to
+    const getTargetRange = () => {
+        if (cellSelection && isMultiCellSelection(cellSelection)) {
+            return normalizeCellSelection(cellSelection);
+        }
+        return { startRow: hitCell.row, startCol: hitCell.col, endRow: hitCell.row, endCol: hitCell.col };
+    };
+
+    const applyBorder = (
+        position: 'all' | 'outside' | 'inside' | 'top' | 'bottom' | 'left' | 'right' | 'none',
+        style: TableBorderStyle = 'thin',
+        color: string = '#000000'
+    ) => {
+        pushToHistory();
+        const range = getTargetRange();
+        const border: TableCellBorder = { style, color };
+        const newBorders = setBorderForRange(
+            el.tableCellBorders,
+            range.startRow, range.startCol,
+            range.endRow, range.endCol,
+            border,
+            position,
+            totalRows, cols
+        );
+        updateElement(el.id!, { tableCellBorders: newBorders }, false);
+        requestAnimationFrame(redrawFn);
+    };
+
+    // Border positions
+    items.push({ label: 'All Borders', onClick: () => applyBorder('all') });
+    items.push({ label: 'Outside Borders', onClick: () => applyBorder('outside') });
+    items.push({ label: 'Inside Borders', onClick: () => applyBorder('inside') });
+    items.push({ separator: true });
+    items.push({ label: 'Top Border', onClick: () => applyBorder('top') });
+    items.push({ label: 'Bottom Border', onClick: () => applyBorder('bottom') });
+    items.push({ label: 'Left Border', onClick: () => applyBorder('left') });
+    items.push({ label: 'Right Border', onClick: () => applyBorder('right') });
+    items.push({ separator: true });
+    items.push({ label: 'No Borders', onClick: () => applyBorder('none') });
+
+    // Border style submenu
+    items.push({ separator: true });
+    const styleItems: MenuItem[] = [
+        { label: 'Thin', onClick: () => applyBorder('all', 'thin') },
+        { label: 'Medium', onClick: () => applyBorder('all', 'medium') },
+        { label: 'Thick', onClick: () => applyBorder('all', 'thick') },
+    ];
+    items.push({ label: 'Border Style', submenu: styleItems });
+
+    // Border color submenu
+    const colorItems: MenuItem[] = [
+        { label: 'Black', onClick: () => applyBorder('all', 'thin', '#000000') },
+        { label: 'Gray', onClick: () => applyBorder('all', 'thin', '#666666') },
+        { label: 'Red', onClick: () => applyBorder('all', 'thin', '#dc2626') },
+        { label: 'Blue', onClick: () => applyBorder('all', 'thin', '#2563eb') },
+        { label: 'Green', onClick: () => applyBorder('all', 'thin', '#16a34a') },
+    ];
+    items.push({ label: 'Border Color', submenu: colorItems });
+
     return items;
 }

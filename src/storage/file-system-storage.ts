@@ -77,7 +77,14 @@ export class FileSystemStorage implements StorageInterface {
     }
 
     async loadDrawing(id: string): Promise<DocumentData | null> {
-        const response = await fetch(`${this.baseUrl}/${id}`);
+        // Add cache-busting and no-cache headers to ensure fresh data
+        const response = await fetch(`${this.baseUrl}/${id}?t=${Date.now()}`, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
         if (!response.ok) return null;
 
         const contentType = response.headers.get('content-type');
@@ -102,7 +109,13 @@ export class FileSystemStorage implements StorageInterface {
     }
 
     async listDrawings(): Promise<string[]> {
-        const response = await fetch(this.baseUrl);
+        const response = await fetch(`${this.baseUrl}?t=${Date.now()}`, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
         if (!response.ok) return [];
         return await response.json();
     }

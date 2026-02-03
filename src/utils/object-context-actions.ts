@@ -150,10 +150,64 @@ export const pasteAsTextElement = (text: string): void => {
     setStore('selection', [id]);
 };
 
+// ─── Remap bindings and relationships for duplicated elements ─────────
+export const remapElementBindings = (
+    elements: DrawingElement[],
+    idMap: Map<string, string>
+): DrawingElement[] => {
+    return elements.map(el => {
+        const updates: Partial<DrawingElement> = {};
+
+        // Remap startBinding if the target is in the selection
+        if (el.startBinding?.elementId && idMap.has(el.startBinding.elementId)) {
+            updates.startBinding = {
+                ...el.startBinding,
+                elementId: idMap.get(el.startBinding.elementId)!
+            };
+        }
+
+        // Remap endBinding if the target is in the selection
+        if (el.endBinding?.elementId && idMap.has(el.endBinding.elementId)) {
+            updates.endBinding = {
+                ...el.endBinding,
+                elementId: idMap.get(el.endBinding.elementId)!
+            };
+        }
+
+        // Remap boundElements if the referenced connectors are in the selection
+        if (el.boundElements && Array.isArray(el.boundElements)) {
+            const remappedBound: typeof el.boundElements = [];
+            for (const be of el.boundElements) {
+                if (idMap.has(be.id)) {
+                    remappedBound.push({ ...be, id: idMap.get(be.id)! });
+                }
+                // Skip bindings to elements not in selection
+            }
+            updates.boundElements = remappedBound.length > 0 ? remappedBound : null;
+        }
+
+        // Remap parentId for mindmap hierarchy
+        if (el.parentId && idMap.has(el.parentId)) {
+            updates.parentId = idMap.get(el.parentId)!;
+        } else if (el.parentId && !idMap.has(el.parentId)) {
+            // Parent not in selection, clear parent to avoid broken reference
+            updates.parentId = undefined;
+        }
+
+        // Remap groupIds if they are part of the cloned groups
+        if (el.groupIds && Array.isArray(el.groupIds)) {
+            updates.groupIds = el.groupIds.map((gid: string) =>
+                idMap.has(gid) ? idMap.get(gid)! : gid
+            );
+        }
+
+        return Object.keys(updates).length > 0 ? { ...el, ...updates } : el;
+    });
+};
+
 // ─── Paste internal Yappy elements ───────────────────────────────────
 const pasteYappyElements = (data: any): void => {
     pushToHistory();
-    const newIds: string[] = [];
 
     const center = getViewportCenter();
 
@@ -170,20 +224,41 @@ const pasteYappyElements = (data: any): void => {
     const dx = center.x - contentCX;
     const dy = center.y - contentCY;
 
+    // Build ID mapping and group ID mapping
+    const idMap = new Map<string, string>();
+    const groupIdMap = new Map<string, string>();
+
+    // Collect all group IDs first
     data.elements.forEach((el: any) => {
-        const newId = generateId(el.type);
-        const newEl = {
-            ...el,
-            id: newId,
-            x: el.x + dx,
-            y: el.y + dy,
-            layerId: store.activeLayerId,
-            groupIds: [],
-        };
-        setStore('elements', els => [...els, newEl]);
-        newIds.push(newId);
+        idMap.set(el.id, generateId(el.type));
+        el.groupIds?.forEach((gid: string) => {
+            if (!groupIdMap.has(gid)) {
+                groupIdMap.set(gid, crypto.randomUUID());
+            }
+        });
     });
-    setStore('selection', newIds);
+
+    // Merge group mappings into idMap for unified remapping
+    groupIdMap.forEach((newId, oldId) => idMap.set(oldId, newId));
+
+    // Create new elements with updated IDs and positions
+    let newElements: DrawingElement[] = data.elements.map((el: any) => ({
+        ...el,
+        id: idMap.get(el.id)!,
+        x: el.x + dx,
+        y: el.y + dy,
+        layerId: store.activeLayerId,
+        groupIds: el.groupIds?.map((gid: string) => groupIdMap.get(gid) ?? gid) ?? [],
+        boundElements: el.boundElements ?? null,
+        seed: Math.floor(Math.random() * 2147483647)
+    }));
+
+    // Remap all bindings and relationships
+    newElements = remapElementBindings(newElements, idMap);
+
+    // Add elements to store
+    setStore('elements', els => [...els, ...newElements]);
+    setStore('selection', newElements.map(el => el.id));
 };
 
 // ─── Try parsing text as Yappy JSON, returns true if handled ─────────

@@ -3,7 +3,7 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory } from "../store/app-store";
 import { normalizePoints } from "../utils/render-element";
 import type { DrawingElement } from "../types";
 import ContextMenu from "./context-menu";
@@ -35,6 +35,7 @@ import { Minimap } from "./minimap";
 import { getContextMenuItems } from "../utils/context-menu-builder";
 import PathEditorOverlay from "./path-editor-overlay";
 import { commitText as commitTextHandler, handleDoubleClick as handleDoubleClickHandler, type TextEditingContext } from "../utils/tool-handlers/text-editing-handler";
+import { computeCellRects, defaultColWidths, defaultRowHeights, hitTestColEdge, measureColumnOptimalWidth } from "../utils/table-utils";
 import { handleDragOver, handleDrop as handleDropHandler, handleWheel, type CanvasEventContext } from "../utils/tool-handlers/canvas-event-handlers";
 import { showToast } from "./toast";
 import { perfMonitor } from "../utils/performance-monitor";
@@ -127,6 +128,7 @@ const Canvas: Component = () => {
     const [editingProperty, setEditingProperty] = createSignal<'text' | 'containerText' | 'attributesText' | 'methodsText' | 'tableCell'>('containerText');
     const [editText, setEditText] = createSignal("");
     const [tableEditingCell, setTableEditingCell] = createSignal<import("../utils/tool-handlers/text-editing-handler").TableEditingCell | null>(null);
+    const [tableCellSelectionSignal, setTableCellSelection] = createSignal<import("../types").TableCellSelection | null>(null);
     let textInputRef: HTMLTextAreaElement | undefined;
 
     // Selection/Move State
@@ -241,6 +243,7 @@ const Canvas: Component = () => {
             selectionBox: selectionBox(), lassoPoints: lassoPoints(),
             suggestedBinding: suggestedBinding(),
             snappingGuides: snappingGuides(), spacingGuides: spacingGuides(),
+            tableCellSelection: tableCellSelectionSignal(),
         });
 
         renderConnectionAnchors(ctx, {
@@ -305,6 +308,7 @@ const Canvas: Component = () => {
             e.tableColWidths; e.tableRowHeights; e.tableColOrder;
             e.tableSortCol; e.tableSortDir;
             e.tableHeaderColor; e.tableHeaderTextColor; e.tableRowColor; e.tableAltRowColor;
+            e.tableColAlignments; e.tableMergedCells; e.tableCellFormats; e.tableCellBorders;
             // Animations
             e.spinEnabled; e.spinSpeed;
             e.orbitEnabled; e.orbitCenterId; e.orbitRadius; e.orbitSpeed; e.orbitDirection;
@@ -320,6 +324,7 @@ const Canvas: Component = () => {
         store.selection.length;
         selectionBox();
         lassoPoints();
+        tableCellSelectionSignal();
         // Note: pState.laserTrailData is mutable (not reactive) for performance
         // Track layer changes
         store.layers.length;
@@ -443,7 +448,7 @@ const Canvas: Component = () => {
         getWorldCoordinates, canInteractWithElement, checkBinding,
         refreshLinePoints, refreshBoundLine, flushPenPoints,
         applyMasterProjection, normalizePencil, commitText,
-        draw, setCursor
+        draw, setCursor, setTableCellSelection
     };
     const pSignals: import("../utils/pointer-helpers").PointerSignals = {
         editingId, setEditingId, setEditText,
@@ -571,6 +576,62 @@ const Canvas: Component = () => {
             requestAnimationFrame(draw);
             return;
         }
+
+        // Check for table column edge double-click (auto-fit column width)
+        if (store.selection.length === 1 && store.selectedTool === 'selection') {
+            const selEl = store.elements.find(el => el.id === store.selection[0]);
+            if (selEl && selEl.type === 'table' && canvasRef) {
+                const { x, y } = getWorldCoordinates(e.clientX, e.clientY);
+                const cols = selEl.tableCols ?? 3;
+                const rows = selEl.tableRows ?? 3;
+                const hasHeader = selEl.tableHeaders !== false;
+                const totalVisualRows = hasHeader ? rows + 1 : rows;
+                const colWidths = selEl.tableColWidths ?? defaultColWidths(cols);
+                const rowHeights = selEl.tableRowHeights ?? defaultRowHeights(totalVisualRows);
+                const cellRects = computeCellRects(selEl.x, selEl.y, selEl.width, selEl.height, colWidths, rowHeights, selEl.tableColOrder, hasHeader);
+                const edgeThreshold = 6 / store.viewState.scale;
+
+                const colEdge = hitTestColEdge(x, y, cellRects, edgeThreshold);
+                if (colEdge) {
+                    // Auto-fit the column to the right of the edge (colIndex is the left column)
+                    const targetCol = colEdge.colIndex;
+                    const ctx = canvasRef.getContext('2d');
+                    if (ctx && selEl.tableData) {
+                        const fontSize = selEl.fontSize ?? 14;
+                        const optimalWidth = measureColumnOptimalWidth(
+                            ctx,
+                            selEl.tableData,
+                            targetCol,
+                            fontSize,
+                            selEl.width,
+                            12,
+                            hasHeader
+                        );
+
+                        // Update column widths, redistributing remaining space
+                        const newWidths = [...colWidths];
+                        const oldWidth = newWidths[targetCol];
+
+                        // Distribute the difference proportionally among other columns
+                        const otherColsTotal = 1 - oldWidth;
+                        if (otherColsTotal > 0) {
+                            newWidths[targetCol] = optimalWidth;
+                            for (let c = 0; c < cols; c++) {
+                                if (c !== targetCol) {
+                                    newWidths[c] = newWidths[c] * (1 - optimalWidth) / otherColsTotal;
+                                }
+                            }
+                        }
+
+                        pushToHistory();
+                        updateElement(selEl.id, { tableColWidths: newWidths }, false);
+                        requestAnimationFrame(draw);
+                        return;
+                    }
+                }
+            }
+        }
+
         handleDoubleClickHandler(e, textEditCtx);
     };
 
@@ -669,7 +730,7 @@ const Canvas: Component = () => {
                 <ContextMenu
                     x={contextMenuPos().x}
                     y={contextMenuPos().y}
-                    items={(() => { const w = getWorldCoordinates(contextMenuPos().x, contextMenuPos().y); return getContextMenuItems(draw, w.x, w.y); })()}
+                    items={(() => { const w = getWorldCoordinates(contextMenuPos().x, contextMenuPos().y); return getContextMenuItems(draw, w.x, w.y, tableCellSelectionSignal()); })()}
                     onClose={() => setContextMenuOpen(false)}
                 />
             </Show>
