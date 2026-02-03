@@ -128,6 +128,17 @@
     }
 }
 
+/* Mobile: hide drag handles */
+@media (max-width: 768px) {
+    .menu-container .drag-handle {
+        display: none;
+    }
+
+    .menu-container {
+        padding: 4px;
+    }
+}
+
 .menu-item {
     display: grid;
     grid-template-columns: 20px 1fr auto;

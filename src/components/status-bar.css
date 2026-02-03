@@ -119,3 +119,10 @@
     color: #e25555;
     font-size: 12px;
 }
+
+/* Mobile: hide full status bar */
+@media (max-width: 768px) {
+    .status-bar {
+        display: none;
+    }
+}

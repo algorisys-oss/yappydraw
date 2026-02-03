@@ -438,7 +438,7 @@ export const WelcomeScreen: Component = () => {
                     "gap": "1rem"
                 }}>
                     <h1 style={{
-                        "font-size": "5rem",
+                        "font-size": windowSize().width < 768 ? "2.5rem" : "5rem",
                         "margin": "0",
                         "line-height": "1.2",
                         "display": "flex",
@@ -459,33 +459,36 @@ export const WelcomeScreen: Component = () => {
                         }}>Draw</span>
                     </h1>
                     <p style={{
-                        "font-size": "1.2rem",
+                        "font-size": windowSize().width < 768 ? "0.9rem" : "1.2rem",
                         "opacity": "0",
-                        "animation": "welcomeFadeIn 0.5s ease-out 0.3s forwards"
+                        "animation": "welcomeFadeIn 0.5s ease-out 0.3s forwards",
+                        "padding": windowSize().width < 768 ? "0 1rem" : "0"
                     }}>
                         All your data stays on your machine. Nothing is sent to the cloud.
                     </p>
 
-                    <div style={{
-                        "margin-top": "2rem",
-                        "display": "grid",
-                        "grid-template-columns": "auto auto",
-                        "gap": "1rem 3rem",
-                        "text-align": "left",
-                        "font-family": "Inter, sans-serif",
-                        "font-size": "0.9rem",
-                        "opacity": "0",
-                        "animation": "welcomeFadeInUp 0.5s ease-out 0.5s forwards"
-                    }}>
-                        <span>Open</span>
-                        <strong>Ctrl+Alt+O</strong>
+                    <Show when={windowSize().width >= 768}>
+                        <div style={{
+                            "margin-top": "2rem",
+                            "display": "grid",
+                            "grid-template-columns": "auto auto",
+                            "gap": "1rem 3rem",
+                            "text-align": "left",
+                            "font-family": "Inter, sans-serif",
+                            "font-size": "0.9rem",
+                            "opacity": "0",
+                            "animation": "welcomeFadeInUp 0.5s ease-out 0.5s forwards"
+                        }}>
+                            <span>Open</span>
+                            <strong>Ctrl+Alt+O</strong>
 
-                        <span>Smart Palette</span>
-                        <strong>Ctrl+K</strong>
+                            <span>Smart Palette</span>
+                            <strong>Ctrl+K</strong>
 
-                        <span>Help</span>
-                        <strong>?</strong>
-                    </div>
+                            <span>Help</span>
+                            <strong>?</strong>
+                        </div>
+                    </Show>
 
                     {/* Shape Categories */}
                     <div style={{

@@ -40,6 +40,7 @@ const Toolbar: Component = () => {
     const [position, setPosition] = createSignal({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = createSignal(false);
     const [dragStart, setDragStart] = createSignal({ x: 0, y: 0 });
+    const [isMobile, setIsMobile] = createSignal(window.innerWidth <= 768);
 
     const onMouseDown = (e: MouseEvent) => {
         // Drag if clicked on the container's padding or gaps, or the handle itself
@@ -69,9 +70,14 @@ const Toolbar: Component = () => {
     onMount(() => {
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
+
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+
         onCleanup(() => {
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
+            window.removeEventListener('resize', handleResize);
         });
     });
 
@@ -177,8 +183,8 @@ const Toolbar: Component = () => {
             class="toolbar-container"
             classList={{ dragging: isDragging() }}
             onContextMenu={(e) => e.preventDefault()}
-            onMouseDown={onMouseDown}
-            style={{
+            onMouseDown={isMobile() ? undefined : onMouseDown}
+            style={isMobile() ? {} : {
                 transform: `translateX(-50%) translate(${position().x}px, ${position().y}px)`
             }}
         >

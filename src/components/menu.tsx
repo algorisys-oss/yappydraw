@@ -5,12 +5,12 @@ import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, resetToNewDocument, saveActiveSlide, setIsExportOpen,
-    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar
+    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo
 } from "../store/app-store";
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Download, Layout,
-    Layers, Check, Play, Pause, Square, Camera, Video, Palette
+    Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical
 } from "lucide-solid";
 import { P3ColorPicker } from "./p3-color-picker";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
@@ -55,6 +55,8 @@ export const handleNew = (docType: 'infinite' | 'slides' = 'slides') => {
 
 const Menu: Component = () => {
     const [isMenuOpen, setIsMenuOpen] = createSignal(false);
+    const [isMobile, setIsMobile] = createSignal(window.innerWidth <= 768);
+    const [isUtilityMenuOpen, setIsUtilityMenuOpen] = createSignal(false);
     let fileInputRef: HTMLInputElement | undefined;
 
     const [saveIntent, setSaveIntent] = createSignal<'workspace' | 'disk' | 'disk-json'>('workspace');
@@ -327,9 +329,14 @@ const Menu: Component = () => {
     onMount(() => {
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
+
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+
         onCleanup(() => {
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
+            window.removeEventListener('resize', handleResize);
         });
 
         const params = new URLSearchParams(window.location.search);
@@ -342,8 +349,8 @@ const Menu: Component = () => {
 
     return (
         <>
-            <Show when={isMenuOpen()}>
-                <div class="menu-backdrop" onClick={() => setIsMenuOpen(false)}></div>
+            <Show when={isMenuOpen() || isUtilityMenuOpen()}>
+                <div class="menu-backdrop" onClick={() => { setIsMenuOpen(false); setIsUtilityMenuOpen(false); }}></div>
             </Show>
 
             <input
@@ -550,7 +557,8 @@ const Menu: Component = () => {
                         </div>
                     </div>
 
-                    <Show when={store.showUtilityToolbar}>
+                    {/* Desktop: full utility toolbar */}
+                    <Show when={store.showUtilityToolbar && !isMobile()}>
                         <div
                             style={{
                                 position: 'fixed',
@@ -620,6 +628,94 @@ const Menu: Component = () => {
                                 </button>
 
                             </div>
+                        </div>
+                    </Show>
+
+                    {/* Mobile: collapsed utility menu button at top-right */}
+                    <Show when={isMobile()}>
+                        <div
+                            style={{
+                                position: 'fixed',
+                                top: '12px',
+                                right: '12px',
+                                "z-index": 10000
+                            }}
+                        >
+                            <div class="menu-container" style={{ position: 'relative' }}>
+                                <button
+                                    class={`menu-btn ${isUtilityMenuOpen() ? 'active' : ''}`}
+                                    onClick={() => setIsUtilityMenuOpen(!isUtilityMenuOpen())}
+                                    title="More Actions"
+                                >
+                                    <MoreVertical size={20} />
+                                </button>
+                                <Show when={isUtilityMenuOpen()}>
+                                    <div class="menu-dropdown" style={{ right: 0, left: 'auto', width: '200px', top: '48px' }}>
+                                        <button class="menu-item" onClick={() => { sequenceAnimator.playAll('programmatic'); setIsUtilityMenuOpen(false); }} disabled={isGlobalPlaying() && !isGlobalPaused()}>
+                                            <Play size={16} color="#10b981" />
+                                            <span class="label">Play Animations</span>
+                                        </button>
+                                        <button class="menu-item" onClick={() => { isGlobalPaused() ? animationEngine.resumeAll() : animationEngine.pauseAll(); setIsUtilityMenuOpen(false); }} disabled={!isGlobalPlaying() && !isGlobalPaused()}>
+                                            <Pause size={16} color="#f59e0b" />
+                                            <span class="label">{isGlobalPaused() ? "Resume" : "Pause"}</span>
+                                        </button>
+                                        <button class="menu-item" onClick={() => { sequenceAnimator.stopAll(); setIsUtilityMenuOpen(false); }} disabled={!isGlobalPlaying() && !isGlobalPaused()}>
+                                            <Square size={16} color="#ef4444" />
+                                            <span class="label">Stop</span>
+                                        </button>
+                                        <div class="menu-separator"></div>
+                                        <button class="menu-item" onClick={() => { toggleTheme(); setIsUtilityMenuOpen(false); }}>
+                                            {store.theme === 'light' ? <Moon size={16} /> : store.theme === 'dark' ? <Focus size={16} /> : <Sun size={16} />}
+                                            <span class="label">Toggle Theme</span>
+                                        </button>
+                                    </div>
+                                </Show>
+                            </div>
+                        </div>
+
+                        {/* Mobile: floating undo/redo above bottom toolbar */}
+                        <div
+                            style={{
+                                position: 'fixed',
+                                bottom: 'calc(60px + env(safe-area-inset-bottom, 0px))',
+                                right: '12px',
+                                "z-index": 10001,
+                                display: 'flex',
+                                gap: '4px'
+                            }}
+                        >
+                            <button
+                                class="menu-btn"
+                                style={{
+                                    background: 'var(--bg-panel)',
+                                    "box-shadow": 'var(--shadow-sm)',
+                                    border: '1px solid var(--border-color)',
+                                    width: '40px',
+                                    height: '40px',
+                                    "border-radius": '8px'
+                                }}
+                                onClick={undo}
+                                disabled={store.undoStackLength === 0}
+                                title="Undo"
+                            >
+                                <Undo2 size={18} />
+                            </button>
+                            <button
+                                class="menu-btn"
+                                style={{
+                                    background: 'var(--bg-panel)',
+                                    "box-shadow": 'var(--shadow-sm)',
+                                    border: '1px solid var(--border-color)',
+                                    width: '40px',
+                                    height: '40px',
+                                    "border-radius": '8px'
+                                }}
+                                onClick={redo}
+                                disabled={store.redoStackLength === 0}
+                                title="Redo"
+                            >
+                                <Redo2 size={18} />
+                            </button>
                         </div>
                     </Show>
                 </>
