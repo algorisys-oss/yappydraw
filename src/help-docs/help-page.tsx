@@ -3,7 +3,8 @@
  * Displays documentation for all shapes with interactive navigation.
  */
 
-import { type Component, createSignal, For, Show } from 'solid-js';
+import { type Component, createSignal, For, Show, onMount, onCleanup } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import './help-page.css';
 
 // Shape documentation data
@@ -17,27 +18,156 @@ interface ShapeDoc {
 }
 
 // Import shape documentation components
+import { BasicShapesDoc } from './shapes/basic-shapes-doc';
+import { GeometricShapesDoc } from './shapes/geometric-shapes-doc';
+import { DrawingToolsDoc } from './shapes/drawing-tools-doc';
+import { ConnectorsDoc } from './shapes/connectors-doc';
+import { FlowchartDoc } from './shapes/flowchart-doc';
+import { UmlDoc } from './shapes/uml-doc';
+import { InfrastructureDoc } from './shapes/infrastructure-doc';
+import { WireframingDoc } from './shapes/wireframing-doc';
+import { SketchnoteDoc } from './shapes/sketchnote-doc';
+import { MindmapDoc } from './shapes/mindmap-doc';
 import { TableDoc } from './shapes/table-doc';
+import { AnimationDoc } from './features/animation-doc';
 
-// Registry of all shape documentation
+// Registry of all shape documentation - organized by category in logical sequence
 const shapeDocuments: ShapeDoc[] = [
+    // Basic Shapes
+    {
+        id: 'basic-shapes',
+        name: 'Basic Shapes',
+        icon: '⬜',
+        category: 'Shapes',
+        description: 'Rectangle, circle, diamond, triangle - the fundamental building blocks',
+        content: BasicShapesDoc
+    },
+    {
+        id: 'geometric-shapes',
+        name: 'Geometric Shapes',
+        icon: '⬡',
+        category: 'Shapes',
+        description: 'Hexagon, star, polygon, and other geometric shapes',
+        content: GeometricShapesDoc
+    },
+    // Drawing
+    {
+        id: 'drawing-tools',
+        name: 'Drawing Tools',
+        icon: '✏️',
+        category: 'Drawing',
+        description: 'Pencil, fineliner, marker, and ink brush for freehand drawing',
+        content: DrawingToolsDoc
+    },
+    {
+        id: 'connectors',
+        name: 'Connectors',
+        icon: '↗️',
+        category: 'Drawing',
+        description: 'Lines, arrows, bezier curves, and smart connectors',
+        content: ConnectorsDoc
+    },
+    // Diagrams
+    {
+        id: 'flowchart',
+        name: 'Flowchart',
+        icon: '📋',
+        category: 'Diagrams',
+        description: 'Standard flowchart symbols for process flows',
+        content: FlowchartDoc
+    },
+    {
+        id: 'uml',
+        name: 'UML',
+        icon: '📐',
+        category: 'Diagrams',
+        description: 'UML shapes for class, sequence, and state diagrams',
+        content: UmlDoc
+    },
+    {
+        id: 'infrastructure',
+        name: 'Infrastructure',
+        icon: '☁️',
+        category: 'Diagrams',
+        description: 'Cloud architecture and network diagram shapes',
+        content: InfrastructureDoc
+    },
+    // Design
+    {
+        id: 'wireframing',
+        name: 'Wireframing',
+        icon: '📱',
+        category: 'Design',
+        description: 'UI mockup elements for web and mobile design',
+        content: WireframingDoc
+    },
+    {
+        id: 'sketchnote',
+        name: 'Sketchnote',
+        icon: '🎨',
+        category: 'Design',
+        description: 'Visual vocabulary for sketchnoting and visual thinking',
+        content: SketchnoteDoc
+    },
+    // Data & Structure
+    {
+        id: 'mindmap',
+        name: 'Mind Maps',
+        icon: '🧠',
+        category: 'Structure',
+        description: 'Create hierarchical mind maps for brainstorming',
+        content: MindmapDoc
+    },
     {
         id: 'table',
-        name: 'Table',
+        name: 'Tables',
         icon: '📊',
-        category: 'Data',
+        category: 'Structure',
         description: 'Create and edit tables with rows, columns, and data',
         content: TableDoc
     },
-    // Add more shapes here as documentation is created
+    // Features
+    {
+        id: 'animation',
+        name: 'Animation',
+        icon: '🎬',
+        category: 'Features',
+        description: 'Animate elements with presets, keyframes, and spring physics',
+        content: AnimationDoc
+    },
 ];
 
 // Group shapes by category
 const categories = [...new Set(shapeDocuments.map(s => s.category))];
 
+// Parse shape ID from URL hash (e.g., #/help/animation -> animation)
+const getShapeFromHash = (): string => {
+    const hash = window.location.hash;
+    const match = hash.match(/#\/?help\/([^/]+)/);
+    return match ? match[1] : 'basic-shapes';
+};
+
 export const HelpPage: Component = () => {
-    const [selectedShape, setSelectedShape] = createSignal<string>('table');
+    const [selectedShape, setSelectedShape] = createSignal<string>(getShapeFromHash());
     const [searchQuery, setSearchQuery] = createSignal('');
+
+    // Listen for hash changes (browser back/forward)
+    onMount(() => {
+        const handleHashChange = () => {
+            const newShape = getShapeFromHash();
+            if (shapeDocuments.some(s => s.id === newShape)) {
+                setSelectedShape(newShape);
+            }
+        };
+        window.addEventListener('hashchange', handleHashChange);
+        onCleanup(() => window.removeEventListener('hashchange', handleHashChange));
+    });
+
+    // Navigate to a shape doc via URL
+    const navigateToShape = (shapeId: string) => {
+        window.location.hash = `#/help/${shapeId}`;
+        setSelectedShape(shapeId);
+    };
 
     const filteredShapes = () => {
         const query = searchQuery().toLowerCase();
@@ -90,7 +220,7 @@ export const HelpPage: Component = () => {
                                             {(shape) => (
                                                 <li
                                                     class={`shape-item ${selectedShape() === shape.id ? 'active' : ''}`}
-                                                    onClick={() => setSelectedShape(shape.id)}
+                                                    onClick={() => navigateToShape(shape.id)}
                                                 >
                                                     <span class="shape-icon">{shape.icon}</span>
                                                     <span class="shape-name">{shape.name}</span>
@@ -107,10 +237,7 @@ export const HelpPage: Component = () => {
                 {/* Main content */}
                 <main class="help-main">
                     <Show when={currentDoc()} fallback={<p>Select a shape to view documentation</p>}>
-                        {(doc) => {
-                            const DocComponent = doc().content;
-                            return <DocComponent />;
-                        }}
+                        <Dynamic component={currentDoc()!.content} />
                     </Show>
                 </main>
             </div>

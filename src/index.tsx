@@ -19,7 +19,7 @@ const Router = () => {
         return () => window.removeEventListener('hashchange', handleHashChange)
     })
 
-    const isHelpRoute = () => route() === '#/help' || route() === '#help'
+    const isHelpRoute = () => route().startsWith('#/help') || route() === '#help'
 
     return (
         <Show when={isHelpRoute()} fallback={<App />}>
