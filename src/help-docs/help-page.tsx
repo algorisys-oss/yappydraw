@@ -3,7 +3,7 @@
  * Displays documentation for all shapes with interactive navigation.
  */
 
-import { type Component, createSignal, For, Show, onMount, onCleanup } from 'solid-js';
+import { type Component, createSignal, For, Show, onMount, onCleanup, lazy, Suspense } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import './help-page.css';
 
@@ -17,19 +17,19 @@ interface ShapeDoc {
     content: Component;
 }
 
-// Import shape documentation components
-import { BasicShapesDoc } from './shapes/basic-shapes-doc';
-import { GeometricShapesDoc } from './shapes/geometric-shapes-doc';
-import { DrawingToolsDoc } from './shapes/drawing-tools-doc';
-import { ConnectorsDoc } from './shapes/connectors-doc';
-import { FlowchartDoc } from './shapes/flowchart-doc';
-import { UmlDoc } from './shapes/uml-doc';
-import { InfrastructureDoc } from './shapes/infrastructure-doc';
-import { WireframingDoc } from './shapes/wireframing-doc';
-import { SketchnoteDoc } from './shapes/sketchnote-doc';
-import { MindmapDoc } from './shapes/mindmap-doc';
-import { TableDoc } from './shapes/table-doc';
-import { AnimationDoc } from './features/animation-doc';
+// Lazy load documentation components for better performance
+const BasicShapesDoc = lazy(() => import('./shapes/basic-shapes-doc'));
+const GeometricShapesDoc = lazy(() => import('./shapes/geometric-shapes-doc'));
+const DrawingToolsDoc = lazy(() => import('./shapes/drawing-tools-doc'));
+const ConnectorsDoc = lazy(() => import('./shapes/connectors-doc'));
+const FlowchartDoc = lazy(() => import('./shapes/flowchart-doc'));
+const UmlDoc = lazy(() => import('./shapes/uml-doc'));
+const InfrastructureDoc = lazy(() => import('./shapes/infrastructure-doc'));
+const WireframingDoc = lazy(() => import('./shapes/wireframing-doc'));
+const SketchnoteDoc = lazy(() => import('./shapes/sketchnote-doc'));
+const MindmapDoc = lazy(() => import('./shapes/mindmap-doc'));
+const TableDoc = lazy(() => import('./shapes/table-doc'));
+const AnimationDoc = lazy(() => import('./features/animation-doc'));
 
 // Registry of all shape documentation - organized by category in logical sequence
 const shapeDocuments: ShapeDoc[] = [
@@ -182,8 +182,8 @@ export const HelpPage: Component = () => {
     const currentDoc = () => shapeDocuments.find(s => s.id === selectedShape());
 
     const handleBackToApp = () => {
+        // Just clear the hash - the router will handle showing the app
         window.location.hash = '';
-        window.location.reload();
     };
 
     return (
@@ -237,7 +237,9 @@ export const HelpPage: Component = () => {
                 {/* Main content */}
                 <main class="help-main">
                     <Show when={currentDoc()} fallback={<p>Select a shape to view documentation</p>}>
-                        <Dynamic component={currentDoc()!.content} />
+                        <Suspense fallback={<div class="doc-loading">Loading...</div>}>
+                            <Dynamic component={currentDoc()!.content} />
+                        </Suspense>
                     </Show>
                 </main>
             </div>
