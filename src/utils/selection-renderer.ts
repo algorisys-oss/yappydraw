@@ -7,7 +7,7 @@
 
 import type { DrawingElement } from '../types';
 import { normalizePoints } from './render-element';
-import { getOrganicBranchPolygon } from './geometry';
+import { getOrganicBranchPolygon, rotatePoint } from './geometry';
 
 export interface ElementOverlayOptions {
     scale: number;
@@ -39,22 +39,34 @@ export function renderElementOverlays(
         const hY = renderedEl.y;
         const hW = renderedEl.width;
         const hH = renderedEl.height;
-        const hAngle = renderedEl.angle;
+        const hAngle = renderedEl.angle || 0;
         const hcx = hX + hW / 2;
         const hcy = hY + hH / 2;
 
         ctx.save();
-        if (hAngle) {
-            ctx.translate(hcx, hcy);
-            ctx.rotate(hAngle);
-            ctx.translate(-hcx, -hcy);
-        }
         ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 1 / scale;
 
         // Only draw bounding box for non-linear elements
         if (el.type !== 'line' && el.type !== 'arrow' && el.type !== 'bezier' && el.type !== 'organicBranch') {
-            ctx.strokeRect(hX - padding, hY - padding, hW + padding * 2, hH + padding * 2);
+            // Draw rotated bounding box as a path
+            const boxCorners = [
+                { x: hX - padding, y: hY - padding },             // TL
+                { x: hX + hW + padding, y: hY - padding },        // TR
+                { x: hX + hW + padding, y: hY + hH + padding },   // BR
+                { x: hX - padding, y: hY + hH + padding }         // BL
+            ];
+            const rotatedBoxCorners = hAngle
+                ? boxCorners.map(c => rotatePoint(c.x, c.y, hcx, hcy, hAngle))
+                : boxCorners;
+
+            ctx.beginPath();
+            ctx.moveTo(rotatedBoxCorners[0].x, rotatedBoxCorners[0].y);
+            for (let i = 1; i < rotatedBoxCorners.length; i++) {
+                ctx.lineTo(rotatedBoxCorners[i].x, rotatedBoxCorners[i].y);
+            }
+            ctx.closePath();
+            ctx.stroke();
         } else if (el.type === 'organicBranch' && el.points && el.points.length >= 2 && el.controlPoints && el.controlPoints.length >= 2) {
             // Draw curved selection outline for organicBranch
             const pts = normalizePoints(el.points);
@@ -133,8 +145,8 @@ export function renderElementOverlays(
                 }
 
             } else {
-                // Standard Box Handles
-                const handles = [
+                // Standard Box Handles - compute positions in local space then rotate
+                const localHandles = [
                     { x: hX - padding, y: hY - padding }, // TL
                     { x: hX + hW + padding, y: hY - padding }, // TR
                     { x: hX + hW + padding, y: hY + hH + padding }, // BR
@@ -146,15 +158,28 @@ export function renderElementOverlays(
                     { x: hX - padding, y: hY + hH / 2 } // LM
                 ];
 
-                handles.forEach(h => {
-                    ctx.fillRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
-                    ctx.strokeRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
+                // Rotate handles around element center
+                const handles = hAngle
+                    ? localHandles.map(h => rotatePoint(h.x, h.y, hcx, hcy, hAngle))
+                    : localHandles;
+
+                handles.forEach((h) => {
+                    ctx.save();
+                    ctx.translate(h.x, h.y);
+                    if (hAngle) ctx.rotate(hAngle);
+                    ctx.fillRect(-handleSize / 2, -handleSize / 2, handleSize, handleSize);
+                    ctx.strokeRect(-handleSize / 2, -handleSize / 2, handleSize, handleSize);
+                    ctx.restore();
                 });
 
-                // Rotate Handle
-                const rotH = { x: el.x + el.width / 2, y: el.y - padding - 20 / scale };
+                // Rotate Handle - compute position then rotate
+                const localRotH = { x: el.x + el.width / 2, y: el.y - padding - 20 / scale };
+                const localRotLineStart = { x: el.x + el.width / 2, y: el.y - padding };
+                const rotH = hAngle ? rotatePoint(localRotH.x, localRotH.y, hcx, hcy, hAngle) : localRotH;
+                const rotLineStart = hAngle ? rotatePoint(localRotLineStart.x, localRotLineStart.y, hcx, hcy, hAngle) : localRotLineStart;
+
                 ctx.beginPath();
-                ctx.moveTo(el.x + el.width / 2, el.y - padding);
+                ctx.moveTo(rotLineStart.x, rotLineStart.y);
                 ctx.lineTo(rotH.x, rotH.y);
                 ctx.stroke();
                 ctx.beginPath();

@@ -2,10 +2,6 @@
 
 **Yappy** is an infinite canvas drawing and diagramming application built with SolidJS. Create hand-drawn style diagrams, architecture sketches, mindmaps, wireframes, presentations, and whiteboard illustrations with 100+ shape types and a full-featured toolset.
 
-The live beta version is at
-
-https://yappydraw.com/
-
 ## How YappyDraw Is Developed
 
 YappyDraw is **vibe-architected** by **Rajesh Pillai**, with every major architectural decision, abstraction, and convention consciously designed and reviewed by an experienced engineer.
