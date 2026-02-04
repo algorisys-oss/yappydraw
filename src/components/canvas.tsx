@@ -15,7 +15,7 @@ import {
     presentationOnDown, presentationOnMove, presentationOnUp,
     panOnDown, panOnMove, panOnUp,
     laserOnDown, laserOnMove, laserOnUp,
-    textOnDown, inkOnDown,
+    textOnDown, textOnMove, textOnUp, inkOnDown,
     eraserOnDown, eraserOnMove,
     connectorHandleOnUp,
     handleAutoScroll
@@ -489,7 +489,7 @@ const Canvas: Component = () => {
             return;
         }
 
-        if (store.selectedTool === 'text') { textOnDown(x, y, pSignals); return; }
+        if (store.selectedTool === 'text') { textOnDown(x, y, pState, pSignals); return; }
         if (store.selectedTool === 'laser') { laserOnDown(x, y, pState); return; }
         if (store.selectedTool === 'ink') { inkOnDown(x, y, pState); return; }
         if (store.selectedTool === 'eraser') { eraserOnDown(x, y, pState, pHelpers); return; }
@@ -514,6 +514,12 @@ const Canvas: Component = () => {
 
         if (store.selectedTool === 'laser') {
             laserOnMove(e, pState, pHelpers, LASER_THROTTLE_MS, LASER_MAX_POINTS);
+        }
+
+        if (store.selectedTool === 'text' && pState.isDrawing) {
+            textOnMove(x, y, pState);
+            requestAnimationFrame(draw);
+            return;
         }
 
         if (pState.isPolylineBuilding) {
@@ -564,6 +570,11 @@ const Canvas: Component = () => {
         if (store.selectedTool === 'selection' || store.selectedTool === 'lasso') {
             const { x: upX, y: upY } = getWorldCoordinates(e.clientX, e.clientY);
             selectionOnUp(e, upX, upY, pState, pHelpers, pSignals);
+            return;
+        }
+
+        if (store.selectedTool === 'text') {
+            textOnUp(pState, pSignals);
             return;
         }
 

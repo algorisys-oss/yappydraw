@@ -134,44 +134,60 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 const fontWeight = el.fontWeight || 'normal';
                 const fontStyle = el.fontStyle || 'normal';
 
+                // For text elements and shapes, use element height for vertical centering
+                const textareaHeight = isTableCell ? cellHeight : elH * scale;
+                const lineHeightPx = fontSizeVal * scale * 1.2;
+
                 return (
-                    <textarea
-                        ref={(el) => {
-                            textInputRef = el;
-                            props.onTextInputRef(el);
-                        }}
-                        value={props.editText()}
-                        onInput={(e) => props.setEditText(e.currentTarget.value)}
-                        onBlur={handleTextBlur}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
-                                e.preventDefault();
-                                props.onCommitText();
-                                setSelectedTool('selection');
-                            }
-                        }}
+                    <div
                         style={{
                             position: 'absolute',
                             top: `${centerY}px`,
                             left: `${centerX}px`,
                             transform: isTableCell ? 'none' : 'translate(-50%, -50%)',
                             width: `${Math.max(50, textareaWidth)}px`,
-                            height: isTableCell ? `${cellHeight}px` : undefined,
+                            height: `${textareaHeight}px`,
+                            display: 'flex',
+                            'align-items': 'center',
+                            'justify-content': 'center',
                             'box-sizing': 'border-box',
-                            font: `${fontStyle} ${fontWeight} ${fontSizeVal * scale}px ${fontFamily}`,
-                            color: el.textColor || el.strokeColor,
-                            background: isTableCell ? 'rgba(255,255,255,0.95)' : 'transparent',
                             border: '1px dashed #007acc',
-                            outline: 'none',
-                            margin: 0,
-                            padding: '4px',
-                            resize: 'none',
-                            overflow: 'hidden',
-                            'min-height': isTableCell ? undefined : '1em',
-                            'text-align': textAlign as any,
-                            'line-height': isTableCell ? `${cellHeight - 8}px` : undefined
+                            background: isTableCell ? 'rgba(255,255,255,0.95)' : 'transparent',
                         }}
-                    />
+                    >
+                        <textarea
+                            ref={(el) => {
+                                textInputRef = el;
+                                props.onTextInputRef(el);
+                            }}
+                            value={props.editText()}
+                            onInput={(e) => props.setEditText(e.currentTarget.value)}
+                            onBlur={handleTextBlur}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Escape') {
+                                    e.preventDefault();
+                                    props.onCommitText();
+                                    setSelectedTool('selection');
+                                }
+                            }}
+                            style={{
+                                width: '100%',
+                                'max-height': '100%',
+                                'box-sizing': 'border-box',
+                                font: `${fontStyle} ${fontWeight} ${fontSizeVal * scale}px ${fontFamily}`,
+                                color: el.textColor || el.strokeColor,
+                                background: 'transparent',
+                                border: 'none',
+                                outline: 'none',
+                                margin: 0,
+                                padding: '4px',
+                                resize: 'none',
+                                overflow: 'hidden',
+                                'text-align': textAlign as any,
+                                'line-height': `${lineHeightPx}px`
+                            }}
+                        />
+                    </div>
                 );
             }}
         </Show>

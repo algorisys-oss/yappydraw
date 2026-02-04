@@ -9,7 +9,7 @@ import type { DrawingElement } from '../../types';
 import { store, updateElement, deleteElements, isLayerVisible } from '../../store/app-store';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
-import { fitShapeToText, measureContainerText } from '../text-utils';
+import { fitShapeToText, measureContainerText, measureWrappedTextHeight } from '../text-utils';
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestTableCell } from '../table-utils';
 
 /**
@@ -68,27 +68,16 @@ export function commitText(ctx: TextEditingContext): void {
         return;
     }
 
-    // For standalone text elements, update text property and calculate dimensions
+    // For standalone text elements, preserve width and recalculate height based on wrapped text
     if (el.type === 'text') {
         if (newText) {
-            let width = 0;
-            let height = 0;
-            if (ctx.canvasRef) {
-                const canvasCtx = ctx.canvasRef.getContext("2d");
-                if (canvasCtx) {
-                    const fontSize = el.fontSize || 28;
-                    canvasCtx.font = `${fontSize}px sans-serif`;
-                    const lines = newText.split('\n');
-                    for (const line of lines) {
-                        const metrics = canvasCtx.measureText(line);
-                        width = Math.max(width, metrics.width);
-                    }
-                    height = lines.length * fontSize * 1.2;
-                }
-            }
-            width = Math.max(width, 10);
-            height = Math.max(height, 10);
-            updateElement(id, { text: newText, width, height }, true);
+            const fontSize = el.fontSize || 28;
+            // Preserve existing width, recalculate height based on wrapped content
+            const existingWidth = el.width || 200;
+            const height = measureWrappedTextHeight(newText, existingWidth, fontSize, el.fontFamily);
+            const finalHeight = Math.max(height, fontSize * 1.2);
+
+            updateElement(id, { text: newText, height: finalHeight }, true);
         } else {
             deleteElements([id]);
         }

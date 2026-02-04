@@ -221,27 +221,105 @@ export function laserOnUp(
 
 // ─── Text Tool ───────────────────────────────────────────────────────
 
+// Constants for text tool
+const TEXT_DEFAULT_WIDTH = 200;
+const TEXT_MIN_DRAG_WIDTH = 10;
+
 export function textOnDown(
     x: number,
     y: number,
-    signals: PointerSignals
+    pState: PointerState,
+    _signals: PointerSignals
 ): void {
     const id = generateId('text');
+    pState.isDrawing = true;
+    pState.startX = x;
+    pState.startY = y;
+    pState.currentId = id;
+
     const newElement = {
         ...store.defaultElementStyles,
         id,
         type: 'text',
         x,
         y,
-        width: 100,
+        width: 0,
         height: 30,
         text: '',
         layerId: store.activeLayerId
     } as DrawingElement;
     addElement(newElement);
-    signals.setEditingId(id);
+    // Don't open editor yet - defer to textOnUp
+}
+
+export function textOnMove(
+    x: number,
+    y: number,
+    pState: PointerState
+): void {
+    if (!pState.isDrawing || !pState.currentId) return;
+
+    const el = store.elements.find(e => e.id === pState.currentId);
+    if (!el || el.type !== 'text') return;
+
+    // Calculate width and height from drag distance
+    const width = Math.abs(x - pState.startX);
+    const height = Math.abs(y - pState.startY);
+
+    // Handle dragging in any direction (normalize position)
+    const newX = x < pState.startX ? x : pState.startX;
+    const newY = y < pState.startY ? y : pState.startY;
+
+    updateElement(pState.currentId, { x: newX, y: newY, width, height }, false);
+}
+
+export function textOnUp(
+    pState: PointerState,
+    signals: PointerSignals
+): void {
+    if (!pState.currentId) return;
+
+    const el = store.elements.find(e => e.id === pState.currentId);
+    if (!el || el.type !== 'text') {
+        pState.isDrawing = false;
+        pState.currentId = null;
+        return;
+    }
+
+    let finalWidth = el.width;
+    let finalHeight = el.height;
+    let finalX = el.x;
+    let finalY = el.y;
+
+    const fontSize = el.fontSize || 28;
+    const lineHeight = fontSize * 1.2;
+
+    // If width is too small (click rather than drag), use default width
+    if (finalWidth < TEXT_MIN_DRAG_WIDTH) {
+        finalWidth = TEXT_DEFAULT_WIDTH;
+        finalX = pState.startX; // Reset to original click position
+    }
+
+    // If height is too small, use default height (one line)
+    if (finalHeight < TEXT_MIN_DRAG_WIDTH) {
+        finalHeight = lineHeight;
+        finalY = pState.startY; // Reset to original click position
+    }
+
+    updateElement(pState.currentId, {
+        x: finalX,
+        y: finalY,
+        width: finalWidth,
+        height: finalHeight
+    }, false);
+
+    // Open text editor
+    signals.setEditingId(pState.currentId);
     signals.setEditText("");
     setTimeout(() => signals.textInputRef?.focus(), 0);
+
+    pState.isDrawing = false;
+    pState.currentId = null;
 }
 
 // ─── Ink Tool ────────────────────────────────────────────────────────

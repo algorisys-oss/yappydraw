@@ -137,6 +137,41 @@ export const measureContainerText = (
     return result;
 };
 
+/**
+ * Measure the height of wrapped text within a given width.
+ * Used for text elements to auto-adjust height based on content.
+ */
+export const measureWrappedTextHeight = (
+    text: string,
+    width: number,
+    fontSize: number,
+    fontFamily?: string
+): number => {
+    if (!text) return fontSize * 1.2;
+
+    const ctx = getMeasurementContext();
+    const resolvedFont = resolveFontFamily(fontFamily);
+    ctx.font = `${fontSize}px ${resolvedFont}`;
+
+    const padding = 4;
+    const availableWidth = Math.max(width - padding * 2, 20);
+
+    const paragraphs = text.split('\n');
+    let totalLines = 0;
+
+    paragraphs.forEach(para => {
+        if (para === '') {
+            totalLines += 1;
+        } else {
+            const wrapped = wrapText(ctx, para, availableWidth);
+            totalLines += wrapped.length;
+        }
+    });
+
+    const lineHeight = fontSize * 1.2;
+    return totalLines * lineHeight;
+};
+
 export const fitShapeToText = (
     ctx: CanvasRenderingContext2D,
     el: Partial<DrawingElement>,

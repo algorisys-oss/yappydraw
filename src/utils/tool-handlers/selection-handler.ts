@@ -21,6 +21,7 @@ import { getGroupsSortedByPriority, isPointInGroupBounds } from '../group-utils'
 import { normalizePoints } from '../render-element';
 import { connectorHandleOnDown } from './minor-handlers';
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestColEdge, hitTestRowEdge, hitTestTableCell, sortTableData, reorderColumns } from '../table-utils';
+import { measureWrappedTextHeight } from '../text-utils';
 
 // ─── Helper: Capture initial positions for move/resize ──────────────
 
@@ -673,9 +674,9 @@ function handleResize(
     const firstEl = store.elements.find(e => e.id === store.selection[0]);
     let isConstrained = e.shiftKey || (store.selection.length === 1 && firstEl?.constrained);
 
-    // Lock Aspect Ratio for Text by Default
+    // Text elements don't use aspect ratio lock - they freely resize width and recalculate height
     if (store.selection.length === 1 && firstEl?.type === 'text') {
-        isConstrained = !e.shiftKey;
+        isConstrained = false;
     }
 
     if (isConstrained && pState.initialElementWidth !== 0 && pState.initialElementHeight !== 0) {
@@ -956,13 +957,27 @@ function applyResize(
             const scaleX = pState.initialElementWidth === 0 ? 1 : newWidth / pState.initialElementWidth;
             const scaleY = pState.initialElementHeight === 0 ? 1 : newHeight / pState.initialElementHeight;
 
-            // Scale font size for text
-            if (singleEl.type === 'text') {
-                if (scaleY > 0) {
-                    let newFontSize = pState.initialElementFontSize * scaleY;
-                    newFontSize = Math.max(newFontSize, 8);
-                    updates.fontSize = newFontSize;
+            // Text elements: keep font size constant
+            // - Horizontal resize (lm, rm): recalculate height based on wrapped text
+            // - Vertical resize (tm, bm): allow free height adjustment (padding)
+            // - Corner resize (tl, tr, bl, br): allow free resize of both dimensions
+            if (singleEl.type === 'text' && singleEl.text) {
+                const fontSize = singleEl.fontSize || 28;
+                const isHorizontalOnly = pState.draggingHandle === 'lm' || pState.draggingHandle === 'rm';
+                const isCorner = ['tl', 'tr', 'bl', 'br'].includes(pState.draggingHandle!);
+
+                if (isHorizontalOnly) {
+                    // Horizontal resize: recalculate height based on wrapped text
+                    const calculatedHeight = measureWrappedTextHeight(singleEl.text, newWidth, fontSize, singleEl.fontFamily);
+                    updates.height = Math.max(calculatedHeight, fontSize * 1.2);
+                } else if (isCorner) {
+                    // Corner resize: allow free resize, but ensure minimum dimensions
+                    const minHeight = measureWrappedTextHeight(singleEl.text, newWidth, fontSize, singleEl.fontFamily);
+                    updates.height = Math.max(newHeight, minHeight);
+                    updates.width = Math.max(newWidth, 20);
                 }
+                // Vertical resize (tm, bm): height is already set by newHeight, no changes needed
+                // Don't scale font size - keep it constant
             }
 
             // Scale points for pen tools
