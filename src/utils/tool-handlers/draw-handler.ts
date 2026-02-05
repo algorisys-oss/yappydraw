@@ -33,7 +33,9 @@ const NORMALIZABLE_SHAPES = [
     'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda',
     'router', 'browser', 'trapezoid', 'rightTriangle', 'pentagon', 'septagon',
     'browserWindow', 'mobilePhone', 'ghostButton', 'inputField',
-    'table'
+    'table',
+    // 3D shapes need normalization too
+    'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox'
 ];
 
 // Tools that stay active after drawing (don't switch to selection)
@@ -269,8 +271,8 @@ export function drawOnUp(
             normalizeOrganicBranch(pState.currentId, el);
         }
 
-        // Switch back to selection tool after drawing (except for continuous tools)
-        if (!CONTINUOUS_TOOLS.includes(store.selectedTool)) {
+        // Switch back to selection tool after drawing (except for continuous tools or locked tools)
+        if (!CONTINUOUS_TOOLS.includes(store.selectedTool) && !store.toolLocked) {
             setSelectedTool('selection');
         }
 

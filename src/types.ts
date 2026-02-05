@@ -1,5 +1,5 @@
 import type { ElementAnimation } from './types/motion-types';
-export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'fineliner' | 'inkbrush' | 'marker' | 'eraser' | 'pan' | 'selection' | 'image' | 'bezier' | 'diamond' | 'triangle' | 'hexagon' | 'octagon' | 'parallelogram' | 'star' | 'cloud' | 'heart' | 'cross' | 'checkmark' | 'arrowLeft' | 'arrowUp' | 'arrowDown' | 'arrowRight' | 'capsule' | 'stickyNote' | 'callout' | 'burst' | 'speechBubble' | 'ribbon' | 'bracketLeft' | 'bracketRight' | 'database' | 'document' | 'predefinedProcess' | 'internalStorage' | 'server' | 'loadBalancer' | 'firewall' | 'user' | 'messageQueue' | 'lambda' | 'router' | 'browser' | 'trapezoid' | 'rightTriangle' | 'pentagon' | 'septagon' | 'starPerson' | 'scroll' | 'wavyDivider' | 'doubleBanner' | 'lightbulb' | 'signpost' | 'burstBlob' | 'browserWindow' | 'mobilePhone' | 'ghostButton' | 'inputField' | 'organicBranch' | 'polygon' | 'dfdProcess' | 'dfdDataStore' | 'isometricCube' | 'cylinder' | 'stateStart' | 'stateEnd' | 'stateSync' | 'activationBar' | 'externalEntity' | 'ink' | 'laser' | 'umlClass' | 'umlInterface' | 'umlActor' | 'umlUseCase' | 'umlNote' | 'umlPackage' | 'solidBlock' | 'perspectiveBlock' | 'umlComponent' | 'umlState' | 'umlLifeline' | 'umlFragment' | 'umlSignalSend' | 'umlSignalReceive' | 'umlProvidedInterface' | 'umlRequiredInterface'
+export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'fineliner' | 'inkbrush' | 'marker' | 'eraser' | 'pan' | 'selection' | 'image' | 'bezier' | 'diamond' | 'triangle' | 'hexagon' | 'octagon' | 'parallelogram' | 'star' | 'cloud' | 'heart' | 'cross' | 'checkmark' | 'arrowLeft' | 'arrowUp' | 'arrowDown' | 'arrowRight' | 'capsule' | 'stickyNote' | 'callout' | 'burst' | 'speechBubble' | 'ribbon' | 'bracketLeft' | 'bracketRight' | 'database' | 'document' | 'predefinedProcess' | 'internalStorage' | 'server' | 'loadBalancer' | 'firewall' | 'user' | 'messageQueue' | 'lambda' | 'router' | 'browser' | 'trapezoid' | 'rightTriangle' | 'pentagon' | 'septagon' | 'starPerson' | 'scroll' | 'wavyDivider' | 'doubleBanner' | 'lightbulb' | 'signpost' | 'burstBlob' | 'browserWindow' | 'mobilePhone' | 'ghostButton' | 'inputField' | 'organicBranch' | 'polygon' | 'dfdProcess' | 'dfdDataStore' | 'isometricCube' | 'cylinder' | 'stateStart' | 'stateEnd' | 'stateSync' | 'activationBar' | 'externalEntity' | 'ink' | 'laser' | 'umlClass' | 'umlInterface' | 'umlActor' | 'umlUseCase' | 'umlNote' | 'umlPackage' | 'solidBlock' | 'perspectiveBlock' | 'openBox' | 'umlComponent' | 'umlState' | 'umlLifeline' | 'umlFragment' | 'umlSignalSend' | 'umlSignalReceive' | 'umlProvidedInterface' | 'umlRequiredInterface'
 | 'trophy' | 'clock' | 'gear' | 'target' | 'rocket' | 'flag'
 | 'key' | 'magnifyingGlass' | 'book' | 'megaphone' | 'eye' | 'thoughtBubble'
 | 'stickFigure' | 'sittingPerson' | 'presentingPerson' | 'handPointRight' | 'thumbsUp' | 'faceHappy' | 'faceSad' | 'faceConfused'
@@ -118,6 +118,9 @@ export interface DrawingElement {
     // Common Styles
     strokeColor: string;
     backgroundColor: string;
+    lidColor?: string; // Optional lid fill color for openBox shape
+    lidStrokeColor?: string; // Optional lid stroke color for openBox shape
+    backfaceStrokeColor?: string; // Optional stroke color for back-facing surfaces (facing away from viewer)
     fillStyle: FillStyle;
     strokeWidth: number;
     strokeStyle: StrokeStyle;
@@ -197,6 +200,17 @@ export interface DrawingElement {
     sideRatio?: number; // 0-100 (Horizontal rotation for isometricCube)
     depth?: number; // 0-200 (Extrusion depth for solidBlock/perspectiveBlock/cylinder)
     viewAngle?: number; // 0-360 (View angle for solidBlock/perspectiveBlock/cylinder)
+    openAmount?: number; // 0-100 (How open the box lid is - lid lifts up and tilts back)
+    lidPosition?: 'back' | 'front' | 'left' | 'right'; // Which edge the lid hinges on
+    lidStyle?: 'single' | 'split' | 'double' | 'quad' | 'flaps'; // Single lid, split (French doors), double (opposite sides), quad (4 quarters), or flaps (2 half-lids meeting at center)
+    openBoxPreset?: string; // Predefined openBox style preset ID
+    showLidHinge?: boolean; // Show the hinge edge face of the lid for complete 3D appearance
+    // OpenBox interaction properties
+    enableClickToOpen?: boolean; // Enable click-to-open animation in presentation mode
+    revealElementId?: string; // ID of element to reveal when box opens
+    openAnimationDuration?: number; // Duration of open animation in ms
+    revealAnimationType?: 'fadeIn' | 'slideUp' | 'scaleUp' | 'pop'; // Type of reveal animation
+    restoreAfterReveal?: boolean; // Restore box and reveal element to initial state after animation
     taper?: number; // 0-1 (Scaling of back face for perspectiveBlock)
     skewX?: number; // -1 to 1 (X offset of back face)
     skewY?: number; // -1 to 1 (Y offset of back face)
@@ -224,6 +238,7 @@ export interface DrawingElement {
     gradientDirection?: number; // Angle in degrees (0-360)
     gradientStops?: GradientStop[];
     gradientType?: GradientType;
+    gradientPreset?: string; // Predefined gradient preset ID
     gradientHandlePositions?: { start: Point; end: Point };
 
     // Effects

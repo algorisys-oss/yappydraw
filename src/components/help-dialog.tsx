@@ -1,5 +1,5 @@
 import { Show, For, onCleanup, createEffect } from "solid-js";
-import { X, ExternalLink, Github, Youtube, Bug } from "lucide-solid";
+import { X, ExternalLink, Github, Youtube, Bug, LayoutTemplate } from "lucide-solid";
 import "./help-dialog.css";
 
 interface ShortcutEntry {
@@ -40,6 +40,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Pan Mode', keys: 'H' },
             { label: 'Laser Pointer', keys: 'Shift+P' },
             { label: 'Ink Overlay', keys: 'Alt+I' },
+            { label: 'Lock Tool (stay active)', keys: 'Double-click' },
         ]
     },
     {
@@ -164,6 +165,18 @@ export default function HelpDialog(props: Props) {
                             >
                                 <ExternalLink size={16} />
                                 Documentation
+                            </a>
+                            <a
+                                href="#/examples"
+                                class="social-btn"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    props.onClose();
+                                    window.location.hash = '#/examples';
+                                }}
+                            >
+                                <LayoutTemplate size={16} />
+                                Examples
                             </a>
                             <a href="https://github.com/algorisys-oss/yappydraw" target="_blank" rel="noopener noreferrer" class="social-btn">
                                 <Github size={16} />

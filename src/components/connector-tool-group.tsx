@@ -1,6 +1,6 @@
 import { type Component, createSignal, Show, For, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, setSelectedTool, setSelectedConnectorType, setStore } from "../store/app-store";
+import { store, setSelectedTool, setSelectedConnectorType, setStore, setToolLocked } from "../store/app-store";
 import type { ElementType } from "../types";
 import { MoveUpRight, Minus, Spline, Waypoints, ChevronDown } from "lucide-solid";
 import "./connector-tool-group.css";
@@ -39,9 +39,26 @@ const ConnectorToolGroup: Component = () => {
         return ['arrow', 'line', 'bezier', 'polyline'].includes(store.selectedTool);
     };
 
+    let clickTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const handleSelectConnector = (connectorType: ConnectorType) => {
+        if (clickTimeout) clearTimeout(clickTimeout);
+        clickTimeout = setTimeout(() => {
+            setSelectedConnectorType(connectorType);
+            setSelectedTool(connectorType as ElementType);
+            setIsOpen(false);
+            clickTimeout = null;
+        }, 200);
+    };
+
+    const handleSelectConnectorDouble = (connectorType: ConnectorType) => {
+        if (clickTimeout) {
+            clearTimeout(clickTimeout);
+            clickTimeout = null;
+        }
         setSelectedConnectorType(connectorType);
         setSelectedTool(connectorType as ElementType);
+        setToolLocked(true);
         setIsOpen(false);
     };
 
@@ -72,7 +89,7 @@ const ConnectorToolGroup: Component = () => {
         <div class="connector-tool-group">
             <button
                 ref={buttonRef}
-                class={`toolbar-btn ${isConnectorToolActive() ? 'active' : ''}`}
+                class={`toolbar-btn ${isConnectorToolActive() ? 'active' : ''} ${isConnectorToolActive() && store.toolLocked ? 'tool-locked' : ''}`}
                 onClick={toggleMenu}
                 onContextMenu={handleRightClick}
                 title={`${getCurrentTool().label} (Click for more)`}
@@ -97,7 +114,8 @@ const ConnectorToolGroup: Component = () => {
                                 <button
                                     class={`dropdown-item ${store.selectedConnectorType === tool.type ? 'active' : ''}`}
                                     on:click={() => handleSelectConnector(tool.type)}
-                                    title={tool.label}
+                                    on:dblclick={() => handleSelectConnectorDouble(tool.type)}
+                                    title={`${tool.label} (double-click to lock)`}
                                 >
                                     <tool.icon size={18} />
                                 </button>

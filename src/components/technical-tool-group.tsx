@@ -1,9 +1,9 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, setSelectedTool, setSelectedTechnicalType, setStore } from "../store/app-store";
+import { store, setSelectedTool, setSelectedTechnicalType, setStore, setToolLocked } from "../store/app-store";
 import type { ElementType } from "../types";
 import {
-    Box, Database, ChevronDown, Binary, HardDrive, Circle, CircleDot, Minus, GripVertical, Layers, Cuboid, Package
+    Box, Database, ChevronDown, Binary, HardDrive, Circle, CircleDot, Minus, GripVertical, Layers, Cuboid, Package, PackageOpen
 } from "lucide-solid";
 import "./pen-tool-group.css"; // Reuse the same CSS
 
@@ -13,6 +13,7 @@ const technicalTools: { type: ElementType; icon: Component<{ size?: number; colo
     { type: 'isometricCube', icon: Package, label: 'Isometric Cube' },
     { type: 'solidBlock', icon: Box, label: 'Solid Block' },
     { type: 'perspectiveBlock', icon: Cuboid, label: 'Perspective Block' },
+    { type: 'openBox', icon: PackageOpen, label: 'Open Box' },
     { type: 'cylinder', icon: Database, label: 'Cylinder' },
     { type: 'stateStart', icon: Circle, label: 'Initial State' },
     { type: 'stateEnd', icon: CircleDot, label: 'Final State' },
@@ -43,9 +44,26 @@ const TechnicalToolGroup: Component = () => {
         return found || technicalTools[0];
     };
 
+    let clickTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const handleToolClick = (type: ElementType) => {
+        if (clickTimeout) clearTimeout(clickTimeout);
+        clickTimeout = setTimeout(() => {
+            setSelectedTechnicalType(type as any);
+            setSelectedTool(type);
+            setIsOpen(false);
+            clickTimeout = null;
+        }, 200);
+    };
+
+    const handleToolDoubleClick = (type: ElementType) => {
+        if (clickTimeout) {
+            clearTimeout(clickTimeout);
+            clickTimeout = null;
+        }
         setSelectedTechnicalType(type as any);
         setSelectedTool(type);
+        setToolLocked(true);
         setIsOpen(false);
     };
 
@@ -79,7 +97,7 @@ const TechnicalToolGroup: Component = () => {
         <div class="pen-tool-group">
             <button
                 ref={buttonRef}
-                class={`toolbar-btn ${isActive() ? 'active' : ''}`}
+                class={`toolbar-btn ${isActive() ? 'active' : ''} ${isActive() && store.toolLocked ? 'tool-locked' : ''}`}
                 onClick={toggleMenu}
                 onContextMenu={handleRightClick}
                 title={activeTool().label}
@@ -103,7 +121,8 @@ const TechnicalToolGroup: Component = () => {
                             <button
                                 class={`dropdown-item ${store.selectedTool === tool.type ? 'active' : ''}`}
                                 on:click={() => handleToolClick(tool.type)}
-                                title={tool.label}
+                                on:dblclick={() => handleToolDoubleClick(tool.type)}
+                                title={`${tool.label} (double-click to lock)`}
                             >
                                 <tool.icon size={18} />
                             </button>

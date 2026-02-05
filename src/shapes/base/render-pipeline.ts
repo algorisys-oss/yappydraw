@@ -129,7 +129,9 @@ export class RenderPipeline {
         let fill = el.backgroundColor === 'transparent' ? undefined : this.adjustColor(el.backgroundColor, isDarkMode);
 
         // Suppress RoughJS fill if complex fill (gradient/dots) is active
-        if (['linear', 'radial', 'conic', 'dots'].includes(el.fillStyle as string)) {
+        // Also use 'solid' fillStyle for RoughJS since it doesn't understand gradient types
+        const isComplexFill = ['linear', 'radial', 'conic', 'dots'].includes(el.fillStyle as string);
+        if (isComplexFill) {
             fill = undefined;
         }
 
@@ -137,10 +139,13 @@ export class RenderPipeline {
         const baseGap = 5;
         const hachureGap = Math.max(0.5, baseGap / density);
 
+        // RoughJS fillStyle - use 'solid' for gradient types since we handle those separately
+        const roughFillStyle = isComplexFill ? 'solid' : el.fillStyle;
+
         return {
             stroke,
             fill,
-            fillStyle: el.fillStyle as any,
+            fillStyle: roughFillStyle as any,
             strokeWidth: el.strokeWidth,
             hachureAngle: 60,
             hachureGap: hachureGap,

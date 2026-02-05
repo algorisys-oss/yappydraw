@@ -12,6 +12,8 @@ import {
 } from "lucide-solid";
 import "./property-panel.css";
 import { properties, type PropertyConfig } from "../config/properties";
+import { getGradientPreset } from "../config/gradient-presets";
+import { getOpenBoxPreset } from "../config/openbox-presets";
 import { showToast } from "./toast";
 import { playSequence } from "../utils/animation/orchestrator";
 import { AnimationPanel } from "./animation-panel";
@@ -561,6 +563,57 @@ const PropertyPanel: Component = () => {
         let finalValue = value;
         if (key === 'roundness') {
             finalValue = value ? { type: 1 } : null;
+        }
+
+        // Gradient preset: apply preset colors and direction
+        if (key === 'gradientPreset' && value !== 'custom') {
+            const preset = getGradientPreset(value);
+            if (preset && target.type === 'element') {
+                const id = targetId || target.data.id!;
+                updateElement(id, {
+                    gradientPreset: value,
+                    gradientStops: preset.stops,
+                    gradientDirection: preset.direction ?? 45
+                }, history);
+                return;
+            } else if (preset && target.type === 'multi') {
+                store.selection.forEach(id => {
+                    updateElement(id, {
+                        gradientPreset: value,
+                        gradientStops: preset.stops,
+                        gradientDirection: preset.direction ?? 45
+                    }, history);
+                });
+                return;
+            } else if (preset && target.type === 'slide') {
+                const slideIndex = store.activeSlideIndex;
+                updateSlideBackground(slideIndex, {
+                    gradientStops: preset.stops,
+                    gradientDirection: preset.direction ?? 45
+                });
+                return;
+            }
+        }
+
+        // OpenBox preset: apply all preset settings
+        if (key === 'openBoxPreset' && value !== 'custom') {
+            const preset = getOpenBoxPreset(value);
+            if (preset && target.type === 'element') {
+                const id = targetId || target.data.id!;
+                updateElement(id, {
+                    openBoxPreset: value,
+                    ...preset.settings
+                }, history);
+                return;
+            } else if (preset && target.type === 'multi') {
+                store.selection.forEach(id => {
+                    updateElement(id, {
+                        openBoxPreset: value,
+                        ...preset.settings
+                    }, history);
+                });
+                return;
+            }
         }
 
         // Table resize: when rows or cols change, resize data/widths/heights arrays

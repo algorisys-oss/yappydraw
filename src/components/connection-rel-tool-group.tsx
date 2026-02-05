@@ -1,6 +1,6 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, setSelectedTool, setSelectedConnectionRelType, setStore } from "../store/app-store";
+import { store, setSelectedTool, setSelectedConnectionRelType, setStore, setToolLocked } from "../store/app-store";
 import type { ElementType } from "../types";
 import {
     ChevronDown
@@ -109,9 +109,26 @@ const ConnectionRelToolGroup: Component = () => {
         return found || connectionRelTools[0];
     };
 
+    let clickTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const handleToolClick = (type: ElementType) => {
+        if (clickTimeout) clearTimeout(clickTimeout);
+        clickTimeout = setTimeout(() => {
+            setSelectedConnectionRelType(type as any);
+            setSelectedTool(type);
+            setIsOpen(false);
+            clickTimeout = null;
+        }, 200);
+    };
+
+    const handleToolDoubleClick = (type: ElementType) => {
+        if (clickTimeout) {
+            clearTimeout(clickTimeout);
+            clickTimeout = null;
+        }
         setSelectedConnectionRelType(type as any);
         setSelectedTool(type);
+        setToolLocked(true);
         setIsOpen(false);
     };
 
@@ -145,7 +162,7 @@ const ConnectionRelToolGroup: Component = () => {
         <div class="pen-tool-group">
             <button
                 ref={buttonRef}
-                class={`toolbar-btn ${isActive() ? 'active' : ''}`}
+                class={`toolbar-btn ${isActive() ? 'active' : ''} ${isActive() && store.toolLocked ? 'tool-locked' : ''}`}
                 onClick={toggleMenu}
                 onContextMenu={handleRightClick}
                 title={activeTool().label}
@@ -169,7 +186,8 @@ const ConnectionRelToolGroup: Component = () => {
                             <button
                                 class={`dropdown-item ${store.selectedTool === tool.type ? 'active' : ''}`}
                                 on:click={() => handleToolClick(tool.type)}
-                                title={tool.label}
+                                on:dblclick={() => handleToolDoubleClick(tool.type)}
+                                title={`${tool.label} (double-click to lock)`}
                             >
                                 <tool.icon size={18} />
                             </button>

@@ -45,6 +45,10 @@ export interface PointerState {
     tableCellSelection: { startRow: number; startCol: number; endRow: number; endCol: number } | null;
     tableCellSelectionElementId: string | null;
     tableCellSelectionDragging: boolean;  // true when drag-selecting cells
+
+    // 3D shape view angle control (Alt+drag)
+    initial3DViewAngle: number | undefined;
+    initial3DStartX: number | undefined;
 }
 
 export function createPointerState(): PointerState {
@@ -86,5 +90,7 @@ export function createPointerState(): PointerState {
         tableCellSelection: null,
         tableCellSelectionElementId: null,
         tableCellSelectionDragging: false,
+        initial3DViewAngle: undefined,
+        initial3DStartX: undefined,
     };
 }

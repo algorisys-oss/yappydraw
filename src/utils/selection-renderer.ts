@@ -257,16 +257,20 @@ export function renderElementOverlays(
             cy = el.y + faceHeight;
             cx = el.x + el.width * sideRatio;
         } else if (el.type === 'solidBlock' || el.type === 'cylinder') {
-            const depth = el.depth !== undefined ? el.depth : 50;
+            const depthBase = el.depth !== undefined ? el.depth : 50;
             const angle = (el.viewAngle !== undefined ? el.viewAngle : 45) * Math.PI / 180;
 
             const centerX = el.x + el.width / 2;
             const centerY = el.y + el.height / 2;
 
+            // Scale depth with shape size (must match shape-geometry.ts calculation)
+            const minDim = Math.min(Math.abs(el.width), Math.abs(el.height));
+            const depth = minDim > 0 ? Math.min(depthBase, minDim * 0.5) : 0;
+
             cx = centerX + depth * Math.cos(angle);
             cy = centerY + depth * Math.sin(angle);
         } else if (el.type === 'perspectiveBlock') {
-            const depth = el.depth !== undefined ? el.depth : 50;
+            const depthBase = el.depth !== undefined ? el.depth : 50;
             const angle = (el.viewAngle !== undefined ? el.viewAngle : 45) * Math.PI / 180;
             const bTaper = el.taper !== undefined ? el.taper : 0;
             const skewX = (el.skewX !== undefined ? el.skewX : 0) * el.width;
@@ -274,6 +278,10 @@ export function renderElementOverlays(
 
             const centerX = el.x + el.width / 2;
             const centerY = el.y + el.height / 2;
+
+            // Scale depth with shape size (must match shape-geometry.ts calculation)
+            const minDim = Math.min(Math.abs(el.width), Math.abs(el.height));
+            const depth = minDim > 0 ? Math.min(depthBase, minDim * 0.5) : 0;
 
             const dx = depth * Math.cos(angle) + skewX;
             const dy = depth * Math.sin(angle) + skewY;
@@ -315,6 +323,32 @@ export function renderElementOverlays(
                 ctx.fill();
                 ctx.stroke();
             }
+
+            // Draw rotation handle for perspectiveBlock based on visual bounds
+            // Calculate visual top from all 8 vertices
+            const visualTop = Math.min(
+                centerY + dy - bh,  // bTL, bTR
+                centerY + fsY - fh  // fTL, fTR
+            );
+            const handleSize = 8 / scale;
+            const rotHandleY = visualTop - padding - 20 / scale;
+            const rotLineStartY = visualTop - padding;
+
+            // Draw rotation line
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2 / scale;
+            ctx.beginPath();
+            ctx.moveTo(centerX, rotLineStartY);
+            ctx.lineTo(centerX, rotHandleY);
+            ctx.stroke();
+
+            // Draw rotation handle circle
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(centerX, rotHandleY, handleSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
             return; // Already drawn handles
         } else if (el.type === 'star' || el.type === 'burst') {
             const ratio = (el.shapeRatio !== undefined ? el.shapeRatio : 25) / 100;

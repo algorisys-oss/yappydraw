@@ -88,3 +88,16 @@
     transform: rotate(180deg);
     /* Add a hover effect for better visibility */
 }
+
+/* Tool locked indicator - small dot on the button */
+.toolbar-btn.tool-locked::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}

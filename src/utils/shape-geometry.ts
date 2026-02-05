@@ -1,11 +1,35 @@
 import type { DrawingElement } from "../types";
 
 export type ShapeGeometry =
-    | { type: 'rect', x: number, y: number, w: number, h: number, r?: number, shade?: number }
-    | { type: 'ellipse', cx: number, cy: number, rx: number, ry: number, shade?: number }
-    | { type: 'path', path: string, shade?: number }
-    | { type: 'points', points: { x: number, y: number }[], isClosed?: boolean, shade?: number }
+    | { type: 'rect', x: number, y: number, w: number, h: number, r?: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
+    | { type: 'ellipse', cx: number, cy: number, rx: number, ry: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
+    | { type: 'path', path: string, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
+    | { type: 'points', points: { x: number, y: number }[], isClosed?: boolean, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
     | { type: 'multi', shapes: ShapeGeometry[] };
+
+/**
+ * Calculate if a polygon face is back-facing based on its winding order.
+ * Uses the signed area (shoelace formula) to determine winding:
+ * - Positive area = counter-clockwise (front-facing in our coordinate system)
+ * - Negative area = clockwise (back-facing)
+ *
+ * In screen coordinates where Y increases downward, this convention may be inverted
+ * depending on how vertices are defined. We consider clockwise as back-facing.
+ */
+export const isPolygonBackfacing = (points: { x: number, y: number }[]): boolean => {
+    if (points.length < 3) return false;
+
+    // Calculate signed area using shoelace formula
+    let signedArea = 0;
+    for (let i = 0; i < points.length; i++) {
+        const j = (i + 1) % points.length;
+        signedArea += (points[j].x - points[i].x) * (points[j].y + points[i].y);
+    }
+
+    // In screen coordinates (Y down), clockwise winding gives positive area
+    // We consider clockwise as back-facing (normal points into screen)
+    return signedArea > 0;
+};
 
 const getRoundedRectPath = (x: number, y: number, w: number, h: number, r: number) => {
     return `M ${x + r} ${y} L ${x + w - r} ${y} Q ${x + w} ${y} ${x + w} ${y + r} L ${x + w} ${y + h - r} Q ${x + w} ${y + h} ${x + w - r} ${y + h} L ${x + r} ${y + h} Q ${x} ${y + h} ${x} ${y + h - r} L ${x} ${y + r} Q ${x} ${y} ${x + r} ${y}`;
@@ -455,22 +479,26 @@ export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         }
 
         case 'solidBlock': {
-            // 1. Get Params
-            const depth = el.depth !== undefined ? el.depth : 50;
+            // Simple 3D solid block - no open lid functionality (use openBox for that)
+            const depthBase = el.depth !== undefined ? el.depth : 50;
             const angleDeg = el.viewAngle !== undefined ? el.viewAngle : 45;
             const angleRad = (angleDeg * Math.PI) / 180;
 
-            // 2. Calculate Offset
+            // Scale depth with shape size so it starts at 0 when size is 0
+            const minDim = Math.min(Math.abs(w), Math.abs(h));
+            const depth = minDim > 0 ? Math.min(depthBase, minDim * 0.5) : 0;
+
+            // Calculate 3D offset
             const dx = depth * Math.cos(angleRad);
             const dy = depth * Math.sin(angleRad);
 
-            // 3. Front Face Vertices (Rectangle)
+            // Front Face Vertices
             const fTL = { x: x, y: y };
             const fTR = { x: x + w, y: y };
             const fBR = { x: x + w, y: y + h };
             const fBL = { x: x, y: y + h };
 
-            // 4. Back Face Vertices (Offset)
+            // Back Face Vertices (Offset)
             const bTL = { x: x + dx, y: y + dy };
             const bTR = { x: x + w + dx, y: y + dy };
             const bBR = { x: x + w + dx, y: y + h + dy };
@@ -481,7 +509,7 @@ export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
                     // Back Face (Draw first / Background)
                     { type: 'points', points: [bTL, bTR, bBR, bBL], shade: 0.6 },
 
-                    // Sides 
+                    // Sides
                     { type: 'points', points: [fTL, fTR, bTR, bTL], shade: 1.1 }, // Top
                     { type: 'points', points: [fTR, fBR, bBR, bTR], shade: 0.8 }, // Right
                     { type: 'points', points: [fBR, fBL, bBL, bBR], shade: 0.7 }, // Bottom
@@ -494,7 +522,7 @@ export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         }
 
         case 'perspectiveBlock': {
-            const depth = el.depth !== undefined ? el.depth : 50;
+            const depthBase = el.depth !== undefined ? el.depth : 50;
             const angleDeg = el.viewAngle !== undefined ? el.viewAngle : 45;
             const angleRad = (angleDeg * Math.PI) / 180;
             const taper = el.taper !== undefined ? el.taper : 0; // Back face taper
@@ -504,6 +532,10 @@ export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
             const fTaper = el.frontTaper !== undefined ? el.frontTaper : 0;
             const fSkewX = (el.frontSkewX !== undefined ? el.frontSkewX : 0) * w;
             const fSkewY = (el.frontSkewY !== undefined ? el.frontSkewY : 0) * h;
+
+            // Scale depth with shape size so it starts at 0 when size is 0
+            const minDim = Math.min(Math.abs(w), Math.abs(h));
+            const depth = minDim > 0 ? Math.min(depthBase, minDim * 0.5) : 0;
 
             const dx = depth * Math.cos(angleRad) + skewX;
             const dy = depth * Math.sin(angleRad) + skewY;
@@ -540,13 +572,517 @@ export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
             };
         }
 
+        case 'openBox': {
+            // Open Box with configurable hinged lid(s)
+            const depthBase = el.depth !== undefined ? el.depth : 50;
+            const angleDeg = el.viewAngle !== undefined ? el.viewAngle : 45;
+            const angleRad = (angleDeg * Math.PI) / 180;
+            const openAmount = el.openAmount !== undefined ? el.openAmount : 0; // 0-100
+            const lidPosition = el.lidPosition || 'back';
+            const lidStyle = el.lidStyle || 'single';
+            const showLidHinge = el.showLidHinge || false;
+
+            // Scale depth with shape size so it starts at 0 when size is 0
+            const minDim = Math.min(Math.abs(w), Math.abs(h));
+            const depth = minDim > 0 ? Math.min(depthBase, minDim * 0.5) : 0;
+
+            // Calculate 3D offset for depth
+            const dx = depth * Math.cos(angleRad);
+            const dy = depth * Math.sin(angleRad);
+
+            // Box body vertices
+            // Front Face
+            const fTL = { x: x, y: y };
+            const fTR = { x: x + w, y: y };
+            const fBR = { x: x + w, y: y + h };
+            const fBL = { x: x, y: y + h };
+
+            // Back Face
+            const bTL = { x: x + dx, y: y + dy };
+            const bTR = { x: x + w + dx, y: y + dy };
+            const bBR = { x: x + w + dx, y: y + h + dy };
+            const bBL = { x: x + dx, y: y + h + dy };
+
+            // Lid thickness
+            const lidThickness = Math.max(6, depth * 0.15);
+
+            // Helper to generate lid geometry given hinge and free edges
+            const generateLid = (
+                hingeL: { x: number; y: number },
+                hingeR: { x: number; y: number },
+                freeL: { x: number; y: number },
+                _freeR: { x: number; y: number }, // Reserved for non-rectangular lids
+                openRatio: number
+            ): ShapeGeometry[] => {
+                // Direction from hinge to free edge
+                const lidDx = freeL.x - hingeL.x;
+                const lidDy = freeL.y - hingeL.y;
+                const lidDepth = Math.sqrt(lidDx * lidDx + lidDy * lidDy) || 1;
+                const dirX = lidDx / lidDepth;
+                const dirY = lidDy / lidDepth;
+
+                const lidAngleRad = openRatio * (Math.PI * 0.65);
+                const cosA = Math.cos(lidAngleRad);
+                const sinA = Math.sin(lidAngleRad);
+
+                // Rotated free edge offset from hinge
+                const freeOffsetX = dirX * lidDepth * cosA;
+                const freeOffsetY = dirY * lidDepth * cosA - lidDepth * sinA;
+
+                // Lid vertices (top surface)
+                const lidHingeTL = { x: hingeL.x, y: hingeL.y };
+                const lidHingeTR = { x: hingeR.x, y: hingeR.y };
+                const lidFreeTL = { x: hingeL.x + freeOffsetX, y: hingeL.y + freeOffsetY };
+                const lidFreeTR = { x: hingeR.x + freeOffsetX, y: hingeR.y + freeOffsetY };
+
+                // Thickness offset (perpendicular to lid surface)
+                const thickX = -dirX * lidThickness * sinA;
+                const thickY = -dirY * lidThickness * sinA - lidThickness * cosA;
+
+                const lidHingeBL = { x: lidHingeTL.x + thickX, y: lidHingeTL.y + thickY };
+                const lidHingeBR = { x: lidHingeTR.x + thickX, y: lidHingeTR.y + thickY };
+                const lidFreeBL = { x: lidFreeTL.x + thickX, y: lidFreeTL.y + thickY };
+                const lidFreeBR = { x: lidFreeTR.x + thickX, y: lidFreeTR.y + thickY };
+
+                // Build faces in proper back-to-front order for painter's algorithm.
+                // The lid rotates around the hinge axis, so:
+                // - Bottom face (underside) is always "behind" the top face in 3D
+                // - It should be rendered first to be properly occluded by faces in front
+                //
+                // Face ordering from back to front:
+                // 1. Bottom (underside) - furthest back, rendered first
+                // 2. Hinge edge (if visible) - at the back
+                // 3. Left/Right sides - middle layer
+                // 4. Free edge - front-facing when lid is open
+                // 5. Top face - closest to viewer, rendered last
+
+                const faces: ShapeGeometry[] = [];
+
+                // 1. Bottom face (underside) - always render first
+                const bottomPoints = [lidHingeBL, lidHingeBR, lidFreeBR, lidFreeBL];
+                faces.push({ type: 'points', points: bottomPoints, shade: 0.55, noStroke: true, isLid: true, isBackface: isPolygonBackfacing(bottomPoints) });
+
+                // 2. Hinge edge (if enabled) - rendered early as it's at the back
+                // noStroke on thickness faces - only top face perimeter gets stroked
+                if (showLidHinge) {
+                    const hingePoints = [lidHingeTL, lidHingeTR, lidHingeBR, lidHingeBL];
+                    faces.push({ type: 'points', points: hingePoints, shade: 0.7, noStroke: true, isLid: true, isBackface: isPolygonBackfacing(hingePoints) });
+                }
+
+                // 3. Side faces - determine which side is further based on view angle and lid position
+                // Use centroid Y to determine order (higher Y = further back in this projection)
+                // noStroke on thickness faces to avoid internal edge lines
+                const leftCentroidY = (lidHingeTL.y + lidFreeTL.y + lidFreeBL.y + lidHingeBL.y) / 4;
+                const rightCentroidY = (lidFreeTR.y + lidHingeTR.y + lidHingeBR.y + lidFreeBR.y) / 4;
+
+                const leftSidePoints = [lidHingeTL, lidFreeTL, lidFreeBL, lidHingeBL];
+                const rightSidePoints = [lidFreeTR, lidHingeTR, lidHingeBR, lidFreeBR];
+                const leftSideFace: ShapeGeometry = { type: 'points', points: leftSidePoints, shade: 0.9, noStroke: true, isLid: true, isBackface: isPolygonBackfacing(leftSidePoints) };
+                const rightSideFace: ShapeGeometry = { type: 'points', points: rightSidePoints, shade: 0.8, noStroke: true, isLid: true, isBackface: isPolygonBackfacing(rightSidePoints) };
+
+                if (leftCentroidY > rightCentroidY) {
+                    faces.push(leftSideFace, rightSideFace);
+                } else {
+                    faces.push(rightSideFace, leftSideFace);
+                }
+
+                // 4. Free edge - visible when lid is open, noStroke (thickness face)
+                const freeEdgePoints = [lidFreeTL, lidFreeTR, lidFreeBR, lidFreeBL];
+                faces.push({ type: 'points', points: freeEdgePoints, shade: 0.95, noStroke: true, isLid: true, isBackface: isPolygonBackfacing(freeEdgePoints) });
+
+                // 5. Top/Bottom face - determine which is facing the viewer
+                // Use the actual face normal (via signed area) to determine visibility
+                // If the top face polygon is back-facing in screen space, we're seeing the underside
+                const topPoints = [lidHingeTL, lidHingeTR, lidFreeTR, lidFreeTL];
+
+                // Use isPolygonBackfacing to determine if we're looking at the back of the top face
+                // When the top face is back-facing, we're actually seeing the underside
+                const topFaceIsBackfacing = isPolygonBackfacing(topPoints);
+                const showUnderside = openRatio > 0.1 && topFaceIsBackfacing;
+
+                if (showUnderside) {
+                    // We see the underside - remove the noStroke bottom, add top behind, bottom in front with stroke
+                    faces.shift(); // Remove the noStroke bottom we added at start
+                    faces.push({ type: 'points', points: topPoints, shade: 0.55, noStroke: true, isLid: true, isBackface: true });
+                    faces.push({ type: 'points', points: bottomPoints, shade: 1.1, isLid: true, isBackface: false });
+                } else {
+                    // Normal case - we see the top, stroke it
+                    faces.push({ type: 'points', points: topPoints, shade: 1.1, isLid: true, isBackface: false });
+                }
+
+                return faces;
+            };
+
+            // Helper to get midpoint
+            const midpoint = (a: { x: number; y: number }, b: { x: number; y: number }) => ({
+                x: (a.x + b.x) / 2,
+                y: (a.y + b.y) / 2
+            });
+
+            // Define hinge and free edges based on lid position
+            type LidConfig = {
+                hingeL: { x: number; y: number };
+                hingeR: { x: number; y: number };
+                freeL: { x: number; y: number };
+                freeR: { x: number; y: number };
+            };
+
+            const getLidConfigs = (): LidConfig[] => {
+                if (lidStyle === 'single') {
+                    switch (lidPosition) {
+                        case 'front':
+                            return [{ hingeL: fTL, hingeR: fTR, freeL: bTL, freeR: bTR }];
+                        case 'left':
+                            return [{ hingeL: bTL, hingeR: fTL, freeL: bTR, freeR: fTR }];
+                        case 'right':
+                            return [{ hingeL: fTR, hingeR: bTR, freeL: fTL, freeR: bTL }];
+                        case 'back':
+                        default:
+                            return [{ hingeL: bTL, hingeR: bTR, freeL: fTL, freeR: fTR }];
+                    }
+                } else if (lidStyle === 'split') {
+                    // Split: two half-lids opening from center
+                    const frontMid = midpoint(fTL, fTR);
+                    const backMid = midpoint(bTL, bTR);
+                    const leftMid = midpoint(fTL, bTL);
+                    const rightMid = midpoint(fTR, bTR);
+
+                    switch (lidPosition) {
+                        case 'front':
+                        case 'back':
+                            // Split left-right, both open outward
+                            return [
+                                { hingeL: backMid, hingeR: frontMid, freeL: bTL, freeR: fTL }, // Left half
+                                { hingeL: frontMid, hingeR: backMid, freeL: fTR, freeR: bTR }  // Right half
+                            ];
+                        case 'left':
+                        case 'right':
+                            // Split front-back, both open outward
+                            return [
+                                { hingeL: leftMid, hingeR: rightMid, freeL: fTL, freeR: fTR }, // Front half
+                                { hingeL: rightMid, hingeR: leftMid, freeL: bTR, freeR: bTL }  // Back half
+                            ];
+                        default:
+                            return [{ hingeL: bTL, hingeR: bTR, freeL: fTL, freeR: fTR }];
+                    }
+                } else if (lidStyle === 'double') {
+                    // Double: two lids on opposite sides
+                    switch (lidPosition) {
+                        case 'front':
+                        case 'back':
+                            // Front and back lids
+                            return [
+                                { hingeL: bTL, hingeR: bTR, freeL: fTL, freeR: fTR }, // Back lid
+                                { hingeL: fTL, hingeR: fTR, freeL: bTL, freeR: bTR }  // Front lid
+                            ];
+                        case 'left':
+                        case 'right':
+                            // Left and right lids
+                            return [
+                                { hingeL: bTL, hingeR: fTL, freeL: bTR, freeR: fTR }, // Left lid
+                                { hingeL: fTR, hingeR: bTR, freeL: fTL, freeR: bTL }  // Right lid
+                            ];
+                        default:
+                            return [{ hingeL: bTL, hingeR: bTR, freeL: fTL, freeR: fTR }];
+                    }
+                } else if (lidStyle === 'quad') {
+                    // Quad: four flaps - arrangement depends on lidPosition
+                    const frontMid = midpoint(fTL, fTR);
+                    const backMid = midpoint(bTL, bTR);
+                    const leftMid = midpoint(fTL, bTL);
+                    const rightMid = midpoint(fTR, bTR);
+                    const center = midpoint(frontMid, backMid);
+
+                    switch (lidPosition) {
+                        case 'front':
+                        case 'back':
+                            // 4 strips: 2 on front edge + 2 on back edge (each half-width)
+                            return [
+                                { hingeL: fTL, hingeR: frontMid, freeL: leftMid, freeR: center },     // Front-Left strip
+                                { hingeL: frontMid, hingeR: fTR, freeL: center, freeR: rightMid },    // Front-Right strip
+                                { hingeL: backMid, hingeR: bTL, freeL: center, freeR: leftMid },      // Back-Left strip
+                                { hingeL: bTR, hingeR: backMid, freeL: rightMid, freeR: center }      // Back-Right strip
+                            ];
+                        case 'left':
+                        case 'right':
+                            // 4 strips: 2 on left edge + 2 on right edge (each half-depth)
+                            return [
+                                { hingeL: fTL, hingeR: leftMid, freeL: frontMid, freeR: center },     // Left-Front strip
+                                { hingeL: leftMid, hingeR: bTL, freeL: center, freeR: backMid },      // Left-Back strip
+                                { hingeL: bTR, hingeR: rightMid, freeL: backMid, freeR: center },     // Right-Back strip
+                                { hingeL: rightMid, hingeR: fTR, freeL: center, freeR: frontMid }     // Right-Front strip
+                            ];
+                        default:
+                            // Default: 4 corner flaps (original behavior)
+                            return [
+                                { hingeL: fTL, hingeR: frontMid, freeL: leftMid, freeR: center },
+                                { hingeL: frontMid, hingeR: fTR, freeL: center, freeR: rightMid },
+                                { hingeL: bTR, hingeR: backMid, freeL: rightMid, freeR: center },
+                                { hingeL: backMid, hingeR: bTL, freeL: center, freeR: leftMid }
+                            ];
+                    }
+                } else if (lidStyle === 'flaps') {
+                    // Flaps: two half-lids that meet edge-to-edge at center when closed
+                    const frontMid = midpoint(fTL, fTR);
+                    const backMid = midpoint(bTL, bTR);
+                    const leftMid = midpoint(fTL, bTL);
+                    const rightMid = midpoint(fTR, bTR);
+
+                    switch (lidPosition) {
+                        case 'front':
+                        case 'back':
+                            // Front flap + Back flap (each covers half depth)
+                            return [
+                                { hingeL: fTL, hingeR: fTR, freeL: leftMid, freeR: rightMid },   // Front flap (hinges at front, covers to center)
+                                { hingeL: bTR, hingeR: bTL, freeL: rightMid, freeR: leftMid }    // Back flap (hinges at back, covers to center)
+                            ];
+                        case 'left':
+                        case 'right':
+                            // Left flap + Right flap (each covers half width)
+                            return [
+                                { hingeL: bTL, hingeR: fTL, freeL: backMid, freeR: frontMid },   // Left flap (hinges at left, covers to center)
+                                { hingeL: fTR, hingeR: bTR, freeL: frontMid, freeR: backMid }    // Right flap (hinges at right, covers to center)
+                            ];
+                        default:
+                            return [
+                                { hingeL: fTL, hingeR: fTR, freeL: leftMid, freeR: rightMid },
+                                { hingeL: bTR, hingeR: bTL, freeL: rightMid, freeR: leftMid }
+                            ];
+                    }
+                }
+                return [{ hingeL: bTL, hingeR: bTR, freeL: fTL, freeR: fTR }];
+            };
+
+            const openRatio = openAmount / 100;
+
+            // Interior of the box (visible when open)
+            const wallThick = Math.max(4, Math.min(8, w * 0.04));
+
+            // Normalize the depth direction for Y offsets
+            const depthLen = Math.sqrt(dx * dx + dy * dy) || 1;
+            const depthDirY = dy / depthLen;
+
+            // Inner corners at top opening
+            // Front corners move inward (toward back = positive depth direction)
+            // Back corners move inward (toward front = negative depth direction)
+            const innerFTL = { x: fTL.x + wallThick, y: fTL.y + wallThick * depthDirY };
+            const innerFTR = { x: fTR.x - wallThick, y: fTR.y + wallThick * depthDirY };
+            const innerBTL = { x: bTL.x + wallThick, y: bTL.y - wallThick * depthDirY };
+            const innerBTR = { x: bTR.x - wallThick, y: bTR.y - wallThick * depthDirY };
+
+            // Inner corners at bottom
+            const innerFBL = { x: fBL.x + wallThick, y: fBL.y - wallThick };
+            const innerFBR = { x: fBR.x - wallThick, y: fBR.y - wallThick };
+            const innerBBL = { x: bBL.x + wallThick, y: bBL.y - wallThick };
+            const innerBBR = { x: bBR.x - wallThick, y: bBR.y - wallThick };
+
+            // Determine view direction for proper face ordering (painter's algorithm)
+            // dy > 0: viewing from above (standard), dy < 0: viewing from below
+            const isBottomView = dy < 0;
+
+            // Build the shape based on openAmount
+            if (openAmount > 0) {
+                const lidConfigs = getLidConfigs();
+
+                // Generate lids with position info for sorting
+                type LidWithPosition = {
+                    shapes: ShapeGeometry[];
+                    centerX: number;  // Average X of lid - for left/right sorting
+                    centerY: number;  // Average Y of lid - for front/back sorting
+                };
+                const lidsWithPosition: LidWithPosition[] = lidConfigs.map(config => {
+                    const shapes = generateLid(config.hingeL, config.hingeR, config.freeL, config.freeR, openRatio);
+                    // Calculate center of lid based on hinge and free edges
+                    const centerX = (config.hingeL.x + config.hingeR.x + config.freeL.x + config.freeR.x) / 4;
+                    const centerY = (config.hingeL.y + config.hingeR.y + config.freeL.y + config.freeR.y) / 4;
+                    return { shapes, centerX, centerY };
+                });
+
+                // Sort lids: for top view, render back/left lids first (higher Y, lower X), front/right lids last
+                // For bottom view, reverse the order
+                lidsWithPosition.sort((a, b) => {
+                    if (isBottomView) {
+                        // Bottom view: lower Y first, then higher X first
+                        return (a.centerY - b.centerY) || (b.centerX - a.centerX);
+                    } else {
+                        // Top view: higher Y first (back), then lower X first (left)
+                        return (b.centerY - a.centerY) || (a.centerX - b.centerX);
+                    }
+                });
+
+                // Separate lids into "back" (render before front face) and "front" (render after)
+                // For standard top-front view:
+                //   - Left-side lids (lower X) are "behind" the front face → backLids
+                //   - Right-side lids (higher X) can be in front → frontLids
+                //   - Back lids (higher Y) are also behind → backLids
+                const boxCenterX = (fTL.x + fTR.x) / 2;
+                const boxCenterY = (fTL.y + bTL.y) / 2;
+                const backLids: ShapeGeometry[] = [];
+                const frontLids: ShapeGeometry[] = [];
+                lidsWithPosition.forEach(lid => {
+                    // Determine if lid is closer to or farther from viewer using depth direction
+                    // Viewer is at opposite of depth direction: (-dx, -dy)
+                    // Project lid's offset from box center onto viewer direction
+                    // Positive dot = lid is closer to viewer = frontLids (render after front face)
+                    // Negative dot = lid is farther from viewer = backLids (render before front face)
+                    const lidOffsetX = lid.centerX - boxCenterX;
+                    const lidOffsetY = lid.centerY - boxCenterY;
+                    const dotWithViewer = -dx * lidOffsetX - dy * lidOffsetY;
+
+                    if (isBottomView) {
+                        // Bottom view: invert the logic since we're looking from below
+                        if (dotWithViewer < 0) {
+                            frontLids.push(...lid.shapes);
+                        } else {
+                            backLids.push(...lid.shapes);
+                        }
+                    } else {
+                        // Top view: positive dot = closer to viewer = render after front face
+                        if (dotWithViewer > 0) {
+                            frontLids.push(...lid.shapes);
+                        } else {
+                            backLids.push(...lid.shapes);
+                        }
+                    }
+                });
+
+                // Define faces with backface detection
+                const backFacePoints = [bTL, bTR, bBR, bBL];
+                const frontFacePoints = [fTL, fTR, fBR, fBL];
+                const bottomFacePoints = [fBR, fBL, bBL, bBR];
+                const rightFacePoints = [fTR, fBR, bBR, bTR];
+                const leftFacePoints = [fBL, fTL, bTL, bBL];
+
+                const backFace: ShapeGeometry = { type: 'points', points: backFacePoints, shade: 0.6, isBackface: isPolygonBackfacing(backFacePoints) };
+                const frontFace: ShapeGeometry = { type: 'points', points: frontFacePoints, shade: 1.0, isBackface: isPolygonBackfacing(frontFacePoints) };
+                const bottomFace: ShapeGeometry = { type: 'points', points: bottomFacePoints, shade: 0.7, isBackface: isPolygonBackfacing(bottomFacePoints) };
+                const rightFace: ShapeGeometry = { type: 'points', points: rightFacePoints, shade: 0.8, isBackface: isPolygonBackfacing(rightFacePoints) };
+                const leftFace: ShapeGeometry = { type: 'points', points: leftFacePoints, shade: 0.9, isBackface: isPolygonBackfacing(leftFacePoints) };
+
+                // Inner walls (noStroke, but still calculate backface for consistency)
+                const innerBackPoints = [innerBTL, innerBTR, innerBBR, innerBBL];
+                const innerBottomPoints = [innerBBL, innerBBR, innerFBR, innerFBL];
+                const innerLeftPoints = [innerFTL, innerBTL, innerBBL, innerFBL];
+                const innerRightPoints = [innerBTR, innerFTR, innerFBR, innerBBR];
+                const innerFrontPoints = [innerFTR, innerFTL, innerFBL, innerFBR];
+
+                const innerBack: ShapeGeometry = { type: 'points', points: innerBackPoints, shade: 0.45, noStroke: true, isBackface: isPolygonBackfacing(innerBackPoints) };
+                const innerBottom: ShapeGeometry = { type: 'points', points: innerBottomPoints, shade: 0.5, noStroke: true, isBackface: isPolygonBackfacing(innerBottomPoints) };
+                const innerLeft: ShapeGeometry = { type: 'points', points: innerLeftPoints, shade: 0.55, noStroke: true, isBackface: isPolygonBackfacing(innerLeftPoints) };
+                const innerRight: ShapeGeometry = { type: 'points', points: innerRightPoints, shade: 0.6, noStroke: true, isBackface: isPolygonBackfacing(innerRightPoints) };
+                const innerFront: ShapeGeometry = { type: 'points', points: innerFrontPoints, shade: 0.65, noStroke: true, isBackface: isPolygonBackfacing(innerFrontPoints) };
+
+                // Order faces based on view direction (back-to-front for painter's algorithm)
+                // Split into "back box faces" and "closest box face" so we can insert back lids between them
+                let backBoxFaces: ShapeGeometry[];
+                let closestBoxFace: ShapeGeometry;
+                if (isBottomView) {
+                    // Bottom view: looking up from below
+                    // bottomFace is closest (render last after back lids)
+                    backBoxFaces = [
+                        frontFace,           // Furthest from below
+                        innerFront, innerLeft, innerRight, innerBack,
+                        innerBottom,
+                        leftFace, rightFace,
+                        backFace,
+                    ];
+                    closestBoxFace = bottomFace;
+                } else {
+                    // Top view (standard): looking down from above
+                    // frontFace is closest (render last after back lids)
+                    backBoxFaces = [
+                        backFace,            // Furthest from above
+                        innerBack, innerLeft, innerRight, innerFront,
+                        innerBottom,
+                        leftFace, rightFace,
+                    ];
+                    closestBoxFace = frontFace;
+                }
+
+                // Define rim faces with backface detection
+                const frontRimPoints = [fTL, fTR, innerFTR, innerFTL];
+                const rightRimPoints = [fTR, bTR, innerBTR, innerFTR];
+                const leftRimPoints = [bTL, fTL, innerFTL, innerBTL];
+                const backRimPoints = [bTR, bTL, innerBTL, innerBTR];
+
+                const frontRim: ShapeGeometry = { type: 'points', points: frontRimPoints, shade: 1.05, isBackface: isPolygonBackfacing(frontRimPoints),
+                    noStroke: lidStyle === 'quad' || lidStyle === 'double' || (lidStyle === 'flaps' && (lidPosition === 'front' || lidPosition === 'back')) || (!(lidStyle === 'single' && lidPosition === 'back') && !(lidStyle === 'split' && (lidPosition === 'left' || lidPosition === 'right'))) };
+                const rightRim: ShapeGeometry = { type: 'points', points: rightRimPoints, shade: 0.98, isBackface: isPolygonBackfacing(rightRimPoints),
+                    noStroke: lidStyle === 'quad' || lidStyle === 'double' || (lidStyle === 'flaps' && (lidPosition === 'left' || lidPosition === 'right')) || (!(lidStyle === 'single' && lidPosition === 'left') && !(lidStyle === 'split' && (lidPosition === 'front' || lidPosition === 'back'))) };
+                const leftRim: ShapeGeometry = { type: 'points', points: leftRimPoints, shade: 1.0, isBackface: isPolygonBackfacing(leftRimPoints),
+                    noStroke: lidStyle === 'quad' || lidStyle === 'double' || (lidStyle === 'flaps' && (lidPosition === 'left' || lidPosition === 'right')) || (!(lidStyle === 'single' && lidPosition === 'right') && !(lidStyle === 'split' && (lidPosition === 'front' || lidPosition === 'back'))) };
+                const backRim: ShapeGeometry = { type: 'points', points: backRimPoints, shade: 0.95, isBackface: isPolygonBackfacing(backRimPoints),
+                    noStroke: lidStyle === 'quad' || lidStyle === 'double' || (lidStyle === 'flaps' && (lidPosition === 'front' || lidPosition === 'back')) || (!(lidStyle === 'single' && lidPosition === 'front') && !(lidStyle === 'split' && (lidPosition === 'left' || lidPosition === 'right'))) };
+
+                return {
+                    type: 'multi', shapes: [
+                        // === BOX BODY (back faces) ===
+                        ...backBoxFaces,
+
+                        // === BACK LIDS (lids extending toward back/left - render BEFORE closest box face) ===
+                        ...backLids,
+
+                        // === CLOSEST BOX FACE (front face for top view, bottom for bottom view) ===
+                        closestBoxFace,
+
+                        // === TOP RIM (horizontal surfaces at top of walls) ===
+                        backRim, leftRim, rightRim, frontRim,
+
+                        // === FRONT LIDS (lids extending toward front/right - render last) ===
+                        ...frontLids
+                    ]
+                };
+            }
+
+            // Box is closed - determine which faces are lids based on style
+            const closedLidFaces: ShapeGeometry[] = [];
+            if (lidStyle === 'single' || lidStyle === 'split' || lidStyle === 'quad' || lidStyle === 'flaps') {
+                // Single, split, quad, or flaps: top face is the lid
+                closedLidFaces.push({ type: 'points', points: [fTL, fTR, bTR, bTL], shade: 1.1, isLid: true });
+            } else if (lidStyle === 'double') {
+                // Double: top face is lid
+                closedLidFaces.push({ type: 'points', points: [fTL, fTR, bTR, bTL], shade: 1.1, isLid: true });
+            }
+
+            // Order faces based on view direction (painter's algorithm)
+            if (isBottomView) {
+                // Bottom view: front is far, back is close; bottom face rendered last
+                return {
+                    type: 'multi', shapes: [
+                        { type: 'points', points: [fTL, fTR, fBR, fBL], shade: 1.0 },  // Front (furthest from below)
+                        ...closedLidFaces,
+                        { type: 'points', points: [fBL, fTL, bTL, bBL], shade: 0.9 },  // Left
+                        { type: 'points', points: [fTR, fBR, bBR, bTR], shade: 0.8 },  // Right
+                        { type: 'points', points: [bTL, bTR, bBR, bBL], shade: 0.6 },  // Back
+                        { type: 'points', points: [fBR, fBL, bBL, bBR], shade: 0.7 },  // Bottom (closest from below - render last)
+                    ]
+                };
+            }
+
+            // Top view (standard): back is far, front is close
+            return {
+                type: 'multi', shapes: [
+                    { type: 'points', points: [bTL, bTR, bBR, bBL], shade: 0.6 },  // Back (furthest)
+                    ...closedLidFaces,
+                    { type: 'points', points: [fBR, fBL, bBL, bBR], shade: 0.7 },  // Bottom
+                    { type: 'points', points: [fTR, fBR, bBR, bTR], shade: 0.8 },  // Right
+                    { type: 'points', points: [fBL, fTL, bTL, bBL], shade: 0.9 },  // Left
+                    { type: 'points', points: [fTL, fTR, fBR, fBL], shade: 1.0 }   // Front (closest - render last)
+                ]
+            };
+        }
+
         case 'cylinder': {
-            const depth = el.depth !== undefined ? el.depth : 50;
+            const depthBase = el.depth !== undefined ? el.depth : 50;
             const angleDeg = el.viewAngle !== undefined ? el.viewAngle : 45;
             const angleRad = (angleDeg * Math.PI) / 180;
 
             const rx = w / 2;
             const ry = h / 2;
+
+            // Scale depth with shape size (must match selection-renderer.ts and handle-detection.ts)
+            const minDim = Math.min(Math.abs(w), Math.abs(h));
+            const depth = minDim > 0 ? Math.min(depthBase, minDim * 0.5) : 0;
 
             const dx = depth * Math.cos(angleRad);
             const dy = depth * Math.sin(angleRad);

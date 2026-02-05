@@ -1,6 +1,6 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, setSelectedTool, setSelectedShapeType, setStore } from "../store/app-store";
+import { store, setSelectedTool, setSelectedShapeType, setStore, setToolLocked } from "../store/app-store";
 import type { ElementType } from "../types";
 import {
     Square, Circle, Diamond,
@@ -124,9 +124,28 @@ const ShapeToolGroup: Component = () => {
         return found || shapeTools[0];
     };
 
+    let clickTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const handleToolClick = (type: ElementType) => {
+        // Delay single click to allow double-click detection
+        if (clickTimeout) clearTimeout(clickTimeout);
+        clickTimeout = setTimeout(() => {
+            setSelectedShapeType(type as any);
+            setSelectedTool(type);
+            setIsOpen(false);
+            clickTimeout = null;
+        }, 200);
+    };
+
+    const handleToolDoubleClick = (type: ElementType) => {
+        // Cancel pending single click and lock the tool
+        if (clickTimeout) {
+            clearTimeout(clickTimeout);
+            clickTimeout = null;
+        }
         setSelectedShapeType(type as any);
         setSelectedTool(type);
+        setToolLocked(true);
         setIsOpen(false);
     };
 
@@ -160,7 +179,7 @@ const ShapeToolGroup: Component = () => {
         <div class="pen-tool-group">
             <button
                 ref={buttonRef}
-                class={`toolbar-btn ${isActive() ? 'active' : ''}`}
+                class={`toolbar-btn ${isActive() ? 'active' : ''} ${isActive() && store.toolLocked ? 'tool-locked' : ''}`}
                 onClick={toggleMenu}
                 onContextMenu={handleRightClick}
                 title={`${activeTool().label} (Click for more)`}
@@ -184,7 +203,8 @@ const ShapeToolGroup: Component = () => {
                             <button
                                 class={`dropdown-item ${store.selectedTool === tool.type ? 'active' : ''}`}
                                 on:click={() => handleToolClick(tool.type)}
-                                title={tool.label}
+                                on:dblclick={() => handleToolDoubleClick(tool.type)}
+                                title={`${tool.label} (double-click to lock)`}
                             >
                                 <tool.icon size={18} />
                             </button>

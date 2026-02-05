@@ -76,7 +76,16 @@ export {
     random,
     randomInt,
     randomPick,
-    shuffle
+    shuffle,
+    // 3D Box Animations
+    boxRotateReveal,
+    boxLidOpen,
+    boxLidClose,
+    boxOpenReveal,
+    boxExplode,
+    boxCollapse,
+    isometricRotate,
+    depthPulse
 } from './element-animator';
 
 export type { StaggerConfig } from './element-animator';

@@ -81,7 +81,7 @@ export function registerShapes() {
         'cross', 'checkmark', 'capsule',
         'arrowLeft', 'arrowRight', 'arrowUp', 'arrowDown',
         'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'cylinder',
-        'stateStart', 'stateEnd', 'stateSync', 'activationBar', 'externalEntity', 'perspectiveBlock',
+        'stateStart', 'stateEnd', 'stateSync', 'activationBar', 'externalEntity', 'perspectiveBlock', 'openBox',
         'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface'
     ] as const;
     specialtyTypes.forEach(type => shapeRegistry.register(type, specialtyRenderer));

@@ -26,7 +26,11 @@ export abstract class ShapeRenderer {
         } else {
             // Normal render path
             // 2b. Apply complex fills (gradients, dots) using ShapeGeometry
-            RenderPipeline.applyComplexFills(context, cx, cy);
+            // Skip global complex fills for 3D shapes - they handle gradients per-face
+            const is3D = ['solidBlock', 'cylinder', 'isometricCube', 'perspectiveBlock', 'openBox'].includes(element.type);
+            if (!is3D) {
+                RenderPipeline.applyComplexFills(context, cx, cy);
+            }
 
             // 3. Delegate to specialized rendering methods based on style
             if (element.renderStyle === 'architectural') {

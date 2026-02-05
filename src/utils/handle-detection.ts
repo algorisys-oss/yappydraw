@@ -156,10 +156,12 @@ export function getHandleAtPosition(
             }
         }
 
-        // Check Rotate Handle
-        const rotH = { x: el.x + el.width / 2, y: el.y - padding - 20 / scale };
-        if (Math.abs(local.x - rotH.x) <= handleSize && Math.abs(local.y - rotH.y) <= handleSize / 2) {
-            return { id: el.id, handle: 'rotate' };
+        // Check Rotate Handle (skip perspectiveBlock - it has visual-bounds-based rotation handle)
+        if (el.type !== 'perspectiveBlock') {
+            const rotH = { x: el.x + el.width / 2, y: el.y - padding - 20 / scale };
+            if (Math.abs(local.x - rotH.x) <= handleSize && Math.abs(local.y - rotH.y) <= handleSize / 2) {
+                return { id: el.id, handle: 'rotate' };
+            }
         }
 
         // Custom Control Handles (Star, Burst, Isometric Cube, Solid Block)
@@ -176,11 +178,15 @@ export function getHandleAtPosition(
                 return { id: el.id, handle: 'control-1' };
             }
         } else if (el.type === 'solidBlock' || el.type === 'cylinder') {
-            const depth = el.depth !== undefined ? el.depth : 50;
+            const depthBase = el.depth !== undefined ? el.depth : 50;
             const angle = (el.viewAngle !== undefined ? el.viewAngle : 45) * Math.PI / 180;
 
             const centerX = el.x + el.width / 2;
             const centerY = el.y + el.height / 2;
+
+            // Scale depth with shape size (must match shape-geometry.ts calculation)
+            const minDim = Math.min(Math.abs(el.width), Math.abs(el.height));
+            const depth = minDim > 0 ? Math.min(depthBase, minDim * 0.5) : 0;
 
             const cx = centerX + depth * Math.cos(angle);
             const cy = centerY + depth * Math.sin(angle);
@@ -189,7 +195,7 @@ export function getHandleAtPosition(
                 return { id: el.id, handle: 'control-1' };
             }
         } else if (el.type === 'perspectiveBlock') {
-            const depth = el.depth !== undefined ? el.depth : 50;
+            const depthBase = el.depth !== undefined ? el.depth : 50;
             const angle = (el.viewAngle !== undefined ? el.viewAngle : 45) * Math.PI / 180;
             const taper = el.taper !== undefined ? el.taper : 0;
             const skewX = (el.skewX !== undefined ? el.skewX : 0) * el.width;
@@ -197,6 +203,10 @@ export function getHandleAtPosition(
 
             const centerX = el.x + el.width / 2;
             const centerY = el.y + el.height / 2;
+
+            // Scale depth with shape size (must match shape-geometry.ts calculation)
+            const minDim = Math.min(Math.abs(el.width), Math.abs(el.height));
+            const depth = minDim > 0 ? Math.min(depthBase, minDim * 0.5) : 0;
 
             const dx = depth * Math.cos(angle) + skewX;
             const dy = depth * Math.sin(angle) + skewY;
@@ -229,6 +239,16 @@ export function getHandleAtPosition(
                 if (Math.abs(local.x - h.x) <= handleSize && Math.abs(local.y - h.y) <= handleSize) {
                     return { id: el.id, handle: h.handle };
                 }
+            }
+
+            // Check visual-bounds-based rotation handle for perspectiveBlock
+            const visualTop = Math.min(
+                centerY + dy - bh,  // bTL, bTR
+                centerY + fsY - fh  // fTL, fTR
+            );
+            const rotHandleY = visualTop - padding - 20 / scale;
+            if (Math.abs(local.x - centerX) <= handleSize && Math.abs(local.y - rotHandleY) <= handleSize / 2) {
+                return { id: el.id, handle: 'rotate' };
             }
         } else if (el.type === 'star' || el.type === 'burst') {
             const ratio = (el.shapeRatio !== undefined ? el.shapeRatio : 25) / 100;

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-02-05
+
+### Added
+- **Open Box click-to-open animation**: Click openBox in presentation mode to animate lid opening with element reveal
+- **Reveal animations**: fadeIn, slideUp, scaleUp, and pop effects for revealed elements
+- **Restore after reveal**: Auto-close box and hide reveal element after animation completes
+- **Lid style options**: Single, split, double, quad, and flaps configurations for openBox
+- **45 gradient presets**: Predefined gradients in 8 categories (warm, cool, nature, metallic, pastel, vibrant, dark, light)
+- **13 openBox style presets**: Quick styling presets in 4 categories (presentation, product, fantasy, playful)
+- **Per-face gradient shading**: 3D shapes now render gradients with proper lighting simulation per face
+- **Tool locking**: Double-click any tool to keep it active after drawing
+- **Open box lid customization**: Separate fill/stroke colors for lid and backface edges
+- **Text editing for openBox**: Double-click to edit text directly on the shape
+
+### Fixed
+- Gradient fills now render correctly on all 3D shapes (solidBlock, cylinder, isometricCube, perspectiveBlock, openBox)
+- Sketch mode no longer shows hachure artifacts when using gradient fills
+- Reveal elements properly hide when entering presentation mode or switching slides
+- OpenBox elements reset to closed state when exiting presentation mode (ESC)
+- Perspective block rotation handle position corrected
+- 3D shape depth now scales proportionally with shape size
+
 ## [1.5.0] - 2026-02-04
 
 ### Added

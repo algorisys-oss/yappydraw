@@ -28,6 +28,7 @@ interface AppState {
 
     // Remaining Global State
     selectedTool: ToolType;
+    toolLocked: boolean; // When true, tool stays active after drawing
     selection: string[]; // IDs of selected elements
     defaultElementStyles: Partial<DrawingElement>; // Styles for new elements
     theme: 'light' | 'dark' | 'focus';
@@ -108,6 +109,7 @@ const initialState: AppState = {
     canvasTexture: 'none',
     isPreviewing: false,
     selectedTool: 'selection',
+    toolLocked: false, // When true, tool stays active after drawing (double-click to lock)
     selectedUmlType: 'umlClass',
     selection: [],
     flowTick: 0,
@@ -557,8 +559,9 @@ export const setSelectedTool = (tool: ToolType) => {
         setStore('toolStyles', currentTool, currentStyles);
     }
 
-    // 2. Switch tool
+    // 2. Switch tool and reset lock
     setStore('selectedTool', tool);
+    setStore('toolLocked', false);
     if (tool !== 'selection' && tool !== 'lasso' && tool !== 'pan' && tool !== 'eraser') {
         setStore('selection', []);
     }
@@ -586,6 +589,10 @@ export const setSelectedTool = (tool: ToolType) => {
     } else {
         updateDefaultStyles({ autoResize: false });
     }
+};
+
+export const setToolLocked = (locked: boolean) => {
+    setStore('toolLocked', locked);
 };
 
 export const updateDefaultStyles = (updates: Partial<DrawingElement>) => {
@@ -635,6 +642,48 @@ export const saveActiveSlide = () => {
     setStore("slides", currentIndex, currentSlideValues);
 };
 
+/**
+ * Hide reveal elements for closed openBox shapes.
+ * Called when entering presentation mode or switching slides to ensure reveal elements start hidden.
+ */
+const hideOpenBoxRevealElements = () => {
+    for (const el of store.elements) {
+        if (el.type === 'openBox' && el.enableClickToOpen && el.revealElementId) {
+            const isClosed = (el.openAmount ?? 0) <= 50;
+            if (isClosed) {
+                // Find and hide the reveal element
+                const revealIndex = store.elements.findIndex(e => e.id === el.revealElementId);
+                if (revealIndex !== -1) {
+                    setStore('elements', revealIndex, 'opacity', 0);
+                }
+            }
+        }
+    }
+};
+
+/**
+ * Reset openBox elements to closed state when exiting presentation mode.
+ * Closes any open boxes and hides their reveal elements.
+ */
+const resetOpenBoxElements = () => {
+    for (let i = 0; i < store.elements.length; i++) {
+        const el = store.elements[i];
+        if (el.type === 'openBox' && el.enableClickToOpen) {
+            // Close the box if it's open
+            if ((el.openAmount ?? 0) > 0) {
+                setStore('elements', i, 'openAmount', 0);
+            }
+            // Hide the reveal element
+            if (el.revealElementId) {
+                const revealIndex = store.elements.findIndex(e => e.id === el.revealElementId);
+                if (revealIndex !== -1) {
+                    setStore('elements', revealIndex, 'opacity', 0);
+                }
+            }
+        }
+    }
+};
+
 export const setActiveSlide = async (index: number, skipAnimation?: boolean) => {
     if (index < 0 || index >= store.slides.length) return;
     if (index === store.activeSlideIndex && !slideTransitionManager.transitioning) return;
@@ -671,6 +720,7 @@ export const setActiveSlide = async (index: number, skipAnimation?: boolean) => 
 
         // Trigger Build Animations in Presentation Mode
         if (store.appMode === 'presentation') {
+            hideOpenBoxRevealElements();
             slideBuildManager.init(index);
             slideBuildManager.playInitial();
         }
@@ -1923,6 +1973,9 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
         if (newState) {
             setStore('selection', []); // Clear selection
 
+            // Hide reveal elements for closed openBox shapes
+            hideOpenBoxRevealElements();
+
             // Auto fit on enter - we delay this slightly to allow the appMode transition
             // and fullscreen state to begin initiating. The resize/fullscreen listeners
             // will catch the final dimensions.
@@ -1933,6 +1986,9 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
             // Initialize animations
             slideBuildManager.init(store.activeSlideIndex);
             slideBuildManager.playInitial();
+        } else {
+            // Exiting presentation mode - reset openBox elements to closed state
+            resetOpenBoxElements();
         }
     });
 

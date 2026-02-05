@@ -11,6 +11,135 @@ import { store, setViewState, addElement, updateElement, setStore, deleteElement
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
 import { generateId } from '../id-generator';
+import { animateElement, animateFrom } from '../animation/element-animator';
+
+// ─── OpenBox Click-to-Open Animation ─────────────────────────────────
+
+/**
+ * Trigger the open and reveal animation for an openBox element.
+ * Animates the lid opening and reveals the linked element if configured.
+ */
+function triggerOpenBoxReveal(el: DrawingElement): void {
+    const duration = el.openAnimationDuration ?? 600;
+    const currentOpen = el.openAmount ?? 0;
+
+    // Toggle: if already open (>50), close it; otherwise open it
+    const targetOpen = currentOpen > 50 ? 0 : 100;
+
+    // Animate the lid opening/closing
+    animateElement(el.id, { openAmount: targetOpen }, {
+        duration,
+        easing: 'easeOutCubic'
+    });
+
+    // If there's a reveal element, animate it too
+    if (el.revealElementId && targetOpen === 100) {
+        const revealEl = store.elements.find(e => e.id === el.revealElementId);
+        if (revealEl) {
+            const revealType = el.revealAnimationType ?? 'fadeIn';
+            const revealDelay = duration * 0.3; // Start reveal 30% into the open animation
+            const revealDuration = duration * 0.7;
+
+            // Store original values for restore
+            const origY = revealEl.y;
+            const origWidth = revealEl.width;
+            const origHeight = revealEl.height;
+
+            // Calculate total animation time for restore
+            const totalAnimTime = revealDelay + revealDuration + 500; // 500ms pause before restore
+
+            switch (revealType) {
+                case 'fadeIn':
+                    // First set opacity to 0, then animate to 1
+                    updateElement(el.revealElementId, { opacity: 0 });
+                    setTimeout(() => {
+                        animateElement(el.revealElementId!, { opacity: 100 }, {
+                            duration: revealDuration,
+                            easing: 'easeOutCubic'
+                        });
+                    }, revealDelay);
+                    break;
+
+                case 'slideUp':
+                    const startY = revealEl.y + 30;
+                    updateElement(el.revealElementId, { opacity: 0, y: startY });
+                    setTimeout(() => {
+                        animateElement(el.revealElementId!, { opacity: 100, y: origY - 30 }, {
+                            duration: revealDuration,
+                            easing: 'easeOutCubic'
+                        });
+                    }, revealDelay);
+                    break;
+
+                case 'scaleUp':
+                    updateElement(el.revealElementId, {
+                        opacity: 0,
+                        width: origWidth * 0.5,
+                        height: origHeight * 0.5
+                    });
+                    setTimeout(() => {
+                        animateElement(el.revealElementId!, {
+                            opacity: 100,
+                            width: origWidth,
+                            height: origHeight
+                        }, {
+                            duration: revealDuration,
+                            easing: 'easeOutBack'
+                        });
+                    }, revealDelay);
+                    break;
+
+                case 'pop':
+                    updateElement(el.revealElementId, {
+                        opacity: 0,
+                        width: origWidth * 0.3,
+                        height: origHeight * 0.3
+                    });
+                    setTimeout(() => {
+                        animateElement(el.revealElementId!, {
+                            opacity: 100,
+                            width: origWidth,
+                            height: origHeight
+                        }, {
+                            duration: duration * 0.5,
+                            easing: 'easeOutElastic'
+                        });
+                    }, revealDelay);
+                    break;
+            }
+
+            // If restoreAfterReveal is enabled, auto-close and hide after animation
+            if (el.restoreAfterReveal) {
+                setTimeout(() => {
+                    // Close the box
+                    animateElement(el.id, { openAmount: 0 }, {
+                        duration: duration * 0.5,
+                        easing: 'easeInCubic'
+                    });
+
+                    // Hide the reveal element and restore original dimensions
+                    animateElement(el.revealElementId!, {
+                        opacity: 0,
+                        y: origY,
+                        width: origWidth,
+                        height: origHeight
+                    }, {
+                        duration: duration * 0.3,
+                        easing: 'easeInCubic'
+                    });
+                }, totalAnimTime);
+            }
+        }
+    }
+
+    // If closing the box, hide the reveal element
+    if (el.revealElementId && targetOpen === 0) {
+        animateElement(el.revealElementId, { opacity: 0 }, {
+            duration: duration * 0.3,
+            easing: 'easeInCubic'
+        });
+    }
+}
 
 // ─── Presentation Mode ──────────────────────────────────────────────
 
@@ -44,6 +173,11 @@ export function presentationOnDown(
         for (let i = store.elements.length - 1; i >= 0; i--) {
             const el = store.elements[i];
             if (hitTestElement(helpers.applyMasterProjection(el), x, y, threshold, store.elements, elementMap)) {
+                // Check for openBox with click-to-open enabled
+                if (el.type === 'openBox' && el.enableClickToOpen) {
+                    triggerOpenBoxReveal(el);
+                    return true;
+                }
                 // Element hit — fall through to selectionOnDown for select/move
                 return false;
             }

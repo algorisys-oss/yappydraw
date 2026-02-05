@@ -100,7 +100,7 @@ This project stands as proof that **beautiful, complex software still requires e
 | **People** | Stick Figure, Sitting/Presenting Person, Thumbs Up, Happy/Sad/Confused Faces |
 | **Status** | Checkbox, Numbered Badge, Question/Exclamation Mark, Tag, Pin, Stamp |
 | **Connection** | Puzzle Piece, Chain Link, Bridge, Magnet, Scale, Seedling, Tree, Mountain |
-| **3D / Technical** | Isometric Cube, Solid Block, Perspective Block, Cylinder, DFD Process/Data Store |
+| **3D / Technical** | Isometric Cube, Solid Block, Perspective Block, Open Box (with lid animation), Cylinder, DFD Process/Data Store |
 | **State Machine** | Start/End states, Sync Bar, Activation Bar |
 | **Math / Geometric** | Trapezoid, Right Triangle, Pentagon, Septagon |
 
@@ -112,6 +112,15 @@ This project stands as proof that **beautiful, complex software still requires e
 - **Connection anchors** — visual blue dots on nearby shapes while drawing
 - **Connector handles** — green drag-out dots on selected shapes to start new connections
 - **Polyline shapes** — unbound polylines act as polygon shapes (fill, hit-test, transform)
+
+### 3D Shapes
+
+- **Isometric Cube** — configurable vertical and side ratios
+- **Solid Block** — adjustable depth and view angle
+- **Perspective Block** — depth, taper, skew controls for vanishing point effects
+- **Open Box** — hinged lid with configurable position (back/front/left/right), style (single/split/double/quad/flaps), and click-to-open animation with element reveal
+- **Cylinder** — 3D cylinder with configurable depth and view angle
+- **Per-face gradient shading** — gradients automatically darken/lighten per face for realistic 3D lighting
 
 ### Mindmap
 
@@ -147,7 +156,7 @@ This project stands as proof that **beautiful, complex software still requires e
 
 - **Dual render modes** — sketch (RoughJS hand-drawn) or architectural (clean lines)
 - **Fill styles** — solid, hachure, cross-hatch, zigzag, dots, dashed, zigzag-line, gradients
-- **Gradients** — linear, radial, conic with multi-stop color control
+- **Gradients** — linear, radial, conic with multi-stop color control and 45 predefined presets (warm, cool, nature, metallic, pastel, vibrant, dark, light)
 - **18 blend modes** — multiply, screen, overlay, color-dodge, and more
 - **Shadows** — color, blur, and offset per element
 - **Arrowheads** — arrow, triangle, dot, circle, bar, diamond, crowsfoot (start/end independently)
@@ -206,6 +215,10 @@ Yappy.updateSlideTransition(0, { type: 'fade', duration: 500 })
 // Mindmap
 Yappy.addChildNode(parentId)
 Yappy.reorderMindmap(rootId, 'horizontal')
+
+// 3D Shapes
+Yappy.createOpenBox(100, 100, 200, 150, { depth: 50, openAmount: 0, lidPosition: 'back' })
+Yappy.createSolidBlock(100, 100, 200, 150, { depth: 50, viewAngle: 45 })
 
 // And 100+ more functions for elements, layers, view, themes, clipboard, history...
 ```

@@ -5,15 +5,53 @@ import { animateElementsFrom, calculateStaggerDelays, type StaggerConfig } from 
 import { Play, Square, Plus, Trash2, ChevronDown, ChevronRight, ChevronUp, Edit3, Users } from 'lucide-solid';
 import type { ElementAnimation, PresetAnimation, RotateAnimation, AutoSpinAnimation, KeyframeAnimation, AnimationKeyframe } from '../types/motion-types';
 
-const PRESETS = [
+// Common presets for all shapes
+const COMMON_PRESETS = [
     'drawIn', 'drawOut',
     'fadeIn', 'fadeOut',
     'slideInLeft', 'slideInRight', 'slideInUp', 'slideInDown',
     'zoomIn', 'zoomOut',
-    'bounce', 'pulse', 'shakeX', 'shakeY', 'revolve',
-    // Text animations (for text elements)
+    'bounce', 'pulse', 'shakeX', 'shakeY', 'revolve'
+];
+
+// Text animations (for text elements only)
+const TEXT_PRESETS = [
     'typewriter', 'typewriterCursor', 'wordByWord', 'textScramble', 'lineByLine', 'textDelete', 'charByChar'
 ];
+
+// 3D box animations (for openBox only)
+const OPENBOX_PRESETS = [
+    'boxLidOpen', 'boxLidClose'
+];
+
+// 3D shape animations (for 3D shapes: solidBlock, perspectiveBlock, isometricCube, openBox, cylinder)
+const THREE_D_PRESETS = [
+    'boxRotateReveal', 'boxExplode', 'boxCollapse', 'isometricRotate', 'depthPulse'
+];
+
+// Get applicable presets based on element type
+const getPresetsForType = (type: string | undefined): string[] => {
+    if (!type) return COMMON_PRESETS;
+
+    const presets = [...COMMON_PRESETS];
+
+    // Add text presets for text elements
+    if (type === 'text') {
+        presets.push(...TEXT_PRESETS);
+    }
+
+    // Add openBox-specific presets
+    if (type === 'openBox') {
+        presets.push(...OPENBOX_PRESETS);
+    }
+
+    // Add 3D presets for 3D shapes
+    if (['solidBlock', 'perspectiveBlock', 'isometricCube', 'openBox', 'cylinder'].includes(type)) {
+        presets.push(...THREE_D_PRESETS);
+    }
+
+    return presets;
+};
 
 const KEYFRAME_PROPERTIES = [
     { value: 'x', label: 'X Position' },
@@ -25,6 +63,15 @@ const KEYFRAME_PROPERTIES = [
     { value: 'strokeWidth', label: 'Stroke Width' },
     { value: 'strokeColor', label: 'Stroke Color' },
     { value: 'backgroundColor', label: 'Background Color' },
+    // 3D shape properties
+    { value: 'depth', label: '3D Depth' },
+    { value: 'viewAngle', label: '3D View Angle' },
+    { value: 'openAmount', label: 'Lid Open' },
+    { value: 'taper', label: '3D Taper' },
+    { value: 'skewX', label: '3D Skew X' },
+    { value: 'skewY', label: '3D Skew Y' },
+    { value: 'shapeRatio', label: 'Shape Ratio' },
+    { value: 'sideRatio', label: 'Side Ratio' },
 ];
 
 const EASINGS = [
@@ -49,6 +96,15 @@ const getKeyframeDefaults = (el: any, property: string): AnimationKeyframe[] => 
     const delta = property === 'opacity' ? -50
         : property === 'angle' ? Math.PI / 2
         : property === 'strokeWidth' ? 3
+        // 3D properties
+        : property === 'depth' ? 50
+        : property === 'viewAngle' ? 90
+        : property === 'openAmount' ? 90
+        : property === 'taper' ? 0.5
+        : property === 'skewX' ? 0.3
+        : property === 'skewY' ? 0.3
+        : property === 'shapeRatio' ? 25
+        : property === 'sideRatio' ? 50
         : 200; // x, y, width, height
     return [
         { offset: 0, value: v },
@@ -680,7 +736,7 @@ export const AnimationPanel: Component = () => {
                 }}>
                     <div style={{ 'font-size': '12px', 'margin-bottom': '6px', 'font-weight': 500 }}>Select Preset</div>
                     <div style={{ 'display': 'grid', 'grid-template-columns': '1fr 1fr', 'gap': '4px' }}>
-                        <For each={PRESETS}>
+                        <For each={getPresetsForType(element()?.type)}>
                             {preset => (
                                 <button
                                     onClick={() => addPreset(preset)}

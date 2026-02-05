@@ -592,6 +592,14 @@ export function selectionOnMove(
             // Minimum drag threshold to prevent accidental moves on click
             const dragDist = Math.hypot(x - pState.startX, y - pState.startY);
             if (dragDist < 3 / store.viewState.scale) return;
+
+            // Alt+drag on 3D shapes: change viewAngle instead of moving
+            const is3DShape = ['solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'isometricCube'].includes(el.type);
+            if (e.altKey && is3DShape && store.selection.length === 1) {
+                handle3DViewAngle(e, x, y, id, el, pState, helpers);
+                return;
+            }
+
             handleMove(e, x, y, pState, helpers, signals, SNAPPING_THROTTLE_MS);
         }
     }
@@ -1032,6 +1040,44 @@ function applyResize(
     }
 }
 
+// ─── 3D View Angle Control (Alt+Drag) ────────────────────────────────
+
+function handle3DViewAngle(
+    e: PointerEvent,
+    x: number,
+    y: number,
+    id: string,
+    el: DrawingElement,
+    pState: PointerState,
+    helpers: PointerHelpers
+): void {
+    // Store initial angle on first call during this drag
+    if (pState.initial3DViewAngle === undefined) {
+        pState.initial3DViewAngle = el.viewAngle ?? 45;
+        pState.initial3DStartX = x; // Store the X position when Alt+drag started
+    }
+
+    // Change viewAngle based on horizontal mouse movement from when Alt was pressed
+    const dx = x - (pState.initial3DStartX ?? pState.startX);
+
+    // Sensitivity: pixels per degree (lower = more sensitive)
+    const sensitivity = 1.5;
+    const angleDelta = dx / sensitivity;
+
+    // Calculate new angle, wrapping around 0-360
+    let newAngle = pState.initial3DViewAngle + angleDelta;
+    newAngle = ((newAngle % 360) + 360) % 360;
+
+    // Snap to 5 degree increments if Shift is held
+    if (e.shiftKey) {
+        newAngle = Math.round(newAngle / 5) * 5;
+    }
+
+    updateElement(id, { viewAngle: newAngle }, false); // Don't push to history on every move
+    helpers.setCursor('ew-resize');
+    requestAnimationFrame(helpers.draw);
+}
+
 // ─── Move logic ─────────────────────────────────────────────────────
 
 function handleMove(
@@ -1318,5 +1364,7 @@ export function selectionOnUp(
     pState.isDragging = false;
     pState.draggingHandle = null;
     pState.initialPositions.clear();
+    pState.initial3DViewAngle = undefined;
+    pState.initial3DStartX = undefined;
     signals.setSnappingGuides([]);
 }

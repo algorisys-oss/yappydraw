@@ -77,7 +77,19 @@ export type AnimatableProperty =
     | 'angle'
     | 'strokeWidth'
     | 'roughness'
-    | 'drawProgress';
+    | 'drawProgress'
+    // 3D shape properties
+    | 'depth'
+    | 'viewAngle'
+    | 'openAmount'
+    | 'taper'
+    | 'skewX'
+    | 'skewY'
+    | 'frontTaper'
+    | 'frontSkewX'
+    | 'frontSkewY'
+    | 'shapeRatio'
+    | 'sideRatio';
 
 // Color properties that can be animated
 export type AnimatableColorProperty =
@@ -95,6 +107,18 @@ export interface ElementAnimationTarget {
     strokeWidth?: number;
     roughness?: number;
     drawProgress?: number;
+    // 3D shape properties
+    depth?: number;
+    viewAngle?: number;
+    openAmount?: number;
+    taper?: number;
+    skewX?: number;
+    skewY?: number;
+    frontTaper?: number;
+    frontSkewX?: number;
+    frontSkewY?: number;
+    shapeRatio?: number;
+    sideRatio?: number;
     // Color properties
     strokeColor?: string;
     backgroundColor?: string;
@@ -3697,4 +3721,402 @@ export function animateMorph(
 
     animationEngine.start(animId);
     return animId;
+}
+
+// ============================================
+// 3D Box Animations
+// ============================================
+
+/**
+ * Rotate a 3D shape (solidBlock, perspectiveBlock, cylinder) to reveal different faces
+ * Animates the viewAngle property for a 3D rotation effect
+ *
+ * @param elementId - The 3D shape element to animate
+ * @param targetAngle - Target view angle in degrees (0-360)
+ * @param duration - Animation duration in ms
+ * @param config - Animation configuration
+ *
+ * @example
+ * // Rotate box to show back face
+ * boxRotateReveal('box-1', 180, 800);
+ *
+ * @example
+ * // Full 360 rotation
+ * boxRotateReveal('box-1', 360, 1500, { easing: 'easeInOutCubic' });
+ */
+export function boxRotateReveal(
+    elementId: string,
+    targetAngle: number = 90,
+    duration: number = 800,
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return '';
+
+    // Only works on 3D shapes
+    const is3DShape = ['solidBlock', 'perspectiveBlock', 'cylinder', 'isometricCube'].includes(element.type);
+    if (!is3DShape) {
+        console.warn('boxRotateReveal: Element is not a 3D shape');
+        return '';
+    }
+
+    return animateElement(elementId, {
+        viewAngle: targetAngle
+    }, {
+        duration,
+        easing: config.easing ?? 'easeInOutCubic',
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Animate a 3D box opening effect - the lid lifts up and tilts back
+ * Works with solidBlock and perspectiveBlock elements
+ *
+ * @param elementId - The 3D box element (solidBlock or perspectiveBlock)
+ * @param duration - Total animation duration in ms
+ * @param config - Animation configuration
+ *
+ * @example
+ * boxLidOpen('box-1', 1000);
+ */
+export function boxLidOpen(
+    elementId: string,
+    duration: number = 1000,
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return '';
+
+    // Works only with openBox (has hinged lid)
+    if (element.type !== 'openBox') {
+        console.warn('boxLidOpen: Works only with openBox elements');
+        return '';
+    }
+
+    // Animate openAmount from 0 to 100 with overshoot and settle
+    return animateElement(elementId, {
+        openAmount: 85
+    }, {
+        duration: duration * 0.6,
+        easing: 'easeOutCubic',
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: () => {
+            // Overshoot slightly
+            animateElement(elementId, {
+                openAmount: 95
+            }, {
+                duration: duration * 0.2,
+                easing: 'easeOutQuad',
+                onComplete: () => {
+                    // Settle back
+                    animateElement(elementId, {
+                        openAmount: 90
+                    }, {
+                        duration: duration * 0.2,
+                        easing: 'easeOutElastic',
+                        onComplete: config.onComplete
+                    });
+                }
+            });
+        }
+    });
+}
+
+/**
+ * Close a 3D box lid - the hinged lid closes
+ *
+ * @param elementId - The openBox element
+ * @param duration - Animation duration in ms
+ * @param config - Animation configuration
+ */
+export function boxLidClose(
+    elementId: string,
+    duration: number = 800,
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return '';
+
+    if (element.type !== 'openBox') {
+        console.warn('boxLidClose: Works only with openBox elements');
+        return '';
+    }
+
+    return animateElement(elementId, {
+        openAmount: 0
+    }, {
+        duration,
+        easing: config.easing ?? 'easeInOutCubic',
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Composite box open animation for grouped elements
+ * Animates a box group where:
+ * - First element is the box body
+ * - Second element is the lid
+ * - Remaining elements are contents that reveal
+ *
+ * @param groupId - The group element ID containing box parts
+ * @param duration - Total animation duration in ms
+ * @param config - Animation configuration
+ *
+ * @example
+ * // Create a group with: box body, lid, and content elements
+ * boxOpenReveal('box-group-1', 1500);
+ */
+export function boxOpenReveal(
+    groupId: string,
+    duration: number = 1500,
+    config: ElementAnimationConfig = {}
+): string {
+    const group = store.elements.find(el => el.id === groupId);
+    if (!group || group.type !== 'group') {
+        console.warn('boxOpenReveal: Requires a group element');
+        return '';
+    }
+
+    // Get child elements
+    const children = store.elements.filter(el => el.groupId === groupId);
+    if (children.length < 2) {
+        console.warn('boxOpenReveal: Group needs at least 2 elements (body + lid)');
+        return '';
+    }
+
+    // First child is body (stays), second is lid (animates up + fades)
+    const [, lid, ...contents] = children;
+
+    const animId = generateAnimationId('boxOpen');
+
+    // Store original lid position
+    const lidOriginalY = lid.y;
+
+    // Hide contents initially
+    contents.forEach(content => {
+        updateElement(content.id, { opacity: 0 }, false);
+    });
+
+    // Phase 1: Lid lifts up and fades
+    animateElement(lid.id, {
+        y: lidOriginalY - 80,
+        opacity: 0
+    }, {
+        duration: duration * 0.5,
+        easing: 'easeOutCubic',
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: () => {
+            // Phase 2: Contents scale in with stagger
+            if (contents.length > 0) {
+                contents.forEach((content, index) => {
+                    const originalWidth = content.width;
+                    const originalHeight = content.height;
+                    const originalX = content.x;
+                    const originalY = content.y;
+
+                    // Start small
+                    updateElement(content.id, {
+                        width: originalWidth * 0.3,
+                        height: originalHeight * 0.3,
+                        x: originalX + (originalWidth * 0.35),
+                        y: originalY + (originalHeight * 0.35)
+                    }, false);
+
+                    // Animate to full size
+                    animateElement(content.id, {
+                        width: originalWidth,
+                        height: originalHeight,
+                        x: originalX,
+                        y: originalY,
+                        opacity: 100
+                    }, {
+                        duration: duration * 0.4,
+                        delay: index * 100,
+                        easing: 'easeOutBack',
+                        onComplete: index === contents.length - 1 ? config.onComplete : undefined
+                    });
+                });
+            } else {
+                config.onComplete?.();
+            }
+        }
+    });
+
+    return animId;
+}
+
+/**
+ * Exploded/unfolded box view animation
+ * Animates box faces spreading out from center
+ *
+ * @param elementId - The 3D box element
+ * @param duration - Animation duration in ms
+ * @param config - Animation configuration
+ *
+ * @example
+ * boxExplode('solid-block-1', 1200);
+ */
+export function boxExplode(
+    elementId: string,
+    duration: number = 1200,
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return '';
+
+    // Works with solidBlock or perspectiveBlock
+    if (!['solidBlock', 'perspectiveBlock'].includes(element.type)) {
+        console.warn('boxExplode: Works with solidBlock or perspectiveBlock');
+        return '';
+    }
+
+    // Animate depth to increase and size for "exploded" effect
+    const originalDepth = element.depth ?? 50;
+    const originalWidth = element.width;
+    const originalHeight = element.height;
+    const originalX = element.x;
+    const originalY = element.y;
+
+    return animateElement(elementId, {
+        depth: originalDepth * 2.5,
+        width: originalWidth * 1.3,
+        height: originalHeight * 1.3,
+        x: originalX - (originalWidth * 0.15),
+        y: originalY - (originalHeight * 0.15)
+    }, {
+        duration,
+        easing: config.easing ?? 'easeOutBack',
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Collapse exploded box back to normal
+ *
+ * @param elementId - The 3D box element
+ * @param targetDepth - Target depth value (default 50)
+ * @param duration - Animation duration in ms
+ * @param config - Animation configuration
+ */
+export function boxCollapse(
+    elementId: string,
+    targetDepth: number = 50,
+    duration: number = 800,
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return '';
+
+    const centerX = element.x + element.width / 2;
+    const centerY = element.y + element.height / 2;
+
+    // Calculate target size (assume we want to shrink to ~77% to reverse the 1.3x expand)
+    const targetWidth = element.width / 1.3;
+    const targetHeight = element.height / 1.3;
+
+    return animateElement(elementId, {
+        depth: targetDepth,
+        width: targetWidth,
+        height: targetHeight,
+        x: centerX - targetWidth / 2,
+        y: centerY - targetHeight / 2
+    }, {
+        duration,
+        easing: config.easing ?? 'easeInOutCubic',
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Isometric cube rotation effect
+ * Animates the shapeRatio and sideRatio for isometric cube rotation illusion
+ *
+ * @param elementId - The isometricCube element
+ * @param duration - Animation duration for one full "rotation"
+ * @param config - Animation configuration
+ */
+export function isometricRotate(
+    elementId: string,
+    duration: number = 2000,
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return '';
+
+    if (element.type !== 'isometricCube') {
+        console.warn('isometricRotate: Only works with isometricCube elements');
+        return '';
+    }
+
+    const originalSideRatio = element.sideRatio ?? 50;
+
+    // Animate sideRatio from current to 100 to 0 back to original for rotation effect
+    return animateElementKeyframes(elementId, 'sideRatio', [
+        { offset: 0, value: originalSideRatio },
+        { offset: 0.25, value: 100, easing: 'easeInOutSine' },
+        { offset: 0.5, value: 50, easing: 'easeInOutSine' },
+        { offset: 0.75, value: 0, easing: 'easeInOutSine' },
+        { offset: 1, value: originalSideRatio, easing: 'easeInOutSine' }
+    ], {
+        duration,
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: config.onComplete,
+        loop: config.loop,
+        loopCount: config.loopCount
+    });
+}
+
+/**
+ * 3D depth pulse - makes the box appear to "pop" in 3D
+ *
+ * @param elementId - The 3D shape element
+ * @param duration - Animation duration in ms
+ * @param config - Animation configuration
+ */
+export function depthPulse(
+    elementId: string,
+    duration: number = 600,
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return '';
+
+    const is3DShape = ['solidBlock', 'perspectiveBlock', 'cylinder'].includes(element.type);
+    if (!is3DShape) {
+        console.warn('depthPulse: Only works with 3D shapes');
+        return '';
+    }
+
+    const originalDepth = element.depth ?? 50;
+    const pulseDepth = originalDepth * 1.5;
+
+    return animateElement(elementId, {
+        depth: pulseDepth
+    }, {
+        duration: duration / 2,
+        easing: 'easeOutQuad',
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: () => {
+            animateElement(elementId, {
+                depth: originalDepth
+            }, {
+                duration: duration / 2,
+                easing: 'easeOutElastic',
+                onComplete: config.onComplete
+            });
+        }
+    });
 }

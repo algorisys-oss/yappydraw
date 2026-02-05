@@ -328,10 +328,14 @@ export class SequenceAnimator {
 
         // Handle numeric or string conversion if needed
         const val = anim.to;
-        if (anim.property === 'opacity' || anim.property === 'x' || anim.property === 'y' ||
-            anim.property === 'width' || anim.property === 'height' ||
-            anim.property === 'angle' || anim.property === 'strokeWidth' ||
-            anim.property === 'roughness') {
+        // Numeric properties (including 3D)
+        const numericProps = [
+            'opacity', 'x', 'y', 'width', 'height', 'angle', 'strokeWidth', 'roughness',
+            // 3D properties
+            'depth', 'viewAngle', 'openAmount', 'taper', 'skewX', 'skewY', 'frontTaper', 'frontSkewX', 'frontSkewY',
+            'shapeRatio', 'sideRatio'
+        ];
+        if (numericProps.includes(anim.property)) {
             (target as any)[anim.property] = Number(val);
         } else if (anim.property === 'strokeColor' || anim.property === 'backgroundColor') {
             (target as any)[anim.property] = String(val);

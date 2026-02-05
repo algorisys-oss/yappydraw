@@ -270,7 +270,7 @@ const Canvas: Component = () => {
             e.x; e.y; e.width; e.height;
             if (e.points) e.points.length;
             e.angle; e.opacity; e.flipX; e.flipY;
-            e.strokeColor; e.backgroundColor; e.fillStyle; e.strokeWidth; e.strokeStyle;
+            e.strokeColor; e.backgroundColor; e.lidColor; e.fillStyle; e.strokeWidth; e.strokeStyle;
             e.roughness; e.roundness;
             e.text; e.fontSize; e.fontFamily; e.textAlign;
             e.fontWeight; e.fontStyle;
@@ -287,6 +287,8 @@ const Canvas: Component = () => {
             e.sideRatio; // Track side ratio (perspective)
             e.depth; // Track depth for 3D shapes
             e.viewAngle; // Track viewing angle for 3D shapes
+            e.openAmount; // Track lid open state for 3D boxes
+            e.lidPosition; e.lidStyle; e.showLidHinge; e.lidStrokeColor; // Track lid configuration for openBox
             e.taper; e.skewX; e.skewY;
             e.frontTaper; e.frontSkewX; e.frontSkewY;
             e.drawInnerBorder; // Track double border toggle

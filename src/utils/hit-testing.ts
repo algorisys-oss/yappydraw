@@ -61,7 +61,7 @@ export function hitTestElement(
     let y2 = Math.max(el.y, el.y + el.height);
 
     // Adjust broad-phase for extruding shapes
-    if (el.type === 'solidBlock') {
+    if (el.type === 'solidBlock' || el.type === 'openBox') {
         const depth = el.depth !== undefined ? el.depth : 50;
         const angle = (el.viewAngle !== undefined ? el.viewAngle : 45) * Math.PI / 180;
         const dx = depth * Math.cos(angle);
@@ -98,7 +98,7 @@ export function hitTestElement(
         return false;
     }
 
-    if (el.type === 'rectangle' || el.type === 'solidBlock' || el.type === 'isometricCube' || el.type === 'perspectiveBlock') {
+    if (el.type === 'rectangle' || el.type === 'solidBlock' || el.type === 'isometricCube' || el.type === 'perspectiveBlock' || el.type === 'openBox') {
         // Check if inside expanded bounding box (passed broad-phase check above)
         return true;
     } else if (el.type === 'diamond') {
