@@ -3878,13 +3878,13 @@ export function boxOpenReveal(
     config: ElementAnimationConfig = {}
 ): string {
     const group = store.elements.find(el => el.id === groupId);
-    if (!group || group.type !== 'group') {
-        console.warn('boxOpenReveal: Requires a group element');
+    if (!group) {
+        console.warn('boxOpenReveal: Element not found');
         return '';
     }
 
-    // Get child elements
-    const children = store.elements.filter(el => el.groupId === groupId);
+    // Get child elements (elements that have this groupId in their groupIds array)
+    const children = store.elements.filter(el => el.groupIds?.includes(groupId));
     if (children.length < 2) {
         console.warn('boxOpenReveal: Group needs at least 2 elements (body + lid)');
         return '';
@@ -4064,10 +4064,10 @@ export function isometricRotate(
     // Animate sideRatio from current to 100 to 0 back to original for rotation effect
     return animateElementKeyframes(elementId, 'sideRatio', [
         { offset: 0, value: originalSideRatio },
-        { offset: 0.25, value: 100, easing: 'easeInOutSine' },
-        { offset: 0.5, value: 50, easing: 'easeInOutSine' },
-        { offset: 0.75, value: 0, easing: 'easeInOutSine' },
-        { offset: 1, value: originalSideRatio, easing: 'easeInOutSine' }
+        { offset: 0.25, value: 100, easing: 'easeInOutQuad' },
+        { offset: 0.5, value: 50, easing: 'easeInOutQuad' },
+        { offset: 0.75, value: 0, easing: 'easeInOutQuad' },
+        { offset: 1, value: originalSideRatio, easing: 'easeInOutQuad' }
     ], {
         duration,
         delay: config.delay,

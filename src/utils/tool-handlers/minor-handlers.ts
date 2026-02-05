@@ -11,7 +11,7 @@ import { store, setViewState, addElement, updateElement, setStore, deleteElement
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
 import { generateId } from '../id-generator';
-import { animateElement, animateFrom } from '../animation/element-animator';
+import { animateElement } from '../animation/element-animator';
 
 // ─── OpenBox Click-to-Open Animation ─────────────────────────────────
 

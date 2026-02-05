@@ -1045,7 +1045,7 @@ function applyResize(
 function handle3DViewAngle(
     e: PointerEvent,
     x: number,
-    y: number,
+    _y: number,
     id: string,
     el: DrawingElement,
     pState: PointerState,
