@@ -1,6 +1,6 @@
 {
   "name": "yappy",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,8 @@
     "lucide-solid": "^0.562.0",
     "pptxgenjs": "^4.0.1",
     "roughjs": "^4.6.6",
-    "solid-js": "^1.9.11"
+    "solid-js": "^1.9.11",
+    "sweetalert2": "^11.26.18"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",

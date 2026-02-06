@@ -39,7 +39,7 @@ import { computeCellRects, defaultColWidths, defaultRowHeights, hitTestColEdge, 
 import { handleDragOver, handleDrop as handleDropHandler, handleWheel, type CanvasEventContext } from "../utils/tool-handlers/canvas-event-handlers";
 import { showToast } from "./toast";
 import { perfMonitor } from "../utils/performance-monitor";
-import { fitShapeToText } from "../utils/text-utils";
+import { fitShapeToText, measureWrappedTextHeight } from "../utils/text-utils";
 import { effectiveTime } from "../utils/animation/animation-engine";
 import RecordingOverlay from "./recording-overlay";
 import { setupRecording } from "../utils/recording-manager";
@@ -99,6 +99,38 @@ const Canvas: Component = () => {
                     }));
                 }
             }
+
+            // Standalone text elements: recalculate width+height when font properties change
+            if (el.isSelected && el.type === 'text' && el.text) {
+                // Track font properties to trigger reactive recalculation
+                const fontSize = el.fontSize || 28;
+                const fontFamily = el.fontFamily || 'hand-drawn';
+                const fontWeight = el.fontWeight === 'bold' ? 'bold ' : '';
+                const fontStyle = el.fontStyle === 'italic' ? 'italic ' : '';
+                const padding = 4; // matches text-renderer.ts
+
+                ctx.font = `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
+
+                // Ensure width fits the widest word at current font size
+                const words = el.text.split(/\s+/).filter((w: string) => w.length > 0);
+                let maxWordWidth = 0;
+                for (const word of words) {
+                    maxWordWidth = Math.max(maxWordWidth, ctx.measureText(word).width);
+                }
+                const minWidth = maxWordWidth + padding * 2 + 8;
+                const newWidth = Math.max(el.width || 200, minWidth);
+
+                const calculatedHeight = measureWrappedTextHeight(el.text, newWidth, fontSize, fontFamily);
+                const newHeight = Math.max(calculatedHeight, fontSize * 1.2);
+
+                const updates: Record<string, number> = {};
+                if (Math.abs(newWidth - el.width) > 2) updates.width = newWidth;
+                if (Math.abs(newHeight - el.height) > 2) updates.height = newHeight;
+
+                if (Object.keys(updates).length > 0) {
+                    untrack(() => updateElement(el.id, updates));
+                }
+            }
         });
     });
 
@@ -137,6 +169,7 @@ const Canvas: Component = () => {
     const [suggestedBinding, setSuggestedBinding] = createSignal<{ elementId: string; px: number; py: number; position?: string } | null>(null);
     const [snappingGuides, setSnappingGuides] = createSignal<SnappingGuide[]>([]);
     const [spacingGuides, setSpacingGuides] = createSignal<SpacingGuide[]>([]);
+    const [reparentDropTarget, setReparentDropTarget] = createSignal<string | null>(null);
 
     // Throttle constants
     const SNAPPING_THROTTLE_MS = 16; // ~60 FPS
@@ -223,7 +256,41 @@ const Canvas: Component = () => {
 
         renderGrid(ctx, canvasRef, store.gridSettings, scale, panX, panY, isDarkMode);
 
-        // 5. Render layers & elements
+        // 5. Compute focus branch set (for Focus Mode dimming)
+        let focusBranchIds: Set<string> | null = null;
+        if (store.focusBranchId) {
+            const fSet = new Set<string>();
+            // Add focused node
+            fSet.add(store.focusBranchId);
+            // Add all ancestors up to root
+            let cur = store.elements.find(e => e.id === store.focusBranchId);
+            while (cur?.parentId) {
+                fSet.add(cur.parentId);
+                cur = store.elements.find(e => e.id === cur!.parentId);
+            }
+            // Add all descendants (BFS)
+            const queue = [store.focusBranchId];
+            while (queue.length > 0) {
+                const pid = queue.shift()!;
+                for (const el of store.elements) {
+                    if (el.parentId === pid && !fSet.has(el.id)) {
+                        fSet.add(el.id);
+                        queue.push(el.id);
+                    }
+                }
+            }
+            // Add connectors between focused nodes
+            for (const el of store.elements) {
+                if ((el.type === 'organicBranch' || el.type === 'arrow' || el.type === 'line' || el.type === 'bezier') &&
+                    el.startBinding && el.endBinding &&
+                    fSet.has(el.startBinding.elementId) && fSet.has(el.endBinding.elementId)) {
+                    fSet.add(el.id);
+                }
+            }
+            focusBranchIds = fSet;
+        }
+
+        // Render layers & elements
         const totalRendered = renderLayersAndElements(ctx, rc, {
             elements: store.elements, layers: store.layers, slides: store.slides,
             docType: store.docType, activeSlideIndex: store.activeSlideIndex,
@@ -235,6 +302,7 @@ const Canvas: Component = () => {
             editingId: editingId(),
             canInteractWithElement,
             appMode: store.appMode,
+            focusBranchIds,
         });
 
         // 6. Overlays
@@ -244,6 +312,8 @@ const Canvas: Component = () => {
             suggestedBinding: suggestedBinding(),
             snappingGuides: snappingGuides(), spacingGuides: spacingGuides(),
             tableCellSelection: tableCellSelectionSignal(),
+            isDarkMode, appMode: store.appMode,
+            reparentDropTarget: reparentDropTarget(),
         });
 
         renderConnectionAnchors(ctx, {
@@ -342,6 +412,7 @@ const Canvas: Component = () => {
         store.canvasBackgroundColor;
         store.canvasTexture;
         store.theme;
+        store.focusBranchId;
         snappingGuides();
         // Redraw on reactive changes
         requestAnimationFrame(draw);
@@ -459,6 +530,7 @@ const Canvas: Component = () => {
         suggestedBinding, setSuggestedBinding,
         snappingGuides, setSnappingGuides,
         spacingGuides, setSpacingGuides,
+        reparentDropTarget, setReparentDropTarget,
         get textInputRef() { return textInputRef; }
     };
 

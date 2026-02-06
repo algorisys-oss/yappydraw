@@ -9,7 +9,7 @@ import { store, updateElement, pushToHistory, applyMindmapStyling } from "../sto
 import { getElementPreviewBaseState, isElementAnimating } from "../utils/animation/element-animator";
 import {
     Palette,
-    Bold, Italic, AlignLeft, AlignCenter, AlignRight
+    Bold, Italic, AlignLeft, AlignCenter, AlignRight, WrapText
 } from "lucide-solid";
 import { getElementFamily, getQuickPropertiesForType, QUICK_COLORS, type QuickPropertyDef } from "../config/quick-toolbar-config";
 import "./quick-toolbar.css";
@@ -43,6 +43,37 @@ const ArrowheadIcon: Component<{ type: 'none' | 'arrow' | 'triangle' | 'diamond'
         {props.type === 'diamond' && <polygon points="12,8 10,5.5 8,8 10,10.5" fill="currentColor" stroke="none" />}
     </svg>
 );
+
+/** Shared icon resolver — maps icon string keys to JSX elements */
+const getIcon = (icon: string) => {
+    // Stroke styles
+    if (icon === 'solid') return <StrokeIcon type="solid" />;
+    if (icon === 'dashed') return <StrokeIcon type="dashed" />;
+    if (icon === 'dotted') return <StrokeIcon type="dotted" />;
+    // Curve types
+    if (icon === 'straight') return <CurveIcon type="straight" />;
+    if (icon === 'curve') return <CurveIcon type="curve" />;
+    if (icon === 'elbow') return <CurveIcon type="elbow" />;
+    // Arrowheads
+    if (icon === 'none') return <ArrowheadIcon type="none" />;
+    if (icon === 'arrow') return <ArrowheadIcon type="arrow" />;
+    if (icon === 'triangle') return <ArrowheadIcon type="triangle" />;
+    if (icon === 'diamond') return <ArrowheadIcon type="diamond" />;
+    // Text align
+    if (icon === 'alignLeft') return <AlignLeft size={14} />;
+    if (icon === 'alignCenter') return <AlignCenter size={14} />;
+    if (icon === 'alignRight') return <AlignRight size={14} />;
+    // Font family
+    if (icon === 'fontHand') return <span style={{ "font-family": "Handlee, cursive", "font-size": "13px", "line-height": "1" }}>Aa</span>;
+    if (icon === 'fontCaveat') return <span style={{ "font-family": "Caveat, cursive", "font-size": "14px", "line-height": "1" }}>Aa</span>;
+    if (icon === 'fontMarker') return <span style={{ "font-family": "'Permanent Marker', cursive", "font-size": "11px", "line-height": "1" }}>Aa</span>;
+    if (icon === 'fontSans') return <span style={{ "font-family": "Inter, sans-serif", "font-size": "12px", "font-weight": "500", "line-height": "1" }}>Aa</span>;
+    if (icon === 'fontPoppins') return <span style={{ "font-family": "Poppins, sans-serif", "font-size": "12px", "line-height": "1" }}>Aa</span>;
+    if (icon === 'fontSerif') return <span style={{ "font-family": "Merriweather, serif", "font-size": "11px", "line-height": "1" }}>Aa</span>;
+    if (icon === 'fontMono') return <span style={{ "font-family": "'Source Code Pro', monospace", "font-size": "11px", "line-height": "1" }}>Aa</span>;
+    if (icon === 'fontCode') return <span style={{ "font-family": "'JetBrains Mono', monospace", "font-size": "11px", "line-height": "1" }}>Aa</span>;
+    return null;
+};
 
 /** Color dot with popover */
 const ColorDotControl: Component<{
@@ -108,56 +139,61 @@ const ColorDotControl: Component<{
     );
 };
 
-/** Icon select - row of mutually exclusive icon buttons */
-const IconSelectControl: Component<{
+/** Collapsed icon select — shows only active option + chevron, click opens popover */
+const IconSelectCollapsedControl: Component<{
     value: any;
     options: { value: any; icon: string; label: string }[];
     label: string;
+    isOpen: boolean;
+    onToggle: () => void;
     onChange: (val: any) => void;
 }> = (props) => {
-    const getIcon = (icon: string) => {
-        // Stroke styles
-        if (icon === 'solid') return <StrokeIcon type="solid" />;
-        if (icon === 'dashed') return <StrokeIcon type="dashed" />;
-        if (icon === 'dotted') return <StrokeIcon type="dotted" />;
-        // Curve types
-        if (icon === 'straight') return <CurveIcon type="straight" />;
-        if (icon === 'curve') return <CurveIcon type="curve" />;
-        if (icon === 'elbow') return <CurveIcon type="elbow" />;
-        // Arrowheads
-        if (icon === 'none') return <ArrowheadIcon type="none" />;
-        if (icon === 'arrow') return <ArrowheadIcon type="arrow" />;
-        if (icon === 'triangle') return <ArrowheadIcon type="triangle" />;
-        if (icon === 'diamond') return <ArrowheadIcon type="diamond" />;
-        // Text align
-        if (icon === 'alignLeft') return <AlignLeft size={14} />;
-        if (icon === 'alignCenter') return <AlignCenter size={14} />;
-        if (icon === 'alignRight') return <AlignRight size={14} />;
-        // Font family
-        if (icon === 'fontHand') return <span style={{ "font-family": "Handlee, cursive", "font-size": "13px", "line-height": "1" }}>Aa</span>;
-        if (icon === 'fontCaveat') return <span style={{ "font-family": "Caveat, cursive", "font-size": "14px", "line-height": "1" }}>Aa</span>;
-        if (icon === 'fontMarker') return <span style={{ "font-family": "'Permanent Marker', cursive", "font-size": "11px", "line-height": "1" }}>Aa</span>;
-        if (icon === 'fontSans') return <span style={{ "font-family": "Inter, sans-serif", "font-size": "12px", "font-weight": "500", "line-height": "1" }}>Aa</span>;
-        if (icon === 'fontPoppins') return <span style={{ "font-family": "Poppins, sans-serif", "font-size": "12px", "line-height": "1" }}>Aa</span>;
-        if (icon === 'fontSerif') return <span style={{ "font-family": "Merriweather, serif", "font-size": "11px", "line-height": "1" }}>Aa</span>;
-        if (icon === 'fontMono') return <span style={{ "font-family": "'Source Code Pro', monospace", "font-size": "11px", "line-height": "1" }}>Aa</span>;
-        if (icon === 'fontCode') return <span style={{ "font-family": "'JetBrains Mono', monospace", "font-size": "11px", "line-height": "1" }}>Aa</span>;
-        return null;
+    let wrapperRef: HTMLDivElement | undefined;
+
+    const handleDocClick = (e: MouseEvent) => {
+        if (props.isOpen && wrapperRef && !wrapperRef.contains(e.target as Node)) {
+            props.onToggle();
+        }
     };
 
+    createEffect(() => {
+        if (props.isOpen) {
+            const timer = setTimeout(() => document.addEventListener('click', handleDocClick), 0);
+            onCleanup(() => {
+                clearTimeout(timer);
+                document.removeEventListener('click', handleDocClick);
+            });
+        }
+    });
+
+    const activeOption = () =>
+        props.options.find(o => (o.value ?? null) === (props.value ?? null)) || props.options[0];
+
     return (
-        <div class="qt-icon-select" title={props.label}>
-            <For each={props.options}>
-                {(opt) => (
-                    <button
-                        class={`qt-icon-btn ${(props.value ?? null) === opt.value ? 'active' : ''}`}
-                        onClick={() => props.onChange(opt.value)}
-                        title={opt.label}
-                    >
-                        {getIcon(opt.icon)}
-                    </button>
-                )}
-            </For>
+        <div class="qt-collapsed-select" ref={wrapperRef} title={props.label}>
+            <button
+                class={`qt-icon-btn qt-collapsed-trigger ${props.isOpen ? 'active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); props.onToggle(); }}
+                title={props.label}
+            >
+                {getIcon(activeOption().icon)}
+                <span class="qt-collapsed-chevron" />
+            </button>
+            <Show when={props.isOpen}>
+                <div class="qt-collapsed-popover" onClick={(e) => e.stopPropagation()}>
+                    <For each={props.options}>
+                        {(opt) => (
+                            <button
+                                class={`qt-icon-btn ${(props.value ?? null) === opt.value ? 'active' : ''}`}
+                                onClick={() => { props.onChange(opt.value); props.onToggle(); }}
+                                title={opt.label}
+                            >
+                                {getIcon(opt.icon)}
+                            </button>
+                        )}
+                    </For>
+                </div>
+            </Show>
         </div>
     );
 };
@@ -191,7 +227,7 @@ const IconToggleControl: Component<{
             onClick={toggle}
             title={props.label}
         >
-            {props.propKey === 'fontWeight' ? <Bold size={14} /> : <Italic size={14} />}
+            {props.propKey === 'fontWeight' ? <Bold size={14} /> : props.propKey === 'curvedText' ? <WrapText size={14} /> : <Italic size={14} />}
         </button>
     );
 };
@@ -369,10 +405,16 @@ const ToolbarContent: Component<{
 
                                             if (propDef.controlType === 'icon-select' && propDef.options) {
                                                 return (
-                                                    <IconSelectControl
+                                                    <IconSelectCollapsedControl
                                                         value={value()}
                                                         options={propDef.options}
                                                         label={propDef.label}
+                                                        isOpen={props.activePopover() === propDef.key}
+                                                        onToggle={() => {
+                                                            props.setActivePopover(
+                                                                props.activePopover() === propDef.key ? null : propDef.key
+                                                            );
+                                                        }}
                                                         onChange={(val) => {
                                                             pushToHistory();
                                                             handlePropertyChange(propDef.key, val);
@@ -398,7 +440,7 @@ const ToolbarContent: Component<{
                                             if (propDef.controlType === 'mini-slider') {
                                                 return (
                                                     <MiniSliderControl
-                                                        value={value() ?? propDef.max!}
+                                                        value={value() ?? (propDef.key === 'borderRadius' ? 0 : propDef.max!)}
                                                         min={propDef.min!}
                                                         max={propDef.max!}
                                                         step={propDef.step!}

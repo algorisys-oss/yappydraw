@@ -56,6 +56,97 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     link.click();
 };
 
+export const exportToJpg = async (scale: number, onlySelected: boolean) => {
+    let elements = store.elements;
+    if (onlySelected) {
+        if (store.selection.length === 0) return;
+        elements = elements.filter(el => store.selection.includes(el.id));
+    }
+    if (elements.length === 0) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    elements.forEach(el => {
+        minX = Math.min(minX, el.x);
+        minY = Math.min(minY, el.y);
+        maxX = Math.max(maxX, el.x + el.width);
+        maxY = Math.max(maxY, el.y + el.height);
+    });
+
+    const padding = 20;
+    const width = maxX - minX + padding * 2;
+    const height = maxY - minY + padding * 2;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // JPEG has no transparency — always white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.scale(scale, scale);
+    ctx.translate(-minX + padding, -minY + padding);
+
+    const rc = rough.canvas(canvas);
+    elements.forEach(el => {
+        renderElement(rc, ctx, el);
+    });
+
+    const link = document.createElement('a');
+    link.download = 'yappy_drawing.jpg';
+    link.href = canvas.toDataURL('image/jpeg', 0.92);
+    link.click();
+};
+
+export const copyCanvasAsPng = async (scale: number) => {
+    const elements = store.elements;
+    if (elements.length === 0) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    elements.forEach(el => {
+        minX = Math.min(minX, el.x);
+        minY = Math.min(minY, el.y);
+        maxX = Math.max(maxX, el.x + el.width);
+        maxY = Math.max(maxY, el.y + el.height);
+    });
+
+    const padding = 20;
+    const width = maxX - minX + padding * 2;
+    const height = maxY - minY + padding * 2;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.scale(scale, scale);
+    ctx.translate(-minX + padding, -minY + padding);
+
+    const rc = rough.canvas(canvas);
+    elements.forEach(el => {
+        renderElement(rc, ctx, el);
+    });
+
+    canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        try {
+            await navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+            ]);
+        } catch (_) {
+            // Clipboard API may not be available in all contexts
+        }
+    }, 'image/png');
+};
+
 export const exportToSvg = (onlySelected: boolean) => {
     let elements = store.elements;
     if (onlySelected) {

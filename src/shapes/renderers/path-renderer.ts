@@ -57,7 +57,7 @@ export class PathRenderer extends ShapeRenderer {
             const cp1 = controls[0];
             const cp2 = controls[1];
 
-            this.drawOrganicBranch(ctx, start, end, cp1, cp2, color, el.strokeWidth, el.isEditing ? "" : (el.text || ""), color);
+            this.drawOrganicBranch(ctx, start, end, cp1, cp2, color, el.strokeWidth, el.isEditing ? "" : (el.containerText || ""), el);
             this.renderFlow(context, start, end, cp1, cp2);
         }
     }
@@ -148,7 +148,7 @@ export class PathRenderer extends ShapeRenderer {
         color: string,
         width: number,
         text: string,
-        textColor: string
+        el: any
     ) {
         const segments = 20;
         const pointsTop: { x: number, y: number }[] = [];
@@ -182,25 +182,181 @@ export class PathRenderer extends ShapeRenderer {
         ctx.fillStyle = color;
         ctx.fill();
 
+        // Draw arrowheads at start/end (scale to branch width)
+        if (el.startArrowhead) {
+            const startAngle = this.cubicBezierAngle(start, cp1, cp2, end, 0) + Math.PI;
+            const headLen = el.startArrowheadSize || Math.max(startWidth * 0.75, 12);
+            // Offset away from the branch so it doesn't overlap the wide body
+            const ox = Math.cos(startAngle) * headLen * 0.6;
+            const oy = Math.sin(startAngle) * headLen * 0.6;
+            this.drawArrowhead(ctx, start.x + ox, start.y + oy, startAngle, el.startArrowhead, color, headLen);
+        }
+        if (el.endArrowhead) {
+            const endAngle = this.cubicBezierAngle(start, cp1, cp2, end, 1);
+            const headLen = el.endArrowheadSize || Math.max(endWidth * 1.5, 12);
+            this.drawArrowhead(ctx, end.x, end.y, endAngle, el.endArrowhead, color, headLen);
+        }
+
         if (text) {
             ctx.save();
-            ctx.font = "16px sans-serif";
-            ctx.fillStyle = textColor;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            const fontSize = el.fontSize || 16;
+            const fontFamily = el.fontFamily || 'sans-serif';
+            const fontWeight = el.fontWeight === 'bold' ? 'bold ' : '';
+            const fontStyle = el.fontStyle === 'italic' ? 'italic ' : '';
+            ctx.font = `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
+            ctx.fillStyle = el.textColor || color;
 
-            const centerX = this.cubicBezier(start.x, cp1.x, cp2.x, end.x, 0.5);
-            const centerY = this.cubicBezier(start.y, cp1.y, cp2.y, end.y, 0.5);
-            const angle = this.cubicBezierAngle(start, cp1, cp2, end, 0.5);
-            const textOffset = -15;
-
-            ctx.translate(centerX, centerY);
-            let rawAngle = angle;
-            if (rawAngle > Math.PI / 2 || rawAngle < -Math.PI / 2) rawAngle += Math.PI;
-            ctx.rotate(rawAngle);
-            ctx.fillText(text, 0, textOffset);
+            if (el.curvedText) {
+                this.drawCurvedText(ctx, text, start, cp1, cp2, end, fontSize);
+            } else {
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const centerX = this.cubicBezier(start.x, cp1.x, cp2.x, end.x, 0.5);
+                const centerY = this.cubicBezier(start.y, cp1.y, cp2.y, end.y, 0.5);
+                const angle = this.cubicBezierAngle(start, cp1, cp2, end, 0.5);
+                const textOffset = -15;
+                ctx.translate(centerX, centerY);
+                let rawAngle = angle;
+                if (rawAngle > Math.PI / 2 || rawAngle < -Math.PI / 2) rawAngle += Math.PI;
+                ctx.rotate(rawAngle);
+                ctx.fillText(text, 0, textOffset);
+            }
             ctx.restore();
         }
+    }
+
+    private drawCurvedText(
+        ctx: CanvasRenderingContext2D,
+        text: string,
+        start: { x: number, y: number },
+        cp1: { x: number, y: number },
+        cp2: { x: number, y: number },
+        end: { x: number, y: number },
+        fontSize: number
+    ) {
+        // Build a lookup table of arc-length → t
+        const steps = 200;
+        const arcLengths: number[] = [0];
+        let prevX = start.x, prevY = start.y;
+        for (let i = 1; i <= steps; i++) {
+            const t = i / steps;
+            const x = this.cubicBezier(start.x, cp1.x, cp2.x, end.x, t);
+            const y = this.cubicBezier(start.y, cp1.y, cp2.y, end.y, t);
+            arcLengths.push(arcLengths[i - 1] + Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2));
+            prevX = x;
+            prevY = y;
+        }
+        const totalLen = arcLengths[steps];
+
+        // Map arc-length distance to t parameter
+        const distToT = (d: number): number => {
+            if (d <= 0) return 0;
+            if (d >= totalLen) return 1;
+            let lo = 0, hi = steps;
+            while (lo < hi) {
+                const mid = (lo + hi) >> 1;
+                if (arcLengths[mid] < d) lo = mid + 1; else hi = mid;
+            }
+            const segStart = lo - 1;
+            const segFrac = (d - arcLengths[segStart]) / (arcLengths[lo] - arcLengths[segStart]);
+            return (segStart + segFrac) / steps;
+        };
+
+        // Measure total text width
+        const charWidths: number[] = [];
+        let totalTextWidth = 0;
+        for (const ch of text) {
+            const w = ctx.measureText(ch).width;
+            charWidths.push(w);
+            totalTextWidth += w;
+        }
+
+        // Determine text direction — flip if curve goes right-to-left
+        const midAngle = this.cubicBezierAngle(start, cp1, cp2, end, 0.5);
+        const flip = midAngle > Math.PI / 2 || midAngle < -Math.PI / 2;
+
+        // Center text along the curve
+        let curDist = (totalLen - totalTextWidth) / 2;
+        const textOffset = -fontSize * 0.8; // offset above the curve
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const chars = flip ? [...text].reverse() : [...text];
+        const widths = flip ? [...charWidths].reverse() : charWidths;
+
+        for (let i = 0; i < chars.length; i++) {
+            curDist += widths[i] / 2;
+            const t = distToT(curDist);
+            const x = this.cubicBezier(start.x, cp1.x, cp2.x, end.x, t);
+            const y = this.cubicBezier(start.y, cp1.y, cp2.y, end.y, t);
+            let angle = this.cubicBezierAngle(start, cp1, cp2, end, t);
+            if (flip) angle += Math.PI;
+
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.fillText(chars[i], 0, textOffset);
+            ctx.restore();
+
+            curDist += widths[i] / 2;
+        }
+    }
+
+    private drawArrowhead(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number, type: string, color: string, headLen: number = 12) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+
+        if (type === 'triangle' || type === 'arrow') {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-headLen * Math.cos(Math.PI / 6), -headLen * Math.sin(Math.PI / 6));
+            if (type === 'triangle') {
+                ctx.lineTo(-headLen * Math.cos(-Math.PI / 6), -headLen * Math.sin(-Math.PI / 6));
+                ctx.closePath();
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+            } else {
+                ctx.moveTo(0, 0);
+                ctx.lineTo(-headLen * Math.cos(-Math.PI / 6), -headLen * Math.sin(-Math.PI / 6));
+            }
+            ctx.stroke();
+        } else if (type === 'circle' || type === 'dot') {
+            ctx.beginPath();
+            ctx.arc(-headLen / 2, 0, headLen / 2, 0, Math.PI * 2);
+            ctx.fillStyle = type === 'dot' ? color : '#ffffff';
+            ctx.fill();
+            ctx.stroke();
+        } else if (type === 'diamond' || type === 'diamondFilled') {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-headLen, -headLen / 2);
+            ctx.lineTo(-headLen * 2, 0);
+            ctx.lineTo(-headLen, headLen / 2);
+            ctx.closePath();
+            ctx.fillStyle = type === 'diamondFilled' ? color : '#ffffff';
+            ctx.fill();
+            ctx.stroke();
+        } else if (type === 'crowsfoot') {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-headLen * Math.cos(Math.PI / 4), -headLen * Math.sin(Math.PI / 4));
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-headLen * Math.cos(-Math.PI / 4), -headLen * Math.sin(-Math.PI / 4));
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-headLen, 0);
+            ctx.stroke();
+        } else if (type === 'bar') {
+            ctx.beginPath();
+            ctx.moveTo(0, -headLen);
+            ctx.lineTo(0, headLen);
+            ctx.stroke();
+        }
+        ctx.restore();
     }
 
     protected definePath(ctx: CanvasRenderingContext2D, el: any): void {

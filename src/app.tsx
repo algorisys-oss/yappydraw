@@ -80,6 +80,11 @@ const App: Component = () => {
         togglePresentationMode(false);
         return;
       }
+      if (e.key === 'Escape' && store.focusBranchId) {
+        e.preventDefault();
+        setStore('focusBranchId', null);
+        return;
+      }
 
       const code = e.code;
       const key = e.key.toLowerCase();
@@ -313,6 +318,17 @@ const App: Component = () => {
         if (key === 's') {
           e.preventDefault();
           cycleStrokeStyle();
+        } else if (key === 'f' && e.shiftKey) {
+          // Focus Mode: toggle branch isolation for mindmap nodes
+          e.preventDefault();
+          if (store.focusBranchId) {
+            setStore('focusBranchId', null);
+          } else if (store.selection.length === 1) {
+            const el = store.elements.find(el => el.id === store.selection[0]);
+            if (el && (el.parentId || store.elements.some(c => c.parentId === el.id))) {
+              setStore('focusBranchId', el.id);
+            }
+          }
         } else if (key === 'f') {
           e.preventDefault();
           cycleFillStyle();
@@ -331,13 +347,50 @@ const App: Component = () => {
         } else if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
           if (store.selection.length > 0) {
             e.preventDefault();
-            const nudgeAmount = e.shiftKey ? 10 : 1;
-            let dx = 0, dy = 0;
-            if (key === 'arrowup') dy = -nudgeAmount;
-            else if (key === 'arrowdown') dy = nudgeAmount;
-            else if (key === 'arrowleft') dx = -nudgeAmount;
-            else if (key === 'arrowright') dx = nudgeAmount;
-            moveSelectedElements(dx, dy, true);
+            // Mindmap navigation: single node with hierarchy, no Alt key
+            const CONNECTOR_TYPES = ['line', 'arrow', 'bezier', 'organicBranch', 'polyline'];
+            const selEl = store.selection.length === 1
+              ? store.elements.find(el => el.id === store.selection[0])
+              : null;
+            const isMindmapNode = selEl && !CONNECTOR_TYPES.includes(selEl.type) &&
+              (selEl.parentId || store.elements.some(el => el.parentId === selEl.id));
+            if (isMindmapNode && !e.shiftKey) {
+              // Arrow key hierarchy navigation
+              if (key === 'arrowleft' && selEl.parentId) {
+                // Navigate to parent
+                setStore("selection", [selEl.parentId]);
+              } else if (key === 'arrowright') {
+                // Navigate to first child
+                const children = store.elements.filter(
+                  el => el.parentId === selEl.id && !CONNECTOR_TYPES.includes(el.type)
+                ).sort((a, b) => a.y - b.y);
+                if (children.length > 0) setStore("selection", [children[0].id]);
+              } else if (key === 'arrowup' || key === 'arrowdown') {
+                // Navigate between siblings
+                const parentId = selEl.parentId;
+                if (parentId) {
+                  const siblings = store.elements.filter(
+                    el => el.parentId === parentId && !CONNECTOR_TYPES.includes(el.type)
+                  ).sort((a, b) => a.y - b.y);
+                  const idx = siblings.findIndex(s => s.id === selEl.id);
+                  if (idx >= 0) {
+                    const nextIdx = key === 'arrowup' ? idx - 1 : idx + 1;
+                    if (nextIdx >= 0 && nextIdx < siblings.length) {
+                      setStore("selection", [siblings[nextIdx].id]);
+                    }
+                  }
+                }
+              }
+            } else {
+              // Default nudge behavior (non-mindmap or Alt+Arrow)
+              const nudgeAmount = e.shiftKey ? 10 : 1;
+              let dx = 0, dy = 0;
+              if (key === 'arrowup') dy = -nudgeAmount;
+              else if (key === 'arrowdown') dy = nudgeAmount;
+              else if (key === 'arrowleft') dx = -nudgeAmount;
+              else if (key === 'arrowright') dx = nudgeAmount;
+              moveSelectedElements(dx, dy, true);
+            }
           }
         } else if (key === 'tab') {
           if (store.selection.length === 1) {

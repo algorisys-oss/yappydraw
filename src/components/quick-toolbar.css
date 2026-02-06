@@ -158,11 +158,60 @@
     height: 16px;
 }
 
-/* Icon select group */
+/* Icon select group (legacy inline — kept for reference) */
 .qt-icon-select {
     display: flex;
     align-items: center;
     gap: 2px;
+}
+
+/* ============ Collapsed Icon Select ============ */
+.qt-collapsed-select {
+    position: relative;
+}
+
+.qt-collapsed-trigger {
+    position: relative;
+    padding-right: 10px !important;
+    min-width: 30px;
+}
+
+.qt-collapsed-chevron {
+    position: absolute;
+    bottom: 2px;
+    right: 1px;
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 3px solid currentColor;
+    opacity: 0.5;
+}
+
+.qt-collapsed-trigger:hover .qt-collapsed-chevron {
+    opacity: 0.8;
+}
+
+.qt-collapsed-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-panel, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    z-index: 10002;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    white-space: nowrap;
+}
+
+.qt-collapsed-popover .qt-icon-btn {
+    width: 28px;
+    height: 28px;
 }
 
 /* ============ Mini Slider ============ */

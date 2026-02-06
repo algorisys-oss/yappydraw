@@ -225,7 +225,7 @@ export const intersectElementWithLine = (
         }
         return { x: ix, y: iy };
 
-    } else if (element.type === 'circle') {
+    } else if (element.type === 'circle' || element.type === 'cloud') {
         const rx = element.width / 2 + gap;
         const ry = element.height / 2 + gap;
 
@@ -281,7 +281,7 @@ export const intersectElementWithLine = (
         }
         return { x: ix, y: iy };
     } else if (element.type === 'triangle' || element.type === 'hexagon' || element.type === 'octagon' ||
-        element.type === 'parallelogram' || element.type === 'star' || element.type === 'cloud' ||
+        element.type === 'parallelogram' || element.type === 'star' ||
         element.type === 'heart' || element.type === 'arrowLeft' || element.type === 'arrowRight' ||
         element.type === 'arrowUp' || element.type === 'arrowDown' ||
         element.type === 'capsule' || element.type === 'stickyNote' || element.type === 'callout' ||

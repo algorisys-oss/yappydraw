@@ -85,7 +85,15 @@ export {
     boxExplode,
     boxCollapse,
     isometricRotate,
-    depthPulse
+    depthPulse,
+    // Glitch / Motion Graphics
+    glitch,
+    // Kinetic Typography
+    kineticBounceIn,
+    kineticDropIn,
+    kineticScaleReveal,
+    kineticSlideIn,
+    kineticFadeUp
 } from './element-animator';
 
 export type { StaggerConfig } from './element-animator';

@@ -3,16 +3,14 @@ import { Portal } from "solid-js/web";
 import { store, setSelectedTool, setStore, setToolLocked } from "../store/app-store";
 import type { ElementType } from "../types";
 import {
-    Brain, Leaf, Share2, ChevronDown
+    Brain, Leaf, ChevronDown
 } from "lucide-solid";
 import "./pen-tool-group.css"; // Reuse styling
 
 // Mindmap-specific tools
 const mindmapTools: { type: ElementType | 'organicBranch' | 'mindmapNode'; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
     { type: 'organicBranch', icon: Leaf, label: 'Organic Branch' },
-    // We can alias existing shapes for semantic meaning in this group
     { type: 'cloud', icon: Brain, label: 'Central Topic (Cloud)' },
-    { type: 'circle', icon: Share2, label: 'Topic (Circle)' },
 ];
 
 const MindmapToolGroup: Component = () => {

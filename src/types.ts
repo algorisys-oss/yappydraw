@@ -256,6 +256,9 @@ export interface DrawingElement {
     animations?: ElementAnimation[];
     isMotionPath?: boolean; // Can this element act as a path for others?
 
+    // Text rendering on paths
+    curvedText?: boolean;
+
     // Motion Graphics
     flowAnimation?: boolean;
     flowSpeed?: number;          // 0 to 10

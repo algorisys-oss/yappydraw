@@ -11,7 +11,7 @@ import { isLayerVisible } from '../store/app-store';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { renderElement } from './render-element';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
-import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight } from './selection-renderer';
+import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight } from './selection-renderer';
 import { renderSnappingGuides, renderSpacingGuides } from './snap-renderer';
 import { getSelectionBoundingBox } from './handle-detection';
 import { getAnchorPoints } from './anchor-points';
@@ -48,6 +48,7 @@ export interface RenderElementsParams {
     editingId: string | null;
     canInteractWithElement: (el: DrawingElement) => boolean;
     appMode?: string;
+    focusBranchIds?: Set<string> | null;
 }
 
 export interface SelectionOverlayParams {
@@ -60,6 +61,9 @@ export interface SelectionOverlayParams {
     snappingGuides: SnappingGuide[];
     spacingGuides: SpacingGuide[];
     tableCellSelection?: { startRow: number; startCol: number; endRow: number; endCol: number } | null;
+    isDarkMode?: boolean;
+    appMode?: string;
+    reparentDropTarget?: string | null;
 }
 
 export interface ConnectionAnchorParams {
@@ -510,7 +514,8 @@ export function renderLayersAndElements(
     const {
         elements, layers, slides, docType, activeSlideIndex,
         selection, selectedTool, animatedStates, viewportBounds: vp,
-        scale, isDarkMode, currentDrawingId, hoveredConnector, editingId, appMode
+        scale, isDarkMode, currentDrawingId, hoveredConnector, editingId, appMode,
+        focusBranchIds
     } = params;
 
     const cachedRc = createCachedRc(rc);
@@ -631,8 +636,9 @@ export function renderLayersAndElements(
                 if (editingId === renderedEl.id) {
                     renderedEl.isEditing = true;
                 }
-                const layerOpacity = (layer?.opacity ?? 1);
-                const shouldCache = !animState;
+                const isFocusDimmed = focusBranchIds && focusBranchIds.size > 0 && !focusBranchIds.has(el.id);
+                const layerOpacity = (layer?.opacity ?? 1) * (isFocusDimmed ? 0.12 : 1);
+                const shouldCache = !animState && !isFocusDimmed;
                 if (shouldCache) beginElement(renderedEl.id, computeElementHash(renderedEl));
                 renderElement(cachedRc, ctx, renderedEl, isDarkMode, layerOpacity);
                 if (shouldCache) endElement();
@@ -682,6 +688,12 @@ export function renderSelectionOverlays(
         if (target) renderBindingHighlight(ctx, target, suggestedBinding, scale);
     }
 
+    // Reparent drop target highlight
+    if (params.reparentDropTarget) {
+        const target = elements.find(e => e.id === params.reparentDropTarget);
+        if (target) renderDropTargetHighlight(ctx, target, scale);
+    }
+
     // Snapping & spacing guides
     renderSnappingGuides(ctx, snappingGuides, scale);
     renderSpacingGuides(ctx, spacingGuides, scale);
@@ -693,6 +705,9 @@ export function renderSelectionOverlays(
             renderTableCellSelection(ctx, tableEl, tableCellSelection, scale);
         }
     }
+
+    // Mindmap collapse/expand toggles — rendered last so they're always on top
+    renderMindmapToggles(ctx, elements, selection, scale, params.isDarkMode ?? false, params.appMode);
 }
 
 function renderTableCellSelection(

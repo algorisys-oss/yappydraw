@@ -44,5 +44,7 @@ export interface PointerSignals {
     setSnappingGuides: (v: SnappingGuide[]) => void;
     spacingGuides: () => SpacingGuide[];
     setSpacingGuides: (v: SpacingGuide[]) => void;
+    reparentDropTarget: () => string | null;
+    setReparentDropTarget: (v: string | null) => void;
     textInputRef?: HTMLTextAreaElement;
 }

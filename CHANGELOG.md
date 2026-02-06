@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-02-06
+
+### Added
+- **Organic branch connectors**: Mindmap connectors rendered as smooth bezier curves with curved text labels
+- **Semantic branch styling**: Auto-coloring, depth-based strokeWidth tapering, and opacity fading for mindmap branches
+- **Focus mode (Shift+F)**: Dim all elements outside the selected mindmap branch for focused editing
+- **Arrow key navigation**: Navigate between mindmap nodes using arrow keys
+- **Drag-to-reparent**: Drag mindmap nodes onto new parents with SweetAlert2 confirmation and auto-alignment
+- **Kinetic typography animations**: Typewriter, word-by-word, text scramble, and wave text animation presets
+- **Glitch effect animation preset**: RGB channel splitting, scan lines, and noise overlay
+- **Canvas right-click export**: Export as PNG, JPG, SVG or copy as PNG from the context menu
+- **Collapsed toolbar icon-selects**: Quick toolbar uses single-button popovers for cleaner UI
+- **Drawing Style for openBox**: Sketch and Architectural render styles for openBox 3D shapes
+- **Examples/Showcase page**: Modern diagram templates for quick starts
+
+### Fixed
+- Infinite recursion in mindmap buildTree (connectors inheriting parentId from SolidJS proxy)
+- Child node overlap when pressing Tab on parent repeatedly
+- Kinetic typography multiline text positioning and replay state restore
+- Text element bounding box not recalculating on fontSize change
+- getBranchInfo counting connectors as children (wrong PALETTE color assignment)
+- Bezier midpoint text editing overlay position for organicBranch
+
 ## [1.6.0] - 2026-02-05
 
 ### Added

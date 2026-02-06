@@ -5,11 +5,12 @@ import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } fro
 import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-types';
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
-import { MindmapLayoutEngine, type LayoutDirection } from "../utils/mindmap-layout";
+import { MindmapLayoutEngine, type LayoutDirection, getBranchInfo } from "../utils/mindmap-layout";
 import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
 import { generateId } from "../utils/id-generator"; // New Import
+import { refreshBoundLine } from "../utils/binding-logic";
 
 interface AppState {
     // Current Active Slide properties (for performance and compatibility)
@@ -87,6 +88,7 @@ interface AppState {
         // We sync to the element's pathData on every change, but this tracks "Edit Mode"
     };
 
+    focusBranchId: string | null;
     readOnly: boolean;
     cursorPosition: { x: number; y: number };
     welcomeDismissed: boolean;
@@ -114,6 +116,7 @@ const initialState: AppState = {
     selection: [],
     flowTick: 0,
     isRecording: false,
+    focusBranchId: null,
     readOnly: false,
     cursorPosition: { x: 0, y: 0 },
     welcomeDismissed: false,
@@ -296,25 +299,44 @@ export const addChildNode = (parentId: string) => {
 
     pushToHistory();
     const newId = generateId(parent.type);
-    const hOffset = 150;
-    const vOffset = 0;
+    const hOffset = 100;
+    const vGap = 40;
+
+    // Resolve branch color and depth-based stroke width
+    const branch = getBranchInfo(parent.id, store.elements);
+
+    // Check for existing children to avoid overlap
+    const existingChildren = store.elements.filter(
+        e => e.parentId === parent.id &&
+        e.type !== 'organicBranch' && e.type !== 'arrow' && e.type !== 'line' && e.type !== 'bezier'
+    );
+
+    let childX = parent.x + parent.width + hOffset;
+    let childY = parent.y;
+
+    if (existingChildren.length > 0) {
+        // Place below the last existing child
+        const lastChild = existingChildren.reduce((a, b) => (a.y + a.height > b.y + b.height) ? a : b);
+        childX = lastChild.x;
+        childY = lastChild.y + lastChild.height + vGap;
+    }
 
     const newElement: DrawingElement = {
         ...store.defaultElementStyles,
-        // Inherit styles from parent
-        strokeColor: parent.strokeColor,
+        // Inherit styles from parent, with depth-based tapering
+        strokeColor: branch.color,
         backgroundColor: parent.backgroundColor,
         fillStyle: parent.fillStyle,
-        strokeWidth: parent.strokeWidth,
+        strokeWidth: branch.strokeWidth,
         roughness: parent.roughness,
         renderStyle: parent.renderStyle,
-        opacity: parent.opacity,
+        opacity: branch.opacity,
         strokeStyle: parent.strokeStyle || 'solid',
 
         id: newId,
         type: (parent.type === 'image' || parent.type === 'line' || parent.type === 'arrow') ? 'rectangle' : parent.type,
-        x: parent.x + parent.width + hOffset,
-        y: parent.y + vOffset,
+        x: childX,
+        y: childY,
         width: parent.width > 0 ? parent.width : 100,
         height: parent.height > 0 ? parent.height : 60,
         layerId: store.activeLayerId,
@@ -328,40 +350,58 @@ export const addChildNode = (parentId: string) => {
         link: null,
     };
 
+    // Compute organicBranch connector with proper S-curve control points
+    const cStartX = parent.x + parent.width;
+    const cStartY = parent.y + parent.height / 2;
+    const childHeight = parent.height > 0 ? parent.height : 60;
+    const cEndX = childX;
+    const cEndY = childY + childHeight / 2;
+    const cNX = Math.min(cStartX, cEndX), cNY = Math.min(cStartY, cEndY);
+    const cNW = Math.abs(cEndX - cStartX), cNH = Math.abs(cEndY - cStartY);
+    const cRSX = cStartX - cNX, cRSY = cStartY - cNY, cREX = cEndX - cNX, cREY = cEndY - cNY;
+    const cDX = cREX - cRSX;
+
     const connector: DrawingElement = {
         ...store.defaultElementStyles,
-        id: generateId('arrow'),
-        type: 'arrow',
-        x: parent.x + parent.width,
-        y: parent.y + parent.height / 2,
-        width: hOffset,
-        height: 0,
+        id: generateId('organicBranch'),
+        type: 'organicBranch',
+        x: cNX,
+        y: cNY,
+        width: cNW,
+        height: cNH,
         layerId: store.activeLayerId,
-        startBinding: { elementId: parent.id, gap: 5, position: 'right', focus: 0 },
-        endBinding: { elementId: newId, gap: 5, position: 'left', focus: 0 },
+        startBinding: { elementId: parent.id, gap: 0, position: 'right', focus: 0 },
+        endBinding: { elementId: newId, gap: 0, position: 'left', focus: 0 },
         curveType: 'bezier',
         angle: 0,
         seed: Math.floor(Math.random() * 2 ** 31),
         roundness: null,
         locked: false,
         link: null,
-        opacity: 100,
+        opacity: branch.opacity,
         renderStyle: parent.renderStyle,
-        strokeColor: parent.strokeColor,
-        backgroundColor: 'transparent', // Connectors shouldn't inherit parent fill
+        strokeColor: branch.color,
+        backgroundColor: 'transparent',
         fillStyle: parent.fillStyle,
         strokeStyle: parent.strokeStyle,
-        strokeWidth: parent.strokeWidth,
+        strokeWidth: branch.strokeWidth,
         roughness: parent.roughness,
-        points: [0, 0, hOffset, 0]
+        points: [cRSX, cRSY, cREX, cREY],
+        controlPoints: [
+            { x: cNX + cRSX + cDX * 0.5, y: cNY + cRSY },
+            { x: cNX + cREX - cDX * 0.5, y: cNY + cREY }
+        ]
     };
 
     const connectorId = connector.id;
     setStore("elements", els => [...els, newElement, connector]);
 
     // Movement sync: Add connector to boundElements of both nodes
-    setStore("elements", e => e.id === parentId, "boundElements", b => [...(b || []), { id: connectorId, type: 'arrow' as const }]);
-    setStore("elements", e => e.id === newId, "boundElements", b => [...(b || []), { id: connectorId, type: 'arrow' as const }]);
+    setStore("elements", e => e.id === parentId, "boundElements", b => [...(b || []), { id: connectorId, type: 'organicBranch' as const }]);
+    setStore("elements", e => e.id === newId, "boundElements", b => [...(b || []), { id: connectorId, type: 'organicBranch' as const }]);
+
+    // Snap connector endpoints to actual shape boundaries (important for non-rectangular shapes like cloud)
+    refreshBoundLine(connectorId, () => store.elements, (id, upd) => updateElement(id, upd, false));
 
     setStore("selection", [newId]);
     return newId;
@@ -379,16 +419,19 @@ export const addSiblingNode = (siblingId: string) => {
     // Dynamic spacing based on sibling height
     const vOffset = sibling.height + 40;
 
+    // Resolve branch color — new sibling gets its own branch color from PALETTE
+    const branch = getBranchInfo(parentId, store.elements);
+
     const newElement: DrawingElement = {
         ...store.defaultElementStyles,
-        // Inherit styles from sibling
-        strokeColor: sibling.strokeColor,
-        backgroundColor: 'transparent', // Connectors shouldn't inherit sibling fill
+        // Inherit styles from sibling, with depth-based tapering
+        strokeColor: branch.color,
+        backgroundColor: sibling.backgroundColor,
         fillStyle: sibling.fillStyle,
-        strokeWidth: sibling.strokeWidth,
+        strokeWidth: branch.strokeWidth,
         roughness: sibling.roughness,
         renderStyle: sibling.renderStyle,
-        opacity: sibling.opacity,
+        opacity: branch.opacity,
         strokeStyle: sibling.strokeStyle || 'solid',
 
         id: newId,
@@ -408,40 +451,58 @@ export const addSiblingNode = (siblingId: string) => {
         link: null,
     };
 
+    // Compute organicBranch connector from parent to new sibling
+    const parentEl = store.elements.find(e => e.id === parentId);
+    const cStartX = parentEl ? parentEl.x + parentEl.width : sibling.x - 150;
+    const cStartY = parentEl ? parentEl.y + parentEl.height / 2 : sibling.y + vOffset + sibling.height / 2;
+    const cEndX = sibling.x;
+    const cEndY = sibling.y + vOffset + sibling.height / 2;
+    const cNX = Math.min(cStartX, cEndX), cNY = Math.min(cStartY, cEndY);
+    const cNW = Math.abs(cEndX - cStartX), cNH = Math.abs(cEndY - cStartY);
+    const cRSX = cStartX - cNX, cRSY = cStartY - cNY, cREX = cEndX - cNX, cREY = cEndY - cNY;
+    const cDX = cREX - cRSX;
+
     const connector: DrawingElement = {
         ...store.defaultElementStyles,
-        id: generateId('arrow'),
-        type: 'arrow',
-        x: sibling.x - 150,
-        y: sibling.y + vOffset + sibling.height / 2,
-        width: 150,
-        height: 0,
+        id: generateId('organicBranch'),
+        type: 'organicBranch',
+        x: cNX,
+        y: cNY,
+        width: cNW,
+        height: cNH,
         layerId: store.activeLayerId,
-        startBinding: { elementId: parentId, gap: 5, position: 'right', focus: 0 },
-        endBinding: { elementId: newId, gap: 5, position: 'left', focus: 0 },
+        startBinding: { elementId: parentId, gap: 0, position: 'right', focus: 0 },
+        endBinding: { elementId: newId, gap: 0, position: 'left', focus: 0 },
         curveType: 'bezier',
         angle: 0,
         seed: Math.floor(Math.random() * 2 ** 31),
         roundness: null,
         locked: false,
         link: null,
-        opacity: 100,
+        opacity: branch.opacity,
         renderStyle: sibling.renderStyle,
-        strokeColor: sibling.strokeColor,
-        backgroundColor: 'transparent', // Connectors shouldn't inherit sibling fill
+        strokeColor: branch.color,
+        backgroundColor: 'transparent',
         fillStyle: sibling.fillStyle,
         strokeStyle: sibling.strokeStyle,
-        strokeWidth: sibling.strokeWidth,
+        strokeWidth: branch.strokeWidth,
         roughness: sibling.roughness,
-        points: [0, 0, 150, 0]
+        points: [cRSX, cRSY, cREX, cREY],
+        controlPoints: [
+            { x: cNX + cRSX + cDX * 0.5, y: cNY + cRSY },
+            { x: cNX + cREX - cDX * 0.5, y: cNY + cREY }
+        ]
     };
 
     const connectorId = connector.id;
     setStore("elements", els => [...els, newElement, connector]);
 
     // Movement sync: Add connector to boundElements of both nodes
-    setStore("elements", e => e.id === parentId, "boundElements", b => [...(b || []), { id: connectorId, type: 'arrow' as const }]);
-    setStore("elements", e => e.id === newId, "boundElements", b => [...(b || []), { id: connectorId, type: 'arrow' as const }]);
+    setStore("elements", e => e.id === parentId, "boundElements", b => [...(b || []), { id: connectorId, type: 'organicBranch' as const }]);
+    setStore("elements", e => e.id === newId, "boundElements", b => [...(b || []), { id: connectorId, type: 'organicBranch' as const }]);
+
+    // Snap connector endpoints to actual shape boundaries (important for non-rectangular shapes like cloud)
+    refreshBoundLine(connectorId, () => store.elements, (id, upd) => updateElement(id, upd, false));
 
     setStore("selection", [newId]);
     return newId;
@@ -2158,6 +2219,15 @@ export const reorderMindmap = (rootId: string, direction: LayoutDirection) => {
     });
 
     setStore("elements", newElements);
+
+    // Refresh all bound connectors after layout repositioning
+    for (const el of store.elements) {
+        if ((el.type === 'organicBranch' || el.type === 'arrow' || el.type === 'line')
+            && (el.startBinding || el.endBinding)) {
+            refreshBoundLine(el.id, () => store.elements, (id, upd) => updateElement(id, upd, false));
+        }
+    }
+
     showToast(`Mindmap layout updated (${direction})`, 'success');
 };
 
@@ -2168,7 +2238,7 @@ export const applyMindmapStyling = (rootId: string) => {
 
     pushToHistory();
 
-    engine.applySemanticStyling(tree, store.elements);
+    engine.applySemanticStyling(tree);
 
     const updates = engine.getUpdates(tree, store.elements);
 
@@ -2182,6 +2252,15 @@ export const applyMindmapStyling = (rootId: string) => {
     });
 
     setStore("elements", newElements);
+
+    // Refresh connectors after style changes
+    for (const el of store.elements) {
+        if ((el.type === 'organicBranch' || el.type === 'arrow' || el.type === 'line')
+            && (el.startBinding || el.endBinding)) {
+            refreshBoundLine(el.id, () => store.elements, (id, upd) => updateElement(id, upd, false));
+        }
+    }
+
     showToast(`Semantic styling applied to branch`, 'success');
 };
 

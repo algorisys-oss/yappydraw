@@ -64,6 +64,9 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Add Child Node', keys: 'Tab' },
             { label: 'Add Sibling Node', keys: 'Enter' },
             { label: 'Toggle Collapse', keys: 'Space' },
+            { label: 'Navigate Mindmap', keys: 'Arrow Keys' },
+            { label: 'Nudge Element', keys: 'Shift+Arrow' },
+            { label: 'Focus Branch', keys: 'Shift+F' },
         ]
     },
     {

@@ -24,7 +24,7 @@ import {
     getTransformOptions, getShapeIcon, getShapeTooltip,
     changeElementType, getCurveTypeOptions, getCurveTypeIcon, getCurveTypeTooltip
 } from './element-transforms';
-import { exportToPng, exportToSvg } from './export';
+import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng } from './export';
 import {
     computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData,
     hitTestTableCell, insertTableRow, deleteTableRow, insertTableColumn, deleteTableColumn,
@@ -743,6 +743,17 @@ export function getContextMenuItems(
             { separator: true },
             { label: 'Zen Mode', shortcut: 'Alt+Z', checked: store.zenMode, onClick: toggleZenMode },
             { label: 'Reset View', onClick: () => setViewState({ scale: 1, panX: 0, panY: 0 }) },
+            { separator: true },
+            {
+                label: 'Export Canvas',
+                submenu: [
+                    { label: 'PNG', onClick: () => exportToPng(2, true, false) },
+                    { label: 'JPG', onClick: () => exportToJpg(2, false) },
+                    { label: 'SVG', onClick: () => exportToSvg(false) },
+                    { separator: true },
+                    { label: 'Copy as PNG', onClick: () => copyCanvasAsPng(2) },
+                ]
+            },
             { separator: true },
             { label: 'Canvas Settings', onClick: () => setShowCanvasProperties(true) }
         );

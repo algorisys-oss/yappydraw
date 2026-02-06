@@ -86,14 +86,14 @@ export function getHandleAtPosition(
         if (isElementHiddenByHierarchy(el, elements)) continue;
 
         const hasChildren = elements.some(e => e.parentId === el.id);
-        if (hasChildren && el.type !== 'line' && el.type !== 'arrow') {
+        if (hasChildren && el.type !== 'line' && el.type !== 'arrow' && el.type !== 'organicBranch' && el.type !== 'bezier') {
             const ecx = el.x + el.width / 2;
             const ecy = el.y + el.height / 2;
             const local = unrotatePoint(x, y, ecx, ecy, el.angle || 0);
 
-            const toggleSize = 14 / scale;
-            const tx = el.x + el.width + 15 / scale;
-            const ty = el.y + el.height / 2;
+            const toggleSize = 18 / scale;
+            const tx = el.x + el.width / 2;
+            const ty = el.y + el.height + 15 / scale;
 
             const dist = Math.sqrt(Math.pow(local.x - tx, 2) + Math.pow(local.y - ty, 2));
             if (dist <= (toggleSize / 2) + (5 / scale)) {

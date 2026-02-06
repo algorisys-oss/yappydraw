@@ -9,8 +9,9 @@ import { MorphUtils } from '../math/morph-utils';
 import type { AnimationConfig, EasingFunction, EasingName } from './animation-types';
 import { lerp, lerpColor, getEasing } from './animation-types';
 import type { AnimationKeyframe } from '../../types/motion-types';
-import { store, updateElement, setStore } from '../../store/app-store';
+import { store, updateElement, setStore, pushToHistory } from '../../store/app-store';
 import type { DrawingElement } from '../../types';
+import { getMeasurementContext, getFontString } from '../text-utils';
 
 // Track active animations per element with their affected properties
 // Map<elementId, Map<animationId, Set<propertyName>>>
@@ -4119,4 +4120,503 @@ export function depthPulse(
             });
         }
     });
+}
+
+/**
+ * Glitch effect (attention seeker) - digital distortion with position jitter,
+ * opacity flicker, and signal-loss moments. Inspired by After Effects CRT/VHS glitch.
+ */
+export function glitch(elementId: string, duration: number = 600, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return '';
+
+    const originalX = element.x;
+    const originalY = element.y;
+    const originalOpacity = element.opacity ?? 100;
+    const intensity = config.intensity ?? 15;
+
+    // Scale factor for offsets
+    const s = intensity / 15;
+
+    // Phase 1: Shift right + slight up, partial flicker
+    return animateElement(elementId, {
+        x: originalX + 12 * s,
+        y: originalY - 3 * s,
+        opacity: 80
+    }, {
+        duration: duration * 0.08,
+        easing: 'linear',
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: () => {
+            // Phase 2: Snap left, recover opacity
+            animateElement(elementId, {
+                x: originalX - 8 * s,
+                y: originalY + 2 * s,
+                opacity: 100
+            }, {
+                duration: duration * 0.08,
+                easing: 'linear',
+                onComplete: () => {
+                    // Phase 3: Signal loss — big shift + near-invisible
+                    animateElement(elementId, {
+                        x: originalX + 15 * s,
+                        y: originalY + 4 * s,
+                        opacity: 20
+                    }, {
+                        duration: duration * 0.12,
+                        easing: 'linear',
+                        onComplete: () => {
+                            // Phase 4: Quick recovery
+                            animateElement(elementId, {
+                                x: originalX - 3 * s,
+                                y: originalY - 1 * s,
+                                opacity: 100
+                            }, {
+                                duration: duration * 0.08,
+                                easing: 'linear',
+                                onComplete: () => {
+                                    // Phase 5: Partial signal loss
+                                    animateElement(elementId, {
+                                        x: originalX - 10 * s,
+                                        y: originalY + 3 * s,
+                                        opacity: 60
+                                    }, {
+                                        duration: duration * 0.12,
+                                        easing: 'linear',
+                                        onComplete: () => {
+                                            // Phase 6: Snap right, recover
+                                            animateElement(elementId, {
+                                                x: originalX + 6 * s,
+                                                y: originalY - 2 * s,
+                                                opacity: 100
+                                            }, {
+                                                duration: duration * 0.08,
+                                                easing: 'linear',
+                                                onComplete: () => {
+                                                    // Phase 7: Signal loss again
+                                                    animateElement(elementId, {
+                                                        x: originalX + 4 * s,
+                                                        y: originalY + 1 * s,
+                                                        opacity: 30
+                                                    }, {
+                                                        duration: duration * 0.12,
+                                                        easing: 'linear',
+                                                        onComplete: () => {
+                                                            // Phase 8: Settle back to original
+                                                            animateElement(elementId, {
+                                                                x: originalX,
+                                                                y: originalY,
+                                                                opacity: originalOpacity
+                                                            }, {
+                                                                duration: duration * 0.32,
+                                                                easing: 'easeOutQuad',
+                                                                onComplete: config.onComplete
+                                                            });
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Kinetic Typography — split text into word elements and animate independently
+// ---------------------------------------------------------------------------
+
+// Cache: original element ID → { wordIds, originalState } (for replay & cleanup)
+interface KineticCache {
+    wordIds: string[];
+    originalState: Record<string, any>; // full snapshot for precise restore
+}
+const kineticWordCache = new Map<string, KineticCache>();
+
+/**
+ * Get or create word elements for kinetic typography.
+ * Hides the original element (opacity 0) and creates word elements alongside it.
+ * On replay, reuses cached word IDs if they still exist.
+ */
+function getOrSplitWords(elementId: string): string[] {
+    // Check cache first — allows replay without re-splitting
+    const cached = kineticWordCache.get(elementId);
+    if (cached) {
+        // Verify the word elements still exist in the store
+        const allExist = cached.wordIds.every(id => store.elements.some(el => el.id === id));
+        if (allExist) {
+            // Hide original again for replay
+            updateElement(elementId, { opacity: 0 } as any, false);
+            return cached.wordIds;
+        }
+        // Cache stale but original may still be hidden — restore it
+        const origEl = store.elements.find(el => el.id === elementId);
+        if (origEl && (origEl.opacity ?? 100) === 0 && cached.originalState) {
+            updateElement(elementId, cached.originalState as any, false);
+        }
+        // Cache stale (e.g. after undo), clear it
+        kineticWordCache.delete(elementId);
+    }
+
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return [];
+
+    const textInfo = getElementText(element);
+    if (!textInfo) return [];
+
+    const { text: fullText } = textInfo;
+    const allWords = fullText.split(/\s+/).filter(w => w.length > 0);
+    if (allWords.length === 0) return [];
+
+    const ctx = getMeasurementContext();
+    ctx.font = getFontString(element);
+    const spaceWidth = ctx.measureText(' ').width;
+    const fontSize = element.fontSize || 28;
+    const lineHeight = fontSize * 1.2;
+    const wordHeight = lineHeight;
+    const padding = 4; // matches text-renderer.ts
+
+    // Word-wrap to match how text-renderer.ts lays out lines
+    const availableWidth = Math.max(element.width - padding * 2, 20);
+    const paragraphs = fullText.split('\n');
+    const lines: string[][] = []; // each line is an array of words
+    for (const para of paragraphs) {
+        if (para.trim() === '') {
+            lines.push([]); // empty line (preserves newline spacing)
+            continue;
+        }
+        const paraWords = para.split(/\s+/).filter(w => w.length > 0);
+        let currentLine: string[] = [];
+        let currentLineWidth = 0;
+        for (const word of paraWords) {
+            const wordWidth = ctx.measureText(word).width;
+            const testWidth = currentLine.length > 0
+                ? currentLineWidth + spaceWidth + wordWidth
+                : wordWidth;
+            if (testWidth > availableWidth && currentLine.length > 0) {
+                lines.push(currentLine);
+                currentLine = [word];
+                currentLineWidth = wordWidth;
+            } else {
+                currentLine.push(word);
+                currentLineWidth = testWidth;
+            }
+        }
+        if (currentLine.length > 0) lines.push(currentLine);
+    }
+
+    // Calculate vertical offset to match text-renderer centering
+    const totalTextHeight = lines.length * lineHeight;
+    const verticalPadding = Math.max(0, (element.height - totalTextHeight) / 2);
+    const textAlign = element.textAlign || 'left';
+
+    const groupId = `kinetic-${crypto.randomUUID().slice(0, 8)}`;
+    const wordElements: DrawingElement[] = [];
+
+    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+        const lineWords = lines[lineIdx];
+        if (lineWords.length === 0) continue;
+
+        // Build the full line string to measure word positions in context
+        // This preserves cumulative kerning/spacing from the canvas renderer
+        const fullLine = lineWords.join(' ');
+        const fullLineWidth = ctx.measureText(fullLine).width;
+
+        // Calculate line start X based on text alignment (matches text-renderer.ts)
+        let lineStartX: number;
+        if (textAlign === 'center') {
+            lineStartX = element.x + element.width / 2 - fullLineWidth / 2;
+        } else if (textAlign === 'right') {
+            lineStartX = element.x + element.width - padding - fullLineWidth;
+        } else {
+            lineStartX = element.x + padding;
+        }
+
+        const currentY = element.y + verticalPadding + lineIdx * lineHeight;
+
+        for (let wi = 0; wi < lineWords.length; wi++) {
+            const word = lineWords[wi];
+            const wordWidth = ctx.measureText(word).width;
+
+            // Measure word start position within the full line (cumulative kerning)
+            const prefix = lineWords.slice(0, wi).join(' ') + (wi > 0 ? ' ' : '');
+            const wordStartInLine = wi > 0 ? ctx.measureText(prefix).width : 0;
+
+            // Word element x: lineStartX + offset - padding (renderer adds padding back)
+            const wordX = lineStartX + wordStartInLine - padding;
+
+            wordElements.push({
+                id: crypto.randomUUID(),
+                type: 'text',
+                x: wordX,
+                y: currentY,
+                width: wordWidth + padding * 2,
+                height: wordHeight,
+                text: word,
+                strokeColor: element.strokeColor || '#000000',
+                backgroundColor: element.backgroundColor || 'transparent',
+                fillStyle: element.fillStyle || 'solid',
+                strokeWidth: element.strokeWidth || 1,
+                strokeStyle: element.strokeStyle || 'solid',
+                opacity: element.opacity ?? 100,
+                roughness: element.roughness || 0,
+                angle: 0,
+                renderStyle: element.renderStyle || 'architectural',
+                seed: Math.floor(Math.random() * 2 ** 31),
+                fontFamily: element.fontFamily || 'hand-drawn',
+                fontSize,
+                fontWeight: element.fontWeight,
+                fontStyle: element.fontStyle,
+                textAlign: 'left' as const,
+                verticalAlign: 'middle' as const,
+                textColor: element.textColor,
+                locked: false,
+                link: null,
+                layerId: element.layerId || store.activeLayerId,
+                groupIds: [groupId],
+            } as DrawingElement);
+        }
+    }
+
+    // Save full element state snapshot for precise restore
+    const originalState: Record<string, any> = {
+        x: element.x, y: element.y,
+        width: element.width, height: element.height,
+        opacity: element.opacity ?? 100,
+        angle: element.angle ?? 0,
+    };
+
+    // Single history entry: hide original + add word elements alongside
+    pushToHistory();
+    updateElement(elementId, { opacity: 0 } as any, false);
+    setStore("elements", els => [...els, ...wordElements]);
+
+    const wordIds = wordElements.map(w => w.id);
+    kineticWordCache.set(elementId, { wordIds, originalState });
+    return wordIds;
+}
+
+/**
+ * Shared kinetic typography engine.
+ * Uses a single animationEngine.create() per preset (charByChar pattern)
+ * to avoid multi-animateElement conflicts on freshly created elements.
+ */
+interface KineticWordData {
+    id: string;
+    from: Record<string, number>;
+    to: Record<string, number>;
+    startFraction: number; // 0–1, when this word begins animating
+}
+
+function runKineticAnimation(
+    elementId: string, // original element ID — for cleanup/restore
+    wordData: KineticWordData[],
+    duration: number,
+    easingName: EasingName,
+    config: ElementAnimationConfig
+): string {
+    if (wordData.length === 0) return '';
+
+    const animId = generateAnimationId('kinetic');
+    const easingFn = getEasing(easingName);
+    const maxStart = Math.max(...wordData.map(w => w.startFraction));
+    // Each word's animation occupies this fraction of the total timeline
+    const wordDur = Math.max(0.3, 1 - maxStart);
+
+    // Apply "from" state immediately
+    for (const w of wordData) {
+        updateElement(w.id, w.from as any, false);
+    }
+
+    animationEngine.create(
+        animId,
+        (progress: number) => {
+            for (const w of wordData) {
+                const local = Math.max(0, Math.min(1, (progress - w.startFraction) / wordDur));
+                const eased = easingFn(local);
+                const updates: Record<string, number> = {};
+                for (const key of Object.keys(w.from)) {
+                    updates[key] = w.from[key] + (w.to[key] - w.from[key]) * eased;
+                }
+                updateElement(w.id, updates as any, false);
+            }
+        },
+        {
+            duration,
+            easing: 'linear', // We handle per-word easing manually
+            delay: config.delay,
+            onStart: config.onStart,
+            onComplete: () => {
+                // Snap words to exact final positions
+                for (const w of wordData) {
+                    updateElement(w.id, w.to as any, false);
+                }
+
+                // Words at final positions ARE the visible text — no swap needed.
+                // Individual fillText calls can't pixel-match a continuous string
+                // (canvas kerning/subpixel differences), so we never swap immediately.
+                config.onComplete?.();
+
+                // Deferred cleanup: restore original to exact pre-animation state.
+                // Sequence animator restore runs at ~500ms, so we clean up after that.
+                const cached = kineticWordCache.get(elementId);
+                if (cached) {
+                    setTimeout(() => {
+                        const c = kineticWordCache.get(elementId);
+                        if (!c) return; // already cleaned (replay/undo)
+                        // Restore original to exact saved state (position, size, opacity)
+                        updateElement(elementId, c.originalState as any, false);
+                        // Remove word elements
+                        const wordIdSet = new Set(c.wordIds);
+                        setStore("elements", els => els.filter(el => !wordIdSet.has(el.id)));
+                        kineticWordCache.delete(elementId);
+                    }, 1000);
+                }
+            },
+            loop: config.loop,
+            loopCount: config.loopCount,
+            alternate: config.alternate
+        }
+    );
+
+    animationEngine.start(animId);
+    return animId;
+}
+
+/**
+ * Kinetic Bounce In — words start below and bounce up into position with stagger.
+ */
+export function kineticBounceIn(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    const wordIds = getOrSplitWords(elementId);
+    if (wordIds.length === 0) return '';
+
+    const n = wordIds.length;
+    const staggerSpan = Math.min(0.7, 0.15 * (n - 1));
+    const staggerPer = n > 1 ? staggerSpan / (n - 1) : 0;
+
+    const wordData: KineticWordData[] = wordIds.map((id, i) => {
+        const el = store.elements.find(e => e.id === id);
+        if (!el) return null;
+        const drop = 80 + ((i * 37) % 40); // deterministic pseudo-random
+        return {
+            id,
+            from: { y: el.y + drop, opacity: 0 },
+            to: { y: el.y, opacity: el.opacity ?? 100 },
+            startFraction: i * staggerPer,
+        };
+    }).filter(Boolean) as KineticWordData[];
+
+    return runKineticAnimation(elementId, wordData, duration, 'easeOutBounce', config);
+}
+
+/**
+ * Kinetic Drop In — words fall from above with gravity bounce.
+ */
+export function kineticDropIn(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    const wordIds = getOrSplitWords(elementId);
+    if (wordIds.length === 0) return '';
+
+    const n = wordIds.length;
+    const staggerSpan = Math.min(0.7, 0.15 * (n - 1));
+    const staggerPer = n > 1 ? staggerSpan / (n - 1) : 0;
+
+    const wordData: KineticWordData[] = wordIds.map((id, i) => {
+        const el = store.elements.find(e => e.id === id);
+        if (!el) return null;
+        const drop = 100 + ((i * 43) % 50);
+        return {
+            id,
+            from: { y: el.y - drop, opacity: 0 },
+            to: { y: el.y, opacity: el.opacity ?? 100 },
+            startFraction: i * staggerPer,
+        };
+    }).filter(Boolean) as KineticWordData[];
+
+    return runKineticAnimation(elementId, wordData, duration, 'easeOutBounce', config);
+}
+
+/**
+ * Kinetic Scale Reveal — words scale from 0 at center, wave pattern from center outward.
+ */
+export function kineticScaleReveal(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    const wordIds = getOrSplitWords(elementId);
+    if (wordIds.length === 0) return '';
+
+    const n = wordIds.length;
+    const delays = calculateStaggerDelays(n, { from: 'center' });
+    const staggerSpan = Math.min(0.7, 0.15 * (n - 1));
+
+    const wordData: KineticWordData[] = wordIds.map((id, i) => {
+        const el = store.elements.find(e => e.id === id);
+        if (!el) return null;
+        const cx = el.x + el.width / 2;
+        const cy = el.y + el.height / 2;
+        return {
+            id,
+            from: { width: 0, height: 0, x: cx, y: cy, opacity: 0 },
+            to: { width: el.width, height: el.height, x: el.x, y: el.y, opacity: el.opacity ?? 100 },
+            startFraction: delays[i] * staggerSpan,
+        };
+    }).filter(Boolean) as KineticWordData[];
+
+    return runKineticAnimation(elementId, wordData, duration, 'easeOutBack', config);
+}
+
+/**
+ * Kinetic Slide In — odd words from left, even words from right (alternating).
+ */
+export function kineticSlideIn(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    const wordIds = getOrSplitWords(elementId);
+    if (wordIds.length === 0) return '';
+
+    const n = wordIds.length;
+    const staggerSpan = Math.min(0.7, 0.15 * (n - 1));
+    const staggerPer = n > 1 ? staggerSpan / (n - 1) : 0;
+
+    const wordData: KineticWordData[] = wordIds.map((id, i) => {
+        const el = store.elements.find(e => e.id === id);
+        if (!el) return null;
+        const offset = 300 + ((i * 53) % 100);
+        const startX = i % 2 === 0 ? el.x - offset : el.x + offset;
+        return {
+            id,
+            from: { x: startX, opacity: 0 },
+            to: { x: el.x, opacity: el.opacity ?? 100 },
+            startFraction: i * staggerPer,
+        };
+    }).filter(Boolean) as KineticWordData[];
+
+    return runKineticAnimation(elementId, wordData, duration, 'easeOutCubic', config);
+}
+
+/**
+ * Kinetic Fade Up — words gently fade in and float upward.
+ */
+export function kineticFadeUp(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    const wordIds = getOrSplitWords(elementId);
+    if (wordIds.length === 0) return '';
+
+    const n = wordIds.length;
+    const staggerSpan = Math.min(0.7, 0.15 * (n - 1));
+    const staggerPer = n > 1 ? staggerSpan / (n - 1) : 0;
+
+    const wordData: KineticWordData[] = wordIds.map((id, i) => {
+        const el = store.elements.find(e => e.id === id);
+        if (!el) return null;
+        return {
+            id,
+            from: { y: el.y + 30, opacity: 0 },
+            to: { y: el.y, opacity: el.opacity ?? 100 },
+            startFraction: i * staggerPer,
+        };
+    }).filter(Boolean) as KineticWordData[];
+
+    return runKineticAnimation(elementId, wordData, duration, 'easeOutQuad', config);
 }

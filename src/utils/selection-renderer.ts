@@ -192,39 +192,7 @@ export function renderElementOverlays(
         ctx.restore();
     }
 
-    // --- Mindmap Toggle Handle (+) / (-) — visible when selected OR in presentation mode ---
-    if (isSelected || appMode === 'presentation') {
-        const hasChildren = elements.some(e => e.parentId === el.id);
-        if (hasChildren && el.type !== 'line' && el.type !== 'arrow') {
-            const toggleSize = 14 / scale;
-            const centerX = el.x + el.width + 15 / scale;
-            const centerY = el.y + el.height / 2;
-
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, toggleSize / 2, 0, Math.PI * 2);
-            ctx.fillStyle = el.isCollapsed ? '#10b981' : (isDarkMode ? '#333' : '#fff');
-            ctx.fill();
-            ctx.strokeStyle = '#10b981';
-            ctx.lineWidth = 2 / scale;
-            ctx.stroke();
-
-            // Draw + or -
-            ctx.beginPath();
-            ctx.strokeStyle = el.isCollapsed ? '#fff' : '#10b981';
-            ctx.lineWidth = 2 / scale;
-            // Horizontal line
-            ctx.moveTo(centerX - toggleSize / 4, centerY);
-            ctx.lineTo(centerX + toggleSize / 4, centerY);
-            if (el.isCollapsed) {
-                // Vertical line for +
-                ctx.moveTo(centerX, centerY - toggleSize / 4);
-                ctx.lineTo(centerX, centerY + toggleSize / 4);
-            }
-            ctx.stroke();
-            ctx.restore();
-        }
-    }
+    // --- Mindmap Toggle Handle — moved to renderMindmapToggles() for top-layer rendering ---
 
     // --- Visual Indicator for Collapsed Nodes (Subtle glow) ---
     if (el.isCollapsed && !isSelected) {
@@ -601,5 +569,74 @@ export function renderBindingHighlight(
     ctx.arc(binding.px, binding.py, 5 / scale, 0, Math.PI * 2);
     ctx.fill();
 
+    ctx.restore();
+}
+
+/**
+ * Render mindmap collapse/expand toggles as a top-layer pass.
+ * Called AFTER all elements and overlays are drawn so toggles are never covered.
+ */
+export function renderMindmapToggles(
+    ctx: CanvasRenderingContext2D,
+    elements: DrawingElement[],
+    selection: string[],
+    scale: number,
+    isDarkMode: boolean,
+    appMode?: string
+): void {
+    for (const el of elements) {
+        const isSelected = selection.includes(el.id);
+        if (!(isSelected || appMode === 'presentation')) continue;
+
+        const hasChildren = elements.some(e => e.parentId === el.id);
+        if (!hasChildren) continue;
+        if (el.type === 'line' || el.type === 'arrow' || el.type === 'organicBranch' || el.type === 'bezier') continue;
+
+        const toggleSize = 18 / scale;
+        const centerX = el.x + el.width / 2;
+        const centerY = el.y + el.height + 15 / scale;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, toggleSize / 2, 0, Math.PI * 2);
+        ctx.fillStyle = el.isCollapsed ? '#10b981' : (isDarkMode ? '#333' : '#fff');
+        ctx.fill();
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2 / scale;
+        ctx.stroke();
+
+        // Draw + or -
+        ctx.beginPath();
+        ctx.strokeStyle = el.isCollapsed ? '#fff' : '#10b981';
+        ctx.lineWidth = 2 / scale;
+        ctx.moveTo(centerX - toggleSize / 4, centerY);
+        ctx.lineTo(centerX + toggleSize / 4, centerY);
+        if (el.isCollapsed) {
+            ctx.moveTo(centerX, centerY - toggleSize / 4);
+            ctx.lineTo(centerX, centerY + toggleSize / 4);
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+/**
+ * Render a green dashed highlight around a potential reparent drop target.
+ */
+export function renderDropTargetHighlight(
+    ctx: CanvasRenderingContext2D,
+    el: DrawingElement,
+    scale: number
+): void {
+    ctx.save();
+    ctx.strokeStyle = '#10b981';
+    ctx.lineWidth = 3 / scale;
+    ctx.setLineDash([8 / scale, 4 / scale]);
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.1)';
+    const pad = 4 / scale;
+    ctx.beginPath();
+    ctx.roundRect(el.x - pad, el.y - pad, el.width + pad * 2, el.height + pad * 2, 8 / scale);
+    ctx.fill();
+    ctx.stroke();
     ctx.restore();
 }

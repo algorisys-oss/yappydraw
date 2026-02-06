@@ -9,6 +9,7 @@ import { type Component, createEffect, Show } from "solid-js";
 import { store, setSelectedTool } from "../store/app-store";
 import { measureContainerText, resolveFontFamily } from "../utils/text-utils";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
+import { normalizePoints } from "../utils/render-element";
 import type { TableEditingCell } from "../utils/tool-handlers/text-editing-handler";
 
 interface TextEditingOverlayProps {
@@ -97,6 +98,24 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         cellHeight = cell.cellH * scale;
                         fontSizeVal = el.fontSize ?? 14;
                     }
+                } else if (el.type === 'organicBranch') {
+                    // Position at the bezier curve midpoint (matching path-renderer text position)
+                    const pts = normalizePoints(el.points);
+                    const controls = el.controlPoints || [];
+                    if (pts.length >= 2 && controls.length >= 2) {
+                        const start = { x: elX + pts[0].x, y: elY + pts[0].y };
+                        const end = { x: elX + pts[pts.length - 1].x, y: elY + pts[pts.length - 1].y };
+                        const cp1 = controls[0];
+                        const cp2 = controls[1];
+                        // Cubic bezier at t=0.5
+                        const t = 0.5, k = 0.5;
+                        const midX = k*k*k*start.x + 3*k*k*t*cp1.x + 3*k*t*t*cp2.x + t*t*t*end.x;
+                        const midY = k*k*k*start.y + 3*k*k*t*cp1.y + 3*k*t*t*cp2.y + t*t*t*end.y;
+                        centerX = midX * scale + panX;
+                        centerY = (midY - 15) * scale + panY; // offset up like renderer's textOffset
+                        textareaWidth = Math.max(200, Math.abs(elW) * scale);
+                    }
+                    fontSizeVal = el.fontSize || 16;
                 } else if (el.type === 'umlClass') {
                     const prop = props.editingProperty();
                     if (prop === 'attributesText' || prop === 'methodsText') {
@@ -135,7 +154,9 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 const fontStyle = el.fontStyle || 'normal';
 
                 // For text elements and shapes, use element height for vertical centering
-                const textareaHeight = isTableCell ? cellHeight : elH * scale;
+                const textareaHeight = isTableCell ? cellHeight
+                    : el.type === 'organicBranch' ? Math.max(40, fontSizeVal * scale * 2)
+                    : elH * scale;
                 const lineHeightPx = fontSizeVal * scale * 1.2;
 
                 return (

@@ -11,12 +11,17 @@ const COMMON_PRESETS = [
     'fadeIn', 'fadeOut',
     'slideInLeft', 'slideInRight', 'slideInUp', 'slideInDown',
     'zoomIn', 'zoomOut',
-    'bounce', 'pulse', 'shakeX', 'shakeY', 'revolve'
+    'bounce', 'pulse', 'shakeX', 'shakeY', 'revolve', 'glitch'
 ];
 
 // Text animations (for text elements only)
 const TEXT_PRESETS = [
     'typewriter', 'typewriterCursor', 'wordByWord', 'textScramble', 'lineByLine', 'textDelete', 'charByChar'
+];
+
+// Kinetic typography (splits text into words and animates independently)
+const KINETIC_PRESETS = [
+    'kineticBounceIn', 'kineticDropIn', 'kineticScaleReveal', 'kineticSlideIn', 'kineticFadeUp'
 ];
 
 // 3D box animations (for openBox only)
@@ -38,6 +43,7 @@ const getPresetsForType = (type: string | undefined): string[] => {
     // Add text presets for text elements
     if (type === 'text') {
         presets.push(...TEXT_PRESETS);
+        presets.push(...KINETIC_PRESETS);
     }
 
     // Add openBox-specific presets

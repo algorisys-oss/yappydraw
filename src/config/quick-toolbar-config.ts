@@ -21,6 +21,8 @@ export interface QuickPropertyDef {
     min?: number;
     max?: number;
     step?: number;
+    // If set, only show this control for these specific element types (within the family)
+    applicableTo?: ElementType[];
 }
 
 /** 8 preset colors for quick color pickers */
@@ -59,6 +61,13 @@ const fontFamilyOptions = [
 const shapeProperties: QuickPropertyDef[] = [
     { key: 'strokeColor', controlType: 'color-dot', label: 'Stroke Color' },
     { key: 'backgroundColor', controlType: 'color-dot', label: 'Fill Color' },
+    {
+        key: 'borderRadius', controlType: 'mini-slider', label: 'Roundness',
+        min: 0, max: 50, step: 1,
+        applicableTo: ['rectangle', 'diamond', 'capsule', 'speechBubble', 'browserWindow',
+            'mobilePhone', 'ghostButton', 'inputField', 'dfdProcess', 'isometricCube',
+            'cylinder', 'stateSync', 'activationBar', 'externalEntity']
+    },
     {
         key: 'strokeStyle', controlType: 'icon-select', label: 'Stroke Style',
         options: [
@@ -102,13 +111,17 @@ const connectorProperties: QuickPropertyDef[] = [
         ]
     },
     {
-        key: 'endArrowhead', controlType: 'icon-select', label: 'End Arrow',
+        key: 'endArrowhead', controlType: 'icon-select', label: 'Line End Type',
         options: [
             { value: null, icon: 'none', label: 'None' },
             { value: 'arrow', icon: 'arrow', label: 'Arrow' },
             { value: 'triangle', icon: 'triangle', label: 'Triangle' },
             { value: 'diamond', icon: 'diamond', label: 'Diamond' },
         ]
+    },
+    {
+        key: 'curvedText', controlType: 'icon-toggle', label: 'Curved Text',
+        applicableTo: ['organicBranch']
     },
 ];
 
@@ -155,9 +168,10 @@ const familyConfigs: Record<ElementFamily, QuickPropertyDef[]> = {
 export function getQuickPropertiesForType(type: ElementType): QuickPropertyDef[] {
     const family = getElementFamily(type);
     if (!family) return [];
-    const props = familyConfigs[family];
+    let props = familyConfigs[family];
     if (type === 'table') {
-        return props.filter(p => p.key !== 'backgroundColor');
+        props = props.filter(p => p.key !== 'backgroundColor');
     }
-    return props;
+    // Filter by applicableTo if set on the property definition
+    return props.filter(p => !p.applicableTo || p.applicableTo.includes(type));
 }

@@ -15,7 +15,7 @@ export interface MindmapNode {
 
 export type LayoutDirection = 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial';
 
-const PALETTE = [
+export const PALETTE = [
     '#e03131', // Red
     '#1971c2', // Blue
     '#2f9e44', // Green
@@ -34,7 +34,11 @@ export class MindmapLayoutEngine {
     /**
      * Builds a tree structure starting from the root element.
      */
-    buildTree(rootId: string, elements: readonly DrawingElement[]): MindmapNode | null {
+    buildTree(rootId: string, elements: readonly DrawingElement[], visited?: Set<string>): MindmapNode | null {
+        const _visited = visited || new Set<string>();
+        if (_visited.has(rootId)) return null;
+        _visited.add(rootId);
+
         const rootElement = elements.find(e => e.id === rootId);
         if (!rootElement) return null;
 
@@ -48,9 +52,13 @@ export class MindmapLayoutEngine {
             y: rootElement.y
         };
 
-        const childrenElements = elements.filter(e => e.parentId === rootId);
+        // Filter out connector types — they can inherit parentId from SolidJS proxy spread
+        const CONNECTOR_TYPES = ['organicBranch', 'arrow', 'line', 'bezier'];
+        const childrenElements = elements.filter(e =>
+            e.parentId === rootId && !CONNECTOR_TYPES.includes(e.type)
+        );
         for (const childEl of childrenElements) {
-            const childNode = this.buildTree(childEl.id, elements);
+            const childNode = this.buildTree(childEl.id, elements, _visited);
             if (childNode) {
                 node.children.push(childNode);
             }
@@ -183,18 +191,18 @@ export class MindmapLayoutEngine {
     /**
      * Applies semantic styling (colors, thickness, opacity) based on depth.
      */
-    applySemanticStyling(root: MindmapNode, elements: readonly DrawingElement[]) {
+    applySemanticStyling(root: MindmapNode) {
         // Root remains neutral or user-defined, but let's ensure it has styleUpdates initialized
         root.styleUpdates = {};
 
         root.children.forEach((branchRoot, index) => {
             const branchColor = PALETTE[index % PALETTE.length];
-            this.styleSubtree(branchRoot, branchColor, 1, elements);
+            this.styleSubtree(branchRoot, branchColor, 1);
         });
     }
 
-    private styleSubtree(node: MindmapNode, color: string, depth: number, elements: readonly DrawingElement[]) {
-        const strokeWidth = Math.max(1, 4 - depth * 0.5);
+    private styleSubtree(node: MindmapNode, color: string, depth: number) {
+        const strokeWidth = Math.max(1.5, 4 - depth * 1);
         const opacity = Math.max(40, 100 - depth * 10);
 
         node.styleUpdates = {
@@ -203,20 +211,8 @@ export class MindmapLayoutEngine {
             opacity
         };
 
-        // Also style the connector leading TO this node
-        const connector = elements.find(e =>
-            (e.type === 'arrow' || e.type === 'line' || e.type === 'bezier') &&
-            e.endBinding?.elementId === node.id
-        );
-
-        if (connector) {
-            // Store connector update in a separate map if we don't want to add connectors to nodes
-            // But for simplicity, we can let node.styleUpdates track its incoming connector too?
-            // Actually, better to have a generic updates map.
-        }
-
         for (const child of node.children) {
-            this.styleSubtree(child, color, depth + 1, elements);
+            this.styleSubtree(child, color, depth + 1);
         }
     }
 
@@ -233,7 +229,7 @@ export class MindmapLayoutEngine {
 
         // Styling the incoming connector
         const connector = elements.find(e =>
-            (e.type === 'arrow' || e.type === 'line' || e.type === 'bezier') &&
+            (e.type === 'arrow' || e.type === 'line' || e.type === 'bezier' || e.type === 'organicBranch') &&
             e.endBinding?.elementId === node.id
         );
 
@@ -250,4 +246,55 @@ export class MindmapLayoutEngine {
         }
         return updates;
     }
+}
+
+/**
+ * Resolve branch color and depth for a node in the mindmap tree.
+ * Walks up the parentId chain to find the depth-1 ancestor (subtree root)
+ * and returns its strokeColor as the branch color.
+ * If the node IS a root (no parentId), assigns a new color from PALETTE.
+ */
+export function getBranchInfo(
+    parentId: string,
+    elements: readonly DrawingElement[]
+): { color: string; depth: number; strokeWidth: number; opacity: number } {
+    const parent = elements.find(e => e.id === parentId);
+    if (!parent) return { color: '#000000', depth: 1, strokeWidth: 2, opacity: 90 };
+
+    // Walk up the tree to find root and compute depth
+    let current = parent;
+    let depth = 1;
+    const chain: DrawingElement[] = [current];
+
+    while (current.parentId) {
+        const p = elements.find(e => e.id === current.parentId);
+        if (!p) break;
+        chain.push(p);
+        current = p;
+        depth++;
+    }
+
+    // current is now the root node
+    const root = current;
+
+    if (depth === 1) {
+        // Parent is the root — we're adding a depth-1 child (subtree root)
+        // Auto-assign a color based on how many children the root already has
+        const CONNECTOR_TYPES = ['organicBranch', 'arrow', 'line', 'bezier'];
+        const existingChildren = elements.filter(e => e.parentId === root.id && !CONNECTOR_TYPES.includes(e.type));
+        const colorIndex = existingChildren.length;
+        const color = PALETTE[colorIndex % PALETTE.length];
+        const sw = Math.max(1.5, 4 - depth * 1);
+        const op = Math.max(40, 100 - depth * 10);
+        return { color, depth, strokeWidth: sw, opacity: op };
+    }
+
+    // Depth >= 2: Find the depth-1 ancestor (subtree root) and use its color
+    // chain = [parent, grandparent, ..., root]
+    // The depth-1 node is chain[chain.length - 2] (one below root)
+    const subtreeRoot = chain[chain.length - 2];
+    const color = subtreeRoot.strokeColor || '#000000';
+    const sw = Math.max(1.5, 4 - depth * 1);
+    const op = Math.max(40, 100 - depth * 10);
+    return { color, depth, strokeWidth: sw, opacity: op };
 }

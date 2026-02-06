@@ -13,6 +13,7 @@ import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition, getSelectionBoundingBox } from '../handle-detection';
 import { getDescendants } from '../hierarchy';
 import { snapPoint } from '../snap-helpers';
+import { confirmAndReparent } from '../reparent';
 import { isPointInPolygon } from '../geometry';
 import { getSnappingGuides } from '../object-snapping';
 import { getSpacingGuides } from '../spacing';
@@ -1146,6 +1147,30 @@ function handleMove(
             }
         }
     });
+
+    // Detect reparent drop target during drag
+    if (store.selection.length === 1) {
+        const selEl = store.elements.find(e => e.id === store.selection[0]);
+        if (selEl && selEl.type !== 'line' && selEl.type !== 'arrow' && selEl.type !== 'organicBranch' && selEl.type !== 'bezier') {
+            const selCX = selEl.x + selEl.width / 2;
+            const selCY = selEl.y + selEl.height / 2;
+            let dropId: string | null = null;
+            for (const el of store.elements) {
+                if (el.id === selEl.id) continue;
+                if (el.type === 'line' || el.type === 'arrow' || el.type === 'organicBranch' || el.type === 'bezier') continue;
+                if (store.selection.includes(el.id)) continue;
+                if (hitTestElement(el, selCX, selCY, 0, store.elements)) {
+                    dropId = el.id;
+                    break;
+                }
+            }
+            signals.setReparentDropTarget(dropId);
+        } else {
+            signals.setReparentDropTarget(null);
+        }
+    } else {
+        signals.setReparentDropTarget(null);
+    }
 }
 
 // ─── Pointer Up: Selection finalization ─────────────────────────────
@@ -1249,6 +1274,18 @@ export function selectionOnUp(
         }
         signals.setSuggestedBinding(null);
     }
+
+    // Drag-to-reparent: show confirmation if drop target detected
+    const dropTarget = signals.reparentDropTarget();
+    if (dropTarget && store.selection.length === 1 && pState.isDragging) {
+        const childId = store.selection[0];
+        const childEl = store.elements.find(e => e.id === childId);
+        const targetEl = store.elements.find(e => e.id === dropTarget);
+        if (childEl && targetEl && childEl.parentId !== dropTarget) {
+            confirmAndReparent(childId, dropTarget);
+        }
+    }
+    signals.setReparentDropTarget(null);
 
     // Table column drag-and-drop reorder or sort on up
     if (pState.tableDragCol >= 0 && pState.tableDragElementId) {
