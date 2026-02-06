@@ -30,7 +30,7 @@ export function renderElementOverlays(
     renderedEl: DrawingElement,
     opts: ElementOverlayOptions
 ): void {
-    const { scale, isSelected, selectionLength, isDarkMode, elements, selectedTool, hoveredConnector, appMode } = opts;
+    const { scale, isSelected, selectionLength, selectedTool, hoveredConnector } = opts;
     const padding = 2 / scale;
 
     // --- Selection highlight & Handles ---
