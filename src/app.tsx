@@ -29,10 +29,8 @@ const SlideControlToolbar = lazy(() => import('./components/slide-control-toolba
 const PresentationControls = lazy(() => import('./components/presentation-controls').then(m => ({ default: m.PresentationControls })));
 const CanvasToolbar = lazy(() => import('./components/canvas-toolbar').then(m => ({ default: m.CanvasToolbar })));
 import { WelcomeScreen } from './components/welcome-screen';
-import { features } from './config/features';
-
 import Menu, {
-  handleNew, handleSaveRequest, setShowHelp,
+  handleNew, setShowHelp,
   isDialogOpen, isSaveOpen, isLoadExportOpen, showHelp,
   setIsLoadExportOpen, setLoadExportInitialTab
 } from './components/menu';
@@ -94,7 +92,8 @@ const App: Component = () => {
       if (isCtrlOrMeta) {
         if (key === 's' && e.altKey) {
           e.preventDefault();
-          if (features.enableWorkspacePersistence) handleSaveRequest('workspace');
+          setLoadExportInitialTab('save');
+          setIsLoadExportOpen(true);
           return;
         } else if (key === 'k') {
           e.preventDefault();

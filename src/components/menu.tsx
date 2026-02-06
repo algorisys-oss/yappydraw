@@ -155,6 +155,7 @@ const Menu: Component = () => {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
+                showToast(`Saved as ${fileNameWithExt}`, 'success');
             }
         } catch (e) {
             console.error('Save failed:', e);
