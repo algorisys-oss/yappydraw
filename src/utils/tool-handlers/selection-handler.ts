@@ -93,6 +93,12 @@ export function selectionOnDown(
             return;
         }
 
+        // Table move handle — enter move mode (not resize)
+        if (hitHandle.handle === 'table-move') {
+            initMoveState(pState, x, y);
+            return;
+        }
+
         pushToHistory();
         pState.isDragging = true;
         pState.draggingHandle = hitHandle.handle;
@@ -196,7 +202,7 @@ export function selectionOnDown(
             // Check header cell for sort or column reorder drag
             if (hasHeader) {
                 const hitCell = hitTestTableCell(x, y, cellRects);
-                if (hitCell && hitCell.row === 0 && !e.shiftKey) {
+                if (hitCell && hitCell.row === 0 && !e.shiftKey && e.button !== 2) {
                     // Start potential column drag — will decide sort vs drag on up/move
                     pState.tableDragCol = hitCell.dataCol;
                     pState.tableDragElementId = selEl.id;
@@ -212,7 +218,19 @@ export function selectionOnDown(
             const hitCell = hitTestTableCell(x, y, cellRects);
             if (hitCell) {
                 if (e.shiftKey && pState.tableCellSelection) {
-                    // Extend existing selection with Shift+click
+                    // Shift+click on header cell: extend as full-column selection
+                    if (hasHeader && hitCell.row === 0) {
+                        pState.tableCellSelection = {
+                            startRow: 0,
+                            startCol: pState.tableCellSelection.startCol,
+                            endRow: totalVisualRows - 1,
+                            endCol: hitCell.col
+                        };
+                        pState.tableCellSelectionDragging = false;
+                        helpers.setTableCellSelection({ ...pState.tableCellSelection });
+                        return;
+                    }
+                    // Extend existing selection with Shift+click on body cell
                     pState.tableCellSelection = {
                         ...pState.tableCellSelection,
                         endRow: hitCell.row,
@@ -235,11 +253,10 @@ export function selectionOnDown(
                     helpers.setTableCellSelection({ ...pState.tableCellSelection });
                     return;
                 } else if (e.button !== 2) {
-                    // Clear cell selection on regular left-click only (not right-click for context menu)
-                    pState.tableCellSelection = null;
-                    pState.tableCellSelectionElementId = null;
-                    pState.tableCellSelectionDragging = false;
-                    helpers.setTableCellSelection(null);
+                    // Record intent — defer cell selection to mouseUp so that
+                    // click-without-drag selects cell, but click+drag moves the table.
+                    pState.pendingCellClick = { row: hitCell.row, col: hitCell.col, elementId: selEl.id };
+                    // Don't return — fall through to normal drag/selection flow
                 }
             }
         }
@@ -427,6 +444,9 @@ export function selectionOnMove(
                 helpers.setCursor('move');
                 pState.hoveredConnector = null;
             } else if (hit.handle.startsWith('control-')) {
+                helpers.setCursor('move');
+                pState.hoveredConnector = null;
+            } else if (hit.handle === 'table-move') {
                 helpers.setCursor('move');
                 pState.hoveredConnector = null;
             } else if (hit.handle.startsWith('connector-')) {
@@ -1180,7 +1200,7 @@ export function selectionOnUp(
     x: number,
     y: number,
     pState: PointerState,
-    _helpers: PointerHelpers,
+    helpers: PointerHelpers,
     signals: PointerSignals
 ): void {
     if (pState.isSelecting) {
@@ -1376,6 +1396,17 @@ export function selectionOnUp(
                         }
 
                         updateElement(el.id, updates);
+                    } else if (clickedCell) {
+                        // Non-sort-icon header click: select entire column
+                        pState.tableCellSelection = {
+                            startRow: 0,
+                            startCol: clickedCell.col,
+                            endRow: totalVisualRows2 - 1,
+                            endCol: clickedCell.col
+                        };
+                        pState.tableCellSelectionElementId = el.id;
+                        helpers.setTableCellSelection({ ...pState.tableCellSelection });
+                        requestAnimationFrame(helpers.draw);
                     }
                 }
             }
@@ -1396,6 +1427,19 @@ export function selectionOnUp(
     // Cell selection drag cleanup (keep selection, just stop dragging)
     if (pState.tableCellSelectionDragging) {
         pState.tableCellSelectionDragging = false;
+    }
+
+    // Deferred cell selection: if user clicked a body cell without dragging, select it now
+    if (pState.pendingCellClick) {
+        const dragDist = Math.hypot(x - pState.startX, y - pState.startY);
+        if (dragDist < 3 / store.viewState.scale) {
+            const { row, col, elementId } = pState.pendingCellClick;
+            pState.tableCellSelection = { startRow: row, startCol: col, endRow: row, endCol: col };
+            pState.tableCellSelectionElementId = elementId;
+            helpers.setTableCellSelection({ ...pState.tableCellSelection });
+            requestAnimationFrame(helpers.draw);
+        }
+        pState.pendingCellClick = null;
     }
 
     pState.isDragging = false;

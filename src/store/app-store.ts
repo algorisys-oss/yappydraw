@@ -120,42 +120,49 @@ const initialState: AppState = {
     readOnly: false,
     cursorPosition: { x: 0, y: 0 },
     welcomeDismissed: false,
-    defaultElementStyles: {
-        strokeColor: (localStorage.getItem('theme') === 'focus') ? '#ffffff' : '#000000',
-        backgroundColor: 'transparent',
-        fillStyle: 'solid',
-        strokeWidth: 2,
-        strokeStyle: 'solid',
-        roughness: 1,
-        renderStyle: 'sketch',
-        opacity: 100,
-        angle: 0,
-        roundness: null,
-        locked: false,
-        fontSize: 28,
-        fontFamily: 'hand-drawn',
-        fontWeight: false,
-        fontStyle: false,
-        textAlign: 'center',
-        startArrowhead: null,
-        endArrowhead: null,
-        startArrowheadSize: 12,
-        endArrowheadSize: 12,
-        autoResize: false,
-        flowColor: undefined,
-        seed: 0,
-        shadowEnabled: false,
-        shadowColor: 'rgba(0,0,0,0.3)',
-        shadowBlur: 10,
-        shadowOffsetX: 5,
-        shadowOffsetY: 5,
-        gradientStart: '#ffffff',
-        gradientEnd: '#000000',
-        gradientDirection: 45,
-        smoothing: 3,
-        taperAmount: 0.15,
-        velocitySensitivity: 0.5
-    },
+    defaultElementStyles: (() => {
+        const builtinDefaults: Partial<DrawingElement> = {
+            strokeColor: (localStorage.getItem('theme') === 'focus') ? '#ffffff' : '#000000',
+            backgroundColor: 'transparent',
+            fillStyle: 'solid',
+            strokeWidth: 2,
+            strokeStyle: 'solid',
+            roughness: 1,
+            renderStyle: 'sketch',
+            opacity: 100,
+            angle: 0,
+            roundness: null,
+            locked: false,
+            fontSize: 28,
+            fontFamily: 'hand-drawn',
+            fontWeight: false,
+            fontStyle: false,
+            textAlign: 'center',
+            startArrowhead: null,
+            endArrowhead: null,
+            startArrowheadSize: 12,
+            endArrowheadSize: 12,
+            autoResize: false,
+            flowColor: undefined,
+            seed: 0,
+            shadowEnabled: false,
+            shadowColor: 'rgba(0,0,0,0.3)',
+            shadowBlur: 10,
+            shadowOffsetX: 5,
+            shadowOffsetY: 5,
+            gradientStart: '#ffffff',
+            gradientEnd: '#000000',
+            gradientDirection: 45,
+            smoothing: 3,
+            taperAmount: 0.15,
+            velocitySensitivity: 0.5
+        };
+        try {
+            const saved = localStorage.getItem('defaultElementStyles');
+            if (saved) return { ...builtinDefaults, ...JSON.parse(saved) };
+        } catch { /* ignore parse errors */ }
+        return builtinDefaults;
+    })(),
     // Initialize per-tool default styles
     toolStyles: {
         fineliner: { strokeWidth: 4 },
@@ -656,8 +663,40 @@ export const setToolLocked = (locked: boolean) => {
     setStore('toolLocked', locked);
 };
 
+// Keys that are persisted in the settings dialog
+const SETTINGS_KEYS = ['fontFamily', 'fontSize', 'strokeColor', 'backgroundColor', 'strokeWidth', 'renderStyle', 'opacity'] as const;
+
 export const updateDefaultStyles = (updates: Partial<DrawingElement>) => {
     setStore("defaultElementStyles", (s) => ({ ...s, ...updates }));
+    // Persist user-configurable settings to localStorage
+    const hasSettingsKey = SETTINGS_KEYS.some(k => k in updates);
+    if (hasSettingsKey) {
+        try {
+            const current = store.defaultElementStyles;
+            const toSave: Record<string, any> = {};
+            for (const key of SETTINGS_KEYS) {
+                if (current[key] !== undefined) toSave[key] = current[key];
+            }
+            localStorage.setItem('defaultElementStyles', JSON.stringify(toSave));
+        } catch { /* ignore storage errors */ }
+    }
+};
+
+export const resetDefaultStyles = () => {
+    const builtinDefaults: Partial<DrawingElement> = {
+        strokeColor: (store.theme === 'focus') ? '#ffffff' : '#000000',
+        backgroundColor: 'transparent',
+        fillStyle: 'solid',
+        strokeWidth: 2,
+        strokeStyle: 'solid',
+        roughness: 1,
+        renderStyle: 'sketch',
+        opacity: 100,
+        fontSize: 28,
+        fontFamily: 'hand-drawn',
+    };
+    setStore("defaultElementStyles", (s) => ({ ...s, ...builtinDefaults }));
+    try { localStorage.removeItem('defaultElementStyles'); } catch { /* ignore */ }
 };
 
 export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {

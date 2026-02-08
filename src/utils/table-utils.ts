@@ -273,6 +273,46 @@ export function deleteTableColumn(
     return { data: newData, colWidths: newWidths };
 }
 
+/**
+ * Delete multiple columns from tableData (by data column indices).
+ * Indices are deleted from right-to-left to preserve correct positions.
+ * Returns null if deletion would remove all columns.
+ */
+export function deleteTableColumns(
+    data: string[][],
+    colWidths: number[],
+    dataColIndices: number[]
+): { data: string[][]; colWidths: number[] } | null {
+    if (dataColIndices.length >= colWidths.length) return null;
+    const sortedIndices = [...dataColIndices].sort((a, b) => b - a);
+    let currentData = data;
+    let currentWidths = colWidths;
+    for (const colIndex of sortedIndices) {
+        const result = deleteTableColumn(currentData, currentWidths, colIndex);
+        currentData = result.data;
+        currentWidths = result.colWidths;
+    }
+    return { data: currentData, colWidths: currentWidths };
+}
+
+/**
+ * Check if a cell selection represents full columns (all rows selected).
+ * Returns the array of selected column indices, or null if not a full-column selection.
+ */
+export function getFullColumnSelection(
+    selection: { startRow: number; startCol: number; endRow: number; endCol: number } | null,
+    totalVisualRows: number
+): number[] | null {
+    if (!selection) return null;
+    const norm = normalizeCellSelection(selection);
+    if (norm.startRow !== 0 || norm.endRow !== totalVisualRows - 1) return null;
+    const cols: number[] = [];
+    for (let c = norm.startCol; c <= norm.endCol; c++) {
+        cols.push(c);
+    }
+    return cols.length > 0 ? cols : null;
+}
+
 export function sortTableData(
     data: string[][],
     colIndex: number,
@@ -1101,3 +1141,66 @@ export const datePatterns = [
     { pattern: 'MMM DD, YYYY', example: 'Jan 31, 2025' },
     { pattern: 'MMMM DD, YYYY', example: 'January 31, 2025' },
 ];
+
+/**
+ * Compute the next cell position when navigating by direction.
+ * Handles merged cells (skipping covered cells) and boundary wrapping.
+ */
+export function getNextCell(
+    currentRow: number,
+    currentCol: number,
+    direction: 'left' | 'right' | 'up' | 'down',
+    totalRows: number,
+    totalCols: number,
+    mergedCells?: MergedCellRegion[],
+    wrap: boolean = false
+): { row: number; col: number } | null {
+    let row = currentRow;
+    let col = currentCol;
+
+    if (direction === 'right') {
+        col++;
+        if (col >= totalCols) {
+            if (wrap) { col = 0; row++; } else return null;
+        }
+    } else if (direction === 'left') {
+        col--;
+        if (col < 0) {
+            if (wrap) { col = totalCols - 1; row--; } else return null;
+        }
+    } else if (direction === 'down') {
+        row++;
+    } else if (direction === 'up') {
+        row--;
+    }
+
+    if (row < 0 || row >= totalRows || col < 0 || col >= totalCols) {
+        return null;
+    }
+
+    // Skip cells covered by merged regions
+    let maxIter = totalRows * totalCols;
+    while (maxIter-- > 0 && isCellCoveredByMerge(mergedCells, row, col)) {
+        if (direction === 'right') { col++; }
+        else if (direction === 'left') { col--; }
+        else if (direction === 'down') { row++; }
+        else if (direction === 'up') { row--; }
+
+        if (direction === 'right' && col >= totalCols) {
+            if (wrap) { col = 0; row++; } else return null;
+        }
+        if (direction === 'left' && col < 0) {
+            if (wrap) { col = totalCols - 1; row--; } else return null;
+        }
+        if (row < 0 || row >= totalRows || col < 0 || col >= totalCols) return null;
+    }
+
+    return { row, col };
+}
+
+/**
+ * Check if a keyboard key is a printable character that should start cell editing.
+ */
+export function isPrintableKey(key: string): boolean {
+    return key.length === 1 && key.charCodeAt(0) >= 32;
+}

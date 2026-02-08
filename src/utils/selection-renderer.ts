@@ -186,6 +186,65 @@ export function renderElementOverlays(
                 ctx.arc(rotH.x, rotH.y, handleSize / 2, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
+
+                // Move handle for tables — rendered at top-left corner
+                if (el.type === 'table') {
+                    const moveSize = 20 / scale;
+                    const moveX = hX - padding - moveSize - 4 / scale;
+                    const moveY = hY - padding - moveSize - 4 / scale;
+                    const localMovePos = { x: moveX + moveSize / 2, y: moveY + moveSize / 2 };
+                    const movePos = hAngle ? rotatePoint(localMovePos.x, localMovePos.y, hcx, hcy, hAngle) : localMovePos;
+
+                    ctx.save();
+                    ctx.translate(movePos.x, movePos.y);
+                    if (hAngle) ctx.rotate(hAngle);
+
+                    // Background circle
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5 / scale;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, moveSize / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // 4-way arrow icon
+                    const a = moveSize * 0.28;  // arm length
+                    const t = moveSize * 0.08;  // arrowhead size
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.lineWidth = 1.5 / scale;
+                    // Horizontal line
+                    ctx.beginPath();
+                    ctx.moveTo(-a, 0);
+                    ctx.lineTo(a, 0);
+                    ctx.stroke();
+                    // Vertical line
+                    ctx.beginPath();
+                    ctx.moveTo(0, -a);
+                    ctx.lineTo(0, a);
+                    ctx.stroke();
+                    // Arrowheads (right, left, up, down)
+                    for (const [dx, dy] of [[a, 0], [-a, 0], [0, -a], [0, a]]) {
+                        ctx.beginPath();
+                        if (dy === 0) {
+                            // horizontal arrowhead
+                            const dir = dx > 0 ? 1 : -1;
+                            ctx.moveTo(dx, 0);
+                            ctx.lineTo(dx - dir * t * 2, -t);
+                            ctx.lineTo(dx - dir * t * 2, t);
+                        } else {
+                            // vertical arrowhead
+                            const dir = dy > 0 ? 1 : -1;
+                            ctx.moveTo(0, dy);
+                            ctx.lineTo(-t, dy - dir * t * 2);
+                            ctx.lineTo(t, dy - dir * t * 2);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
             }
         }
 

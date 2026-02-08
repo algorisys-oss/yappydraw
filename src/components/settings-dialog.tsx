@@ -1,0 +1,158 @@
+import { type Component, Show, createEffect, onCleanup } from "solid-js";
+import { X } from "lucide-solid";
+import { store, updateDefaultStyles, resetDefaultStyles } from "../store/app-store";
+import "./settings-dialog.css";
+
+interface SettingsDialogProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+const fontOptions = [
+    { label: 'Virgil (Hand)', value: 'hand-drawn' },
+    { label: 'Caveat (Hand)', value: 'caveat' },
+    { label: 'Marker', value: 'marker' },
+    { label: 'Inter (Sans)', value: 'sans-serif' },
+    { label: 'Poppins (Sans)', value: 'poppins' },
+    { label: 'Merriweather (Serif)', value: 'serif' },
+    { label: 'Source Code Pro', value: 'monospace' },
+    { label: 'JetBrains Mono', value: 'code' },
+];
+
+const SettingsDialog: Component<SettingsDialogProps> = (props) => {
+    createEffect(() => {
+        if (props.isOpen) {
+            const handleKeyDown = (e: KeyboardEvent) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    props.onClose();
+                }
+            };
+            window.addEventListener('keydown', handleKeyDown);
+            onCleanup(() => window.removeEventListener('keydown', handleKeyDown));
+        }
+    });
+
+    const defaults = () => store.defaultElementStyles;
+
+    return (
+        <Show when={props.isOpen}>
+            <div class="settings-modal-overlay" onClick={props.onClose}>
+                <div class="settings-modal" onClick={(e) => e.stopPropagation()}>
+                    <div class="settings-header">
+                        <h3>Settings</h3>
+                        <button class="close-btn" onClick={props.onClose}>
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div class="settings-section">
+                        <p class="settings-section-title">Text Defaults</p>
+
+                        <div class="settings-row">
+                            <label>Font Family</label>
+                            <select
+                                value={defaults().fontFamily ?? 'hand-drawn'}
+                                onChange={(e) => updateDefaultStyles({ fontFamily: e.currentTarget.value as any })}
+                            >
+                                {fontOptions.map(opt => (
+                                    <option value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div class="settings-row">
+                            <label>Font Size</label>
+                            <input
+                                type="number"
+                                min={8}
+                                max={200}
+                                value={defaults().fontSize ?? 28}
+                                onChange={(e) => updateDefaultStyles({ fontSize: parseInt(e.currentTarget.value) || 28 })}
+                            />
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <p class="settings-section-title">Shape Defaults</p>
+
+                        <div class="settings-row">
+                            <label>Stroke Color</label>
+                            <div class="settings-color-group">
+                                <input
+                                    type="color"
+                                    value={defaults().strokeColor ?? '#000000'}
+                                    onInput={(e) => updateDefaultStyles({ strokeColor: e.currentTarget.value })}
+                                />
+                                <span>{defaults().strokeColor ?? '#000000'}</span>
+                            </div>
+                        </div>
+
+                        <div class="settings-row">
+                            <label>Background</label>
+                            <div class="settings-color-group">
+                                <input
+                                    type="color"
+                                    value={defaults().backgroundColor === 'transparent' ? '#ffffff' : (defaults().backgroundColor ?? '#ffffff')}
+                                    onInput={(e) => updateDefaultStyles({ backgroundColor: e.currentTarget.value })}
+                                />
+                                <span>{defaults().backgroundColor ?? 'transparent'}</span>
+                            </div>
+                        </div>
+
+                        <div class="settings-row">
+                            <label>Stroke Width</label>
+                            <input
+                                type="number"
+                                min={1}
+                                max={20}
+                                value={defaults().strokeWidth ?? 2}
+                                onChange={(e) => updateDefaultStyles({ strokeWidth: parseInt(e.currentTarget.value) || 2 })}
+                            />
+                        </div>
+
+                        <div class="settings-row">
+                            <label>Opacity</label>
+                            <div class="settings-range-group">
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={100}
+                                    value={defaults().opacity ?? 100}
+                                    onInput={(e) => updateDefaultStyles({ opacity: parseInt(e.currentTarget.value) })}
+                                />
+                                <span>{defaults().opacity ?? 100}%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <p class="settings-section-title">Drawing Style</p>
+
+                        <div class="settings-row">
+                            <label>Render Style</label>
+                            <select
+                                value={defaults().renderStyle ?? 'sketch'}
+                                onChange={(e) => updateDefaultStyles({ renderStyle: e.currentTarget.value as any })}
+                            >
+                                <option value="sketch">Sketch</option>
+                                <option value="architectural">Architectural</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-footer">
+                        <button class="settings-reset-btn" onClick={() => resetDefaultStyles()}>
+                            Reset to Defaults
+                        </button>
+                        <button class="settings-close-btn" onClick={props.onClose}>
+                            Done
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Show>
+    );
+};
+
+export default SettingsDialog;

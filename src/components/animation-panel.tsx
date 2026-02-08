@@ -34,6 +34,14 @@ const THREE_D_PRESETS = [
     'boxRotateReveal', 'boxExplode', 'boxCollapse', 'isometricRotate', 'depthPulse'
 ];
 
+// Table animations (for table elements only)
+const TABLE_PRESETS = [
+    'tableRowReveal', 'tableColReveal', 'tableCellFill', 'tableHeatmapFadeIn',
+    'tableRowHighlight', 'tableColPulse', 'tableGridDraw', 'tableHeaderSlam',
+    'tableCountUp', 'tableAccordion',
+    'tableCellsAssemble', 'tableLightningSplit'
+];
+
 // Get applicable presets based on element type
 const getPresetsForType = (type: string | undefined): string[] => {
     if (!type) return COMMON_PRESETS;
@@ -54,6 +62,11 @@ const getPresetsForType = (type: string | undefined): string[] => {
     // Add 3D presets for 3D shapes
     if (['solidBlock', 'perspectiveBlock', 'isometricCube', 'openBox', 'cylinder'].includes(type)) {
         presets.push(...THREE_D_PRESETS);
+    }
+
+    // Add table presets for table elements
+    if (type === 'table') {
+        presets.push(...TABLE_PRESETS);
     }
 
     return presets;

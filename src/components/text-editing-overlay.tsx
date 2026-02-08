@@ -22,6 +22,7 @@ interface TextEditingOverlayProps {
     canvasRef?: HTMLCanvasElement;
     onCommitText: () => void;
     onTextInputRef: (ref: HTMLTextAreaElement) => void;
+    onTableCellNavigate?: (direction: 'right' | 'left' | 'down' | 'up') => void;
 }
 
 const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
@@ -189,6 +190,25 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                     e.preventDefault();
                                     props.onCommitText();
                                     setSelectedTool('selection');
+                                    return;
+                                }
+                                // Table cell navigation
+                                if (props.editingProperty() === 'tableCell' && props.onTableCellNavigate) {
+                                    if (e.key === 'Tab') {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        props.onCommitText();
+                                        props.onTableCellNavigate(e.shiftKey ? 'left' : 'right');
+                                        return;
+                                    }
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        props.onCommitText();
+                                        props.onTableCellNavigate('down');
+                                        return;
+                                    }
+                                    // Shift+Enter: allow default (newline in cell)
                                 }
                             }}
                             style={{

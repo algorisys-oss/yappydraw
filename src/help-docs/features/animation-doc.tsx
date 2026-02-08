@@ -91,6 +91,10 @@ export const AnimationDoc: Component = () => {
                             <td><strong>Text</strong></td>
                             <td>typewriter, typewriterCursor, wordByWord, textScramble, lineByLine</td>
                         </tr>
+                        <tr>
+                            <td><strong>Table</strong></td>
+                            <td>tableRowReveal, tableColReveal, tableCellFill, tableHeatmapFadeIn, tableRowHighlight, tableColPulse, tableGridDraw, tableHeaderSlam, tableCountUp, tableAccordion, tableCellsAssemble, tableLightningSplit</td>
+                        </tr>
                     </tbody>
                 </table>
 
@@ -262,6 +266,92 @@ charByChar(textElementId, 1500, { each: 50, from: 'center' });
 textCountUp(textElementId, 0, 1000, 2000, {
     params: { suffix: '+', useCommas: true }
 });`}
+                </div>
+            </section>
+
+            {/* Table Animations */}
+            <section class="doc-section">
+                <h2>Table Animations</h2>
+                <p>Special animations designed specifically for table elements, leveraging the table's internal structure (rows, columns, cells):</p>
+
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Preset</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>tableRowReveal</strong></td>
+                            <td>Rows appear one at a time from top to bottom</td>
+                        </tr>
+                        <tr>
+                            <td><strong>tableColReveal</strong></td>
+                            <td>Columns appear one at a time from left to right</td>
+                        </tr>
+                        <tr>
+                            <td><strong>tableCellFill</strong></td>
+                            <td>Cells fill in one at a time in row-major order</td>
+                        </tr>
+                        <tr>
+                            <td><strong>tableHeatmapFadeIn</strong></td>
+                            <td>Cells fade in with randomized stagger for a heatmap-like effect</td>
+                        </tr>
+                        <tr>
+                            <td><strong>tableRowHighlight</strong></td>
+                            <td>A highlight color sweeps through each row</td>
+                        </tr>
+                        <tr>
+                            <td><strong>tableColPulse</strong></td>
+                            <td>A highlight color pulses through each column</td>
+                        </tr>
+                        <tr>
+                            <td><strong>tableGridDraw</strong></td>
+                            <td>Border draws first, then grid lines appear, then cell backgrounds and text fade in</td>
+                        </tr>
+                        <tr>
+                            <td><strong>tableHeaderSlam</strong></td>
+                            <td>Header row drops in with a bounce effect, then body rows fade in</td>
+                        </tr>
+                        <tr>
+                            <td><strong>tableCountUp</strong></td>
+                            <td>Numeric cells count up from 0 to their final value</td>
+                        </tr>
+                        <tr>
+                            <td><strong>tableAccordion</strong></td>
+                            <td>Rows expand one at a time from collapsed to full height</td>
+                        </tr>
+                        <tr>
+                            <td><strong>tableCellsAssemble</strong></td>
+                            <td>Cells fly in from scattered positions and assemble into the table</td>
+                        </tr>
+                        <tr>
+                            <td><strong>tableLightningSplit</strong></td>
+                            <td>Table splits along a zigzag lightning bolt crack, halves slam together with a flash</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>API Usage</h3>
+                <div class="code-block">
+{`// Row-by-row reveal over 1.2 seconds
+tableRowReveal(tableElementId, 1200);
+
+// Grid draws in over 1.8 seconds
+tableGridDraw(tableElementId, 1800);
+
+// Numeric cells count up from 0
+tableCountUp(tableElementId, 1500);
+
+// Header slams in with bounce
+tableHeaderSlam(tableElementId, 1200);
+
+// Cells fly in and assemble into the table
+tableCellsAssemble(tableElementId, 1800);
+
+// Lightning splits and slams the table together
+tableLightningSplit(tableElementId, 1500);`}
                 </div>
             </section>
 

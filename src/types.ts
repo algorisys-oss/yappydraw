@@ -80,7 +80,12 @@ export type EntranceAnimation = 'none' |
     // Sliding entrances
     'slideInDown' | 'slideInLeft' | 'slideInRight' | 'slideInUp' |
     // Text animations (for text elements only)
-    'typewriter' | 'typewriterCursor' | 'wordByWord' | 'textScramble' | 'lineByLine' | 'charByChar';
+    'typewriter' | 'typewriterCursor' | 'wordByWord' | 'textScramble' | 'lineByLine' | 'charByChar' |
+    // Table animations (for table elements only)
+    'tableRowReveal' | 'tableColReveal' | 'tableCellFill' | 'tableHeatmapFadeIn' |
+    'tableRowHighlight' | 'tableColPulse' | 'tableGridDraw' | 'tableHeaderSlam' |
+    'tableCountUp' | 'tableAccordion' |
+    'tableCellsAssemble' | 'tableLightningSplit';
 
 export type ExitAnimation = 'none' |
     // Back exits
@@ -301,6 +306,10 @@ export interface DrawingElement {
     tableMergedCells?: { startRow: number; startCol: number; endRow: number; endCol: number }[]; // merged cell regions
     tableCellFormats?: TableCellFormat[][];  // per-cell format settings [row][col]
     tableCellBorders?: TableCellBorders[][]; // per-cell border settings [row][col]
+
+    // Table animation
+    tableAnimProgress?: number;   // 0-100, animated by animateElement()
+    tableAnimStyle?: string;      // which table animation is active (e.g. 'rowReveal', 'colReveal')
 }
 
 // Helper type for table cell selection

@@ -1,4 +1,4 @@
-import { type Component, onMount, createEffect, onCleanup, createSignal, Show, untrack } from "solid-js";
+import { type Component, onMount, createEffect, onCleanup, createSignal, Show, untrack, batch } from "solid-js";
 import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
@@ -35,7 +35,7 @@ import { Minimap } from "./minimap";
 import { getContextMenuItems } from "../utils/context-menu-builder";
 import PathEditorOverlay from "./path-editor-overlay";
 import { commitText as commitTextHandler, handleDoubleClick as handleDoubleClickHandler, type TextEditingContext } from "../utils/tool-handlers/text-editing-handler";
-import { computeCellRects, defaultColWidths, defaultRowHeights, hitTestColEdge, measureColumnOptimalWidth } from "../utils/table-utils";
+import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestColEdge, measureColumnOptimalWidth, getNextCell } from "../utils/table-utils";
 import { handleDragOver, handleDrop as handleDropHandler, handleWheel, type CanvasEventContext } from "../utils/tool-handlers/canvas-event-handlers";
 import { showToast } from "./toast";
 import { perfMonitor } from "../utils/performance-monitor";
@@ -746,7 +746,70 @@ const Canvas: Component = () => {
         window.addEventListener("resize", handleResize);
         document.addEventListener("fullscreenchange", handleResize);
         handleResize();
+
+        // Expose table cell navigation interface for global keyboard handler (app.tsx)
+        (window as any).__tableCellNav = {
+            getCellSelection: () => tableCellSelectionSignal(),
+            setCellSelection: (sel: import("../types").TableCellSelection | null) => {
+                pState.tableCellSelection = sel;
+                pState.tableCellSelectionElementId = sel ? store.selection[0] : null;
+                setTableCellSelection(sel);
+                requestAnimationFrame(draw);
+            },
+            startEditingCell: (elementId: string, visualRow: number, visualCol: number, initialText?: string) => {
+                const el = store.elements.find(e => e.id === elementId);
+                if (!el || el.type !== 'table') return;
+
+                const cols = el.tableCols ?? 3;
+                const rows = el.tableRows ?? 3;
+                const hasHeader = el.tableHeaders !== false;
+                const totalVisualRows = hasHeader ? rows + 1 : rows;
+                const colWidths = el.tableColWidths ?? defaultColWidths(cols);
+                const rowHeights = el.tableRowHeights ?? defaultRowHeights(totalVisualRows);
+                const data = el.tableData ?? defaultTableData(rows, cols);
+                const cellRects = computeCellRects(
+                    el.x, el.y, el.width, el.height,
+                    colWidths, rowHeights, el.tableColOrder, hasHeader
+                );
+
+                const cellRect = cellRects.find(r => r.row === visualRow && r.col === visualCol);
+                if (!cellRect) return;
+
+                const tableDataRow = hasHeader
+                    ? (cellRect.dataRow === -1 ? 0 : cellRect.dataRow + 1)
+                    : cellRect.dataRow;
+
+                const currentText = data[tableDataRow]?.[cellRect.dataCol] ?? '';
+
+                batch(() => {
+                    setEditingProperty('tableCell');
+                    setEditText(initialText !== undefined ? initialText : currentText);
+                    setTableEditingCell({
+                        dataRow: tableDataRow,
+                        dataCol: cellRect.dataCol,
+                        cellX: cellRect.x,
+                        cellY: cellRect.y,
+                        cellW: cellRect.w,
+                        cellH: cellRect.h,
+                    });
+                    setEditingId(el.id);
+                });
+
+                setTimeout(() => {
+                    textInputRef?.focus();
+                    if (initialText !== undefined) {
+                        textInputRef?.setSelectionRange(initialText.length, initialText.length);
+                    } else {
+                        textInputRef?.select();
+                    }
+                }, 0);
+            },
+            isEditingTableCell: () => editingId() !== null && editingProperty() === 'tableCell',
+            getEditingId: () => editingId(),
+        };
+
         onCleanup(() => {
+            delete (window as any).__tableCellNav;
             window.removeEventListener('keydown', handlePolylineKeys, true);
             window.removeEventListener("resize", handleResize);
             document.removeEventListener("fullscreenchange", handleResize);
@@ -808,6 +871,33 @@ const Canvas: Component = () => {
                 canvasRef={canvasRef}
                 onCommitText={commitText}
                 onTextInputRef={(ref) => { textInputRef = ref; }}
+                onTableCellNavigate={(direction) => {
+                    const sel = pState.tableCellSelection;
+                    const elId = pState.tableCellSelectionElementId;
+                    if (!sel || !elId) return;
+
+                    const el = store.elements.find(e => e.id === elId);
+                    if (!el || el.type !== 'table') return;
+
+                    const cols = el.tableCols ?? 3;
+                    const rows = el.tableRows ?? 3;
+                    const hasHeader = el.tableHeaders !== false;
+                    const totalVisualRows = hasHeader ? rows + 1 : rows;
+                    const wrap = direction === 'right' || direction === 'left';
+
+                    const nextCell = getNextCell(
+                        sel.startRow, sel.startCol, direction,
+                        totalVisualRows, cols, el.tableMergedCells, wrap
+                    );
+
+                    if (nextCell) {
+                        const newSel = { startRow: nextCell.row, startCol: nextCell.col, endRow: nextCell.row, endCol: nextCell.col };
+                        pState.tableCellSelection = newSel;
+                        pState.tableCellSelectionElementId = elId;
+                        setTableCellSelection(newSel);
+                        (window as any).__tableCellNav?.startEditingCell(elId, nextCell.row, nextCell.col);
+                    }
+                }}
             />
 
             {/* Context Menu */}
@@ -815,7 +905,7 @@ const Canvas: Component = () => {
                 <ContextMenu
                     x={contextMenuPos().x}
                     y={contextMenuPos().y}
-                    items={(() => { const w = getWorldCoordinates(contextMenuPos().x, contextMenuPos().y); return getContextMenuItems(draw, w.x, w.y, tableCellSelectionSignal()); })()}
+                    items={(() => { const w = getWorldCoordinates(contextMenuPos().x, contextMenuPos().y); return getContextMenuItems(draw, w.x, w.y, tableCellSelectionSignal(), () => setTableCellSelection(null)); })()}
                     onClose={() => setContextMenuOpen(false)}
                 />
             </Show>

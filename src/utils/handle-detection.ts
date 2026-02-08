@@ -164,6 +164,17 @@ export function getHandleAtPosition(
             }
         }
 
+        // Table Move Handle — top-left corner outside bounding box
+        if (el.type === 'table') {
+            const moveSize = 20 / scale;
+            const moveX = el.x - padding - moveSize - 4 / scale + moveSize / 2;
+            const moveY = el.y - padding - moveSize - 4 / scale + moveSize / 2;
+            const dist = Math.sqrt(Math.pow(local.x - moveX, 2) + Math.pow(local.y - moveY, 2));
+            if (dist <= moveSize / 2 + 2 / scale) {
+                return { id: el.id, handle: 'table-move' };
+            }
+        }
+
         // Custom Control Handles (Star, Burst, Isometric Cube, Solid Block)
         if (el.type === 'isometricCube') {
             const shapeRatio = (el.shapeRatio !== undefined ? el.shapeRatio : 25) / 100;

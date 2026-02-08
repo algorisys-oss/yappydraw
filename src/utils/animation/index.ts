@@ -93,7 +93,20 @@ export {
     kineticDropIn,
     kineticScaleReveal,
     kineticSlideIn,
-    kineticFadeUp
+    kineticFadeUp,
+    // Table Animations
+    tableRowReveal,
+    tableColReveal,
+    tableCellFill,
+    tableHeatmapFadeIn,
+    tableRowHighlight,
+    tableColPulse,
+    tableGridDraw,
+    tableHeaderSlam,
+    tableCountUp,
+    tableAccordion,
+    tableCellsAssemble,
+    tableLightningSplit
 } from './element-animator';
 
 export type { StaggerConfig } from './element-animator';

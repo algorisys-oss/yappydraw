@@ -9,7 +9,7 @@ import {
 } from "../store/app-store";
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
-    Moon, Sun, Focus, Download, Layout,
+    Moon, Sun, Focus, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical
 } from "lucide-solid";
 import { P3ColorPicker } from "./p3-color-picker";
@@ -22,6 +22,7 @@ const FileOpenDialog = lazy(() => import("./file-open-dialog"));
 const ExportDialog = lazy(() => import("./export-dialog"));
 const SaveDialog = lazy(() => import("./save-dialog"));
 const TemplateBrowser = lazy(() => import("./template-browser"));
+const SettingsDialog = lazy(() => import("./settings-dialog"));
 import { features } from "../config/features";
 import { migrateToSlideFormat, isSlideDocument } from "../utils/migration";
 import type { SlideDocument } from "../types/slide-types";
@@ -36,6 +37,7 @@ export const [isSaveOpen, setIsSaveOpen] = createSignal(false);
 export const [isLoadExportOpen, setIsLoadExportOpen] = createSignal(false);
 export const [loadExportInitialTab, setLoadExportInitialTab] = createSignal<'load' | 'save'>('load');
 export const [showHelp, setShowHelp] = createSignal(false);
+export const [showSettings, setShowSettings] = createSignal(false);
 
 // Exported handlers for App.tsx integration
 let sharedSetSaveIntent: (intent: 'workspace' | 'disk' | 'disk-json') => void = () => { };
@@ -385,6 +387,7 @@ const Menu: Component = () => {
                 />
 
                 <HelpDialog isOpen={showHelp()} onClose={() => setShowHelp(false)} />
+                <SettingsDialog isOpen={showSettings()} onClose={() => setShowSettings(false)} />
 
                 <LoadExportDialog
                     isOpen={isLoadExportOpen()}
@@ -539,6 +542,11 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <Show when={store.showMainToolbar}><Check size={14} class="check-icon" /></Show>
                                         </div>
+                                    </div>
+                                    <div class="menu-separator"></div>
+                                    <div class="menu-item" onClick={() => { setShowSettings(true); setIsMenuOpen(false); }}>
+                                        <Settings size={16} />
+                                        <span class="label">Settings</span>
                                     </div>
                                     <div class="menu-separator"></div>
                                     <div style={{ padding: '4px 12px', "font-size": '12px', color: 'var(--text-secondary)' }}>

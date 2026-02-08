@@ -148,6 +148,8 @@ export function computeElementHash(el: DrawingElement): string {
         if (el.tableMergedCells) h += `|tmc${JSON.stringify(el.tableMergedCells)}`;
         if (el.tableCellFormats) h += `|tcf${JSON.stringify(el.tableCellFormats)}`;
         if (el.tableCellBorders) h += `|tcb${JSON.stringify(el.tableCellBorders)}`;
+        if (el.tableAnimProgress !== undefined) h += `|taprog${el.tableAnimProgress}`;
+        if (el.tableAnimStyle) h += `|tasty${el.tableAnimStyle}`;
     }
 
     return h;

@@ -20,7 +20,7 @@ import { AnimationPanel } from "./animation-panel";
 import { resizeTableData, defaultColWidths, defaultRowHeights, defaultTableData } from "../utils/table-utils";
 
 const MindmapActions: Component<{ elementId: string }> = (props) => {
-    const el = () => store.elements.find(e => e.id === props.elementId);
+    const el = createMemo(() => store.elements.find(e => e.id === props.elementId));
 
     const hasChildren = createMemo(() => {
         return store.elements.some(e => e.parentId === props.elementId);
@@ -872,6 +872,17 @@ const PropertyPanel: Component = () => {
         return groups;
     });
 
+    // Derived memos for activeTarget to avoid repeated calls in Show conditions
+    const targetType = createMemo(() => activeTarget()?.type);
+    const targetData = createMemo(() => {
+        const t = activeTarget();
+        return t?.type === 'element' ? t.data : null;
+    });
+    const targetElementId = createMemo(() => targetData()?.id ?? '');
+    const isElement = createMemo(() => targetType() === 'element');
+    const isMulti = createMemo(() => targetType() === 'multi');
+    const isElementOrMulti = createMemo(() => isElement() || isMulti());
+
     // Collapsible groups
     const [collapsedGroups, setCollapsedGroups] = createSignal<Set<string>>(
         new Set(JSON.parse(localStorage.getItem('collapsed-prop-groups') || '[]'))
@@ -902,7 +913,7 @@ const PropertyPanel: Component = () => {
                                 </button>
                                 <Show when={!store.isPropertyPanelMinimized}>
                                     <div style={{ display: 'flex', 'flex-direction': 'column', gap: '2px' }}>
-                                        <h3 style={{ 'line-height': '1' }}>{activeTarget()?.type === 'element' ? 'Properties' : activeTarget()?.type === 'canvas' ? 'Canvas' : activeTarget()?.type === 'slide' ? `Slide ${store.activeSlideIndex + 1}` : activeTarget()?.type === 'multi' ? 'Selection' : activeTarget()?.type === 'defaults' ? 'Defaults' : 'Properties'}</h3>
+                                        <h3 style={{ 'line-height': '1' }}>{targetType() === 'element' ? 'Properties' : targetType() === 'canvas' ? 'Canvas' : targetType() === 'slide' ? `Slide ${store.activeSlideIndex + 1}` : targetType() === 'multi' ? 'Selection' : targetType() === 'defaults' ? 'Defaults' : 'Properties'}</h3>
                                         <div
                                             class="mode-badge"
                                             classList={{ [store.appMode]: true }}
@@ -915,8 +926,8 @@ const PropertyPanel: Component = () => {
                             </div>
 
                             <div class="header-actions">
-                                <Show when={activeTarget()?.type === 'element' && !store.isPropertyPanelMinimized}>
-                                    <button onClick={() => duplicateElement(activeTarget()!.data!.id!)} title="Duplicate">
+                                <Show when={isElement() && !store.isPropertyPanelMinimized}>
+                                    <button onClick={() => duplicateElement(targetElementId())} title="Duplicate">
                                         <Copy size={16} />
                                     </button>
                                     <button class="delete-btn" onClick={handleDelete} title="Delete">
@@ -933,18 +944,18 @@ const PropertyPanel: Component = () => {
 
                         <Show when={!store.isPropertyPanelMinimized}>
                             <div class="property-content">
-                                <Show when={activeTarget()?.type === 'multi'}>
+                                <Show when={isMulti()}>
                                     <AlignmentControls />
                                 </Show>
-                                <Show when={activeTarget()?.type === 'element'}>
-                                    <MindmapActions elementId={activeTarget()!.data!.id} />
+                                <Show when={isElement()}>
+                                    <MindmapActions elementId={targetElementId()} />
                                 </Show>
-                                <Show when={activeTarget()?.type === 'slide'}>
+                                <Show when={targetType() === 'slide'}>
                                     <SlideActions />
                                 </Show>
 
                                 {/* Element ID (Read-only) */}
-                                <Show when={activeTarget()?.type === 'element'}>
+                                <Show when={isElement()}>
                                     <div class="property-group">
                                         <div class="group-title">GENERAL</div>
                                         <div class="control-row">
@@ -952,17 +963,17 @@ const PropertyPanel: Component = () => {
                                             <div style={{ display: 'flex', 'align-items': 'center', gap: '4px', 'flex': 1 }}>
                                                 <input
                                                     type="text"
-                                                    value={activeTarget()!.data!.id}
+                                                    value={targetElementId()}
                                                     onKeyDown={(e) => {
                                                         if (e.key === 'Enter') {
-                                                            renameElement(activeTarget()!.data!.id, e.currentTarget.value);
+                                                            renameElement(targetElementId(), e.currentTarget.value);
                                                             e.currentTarget.blur();
                                                         }
                                                     }}
                                                     onBlur={(e) => {
                                                         const newId = e.currentTarget.value;
-                                                        if (newId !== activeTarget()!.data!.id) {
-                                                            renameElement(activeTarget()!.data!.id, newId);
+                                                        if (newId !== targetElementId()) {
+                                                            renameElement(targetElementId(), newId);
                                                         }
                                                     }}
                                                     title="Edit ID (Press Enter to save)"
@@ -979,7 +990,7 @@ const PropertyPanel: Component = () => {
                                                     class="icon-btn small"
                                                     title="Copy ID"
                                                     onClick={() => {
-                                                        navigator.clipboard.writeText(activeTarget()!.data!.id);
+                                                        navigator.clipboard.writeText(targetElementId());
                                                         showToast("ID Copied to clipboard", "success");
                                                     }}
                                                 >
@@ -1033,7 +1044,7 @@ const PropertyPanel: Component = () => {
                                 </For>
 
                                 {/* Layers for elements */}
-                                <Show when={activeTarget() && (activeTarget()!.type === 'element' || activeTarget()!.type === 'multi')}>
+                                <Show when={isElementOrMulti()}>
                                     <div class="property-group">
                                         <div class="group-title">LAYERS</div>
 
@@ -1042,11 +1053,10 @@ const PropertyPanel: Component = () => {
                                             <label>Layer</label>
                                             <select
                                                 value={(() => {
-                                                    const target = activeTarget();
-                                                    if (target?.type === 'element') {
-                                                        return (target.data as any).layerId;
+                                                    if (isElement()) {
+                                                        return targetData()?.layerId ?? '';
                                                     }
-                                                    if (target?.type === 'multi') {
+                                                    if (isMulti()) {
                                                         // Check if all have same layer
                                                         const ids = store.selection;
                                                         const elements = store.elements.filter(e => ids.includes(e.id));
@@ -1058,19 +1068,16 @@ const PropertyPanel: Component = () => {
                                                 })()}
                                                 onChange={(e) => {
                                                     const targetLayerId = e.currentTarget.value;
-                                                    if (!targetLayerId) return; // mixed selection placeholder selected?
+                                                    if (!targetLayerId) return;
 
-                                                    const target = activeTarget();
-                                                    if (target?.type === 'element') {
-                                                        const elementId = (target.data as any).id;
-                                                        updateElement(elementId, { layerId: targetLayerId }, true);
-                                                    } else if (target?.type === 'multi') {
-                                                        // Move all selected to this layer
+                                                    if (isElement()) {
+                                                        updateElement(targetElementId(), { layerId: targetLayerId }, true);
+                                                    } else if (isMulti()) {
                                                         moveElementsToLayer(store.selection, targetLayerId);
                                                     }
                                                 }}
                                             >
-                                                <Show when={activeTarget()?.type === 'multi' &&
+                                                <Show when={isMulti() &&
                                                     !store.elements.filter(e => store.selection.includes(e.id))
                                                         .every((e, _, arr) => e.layerId === arr[0].layerId)}>
                                                     <option value="">(Mixed)</option>
@@ -1088,22 +1095,22 @@ const PropertyPanel: Component = () => {
                                         </div>
 
                                         {/* Z-Index Controls - Only for single selection or if we want to implement multi-z moves later */}
-                                        <Show when={activeTarget()?.type === 'element'}>
+                                        <Show when={isElement()}>
                                             <div class="control-row">
                                                 <label>Z-Order</label>
                                             </div>
                                             <div class="layer-controls">
-                                                <button onClick={() => moveElementZIndex((activeTarget()!.data as any).id, 'front')} title="To Front"><ChevronsUp size={16} /></button>
-                                                <button onClick={() => moveElementZIndex((activeTarget()!.data as any).id, 'forward')} title="Forward"><ChevronUp size={16} /></button>
-                                                <button onClick={() => moveElementZIndex((activeTarget()!.data as any).id, 'backward')} title="Backward"><ChevronDown size={16} /></button>
-                                                <button onClick={() => moveElementZIndex((activeTarget()!.data as any).id, 'back')} title="To Back"><ChevronsDown size={16} /></button>
+                                                <button onClick={() => moveElementZIndex(targetElementId(), 'front')} title="To Front"><ChevronsUp size={16} /></button>
+                                                <button onClick={() => moveElementZIndex(targetElementId(), 'forward')} title="Forward"><ChevronUp size={16} /></button>
+                                                <button onClick={() => moveElementZIndex(targetElementId(), 'backward')} title="Backward"><ChevronDown size={16} /></button>
+                                                <button onClick={() => moveElementZIndex(targetElementId(), 'back')} title="To Back"><ChevronsDown size={16} /></button>
                                             </div>
                                         </Show>
                                     </div>
                                 </Show>
 
                                 {/* Animation Section - for single element or multi-selection */}
-                                <Show when={activeTarget()?.type === 'element' || activeTarget()?.type === 'multi'}>
+                                <Show when={isElementOrMulti()}>
                                     <div class="property-group">
                                         <AnimationPanel />
                                     </div>

@@ -28,9 +28,11 @@ import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng } from './export
 import {
     computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData,
     hitTestTableCell, insertTableRow, deleteTableRow, insertTableColumn, deleteTableColumn,
+    deleteTableColumns, getFullColumnSelection,
     tableDataToTSV, parseClipboardTableData,
     getMergedCellAt, mergeCells, unmergeCells, normalizeCellSelection, isMultiCellSelection,
     setCellFormatRange, setBorderForRange, currencySymbols, datePatterns,
+    adjustMergedCellsOnColDelete,
     type MergedCellRegion
 } from './table-utils';
 import type { TableCellFormat, TableCellBorder, TableBorderStyle } from '../types';
@@ -39,7 +41,8 @@ export function getContextMenuItems(
     redrawFn: () => void,
     worldX?: number,
     worldY?: number,
-    cellSelection?: TableCellSelection | null
+    cellSelection?: TableCellSelection | null,
+    onClearCellSelection?: () => void
 ): MenuItem[] {
     const selectionCount = store.selection.length;
     const hasSelection = selectionCount > 0;
@@ -332,7 +335,65 @@ export function getContextMenuItems(
                         requestAnimationFrame(redrawFn);
                     }
                 });
-                if (cols > 1) {
+                // Multi-column or single-column delete
+                const fullColIndices = cellSelection
+                    ? getFullColumnSelection(cellSelection, totalVisualRows)
+                    : null;
+
+                if (fullColIndices && fullColIndices.length > 1 && cols - fullColIndices.length >= 1) {
+                    tableItems.push({
+                        label: `Delete ${fullColIndices.length} Columns`,
+                        onClick: () => {
+                            pushToHistory();
+                            const result = deleteTableColumns(data, colWidths, fullColIndices);
+                            if (!result) return;
+                            // Adjust merged cells (right-to-left)
+                            const sortedDesc = [...fullColIndices].sort((a, b) => b - a);
+                            let newMergedCells = el.tableMergedCells as MergedCellRegion[] | undefined;
+                            for (const ci of sortedDesc) {
+                                newMergedCells = adjustMergedCellsOnColDelete(newMergedCells, ci);
+                            }
+                            // Adjust column alignments
+                            let newAlignments = el.tableColAlignments ? [...el.tableColAlignments] : undefined;
+                            if (newAlignments) {
+                                for (const ci of sortedDesc) {
+                                    newAlignments.splice(ci, 1);
+                                }
+                            }
+                            // Adjust cell formats
+                            let newFormats = el.tableCellFormats
+                                ? el.tableCellFormats.map(row => [...row])
+                                : undefined;
+                            if (newFormats) {
+                                for (const ci of sortedDesc) {
+                                    newFormats = newFormats!.map(row => { row.splice(ci, 1); return row; });
+                                }
+                            }
+                            // Adjust cell borders
+                            let newBorders = el.tableCellBorders
+                                ? el.tableCellBorders.map(row => [...row])
+                                : undefined;
+                            if (newBorders) {
+                                for (const ci of sortedDesc) {
+                                    newBorders = newBorders!.map(row => { row.splice(ci, 1); return row; });
+                                }
+                            }
+                            updateElement(el.id!, {
+                                tableData: result.data,
+                                tableColWidths: result.colWidths,
+                                tableCols: result.colWidths.length,
+                                tableColAlignments: newAlignments,
+                                tableMergedCells: newMergedCells?.length ? newMergedCells : undefined,
+                                tableCellFormats: newFormats,
+                                tableCellBorders: newBorders,
+                                tableSortCol: -1,
+                                tableColOrder: undefined,
+                            }, false);
+                            onClearCellSelection?.();
+                            requestAnimationFrame(redrawFn);
+                        }
+                    });
+                } else if (cols > 1) {
                     tableItems.push({
                         label: 'Delete Column',
                         onClick: () => {
@@ -343,6 +404,7 @@ export function getContextMenuItems(
                                 tableColWidths: result.colWidths,
                                 tableCols: result.colWidths.length,
                             }, false);
+                            onClearCellSelection?.();
                             requestAnimationFrame(redrawFn);
                         }
                     });

@@ -16,7 +16,7 @@ import {
   copyStyle, pasteStyle, lockSelected, flipSelected,
   pasteImageFromBlob, pasteAsTextElement, remapElementBindings
 } from './utils/object-context-actions';
-import { parseClipboardTableData, defaultColWidths, defaultRowHeights } from './utils/table-utils';
+import { parseClipboardTableData, defaultColWidths, defaultRowHeights, getNextCell, normalizeCellSelection } from './utils/table-utils';
 import { updateElement } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
@@ -149,6 +149,74 @@ const App: Component = () => {
       if (isInputFocused) {
         // Let the browser handle standard text editing shortcuts (Ctrl+A, C, V, Z, etc.)
         return;
+      }
+
+      // 2b. TABLE CELL NAVIGATION — when table is selected with cell highlight, not editing
+      const tableCellNav = (window as any).__tableCellNav;
+      if (tableCellNav && !tableCellNav.isEditingTableCell()) {
+        const cellSel = tableCellNav.getCellSelection();
+        if (cellSel && store.selection.length === 1) {
+          const selEl = store.elements.find(el => el.id === store.selection[0]);
+          if (selEl?.type === 'table') {
+            const cols = selEl.tableCols ?? 3;
+            const rows = selEl.tableRows ?? 3;
+            const hasHeader = selEl.tableHeaders !== false;
+            const totalVisualRows = hasHeader ? rows + 1 : rows;
+
+            // Arrow keys: move cell selection
+            if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key) && !isCtrlOrMeta && !e.altKey) {
+              e.preventDefault();
+              const dirMap: Record<string, 'up' | 'down' | 'left' | 'right'> = {
+                arrowup: 'up', arrowdown: 'down', arrowleft: 'left', arrowright: 'right'
+              };
+              const nextCell = getNextCell(
+                cellSel.startRow, cellSel.startCol, dirMap[key],
+                totalVisualRows, cols, selEl.tableMergedCells, false
+              );
+              if (nextCell) {
+                tableCellNav.setCellSelection({
+                  startRow: nextCell.row, startCol: nextCell.col,
+                  endRow: nextCell.row, endCol: nextCell.col
+                });
+              }
+              return;
+            }
+
+            // F2: start editing highlighted cell
+            if (key === 'f2') {
+              e.preventDefault();
+              tableCellNav.startEditingCell(selEl.id, cellSel.startRow, cellSel.startCol);
+              return;
+            }
+
+            // Delete/Backspace: clear highlighted cell(s) content (not delete table)
+            if (key === 'delete' || key === 'backspace') {
+              e.preventDefault();
+              if (selEl.tableData) {
+                pushToHistory();
+                const norm = normalizeCellSelection(cellSel);
+                const colOrder = selEl.tableColOrder;
+                const newData = selEl.tableData.map(row => [...row]);
+                for (let r = norm.startRow; r <= norm.endRow; r++) {
+                  for (let c = norm.startCol; c <= norm.endCol; c++) {
+                    const dataCol = colOrder ? colOrder[c] : c;
+                    if (newData[r]) {
+                      newData[r][dataCol] = '';
+                    }
+                  }
+                }
+                updateElement(selEl.id, { tableData: newData }, true);
+              }
+              return;
+            }
+
+            // Tab, Enter, and printable chars: NOT intercepted here
+            // Tab → falls through to addChildNode (mindmap)
+            // Enter → falls through to addSiblingNode (mindmap)
+            // Printable chars → fall through to tool shortcuts
+            // These keys only do cell navigation during active editing (text-editing-overlay.tsx)
+          }
+        }
       }
 
       // 3. Regular Application Shortcuts (Blocked by inputs)

@@ -108,6 +108,8 @@ export interface ElementAnimationTarget {
     strokeWidth?: number;
     roughness?: number;
     drawProgress?: number;
+    // Table animation progress
+    tableAnimProgress?: number;
     // 3D shape properties
     depth?: number;
     viewAngle?: number;
@@ -2786,6 +2788,20 @@ export function playEntranceAnimation(elementId: string, options: { isPreview?: 
         case 'charByChar':
             return charByChar(elementId, duration, { each: 50, from: 'start' }, config);
 
+        // Table animations (for table elements only)
+        case 'tableRowReveal': return tableRowReveal(elementId, duration, config);
+        case 'tableColReveal': return tableColReveal(elementId, duration, config);
+        case 'tableCellFill': return tableCellFill(elementId, duration, config);
+        case 'tableHeatmapFadeIn': return tableHeatmapFadeIn(elementId, duration, config);
+        case 'tableRowHighlight': return tableRowHighlight(elementId, duration, config);
+        case 'tableColPulse': return tableColPulse(elementId, duration, config);
+        case 'tableGridDraw': return tableGridDraw(elementId, duration, config);
+        case 'tableHeaderSlam': return tableHeaderSlam(elementId, duration, config);
+        case 'tableCountUp': return tableCountUp(elementId, duration, config);
+        case 'tableAccordion': return tableAccordion(elementId, duration, config);
+        case 'tableCellsAssemble': return tableCellsAssemble(elementId, duration, config);
+        case 'tableLightningSplit': return tableLightningSplit(elementId, duration, config);
+
         default:
             return '';
     }
@@ -4619,4 +4635,95 @@ export function kineticFadeUp(elementId: string, duration: number = 1500, config
     }).filter(Boolean) as KineticWordData[];
 
     return runKineticAnimation(elementId, wordData, duration, 'easeOutQuad', config);
+}
+
+// ============================================
+// TABLE ANIMATION PRESETS
+// ============================================
+
+/**
+ * Helper to create table animation presets.
+ * Sets tableAnimProgress to 0 and tableAnimStyle, then animates progress to 100.
+ */
+function tableAnimPreset(
+    elementId: string,
+    styleName: string,
+    duration: number,
+    easing: string,
+    config: ElementAnimationConfig
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element || element.type !== 'table') return '';
+
+    updateElement(elementId, { tableAnimProgress: 0, tableAnimStyle: styleName } as any, false);
+
+    return animateElement(elementId, { tableAnimProgress: 100 } as any, {
+        duration,
+        easing: easing as any,
+        ...config,
+        onComplete: () => {
+            updateElement(elementId, { tableAnimProgress: undefined, tableAnimStyle: undefined } as any, false);
+            config.onComplete?.();
+        }
+    });
+}
+
+/** Table Row-by-Row Reveal — rows appear top-to-bottom */
+export function tableRowReveal(elementId: string, duration: number = 1200, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'rowReveal', duration, 'easeOutQuad', config);
+}
+
+/** Table Column-by-Column Reveal — columns appear left-to-right */
+export function tableColReveal(elementId: string, duration: number = 1200, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'colReveal', duration, 'easeOutQuad', config);
+}
+
+/** Table Cell-by-Cell Fill — cells appear one at a time in row-major order */
+export function tableCellFill(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'cellFill', duration, 'easeOutQuad', config);
+}
+
+/** Table Heatmap Fade-In — cells fade in with randomized stagger */
+export function tableHeatmapFadeIn(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'heatmapFadeIn', duration, 'easeOutQuad', config);
+}
+
+/** Table Row Highlight Sweep — highlight color sweeps through rows */
+export function tableRowHighlight(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'rowHighlight', duration, 'linear', config);
+}
+
+/** Table Column Highlight Pulse — highlight color pulses through columns */
+export function tableColPulse(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'colPulse', duration, 'linear', config);
+}
+
+/** Table Grid Draw-In — border first, then grid lines, then content */
+export function tableGridDraw(elementId: string, duration: number = 1800, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'gridDraw', duration, 'easeInOutQuad', config);
+}
+
+/** Table Header Slam — header drops in with bounce, body fades in */
+export function tableHeaderSlam(elementId: string, duration: number = 1200, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'headerSlam', duration, 'easeOutQuad', config);
+}
+
+/** Table Count-Up — numeric cells count from 0 to final value */
+export function tableCountUp(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'countUp', duration, 'easeOutQuad', config);
+}
+
+/** Table Accordion Expand — rows expand one at a time from collapsed */
+export function tableAccordion(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'accordion', duration, 'easeOutQuad', config);
+}
+
+/** Table Cells Assemble — cells fly from scattered positions and merge into the table */
+export function tableCellsAssemble(elementId: string, duration: number = 2000, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'cellsAssemble', duration, 'easeOutQuad', config);
+}
+
+/** Table Lightning Split — lightning crack reveals the table with dramatic split effect */
+export function tableLightningSplit(elementId: string, duration: number = 1800, config: ElementAnimationConfig = {}): string {
+    return tableAnimPreset(elementId, 'lightningSplit', duration, 'easeOutQuad', config);
 }

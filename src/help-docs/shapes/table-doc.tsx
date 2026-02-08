@@ -90,11 +90,21 @@ const tableId = Yappy.createTable(100, 100, 500, 300, 5, 4, {
 
                 <h3>Interactive Editing</h3>
                 <ul>
-                    <li><strong>Double-click</strong> a cell to start editing</li>
+                    <li><strong>Double-click</strong> a cell or press <kbd class="kbd">Enter</kbd>/<kbd class="kbd">F2</kbd> to start editing</li>
                     <li>Type your content - text will wrap automatically</li>
-                    <li>Press <kbd class="kbd">Enter</kbd> or click outside to confirm</li>
-                    <li>Press <kbd class="kbd">Escape</kbd> to cancel editing</li>
+                    <li>Press <kbd class="kbd">Tab</kbd> to save and move to the next cell, <kbd class="kbd">Shift+Tab</kbd> to go back</li>
+                    <li>Press <kbd class="kbd">Enter</kbd> to save and move down, <kbd class="kbd">Shift+Enter</kbd> for newline</li>
+                    <li>Use <kbd class="kbd">Arrow keys</kbd> to navigate between cells when not editing</li>
+                    <li>Just start typing to replace cell content</li>
+                    <li>Press <kbd class="kbd">Delete</kbd> to clear cell(s), <kbd class="kbd">Escape</kbd> to cancel editing</li>
                 </ul>
+
+                <h3>Moving Tables</h3>
+                <p>
+                    When a table is selected, a <strong>move handle</strong> (blue circle with arrows) appears
+                    at the top-left corner. Drag this handle to reposition the table. You can also click and drag
+                    from any cell area to move the table — a short click selects the cell, while a longer drag moves the table.
+                </p>
 
                 <h3>Using the API</h3>
                 <div class="code-block">
@@ -584,13 +594,49 @@ const merges = Yappy.getMergedCells(tableId);
                         <div class="shortcut-keys">
                             <span class="kbd">Enter</span>
                         </div>
-                        <span class="shortcut-desc">Confirm cell edit</span>
+                        <span class="shortcut-desc">Confirm edit and move down / Start editing cell</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <div class="shortcut-keys">
+                            <span class="kbd">Shift</span>+<span class="kbd">Enter</span>
+                        </div>
+                        <span class="shortcut-desc">Insert newline within cell</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <div class="shortcut-keys">
+                            <span class="kbd">Tab</span> / <span class="kbd">Shift</span>+<span class="kbd">Tab</span>
+                        </div>
+                        <span class="shortcut-desc">Move to next/previous cell (wraps at row boundary)</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <div class="shortcut-keys">
+                            <span class="kbd">Arrow Keys</span>
+                        </div>
+                        <span class="shortcut-desc">Navigate between cells (when not editing)</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <div class="shortcut-keys">
+                            <span class="kbd">F2</span>
+                        </div>
+                        <span class="shortcut-desc">Start editing selected cell</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <div class="shortcut-keys">
+                            <span class="kbd">Delete</span> / <span class="kbd">Backspace</span>
+                        </div>
+                        <span class="shortcut-desc">Clear selected cell(s) content</span>
                     </div>
                     <div class="shortcut-item">
                         <div class="shortcut-keys">
                             <span class="kbd">Escape</span>
                         </div>
                         <span class="shortcut-desc">Cancel cell edit</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <div class="shortcut-keys">
+                            <span class="kbd">Type any character</span>
+                        </div>
+                        <span class="shortcut-desc">Start editing cell with that character</span>
                     </div>
                     <div class="shortcut-item">
                         <div class="shortcut-keys">
@@ -618,6 +664,74 @@ const merges = Yappy.getMergedCells(tableId);
                         <span class="shortcut-desc">Start cell selection for merging</span>
                     </div>
                 </div>
+            </section>
+
+            {/* Table Animations */}
+            <section class="doc-section">
+                <h2>Table Animations</h2>
+                <p>
+                    Tables have 12 dedicated animation presets that leverage their internal structure.
+                    These are available in the Animation Panel when a table is selected.
+                </p>
+
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Animation</th>
+                            <th>Effect</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="code-inline">tableRowReveal</code></td>
+                            <td>Rows appear top-to-bottom</td>
+                        </tr>
+                        <tr>
+                            <td><code class="code-inline">tableColReveal</code></td>
+                            <td>Columns appear left-to-right</td>
+                        </tr>
+                        <tr>
+                            <td><code class="code-inline">tableCellFill</code></td>
+                            <td>Cells fill one at a time</td>
+                        </tr>
+                        <tr>
+                            <td><code class="code-inline">tableHeatmapFadeIn</code></td>
+                            <td>Cells fade in with random stagger</td>
+                        </tr>
+                        <tr>
+                            <td><code class="code-inline">tableRowHighlight</code></td>
+                            <td>Highlight sweeps through rows</td>
+                        </tr>
+                        <tr>
+                            <td><code class="code-inline">tableColPulse</code></td>
+                            <td>Highlight pulses through columns</td>
+                        </tr>
+                        <tr>
+                            <td><code class="code-inline">tableGridDraw</code></td>
+                            <td>Border, grid, then content draws in</td>
+                        </tr>
+                        <tr>
+                            <td><code class="code-inline">tableHeaderSlam</code></td>
+                            <td>Header bounces in, body fades</td>
+                        </tr>
+                        <tr>
+                            <td><code class="code-inline">tableCountUp</code></td>
+                            <td>Numeric cells count from 0</td>
+                        </tr>
+                        <tr>
+                            <td><code class="code-inline">tableAccordion</code></td>
+                            <td>Rows expand one at a time</td>
+                        </tr>
+                        <tr>
+                            <td><code class="code-inline">tableCellsAssemble</code></td>
+                            <td>Cells fly in and assemble into the table</td>
+                        </tr>
+                        <tr>
+                            <td><code class="code-inline">tableLightningSplit</code></td>
+                            <td>Lightning splits table, halves slam together</td>
+                        </tr>
+                    </tbody>
+                </table>
             </section>
         </div>
     );
