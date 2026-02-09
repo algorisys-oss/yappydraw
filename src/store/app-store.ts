@@ -949,7 +949,8 @@ export const duplicateSlide = (index: number) => {
 
     // 3. Clone elements with ID mapping
     const idMap = new Map<string, string>();
-    sourceElements.forEach(el => idMap.set(el.id, crypto.randomUUID()));
+    const batchIds = new Set<string>();
+    sourceElements.forEach(el => idMap.set(el.id, generateId(el.type, batchIds)));
 
     const newElements = sourceElements.map(el => {
         const newId = idMap.get(el.id)!;
@@ -991,7 +992,7 @@ export const duplicateSlide = (index: number) => {
     // 4. Create new slide frame
     const newSlide: Slide = {
         ...JSON.parse(JSON.stringify(sourceSlide)),
-        id: crypto.randomUUID(),
+        id: generateId('slide'),
         name: `${sourceSlide.name} (Copy)`,
         spatialPosition: { x: newX, y: 0 },
         order: index + 1,
@@ -1234,7 +1235,7 @@ export const toggleStatePanel = (visible?: boolean) => {
 };
 
 export const addDisplayState = (name: string) => {
-    const id = crypto.randomUUID();
+    const id = generateId('state');
     const overrides: Record<string, Partial<any>> = {};
 
     // Capture current values for all elements
@@ -1608,7 +1609,7 @@ export const addLayer = (name?: string, parentId?: string) => {
         return;
     }
     pushToHistory();
-    const newId = crypto.randomUUID();
+    const newId = generateId('layer');
     const maxOrder = Math.max(...store.layers.map(l => l.order), -1);
     const newLayer: Layer = {
         id: newId,
@@ -1698,7 +1699,7 @@ export const duplicateLayer = (id: string) => {
     pushToHistory();
 
     // Create new layer with incremented name
-    const newLayerId = crypto.randomUUID();
+    const newLayerId = generateId('layer');
     const newLayer: Layer = {
         ...original,
         id: newLayerId,
@@ -1713,9 +1714,10 @@ export const duplicateLayer = (id: string) => {
 
     // Duplicate all elements on this layer
     const elementsOnLayer = store.elements.filter(el => el.layerId === id);
+    const layerBatchIds = new Set<string>();
     const duplicatedElements = elementsOnLayer.map(el => ({
         ...el,
-        id: crypto.randomUUID(),
+        id: generateId(el.type, layerBatchIds),
         layerId: newLayerId,
         // Offset duplicated elements slightly so they're visible
         x: el.x + 10,
@@ -1992,7 +1994,7 @@ export const toggleLayerGroupingMode = () => {
 
 export const createLayerGroup = (name?: string) => {
     pushToHistory();
-    const newId = crypto.randomUUID();
+    const newId = generateId('layer');
     const maxOrder = Math.max(...store.layers.map(l => l.order), -1);
     const newGroup: Layer = {
         id: newId,

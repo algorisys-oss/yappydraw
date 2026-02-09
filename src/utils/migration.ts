@@ -176,6 +176,7 @@ export const migrateDrawingData = (data: any): {
 };
 
 import type { SlideDocument, Slide, GlobalSettings } from '../types/slide-types';
+import { generateId } from './id-generator';
 
 /**
  * Check if data is already in the v3+ slide format (v3 or v4)
@@ -198,7 +199,7 @@ export const migrateToSlideFormat = (data: any): SlideDocument => {
 
     // Create a single slide from the legacy data (Spatial Viewport)
     const slide: Slide = {
-        id: crypto.randomUUID(),
+        id: generateId('slide'),
         name: 'Slide 1',
         spatialPosition: { x: 0, y: 0 },
         dimensions: { width: 1920, height: 1080 }, // Default for migrated slides

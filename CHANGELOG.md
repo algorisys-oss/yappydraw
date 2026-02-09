@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.2] - 2026-02-09
+
+### Fixed
+- Copy-paste now maintains relative positions of shapes instead of stacking them at a single point
+- Copy serialization properly unwraps SolidJS store proxies before clipboard write
+- Paste handler uses already-parsed clipboard data directly instead of unreliable async re-read
+- Duplicate (Ctrl+D) now generates human-readable sequential IDs (e.g. `rect-3`) instead of GUIDs
+- `generateId()` batch uniqueness — multiple elements of the same type no longer get duplicate IDs
+
+### Changed
+- Migrated all element, layer, slide, and state ID generation from `crypto.randomUUID()` to `generateId()` with human-readable sequential naming pattern (`{type}-{n}`)
+- `generateId()` now accepts optional `batchIds` parameter for multi-element operations
+- `generateId()` now scans all store collections (elements, layers, slides, states) for prefix uniqueness
+
 ## [1.8.1] - 2026-02-09
 
 ### Fixed

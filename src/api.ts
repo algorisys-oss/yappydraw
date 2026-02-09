@@ -44,6 +44,7 @@ import {
     copyToClipboard, cutToClipboard, pasteFromClipboard,
     copyStyle, pasteStyle
 } from "./utils/object-context-actions";
+import { generateId } from "./utils/id-generator";
 import {
     defaultColWidths, defaultRowHeights,
     insertTableRow, deleteTableRow, insertTableColumn, deleteTableColumn,
@@ -174,7 +175,7 @@ export const YappyAPI = {
      * Create a generic element
      */
     createElement(type: ElementType, x: number, y: number, width: number, height: number, options?: ElementOptions): string {
-        const id = crypto.randomUUID();
+        const id = generateId(type);
         const defaults = store.defaultElementStyles;
 
         const element: DrawingElement = {
@@ -343,7 +344,7 @@ export const YappyAPI = {
     // --- Specialized Elements ---
 
     createText(x: number, y: number, text: string, options?: ElementOptions) {
-        const id = crypto.randomUUID();
+        const id = generateId('text');
         const defaults = store.defaultElementStyles;
         const fontSize = options?.fontSize ?? defaults.fontSize ?? 28;
         // Approximation

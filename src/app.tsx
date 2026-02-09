@@ -12,11 +12,13 @@ import {
 import Canvas from './components/canvas';
 import Toolbar from './components/toolbar';
 import {
-  copyToClipboard, cutToClipboard, pasteFromClipboard,
+  copyToClipboard, cutToClipboard,
   copyStyle, pasteStyle, lockSelected, flipSelected,
-  pasteImageFromBlob, pasteAsTextElement, remapElementBindings
+  pasteImageFromBlob, pasteAsTextElement, remapElementBindings,
+  pasteYappyElements
 } from './utils/object-context-actions';
 import { parseClipboardTableData, defaultColWidths, defaultRowHeights, getNextCell, normalizeCellSelection } from './utils/table-utils';
+import { generateId } from './utils/id-generator';
 import { updateElement } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
@@ -318,11 +320,12 @@ const App: Component = () => {
             // Build ID mapping for elements and groups
             const idMap = new Map<string, string>();
             const groupMapping = new Map<string, string>();
+            const batchIds = new Set<string>();
 
             selectedElements.forEach(el => {
-              idMap.set(el.id, crypto.randomUUID());
+              idMap.set(el.id, generateId(el.type, batchIds));
               el.groupIds?.forEach((gid: string) => {
-                if (!groupMapping.has(gid)) groupMapping.set(gid, crypto.randomUUID());
+                if (!groupMapping.has(gid)) groupMapping.set(gid, generateId('group', batchIds));
               });
             });
 
@@ -561,7 +564,7 @@ const App: Component = () => {
         try {
           const data = JSON.parse(text);
           if (data.type === 'yappy-elements' && Array.isArray(data.elements)) {
-            pasteFromClipboard();
+            pasteYappyElements(data);
             return;
           }
         } catch { /* not JSON */ }

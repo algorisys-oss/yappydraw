@@ -9,7 +9,9 @@ import type { DrawingElement } from "../types";
 export const copyToClipboard = async () => {
     if (store.selection.length === 0) return;
 
-    const elementsToCopy = store.elements.filter(el => store.selection.includes(el.id));
+    const elementsToCopy = JSON.parse(JSON.stringify(
+        store.elements.filter(el => store.selection.includes(el.id))
+    ));
     const clipboardData = {
         type: 'yappy-elements',
         elements: elementsToCopy
@@ -73,7 +75,7 @@ export const pasteImageFromBlob = (blob: Blob, offset = { dx: 0, dy: 0 }): Promi
                 }
 
                 const center = getViewportCenter();
-                const id = crypto.randomUUID();
+                const id = generateId('image');
 
                 addElement({
                     id,
@@ -119,7 +121,7 @@ export const pasteAsTextElement = (text: string): void => {
     const estimatedHeight = Math.max(fontSize * 1.5, lines.length * fontSize * 1.4);
 
     const center = getViewportCenter();
-    const id = crypto.randomUUID();
+    const id = generateId('text');
 
     addElement({
         id,
@@ -206,17 +208,18 @@ export const remapElementBindings = (
 };
 
 // ─── Paste internal Yappy elements ───────────────────────────────────
-const pasteYappyElements = (data: any): void => {
+export const pasteYappyElements = (data: any): void => {
     pushToHistory();
 
     const center = getViewportCenter();
-
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     data.elements.forEach((el: any) => {
+        const w = el.width || 0;
+        const h = el.height || 0;
         minX = Math.min(minX, el.x);
         minY = Math.min(minY, el.y);
-        maxX = Math.max(maxX, el.x + el.width);
-        maxY = Math.max(maxY, el.y + el.height);
+        maxX = Math.max(maxX, el.x + w);
+        maxY = Math.max(maxY, el.y + h);
     });
     const contentCX = minX + (maxX - minX) / 2;
     const contentCY = minY + (maxY - minY) / 2;
@@ -227,13 +230,14 @@ const pasteYappyElements = (data: any): void => {
     // Build ID mapping and group ID mapping
     const idMap = new Map<string, string>();
     const groupIdMap = new Map<string, string>();
+    const batchIds = new Set<string>();
 
     // Collect all group IDs first
     data.elements.forEach((el: any) => {
-        idMap.set(el.id, generateId(el.type));
+        idMap.set(el.id, generateId(el.type, batchIds));
         el.groupIds?.forEach((gid: string) => {
             if (!groupIdMap.has(gid)) {
-                groupIdMap.set(gid, crypto.randomUUID());
+                groupIdMap.set(gid, generateId('group', batchIds));
             }
         });
     });

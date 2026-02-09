@@ -1,5 +1,6 @@
 import { type Component, For, createSignal, onMount, onCleanup } from "solid-js";
 import { store, setSelectedTool, addElement, setStore } from "../store/app-store";
+import { generateId } from "../utils/id-generator";
 import type { ToolType } from "../types";
 import { MousePointer2, Type, Eraser, Hand, Image as ImageIcon, Zap, Highlighter, Lasso } from "lucide-solid";
 import PenToolGroup from "./pen-tool-group";
@@ -147,7 +148,7 @@ const Toolbar: Component = () => {
                         }
 
                         addElement({
-                            id: crypto.randomUUID(),
+                            id: generateId('image'),
                             type: 'image',
                             x: 100,
                             y: 100,
