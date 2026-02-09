@@ -7,6 +7,7 @@ import {
     toggleUtilityToolbar, loadTemplate, loadDocument, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo
 } from "../store/app-store";
+import { clearAutoSave } from "../storage/auto-save";
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Download, Layout, Settings,
@@ -107,6 +108,7 @@ const Menu: Component = () => {
                     return;
                 }
                 await storage.saveDrawing(filename, slideDoc);
+                clearAutoSave();
                 showToast(`Drawing saved successfully!`, 'success');
             } else {
                 const jsonString = JSON.stringify(slideDoc, null, 2);
@@ -157,6 +159,7 @@ const Menu: Component = () => {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
+                clearAutoSave();
                 showToast(`Saved as ${fileNameWithExt}`, 'success');
             }
         } catch (e) {

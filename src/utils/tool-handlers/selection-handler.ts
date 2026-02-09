@@ -5,6 +5,7 @@
  * Extracted from canvas.tsx handlePointerDown/Move/Up.
  */
 
+import { batch } from 'solid-js';
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
@@ -1144,28 +1145,44 @@ function handleMove(
 
     const skipHierarchy = e.altKey;
 
-    pState.initialPositions.forEach((initPos, selId) => {
-        if (skipHierarchy && !store.selection.includes(selId)) return;
+    // Batch all position updates so reactive effects (e.g. refreshBoundLine in
+    // canvas createEffect) only fire after every element has its final position.
+    // Without batch, moving shape A triggers refreshBoundLine on a connected arrow
+    // before the arrow (or shape B) has been moved, corrupting its width/height.
+    batch(() => {
+        pState.initialPositions.forEach((initPos, selId) => {
+            if (skipHierarchy && !store.selection.includes(selId)) return;
 
-        const el = store.elements.find(e => e.id === selId);
-        if (el && helpers.canInteractWithElement(el)) {
-            const updates: any = { x: initPos.x + dx, y: initPos.y + dy };
+            const el = store.elements.find(e => e.id === selId);
+            if (el && helpers.canInteractWithElement(el)) {
+                const updates: any = { x: initPos.x + dx, y: initPos.y + dy };
 
-            // Update Absolute Control Points
-            if (initPos.controlPoints) {
-                updates.controlPoints = initPos.controlPoints.map((cp: any) => ({
-                    x: cp.x + dx,
-                    y: cp.y + dy
-                }));
+                // Update Absolute Control Points
+                if (initPos.controlPoints) {
+                    updates.controlPoints = initPos.controlPoints.map((cp: any) => ({
+                        x: cp.x + dx,
+                        y: cp.y + dy
+                    }));
+                }
+
+                updateElement(selId, updates, false);
             }
+        });
 
-            updateElement(selId, updates, false);
-
-            // Update Bound Lines
-            if (el.boundElements) {
-                el.boundElements.forEach(b => helpers.refreshBoundLine(b.id));
+        // Refresh bound lines AFTER all positions are updated.
+        // Skip lines that are also in the selection — they've already been translated
+        // by the same delta, so their relative binding geometry is preserved.
+        pState.initialPositions.forEach((_, selId) => {
+            if (skipHierarchy && !store.selection.includes(selId)) return;
+            const el = store.elements.find(e => e.id === selId);
+            if (el?.boundElements) {
+                el.boundElements.forEach(b => {
+                    if (!pState.initialPositions.has(b.id)) {
+                        helpers.refreshBoundLine(b.id);
+                    }
+                });
             }
-        }
+        });
     });
 
     // Detect reparent drop target during drag

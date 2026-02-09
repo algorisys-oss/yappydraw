@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.4] - 2026-02-09
+
+### Added
+- localStorage auto-save with silent restore on startup (like Excalidraw/tldraw)
+- Real-time debounced saves (1s after last change), immediate save on slide navigation and tab close
+- Dirty state indicator (red dot) in status bar next to document name
+- Multi-tab awareness with toast warning when another tab edits the same document
+- `Yappy.forceAutoSave()` and `Yappy.clearAutoSave()` on public API
+
+### Fixed
+- Arrow connector handle endpoints now include `position` in endBinding for proper anchor tracking (Bug #19)
+- Moving shape+arrow selections no longer corrupts arrow geometry — uses `batch()` and two-pass update (Bug #20)
+- SVG export now renders standalone text and container text with proper font, alignment, and word wrapping (Bug #21)
+
 ## [1.8.3] - 2026-02-09
 
 ### Fixed

@@ -10,6 +10,7 @@ import { storage } from './storage/file-system-storage'
 // Lazy load pages to reduce initial bundle
 const HelpPage = lazy(() => import('./help-docs/help-page'))
 const ExamplesPage = lazy(() => import('./examples/examples-page'))
+const EmbedViewer = lazy(() => import('./components/embed-viewer'))
 
 const root = document.getElementById('root')
 
@@ -76,6 +77,7 @@ const Router = () => {
         }
     })
 
+    const isEmbedRoute = () => route().startsWith('#/embed/')
     const isHelpRoute = () => route().startsWith('#/help') || route() === '#help'
     const isExamplesRoute = () => route().startsWith('#/examples') || route() === '#examples'
 
@@ -85,6 +87,11 @@ const Router = () => {
 
     return (
         <Switch fallback={<App />}>
+            <Match when={isEmbedRoute()}>
+                <Suspense fallback={<LoadingFallback />}>
+                    <EmbedViewer />
+                </Suspense>
+            </Match>
             <Match when={isHelpRoute()}>
                 <Suspense fallback={<LoadingFallback />}>
                     <HelpPage />

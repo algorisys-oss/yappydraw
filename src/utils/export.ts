@@ -3,6 +3,7 @@ import { renderElement } from "./render-element";
 import rough from 'roughjs/bin/rough';
 import { jsPDF } from "jspdf";
 import PptxGenJS from "pptxgenjs";
+import { resolveFontFamily, wrapText, getMeasurementContext } from "./text-utils";
 
 
 export const exportToPng = async (scale: number, background: boolean, onlySelected: boolean) => {
@@ -230,14 +231,50 @@ export const exportToSvg = (onlySelected: boolean) => {
                 node = rc.line(el.x, el.y, endX, endY, options);
             }
         } else if (el.type === 'text' && el.text) {
-            const textText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            textText.textContent = el.text;
-            textText.setAttribute('x', `${el.x}`);
-            textText.setAttribute('y', `${el.y + (el.fontSize || 28)}`); // Baseline
-            textText.setAttribute('fill', el.strokeColor);
-            textText.setAttribute('font-family', 'sans-serif');
-            textText.setAttribute('font-size', `${el.fontSize || 28}px`);
-            node = textText;
+            const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            const fontSize = el.fontSize || 20;
+            const fontFamily = resolveFontFamily(el.fontFamily);
+            const fontWeight = (el.fontWeight === true || el.fontWeight === 'bold') ? 'bold' : 'normal';
+            const fontStyleStr = (el.fontStyle === true || el.fontStyle === 'italic') ? 'italic' : 'normal';
+            const textColor = el.textColor || el.strokeColor;
+            const textAlign = el.textAlign || 'left';
+            const lineHeight = fontSize * 1.2;
+            const padding = 4;
+
+            // Word wrap using offscreen canvas (matches canvas rendering)
+            const measureCtx = getMeasurementContext();
+            measureCtx.font = `${fontStyleStr === 'italic' ? 'italic ' : ''}${fontWeight === 'bold' ? 'bold ' : ''}${fontSize}px ${fontFamily}`;
+            const availableWidth = Math.max(el.width - padding * 2, 20);
+            const paragraphs = el.text.split('\n');
+            const lines: string[] = [];
+            paragraphs.forEach(para => {
+                if (para === '') lines.push('');
+                else lines.push(...wrapText(measureCtx, para, availableWidth));
+            });
+
+            // SVG text-anchor mapping
+            let textAnchor = 'start';
+            let xPos = el.x + padding;
+            if (textAlign === 'center') { textAnchor = 'middle'; xPos = el.x + el.width / 2; }
+            else if (textAlign === 'right') { textAnchor = 'end'; xPos = el.x + el.width - padding; }
+
+            const totalTextHeight = lines.length * lineHeight;
+            const verticalPadding = Math.max(0, (el.height - totalTextHeight) / 2);
+
+            lines.forEach((line, index) => {
+                const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                textEl.textContent = line || '\u00A0';
+                textEl.setAttribute('x', `${xPos}`);
+                textEl.setAttribute('y', `${el.y + verticalPadding + index * lineHeight + fontSize}`);
+                textEl.setAttribute('fill', textColor);
+                textEl.setAttribute('font-family', fontFamily);
+                textEl.setAttribute('font-size', `${fontSize}px`);
+                textEl.setAttribute('font-weight', fontWeight);
+                textEl.setAttribute('font-style', fontStyleStr);
+                textEl.setAttribute('text-anchor', textAnchor);
+                textGroup.appendChild(textEl);
+            });
+            node = textGroup;
         } else if ((el.type === 'fineliner' || el.type === 'inkbrush' || el.type === 'marker') && el.points) {
             // Helper to normalize
             let points: { x: number, y: number }[] = [];
@@ -263,6 +300,52 @@ export const exportToSvg = (onlySelected: boolean) => {
             image.setAttribute('width', `${el.width}`);
             image.setAttribute('height', `${el.height}`);
             node = image;
+        }
+
+        // Render containerText inside shapes (rectangles, circles, etc.)
+        if (node && el.containerText && el.type !== 'text') {
+            const wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            wrapper.appendChild(node);
+
+            const fontSize = el.fontSize || 16;
+            const fontFamily = resolveFontFamily(el.fontFamily);
+            const textColor = el.textColor || el.strokeColor;
+            const textAlign = el.textAlign || 'center';
+            const lineHeight = fontSize * 1.2;
+            const cx = el.x + el.width / 2;
+            const cy = el.y + el.height / 2;
+
+            const measureCtx = getMeasurementContext();
+            measureCtx.font = `${fontSize}px ${fontFamily}`;
+            const maxWidth = el.width - 20;
+            const paragraphs = el.containerText.split('\n');
+            const lines: string[] = [];
+            paragraphs.forEach(para => {
+                if (para === '') lines.push('');
+                else lines.push(...wrapText(measureCtx, para, maxWidth));
+            });
+
+            let textAnchor = 'middle';
+            let xPos = cx;
+            if (textAlign === 'left') { textAnchor = 'start'; xPos = el.x + 10; }
+            else if (textAlign === 'right') { textAnchor = 'end'; xPos = el.x + el.width - 10; }
+
+            const totalHeight = lines.length * lineHeight;
+            const startY = cy - totalHeight / 2 + lineHeight / 2;
+
+            lines.forEach((line, index) => {
+                const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                textEl.textContent = line || '\u00A0';
+                textEl.setAttribute('x', `${xPos}`);
+                textEl.setAttribute('y', `${startY + index * lineHeight}`);
+                textEl.setAttribute('fill', textColor);
+                textEl.setAttribute('font-family', fontFamily);
+                textEl.setAttribute('font-size', `${fontSize}px`);
+                textEl.setAttribute('text-anchor', textAnchor);
+                textEl.setAttribute('dominant-baseline', 'central');
+                wrapper.appendChild(textEl);
+            });
+            node = wrapper;
         }
 
         if (node) {

@@ -11,7 +11,7 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
 
 export type ToolType = ElementType | 'lasso';
 
-export type AppMode = 'design' | 'presentation' | 'prototype';
+export type AppMode = 'design' | 'presentation' | 'prototype' | 'embed';
 export type FillStyle = 'hachure' | 'solid' | 'cross-hatch' | 'zigzag' | 'dots' | 'dashed' | 'zigzag-line' | 'linear' | 'radial' | 'conic' | 'image';
 export type StrokeStyle = 'solid' | 'dashed' | 'dotted';
 export type FontFamily = 'hand-drawn' | 'sans-serif' | 'monospace' | 'caveat' | 'poppins' | 'serif' | 'marker' | 'code';

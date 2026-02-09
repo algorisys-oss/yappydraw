@@ -41,6 +41,7 @@ import { initAPI } from './api';
 import { SlidersHorizontal } from 'lucide-solid';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
+import { initAutoSave, forceAutoSave, loadAutoSave } from './storage/auto-save';
 
 
 const App: Component = () => {
@@ -50,6 +51,10 @@ const App: Component = () => {
     console.log('App: Registering shapes...');
     registerShapes();
     initAPI();
+
+    // Auto-save: silently restore last session, then start watchers
+    loadAutoSave();
+    initAutoSave();
 
     const handleKeyDown = async (e: KeyboardEvent) => {
       // 0. Ignore shortcuts if any Modal Dialog is open
@@ -519,8 +524,7 @@ const App: Component = () => {
     };
 
     const handleBeforeUnload = (_e: BeforeUnloadEvent) => {
-      // Prevent accidental feedback navigation?
-      // For now, no-op or simple confirmation if needed.
+      forceAutoSave();
     };
 
     const handlePaste = (e: ClipboardEvent) => {

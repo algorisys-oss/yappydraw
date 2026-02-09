@@ -629,7 +629,7 @@ export function connectorHandleOnUp(
     if (el) {
         if (signals.suggestedBinding()) {
             const binding = signals.suggestedBinding()!;
-            const bindingData = { elementId: binding.elementId, focus: 0, gap: 5 };
+            const bindingData = { elementId: binding.elementId, focus: 0, gap: 5, position: binding.position };
             updateElement(pState.currentId, { endBinding: bindingData });
 
             const target = store.elements.find(e => e.id === binding.elementId);

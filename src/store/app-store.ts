@@ -37,6 +37,7 @@ interface AppState {
     showCanvasProperties: boolean;
     undoStackLength: number;
     redoStackLength: number;
+    isDirty: boolean; // True when document has unsaved changes
     flowTick: number; // For forcing redraws on flow animations
     // Panel Visibility
     showPropertyPanel: boolean;
@@ -179,6 +180,7 @@ const initialState: AppState = {
     showCanvasProperties: false,
     undoStackLength: 0,
     redoStackLength: 0,
+    isDirty: false,
     showPropertyPanel: false,
     showLayerPanel: false,
     isPropertyPanelMinimized: false,
@@ -1335,6 +1337,9 @@ export const clearHistory = () => {
 export const resetToNewDocument = (docType: 'infinite' | 'slides' = 'slides') => {
     const doc = createSlideDocument('Untitled', docType);
     loadDocument(doc);
+    // Clear auto-save data (inline to avoid circular import)
+    try { localStorage.removeItem('yappy:autosave'); localStorage.removeItem('yappy:autosave:meta'); } catch {}
+    setStore("isDirty", false);
     setStore("welcomeDismissed", true);
     setStore("showSlideToolbar", true);
     setStore("showUtilityToolbar", true);

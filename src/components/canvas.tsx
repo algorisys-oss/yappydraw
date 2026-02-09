@@ -535,6 +535,7 @@ const Canvas: Component = () => {
     };
 
     const handlePointerDown = (e: PointerEvent) => {
+        if (store.appMode === 'embed') return;
         if (presentationOnDown(e, pState, pHelpers)) return;
         (e.currentTarget as Element).setPointerCapture(e.pointerId);
         const { x, y } = getWorldCoordinates(e.clientX, e.clientY);

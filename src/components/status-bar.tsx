@@ -72,6 +72,20 @@ const StatusBar: Component = () => {
         <div class="status-bar">
             {/* Document Name */}
             <div class="status-section status-doc-name">
+                <Show when={store.isDirty}>
+                    <span
+                        style={{
+                            display: 'inline-block',
+                            width: '6px',
+                            height: '6px',
+                            'border-radius': '50%',
+                            background: '#e74c3c',
+                            'margin-right': '4px',
+                            'flex-shrink': '0',
+                        }}
+                        title="Unsaved changes"
+                    />
+                </Show>
                 <span>{drawingId()}</span>
             </div>
 

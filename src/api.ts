@@ -45,6 +45,7 @@ import {
     copyStyle, pasteStyle
 } from "./utils/object-context-actions";
 import { generateId } from "./utils/id-generator";
+import { forceAutoSave, clearAutoSave } from "./storage/auto-save";
 import {
     defaultColWidths, defaultRowHeights,
     insertTableRow, deleteTableRow, insertTableColumn, deleteTableColumn,
@@ -1121,7 +1122,28 @@ export const YappyAPI = {
     cutToClipboard,
     pasteFromClipboard,
     copyStyle,
-    pasteStyle
+    pasteStyle,
+
+    // Auto-Save
+    forceAutoSave() { forceAutoSave(); },
+    clearAutoSave() { clearAutoSave(); },
+
+    // Embed
+    getEmbedUrl(docId: string, options?: { theme?: string; slide?: number; background?: string }) {
+        const base = `${window.location.origin}${window.location.pathname}#/embed/${encodeURIComponent(docId)}`;
+        const params = new URLSearchParams();
+        if (options?.theme) params.set('theme', options.theme);
+        if (options?.slide) params.set('slide', String(options.slide));
+        if (options?.background) params.set('bg', options.background);
+        const qs = params.toString();
+        return qs ? `${base}?${qs}` : base;
+    },
+    getEmbedHtml(docId: string, options?: { theme?: string; slide?: number; background?: string; width?: number; height?: number }) {
+        const url = this.getEmbedUrl(docId, options);
+        const w = options?.width ?? 800;
+        const h = options?.height ?? 600;
+        return `<iframe src="${url}" width="${w}" height="${h}" frameborder="0" allowfullscreen></iframe>`;
+    }
 };
 
 declare global {

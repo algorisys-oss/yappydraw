@@ -30,6 +30,7 @@ const SketchnoteDoc = lazy(() => import('./shapes/sketchnote-doc'));
 const MindmapDoc = lazy(() => import('./shapes/mindmap-doc'));
 const TableDoc = lazy(() => import('./shapes/table-doc'));
 const AnimationDoc = lazy(() => import('./features/animation-doc'));
+const EmbeddingDoc = lazy(() => import('./features/embedding-doc'));
 
 // Registry of all shape documentation - organized by category in logical sequence
 const shapeDocuments: ShapeDoc[] = [
@@ -134,6 +135,14 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Features',
         description: 'Animate elements with presets, keyframes, and spring physics',
         content: AnimationDoc
+    },
+    {
+        id: 'embedding',
+        name: 'Embedding',
+        icon: '🔗',
+        category: 'Features',
+        description: 'Embed drawings in Confluence, Notion, wikis, and other platforms',
+        content: EmbeddingDoc
     },
 ];
 
