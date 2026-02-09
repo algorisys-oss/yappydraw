@@ -94,6 +94,7 @@ const shapeProperties: QuickPropertyDef[] = [
 /** Quick properties for connectors (line, arrow, bezier) */
 const connectorProperties: QuickPropertyDef[] = [
     { key: 'strokeColor', controlType: 'color-dot', label: 'Stroke Color' },
+    { key: 'strokeWidth', controlType: 'mini-slider', label: 'Line Width', min: 1, max: 20, step: 1 },
     {
         key: 'strokeStyle', controlType: 'icon-select', label: 'Stroke Style',
         options: [

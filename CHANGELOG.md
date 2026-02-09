@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.5] - 2026-02-09
+
+### Added
+- Contextual modifier hints in status bar — reactive keyboard shortcut hints based on active tool and selection (shape, connector, drawing, mindmap, etc.)
+- Mindmap-specific hints: Alt+Drag (move tree), Tab (add child), Enter (add sibling)
+- Global settings button in bottom-left floating buttons (gear icon before property toggle)
+- Quick Toolbar toggle in global settings dialog (on/off switch)
+- Drawing Style (Sketch/Architectural) selector in global settings dialog
+- Line Width mini-slider (1–20px) in connector floating quick toolbar
+
+### Fixed
+- Sketch-mode arrowheads on dashed/dotted connectors now render solid (no longer incomplete)
+- Presentation mode for infinite canvas documents now starts at 100% zoom centered on content (slides still fit-to-screen)
+
+### Changed
+- Standardized mindmap drag behavior: Drag moves only the selected node, Alt+Drag moves the entire subtree (uniform for root and child nodes)
+- Settings dialog reorganized: new "General" section with Quick Toolbar toggle and Drawing Style; removed duplicate Render Style from defaults
+
 ## [1.8.4] - 2026-02-09
 
 ### Added

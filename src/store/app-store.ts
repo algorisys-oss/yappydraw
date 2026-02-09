@@ -2087,7 +2087,29 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
             // and fullscreen state to begin initiating. The resize/fullscreen listeners
             // will catch the final dimensions.
             setTimeout(() => {
-                zoomToFitSlide();
+                if (store.docType === 'slides') {
+                    zoomToFitSlide();
+                } else {
+                    // Infinite canvas: reset to 100% zoom, centered on content
+                    if (store.elements.length === 0) {
+                        setStore('viewState', { scale: 1, panX: 0, panY: 0 });
+                    } else {
+                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                        store.elements.forEach(el => {
+                            minX = Math.min(minX, el.x);
+                            maxX = Math.max(maxX, el.x + el.width);
+                            minY = Math.min(minY, el.y);
+                            maxY = Math.max(maxY, el.y + el.height);
+                        });
+                        const cx = (minX + maxX) / 2;
+                        const cy = (minY + maxY) / 2;
+                        setStore('viewState', {
+                            scale: 1,
+                            panX: window.innerWidth / 2 - cx,
+                            panY: window.innerHeight / 2 - cy,
+                        });
+                    }
+                }
             }, 100);
 
             // Initialize animations

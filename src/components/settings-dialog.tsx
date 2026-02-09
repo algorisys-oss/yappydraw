@@ -1,6 +1,6 @@
 import { type Component, Show, createEffect, onCleanup } from "solid-js";
 import { X } from "lucide-solid";
-import { store, updateDefaultStyles, resetDefaultStyles } from "../store/app-store";
+import { store, updateDefaultStyles, resetDefaultStyles, updateGlobalSettings } from "../store/app-store";
 import "./settings-dialog.css";
 
 interface SettingsDialogProps {
@@ -44,6 +44,33 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         <button class="close-btn" onClick={props.onClose}>
                             <X size={20} />
                         </button>
+                    </div>
+
+                    <div class="settings-section">
+                        <p class="settings-section-title">General</p>
+
+                        <div class="settings-row">
+                            <label>Quick Toolbar</label>
+                            <label class="settings-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={store.globalSettings.showQuickToolbar ?? true}
+                                    onChange={(e) => updateGlobalSettings({ showQuickToolbar: e.currentTarget.checked })}
+                                />
+                                <span class="settings-toggle-slider" />
+                            </label>
+                        </div>
+
+                        <div class="settings-row">
+                            <label>Drawing Style</label>
+                            <select
+                                value={store.globalSettings.renderStyle ?? 'sketch'}
+                                onChange={(e) => updateGlobalSettings({ renderStyle: e.currentTarget.value as any })}
+                            >
+                                <option value="sketch">Sketch</option>
+                                <option value="architectural">Architectural</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="settings-section">
@@ -123,21 +150,6 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                 />
                                 <span>{defaults().opacity ?? 100}%</span>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="settings-section">
-                        <p class="settings-section-title">Drawing Style</p>
-
-                        <div class="settings-row">
-                            <label>Render Style</label>
-                            <select
-                                value={defaults().renderStyle ?? 'sketch'}
-                                onChange={(e) => updateDefaultStyles({ renderStyle: e.currentTarget.value as any })}
-                            >
-                                <option value="sketch">Sketch</option>
-                                <option value="architectural">Architectural</option>
-                            </select>
                         </div>
                     </div>
 

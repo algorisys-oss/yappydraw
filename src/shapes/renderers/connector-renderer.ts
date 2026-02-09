@@ -362,6 +362,8 @@ export class ConnectorRenderer extends ShapeRenderer {
     }
 
     private drawArrowhead(rc: any, x: number, y: number, angle: number, type: string, options: any, headLen: number = 12) {
+        // Arrowheads should always be solid, even if the line is dashed/dotted
+        options = { ...options, strokeLineDash: undefined };
         const p1 = { x: x - headLen * Math.cos(angle - Math.PI / 6), y: y - headLen * Math.sin(angle - Math.PI / 6) };
         const p2 = { x: x - headLen * Math.cos(angle + Math.PI / 6), y: y - headLen * Math.sin(angle + Math.PI / 6) };
 

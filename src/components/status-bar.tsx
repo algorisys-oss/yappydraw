@@ -1,9 +1,72 @@
-import { type Component, Show } from "solid-js";
+import { type Component, Show, For } from "solid-js";
 import { store, setViewState, undo, redo, togglePresentationMode } from "../store/app-store";
 import { drawingId } from "./menu";
 import { Plus, Minus, Undo2, Redo2, Play } from "lucide-solid";
 import pkg from '../../package.json';
 import "./status-bar.css";
+
+/** Contextual modifier hint: key combo + action description */
+type Hint = { key: string; action: string };
+
+const SHAPE_TOOLS = [
+    'rectangle', 'circle', 'diamond', 'shape', 'infra', 'sketchnote', 'people',
+    'status', 'cloudInfra', 'dataMetrics', 'connectionRel', 'wireframe',
+    'technical', 'uml', 'math', 'mindmap',
+    'star', 'hexagon', 'parallelogram', 'capsule', 'speechBubble',
+];
+const CONNECTOR_TOOLS = ['line', 'arrow', 'bezier', 'polyline'];
+const DRAWING_TOOLS = ['fineliner', 'inkbrush', 'marker'];
+
+function isMindmapNode(el: any): boolean {
+    if (!el) return false;
+    if (el.parentId) return true;
+    // Check if this element has children (is a mindmap root)
+    return store.elements.some(e => e.parentId === el.id);
+}
+
+function getContextHints(tool: string, hasSelection: boolean): Hint[] {
+    if (tool === 'selection' || tool === 'lasso') {
+        if (hasSelection) {
+            const hints: Hint[] = [
+                { key: 'Ctrl+D', action: 'Duplicate' },
+                { key: 'Shift+Drag', action: 'Constrain' },
+                { key: 'Del', action: 'Delete' },
+                { key: 'Ctrl+C', action: 'Copy' },
+            ];
+            // Add mindmap-specific hints when a mindmap node is selected
+            if (store.selection.length === 1) {
+                const sel = store.elements.find(e => e.id === store.selection[0]);
+                if (isMindmapNode(sel)) {
+                    hints.push({ key: 'Alt+Drag', action: 'Move tree' });
+                    hints.push({ key: 'Tab', action: 'Add child' });
+                    hints.push({ key: 'Enter', action: 'Add sibling' });
+                }
+            }
+            return hints;
+        }
+        return tool === 'lasso'
+            ? [{ key: 'Drag', action: 'Lasso select' }, { key: 'Space+Drag', action: 'Pan' }]
+            : [{ key: 'Click', action: 'Select' }, { key: 'Drag', action: 'Box select' }, { key: 'Space+Drag', action: 'Pan' }];
+    }
+    if (CONNECTOR_TOOLS.includes(tool)) {
+        return [{ key: 'Drag', action: 'Connect' }, { key: 'Shift', action: 'Constrain angle' }];
+    }
+    if (tool === 'mindmap') {
+        return [{ key: 'Click', action: 'Place mindmap' }, { key: 'Alt+Drag', action: 'Move root node' }];
+    }
+    if (SHAPE_TOOLS.includes(tool)) {
+        return [{ key: 'Drag', action: 'Draw shape' }, { key: 'Shift', action: 'Constrain' }];
+    }
+    if (DRAWING_TOOLS.includes(tool)) {
+        return [{ key: 'Drag', action: 'Draw' }, { key: 'Shift', action: 'Straight line' }];
+    }
+    if (tool === 'text') return [{ key: 'Click', action: 'Place text' }];
+    if (tool === 'pan') return [{ key: 'Drag', action: 'Pan' }, { key: 'Ctrl+Scroll', action: 'Zoom' }];
+    if (tool === 'eraser') return [{ key: 'Click/Drag', action: 'Erase' }];
+    if (tool === 'table') return [{ key: 'Drag', action: 'Draw table' }];
+    if (tool === 'image') return [{ key: 'Click', action: 'Place image' }];
+    return [];
+}
 
 const TOOL_LABELS: Record<string, string> = {
     selection: 'Select',
@@ -110,6 +173,17 @@ const StatusBar: Component = () => {
                     <span>{store.selection.length} selected</span>
                 </div>
             </Show>
+
+            {/* Contextual Modifier Hints */}
+            <div class="status-section status-hints">
+                <For each={getContextHints(store.selectedTool, store.selection.length > 0)}>
+                    {(hint) => (
+                        <span class="status-hint">
+                            <kbd>{hint.key}</kbd> {hint.action}
+                        </span>
+                    )}
+                </For>
+            </div>
 
             {/* Spacer */}
             <div class="status-spacer" />

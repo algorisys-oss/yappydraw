@@ -120,6 +120,32 @@
     font-size: 12px;
 }
 
+/* Contextual modifier hints */
+.status-hints {
+    gap: 8px;
+    font-size: 10px;
+    opacity: 0.8;
+    border-right: none !important;
+}
+
+.status-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.status-hint kbd {
+    display: inline-block;
+    padding: 0 4px;
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 9px;
+    line-height: 16px;
+    color: var(--text-primary, #111827);
+    background: var(--btn-hover, #f3f4f6);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 3px;
+}
+
 /* Mobile: hide full status bar */
 @media (max-width: 768px) {
     .status-bar {

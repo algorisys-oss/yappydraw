@@ -32,13 +32,13 @@ const PresentationControls = lazy(() => import('./components/presentation-contro
 const CanvasToolbar = lazy(() => import('./components/canvas-toolbar').then(m => ({ default: m.CanvasToolbar })));
 import { WelcomeScreen } from './components/welcome-screen';
 import Menu, {
-  handleNew, setShowHelp,
+  handleNew, setShowHelp, setShowSettings,
   isDialogOpen, isSaveOpen, isLoadExportOpen, showHelp,
   setIsLoadExportOpen, setLoadExportInitialTab
 } from './components/menu';
 import StatusBar from './components/status-bar';
 import { initAPI } from './api';
-import { SlidersHorizontal } from 'lucide-solid';
+import { SlidersHorizontal, Settings } from 'lucide-solid';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
 import { initAutoSave, forceAutoSave, loadAutoSave } from './storage/auto-save';
@@ -651,13 +651,41 @@ const App: Component = () => {
         <Show when={store.appMode !== 'presentation'}>
           <button
             class="floating-settings-btn"
+            onClick={() => setShowSettings(true)}
+            title="Global Settings"
+            style={{
+              position: 'fixed',
+              bottom: '34px',
+              left: '12px',
+              width: '36px',
+              height: '36px',
+              padding: '0',
+              'box-sizing': 'border-box',
+              'border-radius': '50%',
+              border: 'none',
+              background: 'var(--bg-panel, #ffffff)',
+              color: 'var(--text-secondary, #4b5563)',
+              'box-shadow': '0 2px 8px rgba(0, 0, 0, 0.12)',
+              cursor: 'pointer',
+              display: 'flex',
+              'align-items': 'center',
+              'justify-content': 'center',
+              'z-index': '1000',
+              transition: 'all 0.2s ease',
+              overflow: 'visible'
+            }}
+          >
+            <Settings size={20} />
+          </button>
+          <button
+            class="floating-settings-btn"
             classList={{ 'active': store.showPropertyPanel }}
             onClick={() => togglePropertyPanel()}
             title="Toggle Properties (Alt+Enter)"
             style={{
               position: 'fixed',
               bottom: '34px',
-              left: '12px',
+              left: '56px',
               width: '36px',
               height: '36px',
               padding: '0',
@@ -685,7 +713,7 @@ const App: Component = () => {
             style={{
               position: 'fixed',
               bottom: '34px',
-              left: '56px',
+              left: '100px',
               width: '36px',
               height: '36px',
               'border-radius': '50%',

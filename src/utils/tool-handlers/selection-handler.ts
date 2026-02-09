@@ -1143,7 +1143,7 @@ function handleMove(
         dy = Math.round(dy / gridSize) * gridSize;
     }
 
-    const skipHierarchy = e.altKey;
+    const skipHierarchy = !e.altKey;
 
     // Batch all position updates so reactive effects (e.g. refreshBoundLine in
     // canvas createEffect) only fire after every element has its final position.
