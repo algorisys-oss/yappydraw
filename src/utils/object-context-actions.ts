@@ -160,20 +160,28 @@ export const remapElementBindings = (
     return elements.map(el => {
         const updates: Partial<DrawingElement> = {};
 
-        // Remap startBinding if the target is in the selection
-        if (el.startBinding?.elementId && idMap.has(el.startBinding.elementId)) {
-            updates.startBinding = {
-                ...el.startBinding,
-                elementId: idMap.get(el.startBinding.elementId)!
-            };
+        // Remap startBinding if the target is in the selection, clear if not
+        if (el.startBinding?.elementId) {
+            if (idMap.has(el.startBinding.elementId)) {
+                updates.startBinding = {
+                    ...el.startBinding,
+                    elementId: idMap.get(el.startBinding.elementId)!
+                };
+            } else {
+                updates.startBinding = null;
+            }
         }
 
-        // Remap endBinding if the target is in the selection
-        if (el.endBinding?.elementId && idMap.has(el.endBinding.elementId)) {
-            updates.endBinding = {
-                ...el.endBinding,
-                elementId: idMap.get(el.endBinding.elementId)!
-            };
+        // Remap endBinding if the target is in the selection, clear if not
+        if (el.endBinding?.elementId) {
+            if (idMap.has(el.endBinding.elementId)) {
+                updates.endBinding = {
+                    ...el.endBinding,
+                    elementId: idMap.get(el.endBinding.elementId)!
+                };
+            } else {
+                updates.endBinding = null;
+            }
         }
 
         // Remap boundElements if the referenced connectors are in the selection
@@ -251,6 +259,10 @@ export const pasteYappyElements = (data: any): void => {
         id: idMap.get(el.id)!,
         x: el.x + dx,
         y: el.y + dy,
+        // controlPoints are absolute canvas coordinates — shift them by the same offset
+        controlPoints: el.controlPoints
+            ? el.controlPoints.map((cp: any) => ({ x: cp.x + dx, y: cp.y + dy }))
+            : undefined,
         layerId: store.activeLayerId,
         groupIds: el.groupIds?.map((gid: string) => groupIdMap.get(gid) ?? gid) ?? [],
         boundElements: el.boundElements ?? null,

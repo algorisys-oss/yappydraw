@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.3] - 2026-02-09
+
+### Fixed
+- Pasted organic branches no longer change curve orientation — `controlPoints` (absolute coordinates) are now offset by the paste displacement
+- Pasted connectors no longer anchor to original shapes — bindings referencing elements outside the pasted selection are cleared instead of preserved
+
 ## [1.8.2] - 2026-02-09
 
 ### Fixed
