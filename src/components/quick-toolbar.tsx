@@ -12,6 +12,7 @@ import {
     Bold, Italic, AlignLeft, AlignCenter, AlignRight, WrapText
 } from "lucide-solid";
 import { getElementFamily, getQuickPropertiesForType, QUICK_COLORS, type QuickPropertyDef } from "../config/quick-toolbar-config";
+import { fontCapabilities } from "../config/properties";
 import "./quick-toolbar.css";
 
 // ============ Sub-Components ============
@@ -203,6 +204,7 @@ const IconToggleControl: Component<{
     value: any;
     propKey: string;
     label: string;
+    disabled?: boolean;
     onChange: (val: any) => void;
 }> = (props) => {
     const isActive = () => {
@@ -212,6 +214,7 @@ const IconToggleControl: Component<{
     };
 
     const toggle = () => {
+        if (props.disabled) return;
         if (props.propKey === 'fontWeight') {
             props.onChange(isActive() ? 'normal' : 'bold');
         } else if (props.propKey === 'fontStyle') {
@@ -224,8 +227,10 @@ const IconToggleControl: Component<{
     return (
         <button
             class={`qt-icon-btn ${isActive() ? 'active' : ''}`}
+            classList={{ 'qt-disabled': !!props.disabled }}
             onClick={toggle}
-            title={props.label}
+            disabled={props.disabled}
+            title={props.disabled ? `This font does not support ${props.label.toLowerCase()}` : props.label}
         >
             {props.propKey === 'fontWeight' ? <Bold size={14} /> : props.propKey === 'curvedText' ? <WrapText size={14} /> : <Italic size={14} />}
         </button>
@@ -424,11 +429,20 @@ const ToolbarContent: Component<{
                                             }
 
                                             if (propDef.controlType === 'icon-toggle') {
+                                                const isFontToggle = propDef.key === 'fontWeight' || propDef.key === 'fontStyle';
+                                                const isDisabled = () => {
+                                                    if (!isFontToggle) return false;
+                                                    const font = (el() as any).fontFamily || 'hand-drawn';
+                                                    const caps = fontCapabilities[font];
+                                                    if (!caps) return false;
+                                                    return propDef.key === 'fontWeight' ? !caps.bold : !caps.italic;
+                                                };
                                                 return (
                                                     <IconToggleControl
                                                         value={value()}
                                                         propKey={propDef.key}
                                                         label={propDef.label}
+                                                        disabled={isDisabled()}
                                                         onChange={(val) => {
                                                             pushToHistory();
                                                             handlePropertyChange(propDef.key, val);

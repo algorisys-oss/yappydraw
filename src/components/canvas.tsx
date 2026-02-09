@@ -3,7 +3,7 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool } from "../store/app-store";
 import { normalizePoints } from "../utils/render-element";
 import type { DrawingElement } from "../types";
 import ContextMenu from "./context-menu";
@@ -541,6 +541,10 @@ const Canvas: Component = () => {
 
         if (editingId()) {
             commitText();
+            // Switch back to selection if text tool was active (blur handler won't fire in time)
+            if (store.selectedTool === 'text') {
+                setSelectedTool('selection');
+            }
             return;
         }
 

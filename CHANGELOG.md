@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-02-09
+
+### Fixed
+- Text tool not switching to selection on first click outside (pointerdown/blur race condition)
+- Bold/Italic toggles now disabled for fonts without those variants (Handlee, Permanent Marker, Caveat italic)
+
 ## [1.7.0] - 2026-02-06
 
 ### Added

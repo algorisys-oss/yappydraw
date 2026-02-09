@@ -1,5 +1,17 @@
 import type { ElementType } from "../types";
 
+/** Which style variants each font supports (based on Google Fonts availability) */
+export const fontCapabilities: Record<string, { bold: boolean; italic: boolean }> = {
+    'hand-drawn':  { bold: false, italic: false },  // Handlee — regular only
+    'marker':      { bold: false, italic: false },  // Permanent Marker — regular only
+    'caveat':      { bold: true,  italic: false },  // Caveat — weights 400-700, no italic
+    'sans-serif':  { bold: true,  italic: true },
+    'poppins':     { bold: true,  italic: true },
+    'serif':       { bold: true,  italic: true },
+    'monospace':   { bold: true,  italic: true },
+    'code':        { bold: true,  italic: true },
+};
+
 export interface PropertyConfig {
     key: string;
     label: string;

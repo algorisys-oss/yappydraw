@@ -158,6 +158,13 @@
     height: 16px;
 }
 
+.qt-icon-btn:disabled,
+.qt-icon-btn.qt-disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* Icon select group (legacy inline — kept for reference) */
 .qt-icon-select {
     display: flex;

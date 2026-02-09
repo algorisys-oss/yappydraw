@@ -11,7 +11,7 @@ import {
     X, Play, Menu
 } from "lucide-solid";
 import "./property-panel.css";
-import { properties, type PropertyConfig } from "../config/properties";
+import { properties, fontCapabilities, type PropertyConfig } from "../config/properties";
 import { getGradientPreset } from "../config/gradient-presets";
 import { getOpenBoxPreset } from "../config/openbox-presets";
 import { showToast } from "./toast";
@@ -809,17 +809,30 @@ const PropertyPanel: Component = () => {
                         </select>
                     </div>
                 );
-            case 'toggle':
+            case 'toggle': {
+                // Disable bold/italic toggles when font doesn't support them
+                const isFontToggle = prop.key === 'fontWeight' || prop.key === 'fontStyle';
+                const isDisabled = () => {
+                    if (!isFontToggle) return false;
+                    const fontProp = { ...prop, key: 'fontFamily' } as PropertyConfig;
+                    const font = getPropertyValue(fontProp) || 'hand-drawn';
+                    const caps = fontCapabilities[font as string];
+                    if (!caps) return false;
+                    return prop.key === 'fontWeight' ? !caps.bold : !caps.italic;
+                };
                 return (
-                    <div class="control-row">
+                    <div class="control-row" style={{ opacity: isDisabled() ? 0.4 : 1 }}>
                         <label>{prop.label}</label>
                         <input
                             type="checkbox"
                             checked={!!getPropertyValue(prop)}
+                            disabled={isDisabled()}
+                            title={isDisabled() ? 'This font does not support ' + prop.label.toLowerCase() : ''}
                             onChange={(e) => handleChange(prop.key, e.currentTarget.checked, activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined)}
                         />
                     </div>
                 );
+            }
             case 'input':
                 return (
                     <div class="control-row">
