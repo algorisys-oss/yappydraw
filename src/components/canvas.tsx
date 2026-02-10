@@ -381,6 +381,11 @@ const Canvas: Component = () => {
             e.tableSortCol; e.tableSortDir;
             e.tableHeaderColor; e.tableHeaderTextColor; e.tableRowColor; e.tableAltRowColor;
             e.tableColAlignments; e.tableMergedCells; e.tableCellFormats; e.tableCellBorders;
+            // Data Structure properties
+            e.dsShowIndices; e.dsDirection; e.dsItemColor; e.dsCapacity;
+            e.dsHighlightIndex; e.dsHighlightIndex2; e.dsHighlightColor; e.dsHighlightColor2;
+            e.dsSortedBoundary; e.dsSortedBoundaryEnd;
+            e.dsAnimProgress; e.dsAnimStyle; e.dsPersistChanges;
             // Animations
             e.spinEnabled; e.spinSpeed;
             e.orbitEnabled; e.orbitCenterId; e.orbitRadius; e.orbitSpeed; e.orbitDirection;
@@ -631,7 +636,7 @@ const Canvas: Component = () => {
     const handlePointerUp = (e: PointerEvent) => {
         (e.currentTarget as Element).releasePointerCapture(e.pointerId);
 
-        if (presentationOnUp(pState)) return;
+        if (presentationOnUp(e, pState)) return;
         if (store.selectedTool === 'pan') { panOnUp(pState, pHelpers); return; }
         if (store.selectedTool === 'laser') { laserOnUp(pState, pHelpers); return; }
 

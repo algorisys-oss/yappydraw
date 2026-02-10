@@ -791,7 +791,14 @@ const PropertyPanel: Component = () => {
                         </div>
                     </div>
                 );
-            case 'select':
+            case 'select': {
+                const target = activeTarget();
+                const elType = target?.type === 'element' ? target.data?.type
+                    : target?.type === 'slide' ? 'slide'
+                    : target?.type === 'canvas' ? 'canvas' : undefined;
+                const filteredOptions = () => prop.options?.filter(o =>
+                    !o.excludeFrom || !elType || !o.excludeFrom.includes(elType as any)
+                ) ?? [];
                 return (
                     <div class="control-row">
                         <label>{prop.label}</label>
@@ -801,15 +808,16 @@ const PropertyPanel: Component = () => {
                                 const val = e.currentTarget.value;
                                 // Try to parse number if options are numbers
                                 const isNum = prop.options?.some(o => typeof o.value === 'number');
-                                handleChange(prop.key, isNum ? Number(val) : val, activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined);
+                                handleChange(prop.key, isNum ? Number(val) : val, target?.type, target?.type === 'element' ? target?.data?.id : undefined);
                             }}
                         >
-                            <For each={prop.options}>
+                            <For each={filteredOptions()}>
                                 {(opt) => <option value={opt.value ?? ''}>{opt.label}</option>}
                             </For>
                         </select>
                     </div>
                 );
+            }
             case 'toggle': {
                 // Disable bold/italic toggles when font doesn't support them
                 const isFontToggle = prop.key === 'fontWeight' || prop.key === 'fontStyle';

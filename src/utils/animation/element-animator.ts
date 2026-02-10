@@ -90,7 +90,9 @@ export type AnimatableProperty =
     | 'frontSkewX'
     | 'frontSkewY'
     | 'shapeRatio'
-    | 'sideRatio';
+    | 'sideRatio'
+    // Code block properties
+    | 'codeHighlightLine';
 
 // Color properties that can be animated
 export type AnimatableColorProperty =
@@ -122,6 +124,13 @@ export interface ElementAnimationTarget {
     frontSkewY?: number;
     shapeRatio?: number;
     sideRatio?: number;
+    // Code block properties
+    codeHighlightLine?: number;
+    // Data structure animation progress
+    dsAnimProgress?: number;
+    dsHighlightIndex2?: number;
+    dsSortedBoundary?: number;
+    dsSortedBoundaryEnd?: number;
     // Color properties
     strokeColor?: string;
     backgroundColor?: string;
@@ -2802,6 +2811,14 @@ export function playEntranceAnimation(elementId: string, options: { isPreview?: 
         case 'tableCellsAssemble': return tableCellsAssemble(elementId, duration, config);
         case 'tableLightningSplit': return tableLightningSplit(elementId, duration, config);
 
+        // Code Block animations
+        case 'codeLineHighlight': return codeLineHighlight(elementId, duration, config);
+
+        // Data Structure animations
+        case 'dsItemReveal': return dsItemReveal(elementId, duration, config);
+        case 'dsHighlightSweep': return dsHighlightSweep(elementId, duration, config);
+        case 'dsPointerWalk': return dsPointerWalk(elementId, duration, config);
+
         default:
             return '';
     }
@@ -2941,7 +2958,7 @@ export function playExitAnimation(elementId: string, options: { isPreview?: bool
  * Works with both text elements (text property) and shapes with containerText
  */
 function getElementText(element: DrawingElement): { text: string; property: 'text' | 'containerText' } | null {
-    if (element.type === 'text' && element.text) {
+    if ((element.type === 'text' || element.type === 'codeBlock') && element.text) {
         return { text: element.text, property: 'text' };
     }
     if (element.containerText) {
@@ -3875,6 +3892,64 @@ export function boxLidClose(
 }
 
 /**
+ * Open and close a 3D box lid in a continuous cycle.
+ * Opens the lid with a natural overshoot, then closes it smoothly.
+ * Supports looping for continuous open/close animation.
+ *
+ * @param elementId - The openBox element
+ * @param duration - Duration for one full open+close cycle in ms
+ * @param config - Animation configuration (supports loop, loopCount)
+ *
+ * @example
+ * boxLidOpenClose('box-1', 2000, { loop: true });
+ */
+export function boxLidOpenClose(
+    elementId: string,
+    duration: number = 2000,
+    config: ElementAnimationConfig = {}
+): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return '';
+
+    if (element.type !== 'openBox') {
+        console.warn('boxLidOpenClose: Works only with openBox elements');
+        return '';
+    }
+
+    const isInfinite = config.loop && (config.loopCount === undefined || config.loopCount === Infinity);
+
+    const doCycle = (isFirst: boolean): string => {
+        // Phase 1: Open the lid (60% of duration)
+        return animateElement(elementId, {
+            openAmount: 90
+        }, {
+            duration: duration * 0.5,
+            easing: 'easeOutCubic',
+            delay: isFirst ? config.delay : 0,
+            onStart: isFirst ? config.onStart : undefined,
+            onComplete: () => {
+                // Phase 2: Brief pause at open position, then close (40% of duration)
+                animateElement(elementId, {
+                    openAmount: 0
+                }, {
+                    duration: duration * 0.5,
+                    easing: 'easeInOutCubic',
+                    onComplete: () => {
+                        if (isInfinite) {
+                            doCycle(false);
+                        } else {
+                            config.onComplete?.();
+                        }
+                    }
+                });
+            }
+        });
+    };
+
+    return doCycle(true);
+}
+
+/**
  * Composite box open animation for grouped elements
  * Animates a box group where:
  * - First element is the box body
@@ -4726,4 +4801,184 @@ export function tableCellsAssemble(elementId: string, duration: number = 2000, c
 /** Table Lightning Split — lightning crack reveals the table with dramatic split effect */
 export function tableLightningSplit(elementId: string, duration: number = 1800, config: ElementAnimationConfig = {}): string {
     return tableAnimPreset(elementId, 'lightningSplit', duration, 'easeOutQuad', config);
+}
+
+// ─── Code Block Animations ──────────────────────────────────────────
+
+/**
+ * Code Line Highlight — a highlight bar steps line by line through the code,
+ * simulating a debugger stepping through execution.
+ * Duration auto-scales: ~800ms per line (minimum 2s).
+ * For large code, updates codeScrollOffset so the highlighted line stays visible.
+ */
+export function codeLineHighlight(elementId: string, _duration: number = 0, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element || element.type !== 'codeBlock') {
+        console.warn('codeLineHighlight: Element is not a codeBlock');
+        return '';
+    }
+
+    const lines = (element.text || '').split('\n');
+    const lineCount = lines.length;
+    if (lineCount === 0) return '';
+
+    // Read ms/line from animation params (configurable in animation panel), fallback 800
+    const msPerLine = config.params?.msPerLine || 800;
+    const actualDuration = Math.max(2000, lineCount * msPerLine);
+
+    const animId = generateAnimationId('codeLineHighlight');
+    const targetProps = new Set<string>(['codeHighlightLine']);
+
+    stopConflictingAnimations(elementId, targetProps);
+    if (!activeAnimations.has(elementId)) {
+        activeAnimations.set(elementId, new Map());
+    }
+    activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Start with no highlight, scroll at top
+    updateElement(elementId, { codeHighlightLine: -1, codeScrollOffset: 0, opacity: 100 } as any, false);
+
+    let lastLine = -1;
+
+    // Calculate how many lines fit in the visible area
+    const fontSize = element.fontSize || 14;
+    const lineHeight = fontSize * 1.4;
+    const padding = 12;
+    const titleBarHeight = element.containerText ? fontSize * 1.8 : 0;
+    const visibleHeight = element.height - titleBarHeight - padding * 2;
+    const visibleLines = Math.max(1, Math.floor(visibleHeight / lineHeight));
+
+    animationEngine.create(
+        animId,
+        (progress: number) => {
+            // Use staircase function: each line gets equal time
+            const currentLine = Math.min(Math.floor(progress * lineCount), lineCount - 1);
+            if (currentLine !== lastLine) {
+                lastLine = currentLine;
+                // Calculate scroll offset to keep highlighted line visible
+                let scrollOffset = 0;
+                if (currentLine >= visibleLines - 1) {
+                    // Scroll so highlighted line is near bottom of visible area
+                    scrollOffset = (currentLine - visibleLines + 2) * lineHeight;
+                }
+                updateElement(elementId, {
+                    codeHighlightLine: currentLine,
+                    codeScrollOffset: scrollOffset
+                } as any, false);
+            }
+        },
+        {
+            duration: actualDuration,
+            easing: config.easing || 'linear',
+            delay: config.delay,
+            onStart: config.onStart,
+            onComplete: () => {
+                // Clear highlight and scroll after completion
+                updateElement(elementId, { codeHighlightLine: -1, codeScrollOffset: 0 } as any, false);
+                const animIds = activeAnimations.get(elementId);
+                if (animIds) {
+                    animIds.delete(animId);
+                    if (animIds.size === 0) activeAnimations.delete(elementId);
+                }
+                config.onComplete?.();
+            },
+            loop: config.loop,
+            loopCount: config.loopCount,
+            alternate: config.alternate,
+        }
+    );
+
+    animationEngine.start(animId);
+    return animId;
+}
+
+// ─── Data Structure Animation Presets ────────────────────────────────
+
+const DS_TYPES_ANIM = ['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'];
+
+function getDsItemCount(element: any): number {
+    if (!element.text) return 0;
+    if (element.type === 'dsHashTable') return element.dsCapacity || 5;
+    return element.text.split(',').map((v: string) => v.trim()).filter((v: string) => v.length > 0).length;
+}
+
+/**
+ * dsItemReveal: Items appear one by one using dsAnimProgress/dsAnimStyle
+ */
+export function dsItemReveal(elementId: string, _duration: number = 2000, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element || !DS_TYPES_ANIM.includes(element.type)) return '';
+
+    const itemCount = getDsItemCount(element);
+    const actualDuration = Math.max(1000, itemCount * 400);
+
+    updateElement(elementId, { dsAnimProgress: 0, dsAnimStyle: 'itemReveal' } as any, false);
+
+    return animateElement(elementId, { dsAnimProgress: 100 } as any, {
+        duration: actualDuration,
+        easing: config.easing || 'easeOutQuad' as any,
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: () => {
+            updateElement(elementId, { dsAnimProgress: undefined, dsAnimStyle: undefined } as any, false);
+            config.onComplete?.();
+        },
+        loop: config.loop,
+        loopCount: config.loopCount,
+        alternate: config.alternate,
+    });
+}
+
+/**
+ * dsHighlightSweep: Highlight walks through items sequentially
+ */
+export function dsHighlightSweep(elementId: string, _duration: number = 2000, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element || !DS_TYPES_ANIM.includes(element.type)) return '';
+
+    const itemCount = getDsItemCount(element);
+    const actualDuration = Math.max(1000, itemCount * 600);
+
+    updateElement(elementId, { dsAnimProgress: 0, dsAnimStyle: 'highlightSweep' } as any, false);
+
+    return animateElement(elementId, { dsAnimProgress: 100 } as any, {
+        duration: actualDuration,
+        easing: 'linear' as any,
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: () => {
+            updateElement(elementId, { dsAnimProgress: undefined, dsAnimStyle: undefined, dsHighlightIndex: -1 } as any, false);
+            config.onComplete?.();
+        },
+        loop: config.loop,
+        loopCount: config.loopCount,
+        alternate: config.alternate,
+    });
+}
+
+/**
+ * dsPointerWalk: Animated pointer moves through the structure
+ */
+export function dsPointerWalk(elementId: string, _duration: number = 2000, config: ElementAnimationConfig = {}): string {
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element || !DS_TYPES_ANIM.includes(element.type)) return '';
+
+    const itemCount = getDsItemCount(element);
+    const actualDuration = Math.max(1000, itemCount * 500);
+
+    updateElement(elementId, { dsAnimProgress: 0, dsAnimStyle: 'pointerWalk' } as any, false);
+
+    return animateElement(elementId, { dsAnimProgress: 100 } as any, {
+        duration: actualDuration,
+        easing: 'linear' as any,
+        delay: config.delay,
+        onStart: config.onStart,
+        onComplete: () => {
+            updateElement(elementId, { dsAnimProgress: undefined, dsAnimStyle: undefined, dsPointerIndex: -1 } as any, false);
+            config.onComplete?.();
+        },
+        loop: config.loop,
+        loopCount: config.loopCount,
+        alternate: config.alternate,
+    });
 }

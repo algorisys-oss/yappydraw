@@ -143,6 +143,7 @@ export const WelcomeScreen: Component = () => {
         "Sketch & Architectural modes",
         "UML & Flowchart diagrams",
         "Cloud infrastructure shapes",
+        "Data Structure visualizations",
         "Freehand drawing tools",
         "Smart connectors & arrows",
         "40+ animation presets",
@@ -152,9 +153,10 @@ export const WelcomeScreen: Component = () => {
     const rightFeatures = [
         "P3 wide-gamut colors",
         "Gradient & pattern fills",
-        "Quick toolbar & status bar",
+        "Floating quick toolbar",
         "100% local & private",
         "Slide transitions & builds",
+        "Live DS operations in presentations",
         "Dark mode support",
         "Presentation mode",
         "Export PNG, SVG, HTML",
@@ -171,6 +173,7 @@ export const WelcomeScreen: Component = () => {
         { label: "Animations", icon: "motion", color: "color(display-p3 1 0.4 0.3)" },
         { label: "Connectors", icon: "arrow", color: "color(display-p3 0.6 0.6 0.7)" },
         { label: "Tables", icon: "table", color: "color(display-p3 0.4 0.6 0.8)" },
+        { label: "Data Structures", icon: "ds", color: "color(display-p3 0.3 0.7 0.6)" },
     ];
 
     // Small SVG icons for each category
@@ -253,6 +256,15 @@ export const WelcomeScreen: Component = () => {
                     <line x1="5" y1="1" x2="5" y2="13" />
                     <line x1="9" y1="1" x2="9" y2="13" />
                     <line x1="1" y1="9" x2="13" y2="9" />
+                </svg>
+            );
+            case 'ds': return (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="1" y="5" width="3" height="3" rx="0.5" />
+                    <rect x="5.5" y="5" width="3" height="3" rx="0.5" />
+                    <rect x="10" y="5" width="3" height="3" rx="0.5" />
+                    <line x1="4" y1="6.5" x2="5.5" y2="6.5" />
+                    <line x1="8.5" y1="6.5" x2="10" y2="6.5" />
                 </svg>
             );
             default: return null;

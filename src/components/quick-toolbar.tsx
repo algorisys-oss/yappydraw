@@ -8,7 +8,7 @@ import { type Component, Show, For, createSignal, createMemo, createEffect, onCl
 import { store, updateElement, pushToHistory, applyMindmapStyling } from "../store/app-store";
 import { getElementPreviewBaseState, isElementAnimating } from "../utils/animation/element-animator";
 import {
-    Palette,
+    Palette, SlidersHorizontal,
     Bold, Italic, AlignLeft, AlignCenter, AlignRight, WrapText
 } from "lucide-solid";
 import { getElementFamily, getQuickPropertiesForType, QUICK_COLORS, type QuickPropertyDef } from "../config/quick-toolbar-config";
@@ -268,6 +268,7 @@ const MiniSliderControl: Component<{
 
 export const QuickToolbar: Component = () => {
     const [activePopover, setActivePopover] = createSignal<string | null>(null);
+    const [isExpanded, setIsExpanded] = createSignal(false);
 
     const selectedElement = () => {
         if (store.selection.length !== 1) return null;
@@ -307,23 +308,34 @@ export const QuickToolbar: Component = () => {
         return getQuickPropertiesForType(el.type);
     });
 
+    // Collapse when selection changes
+    createEffect(() => {
+        store.selection[0]; // track selection
+        setIsExpanded(false);
+        setActivePopover(null);
+    });
+
     return (
         <Show when={shouldShowToolbar()}>
-            <ToolbarContent
+            <ToolbarContainer
                 quickProps={quickProps}
                 isMindmapNode={isMindmapNode}
                 activePopover={activePopover}
                 setActivePopover={setActivePopover}
+                isExpanded={isExpanded}
+                setIsExpanded={setIsExpanded}
             />
         </Show>
     );
 };
 
-const ToolbarContent: Component<{
+const ToolbarContainer: Component<{
     quickProps: () => QuickPropertyDef[];
     isMindmapNode: () => boolean;
     activePopover: () => string | null;
     setActivePopover: (key: string | null) => void;
+    isExpanded: () => boolean;
+    setIsExpanded: (v: boolean) => void;
 }> = (props) => {
     const element = createMemo(() => {
         if (store.selection.length !== 1) return null;
@@ -331,6 +343,23 @@ const ToolbarContent: Component<{
     });
 
     let containerRef: HTMLDivElement | undefined;
+
+    // Click outside collapses the expanded toolbar
+    createEffect(() => {
+        if (props.isExpanded()) {
+            const handler = (e: MouseEvent) => {
+                if (containerRef && !containerRef.contains(e.target as Node)) {
+                    props.setIsExpanded(false);
+                    props.setActivePopover(null);
+                }
+            };
+            const timer = setTimeout(() => document.addEventListener('pointerdown', handler), 0);
+            onCleanup(() => {
+                clearTimeout(timer);
+                document.removeEventListener('pointerdown', handler);
+            });
+        }
+    });
 
     const handlePropertyChange = (key: string, value: any) => {
         const el = element();
@@ -349,25 +378,32 @@ const ToolbarContent: Component<{
                     const baseState = getElementPreviewBaseState(el().id);
                     const elX = baseState ? baseState.x : el().x;
                     const elW = baseState ? baseState.width : el().width;
-                    const toolbarWidth = containerRef?.offsetWidth ?? 300;
-                    const base = (elX + elW / 2) * store.viewState.scale + store.viewState.panX - toolbarWidth / 2;
 
-                    // Collision avoidance with Property Panel
-                    if (store.showPropertyPanel && !store.isPropertyPanelMinimized) {
-                        const panelStart = window.innerWidth - 280;
-                        const padding = 20;
-                        if (base + toolbarWidth > panelStart - padding) {
-                            return panelStart - toolbarWidth - padding;
+                    if (props.isExpanded()) {
+                        const toolbarWidth = containerRef?.offsetWidth ?? 300;
+                        const base = (elX + elW / 2) * store.viewState.scale + store.viewState.panX - toolbarWidth / 2;
+
+                        // Collision avoidance with Property Panel
+                        if (store.showPropertyPanel && !store.isPropertyPanelMinimized) {
+                            const panelStart = window.innerWidth - 280;
+                            const padding = 20;
+                            if (base + toolbarWidth > panelStart - padding) {
+                                return panelStart - toolbarWidth - padding;
+                            }
                         }
+                        return Math.max(base, 10);
                     }
-                    return Math.max(base, 10);
+                    // Collapsed: position at top-right of element (avoid rotate handle at center)
+                    const iconSize = 32;
+                    const base = (elX + elW) * store.viewState.scale + store.viewState.panX + 8;
+                    return Math.min(Math.max(base, 10), window.innerWidth - iconSize - 10);
                 };
 
                 const y = () => {
                     const baseState = getElementPreviewBaseState(el().id);
                     const elY = baseState ? baseState.y : el().y;
-                    const toolbarHeight = 50;
-                    const margin = 20;
+                    const toolbarHeight = props.isExpanded() ? 50 : 32;
+                    const margin = props.isExpanded() ? 20 : 12;
                     const calculated = elY * store.viewState.scale + store.viewState.panY - toolbarHeight - margin;
                     return Math.max(calculated, 60);
                 };
@@ -381,111 +417,133 @@ const ToolbarContent: Component<{
                             left: `${Math.round(x())}px`,
                         }}
                     >
-                        <div class="quick-toolbar-content">
-                            {/* Quick Property Controls */}
-                            <Show when={props.quickProps().length > 0}>
-                                <div class="quick-props-section">
-                                    <For each={props.quickProps()}>
-                                        {(propDef) => {
-                                            const value = () => (el() as any)[propDef.key];
+                        <Show when={!props.isExpanded()} fallback={
+                            <div class="quick-toolbar-content">
+                                {/* Collapse button */}
+                                <button
+                                    class="qt-collapse-btn"
+                                    onClick={() => { props.setIsExpanded(false); props.setActivePopover(null); }}
+                                    title="Collapse toolbar"
+                                >
+                                    <SlidersHorizontal size={14} />
+                                </button>
 
-                                            if (propDef.controlType === 'color-dot') {
-                                                return (
-                                                    <ColorDotControl
-                                                        value={value() || (propDef.key === 'backgroundColor' ? 'transparent' : '#000000')}
-                                                        label={propDef.label}
-                                                        isOpen={props.activePopover() === propDef.key}
-                                                        onToggle={() => {
-                                                            props.setActivePopover(
-                                                                props.activePopover() === propDef.key ? null : propDef.key
-                                                            );
-                                                        }}
-                                                        onChange={(color) => {
-                                                            pushToHistory();
-                                                            handlePropertyChange(propDef.key, color);
-                                                        }}
-                                                    />
-                                                );
-                                            }
+                                <div class="qt-divider" />
 
-                                            if (propDef.controlType === 'icon-select' && propDef.options) {
-                                                return (
-                                                    <IconSelectCollapsedControl
-                                                        value={value()}
-                                                        options={propDef.options}
-                                                        label={propDef.label}
-                                                        isOpen={props.activePopover() === propDef.key}
-                                                        onToggle={() => {
-                                                            props.setActivePopover(
-                                                                props.activePopover() === propDef.key ? null : propDef.key
-                                                            );
-                                                        }}
-                                                        onChange={(val) => {
-                                                            pushToHistory();
-                                                            handlePropertyChange(propDef.key, val);
-                                                        }}
-                                                    />
-                                                );
-                                            }
-
-                                            if (propDef.controlType === 'icon-toggle') {
-                                                const isFontToggle = propDef.key === 'fontWeight' || propDef.key === 'fontStyle';
-                                                const isDisabled = () => {
-                                                    if (!isFontToggle) return false;
-                                                    const font = (el() as any).fontFamily || 'hand-drawn';
-                                                    const caps = fontCapabilities[font];
-                                                    if (!caps) return false;
-                                                    return propDef.key === 'fontWeight' ? !caps.bold : !caps.italic;
-                                                };
-                                                return (
-                                                    <IconToggleControl
-                                                        value={value()}
-                                                        propKey={propDef.key}
-                                                        label={propDef.label}
-                                                        disabled={isDisabled()}
-                                                        onChange={(val) => {
-                                                            pushToHistory();
-                                                            handlePropertyChange(propDef.key, val);
-                                                        }}
-                                                    />
-                                                );
-                                            }
-
-                                            if (propDef.controlType === 'mini-slider') {
-                                                return (
-                                                    <MiniSliderControl
-                                                        value={value() ?? (propDef.key === 'borderRadius' ? 0 : propDef.max!)}
-                                                        min={propDef.min!}
-                                                        max={propDef.max!}
-                                                        step={propDef.step!}
-                                                        label={propDef.label}
-                                                        onStart={handlePropertyStart}
-                                                        onChange={(val) => handlePropertyChange(propDef.key, val)}
-                                                    />
-                                                );
-                                            }
-
-                                            return null;
-                                        }}
-                                    </For>
-                                </div>
-                            </Show>
-
-                            {/* Mindmap Actions Section */}
-                            <Show when={props.isMindmapNode()}>
+                                {/* Quick Property Controls */}
                                 <Show when={props.quickProps().length > 0}>
-                                    <div class="qt-divider" />
+                                    <div class="quick-props-section">
+                                        <For each={props.quickProps()}>
+                                            {(propDef) => {
+                                                const value = () => (el() as any)[propDef.key];
+
+                                                if (propDef.controlType === 'color-dot') {
+                                                    return (
+                                                        <ColorDotControl
+                                                            value={value() || (propDef.key === 'backgroundColor' ? 'transparent' : '#000000')}
+                                                            label={propDef.label}
+                                                            isOpen={props.activePopover() === propDef.key}
+                                                            onToggle={() => {
+                                                                props.setActivePopover(
+                                                                    props.activePopover() === propDef.key ? null : propDef.key
+                                                                );
+                                                            }}
+                                                            onChange={(color) => {
+                                                                pushToHistory();
+                                                                handlePropertyChange(propDef.key, color);
+                                                            }}
+                                                        />
+                                                    );
+                                                }
+
+                                                if (propDef.controlType === 'icon-select' && propDef.options) {
+                                                    return (
+                                                        <IconSelectCollapsedControl
+                                                            value={value()}
+                                                            options={propDef.options}
+                                                            label={propDef.label}
+                                                            isOpen={props.activePopover() === propDef.key}
+                                                            onToggle={() => {
+                                                                props.setActivePopover(
+                                                                    props.activePopover() === propDef.key ? null : propDef.key
+                                                                );
+                                                            }}
+                                                            onChange={(val) => {
+                                                                pushToHistory();
+                                                                handlePropertyChange(propDef.key, val);
+                                                            }}
+                                                        />
+                                                    );
+                                                }
+
+                                                if (propDef.controlType === 'icon-toggle') {
+                                                    const isFontToggle = propDef.key === 'fontWeight' || propDef.key === 'fontStyle';
+                                                    const isDisabled = () => {
+                                                        if (!isFontToggle) return false;
+                                                        const font = (el() as any).fontFamily || 'hand-drawn';
+                                                        const caps = fontCapabilities[font];
+                                                        if (!caps) return false;
+                                                        return propDef.key === 'fontWeight' ? !caps.bold : !caps.italic;
+                                                    };
+                                                    return (
+                                                        <IconToggleControl
+                                                            value={value()}
+                                                            propKey={propDef.key}
+                                                            label={propDef.label}
+                                                            disabled={isDisabled()}
+                                                            onChange={(val) => {
+                                                                pushToHistory();
+                                                                handlePropertyChange(propDef.key, val);
+                                                            }}
+                                                        />
+                                                    );
+                                                }
+
+                                                if (propDef.controlType === 'mini-slider') {
+                                                    return (
+                                                        <MiniSliderControl
+                                                            value={value() ?? (propDef.key === 'borderRadius' ? 0 : propDef.max!)}
+                                                            min={propDef.min!}
+                                                            max={propDef.max!}
+                                                            step={propDef.step!}
+                                                            label={propDef.label}
+                                                            onStart={handlePropertyStart}
+                                                            onChange={(val) => handlePropertyChange(propDef.key, val)}
+                                                        />
+                                                    );
+                                                }
+
+                                                return null;
+                                            }}
+                                        </For>
+                                    </div>
                                 </Show>
 
-                                <button
-                                    class="qt-action-btn"
-                                    onClick={() => applyMindmapStyling(el().id)}
-                                    title="Auto Style Branch"
-                                >
-                                    <Palette size={18} />
-                                </button>
-                            </Show>
-                        </div>
+                                {/* Mindmap Actions Section */}
+                                <Show when={props.isMindmapNode()}>
+                                    <Show when={props.quickProps().length > 0}>
+                                        <div class="qt-divider" />
+                                    </Show>
+
+                                    <button
+                                        class="qt-action-btn"
+                                        onClick={() => applyMindmapStyling(el().id)}
+                                        title="Auto Style Branch"
+                                    >
+                                        <Palette size={18} />
+                                    </button>
+                                </Show>
+                            </div>
+                        }>
+                            {/* Collapsed state: tiny icon */}
+                            <button
+                                class="qt-collapsed-icon"
+                                onClick={() => props.setIsExpanded(true)}
+                                title="Quick properties"
+                            >
+                                <SlidersHorizontal size={16} />
+                            </button>
+                        </Show>
                     </div>
                 );
             }}

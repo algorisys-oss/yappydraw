@@ -81,6 +81,7 @@ export {
     boxRotateReveal,
     boxLidOpen,
     boxLidClose,
+    boxLidOpenClose,
     boxOpenReveal,
     boxExplode,
     boxCollapse,
@@ -106,7 +107,11 @@ export {
     tableCountUp,
     tableAccordion,
     tableCellsAssemble,
-    tableLightningSplit
+    tableLightningSplit,
+    codeLineHighlight,
+    dsItemReveal,
+    dsHighlightSweep,
+    dsPointerWalk
 } from './element-animator';
 
 export type { StaggerConfig } from './element-animator';

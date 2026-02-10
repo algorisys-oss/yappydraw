@@ -616,8 +616,11 @@ export function selectionOnMove(
             if (dragDist < 3 / store.viewState.scale) return;
 
             // Alt+drag on 3D shapes: change viewAngle instead of moving
+            // Once 3D mode is entered, stay in it for the entire drag (prevents
+            // accidental panning if Alt key state flickers between move events)
             const is3DShape = ['solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'isometricCube'].includes(el.type);
-            if (e.altKey && is3DShape && store.selection.length === 1) {
+            const already3DMode = pState.initial3DViewAngle !== undefined;
+            if ((e.altKey || already3DMode) && is3DShape && store.selection.length === 1) {
                 handle3DViewAngle(e, x, y, id, el, pState, helpers);
                 return;
             }
@@ -1066,37 +1069,45 @@ function applyResize(
 
 function handle3DViewAngle(
     e: PointerEvent,
-    x: number,
+    _x: number,
     _y: number,
     id: string,
     el: DrawingElement,
     pState: PointerState,
     helpers: PointerHelpers
 ): void {
-    // Store initial angle on first call during this drag
+    // Store initial values on first call during this drag
     if (pState.initial3DViewAngle === undefined) {
         pState.initial3DViewAngle = el.viewAngle ?? 45;
-        pState.initial3DStartX = x; // Store the X position when Alt+drag started
+        pState.initial3DDepth = el.depth ?? 50;
+        pState.initial3DStartX = e.clientX;
+        pState.initial3DStartY = e.clientY;
     }
 
-    // Change viewAngle based on horizontal mouse movement from when Alt was pressed
-    const dx = x - (pState.initial3DStartX ?? pState.startX);
+    // Use screen-space coordinates for consistent feel at any zoom level
+    const dx = e.clientX - (pState.initial3DStartX ?? e.clientX);
+    const dy = e.clientY - (pState.initial3DStartY ?? e.clientY);
 
-    // Sensitivity: pixels per degree (lower = more sensitive)
-    const sensitivity = 1.5;
-    const angleDelta = dx / sensitivity;
-
-    // Calculate new angle, wrapping around 0-360
+    // Horizontal drag → viewAngle (rotation direction)
+    const angleSensitivity = 0.8; // screen pixels per degree (lower = faster rotation)
+    const angleDelta = dx / angleSensitivity;
     let newAngle = pState.initial3DViewAngle + angleDelta;
     newAngle = ((newAngle % 360) + 360) % 360;
 
-    // Snap to 5 degree increments if Shift is held
+    // Vertical drag → depth (drag down = more depth, drag up = less)
+    const depthSensitivity = 1; // screen pixels per depth unit
+    const depthDelta = dy / depthSensitivity;
+    let newDepth = (pState.initial3DDepth ?? 0) + depthDelta;
+    newDepth = Math.max(0, Math.min(300, newDepth));
+
+    // Snap to 5-unit increments if Shift is held
     if (e.shiftKey) {
         newAngle = Math.round(newAngle / 5) * 5;
+        newDepth = Math.round(newDepth / 5) * 5;
     }
 
-    updateElement(id, { viewAngle: newAngle }, false); // Don't push to history on every move
-    helpers.setCursor('ew-resize');
+    updateElement(id, { viewAngle: newAngle, depth: newDepth }, false);
+    helpers.setCursor('move');
     requestAnimationFrame(helpers.draw);
 }
 
@@ -1463,6 +1474,8 @@ export function selectionOnUp(
     pState.draggingHandle = null;
     pState.initialPositions.clear();
     pState.initial3DViewAngle = undefined;
+    pState.initial3DDepth = undefined;
     pState.initial3DStartX = undefined;
+    pState.initial3DStartY = undefined;
     signals.setSnappingGuides([]);
 }

@@ -26,7 +26,7 @@ const KINETIC_PRESETS = [
 
 // 3D box animations (for openBox only)
 const OPENBOX_PRESETS = [
-    'boxLidOpen', 'boxLidClose'
+    'boxLidOpen', 'boxLidClose', 'boxLidOpenClose'
 ];
 
 // 3D shape animations (for 3D shapes: solidBlock, perspectiveBlock, isometricCube, openBox, cylinder)
@@ -40,6 +40,15 @@ const TABLE_PRESETS = [
     'tableRowHighlight', 'tableColPulse', 'tableGridDraw', 'tableHeaderSlam',
     'tableCountUp', 'tableAccordion',
     'tableCellsAssemble', 'tableLightningSplit'
+];
+
+// Code block animations
+const CODEBLOCK_PRESETS = [
+    'typewriter', 'lineByLine', 'codeLineHighlight'
+];
+
+const DS_PRESETS = [
+    'dsItemReveal', 'dsHighlightSweep', 'dsPointerWalk'
 ];
 
 // Get applicable presets based on element type
@@ -67,6 +76,16 @@ const getPresetsForType = (type: string | undefined): string[] => {
     // Add table presets for table elements
     if (type === 'table') {
         presets.push(...TABLE_PRESETS);
+    }
+
+    // Add code block presets
+    if (type === 'codeBlock') {
+        presets.push(...CODEBLOCK_PRESETS);
+    }
+
+    // Add data structure presets
+    if (['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'].includes(type)) {
+        presets.push(...DS_PRESETS);
     }
 
     return presets;
@@ -189,7 +208,9 @@ export const AnimationPanel: Component = () => {
             delay: 0,
             easing: 'easeOutQuad',
             trigger: el.animations?.length ? 'after-prev' : 'on-load',
-            params: name === 'revolve' ? { radius: 50 } : undefined
+            params: name === 'revolve' ? { radius: 50 }
+                : name === 'codeLineHighlight' ? { msPerLine: 800 }
+                : undefined
         };
 
         const currentAnims = el.animations || [];
@@ -707,7 +728,18 @@ export const AnimationPanel: Component = () => {
 
             <div class="animation-list" style={{ display: 'flex', 'flex-direction': 'column', gap: '8px' }}>
                 <For each={element()?.animations || []}>
-                    {(anim, index) => (
+                    {(anim, index) => {
+                        // Compute click-step number for this animation
+                        const anims = element()?.animations || [];
+                        let step = 0;
+                        for (let i = 0; i <= index(); i++) {
+                            const t = anims[i].trigger;
+                            if (t === 'on-click') step++;
+                        }
+                        const stepNum = anim.trigger === 'on-load' ? 0
+                            : anim.trigger === 'on-click' ? step
+                            : step; // after-prev / with-prev inherit current step
+                        return (
                         <AnimationItem
                             animation={anim}
                             index={index()}
@@ -717,9 +749,11 @@ export const AnimationPanel: Component = () => {
                             onUpdate={(u) => updateAnimProperty(anim.id, u)}
                             onRemove={() => removeAnimation(anim.id)}
                             onReorder={(d) => handleReorder(anim.id, d)}
-                            elementId={element()!.id} // Pass Element ID
+                            elementId={element()!.id}
+                            stepNumber={stepNum}
                         />
-                    )}
+                        );
+                    }}
                 </For>
             </div>
 
@@ -892,6 +926,7 @@ const AnimationItem: Component<{
     onRemove: () => void;
     onReorder: (direction: 'up' | 'down') => void;
     elementId: string;
+    stepNumber?: number;
 }> = (props) => {
 
     return (
@@ -914,6 +949,36 @@ const AnimationItem: Component<{
                 <div style={{ 'margin-right': '6px', 'display': 'flex' }}>
                     {props.expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 </div>
+                {/* Step number badge */}
+                <Show when={props.stepNumber !== undefined && props.stepNumber > 0}>
+                    <span style={{
+                        'display': 'inline-flex',
+                        'align-items': 'center',
+                        'justify-content': 'center',
+                        'min-width': '18px',
+                        'height': '18px',
+                        'border-radius': '9px',
+                        'background': props.animation.trigger === 'on-click' ? '#3b82f6' : 'rgba(59,130,246,0.3)',
+                        'color': 'white',
+                        'font-size': '9px',
+                        'font-weight': 600,
+                        'margin-right': '6px',
+                        'padding': '0 4px',
+                        'flex-shrink': 0
+                    }}>
+                        {props.stepNumber}
+                    </span>
+                </Show>
+                <Show when={props.stepNumber === 0}>
+                    <span style={{
+                        'font-size': '9px',
+                        'opacity': 0.4,
+                        'margin-right': '6px',
+                        'flex-shrink': 0
+                    }}>
+                        auto
+                    </span>
+                </Show>
                 <div style={{ 'flex': 1, 'font-size': '12px', 'font-weight': 500 }}>
                     {props.animation.type === 'preset' ? (props.animation as PresetAnimation).name :
                         props.animation.type === 'rotate' ? 'Rotate' :
@@ -1103,6 +1168,25 @@ const AnimationItem: Component<{
                                 value={(props.animation as any).params?.radius ?? 50}
                                 onInput={(e) => {
                                     const params = { ...(props.animation as any).params, radius: Number(e.currentTarget.value) };
+                                    props.onUpdate({ params });
+                                }}
+                                style={{ 'width': '60px', 'font-size': '11px', 'padding': '2px 4px' }}
+                            />
+                        </div>
+                    </Show>
+
+                    {/* Code Line Highlight speed */}
+                    <Show when={props.animation.type === 'preset' && (props.animation as PresetAnimation).name === 'codeLineHighlight'}>
+                        <div style={{ 'display': 'flex', 'align-items': 'center', 'justify-content': 'space-between' }}>
+                            <label style={{ 'font-size': '11px', 'opacity': 0.7 }}>Speed (ms/line)</label>
+                            <input
+                                type="number"
+                                step="100"
+                                min="100"
+                                max="5000"
+                                value={(props.animation as any).params?.msPerLine ?? 800}
+                                onInput={(e) => {
+                                    const params = { ...(props.animation as any).params, msPerLine: Number(e.currentTarget.value) };
                                     props.onUpdate({ params });
                                 }}
                                 style={{ 'width': '60px', 'font-size': '11px', 'padding': '2px 4px' }}
@@ -1407,6 +1491,19 @@ const AnimationItem: Component<{
                         />
                         <label for={`restore-${props.animation.id}`} style={{ 'font-size': '11px', 'opacity': 0.7, 'cursor': 'pointer' }}>
                             Restore state after finish
+                        </label>
+                    </div>
+
+                    {/* Start Hidden in Presentation */}
+                    <div style={{ 'display': 'flex', 'align-items': 'center', 'gap': '8px', 'margin-top': '4px' }}>
+                        <input
+                            type="checkbox"
+                            id={`startHidden-${props.animation.id}`}
+                            checked={props.animation.startHidden ?? (props.animation.trigger === 'on-click')}
+                            onChange={(e) => props.onUpdate({ startHidden: e.currentTarget.checked })}
+                        />
+                        <label for={`startHidden-${props.animation.id}`} style={{ 'font-size': '11px', 'opacity': 0.7, 'cursor': 'pointer' }}>
+                            Start hidden in presentation
                         </label>
                     </div>
 

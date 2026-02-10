@@ -583,8 +583,9 @@ export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
             const showLidHinge = el.showLidHinge || false;
 
             // Scale depth with shape size so it starts at 0 when size is 0
+            // Use 0.8 multiplier to allow deeper 3D views (top-down perspectives)
             const minDim = Math.min(Math.abs(w), Math.abs(h));
-            const depth = minDim > 0 ? Math.min(depthBase, minDim * 0.5) : 0;
+            const depth = minDim > 0 ? Math.min(depthBase, minDim * 0.8) : 0;
 
             // Calculate 3D offset for depth
             const dx = depth * Math.cos(angleRad);

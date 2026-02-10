@@ -18,6 +18,7 @@ import CloudInfraToolGroup from "./cloud-infra-tool-group";
 import DataMetricsToolGroup from "./data-metrics-tool-group";
 import ConnectionRelToolGroup from "./connection-rel-tool-group";
 import ConnectorToolGroup from "./connector-tool-group";
+import DsToolGroup from "./ds-tool-group";
 import "./toolbar.css";
 
 // Navigation tools (rendered before grouped tools)
@@ -245,6 +246,9 @@ const Toolbar: Component = () => {
 
             {/* Wireframing Essentials (Browser Window, Mobile, Input, Button) */}
             <WireframeToolGroup />
+
+            {/* Data Structures (Array, Stack, Queue, LinkedList, BinaryTree, HashTable) */}
+            <DsToolGroup />
 
             {/* Technical Diagramming Group (DFD, Isometric Cube, Cylinder) */}
             <TechnicalToolGroup />

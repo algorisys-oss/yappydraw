@@ -238,7 +238,10 @@ export function hitTestElement(
         el.type === 'table' ||
         el.type === 'puzzlePiece' || el.type === 'chainLink' || el.type === 'bridge' ||
         el.type === 'magnet' || el.type === 'scale' || el.type === 'seedling' ||
-        el.type === 'tree' || el.type === 'mountain'
+        el.type === 'tree' || el.type === 'mountain' ||
+        el.type === 'codeBlock' ||
+        el.type === 'dsArray' || el.type === 'dsStack' || el.type === 'dsQueue' ||
+        el.type === 'dsLinkedList' || el.type === 'dsBinaryTree' || el.type === 'dsHashTable'
     ) {
         // For these shapes, rely on bounding box hit test (passed above)
         // or implement detailed geometry check if needed

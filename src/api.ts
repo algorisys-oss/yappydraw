@@ -76,6 +76,7 @@ interface ElementOptions {
     endBinding?: { elementId: string; focus: number; gap: number; position?: string } | null;
 
     // New Attributes
+    text?: string;
     containerText?: string;
     locked?: boolean;
     link?: string | null;
@@ -89,6 +90,27 @@ interface ElementOptions {
     borderRadius?: number;
     tailPosition?: number;
     shapeRatio?: number;
+
+    // Code Block
+    codeShowLineNumbers?: boolean;
+    codeStartLineNumber?: number;
+    codeHighlightLine?: number;
+    codeScrollOffset?: number;
+
+    // Data Structure
+    dsShowIndices?: boolean;
+    dsDirection?: 'horizontal' | 'vertical';
+    dsItemColor?: string;
+    dsHighlightIndex?: number;
+    dsPointerIndex?: number;
+    dsCapacity?: number;
+    dsAnimProgress?: number;
+    dsAnimStyle?: string;
+    dsHighlightIndex2?: number;
+    dsHighlightColor?: string;
+    dsHighlightColor2?: string;
+    dsSortedBoundary?: number;
+    dsSortedBoundaryEnd?: number;
 
     // Advanced Styling
     fillDensity?: number;
@@ -867,6 +889,155 @@ export const YappyAPI = {
         const table = this.getElement(tableId);
         if (!table || table.type !== 'table') return null;
         return table.tableMergedCells ?? [];
+    },
+
+    // --- Code Block API ---
+
+    /**
+     * Create a code block element with dark theme defaults
+     * @param x - X position
+     * @param y - Y position
+     * @param width - Width
+     * @param height - Height
+     * @param code - Initial code content
+     * @param options - Additional options (title via containerText, line numbers, etc.)
+     */
+    createCodeBlock(x: number, y: number, width: number, height: number, code?: string, options?: ElementOptions): string {
+        return this.createElement('codeBlock', x, y, width, height, {
+            backgroundColor: '#1e293b',
+            fillStyle: 'solid',
+            strokeColor: '#334155',
+            textColor: '#e2e8f0',
+            fontFamily: 'code',
+            fontSize: 14,
+            textAlign: 'left',
+            borderRadius: 4,
+            codeShowLineNumbers: true,
+            codeStartLineNumber: 1,
+            ...options,
+            text: code ?? options?.text ?? '',
+        });
+    },
+
+    /**
+     * Get the code text content of a code block
+     * @param codeBlockId - Code block element ID
+     */
+    getCodeBlockText(codeBlockId: string): string | null {
+        const el = this.getElement(codeBlockId);
+        if (!el || el.type !== 'codeBlock') return null;
+        return el.text ?? '';
+    },
+
+    /**
+     * Set the code text content of a code block
+     * @param codeBlockId - Code block element ID
+     * @param code - New code content
+     */
+    setCodeBlockText(codeBlockId: string, code: string): void {
+        const el = this.getElement(codeBlockId);
+        if (!el || el.type !== 'codeBlock') return;
+        updateElement(codeBlockId, { text: code }, true);
+    },
+
+    /**
+     * Get the title (filename/language label) of a code block
+     * @param codeBlockId - Code block element ID
+     */
+    getCodeBlockTitle(codeBlockId: string): string | null {
+        const el = this.getElement(codeBlockId);
+        if (!el || el.type !== 'codeBlock') return null;
+        return el.containerText ?? '';
+    },
+
+    /**
+     * Set the title (filename/language label) of a code block
+     * @param codeBlockId - Code block element ID
+     * @param title - Title text (e.g., "main.py", "JavaScript")
+     */
+    setCodeBlockTitle(codeBlockId: string, title: string): void {
+        const el = this.getElement(codeBlockId);
+        if (!el || el.type !== 'codeBlock') return;
+        updateElement(codeBlockId, { containerText: title }, true);
+    },
+
+    /**
+     * Get the number of lines in a code block
+     * @param codeBlockId - Code block element ID
+     */
+    getCodeBlockLineCount(codeBlockId: string): number {
+        const el = this.getElement(codeBlockId);
+        if (!el || el.type !== 'codeBlock' || !el.text) return 0;
+        return el.text.split('\n').length;
+    },
+
+    // --- Data Structure API ---
+
+    createDsArray(x: number, y: number, width: number, height: number, values?: string[], options?: ElementOptions): string {
+        return this.createElement('dsArray', x, y, width, height, {
+            text: values ? values.join(', ') : '1, 2, 3, 4, 5',
+            dsShowIndices: true,
+            dsDirection: 'horizontal',
+            ...options,
+        });
+    },
+
+    createDsStack(x: number, y: number, width: number, height: number, values?: string[], options?: ElementOptions): string {
+        return this.createElement('dsStack', x, y, width, height, {
+            text: values ? values.join(', ') : 'A, B, C',
+            dsDirection: 'vertical',
+            ...options,
+        });
+    },
+
+    createDsQueue(x: number, y: number, width: number, height: number, values?: string[], options?: ElementOptions): string {
+        return this.createElement('dsQueue', x, y, width, height, {
+            text: values ? values.join(', ') : 'first, second, third',
+            dsDirection: 'horizontal',
+            ...options,
+        });
+    },
+
+    createDsLinkedList(x: number, y: number, width: number, height: number, values?: string[], options?: ElementOptions): string {
+        return this.createElement('dsLinkedList', x, y, width, height, {
+            text: values ? values.join(', ') : 'A, B, C, D',
+            dsDirection: 'horizontal',
+            ...options,
+        });
+    },
+
+    createDsBinaryTree(x: number, y: number, width: number, height: number, values?: string[], options?: ElementOptions): string {
+        return this.createElement('dsBinaryTree', x, y, width, height, {
+            text: values ? values.join(', ') : '50, 30, 70, 20, 40, _, 80',
+            ...options,
+        });
+    },
+
+    createDsHashTable(x: number, y: number, width: number, height: number, entries?: string[], options?: ElementOptions): string {
+        return this.createElement('dsHashTable', x, y, width, height, {
+            text: entries ? entries.join(', ') : 'name:Alice, age:30, id:42',
+            dsShowIndices: true,
+            dsCapacity: options?.dsCapacity ?? 5,
+            ...options,
+        });
+    },
+
+    getDsValues(dsId: string): string[] | null {
+        const el = this.getElement(dsId);
+        if (!el || !el.text) return null;
+        return el.text.split(',').map((v: string) => v.trim()).filter((v: string) => v.length > 0);
+    },
+
+    setDsValues(dsId: string, values: string[]): void {
+        const el = this.getElement(dsId);
+        if (!el) return;
+        updateElement(dsId, { text: values.join(', ') }, true);
+    },
+
+    /** Execute a CRUD operation on a DS element with animation */
+    async dsOperation(elementId: string, action: string, params?: { value?: string; key?: string; index?: number }): Promise<void> {
+        const { executeDsOperation } = await import('./utils/ds-operations');
+        return executeDsOperation(elementId, action, params || {});
     },
 
     // --- Actions & Helpers ---

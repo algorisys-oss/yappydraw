@@ -11,6 +11,7 @@ import { slideTransitionManager } from "../utils/animation/slide-transition-mana
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
 import { generateId } from "../utils/id-generator"; // New Import
 import { refreshBoundLine } from "../utils/binding-logic";
+import { abortDsAlgorithm } from "../utils/ds-operations";
 
 interface AppState {
     // Current Active Slide properties (for performance and compatibility)
@@ -63,7 +64,7 @@ interface AppState {
     canvasTexture: 'none' | 'dots' | 'grid' | 'graph' | 'paper';
     isPreviewing: boolean;
     isRecording: boolean;
-    selectedTechnicalType: 'dfdProcess' | 'dfdDataStore' | 'isometricCube' | 'cylinder' | 'stateStart' | 'stateEnd' | 'stateSync' | 'activationBar' | 'externalEntity';
+    selectedTechnicalType: 'dfdProcess' | 'dfdDataStore' | 'isometricCube' | 'cylinder' | 'stateStart' | 'stateEnd' | 'stateSync' | 'activationBar' | 'externalEntity' | 'codeBlock';
     // State Morphing
     states: DisplayState[];
     activeStateId?: string;
@@ -75,6 +76,8 @@ interface AppState {
     showExportDialog: boolean;
     showUtilityToolbar: boolean;
     showCanvasToolbar: boolean;
+    selectedDsType: 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable';
+    activeDsOpsElementId: string | null;
     selectedUmlType: 'umlClass' | 'umlInterface' | 'umlActor' | 'umlUseCase' | 'umlNote' | 'umlPackage' | 'umlComponent' | 'umlState' | 'umlLifeline' | 'umlFragment' | 'umlSignalSend' | 'umlSignalReceive' | 'umlProvidedInterface' | 'umlRequiredInterface';
 
     // Tool-specific styles persistence
@@ -202,6 +205,8 @@ const initialState: AppState = {
     layerGroupingModeEnabled: false,
     maxLayers: 20,
     selectedTechnicalType: 'dfdProcess',
+    selectedDsType: 'dsArray',
+    activeDsOpsElementId: null,
     states: [],
     showStatePanel: false,
     showSlideNavigator: true,
@@ -2063,6 +2068,10 @@ export const zoomToFitSlide = () => {
     });
 };
 
+// Snapshot of DS element text for auto-reset on presentation exit
+const dsTextSnapshots = new Map<string, string>();
+const DS_TYPES_SNAP = ['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'];
+
 export const togglePresentationMode = async (visible?: boolean, fromSlide?: number) => {
     const isPresentation = store.appMode === 'presentation';
     const newState = visible ?? !isPresentation;
@@ -2079,6 +2088,14 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
 
         if (newState) {
             setStore('selection', []); // Clear selection
+
+            // Snapshot DS element text for auto-reset on exit
+            dsTextSnapshots.clear();
+            for (const el of store.elements) {
+                if (DS_TYPES_SNAP.includes(el.type)) {
+                    dsTextSnapshots.set(el.id, el.text || '');
+                }
+            }
 
             // Hide reveal elements for closed openBox shapes
             hideOpenBoxRevealElements();
@@ -2116,8 +2133,20 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
             slideBuildManager.init(store.activeSlideIndex);
             slideBuildManager.playInitial();
         } else {
-            // Exiting presentation mode - reset openBox elements to closed state
+            // Exiting presentation mode - restore hidden elements and reset openBox
+            slideBuildManager.restoreAll();
             resetOpenBoxElements();
+            abortDsAlgorithm();
+            setStore('activeDsOpsElementId', null);
+
+            // Restore DS element text unless dsPersistChanges is enabled
+            for (const [id, originalText] of dsTextSnapshots) {
+                const el = store.elements.find(e => e.id === id);
+                if (el && !el.dsPersistChanges) {
+                    updateElement(id, { text: originalText } as any, false);
+                }
+            }
+            dsTextSnapshots.clear();
         }
     });
 
@@ -2133,6 +2162,14 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
 
 export const setSelectedTechnicalType = (type: AppState['selectedTechnicalType']) => {
     setStore('selectedTechnicalType', type);
+};
+
+export const setSelectedDsType = (type: AppState['selectedDsType']) => {
+    setStore('selectedDsType', type);
+};
+
+export const setActiveDsOpsElement = (id: string | null) => {
+    setStore('activeDsOpsElementId', id);
 };
 
 export const setSelectedUmlType = (type: AppState['selectedUmlType']) => {

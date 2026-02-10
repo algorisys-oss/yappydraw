@@ -1,4 +1,4 @@
-import { store } from '../../store/app-store';
+import { store, setStore } from '../../store/app-store';
 import type { ElementAnimation } from '../../types/motion-types';
 import { sequenceAnimator } from './sequence-animator';
 import { getElementsOnSlide } from '../slide-utils';
@@ -10,11 +10,13 @@ export interface BuildStep {
 }
 
 /**
- * Orchestrates the global animation build sequence for the active slide.
+ * Orchestrates the global animation build sequence for the active slide or canvas.
  */
 class SlideBuildManager {
     private buildSequence: BuildStep[] = [];
     private isPlaying: boolean = false;
+    private _playedClickSteps: number = 0;
+    private hiddenElementOpacities: Map<string, number> = new Map();
 
     /**
      * Initialize build sequence for the current slide.
@@ -23,10 +25,14 @@ class SlideBuildManager {
     init(slideIndex: number) {
         this.reset();
 
-        const slideElements = getElementsOnSlide(slideIndex, store.elements, store.slides);
+        // For infinite canvas mode, use all elements; for slides, use slide-specific elements
+        const slideElements = store.docType === 'infinite'
+            ? store.elements
+            : getElementsOnSlide(slideIndex, store.elements, store.slides);
+
         const allBuilds: BuildStep[] = [];
 
-        // Flatten all animations from all elements on this slide
+        // Flatten all animations from all elements
         slideElements.forEach(el => {
             if (el.animations && el.animations.length > 0) {
                 el.animations.forEach(anim => {
@@ -64,13 +70,29 @@ class SlideBuildManager {
             return a.elementId.localeCompare(b.elementId);
         });
 
+        // Hide elements that have startHidden animations
+        this.applyStartHidden();
     }
 
     reset() {
+        // Restore hidden element opacities before clearing
+        this.restoreHiddenElements();
+
         this.buildSequence = [];
         this.isPlaying = false;
+        this._playedClickSteps = 0;
         // Stop any running animations
         sequenceAnimator.stopAll();
+    }
+
+    /** Total number of 'on-click' steps in the build sequence */
+    get totalClickSteps(): number {
+        return this.buildSequence.filter(step => step.animation.trigger === 'on-click').length;
+    }
+
+    /** Number of 'on-click' steps already played */
+    get playedClickSteps(): number {
+        return this._playedClickSteps;
     }
 
     /**
@@ -111,9 +133,15 @@ class SlideBuildManager {
 
         this.isPlaying = true;
         await this.executeStep(nextClickIdx);
+        this._playedClickSteps++;
         this.isPlaying = false;
 
         return true;
+    }
+
+    /** Restore any hidden elements to their original opacity. Called when exiting presentation. */
+    restoreAll() {
+        this.restoreHiddenElements();
     }
 
     private executeStep(index: number): Promise<void> {
@@ -121,6 +149,18 @@ class SlideBuildManager {
         if (!step || step.played) return Promise.resolve();
 
         step.played = true;
+
+        // If this element was hidden by startHidden, restore its opacity before the animation runs.
+        // For fadeIn presets: opacity restores to 100, then fadeIn immediately sets it to 0 and animates to 100 (no flicker).
+        // For non-opacity presets (bounce, shake): element becomes visible, then animation plays.
+        if (this.hiddenElementOpacities.has(step.elementId)) {
+            const originalOpacity = this.hiddenElementOpacities.get(step.elementId)!;
+            const elIndex = store.elements.findIndex(e => e.id === step.elementId);
+            if (elIndex !== -1) {
+                setStore('elements', elIndex, 'opacity', originalOpacity);
+            }
+            this.hiddenElementOpacities.delete(step.elementId);
+        }
 
         return new Promise((resolve) => {
             const onComplete = () => {
@@ -140,7 +180,7 @@ class SlideBuildManager {
 
     private triggerWithPrev(currentIndex: number) {
         // Look ahead for animations marked 'with-prev'
-        // In a global build, 'with-prev' means "run with the PREVIOUS build step", 
+        // In a global build, 'with-prev' means "run with the PREVIOUS build step",
         // which might be on a different element.
         let next = currentIndex + 1;
         while (next < this.buildSequence.length && this.buildSequence[next].animation.trigger === 'with-prev') {
@@ -154,6 +194,43 @@ class SlideBuildManager {
         if (next < this.buildSequence.length && this.buildSequence[next].animation.trigger === 'after-prev') {
             await this.executeStep(next);
         }
+    }
+
+    /**
+     * Scan build sequence for animations with startHidden enabled.
+     * Save original opacity and set elements to invisible.
+     */
+    private applyStartHidden() {
+        this.hiddenElementOpacities.clear();
+
+        const hideElementIds = new Set<string>();
+        this.buildSequence.forEach(step => {
+            const shouldHide = step.animation.startHidden ?? (step.animation.trigger === 'on-click');
+            if (shouldHide) {
+                hideElementIds.add(step.elementId);
+            }
+        });
+
+        for (const elementId of hideElementIds) {
+            const elIndex = store.elements.findIndex(e => e.id === elementId);
+            if (elIndex !== -1) {
+                this.hiddenElementOpacities.set(elementId, store.elements[elIndex].opacity ?? 100);
+                setStore('elements', elIndex, 'opacity', 0);
+            }
+        }
+    }
+
+    /**
+     * Restore all hidden elements to their original opacity.
+     */
+    private restoreHiddenElements() {
+        for (const [elementId, originalOpacity] of this.hiddenElementOpacities) {
+            const elIndex = store.elements.findIndex(e => e.id === elementId);
+            if (elIndex !== -1) {
+                setStore('elements', elIndex, 'opacity', originalOpacity);
+            }
+        }
+        this.hiddenElementOpacities.clear();
     }
 }
 

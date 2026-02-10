@@ -23,6 +23,8 @@ import { StatusRenderer } from "./renderers/status-renderer";
 import { CloudInfraRenderer } from "./renderers/cloud-infra-renderer";
 import { DataMetricsRenderer } from "./renderers/data-metrics-renderer";
 import { TableRenderer } from "./renderers/table-renderer";
+import { CodeBlockRenderer } from "./renderers/code-block-renderer";
+import { DataStructureRenderer } from "./renderers/data-structure-renderer";
 import { ConnectionRelRenderer } from "./renderers/connection-rel-renderer";
 
 export function registerShapes() {
@@ -113,6 +115,11 @@ export function registerShapes() {
     dataMetricsTypes.forEach(type => shapeRegistry.register(type, dataMetricsRenderer));
 
     shapeRegistry.register('table', new TableRenderer());
+    shapeRegistry.register('codeBlock', new CodeBlockRenderer());
+
+    const dsRenderer = new DataStructureRenderer();
+    const dsTypes = ['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'] as const;
+    dsTypes.forEach(type => shapeRegistry.register(type, dsRenderer));
 
     const connectionRelRenderer = new ConnectionRelRenderer();
     const connectionRelTypes = ['puzzlePiece', 'chainLink', 'bridge', 'magnet', 'scale', 'seedling', 'tree', 'mountain'] as const;

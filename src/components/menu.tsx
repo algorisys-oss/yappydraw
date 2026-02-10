@@ -23,7 +23,7 @@ const FileOpenDialog = lazy(() => import("./file-open-dialog"));
 const ExportDialog = lazy(() => import("./export-dialog"));
 const SaveDialog = lazy(() => import("./save-dialog"));
 const TemplateBrowser = lazy(() => import("./template-browser"));
-const SettingsDialog = lazy(() => import("./settings-dialog"));
+import SettingsDialog from "./settings-dialog";
 import { features } from "../config/features";
 import { migrateToSlideFormat, isSlideDocument } from "../utils/migration";
 import type { SlideDocument } from "../types/slide-types";
@@ -246,6 +246,22 @@ const Menu: Component = () => {
         (e.target as HTMLInputElement).value = '';
     };
 
+    const handleLoadJsonText = (jsonString: string) => {
+        try {
+            showToast('Loading JSON...', 'loading', 0);
+            const json = JSON.parse(jsonString);
+            const doc = isSlideDocument(json) ? json : migrateToSlideFormat(json);
+            loadDocument(doc);
+            setDrawingId(doc.metadata?.name || 'Pasted Sketch');
+            showToast('JSON loaded successfully', 'success');
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to load JSON. The data may be corrupted or in an invalid format.', 'error');
+        }
+        setIsLoadExportOpen(false);
+        setIsMenuOpen(false);
+    };
+
     const handleExportHtml = async () => {
         try {
             showToast('Generating HTML...', 'loading', 0);
@@ -398,6 +414,7 @@ const Menu: Component = () => {
                     onClose={() => setIsLoadExportOpen(false)}
                     onLoadWorkspace={() => { setIsLoadExportOpen(false); setIsDialogOpen(true); }}
                     onLoadDisk={() => { setIsLoadExportOpen(false); fileInputRef?.click(); }}
+                    onLoadJson={handleLoadJsonText}
                     onSaveWorkspace={() => { setIsLoadExportOpen(false); handleSaveRequest('workspace'); }}
                     onSaveDisk={() => { setIsLoadExportOpen(false); handleSaveRequest('disk'); }}
                     onSaveDiskJson={() => { setIsLoadExportOpen(false); handleSaveRequest('disk-json'); }}
@@ -493,6 +510,7 @@ const Menu: Component = () => {
                                         <span class="label">Display States</span>
                                         <div class="menu-item-right">
                                             <Show when={store.showStatePanel}><Check size={14} class="check-icon" /></Show>
+                                            <span class="shortcut">Alt+S</span>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleMinimap(); setIsMenuOpen(false); }}>

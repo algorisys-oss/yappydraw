@@ -82,7 +82,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 // Calculate Center based on Editing Property
                 let centerX = (elX + elW / 2) * scale + panX;
                 let centerY = (elY + elH / 2) * scale + panY;
-                let textAlign = 'center';
+                let textAlign = el.textAlign || 'center';
                 let fontSizeVal = el.fontSize || 28;
                 let textareaWidth = elW * scale;
 
@@ -174,7 +174,8 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                             'justify-content': 'center',
                             'box-sizing': 'border-box',
                             border: '1px dashed #007acc',
-                            background: isTableCell ? 'rgba(255,255,255,0.95)' : 'transparent',
+                            background: isTableCell ? 'rgba(255,255,255,0.95)'
+                                : (el.type?.startsWith('ds') ? 'rgba(255,255,255,0.9)' : 'transparent'),
                         }}
                     >
                         <textarea

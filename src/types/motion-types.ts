@@ -28,6 +28,7 @@ export interface BaseAnimation {
     repeat?: number;  // 0 = no repeat, -1 = infinite
     yoyo?: boolean;   // Reverse on alternate
     restoreAfter?: boolean; // Restore element state after animation finishes
+    startHidden?: boolean;  // Hide element until this animation plays (presentation mode)
 }
 
 // 1. Preset Animation (Extensions of current entrance/exit)

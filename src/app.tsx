@@ -1,13 +1,14 @@
 import { type Component, onMount, onCleanup, Show, lazy, Suspense } from 'solid-js';
 import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel,
-  toggleMinimap, toggleZenMode, toggleCommandPalette, moveSelectedElements,
+  toggleMinimap, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
   addChildNode, addSiblingNode, toggleCollapseSelection, togglePresentationMode,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
-  setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory
+  setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
+  setActiveDsOpsElement
 } from './store/app-store';
 import Canvas from './components/canvas';
 import Toolbar from './components/toolbar';
@@ -30,6 +31,7 @@ const SlideNavigator = lazy(() => import('./components/slide-navigator').then(m 
 const SlideControlToolbar = lazy(() => import('./components/slide-control-toolbar').then(m => ({ default: m.SlideControlToolbar })));
 const PresentationControls = lazy(() => import('./components/presentation-controls').then(m => ({ default: m.PresentationControls })));
 const CanvasToolbar = lazy(() => import('./components/canvas-toolbar').then(m => ({ default: m.CanvasToolbar })));
+const DsOpsPanel = lazy(() => import('./components/ds-ops-panel'));
 import { WelcomeScreen } from './components/welcome-screen';
 import Menu, {
   handleNew, setShowHelp, setShowSettings,
@@ -259,6 +261,9 @@ const App: Component = () => {
           const nextZen = !store.zenMode;
           toggleZenMode(nextZen);
           toggleSlideNavigator(!nextZen);
+        } else if (code === 'KeyS' || key === 's') {
+          e.preventDefault();
+          toggleStatePanel();
         } else if (code === 'KeyI' || key === 'i') {
           e.preventDefault();
           setSelectedTool('ink');
@@ -368,6 +373,22 @@ const App: Component = () => {
       if (!e.altKey && !e.ctrlKey && !e.metaKey) {
         // Presentation Navigation
         if (store.appMode === 'presentation') {
+          // When DS ops panel is active, reserve Space/Enter for input
+          if (store.activeDsOpsElementId) {
+            if (code === 'Escape') {
+              e.preventDefault();
+              setActiveDsOpsElement(null);
+              return;
+            }
+            if (code === 'PageDown' || code === 'ArrowRight') {
+              e.preventDefault();
+              setActiveDsOpsElement(null);
+              advancePresentation();
+              return;
+            }
+            // Let other keys through to the ops panel inputs
+            return;
+          }
           if (code === 'PageDown' || code === 'Enter' || code === 'NumpadEnter' || code === 'Space' || code === 'ArrowRight') {
             e.preventDefault();
             advancePresentation();
@@ -639,6 +660,7 @@ const App: Component = () => {
           </Show>
         </Show>
         <CanvasToolbar />
+        <DsOpsPanel />
 
         {/* Panels hidden in Presentation Mode */}
         <Show when={store.appMode !== 'presentation'}>

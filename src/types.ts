@@ -7,7 +7,8 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
 | 'kubernetes' | 'container' | 'apiGateway' | 'cdn' | 'storageBlob' | 'eventBus' | 'microservice' | 'shield'
 | 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'table'
 | 'puzzlePiece' | 'chainLink' | 'bridge' | 'magnet' | 'scale' | 'seedling' | 'tree' | 'mountain'
-| 'polyline';
+| 'polyline' | 'codeBlock'
+| 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable';
 
 export type ToolType = ElementType | 'lasso';
 
@@ -85,7 +86,11 @@ export type EntranceAnimation = 'none' |
     'tableRowReveal' | 'tableColReveal' | 'tableCellFill' | 'tableHeatmapFadeIn' |
     'tableRowHighlight' | 'tableColPulse' | 'tableGridDraw' | 'tableHeaderSlam' |
     'tableCountUp' | 'tableAccordion' |
-    'tableCellsAssemble' | 'tableLightningSplit';
+    'tableCellsAssemble' | 'tableLightningSplit' |
+    // Code Block animations
+    'codeLineHighlight' |
+    // Data Structure animations
+    'dsItemReveal' | 'dsHighlightSweep' | 'dsPointerWalk';
 
 export type ExitAnimation = 'none' |
     // Back exits
@@ -217,6 +222,27 @@ export interface DrawingElement {
     revealAnimationType?: 'fadeIn' | 'slideUp' | 'scaleUp' | 'pop'; // Type of reveal animation
     restoreAfterReveal?: boolean; // Restore box and reveal element to initial state after animation
     taper?: number; // 0-1 (Scaling of back face for perspectiveBlock)
+
+    // Code block properties
+    codeShowLineNumbers?: boolean; // Show line numbers in gutter (default true)
+    codeStartLineNumber?: number;  // First line number (default 1)
+    codeHighlightLine?: number;    // Currently highlighted line (for animation, -1 = none)
+    codeScrollOffset?: number;     // Vertical scroll offset in px (for animation auto-scroll)
+    // Data Structure visualization properties
+    dsShowIndices?: boolean;       // Show index/position labels
+    dsDirection?: 'horizontal' | 'vertical';  // Layout direction
+    dsItemColor?: string;          // Cell/node fill color
+    dsHighlightIndex?: number;     // Highlighted item index (-1 = none)
+    dsPointerIndex?: number;       // Pointer/cursor position (for animations)
+    dsCapacity?: number;           // Max visible cells / buckets
+    dsAnimProgress?: number;       // Animation progress 0-100
+    dsAnimStyle?: string;          // Active animation type name
+    dsPersistChanges?: boolean;    // Keep CRUD changes after presentation (default false = reset)
+    dsHighlightIndex2?: number;    // Second highlighted item (for sort comparison/swap)
+    dsHighlightColor?: string;     // Color token: 'comparing' | 'swapping' | 'sorted' | 'searching' | 'found' | 'notfound'
+    dsHighlightColor2?: string;    // Color token for second highlight
+    dsSortedBoundary?: number;     // Items with index < this are sorted (green tint, from left)
+    dsSortedBoundaryEnd?: number;  // Items with index >= this are sorted (green tint, from right)
     skewX?: number; // -1 to 1 (X offset of back face)
     skewY?: number; // -1 to 1 (Y offset of back face)
     frontTaper?: number; // 0-1 (Scaling of front face)

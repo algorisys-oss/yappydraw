@@ -5,6 +5,53 @@
     pointer-events: auto;
 }
 
+/* Collapsed icon — tiny button shown when toolbar is minimized */
+.qt-collapsed-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--bg-panel, #ffffff);
+    border: 2px solid var(--primary-color, #3b82f6);
+    border-radius: 50%;
+    color: var(--primary-color, #3b82f6);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.qt-collapsed-icon:hover {
+    background: var(--primary-color, #3b82f6);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
+/* Collapse button inside expanded toolbar */
+.qt-collapse-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 4px;
+    color: var(--primary-color, #3b82f6);
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.qt-collapse-btn:hover {
+    background: var(--primary-color, #3b82f6);
+    color: white;
+    border-color: var(--primary-color, #3b82f6);
+}
+
 /* Main content row */
 .quick-toolbar-content {
     display: flex;

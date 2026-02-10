@@ -909,6 +909,179 @@ Yappy.animateElementKeyframes(elementId, 'opacity', [
                 </table>
             </section>
 
+            {/* Click-to-Advance (Interactive Presentations) */}
+            <section class="doc-section">
+                <h2>Click-to-Advance (Interactive Presentations)</h2>
+                <p>
+                    Build step-by-step interactive presentations where each click reveals the next visual.
+                    Perfect for teaching CS concepts, explaining algorithms, or walking through diagrams.
+                </p>
+
+                <h3>Animation Triggers</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Trigger</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>On Load</strong></td>
+                            <td>Plays automatically when the slide loads or presentation starts</td>
+                        </tr>
+                        <tr>
+                            <td><strong>On Click</strong></td>
+                            <td>Plays when the presenter clicks (or presses Space/Enter/Arrow). Each "On Click" animation creates a new step</td>
+                        </tr>
+                        <tr>
+                            <td><strong>After Previous</strong></td>
+                            <td>Plays automatically after the previous animation finishes. Chains onto the same step</td>
+                        </tr>
+                        <tr>
+                            <td><strong>With Previous</strong></td>
+                            <td>Plays simultaneously with the previous animation. Runs in parallel within the same step</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>How to Build an Interactive Diagram</h3>
+                <ol>
+                    <li><strong>Create your shapes</strong> - Draw the elements of your diagram (works on both slides and infinite canvas)</li>
+                    <li><strong>Add animations</strong> - Select each element, open Animation Panel, and add a preset (e.g., fadeIn, slideInLeft)</li>
+                    <li><strong>Set triggers</strong> - For step-by-step reveals:
+                        <ul>
+                            <li>Set the first animation to <strong>On Click</strong> (Step 1)</li>
+                            <li>Chain follow-up effects with <strong>After Previous</strong> (same step, sequential)</li>
+                            <li>Run parallel effects with <strong>With Previous</strong> (same step, simultaneous)</li>
+                            <li>Set the next reveal to <strong>On Click</strong> (Step 2), and so on</li>
+                        </ul>
+                    </li>
+                    <li><strong>Present</strong> - Enter presentation mode (F5) and click/press Space to advance through each step</li>
+                </ol>
+
+                <h3>Start Hidden</h3>
+                <p>
+                    Each animation has a <strong>"Start hidden in presentation"</strong> checkbox.
+                    When enabled, the element is invisible when the presentation starts and only
+                    appears when its animation step fires. This is essential for step-by-step reveals.
+                </p>
+                <p>
+                    <strong>Smart default:</strong> On Click animations default to start hidden (checked),
+                    while On Load animations default to visible (unchecked). You can override this per animation.
+                </p>
+
+                <h3>Step Numbers in Animation Panel</h3>
+                <p>
+                    Each animation shows a numbered badge indicating which click-step it belongs to.
+                    Blue badges mark <strong>On Click</strong> triggers (step boundaries), while dimmed badges show
+                    chained animations (After Previous / With Previous) that belong to the same step.
+                    Animations with <strong>On Load</strong> trigger show "auto" since they play immediately.
+                </p>
+
+                <h3>Infinite Canvas Presentations</h3>
+                <p>
+                    Click-to-advance works on both slides and infinite canvas mode. On infinite canvas:
+                </p>
+                <ul>
+                    <li><strong>Click</strong> empty space to advance to the next animation step</li>
+                    <li><strong>Drag</strong> to pan around the canvas</li>
+                    <li>The presentation HUD shows <strong>Step X / Y</strong> progress</li>
+                    <li>Use <strong>Space</strong>, <strong>Enter</strong>, or <strong>Arrow Right</strong> to advance</li>
+                    <li>Use <strong>Arrow Left</strong> or <strong>Backspace</strong> to go back</li>
+                </ul>
+
+                <h3>Example: Teaching a Stack Data Structure</h3>
+                <div class="code-block">
+{`Step 1 (On Click):  Show empty stack frame       → fadeIn
+Step 2 (On Click):  Push value "42"              → slideInDown
+  (After Previous): Arrow points to top           → fadeIn
+Step 3 (On Click):  Push value "17"              → slideInDown
+  (With Previous):  Previous arrow moves down     → property animation (y)
+  (After Previous): New arrow points to top       → fadeIn
+Step 4 (On Click):  Pop value "17"               → slideOutUp
+  (After Previous): Arrow updates                 → fadeIn`}
+                </div>
+
+                <div class="tip-box">
+                    <h5>Tip: Presentation Advancement Order</h5>
+                    <p>
+                        When you click during a presentation, YappyDraw checks in this order:
+                        <br />1. <strong>Display States</strong> - If there are state transitions, advance to the next state
+                        <br />2. <strong>Build Animations</strong> - If there are pending On Click animations, play the next one
+                        <br />3. <strong>Next Slide</strong> - If all animations are done, move to the next slide
+                    </p>
+                </div>
+            </section>
+
+            {/* 3D Box Animations */}
+            <section class="doc-section">
+                <h2>3D Box Animations</h2>
+                <p>Special animation presets for 3D shapes (openBox, solidBlock, etc.):</p>
+
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Preset</th>
+                            <th>Applies To</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>boxLidOpen</strong></td>
+                            <td>openBox</td>
+                            <td>Opens the lid with overshoot and settle physics</td>
+                        </tr>
+                        <tr>
+                            <td><strong>boxLidClose</strong></td>
+                            <td>openBox</td>
+                            <td>Smoothly closes the lid</td>
+                        </tr>
+                        <tr>
+                            <td><strong>boxLidOpenClose</strong></td>
+                            <td>openBox</td>
+                            <td>Opens then closes the lid in a cycle. Supports looping for continuous animation</td>
+                        </tr>
+                        <tr>
+                            <td><strong>boxRotateReveal</strong></td>
+                            <td>All 3D shapes</td>
+                            <td>Rotates the view angle to reveal the 3D form</td>
+                        </tr>
+                        <tr>
+                            <td><strong>boxExplode</strong></td>
+                            <td>All 3D shapes</td>
+                            <td>Expands the shape outward with increased depth</td>
+                        </tr>
+                        <tr>
+                            <td><strong>boxCollapse</strong></td>
+                            <td>All 3D shapes</td>
+                            <td>Shrinks the shape inward (reverse of explode)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>depthPulse</strong></td>
+                            <td>All 3D shapes</td>
+                            <td>Pulses the depth for a breathing effect</td>
+                        </tr>
+                        <tr>
+                            <td><strong>isometricRotate</strong></td>
+                            <td>isometricCube</td>
+                            <td>Rotates the isometric cube faces</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>3D View Angle Control</h3>
+                <p>
+                    Use <strong>Alt + Drag</strong> on any 3D shape to interactively adjust its orientation:
+                </p>
+                <ul>
+                    <li><strong>Horizontal drag</strong> - Changes the view angle (rotation direction)</li>
+                    <li><strong>Vertical drag</strong> - Changes the depth (drag down for more depth, up for less)</li>
+                    <li>Hold <strong>Shift</strong> while dragging to snap to 5-degree / 5-unit increments</li>
+                </ul>
+            </section>
+
             {/* Keyboard Shortcuts */}
             <section class="doc-section">
                 <h2>Keyboard Shortcuts</h2>
@@ -924,6 +1097,12 @@ Yappy.animateElementKeyframes(elementId, 'opacity', [
                             <span class="kbd">Esc</span>
                         </div>
                         <span class="shortcut-desc">Stop animation</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <div class="shortcut-keys">
+                            <span class="kbd">Alt</span> + <span class="kbd">S</span>
+                        </div>
+                        <span class="shortcut-desc">Toggle Display States panel</span>
                     </div>
                 </div>
             </section>

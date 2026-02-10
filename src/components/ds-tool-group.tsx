@@ -1,29 +1,22 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, setSelectedTool, setSelectedTechnicalType, setStore, setToolLocked } from "../store/app-store";
+import { store, setSelectedTool, setSelectedDsType, setStore, setToolLocked } from "../store/app-store";
 import type { ElementType } from "../types";
 import {
-    Box, Database, ChevronDown, Binary, HardDrive, Circle, CircleDot, Minus, GripVertical, Layers, Cuboid, Package, PackageOpen, Code
+    LayoutList, Layers, ArrowRightLeft, Link, GitFork, Hash, ChevronDown
 } from "lucide-solid";
 import "./pen-tool-group.css"; // Reuse the same CSS
 
-const technicalTools: { type: ElementType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
-    { type: 'dfdProcess', icon: Binary, label: 'DFD Process' },
-    { type: 'dfdDataStore', icon: HardDrive, label: 'DFD Data Store' },
-    { type: 'isometricCube', icon: Package, label: 'Isometric Cube' },
-    { type: 'solidBlock', icon: Box, label: 'Solid Block' },
-    { type: 'perspectiveBlock', icon: Cuboid, label: 'Perspective Block' },
-    { type: 'openBox', icon: PackageOpen, label: 'Open Box' },
-    { type: 'cylinder', icon: Database, label: 'Cylinder' },
-    { type: 'stateStart', icon: Circle, label: 'Initial State' },
-    { type: 'stateEnd', icon: CircleDot, label: 'Final State' },
-    { type: 'stateSync', icon: Minus, label: 'Sync Bar' },
-    { type: 'activationBar', icon: GripVertical, label: 'Activation Bar' },
-    { type: 'externalEntity', icon: Layers, label: 'External Entity' },
-    { type: 'codeBlock', icon: Code, label: 'Code Block' },
+const dsTools: { type: ElementType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
+    { type: 'dsArray', icon: LayoutList, label: 'Array' },
+    { type: 'dsStack', icon: Layers, label: 'Stack' },
+    { type: 'dsQueue', icon: ArrowRightLeft, label: 'Queue' },
+    { type: 'dsLinkedList', icon: Link, label: 'Linked List' },
+    { type: 'dsBinaryTree', icon: GitFork, label: 'Binary Tree' },
+    { type: 'dsHashTable', icon: Hash, label: 'Hash Table' },
 ];
 
-const TechnicalToolGroup: Component = () => {
+const DsToolGroup: Component = () => {
     const [isOpen, setIsOpen] = createSignal(false);
     let buttonRef: HTMLButtonElement | undefined;
     let dropdownRef: HTMLDivElement | undefined;
@@ -41,8 +34,8 @@ const TechnicalToolGroup: Component = () => {
     });
 
     const getActiveTool = () => {
-        const found = technicalTools.find(t => t.type === store.selectedTechnicalType);
-        return found || technicalTools[0];
+        const found = dsTools.find(t => t.type === store.selectedDsType);
+        return found || dsTools[0];
     };
 
     let clickTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -50,7 +43,7 @@ const TechnicalToolGroup: Component = () => {
     const handleToolClick = (type: ElementType) => {
         if (clickTimeout) clearTimeout(clickTimeout);
         clickTimeout = setTimeout(() => {
-            setSelectedTechnicalType(type as any);
+            setSelectedDsType(type as any);
             setSelectedTool(type);
             setIsOpen(false);
             clickTimeout = null;
@@ -62,7 +55,7 @@ const TechnicalToolGroup: Component = () => {
             clearTimeout(clickTimeout);
             clickTimeout = null;
         }
-        setSelectedTechnicalType(type as any);
+        setSelectedDsType(type as any);
         setSelectedTool(type);
         setToolLocked(true);
         setIsOpen(false);
@@ -76,13 +69,13 @@ const TechnicalToolGroup: Component = () => {
 
     const toggleMenu = () => {
         if (!isActive()) {
-            setSelectedTool(store.selectedTechnicalType);
+            setSelectedTool(store.selectedDsType);
         }
         setIsOpen(!isOpen());
     };
 
     const activeTool = () => getActiveTool();
-    const isActive = () => technicalTools.some(t => t.type === store.selectedTool);
+    const isActive = () => dsTools.some(t => t.type === store.selectedTool);
 
     const getDropdownPosition = () => {
         if (!buttonRef) return {};
@@ -118,7 +111,7 @@ const TechnicalToolGroup: Component = () => {
             <Show when={isOpen()}>
                 <Portal>
                     <div ref={dropdownRef} class="pen-tool-dropdown" style={getDropdownPosition()}>
-                        {technicalTools.map((tool) => (
+                        {dsTools.map((tool) => (
                             <button
                                 class={`dropdown-item ${store.selectedTool === tool.type ? 'active' : ''}`}
                                 on:click={() => handleToolClick(tool.type)}
@@ -135,4 +128,4 @@ const TechnicalToolGroup: Component = () => {
     );
 };
 
-export default TechnicalToolGroup;
+export default DsToolGroup;

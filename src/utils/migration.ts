@@ -118,6 +118,27 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         ...(el.flowColor !== undefined && { flowColor: el.flowColor }),
         ...(el.flowDensity !== undefined && { flowDensity: el.flowDensity }),
         ...(el.isMotionPath !== undefined && { isMotionPath: el.isMotionPath }),
+
+        // Code Block
+        ...(el.codeShowLineNumbers !== undefined && { codeShowLineNumbers: el.codeShowLineNumbers }),
+        ...(el.codeStartLineNumber !== undefined && { codeStartLineNumber: el.codeStartLineNumber }),
+        ...(el.codeHighlightLine !== undefined && { codeHighlightLine: el.codeHighlightLine }),
+        ...(el.codeScrollOffset !== undefined && { codeScrollOffset: el.codeScrollOffset }),
+        // Data Structure
+        ...(el.dsShowIndices !== undefined && { dsShowIndices: el.dsShowIndices }),
+        ...(el.dsDirection !== undefined && { dsDirection: el.dsDirection }),
+        ...(el.dsItemColor !== undefined && { dsItemColor: el.dsItemColor }),
+        ...(el.dsHighlightIndex !== undefined && { dsHighlightIndex: el.dsHighlightIndex }),
+        ...(el.dsPointerIndex !== undefined && { dsPointerIndex: el.dsPointerIndex }),
+        ...(el.dsCapacity !== undefined && { dsCapacity: el.dsCapacity }),
+        ...(el.dsAnimProgress !== undefined && { dsAnimProgress: el.dsAnimProgress }),
+        ...(el.dsAnimStyle !== undefined && { dsAnimStyle: el.dsAnimStyle }),
+        ...(el.dsPersistChanges !== undefined && { dsPersistChanges: el.dsPersistChanges }),
+        ...(el.dsHighlightIndex2 !== undefined && { dsHighlightIndex2: el.dsHighlightIndex2 }),
+        ...(el.dsHighlightColor !== undefined && { dsHighlightColor: el.dsHighlightColor }),
+        ...(el.dsHighlightColor2 !== undefined && { dsHighlightColor2: el.dsHighlightColor2 }),
+        ...(el.dsSortedBoundary !== undefined && { dsSortedBoundary: el.dsSortedBoundary }),
+        ...(el.dsSortedBoundaryEnd !== undefined && { dsSortedBoundaryEnd: el.dsSortedBoundaryEnd }),
     } as DrawingElement;
 };
 

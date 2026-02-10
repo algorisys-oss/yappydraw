@@ -1,6 +1,6 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import {
-    X, Upload, Download, FolderOpen, Save, FileText,
+    X, Upload, Download, FolderOpen, Save, FileText, ClipboardPaste,
     Image as ImageIcon, HelpCircle, AlertTriangle
 } from "lucide-solid";
 import "./load-export-dialog.css";
@@ -12,6 +12,7 @@ interface LoadExportDialogProps {
     onClose: () => void;
     onLoadWorkspace: () => void;
     onLoadDisk: () => void;
+    onLoadJson: (json: string) => void;
     onSaveWorkspace: () => void;
     onSaveDisk: () => void;
     onSaveDiskJson: () => void;
@@ -21,10 +22,16 @@ interface LoadExportDialogProps {
 
 const LoadExportDialog: Component<LoadExportDialogProps> = (props) => {
     const [activeTab, setActiveTab] = createSignal<'load' | 'save'>(props.initialTab);
+    const [showJsonInput, setShowJsonInput] = createSignal(false);
+    const [jsonText, setJsonText] = createSignal('');
+    const [jsonError, setJsonError] = createSignal('');
 
     createEffect(() => {
         if (props.isOpen) {
             setActiveTab(props.initialTab);
+            setShowJsonInput(false);
+            setJsonText('');
+            setJsonError('');
         }
     });
 
@@ -34,13 +41,34 @@ const LoadExportDialog: Component<LoadExportDialogProps> = (props) => {
             const handleKeyDown = (e: KeyboardEvent) => {
                 if (e.key === 'Escape') {
                     e.preventDefault();
-                    props.onClose();
+                    if (showJsonInput()) {
+                        setShowJsonInput(false);
+                        setJsonError('');
+                    } else {
+                        props.onClose();
+                    }
                 }
             };
             window.addEventListener('keydown', handleKeyDown);
             onCleanup(() => window.removeEventListener('keydown', handleKeyDown));
         }
     });
+
+    const handleLoadJson = () => {
+        const text = jsonText().trim();
+        if (!text) {
+            setJsonError('Please paste JSON content');
+            return;
+        }
+        try {
+            JSON.parse(text); // Validate JSON syntax
+        } catch {
+            setJsonError('Invalid JSON — please check the format');
+            return;
+        }
+        setJsonError('');
+        props.onLoadJson(text);
+    };
 
     return (
         <Show when={props.isOpen}>
@@ -78,31 +106,76 @@ const LoadExportDialog: Component<LoadExportDialogProps> = (props) => {
                                 </div>
                             </div>
 
-                            <div class="options-grid">
-                                <div class="option-card" onClick={props.onLoadDisk}>
-                                    <div class="option-icon disk">
-                                        <Upload size={32} />
-                                    </div>
-                                    <div class="option-info">
-                                        <h4>Load from file</h4>
-                                        <p>Open a .yappy or .json sketch file from your device</p>
-                                    </div>
-                                    <button class="action-trigger">Load from file</button>
-                                </div>
-
-                                <Show when={features.enableWorkspacePersistence}>
-                                    <div class="option-card" onClick={props.onLoadWorkspace}>
-                                        <div class="option-icon workspace">
-                                            <FolderOpen size={32} />
+                            <Show when={!showJsonInput()}>
+                                <div class="options-grid load-grid">
+                                    <div class="option-card" onClick={props.onLoadDisk}>
+                                        <div class="option-icon disk">
+                                            <Upload size={32} />
                                         </div>
                                         <div class="option-info">
-                                            <h4>Open from Workspace</h4>
-                                            <p>Load a drawing saved in your local workspace</p>
+                                            <h4>Load from file</h4>
+                                            <p>Open a .yappy or .json sketch file from your device</p>
                                         </div>
-                                        <button class="action-trigger">Open Workspace</button>
+                                        <button class="action-trigger">Load from file</button>
                                     </div>
-                                </Show>
-                            </div>
+
+                                    <div class="option-card" onClick={() => setShowJsonInput(true)}>
+                                        <div class="option-icon json-paste">
+                                            <ClipboardPaste size={32} />
+                                        </div>
+                                        <div class="option-info">
+                                            <h4>Paste JSON</h4>
+                                            <p>Load a sketch by pasting its JSON content directly</p>
+                                        </div>
+                                        <button class="action-trigger">Paste JSON</button>
+                                    </div>
+
+                                    <Show when={features.enableWorkspacePersistence}>
+                                        <div class="option-card" onClick={props.onLoadWorkspace}>
+                                            <div class="option-icon workspace">
+                                                <FolderOpen size={32} />
+                                            </div>
+                                            <div class="option-info">
+                                                <h4>Open from Workspace</h4>
+                                                <p>Load a drawing saved in your local workspace</p>
+                                            </div>
+                                            <button class="action-trigger">Open Workspace</button>
+                                        </div>
+                                    </Show>
+                                </div>
+                            </Show>
+
+                            <Show when={showJsonInput()}>
+                                <div class="json-input-section">
+                                    <div class="json-input-header">
+                                        <h4>Paste JSON</h4>
+                                        <button
+                                            class="json-back-btn"
+                                            onClick={() => { setShowJsonInput(false); setJsonError(''); }}
+                                        >
+                                            Back
+                                        </button>
+                                    </div>
+                                    <textarea
+                                        ref={(el) => setTimeout(() => el.focus(), 0)}
+                                        class="json-textarea"
+                                        placeholder='Paste your YappyDraw JSON here...&#10;&#10;{ "version": 4, "elements": [...], ... }'
+                                        value={jsonText()}
+                                        onInput={(e) => { setJsonText(e.currentTarget.value); setJsonError(''); }}
+                                        onKeyDown={(e) => e.stopPropagation()}
+                                    />
+                                    <Show when={jsonError()}>
+                                        <div class="json-error">{jsonError()}</div>
+                                    </Show>
+                                    <button
+                                        class="action-trigger json-load-btn"
+                                        onClick={handleLoadJson}
+                                        disabled={!jsonText().trim()}
+                                    >
+                                        Load JSON
+                                    </button>
+                                </div>
+                            </Show>
                         </Show>
 
                         <Show when={activeTab() === 'save'}>

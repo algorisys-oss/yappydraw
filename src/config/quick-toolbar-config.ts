@@ -78,6 +78,11 @@ const shapeProperties: QuickPropertyDef[] = [
     },
     { key: 'opacity', controlType: 'mini-slider', label: 'Opacity', min: 0, max: 100, step: 5 },
     {
+        key: 'fontSize', controlType: 'mini-slider', label: 'Font Size',
+        min: 8, max: 72, step: 1,
+        applicableTo: ['codeBlock', 'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable']
+    },
+    {
         key: 'fontFamily', controlType: 'icon-select', label: 'Font',
         options: fontFamilyOptions
     },

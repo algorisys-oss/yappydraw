@@ -1,5 +1,6 @@
 import { type Component, Show, createSignal, onMount, onCleanup, createMemo } from 'solid-js';
 import { store, togglePresentationMode, advancePresentation, retreatPresentation, setSelectedTool } from '../store/app-store';
+import { slideBuildManager } from '../utils/animation/slide-build-manager';
 import { ChevronLeft, ChevronRight, X, MousePointer2, Zap, Highlighter, Brush, Eraser } from 'lucide-solid';
 
 export const PresentationControls: Component = () => {
@@ -25,6 +26,11 @@ export const PresentationControls: Component = () => {
     });
 
     const slideInfo = createMemo(() => {
+        if (store.docType === 'infinite') {
+            const total = slideBuildManager.totalClickSteps;
+            const played = slideBuildManager.playedClickSteps;
+            return total > 0 ? `Step ${played} / ${total}` : 'No steps';
+        }
         return `Slide ${store.activeSlideIndex + 1} of ${store.slides.length}`;
     });
 

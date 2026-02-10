@@ -21,7 +21,8 @@ const SOLID_STROKE_SHAPES = [
     'isometricCube', 'solidBlock', 'perspectiveBlock',
     'umlClass', 'umlInterface', 'umlActor', 'umlComponent', 'umlState',
     'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive',
-    'table'
+    'table', 'codeBlock',
+    'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'
 ];
 
 // Shapes that need negative-dimension normalization on finish
@@ -35,7 +36,9 @@ const NORMALIZABLE_SHAPES = [
     'browserWindow', 'mobilePhone', 'ghostButton', 'inputField',
     'table',
     // 3D shapes need normalization too
-    'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox'
+    'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox',
+    'codeBlock',
+    'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'
 ];
 
 // Tools that stay active after drawing (don't switch to selection)
@@ -148,6 +151,52 @@ export function drawOnDown(
         newElement.tableAltRowColor = '';
         newElement.tableSortCol = -1;
         newElement.tableSortDir = 'asc';
+    }
+
+    // Apply specific defaults for Code Block
+    if (actualType === 'codeBlock') {
+        newElement.backgroundColor = '#1e293b';
+        newElement.fillStyle = 'solid';
+        newElement.strokeColor = '#334155';
+        newElement.textColor = '#e2e8f0';
+        newElement.fontFamily = 'code';
+        newElement.fontSize = 14;
+        newElement.textAlign = 'left';
+        newElement.codeShowLineNumbers = true;
+        newElement.codeStartLineNumber = 1;
+        newElement.borderRadius = 4;
+    }
+
+    // Apply specific defaults for Data Structure shapes
+    const DS_TYPES = ['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'];
+    if (DS_TYPES.includes(actualType)) {
+        newElement.backgroundColor = '#f8fafc';
+        newElement.fillStyle = 'solid';
+        newElement.strokeColor = '#334155';
+        newElement.textColor = '#1e293b';
+        newElement.fontFamily = 'code';
+        newElement.fontSize = 14;
+        newElement.borderRadius = 4;
+        if (actualType === 'dsArray') {
+            newElement.text = '1, 2, 3, 4, 5';
+            newElement.dsShowIndices = true;
+            newElement.dsDirection = 'horizontal';
+        } else if (actualType === 'dsStack') {
+            newElement.text = 'A, B, C';
+            newElement.dsDirection = 'vertical';
+        } else if (actualType === 'dsQueue') {
+            newElement.text = 'first, second, third';
+            newElement.dsDirection = 'horizontal';
+        } else if (actualType === 'dsLinkedList') {
+            newElement.text = 'A, B, C, D';
+            newElement.dsDirection = 'horizontal';
+        } else if (actualType === 'dsBinaryTree') {
+            newElement.text = '50, 30, 70, 20, 40, _, 80';
+        } else if (actualType === 'dsHashTable') {
+            newElement.text = 'name:Alice, age:30, id:42';
+            newElement.dsShowIndices = true;
+            newElement.dsCapacity = 5;
+        }
     }
 
     addElement(newElement);
@@ -274,6 +323,8 @@ export function drawOnUp(
         // Switch back to selection tool after drawing (except for continuous tools or locked tools)
         if (!CONTINUOUS_TOOLS.includes(store.selectedTool) && !store.toolLocked) {
             setSelectedTool('selection');
+            // Auto-select the newly drawn element so property panel shows immediately
+            setStore('selection', [pState.currentId]);
         }
 
         // If drawn from a connector handle, select the new arrow

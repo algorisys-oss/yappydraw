@@ -49,7 +49,9 @@ export interface PointerState {
 
     // 3D shape view angle control (Alt+drag)
     initial3DViewAngle: number | undefined;
+    initial3DDepth: number | undefined;
     initial3DStartX: number | undefined;
+    initial3DStartY: number | undefined;
 }
 
 export function createPointerState(): PointerState {
@@ -93,6 +95,8 @@ export function createPointerState(): PointerState {
         tableCellSelectionDragging: false,
         pendingCellClick: null,
         initial3DViewAngle: undefined,
+        initial3DDepth: undefined,
         initial3DStartX: undefined,
+        initial3DStartY: undefined,
     };
 }

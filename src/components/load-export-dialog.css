@@ -230,6 +230,104 @@
     color: var(--text-secondary);
 }
 
+/* JSON Paste Icon */
+.option-icon.json-paste {
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+    color: #7c3aed;
+}
+
+/* JSON Input Section */
+.json-input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.json-input-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.json-input-header h4 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.json-back-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 4px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+}
+
+.json-back-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.json-textarea {
+    width: 100%;
+    min-height: 180px;
+    max-height: 300px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+}
+
+.json-textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.json-textarea::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.json-error {
+    font-size: 13px;
+    color: #dc2626;
+    padding: 6px 10px;
+    background: rgba(239, 68, 68, 0.08);
+    border-radius: 6px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.json-load-btn {
+    align-self: flex-end;
+    width: auto;
+    padding: 8px 24px;
+}
+
+.json-load-btn:hover:not(:disabled) {
+    background: var(--primary-hover, #2563eb);
+    border-color: var(--primary-hover, #2563eb);
+    color: white;
+    filter: none;
+}
+
+.json-load-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: none;
+    pointer-events: none;
+}
+
 /* Dark Mode Overrides */
 [data-theme='dark'] .alert-box.warning,
 [data-theme='focus'] .alert-box.warning {

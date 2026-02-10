@@ -7,7 +7,7 @@
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, setViewState, addElement, updateElement, setStore, deleteElements, advancePresentation, isLayerVisible, toggleCollapse } from '../../store/app-store';
+import { store, setViewState, addElement, updateElement, setStore, deleteElements, advancePresentation, isLayerVisible, toggleCollapse, setActiveDsOpsElement } from '../../store/app-store';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
 import { generateId } from '../id-generator';
@@ -178,6 +178,12 @@ export function presentationOnDown(
                     triggerOpenBoxReveal(el);
                     return true;
                 }
+                // DS element click — toggle operations panel
+                const DS_TYPES = ['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'];
+                if (DS_TYPES.includes(el.type)) {
+                    setActiveDsOpsElement(store.activeDsOpsElementId === el.id ? null : el.id);
+                    return true;
+                }
                 // Element hit — fall through to selectionOnDown for select/move
                 return false;
             }
@@ -185,6 +191,10 @@ export function presentationOnDown(
         // Clicked empty space — deselect if anything is selected
         if (store.selection.length > 0) {
             setStore('selection', []);
+        }
+        // Dismiss DS operations panel
+        if (store.activeDsOpsElementId) {
+            setActiveDsOpsElement(null);
         }
     }
 
@@ -198,7 +208,7 @@ export function presentationOnDown(
         // Presentation tools (laser, ink, eraser) fall through
         return false;
     } else {
-        // Infinite mode: laser/ink/eraser fall through, nav tools pan
+        // Infinite mode: nav tools pan (drag) or advance (click)
         if (isNavTool && (e.button === 0 || e.button === 1)) {
             pState.isDragging = true;
             pState.startX = e.clientX;
@@ -249,6 +259,7 @@ export function presentationOnMove(
  * Returns true if the event was fully handled.
  */
 export function presentationOnUp(
+    e: PointerEvent,
     pState: PointerState
 ): boolean {
     if (store.appMode !== 'presentation') return false;
@@ -261,6 +272,13 @@ export function presentationOnUp(
     if (store.docType === 'slides' && isNavTool) return true;
 
     if (store.docType !== 'slides' && isNavTool) {
+        // Distinguish click from drag: if pointer barely moved, treat as click-to-advance
+        const dx = e.clientX - pState.startX;
+        const dy = e.clientY - pState.startY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 5 && e.button === 0) {
+            advancePresentation();
+        }
         pState.isDragging = false;
         return true;
     }
