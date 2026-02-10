@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.6] - 2026-02-10
+
+### Fixed
+- Diamond shape fill color in architectural mode with borderRadius > 0 — was inheriting fill from previously rendered shape due to missing `ctx.fillStyle` and Path2D rendering quirk (Bug #22)
+- Multi-select property panel now only shows properties applicable to selected shape types — table-only properties (Row Color, Alt Row Color, Header Text, etc.) no longer appear when no table is selected (Bug #23)
+
 ## [1.8.5] - 2026-02-09
 
 ### Added

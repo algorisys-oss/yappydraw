@@ -492,11 +492,12 @@ const PropertyPanel: Component = () => {
                     return false;
                 }
             } else if (target.type === 'multi') {
-                // For multi-selection, show 'all' properties OR any array properties not exclusive to slides/canvas
+                // For multi-selection, show 'all' properties OR properties where at least one selected element matches
                 if ((p.applicableTo as any) !== 'all') {
                     if (Array.isArray(p.applicableTo)) {
-                        const isExclusiveToSlides = p.applicableTo.every(t => t === 'slide' || t === 'canvas');
-                        if (isExclusiveToSlides) return false;
+                        const selectedTypes = store.selection.map(id => store.elements.find(e => e.id === id)?.type).filter(Boolean);
+                        const hasMatch = selectedTypes.some(t => (p.applicableTo as string[]).includes(t as string));
+                        if (!hasMatch) return false;
                     } else {
                         return false;
                     }

@@ -83,19 +83,18 @@ export class DiamondRenderer extends ShapeRenderer {
         const cy = el.y + h2;
 
         if (fill && fill !== 'transparent' && fill !== 'none') {
+            ctx.fillStyle = fill;
             ctx.beginPath();
             if (r > 0) {
-                const path = this.getRoundedDiamondPath(el.x, el.y, el.width, el.height, r);
-                ctx.fill(new Path2D(path));
+                this.executePath(ctx, el.x, el.y, el.width, el.height, r);
             } else {
                 ctx.moveTo(cx, el.y);
                 ctx.lineTo(el.x + el.width, cy);
                 ctx.lineTo(cx, el.y + el.height);
                 ctx.lineTo(el.x, cy);
                 ctx.closePath();
-                ctx.fillStyle = fill;
-                ctx.fill();
             }
+            ctx.fill();
         }
 
         ctx.beginPath();
