@@ -12,6 +12,7 @@ import { store, addElement, updateElement, setStore, setSelectedTool } from '../
 import { snapPoint } from '../snap-helpers';
 import { generateId } from '../id-generator';
 import { defaultTableData, defaultColWidths, defaultRowHeights } from '../table-utils';
+import { getUIShapeDef } from '../../config/ui-shape-defs';
 
 // Shapes that default to solid stroke
 const SOLID_STROKE_SHAPES = [
@@ -22,7 +23,10 @@ const SOLID_STROKE_SHAPES = [
     'umlClass', 'umlInterface', 'umlActor', 'umlComponent', 'umlState',
     'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive',
     'table', 'codeBlock',
-    'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'
+    'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable',
+    'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch',
+    'card', 'searchBar', 'progressBar', 'avatar', 'navbar',
+    'tabBar', 'badge', 'tooltip', 'slider'
 ];
 
 // Shapes that need negative-dimension normalization on finish
@@ -38,7 +42,10 @@ const NORMALIZABLE_SHAPES = [
     // 3D shapes need normalization too
     'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox',
     'codeBlock',
-    'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'
+    'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable',
+    'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch',
+    'card', 'searchBar', 'progressBar', 'avatar', 'navbar',
+    'tabBar', 'badge', 'tooltip', 'slider'
 ];
 
 // Tools that stay active after drawing (don't switch to selection)
@@ -199,6 +206,13 @@ export function drawOnDown(
         }
     }
 
+    // Apply defaults for UI wireframe shapes from config
+    const uiDef = getUIShapeDef(actualType);
+    if (uiDef) {
+        newElement.fillStyle = 'solid';
+        newElement.strokeStyle = 'solid';
+    }
+
     addElement(newElement);
 
     // Update target's boundElements if we have a start binding
@@ -318,6 +332,18 @@ export function drawOnUp(
             }
         } else if (el.type === 'organicBranch') {
             normalizeOrganicBranch(pState.currentId, el);
+        }
+
+        // Apply minimum dimensions for UI shapes (click-to-create)
+        const uiShapeDef = getUIShapeDef(el.type);
+        if (uiShapeDef) {
+            const currentEl = store.elements.find(e => e.id === pState.currentId);
+            if (currentEl && Math.abs(currentEl.width) < 20 && Math.abs(currentEl.height) < 20) {
+                updateElement(pState.currentId!, {
+                    width: uiShapeDef.defaultWidth,
+                    height: uiShapeDef.defaultHeight,
+                });
+            }
         }
 
         // Switch back to selection tool after drawing (except for continuous tools or locked tools)

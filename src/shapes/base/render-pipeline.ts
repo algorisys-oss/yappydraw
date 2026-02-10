@@ -3,6 +3,7 @@ import type { DrawingElement } from "../../types";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 import { getFontString, measureContainerText } from "../../utils/text-utils";
 import type { RenderContext } from "./types";
+import { getUIShapeDef } from "../../config/ui-shape-defs";
 
 export class RenderPipeline {
     static adjustColor(color: string, _isDarkMode: boolean) {
@@ -306,11 +307,11 @@ export class RenderPipeline {
         } else if (el.type === 'signpost') {
             maxWidth = el.width * 0.8;
             startYOffset = - (el.height * 0.15);
-        } else if (el.type === 'browserWindow') {
-            const headerH = Math.min(el.height * 0.15, 30);
-            startYOffset = headerH / 2;
-        } else if (el.type === 'mobilePhone') {
-            startYOffset = - (el.height * 0.05);
+        } else {
+            const uiDef = getUIShapeDef(el.type);
+            if (uiDef?.textYOffset) {
+                startYOffset = uiDef.textYOffset(el);
+            }
         }
 
         const metrics = measureContainerText(ctx, el, textStr, maxWidth);

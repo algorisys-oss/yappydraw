@@ -241,7 +241,12 @@ export function hitTestElement(
         el.type === 'tree' || el.type === 'mountain' ||
         el.type === 'codeBlock' ||
         el.type === 'dsArray' || el.type === 'dsStack' || el.type === 'dsQueue' ||
-        el.type === 'dsLinkedList' || el.type === 'dsBinaryTree' || el.type === 'dsHashTable'
+        el.type === 'dsLinkedList' || el.type === 'dsBinaryTree' || el.type === 'dsHashTable' ||
+        el.type === 'solidButton' || el.type === 'dropdown' || el.type === 'uiCheckbox' ||
+        el.type === 'radioButton' || el.type === 'toggleSwitch' || el.type === 'card' ||
+        el.type === 'searchBar' || el.type === 'progressBar' || el.type === 'avatar' ||
+        el.type === 'navbar' || el.type === 'tabBar' || el.type === 'badge' ||
+        el.type === 'tooltip' || el.type === 'slider'
     ) {
         // For these shapes, rely on bounding box hit test (passed above)
         // or implement detailed geometry check if needed

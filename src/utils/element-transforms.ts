@@ -108,6 +108,9 @@ export const getTransformOptions = (currentType: ElementType, isPolylineShape = 
         'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda', 'router', 'browser',
         'trapezoid', 'rightTriangle', 'pentagon', 'septagon',
         'browserWindow', 'mobilePhone', 'ghostButton', 'inputField',
+        'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch',
+        'card', 'searchBar', 'progressBar', 'avatar', 'navbar',
+        'tabBar', 'badge', 'tooltip', 'slider',
         'starPerson', 'lightbulb', 'signpost', 'burstBlob', 'scroll', 'wavyDivider', 'doubleBanner',
         'trophy', 'clock', 'gear', 'target', 'rocket', 'flag',
         'key', 'magnifyingGlass', 'book', 'megaphone', 'eye', 'thoughtBubble',
@@ -210,11 +213,25 @@ export const getShapeIcon = (type: ElementType): string => {
         'pentagon': '⬠',
         'septagon': '⬡',
 
-        // Wireframe
+        // Wireframe / UI Components
         'browserWindow': '🖼',
         'mobilePhone': '📱',
         'ghostButton': '▢',
         'inputField': '▭',
+        'solidButton': '▣',
+        'dropdown': '▾',
+        'uiCheckbox': '☑',
+        'radioButton': '◉',
+        'toggleSwitch': '⊝',
+        'searchBar': '🔍',
+        'slider': '⊖',
+        'card': '▭',
+        'navbar': '═',
+        'tabBar': '⊟',
+        'avatar': '👤',
+        'progressBar': '▰',
+        'badge': '⊞',
+        'tooltip': '💬',
 
         // Sketchnote
         'starPerson': '⭐',

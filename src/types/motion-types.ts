@@ -53,6 +53,7 @@ export interface PathAnimation extends BaseAnimation {
     pathId?: string;    // ID of a path element to follow
     pathData?: string;  // SVG path data if custom
     orientToPath?: boolean;
+    smoothPath?: boolean;  // Auto-smooth L segments to cubic Bezier curves
 }
 
 // 4. Rotate Animation (Discrete Rotation)

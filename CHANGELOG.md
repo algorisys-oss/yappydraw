@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-02-10
+
+### Added
+- **14 new UI/UX wireframe shapes** for rapid prototyping:
+  - **Form**: Solid Button, Dropdown, Checkbox, Radio Button, Toggle Switch, Search Bar, Slider
+  - **Container**: Card (rounded rect with header divider)
+  - **Navigation**: Navbar (hamburger + title + action icons), Tab Bar (Material Design text tabs with underline indicator)
+  - **Feedback**: Avatar (person silhouette), Progress Bar, Badge (pill label), Tooltip (rect with pointer)
+- **Data-driven shape architecture** — new `ui-shape-defs.tsx` config array replaces hard-coded renderers; adding a new UI shape now requires only one config entry instead of touching 8+ files
+- **Categorized wireframe toolbar** — dropdown grouped by Container, Form, Navigation, Feedback with category headers
+- **Custom text rendering** for Navbar, Tab Bar, and Input Field — comma-separated labels parsed and rendered with active tab indicators
+- **API methods**: `createUIComponent()`, `createSolidButton()`, `createDropdown()`, `createCard()` for programmatic shape creation
+- Click-to-create support for all UI shapes using config-defined default dimensions
+
+### Changed
+- Unified `UIComponentRenderer` dispatches to config-defined render functions (architectural + sketch modes)
+- Shape registration, toolbar, icon maps, and property configs now auto-derived from config array
+- Wireframe tool group refactored from hard-coded tool list to config-driven categorized layout
+
 ## [1.8.6] - 2026-02-10
 
 ### Fixed

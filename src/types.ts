@@ -8,7 +8,10 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
 | 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'table'
 | 'puzzlePiece' | 'chainLink' | 'bridge' | 'magnet' | 'scale' | 'seedling' | 'tree' | 'mountain'
 | 'polyline' | 'codeBlock'
-| 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable';
+| 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable'
+| 'solidButton' | 'dropdown' | 'uiCheckbox' | 'radioButton' | 'toggleSwitch'
+| 'card' | 'searchBar' | 'progressBar' | 'avatar' | 'navbar'
+| 'tabBar' | 'badge' | 'tooltip' | 'slider';
 
 export type ToolType = ElementType | 'lasso';
 

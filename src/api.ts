@@ -46,6 +46,7 @@ import {
 } from "./utils/object-context-actions";
 import { generateId } from "./utils/id-generator";
 import { forceAutoSave, clearAutoSave } from "./storage/auto-save";
+import { getUIShapeDef } from "./config/ui-shape-defs";
 import {
     defaultColWidths, defaultRowHeights,
     insertTableRow, deleteTableRow, insertTableColumn, deleteTableColumn,
@@ -332,6 +333,25 @@ export const YappyAPI = {
 
     createStickyNote(x: number, y: number, width: number, height: number, text?: string, options?: ElementOptions) {
         return this.createElement('stickyNote', x, y, width, height, { ...options, containerText: text });
+    },
+
+    createUIComponent(type: ElementType, x: number, y: number, width?: number, height?: number, options?: ElementOptions) {
+        const def = getUIShapeDef(type);
+        const w = width ?? def?.defaultWidth ?? 200;
+        const h = height ?? def?.defaultHeight ?? 100;
+        return this.createElement(type, x, y, w, h, options);
+    },
+
+    createSolidButton(x: number, y: number, label?: string, options?: ElementOptions) {
+        return this.createUIComponent('solidButton', x, y, undefined, undefined, { ...options, containerText: label });
+    },
+
+    createDropdown(x: number, y: number, label?: string, options?: ElementOptions) {
+        return this.createUIComponent('dropdown', x, y, undefined, undefined, { ...options, containerText: label });
+    },
+
+    createCard(x: number, y: number, width?: number, height?: number, options?: ElementOptions) {
+        return this.createUIComponent('card', x, y, width, height, options);
     },
 
     // --- Linear Elements ---

@@ -235,6 +235,59 @@ export class PathUtils {
      * - Anchor -> Control -> Anchor = Q
      * - Anchor -> Control -> Control -> Anchor = C
      */
+    /**
+     * Extract only anchor points from an SVG path string, stripping all control points.
+     */
+    static extractAnchors(d: string): { x: number; y: number }[] {
+        return this.svgToPoints(d)
+            .filter(p => p.type === 'anchor')
+            .map(p => ({ x: p.x, y: p.y }));
+    }
+
+    /**
+     * Convert straight-line path to smooth cubic Bezier using Catmull-Rom spline conversion.
+     * For each segment P[i] -> P[i+1], cubic control points are:
+     *   CP1 = P[i]   + (P[i+1] - P[i-1]) / 6
+     *   CP2 = P[i+1] - (P[i+2] - P[i])   / 6
+     * Boundary: first/last points duplicated as virtual neighbors.
+     */
+    static smoothPathData(d: string): string {
+        const anchors = this.extractAnchors(d);
+        if (anchors.length < 2) return d;
+
+        let result = `M ${Math.round(anchors[0].x)} ${Math.round(anchors[0].y)}`;
+
+        for (let i = 0; i < anchors.length - 1; i++) {
+            const p0 = anchors[Math.max(0, i - 1)];
+            const p1 = anchors[i];
+            const p2 = anchors[i + 1];
+            const p3 = anchors[Math.min(anchors.length - 1, i + 2)];
+
+            const cp1x = p1.x + (p2.x - p0.x) / 6;
+            const cp1y = p1.y + (p2.y - p0.y) / 6;
+            const cp2x = p2.x - (p3.x - p1.x) / 6;
+            const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+            result += ` C ${Math.round(cp1x)} ${Math.round(cp1y)} ${Math.round(cp2x)} ${Math.round(cp2y)} ${Math.round(p2.x)} ${Math.round(p2.y)}`;
+        }
+
+        return result;
+    }
+
+    /**
+     * Strip all curves from a path, converting to straight line segments between anchors.
+     */
+    static unsmoothPathData(d: string): string {
+        const anchors = this.extractAnchors(d);
+        if (anchors.length < 2) return d;
+
+        let result = `M ${Math.round(anchors[0].x)} ${Math.round(anchors[0].y)}`;
+        for (let i = 1; i < anchors.length; i++) {
+            result += ` L ${Math.round(anchors[i].x)} ${Math.round(anchors[i].y)}`;
+        }
+        return result;
+    }
+
     static pointsToSvg(points: { x: number; y: number; type: string }[]): string {
         if (points.length === 0) return '';
 

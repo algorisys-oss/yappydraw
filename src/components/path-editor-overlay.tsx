@@ -29,6 +29,13 @@ const PathEditorOverlay: Component<{
         return PathUtils.svgToPoints((anim as any).pathData);
     });
 
+    const isSmooth = createMemo(() => {
+        const el = element();
+        if (!el || !props.animationId) return false;
+        const anim = el.animations?.find(a => a.id === props.animationId);
+        return (anim as any)?.smoothPath || false;
+    });
+
     // Memoize the transform string to avoid messy JSX
     const transformString = createMemo(() => {
         const el = element();
@@ -77,6 +84,8 @@ const PathEditorOverlay: Component<{
                         const screenX = worldX * props.scale + props.panX;
                         const screenY = worldY * props.scale + props.panY;
 
+                        const isControlInSmooth = isSmooth() && point.type !== 'anchor';
+
                         return (
                             <div
                                 class="path-control-point"
@@ -92,11 +101,15 @@ const PathEditorOverlay: Component<{
                                     'border-radius': '50%',
                                     // Handles must be interactive
                                     'pointer-events': 'all',
-                                    cursor: 'move',
-                                    'z-index': 1000
+                                    cursor: isControlInSmooth ? 'default' : 'move',
+                                    'z-index': 1000,
+                                    opacity: isControlInSmooth ? 0.4 : 1
                                 }}
-                                title={`Point ${i()}: ${point.type}`}
+                                title={`Point ${i()}: ${point.type}${isControlInSmooth ? ' (auto-computed)' : ''}`}
                                 onPointerDown={(e) => {
+                                    // In smooth mode, control points are auto-computed — skip drag
+                                    if (isSmooth() && point.type !== 'anchor') return;
+
                                     e.stopPropagation(); // Stop canvas pan
                                     e.currentTarget.setPointerCapture(e.pointerId);
 
@@ -108,17 +121,36 @@ const PathEditorOverlay: Component<{
                                         const dx = (ev.clientX - dragStartX) / props.scale;
                                         const dy = (ev.clientY - dragStartY) / props.scale;
 
-                                        // Update Point in Store
-                                        const currentPoints = [...points()];
-                                        currentPoints[i()] = {
-                                            ...currentPoints[i()],
-                                            x: initialPoint.x + dx,
-                                            y: initialPoint.y + dy
-                                        };
-
-                                        // Sync back to SVG
-                                        const newD = PathUtils.pointsToSvg(currentPoints);
-                                        updateAnimation(props.elementId!, props.animationId!, { pathData: newD } as any);
+                                        if (isSmooth()) {
+                                            // Work with anchors only, then re-smooth
+                                            const anim = element()?.animations?.find(a => a.id === props.animationId);
+                                            const anchors = PathUtils.extractAnchors((anim as any)?.pathData || '');
+                                            // Find which anchor this point maps to
+                                            const anchorIndex = points().slice(0, i() + 1).filter(p => p.type === 'anchor').length - 1;
+                                            if (anchorIndex >= 0 && anchorIndex < anchors.length) {
+                                                anchors[anchorIndex] = {
+                                                    x: initialPoint.x + dx,
+                                                    y: initialPoint.y + dy
+                                                };
+                                            }
+                                            // Rebuild straight then smooth
+                                            let newD = `M ${Math.round(anchors[0].x)} ${Math.round(anchors[0].y)}`;
+                                            for (let j = 1; j < anchors.length; j++) {
+                                                newD += ` L ${Math.round(anchors[j].x)} ${Math.round(anchors[j].y)}`;
+                                            }
+                                            newD = PathUtils.smoothPathData(newD);
+                                            updateAnimation(props.elementId!, props.animationId!, { pathData: newD } as any);
+                                        } else {
+                                            // Original behavior
+                                            const currentPoints = [...points()];
+                                            currentPoints[i()] = {
+                                                ...currentPoints[i()],
+                                                x: initialPoint.x + dx,
+                                                y: initialPoint.y + dy
+                                            };
+                                            const newD = PathUtils.pointsToSvg(currentPoints);
+                                            updateAnimation(props.elementId!, props.animationId!, { pathData: newD } as any);
+                                        }
                                     };
 
                                     const onUp = (ev: PointerEvent) => {
@@ -191,36 +223,79 @@ const PathEditorOverlay: Component<{
                             newPointY = clickY - cy;
                         }
 
-                        const currentPoints = [...points()];
-                        currentPoints.push({ x: newPointX, y: newPointY, type: 'anchor' });
+                        // Extract anchors and append the new point
+                        const anchors = PathUtils.extractAnchors((anim as any)?.pathData || '');
+                        anchors.push({ x: newPointX, y: newPointY });
 
-                        const newD = PathUtils.pointsToSvg(currentPoints);
+                        // Rebuild path — smooth or straight
+                        let newD = `M ${Math.round(anchors[0].x)} ${Math.round(anchors[0].y)}`;
+                        for (let j = 1; j < anchors.length; j++) {
+                            newD += ` L ${Math.round(anchors[j].x)} ${Math.round(anchors[j].y)}`;
+                        }
+                        if ((anim as any)?.smoothPath) {
+                            newD = PathUtils.smoothPathData(newD);
+                        }
+
                         updateAnimation(props.elementId!, props.animationId!, { pathData: newD } as any);
                     }}
                 />
 
-                {/* 4. Done Button */}
-                <button
-                    onClick={() => setPathEditing(false)}
-                    style={{
-                        position: 'absolute',
-                        top: '20px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        'z-index': 2000,
-                        'background': '#3b82f6',
-                        'color': 'white',
-                        'padding': '8px 16px',
-                        'border-radius': '20px',
-                        'border': 'none',
-                        'font-weight': 600,
-                        'box-shadow': '0 4px 6px rgba(0,0,0,0.1)',
-                        'cursor': 'pointer',
-                        'pointer-events': 'all'
-                    }}
-                >
-                    Done Editing Path
-                </button>
+                {/* 4. Top Bar Buttons */}
+                <div style={{
+                    position: 'absolute',
+                    top: '20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    'z-index': 2000,
+                    display: 'flex',
+                    gap: '8px',
+                    'pointer-events': 'all'
+                }}>
+                    <button
+                        onClick={() => setPathEditing(false)}
+                        style={{
+                            'background': '#3b82f6',
+                            'color': 'white',
+                            'padding': '8px 16px',
+                            'border-radius': '20px',
+                            'border': 'none',
+                            'font-weight': 600,
+                            'box-shadow': '0 4px 6px rgba(0,0,0,0.1)',
+                            'cursor': 'pointer',
+                        }}
+                    >
+                        Done Editing Path
+                    </button>
+                    <button
+                        onClick={() => {
+                            const el = element()!;
+                            const anim = el.animations?.find(a => a.id === props.animationId) as any;
+                            if (!anim) return;
+                            const newSmooth = !anim.smoothPath;
+                            const currentPath = anim.pathData || '';
+                            const newPath = newSmooth
+                                ? PathUtils.smoothPathData(currentPath)
+                                : PathUtils.unsmoothPathData(currentPath);
+                            updateAnimation(props.elementId!, props.animationId!, {
+                                smoothPath: newSmooth,
+                                pathData: newPath
+                            } as any);
+                            pushToHistory();
+                        }}
+                        style={{
+                            'background': isSmooth() ? '#10b981' : '#6b7280',
+                            'color': 'white',
+                            'padding': '8px 16px',
+                            'border-radius': '20px',
+                            'border': 'none',
+                            'font-weight': 600,
+                            'box-shadow': '0 4px 6px rgba(0,0,0,0.1)',
+                            'cursor': 'pointer',
+                        }}
+                    >
+                        {isSmooth() ? 'Smooth: ON' : 'Smooth: OFF'}
+                    </button>
+                </div>
             </div>
         </Show>
     );

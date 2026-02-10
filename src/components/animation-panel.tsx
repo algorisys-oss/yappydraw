@@ -1,6 +1,7 @@
 import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
 import { store, updateElement, updateAnimation, reorderAnimation, setPathEditing } from '../store/app-store';
 import { sequenceAnimator } from '../utils/animation/sequence-animator';
+import { PathUtils } from '../utils/math/path-utils';
 import { animateElementsFrom, calculateStaggerDelays, type StaggerConfig } from '../utils/animation';
 import { Play, Square, Plus, Trash2, ChevronDown, ChevronRight, ChevronUp, Edit3, Users } from 'lucide-solid';
 import type { ElementAnimation, PresetAnimation, RotateAnimation, AutoSpinAnimation, KeyframeAnimation, AnimationKeyframe } from '../types/motion-types';
@@ -1249,6 +1250,24 @@ const AnimationItem: Component<{
                             />
                             <label for={`orient-${props.animation.id}`} style={{ 'font-size': '11px', 'opacity': 0.7, 'cursor': 'pointer' }}>
                                 Orient to Path
+                            </label>
+                        </div>
+                        <div style={{ 'display': 'flex', 'align-items': 'center', 'gap': '8px' }}>
+                            <input
+                                type="checkbox"
+                                id={`smooth-${props.animation.id}`}
+                                checked={(props.animation as any).smoothPath || false}
+                                onChange={(e) => {
+                                    const checked = e.currentTarget.checked;
+                                    const currentPath = (props.animation as any).pathData || '';
+                                    const newPath = checked
+                                        ? PathUtils.smoothPathData(currentPath)
+                                        : PathUtils.unsmoothPathData(currentPath);
+                                    props.onUpdate({ smoothPath: checked, pathData: newPath } as any);
+                                }}
+                            />
+                            <label for={`smooth-${props.animation.id}`} style={{ 'font-size': '11px', 'opacity': 0.7, 'cursor': 'pointer' }}>
+                                Smooth Path
                             </label>
                         </div>
                         <div style={{ 'display': 'flex', 'align-items': 'center', 'gap': '8px' }}>

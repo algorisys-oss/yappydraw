@@ -1,6 +1,6 @@
 import { batch } from "solid-js";
 import { createStore } from "solid-js/store";
-import type { DrawingElement, ViewState, ToolType, Layer, GridSettings, AppMode } from "../types";
+import type { DrawingElement, ViewState, ToolType, Layer, GridSettings, AppMode, ElementType } from "../types";
 import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } from '../types/slide-types';
 import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-types';
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
@@ -58,7 +58,7 @@ interface AppState {
     selectedCloudInfraType: 'kubernetes' | 'container' | 'apiGateway' | 'cdn' | 'storageBlob' | 'eventBus' | 'microservice' | 'shield';
     selectedDataMetricsType: 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'table';
     selectedConnectionRelType: 'puzzlePiece' | 'chainLink' | 'bridge' | 'magnet' | 'scale' | 'seedling' | 'tree' | 'mountain';
-    selectedWireframeType: 'browserWindow' | 'mobilePhone' | 'ghostButton' | 'inputField';
+    selectedWireframeType: ElementType;
     layerGroupingModeEnabled: boolean;
     maxLayers: number;
     canvasTexture: 'none' | 'dots' | 'grid' | 'graph' | 'paper';
@@ -1944,7 +1944,7 @@ export const setSelectedConnectionRelType = (connectionRelType: 'puzzlePiece' | 
     setStore('selectedConnectionRelType', connectionRelType);
 };
 
-export const setSelectedWireframeType = (wireframeType: 'browserWindow' | 'mobilePhone' | 'ghostButton' | 'inputField') => {
+export const setSelectedWireframeType = (wireframeType: ElementType) => {
     setStore('selectedWireframeType', wireframeType);
 };
 

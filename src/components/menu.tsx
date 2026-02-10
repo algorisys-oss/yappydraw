@@ -571,7 +571,7 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-separator"></div>
                                     <div style={{ padding: '4px 12px', "font-size": '12px', color: 'var(--text-secondary)' }}>
-                                        Found a bug? <a href="https://github.com/algorisys-oss/yappydraw/issues" target="_blank" rel="noopener noreferrer">Report</a>
+                                        Found a bug? <a href="https://github.com/algorisys-oss/" target="_blank" rel="noopener noreferrer">Report</a>
                                     </div>
                                 </div>
                             </Show>

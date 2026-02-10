@@ -1,50 +1,30 @@
-import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
+import { type Component, createSignal, Show, createEffect, onCleanup, For } from "solid-js";
 import { Portal } from "solid-js/web";
 import { store, setSelectedTool, setSelectedWireframeType, setStore, setToolLocked } from "../store/app-store";
 import type { ElementType } from "../types";
+import { UI_SHAPE_DEFS, type UIShapeCategory } from "../config/ui-shape-defs";
 import {
     ChevronDown
 } from "lucide-solid";
 import "./pen-tool-group.css"; // Reuse the same CSS
 
-// Custom Icons for specialized wireframe shapes
-const BrowserWindowIcon: Component<{ size?: number; color?: string }> = (props) => (
-    <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="3" width="20" height="18" rx="2" ry="2" />
-        <line x1="2" y1="8" x2="22" y2="8" />
-        <circle cx="5" cy="5.5" r="0.5" fill="currentColor" />
-        <circle cx="7" cy="5.5" r="0.5" fill="currentColor" />
-        <circle cx="9" cy="5.5" r="0.5" fill="currentColor" />
-    </svg>
-);
+// Derive tool list from config
+const allUITypes = UI_SHAPE_DEFS.map(d => d.type as ElementType);
 
-const MobilePhoneIcon: Component<{ size?: number; color?: string }> = (props) => (
-    <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-        <path d="M10 4h4" />
-        <path d="M11 19h2" />
-    </svg>
-);
-
-const GhostButtonIcon: Component<{ size?: number; color?: string }> = (props) => (
-    <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2">
-        <rect x="3" y="6" width="18" height="12" rx="2" ry="2" />
-    </svg>
-);
-
-const InputFieldIcon: Component<{ size?: number; color?: string }> = (props) => (
-    <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="7" width="18" height="10" rx="1" />
-        <line x1="7" y1="10" x2="7" y2="14" />
-    </svg>
-);
-
-const wireframeTools: { type: ElementType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
-    { type: 'browserWindow', icon: BrowserWindowIcon, label: 'Browser Window' },
-    { type: 'mobilePhone', icon: MobilePhoneIcon, label: 'Mobile Phone' },
-    { type: 'ghostButton', icon: GhostButtonIcon, label: 'Ghost Button' },
-    { type: 'inputField', icon: InputFieldIcon, label: 'Input Field' },
-];
+const categoryOrder: UIShapeCategory[] = ['container', 'form', 'navigation', 'feedback'];
+const categoryLabels: Record<UIShapeCategory, string> = {
+    container: 'Containers',
+    form: 'Form',
+    navigation: 'Navigation',
+    feedback: 'Feedback',
+};
+const groupedTools = categoryOrder
+    .map(cat => ({
+        category: cat,
+        label: categoryLabels[cat],
+        tools: UI_SHAPE_DEFS.filter(d => d.category === cat),
+    }))
+    .filter(g => g.tools.length > 0);
 
 const WireframeToolGroup: Component = () => {
     const [isOpen, setIsOpen] = createSignal(false);
@@ -64,8 +44,8 @@ const WireframeToolGroup: Component = () => {
     });
 
     const getActiveTool = () => {
-        const found = wireframeTools.find(t => t.type === store.selectedWireframeType);
-        return found || wireframeTools[0];
+        const found = UI_SHAPE_DEFS.find(t => t.type === store.selectedWireframeType);
+        return found || UI_SHAPE_DEFS[0];
     };
 
     let clickTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -73,7 +53,7 @@ const WireframeToolGroup: Component = () => {
     const handleToolClick = (type: ElementType) => {
         if (clickTimeout) clearTimeout(clickTimeout);
         clickTimeout = setTimeout(() => {
-            setSelectedWireframeType(type as any);
+            setSelectedWireframeType(type);
             setSelectedTool(type);
             setIsOpen(false);
             clickTimeout = null;
@@ -85,7 +65,7 @@ const WireframeToolGroup: Component = () => {
             clearTimeout(clickTimeout);
             clickTimeout = null;
         }
-        setSelectedWireframeType(type as any);
+        setSelectedWireframeType(type);
         setSelectedTool(type);
         setToolLocked(true);
         setIsOpen(false);
@@ -105,7 +85,7 @@ const WireframeToolGroup: Component = () => {
     };
 
     const activeTool = () => getActiveTool();
-    const isActive = () => wireframeTools.some(t => t.type === store.selectedTool);
+    const isActive = () => allUITypes.includes(store.selectedTool as any);
 
     const getDropdownPosition = () => {
         if (!buttonRef) return {};
@@ -128,7 +108,7 @@ const WireframeToolGroup: Component = () => {
             >
                 <div class="tool-icon-wrapper">
                     {(() => {
-                        const Icon = activeTool().icon;
+                        const Icon = activeTool().toolbarIcon;
                         return <Icon size={20} />;
                     })()}
                     <ChevronDown
@@ -140,17 +120,52 @@ const WireframeToolGroup: Component = () => {
 
             <Show when={isOpen()}>
                 <Portal>
-                    <div ref={dropdownRef} class="pen-tool-dropdown" style={getDropdownPosition()}>
-                        {wireframeTools.map((tool) => (
-                            <button
-                                class={`dropdown-item ${store.selectedTool === tool.type ? 'active' : ''}`}
-                                on:click={() => handleToolClick(tool.type)}
-                                on:dblclick={() => handleToolDoubleClick(tool.type)}
-                                title={`${tool.label} (double-click to lock)`}
-                            >
-                                <tool.icon size={18} />
-                            </button>
-                        ))}
+                    <div ref={dropdownRef} class="pen-tool-dropdown" style={{
+                        ...getDropdownPosition(),
+                        display: 'flex',
+                        'flex-direction': 'column',
+                        'grid-template-columns': 'none',
+                        'max-height': '400px',
+                        'overflow-y': 'auto',
+                        width: '280px',
+                        gap: '2px',
+                    }}>
+                        <For each={groupedTools}>
+                            {(group) => (
+                                <>
+                                    <div style={{
+                                        'font-size': '9px',
+                                        'text-transform': 'uppercase',
+                                        'letter-spacing': '0.05em',
+                                        'opacity': 0.5,
+                                        'padding': '6px 8px 2px',
+                                        'pointer-events': 'none',
+                                    }}>
+                                        {group.label}
+                                    </div>
+                                    <div style={{
+                                        display: 'grid',
+                                        'grid-template-columns': 'repeat(6, 1fr)',
+                                        gap: '2px',
+                                        padding: '0 4px 4px',
+                                    }}>
+                                        <For each={group.tools}>
+                                            {(tool) => (
+                                                <button
+                                                    class={`dropdown-item ${store.selectedTool === tool.type ? 'active' : ''}`}
+                                                    on:click={() => handleToolClick(tool.type as ElementType)}
+                                                    on:dblclick={() => handleToolDoubleClick(tool.type as ElementType)}
+                                                    title={`${tool.label} (double-click to lock)`}
+                                                    style={{ width: '100%' }}
+                                                >
+                                                    <tool.toolbarIcon size={18} />
+                                                </button>
+                                            )}
+                                        </For>
+                                    </div>
+                                </>
+                            )}
+                        </For>
                     </div>
                 </Portal>
             </Show>

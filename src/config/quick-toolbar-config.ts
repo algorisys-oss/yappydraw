@@ -65,7 +65,8 @@ const shapeProperties: QuickPropertyDef[] = [
         key: 'borderRadius', controlType: 'mini-slider', label: 'Roundness',
         min: 0, max: 50, step: 1,
         applicableTo: ['rectangle', 'diamond', 'capsule', 'speechBubble', 'browserWindow',
-            'mobilePhone', 'ghostButton', 'inputField', 'dfdProcess', 'isometricCube',
+            'mobilePhone', 'ghostButton', 'inputField', 'solidButton', 'dropdown',
+            'card', 'searchBar', 'badge', 'tooltip', 'dfdProcess', 'isometricCube',
             'cylinder', 'stateSync', 'activationBar', 'externalEntity']
     },
     {

@@ -9,9 +9,9 @@ import { PolygonRenderer } from "./renderers/polygon-renderer";
 import { FlowchartRenderer } from "./renderers/flowchart-renderer";
 import { SketchnoteRenderer } from "./renderers/sketchnote-renderer";
 import { InfraRenderer } from "./renderers/infra-renderer";
-import { ContainerRenderer } from "./renderers/container-renderer";
 import { PathRenderer } from "./renderers/path-renderer";
-import { WireframeRenderer } from "./renderers/wireframe-renderer";
+import { UIComponentRenderer } from "./renderers/ui-component-renderer";
+import { UI_SHAPE_DEFS } from "../config/ui-shape-defs";
 import { ConnectorRenderer } from "./renderers/connector-renderer";
 import { FreehandRenderer } from "./renderers/freehand-renderer";
 import { SpecialtyShapeRenderer } from "./renderers/specialty-shape-renderer";
@@ -55,17 +55,13 @@ export function registerShapes() {
     const infraTypes = ['server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda', 'router'] as const;
     infraTypes.forEach(type => shapeRegistry.register(type, infraRenderer));
 
-    const containerRenderer = new ContainerRenderer();
-    const containerTypes = ['browserWindow', 'mobilePhone'] as const;
-    containerTypes.forEach(type => shapeRegistry.register(type, containerRenderer));
-
     const pathRenderer = new PathRenderer();
     const pathTypes = ['organicBranch'] as const;
     pathTypes.forEach(type => shapeRegistry.register(type, pathRenderer));
 
-    const wireframeRenderer = new WireframeRenderer();
-    const wireframeTypes = ['browser', 'ghostButton', 'inputField'] as const;
-    wireframeTypes.forEach(type => shapeRegistry.register(type, wireframeRenderer));
+    // UI/UX wireframe shapes — data-driven from config
+    const uiRenderer = new UIComponentRenderer();
+    UI_SHAPE_DEFS.forEach(def => shapeRegistry.register(def.type as any, uiRenderer));
 
     const connectorRenderer = new ConnectorRenderer();
     shapeRegistry.register('line', connectorRenderer);
