@@ -185,6 +185,16 @@ interface ElementOptions {
     tableHeaderTextColor?: string;
     tableRowColor?: string;
     tableAltRowColor?: string;
+
+    // BPMN specifics
+    bpmnEventType?: 'none' | 'message' | 'timer' | 'error' | 'signal' | 'conditional' | 'escalation' | 'compensation' | 'link' | 'terminate' | 'cancel';
+    bpmnTaskType?: 'none' | 'user' | 'service' | 'script' | 'manual' | 'send' | 'receive' | 'businessRule';
+    bpmnLoopType?: 'none' | 'standard' | 'parallel' | 'sequential' | 'compensation';
+    bpmnIconScale?: number;
+    bpmnIconColor?: string;
+    bpmnIconFilled?: boolean;
+    bpmnNonInterrupting?: boolean;
+    bpmnLaneCount?: number;
 }
 
 export const YappyAPI = {
@@ -340,6 +350,39 @@ export const YappyAPI = {
         const w = width ?? def?.defaultWidth ?? 200;
         const h = height ?? def?.defaultHeight ?? 100;
         return this.createElement(type, x, y, w, h, options);
+    },
+
+    /**
+     * Create a BPMN shape
+     * @param type - BPMN shape type (e.g., 'bpmnStartEvent', 'bpmnTask', 'bpmnPool')
+     * @param x - X position
+     * @param y - Y position
+     * @param width - Width (defaults vary by shape type)
+     * @param height - Height (defaults vary by shape type)
+     * @param options - Optional styling and BPMN-specific properties (bpmnEventType, bpmnTaskType, bpmnLoopType)
+     */
+    createBpmnShape(type: 'bpmnStartEvent' | 'bpmnEndEvent' | 'bpmnIntermediateEvent' | 'bpmnExclusiveGateway' | 'bpmnParallelGateway' | 'bpmnInclusiveGateway' | 'bpmnEventGateway' | 'bpmnTask' | 'bpmnSubProcess' | 'bpmnCallActivity' | 'bpmnDataObject' | 'bpmnAnnotation' | 'bpmnPool' | 'bpmnDataStore' | 'bpmnGroup', x: number, y: number, width?: number, height?: number, options?: ElementOptions): string | null {
+        const bpmnDefaults: Record<string, { w: number; h: number }> = {
+            bpmnStartEvent: { w: 50, h: 50 },
+            bpmnEndEvent: { w: 50, h: 50 },
+            bpmnIntermediateEvent: { w: 50, h: 50 },
+            bpmnExclusiveGateway: { w: 60, h: 60 },
+            bpmnParallelGateway: { w: 60, h: 60 },
+            bpmnInclusiveGateway: { w: 60, h: 60 },
+            bpmnEventGateway: { w: 60, h: 60 },
+            bpmnTask: { w: 120, h: 80 },
+            bpmnCallActivity: { w: 120, h: 80 },
+            bpmnSubProcess: { w: 140, h: 90 },
+            bpmnDataObject: { w: 60, h: 80 },
+            bpmnAnnotation: { w: 120, h: 60 },
+            bpmnPool: { w: 500, h: 200 },
+            bpmnDataStore: { w: 70, h: 70 },
+            bpmnGroup: { w: 200, h: 150 },
+        };
+        const defaults = bpmnDefaults[type] ?? { w: 100, h: 80 };
+        const w = width ?? defaults.w;
+        const h = height ?? defaults.h;
+        return this.createElement(type as ElementType, x, y, w, h, options);
     },
 
     createSolidButton(x: number, y: number, label?: string, options?: ElementOptions) {

@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-02-11
+
+### Added
+- **BPMN 2.0 shape library** with 15 dedicated shapes for business process modeling:
+  - **Events**: Start Event, End Event, Intermediate Event (thin/thick/double circle)
+  - **Gateways**: Exclusive (XOR), Parallel (AND), Inclusive (OR), Event-based (4 diamond variants)
+  - **Activities**: Task, Sub-Process (with [+] marker), Call Activity (bold border)
+  - **Artifacts**: Data Object (folded page), Data Store (cylinder), Text Annotation (bracket), Group (dashed rect)
+  - **Swimlanes**: Pool / Lane with up to 6 horizontal lane dividers
+- **11 event type icons** — message (envelope), timer (clock), error (zigzag), signal (triangle), conditional (page), escalation (chevron), compensation (rewind), link (pentagon), terminate (filled circle), cancel (X mark)
+- **8 task type markers** — user, service, script, manual, send, receive, business rule (table/grid)
+- **5 loop/multi-instance markers** — standard loop, parallel multi-instance, sequential multi-instance, compensation
+- **Non-interrupting events** — dashed border toggle for Start and Intermediate events (boundary events)
+- **BPMN icon customization** — Icon Scale (0.5–2.0), Icon Color override, Fill Icon toggle (catching vs throwing)
+- **BPMN toolbar dropdown** with 15 custom SVG icons grouped by category
+- **`data/bpmn.json`** — comprehensive BPMN 2.0 shape reference file for review
+- **BPMN help documentation** covering all shapes, markers, patterns, and best practices
+- Welcome screen BPMN 2.0 category pill
+- `createBpmnShape()` API method with smart defaults per shape type
+
+### Fixed
+- **RoughJS cache invalidation for BPMN** — `computeElementHash` now includes all BPMN properties, preventing stale cached renders when event type, task type, or other BPMN properties change
+- **Shape geometry for Event Gateway and Data Store** — fixed undefined `cx`/`cy` variables (should be `0` in local coordinates)
+- **Property type mismatch** — `bpmnIconFilled` and `bpmnNonInterrupting` now use `'toggle'` type instead of invalid `'boolean'`
+- **Draw handler defaults** — BPMN shapes now correctly default to solid strokes and normalize negative dimensions
+
 ## [1.9.0] - 2026-02-10
 
 ### Added

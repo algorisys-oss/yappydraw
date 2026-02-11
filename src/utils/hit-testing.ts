@@ -246,7 +246,12 @@ export function hitTestElement(
         el.type === 'radioButton' || el.type === 'toggleSwitch' || el.type === 'card' ||
         el.type === 'searchBar' || el.type === 'progressBar' || el.type === 'avatar' ||
         el.type === 'navbar' || el.type === 'tabBar' || el.type === 'badge' ||
-        el.type === 'tooltip' || el.type === 'slider'
+        el.type === 'tooltip' || el.type === 'slider' ||
+        el.type === 'bpmnStartEvent' || el.type === 'bpmnEndEvent' || el.type === 'bpmnIntermediateEvent' ||
+        el.type === 'bpmnExclusiveGateway' || el.type === 'bpmnParallelGateway' || el.type === 'bpmnInclusiveGateway' ||
+        el.type === 'bpmnTask' || el.type === 'bpmnSubProcess' || el.type === 'bpmnCallActivity' ||
+        el.type === 'bpmnDataObject' || el.type === 'bpmnAnnotation' || el.type === 'bpmnPool' ||
+        el.type === 'bpmnEventGateway' || el.type === 'bpmnDataStore' || el.type === 'bpmnGroup'
     ) {
         // For these shapes, rely on bounding box hit test (passed above)
         // or implement detailed geometry check if needed

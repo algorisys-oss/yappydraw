@@ -136,6 +136,16 @@ export function computeElementHash(el: DrawingElement): string {
     // Draw progress (changes during draw-in animation)
     if (el.drawProgress !== undefined) h += `|dprog${el.drawProgress}`;
 
+    // BPMN properties
+    if (el.bpmnEventType) h += `|bet${el.bpmnEventType}`;
+    if (el.bpmnTaskType) h += `|btt${el.bpmnTaskType}`;
+    if (el.bpmnLoopType) h += `|blt${el.bpmnLoopType}`;
+    if (el.bpmnNonInterrupting) h += `|bni1`;
+    if (el.bpmnLaneCount !== undefined && el.bpmnLaneCount > 1) h += `|blc${el.bpmnLaneCount}`;
+    if (el.bpmnIconScale !== undefined && el.bpmnIconScale !== 1) h += `|bis${el.bpmnIconScale}`;
+    if (el.bpmnIconColor) h += `|bic${el.bpmnIconColor}`;
+    if (el.bpmnIconFilled) h += `|bif1`;
+
     // Table properties
     if (el.type === 'table') {
         h += `|tr${el.tableRows}|tc${el.tableCols}|th${el.tableHeaders}`;

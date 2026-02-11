@@ -1680,6 +1680,84 @@ export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
             const peakX = -w * 0.05;
             return { type: 'points', points: [{ x: peakX, y: y }, { x: x + w, y: y + h }, { x: x, y: y + h }] };
         }
+
+        // ── BPMN Events ──
+        case 'bpmnStartEvent':
+        case 'bpmnEndEvent': {
+            const r = Math.min(w, h) / 2;
+            return { type: 'ellipse', cx: 0, cy: 0, rx: r, ry: r };
+        }
+
+        case 'bpmnIntermediateEvent': {
+            const outerR = Math.min(w, h) / 2;
+            const innerR = outerR * 0.82;
+            return {
+                type: 'multi', shapes: [
+                    { type: 'ellipse', cx: 0, cy: 0, rx: outerR, ry: outerR },
+                    { type: 'ellipse', cx: 0, cy: 0, rx: innerR, ry: innerR }
+                ]
+            };
+        }
+
+        // ── BPMN Gateways ──
+        case 'bpmnExclusiveGateway':
+        case 'bpmnParallelGateway':
+        case 'bpmnInclusiveGateway': {
+            return {
+                type: 'points', points: [
+                    { x: 0, y: y },
+                    { x: mw, y: 0 },
+                    { x: 0, y: y + h },
+                    { x: -mw, y: 0 }
+                ]
+            };
+        }
+
+        // ── BPMN Activities ──
+        case 'bpmnTask':
+        case 'bpmnSubProcess':
+        case 'bpmnCallActivity': {
+            const radius = Math.min(w, h) * 0.1;
+            return { type: 'rect', x: x, y: y, w: w, h: h, r: radius };
+        }
+
+        // ── BPMN Artifacts ──
+        case 'bpmnDataObject': {
+            const fold = Math.min(w, h) * 0.18;
+            return {
+                type: 'path',
+                path: `M ${x} ${y} L ${x + w - fold} ${y} L ${x + w} ${y + fold} L ${x + w} ${y + h} L ${x} ${y + h} Z`
+            };
+        }
+
+        case 'bpmnAnnotation': {
+            return { type: 'rect', x: x, y: y, w: w, h: h };
+        }
+
+        case 'bpmnPool': {
+            return { type: 'rect', x: x, y: y, w: w, h: h };
+        }
+
+        case 'bpmnEventGateway': {
+            const hw = w / 2, hh = h / 2;
+            return {
+                type: 'points',
+                points: [
+                    { x: 0, y: -hh },
+                    { x: hw, y: 0 },
+                    { x: 0, y: hh },
+                    { x: -hw, y: 0 }
+                ]
+            };
+        }
+
+        case 'bpmnDataStore': {
+            return { type: 'ellipse', cx: 0, cy: 0, rx: w / 2, ry: h / 2 };
+        }
+
+        case 'bpmnGroup': {
+            return { type: 'rect', x: x, y: y, w: w, h: h, r: Math.min(w, h) * 0.08 };
+        }
     }
 
     return null;

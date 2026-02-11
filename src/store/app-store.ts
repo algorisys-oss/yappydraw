@@ -79,6 +79,7 @@ interface AppState {
     selectedDsType: 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable';
     activeDsOpsElementId: string | null;
     selectedUmlType: 'umlClass' | 'umlInterface' | 'umlActor' | 'umlUseCase' | 'umlNote' | 'umlPackage' | 'umlComponent' | 'umlState' | 'umlLifeline' | 'umlFragment' | 'umlSignalSend' | 'umlSignalReceive' | 'umlProvidedInterface' | 'umlRequiredInterface';
+    selectedBpmnType: 'bpmnStartEvent' | 'bpmnEndEvent' | 'bpmnIntermediateEvent' | 'bpmnExclusiveGateway' | 'bpmnParallelGateway' | 'bpmnInclusiveGateway' | 'bpmnEventGateway' | 'bpmnTask' | 'bpmnSubProcess' | 'bpmnCallActivity' | 'bpmnDataObject' | 'bpmnAnnotation' | 'bpmnPool' | 'bpmnDataStore' | 'bpmnGroup';
 
     // Tool-specific styles persistence
     toolStyles: Record<string, Partial<DrawingElement>>;
@@ -117,6 +118,7 @@ const initialState: AppState = {
     selectedTool: 'selection',
     toolLocked: false, // When true, tool stays active after drawing (double-click to lock)
     selectedUmlType: 'umlClass',
+    selectedBpmnType: 'bpmnStartEvent',
     selection: [],
     flowTick: 0,
     isRecording: false,
@@ -2176,6 +2178,9 @@ export const setSelectedUmlType = (type: AppState['selectedUmlType']) => {
     setStore('selectedUmlType', type);
 };
 
+export const setSelectedBpmnType = (type: AppState['selectedBpmnType']) => {
+    setStore('selectedBpmnType', type);
+};
 
 export const toggleCommandPalette = (visible?: boolean) => {
     setStore('showCommandPalette', (v) => visible ?? !v);

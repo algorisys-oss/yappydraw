@@ -386,6 +386,10 @@ const Canvas: Component = () => {
             e.dsHighlightIndex; e.dsHighlightIndex2; e.dsHighlightColor; e.dsHighlightColor2;
             e.dsSortedBoundary; e.dsSortedBoundaryEnd;
             e.dsAnimProgress; e.dsAnimStyle; e.dsPersistChanges;
+            // BPMN properties
+            e.bpmnEventType; e.bpmnTaskType; e.bpmnLoopType;
+            e.bpmnIconScale; e.bpmnIconColor; e.bpmnIconFilled;
+            e.bpmnNonInterrupting; e.bpmnLaneCount;
             // Animations
             e.spinEnabled; e.spinSpeed;
             e.orbitEnabled; e.orbitCenterId; e.orbitRadius; e.orbitSpeed; e.orbitDirection;

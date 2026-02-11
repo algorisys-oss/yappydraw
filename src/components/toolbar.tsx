@@ -19,6 +19,7 @@ import DataMetricsToolGroup from "./data-metrics-tool-group";
 import ConnectionRelToolGroup from "./connection-rel-tool-group";
 import ConnectorToolGroup from "./connector-tool-group";
 import DsToolGroup from "./ds-tool-group";
+import BpmnToolGroup from "./bpmn-tool-group";
 import "./toolbar.css";
 
 // Navigation tools (rendered before grouped tools)
@@ -255,6 +256,9 @@ const Toolbar: Component = () => {
 
             {/* UML Tool Group (Class, Actor, UseCase) */}
             <UmlToolGroup />
+
+            {/* BPMN Tool Group (Events, Gateways, Activities, Artifacts) */}
+            <BpmnToolGroup />
 
             {/* Text, Image, Eraser, Laser, Ink */}
             <For each={utilityTools}>

@@ -26,6 +26,7 @@ import { TableRenderer } from "./renderers/table-renderer";
 import { CodeBlockRenderer } from "./renderers/code-block-renderer";
 import { DataStructureRenderer } from "./renderers/data-structure-renderer";
 import { ConnectionRelRenderer } from "./renderers/connection-rel-renderer";
+import { BpmnRenderer } from "./renderers/bpmn-renderer";
 
 export function registerShapes() {
     console.log('Registering all shapes including specialty...');
@@ -120,4 +121,14 @@ export function registerShapes() {
     const connectionRelRenderer = new ConnectionRelRenderer();
     const connectionRelTypes = ['puzzlePiece', 'chainLink', 'bridge', 'magnet', 'scale', 'seedling', 'tree', 'mountain'] as const;
     connectionRelTypes.forEach(type => shapeRegistry.register(type, connectionRelRenderer));
+
+    const bpmnRenderer = new BpmnRenderer();
+    const bpmnTypes = [
+        'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent',
+        'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway',
+        'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity',
+        'bpmnDataObject', 'bpmnAnnotation', 'bpmnPool',
+        'bpmnEventGateway', 'bpmnDataStore', 'bpmnGroup'
+    ] as const;
+    bpmnTypes.forEach(type => shapeRegistry.register(type, bpmnRenderer));
 }

@@ -26,7 +26,11 @@ const SOLID_STROKE_SHAPES = [
     'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable',
     'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch',
     'card', 'searchBar', 'progressBar', 'avatar', 'navbar',
-    'tabBar', 'badge', 'tooltip', 'slider'
+    'tabBar', 'badge', 'tooltip', 'slider',
+    'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent',
+    'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnEventGateway',
+    'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity',
+    'bpmnDataObject', 'bpmnAnnotation', 'bpmnPool', 'bpmnDataStore', 'bpmnGroup'
 ];
 
 // Shapes that need negative-dimension normalization on finish
@@ -45,7 +49,11 @@ const NORMALIZABLE_SHAPES = [
     'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable',
     'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch',
     'card', 'searchBar', 'progressBar', 'avatar', 'navbar',
-    'tabBar', 'badge', 'tooltip', 'slider'
+    'tabBar', 'badge', 'tooltip', 'slider',
+    'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent',
+    'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnEventGateway',
+    'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity',
+    'bpmnDataObject', 'bpmnAnnotation', 'bpmnPool', 'bpmnDataStore', 'bpmnGroup'
 ];
 
 // Tools that stay active after drawing (don't switch to selection)

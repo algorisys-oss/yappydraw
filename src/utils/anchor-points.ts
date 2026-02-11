@@ -113,7 +113,12 @@ export function getAnchorPoints(element: DrawingElement): AnchorPoint[] {
         element.type === 'lightbulb' || element.type === 'signpost' || element.type === 'burstBlob' ||
         element.type === 'browserWindow' || element.type === 'mobilePhone' || element.type === 'ghostButton' || element.type === 'inputField' ||
         element.type === 'bracketLeft' || element.type === 'bracketRight' ||
-        element.type === 'database' || element.type === 'document' || element.type === 'predefinedProcess' || element.type === 'internalStorage') {
+        element.type === 'database' || element.type === 'document' || element.type === 'predefinedProcess' || element.type === 'internalStorage' ||
+        element.type === 'bpmnStartEvent' || element.type === 'bpmnEndEvent' || element.type === 'bpmnIntermediateEvent' ||
+        element.type === 'bpmnExclusiveGateway' || element.type === 'bpmnParallelGateway' || element.type === 'bpmnInclusiveGateway' ||
+        element.type === 'bpmnTask' || element.type === 'bpmnSubProcess' || element.type === 'bpmnCallActivity' ||
+        element.type === 'bpmnDataObject' || element.type === 'bpmnAnnotation' || element.type === 'bpmnPool' ||
+        element.type === 'bpmnEventGateway' || element.type === 'bpmnDataStore' || element.type === 'bpmnGroup') {
         // For complex shapes, use 4 cardinal points
         const rawAnchors: AnchorPoint[] = [
             { x: cx, y: cy - h / 2, position: 'top' },

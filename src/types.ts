@@ -11,7 +11,12 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
 | 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable'
 | 'solidButton' | 'dropdown' | 'uiCheckbox' | 'radioButton' | 'toggleSwitch'
 | 'card' | 'searchBar' | 'progressBar' | 'avatar' | 'navbar'
-| 'tabBar' | 'badge' | 'tooltip' | 'slider';
+| 'tabBar' | 'badge' | 'tooltip' | 'slider'
+| 'bpmnStartEvent' | 'bpmnEndEvent' | 'bpmnIntermediateEvent'
+| 'bpmnExclusiveGateway' | 'bpmnParallelGateway' | 'bpmnInclusiveGateway'
+| 'bpmnTask' | 'bpmnSubProcess' | 'bpmnCallActivity'
+| 'bpmnDataObject' | 'bpmnAnnotation' | 'bpmnPool'
+| 'bpmnEventGateway' | 'bpmnDataStore' | 'bpmnGroup';
 
 export type ToolType = ElementType | 'lasso';
 
@@ -241,6 +246,15 @@ export interface DrawingElement {
     dsAnimProgress?: number;       // Animation progress 0-100
     dsAnimStyle?: string;          // Active animation type name
     dsPersistChanges?: boolean;    // Keep CRUD changes after presentation (default false = reset)
+    // BPMN properties
+    bpmnEventType?: 'none' | 'message' | 'timer' | 'error' | 'signal' | 'conditional' | 'escalation' | 'compensation' | 'link' | 'terminate' | 'cancel';
+    bpmnTaskType?: 'none' | 'user' | 'service' | 'script' | 'manual' | 'send' | 'receive' | 'businessRule';
+    bpmnLoopType?: 'none' | 'standard' | 'parallel' | 'sequential' | 'compensation';
+    bpmnNonInterrupting?: boolean;  // Non-interrupting event (dashed border)
+    bpmnLaneCount?: number;         // Number of lanes inside a pool (1–6)
+    bpmnIconScale?: number;      // Scale factor for BPMN icons/markers (0.5–2.0, default 1.0)
+    bpmnIconColor?: string;      // Override color for BPMN icons (defaults to strokeColor)
+    bpmnIconFilled?: boolean;    // Fill event/gateway icons instead of outline only
     dsHighlightIndex2?: number;    // Second highlighted item (for sort comparison/swap)
     dsHighlightColor?: string;     // Color token: 'comparing' | 'swapping' | 'sorted' | 'searching' | 'found' | 'notfound'
     dsHighlightColor2?: string;    // Color token for second highlight

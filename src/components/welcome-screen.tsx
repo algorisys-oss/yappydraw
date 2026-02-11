@@ -141,7 +141,7 @@ export const WelcomeScreen: Component = () => {
     const leftFeatures = [
         "100+ shapes & icons",
         "Sketch & Architectural modes",
-        "UML & Flowchart diagrams",
+        "UML, BPMN & Flowcharts",
         "Cloud infrastructure shapes",
         "Data Structure visualizations",
         "Freehand drawing tools",
@@ -174,6 +174,7 @@ export const WelcomeScreen: Component = () => {
         { label: "Connectors", icon: "arrow", color: "color(display-p3 0.6 0.6 0.7)" },
         { label: "Tables", icon: "table", color: "color(display-p3 0.4 0.6 0.8)" },
         { label: "Data Structures", icon: "ds", color: "color(display-p3 0.3 0.7 0.6)" },
+        { label: "BPMN 2.0", icon: "bpmn", color: "color(display-p3 0.9 0.5 0.2)" },
     ];
 
     // Small SVG icons for each category
@@ -265,6 +266,13 @@ export const WelcomeScreen: Component = () => {
                     <rect x="10" y="5" width="3" height="3" rx="0.5" />
                     <line x1="4" y1="6.5" x2="5.5" y2="6.5" />
                     <line x1="8.5" y1="6.5" x2="10" y2="6.5" />
+                </svg>
+            );
+            case 'bpmn': return (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="3" cy="7" r="2" />
+                    <path d="M7 4 L10 7 L7 10 L4 7 Z" stroke-width="1" />
+                    <circle cx="11" cy="7" r="2" stroke-width="2.5" />
                 </svg>
             );
             default: return null;
