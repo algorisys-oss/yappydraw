@@ -17,7 +17,7 @@ interface TextEditingOverlayProps {
     setEditingId: (v: string | null) => void;
     editText: () => string;
     setEditText: (v: string) => void;
-    editingProperty: () => 'text' | 'containerText' | 'attributesText' | 'methodsText' | 'tableCell';
+    editingProperty: () => 'text' | 'containerText' | 'attributesText' | 'methodsText' | 'tableCell' | `bpmnLaneLabel:${number}`;
     tableEditingCell?: () => TableEditingCell | null;
     canvasRef?: HTMLCanvasElement;
     onCommitText: () => void;

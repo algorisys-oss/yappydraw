@@ -1469,6 +1469,18 @@ export const properties: PropertyConfig[] = [
         applicableTo: ['bpmnPool'],
         defaultValue: 1,
         group: 'style'
+    },
+    {
+        key: 'bpmnOrientation',
+        label: 'Orientation',
+        type: 'select',
+        options: [
+            { label: 'Horizontal', value: 'horizontal' },
+            { label: 'Vertical', value: 'vertical' }
+        ],
+        applicableTo: ['bpmnPool'],
+        defaultValue: 'horizontal',
+        group: 'style'
     }
 ];
 

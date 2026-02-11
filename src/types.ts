@@ -7,7 +7,7 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
 | 'kubernetes' | 'container' | 'apiGateway' | 'cdn' | 'storageBlob' | 'eventBus' | 'microservice' | 'shield'
 | 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'table'
 | 'puzzlePiece' | 'chainLink' | 'bridge' | 'magnet' | 'scale' | 'seedling' | 'tree' | 'mountain'
-| 'polyline' | 'codeBlock'
+| 'polyline' | 'elbow' | 'codeBlock'
 | 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable'
 | 'solidButton' | 'dropdown' | 'uiCheckbox' | 'radioButton' | 'toggleSwitch'
 | 'card' | 'searchBar' | 'progressBar' | 'avatar' | 'navbar'
@@ -210,6 +210,8 @@ export interface DrawingElement {
     flipY?: boolean; // Mirror vertically
     parentId?: string | null;
     isCollapsed?: boolean;
+    poolContainerId?: string | null;   // ID of containing bpmnPool element
+    poolLaneIndex?: number;            // 0-based lane index within the pool
     starPoints?: number; // Number of points for star shapes (3-12, default: 5)
     polygonSides?: number; // Number of sides for polygon shapes (3-20, default: 6)
     borderRadius?: number; // Corner radius percentage (0-50, default: 0)
@@ -252,6 +254,14 @@ export interface DrawingElement {
     bpmnLoopType?: 'none' | 'standard' | 'parallel' | 'sequential' | 'compensation';
     bpmnNonInterrupting?: boolean;  // Non-interrupting event (dashed border)
     bpmnLaneCount?: number;         // Number of lanes inside a pool (1–6)
+    bpmnLaneLabels?: string[];      // Per-lane label text array
+    bpmnLaneHeights?: number[];     // Per-lane height ratios (fractions summing to 1.0)
+    bpmnOrientation?: 'horizontal' | 'vertical';  // Pool orientation (default: horizontal)
+    bpmnLaneColors?: string[];      // Per-lane background colors
+    bpmnLaneTextColors?: string[];  // Per-lane text/label colors
+    bpmnLaneCollapsed?: boolean[];  // Per-lane collapsed state
+    bpmnPoolLabelSize?: number;     // Pool header column width (horizontal) or row height (vertical), in px
+    bpmnLaneLabelSize?: number;     // Lane label column width (horizontal) or row height (vertical), in px
     bpmnIconScale?: number;      // Scale factor for BPMN icons/markers (0.5–2.0, default 1.0)
     bpmnIconColor?: string;      // Override color for BPMN icons (defaults to strokeColor)
     bpmnIconFilled?: boolean;    // Fill event/gateway icons instead of outline only

@@ -24,6 +24,7 @@ import {
     getTransformOptions, getShapeIcon, getShapeTooltip,
     changeElementType, getCurveTypeOptions, getCurveTypeIcon, getCurveTypeTooltip
 } from './element-transforms';
+import { shiftLaneIndicesOnRemove, hitTestPoolLane } from './pool-containment';
 import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng } from './export';
 import {
     computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData,
@@ -587,6 +588,168 @@ export function getContextMenuItems(
                 items.push({ label: 'Table', submenu: tableItems });
                 items.push({ separator: true });
             }
+        }
+
+        // BPMN Pool Lane Operations
+        if (selectionCount === 1 && firstEl && firstEl.type === 'bpmnPool') {
+            const el = firstEl;
+            const laneCount = el.bpmnLaneCount ?? 1;
+            const poolItems: MenuItem[] = [];
+
+            if (laneCount < 6) {
+                poolItems.push({
+                    label: 'Add Lane',
+                    onClick: () => {
+                        pushToHistory();
+                        const newCount = laneCount + 1;
+                        const newLabels = [...(el.bpmnLaneLabels ?? [])];
+                        while (newLabels.length < newCount) newLabels.push(`Lane ${newLabels.length + 1}`);
+                        const newColors = [...(el.bpmnLaneColors ?? [])];
+                        while (newColors.length < newCount) newColors.push('');
+                        const newTextColors = [...(el.bpmnLaneTextColors ?? [])];
+                        while (newTextColors.length < newCount) newTextColors.push('');
+                        const newCollapsed = [...(el.bpmnLaneCollapsed ?? [])];
+                        while (newCollapsed.length < newCount) newCollapsed.push(false);
+                        updateElement(el.id, {
+                            bpmnLaneCount: newCount,
+                            bpmnLaneLabels: newLabels,
+                            bpmnLaneColors: newColors,
+                            bpmnLaneTextColors: newTextColors,
+                            bpmnLaneCollapsed: newCollapsed,
+                        }, false);
+                        // No index shift needed — new lane is appended at the end
+                        redrawFn();
+                    }
+                });
+            }
+
+            if (laneCount > 1) {
+                poolItems.push({
+                    label: 'Remove Last Lane',
+                    onClick: () => {
+                        pushToHistory();
+                        const removedIndex = laneCount - 1;
+                        const newCount = laneCount - 1;
+                        const newLabels = [...(el.bpmnLaneLabels ?? [])].slice(0, newCount);
+                        const newColors = [...(el.bpmnLaneColors ?? [])].slice(0, newCount);
+                        const newTextColors = [...(el.bpmnLaneTextColors ?? [])].slice(0, newCount);
+                        const newCollapsed = [...(el.bpmnLaneCollapsed ?? [])].slice(0, newCount);
+                        updateElement(el.id, {
+                            bpmnLaneCount: newCount,
+                            bpmnLaneLabels: newLabels,
+                            bpmnLaneColors: newColors,
+                            bpmnLaneTextColors: newTextColors,
+                            bpmnLaneCollapsed: newCollapsed.length > 0 ? newCollapsed : undefined as any,
+                        }, false);
+                        shiftLaneIndicesOnRemove(el.id, removedIndex, store.elements);
+                        redrawFn();
+                    }
+                });
+            }
+
+            if (laneCount > 1 && el.bpmnLaneHeights) {
+                poolItems.push({
+                    label: 'Equalize Lane Heights',
+                    onClick: () => {
+                        pushToHistory();
+                        updateElement(el.id, { bpmnLaneHeights: undefined as any }, false);
+                        redrawFn();
+                    }
+                });
+            }
+
+            // Per-lane color options (detect which lane was right-clicked)
+            if (laneCount > 1 && worldX !== undefined && worldY !== undefined) {
+                const clickedLane = hitTestPoolLane(el, worldX, worldY);
+
+                if (clickedLane >= 0) {
+                    const laneLabel = el.bpmnLaneLabels?.[clickedLane] || `Lane ${clickedLane + 1}`;
+                    const laneColors: [string, string][] = [
+                        ['None', ''],
+                        ['White', '#ffffff'],
+                        ['Light Blue', '#dbeafe'],
+                        ['Light Green', '#dcfce7'],
+                        ['Light Yellow', '#fef9c3'],
+                        ['Light Pink', '#fce7f3'],
+                        ['Light Purple', '#f3e8ff'],
+                        ['Light Orange', '#ffedd5'],
+                        ['Light Gray', '#f3f4f6'],
+                    ];
+
+                    poolItems.push({ separator: true });
+                    poolItems.push({
+                        label: `${laneLabel} Background`,
+                        submenu: laneColors.map(([name, color]) => ({
+                            label: name,
+                            icon: color ? '■' : '∅',
+                            iconColor: color || undefined,
+                            onClick: () => {
+                                pushToHistory();
+                                const colors = [...(el.bpmnLaneColors ?? Array(laneCount).fill(''))];
+                                while (colors.length < laneCount) colors.push('');
+                                colors[clickedLane] = color;
+                                updateElement(el.id, { bpmnLaneColors: colors }, false);
+                                redrawFn();
+                            }
+                        }))
+                    });
+
+                    const textColors: [string, string][] = [
+                        ['Default', ''],
+                        ['Black', '#000000'],
+                        ['Dark Blue', '#1e40af'],
+                        ['Dark Green', '#166534'],
+                        ['Dark Red', '#991b1b'],
+                        ['Purple', '#7e22ce'],
+                        ['White', '#ffffff'],
+                    ];
+
+                    poolItems.push({
+                        label: `${laneLabel} Text Color`,
+                        submenu: textColors.map(([name, color]) => ({
+                            label: name,
+                            icon: color ? '■' : '∅',
+                            iconColor: color || undefined,
+                            onClick: () => {
+                                pushToHistory();
+                                const tColors = [...(el.bpmnLaneTextColors ?? Array(laneCount).fill(''))];
+                                while (tColors.length < laneCount) tColors.push('');
+                                tColors[clickedLane] = color;
+                                updateElement(el.id, { bpmnLaneTextColors: tColors }, false);
+                                redrawFn();
+                            }
+                        }))
+                    });
+
+                    // Collapse / Expand lane toggle
+                    const isCollapsed = el.bpmnLaneCollapsed?.[clickedLane] ?? false;
+                    poolItems.push({
+                        label: isCollapsed ? `Expand ${laneLabel}` : `Collapse ${laneLabel}`,
+                        onClick: () => {
+                            pushToHistory();
+                            const collapsedArr = [...(el.bpmnLaneCollapsed ?? Array(laneCount).fill(false))];
+                            while (collapsedArr.length < laneCount) collapsedArr.push(false);
+                            collapsedArr[clickedLane] = !isCollapsed;
+                            updateElement(el.id, { bpmnLaneCollapsed: collapsedArr }, false);
+                            redrawFn();
+                        }
+                    });
+                }
+            }
+
+            poolItems.push({ separator: true });
+            poolItems.push({
+                label: el.bpmnOrientation === 'vertical' ? 'Switch to Horizontal' : 'Switch to Vertical',
+                onClick: () => {
+                    pushToHistory();
+                    updateElement(el.id, {
+                        bpmnOrientation: el.bpmnOrientation === 'vertical' ? 'horizontal' : 'vertical',
+                    }, false);
+                    redrawFn();
+                }
+            });
+
+            items.push({ label: 'Pool', submenu: poolItems });
         }
 
         // Batch Transform Logic (Split by Family)

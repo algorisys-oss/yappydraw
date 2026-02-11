@@ -301,9 +301,9 @@ export function getHandleAtPosition(
             }
         }
 
-        // Check Polyline intermediate point handles
-        const isPolylineShape = el.type === 'line' && el.curveType === 'elbow' && !el.startBinding && !el.endBinding;
-        if (isPolylineShape && el.points && Array.isArray(el.points)) {
+        // Check Polyline/Elbow intermediate point handles (works for both bound and unbound elbows)
+        const hasElbowPoints = el.curveType === 'elbow' && el.points && Array.isArray(el.points);
+        if (hasElbowPoints) {
             const pts = normalizePoints(el.points);
             // Skip first and last (those are start/end handles tl/br)
             for (let pi = 1; pi < pts.length - 1; pi++) {
@@ -315,7 +315,31 @@ export function getHandleAtPosition(
             }
         }
 
-        // Check Connector Handles (only for non-line/arrow shapes, plus polyline shapes)
+        // Check Elbow segment handles (drag entire horizontal/vertical segments)
+        if (hasElbowPoints) {
+            const pts = normalizePoints(el.points);
+            const segmentHitDist = 8 / scale;
+            for (let si = 0; si < pts.length - 1; si++) {
+                const p1x = el.x + pts[si].x, p1y = el.y + pts[si].y;
+                const p2x = el.x + pts[si + 1].x, p2y = el.y + pts[si + 1].y;
+                const isHoriz = Math.abs(p1y - p2y) < 1;
+                const isVert = Math.abs(p1x - p2x) < 1;
+                if (isHoriz) {
+                    const minSX = Math.min(p1x, p2x), maxSX = Math.max(p1x, p2x);
+                    if (maxSX - minSX > 5 / scale && x >= minSX && x <= maxSX && Math.abs(y - p1y) <= segmentHitDist) {
+                        return { id: el.id, handle: `segment-${si}` };
+                    }
+                } else if (isVert) {
+                    const minSY = Math.min(p1y, p2y), maxSY = Math.max(p1y, p2y);
+                    if (maxSY - minSY > 5 / scale && y >= minSY && y <= maxSY && Math.abs(x - p1x) <= segmentHitDist) {
+                        return { id: el.id, handle: `segment-${si}` };
+                    }
+                }
+            }
+        }
+
+        // Check Connector Handles (only for non-line/arrow shapes, plus unbound polyline shapes)
+        const isPolylineShape = el.type === 'line' && el.curveType === 'elbow' && !el.startBinding && !el.endBinding;
         if ((el.type !== 'line' && el.type !== 'arrow') || isPolylineShape) {
             const connectorSize = 14 / scale;
             const connectorOffset = 32 / scale;

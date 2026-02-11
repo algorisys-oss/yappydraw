@@ -24,11 +24,13 @@ export interface TableEditingCell {
     cellH: number;    // cell pixel height
 }
 
+export type EditingPropertyType = 'text' | 'containerText' | 'attributesText' | 'methodsText' | 'tableCell' | `bpmnLaneLabel:${number}`;
+
 export interface TextEditingContext {
     editingId: () => string | null;
     setEditingId: (v: string | null) => void;
-    editingProperty: () => 'text' | 'containerText' | 'attributesText' | 'methodsText' | 'tableCell';
-    setEditingProperty: (v: 'text' | 'containerText' | 'attributesText' | 'methodsText' | 'tableCell') => void;
+    editingProperty: () => EditingPropertyType;
+    setEditingProperty: (v: EditingPropertyType) => void;
     editText: () => string;
     setEditText: (v: string) => void;
     tableEditingCell: () => TableEditingCell | null;
@@ -50,6 +52,20 @@ export function commitText(ctx: TextEditingContext): void {
     if (!el) return;
 
     const newText = ctx.editText().trim();
+
+    // BPMN lane label editing
+    const editProp = ctx.editingProperty();
+    if (typeof editProp === 'string' && editProp.startsWith('bpmnLaneLabel:')) {
+        const laneIndex = parseInt(editProp.split(':')[1], 10);
+        const labels = el.bpmnLaneLabels ? [...el.bpmnLaneLabels] : [];
+        while (labels.length <= laneIndex) labels.push('');
+        labels[laneIndex] = newText;
+        updateElement(id, { bpmnLaneLabels: labels }, true);
+        ctx.setEditingId(null);
+        ctx.setEditText("");
+        requestAnimationFrame(ctx.redrawFn);
+        return;
+    }
 
     // Table cell editing
     if (ctx.editingProperty() === 'tableCell') {
@@ -256,6 +272,63 @@ export function handleDoubleClick(e: MouseEvent, ctx: TextEditingContext): void 
                     } else {
                         prop = 'attributesText';
                         text = el.attributesText || '';
+                    }
+                } else if (el.type === 'bpmnPool') {
+                    // Determine click zone: pool label, lane label, or body
+                    const isVertical = el.bpmnOrientation === 'vertical';
+                    const laneCount = el.bpmnLaneCount ?? 1;
+                    const labels = el.bpmnLaneLabels ?? [];
+
+                    if (isVertical) {
+                        const poolLabelH = el.bpmnPoolLabelSize ?? Math.min(el.height * 0.08, 30);
+                        const laneLabelH = laneCount > 1 ? (el.bpmnLaneLabelSize ?? Math.min(el.height * 0.06, 25)) : 0;
+                        const clickY = y - el.y;
+                        const clickX = x - el.x;
+
+                        if (clickY < poolLabelH) {
+                            // Pool name (top row)
+                            prop = 'containerText';
+                            text = el.containerText || '';
+                        } else if (laneCount > 1 && clickY < poolLabelH + laneLabelH) {
+                            // Lane label row - determine which lane by X
+                            const laneW = el.width / laneCount;
+                            const laneIndex = Math.min(Math.floor(clickX / laneW), laneCount - 1);
+                            batch(() => {
+                                ctx.setEditingProperty(`bpmnLaneLabel:${laneIndex}`);
+                                ctx.setEditText(labels[laneIndex] || '');
+                                ctx.setEditingId(el.id);
+                            });
+                            setTimeout(() => { ctx.textInputRef?.focus(); ctx.textInputRef?.select(); }, 0);
+                            return;
+                        } else {
+                            prop = 'containerText';
+                            text = el.containerText || '';
+                        }
+                    } else {
+                        const poolLabelW = el.bpmnPoolLabelSize ?? Math.min(el.width * 0.06, 35);
+                        const laneLabelW = laneCount > 1 ? (el.bpmnLaneLabelSize ?? Math.min(el.width * 0.05, 28)) : 0;
+                        const clickX = x - el.x;
+
+                        if (clickX < poolLabelW) {
+                            // Pool name (left column)
+                            prop = 'containerText';
+                            text = el.containerText || '';
+                        } else if (laneCount > 1 && clickX < poolLabelW + laneLabelW) {
+                            // Lane label column - determine which lane by Y
+                            const laneH = el.height / laneCount;
+                            const clickY = y - el.y;
+                            const laneIndex = Math.min(Math.floor(clickY / laneH), laneCount - 1);
+                            batch(() => {
+                                ctx.setEditingProperty(`bpmnLaneLabel:${laneIndex}`);
+                                ctx.setEditText(labels[laneIndex] || '');
+                                ctx.setEditingId(el.id);
+                            });
+                            setTimeout(() => { ctx.textInputRef?.focus(); ctx.textInputRef?.select(); }, 0);
+                            return;
+                        } else {
+                            prop = 'containerText';
+                            text = el.containerText || '';
+                        }
                     }
                 } else if (el.type === 'text' || el.type === 'codeBlock' || el.type === 'dsArray' || el.type === 'dsStack' || el.type === 'dsQueue' || el.type === 'dsLinkedList' || el.type === 'dsBinaryTree' || el.type === 'dsHashTable') {
                     prop = 'text';

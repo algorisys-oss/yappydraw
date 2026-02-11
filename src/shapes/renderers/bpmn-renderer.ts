@@ -163,34 +163,8 @@ export class BpmnRenderer extends ShapeRenderer {
             }
 
             case 'bpmnPool': {
-                const labelW = Math.min(w * 0.08, 35);
-                if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fillRect(x, y, w, h);
-                }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.strokeRect(x, y, w, h);
-                ctx.beginPath();
-                ctx.moveTo(x + labelW, y);
-                ctx.lineTo(x + labelW, y + h);
-                ctx.stroke();
-                // Lane dividers
-                this.renderLaneDividers(ctx, el, isDarkMode);
-                // Rotated label
-                if (el.containerText) {
-                    ctx.save();
-                    ctx.translate(x + labelW / 2, cy);
-                    ctx.rotate(-Math.PI / 2);
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    const textColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor, isDarkMode);
-                    ctx.fillStyle = textColor;
-                    ctx.font = `${el.fontWeight || 'normal'} ${el.fontSize || 14}px ${el.fontFamily || 'sans-serif'}`;
-                    ctx.fillText(el.containerText, 0, 0);
-                    ctx.restore();
-                    return;
-                }
-                break;
+                this.renderPoolArchitectural(ctx, el, cx, cy, isDarkMode, backgroundColor);
+                return; // Pool handles its own text
             }
 
             case 'bpmnDataStore': {
@@ -243,10 +217,8 @@ export class BpmnRenderer extends ShapeRenderer {
             }
         }
 
-        // Text for non-pool shapes
-        if (el.type !== 'bpmnPool') {
-            RenderPipeline.renderText(context, cx, cy);
-        }
+        // Text for non-pool shapes (pool returns early from its case branch above)
+        RenderPipeline.renderText(context, cx, cy);
     }
 
     protected renderSketch(context: RenderContext, cx: number, cy: number): void {
@@ -334,25 +306,8 @@ export class BpmnRenderer extends ShapeRenderer {
             }
 
             case 'bpmnPool': {
-                const labelW = Math.min(w * 0.08, 35);
-                rc.rectangle(x, y, w, h, options);
-                rc.line(x + labelW, y, x + labelW, y + h, options);
-                // Lane dividers
-                this.renderLaneDividers(ctx, el, isDarkMode);
-                if (el.containerText) {
-                    ctx.save();
-                    ctx.translate(x + labelW / 2, cy);
-                    ctx.rotate(-Math.PI / 2);
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    const textColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor, isDarkMode);
-                    ctx.fillStyle = textColor;
-                    ctx.font = `${el.fontWeight || 'normal'} ${el.fontSize || 14}px ${el.fontFamily || 'sans-serif'}`;
-                    ctx.fillText(el.containerText, 0, 0);
-                    ctx.restore();
-                    return;
-                }
-                break;
+                this.renderPoolSketch(rc, ctx, el, cx, cy, isDarkMode, options);
+                return; // Pool handles its own text
             }
 
             case 'bpmnDataStore': {
@@ -373,9 +328,8 @@ export class BpmnRenderer extends ShapeRenderer {
             }
         }
 
-        if (el.type !== 'bpmnPool') {
-            RenderPipeline.renderText(context, cx, cy);
-        }
+        // Text for non-pool shapes (pool returns early from its case branch above)
+        RenderPipeline.renderText(context, cx, cy);
     }
 
     protected definePath(ctx: CanvasRenderingContext2D, el: DrawingElement): void {
@@ -853,23 +807,494 @@ export class BpmnRenderer extends ShapeRenderer {
         ctx.restore();
     }
 
-    // ── Lane Dividers inside Pool ──
-    private renderLaneDividers(ctx: CanvasRenderingContext2D, el: DrawingElement, isDarkMode: boolean): void {
-        const laneCount = el.bpmnLaneCount ?? 1;
-        if (laneCount <= 1) return;
+    // ── Pool layout helpers ──
+    private getPoolLabelWidth(el: DrawingElement): number {
+        return el.bpmnPoolLabelSize ?? Math.min(el.width * 0.06, 35);
+    }
+    private getLaneLabelWidth(el: DrawingElement): number {
+        return el.bpmnLaneLabelSize ?? Math.min(el.width * 0.05, 28);
+    }
+    private getPoolLabelHeight(el: DrawingElement): number {
+        return el.bpmnPoolLabelSize ?? Math.min(el.height * 0.08, 30);
+    }
+    private getLaneLabelHeight(el: DrawingElement): number {
+        return el.bpmnLaneLabelSize ?? Math.min(el.height * 0.06, 25);
+    }
 
-        const labelW = Math.min(el.width * 0.08, 35);
-        const bodyW = el.width - labelW;
-        const bodyX = el.x + labelW;
+    private static readonly COLLAPSED_LANE_SIZE = 25;
+
+    /** Compute per-lane sizes. Returns array of lane heights (horizontal) or widths (vertical) */
+    private computeLaneSizes(el: DrawingElement, totalSize: number): number[] {
+        const laneCount = el.bpmnLaneCount ?? 1;
+        if (laneCount <= 1) return [totalSize];
+
+        const collapsed = el.bpmnLaneCollapsed ?? [];
+        const collapsedCount = collapsed.filter(Boolean).length;
+        const collapsedTotal = collapsedCount * BpmnRenderer.COLLAPSED_LANE_SIZE;
+        const remainingSize = Math.max(0, totalSize - collapsedTotal);
+
+        const heights = el.bpmnLaneHeights;
+        if (heights && heights.length === laneCount) {
+            const expandedSum = heights.reduce((sum, h, i) => collapsed[i] ? sum : sum + h, 0);
+            return heights.map((h, i) =>
+                collapsed[i] ? BpmnRenderer.COLLAPSED_LANE_SIZE : (expandedSum > 0 ? (h / expandedSum) * remainingSize : 0));
+        }
+        // Equal division of remaining space
+        const expandedCount = laneCount - collapsedCount;
+        const expandedSize = expandedCount > 0 ? remainingSize / expandedCount : 0;
+        return Array.from({ length: laneCount }, (_, i) =>
+            collapsed[i] ? BpmnRenderer.COLLAPSED_LANE_SIZE : expandedSize);
+    }
+
+    // ── Architectural Pool Rendering ──
+    private renderPoolArchitectural(
+        ctx: CanvasRenderingContext2D, el: DrawingElement,
+        _cx: number, _cy: number, isDarkMode: boolean,
+        backgroundColor: string | undefined
+    ): void {
+        const { x, y, width: w, height: h } = el;
+        const isVertical = el.bpmnOrientation === 'vertical';
+        const laneCount = el.bpmnLaneCount ?? 1;
+        const labels = el.isEditing ? [] : (el.bpmnLaneLabels ?? []);
+        const textColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor, isDarkMode);
+        const font = `${el.fontWeight || 'normal'} ${el.fontSize || 14}px ${el.fontFamily || 'sans-serif'}`;
+        const smallFont = `${el.fontWeight || 'normal'} ${Math.max((el.fontSize || 14) * 0.85, 10)}px ${el.fontFamily || 'sans-serif'}`;
+
+        // Fill background
+        if (backgroundColor) {
+            ctx.fillStyle = backgroundColor;
+            ctx.fillRect(x, y, w, h);
+        }
 
         RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-        const laneH = el.height / laneCount;
-        for (let i = 1; i < laneCount; i++) {
-            const ly = el.y + laneH * i;
+
+        // Outer border
+        ctx.strokeRect(x, y, w, h);
+
+        // Suppress containerText when editing (labels already cleared above)
+        const renderEl = el.isEditing ? { ...el, containerText: '' } : el;
+
+        if (isVertical) {
+            this.renderPoolVerticalArch(ctx, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode);
+        } else {
+            this.renderPoolHorizontalArch(ctx, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode);
+        }
+    }
+
+    private renderPoolHorizontalArch(
+        ctx: CanvasRenderingContext2D, el: DrawingElement,
+        x: number, y: number, w: number, h: number,
+        laneCount: number, labels: string[],
+        textColor: string, font: string, smallFont: string,
+        isDarkMode: boolean
+    ): void {
+        const poolLabelW = this.getPoolLabelWidth(el);
+        const hasLaneLabels = laneCount > 1;
+        const laneLabelW = hasLaneLabels ? this.getLaneLabelWidth(el) : 0;
+
+        // Pool label column divider
+        ctx.beginPath();
+        ctx.moveTo(x + poolLabelW, y);
+        ctx.lineTo(x + poolLabelW, y + h);
+        ctx.stroke();
+
+        // Lane label column divider (only if multiple lanes)
+        if (hasLaneLabels) {
             ctx.beginPath();
-            ctx.moveTo(bodyX, ly);
-            ctx.lineTo(bodyX + bodyW, ly);
+            ctx.moveTo(x + poolLabelW + laneLabelW, y);
+            ctx.lineTo(x + poolLabelW + laneLabelW, y + h);
             ctx.stroke();
+        }
+
+        // Lane dividers, backgrounds, and labels
+        const laneSizes = this.computeLaneSizes(el, h);
+        const laneColors = el.bpmnLaneColors ?? [];
+        const laneTextColors = el.bpmnLaneTextColors ?? [];
+        const collapsed = el.bpmnLaneCollapsed ?? [];
+        let laneY = y;
+        for (let i = 0; i < laneCount; i++) {
+            const laneH = laneSizes[i];
+            const isCollapsed = collapsed[i] ?? false;
+
+            // Per-lane background color
+            const laneBg = laneColors[i];
+            if (laneBg && laneBg !== 'transparent') {
+                ctx.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
+                const laneBodyX = x + poolLabelW + laneLabelW;
+                ctx.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
+            }
+
+            // Collapsed lane: subtle hatching overlay
+            if (isCollapsed) {
+                ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                const laneBodyX = x + poolLabelW + laneLabelW;
+                ctx.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
+            }
+
+            // Lane divider (skip first lane)
+            if (i > 0) {
+                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                ctx.beginPath();
+                ctx.moveTo(x + poolLabelW, laneY);
+                ctx.lineTo(x + w, laneY);
+                ctx.stroke();
+            }
+
+            // Per-lane label (rotated, in lane label column)
+            if (hasLaneLabels) {
+                const label = labels[i] || '';
+                if (label) {
+                    const laneTC = laneTextColors[i]
+                        ? RenderPipeline.adjustColor(laneTextColors[i], isDarkMode)
+                        : textColor;
+                    ctx.save();
+                    ctx.translate(x + poolLabelW + laneLabelW / 2, laneY + laneH / 2);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = laneTC;
+                    ctx.font = smallFont;
+                    // Clip text to lane height
+                    const maxLen = laneH - 10;
+                    const prefix = isCollapsed ? '\u25B8 ' : '';
+                    let displayText = prefix + label;
+                    if (ctx.measureText(displayText).width > maxLen && maxLen > 0) {
+                        displayText = prefix + label;
+                        while (displayText.length > prefix.length + 1 && ctx.measureText(displayText + '...').width > maxLen) {
+                            displayText = displayText.slice(0, -1);
+                        }
+                        displayText += '...';
+                    }
+                    ctx.fillText(displayText, 0, 0);
+                    ctx.restore();
+                }
+            }
+
+            laneY += laneH;
+        }
+
+        // Pool name (rotated, in pool label column)
+        if (el.containerText) {
+            ctx.save();
+            ctx.translate(x + poolLabelW / 2, y + h / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = textColor;
+            ctx.font = font;
+            ctx.fillText(el.containerText, 0, 0);
+            ctx.restore();
+        }
+    }
+
+    private renderPoolVerticalArch(
+        ctx: CanvasRenderingContext2D, el: DrawingElement,
+        x: number, y: number, w: number, h: number,
+        laneCount: number, labels: string[],
+        textColor: string, font: string, smallFont: string,
+        isDarkMode: boolean
+    ): void {
+        const poolLabelH = this.getPoolLabelHeight(el);
+        const hasLaneLabels = laneCount > 1;
+        const laneLabelH = hasLaneLabels ? this.getLaneLabelHeight(el) : 0;
+
+        // Pool label row divider
+        ctx.beginPath();
+        ctx.moveTo(x, y + poolLabelH);
+        ctx.lineTo(x + w, y + poolLabelH);
+        ctx.stroke();
+
+        // Lane label row divider (only if multiple lanes)
+        if (hasLaneLabels) {
+            ctx.beginPath();
+            ctx.moveTo(x, y + poolLabelH + laneLabelH);
+            ctx.lineTo(x + w, y + poolLabelH + laneLabelH);
+            ctx.stroke();
+        }
+
+        // Lane dividers, backgrounds, and labels
+        const laneSizes = this.computeLaneSizes(el, w);
+        const laneColors = el.bpmnLaneColors ?? [];
+        const laneTextColors = el.bpmnLaneTextColors ?? [];
+        const collapsedV = el.bpmnLaneCollapsed ?? [];
+        let laneX = x;
+        for (let i = 0; i < laneCount; i++) {
+            const laneW = laneSizes[i];
+            const isCollapsed = collapsedV[i] ?? false;
+
+            // Per-lane background color
+            const laneBg = laneColors[i];
+            if (laneBg && laneBg !== 'transparent') {
+                ctx.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
+                const laneBodyY = y + poolLabelH + laneLabelH;
+                ctx.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
+            }
+
+            // Collapsed lane: subtle hatching overlay
+            if (isCollapsed) {
+                ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                const laneBodyY = y + poolLabelH + laneLabelH;
+                ctx.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
+            }
+
+            // Lane divider (skip first lane)
+            if (i > 0) {
+                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                ctx.beginPath();
+                ctx.moveTo(laneX, y + poolLabelH);
+                ctx.lineTo(laneX, y + h);
+                ctx.stroke();
+            }
+
+            // Per-lane label (horizontal, in lane label row)
+            if (hasLaneLabels) {
+                const label = labels[i] || '';
+                if (label) {
+                    const laneTC = laneTextColors[i]
+                        ? RenderPipeline.adjustColor(laneTextColors[i], isDarkMode)
+                        : textColor;
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = laneTC;
+                    ctx.font = smallFont;
+                    const maxLen = laneW - 10;
+                    const prefix = isCollapsed ? '\u25B8 ' : '';
+                    let displayText = prefix + label;
+                    if (ctx.measureText(displayText).width > maxLen && maxLen > 0) {
+                        displayText = prefix + label;
+                        while (displayText.length > prefix.length + 1 && ctx.measureText(displayText + '...').width > maxLen) {
+                            displayText = displayText.slice(0, -1);
+                        }
+                        displayText += '...';
+                    }
+                    ctx.fillText(displayText, laneX + laneW / 2, y + poolLabelH + laneLabelH / 2);
+                    ctx.restore();
+                }
+            }
+
+            laneX += laneW;
+        }
+
+        // Pool name (horizontal, in pool label row)
+        if (el.containerText) {
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = textColor;
+            ctx.font = font;
+            ctx.fillText(el.containerText, x + w / 2, y + poolLabelH / 2);
+            ctx.restore();
+        }
+    }
+
+    // ── Sketch Pool Rendering ──
+    private renderPoolSketch(
+        rc: any, ctx: CanvasRenderingContext2D, el: DrawingElement,
+        _cx: number, _cy: number, isDarkMode: boolean, options: any
+    ): void {
+        const { x, y, width: w, height: h } = el;
+        const isVertical = el.bpmnOrientation === 'vertical';
+        const laneCount = el.bpmnLaneCount ?? 1;
+        const labels = el.isEditing ? [] : (el.bpmnLaneLabels ?? []);
+        const textColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor, isDarkMode);
+        const font = `${el.fontWeight || 'normal'} ${el.fontSize || 14}px ${el.fontFamily || 'sans-serif'}`;
+        const smallFont = `${el.fontWeight || 'normal'} ${Math.max((el.fontSize || 14) * 0.85, 10)}px ${el.fontFamily || 'sans-serif'}`;
+
+        // Outer rectangle
+        rc.rectangle(x, y, w, h, options);
+
+        // Suppress containerText when editing (labels already cleared above)
+        const renderEl = el.isEditing ? { ...el, containerText: '' } : el;
+
+        if (isVertical) {
+            this.renderPoolVerticalSketch(rc, ctx, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode, options);
+        } else {
+            this.renderPoolHorizontalSketch(rc, ctx, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode, options);
+        }
+    }
+
+    private renderPoolHorizontalSketch(
+        rc: any, ctx: CanvasRenderingContext2D, el: DrawingElement,
+        x: number, y: number, w: number, h: number,
+        laneCount: number, labels: string[],
+        textColor: string, font: string, smallFont: string,
+        isDarkMode: boolean, options: any
+    ): void {
+        const poolLabelW = this.getPoolLabelWidth(el);
+        const hasLaneLabels = laneCount > 1;
+        const laneLabelW = hasLaneLabels ? this.getLaneLabelWidth(el) : 0;
+
+        // Pool label column divider
+        rc.line(x + poolLabelW, y, x + poolLabelW, y + h, options);
+
+        // Lane label column divider
+        if (hasLaneLabels) {
+            rc.line(x + poolLabelW + laneLabelW, y, x + poolLabelW + laneLabelW, y + h, options);
+        }
+
+        // Lane dividers, backgrounds, and labels
+        const laneSizes = this.computeLaneSizes(el, h);
+        const laneColors = el.bpmnLaneColors ?? [];
+        const laneTextColors = el.bpmnLaneTextColors ?? [];
+        const collapsedHS = el.bpmnLaneCollapsed ?? [];
+        let laneY = y;
+        for (let i = 0; i < laneCount; i++) {
+            const laneH = laneSizes[i];
+            const isCollapsed = collapsedHS[i] ?? false;
+
+            // Per-lane background color
+            const laneBg = laneColors[i];
+            if (laneBg && laneBg !== 'transparent') {
+                ctx.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
+                const laneBodyX = x + poolLabelW + laneLabelW;
+                ctx.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
+            }
+
+            // Collapsed lane: subtle overlay
+            if (isCollapsed) {
+                ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                const laneBodyX = x + poolLabelW + laneLabelW;
+                ctx.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
+            }
+
+            if (i > 0) {
+                rc.line(x + poolLabelW, laneY, x + w, laneY, options);
+            }
+
+            // Per-lane label
+            if (hasLaneLabels) {
+                const label = labels[i] || '';
+                if (label) {
+                    const laneTC = laneTextColors[i]
+                        ? RenderPipeline.adjustColor(laneTextColors[i], isDarkMode)
+                        : textColor;
+                    ctx.save();
+                    ctx.translate(x + poolLabelW + laneLabelW / 2, laneY + laneH / 2);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = laneTC;
+                    ctx.font = smallFont;
+                    const maxLen = laneH - 10;
+                    const prefix = isCollapsed ? '\u25B8 ' : '';
+                    let displayText = prefix + label;
+                    if (ctx.measureText(displayText).width > maxLen && maxLen > 0) {
+                        displayText = prefix + label;
+                        while (displayText.length > prefix.length + 1 && ctx.measureText(displayText + '...').width > maxLen) {
+                            displayText = displayText.slice(0, -1);
+                        }
+                        displayText += '...';
+                    }
+                    ctx.fillText(displayText, 0, 0);
+                    ctx.restore();
+                }
+            }
+
+            laneY += laneH;
+        }
+
+        // Pool name
+        if (el.containerText) {
+            ctx.save();
+            ctx.translate(x + poolLabelW / 2, y + h / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = textColor;
+            ctx.font = font;
+            ctx.fillText(el.containerText, 0, 0);
+            ctx.restore();
+        }
+    }
+
+    private renderPoolVerticalSketch(
+        rc: any, ctx: CanvasRenderingContext2D, el: DrawingElement,
+        x: number, y: number, w: number, h: number,
+        laneCount: number, labels: string[],
+        textColor: string, font: string, smallFont: string,
+        isDarkMode: boolean, options: any
+    ): void {
+        const poolLabelH = this.getPoolLabelHeight(el);
+        const hasLaneLabels = laneCount > 1;
+        const laneLabelH = hasLaneLabels ? this.getLaneLabelHeight(el) : 0;
+
+        // Pool label row divider
+        rc.line(x, y + poolLabelH, x + w, y + poolLabelH, options);
+
+        // Lane label row divider
+        if (hasLaneLabels) {
+            rc.line(x, y + poolLabelH + laneLabelH, x + w, y + poolLabelH + laneLabelH, options);
+        }
+
+        // Lane dividers, backgrounds, and labels
+        const laneSizes = this.computeLaneSizes(el, w);
+        const laneColors = el.bpmnLaneColors ?? [];
+        const laneTextColors = el.bpmnLaneTextColors ?? [];
+        const collapsedVS = el.bpmnLaneCollapsed ?? [];
+        let laneX = x;
+        for (let i = 0; i < laneCount; i++) {
+            const laneW = laneSizes[i];
+            const isCollapsed = collapsedVS[i] ?? false;
+
+            // Per-lane background color
+            const laneBg = laneColors[i];
+            if (laneBg && laneBg !== 'transparent') {
+                ctx.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
+                const laneBodyY = y + poolLabelH + laneLabelH;
+                ctx.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
+            }
+
+            // Collapsed lane: subtle overlay
+            if (isCollapsed) {
+                ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                const laneBodyY = y + poolLabelH + laneLabelH;
+                ctx.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
+            }
+
+            if (i > 0) {
+                rc.line(laneX, y + poolLabelH, laneX, y + h, options);
+            }
+
+            // Per-lane label
+            if (hasLaneLabels) {
+                const label = labels[i] || '';
+                if (label) {
+                    const laneTC = laneTextColors[i]
+                        ? RenderPipeline.adjustColor(laneTextColors[i], isDarkMode)
+                        : textColor;
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = laneTC;
+                    ctx.font = smallFont;
+                    const maxLen = laneW - 10;
+                    const prefix = isCollapsed ? '\u25B8 ' : '';
+                    let displayText = prefix + label;
+                    if (ctx.measureText(displayText).width > maxLen && maxLen > 0) {
+                        displayText = prefix + label;
+                        while (displayText.length > prefix.length + 1 && ctx.measureText(displayText + '...').width > maxLen) {
+                            displayText = displayText.slice(0, -1);
+                        }
+                        displayText += '...';
+                    }
+                    ctx.fillText(displayText, laneX + laneW / 2, y + poolLabelH + laneLabelH / 2);
+                    ctx.restore();
+                }
+            }
+
+            laneX += laneW;
+        }
+
+        // Pool name
+        if (el.containerText) {
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = textColor;
+            ctx.font = font;
+            ctx.fillText(el.containerText, x + w / 2, y + poolLabelH / 2);
+            ctx.restore();
         }
     }
 

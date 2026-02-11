@@ -204,6 +204,15 @@ export const remapElementBindings = (
             updates.parentId = undefined;
         }
 
+        // Remap poolContainerId for pool lane containment
+        if (el.poolContainerId && idMap.has(el.poolContainerId)) {
+            updates.poolContainerId = idMap.get(el.poolContainerId)!;
+        } else if (el.poolContainerId && !idMap.has(el.poolContainerId)) {
+            // Pool not in selection, clear containment to avoid broken reference
+            updates.poolContainerId = null;
+            updates.poolLaneIndex = undefined;
+        }
+
         // Remap groupIds if they are part of the cloned groups
         if (el.groupIds && Array.isArray(el.groupIds)) {
             updates.groupIds = el.groupIds.map((gid: string) =>

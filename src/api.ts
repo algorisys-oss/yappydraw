@@ -46,6 +46,7 @@ import {
 } from "./utils/object-context-actions";
 import { generateId } from "./utils/id-generator";
 import { forceAutoSave, clearAutoSave } from "./storage/auto-save";
+import { assignToPoolLane, unassignFromPool, shiftLaneIndicesOnRemove, shiftLaneIndicesOnInsert } from "./utils/pool-containment";
 import { getUIShapeDef } from "./config/ui-shape-defs";
 import {
     defaultColWidths, defaultRowHeights,
@@ -195,6 +196,18 @@ interface ElementOptions {
     bpmnIconFilled?: boolean;
     bpmnNonInterrupting?: boolean;
     bpmnLaneCount?: number;
+    bpmnLaneLabels?: string[];
+    bpmnLaneHeights?: number[];
+    bpmnOrientation?: 'horizontal' | 'vertical';
+    bpmnLaneColors?: string[];
+    bpmnLaneTextColors?: string[];
+    bpmnPoolLabelSize?: number;
+    bpmnLaneLabelSize?: number;
+    bpmnLaneCollapsed?: boolean[];
+
+    // Pool containment
+    poolContainerId?: string | null;
+    poolLaneIndex?: number;
 }
 
 export const YappyAPI = {
@@ -375,7 +388,7 @@ export const YappyAPI = {
             bpmnSubProcess: { w: 140, h: 90 },
             bpmnDataObject: { w: 60, h: 80 },
             bpmnAnnotation: { w: 120, h: 60 },
-            bpmnPool: { w: 500, h: 200 },
+            bpmnPool: { w: 600, h: 300 },
             bpmnDataStore: { w: 70, h: 70 },
             bpmnGroup: { w: 200, h: 150 },
         };
@@ -1377,6 +1390,242 @@ export const YappyAPI = {
         const w = options?.width ?? 800;
         const h = options?.height ?? 600;
         return `<iframe src="${url}" width="${w}" height="${h}" frameborder="0" allowfullscreen></iframe>`;
+    },
+
+    // --- Pool Lane Management ---
+
+    /**
+     * Add a lane to a BPMN pool
+     * @param poolId - Pool element ID
+     * @param index - Optional index to insert at (defaults to end)
+     * @param label - Optional label for the new lane
+     */
+    addPoolLane(poolId: string, index?: number, label?: string): boolean {
+        const el = this.getElement(poolId);
+        if (!el || el.type !== 'bpmnPool') return false;
+        const laneCount = el.bpmnLaneCount ?? 1;
+        if (laneCount >= 6) return false;
+
+        const newCount = laneCount + 1;
+        const labels = [...(el.bpmnLaneLabels ?? [])];
+        while (labels.length < laneCount) labels.push(`Lane ${labels.length + 1}`);
+        const colors = [...(el.bpmnLaneColors ?? [])];
+        while (colors.length < laneCount) colors.push('');
+        const textColors = [...(el.bpmnLaneTextColors ?? [])];
+        while (textColors.length < laneCount) textColors.push('');
+
+        const insertIdx = index ?? labels.length;
+        labels.splice(insertIdx, 0, label ?? `Lane ${newCount}`);
+        colors.splice(insertIdx, 0, '');
+        textColors.splice(insertIdx, 0, '');
+
+        pushToHistory();
+        updateElement(poolId, { bpmnLaneCount: newCount, bpmnLaneLabels: labels, bpmnLaneColors: colors, bpmnLaneTextColors: textColors }, false);
+        // Shift lane indices for contained elements at or after the insertion point
+        if (insertIdx < laneCount) {
+            shiftLaneIndicesOnInsert(poolId, insertIdx, store.elements);
+        }
+        return true;
+    },
+
+    /**
+     * Remove a lane from a BPMN pool
+     * @param poolId - Pool element ID
+     * @param index - Lane index to remove
+     */
+    removePoolLane(poolId: string, index: number): boolean {
+        const el = this.getElement(poolId);
+        if (!el || el.type !== 'bpmnPool') return false;
+        const laneCount = el.bpmnLaneCount ?? 1;
+        if (laneCount <= 1 || index < 0 || index >= laneCount) return false;
+
+        const newCount = laneCount - 1;
+        const labels = [...(el.bpmnLaneLabels ?? [])];
+        if (index < labels.length) labels.splice(index, 1);
+        const colors = [...(el.bpmnLaneColors ?? [])];
+        if (index < colors.length) colors.splice(index, 1);
+        const textColors = [...(el.bpmnLaneTextColors ?? [])];
+        if (index < textColors.length) textColors.splice(index, 1);
+        const collapsed = [...(el.bpmnLaneCollapsed ?? [])];
+        if (index < collapsed.length) collapsed.splice(index, 1);
+
+        pushToHistory();
+        updateElement(poolId, {
+            bpmnLaneCount: newCount,
+            bpmnLaneLabels: labels,
+            bpmnLaneColors: colors,
+            bpmnLaneTextColors: textColors,
+            bpmnLaneCollapsed: collapsed.length > 0 ? collapsed : undefined as any,
+        }, false);
+        shiftLaneIndicesOnRemove(poolId, index, store.elements);
+        return true;
+    },
+
+    /**
+     * Set a lane label in a BPMN pool
+     * @param poolId - Pool element ID
+     * @param laneIndex - Lane index
+     * @param label - New label text
+     */
+    setPoolLaneLabel(poolId: string, laneIndex: number, label: string): boolean {
+        const el = this.getElement(poolId);
+        if (!el || el.type !== 'bpmnPool') return false;
+        const laneCount = el.bpmnLaneCount ?? 1;
+        if (laneIndex < 0 || laneIndex >= laneCount) return false;
+
+        const labels = [...(el.bpmnLaneLabels ?? [])];
+        while (labels.length < laneCount) labels.push(`Lane ${labels.length + 1}`);
+        labels[laneIndex] = label;
+
+        pushToHistory();
+        updateElement(poolId, { bpmnLaneLabels: labels }, false);
+        return true;
+    },
+
+    /**
+     * Set pool orientation (horizontal or vertical)
+     * @param poolId - Pool element ID
+     * @param orientation - 'horizontal' or 'vertical'
+     */
+    setPoolOrientation(poolId: string, orientation: 'horizontal' | 'vertical'): boolean {
+        const el = this.getElement(poolId);
+        if (!el || el.type !== 'bpmnPool') return false;
+
+        pushToHistory();
+        updateElement(poolId, { bpmnOrientation: orientation }, false);
+        return true;
+    },
+
+    /**
+     * Get pool lane information
+     * @param poolId - Pool element ID
+     */
+    getPoolLanes(poolId: string): { labels: string[]; heights: number[]; orientation: string; colors: string[]; textColors: string[] } | null {
+        const el = this.getElement(poolId);
+        if (!el || el.type !== 'bpmnPool') return null;
+
+        const laneCount = el.bpmnLaneCount ?? 1;
+        const labels = el.bpmnLaneLabels ?? Array.from({ length: laneCount }, (_, i) => `Lane ${i + 1}`);
+        const heights = el.bpmnLaneHeights ?? Array.from({ length: laneCount }, () => 1 / laneCount);
+        const orientation = el.bpmnOrientation ?? 'horizontal';
+        const colors = el.bpmnLaneColors ?? [];
+        const textColors = el.bpmnLaneTextColors ?? [];
+
+        return { labels: [...labels], heights: [...heights], orientation, colors: [...colors], textColors: [...textColors] };
+    },
+
+    /**
+     * Set per-lane background color
+     */
+    setPoolLaneColor(poolId: string, laneIndex: number, color: string): boolean {
+        const el = this.getElement(poolId);
+        if (!el || el.type !== 'bpmnPool') return false;
+        const laneCount = el.bpmnLaneCount ?? 1;
+        if (laneIndex < 0 || laneIndex >= laneCount) return false;
+
+        const colors = [...(el.bpmnLaneColors ?? Array(laneCount).fill(''))];
+        while (colors.length < laneCount) colors.push('');
+        colors[laneIndex] = color;
+        pushToHistory();
+        updateElement(poolId, { bpmnLaneColors: colors }, false);
+        return true;
+    },
+
+    /**
+     * Set per-lane text color
+     */
+    setPoolLaneTextColor(poolId: string, laneIndex: number, color: string): boolean {
+        const el = this.getElement(poolId);
+        if (!el || el.type !== 'bpmnPool') return false;
+        const laneCount = el.bpmnLaneCount ?? 1;
+        if (laneIndex < 0 || laneIndex >= laneCount) return false;
+
+        const textColors = [...(el.bpmnLaneTextColors ?? Array(laneCount).fill(''))];
+        while (textColors.length < laneCount) textColors.push('');
+        textColors[laneIndex] = color;
+        pushToHistory();
+        updateElement(poolId, { bpmnLaneTextColors: textColors }, false);
+        return true;
+    },
+
+    // --- Pool Lane Containment ---
+
+    /**
+     * Assign an element to a pool lane
+     * @param elementId - Element ID to assign
+     * @param poolId - Pool element ID
+     * @param laneIndex - 0-based lane index
+     */
+    assignToPoolLane(elementId: string, poolId: string, laneIndex: number): boolean {
+        const el = this.getElement(elementId);
+        const pool = this.getElement(poolId);
+        if (!el || !pool || pool.type !== 'bpmnPool') return false;
+        const laneCount = pool.bpmnLaneCount ?? 1;
+        if (laneIndex < 0 || laneIndex >= laneCount) return false;
+
+        pushToHistory();
+        assignToPoolLane(elementId, poolId, laneIndex);
+        return true;
+    },
+
+    /**
+     * Remove an element from its pool lane
+     * @param elementId - Element ID to remove from pool
+     */
+    removeFromPool(elementId: string): boolean {
+        const el = this.getElement(elementId);
+        if (!el || !el.poolContainerId) return false;
+
+        pushToHistory();
+        unassignFromPool(elementId);
+        return true;
+    },
+
+    /**
+     * Get all elements contained in a specific pool or pool lane
+     * @param poolId - Pool element ID
+     * @param laneIndex - Optional lane index filter (all lanes if omitted)
+     */
+    getPoolContainedElements(poolId: string, laneIndex?: number): DrawingElement[] {
+        return store.elements.filter(el => {
+            if (el.poolContainerId !== poolId) return false;
+            if (laneIndex !== undefined && el.poolLaneIndex !== laneIndex) return false;
+            return true;
+        });
+    },
+
+    // --- Pool Lane Collapse ---
+
+    /**
+     * Set a lane's collapsed state
+     * @param poolId - Pool element ID
+     * @param laneIndex - Lane index
+     * @param collapsed - true to collapse, false to expand
+     */
+    setPoolLaneCollapsed(poolId: string, laneIndex: number, collapsed: boolean): boolean {
+        const el = this.getElement(poolId);
+        if (!el || el.type !== 'bpmnPool') return false;
+        const laneCount = el.bpmnLaneCount ?? 1;
+        if (laneIndex < 0 || laneIndex >= laneCount) return false;
+
+        const collapsedArr = [...(el.bpmnLaneCollapsed ?? Array(laneCount).fill(false))];
+        while (collapsedArr.length < laneCount) collapsedArr.push(false);
+        collapsedArr[laneIndex] = collapsed;
+
+        pushToHistory();
+        updateElement(poolId, { bpmnLaneCollapsed: collapsedArr }, false);
+        return true;
+    },
+
+    /**
+     * Check if a lane is collapsed
+     * @param poolId - Pool element ID
+     * @param laneIndex - Lane index
+     */
+    isPoolLaneCollapsed(poolId: string, laneIndex: number): boolean {
+        const el = this.getElement(poolId);
+        if (!el || el.type !== 'bpmnPool') return false;
+        return el.bpmnLaneCollapsed?.[laneIndex] ?? false;
     }
 };
 

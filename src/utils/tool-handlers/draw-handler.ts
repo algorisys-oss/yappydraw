@@ -13,6 +13,7 @@ import { snapPoint } from '../snap-helpers';
 import { generateId } from '../id-generator';
 import { defaultTableData, defaultColWidths, defaultRowHeights } from '../table-utils';
 import { getUIShapeDef } from '../../config/ui-shape-defs';
+import { hitTestPoolLane, assignToPoolLane } from '../pool-containment';
 
 // Shapes that default to solid stroke
 const SOLID_STROKE_SHAPES = [
@@ -73,6 +74,8 @@ export function drawOnDown(
     pState.isDrawing = true;
     pState.penPointsBuffer = [];
     pState.lastPenUpdateTime = 0;
+    pState.elbowCommittedPoints = [{ x: 0, y: 0 }];
+    pState.elbowDirection = null;
 
     // Snap start position if enabled
     let creationX = x;
@@ -88,17 +91,17 @@ export function drawOnDown(
     pState.currentId = generateId(store.selectedTool);
 
     const tool = store.selectedTool;
-    const actualType = tool === 'bezier' ? 'line' : tool;
+    const actualType = tool === 'bezier' ? 'line' : (tool === 'elbow' ? 'arrow' : tool);
     const actualCurveType = (tool === 'bezier' || tool === 'organicBranch')
         ? 'bezier'
-        : (store.defaultElementStyles.curveType || 'straight');
+        : (tool === 'elbow' ? 'elbow' : (store.defaultElementStyles.curveType || 'straight'));
 
     // Check for start binding at creation time (connectors only — not plain lines)
     let startBindingData: { elementId: string; focus: number; gap: number; position?: string } | undefined;
     let snappedStartX = creationX;
     let snappedStartY = creationY;
 
-    if (tool === 'arrow' || tool === 'bezier' || tool === 'organicBranch') {
+    if (tool === 'arrow' || tool === 'bezier' || tool === 'elbow' || tool === 'organicBranch') {
         const match = helpers.checkBinding(creationX, creationY, pState.currentId);
         if (match) {
             startBindingData = {
@@ -166,6 +169,20 @@ export function drawOnDown(
         newElement.tableAltRowColor = '';
         newElement.tableSortCol = -1;
         newElement.tableSortDir = 'asc';
+    }
+
+    // Apply specific defaults for BPMN Pool
+    if (actualType === 'bpmnPool') {
+        newElement.bpmnLaneCount = 2;
+        newElement.bpmnLaneLabels = ['Lane 1', 'Lane 2'];
+        newElement.bpmnOrientation = 'horizontal';
+        newElement.containerText = 'Pool';
+        newElement.fillStyle = 'solid';
+        // Use theme-aware colors so strokes remain visible against background
+        const isFocus = store.theme === 'focus';
+        newElement.backgroundColor = isFocus ? '#1e293b' : '#ffffff';
+        newElement.strokeColor = isFocus ? '#94a3b8' : '#000000';
+        newElement.textColor = isFocus ? '#e2e8f0' : '#000000';
     }
 
     // Apply specific defaults for Code Block
@@ -246,7 +263,7 @@ export function drawOnMove(
     let finalY = y;
 
     // Check binding for connector tools only (not plain lines)
-    if (store.selectedTool === 'arrow' || store.selectedTool === 'bezier' || store.selectedTool === 'organicBranch' || pState.draggingFromConnector) {
+    if (store.selectedTool === 'arrow' || store.selectedTool === 'bezier' || store.selectedTool === 'elbow' || store.selectedTool === 'organicBranch' || pState.draggingFromConnector) {
         if (pState.currentId) {
             const match = helpers.checkBinding(x, y, pState.currentId);
             if (match) {
@@ -280,6 +297,55 @@ export function drawOnMove(
         const cp1 = { x: pState.startX + w * 0.5, y: pState.startY };
         const cp2 = { x: finalX - w * 0.5, y: finalY };
         updates.controlPoints = [cp1, cp2];
+    }
+
+    // For elbow, track direction changes to build multi-bend orthogonal path
+    if (store.selectedTool === 'elbow') {
+        const BEND_THRESHOLD = 15;
+        const relX = finalX - pState.startX;
+        const relY = finalY - pState.startY;
+        const committed = pState.elbowCommittedPoints;
+        const last = committed[committed.length - 1];
+        const dx = relX - last.x;
+        const dy = relY - last.y;
+
+        // Determine initial direction after sufficient movement
+        if (pState.elbowDirection === null) {
+            if (Math.abs(dx) > BEND_THRESHOLD || Math.abs(dy) > BEND_THRESHOLD) {
+                pState.elbowDirection = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
+            }
+        }
+
+        // Detect direction change → commit bend point
+        if (pState.elbowDirection === 'h' && Math.abs(dy) > BEND_THRESHOLD) {
+            committed.push({ x: relX, y: last.y });
+            pState.elbowDirection = 'v';
+        } else if (pState.elbowDirection === 'v' && Math.abs(dx) > BEND_THRESHOLD) {
+            committed.push({ x: last.x, y: relY });
+            pState.elbowDirection = 'h';
+        }
+
+        // Build preview: committed points + trailing constrained segment + cursor endpoint
+        const updatedLast = committed[committed.length - 1];
+        const pts: { x: number; y: number }[] = [...committed];
+
+        if (pState.elbowDirection === 'h') {
+            pts.push({ x: relX, y: updatedLast.y });
+            // Add small perpendicular stub if cursor is offset
+            if (Math.abs(relY - updatedLast.y) > 1) {
+                pts.push({ x: relX, y: relY });
+            }
+        } else if (pState.elbowDirection === 'v') {
+            pts.push({ x: updatedLast.x, y: relY });
+            if (Math.abs(relX - updatedLast.x) > 1) {
+                pts.push({ x: relX, y: relY });
+            }
+        } else {
+            // No direction yet — just show endpoint
+            pts.push({ x: relX, y: relY });
+        }
+
+        updates.points = pts as any;
     }
 
     if (pState.currentId) updateElement(pState.currentId, updates);
@@ -320,6 +386,23 @@ export function drawOnUp(
             signals.setSuggestedBinding(null);
         }
 
+        // Finalize elbow routing: use refreshBoundLine for smart anchor switching + routing
+        if (el.curveType === 'elbow' && pState.currentId) {
+            if (el.startBinding && el.endBinding) {
+                // refreshBoundLine picks ideal anchor positions (left/right/top/bottom)
+                // based on relative shape positions, then routes accordingly
+                helpers.refreshBoundLine(pState.currentId);
+            } else {
+                const updatedEl = store.elements.find(e => e.id === pState.currentId);
+                if (updatedEl) {
+                    const pts = helpers.refreshLinePoints(updatedEl);
+                    if (pts) {
+                        updateElement(pState.currentId, { points: pts });
+                    }
+                }
+            }
+        }
+
         // Normalize negative dimensions for geometric shapes
         if (NORMALIZABLE_SHAPES.includes(el.type)) {
             if (el.width < 0) {
@@ -351,6 +434,23 @@ export function drawOnUp(
                     width: uiShapeDef.defaultWidth,
                     height: uiShapeDef.defaultHeight,
                 });
+            }
+        }
+
+        // Auto-assign to pool lane if drawn inside one (skip pools themselves)
+        if (el.type !== 'bpmnPool') {
+            const finalEl = store.elements.find(e => e.id === pState.currentId);
+            if (finalEl) {
+                const cx = finalEl.x + finalEl.width / 2;
+                const cy = finalEl.y + finalEl.height / 2;
+                for (const pool of store.elements) {
+                    if (pool.type !== 'bpmnPool') continue;
+                    const lane = hitTestPoolLane(pool, cx, cy, true);
+                    if (lane >= 0) {
+                        assignToPoolLane(finalEl.id, pool.id, lane);
+                        break;
+                    }
+                }
             }
         }
 

@@ -364,6 +364,18 @@ const ToolbarContainer: Component<{
     const handlePropertyChange = (key: string, value: any) => {
         const el = element();
         if (!el) return;
+        // Sync lane arrays when lane count changes
+        if (el.type === 'bpmnPool' && key === 'bpmnLaneCount') {
+            const newCount = Number(value);
+            const oldLabels = el.bpmnLaneLabels ?? [];
+            const oldColors = el.bpmnLaneColors ?? [];
+            const oldTextColors = el.bpmnLaneTextColors ?? [];
+            const newLabels = Array.from({ length: newCount }, (_, i) => oldLabels[i] ?? `Lane ${i + 1}`);
+            const newColors = Array.from({ length: newCount }, (_, i) => oldColors[i] ?? '');
+            const newTextColors = Array.from({ length: newCount }, (_, i) => oldTextColors[i] ?? '');
+            updateElement(el.id, { bpmnLaneCount: newCount, bpmnLaneLabels: newLabels, bpmnLaneColors: newColors, bpmnLaneTextColors: newTextColors }, false);
+            return;
+        }
         updateElement(el.id, { [key]: value }, false);
     };
 

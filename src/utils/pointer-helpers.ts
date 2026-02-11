@@ -46,5 +46,7 @@ export interface PointerSignals {
     setSpacingGuides: (v: SpacingGuide[]) => void;
     reparentDropTarget: () => string | null;
     setReparentDropTarget: (v: string | null) => void;
+    poolLaneDropTarget: () => { poolId: string; laneIndex: number } | null;
+    setPoolLaneDropTarget: (v: { poolId: string; laneIndex: number } | null) => void;
     textInputRef?: HTMLTextAreaElement;
 }

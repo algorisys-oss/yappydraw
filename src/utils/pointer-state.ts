@@ -47,11 +47,27 @@ export interface PointerState {
     tableCellSelectionDragging: boolean;  // true when drag-selecting cells
     pendingCellClick: { row: number; col: number; elementId: string } | null; // deferred until mouseUp
 
+    // BPMN Pool lane divider resize
+    poolLaneResizeIndex: number;          // lane divider index being resized (-1 = none)
+    poolLaneResizeElementId: string | null;
+    poolLaneResizeStartPos: number;       // start Y (horizontal) or X (vertical)
+    poolLaneResizeInitialHeights: number[] | null;
+
+    // BPMN Pool header/lane-label column divider resize
+    poolHeaderResizeType: 'pool' | 'lane' | null;  // which header divider is being resized
+    poolHeaderResizeElementId: string | null;
+    poolHeaderResizeStartPos: number;               // start X (horizontal) or Y (vertical)
+    poolHeaderResizeInitialSize: number;             // initial size in px
+
     // 3D shape view angle control (Alt+drag)
     initial3DViewAngle: number | undefined;
     initial3DDepth: number | undefined;
     initial3DStartX: number | undefined;
     initial3DStartY: number | undefined;
+
+    // Elbow multi-bend drawing state
+    elbowCommittedPoints: { x: number; y: number }[];
+    elbowDirection: 'h' | 'v' | null;
 }
 
 export function createPointerState(): PointerState {
@@ -94,9 +110,19 @@ export function createPointerState(): PointerState {
         tableCellSelectionElementId: null,
         tableCellSelectionDragging: false,
         pendingCellClick: null,
+        poolLaneResizeIndex: -1,
+        poolLaneResizeElementId: null,
+        poolLaneResizeStartPos: 0,
+        poolLaneResizeInitialHeights: null,
+        poolHeaderResizeType: null,
+        poolHeaderResizeElementId: null,
+        poolHeaderResizeStartPos: 0,
+        poolHeaderResizeInitialSize: 0,
         initial3DViewAngle: undefined,
         initial3DDepth: undefined,
         initial3DStartX: undefined,
         initial3DStartY: undefined,
+        elbowCommittedPoints: [],
+        elbowDirection: null,
     };
 }

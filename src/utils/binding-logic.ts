@@ -32,6 +32,8 @@ export function checkBinding(
         // Skip connectors as targets, but allow unbound polylines (they act as shapes)
         const isPolylineShape = target.type === 'line' && target.curveType === 'elbow' && !target.startBinding && !target.endBinding;
         if ((target.type === 'line' || target.type === 'arrow' || target.type === 'bezier' || target.type === 'organicBranch') && !isPolylineShape) continue;
+        // Skip pool containers — connectors should bind to shapes inside the pool, not the pool itself
+        if (target.type === 'bpmnPool') continue;
         if (target.layerId !== activeLayerId) continue;
 
         let isHit = false;

@@ -109,10 +109,10 @@ const UmlToolGroup: Component = () => {
                 <div class="tool-icon-wrapper">
                     {(() => {
                         const Icon = activeTool().icon;
-                        return <Icon size={20} />;
+                        return <Icon size={18} />;
                     })()}
                     <ChevronDown
-                        size={10}
+                        size={9}
                         class="submenu-indicator"
                     />
                 </div>
@@ -128,7 +128,7 @@ const UmlToolGroup: Component = () => {
                                 on:dblclick={() => handleToolDoubleClick(tool.type)}
                                 title={`${tool.label} (double-click to lock)`}
                             >
-                                <tool.icon size={18} />
+                                <tool.icon size={16} />
                             </button>
                         ))}
                     </div>

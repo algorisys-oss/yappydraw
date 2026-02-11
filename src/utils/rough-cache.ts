@@ -145,6 +145,14 @@ export function computeElementHash(el: DrawingElement): string {
     if (el.bpmnIconScale !== undefined && el.bpmnIconScale !== 1) h += `|bis${el.bpmnIconScale}`;
     if (el.bpmnIconColor) h += `|bic${el.bpmnIconColor}`;
     if (el.bpmnIconFilled) h += `|bif1`;
+    if (el.bpmnLaneLabels?.length) h += `|bll${el.bpmnLaneLabels.join(',')}`;
+    if (el.bpmnLaneHeights?.length) h += `|blh${el.bpmnLaneHeights.join(',')}`;
+    if (el.bpmnOrientation) h += `|bor${el.bpmnOrientation}`;
+    if (el.bpmnLaneColors?.length) h += `|blc2${el.bpmnLaneColors.join(',')}`;
+    if (el.bpmnLaneTextColors?.length) h += `|bltc${el.bpmnLaneTextColors.join(',')}`;
+    if (el.bpmnPoolLabelSize != null) h += `|bpls${el.bpmnPoolLabelSize}`;
+    if (el.bpmnLaneLabelSize != null) h += `|blls${el.bpmnLaneLabelSize}`;
+    if (el.bpmnLaneCollapsed?.length) h += `|blcoll${el.bpmnLaneCollapsed.join(',')}`;
 
     // Table properties
     if (el.type === 'table') {

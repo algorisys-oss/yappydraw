@@ -2,14 +2,15 @@ import { type Component, createSignal, Show, For, createEffect, onCleanup } from
 import { Portal } from "solid-js/web";
 import { store, setSelectedTool, setSelectedConnectorType, setStore, setToolLocked } from "../store/app-store";
 import type { ElementType } from "../types";
-import { MoveUpRight, Minus, Spline, Waypoints, ChevronDown } from "lucide-solid";
+import { MoveUpRight, Minus, Spline, Waypoints, CornerDownRight, ChevronDown } from "lucide-solid";
 import "./connector-tool-group.css";
 
-export type ConnectorType = 'arrow' | 'line' | 'bezier' | 'polyline';
+export type ConnectorType = 'arrow' | 'line' | 'bezier' | 'elbow' | 'polyline';
 
 const connectorTools: { type: ConnectorType; icon: Component<{ size?: number }>; label: string }[] = [
     { type: 'line', icon: Minus, label: 'Line (L or 4)' },
     { type: 'arrow', icon: MoveUpRight, label: 'Arrow (A or 5)' },
+    { type: 'elbow', icon: CornerDownRight, label: 'Elbow Connector' },
     { type: 'bezier', icon: Spline, label: 'Bezier Curve (B or 0)' },
     { type: 'polyline', icon: Waypoints, label: 'Polyline (click to place points)' },
 ];
@@ -36,7 +37,7 @@ const ConnectorToolGroup: Component = () => {
     };
 
     const isConnectorToolActive = () => {
-        return ['arrow', 'line', 'bezier', 'polyline'].includes(store.selectedTool);
+        return ['arrow', 'line', 'bezier', 'elbow', 'polyline'].includes(store.selectedTool);
     };
 
     let clickTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -97,10 +98,10 @@ const ConnectorToolGroup: Component = () => {
                 <div class="tool-icon-wrapper">
                     {(() => {
                         const Icon = getCurrentTool().icon;
-                        return <Icon size={20} />;
+                        return <Icon size={18} />;
                     })()}
                     <ChevronDown
-                        size={10}
+                        size={9}
                         class="submenu-indicator"
                     />
                 </div>
@@ -117,7 +118,7 @@ const ConnectorToolGroup: Component = () => {
                                     on:dblclick={() => handleSelectConnectorDouble(tool.type)}
                                     title={`${tool.label} (double-click to lock)`}
                                 >
-                                    <tool.icon size={18} />
+                                    <tool.icon size={16} />
                                 </button>
                             )}
                         </For>

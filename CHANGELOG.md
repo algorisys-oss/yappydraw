@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-02-11
+
+### Added
+- **BPMN Swimlane Pools** — full dynamic swimlane system for process diagrams:
+  - Dynamic lane add/remove via context menu (up to 6 lanes per pool)
+  - Horizontal and vertical orientation toggle
+  - Editable per-lane labels with rotated text rendering
+  - Per-lane background and text colors via context menu color swatches
+  - Drag-to-resize lane dividers with proportional sizing
+  - Draggable pool header and lane-label width dividers
+  - Collapsible lanes — collapse to thin strip, hiding contained elements
+  - Both Sketch (RoughJS) and Architectural rendering modes
+- **Pool Element Containment** — logical parent-child relationship between pools and elements:
+  - Elements dropped inside a lane auto-associate (`poolContainerId` + `poolLaneIndex`)
+  - Contained elements move with the pool when dragged
+  - Deleting a pool uncontains its children; removing a lane shifts indices
+  - Pool lane drop highlight (blue overlay) during drag
+- **Elbow Connector Tool** with advanced multi-bend routing:
+  - Multi-bend drawing — direction changes during draw automatically create bend points
+  - Smart arrow direction — auto-detects best anchor position (top/bottom/left/right) based on shape positions
+  - Draggable bend points — click and drag individual vertices on selected elbow connectors
+  - Draggable edge segments — drag horizontal/vertical segments to adjust routing
+  - A* smart pathfinding for bound elbow connectors (routes around shapes)
+- **BPMN demo diagram** — "Ordering a drink from a Vending machine" example (`public/examples/bpmn-demo.json`)
+- **120+ new E2E tests** — BPMN shapes, code blocks, data structures, layers, elements, z-order, alignment, slides, UI panels, and table features
+- Pool containment API: `assignToPoolLane()`, `removeFromPool()`, `getPoolContainedElements()`, `setPoolLaneCollapsed()`, `isPoolLaneCollapsed()`
+
+### Fixed
+- Build errors in `text-editing-overlay.tsx`, `status-tool-group.tsx`, `bpmn-renderer.ts`, `app-store.ts`, and `context-menu-builder.ts`
+- Unreachable code paths in BPMN pool renderer removed
+- Unused imports and parameters cleaned up across multiple files
+
 ## [1.10.0] - 2026-02-11
 
 ### Added

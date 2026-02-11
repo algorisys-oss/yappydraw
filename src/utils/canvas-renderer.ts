@@ -18,6 +18,7 @@ import { getAnchorPoints } from './anchor-points';
 import { projectMasterPosition } from './slide-utils';
 import { getImage } from './image-cache';
 import { computeCellRects, defaultColWidths, defaultRowHeights, normalizeCellSelection } from './table-utils';
+import { getPoolLaneRect } from './pool-containment';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -64,6 +65,7 @@ export interface SelectionOverlayParams {
     isDarkMode?: boolean;
     appMode?: string;
     reparentDropTarget?: string | null;
+    poolLaneDropTarget?: { poolId: string; laneIndex: number } | null;
 }
 
 export interface ConnectionAnchorParams {
@@ -552,15 +554,24 @@ export function renderLayersAndElements(
             if (layer.isMaster) return true;
             if (isElementHiddenByHierarchy(el, elements, elementMap)) return false;
 
-            // Hide connectors if their bound elements are hidden
+            // Hide elements contained in collapsed pool lanes
+            if (el.poolContainerId && el.poolLaneIndex !== undefined) {
+                const pool = elementMap.get(el.poolContainerId);
+                if (pool && pool.bpmnLaneCollapsed?.[el.poolLaneIndex]) return false;
+            }
+
+            // Hide connectors if their bound elements are hidden (hierarchy or collapsed lane)
             if (el.type === 'line' || el.type === 'arrow' || el.type === 'bezier' || el.type === 'organicBranch') {
+                const isInCollapsedLane = (e: DrawingElement) =>
+                    e.poolContainerId && e.poolLaneIndex !== undefined &&
+                    elementMap.get(e.poolContainerId)?.bpmnLaneCollapsed?.[e.poolLaneIndex];
                 if (el.startBinding) {
                     const startEl = elementMap.get(el.startBinding.elementId);
-                    if (startEl && isElementHiddenByHierarchy(startEl, elements, elementMap)) return false;
+                    if (startEl && (isElementHiddenByHierarchy(startEl, elements, elementMap) || isInCollapsedLane(startEl))) return false;
                 }
                 if (el.endBinding) {
                     const endEl = elementMap.get(el.endBinding.elementId);
-                    if (endEl && isElementHiddenByHierarchy(endEl, elements, elementMap)) return false;
+                    if (endEl && (isElementHiddenByHierarchy(endEl, elements, elementMap) || isInCollapsedLane(endEl))) return false;
                 }
             }
 
@@ -692,6 +703,24 @@ export function renderSelectionOverlays(
     if (params.reparentDropTarget) {
         const target = elements.find(e => e.id === params.reparentDropTarget);
         if (target) renderDropTargetHighlight(ctx, target, scale);
+    }
+
+    // Pool lane drop target highlight
+    if (params.poolLaneDropTarget) {
+        const pool = elements.find(e => e.id === params.poolLaneDropTarget!.poolId);
+        if (pool) {
+            const laneRect = getPoolLaneRect(pool, params.poolLaneDropTarget!.laneIndex);
+            if (laneRect) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.12)';
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 2 / scale;
+                ctx.setLineDash([6 / scale, 3 / scale]);
+                ctx.fillRect(laneRect.x, laneRect.y, laneRect.width, laneRect.height);
+                ctx.strokeRect(laneRect.x, laneRect.y, laneRect.width, laneRect.height);
+                ctx.restore();
+            }
+        }
     }
 
     // Snapping & spacing guides

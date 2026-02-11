@@ -11,6 +11,7 @@ export interface MenuItem {
     submenu?: MenuItem[];
     gridColumns?: number; // Number of columns for grid layout in submenu
     icon?: string; // Icon to display (emoji or Unicode symbol)
+    iconColor?: string; // Color to apply to the icon (e.g., for color swatches)
     tooltip?: string; // Tooltip text for hover
 }
 
@@ -145,10 +146,16 @@ const ContextMenu: Component<ContextMenuProps> = (props) => {
                                 <span class="menu-item-check">
                                     {item.checked ? '✓' : ''}
                                 </span>
-                                <Show when={item.icon} fallback={
+                                <Show when={item.icon}>
+                                    <span class="menu-item-icon" style={{
+                                        "font-size": "20px",
+                                        "line-height": "1",
+                                        color: item.iconColor || undefined,
+                                        ...(item.iconColor ? { "text-shadow": "0 0 1px rgba(0,0,0,0.4)" } : {})
+                                    }}>{item.icon}</span>
+                                </Show>
+                                <Show when={item.label}>
                                     <span class="menu-item-label">{item.label}</span>
-                                }>
-                                    <span class="menu-item-icon" style={{ "font-size": "20px", "line-height": "1" }}>{item.icon}</span>
                                 </Show>
                                 <Show when={item.shortcut}>
                                     <span class="menu-item-shortcut">{item.shortcut}</span>

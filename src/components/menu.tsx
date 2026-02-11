@@ -449,7 +449,7 @@ const Menu: Component = () => {
                                 <div class="drag-dots"></div>
                             </div>
                             <button class={`menu-btn ${isMenuOpen() ? 'active' : ''}`} title="Menu" onClick={() => setIsMenuOpen(!isMenuOpen())}>
-                                <MenuIcon size={20} />
+                                <MenuIcon size={18} />
                             </button>
 
                             <Show when={isMenuOpen()}>
@@ -578,11 +578,11 @@ const Menu: Component = () => {
 
                             <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 4px' }}></div>
                             <button class="menu-btn" onClick={() => deleteElements(store.selection)} title="Delete (Del)" disabled={store.selection.length === 0}>
-                                <Trash2 size={18} />
+                                <Trash2 size={16} />
                             </button>
                             <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 4px' }}></div>
                             <button class="menu-btn" onClick={handleResetView} title="Zoom to Fit (Ctrl+1)">
-                                <Maximize size={18} />
+                                <Maximize size={16} />
                             </button>
                         </div>
                     </div>
@@ -608,7 +608,7 @@ const Menu: Component = () => {
                                     title="Play All Animations"
                                     disabled={isGlobalPlaying() && !isGlobalPaused()}
                                 >
-                                    <Play size={18} color={isGlobalPlaying() && !isGlobalPaused() ? "#9ca3af" : "#10b981"} fill={isGlobalPlaying() && !isGlobalPaused() ? "#9ca3af" : "#10b981"} />
+                                    <Play size={16} color={isGlobalPlaying() && !isGlobalPaused() ? "#9ca3af" : "#10b981"} fill={isGlobalPlaying() && !isGlobalPaused() ? "#9ca3af" : "#10b981"} />
                                 </button>
                                 <button
                                     class="menu-btn"
@@ -616,7 +616,7 @@ const Menu: Component = () => {
                                     title={isGlobalPaused() ? "Resume Animations" : "Pause Animations"}
                                     disabled={!isGlobalPlaying() && !isGlobalPaused()}
                                 >
-                                    <Pause size={18} color={!isGlobalPlaying() && !isGlobalPaused() ? "#9ca3af" : "#f59e0b"} fill={!isGlobalPlaying() && !isGlobalPaused() ? "#9ca3af" : "#f59e0b"} />
+                                    <Pause size={16} color={!isGlobalPlaying() && !isGlobalPaused() ? "#9ca3af" : "#f59e0b"} fill={!isGlobalPlaying() && !isGlobalPaused() ? "#9ca3af" : "#f59e0b"} />
                                 </button>
                                 <button
                                     class="menu-btn"
@@ -624,7 +624,7 @@ const Menu: Component = () => {
                                     title="Stop All Animations"
                                     disabled={!isGlobalPlaying() && !isGlobalPaused()}
                                 >
-                                    <Square size={18} color="#ef4444" fill="#ef4444" />
+                                    <Square size={16} color="#ef4444" fill="#ef4444" />
                                 </button>
                                 <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 4px' }}></div>
                                 <div ref={p3PickerRef} style={{ position: 'relative' }}>
@@ -633,7 +633,7 @@ const Menu: Component = () => {
                                         onClick={() => setIsP3PickerOpen(!isP3PickerOpen())}
                                         title="P3 Color Palette"
                                     >
-                                        <Palette size={18} color="#f43f5e" />
+                                        <Palette size={16} color="#f43f5e" />
                                     </button>
                                     <Show when={isP3PickerOpen()}>
                                         <div
@@ -654,7 +654,7 @@ const Menu: Component = () => {
                                 </div>
                                 <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 4px' }}></div>
                                 <button class="menu-btn" onClick={toggleTheme} title="Toggle Theme (Light / Dark / Focus)">
-                                    {store.theme === 'light' ? <Moon size={18} /> : store.theme === 'dark' ? <Focus size={18} /> : <Sun size={18} />}
+                                    {store.theme === 'light' ? <Moon size={16} /> : store.theme === 'dark' ? <Focus size={16} /> : <Sun size={16} />}
                                 </button>
 
                             </div>
@@ -677,7 +677,7 @@ const Menu: Component = () => {
                                     onClick={() => setIsUtilityMenuOpen(!isUtilityMenuOpen())}
                                     title="More Actions"
                                 >
-                                    <MoreVertical size={20} />
+                                    <MoreVertical size={18} />
                                 </button>
                                 <Show when={isUtilityMenuOpen()}>
                                     <div class="menu-dropdown" style={{ right: 0, left: 'auto', width: '200px', top: '48px' }}>

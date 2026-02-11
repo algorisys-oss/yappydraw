@@ -210,7 +210,7 @@ const Toolbar: Component = () => {
                         onContextMenu={handleRightClick}
                         title={tool.label}
                     >
-                        <tool.icon size={20} />
+                        <tool.icon size={18} />
                     </button>
                 )}
             </For>
@@ -269,7 +269,7 @@ const Toolbar: Component = () => {
                         onContextMenu={handleRightClick}
                         title={tool.label}
                     >
-                        <tool.icon size={20} />
+                        <tool.icon size={18} />
                     </button>
                 )}
             </For>

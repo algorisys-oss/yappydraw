@@ -664,6 +664,21 @@ const PropertyPanel: Component = () => {
             return;
         }
 
+        // BPMN Pool: sync lane arrays when lane count changes
+        if (target.type === 'element' && target.data.type === 'bpmnPool' && key === 'bpmnLaneCount') {
+            const el = target.data;
+            const id = targetId || el.id!;
+            const newCount = Number(finalValue);
+            const oldLabels = el.bpmnLaneLabels ?? [];
+            const oldColors = el.bpmnLaneColors ?? [];
+            const oldTextColors = el.bpmnLaneTextColors ?? [];
+            const newLabels = Array.from({ length: newCount }, (_, i) => oldLabels[i] ?? `Lane ${i + 1}`);
+            const newColors = Array.from({ length: newCount }, (_, i) => oldColors[i] ?? '');
+            const newTextColors = Array.from({ length: newCount }, (_, i) => oldTextColors[i] ?? '');
+            updateElement(id, { bpmnLaneCount: newCount, bpmnLaneLabels: newLabels, bpmnLaneColors: newColors, bpmnLaneTextColors: newTextColors }, history);
+            return;
+        }
+
         if (target.type === 'element') {
             updateElement(targetId || target.data.id!, { [key]: finalValue }, history);
         } else if (target.type === 'multi') {

@@ -24,6 +24,7 @@ import { normalizePoints } from '../render-element';
 import { connectorHandleOnDown } from './minor-handlers';
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestColEdge, hitTestRowEdge, hitTestTableCell, sortTableData, reorderColumns } from '../table-utils';
 import { measureWrappedTextHeight } from '../text-utils';
+import { hitTestPoolLane, assignToPoolLane, unassignFromPool } from '../pool-containment';
 
 // ─── Helper: Capture initial positions for move/resize ──────────────
 
@@ -64,6 +65,16 @@ function initMoveState(
     // Include descendants in the move set
     store.selection.forEach(id => {
         getDescendants(id, store.elements).forEach(d => idsToMove.add(d.id));
+    });
+
+    // Include pool-contained elements when moving a pool
+    store.selection.forEach(id => {
+        const el = store.elements.find(e => e.id === id);
+        if (el?.type === 'bpmnPool') {
+            store.elements.forEach(child => {
+                if (child.poolContainerId === id) idsToMove.add(child.id);
+            });
+        }
     });
 
     captureInitialPositions(pState, idsToMove);
@@ -122,6 +133,16 @@ export function selectionOnDown(
                     getDescendants(selId, store.elements).forEach(d => toCapture.add(d.id));
                 });
 
+                // Add pool-contained elements
+                store.selection.forEach(selId => {
+                    const sel = store.elements.find(e => e.id === selId);
+                    if (sel?.type === 'bpmnPool') {
+                        store.elements.forEach(child => {
+                            if (child.poolContainerId === selId) toCapture.add(child.id);
+                        });
+                    }
+                });
+
                 store.elements.forEach(el => {
                     if (toCapture.has(el.id)) {
                         pState.initialPositions.set(el.id, {
@@ -154,6 +175,21 @@ export function selectionOnDown(
                     fontSize: el.fontSize,
                     points: el.points ? [...el.points] : undefined
                 });
+
+                // Also capture contained children so pool resize can reposition them
+                if (el.type === 'bpmnPool') {
+                    store.elements.forEach(child => {
+                        if (child.poolContainerId === el.id) {
+                            pState.initialPositions.set(child.id, {
+                                x: child.x,
+                                y: child.y,
+                                width: child.width,
+                                height: child.height,
+                                fontSize: child.fontSize,
+                            });
+                        }
+                    });
+                }
             }
         }
         return;
@@ -258,6 +294,117 @@ export function selectionOnDown(
                     // click-without-drag selects cell, but click+drag moves the table.
                     pState.pendingCellClick = { row: hitCell.row, col: hitCell.col, elementId: selEl.id };
                     // Don't return — fall through to normal drag/selection flow
+                }
+            }
+        }
+    }
+
+    // BPMN Pool divider resize detection (on already-selected pool)
+    if (store.selection.length === 1) {
+        const selEl = store.elements.find(e => e.id === store.selection[0]);
+        if (selEl && selEl.type === 'bpmnPool') {
+            const laneCount = selEl.bpmnLaneCount ?? 1;
+            const isVertical = selEl.bpmnOrientation === 'vertical';
+            const dividerThreshold = 6 / store.viewState.scale;
+            const poolLabelW = selEl.bpmnPoolLabelSize ?? Math.min(selEl.width * 0.06, 35);
+            const laneLabelW = selEl.bpmnLaneLabelSize ?? Math.min(selEl.width * 0.05, 28);
+            const poolLabelH = selEl.bpmnPoolLabelSize ?? Math.min(selEl.height * 0.08, 30);
+            const laneLabelH = selEl.bpmnLaneLabelSize ?? Math.min(selEl.height * 0.06, 25);
+
+            // Header divider detection (pool label column / lane label column)
+            if (isVertical) {
+                // Vertical: pool label divider is horizontal at y + poolLabelH
+                const poolDivY = selEl.y + poolLabelH;
+                if (Math.abs(y - poolDivY) < dividerThreshold &&
+                    x >= selEl.x && x <= selEl.x + selEl.width) {
+                    pushToHistory();
+                    pState.poolHeaderResizeType = 'pool';
+                    pState.poolHeaderResizeElementId = selEl.id;
+                    pState.poolHeaderResizeStartPos = y;
+                    pState.poolHeaderResizeInitialSize = poolLabelH;
+                    pState.isDragging = true;
+                    return;
+                }
+                // Lane label divider is horizontal at y + poolLabelH + laneLabelH
+                if (laneCount > 1) {
+                    const laneDivY = selEl.y + poolLabelH + laneLabelH;
+                    if (Math.abs(y - laneDivY) < dividerThreshold &&
+                        x >= selEl.x && x <= selEl.x + selEl.width) {
+                        pushToHistory();
+                        pState.poolHeaderResizeType = 'lane';
+                        pState.poolHeaderResizeElementId = selEl.id;
+                        pState.poolHeaderResizeStartPos = y;
+                        pState.poolHeaderResizeInitialSize = laneLabelH;
+                        pState.isDragging = true;
+                        return;
+                    }
+                }
+            } else {
+                // Horizontal: pool label divider is vertical at x + poolLabelW
+                const poolDivX = selEl.x + poolLabelW;
+                if (Math.abs(x - poolDivX) < dividerThreshold &&
+                    y >= selEl.y && y <= selEl.y + selEl.height) {
+                    pushToHistory();
+                    pState.poolHeaderResizeType = 'pool';
+                    pState.poolHeaderResizeElementId = selEl.id;
+                    pState.poolHeaderResizeStartPos = x;
+                    pState.poolHeaderResizeInitialSize = poolLabelW;
+                    pState.isDragging = true;
+                    return;
+                }
+                // Lane label divider is vertical at x + poolLabelW + laneLabelW
+                if (laneCount > 1) {
+                    const laneDivX = selEl.x + poolLabelW + laneLabelW;
+                    if (Math.abs(x - laneDivX) < dividerThreshold &&
+                        y >= selEl.y && y <= selEl.y + selEl.height) {
+                        pushToHistory();
+                        pState.poolHeaderResizeType = 'lane';
+                        pState.poolHeaderResizeElementId = selEl.id;
+                        pState.poolHeaderResizeStartPos = x;
+                        pState.poolHeaderResizeInitialSize = laneLabelW;
+                        pState.isDragging = true;
+                        return;
+                    }
+                }
+            }
+
+            // Lane content divider resize detection
+            if (laneCount > 1) {
+                const heights = selEl.bpmnLaneHeights ?? Array.from({ length: laneCount }, () => 1 / laneCount);
+                const totalSize = isVertical ? selEl.width : selEl.height;
+                const sum = heights.reduce((a, b) => a + b, 0);
+                const normalizedHeights = heights.map(h => (h / sum) * totalSize);
+
+                if (isVertical) {
+                    let laneX = selEl.x;
+                    for (let i = 0; i < laneCount - 1; i++) {
+                        laneX += normalizedHeights[i];
+                        if (Math.abs(x - laneX) < dividerThreshold &&
+                            y >= selEl.y + poolLabelH && y <= selEl.y + selEl.height) {
+                            pushToHistory();
+                            pState.poolLaneResizeIndex = i;
+                            pState.poolLaneResizeElementId = selEl.id;
+                            pState.poolLaneResizeStartPos = x;
+                            pState.poolLaneResizeInitialHeights = [...heights];
+                            pState.isDragging = true;
+                            return;
+                        }
+                    }
+                } else {
+                    let laneY = selEl.y;
+                    for (let i = 0; i < laneCount - 1; i++) {
+                        laneY += normalizedHeights[i];
+                        if (Math.abs(y - laneY) < dividerThreshold &&
+                            x >= selEl.x + poolLabelW && x <= selEl.x + selEl.width) {
+                            pushToHistory();
+                            pState.poolLaneResizeIndex = i;
+                            pState.poolLaneResizeElementId = selEl.id;
+                            pState.poolLaneResizeStartPos = y;
+                            pState.poolLaneResizeInitialHeights = [...heights];
+                            pState.isDragging = true;
+                            return;
+                        }
+                    }
                 }
             }
         }
@@ -441,7 +588,23 @@ export function selectionOnMove(
             else if (hit.handle === 'tr' || hit.handle === 'bl') helpers.setCursor('nesw-resize');
             else if (hit.handle === 'tm' || hit.handle === 'bm') helpers.setCursor('ns-resize');
             else if (hit.handle === 'lm' || hit.handle === 'rm') helpers.setCursor('ew-resize');
-            else if (hit.handle.startsWith('polypoint-')) {
+            else if (hit.handle.startsWith('segment-')) {
+                // Determine segment direction for cursor
+                const segEl = store.elements.find(e => e.id === hit.id);
+                if (segEl && segEl.points) {
+                    const segIdx = parseInt(hit.handle.replace('segment-', ''), 10);
+                    const segPts = normalizePoints(segEl.points);
+                    if (segIdx >= 0 && segIdx < segPts.length - 1) {
+                        const isHoriz = Math.abs(segPts[segIdx].y - segPts[segIdx + 1].y) < 1;
+                        helpers.setCursor(isHoriz ? 'ns-resize' : 'ew-resize');
+                    } else {
+                        helpers.setCursor('move');
+                    }
+                } else {
+                    helpers.setCursor('move');
+                }
+                pState.hoveredConnector = null;
+            } else if (hit.handle.startsWith('polypoint-')) {
                 helpers.setCursor('move');
                 pState.hoveredConnector = null;
             } else if (hit.handle.startsWith('control-')) {
@@ -578,6 +741,48 @@ export function selectionOnMove(
         return;
     }
 
+    // BPMN Pool header/lane-label column divider resize drag
+    if (pState.isDragging && pState.poolHeaderResizeElementId && pState.poolHeaderResizeType) {
+        const el = store.elements.find(e => e.id === pState.poolHeaderResizeElementId);
+        if (!el) return;
+        const isVertical = el.bpmnOrientation === 'vertical';
+        const dPos = (isVertical ? y : x) - pState.poolHeaderResizeStartPos;
+        let newSize = pState.poolHeaderResizeInitialSize + dPos;
+        newSize = Math.max(15, Math.min(newSize, (isVertical ? el.height : el.width) * 0.3));
+        const prop = pState.poolHeaderResizeType === 'pool' ? 'bpmnPoolLabelSize' : 'bpmnLaneLabelSize';
+        updateElement(el.id, { [prop]: newSize });
+        helpers.setCursor(isVertical ? 'row-resize' : 'col-resize');
+        requestAnimationFrame(helpers.draw);
+        return;
+    }
+
+    // BPMN Pool lane divider resize drag
+    if (pState.isDragging && pState.poolLaneResizeElementId && pState.poolLaneResizeInitialHeights) {
+        const el = store.elements.find(e => e.id === pState.poolLaneResizeElementId);
+        if (!el) return;
+
+        const isVertical = el.bpmnOrientation === 'vertical';
+        const totalSize = isVertical ? el.width : el.height;
+        const dPos = (isVertical ? x : y) - pState.poolLaneResizeStartPos;
+        const fracD = dPos / totalSize;
+        const idx = pState.poolLaneResizeIndex;
+        const initial = pState.poolLaneResizeInitialHeights;
+
+        const newHeights = [...initial];
+        const minFrac = 20 / totalSize; // minimum ~20px
+        const total = newHeights[idx] + newHeights[idx + 1];
+        let h1 = initial[idx] + fracD;
+        let h2 = total - h1;
+        if (h1 < minFrac) { h1 = minFrac; h2 = total - h1; }
+        if (h2 < minFrac) { h2 = minFrac; h1 = total - h2; }
+        newHeights[idx] = h1;
+        newHeights[idx + 1] = h2;
+        updateElement(el.id, { bpmnLaneHeights: newHeights });
+        helpers.setCursor(isVertical ? 'col-resize' : 'row-resize');
+        requestAnimationFrame(helpers.draw);
+        return;
+    }
+
     // Table column/row edge cursor on hover (non-dragging)
     if (!pState.isDragging && store.selection.length === 1) {
         const selEl = store.elements.find(e => e.id === store.selection[0]);
@@ -595,6 +800,66 @@ export function selectionOnMove(
                 helpers.setCursor('col-resize');
             } else if (hitTestRowEdge(x, y, cellRects, edgeThreshold)) {
                 helpers.setCursor('row-resize');
+            }
+        }
+
+        // BPMN Pool divider hover cursors
+        if (selEl && selEl.type === 'bpmnPool') {
+            const laneCount = selEl.bpmnLaneCount ?? 1;
+            const isVertical = selEl.bpmnOrientation === 'vertical';
+            const dividerThreshold = 6 / store.viewState.scale;
+            const poolLabelW = selEl.bpmnPoolLabelSize ?? Math.min(selEl.width * 0.06, 35);
+            const laneLabelW = selEl.bpmnLaneLabelSize ?? Math.min(selEl.width * 0.05, 28);
+            const poolLabelH = selEl.bpmnPoolLabelSize ?? Math.min(selEl.height * 0.08, 30);
+            const laneLabelH = selEl.bpmnLaneLabelSize ?? Math.min(selEl.height * 0.06, 25);
+
+            // Header divider hover
+            if (isVertical) {
+                if (Math.abs(y - (selEl.y + poolLabelH)) < dividerThreshold &&
+                    x >= selEl.x && x <= selEl.x + selEl.width) {
+                    helpers.setCursor('row-resize');
+                } else if (laneCount > 1 && Math.abs(y - (selEl.y + poolLabelH + laneLabelH)) < dividerThreshold &&
+                    x >= selEl.x && x <= selEl.x + selEl.width) {
+                    helpers.setCursor('row-resize');
+                }
+            } else {
+                if (Math.abs(x - (selEl.x + poolLabelW)) < dividerThreshold &&
+                    y >= selEl.y && y <= selEl.y + selEl.height) {
+                    helpers.setCursor('col-resize');
+                } else if (laneCount > 1 && Math.abs(x - (selEl.x + poolLabelW + laneLabelW)) < dividerThreshold &&
+                    y >= selEl.y && y <= selEl.y + selEl.height) {
+                    helpers.setCursor('col-resize');
+                }
+            }
+
+            // Lane divider hover
+            if (laneCount > 1) {
+                const heights = selEl.bpmnLaneHeights ?? Array.from({ length: laneCount }, () => 1 / laneCount);
+                const totalSize = isVertical ? selEl.width : selEl.height;
+                const sum = heights.reduce((a, b) => a + b, 0);
+                const normalizedHeights = heights.map(h => (h / sum) * totalSize);
+
+                if (isVertical) {
+                    let laneX = selEl.x;
+                    for (let i = 0; i < laneCount - 1; i++) {
+                        laneX += normalizedHeights[i];
+                        if (Math.abs(x - laneX) < dividerThreshold &&
+                            y >= selEl.y + poolLabelH && y <= selEl.y + selEl.height) {
+                            helpers.setCursor('col-resize');
+                            break;
+                        }
+                    }
+                } else {
+                    let laneY = selEl.y;
+                    for (let i = 0; i < laneCount - 1; i++) {
+                        laneY += normalizedHeights[i];
+                        if (Math.abs(y - laneY) < dividerThreshold &&
+                            x >= selEl.x + poolLabelW && x <= selEl.x + selEl.width) {
+                            helpers.setCursor('row-resize');
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
@@ -744,7 +1009,9 @@ function handleResize(
         }
     }
 
-    if (pState.draggingHandle && pState.draggingHandle.startsWith('polypoint-')) {
+    if (pState.draggingHandle && pState.draggingHandle.startsWith('segment-')) {
+        handleSegmentDrag(x, y, id, pState);
+    } else if (pState.draggingHandle && pState.draggingHandle.startsWith('polypoint-')) {
         handlePolypointDrag(x, y, id, pState);
     } else if (pState.draggingHandle && pState.draggingHandle.startsWith('control-')) {
         handleControlPointDrag(x, y, id, pState, helpers);
@@ -926,6 +1193,40 @@ function handlePolypointDrag(
     updateElement(id, { points: newPoints }, false);
 }
 
+// ─── Elbow Segment Dragging ─────────────────────────────────────────
+
+function handleSegmentDrag(
+    x: number,
+    y: number,
+    id: string,
+    pState: PointerState,
+): void {
+    const segIdx = parseInt(pState.draggingHandle!.replace('segment-', ''), 10);
+    const element = store.elements.find(e => e.id === id);
+    if (!element || !element.points) return;
+
+    const pts = normalizePoints(element.points);
+    if (segIdx < 0 || segIdx >= pts.length - 1) return;
+
+    const p1 = pts[segIdx];
+    const p2 = pts[segIdx + 1];
+    const isHoriz = Math.abs(p1.y - p2.y) < 1;
+
+    const newPoints = pts.map(p => ({ x: p.x, y: p.y }));
+    if (isHoriz) {
+        // Drag horizontal segment vertically
+        const newY = y - element.y;
+        newPoints[segIdx].y = newY;
+        newPoints[segIdx + 1].y = newY;
+    } else {
+        // Drag vertical segment horizontally
+        const newX = x - element.x;
+        newPoints[segIdx].x = newX;
+        newPoints[segIdx + 1].x = newX;
+    }
+    updateElement(id, { points: newPoints }, false);
+}
+
 // ─── Apply Resize (Single or Group) ─────────────────────────────────
 
 function applyResize(
@@ -1061,6 +1362,31 @@ function applyResize(
             }
 
             updateElement(id, updates, false);
+
+            // Reposition pool-contained elements proportionally on resize
+            if (singleEl.type === 'bpmnPool') {
+                const initPool = pState.initialPositions.get(id);
+                if (initPool) {
+                    const finalX = updates.x ?? newX;
+                    const finalY = updates.y ?? newY;
+                    const finalW = updates.width ?? newWidth;
+                    const finalH = updates.height ?? newHeight;
+                    const sx = initPool.width === 0 ? 1 : finalW / initPool.width;
+                    const sy = initPool.height === 0 ? 1 : finalH / initPool.height;
+
+                    store.elements.forEach(child => {
+                        if (child.poolContainerId !== id) return;
+                        const childInit = pState.initialPositions.get(child.id);
+                        if (!childInit) return;
+                        const relX = childInit.x - initPool.x;
+                        const relY = childInit.y - initPool.y;
+                        updateElement(child.id, {
+                            x: finalX + relX * sx,
+                            y: finalY + relY * sy,
+                        }, false);
+                    });
+                }
+            }
         }
     }
 }
@@ -1160,9 +1486,23 @@ function handleMove(
     // canvas createEffect) only fire after every element has its final position.
     // Without batch, moving shape A triggers refreshBoundLine on a connected arrow
     // before the arrow (or shape B) has been moved, corrupting its width/height.
+    // Build set of pool-contained element IDs so they always move with their pool
+    const poolContainedIds = new Set<string>();
+    store.selection.forEach(id => {
+        const el = store.elements.find(e => e.id === id);
+        if (el?.type === 'bpmnPool') {
+            pState.initialPositions.forEach((_, childId) => {
+                const child = store.elements.find(e => e.id === childId);
+                if (child?.poolContainerId === id) poolContainedIds.add(childId);
+            });
+        }
+    });
+
     batch(() => {
         pState.initialPositions.forEach((initPos, selId) => {
-            if (skipHierarchy && !store.selection.includes(selId)) return;
+            // Skip hierarchy descendants when Alt is not pressed, but always move
+            // directly selected elements and pool-contained elements
+            if (skipHierarchy && !store.selection.includes(selId) && !poolContainedIds.has(selId)) return;
 
             const el = store.elements.find(e => e.id === selId);
             if (el && helpers.canInteractWithElement(el)) {
@@ -1184,7 +1524,7 @@ function handleMove(
         // Skip lines that are also in the selection — they've already been translated
         // by the same delta, so their relative binding geometry is preserved.
         pState.initialPositions.forEach((_, selId) => {
-            if (skipHierarchy && !store.selection.includes(selId)) return;
+            if (skipHierarchy && !store.selection.includes(selId) && !poolContainedIds.has(selId)) return;
             const el = store.elements.find(e => e.id === selId);
             if (el?.boundElements) {
                 el.boundElements.forEach(b => {
@@ -1202,22 +1542,45 @@ function handleMove(
         if (selEl && selEl.type !== 'line' && selEl.type !== 'arrow' && selEl.type !== 'organicBranch' && selEl.type !== 'bezier') {
             const selCX = selEl.x + selEl.width / 2;
             const selCY = selEl.y + selEl.height / 2;
-            let dropId: string | null = null;
-            for (const el of store.elements) {
-                if (el.id === selEl.id) continue;
-                if (el.type === 'line' || el.type === 'arrow' || el.type === 'organicBranch' || el.type === 'bezier') continue;
-                if (store.selection.includes(el.id)) continue;
-                if (hitTestElement(el, selCX, selCY, 0, store.elements)) {
-                    dropId = el.id;
-                    break;
+
+            // Pool lane drop detection (takes priority over mindmap reparent)
+            let poolDrop: { poolId: string; laneIndex: number } | null = null;
+            if (selEl.type !== 'bpmnPool') {
+                for (const el of store.elements) {
+                    if (el.type !== 'bpmnPool') continue;
+                    if (store.selection.includes(el.id)) continue;
+                    const laneIdx = hitTestPoolLane(el, selCX, selCY, true);
+                    if (laneIdx >= 0) {
+                        poolDrop = { poolId: el.id, laneIndex: laneIdx };
+                        break;
+                    }
                 }
             }
-            signals.setReparentDropTarget(dropId);
+            signals.setPoolLaneDropTarget(poolDrop);
+
+            // Mindmap reparent detection (suppress if pool lane detected)
+            if (poolDrop) {
+                signals.setReparentDropTarget(null);
+            } else {
+                let dropId: string | null = null;
+                for (const el of store.elements) {
+                    if (el.id === selEl.id) continue;
+                    if (el.type === 'line' || el.type === 'arrow' || el.type === 'organicBranch' || el.type === 'bezier') continue;
+                    if (store.selection.includes(el.id)) continue;
+                    if (hitTestElement(el, selCX, selCY, 0, store.elements)) {
+                        dropId = el.id;
+                        break;
+                    }
+                }
+                signals.setReparentDropTarget(dropId);
+            }
         } else {
             signals.setReparentDropTarget(null);
+            signals.setPoolLaneDropTarget(null);
         }
     } else {
         signals.setReparentDropTarget(null);
+        signals.setPoolLaneDropTarget(null);
     }
 }
 
@@ -1322,6 +1685,24 @@ export function selectionOnUp(
         }
         signals.setSuggestedBinding(null);
     }
+
+    // Pool lane auto-assign/unassign on drop
+    const poolDrop = signals.poolLaneDropTarget();
+    if (poolDrop && store.selection.length === 1 && pState.isDragging) {
+        const childId = store.selection[0];
+        const childEl = store.elements.find(e => e.id === childId);
+        if (childEl && childEl.type !== 'bpmnPool') {
+            assignToPoolLane(childId, poolDrop.poolId, poolDrop.laneIndex);
+        }
+    } else if (!poolDrop && store.selection.length === 1 && pState.isDragging) {
+        // Element was dragged out of a pool — unassign
+        const childId = store.selection[0];
+        const childEl = store.elements.find(e => e.id === childId);
+        if (childEl?.poolContainerId) {
+            unassignFromPool(childId);
+        }
+    }
+    signals.setPoolLaneDropTarget(null);
 
     // Drag-to-reparent: show confirmation if drop target detected
     const dropTarget = signals.reparentDropTarget();
@@ -1450,6 +1831,20 @@ export function selectionOnUp(
         pState.tableResizeElementId = null;
         pState.tableResizeInitialWidths = null;
         pState.tableResizeInitialHeights = null;
+    }
+
+    // BPMN Pool lane resize cleanup
+    if (pState.poolLaneResizeElementId) {
+        pState.poolLaneResizeIndex = -1;
+        pState.poolLaneResizeElementId = null;
+        pState.poolLaneResizeInitialHeights = null;
+    }
+
+    // BPMN Pool header divider resize cleanup
+    if (pState.poolHeaderResizeElementId) {
+        pState.poolHeaderResizeType = null;
+        pState.poolHeaderResizeElementId = null;
+        pState.poolHeaderResizeInitialSize = 0;
     }
 
     // Cell selection drag cleanup (keep selection, just stop dragging)

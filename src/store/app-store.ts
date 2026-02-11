@@ -50,11 +50,11 @@ interface AppState {
     appMode: AppMode;
     showCommandPalette: boolean;
     selectedPenType: 'fineliner' | 'inkbrush' | 'marker';
-    selectedConnectorType: 'arrow' | 'line' | 'bezier' | 'polyline';
+    selectedConnectorType: 'arrow' | 'line' | 'bezier' | 'elbow' | 'polyline';
     selectedShapeType: 'rectangle' | 'circle' | 'diamond' | 'triangle' | 'hexagon' | 'octagon' | 'parallelogram' | 'star' | 'cloud' | 'heart' | 'cross' | 'checkmark' | 'arrowLeft' | 'arrowRight' | 'arrowUp' | 'arrowDown' | 'capsule' | 'stickyNote' | 'callout' | 'burst' | 'speechBubble' | 'ribbon' | 'bracketLeft' | 'bracketRight' | 'database' | 'document' | 'predefinedProcess' | 'internalStorage' | 'trapezoid' | 'rightTriangle' | 'pentagon' | 'septagon' | 'polygon';
     selectedInfraType: 'server' | 'loadBalancer' | 'firewall' | 'user' | 'messageQueue' | 'lambda' | 'router' | 'browser';
     selectedSketchnoteType: 'starPerson' | 'scroll' | 'wavyDivider' | 'doubleBanner' | 'trophy' | 'clock' | 'gear' | 'target' | 'rocket' | 'flag' | 'key' | 'magnifyingGlass' | 'book' | 'megaphone' | 'eye' | 'thoughtBubble' | 'stickFigure' | 'sittingPerson' | 'presentingPerson' | 'handPointRight' | 'thumbsUp' | 'faceHappy' | 'faceSad' | 'faceConfused';
-    selectedStatusType: 'checkbox' | 'checkboxChecked' | 'numberedBadge' | 'questionMark' | 'exclamationMark' | 'tag' | 'pin' | 'stamp';
+    selectedStatusType: 'numberedBadge' | 'questionMark' | 'exclamationMark' | 'tag';
     selectedCloudInfraType: 'kubernetes' | 'container' | 'apiGateway' | 'cdn' | 'storageBlob' | 'eventBus' | 'microservice' | 'shield';
     selectedDataMetricsType: 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'table';
     selectedConnectionRelType: 'puzzlePiece' | 'chainLink' | 'bridge' | 'magnet' | 'scale' | 'seedling' | 'tree' | 'mountain';
@@ -199,7 +199,7 @@ const initialState: AppState = {
     selectedShapeType: 'rectangle',
     selectedInfraType: 'server',
     selectedSketchnoteType: 'starPerson',
-    selectedStatusType: 'checkbox',
+    selectedStatusType: 'numberedBadge',
     selectedCloudInfraType: 'kubernetes',
     selectedDataMetricsType: 'barChart',
     selectedConnectionRelType: 'puzzlePiece',
@@ -544,6 +544,20 @@ export const setShowCanvasProperties = (visible: boolean) => {
 export const deleteElements = (ids: string[]) => {
     if (ids.length === 0) return;
     pushToHistory(); // Save state before deletion
+    // Uncontain children of deleted pools
+    const deletedPoolIds = new Set(
+        ids.filter(id => {
+            const el = store.elements.find(e => e.id === id);
+            return el && el.type === 'bpmnPool';
+        })
+    );
+    if (deletedPoolIds.size > 0) {
+        store.elements.forEach(el => {
+            if (el.poolContainerId && deletedPoolIds.has(el.poolContainerId)) {
+                updateElement(el.id, { poolContainerId: null, poolLaneIndex: undefined }, false);
+            }
+        });
+    }
     setStore("elements", (els) => els.filter(el => !ids.includes(el.id)));
     setStore("selection", []); // Clear selection
 };
@@ -711,9 +725,15 @@ export const resetDefaultStyles = () => {
 export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     setStore("globalSettings", (s) => ({ ...s, ...updates }));
 
-    // Sync renderStyle to default styles if it was updated
+    // Sync renderStyle to default styles and all cached tool styles
     if (updates.renderStyle) {
         updateDefaultStyles({ renderStyle: updates.renderStyle });
+        // Propagate to all cached per-tool styles so switching tools doesn't revert
+        for (const tool of Object.keys(store.toolStyles)) {
+            if ((store.toolStyles as any)[tool]?.renderStyle !== undefined) {
+                setStore('toolStyles', tool as any, 'renderStyle' as any, updates.renderStyle);
+            }
+        }
     }
 };
 
@@ -1914,7 +1934,7 @@ export const setSelectedPenType = (penType: 'fineliner' | 'inkbrush' | 'marker')
     setStore('selectedPenType', penType);
 };
 
-export const setSelectedConnectorType = (connectorType: 'arrow' | 'line' | 'bezier' | 'polyline') => {
+export const setSelectedConnectorType = (connectorType: 'arrow' | 'line' | 'bezier' | 'elbow' | 'polyline') => {
     setStore('selectedConnectorType', connectorType);
 };
 
@@ -1930,7 +1950,7 @@ export const setSelectedSketchnoteType = (sketchnoteType: AppState['selectedSket
     setStore('selectedSketchnoteType', sketchnoteType);
 };
 
-export const setSelectedStatusType = (statusType: 'checkbox' | 'checkboxChecked' | 'numberedBadge' | 'questionMark' | 'exclamationMark' | 'tag' | 'pin' | 'stamp') => {
+export const setSelectedStatusType = (statusType: 'numberedBadge' | 'questionMark' | 'exclamationMark' | 'tag') => {
     setStore('selectedStatusType', statusType);
 };
 

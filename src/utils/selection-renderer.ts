@@ -126,10 +126,30 @@ export function renderElementOverlays(
                     ctx.stroke();
                 });
 
-                // Draw intermediate point handles for polylines
-                const isPolyline = el.type === 'line' && el.curveType === 'elbow' && !el.startBinding && !el.endBinding;
-                if (isPolyline && el.points && Array.isArray(el.points)) {
+                // Draw draggable segments and bend handles for elbow connectors
+                const hasElbowPoints = el.curveType === 'elbow' && el.points && Array.isArray(el.points);
+                if (hasElbowPoints) {
                     const pts = normalizePoints(el.points);
+
+                    // Draw draggable segment indicators (thicker transparent hit zones)
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(14, 165, 233, 0.3)';
+                    ctx.lineWidth = 6 / scale;
+                    ctx.lineCap = 'round';
+                    for (let si = 0; si < pts.length - 1; si++) {
+                        const p1x = el.x + pts[si].x, p1y = el.y + pts[si].y;
+                        const p2x = el.x + pts[si + 1].x, p2y = el.y + pts[si + 1].y;
+                        const segLen = Math.sqrt((p2x - p1x) ** 2 + (p2y - p1y) ** 2);
+                        if (segLen > 10 / scale) {
+                            ctx.beginPath();
+                            ctx.moveTo(p1x, p1y);
+                            ctx.lineTo(p2x, p2y);
+                            ctx.stroke();
+                        }
+                    }
+                    ctx.restore();
+
+                    // Draw bend point handles
                     ctx.fillStyle = '#e0f2fe';
                     ctx.strokeStyle = '#0ea5e9';
                     for (let pi = 1; pi < pts.length - 1; pi++) {

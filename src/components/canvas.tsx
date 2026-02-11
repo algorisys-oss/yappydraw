@@ -157,7 +157,7 @@ const Canvas: Component = () => {
 
     // Text Editing State
     const [editingId, setEditingId] = createSignal<string | null>(null);
-    const [editingProperty, setEditingProperty] = createSignal<'text' | 'containerText' | 'attributesText' | 'methodsText' | 'tableCell'>('containerText');
+    const [editingProperty, setEditingProperty] = createSignal<import("../utils/tool-handlers/text-editing-handler").EditingPropertyType>('containerText');
     const [editText, setEditText] = createSignal("");
     const [tableEditingCell, setTableEditingCell] = createSignal<import("../utils/tool-handlers/text-editing-handler").TableEditingCell | null>(null);
     const [tableCellSelectionSignal, setTableCellSelection] = createSignal<import("../types").TableCellSelection | null>(null);
@@ -170,6 +170,7 @@ const Canvas: Component = () => {
     const [snappingGuides, setSnappingGuides] = createSignal<SnappingGuide[]>([]);
     const [spacingGuides, setSpacingGuides] = createSignal<SpacingGuide[]>([]);
     const [reparentDropTarget, setReparentDropTarget] = createSignal<string | null>(null);
+    const [poolLaneDropTarget, setPoolLaneDropTarget] = createSignal<{ poolId: string; laneIndex: number } | null>(null);
 
     // Throttle constants
     const SNAPPING_THROTTLE_MS = 16; // ~60 FPS
@@ -314,6 +315,7 @@ const Canvas: Component = () => {
             tableCellSelection: tableCellSelectionSignal(),
             isDarkMode, appMode: store.appMode,
             reparentDropTarget: reparentDropTarget(),
+            poolLaneDropTarget: poolLaneDropTarget(),
         });
 
         renderConnectionAnchors(ctx, {
@@ -390,6 +392,11 @@ const Canvas: Component = () => {
             e.bpmnEventType; e.bpmnTaskType; e.bpmnLoopType;
             e.bpmnIconScale; e.bpmnIconColor; e.bpmnIconFilled;
             e.bpmnNonInterrupting; e.bpmnLaneCount;
+            e.bpmnLaneLabels; e.bpmnLaneHeights; e.bpmnOrientation;
+            e.bpmnLaneColors; e.bpmnLaneTextColors;
+            e.bpmnPoolLabelSize; e.bpmnLaneLabelSize;
+            e.bpmnLaneCollapsed;
+            e.poolContainerId; e.poolLaneIndex;
             // Animations
             e.spinEnabled; e.spinSpeed;
             e.orbitEnabled; e.orbitCenterId; e.orbitRadius; e.orbitSpeed; e.orbitDirection;
@@ -540,6 +547,7 @@ const Canvas: Component = () => {
         snappingGuides, setSnappingGuides,
         spacingGuides, setSpacingGuides,
         reparentDropTarget, setReparentDropTarget,
+        poolLaneDropTarget, setPoolLaneDropTarget,
         get textInputRef() { return textInputRef; }
     };
 

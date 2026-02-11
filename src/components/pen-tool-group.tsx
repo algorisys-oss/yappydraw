@@ -99,10 +99,10 @@ const PenToolGroup: Component = () => {
                 <div class="tool-icon-wrapper">
                     {(() => {
                         const Icon = getCurrentPenTool().icon;
-                        return <Icon size={20} />;
+                        return <Icon size={18} />;
                     })()}
                     <ChevronDown
-                        size={10}
+                        size={9}
                         class="submenu-indicator"
                     />
                 </div>
@@ -118,7 +118,7 @@ const PenToolGroup: Component = () => {
                                     on:click={() => handleSelectPen(tool.type)}
                                     title={tool.label}
                                 >
-                                    <tool.icon size={18} />
+                                    <tool.icon size={16} />
                                 </button>
                             )}
                         </For>
