@@ -5,12 +5,13 @@
  */
 
 import { batch } from 'solid-js';
-import type { DrawingElement } from '../../types';
+import type { DrawingElement, RichTextSpan } from '../../types';
 import { store, updateElement, deleteElements, isLayerVisible } from '../../store/app-store';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
 import { fitShapeToText, measureContainerText, measureWrappedTextHeight } from '../text-utils';
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestTableCell } from '../table-utils';
+import { spansToPlainText } from '../rich-text-utils';
 
 /**
  * Context needed by text editing functions from canvas component closures.
@@ -33,6 +34,8 @@ export interface TextEditingContext {
     setEditingProperty: (v: EditingPropertyType) => void;
     editText: () => string;
     setEditText: (v: string) => void;
+    richTextSpans: () => RichTextSpan[];
+    setRichTextSpans: (v: RichTextSpan[]) => void;
     tableEditingCell: () => TableEditingCell | null;
     setTableEditingCell: (v: TableEditingCell | null) => void;
     textInputRef?: HTMLTextAreaElement;
@@ -121,6 +124,56 @@ export function commitText(ctx: TextEditingContext): void {
 
     ctx.setEditingId(null);
     ctx.setEditText("");
+    requestAnimationFrame(ctx.redrawFn);
+}
+
+// ─── Commit Rich Text ────────────────────────────────────────────────
+
+export function commitRichText(ctx: TextEditingContext): void {
+    const id = ctx.editingId();
+    if (!id) return;
+    const el = store.elements.find(e => e.id === id);
+    if (!el) return;
+
+    const spans = ctx.richTextSpans();
+    const plainText = spansToPlainText(spans).trim();
+
+    if (el.type === 'text') {
+        if (plainText) {
+            const fontSize = el.fontSize || 20;
+            const existingWidth = el.width || 200;
+            const height = measureWrappedTextHeight(plainText, existingWidth, fontSize, el.fontFamily);
+            const finalHeight = Math.max(height, fontSize * 1.2);
+            updateElement(id, { richText: spans, text: plainText, height: finalHeight }, true);
+        } else {
+            deleteElements([id]);
+        }
+    } else {
+        // Shape with container text
+        const richKey = 'richContainerText';
+        const textKey = 'containerText';
+
+        if (el.autoResize && ctx.canvasRef) {
+            const canvasCtx = ctx.canvasRef.getContext("2d");
+            if (canvasCtx) {
+                const dims = fitShapeToText(canvasCtx, el, plainText);
+                updateElement(id, {
+                    [richKey]: spans,
+                    [textKey]: plainText,
+                    width: dims.width,
+                    height: dims.height,
+                }, true);
+            } else {
+                updateElement(id, { [richKey]: spans, [textKey]: plainText }, true);
+            }
+        } else {
+            updateElement(id, { [richKey]: spans, [textKey]: plainText }, true);
+        }
+    }
+
+    ctx.setEditingId(null);
+    ctx.setEditText("");
+    ctx.setRichTextSpans([]);
     requestAnimationFrame(ctx.redrawFn);
 }
 
@@ -335,9 +388,15 @@ export function handleDoubleClick(e: MouseEvent, ctx: TextEditingContext): void 
                     text = el.text || '';
                 }
 
+                // Load rich text spans if available
+                const richSpans = prop === 'text' ? el.richText
+                    : prop === 'containerText' ? el.richContainerText
+                    : undefined;
+
                 batch(() => {
                     ctx.setEditingProperty(prop);
                     ctx.setEditText(text);
+                    ctx.setRichTextSpans(richSpans && richSpans.length > 0 ? richSpans : []);
                     ctx.setEditingId(el.id); // must be last — triggers <Show> render
                 });
 

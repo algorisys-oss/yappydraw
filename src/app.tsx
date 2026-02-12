@@ -630,15 +630,44 @@ const App: Component = () => {
       }
     };
 
+    // Global drag/drop for image files — catches drops anywhere in the window
+    // (canvas has its own handler for position-aware drops, this is the fallback)
+    const handleGlobalDragOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes('Files')) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    };
+    const handleGlobalDrop = async (e: DragEvent) => {
+      // Only handle if the canvas didn't already handle it
+      if (e.defaultPrevented) return;
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+      const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+      if (imageFiles.length === 0) return;
+      e.preventDefault();
+      const STAGGER = 30;
+      const ids: string[] = [];
+      for (let i = 0; i < imageFiles.length; i++) {
+        const id = await pasteImageFromBlob(imageFiles[i], { dx: i * STAGGER, dy: i * STAGGER });
+        if (id) ids.push(id);
+      }
+      if (ids.length > 0) setStore('selection', ids);
+    };
+
     window.addEventListener('keydown', handleKeyDown, true);
     window.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('paste', handlePaste);
+    document.addEventListener('dragover', handleGlobalDragOver);
+    document.addEventListener('drop', handleGlobalDrop);
     onCleanup(() => {
       window.removeEventListener('keydown', handleKeyDown, true);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('paste', handlePaste);
+      document.removeEventListener('dragover', handleGlobalDragOver);
+      document.removeEventListener('drop', handleGlobalDrop);
     });
   });
 

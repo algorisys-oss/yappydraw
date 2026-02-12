@@ -1,0 +1,114 @@
+/* Rich Text Editing Overlay */
+.rt-overlay-wrapper {
+    z-index: 10000;
+    pointer-events: auto;
+}
+
+/* Mini formatting toolbar */
+.rt-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 6px;
+    background: var(--bg-panel, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    margin-bottom: 4px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.rt-toolbar-btn {
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--text-secondary, #6b7280);
+    transition: all 0.15s;
+    padding: 0;
+}
+
+.rt-toolbar-btn:hover {
+    background: var(--btn-hover, #f3f4f6);
+    color: var(--text-primary, #374151);
+}
+
+.rt-toolbar-btn.active {
+    background: var(--primary-color, #3b82f6);
+    color: white;
+    border-color: var(--primary-color, #3b82f6);
+}
+
+.rt-toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-color, #e5e7eb);
+    margin: 0 2px;
+    flex-shrink: 0;
+}
+
+/* Color picker */
+.rt-color-wrapper {
+    position: relative;
+}
+
+.rt-color-icon {
+    font-weight: bold;
+    font-size: 14px;
+    border-bottom: 3px solid var(--primary-color, #3b82f6);
+    line-height: 1;
+    padding-bottom: 1px;
+}
+
+.rt-color-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-panel, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 6px;
+    padding: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 10003;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+}
+
+.rt-color-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.1s;
+    padding: 0;
+}
+
+.rt-color-swatch:hover {
+    transform: scale(1.2);
+}
+
+/* Contenteditable editor */
+.rt-editor {
+    box-sizing: border-box;
+    border: 1px dashed #007acc;
+    background: transparent;
+    outline: none;
+    padding: 4px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.rt-editor:focus {
+    border-color: var(--primary-color, #3b82f6);
+}

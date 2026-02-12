@@ -1,5 +1,6 @@
 import type { Template, TemplateCategory, CategoryInfo } from '../types/template-types';
 import * as diagramTemplates from './data/diagrams';
+import * as dslExamples from './data/dsl-examples';
 
 /**
  * Template Registry
@@ -41,6 +42,12 @@ class TemplateRegistry {
             name: 'Animations',
             description: 'Animated diagrams and sequences'
         });
+
+        this.categoriesInfo.set('dsl-examples', {
+            id: 'dsl-examples',
+            name: 'Text Diagrams',
+            description: 'Diagrams from YSL and Mermaid text syntax'
+        });
     }
 
     /**
@@ -55,6 +62,32 @@ class TemplateRegistry {
         this.registerTemplate(diagramTemplates.networkDiagramTemplate);
         this.registerTemplate(diagramTemplates.systemDesignTemplate);
         this.registerTemplate(diagramTemplates.yappyArchitectureTemplate);
+
+        // Register DSL example templates — YSL
+        this.registerTemplate(dslExamples.yslFlowchartTemplate);
+        this.registerTemplate(dslExamples.yslMindmapTemplate);
+        this.registerTemplate(dslExamples.yslInfrastructureTemplate);
+        this.registerTemplate(dslExamples.yslSequenceTemplate);
+        this.registerTemplate(dslExamples.yslDecisionTreeTemplate);
+        this.registerTemplate(dslExamples.yslDataStructuresTemplate);
+        this.registerTemplate(dslExamples.yslHorizontalFlowchartTemplate);
+        this.registerTemplate(dslExamples.yslBpmnProcessTemplate);
+        this.registerTemplate(dslExamples.yslBpmnPoolsTemplate);
+        this.registerTemplate(dslExamples.yslUmlClassTemplate);
+        this.registerTemplate(dslExamples.yslStyledFlowchartTemplate);
+        this.registerTemplate(dslExamples.yslRadialTemplate);
+        this.registerTemplate(dslExamples.yslEdgeTypesTemplate);
+        this.registerTemplate(dslExamples.yslBottomUpTreeTemplate);
+        this.registerTemplate(dslExamples.yslShapesShowcaseTemplate);
+        // Register DSL example templates — Mermaid
+        this.registerTemplate(dslExamples.mermaidFlowchartTemplate);
+        this.registerTemplate(dslExamples.mermaidSequenceTemplate);
+        this.registerTemplate(dslExamples.mermaidClassTemplate);
+        this.registerTemplate(dslExamples.mermaidPieTemplate);
+        this.registerTemplate(dslExamples.mermaidMindmapTemplate);
+        this.registerTemplate(dslExamples.mermaidERTemplate);
+        this.registerTemplate(dslExamples.mermaidStyledTemplate);
+        this.registerTemplate(dslExamples.mermaidStateTemplate);
     }
 
     /**

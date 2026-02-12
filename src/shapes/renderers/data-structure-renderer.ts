@@ -105,7 +105,9 @@ export class DataStructureRenderer extends ShapeRenderer {
     }
 
     private drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
-        r = Math.min(r, w / 2, h / 2);
+        w = Math.max(0, w);
+        h = Math.max(0, h);
+        r = Math.max(0, Math.min(r, w / 2, h / 2));
         if (ctx.roundRect) {
             ctx.beginPath();
             ctx.roundRect(x, y, w, h, r);

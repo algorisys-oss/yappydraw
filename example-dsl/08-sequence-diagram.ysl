@@ -1,0 +1,23 @@
+---
+title: API Sequence Diagram
+layout: sequence
+hSpacing: 200
+vSpacing: 60
+---
+
+# Participants (lifelines)
+client [lifeline] "Client"
+gateway [lifeline] "API Gateway"
+auth [lifeline] "Auth Service"
+backend [lifeline] "Backend"
+db [lifeline] "Database"
+
+# Messages (edges become horizontal arrows)
+client -> gateway "POST /login"
+gateway -> auth "Validate Token"
+auth -> gateway "200 OK"
+gateway -> backend "Forward Request"
+backend -> db "SELECT user"
+db -> backend "User Record"
+backend -> gateway "JSON Response"
+gateway -> client "200 OK + Data"

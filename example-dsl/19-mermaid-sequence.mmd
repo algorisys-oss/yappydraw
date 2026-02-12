@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant C as Client
+    participant A as API Server
+    participant D as Database
+    participant R as Redis Cache
+
+    C->>A: GET /users/123
+    A->>R: Check cache
+    R-->>A: Cache miss
+    A->>D: SELECT * FROM users WHERE id=123
+    D-->>A: User record
+    A->>R: Set cache
+    A-->>C: 200 OK {user}

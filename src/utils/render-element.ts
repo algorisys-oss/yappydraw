@@ -107,7 +107,11 @@ export const renderElement = (
 ) => {
     const renderer = shapeRegistry.getRenderer(el.type);
     if (renderer) {
-        renderer.render({ rc, ctx, element: el, isDarkMode, layerOpacity });
+        try {
+            renderer.render({ rc, ctx, element: el, isDarkMode, layerOpacity });
+        } catch (err) {
+            console.warn(`Render error for ${el.type} (${el.id}):`, err);
+        }
         return;
     }
 

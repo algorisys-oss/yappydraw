@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "JSON Format Example",
+    "description": "Same DSL IR but in JSON format"
+  },
+  "layout": {
+    "strategy": "tree-down",
+    "hSpacing": 120,
+    "vSpacing": 80
+  },
+  "nodes": [
+    { "id": "start", "shape": "circle", "label": "Start" },
+    { "id": "step1", "shape": "rect", "label": "Step 1" },
+    { "id": "step2", "shape": "rect", "label": "Step 2" },
+    { "id": "check", "shape": "diamond", "label": "OK?" },
+    { "id": "done", "shape": "circle", "label": "Done", "style": { "backgroundColor": "#dcfce7" } },
+    { "id": "fail", "shape": "rect", "label": "Failed", "style": { "backgroundColor": "#fecaca" } }
+  ],
+  "edges": [
+    { "from": "start", "to": "step1" },
+    { "from": "step1", "to": "step2" },
+    { "from": "step2", "to": "check" },
+    { "from": "check", "to": "done", "label": "Yes", "type": "arrow" },
+    { "from": "check", "to": "fail", "label": "No", "type": "arrow" }
+  ]
+}

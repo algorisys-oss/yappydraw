@@ -19,34 +19,36 @@ export abstract class ShapeRenderer {
         // 1. Apply universal transformations (rotation, opacity, shadow)
         const { cx, cy } = RenderPipeline.applyTransformations(ctx, element, layerOpacity);
 
-        // 2. Check for draw-in/draw-out animation
-        const dp = element.drawProgress;
-        if (dp !== undefined && dp >= 0 && dp < 100) {
-            this.renderDrawProgress(context, cx, cy);
-        } else {
-            // Normal render path
-            // 2b. Apply complex fills (gradients, dots) using ShapeGeometry
-            // Skip global complex fills for 3D shapes - they handle gradients per-face
-            const is3D = ['solidBlock', 'cylinder', 'isometricCube', 'perspectiveBlock', 'openBox'].includes(element.type);
-            if (!is3D) {
-                RenderPipeline.applyComplexFills(context, cx, cy);
-            }
-
-            // 3. Delegate to specialized rendering methods based on style
-            if (element.renderStyle === 'architectural') {
-                this.renderArchitectural(context, cx, cy);
+        try {
+            // 2. Check for draw-in/draw-out animation
+            const dp = element.drawProgress;
+            if (dp !== undefined && dp >= 0 && dp < 100) {
+                this.renderDrawProgress(context, cx, cy);
             } else {
-                this.renderSketch(context, cx, cy);
+                // Normal render path
+                // 2b. Apply complex fills (gradients, dots) using ShapeGeometry
+                // Skip global complex fills for 3D shapes - they handle gradients per-face
+                const is3D = ['solidBlock', 'cylinder', 'isometricCube', 'perspectiveBlock', 'openBox'].includes(element.type);
+                if (!is3D) {
+                    RenderPipeline.applyComplexFills(context, cx, cy);
+                }
+
+                // 3. Delegate to specialized rendering methods based on style
+                if (element.renderStyle === 'architectural') {
+                    this.renderArchitectural(context, cx, cy);
+                } else {
+                    this.renderSketch(context, cx, cy);
+                }
             }
-        }
 
-        // 4. Flow Animation (Marching Ants) for all shapes
-        if (element.flowAnimation) {
-            this.renderFlowAnimation(context);
+            // 4. Flow Animation (Marching Ants) for all shapes
+            if (element.flowAnimation) {
+                this.renderFlowAnimation(context);
+            }
+        } finally {
+            // 5. Restore transformations — always runs even if rendering throws
+            RenderPipeline.restoreTransformations(ctx);
         }
-
-        // 5. Restore transformations
-        RenderPipeline.restoreTransformations(ctx);
     }
 
     /**

@@ -1,0 +1,11 @@
+graph TD
+    A[Start] --> B{Is it working?}
+    B -->|Yes| C[Great!]
+    B -->|No| D[Debug]
+    D --> E[(Check Logs)]
+    E --> F{Found issue?}
+    F -->|Yes| G[Fix it]
+    F -->|No| H[Ask for help]
+    G --> B
+    H --> D
+    C --> I((Done))

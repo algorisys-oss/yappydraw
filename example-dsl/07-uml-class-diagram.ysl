@@ -1,0 +1,23 @@
+---
+title: UML Class Diagram
+layout: tree-down
+hSpacing: 160
+vSpacing: 120
+---
+
+# UML classes with relationships
+animal [class] "Animal"
+dog [class] "Dog"
+cat [class] "Cat"
+owner [class] "Owner"
+vet [class] "Veterinarian"
+clinic [class] "Clinic"
+
+# Inheritance
+animal -> dog "extends"
+animal -> cat "extends"
+
+# Associations
+owner -> animal "owns"
+vet -> animal "treats"
+clinic -> vet "employs"

@@ -2,6 +2,7 @@ import type { Options } from "roughjs/bin/core";
 import type { DrawingElement } from "../../types";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 import { getFontString, measureContainerText } from "../../utils/text-utils";
+import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils";
 import type { RenderContext } from "./types";
 import { getUIShapeDef } from "../../config/ui-shape-defs";
 import { buildFilterString } from "../../utils/image-filter-utils";
@@ -296,6 +297,12 @@ export class RenderPipeline {
         const { ctx, element: el, isDarkMode } = context;
         if (el.isEditing) return; // Don't render text if we're currently editing it
 
+        // Rich text path — render per-span formatting
+        if (el.richContainerText && el.richContainerText.length > 0) {
+            this.renderRichText(context, cx, cy);
+            return;
+        }
+
         const textStr = el.containerText || el.text;
         if (!textStr) return;
 
@@ -405,6 +412,105 @@ export class RenderPipeline {
             const xPos = getXPosition();
             ctx.fillText(line, xPos, y, el.width - 10);
         });
+
+        ctx.restore();
+    }
+
+    /**
+     * Render rich text (per-span formatting) inside a shape container.
+     */
+    static renderRichText(context: RenderContext, cx: number, cy: number) {
+        const { ctx, element: el, isDarkMode } = context;
+        const spans = el.richContainerText!;
+
+        ctx.save();
+
+        let maxWidth = el.width - 20;
+        let startYOffset = 0;
+
+        if (el.type === 'doubleBanner') {
+            maxWidth = el.width * 0.65;
+            startYOffset = -(el.height * 0.1);
+        } else if (el.type === 'starPerson') {
+            startYOffset = el.height * 0.15;
+        } else if (el.type === 'lightbulb') {
+            maxWidth = el.width * 0.7;
+            startYOffset = -(el.height * 0.1);
+        } else if (el.type === 'signpost') {
+            maxWidth = el.width * 0.8;
+            startYOffset = -(el.height * 0.15);
+        } else {
+            const uiDef = getUIShapeDef(el.type);
+            if (uiDef?.textYOffset) {
+                startYOffset = uiDef.textYOffset(el);
+            }
+        }
+
+        const defaults = { fontSize: el.fontSize || 28, fontFamily: el.fontFamily || 'hand-drawn' };
+        const layout = layoutRichText(ctx, spans, maxWidth, defaults);
+
+        const textAlign = el.textAlign || 'center';
+        const startY = cy - layout.totalHeight / 2 + startYOffset;
+
+        // Accumulate y offset per line
+        let lineY = startY;
+        for (let lineIdx = 0; lineIdx < layout.lineCount; lineIdx++) {
+            const lineHeight = layout.lineHeights[lineIdx];
+            const lineSegments = layout.segments.filter(s => s.lineIndex === lineIdx);
+
+            // Calculate total line width for alignment
+            let lineWidth = 0;
+            if (lineSegments.length > 0) {
+                const last = lineSegments[lineSegments.length - 1];
+                lineWidth = last.x + last.width;
+            }
+
+            // Calculate x offset based on text alignment
+            let xOffset: number;
+            if (textAlign === 'left') {
+                xOffset = cx - maxWidth / 2;
+            } else if (textAlign === 'right') {
+                xOffset = cx + maxWidth / 2 - lineWidth;
+            } else {
+                xOffset = cx - lineWidth / 2;
+            }
+
+            const baselineY = lineY + lineHeight / 2;
+
+            for (const seg of lineSegments) {
+                const span = seg.span;
+                ctx.font = buildSpanFontString(span, defaults);
+                const color = span.color || el.textColor || el.strokeColor;
+                ctx.fillStyle = this.adjustColor(color, isDarkMode);
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'left';
+                ctx.fillText(seg.text, xOffset + seg.x, baselineY);
+
+                // Draw underline
+                if (span.underline) {
+                    const fontSize = span.fontSize || defaults.fontSize;
+                    ctx.beginPath();
+                    ctx.strokeStyle = ctx.fillStyle;
+                    ctx.lineWidth = Math.max(1, fontSize / 14);
+                    ctx.moveTo(xOffset + seg.x, baselineY + fontSize * 0.35);
+                    ctx.lineTo(xOffset + seg.x + seg.width, baselineY + fontSize * 0.35);
+                    ctx.stroke();
+                }
+
+                // Draw strikethrough
+                if (span.strikethrough) {
+                    const fontSize = span.fontSize || defaults.fontSize;
+                    ctx.beginPath();
+                    ctx.strokeStyle = ctx.fillStyle;
+                    ctx.lineWidth = Math.max(1, fontSize / 14);
+                    ctx.moveTo(xOffset + seg.x, baselineY);
+                    ctx.lineTo(xOffset + seg.x + seg.width, baselineY);
+                    ctx.stroke();
+                }
+            }
+
+            lineY += lineHeight;
+        }
 
         ctx.restore();
     }

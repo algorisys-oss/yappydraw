@@ -31,6 +31,7 @@ const MindmapDoc = lazy(() => import('./shapes/mindmap-doc'));
 const TableDoc = lazy(() => import('./shapes/table-doc'));
 const AnimationDoc = lazy(() => import('./features/animation-doc'));
 const EmbeddingDoc = lazy(() => import('./features/embedding-doc'));
+const YslTutorialDoc = lazy(() => import('./features/ysl-tutorial-doc'));
 
 // Registry of all shape documentation - organized by category in logical sequence
 const shapeDocuments: ShapeDoc[] = [
@@ -143,6 +144,14 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Features',
         description: 'Embed drawings in Confluence, Notion, wikis, and other platforms',
         content: EmbeddingDoc
+    },
+    {
+        id: 'ysl-tutorial',
+        name: 'YSL Tutorial',
+        icon: '{}',
+        category: 'Features',
+        description: 'Create diagrams from text using the Yappy Scripting Language',
+        content: YslTutorialDoc
     },
 ];
 

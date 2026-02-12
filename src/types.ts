@@ -28,6 +28,17 @@ export type TextAlign = 'left' | 'center' | 'right';
 export type VerticalAlign = 'top' | 'middle' | 'bottom';
 export type ArrowHead = 'arrow' | 'triangle' | 'dot' | 'circle' | 'bar' | 'diamond' | 'diamondFilled' | 'crowsfoot' | null;
 
+export interface RichTextSpan {
+    text: string;
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    strikethrough?: boolean;
+    color?: string;
+    fontSize?: number;
+    fontFamily?: FontFamily;
+}
+
 export interface GradientStop {
     offset: number; // 0 to 1
     color: string;
@@ -179,6 +190,10 @@ export interface DrawingElement {
     textHighlightColor?: string;
     textHighlightPadding?: number;
     textHighlightRadius?: number;
+
+    // Rich text: per-span formatting (when present, takes priority over plain text)
+    richText?: RichTextSpan[];
+    richContainerText?: RichTextSpan[];
 
     // Text inside shapes (for labels on rectangles, circles, etc.)
     containerText?: string;

@@ -20,7 +20,7 @@ import {
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
     saveActiveSlide
 } from "./store/app-store";
-import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer } from "./types";
+import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
 import type { LayoutDirection } from "./utils/mindmap-layout";
@@ -51,6 +51,8 @@ import { cloudStorageManager } from "./storage/cloud";
 import { drawingId } from "./components/menu";
 import { assignToPoolLane, unassignFromPool, shiftLaneIndicesOnRemove, shiftLaneIndicesOnInsert } from "./utils/pool-containment";
 import { getUIShapeDef } from "./config/ui-shape-defs";
+import { parseDSL as dslParse, renderDiagram, adapterRegistry } from "./dsl";
+import type { RenderOptions, RenderResult } from "./dsl";
 import {
     defaultColWidths, defaultRowHeights,
     insertTableRow, deleteTableRow, insertTableColumn, deleteTableColumn,
@@ -161,6 +163,10 @@ interface ElementOptions {
     textHighlightColor?: string;
     textHighlightPadding?: number;
     textHighlightRadius?: number;
+
+    // Rich Text (per-span formatting)
+    richText?: RichTextSpan[];
+    richContainerText?: RichTextSpan[];
 
     // Hierarchy (Mindmap)
     parentId?: string | null;
@@ -1687,6 +1693,61 @@ export const YappyAPI = {
         async list(options?: { query?: string; pageSize?: number }): Promise<any> {
             return cloudStorageManager.list(options);
         },
+    },
+
+    // ─── DSL Import ──────────────────────────────────────
+
+    /**
+     * Parse and render a DSL diagram from JSON string.
+     * @param input - JSON DSL string
+     * @param options - Render options (clearCanvas, offsetX/Y, zoomToFit)
+     * @returns RenderResult with id maps, or null on parse error
+     */
+    importDSL(input: string, options?: RenderOptions): RenderResult | null {
+        const parsed = dslParse(input);
+        if (!parsed.success || !parsed.diagram) {
+            console.error('[YappyDSL] Parse errors:', parsed.errors);
+            if (parsed.warnings.length > 0) console.warn('[YappyDSL] Warnings:', parsed.warnings);
+            return null;
+        }
+        if (parsed.warnings.length > 0) {
+            console.warn('[YappyDSL] Warnings:', parsed.warnings);
+        }
+        return renderDiagram(parsed.diagram, options);
+    },
+
+    /**
+     * Parse DSL input without rendering (for validation/preview).
+     * @param input - DSL string (JSON or text format)
+     * @returns ParseResult with success, diagram IR, errors, warnings
+     */
+    parseDSL(input: string) {
+        return dslParse(input);
+    },
+
+    /**
+     * Import a Mermaid diagram.
+     * Parses Mermaid syntax and renders it on canvas.
+     * @param input - Mermaid diagram string (e.g. "graph TD\nA-->B")
+     * @param options - Render options
+     * @returns RenderResult or null on error
+     */
+    importMermaid(input: string, options?: RenderOptions): RenderResult | null {
+        const adapter = adapterRegistry.get('mermaid');
+        if (!adapter) {
+            console.error('[YappyDSL] Mermaid adapter not registered.');
+            return null;
+        }
+        const result = adapter.parse(input);
+        if (!result.success || !result.diagram) {
+            console.error('[YappyDSL] Mermaid parse errors:', result.errors);
+            if (result.warnings.length > 0) console.warn('[YappyDSL] Warnings:', result.warnings);
+            return null;
+        }
+        if (result.warnings.length > 0) {
+            console.warn('[YappyDSL] Warnings:', result.warnings);
+        }
+        return renderDiagram(result.diagram, options);
     },
 };
 

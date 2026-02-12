@@ -8,7 +8,7 @@
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, addElement, updateElement, setStore, setSelectedTool } from '../../store/app-store';
+import { store, addElement, updateElement, deleteElements, setStore, setSelectedTool } from '../../store/app-store';
 import { snapPoint } from '../snap-helpers';
 import { generateId } from '../id-generator';
 import { defaultTableData, defaultColWidths, defaultRowHeights } from '../table-utils';
@@ -423,6 +423,23 @@ export function drawOnUp(
             }
         } else if (el.type === 'organicBranch') {
             normalizeOrganicBranch(pState.currentId, el);
+        }
+
+        // Discard shapes created by click without drag (too small)
+        // Excludes pen tools (fineliner/inkbrush/marker/ink), line/arrow, organicBranch, and text
+        const CLICK_EXEMPT = ['fineliner', 'inkbrush', 'marker', 'ink', 'line', 'arrow', 'organicBranch', 'text'];
+        if (!CLICK_EXEMPT.includes(el.type)) {
+            const MIN_DRAG = 5;
+            const currentEl = store.elements.find(e => e.id === pState.currentId);
+            if (currentEl && Math.abs(currentEl.width) < MIN_DRAG && Math.abs(currentEl.height) < MIN_DRAG) {
+                // UI shapes get default dimensions instead of being deleted
+                if (!getUIShapeDef(el.type)) {
+                    deleteElements([pState.currentId]);
+                    pState.currentId = null;
+                    helpers.draw();
+                    return;
+                }
+            }
         }
 
         // Apply minimum dimensions for UI shapes (click-to-create)

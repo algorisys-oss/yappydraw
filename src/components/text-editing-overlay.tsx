@@ -6,6 +6,7 @@
  */
 
 import { type Component, createEffect, Show } from "solid-js";
+import { Maximize2 } from "lucide-solid";
 import { store, setSelectedTool } from "../store/app-store";
 import { measureContainerText, resolveFontFamily } from "../utils/text-utils";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
@@ -23,6 +24,7 @@ interface TextEditingOverlayProps {
     onCommitText: () => void;
     onTextInputRef: (ref: HTMLTextAreaElement) => void;
     onTableCellNavigate?: (direction: 'right' | 'left' | 'down' | 'up') => void;
+    onExpand?: () => void;
 }
 
 const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
@@ -178,6 +180,33 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                 : (el.type?.startsWith('ds') ? 'rgba(255,255,255,0.9)' : 'transparent'),
                         }}
                     >
+                        <Show when={!isTableCell && props.onExpand}>
+                            <button
+                                title="Expand Editor"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => props.onExpand?.()}
+                                style={{
+                                    position: 'absolute',
+                                    top: '-28px',
+                                    right: '0',
+                                    width: '24px',
+                                    height: '24px',
+                                    background: 'var(--bg-panel, #ffffff)',
+                                    border: '1px solid var(--border-color, #e5e7eb)',
+                                    'border-radius': '4px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    'align-items': 'center',
+                                    'justify-content': 'center',
+                                    color: 'var(--text-secondary, #6b7280)',
+                                    'box-shadow': '0 1px 3px rgba(0,0,0,0.1)',
+                                    padding: '0',
+                                    'z-index': '1',
+                                }}
+                            >
+                                <Maximize2 size={12} />
+                            </button>
+                        </Show>
                         <textarea
                             ref={(el) => {
                                 textInputRef = el;

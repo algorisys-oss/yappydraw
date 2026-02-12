@@ -1,0 +1,18 @@
+---
+title: Data Structure Concepts
+layout: grid
+columns: 3
+hSpacing: 80
+vSpacing: 80
+---
+
+# Common data structures with values
+arr [array] "Array" { width: 300, height: 80, dsValues: "10, 20, 30, 40, 50", dsShowIndices: true }
+stk [stack] "Stack" { width: 120, height: 200, dsValues: "pop, C, B, A", dsDirection: "vertical" }
+ll [linked-list] "Linked List" { width: 300, height: 80, dsValues: "Head, Node1, Node2, Tail" }
+ht [hash-table] "Hash Table" { width: 200, height: 180, dsValues: "name:Alice, age:30, city:NYC, role:Dev, id:42", dsCapacity: 5 }
+bt [binary-tree] "Binary Tree" { width: 280, height: 200, dsValues: "50, 30, 70, 20, 40, 60, 80" }
+q [ds-queue] "Queue" { width: 300, height: 80, dsValues: "Front, Msg1, Msg2, Back" }
+db_node [db] "Database" { width: 120, height: 140 }
+tbl [table] "Lookup Table" { width: 300, height: 200 }
+code_node [code] "Code Block" { width: 300, height: 180 }

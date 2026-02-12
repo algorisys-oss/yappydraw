@@ -1,0 +1,21 @@
+---
+title: Styled Flowchart
+layout: tree-down
+---
+
+# Flowchart with rich formatting: gradients, shadows, text highlight, rounded corners
+start [circle] "Start" { backgroundColor: "#dcfce7", strokeColor: "#16a34a", shadowEnabled: true, shadowColor: "#16a34a", shadowBlur: 12 }
+input [parallelogram] "User Input" { backgroundColor: "#dbeafe", strokeColor: "#2563eb", fontFamily: "sans-serif", fontSize: 16 }
+validate [decision] "Valid?" { backgroundColor: "#fef9c3", strokeColor: "#ca8a04", strokeWidth: 3 }
+process [rect] "Process Data" { gradientPreset: "ocean", borderRadius: 15, textHighlightEnabled: true, textHighlightColor: "#e0e7ff" }
+error [rect] "Show Error" { backgroundColor: "#fecaca", strokeColor: "#dc2626", fontWeight: true, shadowEnabled: true, shadowBlur: 8, shadowColor: "#dc2626" }
+result [rect] "Display Result" { backgroundColor: "#dcfce7", strokeColor: "#16a34a", borderRadius: 20, strokeStyle: "dashed" }
+end [circle] "End" { backgroundColor: "#fecaca", strokeColor: "#dc2626" }
+
+start -> input
+input -> validate
+validate -> process "Yes" { strokeColor: "#16a34a", strokeWidth: 3 }
+validate -> error "No" { strokeColor: "#dc2626", strokeWidth: 3 }
+error -> input "Retry"
+process -> result
+result -> end

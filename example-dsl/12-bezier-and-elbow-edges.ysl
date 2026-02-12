@@ -1,0 +1,24 @@
+---
+title: Edge Types Demo
+layout: tree-down
+hSpacing: 200
+---
+
+# Demonstrating different edge types
+a [rect] "Node A"
+b [rect] "Node B"
+c [rect] "Node C"
+d [rect] "Node D"
+e [rect] "Node E"
+
+# Straight arrow (default)
+a -> b "arrow (->)"
+
+# Plain line (no arrowhead)
+a -- c "line (--)"
+
+# Bezier curve
+b ~> d "bezier (~>)"
+
+# Elbow connector
+c => e "elbow (=>)"

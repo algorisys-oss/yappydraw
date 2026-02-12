@@ -11,7 +11,8 @@ import {
     Palette, SlidersHorizontal,
     Bold, Italic, AlignLeft, AlignCenter, AlignRight, WrapText
 } from "lucide-solid";
-import { getElementFamily, getQuickPropertiesForType, QUICK_COLORS, type QuickPropertyDef } from "../config/quick-toolbar-config";
+import { getElementFamily, getQuickPropertiesForType, QUICK_COLORS, type QuickPropertyDef, type PresetOption } from "../config/quick-toolbar-config";
+import { getImageFilterPreset } from "../config/image-filter-presets";
 import { fontCapabilities } from "../config/properties";
 import "./quick-toolbar.css";
 
@@ -279,6 +280,88 @@ const MiniSliderControl: Component<{
     );
 };
 
+/** Preset select — dropdown showing preset names, grouped by category */
+const PresetSelectControl: Component<{
+    value: string;
+    presetOptions: PresetOption[];
+    label: string;
+    isOpen: boolean;
+    onToggle: () => void;
+    onChange: (val: string) => void;
+}> = (props) => {
+    let wrapperRef: HTMLDivElement | undefined;
+
+    const handleDocClick = (e: MouseEvent) => {
+        if (props.isOpen && wrapperRef && !wrapperRef.contains(e.target as Node)) {
+            props.onToggle();
+        }
+    };
+
+    createEffect(() => {
+        if (props.isOpen) {
+            const timer = setTimeout(() => document.addEventListener('click', handleDocClick), 0);
+            onCleanup(() => {
+                clearTimeout(timer);
+                document.removeEventListener('click', handleDocClick);
+            });
+        }
+    });
+
+    const activeLabel = () =>
+        props.presetOptions.find(o => o.value === props.value)?.label || 'None';
+
+    // Group options by category
+    const categories = () => {
+        const cats: { name: string; options: PresetOption[] }[] = [];
+        const seen = new Set<string>();
+        for (const opt of props.presetOptions) {
+            const cat = opt.category || '';
+            if (!seen.has(cat)) {
+                seen.add(cat);
+                cats.push({ name: cat, options: [] });
+            }
+            cats.find(c => c.name === cat)!.options.push(opt);
+        }
+        return cats;
+    };
+
+    return (
+        <div class="qt-preset-select" ref={wrapperRef} title={props.label}>
+            <button
+                class={`qt-preset-trigger ${props.isOpen ? 'active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); props.onToggle(); }}
+                title={props.label}
+            >
+                <span class="qt-preset-label">{activeLabel()}</span>
+                <span class="qt-collapsed-chevron" />
+            </button>
+            <Show when={props.isOpen}>
+                <div class="qt-preset-popover" onClick={(e) => e.stopPropagation()}>
+                    <For each={categories()}>
+                        {(cat) => (
+                            <>
+                                <Show when={cat.name}>
+                                    <div class="qt-preset-category">{cat.name}</div>
+                                </Show>
+                                <For each={cat.options}>
+                                    {(opt) => (
+                                        <button
+                                            class={`qt-preset-option ${props.value === opt.value ? 'active' : ''}`}
+                                            onClick={() => { props.onChange(opt.value); props.onToggle(); }}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    )}
+                                </For>
+                            </>
+                        )}
+                    </For>
+                </div>
+            </Show>
+        </div>
+    );
+};
+
 // ============ Main Component ============
 
 export const QuickToolbar: Component = () => {
@@ -377,8 +460,11 @@ const ToolbarContainer: Component<{
     });
 
     const handlePropertyChange = (key: string, value: any) => {
-        const el = element();
+        // Read selection ID directly from store to avoid any stale memo issues
+        const selId = store.selection.length === 1 ? store.selection[0] : null;
+        const el = selId ? store.elements.find(e => e.id === selId) : null;
         if (!el) return;
+        const id = el.id;
         // Sync lane arrays when lane count changes
         if (el.type === 'bpmnPool' && key === 'bpmnLaneCount') {
             const newCount = Number(value);
@@ -388,10 +474,27 @@ const ToolbarContainer: Component<{
             const newLabels = Array.from({ length: newCount }, (_, i) => oldLabels[i] ?? `Lane ${i + 1}`);
             const newColors = Array.from({ length: newCount }, (_, i) => oldColors[i] ?? '');
             const newTextColors = Array.from({ length: newCount }, (_, i) => oldTextColors[i] ?? '');
-            updateElement(el.id, { bpmnLaneCount: newCount, bpmnLaneLabels: newLabels, bpmnLaneColors: newColors, bpmnLaneTextColors: newTextColors }, false);
+            updateElement(id, { bpmnLaneCount: newCount, bpmnLaneLabels: newLabels, bpmnLaneColors: newColors, bpmnLaneTextColors: newTextColors }, false);
             return;
         }
-        updateElement(el.id, { [key]: value }, false);
+        // Image filter preset: apply all preset values at once
+        if (key === 'filterPreset' && value !== 'custom') {
+            const preset = getImageFilterPreset(value);
+            if (preset) {
+                updateElement(id, {
+                    filterPreset: value,
+                    filterBrightness: preset.values.filterBrightness ?? 100,
+                    filterContrast: preset.values.filterContrast ?? 100,
+                    filterSaturate: preset.values.filterSaturate ?? 100,
+                    filterBlur: preset.values.filterBlur ?? 0,
+                    filterHueRotate: preset.values.filterHueRotate ?? 0,
+                    filterInvert: preset.values.filterInvert ?? 0,
+                    filterSepia: preset.values.filterSepia ?? 0,
+                }, false);
+                return;
+            }
+        }
+        updateElement(id, { [key]: value }, false);
     };
 
     const handlePropertyStart = () => {
@@ -536,6 +639,26 @@ const ToolbarContainer: Component<{
                                                             label={propDef.label}
                                                             onStart={handlePropertyStart}
                                                             onChange={(val) => handlePropertyChange(propDef.key, val)}
+                                                        />
+                                                    );
+                                                }
+
+                                                if (propDef.controlType === 'preset-select' && propDef.presetOptions) {
+                                                    return (
+                                                        <PresetSelectControl
+                                                            value={value() || 'none'}
+                                                            presetOptions={propDef.presetOptions}
+                                                            label={propDef.label}
+                                                            isOpen={props.activePopover() === propDef.key}
+                                                            onToggle={() => {
+                                                                props.setActivePopover(
+                                                                    props.activePopover() === propDef.key ? null : propDef.key
+                                                                );
+                                                            }}
+                                                            onChange={(val) => {
+                                                                pushToHistory();
+                                                                handlePropertyChange(propDef.key, val);
+                                                            }}
                                                         />
                                                     );
                                                 }

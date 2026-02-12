@@ -18,6 +18,7 @@ import { getImageFilterPreset } from "../config/image-filter-presets";
 import { getOpenBoxPreset } from "../config/openbox-presets";
 import { showToast } from "./toast";
 import { playSequence } from "../utils/animation/orchestrator";
+import { plainTextToSpans, spansToPlainText } from "../utils/rich-text-utils";
 import { AnimationPanel } from "./animation-panel";
 import { resizeTableData, defaultColWidths, defaultRowHeights, defaultTableData } from "../utils/table-utils";
 
@@ -854,19 +855,23 @@ const PropertyPanel: Component = () => {
                     </div>
                 );
             case 'select': {
-                const target = activeTarget();
-                const elType = target?.type === 'element' ? target.data?.type
-                    : target?.type === 'slide' ? 'slide'
-                    : target?.type === 'canvas' ? 'canvas' : undefined;
-                const filteredOptions = () => prop.options?.filter(o =>
-                    !o.excludeFrom || !elType || !o.excludeFrom.includes(elType as any)
-                ) ?? [];
+                // Read target fresh in reactive/handler contexts to avoid stale closures
+                const filteredOptions = () => {
+                    const target = activeTarget();
+                    const elType = target?.type === 'element' ? target.data?.type
+                        : target?.type === 'slide' ? 'slide'
+                        : target?.type === 'canvas' ? 'canvas' : undefined;
+                    return prop.options?.filter(o =>
+                        !o.excludeFrom || !elType || !o.excludeFrom.includes(elType as any)
+                    ) ?? [];
+                };
                 return (
                     <div class="control-row">
                         <label>{prop.label}</label>
                         <select
                             value={getPropertyValue(prop) ?? prop.defaultValue}
                             onChange={(e) => {
+                                const target = activeTarget();
                                 const val = e.currentTarget.value;
                                 // Try to parse number if options are numbers
                                 const isNum = prop.options?.some(o => typeof o.value === 'number');
@@ -978,6 +983,24 @@ const PropertyPanel: Component = () => {
         localStorage.setItem('collapsed-prop-groups', JSON.stringify([...next]));
     };
 
+    // Preserve scroll position across selection changes
+    let contentRef: HTMLDivElement | undefined;
+    let savedScrollTop = 0;
+    const handleContentScroll = () => {
+        if (contentRef) savedScrollTop = contentRef.scrollTop;
+    };
+    createEffect(() => {
+        // Track selection changes
+        store.selection.length;
+        store.selection[0];
+        // Restore scroll position after DOM updates
+        requestAnimationFrame(() => {
+            if (contentRef) {
+                contentRef.scrollTop = savedScrollTop;
+            }
+        });
+    });
+
     return (
         <Show when={store.showPropertyPanel && (activeTarget() || store.isPropertyPanelMinimized)}>
             <div
@@ -1027,7 +1050,7 @@ const PropertyPanel: Component = () => {
                         </div>
 
                         <Show when={!store.isPropertyPanelMinimized}>
-                            <div class="property-content">
+                            <div class="property-content" ref={contentRef} onScroll={handleContentScroll}>
                                 <Show when={isMulti()}>
                                     <AlignmentControls />
                                 </Show>
@@ -1122,6 +1145,51 @@ const PropertyPanel: Component = () => {
                                                         return renderControl(prop);
                                                     }}
                                                 </For>
+                                                {/* Rich Text toggle for text elements */}
+                                                <Show when={group === 'text' && (() => {
+                                                    const target = activeTarget();
+                                                    if (!target) return false;
+                                                    if (target.type === 'element') {
+                                                        return target.data.type === 'text' || !!target.data.containerText || !!target.data.richContainerText;
+                                                    }
+                                                    return false;
+                                                })()}>
+                                                    <div class="control-row">
+                                                        <label>Rich Text</label>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={(() => {
+                                                                const target = activeTarget();
+                                                                if (target?.type === 'element') {
+                                                                    const d = target.data;
+                                                                    return !!(d.richText?.length || d.richContainerText?.length);
+                                                                }
+                                                                return false;
+                                                            })()}
+                                                            onChange={(e) => {
+                                                                const target = activeTarget();
+                                                                if (target?.type !== 'element') return;
+                                                                const d = target.data;
+                                                                const id = d.id;
+                                                                if (e.currentTarget.checked) {
+                                                                    // Enable: convert plain text to single rich span
+                                                                    if (d.type === 'text') {
+                                                                        updateElement(id, { richText: plainTextToSpans(d.text || '') }, true);
+                                                                    } else {
+                                                                        updateElement(id, { richContainerText: plainTextToSpans(d.containerText || '') }, true);
+                                                                    }
+                                                                } else {
+                                                                    // Disable: convert back to plain text
+                                                                    if (d.type === 'text' && d.richText) {
+                                                                        updateElement(id, { text: spansToPlainText(d.richText), richText: undefined }, true);
+                                                                    } else if (d.richContainerText) {
+                                                                        updateElement(id, { containerText: spansToPlainText(d.richContainerText), richContainerText: undefined }, true);
+                                                                    }
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </Show>
                                                 {/* Crop button for image elements in filter group */}
                                                 <Show when={group === 'filter' && (() => {
                                                     const target = activeTarget();

@@ -8,7 +8,8 @@ export type TemplateCategory =
     | 'diagrams'
     | 'sketchnotes'
     | 'animations'
-    | 'wireframes';
+    | 'wireframes'
+    | 'dsl-examples';
 
 /**
  * Template metadata
@@ -42,6 +43,8 @@ export interface DrawingData {
 export interface Template {
     metadata: TemplateMetadata;
     data: DrawingData;
+    /** DSL/Mermaid text content — when present, template is rendered via DSL engine instead of loading data.elements */
+    dslContent?: string;
 }
 
 /**

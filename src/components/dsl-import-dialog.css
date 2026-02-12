@@ -1,0 +1,236 @@
+/* DSL Import Dialog */
+.dsl-import-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(2px);
+}
+
+.dsl-import-modal {
+    background: var(--bg-panel, #ffffff);
+    color: var(--text-primary, #1f2937);
+    border-radius: 12px;
+    width: 800px;
+    max-width: 92vw;
+    max-height: 85vh;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+/* Header */
+.dsl-import-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.dsl-import-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dsl-import-title h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.dsl-import-header .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary, #6b7280);
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.dsl-import-header .close-btn:hover {
+    background: var(--bg-hover, #f3f4f6);
+}
+
+/* Toolbar */
+.dsl-import-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.dsl-import-format {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.format-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--bg-hover, #f3f4f6);
+    color: var(--text-secondary, #6b7280);
+    font-weight: 500;
+}
+
+.dsl-import-layout-select {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.dsl-import-layout-select label {
+    color: var(--text-secondary, #6b7280);
+    font-size: 12px;
+}
+
+.dsl-import-layout-select select {
+    padding: 4px 8px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 4px;
+    background: var(--bg-panel, #ffffff);
+    color: var(--text-primary, #1f2937);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* Body / Textarea */
+.dsl-import-body {
+    flex: 1;
+    min-height: 250px;
+    overflow: hidden;
+}
+
+.dsl-import-textarea {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    min-height: 250px;
+    padding: 16px 20px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary, #1f2937);
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    resize: none;
+    tab-size: 2;
+}
+
+.dsl-import-textarea::placeholder {
+    color: var(--text-secondary, #9ca3af);
+    opacity: 0.6;
+}
+
+/* Status / Errors */
+.dsl-import-status {
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    padding: 8px 20px;
+    flex-shrink: 0;
+    max-height: 120px;
+    overflow-y: auto;
+    font-size: 12px;
+}
+
+.dsl-status-success {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.dsl-status-errors {
+    display: flex;
+    gap: 8px;
+    color: #dc2626;
+}
+
+.dsl-status-errors svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.dsl-error-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dsl-error-item {
+    line-height: 1.4;
+}
+
+.dsl-status-warnings {
+    color: #d97706;
+    margin-top: 4px;
+}
+
+.dsl-warning-item {
+    line-height: 1.4;
+}
+
+/* Footer */
+.dsl-import-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.dsl-import-cancel-btn {
+    padding: 6px 16px;
+    background: transparent;
+    color: var(--text-secondary, #6b7280);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.dsl-import-cancel-btn:hover {
+    background: var(--bg-hover, #f3f4f6);
+}
+
+.dsl-import-btn {
+    padding: 6px 20px;
+    background: var(--primary-color, #3b82f6);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+}
+
+.dsl-import-btn:hover:not(:disabled) {
+    background: var(--primary-hover, #2563eb);
+}
+
+.dsl-import-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

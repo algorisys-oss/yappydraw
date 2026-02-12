@@ -62,36 +62,66 @@
     color: var(--text-primary);
 }
 
-/* Category Tabs */
-.template-categories {
-    display: flex;
-    gap: 4px;
-    padding: 12px 24px;
-    border-bottom: 1px solid var(--border-color);
-    overflow-x: auto;
+/* Category Tabs — segmented control (high specificity to override global button) */
+.template-browser-dialog .template-categories {
+    display: inline-flex;
+    gap: 0;
+    margin: 12px 24px;
+    padding: 3px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    overflow: visible;
 }
 
-.template-category-tab {
-    padding: 8px 16px;
+.template-browser-dialog button.template-category-tab {
+    padding: 8px 20px;
     border: none;
     background: transparent;
-    color: var(--text-secondary);
-    font-size: 14px;
+    color: #6b7280;
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: all 0.15s;
     white-space: nowrap;
+    box-shadow: none;
 }
 
-.template-category-tab:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
+.template-browser-dialog button.template-category-tab:hover {
+    color: #374151;
+    background: rgba(0, 0, 0, 0.05);
 }
 
-.template-category-tab.active {
-    background: var(--primary-color);
-    color: white;
+.template-browser-dialog button.template-category-tab.active {
+    background: #ffffff;
+    color: #111827;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .template-browser-dialog .template-categories,
+[data-theme="focus"] .template-browser-dialog .template-categories {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+[data-theme="dark"] .template-browser-dialog button.template-category-tab,
+[data-theme="focus"] .template-browser-dialog button.template-category-tab {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .template-browser-dialog button.template-category-tab:hover,
+[data-theme="focus"] .template-browser-dialog button.template-category-tab:hover {
+    color: #d1d5db;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .template-browser-dialog button.template-category-tab.active,
+[data-theme="focus"] .template-browser-dialog button.template-category-tab.active {
+    background: #374151;
+    color: #f9fafb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 /* Template Grid */
@@ -185,6 +215,37 @@
 [data-theme="dark"] .template-description,
 [data-theme="focus"] .template-description {
     color: #9ca3af;
+}
+
+/* DSL template thumbnail icon */
+.template-dsl-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #7c3aed;
+}
+
+.template-dsl-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+[data-theme="dark"] .template-dsl-icon,
+[data-theme="focus"] .template-dsl-icon {
+    color: #a78bfa;
+}
+
+[data-theme="dark"] .template-dsl-badge,
+[data-theme="focus"] .template-dsl-badge {
+    background: #3b2d6b;
+    color: #c4b5fd;
 }
 
 .template-empty {

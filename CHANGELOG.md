@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-02-13
+
+### Added
+- **YappyDraw DSL Engine** — full text-to-diagram pipeline with JSON IR, compact text syntax, and auto-layout:
+  - DSL Intermediate Representation (IR) with nodes, edges, pools, groups, and layout config
+  - JSON parser + schema validation for programmatic diagram definitions
+  - Compact text parser (YAML frontmatter + node/edge declarations + indentation hierarchy)
+  - Shape alias map (170+ aliases to ElementType) with automatic defaults
+  - Tree layout (4 directions + radial), grid layout, sequence layout, swimlane layout
+  - Pool/lane rendering with node containment for BPMN diagrams
+  - Style support: gradients, shadows, text highlight, inner borders, effects, custom colors
+  - Console API: `Yappy.importDSL()`, `Yappy.importMermaid()`, `Yappy.parseDSL()`
+- **Mermaid Adapter** — parse 7 Mermaid diagram types into YappyDraw canvas elements:
+  - Flowchart (`graph TD/LR`) — nodes, edges, subgraphs, classDef/class/style
+  - Sequence diagram — participants, messages, notes, loops/alt
+  - Class diagram — classes with attributes/methods, relationships
+  - State diagram — states, transitions, start/end markers
+  - Pie chart — slices with values, title extraction
+  - Mindmap — indentation hierarchy with expand/collapse support, shape brackets
+  - ER diagram — entities with typed attributes (PK/FK/UK), relationships with cardinality
+- **Import Dialog** — "Import from Text" modal (menu + command palette):
+  - Auto-detect format (JSON, YSL text, Mermaid)
+  - Live validation with parse error display and line numbers
+  - Layout override dropdown
+  - Format badge indicator
+  - `initialText` prop for pre-loading content from templates
+- **DSL Template Browser** — 23 text-based diagram examples as templates:
+  - "Text Diagrams" category tab with segmented control UI
+  - 15 YSL templates: flowcharts, mindmaps, infrastructure, sequence, BPMN, UML, data structures, radial, edge types, shapes showcase
+  - 8 Mermaid templates: flowchart, sequence, class, state, pie, mindmap, ER, styled flowchart
+  - Clicking a DSL template opens Import Dialog with code pre-loaded
+  - Document icon + YSL/Mermaid format badge in template thumbnails
+- **YSL Tutorial** — interactive tutorial in live help documentation
+- **Rich Text Support** — per-span formatting (bold, italic, underline, color) for text elements
+- **Expanded Text Editor** — modal editor for multi-line text editing
+
+### Fixed
+- **Negative radius crash** in data structure renderer — `ctx.roundRect()` throws on negative radius when cells have tiny dimensions. Clamped w/h/r to non-negative, added try-catch in render loop, try-finally for canvas state restoration.
+- **ER parser attributes** — regex required leading whitespace but input was pre-trimmed. Changed `^\s+` to `^\s*`.
+- **Mermaid pie chart title** — `pie title Browser Market Share` single-line header lost the title. Now extracts inline title via `\btitle\s+(.+)` match.
+- **Mermaid mindmap connections** — `organicBranch` connector requires `controlPoints` that `connect()` doesn't compute. Changed to `type: 'line'` with `curveType: 'bezier'`.
+- **Mermaid mindmap expand/collapse** — flat nodes+edges didn't support `setParentChildRelationships`. Rewrote parser to build nested `children` hierarchy.
+- **Template browser** — lone category tab looked awkward. Hidden when only one category exists.
+- **BPMN pool rendering** — proper sizing, stacking, and node placement in lanes.
+- **Text bounding box** not updating on font size change.
+- **Accidental click-to-create** shapes for all shape tools (discard tiny elements).
+- **Rich text formatting** not persisted on commit.
+
 ## [1.13.0] - 2026-02-12
 
 ### Added

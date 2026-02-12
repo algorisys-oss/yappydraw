@@ -34,7 +34,7 @@ import {
 import { Minimap } from "./minimap";
 import { getContextMenuItems } from "../utils/context-menu-builder";
 import PathEditorOverlay from "./path-editor-overlay";
-import { commitText as commitTextHandler, handleDoubleClick as handleDoubleClickHandler, type TextEditingContext } from "../utils/tool-handlers/text-editing-handler";
+import { commitText as commitTextHandler, commitRichText as commitRichTextHandler, handleDoubleClick as handleDoubleClickHandler, type TextEditingContext } from "../utils/tool-handlers/text-editing-handler";
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestColEdge, measureColumnOptimalWidth, getNextCell } from "../utils/table-utils";
 import { handleDragOver, handleDrop as handleDropHandler, handleWheel, type CanvasEventContext } from "../utils/tool-handlers/canvas-event-handlers";
 import { showToast } from "./toast";
@@ -48,6 +48,9 @@ import { setupRecording } from "../utils/recording-manager";
 export { requestRecording, setRequestRecording } from "../utils/recording-manager";
 import ScrollBackButton from "./scroll-back-button";
 import TextEditingOverlay from "./text-editing-overlay";
+import RichTextEditingOverlay from "./rich-text-editing-overlay";
+import TextEditorModal from "./text-editor-modal";
+import type { RichTextSpan } from "../types";
 
 const Canvas: Component = () => {
 
@@ -85,7 +88,7 @@ const Canvas: Component = () => {
         // We track font properties and text of selected elements
         store.elements.forEach(el => {
             const isLine = el.type === 'line' || el.type === 'arrow';
-            if (el.isSelected && el.autoResize && el.containerText && !isLine) {
+            if (store.selection.includes(el.id) && el.autoResize && el.containerText && !isLine) {
                 // Tracking these properties
                 el.fontSize;
                 el.fontFamily;
@@ -103,10 +106,10 @@ const Canvas: Component = () => {
             }
 
             // Standalone text elements: recalculate width+height when font properties change
-            if (el.isSelected && el.type === 'text' && el.text) {
+            if (store.selection.includes(el.id) && el.type === 'text' && el.text) {
                 // Track font properties to trigger reactive recalculation
-                const fontSize = el.fontSize || 28;
-                const fontFamily = el.fontFamily || 'hand-drawn';
+                const fontSize = el.fontSize || 20;
+                const fontFamily = el.fontFamily || 'sans-serif';
                 const fontWeight = el.fontWeight === 'bold' ? 'bold ' : '';
                 const fontStyle = el.fontStyle === 'italic' ? 'italic ' : '';
                 const padding = 4; // matches text-renderer.ts
@@ -163,6 +166,8 @@ const Canvas: Component = () => {
     const [editText, setEditText] = createSignal("");
     const [tableEditingCell, setTableEditingCell] = createSignal<import("../utils/tool-handlers/text-editing-handler").TableEditingCell | null>(null);
     const [tableCellSelectionSignal, setTableCellSelection] = createSignal<import("../types").TableCellSelection | null>(null);
+    const [richTextSpans, setRichTextSpans] = createSignal<RichTextSpan[]>([]);
+    const [expandedEditorOpen, setExpandedEditorOpen] = createSignal(false);
     let textInputRef: HTMLTextAreaElement | undefined;
 
     // Selection/Move State
@@ -544,6 +549,7 @@ const Canvas: Component = () => {
     const textEditCtx: TextEditingContext = {
         editingId, setEditingId, editingProperty, setEditingProperty,
         editText, setEditText,
+        richTextSpans, setRichTextSpans,
         tableEditingCell, setTableEditingCell,
         get textInputRef() { return textInputRef; },
         get canvasRef() { return canvasRef; },
@@ -555,7 +561,15 @@ const Canvas: Component = () => {
         getWorldCoordinates, canInteractWithElement, applyMasterProjection
     };
 
-    const commitText = () => commitTextHandler(textEditCtx);
+    const commitText = () => {
+        // Route to rich text commit when rich text editing is active
+        if (richTextSpans().length > 0) {
+            commitRichTextHandler(textEditCtx);
+        } else {
+            commitTextHandler(textEditCtx);
+        }
+    };
+    const commitRichText = () => commitRichTextHandler(textEditCtx);
 
     const pHelpers: import("../utils/pointer-helpers").PointerHelpers = {
         getWorldCoordinates, canInteractWithElement, checkBinding,
@@ -1008,8 +1022,18 @@ const Canvas: Component = () => {
             </Show>
 
             <ScrollBackButton canvasRef={canvasRef} />
+            <RichTextEditingOverlay
+                editingId={() => expandedEditorOpen() ? null : (richTextSpans().length > 0 ? editingId() : null)}
+                setEditingId={setEditingId}
+                editingProperty={() => editingProperty() as 'text' | 'containerText'}
+                richTextSpans={richTextSpans}
+                setRichTextSpans={setRichTextSpans}
+                setEditText={setEditText}
+                onCommitRichText={commitRichText}
+                onExpand={() => setExpandedEditorOpen(true)}
+            />
             <TextEditingOverlay
-                editingId={editingId}
+                editingId={() => expandedEditorOpen() ? null : (richTextSpans().length > 0 ? null : editingId())}
                 setEditingId={setEditingId}
                 editText={editText}
                 setEditText={setEditText}
@@ -1018,6 +1042,7 @@ const Canvas: Component = () => {
                 canvasRef={canvasRef}
                 onCommitText={commitText}
                 onTextInputRef={(ref) => { textInputRef = ref; }}
+                onExpand={() => setExpandedEditorOpen(true)}
                 onTableCellNavigate={(direction) => {
                     const sel = pState.tableCellSelection;
                     const elId = pState.tableCellSelectionElementId;
@@ -1045,6 +1070,17 @@ const Canvas: Component = () => {
                         (window as any).__tableCellNav?.startEditingCell(elId, nextCell.row, nextCell.col);
                     }
                 }}
+            />
+            <TextEditorModal
+                isOpen={expandedEditorOpen}
+                onClose={() => setExpandedEditorOpen(false)}
+                isRichText={() => richTextSpans().length > 0}
+                richTextSpans={richTextSpans}
+                setRichTextSpans={setRichTextSpans}
+                editText={editText}
+                setEditText={setEditText}
+                onCommit={() => { richTextSpans().length > 0 ? commitRichText() : commitText(); }}
+                element={() => store.elements.find(e => e.id === editingId()) || null}
             />
 
             {/* Context Menu */}

@@ -11,7 +11,7 @@ import { clearAutoSave } from "../storage/auto-save";
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Download, Layout, Settings,
-    Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical
+    Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText
 } from "lucide-solid";
 import { P3ColorPicker } from "./p3-color-picker";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
@@ -24,6 +24,7 @@ const ExportDialog = lazy(() => import("./export-dialog"));
 const SaveDialog = lazy(() => import("./save-dialog"));
 const TemplateBrowser = lazy(() => import("./template-browser"));
 const CloudStorageDialogLazy = lazy(() => import("./cloud-storage-dialog").then(m => ({ default: m.CloudStorageDialog as any })));
+const DSLImportDialog = lazy(() => import("./dsl-import-dialog"));
 import SettingsDialog from "./settings-dialog";
 import { features } from "../config/features";
 import { cloudStorageManager } from "../storage/cloud";
@@ -44,6 +45,8 @@ export const [showHelp, setShowHelp] = createSignal(false);
 export const [showSettings, setShowSettings] = createSignal(false);
 export const [isCloudDialogOpen, setIsCloudDialogOpen] = createSignal(false);
 export const [cloudDialogMode, setCloudDialogMode] = createSignal<'save' | 'load'>('load');
+export const [isDSLImportOpen, setIsDSLImportOpen] = createSignal(false);
+export const [dslImportInitialText, setDslImportInitialText] = createSignal('');
 
 // Exported handlers for App.tsx integration
 let sharedSetSaveIntent: (intent: 'workspace' | 'disk' | 'disk-json') => void = () => { };
@@ -204,6 +207,15 @@ const Menu: Component = () => {
                 return;
             }
         }
+
+        // DSL-based template: open import dialog with code pre-loaded
+        if (template.dslContent) {
+            setIsTemplateBrowserOpen(false);
+            setDslImportInitialText(template.dslContent);
+            setIsDSLImportOpen(true);
+            return;
+        }
+
         loadTemplate(template.data);
         setIsTemplateBrowserOpen(false);
         showToast(`Template "${template.metadata.name}" loaded`, 'success');
@@ -456,6 +468,12 @@ const Menu: Component = () => {
                     onClose={() => setIsTemplateBrowserOpen(false)}
                     onSelectTemplate={handleTemplateSelect}
                 />
+
+                <DSLImportDialog
+                    isOpen={isDSLImportOpen()}
+                    onClose={() => { setIsDSLImportOpen(false); setDslImportInitialText(''); }}
+                    initialText={dslImportInitialText()}
+                />
             </Suspense>
 
             <Show when={!store.zenMode}>
@@ -499,6 +517,13 @@ const Menu: Component = () => {
                                     <button class="menu-item" onClick={() => { setIsTemplateBrowserOpen(true); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
                                         <span class="label">Templates</span>
+                                    </button>
+                                    <button class="menu-item" onClick={() => { setIsDSLImportOpen(true); setIsMenuOpen(false); }}>
+                                        <FileText size={16} />
+                                        <span class="label">Import from Text</span>
+                                        <div class="menu-item-right">
+                                            <span class="shortcut">Ctrl+Shift+I</span>
+                                        </div>
                                     </button>
                                     <div class="menu-separator"></div>
                                     <button class="menu-item" onClick={() => { setLoadExportInitialTab('load'); setIsLoadExportOpen(true); setIsMenuOpen(false); }}>

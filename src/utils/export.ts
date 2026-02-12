@@ -5,6 +5,7 @@ import { jsPDF } from "jspdf";
 import PptxGenJS from "pptxgenjs";
 import { resolveFontFamily, wrapText, getMeasurementContext } from "./text-utils";
 import { buildFilterString } from "./image-filter-utils";
+import { layoutRichText } from "./rich-text-utils";
 
 
 export const exportToPng = async (scale: number, background: boolean, onlySelected: boolean) => {
@@ -231,50 +232,98 @@ export const exportToSvg = (onlySelected: boolean) => {
             } else {
                 node = rc.line(el.x, el.y, endX, endY, options);
             }
-        } else if (el.type === 'text' && el.text) {
+        } else if (el.type === 'text' && (el.text || (el.richText && el.richText.length > 0))) {
             const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             const fontSize = el.fontSize || 20;
             const fontFamily = resolveFontFamily(el.fontFamily);
-            const fontWeight = (el.fontWeight === true || el.fontWeight === 'bold') ? 'bold' : 'normal';
-            const fontStyleStr = (el.fontStyle === true || el.fontStyle === 'italic') ? 'italic' : 'normal';
             const textColor = el.textColor || el.strokeColor;
             const textAlign = el.textAlign || 'left';
-            const lineHeight = fontSize * 1.2;
             const padding = 4;
 
-            // Word wrap using offscreen canvas (matches canvas rendering)
-            const measureCtx = getMeasurementContext();
-            measureCtx.font = `${fontStyleStr === 'italic' ? 'italic ' : ''}${fontWeight === 'bold' ? 'bold ' : ''}${fontSize}px ${fontFamily}`;
-            const availableWidth = Math.max(el.width - padding * 2, 20);
-            const paragraphs = el.text.split('\n');
-            const lines: string[] = [];
-            paragraphs.forEach(para => {
-                if (para === '') lines.push('');
-                else lines.push(...wrapText(measureCtx, para, availableWidth));
-            });
+            // Rich text path
+            if (el.richText && el.richText.length > 0) {
+                const measureCtx = getMeasurementContext();
+                const availableWidth = Math.max(el.width - padding * 2, 20);
+                const defaults = { fontSize, fontFamily: el.fontFamily || 'sans-serif' };
+                const layout = layoutRichText(measureCtx, el.richText, availableWidth, defaults);
+                const verticalPadding = Math.max(0, (el.height - layout.totalHeight) / 2);
 
-            // SVG text-anchor mapping
-            let textAnchor = 'start';
-            let xPos = el.x + padding;
-            if (textAlign === 'center') { textAnchor = 'middle'; xPos = el.x + el.width / 2; }
-            else if (textAlign === 'right') { textAnchor = 'end'; xPos = el.x + el.width - padding; }
+                let lineY = el.y + verticalPadding;
+                for (let lineIdx = 0; lineIdx < layout.lineCount; lineIdx++) {
+                    const lineHeight = layout.lineHeights[lineIdx];
+                    const lineSegments = layout.segments.filter(s => s.lineIndex === lineIdx);
+                    let lineWidth = 0;
+                    if (lineSegments.length > 0) {
+                        const last = lineSegments[lineSegments.length - 1];
+                        lineWidth = last.x + last.width;
+                    }
 
-            const totalTextHeight = lines.length * lineHeight;
-            const verticalPadding = Math.max(0, (el.height - totalTextHeight) / 2);
+                    let xOffset: number;
+                    if (textAlign === 'center') xOffset = el.x + (el.width - lineWidth) / 2;
+                    else if (textAlign === 'right') xOffset = el.x + el.width - padding - lineWidth;
+                    else xOffset = el.x + padding;
 
-            lines.forEach((line, index) => {
-                const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                textEl.textContent = line || '\u00A0';
-                textEl.setAttribute('x', `${xPos}`);
-                textEl.setAttribute('y', `${el.y + verticalPadding + index * lineHeight + fontSize}`);
-                textEl.setAttribute('fill', textColor);
-                textEl.setAttribute('font-family', fontFamily);
-                textEl.setAttribute('font-size', `${fontSize}px`);
-                textEl.setAttribute('font-weight', fontWeight);
-                textEl.setAttribute('font-style', fontStyleStr);
-                textEl.setAttribute('text-anchor', textAnchor);
-                textGroup.appendChild(textEl);
-            });
+                    const baselineY = lineY + lineHeight * 0.75;
+
+                    // Create a <text> per line with <tspan> per segment
+                    const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    textEl.setAttribute('y', `${baselineY}`);
+
+                    for (const seg of lineSegments) {
+                        const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                        tspan.textContent = seg.text;
+                        tspan.setAttribute('x', `${xOffset + seg.x}`);
+                        tspan.setAttribute('fill', seg.span.color || textColor);
+                        tspan.setAttribute('font-family', resolveFontFamily(seg.span.fontFamily || el.fontFamily));
+                        tspan.setAttribute('font-size', `${seg.span.fontSize || fontSize}px`);
+                        if (seg.span.bold) tspan.setAttribute('font-weight', 'bold');
+                        if (seg.span.italic) tspan.setAttribute('font-style', 'italic');
+                        const deco: string[] = [];
+                        if (seg.span.underline) deco.push('underline');
+                        if (seg.span.strikethrough) deco.push('line-through');
+                        if (deco.length) tspan.setAttribute('text-decoration', deco.join(' '));
+                        textEl.appendChild(tspan);
+                    }
+                    textGroup.appendChild(textEl);
+                    lineY += lineHeight;
+                }
+            } else {
+                // Plain text path (original)
+                const fontWeight = (el.fontWeight === true || el.fontWeight === 'bold') ? 'bold' : 'normal';
+                const fontStyleStr = (el.fontStyle === true || el.fontStyle === 'italic') ? 'italic' : 'normal';
+                const lineHeight = fontSize * 1.2;
+                const measureCtx = getMeasurementContext();
+                measureCtx.font = `${fontStyleStr === 'italic' ? 'italic ' : ''}${fontWeight === 'bold' ? 'bold ' : ''}${fontSize}px ${fontFamily}`;
+                const availableWidth = Math.max(el.width - padding * 2, 20);
+                const paragraphs = el.text!.split('\n');
+                const lines: string[] = [];
+                paragraphs.forEach(para => {
+                    if (para === '') lines.push('');
+                    else lines.push(...wrapText(measureCtx, para, availableWidth));
+                });
+
+                let textAnchor = 'start';
+                let xPos = el.x + padding;
+                if (textAlign === 'center') { textAnchor = 'middle'; xPos = el.x + el.width / 2; }
+                else if (textAlign === 'right') { textAnchor = 'end'; xPos = el.x + el.width - padding; }
+
+                const totalTextHeight = lines.length * lineHeight;
+                const verticalPadding = Math.max(0, (el.height - totalTextHeight) / 2);
+
+                lines.forEach((line, index) => {
+                    const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    textEl.textContent = line || '\u00A0';
+                    textEl.setAttribute('x', `${xPos}`);
+                    textEl.setAttribute('y', `${el.y + verticalPadding + index * lineHeight + fontSize}`);
+                    textEl.setAttribute('fill', textColor);
+                    textEl.setAttribute('font-family', fontFamily);
+                    textEl.setAttribute('font-size', `${fontSize}px`);
+                    textEl.setAttribute('font-weight', fontWeight);
+                    textEl.setAttribute('font-style', fontStyleStr);
+                    textEl.setAttribute('text-anchor', textAnchor);
+                    textGroup.appendChild(textEl);
+                });
+            }
             node = textGroup;
         } else if ((el.type === 'fineliner' || el.type === 'inkbrush' || el.type === 'marker') && el.points) {
             // Helper to normalize
@@ -309,7 +358,7 @@ export const exportToSvg = (onlySelected: boolean) => {
         }
 
         // Render containerText inside shapes (rectangles, circles, etc.)
-        if (node && el.containerText && el.type !== 'text') {
+        if (node && (el.containerText || (el.richContainerText && el.richContainerText.length > 0)) && el.type !== 'text') {
             const wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             wrapper.appendChild(node);
 
@@ -317,40 +366,87 @@ export const exportToSvg = (onlySelected: boolean) => {
             const fontFamily = resolveFontFamily(el.fontFamily);
             const textColor = el.textColor || el.strokeColor;
             const textAlign = el.textAlign || 'center';
-            const lineHeight = fontSize * 1.2;
             const cx = el.x + el.width / 2;
             const cy = el.y + el.height / 2;
-
-            const measureCtx = getMeasurementContext();
-            measureCtx.font = `${fontSize}px ${fontFamily}`;
             const maxWidth = el.width - 20;
-            const paragraphs = el.containerText.split('\n');
-            const lines: string[] = [];
-            paragraphs.forEach(para => {
-                if (para === '') lines.push('');
-                else lines.push(...wrapText(measureCtx, para, maxWidth));
-            });
 
-            let textAnchor = 'middle';
-            let xPos = cx;
-            if (textAlign === 'left') { textAnchor = 'start'; xPos = el.x + 10; }
-            else if (textAlign === 'right') { textAnchor = 'end'; xPos = el.x + el.width - 10; }
+            if (el.richContainerText && el.richContainerText.length > 0) {
+                // Rich text path
+                const measureCtx = getMeasurementContext();
+                const defaults = { fontSize, fontFamily: el.fontFamily || 'hand-drawn' };
+                const layout = layoutRichText(measureCtx, el.richContainerText, maxWidth, defaults);
+                const startY = cy - layout.totalHeight / 2;
 
-            const totalHeight = lines.length * lineHeight;
-            const startY = cy - totalHeight / 2 + lineHeight / 2;
+                let lineY = startY;
+                for (let lineIdx = 0; lineIdx < layout.lineCount; lineIdx++) {
+                    const lineHeight = layout.lineHeights[lineIdx];
+                    const lineSegments = layout.segments.filter(s => s.lineIndex === lineIdx);
+                    let lineWidth = 0;
+                    if (lineSegments.length > 0) {
+                        const last = lineSegments[lineSegments.length - 1];
+                        lineWidth = last.x + last.width;
+                    }
 
-            lines.forEach((line, index) => {
-                const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                textEl.textContent = line || '\u00A0';
-                textEl.setAttribute('x', `${xPos}`);
-                textEl.setAttribute('y', `${startY + index * lineHeight}`);
-                textEl.setAttribute('fill', textColor);
-                textEl.setAttribute('font-family', fontFamily);
-                textEl.setAttribute('font-size', `${fontSize}px`);
-                textEl.setAttribute('text-anchor', textAnchor);
-                textEl.setAttribute('dominant-baseline', 'central');
-                wrapper.appendChild(textEl);
-            });
+                    let xOffset: number;
+                    if (textAlign === 'left') xOffset = cx - maxWidth / 2;
+                    else if (textAlign === 'right') xOffset = cx + maxWidth / 2 - lineWidth;
+                    else xOffset = cx - lineWidth / 2;
+
+                    const baselineY = lineY + lineHeight * 0.75;
+                    const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    textEl.setAttribute('y', `${baselineY}`);
+
+                    for (const seg of lineSegments) {
+                        const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                        tspan.textContent = seg.text;
+                        tspan.setAttribute('x', `${xOffset + seg.x}`);
+                        tspan.setAttribute('fill', seg.span.color || textColor);
+                        tspan.setAttribute('font-family', resolveFontFamily(seg.span.fontFamily || el.fontFamily));
+                        tspan.setAttribute('font-size', `${seg.span.fontSize || fontSize}px`);
+                        if (seg.span.bold) tspan.setAttribute('font-weight', 'bold');
+                        if (seg.span.italic) tspan.setAttribute('font-style', 'italic');
+                        const deco: string[] = [];
+                        if (seg.span.underline) deco.push('underline');
+                        if (seg.span.strikethrough) deco.push('line-through');
+                        if (deco.length) tspan.setAttribute('text-decoration', deco.join(' '));
+                        textEl.appendChild(tspan);
+                    }
+                    wrapper.appendChild(textEl);
+                    lineY += lineHeight;
+                }
+            } else if (el.containerText) {
+                // Plain text path (original)
+                const lineHeight = fontSize * 1.2;
+                const measureCtx = getMeasurementContext();
+                measureCtx.font = `${fontSize}px ${fontFamily}`;
+                const paragraphs = el.containerText.split('\n');
+                const lines: string[] = [];
+                paragraphs.forEach(para => {
+                    if (para === '') lines.push('');
+                    else lines.push(...wrapText(measureCtx, para, maxWidth));
+                });
+
+                let textAnchor = 'middle';
+                let xPos = cx;
+                if (textAlign === 'left') { textAnchor = 'start'; xPos = el.x + 10; }
+                else if (textAlign === 'right') { textAnchor = 'end'; xPos = el.x + el.width - 10; }
+
+                const totalHeight = lines.length * lineHeight;
+                const startY = cy - totalHeight / 2 + lineHeight / 2;
+
+                lines.forEach((line, index) => {
+                    const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    textEl.textContent = line || '\u00A0';
+                    textEl.setAttribute('x', `${xPos}`);
+                    textEl.setAttribute('y', `${startY + index * lineHeight}`);
+                    textEl.setAttribute('fill', textColor);
+                    textEl.setAttribute('font-family', fontFamily);
+                    textEl.setAttribute('font-size', `${fontSize}px`);
+                    textEl.setAttribute('text-anchor', textAnchor);
+                    textEl.setAttribute('dominant-baseline', 'central');
+                    wrapper.appendChild(textEl);
+                });
+            }
             node = wrapper;
         }
 

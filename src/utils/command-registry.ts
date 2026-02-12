@@ -6,6 +6,7 @@ import {
     setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode
 } from "../store/app-store";
 import { flipSelected, lockSelected } from "./object-context-actions";
+import { setIsDSLImportOpen } from "../components/menu";
 
 export interface Command {
     id: string;
@@ -91,6 +92,9 @@ export const getCommands = (): Command[] => {
             shortcut: 'Alt+N'
         },
         { id: 'action-add-layer', label: 'Add Layer', category: 'Layers', action: () => addLayer(), shortcut: 'Ctrl+Shift+N' },
+
+        // DSL Import
+        { id: 'file-import-dsl', label: 'Import Diagram from Text', category: 'File', action: () => setIsDSLImportOpen(true), shortcut: 'Ctrl+Shift+I' },
     ];
 
     // Dynamic Layer Commands

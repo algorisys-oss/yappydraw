@@ -268,6 +268,93 @@
     height: 28px;
 }
 
+/* ============ Preset Select ============ */
+.qt-preset-select {
+    position: relative;
+}
+
+.qt-preset-trigger {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 26px;
+    padding: 0 8px;
+    background: transparent;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 4px;
+    color: var(--text-primary, #374151);
+    cursor: pointer;
+    font-size: 11px;
+    white-space: nowrap;
+    transition: all 0.15s;
+    position: relative;
+    padding-right: 16px;
+}
+
+.qt-preset-trigger:hover {
+    background: var(--btn-hover, #f3f4f6);
+    border-color: var(--primary-color, #3b82f6);
+}
+
+.qt-preset-trigger.active {
+    border-color: var(--primary-color, #3b82f6);
+    box-shadow: 0 0 0 1px var(--primary-color, #3b82f6);
+}
+
+.qt-preset-label {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.qt-preset-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-panel, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    z-index: 10002;
+    min-width: 130px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.qt-preset-category {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary, #6b7280);
+    padding: 6px 8px 2px;
+}
+
+.qt-preset-option {
+    display: block;
+    width: 100%;
+    padding: 5px 8px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-primary, #374151);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.qt-preset-option:hover {
+    background: var(--btn-hover, #f3f4f6);
+}
+
+.qt-preset-option.active {
+    background: var(--primary-color, #3b82f6);
+    color: white;
+}
+
 /* ============ Mini Slider ============ */
 .qt-mini-slider {
     display: flex;

@@ -1,0 +1,19 @@
+---
+title: Simple Flowchart
+layout: tree-down
+---
+
+# A basic login flow
+start [circle] "Start"
+login [rect] "Login Form"
+check [decision] "Valid?"
+dashboard [rect] "Dashboard"
+error [rect] "Error" { backgroundColor: "#fecaca" }
+end [circle] "End"
+
+start -> login
+login -> check
+check -> dashboard "Yes"
+check -> error "No"
+error -> login "Retry"
+dashboard -> end

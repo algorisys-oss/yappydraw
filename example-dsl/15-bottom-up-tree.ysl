@@ -1,0 +1,24 @@
+---
+title: Bottom-Up Org Chart
+layout: tree-up
+hSpacing: 130
+vSpacing: 80
+---
+
+# Organization chart (bottom-up layout)
+ceo [rect] "CEO"
+cto [rect] "CTO"
+cfo [rect] "CFO"
+vpe [rect] "VP Engineering"
+vps [rect] "VP Sales"
+dev1 [rect] "Dev Team Lead"
+dev2 [rect] "QA Team Lead"
+sales1 [rect] "Sales Lead"
+
+ceo -> cto
+ceo -> cfo
+cto -> vpe
+cfo -> vps
+vpe -> dev1
+vpe -> dev2
+vps -> sales1

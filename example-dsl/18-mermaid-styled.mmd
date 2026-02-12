@@ -1,0 +1,15 @@
+flowchart LR
+    A[User Request] --> B{Auth Check}
+    B -->|Valid| C[Process]
+    B -->|Invalid| D[Reject]
+    C --> E[(Database)]
+    E --> F[Response]
+    D --> G[Error Page]
+
+    classDef success fill:#dcfce7,stroke:#16a34a,color:#166534
+    classDef error fill:#fecaca,stroke:#dc2626,color:#991b1b
+    classDef db fill:#dbeafe,stroke:#2563eb,color:#1e40af
+
+    class C,F success
+    class D,G error
+    class E db

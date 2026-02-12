@@ -4,12 +4,20 @@
  */
 
 import type { ElementType } from '../types';
+import { IMAGE_FILTER_PRESETS } from './image-filter-presets';
 
 /** Broad families that group element types for toolbar purposes */
 export type ElementFamily = 'shape' | 'connector' | 'text' | 'drawing' | 'image';
 
 /** Control types that can render in the compact toolbar */
-export type QuickControlType = 'color-dot' | 'icon-toggle' | 'icon-select' | 'mini-slider';
+export type QuickControlType = 'color-dot' | 'icon-toggle' | 'icon-select' | 'mini-slider' | 'preset-select';
+
+/** For preset-select: a preset option with id, label, and category */
+export interface PresetOption {
+    value: string;
+    label: string;
+    category?: string;
+}
 
 export interface QuickPropertyDef {
     key: string;                // DrawingElement property key
@@ -17,6 +25,8 @@ export interface QuickPropertyDef {
     label: string;              // tooltip text
     // For icon-select
     options?: { value: any; icon: string; label: string }[];
+    // For preset-select
+    presetOptions?: PresetOption[];
     // For mini-slider
     min?: number;
     max?: number;
@@ -167,8 +177,16 @@ const drawingProperties: QuickPropertyDef[] = [
     { key: 'strokeWidth', controlType: 'mini-slider', label: 'Stroke Width', min: 1, max: 20, step: 1 },
 ];
 
+/** Filter preset options for the quick toolbar dropdown */
+const filterPresetOptions: PresetOption[] = IMAGE_FILTER_PRESETS.map(p => ({
+    value: p.id,
+    label: p.name,
+    category: p.category,
+}));
+
 /** Quick properties for images */
 const imageProperties: QuickPropertyDef[] = [
+    { key: 'filterPreset', controlType: 'preset-select', label: 'Filter Preset', presetOptions: filterPresetOptions },
     { key: 'opacity', controlType: 'mini-slider', label: 'Opacity', min: 0, max: 100, step: 5 },
     { key: 'filterBrightness', controlType: 'mini-slider', label: 'Brightness', min: 0, max: 200, step: 5 },
     { key: 'filterContrast', controlType: 'mini-slider', label: 'Contrast', min: 0, max: 200, step: 5 },
