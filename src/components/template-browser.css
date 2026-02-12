@@ -217,10 +217,25 @@
     color: #9ca3af;
 }
 
-/* DSL template thumbnail icon */
-.template-dsl-icon {
+/* DSL template cards — no thumbnail, compact text-only layout */
+.template-card.template-card-dsl {
+    height: auto;
+    overflow: visible;
+    padding: 14px;
+}
+
+.template-card-dsl .template-name {
+    margin: 6px 0 4px 0;
+}
+
+.template-card-dsl .template-description {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+}
+
+.template-dsl-header {
     display: flex;
-    flex-direction: column;
     align-items: center;
     gap: 8px;
     color: #7c3aed;
@@ -237,8 +252,8 @@
     color: #6d28d9;
 }
 
-[data-theme="dark"] .template-dsl-icon,
-[data-theme="focus"] .template-dsl-icon {
+[data-theme="dark"] .template-dsl-header,
+[data-theme="focus"] .template-dsl-header {
     color: #a78bfa;
 }
 
