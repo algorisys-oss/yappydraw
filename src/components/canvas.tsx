@@ -3,7 +3,7 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect } from "../store/app-store";
 import { normalizePoints } from "../utils/render-element";
 import type { DrawingElement } from "../types";
 import ContextMenu from "./context-menu";
@@ -38,6 +38,8 @@ import { commitText as commitTextHandler, handleDoubleClick as handleDoubleClick
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestColEdge, measureColumnOptimalWidth, getNextCell } from "../utils/table-utils";
 import { handleDragOver, handleDrop as handleDropHandler, handleWheel, type CanvasEventContext } from "../utils/tool-handlers/canvas-event-handlers";
 import { showToast } from "./toast";
+import { hitTestElement } from "../utils/hit-testing";
+import { renderCropOverlay, hitTestCropHandle, applyCropDrag, getCropHandleCursor, finalizeCropRect, type CropHandle } from "../utils/image-crop-utils";
 import { perfMonitor } from "../utils/performance-monitor";
 import { fitShapeToText, measureWrappedTextHeight } from "../utils/text-utils";
 import { effectiveTime } from "../utils/animation/animation-engine";
@@ -171,6 +173,12 @@ const Canvas: Component = () => {
     const [spacingGuides, setSpacingGuides] = createSignal<SpacingGuide[]>([]);
     const [reparentDropTarget, setReparentDropTarget] = createSignal<string | null>(null);
     const [poolLaneDropTarget, setPoolLaneDropTarget] = createSignal<{ poolId: string; laneIndex: number } | null>(null);
+
+    // Crop mode drag state (mutable, not reactive — same pattern as pState)
+    let cropDragHandle: CropHandle = null;
+    let cropDragStartX = 0;
+    let cropDragStartY = 0;
+    let cropDragStartRect: { x: number; y: number; width: number; height: number } | null = null;
 
     // Throttle constants
     const SNAPPING_THROTTLE_MS = 16; // ~60 FPS
@@ -327,6 +335,14 @@ const Canvas: Component = () => {
 
         renderLaserTrail(ctx, pState.laserTrailData, scale, LASER_DECAY_MS);
 
+        // 7. Crop mode overlay
+        if (store.cropModeElementId && store.cropRect) {
+            const cropEl = store.elements.find(e => e.id === store.cropModeElementId);
+            if (cropEl) {
+                renderCropOverlay(ctx, cropEl, store.cropRect, scale);
+            }
+        }
+
         ctx.restore();
 
         perfMonitor.measureFrame(performance.now() - startTime, store.elements.length, totalRendered);
@@ -377,6 +393,11 @@ const Canvas: Component = () => {
             e.shadowEnabled; e.shadowColor; e.shadowBlur; e.shadowOffsetX; e.shadowOffsetY;
             // Effects
             e.blendMode;
+            // Image filter properties
+            e.filterBrightness; e.filterContrast; e.filterSaturate;
+            e.filterBlur; e.filterHueRotate; e.filterInvert; e.filterSepia;
+            e.filterPreset;
+            e.crop; // Image crop
             // Table properties
             e.tableRows; e.tableCols; e.tableHeaders; e.tableData;
             e.tableColWidths; e.tableRowHeights; e.tableColOrder;
@@ -429,6 +450,9 @@ const Canvas: Component = () => {
         store.canvasTexture;
         store.theme;
         store.focusBranchId;
+        // Crop mode
+        store.cropModeElementId;
+        store.cropRect;
         snappingGuides();
         // Redraw on reactive changes
         requestAnimationFrame(draw);
@@ -557,6 +581,30 @@ const Canvas: Component = () => {
         (e.currentTarget as Element).setPointerCapture(e.pointerId);
         const { x, y } = getWorldCoordinates(e.clientX, e.clientY);
 
+        // Crop mode interception
+        if (store.cropModeElementId && store.cropRect) {
+            const cropEl = store.elements.find(el => el.id === store.cropModeElementId);
+            if (cropEl) {
+                const handle = hitTestCropHandle(x, y, cropEl, store.cropRect, store.viewState.scale);
+                if (handle) {
+                    cropDragHandle = handle;
+                    cropDragStartX = x;
+                    cropDragStartY = y;
+                    cropDragStartRect = { ...store.cropRect };
+                    return;
+                }
+                // Clicked outside crop area — apply and exit
+                const finalCrop = finalizeCropRect(store.cropRect, cropEl);
+                exitCropMode(false);
+                if (finalCrop) {
+                    pushToHistory();
+                    updateElement(cropEl.id, { crop: finalCrop });
+                }
+                requestAnimationFrame(draw);
+                return;
+            }
+        }
+
         if (editingId()) {
             commitText();
             // Switch back to selection if text tool was active (blur handler won't fire in time)
@@ -567,6 +615,31 @@ const Canvas: Component = () => {
         }
 
 
+
+        // Crop tool: click on image → enter crop mode
+        if (store.selectedTool === 'crop') {
+            const threshold = 10 / store.viewState.scale;
+            const elementMap = new Map<string, DrawingElement>();
+            for (const el of store.elements) elementMap.set(el.id, el);
+
+            // Find top-most element under cursor
+            let hitEl: DrawingElement | null = null;
+            for (let i = store.elements.length - 1; i >= 0; i--) {
+                const el = store.elements[i];
+                if (hitTestElement(el, x, y, threshold, store.elements, elementMap)) {
+                    hitEl = el;
+                    break;
+                }
+            }
+
+            if (hitEl && hitEl.type === 'image' && hitEl.dataURL) {
+                enterCropMode(hitEl.id);
+                requestAnimationFrame(draw);
+            } else if (hitEl) {
+                showToast('Crop only works on image elements', 'info');
+            }
+            return;
+        }
 
         if (store.selectedTool === 'selection' || store.selectedTool === 'lasso') {
             selectionOnDown(e, x, y, pState, pHelpers, pSignals);
@@ -599,6 +672,25 @@ const Canvas: Component = () => {
         if (presentationOnMove(e, pState)) return;
         let { x, y } = getWorldCoordinates(e.clientX, e.clientY);
         setCursorPosition({ x: Math.round(x), y: Math.round(y) });
+
+        // Crop mode drag
+        if (store.cropModeElementId && store.cropRect) {
+            const cropEl = store.elements.find(el => el.id === store.cropModeElementId);
+            if (cropEl) {
+                if (cropDragHandle && cropDragStartRect) {
+                    const dx = x - cropDragStartX;
+                    const dy = y - cropDragStartY;
+                    const newRect = applyCropDrag(cropDragHandle, cropDragStartRect, dx, dy, cropEl.width, cropEl.height);
+                    updateCropRect(newRect);
+                    requestAnimationFrame(draw);
+                    return;
+                }
+                // Update cursor based on hovered handle
+                const handle = hitTestCropHandle(x, y, cropEl, store.cropRect, store.viewState.scale);
+                if (canvasRef) canvasRef.style.cursor = getCropHandleCursor(handle);
+                return;
+            }
+        }
 
         if (store.selectedTool === 'pan') { panOnMove(e, pState, pHelpers); return; }
 
@@ -647,6 +739,13 @@ const Canvas: Component = () => {
 
     const handlePointerUp = (e: PointerEvent) => {
         (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+
+        // Crop mode: finish drag
+        if (cropDragHandle) {
+            cropDragHandle = null;
+            cropDragStartRect = null;
+            return;
+        }
 
         if (presentationOnUp(e, pState)) return;
         if (store.selectedTool === 'pan') { panOnUp(pState, pHelpers); return; }
@@ -748,6 +847,31 @@ const Canvas: Component = () => {
             draw();
         });
 
+        // Crop mode keyboard shortcuts (Enter to apply, Escape to cancel)
+        const handleCropKeys = (e: KeyboardEvent) => {
+            if (!store.cropModeElementId) return;
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                const cropEl = store.elements.find(el => el.id === store.cropModeElementId);
+                if (cropEl && store.cropRect) {
+                    const finalCrop = finalizeCropRect(store.cropRect, cropEl);
+                    exitCropMode(false);
+                    if (finalCrop) {
+                        pushToHistory();
+                        updateElement(cropEl.id, { crop: finalCrop });
+                    }
+                }
+                requestAnimationFrame(draw);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                exitCropMode(false);
+                requestAnimationFrame(draw);
+            }
+        };
+        window.addEventListener('keydown', handleCropKeys, true);
+
         // Polyline keyboard shortcuts (Escape to finish, Backspace to undo last point)
         const handlePolylineKeys = (e: KeyboardEvent) => {
             if (!pState.isPolylineBuilding) return;
@@ -832,6 +956,7 @@ const Canvas: Component = () => {
 
         onCleanup(() => {
             delete (window as any).__tableCellNav;
+            window.removeEventListener('keydown', handleCropKeys, true);
             window.removeEventListener('keydown', handlePolylineKeys, true);
             window.removeEventListener("resize", handleResize);
             document.removeEventListener("fullscreenchange", handleResize);

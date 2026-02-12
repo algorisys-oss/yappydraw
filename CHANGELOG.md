@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-02-12
+
+### Added
+- **Image Filters** — Instagram-style filter system for image elements:
+  - 15 filter presets in 5 categories: Basic, Warm, Cool, Vintage, Dramatic
+  - Individual sliders for brightness, contrast, saturation, sepia, hue-rotate, blur, invert
+  - Filter preset dropdown in property panel (FILTER group) with auto-switch to "Custom" on manual adjustment
+  - Quick toolbar shows brightness, contrast, and saturation sliders for images
+  - SVG export preserves filter values via CSS `filter` attribute on `<image>` elements
+- **Image Crop Tool** — interactive crop with overlay, handles, and rule-of-thirds grid:
+  - Crop tool in toolbar (selection/lasso group) with **Shift+C** shortcut
+  - Click on image with crop tool to enter crop mode
+  - 8 drag handles (4 corners + 4 edges) to resize crop area, drag inside to move
+  - Rule-of-thirds grid overlay for composition guidance
+  - Dimmed area outside crop region with full-opacity cropped preview
+  - Enter to apply crop, Escape to cancel, click outside to apply
+  - "Crop Image" and "Reset Crop" buttons in property panel FILTER group
+  - Non-image elements show info toast when crop tool is used
+- **Desktop Image Drag & Drop** — drag image files from desktop/file manager directly onto the canvas:
+  - Single or multiple images supported (staggered placement)
+  - Images placed at drop position with automatic compression (WebP 0.8) and resizing
+- **YappyDraw Logo** — logo added to menu bar (24px) and welcome screen (96px desktop, 64px mobile)
+- **Favicon & Terms of Service** — custom favicon and terms of service page
+
 ## [1.12.0] - 2026-02-12
 
 ### Added

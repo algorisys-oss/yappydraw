@@ -4,6 +4,7 @@ import rough from 'roughjs/bin/rough';
 import { jsPDF } from "jspdf";
 import PptxGenJS from "pptxgenjs";
 import { resolveFontFamily, wrapText, getMeasurementContext } from "./text-utils";
+import { buildFilterString } from "./image-filter-utils";
 
 
 export const exportToPng = async (scale: number, background: boolean, onlySelected: boolean) => {
@@ -299,6 +300,11 @@ export const exportToSvg = (onlySelected: boolean) => {
             image.setAttribute('y', `${el.y}`);
             image.setAttribute('width', `${el.width}`);
             image.setAttribute('height', `${el.height}`);
+            // Apply CSS filter if any image filter properties are set
+            const filterStr = buildFilterString(el);
+            if (filterStr !== 'none') {
+                image.setAttribute('style', `filter: ${filterStr}`);
+            }
             node = image;
         }
 

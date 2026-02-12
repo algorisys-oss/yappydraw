@@ -18,7 +18,7 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
 | 'bpmnDataObject' | 'bpmnAnnotation' | 'bpmnPool'
 | 'bpmnEventGateway' | 'bpmnDataStore' | 'bpmnGroup';
 
-export type ToolType = ElementType | 'lasso';
+export type ToolType = ElementType | 'lasso' | 'crop';
 
 export type AppMode = 'design' | 'presentation' | 'prototype' | 'embed';
 export type FillStyle = 'hachure' | 'solid' | 'cross-hatch' | 'zigzag' | 'dots' | 'dashed' | 'zigzag-line' | 'linear' | 'radial' | 'conic' | 'image';
@@ -195,6 +195,16 @@ export interface DrawingElement {
     status?: 'pending' | 'loaded' | 'error';
     dataURL?: string;
     mimeType?: string;
+
+    // Image Filter Properties
+    filterBrightness?: number;   // 0-200, default 100 (CSS brightness %)
+    filterContrast?: number;     // 0-200, default 100 (CSS contrast %)
+    filterSaturate?: number;     // 0-200, default 100 (CSS saturate %)
+    filterBlur?: number;         // 0-20, default 0 (CSS blur in px)
+    filterHueRotate?: number;    // 0-360, default 0 (CSS hue-rotate in degrees)
+    filterInvert?: number;       // 0-100, default 0 (CSS invert %)
+    filterSepia?: number;        // 0-100, default 0 (CSS sepia %)
+    filterPreset?: string;       // Preset ID or 'custom'
 
     // Meta
     groupIds?: string[];

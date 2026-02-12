@@ -17,7 +17,16 @@ export class ImageRenderer extends ShapeRenderer {
 
         const img = getImage(el.dataURL);
         if (img) {
-            ctx.drawImage(img, el.x, el.y, el.width, el.height);
+            if (el.crop) {
+                // Draw cropped region: source rect → destination rect
+                ctx.drawImage(
+                    img,
+                    el.crop.x, el.crop.y, el.crop.width, el.crop.height,
+                    el.x, el.y, el.width, el.height
+                );
+            } else {
+                ctx.drawImage(img, el.x, el.y, el.width, el.height);
+            }
         } else {
             // Placeholder while loading
             ctx.save();

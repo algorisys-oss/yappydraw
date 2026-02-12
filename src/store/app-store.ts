@@ -12,6 +12,7 @@ import { slideBuildManager } from '../utils/animation/slide-build-manager';
 import { generateId } from "../utils/id-generator"; // New Import
 import { refreshBoundLine } from "../utils/binding-logic";
 import { abortDsAlgorithm } from "../utils/ds-operations";
+import { getImage } from "../utils/image-cache";
 
 interface AppState {
     // Current Active Slide properties (for performance and compatibility)
@@ -97,6 +98,10 @@ interface AppState {
     readOnly: boolean;
     cursorPosition: { x: number; y: number };
     welcomeDismissed: boolean;
+
+    // Image Crop Mode
+    cropModeElementId: string | null;
+    cropRect: { x: number; y: number; width: number; height: number } | null;
 }
 
 const initialDoc = createSlideDocument();
@@ -222,7 +227,9 @@ const initialState: AppState = {
         isActive: false,
         elementId: null,
         animationId: null
-    }
+    },
+    cropModeElementId: null,
+    cropRect: null,
 };
 
 export const [store, setStore] = createStore<AppState>(initialState);
@@ -750,6 +757,51 @@ export const setPathEditing = (isActive: boolean, elementId: string | null = nul
     if (isActive) {
         showToast("Path Edit Mode Active", "info");
     }
+};
+
+// --- Image Crop Actions ---
+export const enterCropMode = (elementId: string) => {
+    const el = store.elements.find(e => e.id === elementId);
+    if (!el || el.type !== 'image' || !el.dataURL) return;
+
+    // Initialize crop rect in element-local coordinates (0,0 = top-left of element)
+    const cropRect = { x: 0, y: 0, width: el.width, height: el.height };
+
+    if (el.crop) {
+        // Convert stored source-pixel crop to element-local coordinates
+        const img = getImage(el.dataURL);
+        if (img) {
+            const sx = el.width / img.naturalWidth;
+            const sy = el.height / img.naturalHeight;
+            cropRect.x = el.crop.x * sx;
+            cropRect.y = el.crop.y * sy;
+            cropRect.width = el.crop.width * sx;
+            cropRect.height = el.crop.height * sy;
+        }
+    }
+
+    setStore('cropModeElementId', elementId);
+    setStore('cropRect', cropRect);
+};
+
+export const exitCropMode = (apply: boolean) => {
+    if (apply && store.cropModeElementId && store.cropRect) {
+        pushToHistory();
+        updateElement(store.cropModeElementId, { crop: { ...store.cropRect } });
+    }
+    setStore('cropModeElementId', null);
+    setStore('cropRect', null);
+};
+
+export const updateCropRect = (rect: { x: number; y: number; width: number; height: number }) => {
+    setStore('cropRect', { ...rect });
+};
+
+export const resetCrop = (elementId: string) => {
+    pushToHistory();
+    updateElement(elementId, { crop: null });
+    setStore('cropModeElementId', null);
+    setStore('cropRect', null);
 };
 
 // --- Slide Management Actions ---

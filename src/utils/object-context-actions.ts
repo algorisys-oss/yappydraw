@@ -36,7 +36,7 @@ const getViewportCenter = () => ({
 });
 
 // ─── Paste image from blob (used by paste event + context menu) ──────
-export const pasteImageFromBlob = (blob: Blob, offset = { dx: 0, dy: 0 }): Promise<string | null> => {
+export const pasteImageFromBlob = (blob: Blob, offset = { dx: 0, dy: 0 }, position?: { x: number; y: number }): Promise<string | null> => {
     return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -74,14 +74,14 @@ export const pasteImageFromBlob = (blob: Blob, offset = { dx: 0, dy: 0 }): Promi
                     else { visualH = VISUAL_MAX; visualW = visualH * ratio; }
                 }
 
-                const center = getViewportCenter();
+                const anchor = position || getViewportCenter();
                 const id = generateId('image');
 
                 addElement({
                     id,
                     type: 'image',
-                    x: center.x - visualW / 2 + offset.dx,
-                    y: center.y - visualH / 2 + offset.dy,
+                    x: anchor.x - visualW / 2 + offset.dx,
+                    y: anchor.y - visualH / 2 + offset.dy,
                     width: visualW,
                     height: visualH,
                     strokeColor: 'transparent',

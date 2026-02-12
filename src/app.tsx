@@ -516,6 +516,9 @@ const App: Component = () => {
         } else if (e.shiftKey && key === 'l') {
           e.preventDefault();
           setSelectedTool('lasso');
+        } else if (e.shiftKey && key === 'c') {
+          e.preventDefault();
+          setSelectedTool('crop');
         } else if (e.shiftKey && key === 'h') {
           e.preventDefault();
           if (store.selection.length > 0) flipSelected('horizontal');

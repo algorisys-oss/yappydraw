@@ -5,9 +5,10 @@
  */
 
 import type { DrawingElement } from '../../types';
-import { store, setViewState, updateElement, pushToHistory, updateSlideBackground, isLayerVisible } from '../../store/app-store';
+import { store, setStore, setViewState, updateElement, pushToHistory, updateSlideBackground, isLayerVisible } from '../../store/app-store';
 import { calculateAllAnimatedStates } from '../animation-utils';
 import { hitTestElement } from '../hit-testing';
+import { pasteImageFromBlob } from '../object-context-actions';
 
 /**
  * Context needed by drop handler from canvas component closures.
@@ -32,6 +33,29 @@ export function handleDragOver(e: DragEvent): void {
 export async function handleDrop(e: DragEvent, ctx: CanvasEventContext): Promise<void> {
     e.preventDefault();
     e.stopPropagation();
+
+    // Handle image files dropped from desktop/file manager
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+        const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+        if (imageFiles.length > 0) {
+            const { x, y } = ctx.getWorldCoordinates(e.clientX, e.clientY);
+            pushToHistory();
+            const STAGGER = 30;
+            const ids: string[] = [];
+            for (let i = 0; i < imageFiles.length; i++) {
+                const id = await pasteImageFromBlob(
+                    imageFiles[i],
+                    { dx: i * STAGGER, dy: i * STAGGER },
+                    { x, y }
+                );
+                if (id) ids.push(id);
+            }
+            if (ids.length > 0) setStore('selection', ids);
+            return;
+        }
+    }
+
     const data = e.dataTransfer?.getData('text/plain');
     if (!data) return;
 

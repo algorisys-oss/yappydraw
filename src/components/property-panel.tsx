@@ -1,7 +1,8 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
+import type { DrawingElement } from "../types";
 import {
     Copy, ChevronsDown, ChevronDown, ChevronUp, ChevronsUp, Trash2, Palette,
     AlignLeft, AlignCenterHorizontal, AlignRight,
@@ -13,6 +14,7 @@ import {
 import "./property-panel.css";
 import { properties, fontCapabilities, type PropertyConfig } from "../config/properties";
 import { getGradientPreset } from "../config/gradient-presets";
+import { getImageFilterPreset } from "../config/image-filter-presets";
 import { getOpenBoxPreset } from "../config/openbox-presets";
 import { showToast } from "./toast";
 import { playSequence } from "../utils/animation/orchestrator";
@@ -596,6 +598,51 @@ const PropertyPanel: Component = () => {
             }
         }
 
+        // Image filter preset: apply preset filter values
+        if (key === 'filterPreset' && value !== 'custom') {
+            const preset = getImageFilterPreset(value);
+            if (preset) {
+                const filterUpdates = {
+                    filterPreset: value,
+                    filterBrightness: preset.values.filterBrightness ?? 100,
+                    filterContrast: preset.values.filterContrast ?? 100,
+                    filterSaturate: preset.values.filterSaturate ?? 100,
+                    filterBlur: preset.values.filterBlur ?? 0,
+                    filterHueRotate: preset.values.filterHueRotate ?? 0,
+                    filterInvert: preset.values.filterInvert ?? 0,
+                    filterSepia: preset.values.filterSepia ?? 0,
+                };
+                if (target.type === 'element') {
+                    updateElement(targetId || target.data.id!, filterUpdates, history);
+                } else if (target.type === 'multi') {
+                    store.selection.forEach(id => updateElement(id, filterUpdates, history));
+                }
+                return;
+            }
+        }
+
+        // Auto-switch to custom preset when individual filter values change
+        const FILTER_KEYS = ['filterBrightness', 'filterContrast', 'filterSaturate', 'filterBlur', 'filterHueRotate', 'filterInvert', 'filterSepia'];
+        if (FILTER_KEYS.includes(key)) {
+            if (target.type === 'element') {
+                const el = target.data as DrawingElement;
+                if (el.filterPreset && el.filterPreset !== 'custom') {
+                    updateElement(targetId || el.id!, { filterPreset: 'custom', [key]: finalValue }, history);
+                    return;
+                }
+            } else if (target.type === 'multi') {
+                store.selection.forEach(id => {
+                    const el = store.elements.find(e => e.id === id);
+                    if (el?.filterPreset && el.filterPreset !== 'custom') {
+                        updateElement(id, { filterPreset: 'custom', [key]: finalValue }, history);
+                    } else {
+                        updateElement(id, { [key]: finalValue }, history);
+                    }
+                });
+                return;
+            }
+        }
+
         // OpenBox preset: apply all preset settings
         if (key === 'openBoxPreset' && value !== 'custom') {
             const preset = getOpenBoxPreset(value);
@@ -1075,6 +1122,64 @@ const PropertyPanel: Component = () => {
                                                         return renderControl(prop);
                                                     }}
                                                 </For>
+                                                {/* Crop button for image elements in filter group */}
+                                                <Show when={group === 'filter' && (() => {
+                                                    const target = activeTarget();
+                                                    if (!target) return false;
+                                                    if (target.type === 'element') return target.data.type === 'image';
+                                                    return false;
+                                                })()}>
+                                                    <div class="control-row" style={{ "margin-top": "8px", gap: "6px" }}>
+                                                        <button
+                                                            style={{
+                                                                flex: "1",
+                                                                "font-size": "12px",
+                                                                padding: "6px 12px",
+                                                                background: "var(--bg-secondary)",
+                                                                border: "1px solid var(--border-color)",
+                                                                "border-radius": "4px",
+                                                                color: "var(--text-primary)",
+                                                                cursor: "pointer",
+                                                            }}
+                                                            onClick={() => {
+                                                                const target = activeTarget();
+                                                                if (target?.type === 'element') {
+                                                                    enterCropMode(target.data.id!);
+                                                                }
+                                                            }}
+                                                            title="Crop image (Enter to apply, Escape to cancel)"
+                                                        >
+                                                            Crop Image
+                                                        </button>
+                                                        <Show when={(() => {
+                                                            const target = activeTarget();
+                                                            if (target?.type === 'element') return !!target.data.crop;
+                                                            return false;
+                                                        })()}>
+                                                            <button
+                                                                style={{
+                                                                    flex: "1",
+                                                                    "font-size": "12px",
+                                                                    padding: "6px 12px",
+                                                                    background: "var(--bg-secondary)",
+                                                                    border: "1px solid var(--border-color)",
+                                                                    "border-radius": "4px",
+                                                                    color: "var(--text-secondary)",
+                                                                    cursor: "pointer",
+                                                                }}
+                                                                onClick={() => {
+                                                                    const target = activeTarget();
+                                                                    if (target?.type === 'element') {
+                                                                        resetCrop(target.data.id!);
+                                                                    }
+                                                                }}
+                                                                title="Remove crop and show full image"
+                                                            >
+                                                                Reset Crop
+                                                            </button>
+                                                        </Show>
+                                                    </div>
+                                                </Show>
                                             </Show>
                                         </div>
                                     )}

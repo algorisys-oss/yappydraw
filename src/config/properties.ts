@@ -22,7 +22,7 @@ export interface PropertyConfig {
     step?: number;
     applicableTo: (ElementType | 'canvas' | 'slide')[] | 'all';
     defaultValue?: any;
-    group: 'style' | 'stroke' | 'background' | 'text' | 'dimensions' | 'advanced' | 'canvas' | 'shadow' | 'gradient' | 'motion' | 'slide' | 'interaction';
+    group: 'style' | 'stroke' | 'background' | 'text' | 'dimensions' | 'advanced' | 'canvas' | 'shadow' | 'gradient' | 'motion' | 'slide' | 'interaction' | 'filter';
     dependsOn?: string | { key: string; value: any | any[] }; // Key of property that must be truthy for this to show
 }
 
@@ -724,6 +724,97 @@ export const properties: PropertyConfig[] = [
         applicableTo: 'all',
         defaultValue: 5,
         dependsOn: 'shadowEnabled'
+    },
+
+    // Image Filter Properties
+    {
+        key: 'filterPreset',
+        label: 'Filter Preset',
+        type: 'select',
+        options: [
+            { label: 'None', value: 'none' },
+            { label: 'Grayscale', value: 'grayscale' },
+            { label: 'Warm', value: 'warm' },
+            { label: 'Sunny', value: 'sunny' },
+            { label: 'Golden', value: 'golden' },
+            { label: 'Cool', value: 'cool' },
+            { label: 'Arctic', value: 'arctic' },
+            { label: 'Sepia', value: 'sepia' },
+            { label: 'Vintage', value: 'vintage' },
+            { label: 'Retro', value: 'retro' },
+            { label: 'Faded', value: 'faded' },
+            { label: 'High Contrast', value: 'highContrast' },
+            { label: 'Dramatic', value: 'dramatic' },
+            { label: 'Noir', value: 'noir' },
+            { label: 'Invert', value: 'invert' },
+            { label: 'Custom', value: 'custom' },
+        ],
+        group: 'filter',
+        applicableTo: ['image'],
+        defaultValue: 'none'
+    },
+    {
+        key: 'filterBrightness',
+        label: 'Brightness',
+        type: 'slider',
+        min: 0, max: 200, step: 5,
+        group: 'filter',
+        applicableTo: ['image'],
+        defaultValue: 100
+    },
+    {
+        key: 'filterContrast',
+        label: 'Contrast',
+        type: 'slider',
+        min: 0, max: 200, step: 5,
+        group: 'filter',
+        applicableTo: ['image'],
+        defaultValue: 100
+    },
+    {
+        key: 'filterSaturate',
+        label: 'Saturation',
+        type: 'slider',
+        min: 0, max: 200, step: 5,
+        group: 'filter',
+        applicableTo: ['image'],
+        defaultValue: 100
+    },
+    {
+        key: 'filterSepia',
+        label: 'Sepia',
+        type: 'slider',
+        min: 0, max: 100, step: 5,
+        group: 'filter',
+        applicableTo: ['image'],
+        defaultValue: 0
+    },
+    {
+        key: 'filterHueRotate',
+        label: 'Hue Rotate',
+        type: 'slider',
+        min: 0, max: 360, step: 5,
+        group: 'filter',
+        applicableTo: ['image'],
+        defaultValue: 0
+    },
+    {
+        key: 'filterBlur',
+        label: 'Blur',
+        type: 'slider',
+        min: 0, max: 20, step: 0.5,
+        group: 'filter',
+        applicableTo: ['image'],
+        defaultValue: 0
+    },
+    {
+        key: 'filterInvert',
+        label: 'Invert',
+        type: 'slider',
+        min: 0, max: 100, step: 5,
+        group: 'filter',
+        applicableTo: ['image'],
+        defaultValue: 0
     },
 
     // Text Specific

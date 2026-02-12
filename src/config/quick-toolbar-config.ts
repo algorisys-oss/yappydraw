@@ -33,7 +33,7 @@ export const QUICK_COLORS = [
 
 const CONNECTOR_TYPES: ElementType[] = ['line', 'arrow', 'bezier', 'elbow', 'organicBranch', 'polyline'];
 const DRAWING_TYPES: ElementType[] = ['fineliner', 'inkbrush', 'marker'];
-const TOOL_TYPES: (ElementType | 'lasso')[] = ['eraser', 'pan', 'selection', 'laser', 'ink', 'lasso'];
+const TOOL_TYPES: (ElementType | 'lasso' | 'crop')[] = ['eraser', 'pan', 'selection', 'laser', 'ink', 'lasso', 'crop'];
 
 /** Classify an element type into its family */
 export function getElementFamily(type: ElementType): ElementFamily | null {
@@ -170,6 +170,9 @@ const drawingProperties: QuickPropertyDef[] = [
 /** Quick properties for images */
 const imageProperties: QuickPropertyDef[] = [
     { key: 'opacity', controlType: 'mini-slider', label: 'Opacity', min: 0, max: 100, step: 5 },
+    { key: 'filterBrightness', controlType: 'mini-slider', label: 'Brightness', min: 0, max: 200, step: 5 },
+    { key: 'filterContrast', controlType: 'mini-slider', label: 'Contrast', min: 0, max: 200, step: 5 },
+    { key: 'filterSaturate', controlType: 'mini-slider', label: 'Saturation', min: 0, max: 200, step: 5 },
 ];
 
 const familyConfigs: Record<ElementFamily, QuickPropertyDef[]> = {

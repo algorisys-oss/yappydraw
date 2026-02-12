@@ -2,7 +2,7 @@ import { type Component, For, createSignal, onMount, onCleanup } from "solid-js"
 import { store, setSelectedTool, addElement, setStore } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import type { ToolType } from "../types";
-import { MousePointer2, Type, Eraser, Hand, Image as ImageIcon, Zap, Highlighter, Lasso } from "lucide-solid";
+import { MousePointer2, Type, Eraser, Hand, Image as ImageIcon, Zap, Highlighter, Lasso, Crop } from "lucide-solid";
 import PenToolGroup from "./pen-tool-group";
 import ShapeToolGroup from "./shape-tool-group";
 import SketchnoteToolGroup from "./sketchnote-tool-group";
@@ -27,6 +27,7 @@ const navTools: { type: ToolType; icon: Component<{ size?: number; color?: strin
     { type: 'pan', icon: Hand, label: 'Pan Tool (H)' },
     { type: 'selection', icon: MousePointer2, label: 'Selection (V or 1)' },
     { type: 'lasso', icon: Lasso, label: 'Lasso Select (Shift+L)' },
+    { type: 'crop', icon: Crop, label: 'Crop Image (Shift+C)' },
 ];
 
 // Utility tools (rendered after grouped tools)

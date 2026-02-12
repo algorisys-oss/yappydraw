@@ -4,6 +4,7 @@ import { getShapeGeometry } from "../../utils/shape-geometry";
 import { getFontString, measureContainerText } from "../../utils/text-utils";
 import type { RenderContext } from "./types";
 import { getUIShapeDef } from "../../config/ui-shape-defs";
+import { buildFilterString } from "../../utils/image-filter-utils";
 
 export class RenderPipeline {
     static adjustColor(color: string, _isDarkMode: boolean) {
@@ -80,6 +81,14 @@ export class RenderPipeline {
             ctx.shadowOffsetY = el.shadowOffsetY || 5;
         } else {
             ctx.shadowColor = 'transparent';
+        }
+
+        // Apply CSS Filter (for images with filter properties)
+        if (el.type === 'image') {
+            const filterStr = buildFilterString(el);
+            if (filterStr !== 'none') {
+                ctx.filter = filterStr;
+            }
         }
 
         const angle = el.angle || 0;
