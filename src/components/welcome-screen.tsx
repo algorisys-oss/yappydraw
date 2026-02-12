@@ -457,6 +457,17 @@ export const WelcomeScreen: Component = () => {
                     "align-items": "center",
                     "gap": "1rem"
                 }}>
+                    <img
+                        src="/logo.svg"
+                        alt="YappyDraw Logo"
+                        style={{
+                            "width": windowSize().width < 768 ? "64px" : "96px",
+                            "height": windowSize().width < 768 ? "64px" : "96px",
+                            "border-radius": "18px",
+                            "opacity": "0",
+                            "animation": "welcomeScaleIn 0.6s ease-out 0s forwards"
+                        }}
+                    />
                     <h1 style={{
                         "font-size": windowSize().width < 768 ? "2.5rem" : "5rem",
                         "margin": "0",

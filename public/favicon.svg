@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="32" height="32" rx="6" ry="6" fill="url(#bg)"/>
+  <!-- Pencil icon -->
+  <g transform="translate(6, 4) rotate(0)">
+    <path d="M18.5 3.5L20.5 5.5L8 18L4 20L6 16Z" fill="#fbbf24" stroke="white" stroke-width="0.8"/>
+    <path d="M4 20L6 16L8 18Z" fill="#78716c"/>
+    <path d="M18.5 3.5L20.5 5.5L22 4L20 2Z" fill="#fb7185" stroke="white" stroke-width="0.8"/>
+  </g>
+  <!-- Small canvas hint -->
+  <rect x="3" y="22" width="10" height="7" rx="1.5" fill="white" opacity="0.9"/>
+  <line x1="5" y1="25" x2="11" y2="25" stroke="#3b82f6" stroke-width="0.8" stroke-linecap="round" opacity="0.5"/>
+  <line x1="5" y1="27" x2="9" y2="27" stroke="#3b82f6" stroke-width="0.8" stroke-linecap="round" opacity="0.5"/>
+</svg>

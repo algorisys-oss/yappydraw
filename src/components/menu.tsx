@@ -477,6 +477,11 @@ const Menu: Component = () => {
                             <div class="drag-handle sm">
                                 <div class="drag-dots"></div>
                             </div>
+                            <img
+                                src="/logo.svg"
+                                alt="YappyDraw"
+                                style={{ width: '24px', height: '24px', 'border-radius': '4px', 'flex-shrink': '0' }}
+                            />
                             <button class={`menu-btn ${isMenuOpen() ? 'active' : ''}`} title="Menu" onClick={() => setIsMenuOpen(!isMenuOpen())}>
                                 <MenuIcon size={18} />
                             </button>
