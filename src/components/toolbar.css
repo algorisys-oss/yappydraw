@@ -84,6 +84,7 @@
         width: 40px;
         height: 40px;
         flex-shrink: 0;
+        touch-action: manipulation;
     }
 
     /* Ensure tool groups don't shrink */

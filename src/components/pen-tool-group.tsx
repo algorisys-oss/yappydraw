@@ -82,7 +82,7 @@ const PenToolGroup: Component = () => {
         const rect = buttonRef.getBoundingClientRect();
         const isMobile = window.innerWidth <= 768;
         if (isMobile) {
-            return { top: `${rect.bottom + 8}px`, left: '50%', transform: 'translateX(-50%)' };
+            return { bottom: `${window.innerHeight - rect.top + 8}px`, left: '50%', transform: 'translateX(-50%)' };
         }
         return { top: `${rect.bottom + 4}px`, left: `${rect.left}px` };
     };
@@ -92,7 +92,7 @@ const PenToolGroup: Component = () => {
             <button
                 ref={buttonRef}
                 class={`toolbar-btn ${isPenToolActive() ? 'active' : ''}`}
-                onClick={toggleMenu}
+                on:click={toggleMenu}
                 onContextMenu={handleRightClick}
                 title={`${getCurrentPenTool().label} (P or 8 - Click for more)`}
             >

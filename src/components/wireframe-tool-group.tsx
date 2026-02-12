@@ -151,7 +151,7 @@ const WireframeToolGroup: Component = () => {
         const rect = buttonRef.getBoundingClientRect();
         const isMobile = window.innerWidth <= 768;
         if (isMobile) {
-            return { top: `${rect.bottom + 8}px`, left: '50%', transform: 'translateX(-50%)' };
+            return { bottom: `${window.innerHeight - rect.top + 8}px`, left: '50%', transform: 'translateX(-50%)' };
         }
         return { top: `${rect.bottom + 4}px`, left: `${rect.left}px` };
     };
@@ -161,7 +161,7 @@ const WireframeToolGroup: Component = () => {
             <button
                 ref={buttonRef}
                 class={`toolbar-btn ${isActive() ? 'active' : ''} ${isActive() && store.toolLocked ? 'tool-locked' : ''}`}
-                onClick={toggleMenu}
+                on:click={toggleMenu}
                 onContextMenu={handleRightClick}
                 title={activeTool().label}
             >

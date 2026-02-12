@@ -35,13 +35,23 @@ const CurveIcon: Component<{ type: 'straight' | 'curve' | 'elbow' }> = (props) =
     </svg>
 );
 
-/** Inline SVG icons for arrowheads */
+/** Inline SVG icons for arrowheads (end — arrowhead on right) */
 const ArrowheadIcon: Component<{ type: 'none' | 'arrow' | 'triangle' | 'diamond' }> = (props) => (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
         <line x1="2" y1="8" x2="12" y2="8" />
         {props.type === 'arrow' && <polyline points="9,5 12,8 9,11" />}
         {props.type === 'triangle' && <polygon points="12,8 8,5 8,11" fill="currentColor" stroke="none" />}
         {props.type === 'diamond' && <polygon points="12,8 10,5.5 8,8 10,10.5" fill="currentColor" stroke="none" />}
+    </svg>
+);
+
+/** Inline SVG icons for start arrowheads (arrowhead on left) */
+const StartArrowheadIcon: Component<{ type: 'none' | 'arrow' | 'triangle' | 'diamond' }> = (props) => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <line x1="4" y1="8" x2="14" y2="8" />
+        {props.type === 'arrow' && <polyline points="7,5 4,8 7,11" />}
+        {props.type === 'triangle' && <polygon points="4,8 8,5 8,11" fill="currentColor" stroke="none" />}
+        {props.type === 'diamond' && <polygon points="4,8 6,5.5 8,8 6,10.5" fill="currentColor" stroke="none" />}
     </svg>
 );
 
@@ -55,11 +65,16 @@ const getIcon = (icon: string) => {
     if (icon === 'straight') return <CurveIcon type="straight" />;
     if (icon === 'curve') return <CurveIcon type="curve" />;
     if (icon === 'elbow') return <CurveIcon type="elbow" />;
-    // Arrowheads
+    // End arrowheads
     if (icon === 'none') return <ArrowheadIcon type="none" />;
     if (icon === 'arrow') return <ArrowheadIcon type="arrow" />;
     if (icon === 'triangle') return <ArrowheadIcon type="triangle" />;
     if (icon === 'diamond') return <ArrowheadIcon type="diamond" />;
+    // Start arrowheads
+    if (icon === 'startNone') return <StartArrowheadIcon type="none" />;
+    if (icon === 'startArrow') return <StartArrowheadIcon type="arrow" />;
+    if (icon === 'startTriangle') return <StartArrowheadIcon type="triangle" />;
+    if (icon === 'startDiamond') return <StartArrowheadIcon type="diamond" />;
     // Text align
     if (icon === 'alignLeft') return <AlignLeft size={14} />;
     if (icon === 'alignCenter') return <AlignCenter size={14} />;

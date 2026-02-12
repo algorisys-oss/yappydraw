@@ -81,7 +81,7 @@ const ConnectorToolGroup: Component = () => {
         const rect = buttonRef.getBoundingClientRect();
         const isMobile = window.innerWidth <= 768;
         if (isMobile) {
-            return { top: `${rect.bottom + 8}px`, left: '50%', transform: 'translateX(-50%)' };
+            return { bottom: `${window.innerHeight - rect.top + 8}px`, left: '50%', transform: 'translateX(-50%)' };
         }
         return { top: `${rect.bottom + 4}px`, left: `${rect.left}px` };
     };
@@ -91,7 +91,7 @@ const ConnectorToolGroup: Component = () => {
             <button
                 ref={buttonRef}
                 class={`toolbar-btn ${isConnectorToolActive() ? 'active' : ''} ${isConnectorToolActive() && store.toolLocked ? 'tool-locked' : ''}`}
-                onClick={toggleMenu}
+                on:click={toggleMenu}
                 onContextMenu={handleRightClick}
                 title={`${getCurrentTool().label} (Click for more)`}
             >

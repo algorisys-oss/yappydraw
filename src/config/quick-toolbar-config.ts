@@ -31,7 +31,7 @@ export const QUICK_COLORS = [
     '#2f9e44', '#1971c2', '#6741d9', '#ffffff'
 ];
 
-const CONNECTOR_TYPES: ElementType[] = ['line', 'arrow', 'bezier', 'organicBranch', 'polyline'];
+const CONNECTOR_TYPES: ElementType[] = ['line', 'arrow', 'bezier', 'elbow', 'organicBranch', 'polyline'];
 const DRAWING_TYPES: ElementType[] = ['fineliner', 'inkbrush', 'marker'];
 const TOOL_TYPES: (ElementType | 'lasso')[] = ['eraser', 'pan', 'selection', 'laser', 'ink', 'lasso'];
 
@@ -118,7 +118,16 @@ const connectorProperties: QuickPropertyDef[] = [
         ]
     },
     {
-        key: 'endArrowhead', controlType: 'icon-select', label: 'Line End Type',
+        key: 'startArrowhead', controlType: 'icon-select', label: 'Line Start',
+        options: [
+            { value: null, icon: 'startNone', label: 'None' },
+            { value: 'arrow', icon: 'startArrow', label: 'Arrow' },
+            { value: 'triangle', icon: 'startTriangle', label: 'Triangle' },
+            { value: 'diamond', icon: 'startDiamond', label: 'Diamond' },
+        ]
+    },
+    {
+        key: 'endArrowhead', controlType: 'icon-select', label: 'Line End',
         options: [
             { value: null, icon: 'none', label: 'None' },
             { value: 'arrow', icon: 'arrow', label: 'Arrow' },

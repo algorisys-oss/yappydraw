@@ -26,7 +26,7 @@
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: var(--shadow-sm);
-    z-index: 1001;
+    z-index: 10003;
     padding: 8px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -60,6 +60,7 @@
     cursor: pointer;
     color: inherit;
     transition: background 0.2s;
+    touch-action: manipulation;
 }
 
 .dropdown-item:hover {

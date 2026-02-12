@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.1] - 2026-02-12
+
+### Fixed
+- **Group toolbar/submenus broken on mobile and Safari** — all 15 tool group dropdowns now work reliably:
+  - Dropdowns open above the toolbar on mobile (were positioned off-screen below the bottom toolbar)
+  - Changed toggle buttons from SolidJS delegated `onClick` to native `on:click` for Safari/WebKit compatibility
+  - Increased dropdown z-index from 1001 to 10003 (above toolbar's 10002) to prevent dropdowns rendering behind toolbar
+  - Added `touch-action: manipulation` on toolbar buttons and dropdown items to eliminate 300ms tap delay
+
+### Added
+- **Line start arrowhead control** in quick toolbar — connectors now show both "Line Start" and "Line End" style selectors with mirrored arrow icons (None, Arrow, Triangle, Diamond)
+- **Elbow connector** added to quick toolbar connector types — elbow connectors now show the floating property toolbar
+
 ## [1.11.0] - 2026-02-11
 
 ### Added
