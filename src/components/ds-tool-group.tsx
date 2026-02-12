@@ -39,26 +39,29 @@ const DsToolGroup: Component = () => {
     };
 
     let clickTimeout: ReturnType<typeof setTimeout> | null = null;
+    let lastClickTime = 0;
+    let lastClickType: string | null = null;
 
     const handleToolClick = (type: ElementType) => {
+        const now = Date.now();
+        const isDouble = type === lastClickType && now - lastClickTime < 400;
+        lastClickTime = now;
+        lastClickType = type;
         if (clickTimeout) clearTimeout(clickTimeout);
-        clickTimeout = setTimeout(() => {
+        if (isDouble) {
+            clickTimeout = null;
             setSelectedDsType(type as any);
             setSelectedTool(type);
+            setToolLocked(true);
             setIsOpen(false);
-            clickTimeout = null;
-        }, 200);
-    };
-
-    const handleToolDoubleClick = (type: ElementType) => {
-        if (clickTimeout) {
-            clearTimeout(clickTimeout);
-            clickTimeout = null;
+        } else {
+            clickTimeout = setTimeout(() => {
+                setSelectedDsType(type as any);
+                setSelectedTool(type);
+                setIsOpen(false);
+                clickTimeout = null;
+            }, 300);
         }
-        setSelectedDsType(type as any);
-        setSelectedTool(type);
-        setToolLocked(true);
-        setIsOpen(false);
     };
 
     const handleRightClick = (e: MouseEvent) => {
@@ -115,7 +118,6 @@ const DsToolGroup: Component = () => {
                             <button
                                 class={`dropdown-item ${store.selectedTool === tool.type ? 'active' : ''}`}
                                 on:click={() => handleToolClick(tool.type)}
-                                on:dblclick={() => handleToolDoubleClick(tool.type)}
                                 title={`${tool.label} (double-click to lock)`}
                             >
                                 <tool.icon size={16} />

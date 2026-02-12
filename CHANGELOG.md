@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-02-12
+
+### Added
+- **Google Drive Cloud Storage** — save and load drawings from your Google Drive:
+  - PKCE OAuth 2.0 sign-in (fully client-side, no backend needed)
+  - Save drawings as compressed `.yappy` files in a dedicated "YappyDraw" folder
+  - Browse, search, and load saved drawings from Drive
+  - Overwrite detection — saves to same-name files update in place instead of creating duplicates
+  - Delete files with confirmation dialog
+  - User avatar and account info display
+  - Shared Drive support (Google Workspace)
+  - Pluggable provider architecture for future storage backends (Dropbox, GitHub, etc.)
+  - Feature-flagged via `VITE_ENABLE_CLOUD_STORAGE` and `VITE_ENABLE_GOOGLE_DRIVE` env vars
+- **Cloud Storage API** — programmatic access via `Yappy.cloudStorage`:
+  - `getActiveProvider()`, `isAuthenticated()`, `signIn()`, `signOut()`
+  - `save()`, `load()`, `list()` for cloud file operations
+- **Privacy Policy** page (`/privacy-policy.html`) with link in status bar
+- **SEO improvements** — Open Graph meta tags, `robots.txt`, and `sitemap.xml`
+
+### Fixed
+- **Double-click to lock tool not working on Safari/Mac** — replaced native `dblclick` events with manual timestamp-based detection across all 14 tool group components for cross-browser reliability
+- Build errors in cloud storage API (replaced CommonJS `require()` with ES module imports)
+- Unused imports in cloud storage dialog, settings dialog, and menu
+
 ## [1.11.1] - 2026-02-12
 
 ### Fixed

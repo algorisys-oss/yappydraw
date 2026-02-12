@@ -44,6 +44,7 @@ import { SlidersHorizontal, Settings } from 'lucide-solid';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
 import { initAutoSave, forceAutoSave, loadAutoSave } from './storage/auto-save';
+import { initCloudStorage } from './storage/cloud';
 
 
 const App: Component = () => {
@@ -57,6 +58,9 @@ const App: Component = () => {
     // Auto-save: silently restore last session, then start watchers
     loadAutoSave();
     initAutoSave();
+
+    // Cloud storage: register providers and restore config
+    initCloudStorage();
 
     const handleKeyDown = async (e: KeyboardEvent) => {
       // 0. Ignore shortcuts if any Modal Dialog is open

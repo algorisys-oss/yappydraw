@@ -1,6 +1,10 @@
-import { type Component, Show, createEffect, onCleanup } from "solid-js";
+import { type Component, Show, createEffect, onCleanup, createSignal } from "solid-js";
 import { X } from "lucide-solid";
 import { store, updateDefaultStyles, resetDefaultStyles, updateGlobalSettings } from "../store/app-store";
+import { features } from "../config/features";
+import { cloudStorageManager } from "../storage/cloud";
+import type { AuthState } from "../storage/cloud/types";
+import { showToast } from "./toast";
 import "./settings-dialog.css";
 
 interface SettingsDialogProps {
@@ -153,6 +157,13 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
                     </div>
 
+                    <Show when={features.enableCloudStorage}>
+                        <div class="settings-section">
+                            <p class="settings-section-title">Cloud Storage</p>
+                            <CloudSettingsContent />
+                        </div>
+                    </Show>
+
                     <div class="settings-footer">
                         <button class="settings-reset-btn" onClick={() => resetDefaultStyles()}>
                             Reset to Defaults
@@ -166,5 +177,78 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
         </Show>
     );
 };
+
+/** Inline cloud storage settings section. */
+function CloudSettingsContent() {
+    const [authState, setAuthState] = createSignal<AuthState>(
+        cloudStorageManager.getAuthState()
+    );
+
+    createEffect(() => {
+        const provider = cloudStorageManager.getActiveProvider();
+        if (provider) {
+            const unsub = provider.onAuthStateChange(setAuthState);
+            onCleanup(unsub);
+        }
+    });
+
+    async function handleSignIn() {
+        try {
+            if (!cloudStorageManager.getActiveProvider()) {
+                await cloudStorageManager.setActiveProvider('google-drive');
+            }
+            await cloudStorageManager.signIn();
+            setAuthState(cloudStorageManager.getAuthState());
+        } catch (e: any) {
+            showToast(e.message || 'Sign-in failed', 'error');
+        }
+    }
+
+    async function handleSignOut() {
+        try {
+            await cloudStorageManager.signOut();
+            setAuthState({ isAuthenticated: false });
+        } catch (e: any) {
+            showToast(e.message || 'Sign-out failed', 'error');
+        }
+    }
+
+    return (
+        <>
+            <div class="settings-row">
+                <label>Provider</label>
+                <span style={{ "font-size": "0.85rem", color: "var(--text-secondary)" }}>Google Drive</span>
+            </div>
+            <div class="settings-row">
+                <label>Account</label>
+                <Show
+                    when={authState().isAuthenticated}
+                    fallback={
+                        <button
+                            class="settings-close-btn"
+                            style={{ "font-size": "0.8rem", padding: "4px 12px" }}
+                            onClick={handleSignIn}
+                        >
+                            Sign in
+                        </button>
+                    }
+                >
+                    <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+                        <span style={{ "font-size": "0.8rem", color: "var(--text-secondary)" }}>
+                            {authState().userEmail || 'Connected'}
+                        </span>
+                        <button
+                            class="settings-reset-btn"
+                            style={{ "font-size": "0.75rem", padding: "2px 8px" }}
+                            onClick={handleSignOut}
+                        >
+                            Sign out
+                        </button>
+                    </div>
+                </Show>
+            </div>
+        </>
+    );
+}
 
 export default SettingsDialog;

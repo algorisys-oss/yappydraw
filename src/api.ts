@@ -17,10 +17,11 @@ import {
     alignSelectedElements, distributeSelectedElements,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
-    toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition
+    toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
+    saveActiveSlide
 } from "./store/app-store";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer } from "./types";
-import type { Slide, SlideTransition } from "./types/slide-types";
+import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
 import type { LayoutDirection } from "./utils/mindmap-layout";
 import {
@@ -46,6 +47,8 @@ import {
 } from "./utils/object-context-actions";
 import { generateId } from "./utils/id-generator";
 import { forceAutoSave, clearAutoSave } from "./storage/auto-save";
+import { cloudStorageManager } from "./storage/cloud";
+import { drawingId } from "./components/menu";
 import { assignToPoolLane, unassignFromPool, shiftLaneIndicesOnRemove, shiftLaneIndicesOnInsert } from "./utils/pool-containment";
 import { getUIShapeDef } from "./config/ui-shape-defs";
 import {
@@ -1626,7 +1629,65 @@ export const YappyAPI = {
         const el = this.getElement(poolId);
         if (!el || el.type !== 'bpmnPool') return false;
         return el.bpmnLaneCollapsed?.[laneIndex] ?? false;
-    }
+    },
+
+    // ── Cloud Storage ─────────────────────────────────────
+
+    cloudStorage: {
+        /** Get the active provider ID (e.g. "google-drive") or null. */
+        getActiveProvider(): string | null {
+            return cloudStorageManager.getActiveProvider()?.id ?? null;
+        },
+
+        /** Check if the active provider is authenticated. */
+        isAuthenticated(): boolean {
+            return cloudStorageManager.getAuthState().isAuthenticated;
+        },
+
+        /** Sign in to the active (or specified) provider. */
+        async signIn(providerId?: string): Promise<void> {
+            if (providerId && !cloudStorageManager.getActiveProvider()) {
+                await cloudStorageManager.setActiveProvider(providerId);
+            }
+            return cloudStorageManager.signIn();
+        },
+
+        /** Sign out of the active provider. */
+        async signOut(): Promise<void> {
+            return cloudStorageManager.signOut();
+        },
+
+        /** Save the current document to the cloud. */
+        async save(options?: { fileName?: string; folderId?: string }): Promise<any> {
+            saveActiveSlide();
+            const doc: SlideDocument = {
+                version: 4,
+                metadata: {
+                    name: options?.fileName || drawingId() || 'untitled',
+                    updatedAt: new Date().toISOString(),
+                    docType: store.docType,
+                },
+                elements: JSON.parse(JSON.stringify(store.elements)),
+                layers: JSON.parse(JSON.stringify(store.layers)),
+                slides: JSON.parse(JSON.stringify(store.slides)),
+                globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
+                gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
+                states: JSON.parse(JSON.stringify(store.states)),
+            };
+            return cloudStorageManager.save(doc, options);
+        },
+
+        /** Load a document from the cloud by file ID. */
+        async load(fileId: string): Promise<void> {
+            const doc = await cloudStorageManager.load(fileId);
+            loadDocument(doc);
+        },
+
+        /** List files in the cloud. */
+        async list(options?: { query?: string; pageSize?: number }): Promise<any> {
+            return cloudStorageManager.list(options);
+        },
+    },
 };
 
 declare global {

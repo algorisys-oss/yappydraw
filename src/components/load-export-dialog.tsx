@@ -1,7 +1,7 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import {
     X, Upload, Download, FolderOpen, Save, FileText, ClipboardPaste,
-    Image as ImageIcon, HelpCircle, AlertTriangle
+    Image as ImageIcon, HelpCircle, AlertTriangle, Cloud
 } from "lucide-solid";
 import "./load-export-dialog.css";
 import { features } from "../config/features";
@@ -18,6 +18,8 @@ interface LoadExportDialogProps {
     onSaveDiskJson: () => void;
     onExportImage: () => void;
     onExportHtml: () => void;
+    onLoadCloud?: () => void;
+    onSaveCloud?: () => void;
 }
 
 const LoadExportDialog: Component<LoadExportDialogProps> = (props) => {
@@ -130,6 +132,19 @@ const LoadExportDialog: Component<LoadExportDialogProps> = (props) => {
                                         <button class="action-trigger">Paste JSON</button>
                                     </div>
 
+                                    <Show when={features.enableCloudStorage && features.enableGoogleDrive}>
+                                        <div class="option-card" onClick={props.onLoadCloud}>
+                                            <div class="option-icon cloud">
+                                                <Cloud size={32} />
+                                            </div>
+                                            <div class="option-info">
+                                                <h4>Open from Google Drive</h4>
+                                                <p>Load a drawing from your Google Drive</p>
+                                            </div>
+                                            <button class="action-trigger">Open from Drive</button>
+                                        </div>
+                                    </Show>
+
                                     <Show when={features.enableWorkspacePersistence}>
                                         <div class="option-card" onClick={props.onLoadWorkspace}>
                                             <div class="option-icon workspace">
@@ -223,6 +238,19 @@ const LoadExportDialog: Component<LoadExportDialogProps> = (props) => {
                                     </div>
                                     <button class="action-trigger secondary">Export HTML</button>
                                 </div>
+
+                                <Show when={features.enableCloudStorage && features.enableGoogleDrive}>
+                                    <div class="option-card compact" onClick={props.onSaveCloud}>
+                                        <div class="option-icon cloud">
+                                            <Cloud size={24} />
+                                        </div>
+                                        <div class="option-info">
+                                            <h4>Save to Google Drive</h4>
+                                            <p>Save your drawing to Google Drive</p>
+                                        </div>
+                                        <button class="action-trigger secondary">Save to Drive</button>
+                                    </div>
+                                </Show>
 
                                 <Show when={features.enableWorkspacePersistence}>
                                     <div class="option-card compact" onClick={props.onSaveWorkspace}>

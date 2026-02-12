@@ -41,26 +41,29 @@ const ConnectorToolGroup: Component = () => {
     };
 
     let clickTimeout: ReturnType<typeof setTimeout> | null = null;
+    let lastClickTime = 0;
+    let lastClickType: string | null = null;
 
     const handleSelectConnector = (connectorType: ConnectorType) => {
+        const now = Date.now();
+        const isDouble = connectorType === lastClickType && now - lastClickTime < 400;
+        lastClickTime = now;
+        lastClickType = connectorType;
         if (clickTimeout) clearTimeout(clickTimeout);
-        clickTimeout = setTimeout(() => {
+        if (isDouble) {
+            clickTimeout = null;
             setSelectedConnectorType(connectorType);
             setSelectedTool(connectorType as ElementType);
+            setToolLocked(true);
             setIsOpen(false);
-            clickTimeout = null;
-        }, 200);
-    };
-
-    const handleSelectConnectorDouble = (connectorType: ConnectorType) => {
-        if (clickTimeout) {
-            clearTimeout(clickTimeout);
-            clickTimeout = null;
+        } else {
+            clickTimeout = setTimeout(() => {
+                setSelectedConnectorType(connectorType);
+                setSelectedTool(connectorType as ElementType);
+                setIsOpen(false);
+                clickTimeout = null;
+            }, 300);
         }
-        setSelectedConnectorType(connectorType);
-        setSelectedTool(connectorType as ElementType);
-        setToolLocked(true);
-        setIsOpen(false);
     };
 
     const handleRightClick = (e: MouseEvent) => {
@@ -115,7 +118,6 @@ const ConnectorToolGroup: Component = () => {
                                 <button
                                     class={`dropdown-item ${store.selectedConnectorType === tool.type ? 'active' : ''}`}
                                     on:click={() => handleSelectConnector(tool.type)}
-                                    on:dblclick={() => handleSelectConnectorDouble(tool.type)}
                                     title={`${tool.label} (double-click to lock)`}
                                 >
                                     <tool.icon size={16} />

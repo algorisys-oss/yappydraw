@@ -1,3 +1,6 @@
+# Env
+.env.local
+.env.production
 # Logs
 .claude/settings.json
 logs

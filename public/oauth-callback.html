@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>YappyDraw — Connecting...</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+        p { font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <p>Connecting to cloud storage... This window will close automatically.</p>
+    <script>
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            var code = params.get('code');
+            var error = params.get('error');
+            if (window.opener) {
+                if (code) {
+                    window.opener.postMessage(
+                        { type: 'yappy-oauth-callback', code: code },
+                        window.location.origin
+                    );
+                } else {
+                    window.opener.postMessage(
+                        { type: 'yappy-oauth-error', error: error || 'Unknown error' },
+                        window.location.origin
+                    );
+                }
+            }
+            window.close();
+        })();
+    </script>
+</body>
+</html>

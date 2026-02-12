@@ -23,8 +23,11 @@ const FileOpenDialog = lazy(() => import("./file-open-dialog"));
 const ExportDialog = lazy(() => import("./export-dialog"));
 const SaveDialog = lazy(() => import("./save-dialog"));
 const TemplateBrowser = lazy(() => import("./template-browser"));
+const CloudStorageDialogLazy = lazy(() => import("./cloud-storage-dialog").then(m => ({ default: m.CloudStorageDialog as any })));
 import SettingsDialog from "./settings-dialog";
 import { features } from "../config/features";
+import { cloudStorageManager } from "../storage/cloud";
+import type { CloudFileInfo } from "../storage/cloud/types";
 import { migrateToSlideFormat, isSlideDocument } from "../utils/migration";
 import type { SlideDocument } from "../types/slide-types";
 import type { Template } from "../types/template-types";
@@ -39,6 +42,8 @@ export const [isLoadExportOpen, setIsLoadExportOpen] = createSignal(false);
 export const [loadExportInitialTab, setLoadExportInitialTab] = createSignal<'load' | 'save'>('load');
 export const [showHelp, setShowHelp] = createSignal(false);
 export const [showSettings, setShowSettings] = createSignal(false);
+export const [isCloudDialogOpen, setIsCloudDialogOpen] = createSignal(false);
+export const [cloudDialogMode, setCloudDialogMode] = createSignal<'save' | 'load'>('load');
 
 // Exported handlers for App.tsx integration
 let sharedSetSaveIntent: (intent: 'workspace' | 'disk' | 'disk-json') => void = () => { };
@@ -420,6 +425,30 @@ const Menu: Component = () => {
                     onSaveDiskJson={() => { setIsLoadExportOpen(false); handleSaveRequest('disk-json'); }}
                     onExportImage={() => { setIsLoadExportOpen(false); setIsExportOpen(true); }}
                     onExportHtml={handleExportHtml}
+                    onLoadCloud={() => { setIsLoadExportOpen(false); setCloudDialogMode('load'); setIsCloudDialogOpen(true); }}
+                    onSaveCloud={() => { setIsLoadExportOpen(false); setCloudDialogMode('save'); setIsCloudDialogOpen(true); }}
+                />
+
+                <CloudStorageDialogLazy
+                    isOpen={isCloudDialogOpen()}
+                    mode={cloudDialogMode()}
+                    onClose={() => setIsCloudDialogOpen(false)}
+                    currentFileName={drawingId()}
+                    onLoad={async (fileId: string) => {
+                        setIsCloudDialogOpen(false);
+                        showToast('Loading from Google Drive...', 'loading', 0);
+                        try {
+                            const doc = await cloudStorageManager.load(fileId);
+                            loadDocument(doc);
+                            setDrawingId(doc.metadata?.name || 'Untitled');
+                            showToast('Loaded from Google Drive', 'success');
+                        } catch (e: any) {
+                            showToast(e.message || 'Failed to load from Google Drive', 'error');
+                        }
+                    }}
+                    onSaveComplete={(fileInfo: CloudFileInfo) => {
+                        setDrawingId(fileInfo.name);
+                    }}
                 />
 
                 <TemplateBrowser

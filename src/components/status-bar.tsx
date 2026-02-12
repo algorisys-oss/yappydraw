@@ -249,6 +249,13 @@ const StatusBar: Component = () => {
                 v{pkg.version}
             </div>
 
+            {/* Privacy Policy */}
+            <div class="status-section status-attribution">
+                <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer">
+                    Privacy Policy
+                </a>
+            </div>
+
             {/* Attribution */}
             <div class="status-section status-attribution" style={{ 'border-right': 'none' }}>
                 Developed with <span class="status-heart">&hearts;</span> by{' '}

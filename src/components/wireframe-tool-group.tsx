@@ -108,26 +108,29 @@ const WireframeToolGroup: Component = () => {
     };
 
     let clickTimeout: ReturnType<typeof setTimeout> | null = null;
+    let lastClickTime = 0;
+    let lastClickType: string | null = null;
 
     const handleToolClick = (type: ElementType) => {
+        const now = Date.now();
+        const isDouble = type === lastClickType && now - lastClickTime < 400;
+        lastClickTime = now;
+        lastClickType = type;
         if (clickTimeout) clearTimeout(clickTimeout);
-        clickTimeout = setTimeout(() => {
+        if (isDouble) {
+            clickTimeout = null;
             setSelectedWireframeType(type);
             setSelectedTool(type);
+            setToolLocked(true);
             setIsOpen(false);
-            clickTimeout = null;
-        }, 200);
-    };
-
-    const handleToolDoubleClick = (type: ElementType) => {
-        if (clickTimeout) {
-            clearTimeout(clickTimeout);
-            clickTimeout = null;
+        } else {
+            clickTimeout = setTimeout(() => {
+                setSelectedWireframeType(type);
+                setSelectedTool(type);
+                setIsOpen(false);
+                clickTimeout = null;
+            }, 300);
         }
-        setSelectedWireframeType(type);
-        setSelectedTool(type);
-        setToolLocked(true);
-        setIsOpen(false);
     };
 
     const handleRightClick = (e: MouseEvent) => {
@@ -213,8 +216,7 @@ const WireframeToolGroup: Component = () => {
                                                 <button
                                                     class={`dropdown-item ${store.selectedTool === tool.type ? 'active' : ''}`}
                                                     on:click={() => handleToolClick(tool.type as ElementType)}
-                                                    on:dblclick={() => handleToolDoubleClick(tool.type as ElementType)}
-                                                    title={`${tool.label} (double-click to lock)`}
+                                                                        title={`${tool.label} (double-click to lock)`}
                                                     style={{ width: '100%' }}
                                                 >
                                                     <tool.toolbarIcon size={16} />
@@ -247,7 +249,6 @@ const WireframeToolGroup: Component = () => {
                                     <button
                                         class={`dropdown-item ${store.selectedTool === tool.type ? 'active' : ''}`}
                                         on:click={() => handleToolClick(tool.type)}
-                                        on:dblclick={() => handleToolDoubleClick(tool.type)}
                                         title={`${tool.label} (double-click to lock)`}
                                         style={{ width: '100%' }}
                                     >
