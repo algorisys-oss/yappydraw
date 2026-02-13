@@ -108,7 +108,7 @@ export function registerShapes() {
     cloudInfraTypes.forEach(type => shapeRegistry.register(type, cloudInfraRenderer));
 
     const dataMetricsRenderer = new DataMetricsRenderer();
-    const dataMetricsTypes = ['barChart', 'pieChart', 'trendUp', 'trendDown', 'funnel', 'gauge'] as const;
+    const dataMetricsTypes = ['barChart', 'pieChart', 'trendUp', 'trendDown', 'funnel', 'gauge', 'ganttChart', 'journeyDiagram', 'quadrantChart', 'xyChart'] as const;
     dataMetricsTypes.forEach(type => shapeRegistry.register(type, dataMetricsRenderer));
 
     shapeRegistry.register('table', new TableRenderer());

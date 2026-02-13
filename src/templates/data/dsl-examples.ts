@@ -730,3 +730,146 @@ export const mermaidStateTemplate: Template = {
     Rejected --> Idle : Retry
     Complete --> [*]`,
 };
+
+export const mermaidGanttTemplate: Template = {
+    metadata: {
+        id: 'dsl-mermaid-gantt',
+        name: 'Gantt Chart (Mermaid)',
+        category: 'dsl-examples',
+        description: 'Project timeline with task dependencies in Mermaid syntax',
+        tags: ['mermaid', 'gantt', 'chart', 'timeline'],
+        order: 22,
+    },
+    data: { elements: [], layers: [] },
+    dslContent: `gantt
+    title Product Launch Plan
+    dateFormat YYYY-MM-DD
+    section Planning
+    Requirements     :a1, 2024-01-01, 14d
+    Design Specs     :a2, after a1, 10d
+    section Development
+    Frontend         :b1, after a2, 21d
+    Backend          :b2, after a2, 28d
+    API Integration  :b3, after b1, 7d
+    section Testing
+    Unit Tests       :crit, c1, after b2, 10d
+    QA Testing       :c2, after c1, 7d
+    section Launch
+    Staging Deploy   :done, d1, 2024-04-01, 3d
+    Production       :d2, after c2, 2d`,
+};
+
+export const mermaidJourneyTemplate: Template = {
+    metadata: {
+        id: 'dsl-mermaid-journey',
+        name: 'User Journey (Mermaid)',
+        category: 'dsl-examples',
+        description: 'User experience journey map with satisfaction scores',
+        tags: ['mermaid', 'journey', 'ux'],
+        order: 23,
+    },
+    data: { elements: [], layers: [] },
+    dslContent: `journey
+    title My Working Day
+    section Go to work
+      Make tea: 5: Me
+      Go upstairs: 3: Me, Cat
+      Do work: 1: Me, Cat, Dog
+    section Go home
+      Go downstairs: 5: Me
+      Sit down: 5: Me`,
+};
+
+export const mermaidQuadrantTemplate: Template = {
+    metadata: {
+        id: 'dsl-mermaid-quadrant',
+        name: 'Quadrant Chart (Mermaid)',
+        category: 'dsl-examples',
+        description: 'Priority matrix with reach vs engagement axes',
+        tags: ['mermaid', 'quadrant', 'chart', 'matrix'],
+        order: 24,
+    },
+    data: { elements: [], layers: [] },
+    dslContent: `quadrantChart
+    title Reach and engagement of campaigns
+    x-axis Low Reach --> High Reach
+    y-axis Low Engagement --> High Engagement
+    quadrant-1 We should expand
+    quadrant-2 Need to promote
+    quadrant-3 Re-evaluate
+    quadrant-4 May be improved
+    Campaign A: [0.3, 0.6]
+    Campaign B: [0.45, 0.23]
+    Campaign C: [0.57, 0.69]
+    Campaign D: [0.78, 0.34]
+    Campaign E: [0.40, 0.34]
+    Campaign F: [0.35, 0.78]`,
+};
+
+export const mermaidXYChartTemplate: Template = {
+    metadata: {
+        id: 'dsl-mermaid-xychart',
+        name: 'XY Chart (Mermaid)',
+        category: 'dsl-examples',
+        description: 'Bar and line chart with sales revenue data',
+        tags: ['mermaid', 'xychart', 'bar', 'chart'],
+        order: 25,
+    },
+    data: { elements: [], layers: [] },
+    dslContent: `xychart-beta
+    title "Sales Revenue"
+    x-axis [Jan, Feb, Mar, Apr, May, Jun]
+    y-axis "Revenue (in $)" 4000 --> 12000
+    bar [5000, 6000, 7500, 8200, 9500, 10500]
+    line [5000, 6000, 7500, 8200, 9500, 10500]`,
+};
+
+export const mermaidBlockTemplate: Template = {
+    metadata: {
+        id: 'dsl-mermaid-block',
+        name: 'Block Diagram (Mermaid)',
+        category: 'dsl-examples',
+        description: 'Grid-based block diagram with connections',
+        tags: ['mermaid', 'block', 'diagram'],
+        order: 26,
+    },
+    data: { elements: [], layers: [] },
+    dslContent: `block-beta
+    columns 3
+    a["Frontend"] b["API Gateway"] c["Backend"]
+    d["Cache"]:2 e["Database"]
+    space f["Message Queue"] space
+
+    a --> b
+    b --> c
+    c --> e
+    c --> d
+    c --> f`,
+};
+
+export const mermaidGitGraphTemplate: Template = {
+    metadata: {
+        id: 'dsl-mermaid-gitgraph',
+        name: 'Git Graph (Mermaid)',
+        category: 'dsl-examples',
+        description: 'Git branching and merge history visualization',
+        tags: ['mermaid', 'git', 'graph', 'branch'],
+        order: 27,
+    },
+    data: { elements: [], layers: [] },
+    dslContent: `gitGraph
+    commit id: "init"
+    commit id: "feat-1"
+    branch develop
+    commit id: "dev-1"
+    commit id: "dev-2"
+    branch feature
+    commit id: "feat-a"
+    commit id: "feat-b" tag: "v0.1"
+    checkout develop
+    merge feature
+    commit id: "dev-3"
+    checkout main
+    merge develop
+    commit id: "release" tag: "v1.0"`,
+};

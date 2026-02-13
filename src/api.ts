@@ -119,6 +119,17 @@ interface ElementOptions {
     dsSortedBoundary?: number;
     dsSortedBoundaryEnd?: number;
 
+    // Pie Chart data
+    pieSlices?: Array<{ label: string; value: number; color?: string }>;
+    // Gantt Chart data
+    ganttTasks?: Array<{ id: string; label: string; section: string; startDate: string; endDate: string; duration: number; isCritical?: boolean; status?: 'done' | 'active' | 'default'; color?: string }>;
+    // Journey Diagram data
+    journeyTasks?: Array<{ label: string; score: number; actors: string[]; section: string; color?: string }>;
+    // Quadrant Chart data
+    quadrantData?: { title?: string; xAxisLabel?: [string, string]; yAxisLabel?: [string, string]; quadrantLabels: [string, string, string, string]; points: Array<{ label: string; x: number; y: number; color?: string }> };
+    // XY Chart data
+    xyChartData?: { title?: string; xAxis: { labels?: string[]; label?: string }; yAxis: { label?: string; min?: number; max?: number }; bars?: number[]; lines?: number[][] };
+
     // Advanced Styling
     fillDensity?: number;
     shadowEnabled?: boolean;

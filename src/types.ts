@@ -5,7 +5,7 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
 | 'stickFigure' | 'sittingPerson' | 'presentingPerson' | 'handPointRight' | 'thumbsUp' | 'faceHappy' | 'faceSad' | 'faceConfused'
 | 'checkbox' | 'checkboxChecked' | 'numberedBadge' | 'questionMark' | 'exclamationMark' | 'tag' | 'pin' | 'stamp'
 | 'kubernetes' | 'container' | 'apiGateway' | 'cdn' | 'storageBlob' | 'eventBus' | 'microservice' | 'shield'
-| 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'table'
+| 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'ganttChart' | 'journeyDiagram' | 'quadrantChart' | 'xyChart' | 'table'
 | 'puzzlePiece' | 'chainLink' | 'bridge' | 'magnet' | 'scale' | 'seedling' | 'tree' | 'mountain'
 | 'polyline' | 'elbow' | 'codeBlock'
 | 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable'
@@ -295,6 +295,16 @@ export interface DrawingElement {
     dsHighlightColor2?: string;    // Color token for second highlight
     dsSortedBoundary?: number;     // Items with index < this are sorted (green tint, from left)
     dsSortedBoundaryEnd?: number;  // Items with index >= this are sorted (green tint, from right)
+    // Pie Chart data (from Mermaid pie DSL)
+    pieSlices?: Array<{ label: string; value: number; color?: string }>;
+    // Gantt Chart data (from Mermaid gantt DSL)
+    ganttTasks?: Array<{ id: string; label: string; section: string; startDate: string; endDate: string; duration: number; isCritical?: boolean; status?: 'done' | 'active' | 'default'; color?: string }>;
+    // Journey Diagram data (from Mermaid journey DSL)
+    journeyTasks?: Array<{ label: string; score: number; actors: string[]; section: string; color?: string }>;
+    // Quadrant Chart data (from Mermaid quadrantChart DSL)
+    quadrantData?: { title?: string; xAxisLabel?: [string, string]; yAxisLabel?: [string, string]; quadrantLabels: [string, string, string, string]; points: Array<{ label: string; x: number; y: number; color?: string }> };
+    // XY Chart data (from Mermaid xychart DSL)
+    xyChartData?: { title?: string; xAxis: { labels?: string[]; label?: string }; yAxis: { label?: string; min?: number; max?: number }; bars?: number[]; lines?: number[][] };
     skewX?: number; // -1 to 1 (X offset of back face)
     skewY?: number; // -1 to 1 (Y offset of back face)
     frontTaper?: number; // 0-1 (Scaling of front face)

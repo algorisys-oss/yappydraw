@@ -24,6 +24,12 @@ export { parseMermaidFlowchart } from './adapters/mermaid/flowchart-parser';
 export { parseMermaidSequence } from './adapters/mermaid/sequence-parser';
 export { parseMermaidClass } from './adapters/mermaid/class-parser';
 export { parseMermaidState } from './adapters/mermaid/state-parser';
+export { parseMermaidGantt } from './adapters/mermaid/gantt-parser';
+export { parseMermaidGitGraph } from './adapters/mermaid/gitgraph-parser';
+export { parseMermaidJourney } from './adapters/mermaid/journey-parser';
+export { parseMermaidQuadrant } from './adapters/mermaid/quadrant-parser';
+export { parseMermaidXYChart } from './adapters/mermaid/xychart-parser';
+export { parseMermaidBlock } from './adapters/mermaid/block-parser';
 export type { DSLAdapter, AdapterResult } from './adapters/adapter-interface';
 
 // YSL Scripting Language

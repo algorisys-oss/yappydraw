@@ -88,6 +88,12 @@ class TemplateRegistry {
         this.registerTemplate(dslExamples.mermaidERTemplate);
         this.registerTemplate(dslExamples.mermaidStyledTemplate);
         this.registerTemplate(dslExamples.mermaidStateTemplate);
+        this.registerTemplate(dslExamples.mermaidGanttTemplate);
+        this.registerTemplate(dslExamples.mermaidJourneyTemplate);
+        this.registerTemplate(dslExamples.mermaidQuadrantTemplate);
+        this.registerTemplate(dslExamples.mermaidXYChartTemplate);
+        this.registerTemplate(dslExamples.mermaidBlockTemplate);
+        this.registerTemplate(dslExamples.mermaidGitGraphTemplate);
     }
 
     /**

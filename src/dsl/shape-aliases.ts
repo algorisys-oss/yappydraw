@@ -78,6 +78,12 @@ export const SHAPE_ALIASES: Record<string, ElementType> = {
     'code': 'codeBlock',
     'image': 'image',
 
+    // Data Visualizations
+    'gantt': 'ganttChart',
+    'journey': 'journeyDiagram',
+    'quadrant': 'quadrantChart',
+    'xy-chart': 'xyChart',
+
     // Shapes
     'cloud': 'cloud',
     'hexagon': 'hexagon',

@@ -12,6 +12,12 @@ import { parseMermaidState } from './state-parser';
 import { parseMermaidPie } from './pie-parser';
 import { parseMermaidMindmap } from './mindmap-parser';
 import { parseMermaidER } from './er-parser';
+import { parseMermaidGantt } from './gantt-parser';
+import { parseMermaidGitGraph } from './gitgraph-parser';
+import { parseMermaidJourney } from './journey-parser';
+import { parseMermaidQuadrant } from './quadrant-parser';
+import { parseMermaidXYChart } from './xychart-parser';
+import { parseMermaidBlock } from './block-parser';
 
 /** Detect the Mermaid diagram type from the first non-empty, non-comment line. */
 function detectDiagramType(input: string): string | null {
@@ -28,6 +34,11 @@ function detectDiagramType(input: string): string | null {
         if (/^gantt/i.test(trimmed)) return 'gantt';
         if (/^pie/i.test(trimmed)) return 'pie';
         if (/^mindmap/i.test(trimmed)) return 'mindmap';
+        if (/^gitGraph/i.test(trimmed)) return 'gitgraph';
+        if (/^journey/i.test(trimmed)) return 'journey';
+        if (/^quadrantChart/i.test(trimmed)) return 'quadrant';
+        if (/^xychart-beta/i.test(trimmed)) return 'xychart';
+        if (/^block-beta/i.test(trimmed)) return 'block';
 
         // First meaningful line didn't match any known type
         return null;
@@ -67,12 +78,30 @@ export class MermaidAdapter implements DSLAdapter {
             case 'er':
                 return parseMermaidER(input);
 
+            case 'gantt':
+                return parseMermaidGantt(input);
+
+            case 'gitgraph':
+                return parseMermaidGitGraph(input);
+
+            case 'journey':
+                return parseMermaidJourney(input);
+
+            case 'quadrant':
+                return parseMermaidQuadrant(input);
+
+            case 'xychart':
+                return parseMermaidXYChart(input);
+
+            case 'block':
+                return parseMermaidBlock(input);
+
             default:
                 return {
                     success: false,
                     errors: [{
                         line: 1,
-                        message: `Unsupported Mermaid diagram type. Supported: flowchart, sequence, class, state, pie, mindmap, erDiagram.`,
+                        message: `Unsupported Mermaid diagram type. Supported: flowchart, sequence, class, state, pie, mindmap, erDiagram, gantt, gitGraph, journey, quadrantChart, xychart-beta, block-beta.`,
                     }],
                     warnings: [],
                 };

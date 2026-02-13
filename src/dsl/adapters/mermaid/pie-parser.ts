@@ -1,6 +1,6 @@
 /**
  * Mermaid Pie Chart Parser
- * Parses `pie` syntax into DSL IR.
+ * Parses `pie` syntax into DSL IR with data-driven slice rendering.
  *
  * Supported:
  *   pie title "My Chart"
@@ -15,6 +15,18 @@ import type { AdapterResult } from '../adapter-interface';
 import { stripQuotes } from './mermaid-utils';
 
 const SLICE_RE = /^\s*"([^"]+)"\s*:\s*(\d+(?:\.\d+)?)\s*$/;
+
+/** Standard chart color palette — 8 colors cycling. */
+const PIE_COLORS = [
+    '#3b82f6', // blue
+    '#ef4444', // red
+    '#22c55e', // green
+    '#f59e0b', // amber
+    '#8b5cf6', // purple
+    '#06b6d4', // cyan
+    '#f97316', // orange
+    '#ec4899', // pink
+];
 
 export function parseMermaidPie(input: string): AdapterResult {
     const errors: ParseError[] = [];
@@ -68,35 +80,29 @@ export function parseMermaidPie(input: string): AdapterResult {
         return { success: false, errors, warnings };
     }
 
-    // Create a pieChart node with the title, plus a legend of text nodes
-    const nodes: DSLNode[] = [];
+    // Assign colors to slices
+    const coloredSlices = slices.map((s, i) => ({
+        label: s.label,
+        value: s.value,
+        color: PIE_COLORS[i % PIE_COLORS.length],
+    }));
 
-    // Main pie chart shape
-    nodes.push({
+    // Single pieChart node with slice data attached via properties
+    const nodes: DSLNode[] = [{
         id: 'pie',
         shape: 'pieChart',
         label: title,
-        width: 240,
-        height: 240,
-    });
-
-    // Create text labels as a legend below
-    const total = slices.reduce((s, sl) => s + sl.value, 0);
-    for (let i = 0; i < slices.length; i++) {
-        const pct = total > 0 ? ((slices[i].value / total) * 100).toFixed(1) : '0';
-        nodes.push({
-            id: `legend_${i}`,
-            shape: 'text',
-            label: `${slices[i].label}: ${slices[i].value} (${pct}%)`,
-            width: 200,
-            height: 30,
-        });
-    }
+        width: 350,
+        height: 300,
+        properties: {
+            pieSlices: coloredSlices,
+        },
+    }];
 
     const diagram: DSLDiagram = {
         version: 1,
         meta: { title, sourceFormat: 'mermaid' },
-        layout: { strategy: 'grid', columns: 1, vSpacing: 10 },
+        layout: { strategy: 'grid', columns: 1 },
         nodes,
         edges: [],
     };

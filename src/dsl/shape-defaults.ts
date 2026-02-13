@@ -112,6 +112,12 @@ const SHAPE_DEFAULTS: Partial<Record<ElementType, ShapeSize>> = {
     badge: { width: 80, height: 28 },
     tooltip: { width: 160, height: 48 },
 
+    // ─── Data Visualizations ──────────────────────────────
+    ganttChart: { width: 600, height: 400 },
+    journeyDiagram: { width: 600, height: 350 },
+    quadrantChart: { width: 450, height: 450 },
+    xyChart: { width: 500, height: 350 },
+
     // ─── Connectors (typically sized by endpoints) ───────
     arrow: { width: 200, height: 0 },
     line: { width: 200, height: 0 },
