@@ -132,12 +132,17 @@ function openAuthPopup(url: string): Window {
     return popup;
 }
 
+const OAUTH_STORAGE_KEY = 'yappy:oauth:result';
+
 function waitForAuthCode(popup: Window): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         let settled = false;
 
+        // Clear any stale OAuth result from a previous attempt
+        try { localStorage.removeItem(OAUTH_STORAGE_KEY); } catch { /* ignore */ }
+
+        // Strategy 1: postMessage (works when COOP allows window.opener)
         const onMessage = (event: MessageEvent) => {
-            // Only accept messages from our own origin
             if (event.origin !== window.location.origin) return;
 
             if (event.data?.type === 'yappy-oauth-callback' && event.data.code) {
@@ -151,21 +156,73 @@ function waitForAuthCode(popup: Window): Promise<string> {
             }
         };
 
-        // Detect if user closes the popup without completing auth
+        // Strategy 2: localStorage 'storage' event (COOP-proof fallback)
+        // Fires when another tab/window writes to localStorage
+        const onStorage = (event: StorageEvent) => {
+            if (event.key !== OAUTH_STORAGE_KEY || !event.newValue) return;
+            try {
+                const data = JSON.parse(event.newValue);
+                if (data.type === 'yappy-oauth-callback' && data.code) {
+                    settled = true;
+                    cleanup();
+                    resolve(data.code);
+                } else if (data.type === 'yappy-oauth-error') {
+                    settled = true;
+                    cleanup();
+                    reject(new Error(data.error || 'OAuth authentication failed'));
+                }
+            } catch { /* malformed data, ignore */ }
+        };
+
+        // Poll for completion. Uses two signals:
+        // - popup.closed: detect user manually closing the popup (may be blocked by COOP)
+        // - localStorage: COOP-proof fallback for receiving the auth code
         const checkClosedTimer = window.setInterval(() => {
-            if (popup.closed && !settled) {
-                settled = true;
-                cleanup();
-                reject(new Error('Authentication cancelled — popup was closed.'));
+            if (settled) return;
+
+            // Check localStorage for auth result (COOP-proof, always works)
+            // The storage event may not fire if the popup closes immediately after writing,
+            // so we also poll directly as a safety net.
+            try {
+                const stored = localStorage.getItem(OAUTH_STORAGE_KEY);
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    if (data.type === 'yappy-oauth-callback' && data.code) {
+                        settled = true;
+                        cleanup();
+                        resolve(data.code);
+                        return;
+                    } else if (data.type === 'yappy-oauth-error') {
+                        settled = true;
+                        cleanup();
+                        reject(new Error(data.error || 'OAuth authentication failed'));
+                        return;
+                    }
+                }
+            } catch { /* ignore */ }
+
+            // Check if user closed the popup without completing auth
+            try {
+                if (popup.closed) {
+                    settled = true;
+                    cleanup();
+                    reject(new Error('Authentication cancelled — popup was closed.'));
+                }
+            } catch {
+                // COOP blocks popup.closed — we rely on localStorage above
             }
         }, POPUP_CHECK_INTERVAL_MS);
 
         function cleanup() {
             window.removeEventListener('message', onMessage);
+            window.removeEventListener('storage', onStorage);
             window.clearInterval(checkClosedTimer);
+            // Clean up the localStorage key
+            try { localStorage.removeItem(OAUTH_STORAGE_KEY); } catch { /* ignore */ }
         }
 
         window.addEventListener('message', onMessage);
+        window.addEventListener('storage', onStorage);
     });
 }
 

@@ -177,6 +177,13 @@ export const exportToSvg = (onlySelected: boolean) => {
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     svg.style.backgroundColor = '#ffffff'; // Optional: white bg
 
+    // Embed Google Fonts for accurate text rendering in standalone SVG
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const fontStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    fontStyle.textContent = `@import url('https://fonts.googleapis.com/css2?family=Handlee&family=Inter:wght@400;700&family=Source+Code+Pro:wght@400;700&family=Caveat:wght@400;700&family=Poppins:wght@400;700&family=Merriweather:wght@400;700&family=Permanent+Marker&family=JetBrains+Mono:wght@400;700&display=swap');`;
+    defs.appendChild(fontStyle);
+    svg.appendChild(defs);
+
     const rc = rough.svg(svg);
 
     // Group for Translation
@@ -185,8 +192,8 @@ export const exportToSvg = (onlySelected: boolean) => {
     svg.appendChild(g);
 
     elements.forEach(el => {
-        // Rotation Group
         let node: SVGElement | null = null;
+        let isCanvasFallback = false;
 
         // Options
         const options: any = {
@@ -203,6 +210,15 @@ export const exportToSvg = (onlySelected: boolean) => {
             node = rc.rectangle(el.x, el.y, el.width, el.height, options);
         } else if (el.type === 'circle') {
             node = rc.ellipse(el.x + el.width / 2, el.y + el.height / 2, Math.abs(el.width), Math.abs(el.height), options);
+        } else if (el.type === 'diamond') {
+            const dcx = el.x + el.width / 2;
+            const dcy = el.y + el.height / 2;
+            node = rc.polygon([
+                [dcx, el.y],
+                [el.x + el.width, dcy],
+                [dcx, el.y + el.height],
+                [el.x, dcy]
+            ], options);
         } else if (el.type === 'line' || el.type === 'arrow') {
             const endX = el.x + el.width;
             const endY = el.y + el.height;
@@ -325,7 +341,7 @@ export const exportToSvg = (onlySelected: boolean) => {
                 });
             }
             node = textGroup;
-        } else if ((el.type === 'fineliner' || el.type === 'inkbrush' || el.type === 'marker') && el.points) {
+        } else if ((el.type === 'fineliner' || el.type === 'inkbrush' || el.type === 'marker' || el.type === 'ink') && el.points) {
             // Helper to normalize
             let points: { x: number, y: number }[] = [];
             if (el.pointsEncoding === 'flat') {
@@ -342,7 +358,7 @@ export const exportToSvg = (onlySelected: boolean) => {
                 const absPoints = points.map(p => [el.x + p.x, el.y + p.y] as [number, number]);
                 node = rc.curve(absPoints, options);
             }
-        } else if (el.type === 'image' && el.dataURL) {
+        } else if (el.type === 'image' && el.dataURL && !el.crop) {
             const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
             image.setAttribute('href', el.dataURL);
             image.setAttribute('x', `${el.x}`);
@@ -357,8 +373,51 @@ export const exportToSvg = (onlySelected: boolean) => {
             node = image;
         }
 
+        // Canvas fallback for shape types without native SVG rendering
+        // Renders the element via the canvas pipeline and embeds as a raster image
+        if (!node && el.type !== 'text') {
+            const absW = Math.abs(el.width);
+            const absH = Math.abs(el.height);
+            if (absW > 0 && absH > 0) {
+                isCanvasFallback = true;
+                const fbScale = 2; // 2x for crisp rendering
+                let pad = Math.max(30, (el.strokeWidth || 2) * 3);
+                // Extra padding for rotation (rotated shapes extend beyond original bounds)
+                if (el.angle) {
+                    pad += Math.ceil((Math.sqrt(absW * absW + absH * absH) - Math.min(absW, absH)) / 2);
+                }
+                // Extra padding for drop shadows
+                if (el.shadowEnabled) {
+                    pad += (el.shadowBlur || 10) + Math.max(Math.abs(el.shadowOffsetX || 0), Math.abs(el.shadowOffsetY || 0));
+                }
+
+                const minElX = Math.min(el.x, el.x + el.width);
+                const minElY = Math.min(el.y, el.y + el.height);
+
+                const fbCanvas = document.createElement('canvas');
+                fbCanvas.width = (absW + pad * 2) * fbScale;
+                fbCanvas.height = (absH + pad * 2) * fbScale;
+                const tmpCtx = fbCanvas.getContext('2d');
+                if (tmpCtx) {
+                    tmpCtx.scale(fbScale, fbScale);
+                    tmpCtx.translate(-minElX + pad, -minElY + pad);
+                    const tmpRc = rough.canvas(fbCanvas);
+                    renderElement(tmpRc, tmpCtx, el);
+
+                    const fbImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                    fbImage.setAttribute('href', fbCanvas.toDataURL('image/png'));
+                    fbImage.setAttribute('x', `${minElX - pad}`);
+                    fbImage.setAttribute('y', `${minElY - pad}`);
+                    fbImage.setAttribute('width', `${absW + pad * 2}`);
+                    fbImage.setAttribute('height', `${absH + pad * 2}`);
+                    node = fbImage;
+                }
+            }
+        }
+
         // Render containerText inside shapes (rectangles, circles, etc.)
-        if (node && (el.containerText || (el.richContainerText && el.richContainerText.length > 0)) && el.type !== 'text') {
+        // Skip for canvas fallback shapes — container text is already rendered by the canvas pipeline
+        if (node && !isCanvasFallback && (el.containerText || (el.richContainerText && el.richContainerText.length > 0)) && el.type !== 'text') {
             const wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             wrapper.appendChild(node);
 
@@ -451,11 +510,24 @@ export const exportToSvg = (onlySelected: boolean) => {
         }
 
         if (node) {
-            node.setAttribute('opacity', `${(el.opacity ?? 100) / 100}`);
-            if (el.angle) {
-                const cx = el.x + el.width / 2;
-                const cy = el.y + el.height / 2;
-                node.setAttribute('transform', `rotate(${el.angle * (180 / Math.PI)}, ${cx}, ${cy})`);
+            if (!isCanvasFallback) {
+                // Apply SVG-level properties for natively rendered shapes
+                // Canvas fallback shapes already have opacity, rotation, flip baked in
+                node.setAttribute('opacity', `${(el.opacity ?? 100) / 100}`);
+                const transforms: string[] = [];
+                if (el.angle) {
+                    const tcx = el.x + el.width / 2;
+                    const tcy = el.y + el.height / 2;
+                    transforms.push(`rotate(${el.angle * (180 / Math.PI)}, ${tcx}, ${tcy})`);
+                }
+                if (el.flipX || el.flipY) {
+                    const tcx = el.x + el.width / 2;
+                    const tcy = el.y + el.height / 2;
+                    transforms.push(`translate(${tcx}, ${tcy}) scale(${el.flipX ? -1 : 1}, ${el.flipY ? -1 : 1}) translate(${-tcx}, ${-tcy})`);
+                }
+                if (transforms.length > 0) {
+                    node.setAttribute('transform', transforms.join(' '));
+                }
             }
             g.appendChild(node);
         }
