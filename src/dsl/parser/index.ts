@@ -6,6 +6,7 @@
 import type { ParseResult } from '../types';
 import { parseJsonDSL } from './json-parser';
 import { parseTextDSL } from './text-parser';
+import { parseYSL, isYSLScript } from '../ysl';
 import { adapterRegistry } from '../adapters/adapter-registry';
 import { MermaidAdapter } from '../adapters/mermaid/mermaid-adapter';
 
@@ -14,7 +15,7 @@ adapterRegistry.register(new MermaidAdapter());
 
 /**
  * Parse DSL input (auto-detects format).
- * Checks: JSON → Mermaid → Text DSL.
+ * Checks: JSON → YSL script → Mermaid → Text DSL.
  */
 export function parseDSL(input: string): ParseResult {
     const trimmed = input.trim();
@@ -30,6 +31,11 @@ export function parseDSL(input: string): ParseResult {
     // Auto-detect: JSON starts with {
     if (trimmed.startsWith('{')) {
         return parseJsonDSL(trimmed);
+    }
+
+    // YSL scripting language (has variables, loops, functions, etc.)
+    if (isYSLScript(trimmed)) {
+        return parseYSL(trimmed);
     }
 
     // Try Mermaid adapter (checks for graph/flowchart/sequenceDiagram etc.)

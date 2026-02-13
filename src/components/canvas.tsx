@@ -903,6 +903,13 @@ const Canvas: Component = () => {
         };
         window.addEventListener('keydown', handlePolylineKeys, true);
 
+        // Drag-and-drop for color/URL drops on canvas elements (image file drops handled globally in app.tsx)
+        // Attach to parent wrapper div instead of canvas directly — canvas is a weak drop target on Linux/Wayland
+        const dropHandler = (e: DragEvent) => handleDropHandler(e, canvasEventCtx);
+        const dropZone = canvasRef!.parentElement!;
+        dropZone.addEventListener('dragover', handleDragOver);
+        dropZone.addEventListener('drop', dropHandler);
+
         window.addEventListener("resize", handleResize);
         document.addEventListener("fullscreenchange", handleResize);
         handleResize();
@@ -970,6 +977,8 @@ const Canvas: Component = () => {
 
         onCleanup(() => {
             delete (window as any).__tableCellNav;
+            dropZone.removeEventListener('dragover', handleDragOver);
+            dropZone.removeEventListener('drop', dropHandler);
             window.removeEventListener('keydown', handleCropKeys, true);
             window.removeEventListener('keydown', handlePolylineKeys, true);
             window.removeEventListener("resize", handleResize);
@@ -982,22 +991,22 @@ const Canvas: Component = () => {
 
     return (
         <>
-            <canvas
-                ref={canvasRef}
-                onWheel={handleWheel}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onDblClick={handleDoubleClick}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDropHandler(e, canvasEventCtx)}
-                onContextMenu={(e) => {
-                    e.preventDefault();
-                    setContextMenuPos({ x: e.clientX, y: e.clientY });
-                    setContextMenuOpen(true);
-                }}
-                style={{ display: "block", "touch-action": "none", cursor: cursor(), "user-select": "none" }}
-            />
+            <div class="canvas-drop-zone" style={{ position: "relative", width: "100%", height: "100%" }}>
+                <canvas
+                    ref={canvasRef}
+                    onWheel={handleWheel}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onDblClick={handleDoubleClick}
+                    onContextMenu={(e) => {
+                        e.preventDefault();
+                        setContextMenuPos({ x: e.clientX, y: e.clientY });
+                        setContextMenuOpen(true);
+                    }}
+                    style={{ display: "block", "touch-action": "none", cursor: cursor(), "user-select": "none" }}
+                />
+            </div>
 
             {/* Global Texture Overlay */}
             <Show when={store.canvasTexture !== 'none' && store.canvasTexture !== 'grid' && store.canvasTexture !== 'graph'}>

@@ -499,8 +499,12 @@ const App: Component = () => {
           }
         } else if (key === 'enter') {
           if (store.selection.length === 1) {
-            e.preventDefault();
-            addSiblingNode(store.selection[0]);
+            // Only intercept Enter for mindmap nodes (elements with parentId)
+            const selEl = store.elements.find(el => el.id === store.selection[0]);
+            if (selEl?.parentId) {
+              e.preventDefault();
+              addSiblingNode(store.selection[0]);
+            }
           }
         } else if (key === ' ') {
           if (store.selection.length > 0) {
@@ -630,44 +634,342 @@ const App: Component = () => {
       }
     };
 
-    // Global drag/drop for image files — catches drops anywhere in the window
-    // (canvas has its own handler for position-aware drops, this is the fallback)
-    const handleGlobalDragOver = (e: DragEvent) => {
-      if (e.dataTransfer?.types.includes('Files')) {
-        e.preventDefault();
+    // Global drag/drop for image files — primary handler for reliable drops
+    // HTML5 D&D requires preventDefault on BOTH dragenter AND dragover for drops to work
+    let _dragOverCount = 0;
+    let _dragHasFiles = false; // Track whether current drag contains files (from dragover types)
+    // _lastDragCoords removed — was unused (reserved for future fallback file picker positioning)
+    const handleGlobalDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      ++_dragOverCount;
+      if (e.dataTransfer) {
         e.dataTransfer.dropEffect = 'copy';
+        const types = e.dataTransfer.types ? Array.from(e.dataTransfer.types) : [];
+        if (types.includes('Files')) _dragHasFiles = true;
+        // Log first dragenter to see what types are available from the OS
+        if (_dragOverCount === 1) {
+          console.log('[DND dragenter] types:', types, 'hasFiles:', _dragHasFiles);
+        }
       }
     };
-    const handleGlobalDrop = async (e: DragEvent) => {
-      // Only handle if the canvas didn't already handle it
-      if (e.defaultPrevented) return;
-      const files = e.dataTransfer?.files;
-      if (!files || files.length === 0) return;
-      const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
-      if (imageFiles.length === 0) return;
+    const handleGlobalDragOver = (e: DragEvent) => {
       e.preventDefault();
+      ++_dragOverCount;
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+        if (!_dragHasFiles && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+          _dragHasFiles = true;
+        }
+      }
+      // _lastDragCoords tracking removed — reserved for future fallback file picker positioning
+    };
+
+    /**
+     * Fallback for Chromium/Linux empty DataTransfer bug:
+     * Show a visible "Click to select image" prompt at the drop location.
+     * A real user click on the prompt is a guaranteed user gesture for file input.
+     */
+    const showDropFallbackPrompt = (clientX: number, clientY: number) => {
+      // Remove any existing prompt
+      document.getElementById('dnd-fallback-prompt')?.remove();
+
+      const prompt = document.createElement('div');
+      prompt.id = 'dnd-fallback-prompt';
+      prompt.style.cssText = `
+        position: fixed; top: ${clientY - 20}px; left: ${clientX - 80}px;
+        z-index: 100000; background: #1e40af; color: white;
+        padding: 8px 16px; border-radius: 8px; cursor: pointer;
+        font: 13px/1.4 system-ui, sans-serif; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        display: flex; align-items: center; gap: 6px; user-select: none;
+        animation: dnd-fade-in 0.15s ease-out;
+      `;
+      prompt.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Click to select image`;
+
+      // Add animation keyframe if not present
+      if (!document.getElementById('dnd-fallback-style')) {
+        const style = document.createElement('style');
+        style.id = 'dnd-fallback-style';
+        style.textContent = `@keyframes dnd-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }`;
+        document.head.appendChild(style);
+      }
+
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.multiple = true;
+      input.style.display = 'none';
+
+      const cleanup = () => {
+        prompt.remove();
+        input.remove();
+      };
+
+      input.addEventListener('change', async () => {
+        const files = input.files;
+        if (!files || files.length === 0) { cleanup(); return; }
+        if (!store.welcomeDismissed) setStore('welcomeDismissed', true);
+        const { scale, panX, panY } = store.viewState;
+        const worldX = (clientX - panX) / scale;
+        const worldY = (clientY - panY) / scale;
+        const STAGGER = 30;
+        const ids: string[] = [];
+        for (let i = 0; i < files.length; i++) {
+          try {
+            const id = await pasteImageFromBlob(files[i], { dx: i * STAGGER, dy: i * STAGGER }, { x: worldX, y: worldY });
+            if (id) ids.push(id);
+          } catch (err) { console.error('[DND fallback] FAILED:', err); }
+        }
+        if (ids.length > 0) setStore('selection', ids);
+        cleanup();
+      });
+
+      prompt.addEventListener('click', () => input.click());
+
+      // Auto-dismiss after 5s if not clicked
+      setTimeout(() => { if (document.getElementById('dnd-fallback-prompt')) cleanup(); }, 5000);
+
+      // Dismiss on click outside
+      const outsideClick = (e: MouseEvent) => {
+        if (!prompt.contains(e.target as Node)) {
+          cleanup();
+          document.removeEventListener('mousedown', outsideClick);
+        }
+      };
+      setTimeout(() => document.addEventListener('mousedown', outsideClick), 100);
+
+      document.body.appendChild(prompt);
+      document.body.appendChild(input);
+    };
+
+    const isImageFile = (f: File) => {
+      // Check MIME type first, fall back to extension for files with empty type
+      if (f.type.startsWith('image/')) return true;
+      if (!f.type && f.name) {
+        const ext = f.name.split('.').pop()?.toLowerCase();
+        return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'avif', 'heic', 'heif', 'tiff', 'tif'].includes(ext || '');
+      }
+      return false;
+    };
+
+    /**
+     * Extract ALL data from DataTransfer SYNCHRONOUSLY.
+     * Some browsers (especially on Linux) aggressively clear DataTransfer
+     * after the synchronous event handler returns, even within async functions.
+     * This function must be called from a non-async handler to guarantee data access.
+     */
+    const extractDropData = (e: DragEvent, source: string) => {
+      const t = e.target as HTMLElement;
+      const dt = e.dataTransfer;
+      const types = dt?.types ? Array.from(dt.types) : [];
+
+      // Extract files from dt.files
+      const filesFromList: File[] = [];
+      if (dt?.files) {
+        for (let i = 0; i < dt.files.length; i++) {
+          filesFromList.push(dt.files[i]);
+        }
+      }
+
+      // Extract files from dt.items (fallback — more reliable on some platforms)
+      const filesFromItems: File[] = [];
+      if (dt?.items) {
+        for (let i = 0; i < dt.items.length; i++) {
+          const item = dt.items[i];
+          if (item.kind === 'file') {
+            const file = item.getAsFile();
+            if (file) filesFromItems.push(file);
+          }
+        }
+      }
+
+      // Read string data synchronously (before browser clears DataTransfer)
+      const uriList = dt ? dt.getData('text/uri-list') : '';
+      const textPlain = dt ? dt.getData('text/plain') : '';
+
+      console.log(`[DND drop:${source}]`, {
+        target: t.tagName,
+        clientX: e.clientX, clientY: e.clientY,
+        defaultPrevented: e.defaultPrevented,
+        types,
+        filesFromList: filesFromList.length,
+        filesFromItems: filesFromItems.length,
+        uriList: uriList ? uriList.substring(0, 200) : '',
+        textPlain: textPlain ? textPlain.substring(0, 200) : '',
+      });
+
+      return {
+        clientX: e.clientX,
+        clientY: e.clientY,
+        filesFromList,
+        filesFromItems,
+        uriList,
+        textPlain,
+        types,
+      };
+    };
+
+    /**
+     * Process extracted drop data asynchronously (file conversion, image creation).
+     * Called AFTER extractDropData has synchronously captured all DataTransfer content.
+     */
+    const processExtractedDrop = async (data: ReturnType<typeof extractDropData>) => {
+      let imageFiles: File[] = [];
+
+      // 1. Try files from dt.files
+      const allListFiles = data.filesFromList;
+      if (allListFiles.length > 0) {
+        console.log('[DND drop] files:', allListFiles.map(f => ({ name: f.name, type: f.type, size: f.size })));
+        imageFiles = allListFiles.filter(isImageFile);
+      }
+
+      // 2. Fallback: files from dt.items
+      if (imageFiles.length === 0 && data.filesFromItems.length > 0) {
+        console.log('[DND drop] using items API files:', data.filesFromItems.map(f => ({ name: f.name, type: f.type, size: f.size })));
+        imageFiles = data.filesFromItems.filter(isImageFile);
+      }
+
+      // 3. Fallback: text/uri-list for image URLs
+      if (imageFiles.length === 0 && data.uriList) {
+        const urls = data.uriList.split('\n').map(s => s.trim()).filter(s => s && !s.startsWith('#'));
+        console.log('[DND drop] uri-list URLs:', urls);
+        for (const url of urls) {
+          if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image')) {
+            const lowerUrl = url.toLowerCase();
+            const isImgUrl = url.startsWith('data:image') ||
+              ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.avif'].some(ext => lowerUrl.includes(ext));
+            if (isImgUrl) {
+              try {
+                const resp = await fetch(url);
+                const blob = await resp.blob();
+                if (blob.type.startsWith('image/')) {
+                  const fileName = url.split('/').pop()?.split('?')[0] || 'image.png';
+                  imageFiles.push(new File([blob], fileName, { type: blob.type }));
+                }
+              } catch (err) {
+                console.warn('[DND drop] failed to fetch URL:', url, err);
+              }
+            }
+          }
+        }
+      }
+
+      // 4. Fallback: text/plain for image URLs
+      if (imageFiles.length === 0 && data.textPlain && !data.types.includes('Files')) {
+        const text = data.textPlain;
+        if (text.startsWith('http://') || text.startsWith('https://') || text.startsWith('data:image')) {
+          const lowerText = text.toLowerCase();
+          const isImgUrl = text.startsWith('data:image') ||
+            ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.avif'].some(ext => lowerText.includes(ext));
+          if (isImgUrl) {
+            try {
+              const resp = await fetch(text);
+              const blob = await resp.blob();
+              if (blob.type.startsWith('image/')) {
+                const fileName = text.split('/').pop()?.split('?')[0] || 'image.png';
+                imageFiles.push(new File([blob], fileName, { type: blob.type }));
+              }
+            } catch (err) {
+              console.warn('[DND drop] failed to fetch text URL:', text, err);
+            }
+          }
+        }
+      }
+
+      if (imageFiles.length === 0) {
+        console.log('[DND drop] NO image files from any source');
+        return false;
+      }
+
+      // Dismiss welcome screen
+      if (!store.welcomeDismissed) {
+        setStore('welcomeDismissed', true);
+      }
+
+      const { scale, panX, panY } = store.viewState;
+      const worldX = (data.clientX - panX) / scale;
+      const worldY = (data.clientY - panY) / scale;
+
       const STAGGER = 30;
       const ids: string[] = [];
       for (let i = 0; i < imageFiles.length; i++) {
-        const id = await pasteImageFromBlob(imageFiles[i], { dx: i * STAGGER, dy: i * STAGGER });
-        if (id) ids.push(id);
+        try {
+          const id = await pasteImageFromBlob(imageFiles[i], { dx: i * STAGGER, dy: i * STAGGER }, { x: worldX, y: worldY });
+          if (id) ids.push(id);
+        } catch (err) {
+          console.error('[DND drop] pasteImageFromBlob FAILED:', err);
+        }
       }
-      if (ids.length > 0) setStore('selection', ids);
+      if (ids.length > 0) {
+        setStore('selection', ids);
+        console.log('[DND drop] SUCCESS — added', ids.length, 'image(s)');
+      } else {
+        console.warn('[DND drop] FAILED — no images were created');
+      }
+      return ids.length > 0;
+    };
+
+    // NON-ASYNC drop handlers — extract DataTransfer synchronously, then process async.
+    // Critical: the browser clears DataTransfer after the synchronous handler returns.
+    const handleGlobalDrop = (e: DragEvent) => {
+      const dragCount = _dragOverCount;
+      const hadDragActivity = dragCount > 0;
+      _dragOverCount = 0;
+      _dragHasFiles = false;
+
+      // Always prevent default on drop to stop browser from navigating to the file
+      e.preventDefault();
+      e.stopPropagation();
+
+      const data = extractDropData(e, 'window-capture');
+      console.log('[DND drop] dragOverCount was:', dragCount, 'hadDragActivity:', hadDragActivity);
+
+      const hasFiles = data.filesFromList.length > 0 || data.filesFromItems.length > 0;
+      const hasImageUrls = data.uriList || data.textPlain;
+      if (hasFiles || hasImageUrls) {
+        processExtractedDrop(data);
+      } else if (hadDragActivity) {
+        // DataTransfer is completely empty despite drag activity (Chromium/Linux bug).
+        // Show a visible prompt for the user to select the image file.
+        console.log('[DND drop] DataTransfer empty — showing fallback prompt');
+        showDropFallbackPrompt(data.clientX, data.clientY);
+      }
+    };
+
+    // Bubble phase fallback — only fires if capture didn't handle it
+    const handleDocumentDrop = (e: DragEvent) => {
+      if (e.defaultPrevented) return;
+      const data = extractDropData(e, 'doc-bubble');
+      const hasFiles = data.filesFromList.length > 0 || data.filesFromItems.length > 0;
+      const hasImageUrls = data.uriList || data.textPlain;
+      if (hasFiles || hasImageUrls) {
+        e.preventDefault();
+        e.stopPropagation();
+        processExtractedDrop(data);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
     window.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('paste', handlePaste);
+    // D&D: prevent default on dragenter + dragover (both required by spec) at window capture + document bubble
+    window.addEventListener('dragenter', handleGlobalDragEnter, true);
+    document.addEventListener('dragenter', handleGlobalDragEnter);
+    window.addEventListener('dragover', handleGlobalDragOver, true);
     document.addEventListener('dragover', handleGlobalDragOver);
-    document.addEventListener('drop', handleGlobalDrop);
+    window.addEventListener('drop', handleGlobalDrop, true);
+    document.addEventListener('drop', handleDocumentDrop);
     onCleanup(() => {
       window.removeEventListener('keydown', handleKeyDown, true);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('paste', handlePaste);
+      window.removeEventListener('dragenter', handleGlobalDragEnter, true);
+      document.removeEventListener('dragenter', handleGlobalDragEnter);
+      window.removeEventListener('dragover', handleGlobalDragOver, true);
       document.removeEventListener('dragover', handleGlobalDragOver);
-      document.removeEventListener('drop', handleGlobalDrop);
+      window.removeEventListener('drop', handleGlobalDrop, true);
+      document.removeEventListener('drop', handleDocumentDrop);
     });
   });
 

@@ -90,13 +90,26 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
             if (!isNaN(px)) style.fontSize = px;
         }
 
+        // Block elements (div/p): add newline before if preceded by non-block sibling
+        // Handles DOM structures like: text<div>next line</div> where the browser
+        // wraps subsequent lines in divs but leaves the first line as a text node
+        const isBlock = tag === 'div' || tag === 'p';
+        if (isBlock && el.previousSibling) {
+            const prevTag = (el.previousSibling as HTMLElement).tagName?.toLowerCase?.();
+            // Skip if previous sibling is already a block (handled by post-block \n)
+            // or a <br> (which already emits its own \n)
+            if (prevTag !== 'div' && prevTag !== 'p' && prevTag !== 'br') {
+                spans.push({ text: '\n' });
+            }
+        }
+
         // Recurse children
         for (const child of Array.from(el.childNodes)) {
             walk(child, style);
         }
 
         // Block elements (div/p) insert newline after unless it's the last child
-        if ((tag === 'div' || tag === 'p') && el.nextSibling) {
+        if (isBlock && el.nextSibling) {
             spans.push({ text: '\n' });
         }
     }

@@ -170,7 +170,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                             left: `${centerX}px`,
                             transform: isTableCell ? 'none' : 'translate(-50%, -50%)',
                             width: `${Math.max(50, textareaWidth)}px`,
-                            height: `${textareaHeight}px`,
+                            'min-height': `${textareaHeight}px`,
                             display: 'flex',
                             'align-items': 'center',
                             'justify-content': 'center',
@@ -211,39 +211,56 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                             ref={(el) => {
                                 textInputRef = el;
                                 props.onTextInputRef(el);
+                                // Native keydown handler — takes full control of Enter to guarantee newlines
+                                el.addEventListener('keydown', (e) => {
+                                    if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        e.stopImmediatePropagation();
+                                        props.onCommitText();
+                                        setSelectedTool('selection');
+                                        return;
+                                    }
+                                    // Table cell navigation
+                                    if (props.editingProperty() === 'tableCell' && props.onTableCellNavigate) {
+                                        if (e.key === 'Tab') {
+                                            e.preventDefault();
+                                            e.stopImmediatePropagation();
+                                            props.onCommitText();
+                                            props.onTableCellNavigate(e.shiftKey ? 'left' : 'right');
+                                            return;
+                                        }
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            e.stopImmediatePropagation();
+                                            props.onCommitText();
+                                            props.onTableCellNavigate('down');
+                                            return;
+                                        }
+                                    }
+                                    // Always manually handle Enter — don't rely on browser default
+                                    // This guarantees newlines work regardless of capture-phase interference
+                                    if (e.key === 'Enter' && props.editingProperty() !== 'tableCell') {
+                                        e.preventDefault();
+                                        e.stopImmediatePropagation();
+                                        const ta = el;
+                                        const start = ta.selectionStart;
+                                        const end = ta.selectionEnd;
+                                        const val = ta.value;
+                                        const newVal = val.slice(0, start) + '\n' + val.slice(end);
+                                        ta.value = newVal;
+                                        ta.selectionStart = ta.selectionEnd = start + 1;
+                                        props.setEditText(newVal);
+                                        return;
+                                    }
+                                    // Stop propagation for all keys to prevent global hotkeys from interfering
+                                    e.stopImmediatePropagation();
+                                });
                             }}
                             value={props.editText()}
                             onInput={(e) => props.setEditText(e.currentTarget.value)}
                             onBlur={handleTextBlur}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Escape') {
-                                    e.preventDefault();
-                                    props.onCommitText();
-                                    setSelectedTool('selection');
-                                    return;
-                                }
-                                // Table cell navigation
-                                if (props.editingProperty() === 'tableCell' && props.onTableCellNavigate) {
-                                    if (e.key === 'Tab') {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        props.onCommitText();
-                                        props.onTableCellNavigate(e.shiftKey ? 'left' : 'right');
-                                        return;
-                                    }
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        props.onCommitText();
-                                        props.onTableCellNavigate('down');
-                                        return;
-                                    }
-                                    // Shift+Enter: allow default (newline in cell)
-                                }
-                            }}
                             style={{
                                 width: '100%',
-                                'max-height': '100%',
                                 'box-sizing': 'border-box',
                                 font: `${fontStyle} ${fontWeight} ${fontSizeVal * scale}px ${fontFamily}`,
                                 color: el.textColor || el.strokeColor,

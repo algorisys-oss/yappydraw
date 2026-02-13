@@ -9,11 +9,12 @@ import { store, updateElement, pushToHistory, applyMindmapStyling } from "../sto
 import { getElementPreviewBaseState, isElementAnimating } from "../utils/animation/element-animator";
 import {
     Palette, SlidersHorizontal,
-    Bold, Italic, AlignLeft, AlignCenter, AlignRight, WrapText
+    Bold, Italic, AlignLeft, AlignCenter, AlignRight, WrapText, Type
 } from "lucide-solid";
 import { getElementFamily, getQuickPropertiesForType, QUICK_COLORS, type QuickPropertyDef, type PresetOption } from "../config/quick-toolbar-config";
 import { getImageFilterPreset } from "../config/image-filter-presets";
 import { fontCapabilities } from "../config/properties";
+import { plainTextToSpans, spansToPlainText } from "../utils/rich-text-utils";
 import "./quick-toolbar.css";
 
 // ============ Sub-Components ============
@@ -667,6 +668,36 @@ const ToolbarContainer: Component<{
                                             }}
                                         </For>
                                     </div>
+                                </Show>
+
+                                {/* Rich Text Toggle */}
+                                <Show when={el().type === 'text' || !!el().containerText || !!el().richContainerText}>
+                                    <div class="qt-divider" />
+                                    <button
+                                        class={`qt-icon-btn ${(el().richText?.length || el().richContainerText?.length) ? 'active' : ''}`}
+                                        onClick={() => {
+                                            const d = el();
+                                            pushToHistory();
+                                            if (d.richText?.length || d.richContainerText?.length) {
+                                                // Disable: convert back to plain text
+                                                if (d.type === 'text' && d.richText) {
+                                                    updateElement(d.id, { text: spansToPlainText(d.richText), richText: undefined }, true);
+                                                } else if (d.richContainerText) {
+                                                    updateElement(d.id, { containerText: spansToPlainText(d.richContainerText), richContainerText: undefined }, true);
+                                                }
+                                            } else {
+                                                // Enable: convert plain text to rich spans
+                                                if (d.type === 'text') {
+                                                    updateElement(d.id, { richText: plainTextToSpans(d.text || '') }, true);
+                                                } else {
+                                                    updateElement(d.id, { richContainerText: plainTextToSpans(d.containerText || '') }, true);
+                                                }
+                                            }
+                                        }}
+                                        title="Toggle Rich Text"
+                                    >
+                                        <Type size={14} />
+                                    </button>
                                 </Show>
 
                                 {/* Mindmap Actions Section */}

@@ -85,17 +85,6 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
         }
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            handleCommit();
-            setSelectedTool('selection');
-            return;
-        }
-        // Update format state after key combo
-        setTimeout(updateActiveFormats, 0);
-    };
-
     // Close color picker on outside click
     const handleDocClick = (e: MouseEvent) => {
         if (showColorPicker() && !(e.target as HTMLElement)?.closest('.rt-color-wrapper')) {
@@ -219,7 +208,31 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                         </div>
                         {/* Contenteditable editor */}
                         <div
-                            ref={editorRef}
+                            ref={(el) => {
+                                editorRef = el;
+                                // Native keydown handler — takes full control of Enter to guarantee newlines
+                                el.addEventListener('keydown', (e) => {
+                                    if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        e.stopImmediatePropagation();
+                                        handleCommit();
+                                        setSelectedTool('selection');
+                                        return;
+                                    }
+                                    // Always manually handle Enter — don't rely on browser default
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        e.stopImmediatePropagation();
+                                        document.execCommand('insertLineBreak');
+                                        updateActiveFormats();
+                                        syncSpans();
+                                        return;
+                                    }
+                                    setTimeout(updateActiveFormats, 0);
+                                    // Stop propagation to prevent global hotkeys from interfering
+                                    e.stopImmediatePropagation();
+                                });
+                            }}
                             contentEditable
                             class="rt-editor"
                             style={{
@@ -231,7 +244,6 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                 'line-height': `${fontSizeVal * scale * 1.2}px`,
                             }}
                             onBlur={handleBlur}
-                            onKeyDown={handleKeyDown}
                             onInput={() => { updateActiveFormats(); syncSpans(); }}
                             onMouseUp={() => updateActiveFormats()}
                         />

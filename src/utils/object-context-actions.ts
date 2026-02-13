@@ -38,13 +38,19 @@ const getViewportCenter = () => ({
 // ─── Paste image from blob (used by paste event + context menu) ──────
 export const pasteImageFromBlob = (blob: Blob, offset = { dx: 0, dy: 0 }, position?: { x: number; y: number }): Promise<string | null> => {
     return new Promise((resolve) => {
+        // Safety timeout — never hang forever
+        const timeout = setTimeout(() => resolve(null), 15000);
+        const done = (id: string | null) => { clearTimeout(timeout); resolve(id); };
+
         const reader = new FileReader();
+        reader.onerror = () => done(null);
         reader.onload = (event) => {
             const dataURL = event.target?.result as string;
-            if (!dataURL) { resolve(null); return; }
+            if (!dataURL) { done(null); return; }
 
             const img = new Image();
-            img.src = dataURL;
+            // Set handlers BEFORE src to avoid missing synchronous callbacks
+            img.onerror = () => done(null);
             img.onload = () => {
                 const MAX_DIMENSION = 1500;
                 let width = img.width;
@@ -60,7 +66,7 @@ export const pasteImageFromBlob = (blob: Blob, offset = { dx: 0, dy: 0 }, positi
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
-                if (!ctx) { resolve(null); return; }
+                if (!ctx) { done(null); return; }
 
                 ctx.drawImage(img, 0, 0, width, height);
                 const compressedDataURL = canvas.toDataURL('image/webp', 0.8);
@@ -102,11 +108,10 @@ export const pasteImageFromBlob = (blob: Blob, offset = { dx: 0, dy: 0 }, positi
                     layerId: store.activeLayerId,
                 } as DrawingElement);
 
-                resolve(id);
+                done(id);
             };
-            img.onerror = () => resolve(null);
+            img.src = dataURL;
         };
-        reader.onerror = () => resolve(null);
         reader.readAsDataURL(blob);
     });
 };

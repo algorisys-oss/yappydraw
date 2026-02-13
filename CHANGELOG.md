@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-02-13
+
+### Added
+- **YSL Scripting Language (Phase 1)** — full compiler pipeline extending the declarative text DSL with programming constructs:
+  - Lexer/tokenizer with ~40 token types (keywords, operators, literals, edge operators)
+  - Recursive descent parser producing a typed AST (~25 node types)
+  - Tree-walking interpreter that evaluates scripts into DSLDiagram IR
+  - Lexical scoping with `let`/`const` variable declarations
+  - String interpolation (`"Server ${i}"`) and dynamic node IDs (`server_{i}`)
+  - `for` loops with range (`1..n`) and collection (`["a", "b"]`) iteration
+  - `if`/`else` conditionals with comparison and logical operators
+  - `fn` declarations and calls with parameter passing
+  - `group` blocks for element grouping
+  - Pool/lane declarations for swimlane diagrams
+  - Frontmatter support (`---` blocks) for title and layout configuration
+  - Full expression system: arithmetic, comparison, logical, arrays, member access
+  - Auto-detection in `parseDSL()` — scripts with `let`, `for`, `fn`, etc. route to YSL parser
+  - Produces same DSLDiagram IR as existing text parser — reuses all 11 layout strategies, 88+ shape aliases
+
+### Fixed
+- **Rich text first newline lost on save** — `htmlToSpans()` now handles `<div>`/`<p>` elements preceded by non-block siblings (Chrome wraps lines in `text<div>next</div>` DOM structure)
+- **TypeScript strict mode errors** — resolved `erasableSyntaxOnly` violations (enum, parameter properties), unused variables/imports across YSL and existing codebase
+
 ## [1.14.0] - 2026-02-13
 
 ### Added

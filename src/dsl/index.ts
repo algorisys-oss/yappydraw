@@ -26,6 +26,9 @@ export { parseMermaidClass } from './adapters/mermaid/class-parser';
 export { parseMermaidState } from './adapters/mermaid/state-parser';
 export type { DSLAdapter, AdapterResult } from './adapters/adapter-interface';
 
+// YSL Scripting Language
+export { parseYSL, isYSLScript } from './ysl';
+
 // Utilities
 export { resolveShapeType, SHAPE_ALIASES } from './shape-aliases';
 export { getShapeDefaults } from './shape-defaults';

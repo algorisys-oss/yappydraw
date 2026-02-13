@@ -5,10 +5,9 @@
  */
 
 import type { DrawingElement } from '../../types';
-import { store, setStore, setViewState, updateElement, pushToHistory, updateSlideBackground, isLayerVisible } from '../../store/app-store';
+import { store, setViewState, updateElement, pushToHistory, updateSlideBackground, isLayerVisible } from '../../store/app-store';
 import { calculateAllAnimatedStates } from '../animation-utils';
 import { hitTestElement } from '../hit-testing';
-import { pasteImageFromBlob } from '../object-context-actions';
 
 /**
  * Context needed by drop handler from canvas component closures.
@@ -22,8 +21,8 @@ export interface CanvasEventContext {
 // ─── Drag Over ───────────────────────────────────────────────────────
 
 export function handleDragOver(e: DragEvent): void {
+    e.preventDefault();
     if (e.dataTransfer) {
-        e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
     }
 }
@@ -31,30 +30,20 @@ export function handleDragOver(e: DragEvent): void {
 // ─── Drop Handler ────────────────────────────────────────────────────
 
 export async function handleDrop(e: DragEvent, ctx: CanvasEventContext): Promise<void> {
+    // Image file drops are handled by the global capture handler in app.tsx
+    // This handler only processes color/URL drops onto canvas elements
+    const dt = e.dataTransfer;
+    const files = dt?.files;
+    const hasFileItems = dt?.items ? Array.from(dt.items).some(item => item.kind === 'file') : false;
+    if ((files && files.length > 0) || hasFileItems) {
+        const hasImages = files && files.length > 0
+            ? Array.from(files).some(f => f.type.startsWith('image/'))
+            : hasFileItems; // If items has files, assume images and let global handler sort it out
+        if (hasImages) return; // Let global handler handle it
+    }
+
     e.preventDefault();
     e.stopPropagation();
-
-    // Handle image files dropped from desktop/file manager
-    const files = e.dataTransfer?.files;
-    if (files && files.length > 0) {
-        const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
-        if (imageFiles.length > 0) {
-            const { x, y } = ctx.getWorldCoordinates(e.clientX, e.clientY);
-            pushToHistory();
-            const STAGGER = 30;
-            const ids: string[] = [];
-            for (let i = 0; i < imageFiles.length; i++) {
-                const id = await pasteImageFromBlob(
-                    imageFiles[i],
-                    { dx: i * STAGGER, dy: i * STAGGER },
-                    { x, y }
-                );
-                if (id) ids.push(id);
-            }
-            if (ids.length > 0) setStore('selection', ids);
-            return;
-        }
-    }
 
     const data = e.dataTransfer?.getData('text/plain');
     if (!data) return;
