@@ -24,6 +24,7 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
     const poolIdMap = new Map<string, string>();
     let elementCount = 0;
 
+    try {
     pushToHistory();
 
     // ─── Clear canvas if requested ────────────────────────
@@ -109,7 +110,10 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
         for (const edge of diagram.edges) {
             const sourceCanvasId = nodeIdMap.get(edge.from);
             const targetCanvasId = nodeIdMap.get(edge.to);
-            if (!sourceCanvasId || !targetCanvasId) continue;
+            if (!sourceCanvasId || !targetCanvasId) {
+                console.warn(`[YappyDSL] Edge skipped: "${edge.from}" → "${edge.to}" (missing node: ${!sourceCanvasId ? edge.from : edge.to})`);
+                continue;
+            }
 
             const edgeElementId = renderEdge(edge, sourceCanvasId, targetCanvasId, diagram);
             if (edgeElementId) {
@@ -129,6 +133,11 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
     }
 
     return { nodeIdMap, edgeIdMap, poolIdMap, elementCount };
+    } catch (error) {
+        console.error('[YappyDSL] Render error:', error);
+        // Return partial result so caller knows something went wrong
+        return { nodeIdMap, edgeIdMap, poolIdMap, elementCount };
+    }
 }
 
 // ─── Node Rendering ──────────────────────────────────────

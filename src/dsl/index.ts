@@ -11,7 +11,7 @@ export type {
     ParseResult, ParseError, RenderOptions, RenderResult,
 } from './types';
 
-// Parser
+// Parser — imports trigger MermaidAdapter registration as side effect
 export { parseDSL, parseJsonDSL, parseTextDSL, validateDiagram } from './parser';
 
 // Engine
@@ -29,3 +29,13 @@ export type { DSLAdapter, AdapterResult } from './adapters/adapter-interface';
 // Utilities
 export { resolveShapeType, SHAPE_ALIASES } from './shape-aliases';
 export { getShapeDefaults } from './shape-defaults';
+
+// ─── Initialization Guard ─────────────────────────────────────────
+// Ensure adapters are registered even if tree-shaking affects imports.
+// This runs immediately when this module is loaded.
+import { adapterRegistry as _registry } from './adapters/adapter-registry';
+import { MermaidAdapter as _MermaidAdapter } from './adapters/mermaid/mermaid-adapter';
+
+if (!_registry.get('mermaid')) {
+    _registry.register(new _MermaidAdapter());
+}

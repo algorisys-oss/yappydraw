@@ -69,7 +69,7 @@ const DSLImportDialog: Component<DSLImportDialogProps> = (props) => {
         const trimmed = text.trim();
         if (trimmed.startsWith('{')) {
             setDetectedFormat('json');
-        } else if (/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram)\b/m.test(trimmed)) {
+        } else if (/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|pie|mindmap)\b/m.test(trimmed)) {
             setDetectedFormat('mermaid');
         } else {
             setDetectedFormat('text');

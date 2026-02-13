@@ -222,8 +222,9 @@ export function parseTextDSL(input: string): ParseResult {
     generateEdgesFromChildren(nodes, edges);
 
     // Build diagram
+    // Default to 'tree-down' for automatic layout; 'manual' requires explicit x/y
     const layout: DSLLayoutConfig = {
-        strategy: (layoutConfig as any).strategy || 'manual',
+        strategy: (layoutConfig as any).strategy || 'tree-down',
         ...layoutConfig,
     };
 

@@ -22,9 +22,6 @@ const STATE_ALIAS_RE = /^state\s+"([^"]+)"\s+as\s+(\S+)$/i;
 const STATE_STEREO_RE = /^state\s+(\S+)\s+<<(\w+)>>$/i;
 const STATE_BLOCK_RE = /^state\s+(\S+)\s*\{$/i;
 
-let startCounter = 0;
-let endCounter = 0;
-
 export function parseMermaidState(input: string): AdapterResult {
     const errors: ParseError[] = [];
     const warnings: ParseError[] = [];
@@ -36,8 +33,8 @@ export function parseMermaidState(input: string): AdapterResult {
 
     let headerParsed = false;
     let nestingDepth = 0;
-    startCounter = 0;
-    endCounter = 0;
+    let startCounter = 0;
+    let endCounter = 0;
 
     function ensureState(id: string, label?: string) {
         if (id === '[*]') return; // Handled separately at transition time
