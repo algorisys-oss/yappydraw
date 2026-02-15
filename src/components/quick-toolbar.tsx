@@ -9,7 +9,8 @@ import { store, updateElement, pushToHistory, applyMindmapStyling } from "../sto
 import { getElementPreviewBaseState, isElementAnimating } from "../utils/animation/element-animator";
 import {
     Palette, SlidersHorizontal,
-    Bold, Italic, AlignLeft, AlignCenter, AlignRight, WrapText, Type
+    Bold, Italic, AlignLeft, AlignCenter, AlignRight, WrapText, Type,
+    AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd
 } from "lucide-solid";
 import { getElementFamily, getQuickPropertiesForType, QUICK_COLORS, type QuickPropertyDef, type PresetOption } from "../config/quick-toolbar-config";
 import { getImageFilterPreset } from "../config/image-filter-presets";
@@ -77,10 +78,14 @@ const getIcon = (icon: string) => {
     if (icon === 'startArrow') return <StartArrowheadIcon type="arrow" />;
     if (icon === 'startTriangle') return <StartArrowheadIcon type="triangle" />;
     if (icon === 'startDiamond') return <StartArrowheadIcon type="diamond" />;
-    // Text align
+    // Text align (horizontal)
     if (icon === 'alignLeft') return <AlignLeft size={14} />;
     if (icon === 'alignCenter') return <AlignCenter size={14} />;
     if (icon === 'alignRight') return <AlignRight size={14} />;
+    // Text align (vertical)
+    if (icon === 'alignTop') return <AlignVerticalJustifyStart size={14} />;
+    if (icon === 'alignMiddle') return <AlignVerticalJustifyCenter size={14} />;
+    if (icon === 'alignBottom') return <AlignVerticalJustifyEnd size={14} />;
     // Font family
     if (icon === 'fontHand') return <span style={{ "font-family": "Handlee, cursive", "font-size": "13px", "line-height": "1" }}>Aa</span>;
     if (icon === 'fontCaveat') return <span style={{ "font-family": "Caveat, cursive", "font-size": "14px", "line-height": "1" }}>Aa</span>;

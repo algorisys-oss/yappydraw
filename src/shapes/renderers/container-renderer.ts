@@ -1,10 +1,11 @@
 import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class ContainerRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const strokeColor = RenderPipeline.adjustColor(el.strokeColor, isDarkMode);
         const backgroundColor = el.backgroundColor === 'transparent' ? undefined : RenderPipeline.adjustColor(el.backgroundColor, isDarkMode);
         const x = el.x, y = el.y, w = el.width, h = el.height;
@@ -12,43 +13,43 @@ export class ContainerRenderer extends ShapeRenderer {
         switch (el.type) {
             case 'browserWindow': {
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fillRect(x, y, w, h);
+                    renderer.fillStyle = backgroundColor;
+                    renderer.fillRect(x, y, w, h);
                 }
-                ctx.strokeStyle = strokeColor;
-                ctx.lineWidth = el.strokeWidth;
-                ctx.strokeRect(x, y, w, h);
+                renderer.strokeStyle = strokeColor;
+                renderer.lineWidth = el.strokeWidth;
+                renderer.strokeRect(x, y, w, h);
                 // Header
                 const headerH = Math.min(h * 0.15, 30);
-                ctx.strokeRect(x, y, w, headerH);
+                renderer.strokeRect(x, y, w, headerH);
                 // Buttons
                 const btnR = 4;
                 for (let i = 0; i < 3; i++) {
-                    ctx.beginPath();
-                    ctx.arc(x + 10 + i * 15, y + headerH / 2, btnR, 0, Math.PI * 2);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.arc(x + 10 + i * 15, y + headerH / 2, btnR, 0, Math.PI * 2);
+                    renderer.stroke();
                 }
                 break;
             }
             case 'mobilePhone': {
                 const radius = 20;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.roundRect(x, y, w, h, radius);
-                    ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    renderer.roundRect(x, y, w, h, radius);
+                    renderer.fill();
                 }
-                ctx.strokeStyle = strokeColor;
-                ctx.lineWidth = el.strokeWidth;
-                ctx.beginPath();
-                ctx.roundRect(x, y, w, h, radius);
-                ctx.stroke();
+                renderer.strokeStyle = strokeColor;
+                renderer.lineWidth = el.strokeWidth;
+                renderer.beginPath();
+                renderer.roundRect(x, y, w, h, radius);
+                renderer.stroke();
                 // Screen
                 const screenPadding = 10;
-                ctx.strokeRect(x + screenPadding, y + screenPadding + 20, w - 2 * screenPadding, h - 2 * screenPadding - 40);
+                renderer.strokeRect(x + screenPadding, y + screenPadding + 20, w - 2 * screenPadding, h - 2 * screenPadding - 40);
                 // Button
-                ctx.beginPath();
-                ctx.arc(x + w / 2, y + h - 20, 10, 0, Math.PI * 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.arc(x + w / 2, y + h - 20, 10, 0, Math.PI * 2);
+                renderer.stroke();
                 break;
             }
         }
@@ -91,14 +92,14 @@ export class ContainerRenderer extends ShapeRenderer {
         return `M ${x + rX} ${y} L ${x + w - rX} ${y} Q ${x + w} ${y} ${x + w} ${y + rY} L ${x + w} ${y + h - rY} Q ${x + w} ${y + h} ${x + w - rX} ${y + h} L ${x + rX} ${y + h} Q ${x} ${y + h} ${x} ${y + h - rY} L ${x} ${y + rY} Q ${x} ${y} ${x + rX} ${y}`;
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const x = el.x, y = el.y, w = el.width, h = el.height;
         if (el.type === 'mobilePhone') {
             const radius = 20;
-            ctx.roundRect(x, y, w, h, radius);
+            renderer.roundRect(x, y, w, h, radius);
         } else {
             // browserWindow
-            ctx.rect(x, y, w, h);
+            renderer.rect(x, y, w, h);
         }
     }
 }

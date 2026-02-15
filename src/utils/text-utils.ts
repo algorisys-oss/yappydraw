@@ -1,4 +1,6 @@
 import type { DrawingElement } from "../types";
+import type { IRenderer } from "../rendering/IRenderer";
+import { CanvasRenderer } from "../rendering/CanvasRenderer";
 
 export interface TextMetrics {
     textWidth: number;
@@ -32,6 +34,7 @@ export const getFontString = (el: Partial<DrawingElement>) => {
 
 // Singleton context for text measurements to avoid DOM overhead in render loops
 let sharedMeasurer: CanvasRenderingContext2D | null = null;
+let sharedMeasurementRenderer: IRenderer | null = null;
 export const getMeasurementContext = (): CanvasRenderingContext2D => {
     if (!sharedMeasurer) {
         const canvas = document.createElement('canvas');
@@ -39,9 +42,15 @@ export const getMeasurementContext = (): CanvasRenderingContext2D => {
     }
     return sharedMeasurer;
 };
+export const getMeasurementRenderer = (): IRenderer => {
+    if (!sharedMeasurementRenderer) {
+        sharedMeasurementRenderer = new CanvasRenderer(getMeasurementContext());
+    }
+    return sharedMeasurementRenderer;
+};
 
 export const wrapText = (
-    ctx: CanvasRenderingContext2D,
+    ctx: IRenderer,
     text: string,
     maxWidth: number,
 ): string[] => {
@@ -72,7 +81,7 @@ const _textMetricsCache = new Map<string, TextMetrics>();
 const TEXT_METRICS_CACHE_MAX = 500;
 
 export const measureContainerText = (
-    ctx: CanvasRenderingContext2D,
+    ctx: IRenderer,
     el: Partial<DrawingElement>,
     text: string,
     availableWidth: number
@@ -149,7 +158,7 @@ export const measureWrappedTextHeight = (
 ): number => {
     if (!text) return fontSize * 1.2;
 
-    const ctx = getMeasurementContext();
+    const ctx = getMeasurementRenderer();
     const resolvedFont = resolveFontFamily(fontFamily);
     ctx.font = `${fontSize}px ${resolvedFont}`;
 
@@ -173,7 +182,7 @@ export const measureWrappedTextHeight = (
 };
 
 export const fitShapeToText = (
-    ctx: CanvasRenderingContext2D,
+    ctx: IRenderer,
     el: Partial<DrawingElement>,
     text: string
 ): { width: number, height: number } => {

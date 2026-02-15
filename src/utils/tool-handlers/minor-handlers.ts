@@ -4,6 +4,7 @@
  * Extracted from canvas.tsx handlePointerDown/Move/Up.
  */
 
+import { batch } from 'solid-js';
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
@@ -465,10 +466,120 @@ export function textOnUp(
         height: finalHeight
     }, false);
 
-    // Open text editor
-    signals.setEditingId(pState.currentId);
-    signals.setEditText("");
+    // Open text editor - use batch to set all state atomically
+    batch(() => {
+        signals.setEditText("");
+        signals.setRichTextSpans([]); // Clear any previous rich text spans
+        signals.setEditingId(pState.currentId); // must be last — triggers overlay render
+    });
     setTimeout(() => signals.textInputRef?.focus(), 0);
+
+    pState.isDrawing = false;
+    pState.currentId = null;
+}
+
+// ─── Rich Text Tool ──────────────────────────────────────────────────
+
+export function richTextOnDown(
+    x: number,
+    y: number,
+    pState: PointerState,
+    _signals: PointerSignals
+): void {
+    const id = generateId('richtext');
+    pState.isDrawing = true;
+    pState.startX = x;
+    pState.startY = y;
+    pState.currentId = id;
+
+    const newElement = {
+        ...store.defaultElementStyles,
+        id,
+        type: 'richtext',
+        x,
+        y,
+        width: 0,
+        height: 30,
+        text: '',
+        richText: [], // Initialize empty rich text array
+        layerId: store.activeLayerId
+    } as DrawingElement;
+    addElement(newElement);
+    // Don't open editor yet - defer to richTextOnUp
+}
+
+export function richTextOnMove(
+    x: number,
+    y: number,
+    pState: PointerState
+): void {
+    if (!pState.isDrawing || !pState.currentId) return;
+
+    const el = store.elements.find(e => e.id === pState.currentId);
+    if (!el || el.type !== 'richtext') return;
+
+    // Calculate width and height from drag distance
+    const width = Math.abs(x - pState.startX);
+    const height = Math.abs(y - pState.startY);
+
+    // Handle dragging in any direction (normalize position)
+    const newX = x < pState.startX ? x : pState.startX;
+    const newY = y < pState.startY ? y : pState.startY;
+
+    updateElement(pState.currentId, { x: newX, y: newY, width, height }, false);
+}
+
+export function richTextOnUp(
+    pState: PointerState,
+    signals: PointerSignals
+): void {
+    if (!pState.currentId) return;
+
+    const el = store.elements.find(e => e.id === pState.currentId);
+    if (!el || el.type !== 'richtext') {
+        pState.isDrawing = false;
+        pState.currentId = null;
+        return;
+    }
+
+    let finalWidth = el.width;
+    let finalHeight = el.height;
+    let finalX = el.x;
+    let finalY = el.y;
+
+    const fontSize = el.fontSize || 28;
+    const lineHeight = fontSize * 1.2;
+
+    // If width is too small (click rather than drag), use default width
+    if (finalWidth < TEXT_MIN_DRAG_WIDTH) {
+        finalWidth = TEXT_DEFAULT_WIDTH;
+        finalX = pState.startX; // Reset to original click position
+    }
+
+    // If height is too small, use default height (one line)
+    if (finalHeight < TEXT_MIN_DRAG_WIDTH) {
+        finalHeight = lineHeight;
+        finalY = pState.startY; // Reset to original click position
+    }
+
+    updateElement(pState.currentId, {
+        x: finalX,
+        y: finalY,
+        width: finalWidth,
+        height: finalHeight
+    }, false);
+
+    // Open rich text editor - use batch to set all state atomically
+    const updatedEl = store.elements.find(e => e.id === pState.currentId);
+    if (updatedEl && updatedEl.type === 'richtext') {
+        const richSpans = updatedEl.richText || [];
+        batch(() => {
+            signals.setEditText("");
+            signals.setRichTextSpans(richSpans);
+            signals.setEditingId(pState.currentId); // must be last — triggers overlay render
+        });
+        setTimeout(() => signals.textInputRef?.focus(), 0);
+    }
 
     pState.isDrawing = false;
     pState.currentId = null;

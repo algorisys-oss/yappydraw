@@ -1,18 +1,19 @@
 import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class CircleRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
 
-        this.drawCircleArch(ctx, el, isDarkMode, options.fill);
+        this.drawCircleArch(renderer, el, isDarkMode, options.fill);
 
         if (el.drawInnerBorder) {
             const dist = el.innerBorderDistance || 5;
             if (el.width > dist * 2 && el.height > dist * 2) {
-                this.drawCircleArch(ctx, { ...el, x: el.x + dist, y: el.y + dist, width: el.width - dist * 2, height: el.height - dist * 2, strokeColor: el.innerBorderColor || el.strokeColor }, isDarkMode, 'none');
+                this.drawCircleArch(renderer, { ...el, x: el.x + dist, y: el.y + dist, width: el.width - dist * 2, height: el.height - dist * 2, strokeColor: el.innerBorderColor || el.strokeColor }, isDarkMode, 'none');
             }
         }
 
@@ -36,31 +37,31 @@ export class CircleRenderer extends ShapeRenderer {
         RenderPipeline.renderText(context, cx, cy);
     }
 
-    private drawCircleArch(ctx: CanvasRenderingContext2D, el: any, isDarkMode: boolean, fill?: string) {
+    private drawCircleArch(renderer: IRenderer, el: any, isDarkMode: boolean, fill?: string) {
         const cx = el.x + el.width / 2;
         const cy = el.y + el.height / 2;
         const rx = Math.abs(el.width) / 2;
         const ry = Math.abs(el.height) / 2;
 
         if (fill && fill !== 'transparent' && fill !== 'none') {
-            ctx.beginPath();
-            ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-            ctx.fillStyle = fill;
-            ctx.fill();
+            renderer.beginPath();
+            renderer.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+            renderer.fillStyle = fill;
+            renderer.fill();
         }
 
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-        RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-        ctx.stroke();
+        renderer.beginPath();
+        renderer.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+        renderer.stroke();
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const cx = el.x + el.width / 2;
         const cy = el.y + el.height / 2;
         const rx = Math.abs(el.width) / 2;
         const ry = Math.abs(el.height) / 2;
-        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        renderer.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
     }
 
     estimatePathLength(element: any): number {

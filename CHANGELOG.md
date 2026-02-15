@@ -7,6 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-02-15
+
+### Added
+- **Image Pixel Effects** — pixel-by-pixel image reveal animations with 14 presets:
+  - Effects: left-to-right, top-to-bottom, center-out, random-pixels, spiral-in, diagonal, wave, checker, scanline, dissolve, radial, blinds, mosaic, glitch
+  - Pixel Rain effect (Matrix-style digital rain animation)
+  - API: `Yappy.animatePixelEffect()`, `Yappy.stopPixelEffect()`, `Yappy.pixelEffectPresets`
+  - Integration with animation panel for interactive previews
+- **Text Vertical Alignment** — `verticalAlign` property for text elements:
+  - Three modes: top, middle, bottom
+  - UI controls in quick toolbar and property panel
+  - Real-time preview during editing
+  - Supported in both plain text and rich text rendering
+- **Rich Text Enhancements**:
+  - Separate Text and Rich Text tools in toolbar with dedicated TextToolGroup dropdown
+  - `backgroundColor` property support for rich text elements
+  - Double-click-to-lock for text tool group (consistent with other tool groups)
+- **Raylib Rust Renderer — Rich Text Support**:
+  - `RichTextSpan` struct with full formatting fields (bold, italic, underline, strikethrough, color, fontSize)
+  - Rich text layout engine with word wrapping and per-span rendering
+  - Text highlight background rendering
+  - Container text with rich formatting for rectangles and sticky notes
+  - `"richtext"` element type dispatching
+
+### Fixed
+- **Rich text formatting lost on blur** — `updateElement()` guard was clearing `richText` when both `text` and `richText` were in the same commit update. Added `!('richText' in updates)` check to preserve formatting from `commitRichText()`.
+- **Text tool resets despite double-click lock** — four blur/Escape handlers unconditionally called `setSelectedTool('selection')` without checking `store.toolLocked`. Added guard to all reset points. Added `'richtext'` to `CONTINUOUS_TOOLS` and `CLICK_EXEMPT` arrays.
+- **Text element placeholder dashed border** — removed unnecessary dashed border rendering for empty text elements
+- **Text auto-resize overrides manual resize** — disabled auto-resize for standalone text elements; users can freely resize text bounding boxes
+- **Vertical text alignment accuracy** — fixed calculation to use `fontSize` instead of `lineHeight` for proper centering
+- **Underline/strikethrough dash artifacts** — added `setLineDash([])` before drawing text decoration lines
+
+### Changed
+- **Toolbar layout** — moved Lasso and Crop tools after the Connector toolgroup for better logical grouping
+
+## [1.16.0] - 2026-02-14
+
+### Added
+- **6 New Mermaid Diagram Types** — extending the Mermaid adapter to 13 total diagram types:
+  - Gantt chart — tasks, sections, milestones with timeline layout
+  - User Journey — actions, tasks, and participant scores
+  - Quadrant chart — 2×2 matrix with labeled axes and positioned points
+  - XY chart — bar and line series with axis labels
+  - Block diagram — nested blocks with columns and directional arrows
+  - Git Graph — commits, branches, merges, and cherry-picks
+- **IRenderer Abstraction Layer** — rendering backend portability:
+  - `IRenderer` interface decoupling shape renderers from `CanvasRenderingContext2D`
+  - `CanvasRenderer` adapter implementing `IRenderer` for browser canvas
+  - All shape renderers updated to use `IRenderer` instead of direct canvas context
+- **Raylib Rust Renderer (Phase 3)** — native `.yappy` file viewer:
+  - Rust-based renderer using Raylib 5.x for native desktop rendering
+  - JSON deserialization of `.yappy` files with `DrawingElement` struct
+  - Shape renderers for rectangles, circles, diamonds, triangles, text, images, sticky notes, lines/arrows, and 40+ other shapes
+  - `RaylibRenderer` implementing the same drawing API as the TypeScript `IRenderer`
+  - Pan, zoom, and dark mode support
+
+### Changed
+- **Diagram templates modernized** — all 7 built-in diagram templates updated with architectural style and semantic shapes
+
+### Fixed
+- **Mermaid pie chart** — now renders actual data slices instead of decorative placeholder
+
 ## [1.15.0] - 2026-02-13
 
 ### Added

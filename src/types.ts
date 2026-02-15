@@ -1,5 +1,5 @@
 import type { ElementAnimation } from './types/motion-types';
-export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'fineliner' | 'inkbrush' | 'marker' | 'eraser' | 'pan' | 'selection' | 'image' | 'bezier' | 'diamond' | 'triangle' | 'hexagon' | 'octagon' | 'parallelogram' | 'star' | 'cloud' | 'heart' | 'cross' | 'checkmark' | 'arrowLeft' | 'arrowUp' | 'arrowDown' | 'arrowRight' | 'capsule' | 'stickyNote' | 'callout' | 'burst' | 'speechBubble' | 'ribbon' | 'bracketLeft' | 'bracketRight' | 'database' | 'document' | 'predefinedProcess' | 'internalStorage' | 'server' | 'loadBalancer' | 'firewall' | 'user' | 'messageQueue' | 'lambda' | 'router' | 'browser' | 'trapezoid' | 'rightTriangle' | 'pentagon' | 'septagon' | 'starPerson' | 'scroll' | 'wavyDivider' | 'doubleBanner' | 'lightbulb' | 'signpost' | 'burstBlob' | 'browserWindow' | 'mobilePhone' | 'ghostButton' | 'inputField' | 'organicBranch' | 'polygon' | 'dfdProcess' | 'dfdDataStore' | 'isometricCube' | 'cylinder' | 'stateStart' | 'stateEnd' | 'stateSync' | 'activationBar' | 'externalEntity' | 'ink' | 'laser' | 'umlClass' | 'umlInterface' | 'umlActor' | 'umlUseCase' | 'umlNote' | 'umlPackage' | 'solidBlock' | 'perspectiveBlock' | 'openBox' | 'umlComponent' | 'umlState' | 'umlLifeline' | 'umlFragment' | 'umlSignalSend' | 'umlSignalReceive' | 'umlProvidedInterface' | 'umlRequiredInterface'
+export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'richtext' | 'fineliner' | 'inkbrush' | 'marker' | 'eraser' | 'pan' | 'selection' | 'image' | 'bezier' | 'diamond' | 'triangle' | 'hexagon' | 'octagon' | 'parallelogram' | 'star' | 'cloud' | 'heart' | 'cross' | 'checkmark' | 'arrowLeft' | 'arrowUp' | 'arrowDown' | 'arrowRight' | 'capsule' | 'stickyNote' | 'callout' | 'burst' | 'speechBubble' | 'ribbon' | 'bracketLeft' | 'bracketRight' | 'database' | 'document' | 'predefinedProcess' | 'internalStorage' | 'server' | 'loadBalancer' | 'firewall' | 'user' | 'messageQueue' | 'lambda' | 'router' | 'browser' | 'trapezoid' | 'rightTriangle' | 'pentagon' | 'septagon' | 'starPerson' | 'scroll' | 'wavyDivider' | 'doubleBanner' | 'lightbulb' | 'signpost' | 'burstBlob' | 'browserWindow' | 'mobilePhone' | 'ghostButton' | 'inputField' | 'organicBranch' | 'polygon' | 'dfdProcess' | 'dfdDataStore' | 'isometricCube' | 'cylinder' | 'stateStart' | 'stateEnd' | 'stateSync' | 'activationBar' | 'externalEntity' | 'ink' | 'laser' | 'umlClass' | 'umlInterface' | 'umlActor' | 'umlUseCase' | 'umlNote' | 'umlPackage' | 'solidBlock' | 'perspectiveBlock' | 'openBox' | 'umlComponent' | 'umlState' | 'umlLifeline' | 'umlFragment' | 'umlSignalSend' | 'umlSignalReceive' | 'umlProvidedInterface' | 'umlRequiredInterface'
 | 'trophy' | 'clock' | 'gear' | 'target' | 'rocket' | 'flag'
 | 'key' | 'magnifyingGlass' | 'book' | 'megaphone' | 'eye' | 'thoughtBubble'
 | 'stickFigure' | 'sittingPerson' | 'presentingPerson' | 'handPointRight' | 'thumbsUp' | 'faceHappy' | 'faceSad' | 'faceConfused'
@@ -220,6 +220,23 @@ export interface DrawingElement {
     filterInvert?: number;       // 0-100, default 0 (CSS invert %)
     filterSepia?: number;        // 0-100, default 0 (CSS sepia %)
     filterPreset?: string;       // Preset ID or 'custom'
+
+    // Image Pixel Effect Properties (animated reveal/transform)
+    pixelEffect?: 'sequential-ltr' | 'sequential-rtl' | 'sequential-ttb' | 'sequential-btt' |
+                  'random-pixels' | 'wave-center' | 'wave-corner' | 'scan-lines' |
+                  'block-reveal' | 'spiral' | 'glitch' | 'curtain-vertical' |
+                  'curtain-horizontal' | 'dissolve' | 'pixel-rain';
+    pixelEffectProgress?: number; // 0-1, current progress of pixel effect animation
+    pixelEffectDuration?: number; // Duration in ms for pixel effect animation
+    pixelEffectParams?: {         // Effect-specific parameters
+        lineHeight?: number;      // For scan-lines
+        blockSize?: number;       // For block-reveal
+        glitchIntensity?: number; // For glitch (0-1)
+        waveCount?: number;       // For wave effects
+        columnCount?: number;     // For pixel-rain: number of columns
+        columnWidth?: number;     // For pixel-rain: width of each column
+        trailLength?: number;     // For pixel-rain: trail length
+    };
 
     // Meta
     groupIds?: string[];

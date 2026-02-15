@@ -3,6 +3,7 @@
  * Pure functions for table data manipulation, layout computation,
  * and hit testing for interactive table features.
  */
+import type { IRenderer } from '../rendering/IRenderer';
 
 export interface CellRect {
     row: number;     // visual row index (0 = header if headers enabled)
@@ -340,7 +341,7 @@ export function sortTableData(
  * Returns an array of lines. Handles both word-based and character-based wrapping.
  */
 export function wrapText(
-    ctx: CanvasRenderingContext2D,
+    ctx: IRenderer,
     text: string,
     maxWidth: number
 ): string[] {
@@ -416,7 +417,7 @@ export function wrapText(
  * Returns the width as a fraction of total table width.
  */
 export function measureColumnOptimalWidth(
-    ctx: CanvasRenderingContext2D,
+    ctx: IRenderer,
     data: string[][],
     colIndex: number,
     fontSize: number,

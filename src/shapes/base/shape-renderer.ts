@@ -1,6 +1,7 @@
 import type { RenderContext } from "./types";
 import { RenderPipeline } from "./render-pipeline";
 import { globalTime } from "../../utils/animation/animation-engine";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export abstract class ShapeRenderer {
     /**
@@ -8,7 +9,7 @@ export abstract class ShapeRenderer {
      * Handles universal transformations and delegates to specialized methods.
      */
     render(context: RenderContext) {
-        const { ctx, element, layerOpacity } = context;
+        const { renderer, element, layerOpacity } = context;
 
         // MORPH ANIMATION SUPPORT: If element has custom points, render them directly
         if (element.points && element.points.length > 0) {
@@ -17,7 +18,7 @@ export abstract class ShapeRenderer {
         }
 
         // 1. Apply universal transformations (rotation, opacity, shadow)
-        const { cx, cy } = RenderPipeline.applyTransformations(ctx, element, layerOpacity);
+        const { cx, cy } = RenderPipeline.applyTransformations(renderer, element, layerOpacity);
 
         try {
             // 2. Check for draw-in/draw-out animation
@@ -47,7 +48,7 @@ export abstract class ShapeRenderer {
             }
         } finally {
             // 5. Restore transformations — always runs even if rendering throws
-            RenderPipeline.restoreTransformations(ctx);
+            RenderPipeline.restoreTransformations(renderer);
         }
     }
 
@@ -60,12 +61,12 @@ export abstract class ShapeRenderer {
      *   85-100% progress: Text fades in
      */
     protected renderDrawProgress(context: RenderContext, cx: number, cy: number) {
-        const { ctx, element: el, isDarkMode, layerOpacity } = context;
+        const { renderer, element: el, isDarkMode, layerOpacity } = context;
         const progress = (el.drawProgress ?? 0) / 100;
 
         // Override globalAlpha: during drawIn the element's opacity is set to 0
         // to hide the normal render. We control visibility via phased rendering instead.
-        ctx.globalAlpha = layerOpacity;
+        renderer.globalAlpha = layerOpacity;
 
         // Phase calculations with overlapping ranges
         const strokeProgress = Math.min(1, progress / 0.70);
@@ -77,29 +78,29 @@ export abstract class ShapeRenderer {
 
         // --- Phase 1: Progressive stroke ---
         if (strokeProgress > 0) {
-            ctx.save();
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = el.strokeWidth;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
+            renderer.save();
+            renderer.strokeStyle = strokeColor;
+            renderer.lineWidth = el.strokeWidth;
+            renderer.lineCap = 'round';
+            renderer.lineJoin = 'round';
 
             // Set lineDash to [drawLen, pathLength] to reveal stroke progressively
             const drawLen = pathLength * strokeProgress;
-            ctx.setLineDash([drawLen, pathLength]);
-            ctx.lineDashOffset = 0;
+            renderer.setLineDash([drawLen, pathLength]);
+            renderer.lineDashOffset = 0;
 
-            ctx.beginPath();
-            this.definePath(ctx, el);
-            ctx.stroke();
-            ctx.restore();
+            renderer.beginPath();
+            this.definePath(renderer, el);
+            renderer.stroke();
+            renderer.restore();
         }
 
         // --- Phase 2: Fill fade-in ---
         if (fillProgress > 0) {
             const fill = el.backgroundColor;
             if (fill && fill !== 'transparent' && fill !== 'none') {
-                ctx.save();
-                ctx.globalAlpha *= fillProgress;
+                renderer.save();
+                renderer.globalAlpha *= fillProgress;
 
                 const fillStyle = el.fillStyle;
                 const useComplexFill = ['linear', 'radial', 'conic', 'dots'].includes(fillStyle as string);
@@ -107,22 +108,22 @@ export abstract class ShapeRenderer {
                 if (useComplexFill) {
                     RenderPipeline.applyComplexFills(context, cx, cy);
                 } else {
-                    ctx.fillStyle = RenderPipeline.adjustColor(fill, isDarkMode);
-                    ctx.beginPath();
-                    this.definePath(ctx, el);
-                    ctx.fill();
+                    renderer.fillStyle = RenderPipeline.adjustColor(fill, isDarkMode);
+                    renderer.beginPath();
+                    this.definePath(renderer, el);
+                    renderer.fill();
                 }
 
-                ctx.restore();
+                renderer.restore();
             }
         }
 
         // --- Phase 3: Text fade-in ---
         if (textProgress > 0) {
-            ctx.save();
-            ctx.globalAlpha *= textProgress;
+            renderer.save();
+            renderer.globalAlpha *= textProgress;
             RenderPipeline.renderText(context, cx, cy);
-            ctx.restore();
+            renderer.restore();
         }
     }
 
@@ -141,13 +142,13 @@ export abstract class ShapeRenderer {
      * This bypasses normal shape geometry and renders the points directly.
      */
     protected renderCustomPoints(context: RenderContext) {
-        const { ctx, element: el, isDarkMode, layerOpacity } = context;
+        const { renderer, element: el, isDarkMode, layerOpacity } = context;
 
         console.log('[renderCustomPoints] Rendering custom points:', el.id, el.points?.length);
 
         // Don't apply transformations - points are already in absolute canvas coordinates
-        ctx.save();
-        ctx.globalAlpha = layerOpacity * (el.opacity ?? 1);
+        renderer.save();
+        renderer.globalAlpha = layerOpacity * (el.opacity ?? 1);
 
         // Normalize points (handle both {x,y} and packed number[] formats)
         const points = this.normalizePoints(el.points);
@@ -174,33 +175,33 @@ export abstract class ShapeRenderer {
 
 
         // Apply opacity
-        ctx.save();
-        ctx.globalAlpha = layerOpacity * (el.opacity ?? 1);
+        renderer.save();
+        renderer.globalAlpha = layerOpacity * (el.opacity ?? 1);
 
         // Fill
         if (el.backgroundColor && el.backgroundColor !== 'transparent' && el.backgroundColor !== 'none') {
-            ctx.fillStyle = RenderPipeline.adjustColor(el.backgroundColor, isDarkMode);
-            ctx.beginPath();
-            ctx.moveTo(absolutePoints[0].x, absolutePoints[0].y);
+            renderer.fillStyle = RenderPipeline.adjustColor(el.backgroundColor, isDarkMode);
+            renderer.beginPath();
+            renderer.moveTo(absolutePoints[0].x, absolutePoints[0].y);
             for (let i = 1; i < absolutePoints.length; i++) {
-                ctx.lineTo(absolutePoints[i].x, absolutePoints[i].y);
+                renderer.lineTo(absolutePoints[i].x, absolutePoints[i].y);
             }
-            ctx.closePath();
-            ctx.fill();
+            renderer.closePath();
+            renderer.fill();
         }
 
         // Stroke
-        ctx.strokeStyle = RenderPipeline.adjustColor(el.strokeColor, isDarkMode);
-        ctx.lineWidth = el.strokeWidth;
-        ctx.beginPath();
-        ctx.moveTo(absolutePoints[0].x, absolutePoints[0].y);
+        renderer.strokeStyle = RenderPipeline.adjustColor(el.strokeColor, isDarkMode);
+        renderer.lineWidth = el.strokeWidth;
+        renderer.beginPath();
+        renderer.moveTo(absolutePoints[0].x, absolutePoints[0].y);
         for (let i = 1; i < absolutePoints.length; i++) {
-            ctx.lineTo(absolutePoints[i].x, absolutePoints[i].y);
+            renderer.lineTo(absolutePoints[i].x, absolutePoints[i].y);
         }
-        ctx.closePath();
-        ctx.stroke();
+        renderer.closePath();
+        renderer.stroke();
 
-        ctx.restore();
+        renderer.restore();
     }
 
     /**
@@ -226,41 +227,41 @@ export abstract class ShapeRenderer {
      * Renders an animated dashed border for any shape.
      */
     protected renderFlowAnimation(context: RenderContext) {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const speed = el.flowSpeed !== undefined ? el.flowSpeed : 1;
         const time = globalTime();
         const offset = (time / 20) * speed;
 
-        ctx.save();
-        ctx.strokeStyle = RenderPipeline.adjustColor(el.flowColor || el.strokeColor, isDarkMode);
-        ctx.lineWidth = Math.max(1, el.strokeWidth * 0.8);
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        renderer.save();
+        renderer.strokeStyle = RenderPipeline.adjustColor(el.flowColor || el.strokeColor, isDarkMode);
+        renderer.lineWidth = Math.max(1, el.strokeWidth * 0.8);
+        renderer.lineCap = 'round';
+        renderer.lineJoin = 'round';
 
         const style = el.flowStyle || 'dashes';
         if (style === 'dots') {
-            ctx.setLineDash([2, 8]);
+            renderer.setLineDash([2, 8]);
         } else if (style === 'pulse') {
             const pulse = Math.sin(time / 200) * 0.5 + 0.5;
-            ctx.globalAlpha *= pulse;
-            ctx.setLineDash([]);
+            renderer.globalAlpha *= pulse;
+            renderer.setLineDash([]);
         } else {
-            ctx.setLineDash([8, 8]);
+            renderer.setLineDash([8, 8]);
         }
 
-        ctx.lineDashOffset = -offset;
+        renderer.lineDashOffset = -offset;
 
-        ctx.beginPath();
-        this.definePath(ctx, el);
-        ctx.stroke();
-        ctx.restore();
+        renderer.beginPath();
+        this.definePath(renderer, el);
+        renderer.stroke();
+        renderer.restore();
     }
 
     /**
      * Define the geometry path of the shape for the flow animation.
-     * This should calls ctx.moveTo, ctx.lineTo, etc. but NOT ctx.beginPath or ctx.stroke/fill.
+     * This should call renderer.moveTo, renderer.lineTo, etc. but NOT beginPath or stroke/fill.
      */
-    protected abstract definePath(ctx: CanvasRenderingContext2D, element: any): void;
+    protected abstract definePath(renderer: IRenderer, element: any): void;
 
     /**
      * Renders the shape with clean, precise lines and solid/gradient fills.

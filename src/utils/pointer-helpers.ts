@@ -34,6 +34,7 @@ export interface PointerSignals {
     editingId: () => string | null;
     setEditingId: (v: string | null) => void;
     setEditText: (v: string) => void;
+    setRichTextSpans: (v: any[]) => void;
     selectionBox: () => { x: number; y: number; w: number; h: number } | null;
     setSelectionBox: (v: { x: number; y: number; w: number; h: number } | null) => void;
     lassoPoints: () => { x: number; y: number }[] | null;

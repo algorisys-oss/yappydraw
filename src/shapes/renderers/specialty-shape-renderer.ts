@@ -2,6 +2,7 @@ import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import type { DrawingElement } from "../../types";
+import type { IRenderer } from "../../rendering/IRenderer";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 
 export class SpecialtyShapeRenderer extends ShapeRenderer {
@@ -9,14 +10,14 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
      * Creates a gradient with shading applied for 3D faces.
      * The shading darkens/lightens the gradient colors to simulate lighting.
      */
-    private createShadedGradient(ctx: CanvasRenderingContext2D, el: DrawingElement, shade: number): CanvasGradient | null {
+    private createShadedGradient(renderer: IRenderer, el: DrawingElement, shade: number): ReturnType<IRenderer['createLinearGradient']> | null {
         const w = el.width;
         const h = el.height;
         const mw = w / 2;
         const mh = h / 2;
         const gType = el.gradientType || el.fillStyle || 'linear';
 
-        let grad: CanvasGradient;
+        let grad: ReturnType<IRenderer['createLinearGradient']>;
 
         if (gType === 'linear') {
             const angleRad = (el.gradientDirection || 45) * (Math.PI / 180);
@@ -25,19 +26,19 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
             const y1 = -Math.sin(angleRad) * r;
             const x2 = Math.cos(angleRad) * r;
             const y2 = Math.sin(angleRad) * r;
-            grad = ctx.createLinearGradient(x1, y1, x2, y2);
+            grad = renderer.createLinearGradient(x1, y1, x2, y2);
         } else if (gType === 'radial') {
             const angleRad = (el.gradientDirection || 0) * (Math.PI / 180);
             const radius = Math.max(w, h) / 2;
             const focalOffset = radius * 0.4;
             const fx = Math.cos(angleRad) * focalOffset;
             const fy = Math.sin(angleRad) * focalOffset;
-            grad = ctx.createRadialGradient(fx, fy, 0, 0, 0, radius);
+            grad = renderer.createRadialGradient(fx, fy, 0, 0, 0, radius);
         } else if (gType === 'conic') {
             const angleRad = (el.gradientDirection || 0) * (Math.PI / 180);
-            grad = (ctx as any).createConicGradient(angleRad, 0, 0);
+            grad = renderer.createConicGradient(angleRad, 0, 0);
         } else {
-            grad = ctx.createLinearGradient(-mw, -mh, mw, mh);
+            grad = renderer.createLinearGradient(-mw, -mh, mw, mh);
         }
 
         // Apply gradient stops with shading
@@ -68,7 +69,7 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
     }
 
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
         const strokeColor = RenderPipeline.adjustColor(el.strokeColor, isDarkMode);
         const backgroundColor = el.backgroundColor === 'transparent' ? undefined : RenderPipeline.adjustColor(el.backgroundColor, isDarkMode);
@@ -79,8 +80,8 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
 
-        ctx.save();
-        ctx.translate(cx, cy);
+        renderer.save();
+        renderer.translate(cx, cy);
 
         // Painter's Algorithm for 3D solids (solidBlock, cylinder) to ensure proper occlusion
         // We render each face fully (Fill then Stroke) in order.
@@ -96,25 +97,25 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
 
                 // Apply gradient fill with per-face shading for 3D shapes
                 if (useGradient && !s.isLid) {
-                    const gradient = this.createShadedGradient(ctx, el, shade);
+                    const gradient = this.createShadedGradient(renderer, el, shade);
                     if (gradient) {
-                        ctx.fillStyle = gradient;
-                        ctx.beginPath();
-                        RenderPipeline.renderGeometry(ctx, s);
-                        ctx.fill();
+                        renderer.fillStyle = gradient;
+                        renderer.beginPath();
+                        RenderPipeline.renderGeometry(renderer, s);
+                        renderer.fill();
                     } else if (faceColor) {
                         // Fallback to solid color if gradient creation failed
-                        ctx.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
-                        ctx.beginPath();
-                        RenderPipeline.renderGeometry(ctx, s);
-                        ctx.fill();
+                        renderer.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
+                        renderer.beginPath();
+                        RenderPipeline.renderGeometry(renderer, s);
+                        renderer.fill();
                     }
                 } else if (faceColor) {
                     // Solid color fill with shading
-                    ctx.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
-                    ctx.beginPath();
-                    RenderPipeline.renderGeometry(ctx, s);
-                    ctx.fill();
+                    renderer.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
+                    renderer.beginPath();
+                    RenderPipeline.renderGeometry(renderer, s);
+                    renderer.fill();
                 }
 
                 // 2. Stroke (skip if face is marked as noStroke - used for interior faces)
@@ -132,19 +133,19 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
 
                     // Only stroke if color is visible
                     if (faceStrokeColor && faceStrokeColor !== 'transparent' && faceStrokeColor !== 'none' && el.strokeWidth > 0) {
-                        RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                        ctx.strokeStyle = faceStrokeColor;
-                        if (s.shade) ctx.strokeStyle = RenderPipeline.shadeColor(ctx.strokeStyle as string, s.shade);
-                        ctx.beginPath();
-                        RenderPipeline.renderGeometry(ctx, s);
-                        ctx.stroke();
+                        RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                        renderer.strokeStyle = faceStrokeColor;
+                        if (s.shade) renderer.strokeStyle = RenderPipeline.shadeColor(renderer.strokeStyle as string, s.shade);
+                        renderer.beginPath();
+                        RenderPipeline.renderGeometry(renderer, s);
+                        renderer.stroke();
                     }
                 }
 
                 // 3. Inner Border (Per Face)
                 if (el.drawInnerBorder) {
                     // const dist = el.innerBorderDistance || 5;
-                    // Note: calculating scale for arbitrary polygons is hard. 
+                    // Note: calculating scale for arbitrary polygons is hard.
                     // Simple scaling only works well for centered shapes.
                     // For faces of a 3D object, simple scaling might offset them wrongly relative to their own center.
                     // For now, we skip inner border on complex 3D faces or accept the artifact.
@@ -157,19 +158,19 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
             // Standard Merged Rendering (2D shapes)
             const fillVisible = options.fill && options.fill !== 'transparent' && options.fill !== 'none';
             if (fillVisible && backgroundColor) {
-                ctx.fillStyle = backgroundColor;
-                ctx.beginPath();
-                RenderPipeline.renderGeometry(ctx, geometry);
-                ctx.fill();
+                renderer.fillStyle = backgroundColor;
+                renderer.beginPath();
+                RenderPipeline.renderGeometry(renderer, geometry);
+                renderer.fill();
             }
 
             // Only stroke if color is visible
             const strokeVisible = strokeColor && strokeColor !== 'transparent' && strokeColor !== 'none' && el.strokeWidth > 0;
             if (strokeVisible) {
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath();
-                RenderPipeline.renderGeometry(ctx, geometry);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath();
+                RenderPipeline.renderGeometry(renderer, geometry);
+                renderer.stroke();
             }
 
             if (el.drawInnerBorder) {
@@ -177,23 +178,23 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
                 const sx = (el.width - dist * 2) / el.width;
                 const sy = (el.height - dist * 2) / el.height;
                 if (sx > 0 && sy > 0) {
-                    ctx.save();
-                    ctx.scale(sx, sy);
-                    ctx.strokeStyle = el.innerBorderColor || strokeColor;
-                    ctx.beginPath();
-                    RenderPipeline.renderGeometry(ctx, geometry);
-                    ctx.stroke();
-                    ctx.restore();
+                    renderer.save();
+                    renderer.scale(sx, sy);
+                    renderer.strokeStyle = el.innerBorderColor || strokeColor;
+                    renderer.beginPath();
+                    RenderPipeline.renderGeometry(renderer, geometry);
+                    renderer.stroke();
+                    renderer.restore();
                 }
             }
         }
 
-        ctx.restore();
+        renderer.restore();
         RenderPipeline.renderText(context, cx, cy);
     }
 
     protected renderSketch(context: RenderContext, cx: number, cy: number): void {
-        const { rc, ctx, element: el, isDarkMode } = context;
+        const { rc, renderer, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
         const backgroundColor = el.backgroundColor === 'transparent' ? undefined : RenderPipeline.adjustColor(el.backgroundColor, isDarkMode);
         const lidColor = el.lidColor ? RenderPipeline.adjustColor(el.lidColor, isDarkMode) : undefined;
@@ -203,37 +204,37 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
 
-        ctx.save();
-        ctx.translate(cx, cy);
+        renderer.save();
+        renderer.translate(cx, cy);
 
         const is3D = ['solidBlock', 'cylinder', 'isometricCube', 'perspectiveBlock', 'openBox'].includes(el.type);
         const useGradient = this.hasGradientFill(el);
 
         // For 3D shapes with gradients, fill with canvas gradient first, then stroke with RoughJS
         if (is3D && useGradient && geometry.type === 'multi') {
-            // First pass: fill each face with gradient using canvas API
+            // First pass: fill each face with gradient using renderer API
             geometry.shapes.forEach((s: any) => {
                 const faceColor = (s.isLid && lidColor) ? lidColor : backgroundColor;
                 const shade = s.shade || 1;
 
                 if (!s.isLid) {
-                    const gradient = this.createShadedGradient(ctx, el, shade);
+                    const gradient = this.createShadedGradient(renderer, el, shade);
                     if (gradient) {
-                        ctx.fillStyle = gradient;
-                        ctx.beginPath();
-                        RenderPipeline.renderGeometry(ctx, s);
-                        ctx.fill();
+                        renderer.fillStyle = gradient;
+                        renderer.beginPath();
+                        RenderPipeline.renderGeometry(renderer, s);
+                        renderer.fill();
                     } else if (faceColor) {
-                        ctx.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
-                        ctx.beginPath();
-                        RenderPipeline.renderGeometry(ctx, s);
-                        ctx.fill();
+                        renderer.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
+                        renderer.beginPath();
+                        RenderPipeline.renderGeometry(renderer, s);
+                        renderer.fill();
                     }
                 } else if (faceColor) {
-                    ctx.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
-                    ctx.beginPath();
-                    RenderPipeline.renderGeometry(ctx, s);
-                    ctx.fill();
+                    renderer.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
+                    renderer.beginPath();
+                    RenderPipeline.renderGeometry(renderer, s);
+                    renderer.fill();
                 }
             });
 
@@ -251,14 +252,14 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
             const sy = (el.height - dist * 2) / el.height;
             if (sx > 0 && sy > 0) {
                 const innerOptions = { ...options, stroke: el.innerBorderColor || options.stroke, fill: 'none' };
-                ctx.save();
-                ctx.scale(sx, sy);
+                renderer.save();
+                renderer.scale(sx, sy);
                 this.renderSketchGeometry(rc, geometry, innerOptions, lidColor, lidStrokeColor, backfaceStrokeColor);
-                ctx.restore();
+                renderer.restore();
             }
         }
 
-        ctx.restore();
+        renderer.restore();
         RenderPipeline.renderText(context, cx, cy);
     }
 
@@ -308,12 +309,12 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
 
 
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
 
         // Translate to center as geometry is relative to center
-        ctx.translate(el.x + el.width / 2, el.y + el.height / 2);
-        RenderPipeline.renderGeometry(ctx, geometry);
+        renderer.translate(el.x + el.width / 2, el.y + el.height / 2);
+        RenderPipeline.renderGeometry(renderer, geometry);
     }
 }

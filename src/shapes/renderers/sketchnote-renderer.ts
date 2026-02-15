@@ -2,10 +2,11 @@ import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class SketchnoteRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, rc, element: el, isDarkMode } = context;
+        const { renderer, rc, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
         const x = el.x, y = el.y, w = el.width, h = el.height;
 
@@ -20,12 +21,12 @@ export class SketchnoteRenderer extends ShapeRenderer {
                     rc.ellipse(headX, headY, headRadius * 2, headRadius * 2, { ...options, stroke: 'none', fill: options.fill });
                     rc.polygon(bodyPoints, { ...options, stroke: 'none', fill: options.fill });
                 }
-                ctx.beginPath();
-                ctx.ellipse(headX, headY, headRadius, headRadius, 0, 0, Math.PI * 2);
-                ctx.moveTo(bodyPoints[0][0], bodyPoints[0][1]);
-                for (let i = 1; i < bodyPoints.length; i++) ctx.lineTo(bodyPoints[i][0], bodyPoints[i][1]);
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.ellipse(headX, headY, headRadius, headRadius, 0, 0, Math.PI * 2);
+                renderer.moveTo(bodyPoints[0][0], bodyPoints[0][1]);
+                for (let i = 1; i < bodyPoints.length; i++) renderer.lineTo(bodyPoints[i][0], bodyPoints[i][1]);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.stroke();
                 break;
             }
             case 'lightbulb': {
@@ -36,13 +37,13 @@ export class SketchnoteRenderer extends ShapeRenderer {
                 const bulbPath = this.getLightbulbPath(x, y, w, bulbR, baseW, baseY);
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(bulbPath));
-                    ctx.fillRect(x + w / 2 - baseW / 2, baseY, baseW, baseH);
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(bulbPath);
+                    renderer.fillRect(x + w / 2 - baseW / 2, baseY, baseW, baseH);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(bulbPath));
-                ctx.strokeRect(x + w / 2 - baseW / 2, baseY, baseW, baseH);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(bulbPath);
+                renderer.strokeRect(x + w / 2 - baseW / 2, baseY, baseW, baseH);
                 break;
             }
             case 'signpost': {
@@ -54,106 +55,106 @@ export class SketchnoteRenderer extends ShapeRenderer {
                 const boardX = x + w / 2 - boardW / 2;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fillRect(poleX, y, poleW, h);
-                    ctx.fillRect(boardX, boardY, boardW, boardH);
+                    renderer.fillStyle = options.fill;
+                    renderer.fillRect(poleX, y, poleW, h);
+                    renderer.fillRect(boardX, boardY, boardW, boardH);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.strokeRect(poleX, y, poleW, h);
-                ctx.strokeRect(boardX, boardY, boardW, boardH);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokeRect(poleX, y, poleW, h);
+                renderer.strokeRect(boardX, boardY, boardW, boardH);
                 break;
             }
             case 'burstBlob': {
                 const path = this.getBurstBlobPath(el);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 break;
             }
             case 'wavyDivider': {
                 const path = this.getWavyDividerPath(x, y, w, h);
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 break;
             }
             case 'scroll': {
                 const scrollPath = this.getScrollPath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(scrollPath));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(scrollPath);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(scrollPath));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(scrollPath);
                 break;
             }
             case 'doubleBanner': {
                 const bannerShapes = this.getDoubleBannerPolygons(x, y, w, h);
                 for (const poly of bannerShapes) {
                     if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                        ctx.fillStyle = options.fill;
-                        ctx.beginPath();
-                        ctx.moveTo(poly[0][0], poly[0][1]);
-                        for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i][0], poly[i][1]);
-                        ctx.closePath();
-                        ctx.fill();
+                        renderer.fillStyle = options.fill;
+                        renderer.beginPath();
+                        renderer.moveTo(poly[0][0], poly[0][1]);
+                        for (let i = 1; i < poly.length; i++) renderer.lineTo(poly[i][0], poly[i][1]);
+                        renderer.closePath();
+                        renderer.fill();
                     }
-                    RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                    ctx.beginPath();
-                    ctx.moveTo(poly[0][0], poly[0][1]);
-                    for (let i = 1; i < poly.length; i++) ctx.lineTo(poly[i][0], poly[i][1]);
-                    ctx.closePath();
-                    ctx.stroke();
+                    RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                    renderer.beginPath();
+                    renderer.moveTo(poly[0][0], poly[0][1]);
+                    for (let i = 1; i < poly.length; i++) renderer.lineTo(poly[i][0], poly[i][1]);
+                    renderer.closePath();
+                    renderer.stroke();
                 }
                 break;
             }
             case 'trophy': {
                 const path = this.getTrophyPath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 break;
             }
             case 'clock': {
                 const r = Math.min(w, h) / 2;
                 const ccx = x + w / 2, ccy = y + h / 2;
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.ellipse(ccx, ccy, r, r, 0, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.ellipse(ccx, ccy, r, r, 0, 0, Math.PI * 2);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath();
-                ctx.ellipse(ccx, ccy, r, r, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath();
+                renderer.ellipse(ccx, ccy, r, r, 0, 0, Math.PI * 2);
+                renderer.stroke();
                 // Hands
-                ctx.beginPath();
-                ctx.moveTo(ccx, ccy);
-                ctx.lineTo(ccx, ccy - r * 0.55); // minute hand (12 o'clock)
-                ctx.moveTo(ccx, ccy);
-                ctx.lineTo(ccx + r * 0.35, ccy + r * 0.1); // hour hand (~3 o'clock)
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(ccx, ccy);
+                renderer.lineTo(ccx, ccy - r * 0.55); // minute hand (12 o'clock)
+                renderer.moveTo(ccx, ccy);
+                renderer.lineTo(ccx + r * 0.35, ccy + r * 0.1); // hour hand (~3 o'clock)
+                renderer.stroke();
                 // Center dot
-                ctx.beginPath();
-                ctx.arc(ccx, ccy, r * 0.06, 0, Math.PI * 2);
-                ctx.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
-                ctx.fill();
+                renderer.beginPath();
+                renderer.arc(ccx, ccy, r * 0.06, 0, Math.PI * 2);
+                renderer.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
+                renderer.fill();
                 break;
             }
             case 'gear': {
                 const path = this.getGearPath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path), 'evenodd');
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 break;
             }
             case 'target': {
@@ -163,26 +164,26 @@ export class SketchnoteRenderer extends ShapeRenderer {
                 for (let i = rings; i >= 1; i--) {
                     const rr = r * (i / rings);
                     if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                        ctx.fillStyle = (i % 2 === 1) ? options.fill : '#ffffff';
-                        ctx.beginPath();
-                        ctx.ellipse(ccx, ccy, rr, rr, 0, 0, Math.PI * 2);
-                        ctx.fill();
+                        renderer.fillStyle = (i % 2 === 1) ? options.fill : '#ffffff';
+                        renderer.beginPath();
+                        renderer.ellipse(ccx, ccy, rr, rr, 0, 0, Math.PI * 2);
+                        renderer.fill();
                     }
-                    RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                    ctx.beginPath();
-                    ctx.ellipse(ccx, ccy, rr, rr, 0, 0, Math.PI * 2);
-                    ctx.stroke();
+                    RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                    renderer.beginPath();
+                    renderer.ellipse(ccx, ccy, rr, rr, 0, 0, Math.PI * 2);
+                    renderer.stroke();
                 }
                 break;
             }
             case 'rocket': {
                 const path = this.getRocketPath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 break;
             }
             case 'flag': {
@@ -190,95 +191,95 @@ export class SketchnoteRenderer extends ShapeRenderer {
                 const poleW = Math.max(3, w * 0.04);
                 const poleX = x + w * 0.15 - poleW / 2;
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
-                ctx.strokeRect(poleX, y, poleW, h);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
+                renderer.strokeRect(poleX, y, poleW, h);
                 break;
             }
             case 'key': {
                 const path = this.getKeyPath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 break;
             }
             case 'magnifyingGlass': {
                 const path = this.getMagnifyingGlassPath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 break;
             }
             case 'book': {
                 const path = this.getBookPath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 break;
             }
             case 'megaphone': {
                 const path = this.getMegaphonePath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 break;
             }
             case 'eye': {
                 const path = this.getEyePath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 // Iris and pupil
                 const irisR = Math.min(w, h) * 0.18;
                 const pupilR = irisR * 0.45;
                 const ecx = x + w / 2, ecy = y + h / 2;
-                ctx.beginPath();
-                ctx.ellipse(ecx, ecy, irisR, irisR, 0, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(ecx, ecy, pupilR, 0, Math.PI * 2);
-                ctx.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
-                ctx.fill();
+                renderer.beginPath();
+                renderer.ellipse(ecx, ecy, irisR, irisR, 0, 0, Math.PI * 2);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.arc(ecx, ecy, pupilR, 0, Math.PI * 2);
+                renderer.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
+                renderer.fill();
                 break;
             }
             case 'thoughtBubble': {
                 const path = this.getThoughtBubblePath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 // Trailing thought circles
                 const c1r = Math.min(w, h) * 0.05;
                 const c2r = c1r * 0.65;
                 const c1x = x + w * 0.25, c1y = y + h * 0.88;
                 const c2x = x + w * 0.18, c2y = y + h * 0.95;
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath(); ctx.arc(c1x, c1y, c1r, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(c2x, c2y, c2r, 0, Math.PI * 2); ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath(); renderer.arc(c1x, c1y, c1r, 0, Math.PI * 2); renderer.fill();
+                    renderer.beginPath(); renderer.arc(c2x, c2y, c2r, 0, Math.PI * 2); renderer.fill();
                 }
-                ctx.beginPath(); ctx.arc(c1x, c1y, c1r, 0, Math.PI * 2); ctx.stroke();
-                ctx.beginPath(); ctx.arc(c2x, c2y, c2r, 0, Math.PI * 2); ctx.stroke();
+                renderer.beginPath(); renderer.arc(c1x, c1y, c1r, 0, Math.PI * 2); renderer.stroke();
+                renderer.beginPath(); renderer.arc(c2x, c2y, c2r, 0, Math.PI * 2); renderer.stroke();
                 break;
             }
         }
@@ -787,10 +788,10 @@ export class SketchnoteRenderer extends ShapeRenderer {
         return path;
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
-        ctx.translate(el.x + el.width / 2, el.y + el.height / 2);
-        RenderPipeline.renderGeometry(ctx, geometry);
+        renderer.translate(el.x + el.width / 2, el.y + el.height / 2);
+        RenderPipeline.renderGeometry(renderer, geometry);
     }
 }

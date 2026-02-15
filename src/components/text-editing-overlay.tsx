@@ -9,6 +9,7 @@ import { type Component, createEffect, Show } from "solid-js";
 import { Maximize2 } from "lucide-solid";
 import { store, setSelectedTool } from "../store/app-store";
 import { measureContainerText, resolveFontFamily } from "../utils/text-utils";
+import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
 import { normalizePoints } from "../utils/render-element";
 import type { TableEditingCell } from "../utils/tool-handlers/text-editing-handler";
@@ -39,8 +40,8 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
     const handleTextBlur = () => {
         if (props.editingId()) {
             props.onCommitText();
-            // After creating a new text element, switch back to selection
-            if (store.selectedTool === 'text') {
+            // After creating a new text element, switch back to selection (unless tool is locked)
+            if (store.selectedTool === 'text' && !store.toolLocked) {
                 setSelectedTool('selection');
             }
         }
@@ -126,17 +127,18 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         fontSizeVal = fontSizeVal * 0.9;
 
                         // Re-calculate layout to find Y position
-                        const ctx = props.canvasRef ? props.canvasRef.getContext("2d") : null;
+                        const rawCtx = props.canvasRef ? props.canvasRef.getContext("2d") : null;
+                        const renderer = rawCtx ? new CanvasRenderer(rawCtx) : null;
                         let headerHeight = 30;
-                        if (el.containerText && ctx) {
-                            const metrics = measureContainerText(ctx, el, el.containerText, el.width - 10);
+                        if (el.containerText && renderer) {
+                            const metrics = measureContainerText(renderer, el, el.containerText, el.width - 10);
                             headerHeight = Math.max(30, metrics.textHeight + 20);
                         }
 
                         let attrOffsetY = headerHeight;
                         let attrHeight = 20;
-                        if (el.attributesText && ctx) {
-                            const metrics = measureContainerText(ctx, { ...el, fontSize: fontSizeVal }, el.attributesText, el.width - 10);
+                        if (el.attributesText && renderer) {
+                            const metrics = measureContainerText(renderer, { ...el, fontSize: fontSizeVal }, el.attributesText, el.width - 10);
                             attrHeight = Math.max(20, metrics.textHeight + 10);
                         }
 
@@ -217,7 +219,9 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                         e.preventDefault();
                                         e.stopImmediatePropagation();
                                         props.onCommitText();
-                                        setSelectedTool('selection');
+                                        if (!store.toolLocked) {
+                                            setSelectedTool('selection');
+                                        }
                                         return;
                                     }
                                     // Table cell navigation

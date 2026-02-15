@@ -523,6 +523,9 @@ const App: Component = () => {
         } else if (e.shiftKey && key === 'c') {
           e.preventDefault();
           setSelectedTool('crop');
+        } else if (e.shiftKey && key === 't') {
+          e.preventDefault();
+          setSelectedTool('richtext');
         } else if (e.shiftKey && key === 'h') {
           e.preventDefault();
           if (store.selection.length > 0) flipSelected('horizontal');
@@ -536,7 +539,7 @@ const App: Component = () => {
           else if (key === 'o' || key === '3') setSelectedTool('circle');
           else if (key === 'l' || key === '4') setSelectedTool('line');
           else if (key === 'a' || key === '5') setSelectedTool('arrow');
-          else if (key === 't' || key === '6') setSelectedTool('text');
+          else if (key === 't' || key === '6') setSelectedTool(store.selectedTextType);
           else if (key === 'e' || key === '7') setSelectedTool('eraser');
           else if (key === 'p' || key === '8') setSelectedTool('fineliner');
           else if (key === '9' || key === 'i') {

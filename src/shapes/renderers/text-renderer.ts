@@ -1,6 +1,7 @@
 import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 import type { DrawingElement } from "../../types";
 import { resolveFontFamily, wrapText } from "../../utils/text-utils";
 import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils";
@@ -15,42 +16,36 @@ export class TextRenderer extends ShapeRenderer {
     }
 
     private renderCommon(context: RenderContext): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
 
         const fontSize = el.fontSize || 20;
         const fontFamily = resolveFontFamily(el.fontFamily);
         const fontWeight = (el.fontWeight === true || el.fontWeight === 'bold') ? 'bold ' : '';
         const fontStyle = (el.fontStyle === true || el.fontStyle === 'italic') ? 'italic ' : '';
 
-        ctx.save();
+        renderer.save();
 
         // Render background color if set
         if (el.backgroundColor && el.backgroundColor !== 'transparent' && el.backgroundColor !== 'none') {
-            ctx.fillStyle = RenderPipeline.adjustColor(el.backgroundColor, isDarkMode);
-            ctx.fillRect(el.x, el.y, el.width, el.height);
+            renderer.fillStyle = RenderPipeline.adjustColor(el.backgroundColor, isDarkMode);
+            renderer.fillRect(el.x, el.y, el.width, el.height);
         }
 
-        // If no text yet (during creation), show a placeholder border
+        // If no text yet, nothing to render
         if (!el.text && !(el.richText && el.richText.length > 0)) {
-            if (el.width > 0) {
-                ctx.strokeStyle = RenderPipeline.adjustColor(el.strokeColor || '#1e90ff', isDarkMode);
-                ctx.lineWidth = 1;
-                ctx.setLineDash([4, 4]);
-                ctx.strokeRect(el.x, el.y, el.width, el.height);
-                ctx.setLineDash([]);
-            }
-            ctx.restore();
+            renderer.restore();
             return;
         }
 
         // Rich text path — render per-span formatting
-        if (el.richText && el.richText.length > 0) {
-            this.renderRichTextElement(ctx, el, isDarkMode);
-            ctx.restore();
+        // For richtext elements or elements with richText property
+        if ((el.type === 'richtext' && el.richText) || (el.richText && el.richText.length > 0)) {
+            this.renderRichTextElement(renderer, el, isDarkMode);
+            renderer.restore();
             return;
         }
 
-        ctx.font = `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
+        renderer.font = `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
 
         const lineHeight = fontSize * 1.2;
         const padding = 4; // Small internal padding
@@ -63,28 +58,43 @@ export class TextRenderer extends ShapeRenderer {
             if (para === '') {
                 lines.push('');
             } else {
-                lines.push(...wrapText(ctx, para, availableWidth));
+                lines.push(...wrapText(context.renderer, para, availableWidth));
             }
         });
 
-        // Calculate vertical offset for centering text within element height
-        const totalTextHeight = lines.length * lineHeight;
-        const verticalPadding = Math.max(0, (el.height - totalTextHeight) / 2);
+        // Calculate vertical offset based on verticalAlign property
+        // Total height = (N-1) * lineHeight + fontSize for the last line
+        // This matches the actual rendering which uses index * lineHeight
+        const totalTextHeight = lines.length > 0
+            ? (lines.length - 1) * lineHeight + fontSize
+            : 0;
+        const verticalAlign = el.verticalAlign || 'middle';
+        let verticalPadding = 0;
+
+        if (verticalAlign === 'top') {
+            // Add padding to keep text inside top boundary
+            verticalPadding = padding;
+        } else if (verticalAlign === 'middle') {
+            verticalPadding = Math.max(0, (el.height - totalTextHeight) / 2);
+        } else if (verticalAlign === 'bottom') {
+            // Subtract padding to keep text inside bottom boundary
+            verticalPadding = Math.max(0, el.height - totalTextHeight - padding);
+        }
 
         const textColorRaw = el.textColor || el.strokeColor;
         const textColor = RenderPipeline.adjustColor(textColorRaw, isDarkMode);
 
         // Apply text alignment
-        const textAlign = el.textAlign || 'left';
-        ctx.textAlign = textAlign;
-        ctx.textBaseline = 'hanging';
+        const textAlign = el.textAlign || 'center';
+        renderer.textAlign = textAlign;
+        renderer.textBaseline = 'hanging';
 
         if (el.textHighlightEnabled) {
             const highlightColor = el.textHighlightColor || 'rgba(255, 255, 0, 0.4)';
             const highlightPadding = el.textHighlightPadding ?? 4;
             const radius = el.textHighlightRadius ?? 2;
 
-            ctx.fillStyle = RenderPipeline.adjustColor(highlightColor, isDarkMode);
+            renderer.fillStyle = RenderPipeline.adjustColor(highlightColor, isDarkMode);
 
             // Baseline adjustment for better visual centering
             const baselineShift = el.fontFamily === 'hand-drawn' ? -2 : 0;
@@ -100,39 +110,30 @@ export class TextRenderer extends ShapeRenderer {
             };
 
             lines.forEach((line, index) => {
-                const measuredWidth = ctx.measureText(line).width;
+                const measuredWidth = renderer.measureText(line).width;
                 const xPos = getXPosition();
                 const yOffset = el.y + verticalPadding + index * lineHeight + baselineShift;
                 const vPad = highlightPadding / 2;
 
-                ctx.beginPath();
-                if (ctx.roundRect) {
-                    ctx.roundRect(
-                        xPos - (textAlign === 'center' ? measuredWidth / 2 : 0) - highlightPadding,
-                        yOffset - vPad,
-                        measuredWidth + highlightPadding * 2,
-                        lineHeight + vPad * 2,
-                        radius
-                    );
-                } else {
-                    ctx.rect(
-                        xPos - (textAlign === 'center' ? measuredWidth / 2 : 0) - highlightPadding,
-                        yOffset - vPad,
-                        measuredWidth + highlightPadding * 2,
-                        lineHeight + vPad * 2
-                    );
-                }
-                ctx.fill();
+                renderer.beginPath();
+                renderer.roundRect(
+                    xPos - (textAlign === 'center' ? measuredWidth / 2 : 0) - highlightPadding,
+                    yOffset - vPad,
+                    measuredWidth + highlightPadding * 2,
+                    lineHeight + vPad * 2,
+                    radius
+                );
+                renderer.fill();
             });
 
-            ctx.fillStyle = textColor;
+            renderer.fillStyle = textColor;
             lines.forEach((line, index) => {
                 const xPos = getXPosition();
                 const yOffset = el.y + verticalPadding + index * lineHeight;
-                ctx.fillText(line, xPos, yOffset);
+                renderer.fillText(line, xPos, yOffset);
             });
         } else {
-            ctx.fillStyle = textColor;
+            renderer.fillStyle = textColor;
 
             // Calculate x position based on alignment
             let xPos = el.x + padding;
@@ -144,14 +145,14 @@ export class TextRenderer extends ShapeRenderer {
 
             // Render each line at the correct Y offset with vertical centering
             lines.forEach((line, index) => {
-                ctx.fillText(line, xPos, el.y + verticalPadding + index * lineHeight);
+                renderer.fillText(line, xPos, el.y + verticalPadding + index * lineHeight);
             });
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     private renderRichTextElement(
-        ctx: CanvasRenderingContext2D,
+        renderer: IRenderer,
         el: DrawingElement,
         isDarkMode: boolean
     ): void {
@@ -159,10 +160,21 @@ export class TextRenderer extends ShapeRenderer {
         const padding = 4;
         const availableWidth = Math.max(el.width - padding * 2, 20);
         const defaults = { fontSize: el.fontSize || 20, fontFamily: el.fontFamily || 'sans-serif' };
-        const layout = layoutRichText(ctx, spans, availableWidth, defaults);
+        const layout = layoutRichText(renderer, spans, availableWidth, defaults);
 
-        const textAlign = el.textAlign || 'left';
-        const verticalPadding = Math.max(0, (el.height - layout.totalHeight) / 2);
+        const textAlign = el.textAlign || 'center';
+        const verticalAlign = el.verticalAlign || 'middle';
+        let verticalPadding = 0;
+
+        if (verticalAlign === 'top') {
+            // Add padding to keep text inside top boundary
+            verticalPadding = padding;
+        } else if (verticalAlign === 'middle') {
+            verticalPadding = Math.max(0, (el.height - layout.totalHeight) / 2);
+        } else if (verticalAlign === 'bottom') {
+            // Subtract padding to keep text inside bottom boundary
+            verticalPadding = Math.max(0, el.height - layout.totalHeight - padding);
+        }
 
         let lineY = el.y + verticalPadding;
         for (let lineIdx = 0; lineIdx < layout.lineCount; lineIdx++) {
@@ -188,31 +200,33 @@ export class TextRenderer extends ShapeRenderer {
 
             for (const seg of lineSegments) {
                 const span = seg.span;
-                ctx.font = buildSpanFontString(span, defaults);
+                renderer.font = buildSpanFontString(span, defaults);
                 const color = span.color || el.textColor || el.strokeColor;
-                ctx.fillStyle = RenderPipeline.adjustColor(color, isDarkMode);
-                ctx.textBaseline = 'middle';
-                ctx.textAlign = 'left';
-                ctx.fillText(seg.text, xOffset + seg.x, baselineY);
+                renderer.fillStyle = RenderPipeline.adjustColor(color, isDarkMode);
+                renderer.textBaseline = 'middle';
+                renderer.textAlign = 'left';
+                renderer.fillText(seg.text, xOffset + seg.x, baselineY);
 
                 if (span.underline) {
                     const fontSize = span.fontSize || defaults.fontSize;
-                    ctx.beginPath();
-                    ctx.strokeStyle = ctx.fillStyle;
-                    ctx.lineWidth = Math.max(1, fontSize / 14);
-                    ctx.moveTo(xOffset + seg.x, baselineY + fontSize * 0.35);
-                    ctx.lineTo(xOffset + seg.x + seg.width, baselineY + fontSize * 0.35);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.setLineDash([]);
+                    renderer.strokeStyle = renderer.fillStyle as string;
+                    renderer.lineWidth = Math.max(1, fontSize / 14);
+                    renderer.moveTo(xOffset + seg.x, baselineY + fontSize * 0.35);
+                    renderer.lineTo(xOffset + seg.x + seg.width, baselineY + fontSize * 0.35);
+                    renderer.stroke();
                 }
 
                 if (span.strikethrough) {
                     const fontSize = span.fontSize || defaults.fontSize;
-                    ctx.beginPath();
-                    ctx.strokeStyle = ctx.fillStyle;
-                    ctx.lineWidth = Math.max(1, fontSize / 14);
-                    ctx.moveTo(xOffset + seg.x, baselineY);
-                    ctx.lineTo(xOffset + seg.x + seg.width, baselineY);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.setLineDash([]);
+                    renderer.strokeStyle = renderer.fillStyle as string;
+                    renderer.lineWidth = Math.max(1, fontSize / 14);
+                    renderer.moveTo(xOffset + seg.x, baselineY);
+                    renderer.lineTo(xOffset + seg.x + seg.width, baselineY);
+                    renderer.stroke();
                 }
             }
 
@@ -220,7 +234,7 @@ export class TextRenderer extends ShapeRenderer {
         }
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
-        ctx.rect(el.x, el.y, el.width, el.height);
+    protected definePath(renderer: IRenderer, el: any): void {
+        renderer.rect(el.x, el.y, el.width, el.height);
     }
 }

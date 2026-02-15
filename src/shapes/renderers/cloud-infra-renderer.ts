@@ -2,10 +2,11 @@ import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class CloudInfraRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
         const x = el.x, y = el.y, w = el.width, h = el.height;
 
@@ -18,31 +19,31 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 const spokes = 7;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.ellipse(ccx, ccy, outerR, outerR, 0, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.ellipse(ccx, ccy, outerR, outerR, 0, 0, Math.PI * 2);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath();
-                ctx.ellipse(ccx, ccy, outerR, outerR, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath();
+                renderer.ellipse(ccx, ccy, outerR, outerR, 0, 0, Math.PI * 2);
+                renderer.stroke();
                 // Inner circle
-                ctx.beginPath();
-                ctx.ellipse(ccx, ccy, innerR, innerR, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.ellipse(ccx, ccy, innerR, innerR, 0, 0, Math.PI * 2);
+                renderer.stroke();
                 // Spokes
                 for (let i = 0; i < spokes; i++) {
                     const angle = (Math.PI * 2 * i) / spokes - Math.PI / 2;
-                    ctx.beginPath();
-                    ctx.moveTo(ccx + Math.cos(angle) * innerR, ccy + Math.sin(angle) * innerR);
-                    ctx.lineTo(ccx + Math.cos(angle) * outerR * 0.85, ccy + Math.sin(angle) * outerR * 0.85);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(ccx + Math.cos(angle) * innerR, ccy + Math.sin(angle) * innerR);
+                    renderer.lineTo(ccx + Math.cos(angle) * outerR * 0.85, ccy + Math.sin(angle) * outerR * 0.85);
+                    renderer.stroke();
                     // Spoke knobs
                     const knobR = outerR * 0.08;
-                    ctx.beginPath();
-                    ctx.arc(ccx + Math.cos(angle) * outerR * 0.85, ccy + Math.sin(angle) * outerR * 0.85, knobR, 0, Math.PI * 2);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.arc(ccx + Math.cos(angle) * outerR * 0.85, ccy + Math.sin(angle) * outerR * 0.85, knobR, 0, Math.PI * 2);
+                    renderer.stroke();
                 }
                 break;
             }
@@ -50,21 +51,21 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 // Stacked container box with whale-like top
                 const r = Math.min(w, h) * 0.06;
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    this.roundRect(ctx, x, y, w, h, r);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    this.roundRect(renderer, x, y, w, h, r);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                this.roundRect(ctx, x, y, w, h, r);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                this.roundRect(renderer, x, y, w, h, r);
+                renderer.stroke();
                 // Stack lines (3 horizontal dividers)
                 const rows = 3;
                 for (let i = 1; i <= rows; i++) {
                     const ly = y + (h * i) / (rows + 1);
-                    ctx.beginPath();
-                    ctx.moveTo(x + w * 0.08, ly);
-                    ctx.lineTo(x + w * 0.92, ly);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(x + w * 0.08, ly);
+                    renderer.lineTo(x + w * 0.92, ly);
+                    renderer.stroke();
                 }
                 break;
             }
@@ -72,30 +73,30 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 // Rectangle with arrows going through
                 const r = Math.min(w, h) * 0.08;
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    this.roundRect(ctx, x, y, w, h, r);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    this.roundRect(renderer, x, y, w, h, r);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                this.roundRect(ctx, x, y, w, h, r);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                this.roundRect(renderer, x, y, w, h, r);
+                renderer.stroke();
                 // Arrow pointing right through center
                 const arrowY = y + h / 2;
                 const arrowL = x + w * 0.2;
                 const arrowR = x + w * 0.8;
                 const arrowH = h * 0.12;
-                ctx.beginPath();
-                ctx.moveTo(arrowL, arrowY);
-                ctx.lineTo(arrowR - w * 0.1, arrowY);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(arrowL, arrowY);
+                renderer.lineTo(arrowR - w * 0.1, arrowY);
+                renderer.stroke();
                 // Arrowhead
-                ctx.beginPath();
-                ctx.moveTo(arrowR, arrowY);
-                ctx.lineTo(arrowR - w * 0.1, arrowY - arrowH);
-                ctx.lineTo(arrowR - w * 0.1, arrowY + arrowH);
-                ctx.closePath();
-                ctx.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
-                ctx.fill();
+                renderer.beginPath();
+                renderer.moveTo(arrowR, arrowY);
+                renderer.lineTo(arrowR - w * 0.1, arrowY - arrowH);
+                renderer.lineTo(arrowR - w * 0.1, arrowY + arrowH);
+                renderer.closePath();
+                renderer.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
+                renderer.fill();
                 break;
             }
             case 'cdn': {
@@ -103,31 +104,31 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 const ccx = x + w / 2, ccy = y + h / 2;
                 const rx = w / 2, ry = h / 2;
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.ellipse(ccx, ccy, rx, ry, 0, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.ellipse(ccx, ccy, rx, ry, 0, 0, Math.PI * 2);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath();
-                ctx.ellipse(ccx, ccy, rx, ry, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath();
+                renderer.ellipse(ccx, ccy, rx, ry, 0, 0, Math.PI * 2);
+                renderer.stroke();
                 // Vertical meridian (ellipse)
-                ctx.beginPath();
-                ctx.ellipse(ccx, ccy, rx * 0.4, ry, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.ellipse(ccx, ccy, rx * 0.4, ry, 0, 0, Math.PI * 2);
+                renderer.stroke();
                 // Horizontal equator
-                ctx.beginPath();
-                ctx.moveTo(x, ccy);
-                ctx.lineTo(x + w, ccy);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x, ccy);
+                renderer.lineTo(x + w, ccy);
+                renderer.stroke();
                 // Latitude lines
-                ctx.beginPath();
-                ctx.ellipse(ccx, ccy - ry * 0.45, rx * 0.88, ry * 0.15, 0, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.ellipse(ccx, ccy + ry * 0.45, rx * 0.88, ry * 0.15, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.ellipse(ccx, ccy - ry * 0.45, rx * 0.88, ry * 0.15, 0, 0, Math.PI * 2);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.ellipse(ccx, ccy + ry * 0.45, rx * 0.88, ry * 0.15, 0, 0, Math.PI * 2);
+                renderer.stroke();
                 break;
             }
             case 'storageBlob': {
@@ -136,35 +137,35 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 const bodyTop = y + ellipseH / 2;
                 const bodyBot = y + h - ellipseH / 2;
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.ellipse(x + w / 2, bodyTop, w / 2, ellipseH, 0, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.moveTo(x, bodyTop);
-                    ctx.lineTo(x, bodyBot);
-                    ctx.ellipse(x + w / 2, bodyBot, w / 2, ellipseH, 0, Math.PI, 0, true);
-                    ctx.lineTo(x + w, bodyTop);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.ellipse(x + w / 2, bodyTop, w / 2, ellipseH, 0, 0, Math.PI * 2);
+                    renderer.fill();
+                    renderer.beginPath();
+                    renderer.moveTo(x, bodyTop);
+                    renderer.lineTo(x, bodyBot);
+                    renderer.ellipse(x + w / 2, bodyBot, w / 2, ellipseH, 0, Math.PI, 0, true);
+                    renderer.lineTo(x + w, bodyTop);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Top ellipse
-                ctx.beginPath();
-                ctx.ellipse(x + w / 2, bodyTop, w / 2, ellipseH, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.ellipse(x + w / 2, bodyTop, w / 2, ellipseH, 0, 0, Math.PI * 2);
+                renderer.stroke();
                 // Side walls
-                ctx.beginPath();
-                ctx.moveTo(x, bodyTop);
-                ctx.lineTo(x, bodyBot);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(x + w, bodyTop);
-                ctx.lineTo(x + w, bodyBot);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x, bodyTop);
+                renderer.lineTo(x, bodyBot);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + w, bodyTop);
+                renderer.lineTo(x + w, bodyBot);
+                renderer.stroke();
                 // Bottom ellipse (half)
-                ctx.beginPath();
-                ctx.ellipse(x + w / 2, bodyBot, w / 2, ellipseH, 0, 0, Math.PI);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.ellipse(x + w / 2, bodyBot, w / 2, ellipseH, 0, 0, Math.PI);
+                renderer.stroke();
                 break;
             }
             case 'eventBus': {
@@ -173,33 +174,33 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 const barY = y + (h - barH) / 2;
                 const r = barH / 2;
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    this.roundRect(ctx, x, barY, w, barH, r);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    this.roundRect(renderer, x, barY, w, barH, r);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                this.roundRect(ctx, x, barY, w, barH, r);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                this.roundRect(renderer, x, barY, w, barH, r);
+                renderer.stroke();
                 // Vertical taps
                 const taps = 3;
                 for (let i = 0; i < taps; i++) {
                     const tapX = x + w * (0.25 + i * 0.25);
-                    ctx.beginPath();
-                    ctx.moveTo(tapX, y);
-                    ctx.lineTo(tapX, barY);
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.moveTo(tapX, barY + barH);
-                    ctx.lineTo(tapX, y + h);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(tapX, y);
+                    renderer.lineTo(tapX, barY);
+                    renderer.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(tapX, barY + barH);
+                    renderer.lineTo(tapX, y + h);
+                    renderer.stroke();
                     // Small circles at ends
                     const dotR = Math.min(w, h) * 0.03;
-                    ctx.beginPath();
-                    ctx.arc(tapX, y, dotR, 0, Math.PI * 2);
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.arc(tapX, y + h, dotR, 0, Math.PI * 2);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.arc(tapX, y, dotR, 0, Math.PI * 2);
+                    renderer.stroke();
+                    renderer.beginPath();
+                    renderer.arc(tapX, y + h, dotR, 0, Math.PI * 2);
+                    renderer.stroke();
                 }
                 break;
             }
@@ -208,50 +209,50 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 const ccx = x + w / 2, ccy = y + h / 2;
                 const hexPath = this.getHexPath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(hexPath));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(hexPath);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(hexPath));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(hexPath);
                 // Small gear icon in center
                 const gearR = Math.min(w, h) * 0.15;
                 const teeth = 6;
                 const innerGR = gearR * 0.65;
-                ctx.beginPath();
+                renderer.beginPath();
                 for (let i = 0; i < teeth; i++) {
                     const a1 = (Math.PI * 2 * i) / teeth;
                     const a2 = (Math.PI * 2 * (i + 0.3)) / teeth;
                     const a3 = (Math.PI * 2 * (i + 0.5)) / teeth;
                     const a4 = (Math.PI * 2 * (i + 0.8)) / teeth;
-                    if (i === 0) ctx.moveTo(ccx + Math.cos(a1) * innerGR, ccy + Math.sin(a1) * innerGR);
-                    ctx.lineTo(ccx + Math.cos(a2) * gearR, ccy + Math.sin(a2) * gearR);
-                    ctx.lineTo(ccx + Math.cos(a3) * gearR, ccy + Math.sin(a3) * gearR);
-                    ctx.lineTo(ccx + Math.cos(a4) * innerGR, ccy + Math.sin(a4) * innerGR);
+                    if (i === 0) renderer.moveTo(ccx + Math.cos(a1) * innerGR, ccy + Math.sin(a1) * innerGR);
+                    renderer.lineTo(ccx + Math.cos(a2) * gearR, ccy + Math.sin(a2) * gearR);
+                    renderer.lineTo(ccx + Math.cos(a3) * gearR, ccy + Math.sin(a3) * gearR);
+                    renderer.lineTo(ccx + Math.cos(a4) * innerGR, ccy + Math.sin(a4) * innerGR);
                     const nextA = (Math.PI * 2 * (i + 1)) / teeth;
-                    ctx.lineTo(ccx + Math.cos(nextA) * innerGR, ccy + Math.sin(nextA) * innerGR);
+                    renderer.lineTo(ccx + Math.cos(nextA) * innerGR, ccy + Math.sin(nextA) * innerGR);
                 }
-                ctx.closePath();
-                ctx.stroke();
+                renderer.closePath();
+                renderer.stroke();
                 break;
             }
             case 'shield': {
                 const path = this.getShieldPath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 // Checkmark inside
                 const checkSize = Math.min(w, h) * 0.2;
                 const checkCx = x + w / 2;
                 const checkCy = y + h * 0.42;
-                ctx.beginPath();
-                ctx.moveTo(checkCx - checkSize, checkCy);
-                ctx.lineTo(checkCx - checkSize * 0.3, checkCy + checkSize * 0.7);
-                ctx.lineTo(checkCx + checkSize, checkCy - checkSize * 0.5);
-                ctx.lineWidth = Math.max(2, Math.min(w, h) * 0.05);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(checkCx - checkSize, checkCy);
+                renderer.lineTo(checkCx - checkSize * 0.3, checkCy + checkSize * 0.7);
+                renderer.lineTo(checkCx + checkSize, checkCy - checkSize * 0.5);
+                renderer.lineWidth = Math.max(2, Math.min(w, h) * 0.05);
+                renderer.stroke();
                 break;
             }
         }
@@ -380,18 +381,18 @@ export class CloudInfraRenderer extends ShapeRenderer {
 
     // ─── Helpers ──────────────────────────────────────────────────
 
-    private roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-        ctx.lineTo(x + r, y + h);
-        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-        ctx.lineTo(x, y + r);
-        ctx.quadraticCurveTo(x, y, x + r, y);
-        ctx.closePath();
+    private roundRect(renderer: IRenderer, x: number, y: number, w: number, h: number, r: number): void {
+        renderer.beginPath();
+        renderer.moveTo(x + r, y);
+        renderer.lineTo(x + w - r, y);
+        renderer.quadraticCurveTo(x + w, y, x + w, y + r);
+        renderer.lineTo(x + w, y + h - r);
+        renderer.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        renderer.lineTo(x + r, y + h);
+        renderer.quadraticCurveTo(x, y + h, x, y + h - r);
+        renderer.lineTo(x, y + r);
+        renderer.quadraticCurveTo(x, y, x + r, y);
+        renderer.closePath();
     }
 
     // ─── SVG Path Generators ─────────────────────────────────────
@@ -425,10 +426,10 @@ export class CloudInfraRenderer extends ShapeRenderer {
         return p;
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
-        ctx.translate(el.x + el.width / 2, el.y + el.height / 2);
-        RenderPipeline.renderGeometry(ctx, geometry);
+        renderer.translate(el.x + el.width / 2, el.y + el.height / 2);
+        RenderPipeline.renderGeometry(renderer, geometry);
     }
 }

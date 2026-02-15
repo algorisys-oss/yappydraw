@@ -15,7 +15,9 @@ import {
     presentationOnDown, presentationOnMove, presentationOnUp,
     panOnDown, panOnMove, panOnUp,
     laserOnDown, laserOnMove, laserOnUp,
-    textOnDown, textOnMove, textOnUp, inkOnDown,
+    textOnDown, textOnMove, textOnUp,
+    richTextOnDown, richTextOnMove, richTextOnUp,
+    inkOnDown,
     eraserOnDown, eraserOnMove,
     connectorHandleOnUp,
     handleAutoScroll
@@ -41,7 +43,8 @@ import { showToast } from "./toast";
 import { hitTestElement } from "../utils/hit-testing";
 import { renderCropOverlay, hitTestCropHandle, applyCropDrag, getCropHandleCursor, finalizeCropRect, type CropHandle } from "../utils/image-crop-utils";
 import { perfMonitor } from "../utils/performance-monitor";
-import { fitShapeToText, measureWrappedTextHeight } from "../utils/text-utils";
+import { fitShapeToText } from "../utils/text-utils";
+import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { effectiveTime } from "../utils/animation/animation-engine";
 import RecordingOverlay from "./recording-overlay";
 import { setupRecording } from "../utils/recording-manager";
@@ -84,6 +87,7 @@ const Canvas: Component = () => {
         if (!canvasRef) return;
         const ctx = canvasRef.getContext("2d");
         if (!ctx) return;
+        const renderer = new CanvasRenderer(ctx);
 
         // We track font properties and text of selected elements
         store.elements.forEach(el => {
@@ -96,7 +100,7 @@ const Canvas: Component = () => {
                 el.fontStyle;
                 el.containerText;
 
-                const dims = fitShapeToText(ctx, el, el.containerText);
+                const dims = fitShapeToText(renderer, el, el.containerText);
                 if (Math.abs(dims.width - el.width) > 2 || Math.abs(dims.height - el.height) > 2) {
                     untrack(() => updateElement(el.id, {
                         width: dims.width,
@@ -105,37 +109,9 @@ const Canvas: Component = () => {
                 }
             }
 
-            // Standalone text elements: recalculate width+height when font properties change
-            if (store.selection.includes(el.id) && el.type === 'text' && el.text) {
-                // Track font properties to trigger reactive recalculation
-                const fontSize = el.fontSize || 20;
-                const fontFamily = el.fontFamily || 'sans-serif';
-                const fontWeight = el.fontWeight === 'bold' ? 'bold ' : '';
-                const fontStyle = el.fontStyle === 'italic' ? 'italic ' : '';
-                const padding = 4; // matches text-renderer.ts
-
-                ctx.font = `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
-
-                // Ensure width fits the widest word at current font size
-                const words = el.text.split(/\s+/).filter((w: string) => w.length > 0);
-                let maxWordWidth = 0;
-                for (const word of words) {
-                    maxWordWidth = Math.max(maxWordWidth, ctx.measureText(word).width);
-                }
-                const minWidth = maxWordWidth + padding * 2 + 8;
-                const newWidth = Math.max(el.width || 200, minWidth);
-
-                const calculatedHeight = measureWrappedTextHeight(el.text, newWidth, fontSize, fontFamily);
-                const newHeight = Math.max(calculatedHeight, fontSize * 1.2);
-
-                const updates: Record<string, number> = {};
-                if (Math.abs(newWidth - el.width) > 2) updates.width = newWidth;
-                if (Math.abs(newHeight - el.height) > 2) updates.height = newHeight;
-
-                if (Object.keys(updates).length > 0) {
-                    untrack(() => updateElement(el.id, updates));
-                }
-            }
+            // NOTE: Auto-resize for standalone text elements is disabled
+            // Text elements should have complete manual control like Excalidraw
+            // Auto-height adjustment happens only via left/right middle handles in selection-handler.ts
         });
     });
 
@@ -365,7 +341,7 @@ const Canvas: Component = () => {
             e.angle; e.opacity; e.flipX; e.flipY;
             e.strokeColor; e.backgroundColor; e.lidColor; e.fillStyle; e.strokeWidth; e.strokeStyle;
             e.roughness; e.roundness;
-            e.text; e.fontSize; e.fontFamily; e.textAlign;
+            e.text; e.fontSize; e.fontFamily; e.textAlign; e.verticalAlign;
             e.fontWeight; e.fontStyle;
             e.textColor; e.textHighlightEnabled; e.textHighlightColor; e.textHighlightPadding; e.textHighlightRadius;
             e.startArrowhead; e.endArrowhead;
@@ -578,7 +554,7 @@ const Canvas: Component = () => {
         draw, setCursor, setTableCellSelection
     };
     const pSignals: import("../utils/pointer-helpers").PointerSignals = {
-        editingId, setEditingId, setEditText,
+        editingId, setEditingId, setEditText, setRichTextSpans,
         selectionBox, setSelectionBox,
         lassoPoints, setLassoPoints,
         suggestedBinding, setSuggestedBinding,
@@ -673,6 +649,7 @@ const Canvas: Component = () => {
         }
 
         if (store.selectedTool === 'text') { textOnDown(x, y, pState, pSignals); return; }
+        if (store.selectedTool === 'richtext') { richTextOnDown(x, y, pState, pSignals); return; }
         if (store.selectedTool === 'laser') { laserOnDown(x, y, pState); return; }
         if (store.selectedTool === 'ink') { inkOnDown(x, y, pState); return; }
         if (store.selectedTool === 'eraser') { eraserOnDown(x, y, pState, pHelpers); return; }
@@ -720,6 +697,12 @@ const Canvas: Component = () => {
 
         if (store.selectedTool === 'text' && pState.isDrawing) {
             textOnMove(x, y, pState);
+            requestAnimationFrame(draw);
+            return;
+        }
+
+        if (store.selectedTool === 'richtext' && pState.isDrawing) {
+            richTextOnMove(x, y, pState);
             requestAnimationFrame(draw);
             return;
         }
@@ -787,6 +770,11 @@ const Canvas: Component = () => {
             return;
         }
 
+        if (store.selectedTool === 'richtext') {
+            richTextOnUp(pState, pSignals);
+            return;
+        }
+
         drawOnUp(pState, pHelpers, pSignals);
     };
 
@@ -815,11 +803,12 @@ const Canvas: Component = () => {
                 if (colEdge) {
                     // Auto-fit the column to the right of the edge (colIndex is the left column)
                     const targetCol = colEdge.colIndex;
-                    const ctx = canvasRef.getContext('2d');
-                    if (ctx && selEl.tableData) {
+                    const rawCtx = canvasRef.getContext('2d');
+                    if (rawCtx && selEl.tableData) {
+                        const renderer = new CanvasRenderer(rawCtx);
                         const fontSize = selEl.fontSize ?? 14;
                         const optimalWidth = measureColumnOptimalWidth(
-                            ctx,
+                            renderer,
                             selEl.tableData,
                             targetCol,
                             fontSize,
@@ -1032,7 +1021,14 @@ const Canvas: Component = () => {
 
             <ScrollBackButton canvasRef={canvasRef} />
             <RichTextEditingOverlay
-                editingId={() => expandedEditorOpen() ? null : (richTextSpans().length > 0 ? editingId() : null)}
+                editingId={() => {
+                    if (expandedEditorOpen()) return null;
+                    const id = editingId();
+                    if (!id) return null;
+                    const el = store.elements.find(e => e.id === id);
+                    // Show for richtext elements or when rich text spans are present
+                    return (el?.type === 'richtext' || richTextSpans().length > 0) ? id : null;
+                }}
                 setEditingId={setEditingId}
                 editingProperty={() => editingProperty() as 'text' | 'containerText'}
                 richTextSpans={richTextSpans}
@@ -1042,7 +1038,14 @@ const Canvas: Component = () => {
                 onExpand={() => setExpandedEditorOpen(true)}
             />
             <TextEditingOverlay
-                editingId={() => expandedEditorOpen() ? null : (richTextSpans().length > 0 ? null : editingId())}
+                editingId={() => {
+                    if (expandedEditorOpen()) return null;
+                    const id = editingId();
+                    if (!id) return null;
+                    const el = store.elements.find(e => e.id === id);
+                    // Only show for plain text elements (not richtext) when no rich spans
+                    return (el?.type !== 'richtext' && richTextSpans().length === 0) ? id : null;
+                }}
                 setEditingId={setEditingId}
                 editText={editText}
                 setEditText={setEditText}

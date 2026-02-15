@@ -1,20 +1,21 @@
 import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class RectangleRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const radius = this.getRadius(el);
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
 
-        this.drawRectArch(ctx, el, isDarkMode, radius, options.fill);
+        this.drawRectArch(renderer, el, isDarkMode, radius, options.fill);
 
         if (el.drawInnerBorder) {
             const dist = el.innerBorderDistance || 5;
             if (el.width > dist * 2 && el.height > dist * 2) {
                 const innerR = Math.max(0, radius - dist);
-                this.drawRectArch(ctx, { ...el, x: el.x + dist, y: el.y + dist, width: el.width - dist * 2, height: el.height - dist * 2, strokeColor: el.innerBorderColor || el.strokeColor }, isDarkMode, innerR, 'none');
+                this.drawRectArch(renderer, { ...el, x: el.x + dist, y: el.y + dist, width: el.width - dist * 2, height: el.height - dist * 2, strokeColor: el.innerBorderColor || el.strokeColor }, isDarkMode, innerR, 'none');
             }
         }
 
@@ -46,20 +47,20 @@ export class RectangleRenderer extends ShapeRenderer {
             : (el.roundness ? Math.min(Math.abs(el.width), Math.abs(el.height)) * 0.15 : 0);
     }
 
-    private drawRectArch(ctx: CanvasRenderingContext2D, el: any, isDarkMode: boolean, r: number, fill?: string) {
+    private drawRectArch(renderer: IRenderer, el: any, isDarkMode: boolean, r: number, fill?: string) {
         if (fill && fill !== 'transparent' && fill !== 'none') {
-            ctx.beginPath();
-            if (r > 0) ctx.roundRect(el.x, el.y, el.width, el.height, r);
-            else ctx.rect(el.x, el.y, el.width, el.height);
-            ctx.fillStyle = fill;
-            ctx.fill();
+            renderer.beginPath();
+            if (r > 0) renderer.roundRect(el.x, el.y, el.width, el.height, r);
+            else renderer.rect(el.x, el.y, el.width, el.height);
+            renderer.fillStyle = fill;
+            renderer.fill();
         }
 
-        ctx.beginPath();
-        if (r > 0) ctx.roundRect(el.x, el.y, el.width, el.height, r);
-        else ctx.rect(el.x, el.y, el.width, el.height);
-        RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-        ctx.stroke();
+        renderer.beginPath();
+        if (r > 0) renderer.roundRect(el.x, el.y, el.width, el.height, r);
+        else renderer.rect(el.x, el.y, el.width, el.height);
+        RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+        renderer.stroke();
     }
 
     private drawRectSketch(rc: any, x: number, y: number, w: number, h: number, r: number, options: any) {
@@ -77,12 +78,12 @@ export class RectangleRenderer extends ShapeRenderer {
         return `M ${x + rX} ${y} L ${x + w - rX} ${y} Q ${x + w} ${y} ${x + w} ${y + rY} L ${x + w} ${y + h - rY} Q ${x + w} ${y + h} ${x + w - rX} ${y + h} L ${x + rX} ${y + h} Q ${x} ${y + h} ${x} ${y + h - rY} L ${x} ${y + rY} Q ${x} ${y} ${x + rX} ${y}`;
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const radius = this.getRadius(el);
         if (radius > 0) {
-            ctx.roundRect(el.x, el.y, el.width, el.height, radius);
+            renderer.roundRect(el.x, el.y, el.width, el.height, radius);
         } else {
-            ctx.rect(el.x, el.y, el.width, el.height);
+            renderer.rect(el.x, el.y, el.width, el.height);
         }
     }
 }

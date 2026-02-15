@@ -51,6 +51,7 @@ interface AppState {
     appMode: AppMode;
     showCommandPalette: boolean;
     selectedPenType: 'fineliner' | 'inkbrush' | 'marker';
+    selectedTextType: 'text' | 'richtext';
     selectedConnectorType: 'arrow' | 'line' | 'bezier' | 'elbow' | 'polyline';
     selectedShapeType: 'rectangle' | 'circle' | 'diamond' | 'triangle' | 'hexagon' | 'octagon' | 'parallelogram' | 'star' | 'cloud' | 'heart' | 'cross' | 'checkmark' | 'arrowLeft' | 'arrowRight' | 'arrowUp' | 'arrowDown' | 'capsule' | 'stickyNote' | 'callout' | 'burst' | 'speechBubble' | 'ribbon' | 'bracketLeft' | 'bracketRight' | 'database' | 'document' | 'predefinedProcess' | 'internalStorage' | 'trapezoid' | 'rightTriangle' | 'pentagon' | 'septagon' | 'polygon';
     selectedInfraType: 'server' | 'loadBalancer' | 'firewall' | 'user' | 'messageQueue' | 'lambda' | 'router' | 'browser';
@@ -148,7 +149,8 @@ const initialState: AppState = {
             fontFamily: 'hand-drawn',
             fontWeight: false,
             fontStyle: false,
-            textAlign: 'center',
+            textAlign: 'left',
+            verticalAlign: 'middle',
             startArrowhead: null,
             endArrowhead: null,
             startArrowheadSize: 12,
@@ -200,6 +202,7 @@ const initialState: AppState = {
     appMode: 'design',
     showCommandPalette: false,
     selectedPenType: 'fineliner',
+    selectedTextType: 'text',
     selectedConnectorType: 'arrow',
     selectedShapeType: 'rectangle',
     selectedInfraType: 'server',
@@ -596,6 +599,15 @@ export const updateGlobalTickerState = () => {
 
 export const updateElement = (id: string, updates: Partial<DrawingElement>, recordHistory = false) => {
     if (recordHistory) pushToHistory();
+
+    // If updating text on a richtext element via property panel (without richText), clear richText formatting
+    if ('text' in updates && !('richText' in updates)) {
+        const el = store.elements.find(e => e.id === id);
+        if (el?.type === 'richtext') {
+            updates = { ...updates, richText: undefined };
+        }
+    }
+
     setStore("elements", (el) => el.id === id, updates);
     if ('flowAnimation' in updates) {
         updateGlobalTickerState();

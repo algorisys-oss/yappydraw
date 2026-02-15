@@ -193,7 +193,7 @@ export function hitTestElement(
         const polygon = getOrganicBranchPolygon(start, end, controls[0], controls[1], el.strokeWidth);
 
         return isPointInPolygon(p, polygon);
-    } else if (el.type === 'text' || el.type === 'image') {
+    } else if (el.type === 'text' || el.type === 'richtext' || el.type === 'image') {
         return true; // Box check passed
     } else if (
         el.type === 'triangle' || el.type === 'hexagon' || el.type === 'octagon' ||

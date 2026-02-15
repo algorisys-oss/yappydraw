@@ -1,6 +1,7 @@
 import type { DrawingElement } from "../types";
 import type { RoughCanvas } from "roughjs/bin/canvas";
 import { shapeRegistry } from "../shapes/shape-registry";
+import { CanvasRenderer } from "../rendering/CanvasRenderer";
 
 // Helper to normalize points (supports both old Point[] and new packed number[])
 export const normalizePoints = (points: any[] | number[] | undefined): { x: number; y: number }[] => {
@@ -105,10 +106,11 @@ export const renderElement = (
     isDarkMode: boolean = false,
     layerOpacity: number = 1
 ) => {
-    const renderer = shapeRegistry.getRenderer(el.type);
-    if (renderer) {
+    const shapeRenderer = shapeRegistry.getRenderer(el.type);
+    if (shapeRenderer) {
         try {
-            renderer.render({ rc, ctx, element: el, isDarkMode, layerOpacity });
+            const renderer = new CanvasRenderer(ctx);
+            shapeRenderer.render({ rc, renderer, element: el, isDarkMode, layerOpacity });
         } catch (err) {
             console.warn(`Render error for ${el.type} (${el.id}):`, err);
         }

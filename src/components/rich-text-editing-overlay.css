@@ -2,6 +2,11 @@
 .rt-overlay-wrapper {
     z-index: 10000;
     pointer-events: auto;
+    background: var(--bg-panel, #ffffff);
+    border: 1px dashed var(--primary-color, #3b82f6);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    padding: 4px;
 }
 
 /* Mini formatting toolbar */
@@ -11,11 +16,12 @@
     gap: 2px;
     padding: 4px 6px;
     background: var(--bg-panel, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border: none;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 0;
+    box-shadow: none;
     margin-bottom: 4px;
-    width: fit-content;
+    width: 100%;
     margin-left: auto;
     margin-right: auto;
 }
@@ -100,15 +106,11 @@
 /* Contenteditable editor */
 .rt-editor {
     box-sizing: border-box;
-    border: 1px dashed #007acc;
+    border: none;
     background: transparent;
     outline: none;
     padding: 4px;
     overflow-wrap: break-word;
     word-break: break-word;
     white-space: pre-wrap;
-}
-
-.rt-editor:focus {
-    border-color: var(--primary-color, #3b82f6);
 }

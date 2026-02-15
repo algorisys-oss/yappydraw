@@ -42,6 +42,11 @@ import {
     createSpring
 } from "./utils/animation";
 import {
+    animatePixelEffect,
+    stopPixelEffect,
+    pixelEffectPresets
+} from "./utils/animation/pixel-effect-animator";
+import {
     copyToClipboard, cutToClipboard, pasteFromClipboard,
     copyStyle, pasteStyle
 } from "./utils/object-context-actions";
@@ -1383,6 +1388,11 @@ export const YappyAPI = {
     easings,
     animationEngine,
     createSpring,
+
+    // Image Pixel Effects
+    animatePixelEffect,
+    stopPixelEffect,
+    pixelEffectPresets,
 
     // Clipboard & Style
     copyToClipboard,

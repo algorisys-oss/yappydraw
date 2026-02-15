@@ -1,10 +1,11 @@
 import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class InfraRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const strokeColor = RenderPipeline.adjustColor(el.strokeColor, isDarkMode);
         const backgroundColor = el.backgroundColor === 'transparent' ? undefined : RenderPipeline.adjustColor(el.backgroundColor, isDarkMode);
         const x = el.x, y = el.y, w = el.width, h = el.height;
@@ -12,94 +13,94 @@ export class InfraRenderer extends ShapeRenderer {
         switch (el.type) {
             case 'server': {
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fillRect(x, y, w, h);
+                    renderer.fillStyle = backgroundColor;
+                    renderer.fillRect(x, y, w, h);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.strokeRect(x, y, w, h);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokeRect(x, y, w, h);
                 const slotH = h * 0.05;
                 const slotW = w * 0.7;
                 const slotX = x + (w - slotW) / 2;
-                ctx.fillStyle = strokeColor;
+                renderer.fillStyle = strokeColor;
                 for (let i = 0; i < 3; i++) {
-                    ctx.fillRect(slotX, y + h - (i + 1) * slotH * 2 - slotH, slotW, slotH);
+                    renderer.fillRect(slotX, y + h - (i + 1) * slotH * 2 - slotH, slotW, slotH);
                 }
                 break;
             }
             case 'loadBalancer': {
                 const center_x = x + w / 2, center_y = y + h / 2;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.beginPath(); ctx.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    renderer.beginPath(); renderer.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath(); ctx.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath(); renderer.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); renderer.stroke();
                 const arrowLen = w * 0.3;
-                ctx.beginPath(); ctx.moveTo(center_x - arrowLen, center_y); ctx.lineTo(center_x + arrowLen, center_y); ctx.stroke();
+                renderer.beginPath(); renderer.moveTo(center_x - arrowLen, center_y); renderer.lineTo(center_x + arrowLen, center_y); renderer.stroke();
                 // Arrowheads
-                this.drawArchArrowhead(ctx, center_x + arrowLen, center_y, 0);
-                this.drawArchArrowhead(ctx, center_x - arrowLen, center_y, Math.PI);
+                this.drawArchArrowhead(renderer, center_x + arrowLen, center_y, 0);
+                this.drawArchArrowhead(renderer, center_x - arrowLen, center_y, Math.PI);
                 break;
             }
             case 'firewall': {
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fillRect(x, y, w, h);
+                    renderer.fillStyle = backgroundColor;
+                    renderer.fillRect(x, y, w, h);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.strokeRect(x, y, w, h);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokeRect(x, y, w, h);
                 const rows = 4, cols = 3;
                 const headerH = h * 0.15;
-                ctx.beginPath(); ctx.moveTo(x, y + headerH); ctx.lineTo(x + w, y + headerH);
-                ctx.stroke();
+                renderer.beginPath(); renderer.moveTo(x, y + headerH); renderer.lineTo(x + w, y + headerH);
+                renderer.stroke();
                 const rowH = (h - headerH) / rows;
                 const colW = w / cols;
-                ctx.beginPath();
+                renderer.beginPath();
                 for (let i = 1; i < rows; i++) {
-                    ctx.moveTo(x, y + headerH + i * rowH); ctx.lineTo(x + w, y + headerH + i * rowH);
+                    renderer.moveTo(x, y + headerH + i * rowH); renderer.lineTo(x + w, y + headerH + i * rowH);
                 }
                 for (let i = 0; i < rows; i++) {
                     const shift = (i % 2 === 0) ? 0 : colW / 2;
                     for (let j = 1; j < cols; j++) {
                         const vx = x + j * colW + shift;
                         if (vx < x + w) {
-                            ctx.moveTo(vx, y + i * rowH); ctx.lineTo(vx, y + (i + 1) * rowH);
+                            renderer.moveTo(vx, y + i * rowH); renderer.lineTo(vx, y + (i + 1) * rowH);
                         }
                     }
                 }
-                ctx.stroke();
+                renderer.stroke();
                 break;
             }
             case 'user': {
                 const headR = Math.min(w, h) * 0.25;
                 const center_x = x + w / 2;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.beginPath(); ctx.arc(center_x, y + headR, headR, 0, Math.PI * 2); ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    renderer.beginPath(); renderer.arc(center_x, y + headR, headR, 0, Math.PI * 2); renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath(); ctx.arc(center_x, y + headR, headR, 0, Math.PI * 2); ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath(); renderer.arc(center_x, y + headR, headR, 0, Math.PI * 2); renderer.stroke();
                 const shoulderW = w * 0.8;
-                ctx.beginPath();
-                ctx.moveTo(center_x - shoulderW / 2, y + h);
-                ctx.quadraticCurveTo(center_x, y + headR * 1.5, center_x + shoulderW / 2, y + h);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(center_x - shoulderW / 2, y + h);
+                renderer.quadraticCurveTo(center_x, y + headR * 1.5, center_x + shoulderW / 2, y + h);
+                renderer.stroke();
                 break;
             }
             case 'messageQueue': {
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fillRect(x, y, w, h);
+                    renderer.fillStyle = backgroundColor;
+                    renderer.fillRect(x, y, w, h);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.strokeRect(x, y, w, h);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokeRect(x, y, w, h);
                 const segments = 4;
                 const segW = w / segments;
-                ctx.beginPath();
+                renderer.beginPath();
                 for (let i = 1; i < segments; i++) {
-                    ctx.moveTo(x + i * segW, y); ctx.lineTo(x + i * segW, y + h);
+                    renderer.moveTo(x + i * segW, y); renderer.lineTo(x + i * segW, y + h);
                 }
-                ctx.stroke();
+                renderer.stroke();
                 break;
             }
             case 'lambda': {
@@ -108,30 +109,30 @@ export class InfraRenderer extends ShapeRenderer {
                 const zx = center_x - zapW / 2, zy = center_y - zapH / 2;
                 const zapPath = `M ${zx + zapW} ${zy} L ${zx} ${zy + zapH * 0.6} L ${zx + zapW * 0.6} ${zy + zapH * 0.5} L ${zx} ${zy + zapH} L ${zx + zapW} ${zy + zapH * 0.4} L ${zx + zapW * 0.4} ${zy + zapH * 0.5} Z`;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.beginPath(); ctx.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    renderer.beginPath(); renderer.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath(); ctx.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.stroke();
-                ctx.fillStyle = strokeColor;
-                ctx.fill(new Path2D(zapPath));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath(); renderer.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); renderer.stroke();
+                renderer.fillStyle = strokeColor;
+                renderer.fillPath(zapPath);
                 break;
             }
             case 'router': {
                 const center_x = x + w / 2, center_y = y + h / 2;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.beginPath(); ctx.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    renderer.beginPath(); renderer.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath(); ctx.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath(); renderer.ellipse(center_x, center_y, w / 2, h / 2, 0, 0, Math.PI * 2); renderer.stroke();
                 const r = Math.min(w, h) * 0.3;
-                ctx.beginPath();
+                renderer.beginPath();
                 for (let a = 0; a < 4; a++) {
                     const angle = (Math.PI / 2) * a + Math.PI / 4;
-                    ctx.moveTo(center_x, center_y); ctx.lineTo(center_x + r * Math.cos(angle), center_y + r * Math.sin(angle));
+                    renderer.moveTo(center_x, center_y); renderer.lineTo(center_x + r * Math.cos(angle), center_y + r * Math.sin(angle));
                 }
-                ctx.stroke();
+                renderer.stroke();
                 break;
             }
         }
@@ -227,12 +228,12 @@ export class InfraRenderer extends ShapeRenderer {
         RenderPipeline.renderText(context, cx, cy);
     }
 
-    private drawArchArrowhead(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number) {
-        ctx.beginPath();
-        ctx.moveTo(x - 5 * Math.cos(angle - Math.PI / 6), y - 5 * Math.sin(angle - Math.PI / 6));
-        ctx.lineTo(x, y);
-        ctx.lineTo(x - 5 * Math.cos(angle + Math.PI / 6), y - 5 * Math.sin(angle + Math.PI / 6));
-        ctx.stroke();
+    private drawArchArrowhead(renderer: IRenderer, x: number, y: number, angle: number) {
+        renderer.beginPath();
+        renderer.moveTo(x - 5 * Math.cos(angle - Math.PI / 6), y - 5 * Math.sin(angle - Math.PI / 6));
+        renderer.lineTo(x, y);
+        renderer.lineTo(x - 5 * Math.cos(angle + Math.PI / 6), y - 5 * Math.sin(angle + Math.PI / 6));
+        renderer.stroke();
     }
 
     private drawSketchArrowhead(rc: any, x: number, y: number, angle: number, options: any) {
@@ -243,11 +244,11 @@ export class InfraRenderer extends ShapeRenderer {
         rc.line(x, y, p2.x, p2.y, options);
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         if (el.type === 'loadBalancer' || el.type === 'router' || el.type === 'lambda') {
-            ctx.ellipse(el.x + el.width / 2, el.y + el.height / 2, el.width / 2, el.height / 2, 0, 0, Math.PI * 2);
+            renderer.ellipse(el.x + el.width / 2, el.y + el.height / 2, el.width / 2, el.height / 2, 0, 0, Math.PI * 2);
         } else {
-            ctx.rect(el.x, el.y, el.width, el.height);
+            renderer.rect(el.x, el.y, el.width, el.height);
         }
     }
 }

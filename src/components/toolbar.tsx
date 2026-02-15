@@ -2,8 +2,9 @@ import { type Component, For, createSignal, onMount, onCleanup } from "solid-js"
 import { store, setSelectedTool, addElement, setStore } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import type { ToolType } from "../types";
-import { MousePointer2, Type, Eraser, Hand, Image as ImageIcon, Zap, Highlighter, Lasso, Crop } from "lucide-solid";
+import { MousePointer2, Eraser, Hand, Image as ImageIcon, Zap, Highlighter, Lasso, Crop } from "lucide-solid";
 import PenToolGroup from "./pen-tool-group";
+import TextToolGroup from "./text-tool-group";
 import ShapeToolGroup from "./shape-tool-group";
 import SketchnoteToolGroup from "./sketchnote-tool-group";
 import InfraToolGroup from "./infra-tool-group";
@@ -26,13 +27,16 @@ import "./toolbar.css";
 const navTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
     { type: 'pan', icon: Hand, label: 'Pan Tool (H)' },
     { type: 'selection', icon: MousePointer2, label: 'Selection (V or 1)' },
+];
+
+// Lasso & Crop tools (rendered after connector/line toolgroup)
+const selectUtilTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
     { type: 'lasso', icon: Lasso, label: 'Lasso Select (Shift+L)' },
     { type: 'crop', icon: Crop, label: 'Crop Image (Shift+C)' },
 ];
 
 // Utility tools (rendered after grouped tools)
 const utilityTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
-    { type: 'text', icon: Type, label: 'Text (T or 6)' },
     { type: 'image', icon: ImageIcon, label: 'Insert Image (I or 9)' },
     { type: 'eraser', icon: Eraser, label: 'Eraser (E or 7)' },
     { type: 'laser', icon: Zap, label: 'Laser Pointer (Shift+P)' },
@@ -202,7 +206,7 @@ const Toolbar: Component = () => {
                 accept="image/*"
                 style={{ display: 'none' }}
             />
-            {/* Pan, Selection, Lasso */}
+            {/* Pan, Selection */}
             <For each={navTools}>
                 {(tool) => (
                     <button
@@ -221,6 +225,20 @@ const Toolbar: Component = () => {
 
             {/* Connector Tool Group (Arrow, Line, Bezier, Polyline) */}
             <ConnectorToolGroup />
+
+            {/* Lasso & Crop (after lines) */}
+            <For each={selectUtilTools}>
+                {(tool) => (
+                    <button
+                        class={`toolbar-btn ${store.selectedTool === tool.type ? 'active' : ''}`}
+                        onClick={() => handleToolClick(tool.type)}
+                        onContextMenu={handleRightClick}
+                        title={tool.label}
+                    >
+                        <tool.icon size={18} />
+                    </button>
+                )}
+            </For>
 
             {/* Shape Tool Group (Rectangle, Circle, Diamond, Triangle, Hexagon, etc.) */}
             <ShapeToolGroup />
@@ -261,7 +279,10 @@ const Toolbar: Component = () => {
             {/* BPMN Tool Group (Events, Gateways, Activities, Artifacts) */}
             <BpmnToolGroup />
 
-            {/* Text, Image, Eraser, Laser, Ink */}
+            {/* Text Tool Group (Text, Rich Text) */}
+            <TextToolGroup />
+
+            {/* Image, Eraser, Laser, Ink */}
             <For each={utilityTools}>
                 {(tool) => (
                     <button

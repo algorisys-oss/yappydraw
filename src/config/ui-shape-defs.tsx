@@ -6,6 +6,7 @@ import type { Component } from 'solid-js';
 import type { RoughCanvas } from 'roughjs/bin/canvas';
 import type { Options } from 'roughjs/bin/core';
 import type { DrawingElement } from '../types';
+import type { IRenderer } from '../rendering/IRenderer';
 
 export type UIShapeCategory = 'container' | 'form' | 'feedback' | 'navigation';
 
@@ -17,7 +18,7 @@ export interface UIShapeBounds {
 export interface UIRenderHelpers {
     strokeColor: string;
     backgroundColor: string | undefined;
-    applyStroke: (ctx: CanvasRenderingContext2D) => void;
+    applyStroke: (renderer: IRenderer) => void;
     buildRoughOptions: () => Options;
     getRoundedRectPath: (x: number, y: number, w: number, h: number, r: number) => string;
     shadeColor: (color: string, percent: number) => string;
@@ -33,9 +34,9 @@ export interface UIShapeDef {
     defaultHeight: number;
     customTextRendering?: boolean;
     textYOffset?: (el: DrawingElement) => number;
-    renderArchitectural: (ctx: CanvasRenderingContext2D, el: DrawingElement, b: UIShapeBounds, h: UIRenderHelpers) => void;
-    renderSketch: (rc: RoughCanvas, el: DrawingElement, b: UIShapeBounds, h: UIRenderHelpers, ctx?: CanvasRenderingContext2D) => void;
-    definePath: (ctx: CanvasRenderingContext2D, el: DrawingElement) => void;
+    renderArchitectural: (renderer: IRenderer, el: DrawingElement, b: UIShapeBounds, h: UIRenderHelpers) => void;
+    renderSketch: (rc: RoughCanvas, el: DrawingElement, b: UIShapeBounds, h: UIRenderHelpers, renderer?: IRenderer) => void;
+    definePath: (renderer: IRenderer, el: DrawingElement) => void;
 }
 
 // ─── Toolbar Icons (SolidJS SVG Components) ────────────────────────────
@@ -184,15 +185,15 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
         icon: '🖼', toolbarIcon: BrowserWindowIcon,
         defaultWidth: 400, defaultHeight: 300,
         textYOffset: (el) => Math.min(el.height * 0.15, 30) / 2,
-        renderArchitectural(ctx, _el, b, h) {
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.fillRect(b.x, b.y, b.w, b.h); }
-            h.applyStroke(ctx);
-            ctx.strokeRect(b.x, b.y, b.w, b.h);
+        renderArchitectural(renderer, _el, b, h) {
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.fillRect(b.x, b.y, b.w, b.h); }
+            h.applyStroke(renderer);
+            renderer.strokeRect(b.x, b.y, b.w, b.h);
             const headerH = Math.min(b.h * 0.15, 30);
-            ctx.strokeRect(b.x, b.y, b.w, headerH);
+            renderer.strokeRect(b.x, b.y, b.w, headerH);
             const btnR = 4;
             for (let i = 0; i < 3; i++) {
-                ctx.beginPath(); ctx.arc(b.x + 10 + i * 15, b.y + headerH / 2, btnR, 0, Math.PI * 2); ctx.stroke();
+                renderer.beginPath(); renderer.arc(b.x + 10 + i * 15, b.y + headerH / 2, btnR, 0, Math.PI * 2); renderer.stroke();
             }
         },
         renderSketch(rc, _el, b, h) {
@@ -202,21 +203,21 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             rc.rectangle(b.x, b.y, b.w, headerH, opts);
             for (let i = 0; i < 3; i++) rc.circle(b.x + 10 + i * 15, b.y + headerH / 2, 8, opts);
         },
-        definePath(ctx, el) { ctx.rect(el.x, el.y, el.width, el.height); },
+        definePath(renderer, el) { renderer.rect(el.x, el.y, el.width, el.height); },
     },
     {
         type: 'mobilePhone', label: 'Mobile Phone', category: 'container',
         icon: '📱', toolbarIcon: MobilePhoneIcon,
         defaultWidth: 200, defaultHeight: 400,
         textYOffset: (el) => -(el.height * 0.05),
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const radius = 20;
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, radius); ctx.fill(); }
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, radius); ctx.stroke();
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, radius); renderer.fill(); }
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, radius); renderer.stroke();
             const sp = 10;
-            ctx.strokeRect(b.x + sp, b.y + sp + 20, b.w - 2 * sp, b.h - 2 * sp - 40);
-            ctx.beginPath(); ctx.arc(b.x + b.w / 2, b.y + b.h - 20, 10, 0, Math.PI * 2); ctx.stroke();
+            renderer.strokeRect(b.x + sp, b.y + sp + 20, b.w - 2 * sp, b.h - 2 * sp - 40);
+            renderer.beginPath(); renderer.arc(b.x + b.w / 2, b.y + b.h - 20, 10, 0, Math.PI * 2); renderer.stroke();
         },
         renderSketch(rc, _el, b, h) {
             const opts = h.buildRoughOptions();
@@ -226,20 +227,20 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             rc.rectangle(b.x + sp, b.y + sp + 20, b.w - 2 * sp, b.h - 2 * sp - 40, opts);
             rc.circle(b.x + b.w / 2, b.y + b.h - 20, 20, opts);
         },
-        definePath(ctx, el) { ctx.roundRect(el.x, el.y, el.width, el.height, 20); },
+        definePath(renderer, el) { renderer.roundRect(el.x, el.y, el.width, el.height, 20); },
     },
     {
         type: 'card', label: 'Card', category: 'container',
         icon: '▭', toolbarIcon: CardIcon,
         defaultWidth: 300, defaultHeight: 200,
         textYOffset: (el) => Math.min(el.height * 0.15, 30) / 2,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const r = Math.min(b.w, b.h) * 0.05;
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.fill(); }
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.stroke();
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.fill(); }
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.stroke();
             const divY = b.y + Math.min(b.h * 0.2, 40);
-            ctx.beginPath(); ctx.moveTo(b.x, divY); ctx.lineTo(b.x + b.w, divY); ctx.stroke();
+            renderer.beginPath(); renderer.moveTo(b.x, divY); renderer.lineTo(b.x + b.w, divY); renderer.stroke();
         },
         renderSketch(rc, _el, b, h) {
             const opts = h.buildRoughOptions();
@@ -248,7 +249,7 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             const divY = b.y + Math.min(b.h * 0.2, 40);
             rc.line(b.x, divY, b.x + b.w, divY, opts);
         },
-        definePath(ctx, el) { const r = Math.min(el.width, el.height) * 0.05; ctx.roundRect(el.x, el.y, el.width, el.height, r); },
+        definePath(renderer, el) { const r = Math.min(el.width, el.height) * 0.05; renderer.roundRect(el.x, el.y, el.width, el.height, r); },
     },
 
     // ════════ FORM ELEMENTS ════════
@@ -256,16 +257,16 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
         type: 'browser', label: 'Browser (Simple)', category: 'container',
         icon: '🌐', toolbarIcon: BrowserIcon,
         defaultWidth: 400, defaultHeight: 300,
-        renderArchitectural(ctx, _el, b, h) {
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.fillRect(b.x, b.y, b.w, b.h); }
-            h.applyStroke(ctx);
-            ctx.strokeRect(b.x, b.y, b.w, b.h);
+        renderArchitectural(renderer, _el, b, h) {
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.fillRect(b.x, b.y, b.w, b.h); }
+            h.applyStroke(renderer);
+            renderer.strokeRect(b.x, b.y, b.w, b.h);
             const headerH = b.h * 0.15;
-            ctx.beginPath(); ctx.moveTo(b.x, b.y + headerH); ctx.lineTo(b.x + b.w, b.y + headerH); ctx.stroke();
-            ctx.fillStyle = h.strokeColor;
+            renderer.beginPath(); renderer.moveTo(b.x, b.y + headerH); renderer.lineTo(b.x + b.w, b.y + headerH); renderer.stroke();
+            renderer.fillStyle = h.strokeColor;
             const dotR = headerH * 0.2;
             for (let i = 0; i < 3; i++) {
-                ctx.beginPath(); ctx.arc(b.x + headerH * (0.5 + i * 0.6), b.y + headerH / 2, dotR, 0, Math.PI * 2); ctx.fill();
+                renderer.beginPath(); renderer.arc(b.x + headerH * (0.5 + i * 0.6), b.y + headerH / 2, dotR, 0, Math.PI * 2); renderer.fill();
             }
         },
         renderSketch(rc, _el, b, h) {
@@ -278,43 +279,43 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
                 rc.circle(b.x + headerH * (0.5 + i * 0.6), b.y + headerH / 2, dotR, { ...opts, fillStyle: 'solid', fill: h.strokeColor });
             }
         },
-        definePath(ctx, el) { ctx.rect(el.x, el.y, el.width, el.height); },
+        definePath(renderer, el) { renderer.rect(el.x, el.y, el.width, el.height); },
     },
     {
         type: 'ghostButton', label: 'Ghost Button', category: 'form',
         icon: '▢', toolbarIcon: GhostButtonIcon,
         defaultWidth: 160, defaultHeight: 48,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const r = Math.min(b.w, b.h) * 0.2;
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.fill(); }
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.stroke();
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.fill(); }
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.stroke();
         },
         renderSketch(rc, _el, b, h) {
             const r = Math.min(b.w, b.h) * 0.2;
             rc.path(h.getRoundedRectPath(b.x, b.y, b.w, b.h, r), { ...h.buildRoughOptions(), strokeLineDash: [4, 4] });
         },
-        definePath(ctx, el) { const r = Math.min(el.width, el.height) * 0.2; ctx.roundRect(el.x, el.y, el.width, el.height, r); },
+        definePath(renderer, el) { const r = Math.min(el.width, el.height) * 0.2; renderer.roundRect(el.x, el.y, el.width, el.height, r); },
     },
     {
         type: 'inputField', label: 'Input Field', category: 'form',
         icon: '▭', toolbarIcon: InputFieldIcon,
         defaultWidth: 240, defaultHeight: 40,
         customTextRendering: true,
-        renderArchitectural(ctx, el, b, h) {
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.fillRect(b.x, b.y, b.w, b.h); }
-            h.applyStroke(ctx);
-            ctx.strokeRect(b.x, b.y, b.w, b.h);
+        renderArchitectural(renderer, el, b, h) {
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.fillRect(b.x, b.y, b.w, b.h); }
+            h.applyStroke(renderer);
+            renderer.strokeRect(b.x, b.y, b.w, b.h);
             // Cursor line
-            ctx.beginPath(); ctx.moveTo(b.x + 10, b.y + 8); ctx.lineTo(b.x + 10, b.y + b.h - 8); ctx.stroke();
+            renderer.beginPath(); renderer.moveTo(b.x + 10, b.y + 8); renderer.lineTo(b.x + 10, b.y + b.h - 8); renderer.stroke();
             // Left-aligned text
             if (el.containerText && !el.isEditing) {
-                ctx.save(); ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                renderer.save(); renderer.textAlign = 'left'; renderer.textBaseline = 'middle';
                 const fontSize = el.fontSize || Math.max(12, b.h * 0.4);
-                ctx.font = `${fontSize}px ${el.fontFamily || 'sans-serif'}`;
-                ctx.fillStyle = h.strokeColor;
-                ctx.fillText(el.containerText, b.x + 25, b.cy, b.w - 30);
-                ctx.restore();
+                renderer.font = `${fontSize}px ${el.fontFamily || 'sans-serif'}`;
+                renderer.fillStyle = h.strokeColor;
+                renderer.fillText(el.containerText, b.x + 25, b.cy, b.w - 30);
+                renderer.restore();
             }
         },
         renderSketch(rc, _el, b, h) {
@@ -322,36 +323,36 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             rc.rectangle(b.x, b.y, b.w, b.h, opts);
             rc.line(b.x + 10, b.y + 8, b.x + 10, b.y + b.h - 8, opts);
         },
-        definePath(ctx, el) { ctx.rect(el.x, el.y, el.width, el.height); },
+        definePath(renderer, el) { renderer.rect(el.x, el.y, el.width, el.height); },
     },
     {
         type: 'solidButton', label: 'Solid Button', category: 'form',
         icon: '▣', toolbarIcon: SolidButtonIcon,
         defaultWidth: 160, defaultHeight: 48,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const r = Math.min(b.w, b.h) * 0.15;
-            ctx.fillStyle = h.backgroundColor || h.strokeColor;
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.fill();
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.stroke();
+            renderer.fillStyle = h.backgroundColor || h.strokeColor;
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.fill();
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.stroke();
         },
         renderSketch(rc, _el, b, h) {
             const r = Math.min(b.w, b.h) * 0.15;
             rc.path(h.getRoundedRectPath(b.x, b.y, b.w, b.h, r), { ...h.buildRoughOptions(), fillStyle: 'solid' });
         },
-        definePath(ctx, el) { const r = Math.min(el.width, el.height) * 0.15; ctx.roundRect(el.x, el.y, el.width, el.height, r); },
+        definePath(renderer, el) { const r = Math.min(el.width, el.height) * 0.15; renderer.roundRect(el.x, el.y, el.width, el.height, r); },
     },
     {
         type: 'dropdown', label: 'Dropdown', category: 'form',
         icon: '▾', toolbarIcon: DropdownIcon,
         defaultWidth: 200, defaultHeight: 40,
-        renderArchitectural(ctx, _el, b, h) {
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.fillRect(b.x, b.y, b.w, b.h); }
-            h.applyStroke(ctx);
-            ctx.strokeRect(b.x, b.y, b.w, b.h);
+        renderArchitectural(renderer, _el, b, h) {
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.fillRect(b.x, b.y, b.w, b.h); }
+            h.applyStroke(renderer);
+            renderer.strokeRect(b.x, b.y, b.w, b.h);
             // Chevron
             const cx = b.x + b.w - 20, cy = b.cy;
-            ctx.beginPath(); ctx.moveTo(cx - 5, cy - 4); ctx.lineTo(cx, cy + 4); ctx.lineTo(cx + 5, cy - 4); ctx.stroke();
+            renderer.beginPath(); renderer.moveTo(cx - 5, cy - 4); renderer.lineTo(cx, cy + 4); renderer.lineTo(cx + 5, cy - 4); renderer.stroke();
         },
         renderSketch(rc, _el, b, h) {
             const opts = h.buildRoughOptions();
@@ -360,23 +361,23 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             rc.line(cx - 5, cy - 4, cx, cy + 4, opts);
             rc.line(cx, cy + 4, cx + 5, cy - 4, opts);
         },
-        definePath(ctx, el) { ctx.rect(el.x, el.y, el.width, el.height); },
+        definePath(renderer, el) { renderer.rect(el.x, el.y, el.width, el.height); },
     },
     {
         type: 'uiCheckbox', label: 'Checkbox', category: 'form',
         icon: '☑', toolbarIcon: UICheckboxIcon,
         defaultWidth: 24, defaultHeight: 24,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const r = Math.min(b.w, b.h) * 0.12;
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.fill(); }
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.stroke();
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.fill(); }
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.stroke();
             // Checkmark
-            ctx.beginPath();
-            ctx.moveTo(b.x + b.w * 0.2, b.cy);
-            ctx.lineTo(b.x + b.w * 0.42, b.y + b.h * 0.72);
-            ctx.lineTo(b.x + b.w * 0.78, b.y + b.h * 0.28);
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.moveTo(b.x + b.w * 0.2, b.cy);
+            renderer.lineTo(b.x + b.w * 0.42, b.y + b.h * 0.72);
+            renderer.lineTo(b.x + b.w * 0.78, b.y + b.h * 0.28);
+            renderer.stroke();
         },
         renderSketch(rc, _el, b, h) {
             const opts = h.buildRoughOptions();
@@ -384,20 +385,20 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             rc.line(b.x + b.w * 0.2, b.cy, b.x + b.w * 0.42, b.y + b.h * 0.72, opts);
             rc.line(b.x + b.w * 0.42, b.y + b.h * 0.72, b.x + b.w * 0.78, b.y + b.h * 0.28, opts);
         },
-        definePath(ctx, el) { ctx.rect(el.x, el.y, el.width, el.height); },
+        definePath(renderer, el) { renderer.rect(el.x, el.y, el.width, el.height); },
     },
     {
         type: 'radioButton', label: 'Radio Button', category: 'form',
         icon: '◉', toolbarIcon: RadioButtonIcon,
         defaultWidth: 24, defaultHeight: 24,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const r = Math.min(b.w, b.h) / 2;
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.beginPath(); ctx.arc(b.cx, b.cy, r, 0, Math.PI * 2); ctx.fill(); }
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.arc(b.cx, b.cy, r, 0, Math.PI * 2); ctx.stroke();
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.beginPath(); renderer.arc(b.cx, b.cy, r, 0, Math.PI * 2); renderer.fill(); }
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.arc(b.cx, b.cy, r, 0, Math.PI * 2); renderer.stroke();
             // Inner dot
-            ctx.fillStyle = h.strokeColor;
-            ctx.beginPath(); ctx.arc(b.cx, b.cy, r * 0.45, 0, Math.PI * 2); ctx.fill();
+            renderer.fillStyle = h.strokeColor;
+            renderer.beginPath(); renderer.arc(b.cx, b.cy, r * 0.45, 0, Math.PI * 2); renderer.fill();
         },
         renderSketch(rc, _el, b, h) {
             const opts = h.buildRoughOptions();
@@ -405,24 +406,24 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             rc.circle(b.cx, b.cy, r * 2, opts);
             rc.circle(b.cx, b.cy, r * 0.9, { ...opts, fillStyle: 'solid', fill: h.strokeColor });
         },
-        definePath(ctx, el) { const r = Math.min(el.width, el.height) / 2; ctx.arc(el.x + el.width / 2, el.y + el.height / 2, r, 0, Math.PI * 2); },
+        definePath(renderer, el) { const r = Math.min(el.width, el.height) / 2; renderer.arc(el.x + el.width / 2, el.y + el.height / 2, r, 0, Math.PI * 2); },
     },
     {
         type: 'toggleSwitch', label: 'Toggle Switch', category: 'form',
         icon: '⊝', toolbarIcon: ToggleSwitchIcon,
         defaultWidth: 56, defaultHeight: 28,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const r = b.h / 2;
             // Track
-            ctx.fillStyle = h.backgroundColor || '#d1d5db';
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.fill();
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.stroke();
+            renderer.fillStyle = h.backgroundColor || '#d1d5db';
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.fill();
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.stroke();
             // Knob (positioned at ON side = right)
             const knobR = r * 0.8;
             const knobX = b.x + b.w - r;
-            ctx.fillStyle = h.strokeColor;
-            ctx.beginPath(); ctx.arc(knobX, b.cy, knobR, 0, Math.PI * 2); ctx.fill();
+            renderer.fillStyle = h.strokeColor;
+            renderer.beginPath(); renderer.arc(knobX, b.cy, knobR, 0, Math.PI * 2); renderer.fill();
         },
         renderSketch(rc, _el, b, h) {
             const opts = h.buildRoughOptions();
@@ -431,22 +432,22 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             const knobR = r * 0.8;
             rc.circle(b.x + b.w - r, b.cy, knobR * 2, { ...opts, fillStyle: 'solid', fill: h.strokeColor });
         },
-        definePath(ctx, el) { const r = el.height / 2; ctx.roundRect(el.x, el.y, el.width, el.height, r); },
+        definePath(renderer, el) { const r = el.height / 2; renderer.roundRect(el.x, el.y, el.width, el.height, r); },
     },
     {
         type: 'searchBar', label: 'Search Bar', category: 'form',
         icon: '🔍', toolbarIcon: SearchBarIcon,
         defaultWidth: 280, defaultHeight: 40,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const r = b.h * 0.2;
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.fill(); }
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.stroke();
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.fill(); }
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.stroke();
             // Magnifying glass icon
             const iconX = b.x + 16, iconY = b.cy;
             const gr = Math.min(b.h * 0.22, 7);
-            ctx.beginPath(); ctx.arc(iconX, iconY - 1, gr, 0, Math.PI * 2); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(iconX + gr * 0.7, iconY + gr * 0.7 - 1); ctx.lineTo(iconX + gr * 1.4, iconY + gr * 1.4 - 1); ctx.stroke();
+            renderer.beginPath(); renderer.arc(iconX, iconY - 1, gr, 0, Math.PI * 2); renderer.stroke();
+            renderer.beginPath(); renderer.moveTo(iconX + gr * 0.7, iconY + gr * 0.7 - 1); renderer.lineTo(iconX + gr * 1.4, iconY + gr * 1.4 - 1); renderer.stroke();
         },
         renderSketch(rc, _el, b, h) {
             const opts = h.buildRoughOptions();
@@ -457,32 +458,32 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             rc.circle(iconX, iconY - 1, gr * 2, opts);
             rc.line(iconX + gr * 0.7, iconY + gr * 0.7 - 1, iconX + gr * 1.4, iconY + gr * 1.4 - 1, opts);
         },
-        definePath(ctx, el) { const r = el.height * 0.2; ctx.roundRect(el.x, el.y, el.width, el.height, r); },
+        definePath(renderer, el) { const r = el.height * 0.2; renderer.roundRect(el.x, el.y, el.width, el.height, r); },
     },
     {
         type: 'slider', label: 'Slider', category: 'form',
         icon: '⊖', toolbarIcon: SliderIcon,
         defaultWidth: 200, defaultHeight: 24,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             // Track
             const trackH = Math.max(4, b.h * 0.2);
             const trackY = b.cy - trackH / 2;
-            ctx.fillStyle = h.backgroundColor || '#e5e7eb';
-            ctx.beginPath(); ctx.roundRect(b.x, trackY, b.w, trackH, trackH / 2); ctx.fill();
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.roundRect(b.x, trackY, b.w, trackH, trackH / 2); ctx.stroke();
+            renderer.fillStyle = h.backgroundColor || '#e5e7eb';
+            renderer.beginPath(); renderer.roundRect(b.x, trackY, b.w, trackH, trackH / 2); renderer.fill();
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.roundRect(b.x, trackY, b.w, trackH, trackH / 2); renderer.stroke();
             // Filled portion (60%)
             const fillW = b.w * 0.6;
-            ctx.fillStyle = h.strokeColor;
-            ctx.globalAlpha = 0.3;
-            ctx.beginPath(); ctx.roundRect(b.x, trackY, fillW, trackH, trackH / 2); ctx.fill();
-            ctx.globalAlpha = 1;
+            renderer.fillStyle = h.strokeColor;
+            renderer.globalAlpha = 0.3;
+            renderer.beginPath(); renderer.roundRect(b.x, trackY, fillW, trackH, trackH / 2); renderer.fill();
+            renderer.globalAlpha = 1;
             // Thumb
             const thumbR = b.h * 0.35;
             const thumbX = b.x + fillW;
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath(); ctx.arc(thumbX, b.cy, thumbR, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(thumbX, b.cy, thumbR, 0, Math.PI * 2); ctx.stroke();
+            renderer.fillStyle = '#ffffff';
+            renderer.beginPath(); renderer.arc(thumbX, b.cy, thumbR, 0, Math.PI * 2); renderer.fill();
+            renderer.beginPath(); renderer.arc(thumbX, b.cy, thumbR, 0, Math.PI * 2); renderer.stroke();
         },
         renderSketch(rc, _el, b, h) {
             const opts = h.buildRoughOptions();
@@ -493,7 +494,7 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             const thumbX = b.x + b.w * 0.6;
             rc.circle(thumbX, b.cy, thumbR * 2, { ...opts, fillStyle: 'solid', fill: '#ffffff' });
         },
-        definePath(ctx, el) { ctx.rect(el.x, el.y, el.width, el.height); },
+        definePath(renderer, el) { renderer.rect(el.x, el.y, el.width, el.height); },
     },
 
     // ════════ NAVIGATION ════════
@@ -502,39 +503,39 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
         icon: '═', toolbarIcon: NavbarIcon,
         defaultWidth: 500, defaultHeight: 48,
         customTextRendering: true,
-        renderArchitectural(ctx, el, b, h) {
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.fillRect(b.x, b.y, b.w, b.h); }
-            h.applyStroke(ctx);
+        renderArchitectural(renderer, el, b, h) {
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.fillRect(b.x, b.y, b.w, b.h); }
+            h.applyStroke(renderer);
             const pad = Math.min(16, b.h * 0.3);
             const iconS = Math.min(20, b.h * 0.4);
             // Hamburger menu (left)
             const hx = b.x + pad;
             const hGap = iconS * 0.3;
             for (let i = -1; i <= 1; i++) {
-                ctx.beginPath(); ctx.moveTo(hx, b.cy + i * hGap); ctx.lineTo(hx + iconS, b.cy + i * hGap); ctx.stroke();
+                renderer.beginPath(); renderer.moveTo(hx, b.cy + i * hGap); renderer.lineTo(hx + iconS, b.cy + i * hGap); renderer.stroke();
             }
             // Title text or placeholder
             const title = el.containerText || el.text || '';
             const titleX = hx + iconS + pad;
             const fontSize = Math.max(10, Math.min(16, b.h * 0.35));
             if (title) {
-                ctx.fillStyle = h.strokeColor;
-                ctx.font = `600 ${fontSize}px sans-serif`;
-                ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-                ctx.fillText(title, titleX, b.cy, b.w * 0.5);
+                renderer.fillStyle = h.strokeColor;
+                renderer.font = `600 ${fontSize}px sans-serif`;
+                renderer.textAlign = 'left'; renderer.textBaseline = 'middle';
+                renderer.fillText(title, titleX, b.cy, b.w * 0.5);
             } else {
-                ctx.fillStyle = h.strokeColor; ctx.globalAlpha = 0.35;
-                ctx.beginPath(); ctx.roundRect(titleX, b.cy - 3, b.w * 0.2, 6, 3); ctx.fill();
-                ctx.globalAlpha = 1;
+                renderer.fillStyle = h.strokeColor; renderer.globalAlpha = 0.35;
+                renderer.beginPath(); renderer.roundRect(titleX, b.cy - 3, b.w * 0.2, 6, 3); renderer.fill();
+                renderer.globalAlpha = 1;
             }
             // Right icons
             const rx = b.x + b.w - pad;
-            ctx.beginPath(); ctx.arc(rx - iconS * 0.4, b.cy, iconS * 0.35, 0, Math.PI * 2); ctx.stroke();
-            ctx.beginPath(); ctx.arc(rx - iconS * 1.4, b.cy, iconS * 0.35, 0, Math.PI * 2); ctx.stroke();
+            renderer.beginPath(); renderer.arc(rx - iconS * 0.4, b.cy, iconS * 0.35, 0, Math.PI * 2); renderer.stroke();
+            renderer.beginPath(); renderer.arc(rx - iconS * 1.4, b.cy, iconS * 0.35, 0, Math.PI * 2); renderer.stroke();
             // Bottom border
-            ctx.beginPath(); ctx.moveTo(b.x, b.y + b.h); ctx.lineTo(b.x + b.w, b.y + b.h); ctx.stroke();
+            renderer.beginPath(); renderer.moveTo(b.x, b.y + b.h); renderer.lineTo(b.x + b.w, b.y + b.h); renderer.stroke();
         },
-        renderSketch(rc, el, b, h, ctx) {
+        renderSketch(rc, el, b, h, renderer) {
             const opts = h.buildRoughOptions();
             const pad = Math.min(16, b.h * 0.3);
             const iconS = Math.min(20, b.h * 0.4);
@@ -543,12 +544,12 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             const hGap = iconS * 0.3;
             for (let i = -1; i <= 1; i++) rc.line(hx, b.cy + i * hGap, hx + iconS, b.cy + i * hGap, opts);
             const title = el.containerText || el.text || '';
-            if (title && ctx) {
+            if (title && renderer) {
                 const fontSize = Math.max(10, Math.min(16, b.h * 0.35));
-                ctx.fillStyle = h.strokeColor;
-                ctx.font = `600 ${fontSize}px sans-serif`;
-                ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-                ctx.fillText(title, hx + iconS + pad, b.cy, b.w * 0.5);
+                renderer.fillStyle = h.strokeColor;
+                renderer.font = `600 ${fontSize}px sans-serif`;
+                renderer.textAlign = 'left'; renderer.textBaseline = 'middle';
+                renderer.fillText(title, hx + iconS + pad, b.cy, b.w * 0.5);
             } else if (!title) {
                 rc.rectangle(hx + iconS + pad, b.cy - 3, b.w * 0.2, 6, { ...opts, fill: opts.stroke, fillStyle: 'solid' });
             }
@@ -556,18 +557,18 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             rc.circle(rx - iconS * 0.4, b.cy, iconS * 0.7, opts);
             rc.circle(rx - iconS * 1.4, b.cy, iconS * 0.7, opts);
         },
-        definePath(ctx, el) { ctx.rect(el.x, el.y, el.width, el.height); },
+        definePath(renderer, el) { renderer.rect(el.x, el.y, el.width, el.height); },
     },
     {
         type: 'tabBar', label: 'Tab Bar', category: 'navigation',
         icon: '⊟', toolbarIcon: TabBarIcon,
         defaultWidth: 360, defaultHeight: 40,
         customTextRendering: true,
-        renderArchitectural(ctx, el, b, h) {
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.fillRect(b.x, b.y, b.w, b.h); }
-            h.applyStroke(ctx);
+        renderArchitectural(renderer, el, b, h) {
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.fillRect(b.x, b.y, b.w, b.h); }
+            h.applyStroke(renderer);
             // Bottom border line
-            ctx.beginPath(); ctx.moveTo(b.x, b.y + b.h); ctx.lineTo(b.x + b.w, b.y + b.h); ctx.stroke();
+            renderer.beginPath(); renderer.moveTo(b.x, b.y + b.h); renderer.lineTo(b.x + b.w, b.y + b.h); renderer.stroke();
             // Parse tab labels
             const defaultLabels = ['Tab 1', 'Tab 2', 'Tab 3'];
             const labels = (el.containerText || el.text)
@@ -576,26 +577,26 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             const tabs = labels.length;
             const tabW = b.w / tabs;
             const fontSize = Math.max(10, Math.min(14, b.h * 0.35));
-            ctx.font = `${fontSize}px sans-serif`;
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            renderer.font = `${fontSize}px sans-serif`;
+            renderer.textAlign = 'center'; renderer.textBaseline = 'middle';
             for (let i = 0; i < tabs; i++) {
                 const tx = b.x + tabW * i + tabW / 2;
                 if (i === 0) {
                     // Active tab: full opacity text + bottom indicator
-                    ctx.fillStyle = h.strokeColor;
-                    ctx.font = `600 ${fontSize}px sans-serif`;
-                    ctx.fillText(labels[i], tx, b.cy, tabW - 8);
-                    ctx.fillRect(b.x + tabW * 0.05, b.y + b.h - 3, tabW * 0.9, 3);
-                    ctx.font = `${fontSize}px sans-serif`;
+                    renderer.fillStyle = h.strokeColor;
+                    renderer.font = `600 ${fontSize}px sans-serif`;
+                    renderer.fillText(labels[i], tx, b.cy, tabW - 8);
+                    renderer.fillRect(b.x + tabW * 0.05, b.y + b.h - 3, tabW * 0.9, 3);
+                    renderer.font = `${fontSize}px sans-serif`;
                 } else {
                     // Inactive: faded text
-                    ctx.save(); ctx.globalAlpha = 0.45; ctx.fillStyle = h.strokeColor;
-                    ctx.fillText(labels[i], tx, b.cy, tabW - 8);
-                    ctx.restore();
+                    renderer.save(); renderer.globalAlpha = 0.45; renderer.fillStyle = h.strokeColor;
+                    renderer.fillText(labels[i], tx, b.cy, tabW - 8);
+                    renderer.restore();
                 }
             }
         },
-        renderSketch(rc, el, b, h, ctx) {
+        renderSketch(rc, el, b, h, renderer) {
             const opts = h.buildRoughOptions();
             // Bottom border
             rc.line(b.x, b.y + b.h, b.x + b.w, b.y + b.h, opts);
@@ -608,21 +609,21 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             // Active indicator
             rc.line(b.x + tabW * 0.05, b.y + b.h - 1, b.x + tabW * 0.95, b.y + b.h - 1,
                 { ...opts, strokeWidth: 3 });
-            // Text labels via canvas
-            if (ctx) {
+            // Text labels via renderer
+            if (renderer) {
                 const fontSize = Math.max(10, Math.min(14, b.h * 0.35));
-                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                renderer.textAlign = 'center'; renderer.textBaseline = 'middle';
                 for (let i = 0; i < tabs; i++) {
                     const tx = b.x + tabW * i + tabW / 2;
-                    ctx.fillStyle = h.strokeColor;
-                    ctx.font = i === 0 ? `600 ${fontSize}px sans-serif` : `${fontSize}px sans-serif`;
-                    if (i > 0) ctx.globalAlpha = 0.45;
-                    ctx.fillText(labels[i], tx, b.cy, tabW - 8);
-                    ctx.globalAlpha = 1;
+                    renderer.fillStyle = h.strokeColor;
+                    renderer.font = i === 0 ? `600 ${fontSize}px sans-serif` : `${fontSize}px sans-serif`;
+                    if (i > 0) renderer.globalAlpha = 0.45;
+                    renderer.fillText(labels[i], tx, b.cy, tabW - 8);
+                    renderer.globalAlpha = 1;
                 }
             }
         },
-        definePath(ctx, el) { ctx.rect(el.x, el.y, el.width, el.height); },
+        definePath(renderer, el) { renderer.rect(el.x, el.y, el.width, el.height); },
     },
 
     // ════════ FEEDBACK ════════
@@ -630,25 +631,25 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
         type: 'avatar', label: 'Avatar', category: 'feedback',
         icon: '👤', toolbarIcon: AvatarIcon,
         defaultWidth: 64, defaultHeight: 64,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const r = Math.min(b.w, b.h) / 2;
             // Circle background
             const bg = h.backgroundColor || '#e5e7eb';
-            ctx.fillStyle = bg;
-            ctx.beginPath(); ctx.arc(b.cx, b.cy, r, 0, Math.PI * 2); ctx.fill();
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.arc(b.cx, b.cy, r, 0, Math.PI * 2); ctx.stroke();
+            renderer.fillStyle = bg;
+            renderer.beginPath(); renderer.arc(b.cx, b.cy, r, 0, Math.PI * 2); renderer.fill();
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.arc(b.cx, b.cy, r, 0, Math.PI * 2); renderer.stroke();
             // Clip to circle for person silhouette
-            ctx.save();
-            ctx.beginPath(); ctx.arc(b.cx, b.cy, r - 1, 0, Math.PI * 2); ctx.clip();
+            renderer.save();
+            renderer.beginPath(); renderer.arc(b.cx, b.cy, r - 1, 0, Math.PI * 2); renderer.clip();
             // Use a darker shade of the background for the silhouette
             const silhouetteColor = h.shadeColor(bg === 'transparent' ? '#e5e7eb' : bg, 0.7);
-            ctx.fillStyle = silhouetteColor;
+            renderer.fillStyle = silhouetteColor;
             // Head
-            ctx.beginPath(); ctx.arc(b.cx, b.cy - r * 0.3, r * 0.22, 0, Math.PI * 2); ctx.fill();
+            renderer.beginPath(); renderer.arc(b.cx, b.cy - r * 0.3, r * 0.22, 0, Math.PI * 2); renderer.fill();
             // Body — top overlaps head, bottom clipped by circle
-            ctx.beginPath(); ctx.ellipse(b.cx, b.cy + r * 0.4, r * 0.4, r * 0.5, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.restore();
+            renderer.beginPath(); renderer.ellipse(b.cx, b.cy + r * 0.4, r * 0.4, r * 0.5, 0, 0, Math.PI * 2); renderer.fill();
+            renderer.restore();
         },
         renderSketch(rc, _el, b, h) {
             const opts = h.buildRoughOptions();
@@ -659,26 +660,26 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             // Body
             rc.ellipse(b.cx, b.cy + r * 0.4, r * 0.8, r * 1.0, { ...opts, fill: opts.stroke, fillStyle: 'solid' });
         },
-        definePath(ctx, el) { const r = Math.min(el.width, el.height) / 2; ctx.arc(el.x + el.width / 2, el.y + el.height / 2, r, 0, Math.PI * 2); },
+        definePath(renderer, el) { const r = Math.min(el.width, el.height) / 2; renderer.arc(el.x + el.width / 2, el.y + el.height / 2, r, 0, Math.PI * 2); },
     },
     {
         type: 'progressBar', label: 'Progress Bar', category: 'feedback',
         icon: '▰', toolbarIcon: ProgressBarIcon,
         defaultWidth: 200, defaultHeight: 16,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const r = b.h / 2;
             // Track
-            ctx.fillStyle = h.backgroundColor || '#e5e7eb';
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.fill();
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.stroke();
+            renderer.fillStyle = h.backgroundColor || '#e5e7eb';
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.fill();
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.stroke();
             // Fill (60%)
             const fillW = b.w * 0.6;
             if (fillW > 0) {
-                ctx.fillStyle = h.strokeColor;
-                ctx.globalAlpha = 0.6;
-                ctx.beginPath(); ctx.roundRect(b.x, b.y, fillW, b.h, r); ctx.fill();
-                ctx.globalAlpha = 1;
+                renderer.fillStyle = h.strokeColor;
+                renderer.globalAlpha = 0.6;
+                renderer.beginPath(); renderer.roundRect(b.x, b.y, fillW, b.h, r); renderer.fill();
+                renderer.globalAlpha = 1;
             }
         },
         renderSketch(rc, _el, b, h) {
@@ -688,44 +689,44 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             const fillW = b.w * 0.6;
             rc.path(h.getRoundedRectPath(b.x, b.y, fillW, b.h, r), { ...opts, fillStyle: 'solid', fill: h.strokeColor });
         },
-        definePath(ctx, el) { const r = el.height / 2; ctx.roundRect(el.x, el.y, el.width, el.height, r); },
+        definePath(renderer, el) { const r = el.height / 2; renderer.roundRect(el.x, el.y, el.width, el.height, r); },
     },
     {
         type: 'badge', label: 'Badge', category: 'feedback',
         icon: '⊞', toolbarIcon: BadgeIcon,
         defaultWidth: 80, defaultHeight: 28,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const r = b.h / 2;
-            ctx.fillStyle = h.backgroundColor || h.strokeColor;
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.fill();
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, r); ctx.stroke();
+            renderer.fillStyle = h.backgroundColor || h.strokeColor;
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.fill();
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, b.h, r); renderer.stroke();
         },
         renderSketch(rc, _el, b, h) {
             const r = b.h / 2;
             rc.path(h.getRoundedRectPath(b.x, b.y, b.w, b.h, r), { ...h.buildRoughOptions(), fillStyle: 'solid' });
         },
-        definePath(ctx, el) { const r = el.height / 2; ctx.roundRect(el.x, el.y, el.width, el.height, r); },
+        definePath(renderer, el) { const r = el.height / 2; renderer.roundRect(el.x, el.y, el.width, el.height, r); },
     },
     {
         type: 'tooltip', label: 'Tooltip', category: 'feedback',
         icon: '💬', toolbarIcon: TooltipIcon,
         defaultWidth: 160, defaultHeight: 48,
-        renderArchitectural(ctx, _el, b, h) {
+        renderArchitectural(renderer, _el, b, h) {
             const r = 6;
             const bodyH = b.h * 0.75;
             const arrowH = b.h - bodyH;
             // Body
-            if (h.backgroundColor) { ctx.fillStyle = h.backgroundColor; ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, bodyH, r); ctx.fill(); }
-            h.applyStroke(ctx);
-            ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, bodyH, r); ctx.stroke();
+            if (h.backgroundColor) { renderer.fillStyle = h.backgroundColor; renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, bodyH, r); renderer.fill(); }
+            h.applyStroke(renderer);
+            renderer.beginPath(); renderer.roundRect(b.x, b.y, b.w, bodyH, r); renderer.stroke();
             // Arrow
             const arrowW = 12;
-            ctx.beginPath();
-            ctx.moveTo(b.cx - arrowW / 2, b.y + bodyH);
-            ctx.lineTo(b.cx, b.y + bodyH + arrowH);
-            ctx.lineTo(b.cx + arrowW / 2, b.y + bodyH);
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.moveTo(b.cx - arrowW / 2, b.y + bodyH);
+            renderer.lineTo(b.cx, b.y + bodyH + arrowH);
+            renderer.lineTo(b.cx + arrowW / 2, b.y + bodyH);
+            renderer.stroke();
         },
         renderSketch(rc, _el, b, h) {
             const opts = h.buildRoughOptions();
@@ -737,7 +738,7 @@ export const UI_SHAPE_DEFS: UIShapeDef[] = [
             rc.line(b.cx - arrowW / 2, b.y + bodyH, b.cx, b.y + bodyH + arrowH, opts);
             rc.line(b.cx, b.y + bodyH + arrowH, b.cx + arrowW / 2, b.y + bodyH, opts);
         },
-        definePath(ctx, el) { ctx.rect(el.x, el.y, el.width, el.height); },
+        definePath(renderer, el) { renderer.rect(el.x, el.y, el.width, el.height); },
     },
 ];
 

@@ -1,6 +1,7 @@
 import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 import { normalizePoints, cubicBezier } from "../../utils/render-element";
 import { resolveFontFamily } from "../../utils/text-utils";
 
@@ -11,10 +12,10 @@ export class ConnectorRenderer extends ShapeRenderer {
      * control points, and stroke styles (dashed/dotted) properly.
      */
     render(context: RenderContext) {
-        const { ctx, element, layerOpacity } = context;
+        const { renderer, element, layerOpacity } = context;
 
         // 1. Apply universal transformations (rotation, opacity, shadow)
-        const { cx, cy } = RenderPipeline.applyTransformations(ctx, element, layerOpacity);
+        const { cx, cy } = RenderPipeline.applyTransformations(renderer, element, layerOpacity);
 
         // 2. Check for draw-in/draw-out animation
         const dp = element.drawProgress;
@@ -37,14 +38,14 @@ export class ConnectorRenderer extends ShapeRenderer {
         this.renderConnectorText(context);
 
         // 6. Restore transformations
-        RenderPipeline.restoreTransformations(ctx);
+        RenderPipeline.restoreTransformations(renderer);
     }
 
     /**
      * Render containerText at the midpoint of the connector path.
      */
     private renderConnectorText(context: RenderContext): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const text = el.containerText;
         if (!text || el.isEditing) return;
 
@@ -132,15 +133,15 @@ export class ConnectorRenderer extends ShapeRenderer {
         // Draw text with background for readability
         const fontSize = el.fontSize || 14;
         const fontFamily = resolveFontFamily(el.fontFamily);
-        ctx.save();
-        ctx.font = `${el.fontWeight || 'normal'} ${el.fontStyle || 'normal'} ${fontSize}px ${fontFamily}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        renderer.save();
+        renderer.font = `${el.fontWeight || 'normal'} ${el.fontStyle || 'normal'} ${fontSize}px ${fontFamily}`;
+        renderer.textAlign = 'center';
+        renderer.textBaseline = 'middle';
 
         const lines = text.split('\n');
         const lineHeight = fontSize * 1.3;
         const totalHeight = lines.length * lineHeight;
-        const maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+        const maxLineWidth = Math.max(...lines.map(l => renderer.measureText(l).width));
 
         // Background highlight
         const padX = el.textHighlightPadding ?? 6;
@@ -149,43 +150,43 @@ export class ConnectorRenderer extends ShapeRenderer {
 
         if (el.textHighlightEnabled) {
             const highlightColor = el.textHighlightColor || 'rgba(255, 255, 0, 0.4)';
-            ctx.fillStyle = RenderPipeline.adjustColor(highlightColor, isDarkMode);
+            renderer.fillStyle = RenderPipeline.adjustColor(highlightColor, isDarkMode);
         } else {
             // Default semi-transparent background for readability
-            ctx.fillStyle = isDarkMode ? 'rgba(30,30,30,0.85)' : 'rgba(255,255,255,0.85)';
+            renderer.fillStyle = isDarkMode ? 'rgba(30,30,30,0.85)' : 'rgba(255,255,255,0.85)';
         }
-        ctx.beginPath();
+        renderer.beginPath();
         const rx = midX - maxLineWidth / 2 - padX;
         const ry = midY - totalHeight / 2 - padY;
         const rw = maxLineWidth + padX * 2;
         const rh = totalHeight + padY * 2;
-        ctx.moveTo(rx + radius, ry);
-        ctx.arcTo(rx + rw, ry, rx + rw, ry + rh, radius);
-        ctx.arcTo(rx + rw, ry + rh, rx, ry + rh, radius);
-        ctx.arcTo(rx, ry + rh, rx, ry, radius);
-        ctx.arcTo(rx, ry, rx + rw, ry, radius);
-        ctx.fill();
+        renderer.moveTo(rx + radius, ry);
+        renderer.arcTo(rx + rw, ry, rx + rw, ry + rh, radius);
+        renderer.arcTo(rx + rw, ry + rh, rx, ry + rh, radius);
+        renderer.arcTo(rx, ry + rh, rx, ry, radius);
+        renderer.arcTo(rx, ry, rx + rw, ry, radius);
+        renderer.fill();
 
         // Text color: use textColor if set, fall back to strokeColor
         const textColorRaw = el.textColor || el.strokeColor || '#000000';
         const color = RenderPipeline.adjustColor(textColorRaw, isDarkMode);
-        ctx.fillStyle = color;
+        renderer.fillStyle = color;
         const startY = midY - totalHeight / 2 + lineHeight / 2;
         for (let i = 0; i < lines.length; i++) {
-            ctx.fillText(lines[i], midX, startY + i * lineHeight);
+            renderer.fillText(lines[i], midX, startY + i * lineHeight);
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     protected renderArchitectural(context: RenderContext, _cx: number, _cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
 
-        ctx.save();
-        RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+        renderer.save();
+        RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
 
-        ctx.beginPath();
-        this.definePath(ctx, el);
-        ctx.stroke();
+        renderer.beginPath();
+        this.definePath(renderer, el);
+        renderer.stroke();
 
         this.renderFlow(context);
 
@@ -206,29 +207,29 @@ export class ConnectorRenderer extends ShapeRenderer {
             const cp2 = el.controlPoints?.[1] || cp1;
             if (el.startArrowhead) {
                 const startAngle = Math.atan2(start.y - cp1.y, start.x - cp1.x);
-                this.drawArrowheadArchitectural(ctx, start.x, start.y, startAngle, el.startArrowhead, el.startArrowheadSize || 12);
+                this.drawArrowheadArchitectural(renderer, start.x, start.y, startAngle, el.startArrowhead, el.startArrowheadSize || 12);
             }
             if (el.endArrowhead) {
                 const endAngle = Math.atan2(end.y - cp2.y, end.x - cp2.x);
-                this.drawArrowheadArchitectural(ctx, end.x, end.y, endAngle, el.endArrowhead, el.endArrowheadSize || 12);
+                this.drawArrowheadArchitectural(renderer, end.x, end.y, endAngle, el.endArrowhead, el.endArrowheadSize || 12);
             }
         } else if (el.curveType === 'elbow' && pts.length >= 2) {
             const p0 = { x: el.x + pts[0].x, y: el.y + pts[0].y };
             const p1 = { x: el.x + pts[1].x, y: el.y + pts[1].y };
             const startAngle = Math.atan2(p0.y - p1.y, p0.x - p1.x);
-            if (el.startArrowhead) this.drawArrowheadArchitectural(ctx, p0.x, p0.y, startAngle, el.startArrowhead, el.startArrowheadSize || 12);
+            if (el.startArrowhead) this.drawArrowheadArchitectural(renderer, p0.x, p0.y, startAngle, el.startArrowhead, el.startArrowheadSize || 12);
 
             const pn_1 = { x: el.x + pts[pts.length - 1].x, y: el.y + pts[pts.length - 1].y };
             const pn_2 = { x: el.x + pts[pts.length - 2].x, y: el.y + pts[pts.length - 2].y };
             const endAngle = Math.atan2(pn_1.y - pn_2.y, pn_1.x - pn_2.x);
-            if (el.endArrowhead) this.drawArrowheadArchitectural(ctx, pn_1.x, pn_1.y, endAngle, el.endArrowhead, el.endArrowheadSize || 12);
+            if (el.endArrowhead) this.drawArrowheadArchitectural(renderer, pn_1.x, pn_1.y, endAngle, el.endArrowhead, el.endArrowheadSize || 12);
         } else {
             angle = Math.atan2(end.y - start.y, end.x - start.x);
-            if (el.startArrowhead) this.drawArrowheadArchitectural(ctx, start.x, start.y, angle + Math.PI, el.startArrowhead, el.startArrowheadSize || 12);
-            if (el.endArrowhead) this.drawArrowheadArchitectural(ctx, end.x, end.y, angle, el.endArrowhead, el.endArrowheadSize || 12);
+            if (el.startArrowhead) this.drawArrowheadArchitectural(renderer, start.x, start.y, angle + Math.PI, el.startArrowhead, el.startArrowheadSize || 12);
+            if (el.endArrowhead) this.drawArrowheadArchitectural(renderer, end.x, end.y, angle, el.endArrowhead, el.endArrowheadSize || 12);
         }
 
-        ctx.restore();
+        renderer.restore();
     }
 
     protected renderSketch(context: RenderContext, _cx: number, _cy: number): void {
@@ -295,7 +296,7 @@ export class ConnectorRenderer extends ShapeRenderer {
     }
 
     private renderElbow(context: RenderContext, options: any) {
-        const { rc, ctx, element: el } = context;
+        const { rc, renderer, element: el } = context;
         const pts = normalizePoints(el.points);
         const drawPoints: [number, number][] = (pts && pts.length > 0)
             ? pts.map(p => [el.x + p.x, el.y + p.y])
@@ -316,14 +317,14 @@ export class ConnectorRenderer extends ShapeRenderer {
         if (drawPoints.length >= 3) {
             const strokeW = el.strokeWidth || 2;
             const dotRadius = Math.max(strokeW * 0.6, 1.5);
-            ctx.save();
-            ctx.fillStyle = options.stroke || el.strokeColor || '#000000';
+            renderer.save();
+            renderer.fillStyle = options.stroke || el.strokeColor || '#000000';
             for (let i = 1; i < drawPoints.length - 1; i++) {
-                ctx.beginPath();
-                ctx.arc(drawPoints[i][0], drawPoints[i][1], dotRadius, 0, Math.PI * 2);
-                ctx.fill();
+                renderer.beginPath();
+                renderer.arc(drawPoints[i][0], drawPoints[i][1], dotRadius, 0, Math.PI * 2);
+                renderer.fill();
             }
-            ctx.restore();
+            renderer.restore();
         }
 
         const cleanPoints = drawPoints.filter((p, i, self) =>
@@ -398,71 +399,71 @@ export class ConnectorRenderer extends ShapeRenderer {
         }
     }
 
-    private drawArrowheadArchitectural(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number, type: string, headLen: number = 12) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle);
+    private drawArrowheadArchitectural(renderer: IRenderer, x: number, y: number, angle: number, type: string, headLen: number = 12) {
+        renderer.save();
+        renderer.translate(x, y);
+        renderer.rotate(angle);
 
-        ctx.setLineDash([]); // Usually arrowheads are solid even if line is dashed
+        renderer.setLineDash([]); // Usually arrowheads are solid even if line is dashed
 
         if (type === 'triangle' || type === 'arrow') {
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(-headLen * Math.cos(Math.PI / 6), -headLen * Math.sin(Math.PI / 6));
+            renderer.beginPath();
+            renderer.moveTo(0, 0);
+            renderer.lineTo(-headLen * Math.cos(Math.PI / 6), -headLen * Math.sin(Math.PI / 6));
             if (type === 'triangle') {
-                ctx.lineTo(-headLen * Math.cos(-Math.PI / 6), -headLen * Math.sin(-Math.PI / 6));
-                ctx.closePath();
-                ctx.fillStyle = '#ffffff';
-                ctx.fill();
+                renderer.lineTo(-headLen * Math.cos(-Math.PI / 6), -headLen * Math.sin(-Math.PI / 6));
+                renderer.closePath();
+                renderer.fillStyle = '#ffffff';
+                renderer.fill();
             } else {
-                ctx.moveTo(0, 0);
-                ctx.lineTo(-headLen * Math.cos(-Math.PI / 6), -headLen * Math.sin(-Math.PI / 6));
+                renderer.moveTo(0, 0);
+                renderer.lineTo(-headLen * Math.cos(-Math.PI / 6), -headLen * Math.sin(-Math.PI / 6));
             }
-            ctx.stroke();
+            renderer.stroke();
         } else if (type === 'circle' || type === 'dot') {
-            ctx.beginPath();
-            ctx.arc(-headLen / 2 * Math.cos(0), 0, headLen / 2, 0, Math.PI * 2);
+            renderer.beginPath();
+            renderer.arc(-headLen / 2 * Math.cos(0), 0, headLen / 2, 0, Math.PI * 2);
             if (type === 'dot') {
-                ctx.fillStyle = ctx.strokeStyle;
+                renderer.fillStyle = renderer.strokeStyle;
             } else {
-                ctx.fillStyle = '#ffffff';
+                renderer.fillStyle = '#ffffff';
             }
-            ctx.fill();
-            ctx.stroke();
+            renderer.fill();
+            renderer.stroke();
         } else if (type === 'diamond' || type === 'diamondFilled') {
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(-headLen, -headLen / 2);
-            ctx.lineTo(-headLen * 2, 0);
-            ctx.lineTo(-headLen, headLen / 2);
-            ctx.closePath();
+            renderer.beginPath();
+            renderer.moveTo(0, 0);
+            renderer.lineTo(-headLen, -headLen / 2);
+            renderer.lineTo(-headLen * 2, 0);
+            renderer.lineTo(-headLen, headLen / 2);
+            renderer.closePath();
             if (type === 'diamondFilled') {
-                ctx.fillStyle = ctx.strokeStyle;
+                renderer.fillStyle = renderer.strokeStyle;
             } else {
-                ctx.fillStyle = '#ffffff';
+                renderer.fillStyle = '#ffffff';
             }
-            ctx.fill();
-            ctx.stroke();
+            renderer.fill();
+            renderer.stroke();
         } else if (type === 'crowsfoot') {
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(-headLen * Math.cos(Math.PI / 4), -headLen * Math.sin(Math.PI / 4));
-            ctx.moveTo(0, 0);
-            ctx.lineTo(-headLen * Math.cos(-Math.PI / 4), -headLen * Math.sin(-Math.PI / 4));
-            ctx.moveTo(0, 0);
-            ctx.lineTo(-headLen, 0);
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.moveTo(0, 0);
+            renderer.lineTo(-headLen * Math.cos(Math.PI / 4), -headLen * Math.sin(Math.PI / 4));
+            renderer.moveTo(0, 0);
+            renderer.lineTo(-headLen * Math.cos(-Math.PI / 4), -headLen * Math.sin(-Math.PI / 4));
+            renderer.moveTo(0, 0);
+            renderer.lineTo(-headLen, 0);
+            renderer.stroke();
         } else if (type === 'bar') {
-            ctx.beginPath();
-            ctx.moveTo(0, -headLen);
-            ctx.lineTo(0, headLen);
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.moveTo(0, -headLen);
+            renderer.lineTo(0, headLen);
+            renderer.stroke();
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     private renderFlow(context: RenderContext) {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         if (!el.flowAnimation) return;
 
         const time = (window as any).yappyGlobalTime || performance.now();
@@ -472,10 +473,10 @@ export class ConnectorRenderer extends ShapeRenderer {
         const pulseSize = Math.max(2, el.strokeWidth * 1.5);
         const gap = 100 / (el.flowDensity || 3);
 
-        ctx.save();
-        ctx.fillStyle = color;
-        ctx.shadowBlur = el.flowStyle === 'pulse' ? pulseSize : 0;
-        ctx.shadowColor = color;
+        renderer.save();
+        renderer.fillStyle = color;
+        renderer.shadowBlur = el.flowStyle === 'pulse' ? pulseSize : 0;
+        renderer.shadowColor = color;
 
         const pts = normalizePoints(el.points);
         let start, end;
@@ -526,7 +527,7 @@ export class ConnectorRenderer extends ShapeRenderer {
                     const pNextY = cubicBezier(start.y, cp1.y, cp2.y, end.y, tNext);
                     const angle = Math.atan2(pNextY - py, pNextX - px);
 
-                    this.drawPulse(ctx, px, py, pulseSize, el.flowStyle, angle);
+                    this.drawPulse(renderer, px, py, pulseSize, el.flowStyle, angle);
                 }
             }
         } else if (el.curveType === 'elbow' && pts.length >= 2) {
@@ -544,7 +545,7 @@ export class ConnectorRenderer extends ShapeRenderer {
                     if ((d + offset) % gap < speed / 10) {
                         const px = p1.x + (p2.x - p1.x) * t;
                         const py = p1.y + (p2.y - p1.y) * t;
-                        this.drawPulse(ctx, px, py, pulseSize, el.flowStyle, angle);
+                        this.drawPulse(renderer, px, py, pulseSize, el.flowStyle, angle);
                     }
                 }
                 totalDist += segmentLen;
@@ -561,37 +562,37 @@ export class ConnectorRenderer extends ShapeRenderer {
                 if ((d + offset) % gap < speed / 10) {
                     const px = start.x + dx * t;
                     const py = start.y + dy * t;
-                    this.drawPulse(ctx, px, py, pulseSize, el.flowStyle, angle);
+                    this.drawPulse(renderer, px, py, pulseSize, el.flowStyle, angle);
                 }
             }
         }
 
-        ctx.restore();
+        renderer.restore();
     }
 
-    private drawPulse(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, style?: string, angle: number = 0) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle);
+    private drawPulse(renderer: IRenderer, x: number, y: number, size: number, style?: string, angle: number = 0) {
+        renderer.save();
+        renderer.translate(x, y);
+        renderer.rotate(angle);
 
         if (style === 'dashes') {
-            ctx.fillRect(-size, -size / 2, size * 2, size);
+            renderer.fillRect(-size, -size / 2, size * 2, size);
         } else if (style === 'pulse') {
-            ctx.beginPath();
-            ctx.arc(0, 0, size * 1.5, 0, Math.PI * 2);
+            renderer.beginPath();
+            renderer.arc(0, 0, size * 1.5, 0, Math.PI * 2);
             const alpha = 0.5 + 0.5 * Math.sin(performance.now() / 100);
-            ctx.globalAlpha *= alpha;
-            ctx.fill();
+            renderer.globalAlpha *= alpha;
+            renderer.fill();
         } else {
             // Default: dots
-            ctx.beginPath();
-            ctx.arc(0, 0, size, 0, Math.PI * 2);
-            ctx.fill();
+            renderer.beginPath();
+            renderer.arc(0, 0, size, 0, Math.PI * 2);
+            renderer.fill();
         }
-        ctx.restore();
+        renderer.restore();
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const pts = normalizePoints(el.points);
         let start, end;
         if (pts.length >= 2) {
@@ -609,11 +610,11 @@ export class ConnectorRenderer extends ShapeRenderer {
                 cp1 = el.controlPoints[0];
                 if (el.controlPoints.length > 1) {
                     cp2 = el.controlPoints[1];
-                    ctx.moveTo(start.x, start.y);
-                    ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+                    renderer.moveTo(start.x, start.y);
+                    renderer.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
                 } else {
-                    ctx.moveTo(start.x, start.y);
-                    ctx.quadraticCurveTo(cp1.x, cp1.y, end.x, end.y);
+                    renderer.moveTo(start.x, start.y);
+                    renderer.quadraticCurveTo(cp1.x, cp1.y, end.x, end.y);
                 }
             } else {
                 if (Math.abs(w) > Math.abs(h)) {
@@ -623,21 +624,21 @@ export class ConnectorRenderer extends ShapeRenderer {
                     cp1 = { x: start.x, y: start.y + h / 2 };
                     cp2 = { x: end.x, y: end.y - h / 2 };
                 }
-                ctx.moveTo(start.x, start.y);
-                ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+                renderer.moveTo(start.x, start.y);
+                renderer.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
             }
         } else if (el.curveType === 'elbow') {
             const drawPoints = (pts && pts.length > 0)
                 ? pts.map(p => ({ x: el.x + p.x, y: el.y + p.y }))
                 : [start, end];
 
-            ctx.moveTo(drawPoints[0].x, drawPoints[0].y);
+            renderer.moveTo(drawPoints[0].x, drawPoints[0].y);
             for (let i = 1; i < drawPoints.length; i++) {
-                ctx.lineTo(drawPoints[i].x, drawPoints[i].y);
+                renderer.lineTo(drawPoints[i].x, drawPoints[i].y);
             }
         } else {
-            ctx.moveTo(start.x, start.y);
-            ctx.lineTo(end.x, end.y);
+            renderer.moveTo(start.x, start.y);
+            renderer.lineTo(end.x, end.y);
         }
     }
 

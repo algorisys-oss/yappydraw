@@ -49,7 +49,7 @@ const TOOL_TYPES: (ElementType | 'lasso' | 'crop')[] = ['eraser', 'pan', 'select
 export function getElementFamily(type: ElementType): ElementFamily | null {
     if (TOOL_TYPES.includes(type)) return null;
     if (CONNECTOR_TYPES.includes(type)) return 'connector';
-    if (type === 'text') return 'text';
+    if (type === 'text' || type === 'richtext') return 'text';
     if (DRAWING_TYPES.includes(type)) return 'drawing';
     if (type === 'image') return 'image';
     return 'shape';
@@ -103,6 +103,14 @@ const shapeProperties: QuickPropertyDef[] = [
             { value: 'left', icon: 'alignLeft', label: 'Left' },
             { value: 'center', icon: 'alignCenter', label: 'Center' },
             { value: 'right', icon: 'alignRight', label: 'Right' },
+        ]
+    },
+    {
+        key: 'verticalAlign', controlType: 'icon-select', label: 'Vertical Align',
+        options: [
+            { value: 'top', icon: 'alignTop', label: 'Top' },
+            { value: 'middle', icon: 'alignMiddle', label: 'Middle' },
+            { value: 'bottom', icon: 'alignBottom', label: 'Bottom' },
         ]
     },
 ];
@@ -167,6 +175,14 @@ const textProperties: QuickPropertyDef[] = [
             { value: 'left', icon: 'alignLeft', label: 'Left' },
             { value: 'center', icon: 'alignCenter', label: 'Center' },
             { value: 'right', icon: 'alignRight', label: 'Right' },
+        ]
+    },
+    {
+        key: 'verticalAlign', controlType: 'icon-select', label: 'Vertical Align',
+        options: [
+            { value: 'top', icon: 'alignTop', label: 'Top' },
+            { value: 'middle', icon: 'alignMiddle', label: 'Middle' },
+            { value: 'bottom', icon: 'alignBottom', label: 'Bottom' },
         ]
     },
 ];

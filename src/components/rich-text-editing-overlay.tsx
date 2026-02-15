@@ -80,7 +80,7 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
         if (related?.closest('.rt-toolbar')) return;
         if (related?.closest('.rt-color-popover')) return;
         handleCommit();
-        if (store.selectedTool === 'text') {
+        if ((store.selectedTool === 'text' || store.selectedTool === 'richtext') && !store.toolLocked) {
             setSelectedTool('selection');
         }
     };
@@ -104,24 +104,29 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
     createEffect(() => {
         const id = props.editingId();
         if (id && id !== lastPopulatedId && editorRef) {
+            lastPopulatedId = id;
             const spans = props.richTextSpans();
-            if (spans.length > 0) {
-                lastPopulatedId = id;
-                requestAnimationFrame(() => {
-                    if (!editorRef) return;
-                    editorRef.innerHTML = spansToHtml(spans);
-                    editorRef.focus();
-                    // Select all text
-                    const sel = window.getSelection();
-                    if (sel) {
-                        const range = document.createRange();
+            requestAnimationFrame(() => {
+                if (!editorRef) return;
+                // Populate with HTML if there are spans, otherwise clear
+                editorRef.innerHTML = spans.length > 0 ? spansToHtml(spans) : '';
+                editorRef.focus();
+                // Select all text if there's content, otherwise just place cursor at start
+                const sel = window.getSelection();
+                if (sel) {
+                    const range = document.createRange();
+                    if (editorRef.childNodes.length > 0) {
                         range.selectNodeContents(editorRef);
-                        sel.removeAllRanges();
-                        sel.addRange(range);
+                    } else {
+                        // For empty editor, just place cursor at the start
+                        range.setStart(editorRef, 0);
+                        range.setEnd(editorRef, 0);
                     }
-                    updateActiveFormats();
-                });
-            }
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+                updateActiveFormats();
+            });
         } else if (!id) {
             lastPopulatedId = null;
         }
@@ -216,7 +221,9 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                         e.preventDefault();
                                         e.stopImmediatePropagation();
                                         handleCommit();
-                                        setSelectedTool('selection');
+                                        if (!store.toolLocked) {
+                                            setSelectedTool('selection');
+                                        }
                                         return;
                                     }
                                     // Always manually handle Enter — don't rely on browser default

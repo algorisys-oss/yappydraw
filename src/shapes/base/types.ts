@@ -1,9 +1,10 @@
 import type { RoughCanvas } from "roughjs/bin/canvas";
 import type { DrawingElement } from "../../types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export interface RenderContext {
     rc: RoughCanvas;
-    ctx: CanvasRenderingContext2D;
+    renderer: IRenderer;
     element: DrawingElement;
     isDarkMode: boolean;
     layerOpacity: number;

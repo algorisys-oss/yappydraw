@@ -2,6 +2,7 @@ import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import { resolveFontFamily } from "../../utils/text-utils";
+import type { IRenderer, ICanvasGradient } from "../../rendering/IRenderer";
 
 /**
  * Data Structure Renderer
@@ -18,19 +19,19 @@ export class DataStructureRenderer extends ShapeRenderer {
     }
 
     private renderCommon(context: RenderContext): void {
-        const { ctx, element: el, isDarkMode } = context;
-        ctx.save();
+        const { renderer, element: el, isDarkMode } = context;
+        renderer.save();
 
         switch (el.type) {
-            case 'dsArray': this.renderArray(ctx, el, isDarkMode); break;
-            case 'dsStack': this.renderStack(ctx, el, isDarkMode); break;
-            case 'dsQueue': this.renderQueue(ctx, el, isDarkMode); break;
-            case 'dsLinkedList': this.renderLinkedList(ctx, el, isDarkMode); break;
-            case 'dsBinaryTree': this.renderBinaryTree(ctx, el, isDarkMode); break;
-            case 'dsHashTable': this.renderHashTable(ctx, el, isDarkMode); break;
+            case 'dsArray': this.renderArray(renderer, el, isDarkMode); break;
+            case 'dsStack': this.renderStack(renderer, el, isDarkMode); break;
+            case 'dsQueue': this.renderQueue(renderer, el, isDarkMode); break;
+            case 'dsLinkedList': this.renderLinkedList(renderer, el, isDarkMode); break;
+            case 'dsBinaryTree': this.renderBinaryTree(renderer, el, isDarkMode); break;
+            case 'dsHashTable': this.renderHashTable(renderer, el, isDarkMode); break;
         }
 
-        ctx.restore();
+        renderer.restore();
     }
 
     // ─── Shared Helpers ──────────────────────────────────────────────
@@ -104,28 +105,28 @@ export class DataStructureRenderer extends ShapeRenderer {
         return { bg: colors.itemBg, stroke: colors.stroke, text: colors.text, sw: 0.5 };
     }
 
-    private drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+    private drawRoundedRect(renderer: IRenderer, x: number, y: number, w: number, h: number, r: number): void {
         w = Math.max(0, w);
         h = Math.max(0, h);
         r = Math.max(0, Math.min(r, w / 2, h / 2));
-        if (ctx.roundRect) {
-            ctx.beginPath();
-            ctx.roundRect(x, y, w, h, r);
+        if (renderer.roundRect) {
+            renderer.beginPath();
+            renderer.roundRect(x, y, w, h, r);
         } else {
-            ctx.beginPath();
-            ctx.rect(x, y, w, h);
+            renderer.beginPath();
+            renderer.rect(x, y, w, h);
         }
     }
 
-    private drawTitle(ctx: CanvasRenderingContext2D, el: any, isDarkMode: boolean, titleY: number, titleH: number): void {
+    private drawTitle(renderer: IRenderer, el: any, isDarkMode: boolean, titleY: number, titleH: number): void {
         if (!el.containerText) return;
         const font = resolveFontFamily(el.fontFamily || 'code');
         const fontSize = el.fontSize || 14;
-        ctx.font = `bold ${fontSize}px ${font}`;
-        ctx.fillStyle = RenderPipeline.adjustColor(el.textColor || '#1e293b', isDarkMode);
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(el.containerText, el.x + el.width / 2, titleY + titleH / 2, el.width - 16);
+        renderer.font = `bold ${fontSize}px ${font}`;
+        renderer.fillStyle = RenderPipeline.adjustColor(el.textColor || '#1e293b', isDarkMode);
+        renderer.textAlign = 'center';
+        renderer.textBaseline = 'middle';
+        renderer.fillText(el.containerText, el.x + el.width / 2, titleY + titleH / 2, el.width - 16);
     }
 
     private static DS_HIGHLIGHT_COLORS: Record<string, string> = {
@@ -164,31 +165,31 @@ export class DataStructureRenderer extends ShapeRenderer {
     }
 
     /** Fill background rect with gradient or solid color based on fillStyle */
-    private fillBackground(ctx: CanvasRenderingContext2D, el: any, isDarkMode: boolean,
+    private fillBackground(renderer: IRenderer, el: any, isDarkMode: boolean,
         x: number, y: number, w: number, h: number, cornerRadius: number): void {
         const fillStyle = el.fillStyle;
         const isGradient = ['linear', 'radial', 'conic'].includes(fillStyle as string);
 
-        this.drawRoundedRect(ctx, x, y, w, h, cornerRadius);
+        this.drawRoundedRect(renderer, x, y, w, h, cornerRadius);
 
         if (isGradient) {
             const cx = x + w / 2;
             const cy = y + h / 2;
             const mw = w / 2;
             const mh = h / 2;
-            let grad: CanvasGradient;
+            let grad: ICanvasGradient;
 
             if (fillStyle === 'linear') {
                 const angleRad = (el.gradientDirection || 45) * (Math.PI / 180);
                 const r = Math.sqrt(mw ** 2 + mh ** 2);
-                grad = ctx.createLinearGradient(cx - Math.cos(angleRad) * r, cy - Math.sin(angleRad) * r,
+                grad = renderer.createLinearGradient(cx - Math.cos(angleRad) * r, cy - Math.sin(angleRad) * r,
                     cx + Math.cos(angleRad) * r, cy + Math.sin(angleRad) * r);
             } else if (fillStyle === 'radial') {
                 const radius = Math.max(w, h) / 2;
-                grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+                grad = renderer.createRadialGradient(cx, cy, 0, cx, cy, radius);
             } else {
                 const angleRad = (el.gradientDirection || 0) * (Math.PI / 180);
-                grad = (ctx as any).createConicGradient(angleRad, cx, cy);
+                grad = renderer.createConicGradient(angleRad, cx, cy);
             }
 
             if (el.gradientStops && el.gradientStops.length > 0) {
@@ -199,22 +200,22 @@ export class DataStructureRenderer extends ShapeRenderer {
                 grad.addColorStop(1, el.gradientEnd);
             } else {
                 const bg = RenderPipeline.adjustColor(el.backgroundColor || '#f8fafc', isDarkMode);
-                ctx.fillStyle = bg;
-                ctx.fill();
+                renderer.fillStyle = bg;
+                renderer.fill();
                 return;
             }
 
-            ctx.fillStyle = grad;
-            ctx.fill();
+            renderer.fillStyle = grad;
+            renderer.fill();
         } else {
-            ctx.fillStyle = RenderPipeline.adjustColor(el.backgroundColor || '#f8fafc', isDarkMode);
-            ctx.fill();
+            renderer.fillStyle = RenderPipeline.adjustColor(el.backgroundColor || '#f8fafc', isDarkMode);
+            renderer.fill();
         }
     }
 
     // ─── Array ───────────────────────────────────────────────────────
 
-    private renderArray(ctx: CanvasRenderingContext2D, el: any, isDarkMode: boolean): void {
+    private renderArray(renderer: IRenderer, el: any, isDarkMode: boolean): void {
         const values = this.parseValues(el.text);
         const colors = this.getColors(el, isDarkMode);
         const fontSize = el.fontSize || 14;
@@ -230,29 +231,29 @@ export class DataStructureRenderer extends ShapeRenderer {
         const indexH = showIndices ? fontSize * 1.4 : 0;
 
         // Background
-        this.fillBackground(ctx, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = strokeWidth;
-        this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.stroke();
+        this.fillBackground(renderer, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.strokeStyle = colors.stroke;
+        renderer.lineWidth = strokeWidth;
+        this.drawRoundedRect(renderer, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.stroke();
 
         // Title
         if (hasTitle) {
-            this.drawTitle(ctx, el, isDarkMode, el.y, titleH);
-            ctx.strokeStyle = colors.stroke;
-            ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(el.x + padding, el.y + titleH);
-            ctx.lineTo(el.x + el.width - padding, el.y + titleH);
-            ctx.stroke();
+            this.drawTitle(renderer, el, isDarkMode, el.y, titleH);
+            renderer.strokeStyle = colors.stroke;
+            renderer.lineWidth = 0.5;
+            renderer.beginPath();
+            renderer.moveTo(el.x + padding, el.y + titleH);
+            renderer.lineTo(el.x + el.width - padding, el.y + titleH);
+            renderer.stroke();
         }
 
         if (values.length === 0) {
-            ctx.font = `${fontSize}px ${font}`;
-            ctx.fillStyle = colors.label;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Double-click to add values', el.x + el.width / 2, el.y + el.height / 2);
+            renderer.font = `${fontSize}px ${font}`;
+            renderer.fillStyle = colors.label;
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillText('Double-click to add values', el.x + el.width / 2, el.y + el.height / 2);
             return;
         }
 
@@ -262,7 +263,7 @@ export class DataStructureRenderer extends ShapeRenderer {
         const contentH = el.height - titleH - padding * 2 - indexH;
 
         const n = values.length;
-        ctx.font = `${fontSize}px ${font}`;
+        renderer.font = `${fontSize}px ${font}`;
 
         if (isVertical) {
             const cellH = contentH / n;
@@ -270,32 +271,32 @@ export class DataStructureRenderer extends ShapeRenderer {
             for (let i = 0; i < n; i++) {
                 const alpha = this.getItemAlpha(i, n, el);
                 if (alpha <= 0) continue;
-                ctx.globalAlpha = alpha;
+                renderer.globalAlpha = alpha;
 
                 const cy = contentY + i * cellH;
                 const cs = this.getCellStyle(this.getHighlightState(i, el), colors);
 
-                ctx.fillStyle = cs.bg;
-                this.drawRoundedRect(ctx, contentX, cy, cellW, cellH - 2, 3);
-                ctx.fill();
-                ctx.strokeStyle = cs.stroke;
-                ctx.lineWidth = cs.sw;
-                ctx.stroke();
+                renderer.fillStyle = cs.bg;
+                this.drawRoundedRect(renderer, contentX, cy, cellW, cellH - 2, 3);
+                renderer.fill();
+                renderer.strokeStyle = cs.stroke;
+                renderer.lineWidth = cs.sw;
+                renderer.stroke();
 
-                ctx.fillStyle = cs.text;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(values[i], contentX + cellW / 2, cy + (cellH - 2) / 2, cellW - 8);
+                renderer.fillStyle = cs.text;
+                renderer.textAlign = 'center';
+                renderer.textBaseline = 'middle';
+                renderer.fillText(values[i], contentX + cellW / 2, cy + (cellH - 2) / 2, cellW - 8);
 
                 if (showIndices) {
-                    ctx.fillStyle = colors.label;
-                    ctx.font = `${fontSize * 0.75}px ${font}`;
-                    ctx.textAlign = 'left';
-                    ctx.fillText(`[${i}]`, contentX + cellW + 4, cy + (cellH - 2) / 2);
-                    ctx.font = `${fontSize}px ${font}`;
+                    renderer.fillStyle = colors.label;
+                    renderer.font = `${fontSize * 0.75}px ${font}`;
+                    renderer.textAlign = 'left';
+                    renderer.fillText(`[${i}]`, contentX + cellW + 4, cy + (cellH - 2) / 2);
+                    renderer.font = `${fontSize}px ${font}`;
                 }
 
-                ctx.globalAlpha = 1;
+                renderer.globalAlpha = 1;
             }
         } else {
             // Horizontal
@@ -304,39 +305,39 @@ export class DataStructureRenderer extends ShapeRenderer {
             for (let i = 0; i < n; i++) {
                 const alpha = this.getItemAlpha(i, n, el);
                 if (alpha <= 0) continue;
-                ctx.globalAlpha = alpha;
+                renderer.globalAlpha = alpha;
 
                 const cx = contentX + i * cellW;
                 const cs = this.getCellStyle(this.getHighlightState(i, el), colors);
 
-                ctx.fillStyle = cs.bg;
-                this.drawRoundedRect(ctx, cx + 1, contentY, cellW - 2, cellH, 3);
-                ctx.fill();
-                ctx.strokeStyle = cs.stroke;
-                ctx.lineWidth = cs.sw;
-                ctx.stroke();
+                renderer.fillStyle = cs.bg;
+                this.drawRoundedRect(renderer, cx + 1, contentY, cellW - 2, cellH, 3);
+                renderer.fill();
+                renderer.strokeStyle = cs.stroke;
+                renderer.lineWidth = cs.sw;
+                renderer.stroke();
 
-                ctx.fillStyle = cs.text;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(values[i], cx + cellW / 2, contentY + cellH / 2, cellW - 8);
+                renderer.fillStyle = cs.text;
+                renderer.textAlign = 'center';
+                renderer.textBaseline = 'middle';
+                renderer.fillText(values[i], cx + cellW / 2, contentY + cellH / 2, cellW - 8);
 
                 if (showIndices) {
-                    ctx.fillStyle = colors.label;
-                    ctx.font = `${fontSize * 0.75}px ${font}`;
-                    ctx.textAlign = 'center';
-                    ctx.fillText(`[${i}]`, cx + cellW / 2, contentY + cellH + indexH / 2);
-                    ctx.font = `${fontSize}px ${font}`;
+                    renderer.fillStyle = colors.label;
+                    renderer.font = `${fontSize * 0.75}px ${font}`;
+                    renderer.textAlign = 'center';
+                    renderer.fillText(`[${i}]`, cx + cellW / 2, contentY + cellH + indexH / 2);
+                    renderer.font = `${fontSize}px ${font}`;
                 }
 
-                ctx.globalAlpha = 1;
+                renderer.globalAlpha = 1;
             }
         }
     }
 
     // ─── Stack ───────────────────────────────────────────────────────
 
-    private renderStack(ctx: CanvasRenderingContext2D, el: any, isDarkMode: boolean): void {
+    private renderStack(renderer: IRenderer, el: any, isDarkMode: boolean): void {
         const values = this.parseValues(el.text);
         const colors = this.getColors(el, isDarkMode);
         const fontSize = el.fontSize || 14;
@@ -351,34 +352,34 @@ export class DataStructureRenderer extends ShapeRenderer {
         const markerW = fontSize * 3; // Space for "top →" marker
 
         // Background
-        this.fillBackground(ctx, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = strokeWidth;
-        this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.stroke();
+        this.fillBackground(renderer, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.strokeStyle = colors.stroke;
+        renderer.lineWidth = strokeWidth;
+        this.drawRoundedRect(renderer, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.stroke();
 
         // Title
         if (hasTitle) {
-            this.drawTitle(ctx, el, isDarkMode, el.y, titleH);
-            ctx.strokeStyle = colors.stroke;
-            ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(el.x + padding, el.y + titleH);
-            ctx.lineTo(el.x + el.width - padding, el.y + titleH);
-            ctx.stroke();
+            this.drawTitle(renderer, el, isDarkMode, el.y, titleH);
+            renderer.strokeStyle = colors.stroke;
+            renderer.lineWidth = 0.5;
+            renderer.beginPath();
+            renderer.moveTo(el.x + padding, el.y + titleH);
+            renderer.lineTo(el.x + el.width - padding, el.y + titleH);
+            renderer.stroke();
         }
 
         if (values.length === 0) {
-            ctx.font = `${fontSize}px ${font}`;
-            ctx.fillStyle = colors.label;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Double-click to add values', el.x + el.width / 2, el.y + el.height / 2);
+            renderer.font = `${fontSize}px ${font}`;
+            renderer.fillStyle = colors.label;
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillText('Double-click to add values', el.x + el.width / 2, el.y + el.height / 2);
             return;
         }
 
         const n = values.length;
-        ctx.font = `${fontSize}px ${font}`;
+        renderer.font = `${fontSize}px ${font}`;
 
         if (isHorizontal) {
             // Horizontal stack: last item = top (rightmost)
@@ -389,35 +390,35 @@ export class DataStructureRenderer extends ShapeRenderer {
             const cellW = contentW / n;
 
             // "top →" marker above last cell
-            ctx.fillStyle = colors.highlight;
-            ctx.font = `bold ${fontSize * 0.8}px ${font}`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'bottom';
-            ctx.fillText('top ↓', contentX + (n - 1) * cellW + cellW / 2, contentY - 2);
-            ctx.font = `${fontSize}px ${font}`;
+            renderer.fillStyle = colors.highlight;
+            renderer.font = `bold ${fontSize * 0.8}px ${font}`;
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'bottom';
+            renderer.fillText('top ↓', contentX + (n - 1) * cellW + cellW / 2, contentY - 2);
+            renderer.font = `${fontSize}px ${font}`;
 
             for (let i = 0; i < n; i++) {
                 const alpha = this.getItemAlpha(i, n, el);
                 if (alpha <= 0) continue;
-                ctx.globalAlpha = alpha;
+                renderer.globalAlpha = alpha;
 
                 const cx = contentX + i * cellW;
                 const isTopH = i === n - 1;
                 const hlState = this.getHighlightState(i, el);
                 const cs = this.getCellStyle(hlState !== 'none' ? hlState : (isTopH ? 'primary' : 'none'), colors);
 
-                ctx.fillStyle = cs.bg;
-                this.drawRoundedRect(ctx, cx + 1, contentY, cellW - 2, contentH, 3);
-                ctx.fill();
-                ctx.strokeStyle = cs.stroke;
-                ctx.lineWidth = cs.sw;
-                ctx.stroke();
+                renderer.fillStyle = cs.bg;
+                this.drawRoundedRect(renderer, cx + 1, contentY, cellW - 2, contentH, 3);
+                renderer.fill();
+                renderer.strokeStyle = cs.stroke;
+                renderer.lineWidth = cs.sw;
+                renderer.stroke();
 
-                ctx.fillStyle = cs.text;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(values[i], cx + cellW / 2, contentY + contentH / 2, cellW - 8);
-                ctx.globalAlpha = 1;
+                renderer.fillStyle = cs.text;
+                renderer.textAlign = 'center';
+                renderer.textBaseline = 'middle';
+                renderer.fillText(values[i], cx + cellW / 2, contentY + contentH / 2, cellW - 8);
+                renderer.globalAlpha = 1;
             }
         } else {
             // Vertical stack (default): last item in array = top (visually at top)
@@ -432,43 +433,43 @@ export class DataStructureRenderer extends ShapeRenderer {
                 const vi = n - 1 - i; // visual index (0 = top)
                 const alpha = this.getItemAlpha(i, n, el);
                 if (alpha <= 0) continue;
-                ctx.globalAlpha = alpha;
+                renderer.globalAlpha = alpha;
 
                 const cy = contentY + vi * cellH;
                 const isTop = i === n - 1;
                 const hlState = this.getHighlightState(i, el);
                 const cs = this.getCellStyle(hlState !== 'none' ? hlState : (isTop ? 'primary' : 'none'), colors);
 
-                ctx.fillStyle = cs.bg;
-                this.drawRoundedRect(ctx, contentX, cy + 1, contentW, cellH - 2, 3);
-                ctx.fill();
-                ctx.strokeStyle = cs.stroke;
-                ctx.lineWidth = cs.sw;
-                ctx.stroke();
+                renderer.fillStyle = cs.bg;
+                this.drawRoundedRect(renderer, contentX, cy + 1, contentW, cellH - 2, 3);
+                renderer.fill();
+                renderer.strokeStyle = cs.stroke;
+                renderer.lineWidth = cs.sw;
+                renderer.stroke();
 
-                ctx.fillStyle = cs.text;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(values[i], contentX + contentW / 2, cy + cellH / 2, contentW - 8);
+                renderer.fillStyle = cs.text;
+                renderer.textAlign = 'center';
+                renderer.textBaseline = 'middle';
+                renderer.fillText(values[i], contentX + contentW / 2, cy + cellH / 2, contentW - 8);
 
                 // "top →" marker
                 if (isTop) {
-                    ctx.fillStyle = colors.highlight;
-                    ctx.font = `bold ${fontSize * 0.8}px ${font}`;
-                    ctx.textAlign = 'right';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('top →', contentX - 4, cy + cellH / 2);
-                    ctx.font = `${fontSize}px ${font}`;
+                    renderer.fillStyle = colors.highlight;
+                    renderer.font = `bold ${fontSize * 0.8}px ${font}`;
+                    renderer.textAlign = 'right';
+                    renderer.textBaseline = 'middle';
+                    renderer.fillText('top →', contentX - 4, cy + cellH / 2);
+                    renderer.font = `${fontSize}px ${font}`;
                 }
 
-                ctx.globalAlpha = 1;
+                renderer.globalAlpha = 1;
             }
         }
     }
 
     // ─── Queue ───────────────────────────────────────────────────────
 
-    private renderQueue(ctx: CanvasRenderingContext2D, el: any, isDarkMode: boolean): void {
+    private renderQueue(renderer: IRenderer, el: any, isDarkMode: boolean): void {
         const values = this.parseValues(el.text);
         const colors = this.getColors(el, isDarkMode);
         const fontSize = el.fontSize || 14;
@@ -483,34 +484,34 @@ export class DataStructureRenderer extends ShapeRenderer {
         const markerH = fontSize * 1.4; // Space for front/back markers
 
         // Background
-        this.fillBackground(ctx, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = strokeWidth;
-        this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.stroke();
+        this.fillBackground(renderer, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.strokeStyle = colors.stroke;
+        renderer.lineWidth = strokeWidth;
+        this.drawRoundedRect(renderer, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.stroke();
 
         // Title
         if (hasTitle) {
-            this.drawTitle(ctx, el, isDarkMode, el.y, titleH);
-            ctx.strokeStyle = colors.stroke;
-            ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(el.x + padding, el.y + titleH);
-            ctx.lineTo(el.x + el.width - padding, el.y + titleH);
-            ctx.stroke();
+            this.drawTitle(renderer, el, isDarkMode, el.y, titleH);
+            renderer.strokeStyle = colors.stroke;
+            renderer.lineWidth = 0.5;
+            renderer.beginPath();
+            renderer.moveTo(el.x + padding, el.y + titleH);
+            renderer.lineTo(el.x + el.width - padding, el.y + titleH);
+            renderer.stroke();
         }
 
         if (values.length === 0) {
-            ctx.font = `${fontSize}px ${font}`;
-            ctx.fillStyle = colors.label;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Double-click to add values', el.x + el.width / 2, el.y + el.height / 2);
+            renderer.font = `${fontSize}px ${font}`;
+            renderer.fillStyle = colors.label;
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillText('Double-click to add values', el.x + el.width / 2, el.y + el.height / 2);
             return;
         }
 
         const n = values.length;
-        ctx.font = `${fontSize}px ${font}`;
+        renderer.font = `${fontSize}px ${font}`;
 
         if (isVertical) {
             const contentX = el.x + padding;
@@ -521,35 +522,35 @@ export class DataStructureRenderer extends ShapeRenderer {
             const cellH = contentH / n;
 
             // "front" marker at top
-            ctx.fillStyle = colors.highlight;
-            ctx.font = `bold ${fontSize * 0.75}px ${font}`;
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('front →', contentX + contentW + 4, contentY + cellH / 2);
+            renderer.fillStyle = colors.highlight;
+            renderer.font = `bold ${fontSize * 0.75}px ${font}`;
+            renderer.textAlign = 'left';
+            renderer.textBaseline = 'middle';
+            renderer.fillText('front →', contentX + contentW + 4, contentY + cellH / 2);
             // "back" marker at bottom
-            ctx.fillText('back →', contentX + contentW + 4, contentY + (n - 1) * cellH + cellH / 2);
-            ctx.font = `${fontSize}px ${font}`;
+            renderer.fillText('back →', contentX + contentW + 4, contentY + (n - 1) * cellH + cellH / 2);
+            renderer.font = `${fontSize}px ${font}`;
 
             for (let i = 0; i < n; i++) {
                 const alpha = this.getItemAlpha(i, n, el);
                 if (alpha <= 0) continue;
-                ctx.globalAlpha = alpha;
+                renderer.globalAlpha = alpha;
 
                 const cy = contentY + i * cellH;
                 const cs = this.getCellStyle(this.getHighlightState(i, el), colors);
 
-                ctx.fillStyle = cs.bg;
-                this.drawRoundedRect(ctx, contentX, cy + 1, contentW, cellH - 2, 3);
-                ctx.fill();
-                ctx.strokeStyle = cs.stroke;
-                ctx.lineWidth = cs.sw;
-                ctx.stroke();
+                renderer.fillStyle = cs.bg;
+                this.drawRoundedRect(renderer, contentX, cy + 1, contentW, cellH - 2, 3);
+                renderer.fill();
+                renderer.strokeStyle = cs.stroke;
+                renderer.lineWidth = cs.sw;
+                renderer.stroke();
 
-                ctx.fillStyle = cs.text;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(values[i], contentX + contentW / 2, cy + cellH / 2, contentW - 8);
-                ctx.globalAlpha = 1;
+                renderer.fillStyle = cs.text;
+                renderer.textAlign = 'center';
+                renderer.textBaseline = 'middle';
+                renderer.fillText(values[i], contentX + contentW / 2, cy + cellH / 2, contentW - 8);
+                renderer.globalAlpha = 1;
             }
         } else {
             // Horizontal (default)
@@ -560,42 +561,42 @@ export class DataStructureRenderer extends ShapeRenderer {
             const cellW = contentW / n;
 
             // "front" marker above first cell
-            ctx.fillStyle = colors.highlight;
-            ctx.font = `bold ${fontSize * 0.75}px ${font}`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'bottom';
-            ctx.fillText('front ↓', contentX + cellW / 2, contentY - 2);
+            renderer.fillStyle = colors.highlight;
+            renderer.font = `bold ${fontSize * 0.75}px ${font}`;
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'bottom';
+            renderer.fillText('front ↓', contentX + cellW / 2, contentY - 2);
             // "back" marker above last cell
-            ctx.fillText('back ↓', contentX + (n - 1) * cellW + cellW / 2, contentY - 2);
-            ctx.font = `${fontSize}px ${font}`;
+            renderer.fillText('back ↓', contentX + (n - 1) * cellW + cellW / 2, contentY - 2);
+            renderer.font = `${fontSize}px ${font}`;
 
             for (let i = 0; i < n; i++) {
                 const alpha = this.getItemAlpha(i, n, el);
                 if (alpha <= 0) continue;
-                ctx.globalAlpha = alpha;
+                renderer.globalAlpha = alpha;
 
                 const cx = contentX + i * cellW;
                 const cs = this.getCellStyle(this.getHighlightState(i, el), colors);
 
-                ctx.fillStyle = cs.bg;
-                this.drawRoundedRect(ctx, cx + 1, contentY, cellW - 2, contentH, 3);
-                ctx.fill();
-                ctx.strokeStyle = cs.stroke;
-                ctx.lineWidth = cs.sw;
-                ctx.stroke();
+                renderer.fillStyle = cs.bg;
+                this.drawRoundedRect(renderer, cx + 1, contentY, cellW - 2, contentH, 3);
+                renderer.fill();
+                renderer.strokeStyle = cs.stroke;
+                renderer.lineWidth = cs.sw;
+                renderer.stroke();
 
-                ctx.fillStyle = cs.text;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(values[i], cx + cellW / 2, contentY + contentH / 2, cellW - 8);
-                ctx.globalAlpha = 1;
+                renderer.fillStyle = cs.text;
+                renderer.textAlign = 'center';
+                renderer.textBaseline = 'middle';
+                renderer.fillText(values[i], cx + cellW / 2, contentY + contentH / 2, cellW - 8);
+                renderer.globalAlpha = 1;
             }
         }
     }
 
     // ─── Linked List ─────────────────────────────────────────────────
 
-    private renderLinkedList(ctx: CanvasRenderingContext2D, el: any, isDarkMode: boolean): void {
+    private renderLinkedList(renderer: IRenderer, el: any, isDarkMode: boolean): void {
         const values = this.parseValues(el.text);
         const colors = this.getColors(el, isDarkMode);
         const fontSize = el.fontSize || 14;
@@ -609,34 +610,34 @@ export class DataStructureRenderer extends ShapeRenderer {
         const titleH = hasTitle ? fontSize * 1.8 : 0;
 
         // Background
-        this.fillBackground(ctx, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = strokeWidth;
-        this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.stroke();
+        this.fillBackground(renderer, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.strokeStyle = colors.stroke;
+        renderer.lineWidth = strokeWidth;
+        this.drawRoundedRect(renderer, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.stroke();
 
         // Title
         if (hasTitle) {
-            this.drawTitle(ctx, el, isDarkMode, el.y, titleH);
-            ctx.strokeStyle = colors.stroke;
-            ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(el.x + padding, el.y + titleH);
-            ctx.lineTo(el.x + el.width - padding, el.y + titleH);
-            ctx.stroke();
+            this.drawTitle(renderer, el, isDarkMode, el.y, titleH);
+            renderer.strokeStyle = colors.stroke;
+            renderer.lineWidth = 0.5;
+            renderer.beginPath();
+            renderer.moveTo(el.x + padding, el.y + titleH);
+            renderer.lineTo(el.x + el.width - padding, el.y + titleH);
+            renderer.stroke();
         }
 
         if (values.length === 0) {
-            ctx.font = `${fontSize}px ${font}`;
-            ctx.fillStyle = colors.label;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Double-click to add values', el.x + el.width / 2, el.y + el.height / 2);
+            renderer.font = `${fontSize}px ${font}`;
+            renderer.fillStyle = colors.label;
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillText('Double-click to add values', el.x + el.width / 2, el.y + el.height / 2);
             return;
         }
 
         const n = values.length;
-        ctx.font = `${fontSize}px ${font}`;
+        renderer.font = `${fontSize}px ${font}`;
 
         if (isVertical) {
             const contentX = el.x + padding;
@@ -652,73 +653,73 @@ export class DataStructureRenderer extends ShapeRenderer {
             for (let i = 0; i < n; i++) {
                 const alpha = this.getItemAlpha(i, n, el);
                 if (alpha <= 0) continue;
-                ctx.globalAlpha = alpha;
+                renderer.globalAlpha = alpha;
 
                 const cy = contentY + i * (cellH + arrowH);
                 const cs = this.getCellStyle(this.getHighlightState(i, el), colors);
 
                 // Value box
-                ctx.fillStyle = cs.bg;
-                this.drawRoundedRect(ctx, nodeX, cy, nodeW, cellH, 3);
-                ctx.fill();
-                ctx.strokeStyle = cs.stroke;
-                ctx.lineWidth = cs.sw;
-                ctx.stroke();
+                renderer.fillStyle = cs.bg;
+                this.drawRoundedRect(renderer, nodeX, cy, nodeW, cellH, 3);
+                renderer.fill();
+                renderer.strokeStyle = cs.stroke;
+                renderer.lineWidth = cs.sw;
+                renderer.stroke();
 
                 // Pointer box
-                ctx.fillStyle = cs.bg !== colors.itemBg ? cs.bg : RenderPipeline.adjustColor('#cbd5e1', isDarkMode);
-                ctx.fillRect(nodeX + nodeW, cy, ptrW, cellH);
-                ctx.strokeStyle = cs.stroke;
-                ctx.lineWidth = 0.5;
-                ctx.strokeRect(nodeX + nodeW, cy, ptrW, cellH);
+                renderer.fillStyle = cs.bg !== colors.itemBg ? cs.bg : RenderPipeline.adjustColor('#cbd5e1', isDarkMode);
+                renderer.fillRect(nodeX + nodeW, cy, ptrW, cellH);
+                renderer.strokeStyle = cs.stroke;
+                renderer.lineWidth = 0.5;
+                renderer.strokeRect(nodeX + nodeW, cy, ptrW, cellH);
 
                 // Value text
-                ctx.fillStyle = cs.text;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(values[i], nodeX + nodeW / 2, cy + cellH / 2, nodeW - 8);
+                renderer.fillStyle = cs.text;
+                renderer.textAlign = 'center';
+                renderer.textBaseline = 'middle';
+                renderer.fillText(values[i], nodeX + nodeW / 2, cy + cellH / 2, nodeW - 8);
 
                 // Pointer symbol or null
                 if (i < n - 1) {
                     // Dot
-                    ctx.fillStyle = colors.stroke;
-                    ctx.beginPath();
-                    ctx.arc(nodeX + nodeW + ptrW / 2, cy + cellH / 2, 3, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.fillStyle = colors.stroke;
+                    renderer.beginPath();
+                    renderer.arc(nodeX + nodeW + ptrW / 2, cy + cellH / 2, 3, 0, Math.PI * 2);
+                    renderer.fill();
 
                     // Arrow down to next node
                     const arrowStartY = cy + cellH;
                     const arrowEndY = cy + cellH + arrowH;
                     const arrowX = nodeX + nodeW + ptrW / 2;
-                    ctx.strokeStyle = colors.stroke;
-                    ctx.lineWidth = 1.5;
-                    ctx.beginPath();
-                    ctx.moveTo(arrowX, arrowStartY);
-                    ctx.lineTo(arrowX, arrowEndY);
-                    ctx.stroke();
+                    renderer.strokeStyle = colors.stroke;
+                    renderer.lineWidth = 1.5;
+                    renderer.beginPath();
+                    renderer.moveTo(arrowX, arrowStartY);
+                    renderer.lineTo(arrowX, arrowEndY);
+                    renderer.stroke();
                     // Arrowhead
-                    ctx.beginPath();
-                    ctx.moveTo(arrowX - 4, arrowEndY - 6);
-                    ctx.lineTo(arrowX, arrowEndY);
-                    ctx.lineTo(arrowX + 4, arrowEndY - 6);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(arrowX - 4, arrowEndY - 6);
+                    renderer.lineTo(arrowX, arrowEndY);
+                    renderer.lineTo(arrowX + 4, arrowEndY - 6);
+                    renderer.stroke();
                 } else {
                     // Null symbol (X)
-                    ctx.strokeStyle = colors.label;
-                    ctx.lineWidth = 1.5;
+                    renderer.strokeStyle = colors.label;
+                    renderer.lineWidth = 1.5;
                     const nx = nodeX + nodeW + ptrW * 0.25;
                     const ny = cy + cellH * 0.25;
                     const nw = ptrW * 0.5;
                     const nh = cellH * 0.5;
-                    ctx.beginPath();
-                    ctx.moveTo(nx, ny);
-                    ctx.lineTo(nx + nw, ny + nh);
-                    ctx.moveTo(nx + nw, ny);
-                    ctx.lineTo(nx, ny + nh);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(nx, ny);
+                    renderer.lineTo(nx + nw, ny + nh);
+                    renderer.moveTo(nx + nw, ny);
+                    renderer.lineTo(nx, ny + nh);
+                    renderer.stroke();
                 }
 
-                ctx.globalAlpha = 1;
+                renderer.globalAlpha = 1;
             }
         } else {
             // Horizontal (default)
@@ -736,80 +737,80 @@ export class DataStructureRenderer extends ShapeRenderer {
             for (let i = 0; i < n; i++) {
                 const alpha = this.getItemAlpha(i, n, el);
                 if (alpha <= 0) continue;
-                ctx.globalAlpha = alpha;
+                renderer.globalAlpha = alpha;
 
                 const cx = contentX + i * (cellW + arrowW);
                 const cs = this.getCellStyle(this.getHighlightState(i, el), colors);
 
                 // Value box
-                ctx.fillStyle = cs.bg;
-                this.drawRoundedRect(ctx, cx, nodeY, nodeW, nodeH, 3);
-                ctx.fill();
-                ctx.strokeStyle = cs.stroke;
-                ctx.lineWidth = cs.sw;
-                ctx.stroke();
+                renderer.fillStyle = cs.bg;
+                this.drawRoundedRect(renderer, cx, nodeY, nodeW, nodeH, 3);
+                renderer.fill();
+                renderer.strokeStyle = cs.stroke;
+                renderer.lineWidth = cs.sw;
+                renderer.stroke();
 
                 // Pointer box
-                ctx.fillStyle = cs.bg !== colors.itemBg ? cs.bg : RenderPipeline.adjustColor('#cbd5e1', isDarkMode);
-                ctx.fillRect(cx + nodeW, nodeY, ptrW, nodeH);
-                ctx.strokeStyle = cs.stroke;
-                ctx.lineWidth = 0.5;
-                ctx.strokeRect(cx + nodeW, nodeY, ptrW, nodeH);
+                renderer.fillStyle = cs.bg !== colors.itemBg ? cs.bg : RenderPipeline.adjustColor('#cbd5e1', isDarkMode);
+                renderer.fillRect(cx + nodeW, nodeY, ptrW, nodeH);
+                renderer.strokeStyle = cs.stroke;
+                renderer.lineWidth = 0.5;
+                renderer.strokeRect(cx + nodeW, nodeY, ptrW, nodeH);
 
                 // Value text
-                ctx.fillStyle = cs.text;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(values[i], cx + nodeW / 2, nodeY + nodeH / 2, nodeW - 6);
+                renderer.fillStyle = cs.text;
+                renderer.textAlign = 'center';
+                renderer.textBaseline = 'middle';
+                renderer.fillText(values[i], cx + nodeW / 2, nodeY + nodeH / 2, nodeW - 6);
 
                 // Pointer or null
                 if (i < n - 1) {
                     // Dot in pointer box
-                    ctx.fillStyle = colors.stroke;
-                    ctx.beginPath();
-                    ctx.arc(cx + nodeW + ptrW / 2, nodeY + nodeH / 2, 3, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.fillStyle = colors.stroke;
+                    renderer.beginPath();
+                    renderer.arc(cx + nodeW + ptrW / 2, nodeY + nodeH / 2, 3, 0, Math.PI * 2);
+                    renderer.fill();
 
                     // Arrow to next node
                     const arrowStartX = cx + cellW;
                     const arrowEndX = cx + cellW + arrowW;
                     const arrowY = nodeY + nodeH / 2;
-                    ctx.strokeStyle = colors.stroke;
-                    ctx.lineWidth = 1.5;
-                    ctx.beginPath();
-                    ctx.moveTo(arrowStartX, arrowY);
-                    ctx.lineTo(arrowEndX, arrowY);
-                    ctx.stroke();
+                    renderer.strokeStyle = colors.stroke;
+                    renderer.lineWidth = 1.5;
+                    renderer.beginPath();
+                    renderer.moveTo(arrowStartX, arrowY);
+                    renderer.lineTo(arrowEndX, arrowY);
+                    renderer.stroke();
                     // Arrowhead
-                    ctx.beginPath();
-                    ctx.moveTo(arrowEndX - 6, arrowY - 4);
-                    ctx.lineTo(arrowEndX, arrowY);
-                    ctx.lineTo(arrowEndX - 6, arrowY + 4);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(arrowEndX - 6, arrowY - 4);
+                    renderer.lineTo(arrowEndX, arrowY);
+                    renderer.lineTo(arrowEndX - 6, arrowY + 4);
+                    renderer.stroke();
                 } else {
                     // Null symbol (X)
-                    ctx.strokeStyle = colors.label;
-                    ctx.lineWidth = 1.5;
+                    renderer.strokeStyle = colors.label;
+                    renderer.lineWidth = 1.5;
                     const nx = cx + nodeW + ptrW * 0.2;
                     const ny = nodeY + nodeH * 0.2;
                     const nw = ptrW * 0.6;
                     const nh = nodeH * 0.6;
-                    ctx.beginPath();
-                    ctx.moveTo(nx, ny);
-                    ctx.lineTo(nx + nw, ny + nh);
-                    ctx.moveTo(nx + nw, ny);
-                    ctx.lineTo(nx, ny + nh);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(nx, ny);
+                    renderer.lineTo(nx + nw, ny + nh);
+                    renderer.moveTo(nx + nw, ny);
+                    renderer.lineTo(nx, ny + nh);
+                    renderer.stroke();
                 }
 
-                ctx.globalAlpha = 1;
+                renderer.globalAlpha = 1;
             }
         }
     }
 
     // ─── Binary Tree ─────────────────────────────────────────────────
 
-    private renderBinaryTree(ctx: CanvasRenderingContext2D, el: any, isDarkMode: boolean): void {
+    private renderBinaryTree(renderer: IRenderer, el: any, isDarkMode: boolean): void {
         const values = this.parseValues(el.text);
         const colors = this.getColors(el, isDarkMode);
         const fontSize = el.fontSize || 14;
@@ -822,29 +823,29 @@ export class DataStructureRenderer extends ShapeRenderer {
         const titleH = hasTitle ? fontSize * 1.8 : 0;
 
         // Background
-        this.fillBackground(ctx, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = strokeWidth;
-        this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.stroke();
+        this.fillBackground(renderer, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.strokeStyle = colors.stroke;
+        renderer.lineWidth = strokeWidth;
+        this.drawRoundedRect(renderer, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.stroke();
 
         // Title
         if (hasTitle) {
-            this.drawTitle(ctx, el, isDarkMode, el.y, titleH);
-            ctx.strokeStyle = colors.stroke;
-            ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(el.x + padding, el.y + titleH);
-            ctx.lineTo(el.x + el.width - padding, el.y + titleH);
-            ctx.stroke();
+            this.drawTitle(renderer, el, isDarkMode, el.y, titleH);
+            renderer.strokeStyle = colors.stroke;
+            renderer.lineWidth = 0.5;
+            renderer.beginPath();
+            renderer.moveTo(el.x + padding, el.y + titleH);
+            renderer.lineTo(el.x + el.width - padding, el.y + titleH);
+            renderer.stroke();
         }
 
         if (values.length === 0) {
-            ctx.font = `${fontSize}px ${font}`;
-            ctx.fillStyle = colors.label;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Double-click to add values', el.x + el.width / 2, el.y + el.height / 2);
+            renderer.font = `${fontSize}px ${font}`;
+            renderer.fillStyle = colors.label;
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillText('Double-click to add values', el.x + el.width / 2, el.y + el.height / 2);
             return;
         }
 
@@ -859,7 +860,7 @@ export class DataStructureRenderer extends ShapeRenderer {
         const nodeRadius = Math.min(fontSize * 1.5, contentW / (Math.pow(2, depth) * 1.5), contentH / (depth * 2.2));
         const levelH = contentH / depth;
 
-        ctx.font = `${fontSize * 0.9}px ${font}`;
+        renderer.font = `${fontSize * 0.9}px ${font}`;
 
         // Compute node positions
         const positions: { x: number; y: number }[] = [];
@@ -874,8 +875,8 @@ export class DataStructureRenderer extends ShapeRenderer {
         }
 
         // Draw edges first (so nodes draw on top)
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = 1.5;
+        renderer.strokeStyle = colors.stroke;
+        renderer.lineWidth = 1.5;
         for (let i = 0; i < n; i++) {
             if (values[i] === '_') continue;
             const leftChild = 2 * i + 1;
@@ -886,12 +887,12 @@ export class DataStructureRenderer extends ShapeRenderer {
                 const childAlpha = this.getItemAlpha(leftChild, n, el);
                 const alpha = Math.min(parentAlpha, childAlpha);
                 if (alpha > 0) {
-                    ctx.globalAlpha = alpha;
-                    ctx.beginPath();
-                    ctx.moveTo(positions[i].x, positions[i].y + nodeRadius);
-                    ctx.lineTo(positions[leftChild].x, positions[leftChild].y - nodeRadius);
-                    ctx.stroke();
-                    ctx.globalAlpha = 1;
+                    renderer.globalAlpha = alpha;
+                    renderer.beginPath();
+                    renderer.moveTo(positions[i].x, positions[i].y + nodeRadius);
+                    renderer.lineTo(positions[leftChild].x, positions[leftChild].y - nodeRadius);
+                    renderer.stroke();
+                    renderer.globalAlpha = 1;
                 }
             }
 
@@ -900,12 +901,12 @@ export class DataStructureRenderer extends ShapeRenderer {
                 const childAlpha = this.getItemAlpha(rightChild, n, el);
                 const alpha = Math.min(parentAlpha, childAlpha);
                 if (alpha > 0) {
-                    ctx.globalAlpha = alpha;
-                    ctx.beginPath();
-                    ctx.moveTo(positions[i].x, positions[i].y + nodeRadius);
-                    ctx.lineTo(positions[rightChild].x, positions[rightChild].y - nodeRadius);
-                    ctx.stroke();
-                    ctx.globalAlpha = 1;
+                    renderer.globalAlpha = alpha;
+                    renderer.beginPath();
+                    renderer.moveTo(positions[i].x, positions[i].y + nodeRadius);
+                    renderer.lineTo(positions[rightChild].x, positions[rightChild].y - nodeRadius);
+                    renderer.stroke();
+                    renderer.globalAlpha = 1;
                 }
             }
         }
@@ -915,27 +916,27 @@ export class DataStructureRenderer extends ShapeRenderer {
             if (values[i] === '_') continue;
             const alpha = this.getItemAlpha(i, n, el);
             if (alpha <= 0) continue;
-            ctx.globalAlpha = alpha;
+            renderer.globalAlpha = alpha;
 
             const { x: nx, y: ny } = positions[i];
             const cs = this.getCellStyle(this.getHighlightState(i, el), colors);
 
             // Node circle
-            ctx.fillStyle = cs.bg;
-            ctx.beginPath();
-            ctx.arc(nx, ny, nodeRadius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = cs.stroke;
-            ctx.lineWidth = cs.sw;
-            ctx.stroke();
+            renderer.fillStyle = cs.bg;
+            renderer.beginPath();
+            renderer.arc(nx, ny, nodeRadius, 0, Math.PI * 2);
+            renderer.fill();
+            renderer.strokeStyle = cs.stroke;
+            renderer.lineWidth = cs.sw;
+            renderer.stroke();
 
             // Value text
-            ctx.fillStyle = cs.text;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(values[i], nx, ny, nodeRadius * 1.8);
+            renderer.fillStyle = cs.text;
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillText(values[i], nx, ny, nodeRadius * 1.8);
 
-            ctx.globalAlpha = 1;
+            renderer.globalAlpha = 1;
         }
     }
 
@@ -949,7 +950,7 @@ export class DataStructureRenderer extends ShapeRenderer {
         return Math.abs(hash) % capacity;
     }
 
-    private renderHashTable(ctx: CanvasRenderingContext2D, el: any, isDarkMode: boolean): void {
+    private renderHashTable(renderer: IRenderer, el: any, isDarkMode: boolean): void {
         const colors = this.getColors(el, isDarkMode);
         const fontSize = el.fontSize || 14;
         const font = resolveFontFamily(el.fontFamily || 'code');
@@ -963,21 +964,21 @@ export class DataStructureRenderer extends ShapeRenderer {
         const titleH = hasTitle ? fontSize * 1.8 : 0;
 
         // Background
-        this.fillBackground(ctx, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.strokeStyle = colors.stroke;
-        ctx.lineWidth = strokeWidth;
-        this.drawRoundedRect(ctx, el.x, el.y, el.width, el.height, cornerRadius);
-        ctx.stroke();
+        this.fillBackground(renderer, el, isDarkMode, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.strokeStyle = colors.stroke;
+        renderer.lineWidth = strokeWidth;
+        this.drawRoundedRect(renderer, el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.stroke();
 
         // Title
         if (hasTitle) {
-            this.drawTitle(ctx, el, isDarkMode, el.y, titleH);
-            ctx.strokeStyle = colors.stroke;
-            ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(el.x + padding, el.y + titleH);
-            ctx.lineTo(el.x + el.width - padding, el.y + titleH);
-            ctx.stroke();
+            this.drawTitle(renderer, el, isDarkMode, el.y, titleH);
+            renderer.strokeStyle = colors.stroke;
+            renderer.lineWidth = 0.5;
+            renderer.beginPath();
+            renderer.moveTo(el.x + padding, el.y + titleH);
+            renderer.lineTo(el.x + el.width - padding, el.y + titleH);
+            renderer.stroke();
         }
 
         // Parse key:value pairs and hash them into buckets
@@ -1007,59 +1008,59 @@ export class DataStructureRenderer extends ShapeRenderer {
         const valueX = contentX + gutterW;
         const valueW = contentW - gutterW;
 
-        ctx.font = `${fontSize}px ${font}`;
+        renderer.font = `${fontSize}px ${font}`;
 
         for (let b = 0; b < capacity; b++) {
             const alpha = this.getItemAlpha(b, capacity, el);
             if (alpha <= 0) continue;
-            ctx.globalAlpha = alpha;
+            renderer.globalAlpha = alpha;
 
             const ry = contentY + b * rowH;
             const cs = this.getCellStyle(this.getHighlightState(b, el), colors);
 
             // Bucket index
             if (showIndices) {
-                ctx.fillStyle = RenderPipeline.adjustColor('#1a2332', isDarkMode);
-                ctx.fillRect(contentX, ry + 1, gutterW - 2, rowH - 2);
-                ctx.strokeStyle = colors.stroke;
-                ctx.lineWidth = 0.5;
-                ctx.strokeRect(contentX, ry + 1, gutterW - 2, rowH - 2);
+                renderer.fillStyle = RenderPipeline.adjustColor('#1a2332', isDarkMode);
+                renderer.fillRect(contentX, ry + 1, gutterW - 2, rowH - 2);
+                renderer.strokeStyle = colors.stroke;
+                renderer.lineWidth = 0.5;
+                renderer.strokeRect(contentX, ry + 1, gutterW - 2, rowH - 2);
 
-                ctx.fillStyle = colors.label;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(String(b), contentX + gutterW / 2, ry + rowH / 2);
+                renderer.fillStyle = colors.label;
+                renderer.textAlign = 'center';
+                renderer.textBaseline = 'middle';
+                renderer.fillText(String(b), contentX + gutterW / 2, ry + rowH / 2);
             }
 
             // Value area
-            ctx.fillStyle = cs.bg;
-            this.drawRoundedRect(ctx, valueX, ry + 1, valueW, rowH - 2, 2);
-            ctx.fill();
-            ctx.strokeStyle = cs.stroke;
-            ctx.lineWidth = cs.sw;
-            ctx.stroke();
+            renderer.fillStyle = cs.bg;
+            this.drawRoundedRect(renderer, valueX, ry + 1, valueW, rowH - 2, 2);
+            renderer.fill();
+            renderer.strokeStyle = cs.stroke;
+            renderer.lineWidth = cs.sw;
+            renderer.stroke();
 
             // Bucket contents
             if (buckets[b].length === 0) {
-                ctx.fillStyle = colors.label;
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'middle';
-                ctx.font = `italic ${fontSize * 0.85}px ${font}`;
-                ctx.fillText('empty', valueX + 8, ry + rowH / 2);
-                ctx.font = `${fontSize}px ${font}`;
+                renderer.fillStyle = colors.label;
+                renderer.textAlign = 'left';
+                renderer.textBaseline = 'middle';
+                renderer.font = `italic ${fontSize * 0.85}px ${font}`;
+                renderer.fillText('empty', valueX + 8, ry + rowH / 2);
+                renderer.font = `${fontSize}px ${font}`;
             } else {
                 const text = buckets[b].map(e => e.value ? `${e.key}:${e.value}` : e.key).join(' → ');
-                ctx.fillStyle = cs.text;
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(text, valueX + 8, ry + rowH / 2, valueW - 16);
+                renderer.fillStyle = cs.text;
+                renderer.textAlign = 'left';
+                renderer.textBaseline = 'middle';
+                renderer.fillText(text, valueX + 8, ry + rowH / 2, valueW - 16);
             }
 
-            ctx.globalAlpha = 1;
+            renderer.globalAlpha = 1;
         }
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
-        ctx.rect(el.x, el.y, el.width, el.height);
+    protected definePath(renderer: IRenderer, el: any): void {
+        renderer.rect(el.x, el.y, el.width, el.height);
     }
 }

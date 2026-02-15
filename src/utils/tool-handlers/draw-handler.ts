@@ -60,7 +60,7 @@ const NORMALIZABLE_SHAPES = [
 // Tools that stay active after drawing (don't switch to selection)
 const CONTINUOUS_TOOLS = [
     'selection', 'pan', 'eraser', 'fineliner', 'inkbrush', 'marker',
-    'text', 'ink', 'polyline'
+    'text', 'richtext', 'ink', 'polyline'
 ];
 
 // ─── Pointer Down: Create element ───────────────────────────────────
@@ -427,7 +427,7 @@ export function drawOnUp(
 
         // Discard shapes created by click without drag (too small)
         // Excludes pen tools (fineliner/inkbrush/marker/ink), line/arrow, organicBranch, and text
-        const CLICK_EXEMPT = ['fineliner', 'inkbrush', 'marker', 'ink', 'line', 'arrow', 'organicBranch', 'text'];
+        const CLICK_EXEMPT = ['fineliner', 'inkbrush', 'marker', 'ink', 'line', 'arrow', 'organicBranch', 'text', 'richtext'];
         if (!CLICK_EXEMPT.includes(el.type)) {
             const MIN_DRAG = 5;
             const currentEl = store.elements.find(e => e.id === pState.currentId);

@@ -2,6 +2,7 @@ import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import { resolveFontFamily } from "../../utils/text-utils";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class CodeBlockRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, _cx: number, _cy: number): void {
@@ -13,7 +14,7 @@ export class CodeBlockRenderer extends ShapeRenderer {
     }
 
     private renderCommon(context: RenderContext): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
 
         const fontSize = el.fontSize || 14;
         const lineHeight = fontSize * 1.4;
@@ -29,59 +30,51 @@ export class CodeBlockRenderer extends ShapeRenderer {
         const hasTitle = !!el.containerText;
         const titleBarHeight = hasTitle ? fontSize * 1.8 : 0;
 
-        ctx.save();
+        renderer.save();
 
         // --- Background ---
         const bgColor = el.backgroundColor && el.backgroundColor !== 'transparent' && el.backgroundColor !== 'none'
             ? RenderPipeline.adjustColor(el.backgroundColor, isDarkMode)
             : RenderPipeline.adjustColor('#1e293b', isDarkMode);
 
-        ctx.fillStyle = bgColor;
-        ctx.beginPath();
-        if (ctx.roundRect) {
-            ctx.roundRect(el.x, el.y, el.width, el.height, cornerRadius);
-        } else {
-            ctx.rect(el.x, el.y, el.width, el.height);
-        }
-        ctx.fill();
+        renderer.fillStyle = bgColor;
+        renderer.beginPath();
+        renderer.roundRect(el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.fill();
 
         // --- Stroke border ---
         const strokeColor = RenderPipeline.adjustColor(el.strokeColor || '#334155', isDarkMode);
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = el.strokeWidth || 1;
-        ctx.stroke();
+        renderer.strokeStyle = strokeColor;
+        renderer.lineWidth = el.strokeWidth || 1;
+        renderer.stroke();
 
         // --- Clip to bounds ---
-        ctx.save();
-        ctx.beginPath();
-        if (ctx.roundRect) {
-            ctx.roundRect(el.x, el.y, el.width, el.height, cornerRadius);
-        } else {
-            ctx.rect(el.x, el.y, el.width, el.height);
-        }
-        ctx.clip();
+        renderer.save();
+        renderer.beginPath();
+        renderer.roundRect(el.x, el.y, el.width, el.height, cornerRadius);
+        renderer.clip();
 
         // --- Title bar ---
         if (hasTitle) {
             // Title bar background (slightly lighter)
-            ctx.fillStyle = RenderPipeline.adjustColor('#334155', isDarkMode);
-            ctx.fillRect(el.x, el.y, el.width, titleBarHeight);
+            renderer.fillStyle = RenderPipeline.adjustColor('#334155', isDarkMode);
+            renderer.fillRect(el.x, el.y, el.width, titleBarHeight);
 
             // Separator line
-            ctx.strokeStyle = RenderPipeline.adjustColor('#475569', isDarkMode);
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(el.x, el.y + titleBarHeight);
-            ctx.lineTo(el.x + el.width, el.y + titleBarHeight);
-            ctx.stroke();
+            renderer.strokeStyle = RenderPipeline.adjustColor('#475569', isDarkMode);
+            renderer.lineWidth = 1;
+            renderer.beginPath();
+            renderer.moveTo(el.x, el.y + titleBarHeight);
+            renderer.lineTo(el.x + el.width, el.y + titleBarHeight);
+            renderer.stroke();
 
             // Title text (centered)
             const titleFont = resolveFontFamily('sans-serif');
-            ctx.font = `${fontSize}px ${titleFont}`;
-            ctx.fillStyle = RenderPipeline.adjustColor('#94a3b8', isDarkMode);
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(
+            renderer.font = `${fontSize}px ${titleFont}`;
+            renderer.fillStyle = RenderPipeline.adjustColor('#94a3b8', isDarkMode);
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillText(
                 el.containerText!,
                 el.x + el.width / 2,
                 el.y + titleBarHeight / 2,
@@ -97,27 +90,27 @@ export class CodeBlockRenderer extends ShapeRenderer {
         if (!el.text) {
             // Placeholder when empty
             const codeFont = resolveFontFamily('code');
-            ctx.font = `${fontSize}px ${codeFont}`;
-            ctx.fillStyle = RenderPipeline.adjustColor('#64748b', isDarkMode);
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            ctx.fillText('// Double-click to edit code', codeLeft, codeTop);
-            ctx.restore(); // clip
-            ctx.restore(); // outer save
+            renderer.font = `${fontSize}px ${codeFont}`;
+            renderer.fillStyle = RenderPipeline.adjustColor('#64748b', isDarkMode);
+            renderer.textAlign = 'left';
+            renderer.textBaseline = 'top';
+            renderer.fillText('// Double-click to edit code', codeLeft, codeTop);
+            renderer.restore(); // clip
+            renderer.restore(); // outer save
             return;
         }
 
         const lines = el.text.split('\n');
         const codeFont = resolveFontFamily(el.fontFamily || 'code');
-        ctx.font = `${fontSize}px ${codeFont}`;
-        ctx.textBaseline = 'top';
+        renderer.font = `${fontSize}px ${codeFont}`;
+        renderer.textBaseline = 'top';
 
         // Calculate gutter width based on max line number
         let gutterWidth = 0;
         if (showLineNumbers) {
             const maxLineNum = startLine + lines.length - 1;
             const maxDigits = String(maxLineNum).length;
-            gutterWidth = ctx.measureText('0'.repeat(maxDigits)).width + padding * 1.5;
+            gutterWidth = renderer.measureText('0'.repeat(maxDigits)).width + padding * 1.5;
         }
 
         const textStartX = codeLeft + gutterWidth;
@@ -128,16 +121,16 @@ export class CodeBlockRenderer extends ShapeRenderer {
 
         // Gutter background
         if (showLineNumbers && gutterWidth > 0) {
-            ctx.fillStyle = RenderPipeline.adjustColor('#1a2332', isDarkMode);
-            ctx.fillRect(el.x, el.y + titleBarHeight, gutterWidth + padding, el.height - titleBarHeight);
+            renderer.fillStyle = RenderPipeline.adjustColor('#1a2332', isDarkMode);
+            renderer.fillRect(el.x, el.y + titleBarHeight, gutterWidth + padding, el.height - titleBarHeight);
 
             // Gutter separator
-            ctx.strokeStyle = RenderPipeline.adjustColor('#2d3f54', isDarkMode);
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(el.x + gutterWidth + padding, el.y + titleBarHeight);
-            ctx.lineTo(el.x + gutterWidth + padding, el.y + el.height);
-            ctx.stroke();
+            renderer.strokeStyle = RenderPipeline.adjustColor('#2d3f54', isDarkMode);
+            renderer.lineWidth = 1;
+            renderer.beginPath();
+            renderer.moveTo(el.x + gutterWidth + padding, el.y + titleBarHeight);
+            renderer.lineTo(el.x + gutterWidth + padding, el.y + el.height);
+            renderer.stroke();
         }
 
         // Render each line (scrollOffset shifts lines up, clip hides overflow)
@@ -151,17 +144,17 @@ export class CodeBlockRenderer extends ShapeRenderer {
 
             // Highlight bar for codeLineHighlight animation
             if (highlightLine === i) {
-                ctx.fillStyle = 'rgba(59, 130, 246, 0.2)'; // blue highlight
-                ctx.fillRect(el.x, y - 2, el.width, lineHeight + 2);
+                renderer.fillStyle = 'rgba(59, 130, 246, 0.2)'; // blue highlight
+                renderer.fillRect(el.x, y - 2, el.width, lineHeight + 2);
             }
 
             // Line number
             if (showLineNumbers) {
-                ctx.fillStyle = highlightLine === i
+                renderer.fillStyle = highlightLine === i
                     ? RenderPipeline.adjustColor('#93c5fd', isDarkMode) // brighter for highlighted line
                     : lineNumColor;
-                ctx.textAlign = 'right';
-                ctx.fillText(
+                renderer.textAlign = 'right';
+                renderer.fillText(
                     String(startLine + i),
                     el.x + gutterWidth + padding / 2,
                     y
@@ -169,18 +162,18 @@ export class CodeBlockRenderer extends ShapeRenderer {
             }
 
             // Code text
-            ctx.fillStyle = highlightLine === i
+            renderer.fillStyle = highlightLine === i
                 ? RenderPipeline.adjustColor('#ffffff', isDarkMode)  // white for highlighted line
                 : textColor;
-            ctx.textAlign = 'left';
-            ctx.fillText(lines[i], textStartX + padding / 2, y, codeRight - textStartX - padding / 2);
+            renderer.textAlign = 'left';
+            renderer.fillText(lines[i], textStartX + padding / 2, y, codeRight - textStartX - padding / 2);
         }
 
-        ctx.restore(); // clip
-        ctx.restore(); // outer save
+        renderer.restore(); // clip
+        renderer.restore(); // outer save
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
-        ctx.rect(el.x, el.y, el.width, el.height);
+    protected definePath(renderer: IRenderer, el: any): void {
+        renderer.rect(el.x, el.y, el.width, el.height);
     }
 }

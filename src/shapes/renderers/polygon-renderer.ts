@@ -1,6 +1,7 @@
 import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class PolygonRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
@@ -33,7 +34,7 @@ export class PolygonRenderer extends ShapeRenderer {
     }
 
     private drawPolygon(context: RenderContext, x: number, y: number, w: number, h: number, isInner = false) {
-        const { ctx, rc, element: el, isDarkMode } = context;
+        const { renderer, rc, element: el, isDarkMode } = context;
         const points = this.getPoints(el, x, y, w, h);
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
         const strokeColor = RenderPipeline.adjustColor(el.strokeColor, isDarkMode);
@@ -44,14 +45,14 @@ export class PolygonRenderer extends ShapeRenderer {
             if (!isInner && fillVisible && el.fillStyle !== 'dots') {
                 rc.polygon(points, { ...opts, stroke: 'none', fill: options.fill });
             }
-            ctx.beginPath();
-            ctx.moveTo(points[0][0], points[0][1]);
-            for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
-            ctx.closePath();
-            ctx.strokeStyle = isInner ? (el.innerBorderColor || strokeColor) : strokeColor;
-            ctx.lineWidth = el.strokeWidth;
-            ctx.lineJoin = (el.strokeLineJoin as CanvasLineJoin) || 'round';
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.moveTo(points[0][0], points[0][1]);
+            for (let i = 1; i < points.length; i++) renderer.lineTo(points[i][0], points[i][1]);
+            renderer.closePath();
+            renderer.strokeStyle = isInner ? (el.innerBorderColor || strokeColor) : strokeColor;
+            renderer.lineWidth = el.strokeWidth;
+            renderer.lineJoin = (el.strokeLineJoin as CanvasLineJoin) || 'round';
+            renderer.stroke();
         } else {
             rc.polygon(points, opts);
         }
@@ -100,15 +101,15 @@ export class PolygonRenderer extends ShapeRenderer {
         return points;
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const points = this.getPoints(el, el.x, el.y, el.width, el.height);
         if (points.length < 2) return;
 
-        ctx.moveTo(points[0][0], points[0][1]);
+        renderer.moveTo(points[0][0], points[0][1]);
         for (let i = 1; i < points.length; i++) {
-            ctx.lineTo(points[i][0], points[i][1]);
+            renderer.lineTo(points[i][0], points[i][1]);
         }
-        ctx.closePath();
+        renderer.closePath();
     }
 
     estimatePathLength(element: any): number {

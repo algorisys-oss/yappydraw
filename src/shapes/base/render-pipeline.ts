@@ -6,6 +6,7 @@ import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils
 import type { RenderContext } from "./types";
 import { getUIShapeDef } from "../../config/ui-shape-defs";
 import { buildFilterString } from "../../utils/image-filter-utils";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class RenderPipeline {
     static adjustColor(color: string, _isDarkMode: boolean) {
@@ -63,32 +64,32 @@ export class RenderPipeline {
      * Applies standard transformations (opacity, blend mode, rotation) to the context.
      * Returns the center coordinates (cx, cy) for further use.
      */
-    static applyTransformations(ctx: CanvasRenderingContext2D, el: DrawingElement, layerOpacity: number): { cx: number; cy: number } {
-        ctx.save();
-        ctx.globalAlpha = ((el.opacity ?? 100) / 100) * layerOpacity;
+    static applyTransformations(renderer: IRenderer, el: DrawingElement, layerOpacity: number): { cx: number; cy: number } {
+        renderer.save();
+        renderer.globalAlpha = ((el.opacity ?? 100) / 100) * layerOpacity;
 
         // Apply Blend Mode
         if (el.blendMode) {
-            ctx.globalCompositeOperation = el.blendMode === 'normal'
+            renderer.globalCompositeOperation = el.blendMode === 'normal'
                 ? 'source-over'
-                : el.blendMode as GlobalCompositeOperation;
+                : el.blendMode;
         }
 
         // Apply Drop Shadow
         if (el.shadowEnabled) {
-            ctx.shadowColor = el.shadowColor || 'rgba(0,0,0,0.3)';
-            ctx.shadowBlur = el.shadowBlur || 10;
-            ctx.shadowOffsetX = el.shadowOffsetX || 5;
-            ctx.shadowOffsetY = el.shadowOffsetY || 5;
+            renderer.shadowColor = el.shadowColor || 'rgba(0,0,0,0.3)';
+            renderer.shadowBlur = el.shadowBlur || 10;
+            renderer.shadowOffsetX = el.shadowOffsetX || 5;
+            renderer.shadowOffsetY = el.shadowOffsetY || 5;
         } else {
-            ctx.shadowColor = 'transparent';
+            renderer.shadowColor = 'transparent';
         }
 
         // Apply CSS Filter (for images with filter properties)
         if (el.type === 'image') {
             const filterStr = buildFilterString(el);
             if (filterStr !== 'none') {
-                ctx.filter = filterStr;
+                renderer.filter = filterStr;
             }
         }
 
@@ -101,34 +102,34 @@ export class RenderPipeline {
         const cy = finalY + el.height / 2;
 
         if (finalAngle || el.flipX || el.flipY) {
-            ctx.translate(cx, cy);
-            if (finalAngle) ctx.rotate(finalAngle);
-            if (el.flipX || el.flipY) ctx.scale(el.flipX ? -1 : 1, el.flipY ? -1 : 1);
-            ctx.translate(-cx, -cy);
+            renderer.translate(cx, cy);
+            if (finalAngle) renderer.rotate(finalAngle);
+            if (el.flipX || el.flipY) renderer.scale(el.flipX ? -1 : 1, el.flipY ? -1 : 1);
+            renderer.translate(-cx, -cy);
         }
 
         return { cx, cy };
     }
 
-    static restoreTransformations(ctx: CanvasRenderingContext2D) {
-        ctx.restore();
+    static restoreTransformations(renderer: IRenderer) {
+        renderer.restore();
     }
 
     /**
      * Applies stroke properties (color, width, dash) to the context.
      */
-    static applyStrokeStyle(ctx: CanvasRenderingContext2D, el: DrawingElement, isDarkMode: boolean) {
-        ctx.strokeStyle = this.adjustColor(el.strokeColor, isDarkMode);
-        ctx.lineWidth = el.strokeWidth;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = (el.strokeLineJoin as CanvasLineJoin) || 'round';
+    static applyStrokeStyle(renderer: IRenderer, el: DrawingElement, isDarkMode: boolean) {
+        renderer.strokeStyle = this.adjustColor(el.strokeColor, isDarkMode);
+        renderer.lineWidth = el.strokeWidth;
+        renderer.lineCap = 'round';
+        renderer.lineJoin = (el.strokeLineJoin as CanvasLineJoin) || 'round';
 
         if (el.strokeStyle === 'dashed') {
-            ctx.setLineDash([8, 8]);
+            renderer.setLineDash([8, 8]);
         } else if (el.strokeStyle === 'dotted') {
-            ctx.setLineDash([2, 4]);
+            renderer.setLineDash([2, 4]);
         } else {
-            ctx.setLineDash([]);
+            renderer.setLineDash([]);
         }
     }
 
@@ -171,7 +172,7 @@ export class RenderPipeline {
      * Applies gradient or complex fills using ShapeGeometry.
      */
     static applyComplexFills(context: RenderContext, cx: number, cy: number) {
-        const { ctx, element: el } = context;
+        const { renderer, element: el } = context;
         const fillStyle = el.fillStyle;
 
         const useGradient = (['linear', 'radial', 'conic'].includes(fillStyle as string)) ||
@@ -180,34 +181,34 @@ export class RenderPipeline {
 
         if (!useGradient && !useDots) return;
 
-        ctx.save();
-        ctx.translate(cx, cy);
+        renderer.save();
+        renderer.translate(cx, cy);
 
         if (useGradient) {
-            ctx.beginPath();
-            this.applyGradient(ctx, el);
+            renderer.beginPath();
+            this.applyGradient(renderer, el);
         } else if (useDots) {
-            ctx.beginPath();
-            this.applyDotsFill(ctx, el, context.isDarkMode);
+            renderer.beginPath();
+            this.applyDotsFill(renderer, el, context.isDarkMode);
         }
 
         const geometry = getShapeGeometry(el);
         if (geometry) {
-            this.renderGeometry(ctx, geometry);
-            ctx.fill();
+            this.renderGeometry(renderer, geometry);
+            renderer.fill();
         }
 
-        ctx.restore();
+        renderer.restore();
     }
 
-    private static applyGradient(ctx: CanvasRenderingContext2D, el: DrawingElement) {
+    private static applyGradient(renderer: IRenderer, el: DrawingElement) {
         const w = el.width;
         const h = el.height;
         const mw = w / 2;
         const mh = h / 2;
         const gType = el.gradientType || el.fillStyle || 'linear';
 
-        let grad: CanvasGradient;
+        let grad;
 
         if (gType === 'linear') {
             const angleRad = (el.gradientDirection || 45) * (Math.PI / 180);
@@ -216,19 +217,19 @@ export class RenderPipeline {
             const y1 = -Math.sin(angleRad) * r;
             const x2 = Math.cos(angleRad) * r;
             const y2 = Math.sin(angleRad) * r;
-            grad = ctx.createLinearGradient(x1, y1, x2, y2);
+            grad = renderer.createLinearGradient(x1, y1, x2, y2);
         } else if (gType === 'radial') {
             const angleRad = (el.gradientDirection || 0) * (Math.PI / 180);
             const radius = Math.max(w, h) / 2;
             const focalOffset = radius * 0.4; // 40% offset for focal point
             const fx = Math.cos(angleRad) * focalOffset;
             const fy = Math.sin(angleRad) * focalOffset;
-            grad = ctx.createRadialGradient(fx, fy, 0, 0, 0, radius);
+            grad = renderer.createRadialGradient(fx, fy, 0, 0, 0, radius);
         } else if (gType === 'conic') {
             const angleRad = (el.gradientDirection || 0) * (Math.PI / 180);
-            grad = (ctx as any).createConicGradient(angleRad, 0, 0);
+            grad = renderer.createConicGradient(angleRad, 0, 0);
         } else {
-            grad = ctx.createLinearGradient(-mw, -mh, mw, mh);
+            grad = renderer.createLinearGradient(-mw, -mh, mw, mh);
         }
 
         if (el.gradientStops && el.gradientStops.length > 0) {
@@ -240,12 +241,12 @@ export class RenderPipeline {
             grad.addColorStop(1, el.gradientEnd);
         }
 
-        ctx.fillStyle = grad;
+        renderer.fillStyle = grad;
     }
 
-    private static _dotPatternCache = new Map<string, CanvasPattern | null>();
+    private static _dotPatternCache = new Map<string, any>();
 
-    private static applyDotsFill(ctx: CanvasRenderingContext2D, el: DrawingElement, _isDarkMode: boolean) {
+    private static applyDotsFill(renderer: IRenderer, el: DrawingElement, _isDarkMode: boolean) {
         const density = el.fillDensity || 1;
         const color = el.strokeColor || '#000000';
         const strokeW = el.strokeWidth / 2 || 1;
@@ -264,7 +265,7 @@ export class RenderPipeline {
                 dotCtx.beginPath();
                 dotCtx.arc(gap / 2, gap / 2, strokeW, 0, Math.PI * 2);
                 dotCtx.fill();
-                pattern = ctx.createPattern(dotCanvas, 'repeat');
+                pattern = renderer.createPattern(dotCanvas, 'repeat');
             } else {
                 pattern = null;
             }
@@ -272,29 +273,29 @@ export class RenderPipeline {
             if (this._dotPatternCache.size > 100) this._dotPatternCache.clear();
             this._dotPatternCache.set(cacheKey, pattern!);
         }
-        if (pattern) ctx.fillStyle = pattern;
+        if (pattern) renderer.fillStyle = pattern;
     }
 
-    static renderGeometry(ctx: CanvasRenderingContext2D, geo: any) {
+    static renderGeometry(renderer: IRenderer, geo: any) {
         if (geo.type === 'rect') {
-            ctx.roundRect(geo.x, geo.y, geo.w, geo.h, geo.r || 0);
+            renderer.roundRect(geo.x, geo.y, geo.w, geo.h, geo.r || 0);
         } else if (geo.type === 'ellipse') {
-            ctx.ellipse(geo.cx, geo.cy, geo.rx, geo.ry, 0, 0, Math.PI * 2);
+            renderer.ellipse(geo.cx, geo.cy, geo.rx, geo.ry, 0, 0, Math.PI * 2);
         } else if (geo.type === 'points') {
             if (geo.points.length > 0) {
-                ctx.moveTo(geo.points[0].x, geo.points[0].y);
-                for (let i = 1; i < geo.points.length; i++) ctx.lineTo(geo.points[i].x, geo.points[i].y);
-                if (geo.isClosed !== false) ctx.closePath();
+                renderer.moveTo(geo.points[0].x, geo.points[0].y);
+                for (let i = 1; i < geo.points.length; i++) renderer.lineTo(geo.points[i].x, geo.points[i].y);
+                if (geo.isClosed !== false) renderer.closePath();
             }
         } else if (geo.type === 'path') {
-            ctx.fill(new Path2D(geo.path));
+            renderer.fillPath(geo.path);
         } else if (geo.type === 'multi') {
-            geo.shapes.forEach((s: any) => this.renderGeometry(ctx, s));
+            geo.shapes.forEach((s: any) => this.renderGeometry(renderer, s));
         }
     }
 
     static renderText(context: RenderContext, cx: number, cy: number) {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         if (el.isEditing) return; // Don't render text if we're currently editing it
 
         // Rich text path — render per-span formatting
@@ -306,7 +307,7 @@ export class RenderPipeline {
         const textStr = el.containerText || el.text;
         if (!textStr) return;
 
-        ctx.save();
+        renderer.save();
 
         let maxWidth = el.width - 20;
         let startYOffset = 0;
@@ -330,9 +331,9 @@ export class RenderPipeline {
             }
         }
 
-        const metrics = measureContainerText(ctx, el, textStr, maxWidth);
+        const metrics = measureContainerText(renderer, el, textStr, maxWidth);
 
-        ctx.font = getFontString(el);
+        renderer.font = getFontString(el);
 
         // Resolve Text Color
         const textColorRaw = el.textColor || el.strokeColor;
@@ -340,8 +341,8 @@ export class RenderPipeline {
 
         // Apply text alignment (default to center for containerText)
         const textAlign = el.textAlign || 'center';
-        ctx.textAlign = textAlign;
-        ctx.textBaseline = 'middle';
+        renderer.textAlign = textAlign;
+        renderer.textBaseline = 'middle';
 
         const startY = cy - metrics.textHeight / 2 + metrics.lineHeight / 2 + startYOffset;
 
@@ -365,11 +366,11 @@ export class RenderPipeline {
             const padding = el.textHighlightPadding ?? 4;
             const radius = el.textHighlightRadius ?? 2;
 
-            ctx.fillStyle = this.adjustColor(highlightColor, isDarkMode);
+            renderer.fillStyle = this.adjustColor(highlightColor, isDarkMode);
 
             metrics.lines.forEach((line, index) => {
                 const y = textYAdjusted + index * metrics.lineHeight;
-                const lineWidth = ctx.measureText(line).width;
+                const lineWidth = renderer.measureText(line).width;
                 const xPos = getXPosition();
 
                 // Vertical padding adjustment to make it look centered
@@ -383,47 +384,37 @@ export class RenderPipeline {
                     highlightX = xPos - lineWidth - padding;
                 }
 
-                ctx.beginPath();
-                if (ctx.roundRect) {
-                    ctx.roundRect(
-                        highlightX,
-                        y - metrics.lineHeight / 2 - vPadding,
-                        lineWidth + padding * 2,
-                        metrics.lineHeight + vPadding * 2,
-                        radius
-                    );
-                } else {
-                    // Fallback for older browsers
-                    ctx.rect(
-                        highlightX,
-                        y - metrics.lineHeight / 2 - vPadding,
-                        lineWidth + padding * 2,
-                        metrics.lineHeight + vPadding * 2
-                    );
-                }
-                ctx.fill();
+                renderer.beginPath();
+                renderer.roundRect(
+                    highlightX,
+                    y - metrics.lineHeight / 2 - vPadding,
+                    lineWidth + padding * 2,
+                    metrics.lineHeight + vPadding * 2,
+                    radius
+                );
+                renderer.fill();
             });
         }
 
         // Render Lines
-        ctx.fillStyle = textColor;
+        renderer.fillStyle = textColor;
         metrics.lines.forEach((line, index) => {
             const y = textYAdjusted + index * metrics.lineHeight;
             const xPos = getXPosition();
-            ctx.fillText(line, xPos, y, el.width - 10);
+            renderer.fillText(line, xPos, y, el.width - 10);
         });
 
-        ctx.restore();
+        renderer.restore();
     }
 
     /**
      * Render rich text (per-span formatting) inside a shape container.
      */
     static renderRichText(context: RenderContext, cx: number, cy: number) {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const spans = el.richContainerText!;
 
-        ctx.save();
+        renderer.save();
 
         let maxWidth = el.width - 20;
         let startYOffset = 0;
@@ -447,7 +438,7 @@ export class RenderPipeline {
         }
 
         const defaults = { fontSize: el.fontSize || 28, fontFamily: el.fontFamily || 'hand-drawn' };
-        const layout = layoutRichText(ctx, spans, maxWidth, defaults);
+        const layout = layoutRichText(renderer, spans, maxWidth, defaults);
 
         const textAlign = el.textAlign || 'center';
         const startY = cy - layout.totalHeight / 2 + startYOffset;
@@ -479,39 +470,39 @@ export class RenderPipeline {
 
             for (const seg of lineSegments) {
                 const span = seg.span;
-                ctx.font = buildSpanFontString(span, defaults);
+                renderer.font = buildSpanFontString(span, defaults);
                 const color = span.color || el.textColor || el.strokeColor;
-                ctx.fillStyle = this.adjustColor(color, isDarkMode);
-                ctx.textBaseline = 'middle';
-                ctx.textAlign = 'left';
-                ctx.fillText(seg.text, xOffset + seg.x, baselineY);
+                renderer.fillStyle = this.adjustColor(color, isDarkMode);
+                renderer.textBaseline = 'middle';
+                renderer.textAlign = 'left';
+                renderer.fillText(seg.text, xOffset + seg.x, baselineY);
 
                 // Draw underline
                 if (span.underline) {
                     const fontSize = span.fontSize || defaults.fontSize;
-                    ctx.beginPath();
-                    ctx.strokeStyle = ctx.fillStyle;
-                    ctx.lineWidth = Math.max(1, fontSize / 14);
-                    ctx.moveTo(xOffset + seg.x, baselineY + fontSize * 0.35);
-                    ctx.lineTo(xOffset + seg.x + seg.width, baselineY + fontSize * 0.35);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.strokeStyle = renderer.fillStyle as string;
+                    renderer.lineWidth = Math.max(1, fontSize / 14);
+                    renderer.moveTo(xOffset + seg.x, baselineY + fontSize * 0.35);
+                    renderer.lineTo(xOffset + seg.x + seg.width, baselineY + fontSize * 0.35);
+                    renderer.stroke();
                 }
 
                 // Draw strikethrough
                 if (span.strikethrough) {
                     const fontSize = span.fontSize || defaults.fontSize;
-                    ctx.beginPath();
-                    ctx.strokeStyle = ctx.fillStyle;
-                    ctx.lineWidth = Math.max(1, fontSize / 14);
-                    ctx.moveTo(xOffset + seg.x, baselineY);
-                    ctx.lineTo(xOffset + seg.x + seg.width, baselineY);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.strokeStyle = renderer.fillStyle as string;
+                    renderer.lineWidth = Math.max(1, fontSize / 14);
+                    renderer.moveTo(xOffset + seg.x, baselineY);
+                    renderer.lineTo(xOffset + seg.x + seg.width, baselineY);
+                    renderer.stroke();
                 }
             }
 
             lineY += lineHeight;
         }
 
-        ctx.restore();
+        renderer.restore();
     }
 }

@@ -34,6 +34,7 @@ export function registerShapes() {
     shapeRegistry.register('circle', new CircleRenderer());
     shapeRegistry.register('diamond', new DiamondRenderer());
     shapeRegistry.register('text', new TextRenderer());
+    shapeRegistry.register('richtext', new TextRenderer());
     shapeRegistry.register('image', new ImageRenderer());
     shapeRegistry.register('stickyNote', new StickyNoteRenderer());
 

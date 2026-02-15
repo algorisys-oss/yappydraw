@@ -3,6 +3,7 @@ import { RenderPipeline } from "../base/render-pipeline";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 import type { RenderContext } from "../base/types";
 import type { DrawingElement } from "../../types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 /** Pie slice data from Mermaid pie DSL. */
 interface PieSlice {
@@ -41,7 +42,7 @@ interface XYChartData {
 
 export class DataMetricsRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
         const x = el.x, y = el.y, w = el.width, h = el.height;
 
@@ -55,31 +56,31 @@ export class DataMetricsRenderer extends ShapeRenderer {
                 const baseY = y + h;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
+                    renderer.fillStyle = options.fill;
                     for (let i = 0; i < barCount; i++) {
                         const bx = x + gap + i * (barW + gap);
                         const bh = h * 0.85 * heights[i];
-                        ctx.fillRect(bx, baseY - bh, barW, bh);
+                        renderer.fillRect(bx, baseY - bh, barW, bh);
                     }
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 for (let i = 0; i < barCount; i++) {
                     const bx = x + gap + i * (barW + gap);
                     const bh = h * 0.85 * heights[i];
-                    ctx.strokeRect(bx, baseY - bh, barW, bh);
+                    renderer.strokeRect(bx, baseY - bh, barW, bh);
                 }
                 // Axes
-                ctx.beginPath();
-                ctx.moveTo(x + gap * 0.5, y + h * 0.05);
-                ctx.lineTo(x + gap * 0.5, baseY);
-                ctx.lineTo(x + w - gap * 0.5, baseY);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + gap * 0.5, y + h * 0.05);
+                renderer.lineTo(x + gap * 0.5, baseY);
+                renderer.lineTo(x + w - gap * 0.5, baseY);
+                renderer.stroke();
                 break;
             }
             case 'pieChart': {
                 const pieSlices = (el as any).pieSlices as PieSlice[] | undefined;
                 if (pieSlices && pieSlices.length > 0) {
-                    this.renderDataPieArchitectural(ctx, el, pieSlices, isDarkMode);
+                    this.renderDataPieArchitectural(renderer, el, pieSlices, isDarkMode);
                     // Data-driven pie renders its own title + legend — skip base renderText
                     return;
                 } else {
@@ -88,21 +89,21 @@ export class DataMetricsRenderer extends ShapeRenderer {
                     const r = Math.min(w, h) / 2;
                     const placeholderSlices = [0, 0.3, 0.55, 0.8];
                     if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                        ctx.fillStyle = options.fill;
-                        ctx.beginPath();
-                        ctx.ellipse(ccx, ccy, r, r, 0, 0, Math.PI * 2);
-                        ctx.fill();
+                        renderer.fillStyle = options.fill;
+                        renderer.beginPath();
+                        renderer.ellipse(ccx, ccy, r, r, 0, 0, Math.PI * 2);
+                        renderer.fill();
                     }
-                    RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                    ctx.beginPath();
-                    ctx.ellipse(ccx, ccy, r, r, 0, 0, Math.PI * 2);
-                    ctx.stroke();
+                    RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                    renderer.beginPath();
+                    renderer.ellipse(ccx, ccy, r, r, 0, 0, Math.PI * 2);
+                    renderer.stroke();
                     for (const s of placeholderSlices) {
                         const angle = s * Math.PI * 2 - Math.PI / 2;
-                        ctx.beginPath();
-                        ctx.moveTo(ccx, ccy);
-                        ctx.lineTo(ccx + Math.cos(angle) * r, ccy + Math.sin(angle) * r);
-                        ctx.stroke();
+                        renderer.beginPath();
+                        renderer.moveTo(ccx, ccy);
+                        renderer.lineTo(ccx + Math.cos(angle) * r, ccy + Math.sin(angle) * r);
+                        renderer.stroke();
                     }
                 }
                 break;
@@ -125,43 +126,43 @@ export class DataMetricsRenderer extends ShapeRenderer {
                 const tipY = lastPt.py + Math.sin(angle) * arrowSize;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.moveTo(pts[0].px, baseY);
-                    for (const p of pts) ctx.lineTo(p.px, p.py);
-                    ctx.lineTo(lastPt.px, baseY);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.moveTo(pts[0].px, baseY);
+                    for (const p of pts) renderer.lineTo(p.px, p.py);
+                    renderer.lineTo(lastPt.px, baseY);
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Trend line
-                ctx.beginPath();
-                ctx.moveTo(pts[0].px, pts[0].py);
-                for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].px, pts[i].py);
-                ctx.lineTo(tipX, tipY);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(pts[0].px, pts[0].py);
+                for (let i = 1; i < pts.length; i++) renderer.lineTo(pts[i].px, pts[i].py);
+                renderer.lineTo(tipX, tipY);
+                renderer.stroke();
                 // Arrowhead
                 const a1 = angle + Math.PI * 0.82;
                 const a2 = angle - Math.PI * 0.82;
-                ctx.beginPath();
-                ctx.moveTo(tipX, tipY);
-                ctx.lineTo(tipX + Math.cos(a1) * arrowSize, tipY + Math.sin(a1) * arrowSize);
-                ctx.lineTo(tipX + Math.cos(a2) * arrowSize, tipY + Math.sin(a2) * arrowSize);
-                ctx.closePath();
-                ctx.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
-                ctx.fill();
+                renderer.beginPath();
+                renderer.moveTo(tipX, tipY);
+                renderer.lineTo(tipX + Math.cos(a1) * arrowSize, tipY + Math.sin(a1) * arrowSize);
+                renderer.lineTo(tipX + Math.cos(a2) * arrowSize, tipY + Math.sin(a2) * arrowSize);
+                renderer.closePath();
+                renderer.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
+                renderer.fill();
                 // Data points
                 for (const p of pts) {
-                    ctx.beginPath();
-                    ctx.arc(p.px, p.py, Math.min(w, h) * 0.025, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.beginPath();
+                    renderer.arc(p.px, p.py, Math.min(w, h) * 0.025, 0, Math.PI * 2);
+                    renderer.fill();
                 }
                 // Baseline axis
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath();
-                ctx.moveTo(x + margin * 0.5, baseY);
-                ctx.lineTo(x + w - margin * 0.5, baseY);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath();
+                renderer.moveTo(x + margin * 0.5, baseY);
+                renderer.lineTo(x + w - margin * 0.5, baseY);
+                renderer.stroke();
                 break;
             }
             case 'trendDown': {
@@ -182,43 +183,43 @@ export class DataMetricsRenderer extends ShapeRenderer {
                 const tipY = lastPt.py + Math.sin(angle) * arrowSize;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.moveTo(pts[0].px, baseY);
-                    for (const p of pts) ctx.lineTo(p.px, p.py);
-                    ctx.lineTo(lastPt.px, baseY);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.moveTo(pts[0].px, baseY);
+                    for (const p of pts) renderer.lineTo(p.px, p.py);
+                    renderer.lineTo(lastPt.px, baseY);
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Trend line
-                ctx.beginPath();
-                ctx.moveTo(pts[0].px, pts[0].py);
-                for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].px, pts[i].py);
-                ctx.lineTo(tipX, tipY);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(pts[0].px, pts[0].py);
+                for (let i = 1; i < pts.length; i++) renderer.lineTo(pts[i].px, pts[i].py);
+                renderer.lineTo(tipX, tipY);
+                renderer.stroke();
                 // Arrowhead
                 const a1 = angle + Math.PI * 0.82;
                 const a2 = angle - Math.PI * 0.82;
-                ctx.beginPath();
-                ctx.moveTo(tipX, tipY);
-                ctx.lineTo(tipX + Math.cos(a1) * arrowSize, tipY + Math.sin(a1) * arrowSize);
-                ctx.lineTo(tipX + Math.cos(a2) * arrowSize, tipY + Math.sin(a2) * arrowSize);
-                ctx.closePath();
-                ctx.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
-                ctx.fill();
+                renderer.beginPath();
+                renderer.moveTo(tipX, tipY);
+                renderer.lineTo(tipX + Math.cos(a1) * arrowSize, tipY + Math.sin(a1) * arrowSize);
+                renderer.lineTo(tipX + Math.cos(a2) * arrowSize, tipY + Math.sin(a2) * arrowSize);
+                renderer.closePath();
+                renderer.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
+                renderer.fill();
                 // Data points
                 for (const p of pts) {
-                    ctx.beginPath();
-                    ctx.arc(p.px, p.py, Math.min(w, h) * 0.025, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.beginPath();
+                    renderer.arc(p.px, p.py, Math.min(w, h) * 0.025, 0, Math.PI * 2);
+                    renderer.fill();
                 }
                 // Baseline axis
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath();
-                ctx.moveTo(x + margin * 0.5, baseY);
-                ctx.lineTo(x + w - margin * 0.5, baseY);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath();
+                renderer.moveTo(x + margin * 0.5, baseY);
+                renderer.lineTo(x + w - margin * 0.5, baseY);
+                renderer.stroke();
                 break;
             }
             case 'funnel': {
@@ -231,32 +232,32 @@ export class DataMetricsRenderer extends ShapeRenderer {
                 const midL2 = x + w * 0.22, midR2 = x + w * 0.78;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.moveTo(topL, y);
-                    ctx.lineTo(topR, y);
-                    ctx.lineTo(botR, y + h);
-                    ctx.lineTo(botL, y + h);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.moveTo(topL, y);
+                    renderer.lineTo(topR, y);
+                    renderer.lineTo(botR, y + h);
+                    renderer.lineTo(botL, y + h);
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath();
-                ctx.moveTo(topL, y);
-                ctx.lineTo(topR, y);
-                ctx.lineTo(botR, y + h);
-                ctx.lineTo(botL, y + h);
-                ctx.closePath();
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath();
+                renderer.moveTo(topL, y);
+                renderer.lineTo(topR, y);
+                renderer.lineTo(botR, y + h);
+                renderer.lineTo(botL, y + h);
+                renderer.closePath();
+                renderer.stroke();
                 // Horizontal section lines
-                ctx.beginPath();
-                ctx.moveTo(midL1, midY1);
-                ctx.lineTo(midR1, midY1);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(midL2, midY2);
-                ctx.lineTo(midR2, midY2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(midL1, midY1);
+                renderer.lineTo(midR1, midY1);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.moveTo(midL2, midY2);
+                renderer.lineTo(midR2, midY2);
+                renderer.stroke();
                 break;
             }
             case 'gauge': {
@@ -265,64 +266,64 @@ export class DataMetricsRenderer extends ShapeRenderer {
                 const r = Math.min(w / 2, h * 0.8);
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.arc(ccx, ccy, r, Math.PI, 0);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.arc(ccx, ccy, r, Math.PI, 0);
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Outer arc
-                ctx.beginPath();
-                ctx.arc(ccx, ccy, r, Math.PI, 0);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.arc(ccx, ccy, r, Math.PI, 0);
+                renderer.stroke();
                 // Inner arc
                 const innerR = r * 0.75;
-                ctx.beginPath();
-                ctx.arc(ccx, ccy, innerR, Math.PI, 0);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.arc(ccx, ccy, innerR, Math.PI, 0);
+                renderer.stroke();
                 // Tick marks
                 for (let i = 0; i <= 5; i++) {
                     const angle = Math.PI + (Math.PI * i) / 5;
-                    ctx.beginPath();
-                    ctx.moveTo(ccx + Math.cos(angle) * innerR, ccy + Math.sin(angle) * innerR);
-                    ctx.lineTo(ccx + Math.cos(angle) * r, ccy + Math.sin(angle) * r);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(ccx + Math.cos(angle) * innerR, ccy + Math.sin(angle) * innerR);
+                    renderer.lineTo(ccx + Math.cos(angle) * r, ccy + Math.sin(angle) * r);
+                    renderer.stroke();
                 }
                 // Needle at ~70%
                 const needleAngle = Math.PI + Math.PI * 0.7;
                 const needleLen = r * 0.65;
-                ctx.beginPath();
-                ctx.moveTo(ccx, ccy);
-                ctx.lineTo(ccx + Math.cos(needleAngle) * needleLen, ccy + Math.sin(needleAngle) * needleLen);
-                ctx.lineWidth = Math.max(2, Math.min(w, h) * 0.03);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(ccx, ccy);
+                renderer.lineTo(ccx + Math.cos(needleAngle) * needleLen, ccy + Math.sin(needleAngle) * needleLen);
+                renderer.lineWidth = Math.max(2, Math.min(w, h) * 0.03);
+                renderer.stroke();
                 // Center dot
                 const dotR = Math.min(w, h) * 0.04;
-                ctx.beginPath();
-                ctx.arc(ccx, ccy, dotR, 0, Math.PI * 2);
-                ctx.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
-                ctx.fill();
+                renderer.beginPath();
+                renderer.arc(ccx, ccy, dotR, 0, Math.PI * 2);
+                renderer.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
+                renderer.fill();
                 break;
             }
             case 'quadrantChart': {
                 const data = (el as any).quadrantData as QuadrantData | undefined;
-                if (data) { this.renderQuadrantArchitectural(ctx, el, data, isDarkMode); return; }
+                if (data) { this.renderQuadrantArchitectural(renderer, el, data, isDarkMode); return; }
                 break;
             }
             case 'xyChart': {
                 const data = (el as any).xyChartData as XYChartData | undefined;
-                if (data) { this.renderXYChartArchitectural(ctx, el, data, isDarkMode); return; }
+                if (data) { this.renderXYChartArchitectural(renderer, el, data, isDarkMode); return; }
                 break;
             }
             case 'ganttChart': {
                 const tasks = (el as any).ganttTasks as GanttTask[] | undefined;
-                if (tasks && tasks.length > 0) { this.renderGanttArchitectural(ctx, el, tasks, isDarkMode); return; }
+                if (tasks && tasks.length > 0) { this.renderGanttArchitectural(renderer, el, tasks, isDarkMode); return; }
                 break;
             }
             case 'journeyDiagram': {
                 const tasks = (el as any).journeyTasks as JourneyTask[] | undefined;
-                if (tasks && tasks.length > 0) { this.renderJourneyArchitectural(ctx, el, tasks, isDarkMode); return; }
+                if (tasks && tasks.length > 0) { this.renderJourneyArchitectural(renderer, el, tasks, isDarkMode); return; }
                 break;
             }
         }
@@ -500,7 +501,7 @@ export class DataMetricsRenderer extends ShapeRenderer {
     // ─── Data-Driven Pie Chart Rendering ──────────────────────────
 
     private renderDataPieArchitectural(
-        ctx: CanvasRenderingContext2D,
+        renderer: IRenderer,
         el: DrawingElement,
         slices: PieSlice[],
         isDarkMode: boolean
@@ -520,13 +521,13 @@ export class DataMetricsRenderer extends ShapeRenderer {
         // Draw title
         const titleText = el.containerText || el.text || '';
         if (titleText) {
-            ctx.save();
-            ctx.font = `bold ${Math.max(12, Math.min(16, h * 0.06))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            ctx.fillText(titleText, Math.round(x + w / 2), Math.round(y + 4));
-            ctx.restore();
+            renderer.save();
+            renderer.font = `bold ${Math.max(12, Math.min(16, h * 0.06))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'top';
+            renderer.fillText(titleText, Math.round(x + w / 2), Math.round(y + 4));
+            renderer.restore();
         }
 
         // Draw filled arc slices
@@ -538,17 +539,17 @@ export class DataMetricsRenderer extends ShapeRenderer {
             const color = slice.color || '#94a3b8';
 
             // Fill arc
-            ctx.beginPath();
-            ctx.moveTo(pieCx, pieCy);
-            ctx.arc(pieCx, pieCy, pieR, startAngle, startAngle + sweepAngle);
-            ctx.closePath();
-            ctx.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
-            ctx.fill();
+            renderer.beginPath();
+            renderer.moveTo(pieCx, pieCy);
+            renderer.arc(pieCx, pieCy, pieR, startAngle, startAngle + sweepAngle);
+            renderer.closePath();
+            renderer.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
+            renderer.fill();
 
             // Stroke arc
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 1;
-            ctx.stroke();
+            renderer.strokeStyle = strokeColor;
+            renderer.lineWidth = 1;
+            renderer.stroke();
 
             startAngle += sweepAngle;
         }
@@ -560,10 +561,10 @@ export class DataMetricsRenderer extends ShapeRenderer {
         const legendStartY = Math.round(y + Math.max(24, h * 0.08));
         const swatchSize = Math.round(legendFontSize * 0.8);
 
-        ctx.save();
-        ctx.font = `${legendFontSize}px sans-serif`;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
+        renderer.save();
+        renderer.font = `${legendFontSize}px sans-serif`;
+        renderer.textAlign = 'left';
+        renderer.textBaseline = 'middle';
 
         for (let i = 0; i < slices.length; i++) {
             const ly = Math.round(legendStartY + i * lineH);
@@ -571,25 +572,25 @@ export class DataMetricsRenderer extends ShapeRenderer {
             const color = slices[i].color || '#94a3b8';
 
             // Color swatch
-            ctx.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
-            ctx.fillRect(legendX, ly - swatchSize / 2, swatchSize, swatchSize);
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 0.5;
-            ctx.strokeRect(legendX, ly - swatchSize / 2, swatchSize, swatchSize);
+            renderer.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
+            renderer.fillRect(legendX, ly - swatchSize / 2, swatchSize, swatchSize);
+            renderer.strokeStyle = strokeColor;
+            renderer.lineWidth = 0.5;
+            renderer.strokeRect(legendX, ly - swatchSize / 2, swatchSize, swatchSize);
 
             // Label text
-            ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+            renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
             const label = `${slices[i].label} (${pct}%)`;
-            ctx.fillText(label, legendX + swatchSize + 6, ly);
+            renderer.fillText(label, legendX + swatchSize + 6, ly);
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     private renderDataPieSketch(
         context: RenderContext,
         slices: PieSlice[]
     ): void {
-        const { rc, ctx, element: el, isDarkMode } = context;
+        const { rc, renderer, element: el, isDarkMode } = context;
         const x = el.x, y = el.y, w = el.width, h = el.height;
         const total = slices.reduce((s, sl) => s + sl.value, 0);
         if (total === 0) return;
@@ -605,13 +606,13 @@ export class DataMetricsRenderer extends ShapeRenderer {
         // Title
         const titleText = el.containerText || el.text || '';
         if (titleText) {
-            ctx.save();
-            ctx.font = `bold ${Math.max(12, Math.min(16, h * 0.06))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            ctx.fillText(titleText, Math.round(x + w / 2), Math.round(y + 4));
-            ctx.restore();
+            renderer.save();
+            renderer.font = `bold ${Math.max(12, Math.min(16, h * 0.06))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'top';
+            renderer.fillText(titleText, Math.round(x + w / 2), Math.round(y + 4));
+            renderer.restore();
         }
 
         // Draw filled arcs using rough-js
@@ -635,32 +636,32 @@ export class DataMetricsRenderer extends ShapeRenderer {
         const legendStartY = Math.round(y + Math.max(24, h * 0.08));
         const swatchSize = Math.round(legendFontSize * 0.8);
 
-        ctx.save();
-        ctx.font = `${legendFontSize}px sans-serif`;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
+        renderer.save();
+        renderer.font = `${legendFontSize}px sans-serif`;
+        renderer.textAlign = 'left';
+        renderer.textBaseline = 'middle';
 
         for (let i = 0; i < slices.length; i++) {
             const ly = Math.round(legendStartY + i * lineH);
             const pct = ((slices[i].value / total) * 100).toFixed(1);
             const color = isDarkMode ? this.adjustForDark(slices[i].color || '#94a3b8') : (slices[i].color || '#94a3b8');
 
-            ctx.fillStyle = color;
-            ctx.fillRect(legendX, ly - swatchSize / 2, swatchSize, swatchSize);
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 0.5;
-            ctx.strokeRect(legendX, ly - swatchSize / 2, swatchSize, swatchSize);
+            renderer.fillStyle = color;
+            renderer.fillRect(legendX, ly - swatchSize / 2, swatchSize, swatchSize);
+            renderer.strokeStyle = strokeColor;
+            renderer.lineWidth = 0.5;
+            renderer.strokeRect(legendX, ly - swatchSize / 2, swatchSize, swatchSize);
 
-            ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-            ctx.fillText(`${slices[i].label} (${pct}%)`, legendX + swatchSize + 6, ly);
+            renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+            renderer.fillText(`${slices[i].label} (${pct}%)`, legendX + swatchSize + 6, ly);
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     // ─── Data-Driven Quadrant Chart Rendering ──────────────────────
 
     private renderQuadrantArchitectural(
-        ctx: CanvasRenderingContext2D, el: DrawingElement, data: QuadrantData, isDarkMode: boolean
+        renderer: IRenderer, el: DrawingElement, data: QuadrantData, isDarkMode: boolean
     ): void {
         const x = el.x, y = el.y, w = el.width, h = el.height;
         const pad = { top: 28, right: 8, bottom: 22, left: 16 };
@@ -672,97 +673,97 @@ export class DataMetricsRenderer extends ShapeRenderer {
         const qBg = isDarkMode
             ? ['#1a2e1a', '#1a1a2e', '#2e2a1a', '#2e1a1a']
             : ['#ecfdf5', '#eff6ff', '#fffbeb', '#fef2f2'];
-        ctx.fillStyle = qBg[1]; ctx.fillRect(px, py, hw, hh);          // Q2 top-left
-        ctx.fillStyle = qBg[0]; ctx.fillRect(px + hw, py, hw, hh);     // Q1 top-right
-        ctx.fillStyle = qBg[2]; ctx.fillRect(px, py + hh, hw, hh);     // Q3 bottom-left
-        ctx.fillStyle = qBg[3]; ctx.fillRect(px + hw, py + hh, hw, hh); // Q4 bottom-right
+        renderer.fillStyle = qBg[1]; renderer.fillRect(px, py, hw, hh);          // Q2 top-left
+        renderer.fillStyle = qBg[0]; renderer.fillRect(px + hw, py, hw, hh);     // Q1 top-right
+        renderer.fillStyle = qBg[2]; renderer.fillRect(px, py + hh, hw, hh);     // Q3 bottom-left
+        renderer.fillStyle = qBg[3]; renderer.fillRect(px + hw, py + hh, hw, hh); // Q4 bottom-right
 
         // Cross divider
-        ctx.strokeStyle = isDarkMode ? '#4b5563' : '#d1d5db';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(px + hw, py); ctx.lineTo(px + hw, py + ph);
-        ctx.moveTo(px, py + hh); ctx.lineTo(px + pw, py + hh);
-        ctx.stroke();
+        renderer.strokeStyle = isDarkMode ? '#4b5563' : '#d1d5db';
+        renderer.lineWidth = 1;
+        renderer.beginPath();
+        renderer.moveTo(px + hw, py); renderer.lineTo(px + hw, py + ph);
+        renderer.moveTo(px, py + hh); renderer.lineTo(px + pw, py + hh);
+        renderer.stroke();
 
         // Border
-        ctx.strokeStyle = isDarkMode ? '#6b7280' : '#9ca3af';
-        ctx.strokeRect(px, py, pw, ph);
+        renderer.strokeStyle = isDarkMode ? '#6b7280' : '#9ca3af';
+        renderer.strokeRect(px, py, pw, ph);
 
         // Title
         const title = data.title || el.containerText || el.text || '';
         if (title) {
-            ctx.save();
-            ctx.font = `bold ${Math.max(11, Math.min(14, h * 0.035))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            ctx.fillText(title, x + w / 2, y + 4);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `bold ${Math.max(11, Math.min(14, h * 0.035))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'top';
+            renderer.fillText(title, x + w / 2, y + 4);
+            renderer.restore();
         }
 
         // Quadrant labels (centered in each quadrant, subtle)
         const qlFs = Math.max(8, Math.min(11, pw * 0.028));
-        ctx.save();
-        ctx.font = `${qlFs}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#6b7280' : '#9ca3af';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        if (data.quadrantLabels[1]) ctx.fillText(data.quadrantLabels[1], px + hw * 0.5, py + hh * 0.5);
-        if (data.quadrantLabels[0]) ctx.fillText(data.quadrantLabels[0], px + hw * 1.5, py + hh * 0.5);
-        if (data.quadrantLabels[2]) ctx.fillText(data.quadrantLabels[2], px + hw * 0.5, py + hh * 1.5);
-        if (data.quadrantLabels[3]) ctx.fillText(data.quadrantLabels[3], px + hw * 1.5, py + hh * 1.5);
-        ctx.restore();
+        renderer.save();
+        renderer.font = `${qlFs}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#6b7280' : '#9ca3af';
+        renderer.textAlign = 'center'; renderer.textBaseline = 'middle';
+        if (data.quadrantLabels[1]) renderer.fillText(data.quadrantLabels[1], px + hw * 0.5, py + hh * 0.5);
+        if (data.quadrantLabels[0]) renderer.fillText(data.quadrantLabels[0], px + hw * 1.5, py + hh * 0.5);
+        if (data.quadrantLabels[2]) renderer.fillText(data.quadrantLabels[2], px + hw * 0.5, py + hh * 1.5);
+        if (data.quadrantLabels[3]) renderer.fillText(data.quadrantLabels[3], px + hw * 1.5, py + hh * 1.5);
+        renderer.restore();
 
         // Axis labels
         const aFs = Math.max(8, Math.min(10, pw * 0.022));
-        ctx.save();
-        ctx.font = `${aFs}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-        ctx.textBaseline = 'top';
-        ctx.textAlign = 'left';
-        ctx.fillText(data.xAxisLabel?.[0] || '', px, py + ph + 3);
-        ctx.textAlign = 'right';
-        ctx.fillText(data.xAxisLabel?.[1] || '', px + pw, py + ph + 3);
-        ctx.restore();
+        renderer.save();
+        renderer.font = `${aFs}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+        renderer.textBaseline = 'top';
+        renderer.textAlign = 'left';
+        renderer.fillText(data.xAxisLabel?.[0] || '', px, py + ph + 3);
+        renderer.textAlign = 'right';
+        renderer.fillText(data.xAxisLabel?.[1] || '', px + pw, py + ph + 3);
+        renderer.restore();
         // Y-axis labels (vertical)
-        ctx.save();
-        ctx.font = `${aFs}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-        ctx.save();
-        ctx.translate(px - 3, py + ph); ctx.rotate(-Math.PI / 2);
-        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-        ctx.fillText(data.yAxisLabel?.[0] || '', 0, 0);
-        ctx.restore();
-        ctx.save();
-        ctx.translate(px - 3, py); ctx.rotate(-Math.PI / 2);
-        ctx.textAlign = 'right'; ctx.textBaseline = 'top';
-        ctx.fillText(data.yAxisLabel?.[1] || '', 0, 0);
-        ctx.restore();
-        ctx.restore();
+        renderer.save();
+        renderer.font = `${aFs}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+        renderer.save();
+        renderer.translate(px - 3, py + ph); renderer.rotate(-Math.PI / 2);
+        renderer.textAlign = 'left'; renderer.textBaseline = 'top';
+        renderer.fillText(data.yAxisLabel?.[0] || '', 0, 0);
+        renderer.restore();
+        renderer.save();
+        renderer.translate(px - 3, py); renderer.rotate(-Math.PI / 2);
+        renderer.textAlign = 'right'; renderer.textBaseline = 'top';
+        renderer.fillText(data.yAxisLabel?.[1] || '', 0, 0);
+        renderer.restore();
+        renderer.restore();
 
         // Data points
         const dotR = Math.max(4, Math.min(7, pw * 0.014));
         for (const pt of data.points) {
             const ptx = px + pt.x * pw, pty = py + (1 - pt.y) * ph;
             const color = pt.color || '#3b82f6';
-            ctx.beginPath();
-            ctx.arc(ptx, pty, dotR, 0, Math.PI * 2);
-            ctx.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
-            ctx.fill();
-            ctx.strokeStyle = isDarkMode ? '#1f2937' : '#ffffff';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.arc(ptx, pty, dotR, 0, Math.PI * 2);
+            renderer.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
+            renderer.fill();
+            renderer.strokeStyle = isDarkMode ? '#1f2937' : '#ffffff';
+            renderer.lineWidth = 1.5;
+            renderer.stroke();
             // Point label
-            ctx.save();
-            ctx.font = `${Math.max(7, Math.min(9, pw * 0.02))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#d1d5db' : '#1f2937';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-            ctx.fillText(pt.label, ptx, pty - dotR - 2);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `${Math.max(7, Math.min(9, pw * 0.02))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#d1d5db' : '#1f2937';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'bottom';
+            renderer.fillText(pt.label, ptx, pty - dotR - 2);
+            renderer.restore();
         }
     }
 
     private renderQuadrantSketch(context: RenderContext, data: QuadrantData): void {
-        const { rc, ctx, element: el, isDarkMode } = context;
+        const { rc, renderer, element: el, isDarkMode } = context;
         const x = el.x, y = el.y, w = el.width, h = el.height;
         const pad = { top: 28, right: 8, bottom: 22, left: 16 };
         const px = x + pad.left, py = y + pad.top;
@@ -787,37 +788,37 @@ export class DataMetricsRenderer extends ShapeRenderer {
         // Title
         const title = data.title || el.containerText || el.text || '';
         if (title) {
-            ctx.save();
-            ctx.font = `bold ${Math.max(11, Math.min(14, h * 0.035))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            ctx.fillText(title, x + w / 2, y + 4);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `bold ${Math.max(11, Math.min(14, h * 0.035))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'top';
+            renderer.fillText(title, x + w / 2, y + 4);
+            renderer.restore();
         }
 
         // Quadrant labels
         const qlFs = Math.max(8, Math.min(11, pw * 0.028));
-        ctx.save();
-        ctx.font = `${qlFs}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#6b7280' : '#9ca3af';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        if (data.quadrantLabels[1]) ctx.fillText(data.quadrantLabels[1], px + hw * 0.5, py + hh * 0.5);
-        if (data.quadrantLabels[0]) ctx.fillText(data.quadrantLabels[0], px + hw * 1.5, py + hh * 0.5);
-        if (data.quadrantLabels[2]) ctx.fillText(data.quadrantLabels[2], px + hw * 0.5, py + hh * 1.5);
-        if (data.quadrantLabels[3]) ctx.fillText(data.quadrantLabels[3], px + hw * 1.5, py + hh * 1.5);
-        ctx.restore();
+        renderer.save();
+        renderer.font = `${qlFs}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#6b7280' : '#9ca3af';
+        renderer.textAlign = 'center'; renderer.textBaseline = 'middle';
+        if (data.quadrantLabels[1]) renderer.fillText(data.quadrantLabels[1], px + hw * 0.5, py + hh * 0.5);
+        if (data.quadrantLabels[0]) renderer.fillText(data.quadrantLabels[0], px + hw * 1.5, py + hh * 0.5);
+        if (data.quadrantLabels[2]) renderer.fillText(data.quadrantLabels[2], px + hw * 0.5, py + hh * 1.5);
+        if (data.quadrantLabels[3]) renderer.fillText(data.quadrantLabels[3], px + hw * 1.5, py + hh * 1.5);
+        renderer.restore();
 
         // Axis labels
         const aFs = Math.max(8, Math.min(10, pw * 0.022));
-        ctx.save();
-        ctx.font = `${aFs}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-        ctx.textBaseline = 'top';
-        ctx.textAlign = 'left';
-        ctx.fillText(data.xAxisLabel?.[0] || '', px, py + ph + 3);
-        ctx.textAlign = 'right';
-        ctx.fillText(data.xAxisLabel?.[1] || '', px + pw, py + ph + 3);
-        ctx.restore();
+        renderer.save();
+        renderer.font = `${aFs}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+        renderer.textBaseline = 'top';
+        renderer.textAlign = 'left';
+        renderer.fillText(data.xAxisLabel?.[0] || '', px, py + ph + 3);
+        renderer.textAlign = 'right';
+        renderer.fillText(data.xAxisLabel?.[1] || '', px + pw, py + ph + 3);
+        renderer.restore();
 
         // Data points (rough circles)
         const dotR = Math.max(4, Math.min(7, pw * 0.014));
@@ -830,19 +831,19 @@ export class DataMetricsRenderer extends ShapeRenderer {
                 stroke: isDarkMode ? '#1f2937' : '#ffffff',
                 strokeWidth: 1.5,
             });
-            ctx.save();
-            ctx.font = `${Math.max(7, Math.min(9, pw * 0.02))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#d1d5db' : '#1f2937';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-            ctx.fillText(pt.label, ptx, pty - dotR - 2);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `${Math.max(7, Math.min(9, pw * 0.02))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#d1d5db' : '#1f2937';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'bottom';
+            renderer.fillText(pt.label, ptx, pty - dotR - 2);
+            renderer.restore();
         }
     }
 
     // ─── Data-Driven XY Chart Rendering ────────────────────────────
 
     private renderXYChartArchitectural(
-        ctx: CanvasRenderingContext2D, el: DrawingElement, data: XYChartData, isDarkMode: boolean
+        renderer: IRenderer, el: DrawingElement, data: XYChartData, isDarkMode: boolean
     ): void {
         const x = el.x, y = el.y, w = el.width, h = el.height;
         const pad = { top: 30, right: 10, bottom: 28, left: 50 };
@@ -860,38 +861,38 @@ export class DataMetricsRenderer extends ShapeRenderer {
         const catCount = Math.max(categories.length, data.bars?.length || 0, data.lines?.[0]?.length || 0, 1);
 
         // Background
-        ctx.fillStyle = isDarkMode ? '#1a1a2e' : '#fafafa';
-        ctx.fillRect(px, py, pw, ph);
+        renderer.fillStyle = isDarkMode ? '#1a1a2e' : '#fafafa';
+        renderer.fillRect(px, py, pw, ph);
 
         // Horizontal gridlines
-        ctx.strokeStyle = isDarkMode ? '#374151' : '#e5e7eb';
-        ctx.lineWidth = 0.5;
+        renderer.strokeStyle = isDarkMode ? '#374151' : '#e5e7eb';
+        renderer.lineWidth = 0.5;
         for (let i = 0; i <= 4; i++) {
             const gy = py + (ph * i) / 4;
-            ctx.beginPath(); ctx.moveTo(px, gy); ctx.lineTo(px + pw, gy); ctx.stroke();
+            renderer.beginPath(); renderer.moveTo(px, gy); renderer.lineTo(px + pw, gy); renderer.stroke();
         }
 
         // Title
         const title = data.title || el.containerText || el.text || '';
         if (title) {
-            ctx.save();
-            ctx.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            ctx.fillText(title, x + w / 2, y + 4);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'top';
+            renderer.fillText(title, x + w / 2, y + 4);
+            renderer.restore();
         }
 
         // Y-axis tick labels
-        ctx.save();
-        ctx.font = `${Math.max(8, Math.min(10, h * 0.03))}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        renderer.save();
+        renderer.font = `${Math.max(8, Math.min(10, h * 0.03))}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+        renderer.textAlign = 'right'; renderer.textBaseline = 'middle';
         for (let i = 0; i <= 4; i++) {
             const val = maxVal - (range * i) / 4;
-            ctx.fillText(val.toFixed(0), px - 4, py + (ph * i) / 4);
+            renderer.fillText(val.toFixed(0), px - 4, py + (ph * i) / 4);
         }
-        ctx.restore();
+        renderer.restore();
 
         // Bars
         if (data.bars && data.bars.length > 0) {
@@ -903,11 +904,11 @@ export class DataMetricsRenderer extends ShapeRenderer {
                 const bx = px + i * groupW + (groupW - barW) / 2;
                 const by = py + ph - barH;
                 const color = barColors[i % barColors.length];
-                ctx.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
-                ctx.fillRect(bx, by, barW, barH);
-                ctx.strokeStyle = isDarkMode ? '#4b5563' : '#9ca3af';
-                ctx.lineWidth = 0.5;
-                ctx.strokeRect(bx, by, barW, barH);
+                renderer.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
+                renderer.fillRect(bx, by, barW, barH);
+                renderer.strokeStyle = isDarkMode ? '#4b5563' : '#9ca3af';
+                renderer.lineWidth = 0.5;
+                renderer.strokeRect(bx, by, barW, barH);
             }
         }
 
@@ -918,21 +919,21 @@ export class DataMetricsRenderer extends ShapeRenderer {
             for (let li = 0; li < data.lines.length; li++) {
                 const series = data.lines[li];
                 const color = isDarkMode ? this.adjustForDark(lineColors[li % lineColors.length]) : lineColors[li % lineColors.length];
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 2;
-                ctx.beginPath();
+                renderer.strokeStyle = color;
+                renderer.lineWidth = 2;
+                renderer.beginPath();
                 for (let i = 0; i < series.length; i++) {
                     const lx = px + i * groupW + groupW / 2;
                     const ly = py + ph - ((series[i] - minVal) / range) * ph;
-                    if (i === 0) ctx.moveTo(lx, ly); else ctx.lineTo(lx, ly);
+                    if (i === 0) renderer.moveTo(lx, ly); else renderer.lineTo(lx, ly);
                 }
-                ctx.stroke();
+                renderer.stroke();
                 // Dots
-                ctx.fillStyle = color;
+                renderer.fillStyle = color;
                 for (let i = 0; i < series.length; i++) {
                     const lx = px + i * groupW + groupW / 2;
                     const ly = py + ph - ((series[i] - minVal) / range) * ph;
-                    ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fill();
+                    renderer.beginPath(); renderer.arc(lx, ly, 3, 0, Math.PI * 2); renderer.fill();
                 }
             }
         }
@@ -940,38 +941,38 @@ export class DataMetricsRenderer extends ShapeRenderer {
         // X-axis category labels
         if (categories.length > 0) {
             const groupW = pw / catCount;
-            ctx.save();
-            ctx.font = `${Math.max(8, Math.min(10, pw * 0.025))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            renderer.save();
+            renderer.font = `${Math.max(8, Math.min(10, pw * 0.025))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'top';
             for (let i = 0; i < categories.length; i++) {
-                ctx.fillText(categories[i], px + i * groupW + groupW / 2, py + ph + 4);
+                renderer.fillText(categories[i], px + i * groupW + groupW / 2, py + ph + 4);
             }
-            ctx.restore();
+            renderer.restore();
         }
 
         // Axes border
-        ctx.strokeStyle = isDarkMode ? '#6b7280' : '#9ca3af';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(px, py); ctx.lineTo(px, py + ph); ctx.lineTo(px + pw, py + ph);
-        ctx.stroke();
+        renderer.strokeStyle = isDarkMode ? '#6b7280' : '#9ca3af';
+        renderer.lineWidth = 1;
+        renderer.beginPath();
+        renderer.moveTo(px, py); renderer.lineTo(px, py + ph); renderer.lineTo(px + pw, py + ph);
+        renderer.stroke();
 
         // Y-axis label
         if (data.yAxis.label) {
-            ctx.save();
-            ctx.translate(x + 10, y + h / 2);
-            ctx.rotate(-Math.PI / 2);
-            ctx.font = `${Math.max(8, Math.min(10, h * 0.03))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(data.yAxis.label, 0, 0);
-            ctx.restore();
+            renderer.save();
+            renderer.translate(x + 10, y + h / 2);
+            renderer.rotate(-Math.PI / 2);
+            renderer.font = `${Math.max(8, Math.min(10, h * 0.03))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'middle';
+            renderer.fillText(data.yAxis.label, 0, 0);
+            renderer.restore();
         }
     }
 
     private renderXYChartSketch(context: RenderContext, data: XYChartData): void {
-        const { rc, ctx, element: el, isDarkMode } = context;
+        const { rc, renderer, element: el, isDarkMode } = context;
         const x = el.x, y = el.y, w = el.width, h = el.height;
         const pad = { top: 30, right: 10, bottom: 28, left: 50 };
         const px = x + pad.left, py = y + pad.top;
@@ -1002,24 +1003,24 @@ export class DataMetricsRenderer extends ShapeRenderer {
         // Title
         const title = data.title || el.containerText || el.text || '';
         if (title) {
-            ctx.save();
-            ctx.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            ctx.fillText(title, x + w / 2, y + 4);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'top';
+            renderer.fillText(title, x + w / 2, y + 4);
+            renderer.restore();
         }
 
         // Y-axis ticks
-        ctx.save();
-        ctx.font = `${Math.max(8, Math.min(10, h * 0.03))}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        renderer.save();
+        renderer.font = `${Math.max(8, Math.min(10, h * 0.03))}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+        renderer.textAlign = 'right'; renderer.textBaseline = 'middle';
         for (let i = 0; i <= 4; i++) {
             const val = maxVal - (range * i) / 4;
-            ctx.fillText(val.toFixed(0), px - 4, py + (ph * i) / 4);
+            renderer.fillText(val.toFixed(0), px - 4, py + (ph * i) / 4);
         }
-        ctx.restore();
+        renderer.restore();
 
         // Bars
         if (data.bars && data.bars.length > 0) {
@@ -1061,14 +1062,14 @@ export class DataMetricsRenderer extends ShapeRenderer {
         // X-axis labels
         if (categories.length > 0) {
             const groupW = pw / catCount;
-            ctx.save();
-            ctx.font = `${Math.max(8, Math.min(10, pw * 0.025))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            renderer.save();
+            renderer.font = `${Math.max(8, Math.min(10, pw * 0.025))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'top';
             for (let i = 0; i < categories.length; i++) {
-                ctx.fillText(categories[i], px + i * groupW + groupW / 2, py + ph + 4);
+                renderer.fillText(categories[i], px + i * groupW + groupW / 2, py + ph + 4);
             }
-            ctx.restore();
+            renderer.restore();
         }
 
         // Axes
@@ -1079,7 +1080,7 @@ export class DataMetricsRenderer extends ShapeRenderer {
     // ─── Data-Driven Gantt Chart Rendering ─────────────────────────
 
     private renderGanttArchitectural(
-        ctx: CanvasRenderingContext2D, el: DrawingElement, tasks: GanttTask[], isDarkMode: boolean
+        renderer: IRenderer, el: DrawingElement, tasks: GanttTask[], isDarkMode: boolean
     ): void {
         const x = el.x, y = el.y, w = el.width, h = el.height;
         const titleH = 24;
@@ -1090,12 +1091,12 @@ export class DataMetricsRenderer extends ShapeRenderer {
         // Title
         const title = el.containerText || el.text || '';
         if (title) {
-            ctx.save();
-            ctx.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            ctx.fillText(title, x + w / 2, y + 2);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'top';
+            renderer.fillText(title, x + w / 2, y + 2);
+            renderer.restore();
         }
 
         // Date range
@@ -1112,21 +1113,21 @@ export class DataMetricsRenderer extends ShapeRenderer {
         const chartY = y + titleH + headerH;
 
         // Timeline header
-        ctx.save();
-        ctx.font = `${Math.max(7, Math.min(9, w * 0.015))}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        renderer.save();
+        renderer.font = `${Math.max(7, Math.min(9, w * 0.015))}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
+        renderer.textAlign = 'center'; renderer.textBaseline = 'bottom';
         const tickCount = Math.min(6, Math.max(2, Math.floor(chartW / 60)));
         for (let i = 0; i <= tickCount; i++) {
             const t = startMs + (spanMs * i) / tickCount;
             const tx = chartX + (chartW * i) / tickCount;
             const date = new Date(t);
-            ctx.fillText(`${date.getMonth() + 1}/${date.getDate()}`, tx, chartY - 2);
-            ctx.strokeStyle = isDarkMode ? '#374151' : '#e5e7eb';
-            ctx.lineWidth = 0.5;
-            ctx.beginPath(); ctx.moveTo(tx, chartY); ctx.lineTo(tx, chartY + tasks.length * rowH); ctx.stroke();
+            renderer.fillText(`${date.getMonth() + 1}/${date.getDate()}`, tx, chartY - 2);
+            renderer.strokeStyle = isDarkMode ? '#374151' : '#e5e7eb';
+            renderer.lineWidth = 0.5;
+            renderer.beginPath(); renderer.moveTo(tx, chartY); renderer.lineTo(tx, chartY + tasks.length * rowH); renderer.stroke();
         }
-        ctx.restore();
+        renderer.restore();
 
         // Section tracking
         let currentSection = '';
@@ -1139,24 +1140,24 @@ export class DataMetricsRenderer extends ShapeRenderer {
             // Section header row
             if (t.section !== currentSection) {
                 currentSection = t.section;
-                ctx.fillStyle = isDarkMode ? '#1f2937' : '#f3f4f6';
-                ctx.fillRect(x, ry, w - 8, rowH);
+                renderer.fillStyle = isDarkMode ? '#1f2937' : '#f3f4f6';
+                renderer.fillRect(x, ry, w - 8, rowH);
             }
 
             // Alternating stripe
             if (i % 2 === 0) {
-                ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)';
-                ctx.fillRect(chartX, ry, chartW, rowH);
+                renderer.fillStyle = isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)';
+                renderer.fillRect(chartX, ry, chartW, rowH);
             }
 
             // Task label (clipped to label area)
-            ctx.save();
-            ctx.beginPath(); ctx.rect(x, ry, labelW, rowH); ctx.clip();
-            ctx.font = `${Math.max(7, Math.min(10, rowH * 0.45))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-            ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-            ctx.fillText(t.label, x + labelW - 4, ry + rowH / 2);
-            ctx.restore();
+            renderer.save();
+            renderer.beginPath(); renderer.rect(x, ry, labelW, rowH); renderer.clip();
+            renderer.font = `${Math.max(7, Math.min(10, rowH * 0.45))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+            renderer.textAlign = 'right'; renderer.textBaseline = 'middle';
+            renderer.fillText(t.label, x + labelW - 4, ry + rowH / 2);
+            renderer.restore();
 
             // Task bar
             const barStart = ((new Date(t.startDate).getTime() - startMs) / spanMs) * chartW;
@@ -1166,29 +1167,29 @@ export class DataMetricsRenderer extends ShapeRenderer {
             const barY = ry + (rowH - barH) / 2;
             const color = t.color || '#3b82f6';
 
-            ctx.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
-            if (t.status === 'done') ctx.globalAlpha = 0.5;
-            ctx.fillRect(chartX + barStart, barY, barW, barH);
-            ctx.globalAlpha = 1;
+            renderer.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
+            if (t.status === 'done') renderer.globalAlpha = 0.5;
+            renderer.fillRect(chartX + barStart, barY, barW, barH);
+            renderer.globalAlpha = 1;
 
             if (t.isCritical) {
-                ctx.strokeStyle = isDarkMode ? '#fca5a5' : '#ef4444';
-                ctx.lineWidth = 2;
+                renderer.strokeStyle = isDarkMode ? '#fca5a5' : '#ef4444';
+                renderer.lineWidth = 2;
             } else {
-                ctx.strokeStyle = isDarkMode ? '#4b5563' : '#d1d5db';
-                ctx.lineWidth = 0.5;
+                renderer.strokeStyle = isDarkMode ? '#4b5563' : '#d1d5db';
+                renderer.lineWidth = 0.5;
             }
-            ctx.strokeRect(chartX + barStart, barY, barW, barH);
+            renderer.strokeRect(chartX + barStart, barY, barW, barH);
         }
 
         // Outer border
-        ctx.strokeStyle = isDarkMode ? '#4b5563' : '#d1d5db';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x, y + titleH, w - 8, headerH + tasks.length * rowH);
+        renderer.strokeStyle = isDarkMode ? '#4b5563' : '#d1d5db';
+        renderer.lineWidth = 1;
+        renderer.strokeRect(x, y + titleH, w - 8, headerH + tasks.length * rowH);
     }
 
     private renderGanttSketch(context: RenderContext, tasks: GanttTask[]): void {
-        const { rc, ctx, element: el, isDarkMode } = context;
+        const { rc, renderer, element: el, isDarkMode } = context;
         const x = el.x, y = el.y, w = el.width, h = el.height;
         const titleH = 24;
         const headerH = 20;
@@ -1198,12 +1199,12 @@ export class DataMetricsRenderer extends ShapeRenderer {
         // Title
         const title = el.containerText || el.text || '';
         if (title) {
-            ctx.save();
-            ctx.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            ctx.fillText(title, x + w / 2, y + 2);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'top';
+            renderer.fillText(title, x + w / 2, y + 2);
+            renderer.restore();
         }
 
         // Date range
@@ -1220,19 +1221,19 @@ export class DataMetricsRenderer extends ShapeRenderer {
         const chartY = y + titleH + headerH;
 
         // Timeline header
-        ctx.save();
-        ctx.font = `${Math.max(7, Math.min(9, w * 0.015))}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        renderer.save();
+        renderer.font = `${Math.max(7, Math.min(9, w * 0.015))}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
+        renderer.textAlign = 'center'; renderer.textBaseline = 'bottom';
         const tickCount = Math.min(6, Math.max(2, Math.floor(chartW / 60)));
         for (let i = 0; i <= tickCount; i++) {
             const t = startMs + (spanMs * i) / tickCount;
             const tx = chartX + (chartW * i) / tickCount;
             const date = new Date(t);
-            ctx.fillText(`${date.getMonth() + 1}/${date.getDate()}`, tx, chartY - 2);
+            renderer.fillText(`${date.getMonth() + 1}/${date.getDate()}`, tx, chartY - 2);
             rc.line(tx, chartY, tx, chartY + tasks.length * rowH, { stroke: isDarkMode ? '#374151' : '#e5e7eb', strokeWidth: 0.5 });
         }
-        ctx.restore();
+        renderer.restore();
 
         let currentSection = '';
 
@@ -1249,13 +1250,13 @@ export class DataMetricsRenderer extends ShapeRenderer {
             }
 
             // Task label
-            ctx.save();
-            ctx.beginPath(); ctx.rect(x, ry, labelW, rowH); ctx.clip();
-            ctx.font = `${Math.max(7, Math.min(10, rowH * 0.45))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-            ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-            ctx.fillText(t.label, x + labelW - 4, ry + rowH / 2);
-            ctx.restore();
+            renderer.save();
+            renderer.beginPath(); renderer.rect(x, ry, labelW, rowH); renderer.clip();
+            renderer.font = `${Math.max(7, Math.min(10, rowH * 0.45))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+            renderer.textAlign = 'right'; renderer.textBaseline = 'middle';
+            renderer.fillText(t.label, x + labelW - 4, ry + rowH / 2);
+            renderer.restore();
 
             // Task bar
             const barStart = ((new Date(t.startDate).getTime() - startMs) / spanMs) * chartW;
@@ -1282,7 +1283,7 @@ export class DataMetricsRenderer extends ShapeRenderer {
     // ─── Data-Driven Journey Diagram Rendering ─────────────────────
 
     private renderJourneyArchitectural(
-        ctx: CanvasRenderingContext2D, el: DrawingElement, tasks: JourneyTask[], isDarkMode: boolean
+        renderer: IRenderer, el: DrawingElement, tasks: JourneyTask[], isDarkMode: boolean
     ): void {
         const x = el.x, y = el.y, w = el.width, h = el.height;
         const titleH = 28;
@@ -1296,12 +1297,12 @@ export class DataMetricsRenderer extends ShapeRenderer {
         // Title
         const title = el.containerText || el.text || '';
         if (title) {
-            ctx.save();
-            ctx.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            ctx.fillText(title, x + w / 2, y + 4);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'top';
+            renderer.fillText(title, x + w / 2, y + 4);
+            renderer.restore();
         }
 
         // Build section spans
@@ -1323,14 +1324,14 @@ export class DataMetricsRenderer extends ShapeRenderer {
         for (const sec of sections) {
             const sx = chartX + sec.start * colW;
             const sw = (sec.end - sec.start) * colW;
-            ctx.fillStyle = isDarkMode ? `${sec.color}15` : `${sec.color}18`;
-            ctx.fillRect(sx, chartY, sw, chartH);
-            ctx.save();
-            ctx.font = `bold ${Math.max(7, Math.min(9, colW * 0.14))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? this.adjustForDark(sec.color) : sec.color;
-            ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-            ctx.fillText(sec.name, sx + 2, chartY + 2);
-            ctx.restore();
+            renderer.fillStyle = isDarkMode ? `${sec.color}15` : `${sec.color}18`;
+            renderer.fillRect(sx, chartY, sw, chartH);
+            renderer.save();
+            renderer.font = `bold ${Math.max(7, Math.min(9, colW * 0.14))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? this.adjustForDark(sec.color) : sec.color;
+            renderer.textAlign = 'left'; renderer.textBaseline = 'top';
+            renderer.fillText(sec.name, sx + 2, chartY + 2);
+            renderer.restore();
         }
 
         // Score area
@@ -1338,22 +1339,22 @@ export class DataMetricsRenderer extends ShapeRenderer {
         const scoreAreaH = chartH - 50;
 
         // Score gridlines
-        ctx.strokeStyle = isDarkMode ? '#374151' : '#e5e7eb';
-        ctx.lineWidth = 0.5;
+        renderer.strokeStyle = isDarkMode ? '#374151' : '#e5e7eb';
+        renderer.lineWidth = 0.5;
         for (let s = 1; s <= 5; s++) {
             const sy = scoreAreaTop + scoreAreaH - ((s - 1) / 4) * scoreAreaH;
-            ctx.beginPath(); ctx.moveTo(chartX, sy); ctx.lineTo(chartX + chartW, sy); ctx.stroke();
+            renderer.beginPath(); renderer.moveTo(chartX, sy); renderer.lineTo(chartX + chartW, sy); renderer.stroke();
         }
 
         // Score labels
-        ctx.save();
-        ctx.font = `${Math.max(7, Math.min(9, chartH * 0.035))}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
-        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        renderer.save();
+        renderer.font = `${Math.max(7, Math.min(9, chartH * 0.035))}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
+        renderer.textAlign = 'right'; renderer.textBaseline = 'middle';
         for (let s = 1; s <= 5; s++) {
-            ctx.fillText(`${s}`, chartX - 3, scoreAreaTop + scoreAreaH - ((s - 1) / 4) * scoreAreaH);
+            renderer.fillText(`${s}`, chartX - 3, scoreAreaTop + scoreAreaH - ((s - 1) / 4) * scoreAreaH);
         }
-        ctx.restore();
+        renderer.restore();
 
         // Score color helper
         const scoreColor = (score: number): string => {
@@ -1365,15 +1366,15 @@ export class DataMetricsRenderer extends ShapeRenderer {
         };
 
         // Connecting line
-        ctx.beginPath();
-        ctx.strokeStyle = isDarkMode ? '#6b7280' : '#9ca3af';
-        ctx.lineWidth = 1.5;
+        renderer.beginPath();
+        renderer.strokeStyle = isDarkMode ? '#6b7280' : '#9ca3af';
+        renderer.lineWidth = 1.5;
         for (let i = 0; i < tasks.length; i++) {
             const tx = chartX + i * colW + colW / 2;
             const ty = scoreAreaTop + scoreAreaH - ((tasks[i].score - 1) / 4) * scoreAreaH;
-            if (i === 0) ctx.moveTo(tx, ty); else ctx.lineTo(tx, ty);
+            if (i === 0) renderer.moveTo(tx, ty); else renderer.lineTo(tx, ty);
         }
-        ctx.stroke();
+        renderer.stroke();
 
         // Score dots
         const dotR = Math.max(4, Math.min(6, colW * 0.08));
@@ -1381,40 +1382,40 @@ export class DataMetricsRenderer extends ShapeRenderer {
             const tx = chartX + i * colW + colW / 2;
             const ty = scoreAreaTop + scoreAreaH - ((tasks[i].score - 1) / 4) * scoreAreaH;
             const color = scoreColor(tasks[i].score);
-            ctx.beginPath();
-            ctx.arc(tx, ty, dotR, 0, Math.PI * 2);
-            ctx.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
-            ctx.fill();
-            ctx.strokeStyle = isDarkMode ? '#1f2937' : '#ffffff';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.arc(tx, ty, dotR, 0, Math.PI * 2);
+            renderer.fillStyle = isDarkMode ? this.adjustForDark(color) : color;
+            renderer.fill();
+            renderer.strokeStyle = isDarkMode ? '#1f2937' : '#ffffff';
+            renderer.lineWidth = 1.5;
+            renderer.stroke();
         }
 
         // Task labels
-        ctx.save();
-        ctx.font = `${Math.max(7, Math.min(9, colW * 0.14))}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        renderer.save();
+        renderer.font = `${Math.max(7, Math.min(9, colW * 0.14))}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+        renderer.textAlign = 'center'; renderer.textBaseline = 'top';
         for (let i = 0; i < tasks.length; i++) {
-            ctx.fillText(tasks[i].label, chartX + i * colW + colW / 2, chartY + chartH - 16, colW - 4);
+            renderer.fillText(tasks[i].label, chartX + i * colW + colW / 2, chartY + chartH - 16, colW - 4);
         }
-        ctx.restore();
+        renderer.restore();
 
         // Actor legend
         const allActors = new Set<string>();
         for (const t of tasks) for (const a of t.actors) allActors.add(a);
         if (allActors.size > 0) {
-            ctx.save();
-            ctx.font = `${Math.max(7, Math.min(9, h * 0.025))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-            ctx.fillText(`Actors: ${[...allActors].join(', ')}`, x + w / 2, y + h - 2);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `${Math.max(7, Math.min(9, h * 0.025))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'bottom';
+            renderer.fillText(`Actors: ${[...allActors].join(', ')}`, x + w / 2, y + h - 2);
+            renderer.restore();
         }
     }
 
     private renderJourneySketch(context: RenderContext, tasks: JourneyTask[]): void {
-        const { rc, ctx, element: el, isDarkMode } = context;
+        const { rc, renderer, element: el, isDarkMode } = context;
         const x = el.x, y = el.y, w = el.width, h = el.height;
         const titleH = 28;
         const legendH = 24;
@@ -1427,12 +1428,12 @@ export class DataMetricsRenderer extends ShapeRenderer {
         // Title
         const title = el.containerText || el.text || '';
         if (title) {
-            ctx.save();
-            ctx.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            ctx.fillText(title, x + w / 2, y + 4);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `bold ${Math.max(11, Math.min(14, h * 0.04))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'top';
+            renderer.fillText(title, x + w / 2, y + 4);
+            renderer.restore();
         }
 
         // Section backgrounds
@@ -1457,12 +1458,12 @@ export class DataMetricsRenderer extends ShapeRenderer {
                 fill: isDarkMode ? `${sec.color}15` : `${sec.color}18`,
                 fillStyle: 'solid', stroke: 'transparent', strokeWidth: 0,
             });
-            ctx.save();
-            ctx.font = `bold ${Math.max(7, Math.min(9, colW * 0.14))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? this.adjustForDark(sec.color) : sec.color;
-            ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-            ctx.fillText(sec.name, sx + 2, chartY + 2);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `bold ${Math.max(7, Math.min(9, colW * 0.14))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? this.adjustForDark(sec.color) : sec.color;
+            renderer.textAlign = 'left'; renderer.textBaseline = 'top';
+            renderer.fillText(sec.name, sx + 2, chartY + 2);
+            renderer.restore();
         }
 
         // Score area
@@ -1477,14 +1478,14 @@ export class DataMetricsRenderer extends ShapeRenderer {
         }
 
         // Score labels
-        ctx.save();
-        ctx.font = `${Math.max(7, Math.min(9, chartH * 0.035))}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
-        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        renderer.save();
+        renderer.font = `${Math.max(7, Math.min(9, chartH * 0.035))}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
+        renderer.textAlign = 'right'; renderer.textBaseline = 'middle';
         for (let s = 1; s <= 5; s++) {
-            ctx.fillText(`${s}`, chartX - 3, scoreAreaTop + scoreAreaH - ((s - 1) / 4) * scoreAreaH);
+            renderer.fillText(`${s}`, chartX - 3, scoreAreaTop + scoreAreaH - ((s - 1) / 4) * scoreAreaH);
         }
-        ctx.restore();
+        renderer.restore();
 
         const scoreColor = (score: number): string => {
             if (score <= 1) return '#ef4444';
@@ -1514,25 +1515,25 @@ export class DataMetricsRenderer extends ShapeRenderer {
         }
 
         // Task labels
-        ctx.save();
-        ctx.font = `${Math.max(7, Math.min(9, colW * 0.14))}px sans-serif`;
-        ctx.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        renderer.save();
+        renderer.font = `${Math.max(7, Math.min(9, colW * 0.14))}px sans-serif`;
+        renderer.fillStyle = isDarkMode ? '#d1d5db' : '#374151';
+        renderer.textAlign = 'center'; renderer.textBaseline = 'top';
         for (let i = 0; i < tasks.length; i++) {
-            ctx.fillText(tasks[i].label, chartX + i * colW + colW / 2, chartY + chartH - 16, colW - 4);
+            renderer.fillText(tasks[i].label, chartX + i * colW + colW / 2, chartY + chartH - 16, colW - 4);
         }
-        ctx.restore();
+        renderer.restore();
 
         // Actor legend
         const allActors = new Set<string>();
         for (const t of tasks) for (const a of t.actors) allActors.add(a);
         if (allActors.size > 0) {
-            ctx.save();
-            ctx.font = `${Math.max(7, Math.min(9, h * 0.025))}px sans-serif`;
-            ctx.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-            ctx.fillText(`Actors: ${[...allActors].join(', ')}`, x + w / 2, y + h - 2);
-            ctx.restore();
+            renderer.save();
+            renderer.font = `${Math.max(7, Math.min(9, h * 0.025))}px sans-serif`;
+            renderer.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280';
+            renderer.textAlign = 'center'; renderer.textBaseline = 'bottom';
+            renderer.fillText(`Actors: ${[...allActors].join(', ')}`, x + w / 2, y + h - 2);
+            renderer.restore();
         }
     }
 
@@ -1546,10 +1547,10 @@ export class DataMetricsRenderer extends ShapeRenderer {
         return `#${boost(r).toString(16).padStart(2, '0')}${boost(g).toString(16).padStart(2, '0')}${boost(b).toString(16).padStart(2, '0')}`;
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
-        ctx.translate(el.x + el.width / 2, el.y + el.height / 2);
-        RenderPipeline.renderGeometry(ctx, geometry);
+        renderer.translate(el.x + el.width / 2, el.y + el.height / 2);
+        RenderPipeline.renderGeometry(renderer, geometry);
     }
 }

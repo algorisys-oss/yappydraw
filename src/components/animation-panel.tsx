@@ -52,6 +52,17 @@ const DS_PRESETS = [
     'dsItemReveal', 'dsHighlightSweep', 'dsPointerWalk'
 ];
 
+// Image pixel effect animations (for image elements only)
+const IMAGE_PIXEL_PRESETS = [
+    'pixelRevealLTR', 'pixelRevealRTL', 'pixelRevealTTB', 'pixelRevealBTT',
+    'pixelDissolve', 'pixelRandomScatter',
+    'pixelWaveCenter', 'pixelWaveCorner',
+    'pixelScanLines', 'pixelBlockReveal',
+    'pixelSpiral', 'pixelGlitch',
+    'pixelCurtainV', 'pixelCurtainH',
+    'pixelRain'
+];
+
 // Get applicable presets based on element type
 const getPresetsForType = (type: string | undefined): string[] => {
     if (!type) return COMMON_PRESETS;
@@ -87,6 +98,11 @@ const getPresetsForType = (type: string | undefined): string[] => {
     // Add data structure presets
     if (['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'].includes(type)) {
         presets.push(...DS_PRESETS);
+    }
+
+    // Add image pixel effect presets
+    if (type === 'image') {
+        presets.push(...IMAGE_PIXEL_PRESETS);
     }
 
     return presets;

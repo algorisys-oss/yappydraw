@@ -15,21 +15,22 @@ import {
 import type { RenderContext } from "../base/types";
 import type { DrawingElement } from "../../types";
 import { getFontString } from "../../utils/text-utils";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class TableRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, _cx: number, _cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
-        this.renderTable(ctx, el, isDarkMode, 'architectural');
+        const { renderer, element: el, isDarkMode } = context;
+        this.renderTable(renderer, el, isDarkMode, 'architectural');
     }
 
     protected renderSketch(context: RenderContext, _cx: number, _cy: number): void {
-        const { rc, ctx, element: el, isDarkMode } = context;
+        const { rc, renderer, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
-        this.renderTable(ctx, el, isDarkMode, 'sketch', rc, options);
+        this.renderTable(renderer, el, isDarkMode, 'sketch', rc, options);
     }
 
     private renderTable(
-        ctx: CanvasRenderingContext2D,
+        renderer: IRenderer,
         el: DrawingElement,
         isDarkMode: boolean,
         style: 'architectural' | 'sketch',
@@ -40,7 +41,7 @@ export class TableRenderer extends ShapeRenderer {
         const animProgress = el.tableAnimProgress;
         const animStyle = el.tableAnimStyle;
         if (animProgress !== undefined && animProgress >= 0 && animProgress < 100 && animStyle) {
-            this.renderTableAnimated(ctx, el, isDarkMode, style, animProgress / 100, animStyle, rc, options);
+            this.renderTableAnimated(renderer, el, isDarkMode, style, animProgress / 100, animStyle, rc, options);
             return;
         }
 
@@ -95,19 +96,19 @@ export class TableRenderer extends ShapeRenderer {
             }
 
             if (bgColor) {
-                ctx.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
+                renderer.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
 
                 // Check if this is top-left of a merge - draw extended background
                 const mergeRegion = isTopLeftOfMerge(mergedCells, cell.row, cell.col);
                 if (mergeRegion) {
                     const bounds = getMergedCellBounds(cellRects, mergeRegion);
                     if (bounds) {
-                        ctx.fillRect(bounds.x, bounds.y, bounds.w, bounds.h);
+                        renderer.fillRect(bounds.x, bounds.y, bounds.w, bounds.h);
                     } else {
-                        ctx.fillRect(cell.x, cell.y, cell.w, cell.h);
+                        renderer.fillRect(cell.x, cell.y, cell.w, cell.h);
                     }
                 } else {
-                    ctx.fillRect(cell.x, cell.y, cell.w, cell.h);
+                    renderer.fillRect(cell.x, cell.y, cell.w, cell.h);
                 }
             }
         }
@@ -198,10 +199,10 @@ export class TableRenderer extends ShapeRenderer {
             }
         } else {
             // Architectural style
-            RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+            RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
 
             // Outer border
-            ctx.strokeRect(x, y, w, h);
+            renderer.strokeRect(x, y, w, h);
 
             // Row lines (draw segments, skipping merged regions)
             for (let r = 1; r < rowHeights.length; r++) {
@@ -211,20 +212,20 @@ export class TableRenderer extends ShapeRenderer {
                     if (isRowLineSkipped(r, c)) {
                         // Draw segment up to this point if we have one
                         if (segmentStart < c) {
-                            ctx.beginPath();
-                            ctx.moveTo(x + colXs[segmentStart], ry);
-                            ctx.lineTo(x + colXs[c], ry);
-                            ctx.stroke();
+                            renderer.beginPath();
+                            renderer.moveTo(x + colXs[segmentStart], ry);
+                            renderer.lineTo(x + colXs[c], ry);
+                            renderer.stroke();
                         }
                         segmentStart = c + 1;
                     }
                 }
                 // Draw remaining segment
                 if (segmentStart < cols) {
-                    ctx.beginPath();
-                    ctx.moveTo(x + colXs[segmentStart], ry);
-                    ctx.lineTo(x + w, ry);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(x + colXs[segmentStart], ry);
+                    renderer.lineTo(x + w, ry);
+                    renderer.stroke();
                 }
             }
 
@@ -236,20 +237,20 @@ export class TableRenderer extends ShapeRenderer {
                     if (isColLineSkipped(c, r)) {
                         // Draw segment up to this point if we have one
                         if (segmentStart < r) {
-                            ctx.beginPath();
-                            ctx.moveTo(cx2, y + rowYs[segmentStart]);
-                            ctx.lineTo(cx2, y + rowYs[r]);
-                            ctx.stroke();
+                            renderer.beginPath();
+                            renderer.moveTo(cx2, y + rowYs[segmentStart]);
+                            renderer.lineTo(cx2, y + rowYs[r]);
+                            renderer.stroke();
                         }
                         segmentStart = r + 1;
                     }
                 }
                 // Draw remaining segment
                 if (segmentStart < totalVisualRows) {
-                    ctx.beginPath();
-                    ctx.moveTo(cx2, y + rowYs[segmentStart]);
-                    ctx.lineTo(cx2, y + h);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(cx2, y + rowYs[segmentStart]);
+                    renderer.lineTo(cx2, y + h);
+                    renderer.stroke();
                 }
             }
         }
@@ -271,23 +272,23 @@ export class TableRenderer extends ShapeRenderer {
                 const cellBounds = mergeBounds || { x: cell.x, y: cell.y, w: cell.w, h: cell.h };
 
                 // Draw each border edge
-                this.drawCellBorder(ctx, borders.top, cellBounds.x, cellBounds.y, cellBounds.x + cellBounds.w, cellBounds.y, isDarkMode, style, rc, options);
-                this.drawCellBorder(ctx, borders.bottom, cellBounds.x, cellBounds.y + cellBounds.h, cellBounds.x + cellBounds.w, cellBounds.y + cellBounds.h, isDarkMode, style, rc, options);
-                this.drawCellBorder(ctx, borders.left, cellBounds.x, cellBounds.y, cellBounds.x, cellBounds.y + cellBounds.h, isDarkMode, style, rc, options);
-                this.drawCellBorder(ctx, borders.right, cellBounds.x + cellBounds.w, cellBounds.y, cellBounds.x + cellBounds.w, cellBounds.y + cellBounds.h, isDarkMode, style, rc, options);
+                this.drawCellBorder(renderer, borders.top, cellBounds.x, cellBounds.y, cellBounds.x + cellBounds.w, cellBounds.y, isDarkMode, style, rc, options);
+                this.drawCellBorder(renderer, borders.bottom, cellBounds.x, cellBounds.y + cellBounds.h, cellBounds.x + cellBounds.w, cellBounds.y + cellBounds.h, isDarkMode, style, rc, options);
+                this.drawCellBorder(renderer, borders.left, cellBounds.x, cellBounds.y, cellBounds.x, cellBounds.y + cellBounds.h, isDarkMode, style, rc, options);
+                this.drawCellBorder(renderer, borders.right, cellBounds.x + cellBounds.w, cellBounds.y, cellBounds.x + cellBounds.w, cellBounds.y + cellBounds.h, isDarkMode, style, rc, options);
             }
         }
 
         // --- 3. Draw cell text ---
-        ctx.save();
+        renderer.save();
         const fontSize = el.fontSize ?? 14;
-        ctx.font = getFontString(el);
+        renderer.font = getFontString(el);
         const textColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
         const headerTextColor = el.tableHeaderTextColor
             ? RenderPipeline.adjustColor(el.tableHeaderTextColor, isDarkMode)
             : textColor;
-        ctx.fillStyle = textColor;
-        ctx.textBaseline = 'middle';
+        renderer.fillStyle = textColor;
+        renderer.textBaseline = 'middle';
 
         const padding = 6;
 
@@ -319,35 +320,35 @@ export class TableRenderer extends ShapeRenderer {
 
             if (cellText) {
                 // Clip text to cell bounds
-                ctx.save();
-                ctx.beginPath();
-                ctx.rect(cellBounds.x, cellBounds.y, cellBounds.w, cellBounds.h);
-                ctx.clip();
+                renderer.save();
+                renderer.beginPath();
+                renderer.rect(cellBounds.x, cellBounds.y, cellBounds.w, cellBounds.h);
+                renderer.clip();
 
                 // Get column alignment (default to center)
                 const align = colAlignments?.[cell.dataCol] ?? 'center';
                 let textX: number;
                 if (align === 'left') {
                     textX = cellBounds.x + padding;
-                    ctx.textAlign = 'left';
+                    renderer.textAlign = 'left';
                 } else if (align === 'right') {
                     textX = cellBounds.x + cellBounds.w - padding;
-                    ctx.textAlign = 'right';
+                    renderer.textAlign = 'right';
                 } else {
                     textX = cellBounds.x + cellBounds.w / 2;
-                    ctx.textAlign = 'center';
+                    renderer.textAlign = 'center';
                 }
 
                 if (isHeader) {
-                    ctx.font = 'bold ' + getFontString(el);
-                    ctx.fillStyle = headerTextColor;
+                    renderer.font = 'bold ' + getFontString(el);
+                    renderer.fillStyle = headerTextColor;
                 } else {
-                    ctx.fillStyle = textColor;
+                    renderer.fillStyle = textColor;
                 }
 
                 // Wrap text and render multiple lines
                 const maxTextWidth = cellBounds.w - padding * 2;
-                const lines = wrapText(ctx, cellText, maxTextWidth);
+                const lines = wrapText(renderer, cellText, maxTextWidth);
                 const lineHeight = fontSize * 1.2;
                 const totalTextHeight = lines.length * lineHeight;
 
@@ -356,10 +357,10 @@ export class TableRenderer extends ShapeRenderer {
 
                 for (let i = 0; i < lines.length; i++) {
                     const lineY = startY + i * lineHeight;
-                    ctx.fillText(lines[i], textX, lineY, maxTextWidth);
+                    renderer.fillText(lines[i], textX, lineY, maxTextWidth);
                 }
 
-                ctx.restore();
+                renderer.restore();
             }
 
             // --- Sort indicator for ALL header cells ---
@@ -369,47 +370,47 @@ export class TableRenderer extends ShapeRenderer {
                 const iy = cell.y + cell.h / 2;
                 const isSorted = sortCol === cell.dataCol && sortCol >= 0;
 
-                ctx.save();
+                renderer.save();
                 if (isSorted) {
                     // Active sort: bold single triangle
-                    ctx.fillStyle = headerTextColor;
-                    ctx.beginPath();
+                    renderer.fillStyle = headerTextColor;
+                    renderer.beginPath();
                     if (sortDir === 'asc') {
-                        ctx.moveTo(ix, iy - indicatorSize / 2);
-                        ctx.lineTo(ix - indicatorSize / 2, iy + indicatorSize / 2);
-                        ctx.lineTo(ix + indicatorSize / 2, iy + indicatorSize / 2);
+                        renderer.moveTo(ix, iy - indicatorSize / 2);
+                        renderer.lineTo(ix - indicatorSize / 2, iy + indicatorSize / 2);
+                        renderer.lineTo(ix + indicatorSize / 2, iy + indicatorSize / 2);
                     } else {
-                        ctx.moveTo(ix, iy + indicatorSize / 2);
-                        ctx.lineTo(ix - indicatorSize / 2, iy - indicatorSize / 2);
-                        ctx.lineTo(ix + indicatorSize / 2, iy - indicatorSize / 2);
+                        renderer.moveTo(ix, iy + indicatorSize / 2);
+                        renderer.lineTo(ix - indicatorSize / 2, iy - indicatorSize / 2);
+                        renderer.lineTo(ix + indicatorSize / 2, iy - indicatorSize / 2);
                     }
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.closePath();
+                    renderer.fill();
                 } else {
                     // Unsorted: dimmed up/down chevron pair
-                    ctx.globalAlpha = 0.3;
-                    ctx.fillStyle = headerTextColor;
+                    renderer.globalAlpha = 0.3;
+                    renderer.fillStyle = headerTextColor;
                     const half = indicatorSize * 0.4;
                     // Up chevron
-                    ctx.beginPath();
-                    ctx.moveTo(ix, iy - half);
-                    ctx.lineTo(ix - half, iy - half + half * 0.7);
-                    ctx.lineTo(ix + half, iy - half + half * 0.7);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.beginPath();
+                    renderer.moveTo(ix, iy - half);
+                    renderer.lineTo(ix - half, iy - half + half * 0.7);
+                    renderer.lineTo(ix + half, iy - half + half * 0.7);
+                    renderer.closePath();
+                    renderer.fill();
                     // Down chevron
-                    ctx.beginPath();
-                    ctx.moveTo(ix, iy + half);
-                    ctx.lineTo(ix - half, iy + half - half * 0.7);
-                    ctx.lineTo(ix + half, iy + half - half * 0.7);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.beginPath();
+                    renderer.moveTo(ix, iy + half);
+                    renderer.lineTo(ix - half, iy + half - half * 0.7);
+                    renderer.lineTo(ix + half, iy + half - half * 0.7);
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                ctx.restore();
+                renderer.restore();
             }
         }
 
-        ctx.restore();
+        renderer.restore();
     }
 
     // ── Easing helper for header slam bounce ──
@@ -475,7 +476,7 @@ export class TableRenderer extends ShapeRenderer {
      * Animated table rendering — delegates to per-animation rendering logic.
      */
     private renderTableAnimated(
-        ctx: CanvasRenderingContext2D,
+        renderer: IRenderer,
         el: DrawingElement,
         isDarkMode: boolean,
         style: 'architectural' | 'sketch',
@@ -523,31 +524,31 @@ export class TableRenderer extends ShapeRenderer {
         // Determine animation rendering mode
         switch (animStyle) {
             case 'gridDraw':
-                this.renderGridDraw(ctx, el, isDarkMode, style, progress, x, y, w, h,
+                this.renderGridDraw(renderer, el, isDarkMode, style, progress, x, y, w, h,
                     cols, totalVisualRows, rowHeights, colWidths, rowYs, colXs,
                     cellRects, data, hasHeader, headerColor, rowColor, altRowColor,
                     sortCol, sortDir, colAlignments, mergedCells, cellFormats, cellBorders, order, rc, options);
                 return;
             case 'headerSlam':
-                this.renderHeaderSlam(ctx, el, isDarkMode, style, progress, x, y, w, h,
+                this.renderHeaderSlam(renderer, el, isDarkMode, style, progress, x, y, w, h,
                     cols, totalVisualRows, rowHeights, colWidths, rowYs, colXs,
                     cellRects, data, hasHeader, headerColor, rowColor, altRowColor,
                     sortCol, sortDir, colAlignments, mergedCells, cellFormats, cellBorders, order, rc, options);
                 return;
             case 'countUp':
-                this.renderCountUp(ctx, el, isDarkMode, style, progress, x, y, w, h,
+                this.renderCountUp(renderer, el, isDarkMode, style, progress, x, y, w, h,
                     cols, totalVisualRows, rowYs, colXs,
                     cellRects, data, hasHeader, headerColor, rowColor, altRowColor,
                     sortCol, sortDir, colAlignments, mergedCells, cellFormats, cellBorders, order, rc, options);
                 return;
             case 'cellsAssemble':
-                this.renderCellsAssemble(ctx, el, isDarkMode, style, progress, x, y, w, h,
+                this.renderCellsAssemble(renderer, el, isDarkMode, style, progress, x, y, w, h,
                     cols, totalVisualRows, rowYs, colXs,
                     cellRects, data, hasHeader, headerColor, rowColor, altRowColor,
                     sortCol, sortDir, colAlignments, mergedCells, cellFormats, order, rc, options);
                 return;
             case 'lightningSplit':
-                this.renderLightningSplit(ctx, el, isDarkMode, style, progress, x, y, w, h,
+                this.renderLightningSplit(renderer, el, isDarkMode, style, progress, x, y, w, h,
                     cols, totalVisualRows, rowHeights, colWidths, rowYs, colXs,
                     cellRects, data, hasHeader, headerColor, rowColor, altRowColor,
                     sortCol, sortDir, colAlignments, mergedCells, cellFormats, cellBorders, order, rc, options);
@@ -557,7 +558,7 @@ export class TableRenderer extends ShapeRenderer {
         // Default alpha-based animations: rowReveal, colReveal, cellFill, heatmapFadeIn, accordion,
         // rowHighlight, colPulse
         const isHighlight = animStyle === 'rowHighlight' || animStyle === 'colPulse';
-        const baseAlpha = ctx.globalAlpha;
+        const baseAlpha = renderer.globalAlpha;
 
         // --- Phase 1: Cell backgrounds ---
         for (const cell of cellRects) {
@@ -588,11 +589,11 @@ export class TableRenderer extends ShapeRenderer {
             const cellBounds = mergeBounds || { x: cell.x, y: cell.y, w: cell.w, h: cell.h };
 
             if (bgColor) {
-                ctx.save();
-                ctx.globalAlpha = baseAlpha * alpha;
-                ctx.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
-                ctx.fillRect(cellBounds.x, cellBounds.y, cellBounds.w, cellBounds.h);
-                ctx.restore();
+                renderer.save();
+                renderer.globalAlpha = baseAlpha * alpha;
+                renderer.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
+                renderer.fillRect(cellBounds.x, cellBounds.y, cellBounds.w, cellBounds.h);
+                renderer.restore();
             }
 
             // Highlight overlay for rowHighlight / colPulse
@@ -608,11 +609,11 @@ export class TableRenderer extends ShapeRenderer {
                     if (dist < 1) highlightAlpha = (1 - dist) * 0.35;
                 }
                 if (highlightAlpha > 0) {
-                    ctx.save();
-                    ctx.globalAlpha = baseAlpha * highlightAlpha;
-                    ctx.fillStyle = 'rgba(59, 130, 246, 1)';
-                    ctx.fillRect(cellBounds.x, cellBounds.y, cellBounds.w, cellBounds.h);
-                    ctx.restore();
+                    renderer.save();
+                    renderer.globalAlpha = baseAlpha * highlightAlpha;
+                    renderer.fillStyle = 'rgba(59, 130, 246, 1)';
+                    renderer.fillRect(cellBounds.x, cellBounds.y, cellBounds.w, cellBounds.h);
+                    renderer.restore();
                 }
             }
 
@@ -637,16 +638,16 @@ export class TableRenderer extends ShapeRenderer {
         }
 
         if (gridAlpha > 0) {
-            ctx.save();
-            ctx.globalAlpha = baseAlpha * gridAlpha;
+            renderer.save();
+            renderer.globalAlpha = baseAlpha * gridAlpha;
 
             if (style === 'sketch' && rc && options) {
                 rc.rectangle(x, y, w, h, { ...options, fill: undefined });
             } else {
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.strokeRect(x, y, w, h);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokeRect(x, y, w, h);
             }
-            ctx.restore();
+            renderer.restore();
 
             // Row lines
             for (let r = 1; r < rowHeights.length; r++) {
@@ -657,18 +658,18 @@ export class TableRenderer extends ShapeRenderer {
                 const lineAlpha = isHighlight ? 1 : Math.max(aboveAlpha, belowAlpha);
                 if (lineAlpha <= 0) continue;
 
-                ctx.save();
-                ctx.globalAlpha = baseAlpha * lineAlpha;
+                renderer.save();
+                renderer.globalAlpha = baseAlpha * lineAlpha;
                 if (style === 'sketch' && rc && options) {
                     rc.line(x, ry, x + w, ry, { ...options, fill: undefined });
                 } else {
-                    RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                    ctx.beginPath();
-                    ctx.moveTo(x, ry);
-                    ctx.lineTo(x + w, ry);
-                    ctx.stroke();
+                    RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                    renderer.beginPath();
+                    renderer.moveTo(x, ry);
+                    renderer.lineTo(x + w, ry);
+                    renderer.stroke();
                 }
-                ctx.restore();
+                renderer.restore();
             }
 
             // Column lines
@@ -680,25 +681,25 @@ export class TableRenderer extends ShapeRenderer {
                 const lineAlpha = isHighlight ? 1 : Math.max(leftAlpha, rightAlpha);
                 if (lineAlpha <= 0) continue;
 
-                ctx.save();
-                ctx.globalAlpha = baseAlpha * lineAlpha;
+                renderer.save();
+                renderer.globalAlpha = baseAlpha * lineAlpha;
                 if (style === 'sketch' && rc && options) {
                     rc.line(cx2, y, cx2, y + h, { ...options, fill: undefined });
                 } else {
-                    RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                    ctx.beginPath();
-                    ctx.moveTo(cx2, y);
-                    ctx.lineTo(cx2, y + h);
-                    ctx.stroke();
+                    RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                    renderer.beginPath();
+                    renderer.moveTo(cx2, y);
+                    renderer.lineTo(cx2, y + h);
+                    renderer.stroke();
                 }
-                ctx.restore();
+                renderer.restore();
             }
         }
 
         // --- Phase 2b: Custom cell borders (simplified for animation) ---
         if (cellBorders && gridAlpha > 0) {
-            ctx.save();
-            ctx.globalAlpha = baseAlpha * gridAlpha;
+            renderer.save();
+            renderer.globalAlpha = baseAlpha * gridAlpha;
             for (const cell of cellRects) {
                 if (isCellCoveredByMerge(mergedCells, cell.row, cell.col)) continue;
                 const borders = getCellBorders(cellBorders, cell.row, cell.col);
@@ -706,24 +707,24 @@ export class TableRenderer extends ShapeRenderer {
                 const mergeRegion = isTopLeftOfMerge(mergedCells, cell.row, cell.col);
                 const mergeBounds = mergeRegion ? getMergedCellBounds(cellRects, mergeRegion) : null;
                 const cellBounds2 = mergeBounds || { x: cell.x, y: cell.y, w: cell.w, h: cell.h };
-                this.drawCellBorder(ctx, borders.top, cellBounds2.x, cellBounds2.y, cellBounds2.x + cellBounds2.w, cellBounds2.y, isDarkMode, style, rc, options);
-                this.drawCellBorder(ctx, borders.bottom, cellBounds2.x, cellBounds2.y + cellBounds2.h, cellBounds2.x + cellBounds2.w, cellBounds2.y + cellBounds2.h, isDarkMode, style, rc, options);
-                this.drawCellBorder(ctx, borders.left, cellBounds2.x, cellBounds2.y, cellBounds2.x, cellBounds2.y + cellBounds2.h, isDarkMode, style, rc, options);
-                this.drawCellBorder(ctx, borders.right, cellBounds2.x + cellBounds2.w, cellBounds2.y, cellBounds2.x + cellBounds2.w, cellBounds2.y + cellBounds2.h, isDarkMode, style, rc, options);
+                this.drawCellBorder(renderer, borders.top, cellBounds2.x, cellBounds2.y, cellBounds2.x + cellBounds2.w, cellBounds2.y, isDarkMode, style, rc, options);
+                this.drawCellBorder(renderer, borders.bottom, cellBounds2.x, cellBounds2.y + cellBounds2.h, cellBounds2.x + cellBounds2.w, cellBounds2.y + cellBounds2.h, isDarkMode, style, rc, options);
+                this.drawCellBorder(renderer, borders.left, cellBounds2.x, cellBounds2.y, cellBounds2.x, cellBounds2.y + cellBounds2.h, isDarkMode, style, rc, options);
+                this.drawCellBorder(renderer, borders.right, cellBounds2.x + cellBounds2.w, cellBounds2.y, cellBounds2.x + cellBounds2.w, cellBounds2.y + cellBounds2.h, isDarkMode, style, rc, options);
             }
-            ctx.restore();
+            renderer.restore();
         }
 
         // --- Phase 3: Cell text ---
-        ctx.save();
+        renderer.save();
         const fontSize = el.fontSize ?? 14;
-        ctx.font = getFontString(el);
+        renderer.font = getFontString(el);
         const textColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
         const headerTextColor = el.tableHeaderTextColor
             ? RenderPipeline.adjustColor(el.tableHeaderTextColor, isDarkMode)
             : textColor;
-        ctx.fillStyle = textColor;
-        ctx.textBaseline = 'middle';
+        renderer.fillStyle = textColor;
+        renderer.textBaseline = 'middle';
         const padding = 6;
 
         for (const cell of cellRects) {
@@ -748,35 +749,35 @@ export class TableRenderer extends ShapeRenderer {
             const cellBounds3 = mergeBounds || { x: cell.x, y: cell.y, w: cell.w, h: cell.h };
 
             if (cellText) {
-                ctx.save();
-                ctx.globalAlpha = baseAlpha * alpha;
-                ctx.beginPath();
-                ctx.rect(cellBounds3.x, cellBounds3.y, cellBounds3.w, cellBounds3.h);
-                ctx.clip();
+                renderer.save();
+                renderer.globalAlpha = baseAlpha * alpha;
+                renderer.beginPath();
+                renderer.rect(cellBounds3.x, cellBounds3.y, cellBounds3.w, cellBounds3.h);
+                renderer.clip();
 
                 const align = colAlignments?.[cell.dataCol] ?? 'center';
                 let textX: number;
-                if (align === 'left') { textX = cellBounds3.x + padding; ctx.textAlign = 'left'; }
-                else if (align === 'right') { textX = cellBounds3.x + cellBounds3.w - padding; ctx.textAlign = 'right'; }
-                else { textX = cellBounds3.x + cellBounds3.w / 2; ctx.textAlign = 'center'; }
+                if (align === 'left') { textX = cellBounds3.x + padding; renderer.textAlign = 'left'; }
+                else if (align === 'right') { textX = cellBounds3.x + cellBounds3.w - padding; renderer.textAlign = 'right'; }
+                else { textX = cellBounds3.x + cellBounds3.w / 2; renderer.textAlign = 'center'; }
 
                 if (isHeader) {
-                    ctx.font = 'bold ' + getFontString(el);
-                    ctx.fillStyle = headerTextColor;
+                    renderer.font = 'bold ' + getFontString(el);
+                    renderer.fillStyle = headerTextColor;
                 } else {
-                    ctx.fillStyle = textColor;
+                    renderer.fillStyle = textColor;
                 }
 
                 const maxTextWidth = cellBounds3.w - padding * 2;
-                const lines = wrapText(ctx, cellText, maxTextWidth);
+                const lines = wrapText(renderer, cellText, maxTextWidth);
                 const lineHeight = fontSize * 1.2;
                 const totalTextHeight = lines.length * lineHeight;
                 const startY = cellBounds3.y + (cellBounds3.h - totalTextHeight) / 2 + lineHeight / 2;
 
                 for (let i = 0; i < lines.length; i++) {
-                    ctx.fillText(lines[i], textX, startY + i * lineHeight, maxTextWidth);
+                    renderer.fillText(lines[i], textX, startY + i * lineHeight, maxTextWidth);
                 }
-                ctx.restore();
+                renderer.restore();
             }
 
             // Sort indicators
@@ -785,48 +786,48 @@ export class TableRenderer extends ShapeRenderer {
                 const ix = cell.x + cell.w - padding - indicatorSize / 2;
                 const iy = cell.y + cell.h / 2;
                 const isSorted = sortCol === cell.dataCol && sortCol >= 0;
-                ctx.save();
-                ctx.globalAlpha = baseAlpha * alpha;
+                renderer.save();
+                renderer.globalAlpha = baseAlpha * alpha;
                 if (isSorted) {
-                    ctx.fillStyle = headerTextColor;
-                    ctx.beginPath();
+                    renderer.fillStyle = headerTextColor;
+                    renderer.beginPath();
                     if (sortDir === 'asc') {
-                        ctx.moveTo(ix, iy - indicatorSize / 2);
-                        ctx.lineTo(ix - indicatorSize / 2, iy + indicatorSize / 2);
-                        ctx.lineTo(ix + indicatorSize / 2, iy + indicatorSize / 2);
+                        renderer.moveTo(ix, iy - indicatorSize / 2);
+                        renderer.lineTo(ix - indicatorSize / 2, iy + indicatorSize / 2);
+                        renderer.lineTo(ix + indicatorSize / 2, iy + indicatorSize / 2);
                     } else {
-                        ctx.moveTo(ix, iy + indicatorSize / 2);
-                        ctx.lineTo(ix - indicatorSize / 2, iy - indicatorSize / 2);
-                        ctx.lineTo(ix + indicatorSize / 2, iy - indicatorSize / 2);
+                        renderer.moveTo(ix, iy + indicatorSize / 2);
+                        renderer.lineTo(ix - indicatorSize / 2, iy - indicatorSize / 2);
+                        renderer.lineTo(ix + indicatorSize / 2, iy - indicatorSize / 2);
                     }
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.closePath();
+                    renderer.fill();
                 } else {
-                    ctx.globalAlpha = baseAlpha * alpha * 0.3;
-                    ctx.fillStyle = headerTextColor;
+                    renderer.globalAlpha = baseAlpha * alpha * 0.3;
+                    renderer.fillStyle = headerTextColor;
                     const half = indicatorSize * 0.4;
-                    ctx.beginPath();
-                    ctx.moveTo(ix, iy - half);
-                    ctx.lineTo(ix - half, iy - half + half * 0.7);
-                    ctx.lineTo(ix + half, iy - half + half * 0.7);
-                    ctx.closePath();
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.moveTo(ix, iy + half);
-                    ctx.lineTo(ix - half, iy + half - half * 0.7);
-                    ctx.lineTo(ix + half, iy + half - half * 0.7);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.beginPath();
+                    renderer.moveTo(ix, iy - half);
+                    renderer.lineTo(ix - half, iy - half + half * 0.7);
+                    renderer.lineTo(ix + half, iy - half + half * 0.7);
+                    renderer.closePath();
+                    renderer.fill();
+                    renderer.beginPath();
+                    renderer.moveTo(ix, iy + half);
+                    renderer.lineTo(ix - half, iy + half - half * 0.7);
+                    renderer.lineTo(ix + half, iy + half - half * 0.7);
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                ctx.restore();
+                renderer.restore();
             }
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     // ── Grid Draw-In: border → grid lines → backgrounds → text ──
     private renderGridDraw(
-        ctx: CanvasRenderingContext2D, el: DrawingElement, isDarkMode: boolean,
+        renderer: IRenderer, el: DrawingElement, isDarkMode: boolean,
         style: 'architectural' | 'sketch', progress: number,
         x: number, y: number, w: number, h: number,
         cols: number, _totalVisualRows: number,
@@ -836,7 +837,7 @@ export class TableRenderer extends ShapeRenderer {
         sortCol: number, sortDir: string, colAlignments: any, mergedCells: any, cellFormats: any, _cellBorders: any,
         _order: number[], rc?: any, options?: any
     ): void {
-        const baseAlpha = ctx.globalAlpha;
+        const baseAlpha = renderer.globalAlpha;
         const borderPhase = Math.min(1, progress / 0.2);
         const gridPhase = progress > 0.15 ? Math.min(1, (progress - 0.15) / 0.45) : 0;
         const bgPhase = progress > 0.45 ? Math.min(1, (progress - 0.45) / 0.3) : 0;
@@ -844,29 +845,29 @@ export class TableRenderer extends ShapeRenderer {
 
         // Phase 1: Outer border
         if (borderPhase > 0) {
-            ctx.save();
-            ctx.globalAlpha = baseAlpha * borderPhase;
+            renderer.save();
+            renderer.globalAlpha = baseAlpha * borderPhase;
             if (style === 'sketch' && rc && options) {
                 rc.rectangle(x, y, w, h, { ...options, fill: undefined });
             } else {
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.strokeRect(x, y, w, h);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokeRect(x, y, w, h);
             }
-            ctx.restore();
+            renderer.restore();
         }
 
         // Phase 2: Grid lines
         if (gridPhase > 0) {
-            ctx.save();
-            ctx.globalAlpha = baseAlpha * gridPhase;
+            renderer.save();
+            renderer.globalAlpha = baseAlpha * gridPhase;
             // Row lines
             for (let r = 1; r < rowHeights.length; r++) {
                 const ry = y + rowYs[r];
                 if (style === 'sketch' && rc && options) {
                     rc.line(x, ry, x + w, ry, { ...options, fill: undefined });
                 } else {
-                    RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                    ctx.beginPath(); ctx.moveTo(x, ry); ctx.lineTo(x + w, ry); ctx.stroke();
+                    RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                    renderer.beginPath(); renderer.moveTo(x, ry); renderer.lineTo(x + w, ry); renderer.stroke();
                 }
             }
             // Column lines
@@ -875,11 +876,11 @@ export class TableRenderer extends ShapeRenderer {
                 if (style === 'sketch' && rc && options) {
                     rc.line(cx2, y, cx2, y + h, { ...options, fill: undefined });
                 } else {
-                    RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                    ctx.beginPath(); ctx.moveTo(cx2, y); ctx.lineTo(cx2, y + h); ctx.stroke();
+                    RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                    renderer.beginPath(); renderer.moveTo(cx2, y); renderer.lineTo(cx2, y + h); renderer.stroke();
                 }
             }
-            ctx.restore();
+            renderer.restore();
         }
 
         // Phase 3: Cell backgrounds
@@ -896,25 +897,25 @@ export class TableRenderer extends ShapeRenderer {
                     const mergeRegion = isTopLeftOfMerge(mergedCells, cell.row, cell.col);
                     const bounds = mergeRegion ? getMergedCellBounds(cellRects, mergeRegion) : null;
                     const cb = bounds || { x: cell.x, y: cell.y, w: cell.w, h: cell.h };
-                    ctx.save();
-                    ctx.globalAlpha = baseAlpha * bgPhase;
-                    ctx.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
-                    ctx.fillRect(cb.x, cb.y, cb.w, cb.h);
-                    ctx.restore();
+                    renderer.save();
+                    renderer.globalAlpha = baseAlpha * bgPhase;
+                    renderer.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
+                    renderer.fillRect(cb.x, cb.y, cb.w, cb.h);
+                    renderer.restore();
                 }
             }
         }
 
         // Phase 4: Cell text
         if (textPhase > 0) {
-            this.renderCellText(ctx, el, isDarkMode, baseAlpha * textPhase, cellRects, data,
+            this.renderCellText(renderer, el, isDarkMode, baseAlpha * textPhase, cellRects, data,
                 hasHeader, sortCol, sortDir, colAlignments, mergedCells, cellFormats);
         }
     }
 
     // ── Header Slam: header bounces in, then body fades ──
     private renderHeaderSlam(
-        ctx: CanvasRenderingContext2D, el: DrawingElement, isDarkMode: boolean,
+        renderer: IRenderer, el: DrawingElement, isDarkMode: boolean,
         style: 'architectural' | 'sketch', progress: number,
         x: number, y: number, w: number, h: number,
         cols: number, _totalVisualRows: number,
@@ -926,14 +927,14 @@ export class TableRenderer extends ShapeRenderer {
     ): void {
         if (!hasHeader) {
             // No header — fall back to simple fade
-            ctx.save();
-            ctx.globalAlpha = ctx.globalAlpha * progress;
-            this.renderTable(ctx, { ...el, tableAnimProgress: undefined, tableAnimStyle: undefined } as any, isDarkMode, style, rc, options);
-            ctx.restore();
+            renderer.save();
+            renderer.globalAlpha = renderer.globalAlpha * progress;
+            this.renderTable(renderer, { ...el, tableAnimProgress: undefined, tableAnimStyle: undefined } as any, isDarkMode, style, rc, options);
+            renderer.restore();
             return;
         }
 
-        const baseAlpha = ctx.globalAlpha;
+        const baseAlpha = renderer.globalAlpha;
         const headerPhase = Math.min(1, progress / 0.4);
         const headerBounce = this.easeOutBounce(headerPhase);
         const bodyPhase = progress > 0.35 ? Math.min(1, (progress - 0.35) / 0.65) : 0;
@@ -944,21 +945,21 @@ export class TableRenderer extends ShapeRenderer {
         const headerOffset = (1 - headerBounce) * dropDistance;
 
         // Draw header row (bouncing in from above)
-        ctx.save();
-        ctx.globalAlpha = baseAlpha * Math.min(1, headerPhase * 1.5);
+        renderer.save();
+        renderer.globalAlpha = baseAlpha * Math.min(1, headerPhase * 1.5);
 
         // Outer border for header
         if (style === 'sketch' && rc && options) {
             rc.rectangle(x, y - headerOffset, w, headerH, { ...options, fill: undefined });
         } else {
-            RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-            ctx.strokeRect(x, y - headerOffset, w, headerH);
+            RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+            renderer.strokeRect(x, y - headerOffset, w, headerH);
         }
 
         // Header background
         if (headerColor) {
-            ctx.fillStyle = RenderPipeline.adjustColor(headerColor, isDarkMode);
-            ctx.fillRect(x, y - headerOffset, w, headerH);
+            renderer.fillStyle = RenderPipeline.adjustColor(headerColor, isDarkMode);
+            renderer.fillRect(x, y - headerOffset, w, headerH);
         }
 
         // Header column lines
@@ -967,57 +968,57 @@ export class TableRenderer extends ShapeRenderer {
             if (style === 'sketch' && rc && options) {
                 rc.line(cx2, y - headerOffset, cx2, y - headerOffset + headerH, { ...options, fill: undefined });
             } else {
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath(); ctx.moveTo(cx2, y - headerOffset); ctx.lineTo(cx2, y - headerOffset + headerH); ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath(); renderer.moveTo(cx2, y - headerOffset); renderer.lineTo(cx2, y - headerOffset + headerH); renderer.stroke();
             }
         }
 
         // Header text
         const headerCells = cellRects.filter(c => c.row === 0);
         const fontSize = el.fontSize ?? 14;
-        ctx.font = 'bold ' + getFontString(el);
+        renderer.font = 'bold ' + getFontString(el);
         const headerTextColor = el.tableHeaderTextColor
             ? RenderPipeline.adjustColor(el.tableHeaderTextColor, isDarkMode)
             : RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
-        ctx.fillStyle = headerTextColor;
-        ctx.textBaseline = 'middle';
+        renderer.fillStyle = headerTextColor;
+        renderer.textBaseline = 'middle';
         const padding = 6;
 
         for (const cell of headerCells) {
             const cellText = data[0]?.[cell.dataCol] ?? `Col ${cell.dataCol + 1}`;
             if (!cellText) continue;
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(cell.x, y - headerOffset, cell.w, headerH);
-            ctx.clip();
+            renderer.save();
+            renderer.beginPath();
+            renderer.rect(cell.x, y - headerOffset, cell.w, headerH);
+            renderer.clip();
             const align = colAlignments?.[cell.dataCol] ?? 'center';
             let textX: number;
-            if (align === 'left') { textX = cell.x + padding; ctx.textAlign = 'left'; }
-            else if (align === 'right') { textX = cell.x + cell.w - padding; ctx.textAlign = 'right'; }
-            else { textX = cell.x + cell.w / 2; ctx.textAlign = 'center'; }
+            if (align === 'left') { textX = cell.x + padding; renderer.textAlign = 'left'; }
+            else if (align === 'right') { textX = cell.x + cell.w - padding; renderer.textAlign = 'right'; }
+            else { textX = cell.x + cell.w / 2; renderer.textAlign = 'center'; }
             const maxTextWidth = cell.w - padding * 2;
-            const lines = wrapText(ctx, cellText, maxTextWidth);
+            const lines = wrapText(renderer, cellText, maxTextWidth);
             const lineHeight = fontSize * 1.2;
             const totalTextHeight = lines.length * lineHeight;
             const startTY = (y - headerOffset) + (headerH - totalTextHeight) / 2 + lineHeight / 2;
             for (let i = 0; i < lines.length; i++) {
-                ctx.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
+                renderer.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
             }
-            ctx.restore();
+            renderer.restore();
         }
-        ctx.restore();
+        renderer.restore();
 
         // Draw body (fading in)
         if (bodyPhase > 0) {
-            ctx.save();
-            ctx.globalAlpha = baseAlpha * bodyPhase;
+            renderer.save();
+            renderer.globalAlpha = baseAlpha * bodyPhase;
 
             // Body border + grid
             if (style === 'sketch' && rc && options) {
                 rc.rectangle(x, y + headerH, w, h - headerH, { ...options, fill: undefined });
             } else {
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.strokeRect(x, y + headerH, w, h - headerH);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokeRect(x, y + headerH, w, h - headerH);
             }
 
             // Body row/col lines
@@ -1026,8 +1027,8 @@ export class TableRenderer extends ShapeRenderer {
                 if (style === 'sketch' && rc && options) {
                     rc.line(x, ry, x + w, ry, { ...options, fill: undefined });
                 } else {
-                    RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                    ctx.beginPath(); ctx.moveTo(x, ry); ctx.lineTo(x + w, ry); ctx.stroke();
+                    RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                    renderer.beginPath(); renderer.moveTo(x, ry); renderer.lineTo(x + w, ry); renderer.stroke();
                 }
             }
             for (let c = 1; c < cols; c++) {
@@ -1035,8 +1036,8 @@ export class TableRenderer extends ShapeRenderer {
                 if (style === 'sketch' && rc && options) {
                     rc.line(cx2, y + headerH, cx2, y + h, { ...options, fill: undefined });
                 } else {
-                    RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                    ctx.beginPath(); ctx.moveTo(cx2, y + headerH); ctx.lineTo(cx2, y + h); ctx.stroke();
+                    RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                    renderer.beginPath(); renderer.moveTo(cx2, y + headerH); renderer.lineTo(cx2, y + h); renderer.stroke();
                 }
             }
 
@@ -1053,22 +1054,22 @@ export class TableRenderer extends ShapeRenderer {
                     const mergeRegion = isTopLeftOfMerge(mergedCells, cell.row, cell.col);
                     const bounds = mergeRegion ? getMergedCellBounds(cellRects, mergeRegion) : null;
                     const cb = bounds || { x: cell.x, y: cell.y, w: cell.w, h: cell.h };
-                    ctx.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
-                    ctx.fillRect(cb.x, cb.y, cb.w, cb.h);
+                    renderer.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
+                    renderer.fillRect(cb.x, cb.y, cb.w, cb.h);
                 }
             }
 
             // Body text
-            this.renderCellText(ctx, el, isDarkMode, baseAlpha * bodyPhase, bodyCells, data,
+            this.renderCellText(renderer, el, isDarkMode, baseAlpha * bodyPhase, bodyCells, data,
                 hasHeader, sortCol, sortDir, colAlignments, mergedCells, cellFormats);
 
-            ctx.restore();
+            renderer.restore();
         }
     }
 
     // ── Count-Up: numeric cells count from 0, non-numeric fade in ──
     private renderCountUp(
-        ctx: CanvasRenderingContext2D, el: DrawingElement, isDarkMode: boolean,
+        renderer: IRenderer, el: DrawingElement, isDarkMode: boolean,
         style: 'architectural' | 'sketch', progress: number,
         x: number, y: number, w: number, h: number,
         cols: number, totalVisualRows: number,
@@ -1078,15 +1079,15 @@ export class TableRenderer extends ShapeRenderer {
         _sortCol: number, _sortDir: string, colAlignments: any, mergedCells: any, _cellFormats: any, _cellBorders: any,
         _order: number[], rc?: any, options?: any
     ): void {
-        const baseAlpha = ctx.globalAlpha;
+        const baseAlpha = renderer.globalAlpha;
 
         // Draw full grid + backgrounds at full alpha (table structure visible from start)
         // Outer border
         if (style === 'sketch' && rc && options) {
             rc.rectangle(x, y, w, h, { ...options, fill: undefined });
         } else {
-            RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-            ctx.strokeRect(x, y, w, h);
+            RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+            renderer.strokeRect(x, y, w, h);
         }
 
         // Row lines
@@ -1095,8 +1096,8 @@ export class TableRenderer extends ShapeRenderer {
             if (style === 'sketch' && rc && options) {
                 rc.line(x, ry, x + w, ry, { ...options, fill: undefined });
             } else {
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath(); ctx.moveTo(x, ry); ctx.lineTo(x + w, ry); ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath(); renderer.moveTo(x, ry); renderer.lineTo(x + w, ry); renderer.stroke();
             }
         }
         // Column lines
@@ -1105,8 +1106,8 @@ export class TableRenderer extends ShapeRenderer {
             if (style === 'sketch' && rc && options) {
                 rc.line(cx2, y, cx2, y + h, { ...options, fill: undefined });
             } else {
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath(); ctx.moveTo(cx2, y); ctx.lineTo(cx2, y + h); ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath(); renderer.moveTo(cx2, y); renderer.lineTo(cx2, y + h); renderer.stroke();
             }
         }
 
@@ -1123,20 +1124,20 @@ export class TableRenderer extends ShapeRenderer {
                 const mergeRegion = isTopLeftOfMerge(mergedCells, cell.row, cell.col);
                 const bounds = mergeRegion ? getMergedCellBounds(cellRects, mergeRegion) : null;
                 const cb = bounds || { x: cell.x, y: cell.y, w: cell.w, h: cell.h };
-                ctx.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
-                ctx.fillRect(cb.x, cb.y, cb.w, cb.h);
+                renderer.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
+                renderer.fillRect(cb.x, cb.y, cb.w, cb.h);
             }
         }
 
         // Text with count-up for numeric values
-        ctx.save();
+        renderer.save();
         const fontSize = el.fontSize ?? 14;
-        ctx.font = getFontString(el);
+        renderer.font = getFontString(el);
         const textColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
         const headerTextColor = el.tableHeaderTextColor
             ? RenderPipeline.adjustColor(el.tableHeaderTextColor, isDarkMode)
             : textColor;
-        ctx.textBaseline = 'middle';
+        renderer.textBaseline = 'middle';
         const padding = 6;
 
         for (const cell of cellRects) {
@@ -1174,41 +1175,41 @@ export class TableRenderer extends ShapeRenderer {
             const mergeBounds = mergeRegion ? getMergedCellBounds(cellRects, mergeRegion) : null;
             const cb = mergeBounds || { x: cell.x, y: cell.y, w: cell.w, h: cell.h };
 
-            ctx.save();
-            ctx.globalAlpha = baseAlpha * cellAlpha;
-            ctx.beginPath();
-            ctx.rect(cb.x, cb.y, cb.w, cb.h);
-            ctx.clip();
+            renderer.save();
+            renderer.globalAlpha = baseAlpha * cellAlpha;
+            renderer.beginPath();
+            renderer.rect(cb.x, cb.y, cb.w, cb.h);
+            renderer.clip();
 
             const align = colAlignments?.[cell.dataCol] ?? 'center';
             let textX: number;
-            if (align === 'left') { textX = cb.x + padding; ctx.textAlign = 'left'; }
-            else if (align === 'right') { textX = cb.x + cb.w - padding; ctx.textAlign = 'right'; }
-            else { textX = cb.x + cb.w / 2; ctx.textAlign = 'center'; }
+            if (align === 'left') { textX = cb.x + padding; renderer.textAlign = 'left'; }
+            else if (align === 'right') { textX = cb.x + cb.w - padding; renderer.textAlign = 'right'; }
+            else { textX = cb.x + cb.w / 2; renderer.textAlign = 'center'; }
 
             if (isHeaderCell) {
-                ctx.font = 'bold ' + getFontString(el);
-                ctx.fillStyle = headerTextColor;
+                renderer.font = 'bold ' + getFontString(el);
+                renderer.fillStyle = headerTextColor;
             } else {
-                ctx.fillStyle = textColor;
+                renderer.fillStyle = textColor;
             }
 
             const maxTextWidth = cb.w - padding * 2;
-            const lines = wrapText(ctx, cellText, maxTextWidth);
+            const lines = wrapText(renderer, cellText, maxTextWidth);
             const lineHeight = fontSize * 1.2;
             const totalTextHeight = lines.length * lineHeight;
             const startTY = cb.y + (cb.h - totalTextHeight) / 2 + lineHeight / 2;
             for (let i = 0; i < lines.length; i++) {
-                ctx.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
+                renderer.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
             }
-            ctx.restore();
+            renderer.restore();
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     // ── Cells Assemble: cells fly from scattered positions into grid ──
     private renderCellsAssemble(
-        ctx: CanvasRenderingContext2D, el: DrawingElement, isDarkMode: boolean,
+        renderer: IRenderer, el: DrawingElement, isDarkMode: boolean,
         _style: 'architectural' | 'sketch', progress: number,
         x: number, y: number, w: number, h: number,
         cols: number, totalVisualRows: number,
@@ -1218,7 +1219,7 @@ export class TableRenderer extends ShapeRenderer {
         _sortCol: number, _sortDir: string, colAlignments: any, mergedCells: any, cellFormats: any,
         _order: number[], _rc?: any, _options?: any
     ): void {
-        const baseAlpha = ctx.globalAlpha;
+        const baseAlpha = renderer.globalAlpha;
         const seed = el.seed ?? 0;
         const spread = Math.max(w, h) * 1.5;
 
@@ -1265,11 +1266,11 @@ export class TableRenderer extends ShapeRenderer {
             const centerX = cb.x + cb.w / 2;
             const centerY = cb.y + cb.h / 2;
 
-            ctx.save();
-            ctx.globalAlpha = baseAlpha * cellAlpha;
-            ctx.translate(centerX + offsetX, centerY + offsetY);
-            ctx.rotate(rotation);
-            ctx.translate(-centerX, -centerY);
+            renderer.save();
+            renderer.globalAlpha = baseAlpha * cellAlpha;
+            renderer.translate(centerX + offsetX, centerY + offsetY);
+            renderer.rotate(rotation);
+            renderer.translate(-centerX, -centerY);
 
             // Cell background
             let bgColor: string | null = null;
@@ -1277,13 +1278,13 @@ export class TableRenderer extends ShapeRenderer {
             else if (!isHeader) bgColor = (isOddRow && altRowColor) ? altRowColor : (rowColor || altRowColor || null);
 
             if (bgColor) {
-                ctx.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
-                ctx.fillRect(cb.x, cb.y, cb.w, cb.h);
+                renderer.fillStyle = RenderPipeline.adjustColor(bgColor, isDarkMode);
+                renderer.fillRect(cb.x, cb.y, cb.w, cb.h);
             }
 
             // Cell border (thin outline so each cell is visible while flying)
-            RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-            ctx.strokeRect(cb.x, cb.y, cb.w, cb.h);
+            RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+            renderer.strokeRect(cb.x, cb.y, cb.w, cb.h);
 
             // Cell text
             let cellText = '';
@@ -1297,56 +1298,56 @@ export class TableRenderer extends ShapeRenderer {
             }
 
             if (cellText) {
-                ctx.save();
-                ctx.beginPath();
-                ctx.rect(cb.x, cb.y, cb.w, cb.h);
-                ctx.clip();
+                renderer.save();
+                renderer.beginPath();
+                renderer.rect(cb.x, cb.y, cb.w, cb.h);
+                renderer.clip();
 
-                ctx.font = isHeader ? 'bold ' + getFontString(el) : getFontString(el);
-                ctx.fillStyle = isHeader ? headerTextColor : textColor;
-                ctx.textBaseline = 'middle';
+                renderer.font = isHeader ? 'bold ' + getFontString(el) : getFontString(el);
+                renderer.fillStyle = isHeader ? headerTextColor : textColor;
+                renderer.textBaseline = 'middle';
 
                 const align = colAlignments?.[cell.dataCol] ?? 'center';
                 let textX: number;
-                if (align === 'left') { textX = cb.x + padding; ctx.textAlign = 'left'; }
-                else if (align === 'right') { textX = cb.x + cb.w - padding; ctx.textAlign = 'right'; }
-                else { textX = cb.x + cb.w / 2; ctx.textAlign = 'center'; }
+                if (align === 'left') { textX = cb.x + padding; renderer.textAlign = 'left'; }
+                else if (align === 'right') { textX = cb.x + cb.w - padding; renderer.textAlign = 'right'; }
+                else { textX = cb.x + cb.w / 2; renderer.textAlign = 'center'; }
 
                 const maxTextWidth = cb.w - padding * 2;
-                const lines = wrapText(ctx, cellText, maxTextWidth);
+                const lines = wrapText(renderer, cellText, maxTextWidth);
                 const lineHeight = fontSize * 1.2;
                 const totalTextHeight = lines.length * lineHeight;
                 const startTY = cb.y + (cb.h - totalTextHeight) / 2 + lineHeight / 2;
                 for (let i = 0; i < lines.length; i++) {
-                    ctx.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
+                    renderer.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
                 }
-                ctx.restore();
+                renderer.restore();
             }
 
-            ctx.restore();
+            renderer.restore();
         }
 
         // Draw grid lines on top once cells have settled
         if (gridAlpha > 0) {
-            ctx.save();
-            ctx.globalAlpha = baseAlpha * gridAlpha;
-            RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-            ctx.strokeRect(x, y, w, h);
+            renderer.save();
+            renderer.globalAlpha = baseAlpha * gridAlpha;
+            RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+            renderer.strokeRect(x, y, w, h);
             for (let r = 1; r < totalVisualRows; r++) {
                 const ry2 = y + rowYs[r];
-                ctx.beginPath(); ctx.moveTo(x, ry2); ctx.lineTo(x + w, ry2); ctx.stroke();
+                renderer.beginPath(); renderer.moveTo(x, ry2); renderer.lineTo(x + w, ry2); renderer.stroke();
             }
             for (let c = 1; c < cols; c++) {
                 const cx2 = x + colXs[c];
-                ctx.beginPath(); ctx.moveTo(cx2, y); ctx.lineTo(cx2, y + h); ctx.stroke();
+                renderer.beginPath(); renderer.moveTo(cx2, y); renderer.lineTo(cx2, y + h); renderer.stroke();
             }
-            ctx.restore();
+            renderer.restore();
         }
     }
 
     // ── Lightning Split: dramatic crack reveals the table ──
     private renderLightningSplit(
-        ctx: CanvasRenderingContext2D, el: DrawingElement, isDarkMode: boolean,
+        renderer: IRenderer, el: DrawingElement, isDarkMode: boolean,
         style: 'architectural' | 'sketch', progress: number,
         x: number, y: number, w: number, h: number,
         _cols: number, _totalVisualRows: number,
@@ -1356,7 +1357,7 @@ export class TableRenderer extends ShapeRenderer {
         _sortCol: number, _sortDir: string, _colAlignments: any, _mergedCells: any, _cellFormats: any, _cellBorders: any,
         _order: number[], rc?: any, options?: any
     ): void {
-        const baseAlpha = ctx.globalAlpha;
+        const baseAlpha = renderer.globalAlpha;
         const seed = el.seed ?? 0;
         const centerX = x + w / 2;
 
@@ -1384,54 +1385,54 @@ export class TableRenderer extends ShapeRenderer {
         if (progress < 0.55) {
             // Build left clip path (everything left of zigzag)
             const drawHalf = (side: 'left' | 'right') => {
-                ctx.save();
-                ctx.beginPath();
+                renderer.save();
+                renderer.beginPath();
                 if (side === 'left') {
-                    ctx.moveTo(x - splitGap - 10, y - 20);
+                    renderer.moveTo(x - splitGap - 10, y - 20);
                     // Follow zigzag on right edge
                     for (const pt of zigzag) {
-                        ctx.lineTo(pt.x - splitGap, pt.y);
+                        renderer.lineTo(pt.x - splitGap, pt.y);
                     }
-                    ctx.lineTo(x - splitGap - 10, y + h + 20);
-                    ctx.closePath();
+                    renderer.lineTo(x - splitGap - 10, y + h + 20);
+                    renderer.closePath();
                 } else {
-                    ctx.moveTo(x + w + splitGap + 10, y - 20);
+                    renderer.moveTo(x + w + splitGap + 10, y - 20);
                     // Follow zigzag on left edge (reversed)
                     for (let i = zigzag.length - 1; i >= 0; i--) {
-                        ctx.lineTo(zigzag[i].x + splitGap, zigzag[i].y);
+                        renderer.lineTo(zigzag[i].x + splitGap, zigzag[i].y);
                     }
-                    ctx.lineTo(x + w + splitGap + 10, y + h + 20);
-                    ctx.closePath();
+                    renderer.lineTo(x + w + splitGap + 10, y + h + 20);
+                    renderer.closePath();
                 }
-                ctx.clip();
+                renderer.clip();
 
                 // Translate the half outward
                 const offset = side === 'left' ? -splitGap : splitGap;
-                ctx.translate(offset, 0);
-                ctx.globalAlpha = baseAlpha * Math.min(1, approachPhase * 1.5);
+                renderer.translate(offset, 0);
+                renderer.globalAlpha = baseAlpha * Math.min(1, approachPhase * 1.5);
 
                 // Render the full table (without animation) inside the clip
-                this.renderTable(ctx, {
+                this.renderTable(renderer, {
                     ...el,
                     tableAnimProgress: undefined,
                     tableAnimStyle: undefined
                 } as any, isDarkMode, style, rc, options);
 
-                ctx.restore();
+                renderer.restore();
             };
 
             drawHalf('left');
             drawHalf('right');
         } else {
             // Table fully assembled — render normally
-            ctx.save();
-            ctx.globalAlpha = baseAlpha;
-            this.renderTable(ctx, {
+            renderer.save();
+            renderer.globalAlpha = baseAlpha;
+            this.renderTable(renderer, {
                 ...el,
                 tableAnimProgress: undefined,
                 tableAnimStyle: undefined
             } as any, isDarkMode, style, rc, options);
-            ctx.restore();
+            renderer.restore();
         }
 
         // Lightning bolt effect
@@ -1442,47 +1443,47 @@ export class TableRenderer extends ShapeRenderer {
 
             if (flashAlpha > 0) {
                 // Glow effect
-                ctx.save();
-                ctx.globalAlpha = baseAlpha * flashAlpha * 0.6;
-                ctx.strokeStyle = isDarkMode ? '#88ccff' : '#3b82f6';
-                ctx.lineWidth = 8;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                ctx.shadowColor = isDarkMode ? '#88ccff' : '#3b82f6';
-                ctx.shadowBlur = 25;
-                ctx.beginPath();
-                ctx.moveTo(zigzag[0].x, zigzag[0].y);
+                renderer.save();
+                renderer.globalAlpha = baseAlpha * flashAlpha * 0.6;
+                renderer.strokeStyle = isDarkMode ? '#88ccff' : '#3b82f6';
+                renderer.lineWidth = 8;
+                renderer.lineCap = 'round';
+                renderer.lineJoin = 'round';
+                renderer.shadowColor = isDarkMode ? '#88ccff' : '#3b82f6';
+                renderer.shadowBlur = 25;
+                renderer.beginPath();
+                renderer.moveTo(zigzag[0].x, zigzag[0].y);
                 for (let i = 1; i < zigzag.length; i++) {
-                    ctx.lineTo(zigzag[i].x, zigzag[i].y);
+                    renderer.lineTo(zigzag[i].x, zigzag[i].y);
                 }
-                ctx.stroke();
-                ctx.restore();
+                renderer.stroke();
+                renderer.restore();
 
                 // Core bright line
-                ctx.save();
-                ctx.globalAlpha = baseAlpha * flashAlpha;
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 2.5;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                ctx.shadowColor = '#ffffff';
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.moveTo(zigzag[0].x, zigzag[0].y);
+                renderer.save();
+                renderer.globalAlpha = baseAlpha * flashAlpha;
+                renderer.strokeStyle = '#ffffff';
+                renderer.lineWidth = 2.5;
+                renderer.lineCap = 'round';
+                renderer.lineJoin = 'round';
+                renderer.shadowColor = '#ffffff';
+                renderer.shadowBlur = 10;
+                renderer.beginPath();
+                renderer.moveTo(zigzag[0].x, zigzag[0].y);
                 for (let i = 1; i < zigzag.length; i++) {
-                    ctx.lineTo(zigzag[i].x, zigzag[i].y);
+                    renderer.lineTo(zigzag[i].x, zigzag[i].y);
                 }
-                ctx.stroke();
-                ctx.restore();
+                renderer.stroke();
+                renderer.restore();
 
                 // Screen flash overlay
                 if (flashPhase < 0.5) {
                     const flashScreenAlpha = (0.5 - flashPhase) * 0.3;
-                    ctx.save();
-                    ctx.globalAlpha = baseAlpha * flashScreenAlpha;
-                    ctx.fillStyle = isDarkMode ? '#88ccff' : '#dbeafe';
-                    ctx.fillRect(x - 20, y - 20, w + 40, h + 40);
-                    ctx.restore();
+                    renderer.save();
+                    renderer.globalAlpha = baseAlpha * flashScreenAlpha;
+                    renderer.fillStyle = isDarkMode ? '#88ccff' : '#dbeafe';
+                    renderer.fillRect(x - 20, y - 20, w + 40, h + 40);
+                    renderer.restore();
                 }
             }
         }
@@ -1490,23 +1491,23 @@ export class TableRenderer extends ShapeRenderer {
 
     // ── Shared text rendering helper for animated phases ──
     private renderCellText(
-        ctx: CanvasRenderingContext2D, el: DrawingElement, isDarkMode: boolean,
+        renderer: IRenderer, el: DrawingElement, isDarkMode: boolean,
         alpha: number,
         cells: ReturnType<typeof computeCellRects>,
         data: string[][],
         hasHeader: boolean, sortCol: number, sortDir: string,
         colAlignments: any, mergedCells: any, cellFormats: any
     ): void {
-        ctx.save();
-        ctx.globalAlpha = alpha;
+        renderer.save();
+        renderer.globalAlpha = alpha;
         const fontSize = el.fontSize ?? 14;
-        ctx.font = getFontString(el);
+        renderer.font = getFontString(el);
         const textColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
         const headerTextColor = el.tableHeaderTextColor
             ? RenderPipeline.adjustColor(el.tableHeaderTextColor, isDarkMode)
             : textColor;
-        ctx.fillStyle = textColor;
-        ctx.textBaseline = 'middle';
+        renderer.fillStyle = textColor;
+        renderer.textBaseline = 'middle';
         const padding = 6;
 
         for (const cell of cells) {
@@ -1529,33 +1530,33 @@ export class TableRenderer extends ShapeRenderer {
             const mergeBounds = mergeRegion ? getMergedCellBounds(cells, mergeRegion) : null;
             const cb = mergeBounds || { x: cell.x, y: cell.y, w: cell.w, h: cell.h };
 
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(cb.x, cb.y, cb.w, cb.h);
-            ctx.clip();
+            renderer.save();
+            renderer.beginPath();
+            renderer.rect(cb.x, cb.y, cb.w, cb.h);
+            renderer.clip();
 
             const align = colAlignments?.[cell.dataCol] ?? 'center';
             let textX: number;
-            if (align === 'left') { textX = cb.x + padding; ctx.textAlign = 'left'; }
-            else if (align === 'right') { textX = cb.x + cb.w - padding; ctx.textAlign = 'right'; }
-            else { textX = cb.x + cb.w / 2; ctx.textAlign = 'center'; }
+            if (align === 'left') { textX = cb.x + padding; renderer.textAlign = 'left'; }
+            else if (align === 'right') { textX = cb.x + cb.w - padding; renderer.textAlign = 'right'; }
+            else { textX = cb.x + cb.w / 2; renderer.textAlign = 'center'; }
 
             if (isHeader) {
-                ctx.font = 'bold ' + getFontString(el);
-                ctx.fillStyle = headerTextColor;
+                renderer.font = 'bold ' + getFontString(el);
+                renderer.fillStyle = headerTextColor;
             } else {
-                ctx.fillStyle = textColor;
+                renderer.fillStyle = textColor;
             }
 
             const maxTextWidth = cb.w - padding * 2;
-            const lines = wrapText(ctx, cellText, maxTextWidth);
+            const lines = wrapText(renderer, cellText, maxTextWidth);
             const lineHeight = fontSize * 1.2;
             const totalTextHeight = lines.length * lineHeight;
             const startTY = cb.y + (cb.h - totalTextHeight) / 2 + lineHeight / 2;
             for (let i = 0; i < lines.length; i++) {
-                ctx.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
+                renderer.fillText(lines[i], textX, startTY + i * lineHeight, maxTextWidth);
             }
-            ctx.restore();
+            renderer.restore();
 
             // Sort indicators for header cells
             if (isHeader && !mergeRegion) {
@@ -1563,49 +1564,49 @@ export class TableRenderer extends ShapeRenderer {
                 const ix = cell.x + cell.w - padding - indicatorSize / 2;
                 const iy = cell.y + cell.h / 2;
                 const isSorted = sortCol === cell.dataCol && sortCol >= 0;
-                ctx.save();
+                renderer.save();
                 if (isSorted) {
-                    ctx.fillStyle = headerTextColor;
-                    ctx.beginPath();
+                    renderer.fillStyle = headerTextColor;
+                    renderer.beginPath();
                     if (sortDir === 'asc') {
-                        ctx.moveTo(ix, iy - indicatorSize / 2);
-                        ctx.lineTo(ix - indicatorSize / 2, iy + indicatorSize / 2);
-                        ctx.lineTo(ix + indicatorSize / 2, iy + indicatorSize / 2);
+                        renderer.moveTo(ix, iy - indicatorSize / 2);
+                        renderer.lineTo(ix - indicatorSize / 2, iy + indicatorSize / 2);
+                        renderer.lineTo(ix + indicatorSize / 2, iy + indicatorSize / 2);
                     } else {
-                        ctx.moveTo(ix, iy + indicatorSize / 2);
-                        ctx.lineTo(ix - indicatorSize / 2, iy - indicatorSize / 2);
-                        ctx.lineTo(ix + indicatorSize / 2, iy - indicatorSize / 2);
+                        renderer.moveTo(ix, iy + indicatorSize / 2);
+                        renderer.lineTo(ix - indicatorSize / 2, iy - indicatorSize / 2);
+                        renderer.lineTo(ix + indicatorSize / 2, iy - indicatorSize / 2);
                     }
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.closePath();
+                    renderer.fill();
                 } else {
-                    ctx.globalAlpha *= 0.3;
-                    ctx.fillStyle = headerTextColor;
+                    renderer.globalAlpha *= 0.3;
+                    renderer.fillStyle = headerTextColor;
                     const half = indicatorSize * 0.4;
-                    ctx.beginPath();
-                    ctx.moveTo(ix, iy - half);
-                    ctx.lineTo(ix - half, iy - half + half * 0.7);
-                    ctx.lineTo(ix + half, iy - half + half * 0.7);
-                    ctx.closePath();
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.moveTo(ix, iy + half);
-                    ctx.lineTo(ix - half, iy + half - half * 0.7);
-                    ctx.lineTo(ix + half, iy + half - half * 0.7);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.beginPath();
+                    renderer.moveTo(ix, iy - half);
+                    renderer.lineTo(ix - half, iy - half + half * 0.7);
+                    renderer.lineTo(ix + half, iy - half + half * 0.7);
+                    renderer.closePath();
+                    renderer.fill();
+                    renderer.beginPath();
+                    renderer.moveTo(ix, iy + half);
+                    renderer.lineTo(ix - half, iy + half - half * 0.7);
+                    renderer.lineTo(ix + half, iy + half - half * 0.7);
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                ctx.restore();
+                renderer.restore();
             }
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     /**
      * Draw a single cell border edge.
      */
     private drawCellBorder(
-        ctx: CanvasRenderingContext2D,
+        renderer: IRenderer,
         border: { style: string; color: string } | undefined,
         x1: number,
         y1: number,
@@ -1631,18 +1632,18 @@ export class TableRenderer extends ShapeRenderer {
                 fill: undefined
             });
         } else {
-            ctx.save();
-            ctx.strokeStyle = color;
-            ctx.lineWidth = lineWidth;
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
-            ctx.restore();
+            renderer.save();
+            renderer.strokeStyle = color;
+            renderer.lineWidth = lineWidth;
+            renderer.beginPath();
+            renderer.moveTo(x1, y1);
+            renderer.lineTo(x2, y2);
+            renderer.stroke();
+            renderer.restore();
         }
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
-        ctx.rect(el.x, el.y, el.width, el.height);
+    protected definePath(renderer: IRenderer, el: any): void {
+        renderer.rect(el.x, el.y, el.width, el.height);
     }
 }

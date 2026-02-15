@@ -2,10 +2,11 @@ import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class PeopleRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
         const x = el.x, y = el.y, w = el.width, h = el.height;
 
@@ -18,33 +19,33 @@ export class PeopleRenderer extends ShapeRenderer {
                 const armY = bodyTop + (bodyBottom - bodyTop) * 0.2;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Head
-                ctx.beginPath();
-                ctx.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
+                renderer.stroke();
                 // Spine
-                ctx.beginPath();
-                ctx.moveTo(hx, bodyTop);
-                ctx.lineTo(hx, bodyBottom);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(hx, bodyTop);
+                renderer.lineTo(hx, bodyBottom);
+                renderer.stroke();
                 // Arms
-                ctx.beginPath();
-                ctx.moveTo(x + w * 0.15, armY - h * 0.05);
-                ctx.lineTo(hx, armY);
-                ctx.lineTo(x + w * 0.85, armY - h * 0.05);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + w * 0.15, armY - h * 0.05);
+                renderer.lineTo(hx, armY);
+                renderer.lineTo(x + w * 0.85, armY - h * 0.05);
+                renderer.stroke();
                 // Legs
-                ctx.beginPath();
-                ctx.moveTo(x + w * 0.2, y + h);
-                ctx.lineTo(hx, bodyBottom);
-                ctx.lineTo(x + w * 0.8, y + h);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + w * 0.2, y + h);
+                renderer.lineTo(hx, bodyBottom);
+                renderer.lineTo(x + w * 0.8, y + h);
+                renderer.stroke();
                 break;
             }
             case 'sittingPerson': {
@@ -55,37 +56,37 @@ export class PeopleRenderer extends ShapeRenderer {
                 const armY = bodyTop + (seatY - bodyTop) * 0.25;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Head
-                ctx.beginPath();
-                ctx.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
+                renderer.stroke();
                 // Spine
-                ctx.beginPath();
-                ctx.moveTo(hx, bodyTop);
-                ctx.lineTo(hx, seatY);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(hx, bodyTop);
+                renderer.lineTo(hx, seatY);
+                renderer.stroke();
                 // Arms (resting forward)
-                ctx.beginPath();
-                ctx.moveTo(x + w * 0.2, armY + h * 0.05);
-                ctx.lineTo(hx, armY);
-                ctx.lineTo(x + w * 0.8, armY + h * 0.05);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + w * 0.2, armY + h * 0.05);
+                renderer.lineTo(hx, armY);
+                renderer.lineTo(x + w * 0.8, armY + h * 0.05);
+                renderer.stroke();
                 // Thighs (horizontal)
-                ctx.beginPath();
-                ctx.moveTo(hx, seatY);
-                ctx.lineTo(x + w * 0.8, seatY);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(hx, seatY);
+                renderer.lineTo(x + w * 0.8, seatY);
+                renderer.stroke();
                 // Lower legs (hanging down)
-                ctx.beginPath();
-                ctx.moveTo(x + w * 0.8, seatY);
-                ctx.lineTo(x + w * 0.8, y + h);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + w * 0.8, seatY);
+                renderer.lineTo(x + w * 0.8, y + h);
+                renderer.stroke();
                 break;
             }
             case 'presentingPerson': {
@@ -96,71 +97,71 @@ export class PeopleRenderer extends ShapeRenderer {
                 const armY = bodyTop + (bodyBottom - bodyTop) * 0.15;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Head
-                ctx.beginPath();
-                ctx.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.ellipse(hx, hy, headR, headR, 0, 0, Math.PI * 2);
+                renderer.stroke();
                 // Spine
-                ctx.beginPath();
-                ctx.moveTo(hx, bodyTop);
-                ctx.lineTo(hx, bodyBottom);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(hx, bodyTop);
+                renderer.lineTo(hx, bodyBottom);
+                renderer.stroke();
                 // Left arm (down)
-                ctx.beginPath();
-                ctx.moveTo(hx, armY);
-                ctx.lineTo(x + w * 0.1, bodyBottom);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(hx, armY);
+                renderer.lineTo(x + w * 0.1, bodyBottom);
+                renderer.stroke();
                 // Right arm (pointing up-right to board)
-                ctx.beginPath();
-                ctx.moveTo(hx, armY);
-                ctx.lineTo(x + w * 0.75, y + h * 0.1);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(hx, armY);
+                renderer.lineTo(x + w * 0.75, y + h * 0.1);
+                renderer.stroke();
                 // Legs
-                ctx.beginPath();
-                ctx.moveTo(x + w * 0.15, y + h);
-                ctx.lineTo(hx, bodyBottom);
-                ctx.lineTo(x + w * 0.45, y + h);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + w * 0.15, y + h);
+                renderer.lineTo(hx, bodyBottom);
+                renderer.lineTo(x + w * 0.45, y + h);
+                renderer.stroke();
                 // Board/whiteboard
-                ctx.strokeRect(x + w * 0.55, y, w * 0.45, h * 0.5);
+                renderer.strokeRect(x + w * 0.55, y, w * 0.45, h * 0.5);
                 break;
             }
             case 'handPointRight': {
                 const path = this.getHandPointRightPath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 break;
             }
             case 'thumbsUp': {
                 const path = this.getThumbsUpPath(x, y, w, h);
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = options.fill;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
                 break;
             }
             case 'faceHappy': {
-                this.renderFace(ctx, el, isDarkMode, options, 'happy');
+                this.renderFace(renderer, el, isDarkMode, options, 'happy');
                 break;
             }
             case 'faceSad': {
-                this.renderFace(ctx, el, isDarkMode, options, 'sad');
+                this.renderFace(renderer, el, isDarkMode, options, 'sad');
                 break;
             }
             case 'faceConfused': {
-                this.renderFace(ctx, el, isDarkMode, options, 'confused');
+                this.renderFace(renderer, el, isDarkMode, options, 'confused');
                 break;
             }
         }
@@ -248,7 +249,7 @@ export class PeopleRenderer extends ShapeRenderer {
     // ─── Face rendering (architectural) ──────────────────────────────
 
     private renderFace(
-        ctx: CanvasRenderingContext2D,
+        renderer: IRenderer,
         el: any,
         isDarkMode: boolean,
         options: any,
@@ -260,51 +261,51 @@ export class PeopleRenderer extends ShapeRenderer {
 
         // Face circle
         if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-            ctx.fillStyle = options.fill;
-            ctx.beginPath();
-            ctx.ellipse(fcx, fcy, r, r, 0, 0, Math.PI * 2);
-            ctx.fill();
+            renderer.fillStyle = options.fill;
+            renderer.beginPath();
+            renderer.ellipse(fcx, fcy, r, r, 0, 0, Math.PI * 2);
+            renderer.fill();
         }
-        RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-        ctx.beginPath();
-        ctx.ellipse(fcx, fcy, r, r, 0, 0, Math.PI * 2);
-        ctx.stroke();
+        RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+        renderer.beginPath();
+        renderer.ellipse(fcx, fcy, r, r, 0, 0, Math.PI * 2);
+        renderer.stroke();
 
         // Eyes
         const eyeR = r * 0.08;
         const eyeY = fcy - r * 0.2;
         const eyeSpacing = r * 0.3;
 
-        ctx.beginPath();
-        ctx.arc(fcx - eyeSpacing, eyeY, eyeR, 0, Math.PI * 2);
-        ctx.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(fcx + eyeSpacing, eyeY, eyeR, 0, Math.PI * 2);
-        ctx.fill();
+        renderer.beginPath();
+        renderer.arc(fcx - eyeSpacing, eyeY, eyeR, 0, Math.PI * 2);
+        renderer.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
+        renderer.fill();
+        renderer.beginPath();
+        renderer.arc(fcx + eyeSpacing, eyeY, eyeR, 0, Math.PI * 2);
+        renderer.fill();
 
         // Mouth
         const mouthY = fcy + r * 0.25;
         const mouthW = r * 0.4;
-        ctx.beginPath();
+        renderer.beginPath();
         if (mood === 'happy') {
-            ctx.arc(fcx, mouthY - r * 0.05, mouthW, 0.1, Math.PI - 0.1);
+            renderer.arc(fcx, mouthY - r * 0.05, mouthW, 0.1, Math.PI - 0.1);
         } else if (mood === 'sad') {
-            ctx.arc(fcx, mouthY + r * 0.2, mouthW, Math.PI + 0.1, -0.1);
+            renderer.arc(fcx, mouthY + r * 0.2, mouthW, Math.PI + 0.1, -0.1);
         } else {
             // Confused: wavy line
-            ctx.moveTo(fcx - mouthW, mouthY);
-            ctx.quadraticCurveTo(fcx - mouthW * 0.3, mouthY - r * 0.1, fcx, mouthY);
-            ctx.quadraticCurveTo(fcx + mouthW * 0.3, mouthY + r * 0.1, fcx + mouthW, mouthY);
+            renderer.moveTo(fcx - mouthW, mouthY);
+            renderer.quadraticCurveTo(fcx - mouthW * 0.3, mouthY - r * 0.1, fcx, mouthY);
+            renderer.quadraticCurveTo(fcx + mouthW * 0.3, mouthY + r * 0.1, fcx + mouthW, mouthY);
         }
-        ctx.stroke();
+        renderer.stroke();
 
         // Confused: eyebrow quirk
         if (mood === 'confused') {
-            ctx.beginPath();
-            ctx.moveTo(fcx + eyeSpacing - eyeR * 2, eyeY - r * 0.15);
-            ctx.lineTo(fcx + eyeSpacing + eyeR * 2, eyeY - r * 0.22);
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.moveTo(fcx + eyeSpacing - eyeR * 2, eyeY - r * 0.15);
+            renderer.lineTo(fcx + eyeSpacing + eyeR * 2, eyeY - r * 0.22);
+            renderer.stroke();
         }
     }
 
@@ -453,10 +454,10 @@ export class PeopleRenderer extends ShapeRenderer {
         return p;
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
-        ctx.translate(el.x + el.width / 2, el.y + el.height / 2);
-        RenderPipeline.renderGeometry(ctx, geometry);
+        renderer.translate(el.x + el.width / 2, el.y + el.height / 2);
+        RenderPipeline.renderGeometry(renderer, geometry);
     }
 }

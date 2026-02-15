@@ -5,6 +5,7 @@
 import { ShapeRenderer } from '../base/shape-renderer';
 import { RenderPipeline } from '../base/render-pipeline';
 import type { RenderContext } from '../base/types';
+import type { IRenderer } from '../../rendering/IRenderer';
 
 import { getUIShapeDef, type UIShapeBounds, type UIRenderHelpers } from '../../config/ui-shape-defs';
 
@@ -18,7 +19,7 @@ export class UIComponentRenderer extends ShapeRenderer {
     }
 
     private buildHelpers(context: RenderContext): UIRenderHelpers {
-        const { element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const strokeColor = RenderPipeline.adjustColor(el.strokeColor, isDarkMode);
         const bgRaw = el.backgroundColor;
         const backgroundColor = (!bgRaw || bgRaw === 'transparent') ? undefined
@@ -27,7 +28,7 @@ export class UIComponentRenderer extends ShapeRenderer {
         return {
             strokeColor,
             backgroundColor,
-            applyStroke: (ctx) => RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode),
+            applyStroke: (_renderer) => RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode),
             buildRoughOptions: () => RenderPipeline.buildRenderOptions(el, isDarkMode),
             getRoundedRectPath: this.getRoundedRectPath,
             shadeColor: (color, percent) => RenderPipeline.shadeColor(color, percent),
@@ -49,9 +50,8 @@ export class UIComponentRenderer extends ShapeRenderer {
 
         const bounds = this.buildBounds(context.element);
         const helpers = this.buildHelpers(context);
-        def.renderArchitectural(context.ctx, context.element, bounds, helpers);
+        def.renderArchitectural(context.renderer, context.element, bounds, helpers);
 
-        // Shapes with customTextRendering handle their own text
         if (def.customTextRendering) return;
 
         RenderPipeline.renderText(context, cx, cy);
@@ -63,18 +63,18 @@ export class UIComponentRenderer extends ShapeRenderer {
 
         const bounds = this.buildBounds(context.element);
         const helpers = this.buildHelpers(context);
-        def.renderSketch(context.rc, context.element, bounds, helpers, context.ctx);
+        def.renderSketch(context.rc, context.element, bounds, helpers, context.renderer);
 
         if (def.customTextRendering) return;
         RenderPipeline.renderText(context, cx, cy);
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const def = getUIShapeDef(el.type);
         if (!def) {
-            ctx.rect(el.x, el.y, el.width, el.height);
+            renderer.rect(el.x, el.y, el.width, el.height);
             return;
         }
-        def.definePath(ctx, el);
+        def.definePath(renderer, el);
     }
 }

@@ -3,7 +3,7 @@ import { renderElement } from "./render-element";
 import rough from 'roughjs/bin/rough';
 import { jsPDF } from "jspdf";
 import PptxGenJS from "pptxgenjs";
-import { resolveFontFamily, wrapText, getMeasurementContext } from "./text-utils";
+import { resolveFontFamily, wrapText, getMeasurementRenderer } from "./text-utils";
 import { buildFilterString } from "./image-filter-utils";
 import { layoutRichText } from "./rich-text-utils";
 
@@ -248,7 +248,7 @@ export const exportToSvg = (onlySelected: boolean) => {
             } else {
                 node = rc.line(el.x, el.y, endX, endY, options);
             }
-        } else if (el.type === 'text' && (el.text || (el.richText && el.richText.length > 0))) {
+        } else if ((el.type === 'text' || el.type === 'richtext') && (el.text || (el.richText && el.richText.length > 0))) {
             const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             const fontSize = el.fontSize || 20;
             const fontFamily = resolveFontFamily(el.fontFamily);
@@ -258,10 +258,10 @@ export const exportToSvg = (onlySelected: boolean) => {
 
             // Rich text path
             if (el.richText && el.richText.length > 0) {
-                const measureCtx = getMeasurementContext();
+                const measureRenderer = getMeasurementRenderer();
                 const availableWidth = Math.max(el.width - padding * 2, 20);
                 const defaults = { fontSize, fontFamily: el.fontFamily || 'sans-serif' };
-                const layout = layoutRichText(measureCtx, el.richText, availableWidth, defaults);
+                const layout = layoutRichText(measureRenderer, el.richText, availableWidth, defaults);
                 const verticalPadding = Math.max(0, (el.height - layout.totalHeight) / 2);
 
                 let lineY = el.y + verticalPadding;
@@ -308,14 +308,14 @@ export const exportToSvg = (onlySelected: boolean) => {
                 const fontWeight = (el.fontWeight === true || el.fontWeight === 'bold') ? 'bold' : 'normal';
                 const fontStyleStr = (el.fontStyle === true || el.fontStyle === 'italic') ? 'italic' : 'normal';
                 const lineHeight = fontSize * 1.2;
-                const measureCtx = getMeasurementContext();
-                measureCtx.font = `${fontStyleStr === 'italic' ? 'italic ' : ''}${fontWeight === 'bold' ? 'bold ' : ''}${fontSize}px ${fontFamily}`;
+                const measureRenderer = getMeasurementRenderer();
+                measureRenderer.font = `${fontStyleStr === 'italic' ? 'italic ' : ''}${fontWeight === 'bold' ? 'bold ' : ''}${fontSize}px ${fontFamily}`;
                 const availableWidth = Math.max(el.width - padding * 2, 20);
                 const paragraphs = el.text!.split('\n');
                 const lines: string[] = [];
                 paragraphs.forEach(para => {
                     if (para === '') lines.push('');
-                    else lines.push(...wrapText(measureCtx, para, availableWidth));
+                    else lines.push(...wrapText(measureRenderer, para, availableWidth));
                 });
 
                 let textAnchor = 'start';
@@ -431,9 +431,9 @@ export const exportToSvg = (onlySelected: boolean) => {
 
             if (el.richContainerText && el.richContainerText.length > 0) {
                 // Rich text path
-                const measureCtx = getMeasurementContext();
+                const measureRenderer = getMeasurementRenderer();
                 const defaults = { fontSize, fontFamily: el.fontFamily || 'hand-drawn' };
-                const layout = layoutRichText(measureCtx, el.richContainerText, maxWidth, defaults);
+                const layout = layoutRichText(measureRenderer, el.richContainerText, maxWidth, defaults);
                 const startY = cy - layout.totalHeight / 2;
 
                 let lineY = startY;
@@ -476,13 +476,13 @@ export const exportToSvg = (onlySelected: boolean) => {
             } else if (el.containerText) {
                 // Plain text path (original)
                 const lineHeight = fontSize * 1.2;
-                const measureCtx = getMeasurementContext();
-                measureCtx.font = `${fontSize}px ${fontFamily}`;
+                const measureRenderer = getMeasurementRenderer();
+                measureRenderer.font = `${fontSize}px ${fontFamily}`;
                 const paragraphs = el.containerText.split('\n');
                 const lines: string[] = [];
                 paragraphs.forEach(para => {
                     if (para === '') lines.push('');
-                    else lines.push(...wrapText(measureCtx, para, maxWidth));
+                    else lines.push(...wrapText(measureRenderer, para, maxWidth));
                 });
 
                 let textAnchor = 'middle';

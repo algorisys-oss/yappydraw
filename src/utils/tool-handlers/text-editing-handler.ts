@@ -10,8 +10,9 @@ import { store, updateElement, deleteElements, isLayerVisible } from '../../stor
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
 import { fitShapeToText, measureContainerText, measureWrappedTextHeight } from '../text-utils';
+import { CanvasRenderer } from '../../rendering/CanvasRenderer';
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestTableCell } from '../table-utils';
-import { spansToPlainText } from '../rich-text-utils';
+import { spansToPlainText, plainTextToSpans } from '../rich-text-utils';
 
 /**
  * Context needed by text editing functions from canvas component closures.
@@ -87,8 +88,8 @@ export function commitText(ctx: TextEditingContext): void {
         return;
     }
 
-    // For standalone text elements, preserve width and recalculate height based on wrapped text
-    if (el.type === 'text') {
+    // For standalone text/richtext elements, preserve width and recalculate height based on wrapped text
+    if (el.type === 'text' || el.type === 'richtext') {
         if (newText) {
             const fontSize = el.fontSize || 28;
             // Preserve existing width, recalculate height based on wrapped content
@@ -108,7 +109,7 @@ export function commitText(ctx: TextEditingContext): void {
         if (el.autoResize && ctx.canvasRef && !isLine && prop === 'containerText') {
             const canvasCtx = ctx.canvasRef.getContext("2d");
             if (canvasCtx) {
-                const dims = fitShapeToText(canvasCtx, el, newText);
+                const dims = fitShapeToText(new CanvasRenderer(canvasCtx), el, newText);
                 updateElement(id, {
                     [prop]: newText,
                     width: dims.width,
@@ -138,7 +139,7 @@ export function commitRichText(ctx: TextEditingContext): void {
     const spans = ctx.richTextSpans();
     const plainText = spansToPlainText(spans).trim();
 
-    if (el.type === 'text') {
+    if (el.type === 'text' || el.type === 'richtext') {
         if (plainText) {
             const fontSize = el.fontSize || 20;
             const existingWidth = el.width || 200;
@@ -156,7 +157,7 @@ export function commitRichText(ctx: TextEditingContext): void {
         if (el.autoResize && ctx.canvasRef) {
             const canvasCtx = ctx.canvasRef.getContext("2d");
             if (canvasCtx) {
-                const dims = fitShapeToText(canvasCtx, el, plainText);
+                const dims = fitShapeToText(new CanvasRenderer(canvasCtx), el, plainText);
                 updateElement(id, {
                     [richKey]: spans,
                     [textKey]: plainText,
@@ -226,7 +227,7 @@ export function handleDoubleClick(e: MouseEvent, ctx: TextEditingContext): void 
             }
 
             // Only allow editing containerText for shapes and lines
-            const shapeTypes = ['rectangle', 'circle', 'diamond', 'line', 'arrow', 'text', 'triangle', 'hexagon', 'octagon', 'parallelogram', 'polygon', 'star', 'cloud', 'heart', 'cross', 'checkmark', 'capsule', 'stickyNote', 'callout', 'burst', 'speechBubble', 'ribbon', 'bracketLeft', 'bracketRight', 'database', 'document', 'predefinedProcess', 'internalStorage', 'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda', 'router', 'browser', 'trapezoid', 'rightTriangle', 'pentagon', 'septagon', 'starPerson', 'scroll', 'wavyDivider', 'doubleBanner', 'lightbulb', 'signpost', 'burstBlob', 'browserWindow', 'mobilePhone', 'ghostButton', 'inputField', 'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch', 'card', 'searchBar', 'progressBar', 'avatar', 'navbar', 'tabBar', 'badge', 'tooltip', 'slider', 'trophy', 'clock', 'gear', 'target', 'rocket', 'flag', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'stateStart', 'stateEnd', 'stateSync', 'activationBar', 'externalEntity', 'umlClass', 'umlInterface', 'umlActor', 'umlUseCase', 'umlNote', 'umlPackage', 'umlComponent', 'umlState', 'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface', 'key', 'magnifyingGlass', 'book', 'megaphone', 'eye', 'thoughtBubble', 'stickFigure', 'sittingPerson', 'presentingPerson', 'handPointRight', 'thumbsUp', 'faceHappy', 'faceSad', 'faceConfused', 'checkbox', 'checkboxChecked', 'numberedBadge', 'questionMark', 'exclamationMark', 'tag', 'pin', 'stamp', 'kubernetes', 'container', 'apiGateway', 'cdn', 'storageBlob', 'eventBus', 'microservice', 'shield', 'barChart', 'pieChart', 'trendUp', 'trendDown', 'funnel', 'gauge', 'table', 'puzzlePiece', 'chainLink', 'bridge', 'magnet', 'scale', 'seedling', 'tree', 'mountain', 'organicBranch', 'codeBlock', 'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable', 'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent', 'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity', 'bpmnDataObject', 'bpmnAnnotation', 'bpmnPool', 'bpmnEventGateway', 'bpmnDataStore', 'bpmnGroup'];
+            const shapeTypes = ['rectangle', 'circle', 'diamond', 'line', 'arrow', 'text', 'richtext', 'triangle', 'hexagon', 'octagon', 'parallelogram', 'polygon', 'star', 'cloud', 'heart', 'cross', 'checkmark', 'capsule', 'stickyNote', 'callout', 'burst', 'speechBubble', 'ribbon', 'bracketLeft', 'bracketRight', 'database', 'document', 'predefinedProcess', 'internalStorage', 'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda', 'router', 'browser', 'trapezoid', 'rightTriangle', 'pentagon', 'septagon', 'starPerson', 'scroll', 'wavyDivider', 'doubleBanner', 'lightbulb', 'signpost', 'burstBlob', 'browserWindow', 'mobilePhone', 'ghostButton', 'inputField', 'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch', 'card', 'searchBar', 'progressBar', 'avatar', 'navbar', 'tabBar', 'badge', 'tooltip', 'slider', 'trophy', 'clock', 'gear', 'target', 'rocket', 'flag', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'stateStart', 'stateEnd', 'stateSync', 'activationBar', 'externalEntity', 'umlClass', 'umlInterface', 'umlActor', 'umlUseCase', 'umlNote', 'umlPackage', 'umlComponent', 'umlState', 'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface', 'key', 'magnifyingGlass', 'book', 'megaphone', 'eye', 'thoughtBubble', 'stickFigure', 'sittingPerson', 'presentingPerson', 'handPointRight', 'thumbsUp', 'faceHappy', 'faceSad', 'faceConfused', 'checkbox', 'checkboxChecked', 'numberedBadge', 'questionMark', 'exclamationMark', 'tag', 'pin', 'stamp', 'kubernetes', 'container', 'apiGateway', 'cdn', 'storageBlob', 'eventBus', 'microservice', 'shield', 'barChart', 'pieChart', 'trendUp', 'trendDown', 'funnel', 'gauge', 'table', 'puzzlePiece', 'chainLink', 'bridge', 'magnet', 'scale', 'seedling', 'tree', 'mountain', 'organicBranch', 'codeBlock', 'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable', 'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent', 'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity', 'bpmnDataObject', 'bpmnAnnotation', 'bpmnPool', 'bpmnEventGateway', 'bpmnDataStore', 'bpmnGroup'];
             if (shapeTypes.includes(el.type)) {
                 // Table cell editing
                 if (el.type === 'table') {
@@ -276,15 +277,16 @@ export function handleDoubleClick(e: MouseEvent, ctx: TextEditingContext): void 
                 if (el.type === 'umlClass') {
                     const clickYRelativeToShape = y - el.y;
                     const canvasCtx = ctx.canvasRef?.getContext("2d");
+                    const renderer = canvasCtx ? new CanvasRenderer(canvasCtx) : null;
                     let headerHeight = 30;
-                    if (el.containerText && canvasCtx) {
-                        const metrics = measureContainerText(canvasCtx, el, el.containerText, el.width - 10);
+                    if (el.containerText && renderer) {
+                        const metrics = measureContainerText(renderer, el, el.containerText, el.width - 10);
                         headerHeight = Math.max(30, metrics.textHeight + 20);
                     }
 
                     let attrHeight = 20;
-                    if (el.attributesText && canvasCtx) {
-                        const metrics = measureContainerText(canvasCtx, { ...el, fontSize: (el.fontSize || 28) * 0.9 }, el.attributesText, el.width - 10);
+                    if (el.attributesText && renderer) {
+                        const metrics = measureContainerText(renderer, { ...el, fontSize: (el.fontSize || 28) * 0.9 }, el.attributesText, el.width - 10);
                         attrHeight = Math.max(20, metrics.textHeight + 10);
                     }
 
@@ -301,9 +303,10 @@ export function handleDoubleClick(e: MouseEvent, ctx: TextEditingContext): void 
                 } else if (el.type === 'umlState') {
                     const clickYRelativeToShape = y - el.y;
                     const canvasCtx = ctx.canvasRef?.getContext("2d");
+                    const renderer = canvasCtx ? new CanvasRenderer(canvasCtx) : null;
                     let headerHeight = 35;
-                    if (el.containerText && canvasCtx) {
-                        const metrics = measureContainerText(canvasCtx, el, el.containerText, el.width - 20);
+                    if (el.containerText && renderer) {
+                        const metrics = measureContainerText(renderer, el, el.containerText, el.width - 20);
                         headerHeight = Math.max(35, metrics.textHeight + 15);
                     }
                     if (clickYRelativeToShape < headerHeight) {
@@ -383,20 +386,27 @@ export function handleDoubleClick(e: MouseEvent, ctx: TextEditingContext): void 
                             text = el.containerText || '';
                         }
                     }
-                } else if (el.type === 'text' || el.type === 'codeBlock' || el.type === 'dsArray' || el.type === 'dsStack' || el.type === 'dsQueue' || el.type === 'dsLinkedList' || el.type === 'dsBinaryTree' || el.type === 'dsHashTable') {
+                } else if (el.type === 'text' || el.type === 'richtext' || el.type === 'codeBlock' || el.type === 'dsArray' || el.type === 'dsStack' || el.type === 'dsQueue' || el.type === 'dsLinkedList' || el.type === 'dsBinaryTree' || el.type === 'dsHashTable') {
                     prop = 'text';
                     text = el.text || '';
                 }
 
                 // Load rich text spans if available
-                const richSpans = prop === 'text' ? el.richText
+                const richSpans = (prop === 'text' && el.type === 'richtext') ? el.richText
+                    : prop === 'text' ? el.richText
                     : prop === 'containerText' ? el.richContainerText
                     : undefined;
+
+                // For richtext elements, convert plain text to spans if richText is missing
+                let spansToSet: any[] = richSpans && richSpans.length > 0 ? richSpans : [];
+                if (el.type === 'richtext' && spansToSet.length === 0 && text) {
+                    spansToSet = plainTextToSpans(text);
+                }
 
                 batch(() => {
                     ctx.setEditingProperty(prop);
                     ctx.setEditText(text);
-                    ctx.setRichTextSpans(richSpans && richSpans.length > 0 ? richSpans : []);
+                    ctx.setRichTextSpans(spansToSet);
                     ctx.setEditingId(el.id); // must be last — triggers <Show> render
                 });
 

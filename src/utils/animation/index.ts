@@ -111,7 +111,23 @@ export {
     codeLineHighlight,
     dsItemReveal,
     dsHighlightSweep,
-    dsPointerWalk
+    dsPointerWalk,
+    // Image Pixel Effects
+    pixelRevealLTR,
+    pixelRevealRTL,
+    pixelRevealTTB,
+    pixelRevealBTT,
+    pixelDissolve,
+    pixelRandomScatter,
+    pixelWaveCenter,
+    pixelWaveCorner,
+    pixelScanLines,
+    pixelBlockReveal,
+    pixelSpiral,
+    pixelGlitch,
+    pixelCurtainV,
+    pixelCurtainH,
+    pixelRain
 } from './element-animator';
 
 export type { StaggerConfig } from './element-animator';

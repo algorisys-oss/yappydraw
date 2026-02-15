@@ -5,6 +5,8 @@
 
 import type { RichTextSpan, FontFamily } from '../types';
 import { resolveFontFamily } from './text-utils';
+import type { IRenderer } from '../rendering/IRenderer';
+import { CanvasRenderer } from '../rendering/CanvasRenderer';
 
 // ============ Span ↔ HTML Conversion ============
 
@@ -212,7 +214,7 @@ function getLineHeight(fontSize: number): number {
  * span boundaries. Returns positioned segments for canvas rendering.
  */
 export function layoutRichText(
-    ctx: CanvasRenderingContext2D,
+    ctx: IRenderer,
     spans: RichTextSpan[],
     maxWidth: number,
     elementDefaults: { fontSize?: number; fontFamily?: string }
@@ -310,7 +312,7 @@ export function measureRichTextHeight(
     if (!spans || spans.length === 0) return getLineHeight(defaults.fontSize || 28);
     // Use an offscreen canvas for measurement
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d')!;
+    const ctx = new CanvasRenderer(canvas.getContext('2d')!);
     const layout = layoutRichText(ctx, spans, width - 8, defaults);
     return layout.totalHeight;
 }

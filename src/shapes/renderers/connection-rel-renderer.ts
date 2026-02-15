@@ -2,44 +2,47 @@ import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class ConnectionRelRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
         const x = el.x, y = el.y, w = el.width, h = el.height;
 
         switch (el.type) {
             case 'puzzlePiece': {
                 // Puzzle piece with tab on right and slot on bottom
+                // Use beginPath/moveTo/lineTo/arc instead of Path2D for IRenderer compatibility
                 const tabW = w * 0.15;
                 const slotH = h * 0.15;
-                const path = new Path2D();
-                path.moveTo(x, y);
+
+                renderer.beginPath();
+                renderer.moveTo(x, y);
                 // Top edge
-                path.lineTo(x + w * 0.35, y);
-                path.lineTo(x + w * 0.35, y - slotH);
-                path.arc(x + w * 0.5, y - slotH, w * 0.15, Math.PI, 0);
-                path.lineTo(x + w * 0.65, y);
-                path.lineTo(x + w, y);
+                renderer.lineTo(x + w * 0.35, y);
+                renderer.lineTo(x + w * 0.35, y - slotH);
+                renderer.arc(x + w * 0.5, y - slotH, w * 0.15, Math.PI, 0);
+                renderer.lineTo(x + w * 0.65, y);
+                renderer.lineTo(x + w, y);
                 // Right edge with tab
-                path.lineTo(x + w, y + h * 0.35);
-                path.lineTo(x + w + tabW, y + h * 0.35);
-                path.arc(x + w + tabW, y + h * 0.5, h * 0.15, -Math.PI / 2, Math.PI / 2);
-                path.lineTo(x + w, y + h * 0.65);
-                path.lineTo(x + w, y + h);
+                renderer.lineTo(x + w, y + h * 0.35);
+                renderer.lineTo(x + w + tabW, y + h * 0.35);
+                renderer.arc(x + w + tabW, y + h * 0.5, h * 0.15, -Math.PI / 2, Math.PI / 2);
+                renderer.lineTo(x + w, y + h * 0.65);
+                renderer.lineTo(x + w, y + h);
                 // Bottom edge
-                path.lineTo(x, y + h);
+                renderer.lineTo(x, y + h);
                 // Left edge
-                path.lineTo(x, y);
-                path.closePath();
+                renderer.lineTo(x, y);
+                renderer.closePath();
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fill(path);
+                    renderer.fillStyle = options.fill;
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(path);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.stroke();
                 break;
             }
             case 'chainLink': {
@@ -48,21 +51,21 @@ export class ConnectionRelRenderer extends ShapeRenderer {
                 const r = linkH / 2;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
+                    renderer.fillStyle = options.fill;
                     // Left link
-                    this.roundRect(ctx, x, y + h * 0.1, linkW, linkH, r);
-                    ctx.fill();
+                    this.roundRect(renderer, x, y + h * 0.1, linkW, linkH, r);
+                    renderer.fill();
                     // Right link
-                    this.roundRect(ctx, x + w - linkW, y + h * 0.5, linkW, linkH, r);
-                    ctx.fill();
+                    this.roundRect(renderer, x + w - linkW, y + h * 0.5, linkW, linkH, r);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Left link
-                this.roundRect(ctx, x, y + h * 0.1, linkW, linkH, r);
-                ctx.stroke();
+                this.roundRect(renderer, x, y + h * 0.1, linkW, linkH, r);
+                renderer.stroke();
                 // Right link
-                this.roundRect(ctx, x + w - linkW, y + h * 0.5, linkW, linkH, r);
-                ctx.stroke();
+                this.roundRect(renderer, x + w - linkW, y + h * 0.5, linkW, linkH, r);
+                renderer.stroke();
                 break;
             }
             case 'bridge': {
@@ -71,40 +74,40 @@ export class ConnectionRelRenderer extends ShapeRenderer {
                 const deckH = h * 0.12;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.moveTo(x, archY);
-                    ctx.quadraticCurveTo(x + w / 2, y, x + w, archY);
-                    ctx.lineTo(x + w, archY + deckH);
-                    ctx.quadraticCurveTo(x + w / 2, y + deckH, x, archY + deckH);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.moveTo(x, archY);
+                    renderer.quadraticCurveTo(x + w / 2, y, x + w, archY);
+                    renderer.lineTo(x + w, archY + deckH);
+                    renderer.quadraticCurveTo(x + w / 2, y + deckH, x, archY + deckH);
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Arch
-                ctx.beginPath();
-                ctx.moveTo(x, archY);
-                ctx.quadraticCurveTo(x + w / 2, y, x + w, archY);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x, archY);
+                renderer.quadraticCurveTo(x + w / 2, y, x + w, archY);
+                renderer.stroke();
                 // Deck
-                ctx.beginPath();
-                ctx.moveTo(x, archY + deckH);
-                ctx.lineTo(x + w, archY + deckH);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x, archY + deckH);
+                renderer.lineTo(x + w, archY + deckH);
+                renderer.stroke();
                 // Pillars
                 const pillars = 3;
                 for (let i = 0; i < pillars; i++) {
                     const px = x + w * (0.2 + i * 0.3);
-                    ctx.beginPath();
-                    ctx.moveTo(px, archY + deckH);
-                    ctx.lineTo(px, y + h);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(px, archY + deckH);
+                    renderer.lineTo(px, y + h);
+                    renderer.stroke();
                 }
                 // Ground
-                ctx.beginPath();
-                ctx.moveTo(x, y + h);
-                ctx.lineTo(x + w, y + h);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x, y + h);
+                renderer.lineTo(x + w, y + h);
+                renderer.stroke();
                 break;
             }
             case 'magnet': {
@@ -115,54 +118,54 @@ export class ConnectionRelRenderer extends ShapeRenderer {
                 const armH = h - barH;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(x + armW, y);
-                    ctx.lineTo(x + armW, y + armH);
-                    ctx.arc(x + w / 2, y + armH, gapW / 2, Math.PI, 0, true);
-                    ctx.lineTo(x + w - armW, y);
-                    ctx.lineTo(x + w, y);
-                    ctx.lineTo(x + w, y + armH);
-                    ctx.arc(x + w / 2, y + armH, w / 2, 0, Math.PI);
-                    ctx.lineTo(x, y);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.moveTo(x, y);
+                    renderer.lineTo(x + armW, y);
+                    renderer.lineTo(x + armW, y + armH);
+                    renderer.arc(x + w / 2, y + armH, gapW / 2, Math.PI, 0, true);
+                    renderer.lineTo(x + w - armW, y);
+                    renderer.lineTo(x + w, y);
+                    renderer.lineTo(x + w, y + armH);
+                    renderer.arc(x + w / 2, y + armH, w / 2, 0, Math.PI);
+                    renderer.lineTo(x, y);
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Outer U
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.lineTo(x, y + armH);
-                ctx.arc(x + w / 2, y + armH, w / 2, Math.PI, 0);
-                ctx.lineTo(x + w, y);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x, y);
+                renderer.lineTo(x, y + armH);
+                renderer.arc(x + w / 2, y + armH, w / 2, Math.PI, 0);
+                renderer.lineTo(x + w, y);
+                renderer.stroke();
                 // Inner U
-                ctx.beginPath();
-                ctx.moveTo(x + armW, y);
-                ctx.lineTo(x + armW, y + armH);
-                ctx.arc(x + w / 2, y + armH, gapW / 2, Math.PI, 0, true);
-                ctx.lineTo(x + w - armW, y);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + armW, y);
+                renderer.lineTo(x + armW, y + armH);
+                renderer.arc(x + w / 2, y + armH, gapW / 2, Math.PI, 0, true);
+                renderer.lineTo(x + w - armW, y);
+                renderer.stroke();
                 // Pole caps
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.lineTo(x + armW, y);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(x + w - armW, y);
-                ctx.lineTo(x + w, y);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x, y);
+                renderer.lineTo(x + armW, y);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + w - armW, y);
+                renderer.lineTo(x + w, y);
+                renderer.stroke();
                 // Pole bands
                 const bandY = y + barH * 0.5;
-                ctx.beginPath();
-                ctx.moveTo(x, bandY);
-                ctx.lineTo(x + armW, bandY);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(x + w - armW, bandY);
-                ctx.lineTo(x + w, bandY);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x, bandY);
+                renderer.lineTo(x + armW, bandY);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + w - armW, bandY);
+                renderer.lineTo(x + w, bandY);
+                renderer.stroke();
                 break;
             }
             case 'scale': {
@@ -172,58 +175,58 @@ export class ConnectionRelRenderer extends ShapeRenderer {
                 const beamY = y + h * 0.15;
                 const panR = w * 0.18;
 
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Base
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.fillRect(poleX - baseW / 2, y + h - baseH, baseW, baseH);
+                    renderer.fillStyle = options.fill;
+                    renderer.fillRect(poleX - baseW / 2, y + h - baseH, baseW, baseH);
                 }
-                ctx.strokeRect(poleX - baseW / 2, y + h - baseH, baseW, baseH);
+                renderer.strokeRect(poleX - baseW / 2, y + h - baseH, baseW, baseH);
                 // Vertical pole
-                ctx.beginPath();
-                ctx.moveTo(poleX, y + h - baseH);
-                ctx.lineTo(poleX, beamY);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(poleX, y + h - baseH);
+                renderer.lineTo(poleX, beamY);
+                renderer.stroke();
                 // Beam
-                ctx.beginPath();
-                ctx.moveTo(x + w * 0.08, beamY);
-                ctx.lineTo(x + w * 0.92, beamY);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + w * 0.08, beamY);
+                renderer.lineTo(x + w * 0.92, beamY);
+                renderer.stroke();
                 // Left pan
                 const lpx = x + w * 0.08;
                 const panY = y + h * 0.55;
-                ctx.beginPath();
-                ctx.moveTo(lpx, beamY);
-                ctx.lineTo(lpx - panR * 0.3, panY);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(lpx, beamY);
-                ctx.lineTo(lpx + panR * 0.3, panY);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(lpx, panY + panR * 0.15, panR, Math.PI, 0);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(lpx, beamY);
+                renderer.lineTo(lpx - panR * 0.3, panY);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.moveTo(lpx, beamY);
+                renderer.lineTo(lpx + panR * 0.3, panY);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.arc(lpx, panY + panR * 0.15, panR, Math.PI, 0);
+                renderer.stroke();
                 // Right pan
                 const rpx = x + w * 0.92;
-                ctx.beginPath();
-                ctx.moveTo(rpx, beamY);
-                ctx.lineTo(rpx - panR * 0.3, panY);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(rpx, beamY);
-                ctx.lineTo(rpx + panR * 0.3, panY);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(rpx, panY + panR * 0.15, panR, Math.PI, 0);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(rpx, beamY);
+                renderer.lineTo(rpx - panR * 0.3, panY);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.moveTo(rpx, beamY);
+                renderer.lineTo(rpx + panR * 0.3, panY);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.arc(rpx, panY + panR * 0.15, panR, Math.PI, 0);
+                renderer.stroke();
                 // Triangle at top
-                ctx.beginPath();
-                ctx.moveTo(poleX - w * 0.04, beamY);
-                ctx.lineTo(poleX + w * 0.04, beamY);
-                ctx.lineTo(poleX, beamY - h * 0.06);
-                ctx.closePath();
-                ctx.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
-                ctx.fill();
+                renderer.beginPath();
+                renderer.moveTo(poleX - w * 0.04, beamY);
+                renderer.lineTo(poleX + w * 0.04, beamY);
+                renderer.lineTo(poleX, beamY - h * 0.06);
+                renderer.closePath();
+                renderer.fillStyle = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
+                renderer.fill();
                 break;
             }
             case 'seedling': {
@@ -233,44 +236,44 @@ export class ConnectionRelRenderer extends ShapeRenderer {
                 const stemTop = y + h * 0.25;
                 const leafW = w * 0.3, leafH = h * 0.25;
 
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Stem
-                ctx.beginPath();
-                ctx.moveTo(stemX, stemBot);
-                ctx.quadraticCurveTo(stemX - w * 0.05, (stemBot + stemTop) / 2, stemX, stemTop);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(stemX, stemBot);
+                renderer.quadraticCurveTo(stemX - w * 0.05, (stemBot + stemTop) / 2, stemX, stemTop);
+                renderer.stroke();
                 // Left leaf
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.moveTo(stemX, stemTop + leafH * 0.5);
-                    ctx.quadraticCurveTo(stemX - leafW, stemTop - leafH * 0.5, stemX - leafW * 0.3, stemTop - leafH * 0.3);
-                    ctx.quadraticCurveTo(stemX - leafW * 0.1, stemTop, stemX, stemTop + leafH * 0.5);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.moveTo(stemX, stemTop + leafH * 0.5);
+                    renderer.quadraticCurveTo(stemX - leafW, stemTop - leafH * 0.5, stemX - leafW * 0.3, stemTop - leafH * 0.3);
+                    renderer.quadraticCurveTo(stemX - leafW * 0.1, stemTop, stemX, stemTop + leafH * 0.5);
+                    renderer.fill();
                 }
-                ctx.beginPath();
-                ctx.moveTo(stemX, stemTop + leafH * 0.5);
-                ctx.quadraticCurveTo(stemX - leafW, stemTop - leafH * 0.5, stemX - leafW * 0.3, stemTop - leafH * 0.3);
-                ctx.quadraticCurveTo(stemX - leafW * 0.1, stemTop, stemX, stemTop + leafH * 0.5);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(stemX, stemTop + leafH * 0.5);
+                renderer.quadraticCurveTo(stemX - leafW, stemTop - leafH * 0.5, stemX - leafW * 0.3, stemTop - leafH * 0.3);
+                renderer.quadraticCurveTo(stemX - leafW * 0.1, stemTop, stemX, stemTop + leafH * 0.5);
+                renderer.stroke();
                 // Right leaf
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.moveTo(stemX, stemTop);
-                    ctx.quadraticCurveTo(stemX + leafW, stemTop - leafH, stemX + leafW * 0.4, stemTop - leafH * 0.8);
-                    ctx.quadraticCurveTo(stemX + leafW * 0.1, stemTop - leafH * 0.3, stemX, stemTop);
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.moveTo(stemX, stemTop);
+                    renderer.quadraticCurveTo(stemX + leafW, stemTop - leafH, stemX + leafW * 0.4, stemTop - leafH * 0.8);
+                    renderer.quadraticCurveTo(stemX + leafW * 0.1, stemTop - leafH * 0.3, stemX, stemTop);
+                    renderer.fill();
                 }
-                ctx.beginPath();
-                ctx.moveTo(stemX, stemTop);
-                ctx.quadraticCurveTo(stemX + leafW, stemTop - leafH, stemX + leafW * 0.4, stemTop - leafH * 0.8);
-                ctx.quadraticCurveTo(stemX + leafW * 0.1, stemTop - leafH * 0.3, stemX, stemTop);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(stemX, stemTop);
+                renderer.quadraticCurveTo(stemX + leafW, stemTop - leafH, stemX + leafW * 0.4, stemTop - leafH * 0.8);
+                renderer.quadraticCurveTo(stemX + leafW * 0.1, stemTop - leafH * 0.3, stemX, stemTop);
+                renderer.stroke();
                 // Ground
-                ctx.beginPath();
-                ctx.arc(stemX, stemBot, w * 0.25, Math.PI, 0);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.arc(stemX, stemBot, w * 0.25, Math.PI, 0);
+                renderer.stroke();
                 break;
             }
             case 'tree': {
@@ -281,21 +284,21 @@ export class ConnectionRelRenderer extends ShapeRenderer {
                 const trunkTop = canopyCy + canopyR * 0.5;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
+                    renderer.fillStyle = options.fill;
                     // Canopy
-                    ctx.beginPath();
-                    ctx.arc(x + w / 2, canopyCy, canopyR, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.beginPath();
+                    renderer.arc(x + w / 2, canopyCy, canopyR, 0, Math.PI * 2);
+                    renderer.fill();
                     // Trunk
-                    ctx.fillRect(x + w / 2 - trunkW / 2, trunkTop, trunkW, y + h - trunkTop);
+                    renderer.fillRect(x + w / 2 - trunkW / 2, trunkTop, trunkW, y + h - trunkTop);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Canopy
-                ctx.beginPath();
-                ctx.arc(x + w / 2, canopyCy, canopyR, 0, Math.PI * 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.arc(x + w / 2, canopyCy, canopyR, 0, Math.PI * 2);
+                renderer.stroke();
                 // Trunk
-                ctx.strokeRect(x + w / 2 - trunkW / 2, trunkTop, trunkW, y + h - trunkTop);
+                renderer.strokeRect(x + w / 2 - trunkW / 2, trunkTop, trunkW, y + h - trunkTop);
                 break;
             }
             case 'mountain': {
@@ -307,36 +310,36 @@ export class ConnectionRelRenderer extends ShapeRenderer {
                 const snowY = y + h * 0.22;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
-                    ctx.fillStyle = options.fill;
-                    ctx.beginPath();
-                    ctx.moveTo(peakX, peakY);
-                    ctx.lineTo(baseR, y + h);
-                    ctx.lineTo(baseL, y + h);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.moveTo(peakX, peakY);
+                    renderer.lineTo(baseR, y + h);
+                    renderer.lineTo(baseL, y + h);
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Main mountain
-                ctx.beginPath();
-                ctx.moveTo(peakX, peakY);
-                ctx.lineTo(baseR, y + h);
-                ctx.lineTo(baseL, y + h);
-                ctx.closePath();
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(peakX, peakY);
+                renderer.lineTo(baseR, y + h);
+                renderer.lineTo(baseL, y + h);
+                renderer.closePath();
+                renderer.stroke();
                 // Snow cap
                 const snowL = peakX - w * 0.12;
                 const snowR = peakX + w * 0.14;
-                ctx.beginPath();
-                ctx.moveTo(peakX, peakY);
-                ctx.lineTo(snowR, snowY);
-                ctx.lineTo(snowR - w * 0.05, snowY - h * 0.03);
-                ctx.lineTo(snowR - w * 0.1, snowY + h * 0.02);
-                ctx.lineTo(snowL + w * 0.05, snowY - h * 0.01);
-                ctx.lineTo(snowL, snowY);
-                ctx.closePath();
-                ctx.fillStyle = '#ffffff';
-                ctx.fill();
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(peakX, peakY);
+                renderer.lineTo(snowR, snowY);
+                renderer.lineTo(snowR - w * 0.05, snowY - h * 0.03);
+                renderer.lineTo(snowR - w * 0.1, snowY + h * 0.02);
+                renderer.lineTo(snowL + w * 0.05, snowY - h * 0.01);
+                renderer.lineTo(snowL, snowY);
+                renderer.closePath();
+                renderer.fillStyle = '#ffffff';
+                renderer.fill();
+                renderer.stroke();
                 break;
             }
         }
@@ -469,18 +472,18 @@ export class ConnectionRelRenderer extends ShapeRenderer {
 
     // ─── Helpers ──────────────────────────────────────────────────
 
-    private roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-        ctx.lineTo(x + r, y + h);
-        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-        ctx.lineTo(x, y + r);
-        ctx.quadraticCurveTo(x, y, x + r, y);
-        ctx.closePath();
+    private roundRect(renderer: IRenderer, x: number, y: number, w: number, h: number, r: number): void {
+        renderer.beginPath();
+        renderer.moveTo(x + r, y);
+        renderer.lineTo(x + w - r, y);
+        renderer.quadraticCurveTo(x + w, y, x + w, y + r);
+        renderer.lineTo(x + w, y + h - r);
+        renderer.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        renderer.lineTo(x + r, y + h);
+        renderer.quadraticCurveTo(x, y + h, x, y + h - r);
+        renderer.lineTo(x, y + r);
+        renderer.quadraticCurveTo(x, y, x + r, y);
+        renderer.closePath();
     }
 
     private getPuzzlePath(x: number, y: number, w: number, h: number): string {
@@ -518,10 +521,10 @@ export class ConnectionRelRenderer extends ShapeRenderer {
         return p;
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
-        ctx.translate(el.x + el.width / 2, el.y + el.height / 2);
-        RenderPipeline.renderGeometry(ctx, geometry);
+        renderer.translate(el.x + el.width / 2, el.y + el.height / 2);
+        RenderPipeline.renderGeometry(renderer, geometry);
     }
 }

@@ -18,9 +18,12 @@ import { getImageFilterPreset } from "../config/image-filter-presets";
 import { getOpenBoxPreset } from "../config/openbox-presets";
 import { showToast } from "./toast";
 import { playSequence } from "../utils/animation/orchestrator";
-import { plainTextToSpans, spansToPlainText } from "../utils/rich-text-utils";
 import { AnimationPanel } from "./animation-panel";
 import { resizeTableData, defaultColWidths, defaultRowHeights, defaultTableData } from "../utils/table-utils";
+import {
+    pixelRevealLTR, pixelDissolve, pixelWaveCenter, pixelScanLines,
+    pixelGlitch, pixelBlockReveal, pixelSpiral, pixelCurtainV, pixelRandomScatter, pixelRain
+} from "../utils/animation";
 
 const MindmapActions: Component<{ elementId: string }> = (props) => {
     const el = createMemo(() => store.elements.find(e => e.id === props.elementId));
@@ -114,6 +117,49 @@ const MindmapActions: Component<{ elementId: string }> = (props) => {
                     <button class="icon-btn" onClick={() => reorderMindmap(props.elementId, 'horizontal-right')} title="Horizontal Right"><LayoutList size={18} /></button>
                     <button class="icon-btn" onClick={() => reorderMindmap(props.elementId, 'vertical-down')} title="Vertical Down"><LayoutGrid size={18} /></button>
                     <button class="icon-btn" onClick={() => reorderMindmap(props.elementId, 'radial')} title="Radial"><Target size={18} /></button>
+                </div>
+            </div>
+        </Show>
+    );
+};
+
+const ImagePixelEffectActions: Component<{ elementId: string }> = (props) => {
+    const el = createMemo(() => store.elements.find(e => e.id === props.elementId));
+    const isImage = createMemo(() => el()?.type === 'image');
+
+    // Quick preview effects with direct function calls
+    const quickEffects = [
+        { fn: () => { console.log('Calling pixelRevealLTR'); pixelRevealLTR(props.elementId, 1500); }, icon: '▶️', title: 'Left→Right' },
+        { fn: () => { console.log('Calling pixelDissolve'); pixelDissolve(props.elementId, 2000); }, icon: '✨', title: 'Dissolve' },
+        { fn: () => { console.log('Calling pixelWaveCenter'); pixelWaveCenter(props.elementId, 1800); }, icon: '🌊', title: 'Wave' },
+        { fn: () => { console.log('Calling pixelScanLines'); pixelScanLines(props.elementId, 2500); }, icon: '📺', title: 'Scan Lines' },
+        { fn: () => { console.log('Calling pixelGlitch'); pixelGlitch(props.elementId, 1200); }, icon: '⚡', title: 'Glitch' },
+        { fn: () => { console.log('Calling pixelBlockReveal'); pixelBlockReveal(props.elementId, 2000); }, icon: '▦', title: 'Block' },
+        { fn: () => { console.log('Calling pixelSpiral'); pixelSpiral(props.elementId, 2200); }, icon: '🌀', title: 'Spiral' },
+        { fn: () => { console.log('Calling pixelCurtainV'); pixelCurtainV(props.elementId, 1500); }, icon: '🎭', title: 'Curtain' },
+        { fn: () => { console.log('Calling pixelRandomScatter'); pixelRandomScatter(props.elementId, 1800); }, icon: '🎲', title: 'Random' },
+        { fn: () => { console.log('Calling pixelRain'); pixelRain(props.elementId, 2500); }, icon: '🌧️', title: 'Pixel Rain' }
+    ];
+
+    return (
+        <Show when={isImage()}>
+            <div class="property-group">
+                <div class="group-title">PIXEL EFFECTS - QUICK PREVIEW</div>
+                <div class="alignment-row" style={{ "display": "grid", "grid-template-columns": "repeat(3, 1fr)", "gap": "6px" }}>
+                    <For each={quickEffects}>
+                        {(effect) => (
+                            <button
+                                class="icon-btn"
+                                onClick={effect.fn}
+                                title={`Preview: ${effect.title}`}
+                            >
+                                {effect.icon}
+                            </button>
+                        )}
+                    </For>
+                </div>
+                <div class="group-title" style={{ "margin-top": "8px", "font-size": "10px", "opacity": "0.7" }}>
+                    Quick previews • Use Animation panel below for triggers & persistence
                 </div>
             </div>
         </Show>
@@ -1056,6 +1102,7 @@ const PropertyPanel: Component = () => {
                                 </Show>
                                 <Show when={isElement()}>
                                     <MindmapActions elementId={targetElementId()} />
+                                    <ImagePixelEffectActions elementId={targetElementId()} />
                                 </Show>
                                 <Show when={targetType() === 'slide'}>
                                     <SlideActions />
@@ -1145,51 +1192,6 @@ const PropertyPanel: Component = () => {
                                                         return renderControl(prop);
                                                     }}
                                                 </For>
-                                                {/* Rich Text toggle for text elements */}
-                                                <Show when={group === 'text' && (() => {
-                                                    const target = activeTarget();
-                                                    if (!target) return false;
-                                                    if (target.type === 'element') {
-                                                        return target.data.type === 'text' || !!target.data.containerText || !!target.data.richContainerText;
-                                                    }
-                                                    return false;
-                                                })()}>
-                                                    <div class="control-row">
-                                                        <label>Rich Text</label>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={(() => {
-                                                                const target = activeTarget();
-                                                                if (target?.type === 'element') {
-                                                                    const d = target.data;
-                                                                    return !!(d.richText?.length || d.richContainerText?.length);
-                                                                }
-                                                                return false;
-                                                            })()}
-                                                            onChange={(e) => {
-                                                                const target = activeTarget();
-                                                                if (target?.type !== 'element') return;
-                                                                const d = target.data;
-                                                                const id = d.id;
-                                                                if (e.currentTarget.checked) {
-                                                                    // Enable: convert plain text to single rich span
-                                                                    if (d.type === 'text') {
-                                                                        updateElement(id, { richText: plainTextToSpans(d.text || '') }, true);
-                                                                    } else {
-                                                                        updateElement(id, { richContainerText: plainTextToSpans(d.containerText || '') }, true);
-                                                                    }
-                                                                } else {
-                                                                    // Disable: convert back to plain text
-                                                                    if (d.type === 'text' && d.richText) {
-                                                                        updateElement(id, { text: spansToPlainText(d.richText), richText: undefined }, true);
-                                                                    } else if (d.richContainerText) {
-                                                                        updateElement(id, { containerText: spansToPlainText(d.richContainerText), richContainerText: undefined }, true);
-                                                                    }
-                                                                }
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </Show>
                                                 {/* Crop button for image elements in filter group */}
                                                 <Show when={group === 'filter' && (() => {
                                                     const target = activeTarget();

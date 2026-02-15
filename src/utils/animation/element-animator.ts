@@ -4982,3 +4982,197 @@ export function dsPointerWalk(elementId: string, _duration: number = 2000, confi
         alternate: config.alternate,
     });
 }
+
+// ==============================================
+// IMAGE PIXEL EFFECT ANIMATIONS
+// ==============================================
+import { animatePixelEffect } from './pixel-effect-animator';
+
+/**
+ * Pixel Reveal Left to Right
+ */
+export function pixelRevealLTR(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'sequential-ltr',
+        duration,
+        easing: 'easeOutCubic',
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Reveal Right to Left
+ */
+export function pixelRevealRTL(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'sequential-rtl',
+        duration,
+        easing: 'easeOutCubic',
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Reveal Top to Bottom
+ */
+export function pixelRevealTTB(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'sequential-ttb',
+        duration,
+        easing: 'easeOutCubic',
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Reveal Bottom to Top
+ */
+export function pixelRevealBTT(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'sequential-btt',
+        duration,
+        easing: 'easeOutCubic',
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Dissolve Effect
+ */
+export function pixelDissolve(elementId: string, duration: number = 2000, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'dissolve',
+        duration,
+        easing: 'easeInOutCubic',
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Random Scatter
+ */
+export function pixelRandomScatter(elementId: string, duration: number = 1800, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'random-pixels',
+        duration,
+        easing: 'easeInOutQuad',
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Wave from Center
+ */
+export function pixelWaveCenter(elementId: string, duration: number = 1800, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'wave-center',
+        duration,
+        easing: 'easeOutCubic',
+        params: { waveCount: 2 },
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Wave from Corner
+ */
+export function pixelWaveCorner(elementId: string, duration: number = 1800, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'wave-corner',
+        duration,
+        easing: 'easeOutCubic',
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Scan Lines Effect
+ */
+export function pixelScanLines(elementId: string, duration: number = 2500, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'scan-lines',
+        duration,
+        easing: 'linear',
+        params: { lineHeight: 3 },
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Block Reveal
+ */
+export function pixelBlockReveal(elementId: string, duration: number = 2000, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'block-reveal',
+        duration,
+        easing: 'easeInOutQuad',
+        params: { blockSize: 20 },
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Spiral Effect
+ */
+export function pixelSpiral(elementId: string, duration: number = 2200, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'spiral',
+        duration,
+        easing: 'easeInOutCubic',
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Glitch Effect
+ */
+export function pixelGlitch(elementId: string, duration: number = 1200, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'glitch',
+        duration,
+        easing: 'easeInOutCubic',
+        params: { glitchIntensity: 0.7 },
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Curtain Vertical
+ */
+export function pixelCurtainV(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'curtain-vertical',
+        duration,
+        easing: 'easeOutBack',
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Curtain Horizontal
+ */
+export function pixelCurtainH(elementId: string, duration: number = 1500, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'curtain-horizontal',
+        duration,
+        easing: 'easeOutBack',
+        onComplete: config.onComplete
+    });
+}
+
+/**
+ * Pixel Rain Effect (Matrix-style digital rain)
+ */
+export function pixelRain(elementId: string, duration: number = 2500, config: ElementAnimationConfig = {}): string {
+    return animatePixelEffect(elementId, {
+        effectType: 'pixel-rain',
+        duration,
+        easing: 'linear',
+        params: {
+            columnCount: 12,
+            columnWidth: 3,
+            trailLength: undefined // Use default (30% of height)
+        },
+        onComplete: config.onComplete
+    });
+}

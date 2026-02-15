@@ -3,10 +3,11 @@ import { RenderPipeline } from "../base/render-pipeline";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 import type { RenderContext } from "../base/types";
 import type { DrawingElement } from "../../types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class BpmnRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const backgroundColor = el.backgroundColor === 'transparent' ? undefined : RenderPipeline.adjustColor(el.backgroundColor, isDarkMode);
         const x = el.x, y = el.y, w = el.width, h = el.height;
 
@@ -15,37 +16,37 @@ export class BpmnRenderer extends ShapeRenderer {
             case 'bpmnStartEvent': {
                 const r = Math.min(w, h) / 2;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    renderer.beginPath();
+                    renderer.arc(cx, cy, r, 0, Math.PI * 2);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                this.applyNonInterruptingDash(ctx, el);
-                ctx.beginPath();
-                ctx.arc(cx, cy, r, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                this.renderEventIcon(ctx, el, cx, cy, r * 0.55, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                this.applyNonInterruptingDash(renderer, el);
+                renderer.beginPath();
+                renderer.arc(cx, cy, r, 0, Math.PI * 2);
+                renderer.stroke();
+                renderer.setLineDash([]);
+                this.renderEventIcon(renderer, el, cx, cy, r * 0.55, isDarkMode);
                 break;
             }
 
             case 'bpmnEndEvent': {
                 const r = Math.min(w, h) / 2;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    renderer.beginPath();
+                    renderer.arc(cx, cy, r, 0, Math.PI * 2);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                const savedWidth = ctx.lineWidth;
-                ctx.lineWidth = Math.max(savedWidth * 3, 3);
-                ctx.beginPath();
-                ctx.arc(cx, cy, r, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.lineWidth = savedWidth;
-                this.renderEventIcon(ctx, el, cx, cy, r * 0.5, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                const savedWidth = renderer.lineWidth;
+                renderer.lineWidth = Math.max(savedWidth * 3, 3);
+                renderer.beginPath();
+                renderer.arc(cx, cy, r, 0, Math.PI * 2);
+                renderer.stroke();
+                renderer.lineWidth = savedWidth;
+                this.renderEventIcon(renderer, el, cx, cy, r * 0.5, isDarkMode);
                 break;
             }
 
@@ -53,21 +54,21 @@ export class BpmnRenderer extends ShapeRenderer {
                 const outerR = Math.min(w, h) / 2;
                 const innerR = outerR * 0.82;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
-                    ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    renderer.beginPath();
+                    renderer.arc(cx, cy, outerR, 0, Math.PI * 2);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                this.applyNonInterruptingDash(ctx, el);
-                ctx.beginPath();
-                ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                this.renderEventIcon(ctx, el, cx, cy, innerR * 0.55, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                this.applyNonInterruptingDash(renderer, el);
+                renderer.beginPath();
+                renderer.arc(cx, cy, outerR, 0, Math.PI * 2);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.arc(cx, cy, innerR, 0, Math.PI * 2);
+                renderer.stroke();
+                renderer.setLineDash([]);
+                this.renderEventIcon(renderer, el, cx, cy, innerR * 0.55, isDarkMode);
                 break;
             }
 
@@ -77,19 +78,19 @@ export class BpmnRenderer extends ShapeRenderer {
             case 'bpmnInclusiveGateway':
             case 'bpmnEventGateway': {
                 const hw = w / 2, hh = h / 2;
-                ctx.beginPath();
-                ctx.moveTo(cx, cy - hh);
-                ctx.lineTo(cx + hw, cy);
-                ctx.lineTo(cx, cy + hh);
-                ctx.lineTo(cx - hw, cy);
-                ctx.closePath();
+                renderer.beginPath();
+                renderer.moveTo(cx, cy - hh);
+                renderer.lineTo(cx + hw, cy);
+                renderer.lineTo(cx, cy + hh);
+                renderer.lineTo(cx - hw, cy);
+                renderer.closePath();
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke();
-                this.renderGatewayMarker(ctx, el, cx, cy, Math.min(hw, hh) * 0.55, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.stroke();
+                this.renderGatewayMarker(renderer, el, cx, cy, Math.min(hw, hh) * 0.55, isDarkMode);
                 break;
             }
 
@@ -99,25 +100,25 @@ export class BpmnRenderer extends ShapeRenderer {
             case 'bpmnCallActivity': {
                 const radius = Math.min(w, h) * 0.1;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    this.roundRect(ctx, x, y, w, h, radius);
-                    ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    this.roundRect(renderer, x, y, w, h, radius);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 if (el.type === 'bpmnCallActivity') {
-                    const savedLw = ctx.lineWidth;
-                    ctx.lineWidth = Math.max(savedLw * 2.5, 3);
-                    this.roundRect(ctx, x, y, w, h, radius);
-                    ctx.stroke();
-                    ctx.lineWidth = savedLw;
+                    const savedLw = renderer.lineWidth;
+                    renderer.lineWidth = Math.max(savedLw * 2.5, 3);
+                    this.roundRect(renderer, x, y, w, h, radius);
+                    renderer.stroke();
+                    renderer.lineWidth = savedLw;
                 } else {
-                    this.roundRect(ctx, x, y, w, h, radius);
-                    ctx.stroke();
+                    this.roundRect(renderer, x, y, w, h, radius);
+                    renderer.stroke();
                 }
-                this.renderTaskMarker(ctx, el, isDarkMode);
-                this.renderLoopMarker(ctx, el, isDarkMode);
+                this.renderTaskMarker(renderer, el, isDarkMode);
+                this.renderLoopMarker(renderer, el, isDarkMode);
                 if (el.type === 'bpmnSubProcess') {
-                    this.renderSubProcessMarker(ctx, el, isDarkMode);
+                    this.renderSubProcessMarker(renderer, el, isDarkMode);
                 }
                 break;
             }
@@ -125,45 +126,45 @@ export class BpmnRenderer extends ShapeRenderer {
             // ── Artifacts ──
             case 'bpmnDataObject': {
                 const fold = Math.min(w, h) * 0.18;
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.lineTo(x + w - fold, y);
-                ctx.lineTo(x + w, y + fold);
-                ctx.lineTo(x + w, y + h);
-                ctx.lineTo(x, y + h);
-                ctx.closePath();
+                renderer.beginPath();
+                renderer.moveTo(x, y);
+                renderer.lineTo(x + w - fold, y);
+                renderer.lineTo(x + w, y + fold);
+                renderer.lineTo(x + w, y + h);
+                renderer.lineTo(x, y + h);
+                renderer.closePath();
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(x + w - fold, y);
-                ctx.lineTo(x + w - fold, y + fold);
-                ctx.lineTo(x + w, y + fold);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + w - fold, y);
+                renderer.lineTo(x + w - fold, y + fold);
+                renderer.lineTo(x + w, y + fold);
+                renderer.stroke();
                 break;
             }
 
             case 'bpmnAnnotation': {
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fillRect(x, y, w, h);
+                    renderer.fillStyle = backgroundColor;
+                    renderer.fillRect(x, y, w, h);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 const bracketW = Math.min(w * 0.12, 15);
-                ctx.beginPath();
-                ctx.moveTo(x + bracketW, y);
-                ctx.lineTo(x, y);
-                ctx.lineTo(x, y + h);
-                ctx.lineTo(x + bracketW, y + h);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + bracketW, y);
+                renderer.lineTo(x, y);
+                renderer.lineTo(x, y + h);
+                renderer.lineTo(x + bracketW, y + h);
+                renderer.stroke();
                 break;
             }
 
             case 'bpmnPool': {
-                this.renderPoolArchitectural(ctx, el, cx, cy, isDarkMode, backgroundColor);
+                this.renderPoolArchitectural(renderer, el, cx, cy, isDarkMode, backgroundColor);
                 return; // Pool handles its own text
             }
 
@@ -171,32 +172,32 @@ export class BpmnRenderer extends ShapeRenderer {
                 // Cylinder shape (like database)
                 const ellipseH = Math.min(h * 0.18, 20);
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.beginPath();
-                    ctx.ellipse(cx, y + ellipseH, w / 2, ellipseH, 0, Math.PI, 0);
-                    ctx.lineTo(x + w, y + h - ellipseH);
-                    ctx.ellipse(cx, y + h - ellipseH, w / 2, ellipseH, 0, 0, Math.PI);
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    renderer.beginPath();
+                    renderer.ellipse(cx, y + ellipseH, w / 2, ellipseH, 0, Math.PI, 0);
+                    renderer.lineTo(x + w, y + h - ellipseH);
+                    renderer.ellipse(cx, y + h - ellipseH, w / 2, ellipseH, 0, 0, Math.PI);
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 // Top ellipse
-                ctx.beginPath();
-                ctx.ellipse(cx, y + ellipseH, w / 2, ellipseH, 0, 0, Math.PI * 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.ellipse(cx, y + ellipseH, w / 2, ellipseH, 0, 0, Math.PI * 2);
+                renderer.stroke();
                 // Body sides
-                ctx.beginPath();
-                ctx.moveTo(x, y + ellipseH);
-                ctx.lineTo(x, y + h - ellipseH);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(x + w, y + ellipseH);
-                ctx.lineTo(x + w, y + h - ellipseH);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x, y + ellipseH);
+                renderer.lineTo(x, y + h - ellipseH);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.moveTo(x + w, y + ellipseH);
+                renderer.lineTo(x + w, y + h - ellipseH);
+                renderer.stroke();
                 // Bottom ellipse
-                ctx.beginPath();
-                ctx.ellipse(cx, y + h - ellipseH, w / 2, ellipseH, 0, 0, Math.PI);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.ellipse(cx, y + h - ellipseH, w / 2, ellipseH, 0, 0, Math.PI);
+                renderer.stroke();
                 break;
             }
 
@@ -204,15 +205,15 @@ export class BpmnRenderer extends ShapeRenderer {
                 // Dashed rounded rectangle
                 const radius = Math.min(w, h) * 0.08;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    this.roundRect(ctx, x, y, w, h, radius);
-                    ctx.fill();
+                    renderer.fillStyle = backgroundColor;
+                    this.roundRect(renderer, x, y, w, h, radius);
+                    renderer.fill();
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.setLineDash([8, 4]);
-                this.roundRect(ctx, x, y, w, h, radius);
-                ctx.stroke();
-                ctx.setLineDash([]);
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.setLineDash([8, 4]);
+                this.roundRect(renderer, x, y, w, h, radius);
+                renderer.stroke();
+                renderer.setLineDash([]);
                 break;
             }
         }
@@ -222,7 +223,7 @@ export class BpmnRenderer extends ShapeRenderer {
     }
 
     protected renderSketch(context: RenderContext, cx: number, cy: number): void {
-        const { rc, ctx, element: el, isDarkMode } = context;
+        const { rc, renderer, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
         const x = el.x, y = el.y, w = el.width, h = el.height;
 
@@ -232,7 +233,7 @@ export class BpmnRenderer extends ShapeRenderer {
                 const r = Math.min(w, h) / 2;
                 const eventOpts = el.bpmnNonInterrupting ? { ...options, strokeLineDash: [6, 4] } : options;
                 rc.circle(cx, cy, r * 2, eventOpts);
-                this.renderEventIcon(ctx, el, cx, cy, r * 0.55, isDarkMode);
+                this.renderEventIcon(renderer, el, cx, cy, r * 0.55, isDarkMode);
                 break;
             }
 
@@ -240,7 +241,7 @@ export class BpmnRenderer extends ShapeRenderer {
                 const r = Math.min(w, h) / 2;
                 const thickOptions = { ...options, strokeWidth: Math.max((el.strokeWidth || 2) * 3, 3) };
                 rc.circle(cx, cy, r * 2, thickOptions);
-                this.renderEventIcon(ctx, el, cx, cy, r * 0.5, isDarkMode);
+                this.renderEventIcon(renderer, el, cx, cy, r * 0.5, isDarkMode);
                 break;
             }
 
@@ -250,7 +251,7 @@ export class BpmnRenderer extends ShapeRenderer {
                 const eventOpts = el.bpmnNonInterrupting ? { ...options, strokeLineDash: [6, 4] } : options;
                 rc.circle(cx, cy, outerR * 2, eventOpts);
                 rc.circle(cx, cy, innerR * 2, { ...eventOpts, fill: 'none' });
-                this.renderEventIcon(ctx, el, cx, cy, innerR * 0.55, isDarkMode);
+                this.renderEventIcon(renderer, el, cx, cy, innerR * 0.55, isDarkMode);
                 break;
             }
 
@@ -262,7 +263,7 @@ export class BpmnRenderer extends ShapeRenderer {
                 const hw = w / 2, hh = h / 2;
                 const diamondPath = `M ${cx} ${cy - hh} L ${cx + hw} ${cy} L ${cx} ${cy + hh} L ${cx - hw} ${cy} Z`;
                 rc.path(diamondPath, options);
-                this.renderGatewayMarker(ctx, el, cx, cy, Math.min(hw, hh) * 0.55, isDarkMode);
+                this.renderGatewayMarker(renderer, el, cx, cy, Math.min(hw, hh) * 0.55, isDarkMode);
                 break;
             }
 
@@ -277,10 +278,10 @@ export class BpmnRenderer extends ShapeRenderer {
                 } else {
                     rc.path(this.getRoundRectPath(x, y, w, h, radius), options);
                 }
-                this.renderTaskMarker(ctx, el, isDarkMode);
-                this.renderLoopMarker(ctx, el, isDarkMode);
+                this.renderTaskMarker(renderer, el, isDarkMode);
+                this.renderLoopMarker(renderer, el, isDarkMode);
                 if (el.type === 'bpmnSubProcess') {
-                    this.renderSubProcessMarker(ctx, el, isDarkMode);
+                    this.renderSubProcessMarker(renderer, el, isDarkMode);
                 }
                 break;
             }
@@ -306,7 +307,7 @@ export class BpmnRenderer extends ShapeRenderer {
             }
 
             case 'bpmnPool': {
-                this.renderPoolSketch(rc, ctx, el, cx, cy, isDarkMode, options);
+                this.renderPoolSketch(rc, renderer, el, cx, cy, isDarkMode, options);
                 return; // Pool handles its own text
             }
 
@@ -332,17 +333,17 @@ export class BpmnRenderer extends ShapeRenderer {
         RenderPipeline.renderText(context, cx, cy);
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: DrawingElement): void {
+    protected definePath(renderer: IRenderer, el: DrawingElement): void {
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
-        ctx.translate(el.x + el.width / 2, el.y + el.height / 2);
-        RenderPipeline.renderGeometry(ctx, geometry);
+        renderer.translate(el.x + el.width / 2, el.y + el.height / 2);
+        RenderPipeline.renderGeometry(renderer, geometry);
     }
 
     // ── Non-interrupting dashed border for events ──
-    private applyNonInterruptingDash(ctx: CanvasRenderingContext2D, el: DrawingElement): void {
+    private applyNonInterruptingDash(renderer: IRenderer, el: DrawingElement): void {
         if (el.bpmnNonInterrupting) {
-            ctx.setLineDash([6, 4]);
+            renderer.setLineDash([6, 4]);
         }
     }
 
@@ -352,233 +353,233 @@ export class BpmnRenderer extends ShapeRenderer {
     }
 
     // ── Event Icon Rendering ──
-    private renderEventIcon(ctx: CanvasRenderingContext2D, el: DrawingElement, cx: number, cy: number, iconSize: number, isDarkMode: boolean): void {
+    private renderEventIcon(renderer: IRenderer, el: DrawingElement, cx: number, cy: number, iconSize: number, isDarkMode: boolean): void {
         const eventType = el.bpmnEventType || 'none';
         if (eventType === 'none') return;
 
         const scale = el.bpmnIconScale ?? 1.0;
         iconSize *= scale;
 
-        ctx.save();
+        renderer.save();
         const iconColor = this.getIconColor(el, isDarkMode);
-        ctx.strokeStyle = iconColor;
-        ctx.fillStyle = iconColor;
-        ctx.lineWidth = Math.max(el.strokeWidth * 0.8, 1.2);
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        renderer.strokeStyle = iconColor;
+        renderer.fillStyle = iconColor;
+        renderer.lineWidth = Math.max(el.strokeWidth * 0.8, 1.2);
+        renderer.lineCap = 'round';
+        renderer.lineJoin = 'round';
 
         switch (eventType) {
             case 'message': {
                 const ew = iconSize, eh = iconSize * 0.65;
-                ctx.beginPath();
-                ctx.rect(cx - ew / 2, cy - eh / 2, ew, eh);
-                if (el.bpmnIconFilled) ctx.fill();
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(cx - ew / 2, cy - eh / 2);
-                ctx.lineTo(cx, cy + eh * 0.05);
-                ctx.lineTo(cx + ew / 2, cy - eh / 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.rect(cx - ew / 2, cy - eh / 2, ew, eh);
+                if (el.bpmnIconFilled) renderer.fill();
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.moveTo(cx - ew / 2, cy - eh / 2);
+                renderer.lineTo(cx, cy + eh * 0.05);
+                renderer.lineTo(cx + ew / 2, cy - eh / 2);
+                renderer.stroke();
                 break;
             }
             case 'timer': {
                 const r = iconSize * 0.45;
-                ctx.beginPath();
-                ctx.arc(cx, cy, r, 0, Math.PI * 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.arc(cx, cy, r, 0, Math.PI * 2);
+                renderer.stroke();
                 for (let i = 0; i < 12; i++) {
                     const angle = (i * Math.PI) / 6;
                     const inner = r * 0.8;
-                    ctx.beginPath();
-                    ctx.moveTo(cx + inner * Math.sin(angle), cy - inner * Math.cos(angle));
-                    ctx.lineTo(cx + r * Math.sin(angle), cy - r * Math.cos(angle));
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(cx + inner * Math.sin(angle), cy - inner * Math.cos(angle));
+                    renderer.lineTo(cx + r * Math.sin(angle), cy - r * Math.cos(angle));
+                    renderer.stroke();
                 }
-                ctx.beginPath();
-                ctx.moveTo(cx, cy);
-                ctx.lineTo(cx, cy - r * 0.6);
-                ctx.moveTo(cx, cy);
-                ctx.lineTo(cx + r * 0.4, cy);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(cx, cy);
+                renderer.lineTo(cx, cy - r * 0.6);
+                renderer.moveTo(cx, cy);
+                renderer.lineTo(cx + r * 0.4, cy);
+                renderer.stroke();
                 break;
             }
             case 'error': {
                 const d = iconSize * 0.4;
-                ctx.beginPath();
-                ctx.moveTo(cx - d * 0.3, cy - d);
-                ctx.lineTo(cx + d * 0.15, cy - d * 0.1);
-                ctx.lineTo(cx - d * 0.15, cy + d * 0.1);
-                ctx.lineTo(cx + d * 0.3, cy + d);
+                renderer.beginPath();
+                renderer.moveTo(cx - d * 0.3, cy - d);
+                renderer.lineTo(cx + d * 0.15, cy - d * 0.1);
+                renderer.lineTo(cx - d * 0.15, cy + d * 0.1);
+                renderer.lineTo(cx + d * 0.3, cy + d);
                 if (el.bpmnIconFilled) {
-                    ctx.closePath();
-                    ctx.fill();
+                    renderer.closePath();
+                    renderer.fill();
                 }
-                ctx.stroke();
+                renderer.stroke();
                 break;
             }
             case 'signal': {
                 const d = iconSize * 0.4;
-                ctx.beginPath();
-                ctx.moveTo(cx, cy - d);
-                ctx.lineTo(cx + d * 0.9, cy + d * 0.7);
-                ctx.lineTo(cx - d * 0.9, cy + d * 0.7);
-                ctx.closePath();
-                if (el.bpmnIconFilled) ctx.fill();
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(cx, cy - d);
+                renderer.lineTo(cx + d * 0.9, cy + d * 0.7);
+                renderer.lineTo(cx - d * 0.9, cy + d * 0.7);
+                renderer.closePath();
+                if (el.bpmnIconFilled) renderer.fill();
+                renderer.stroke();
                 break;
             }
             case 'conditional': {
                 const d = iconSize * 0.35;
-                ctx.beginPath();
-                ctx.rect(cx - d, cy - d, d * 2, d * 2);
-                if (el.bpmnIconFilled) ctx.fill();
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.rect(cx - d, cy - d, d * 2, d * 2);
+                if (el.bpmnIconFilled) renderer.fill();
+                renderer.stroke();
                 const lines = 3;
                 const gap = (d * 2) / (lines + 1);
                 for (let i = 1; i <= lines; i++) {
-                    ctx.beginPath();
-                    ctx.moveTo(cx - d * 0.6, cy - d + gap * i);
-                    ctx.lineTo(cx + d * 0.6, cy - d + gap * i);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(cx - d * 0.6, cy - d + gap * i);
+                    renderer.lineTo(cx + d * 0.6, cy - d + gap * i);
+                    renderer.stroke();
                 }
                 break;
             }
             case 'escalation': {
                 // Upward arrow/chevron
                 const d = iconSize * 0.42;
-                ctx.beginPath();
-                ctx.moveTo(cx, cy - d);
-                ctx.lineTo(cx + d * 0.6, cy + d * 0.7);
-                ctx.lineTo(cx, cy + d * 0.15);
-                ctx.lineTo(cx - d * 0.6, cy + d * 0.7);
-                ctx.closePath();
-                if (el.bpmnIconFilled) ctx.fill();
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(cx, cy - d);
+                renderer.lineTo(cx + d * 0.6, cy + d * 0.7);
+                renderer.lineTo(cx, cy + d * 0.15);
+                renderer.lineTo(cx - d * 0.6, cy + d * 0.7);
+                renderer.closePath();
+                if (el.bpmnIconFilled) renderer.fill();
+                renderer.stroke();
                 break;
             }
             case 'compensation': {
                 // Double left-pointing triangles (rewind)
                 const d = iconSize * 0.35;
                 // Left triangle
-                ctx.beginPath();
-                ctx.moveTo(cx - d * 0.1, cy - d * 0.7);
-                ctx.lineTo(cx - d * 1.1, cy);
-                ctx.lineTo(cx - d * 0.1, cy + d * 0.7);
-                ctx.closePath();
-                if (el.bpmnIconFilled) ctx.fill();
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(cx - d * 0.1, cy - d * 0.7);
+                renderer.lineTo(cx - d * 1.1, cy);
+                renderer.lineTo(cx - d * 0.1, cy + d * 0.7);
+                renderer.closePath();
+                if (el.bpmnIconFilled) renderer.fill();
+                renderer.stroke();
                 // Right triangle
-                ctx.beginPath();
-                ctx.moveTo(cx + d * 0.9, cy - d * 0.7);
-                ctx.lineTo(cx - d * 0.1, cy);
-                ctx.lineTo(cx + d * 0.9, cy + d * 0.7);
-                ctx.closePath();
-                if (el.bpmnIconFilled) ctx.fill();
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(cx + d * 0.9, cy - d * 0.7);
+                renderer.lineTo(cx - d * 0.1, cy);
+                renderer.lineTo(cx + d * 0.9, cy + d * 0.7);
+                renderer.closePath();
+                if (el.bpmnIconFilled) renderer.fill();
+                renderer.stroke();
                 break;
             }
             case 'link': {
                 // Right-pointing arrow (pentagon)
                 const d = iconSize * 0.38;
-                ctx.beginPath();
-                ctx.moveTo(cx - d * 0.7, cy - d * 0.5);
-                ctx.lineTo(cx + d * 0.2, cy - d * 0.5);
-                ctx.lineTo(cx + d * 0.9, cy);
-                ctx.lineTo(cx + d * 0.2, cy + d * 0.5);
-                ctx.lineTo(cx - d * 0.7, cy + d * 0.5);
-                ctx.closePath();
-                if (el.bpmnIconFilled) ctx.fill();
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(cx - d * 0.7, cy - d * 0.5);
+                renderer.lineTo(cx + d * 0.2, cy - d * 0.5);
+                renderer.lineTo(cx + d * 0.9, cy);
+                renderer.lineTo(cx + d * 0.2, cy + d * 0.5);
+                renderer.lineTo(cx - d * 0.7, cy + d * 0.5);
+                renderer.closePath();
+                if (el.bpmnIconFilled) renderer.fill();
+                renderer.stroke();
                 break;
             }
             case 'terminate': {
                 // Filled circle
                 const r = iconSize * 0.38;
-                ctx.beginPath();
-                ctx.arc(cx, cy, r, 0, Math.PI * 2);
-                ctx.fill();
+                renderer.beginPath();
+                renderer.arc(cx, cy, r, 0, Math.PI * 2);
+                renderer.fill();
                 break;
             }
             case 'cancel': {
                 // X mark (thick)
                 const d = iconSize * 0.35;
-                ctx.lineWidth = Math.max(el.strokeWidth * 1.5, 2);
-                ctx.beginPath();
-                ctx.moveTo(cx - d, cy - d);
-                ctx.lineTo(cx + d, cy + d);
-                ctx.moveTo(cx + d, cy - d);
-                ctx.lineTo(cx - d, cy + d);
-                ctx.stroke();
+                renderer.lineWidth = Math.max(el.strokeWidth * 1.5, 2);
+                renderer.beginPath();
+                renderer.moveTo(cx - d, cy - d);
+                renderer.lineTo(cx + d, cy + d);
+                renderer.moveTo(cx + d, cy - d);
+                renderer.lineTo(cx - d, cy + d);
+                renderer.stroke();
                 break;
             }
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     // ── Gateway Marker Rendering ──
-    private renderGatewayMarker(ctx: CanvasRenderingContext2D, el: DrawingElement, cx: number, cy: number, size: number, isDarkMode: boolean): void {
+    private renderGatewayMarker(renderer: IRenderer, el: DrawingElement, cx: number, cy: number, size: number, isDarkMode: boolean): void {
         const scale = el.bpmnIconScale ?? 1.0;
         size *= scale;
 
-        ctx.save();
+        renderer.save();
         const iconColor = this.getIconColor(el, isDarkMode);
-        ctx.strokeStyle = iconColor;
-        ctx.fillStyle = iconColor;
-        ctx.lineWidth = Math.max(el.strokeWidth * 1.5, 2);
-        ctx.lineCap = 'round';
+        renderer.strokeStyle = iconColor;
+        renderer.fillStyle = iconColor;
+        renderer.lineWidth = Math.max(el.strokeWidth * 1.5, 2);
+        renderer.lineCap = 'round';
 
         if (el.type === 'bpmnExclusiveGateway') {
             const d = size * 0.7;
-            ctx.beginPath();
-            ctx.moveTo(cx - d, cy - d);
-            ctx.lineTo(cx + d, cy + d);
-            ctx.moveTo(cx + d, cy - d);
-            ctx.lineTo(cx - d, cy + d);
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.moveTo(cx - d, cy - d);
+            renderer.lineTo(cx + d, cy + d);
+            renderer.moveTo(cx + d, cy - d);
+            renderer.lineTo(cx - d, cy + d);
+            renderer.stroke();
         } else if (el.type === 'bpmnParallelGateway') {
             const d = size * 0.75;
-            ctx.beginPath();
-            ctx.moveTo(cx, cy - d);
-            ctx.lineTo(cx, cy + d);
-            ctx.moveTo(cx - d, cy);
-            ctx.lineTo(cx + d, cy);
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.moveTo(cx, cy - d);
+            renderer.lineTo(cx, cy + d);
+            renderer.moveTo(cx - d, cy);
+            renderer.lineTo(cx + d, cy);
+            renderer.stroke();
         } else if (el.type === 'bpmnInclusiveGateway') {
             const r = size * 0.65;
-            ctx.lineWidth = Math.max(el.strokeWidth * 1.8, 2.5);
-            ctx.beginPath();
-            ctx.arc(cx, cy, r, 0, Math.PI * 2);
-            if (el.bpmnIconFilled) ctx.fill();
-            ctx.stroke();
+            renderer.lineWidth = Math.max(el.strokeWidth * 1.8, 2.5);
+            renderer.beginPath();
+            renderer.arc(cx, cy, r, 0, Math.PI * 2);
+            if (el.bpmnIconFilled) renderer.fill();
+            renderer.stroke();
         } else if (el.type === 'bpmnEventGateway') {
             // Double circle + pentagon inside
             const outerR = size * 0.85;
             const innerR = outerR * 0.78;
-            ctx.lineWidth = Math.max(el.strokeWidth * 0.8, 1);
-            ctx.beginPath();
-            ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
-            ctx.stroke();
+            renderer.lineWidth = Math.max(el.strokeWidth * 0.8, 1);
+            renderer.beginPath();
+            renderer.arc(cx, cy, outerR, 0, Math.PI * 2);
+            renderer.stroke();
+            renderer.beginPath();
+            renderer.arc(cx, cy, innerR, 0, Math.PI * 2);
+            renderer.stroke();
             // Pentagon
             const pentR = innerR * 0.65;
-            ctx.beginPath();
+            renderer.beginPath();
             for (let i = 0; i < 5; i++) {
                 const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
                 const px = cx + pentR * Math.cos(angle);
                 const py = cy + pentR * Math.sin(angle);
-                if (i === 0) ctx.moveTo(px, py);
-                else ctx.lineTo(px, py);
+                if (i === 0) renderer.moveTo(px, py);
+                else renderer.lineTo(px, py);
             }
-            ctx.closePath();
-            ctx.stroke();
+            renderer.closePath();
+            renderer.stroke();
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     // ── Task Marker Rendering (top-left icon) ──
-    private renderTaskMarker(ctx: CanvasRenderingContext2D, el: DrawingElement, isDarkMode: boolean): void {
+    private renderTaskMarker(renderer: IRenderer, el: DrawingElement, isDarkMode: boolean): void {
         const taskType = el.bpmnTaskType || 'none';
         if (taskType === 'none') return;
 
@@ -588,120 +589,120 @@ export class BpmnRenderer extends ShapeRenderer {
         const iconX = x + iconSize * 1.1;
         const iconY = y + iconSize * 1.1;
 
-        ctx.save();
+        renderer.save();
         const iconColor = this.getIconColor(el, isDarkMode);
-        ctx.strokeStyle = iconColor;
-        ctx.fillStyle = iconColor;
-        ctx.lineWidth = Math.max(el.strokeWidth * 0.6, 1);
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        renderer.strokeStyle = iconColor;
+        renderer.fillStyle = iconColor;
+        renderer.lineWidth = Math.max(el.strokeWidth * 0.6, 1);
+        renderer.lineCap = 'round';
+        renderer.lineJoin = 'round';
 
         const s = iconSize * 0.5;
 
         switch (taskType) {
             case 'user': {
                 const headR = s * 0.3;
-                ctx.beginPath();
-                ctx.arc(iconX, iconY - s * 0.25, headR, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(iconX - s * 0.45, iconY + s * 0.5);
-                ctx.quadraticCurveTo(iconX - s * 0.45, iconY + s * 0.05, iconX, iconY + s * 0.05);
-                ctx.quadraticCurveTo(iconX + s * 0.45, iconY + s * 0.05, iconX + s * 0.45, iconY + s * 0.5);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.arc(iconX, iconY - s * 0.25, headR, 0, Math.PI * 2);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.moveTo(iconX - s * 0.45, iconY + s * 0.5);
+                renderer.quadraticCurveTo(iconX - s * 0.45, iconY + s * 0.05, iconX, iconY + s * 0.05);
+                renderer.quadraticCurveTo(iconX + s * 0.45, iconY + s * 0.05, iconX + s * 0.45, iconY + s * 0.5);
+                renderer.stroke();
                 break;
             }
             case 'service': {
-                this.drawGear(ctx, iconX - s * 0.15, iconY - s * 0.1, s * 0.32, 6);
-                this.drawGear(ctx, iconX + s * 0.2, iconY + s * 0.2, s * 0.25, 6);
+                this.drawGear(renderer, iconX - s * 0.15, iconY - s * 0.1, s * 0.32, 6);
+                this.drawGear(renderer, iconX + s * 0.2, iconY + s * 0.2, s * 0.25, 6);
                 break;
             }
             case 'script': {
-                ctx.beginPath();
-                ctx.moveTo(iconX - s * 0.4, iconY - s * 0.5);
-                ctx.lineTo(iconX + s * 0.3, iconY - s * 0.5);
-                ctx.quadraticCurveTo(iconX + s * 0.55, iconY - s * 0.5, iconX + s * 0.55, iconY - s * 0.25);
-                ctx.lineTo(iconX + s * 0.55, iconY + s * 0.3);
-                ctx.quadraticCurveTo(iconX + s * 0.55, iconY + s * 0.5, iconX + s * 0.3, iconY + s * 0.5);
-                ctx.lineTo(iconX - s * 0.2, iconY + s * 0.5);
-                ctx.quadraticCurveTo(iconX - s * 0.45, iconY + s * 0.5, iconX - s * 0.45, iconY + s * 0.3);
-                ctx.lineTo(iconX - s * 0.45, iconY - s * 0.25);
-                ctx.quadraticCurveTo(iconX - s * 0.45, iconY - s * 0.5, iconX - s * 0.2, iconY - s * 0.5);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(iconX - s * 0.4, iconY - s * 0.5);
+                renderer.lineTo(iconX + s * 0.3, iconY - s * 0.5);
+                renderer.quadraticCurveTo(iconX + s * 0.55, iconY - s * 0.5, iconX + s * 0.55, iconY - s * 0.25);
+                renderer.lineTo(iconX + s * 0.55, iconY + s * 0.3);
+                renderer.quadraticCurveTo(iconX + s * 0.55, iconY + s * 0.5, iconX + s * 0.3, iconY + s * 0.5);
+                renderer.lineTo(iconX - s * 0.2, iconY + s * 0.5);
+                renderer.quadraticCurveTo(iconX - s * 0.45, iconY + s * 0.5, iconX - s * 0.45, iconY + s * 0.3);
+                renderer.lineTo(iconX - s * 0.45, iconY - s * 0.25);
+                renderer.quadraticCurveTo(iconX - s * 0.45, iconY - s * 0.5, iconX - s * 0.2, iconY - s * 0.5);
+                renderer.stroke();
                 for (let i = 0; i < 3; i++) {
                     const ly = iconY - s * 0.2 + i * s * 0.25;
-                    ctx.beginPath();
-                    ctx.moveTo(iconX - s * 0.25, ly);
-                    ctx.lineTo(iconX + s * 0.35, ly);
-                    ctx.stroke();
+                    renderer.beginPath();
+                    renderer.moveTo(iconX - s * 0.25, ly);
+                    renderer.lineTo(iconX + s * 0.35, ly);
+                    renderer.stroke();
                 }
                 break;
             }
             case 'manual': {
-                ctx.beginPath();
-                ctx.moveTo(iconX - s * 0.5, iconY);
-                ctx.lineTo(iconX + s * 0.1, iconY - s * 0.45);
-                ctx.lineTo(iconX + s * 0.5, iconY - s * 0.25);
-                ctx.lineTo(iconX + s * 0.5, iconY + s * 0.1);
-                ctx.lineTo(iconX + s * 0.1, iconY + s * 0.5);
-                ctx.lineTo(iconX - s * 0.5, iconY + s * 0.5);
-                ctx.closePath();
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(iconX - s * 0.5, iconY);
+                renderer.lineTo(iconX + s * 0.1, iconY - s * 0.45);
+                renderer.lineTo(iconX + s * 0.5, iconY - s * 0.25);
+                renderer.lineTo(iconX + s * 0.5, iconY + s * 0.1);
+                renderer.lineTo(iconX + s * 0.1, iconY + s * 0.5);
+                renderer.lineTo(iconX - s * 0.5, iconY + s * 0.5);
+                renderer.closePath();
+                renderer.stroke();
                 break;
             }
             case 'send': {
                 const ew = s * 0.8, eh = s * 0.55;
-                ctx.beginPath();
-                ctx.moveTo(iconX - ew / 2, iconY - eh / 2);
-                ctx.lineTo(iconX + ew / 2, iconY);
-                ctx.lineTo(iconX - ew / 2, iconY + eh / 2);
-                ctx.closePath();
-                ctx.fill();
+                renderer.beginPath();
+                renderer.moveTo(iconX - ew / 2, iconY - eh / 2);
+                renderer.lineTo(iconX + ew / 2, iconY);
+                renderer.lineTo(iconX - ew / 2, iconY + eh / 2);
+                renderer.closePath();
+                renderer.fill();
                 break;
             }
             case 'receive': {
                 const ew = s * 0.8, eh = s * 0.55;
-                ctx.beginPath();
-                ctx.rect(iconX - ew / 2, iconY - eh / 2, ew, eh);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(iconX - ew / 2, iconY - eh / 2);
-                ctx.lineTo(iconX, iconY + eh * 0.05);
-                ctx.lineTo(iconX + ew / 2, iconY - eh / 2);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.rect(iconX - ew / 2, iconY - eh / 2, ew, eh);
+                renderer.stroke();
+                renderer.beginPath();
+                renderer.moveTo(iconX - ew / 2, iconY - eh / 2);
+                renderer.lineTo(iconX, iconY + eh * 0.05);
+                renderer.lineTo(iconX + ew / 2, iconY - eh / 2);
+                renderer.stroke();
                 break;
             }
             case 'businessRule': {
                 // Table/grid icon
                 const tw = s * 0.9, th = s * 0.7;
                 const tx = iconX - tw / 2, ty = iconY - th / 2;
-                ctx.beginPath();
-                ctx.rect(tx, ty, tw, th);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.rect(tx, ty, tw, th);
+                renderer.stroke();
                 // Header line
                 const headerH = th * 0.35;
-                ctx.beginPath();
-                ctx.moveTo(tx, ty + headerH);
-                ctx.lineTo(tx + tw, ty + headerH);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(tx, ty + headerH);
+                renderer.lineTo(tx + tw, ty + headerH);
+                renderer.stroke();
                 // Fill header
-                ctx.fillStyle = iconColor;
-                ctx.globalAlpha = 0.3;
-                ctx.fillRect(tx, ty, tw, headerH);
-                ctx.globalAlpha = 1;
+                renderer.fillStyle = iconColor;
+                renderer.globalAlpha = 0.3;
+                renderer.fillRect(tx, ty, tw, headerH);
+                renderer.globalAlpha = 1;
                 // Vertical divider
-                ctx.beginPath();
-                ctx.moveTo(tx + tw * 0.35, ty + headerH);
-                ctx.lineTo(tx + tw * 0.35, ty + th);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(tx + tw * 0.35, ty + headerH);
+                renderer.lineTo(tx + tw * 0.35, ty + th);
+                renderer.stroke();
                 break;
             }
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     // ── Loop / Multi-Instance Marker (bottom center) ──
-    private renderLoopMarker(ctx: CanvasRenderingContext2D, el: DrawingElement, isDarkMode: boolean): void {
+    private renderLoopMarker(renderer: IRenderer, el: DrawingElement, isDarkMode: boolean): void {
         const loopType = el.bpmnLoopType || 'none';
         if (loopType === 'none') return;
 
@@ -711,29 +712,29 @@ export class BpmnRenderer extends ShapeRenderer {
         const markerCy = y + h - Math.min(h * 0.1, 12);
         const markerSize = Math.min(w, h) * 0.08 * scale;
 
-        ctx.save();
+        renderer.save();
         const iconColor = this.getIconColor(el, isDarkMode);
-        ctx.strokeStyle = iconColor;
-        ctx.fillStyle = iconColor;
-        ctx.lineWidth = Math.max(el.strokeWidth * 0.6, 1);
-        ctx.lineCap = 'round';
+        renderer.strokeStyle = iconColor;
+        renderer.fillStyle = iconColor;
+        renderer.lineWidth = Math.max(el.strokeWidth * 0.6, 1);
+        renderer.lineCap = 'round';
 
         switch (loopType) {
             case 'standard': {
                 const r = markerSize;
-                ctx.beginPath();
-                ctx.arc(markerCx, markerCy, r, Math.PI * 0.2, Math.PI * 1.8);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.arc(markerCx, markerCy, r, Math.PI * 0.2, Math.PI * 1.8);
+                renderer.stroke();
                 const angle = Math.PI * 0.2;
                 const ax = markerCx + r * Math.cos(angle);
                 const ay = markerCy + r * Math.sin(angle);
                 const arrowSize = r * 0.5;
-                ctx.beginPath();
-                ctx.moveTo(ax, ay);
-                ctx.lineTo(ax + arrowSize, ay - arrowSize * 0.3);
-                ctx.moveTo(ax, ay);
-                ctx.lineTo(ax + arrowSize * 0.3, ay + arrowSize);
-                ctx.stroke();
+                renderer.beginPath();
+                renderer.moveTo(ax, ay);
+                renderer.lineTo(ax + arrowSize, ay - arrowSize * 0.3);
+                renderer.moveTo(ax, ay);
+                renderer.lineTo(ax + arrowSize * 0.3, ay + arrowSize);
+                renderer.stroke();
                 break;
             }
             case 'parallel': {
@@ -741,9 +742,9 @@ export class BpmnRenderer extends ShapeRenderer {
                 const barH = markerSize * 1.5;
                 const gap = markerSize * 0.7;
                 for (let i = -1; i <= 1; i++) {
-                    ctx.beginPath();
-                    ctx.rect(markerCx + i * gap - barW / 2, markerCy - barH / 2, barW, barH);
-                    ctx.fill();
+                    renderer.beginPath();
+                    renderer.rect(markerCx + i * gap - barW / 2, markerCy - barH / 2, barW, barH);
+                    renderer.fill();
                 }
                 break;
             }
@@ -752,35 +753,35 @@ export class BpmnRenderer extends ShapeRenderer {
                 const barH = markerSize * 0.3;
                 const gap = markerSize * 0.55;
                 for (let i = -1; i <= 1; i++) {
-                    ctx.beginPath();
-                    ctx.rect(markerCx - barW / 2, markerCy + i * gap - barH / 2, barW, barH);
-                    ctx.fill();
+                    renderer.beginPath();
+                    renderer.rect(markerCx - barW / 2, markerCy + i * gap - barH / 2, barW, barH);
+                    renderer.fill();
                 }
                 break;
             }
             case 'compensation': {
                 // Double left-pointing triangles (rewind marker)
                 const d = markerSize * 0.9;
-                ctx.beginPath();
-                ctx.moveTo(markerCx, markerCy - d * 0.5);
-                ctx.lineTo(markerCx - d * 0.7, markerCy);
-                ctx.lineTo(markerCx, markerCy + d * 0.5);
-                ctx.closePath();
-                ctx.fill();
-                ctx.beginPath();
-                ctx.moveTo(markerCx + d * 0.7, markerCy - d * 0.5);
-                ctx.lineTo(markerCx, markerCy);
-                ctx.lineTo(markerCx + d * 0.7, markerCy + d * 0.5);
-                ctx.closePath();
-                ctx.fill();
+                renderer.beginPath();
+                renderer.moveTo(markerCx, markerCy - d * 0.5);
+                renderer.lineTo(markerCx - d * 0.7, markerCy);
+                renderer.lineTo(markerCx, markerCy + d * 0.5);
+                renderer.closePath();
+                renderer.fill();
+                renderer.beginPath();
+                renderer.moveTo(markerCx + d * 0.7, markerCy - d * 0.5);
+                renderer.lineTo(markerCx, markerCy);
+                renderer.lineTo(markerCx + d * 0.7, markerCy + d * 0.5);
+                renderer.closePath();
+                renderer.fill();
                 break;
             }
         }
-        ctx.restore();
+        renderer.restore();
     }
 
     // ── Sub-Process [+] Marker ──
-    private renderSubProcessMarker(ctx: CanvasRenderingContext2D, el: DrawingElement, isDarkMode: boolean): void {
+    private renderSubProcessMarker(renderer: IRenderer, el: DrawingElement, isDarkMode: boolean): void {
         const scale = el.bpmnIconScale ?? 1.0;
         const x = el.x, y = el.y, w = el.width, h = el.height;
         const markerCx = x + w / 2;
@@ -790,21 +791,21 @@ export class BpmnRenderer extends ShapeRenderer {
         const hasLoop = el.bpmnLoopType && el.bpmnLoopType !== 'none';
         const offsetX = hasLoop ? boxSize * 2 : 0;
 
-        ctx.save();
+        renderer.save();
         const iconColor = this.getIconColor(el, isDarkMode);
-        ctx.strokeStyle = iconColor;
-        ctx.lineWidth = Math.max(el.strokeWidth * 0.6, 1);
+        renderer.strokeStyle = iconColor;
+        renderer.lineWidth = Math.max(el.strokeWidth * 0.6, 1);
 
-        ctx.beginPath();
-        ctx.rect(markerCx + offsetX - boxSize, markerCy - boxSize, boxSize * 2, boxSize * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(markerCx + offsetX, markerCy - boxSize * 0.6);
-        ctx.lineTo(markerCx + offsetX, markerCy + boxSize * 0.6);
-        ctx.moveTo(markerCx + offsetX - boxSize * 0.6, markerCy);
-        ctx.lineTo(markerCx + offsetX + boxSize * 0.6, markerCy);
-        ctx.stroke();
-        ctx.restore();
+        renderer.beginPath();
+        renderer.rect(markerCx + offsetX - boxSize, markerCy - boxSize, boxSize * 2, boxSize * 2);
+        renderer.stroke();
+        renderer.beginPath();
+        renderer.moveTo(markerCx + offsetX, markerCy - boxSize * 0.6);
+        renderer.lineTo(markerCx + offsetX, markerCy + boxSize * 0.6);
+        renderer.moveTo(markerCx + offsetX - boxSize * 0.6, markerCy);
+        renderer.lineTo(markerCx + offsetX + boxSize * 0.6, markerCy);
+        renderer.stroke();
+        renderer.restore();
     }
 
     // ── Pool layout helpers ──
@@ -848,7 +849,7 @@ export class BpmnRenderer extends ShapeRenderer {
 
     // ── Architectural Pool Rendering ──
     private renderPoolArchitectural(
-        ctx: CanvasRenderingContext2D, el: DrawingElement,
+        renderer: IRenderer, el: DrawingElement,
         _cx: number, _cy: number, isDarkMode: boolean,
         backgroundColor: string | undefined
     ): void {
@@ -862,27 +863,27 @@ export class BpmnRenderer extends ShapeRenderer {
 
         // Fill background
         if (backgroundColor) {
-            ctx.fillStyle = backgroundColor;
-            ctx.fillRect(x, y, w, h);
+            renderer.fillStyle = backgroundColor;
+            renderer.fillRect(x, y, w, h);
         }
 
-        RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
+        RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
 
         // Outer border
-        ctx.strokeRect(x, y, w, h);
+        renderer.strokeRect(x, y, w, h);
 
         // Suppress containerText when editing (labels already cleared above)
         const renderEl = el.isEditing ? { ...el, containerText: '' } : el;
 
         if (isVertical) {
-            this.renderPoolVerticalArch(ctx, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode);
+            this.renderPoolVerticalArch(renderer, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode);
         } else {
-            this.renderPoolHorizontalArch(ctx, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode);
+            this.renderPoolHorizontalArch(renderer, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode);
         }
     }
 
     private renderPoolHorizontalArch(
-        ctx: CanvasRenderingContext2D, el: DrawingElement,
+        renderer: IRenderer, el: DrawingElement,
         x: number, y: number, w: number, h: number,
         laneCount: number, labels: string[],
         textColor: string, font: string, smallFont: string,
@@ -893,17 +894,17 @@ export class BpmnRenderer extends ShapeRenderer {
         const laneLabelW = hasLaneLabels ? this.getLaneLabelWidth(el) : 0;
 
         // Pool label column divider
-        ctx.beginPath();
-        ctx.moveTo(x + poolLabelW, y);
-        ctx.lineTo(x + poolLabelW, y + h);
-        ctx.stroke();
+        renderer.beginPath();
+        renderer.moveTo(x + poolLabelW, y);
+        renderer.lineTo(x + poolLabelW, y + h);
+        renderer.stroke();
 
         // Lane label column divider (only if multiple lanes)
         if (hasLaneLabels) {
-            ctx.beginPath();
-            ctx.moveTo(x + poolLabelW + laneLabelW, y);
-            ctx.lineTo(x + poolLabelW + laneLabelW, y + h);
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.moveTo(x + poolLabelW + laneLabelW, y);
+            renderer.lineTo(x + poolLabelW + laneLabelW, y + h);
+            renderer.stroke();
         }
 
         // Lane dividers, backgrounds, and labels
@@ -919,25 +920,25 @@ export class BpmnRenderer extends ShapeRenderer {
             // Per-lane background color
             const laneBg = laneColors[i];
             if (laneBg && laneBg !== 'transparent') {
-                ctx.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
+                renderer.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
                 const laneBodyX = x + poolLabelW + laneLabelW;
-                ctx.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
+                renderer.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
             }
 
             // Collapsed lane: subtle hatching overlay
             if (isCollapsed) {
-                ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                renderer.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
                 const laneBodyX = x + poolLabelW + laneLabelW;
-                ctx.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
+                renderer.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
             }
 
             // Lane divider (skip first lane)
             if (i > 0) {
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath();
-                ctx.moveTo(x + poolLabelW, laneY);
-                ctx.lineTo(x + w, laneY);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath();
+                renderer.moveTo(x + poolLabelW, laneY);
+                renderer.lineTo(x + w, laneY);
+                renderer.stroke();
             }
 
             // Per-lane label (rotated, in lane label column)
@@ -947,26 +948,26 @@ export class BpmnRenderer extends ShapeRenderer {
                     const laneTC = laneTextColors[i]
                         ? RenderPipeline.adjustColor(laneTextColors[i], isDarkMode)
                         : textColor;
-                    ctx.save();
-                    ctx.translate(x + poolLabelW + laneLabelW / 2, laneY + laneH / 2);
-                    ctx.rotate(-Math.PI / 2);
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = laneTC;
-                    ctx.font = smallFont;
+                    renderer.save();
+                    renderer.translate(x + poolLabelW + laneLabelW / 2, laneY + laneH / 2);
+                    renderer.rotate(-Math.PI / 2);
+                    renderer.textAlign = 'center';
+                    renderer.textBaseline = 'middle';
+                    renderer.fillStyle = laneTC;
+                    renderer.font = smallFont;
                     // Clip text to lane height
                     const maxLen = laneH - 10;
                     const prefix = isCollapsed ? '\u25B8 ' : '';
                     let displayText = prefix + label;
-                    if (ctx.measureText(displayText).width > maxLen && maxLen > 0) {
+                    if (renderer.measureText(displayText).width > maxLen && maxLen > 0) {
                         displayText = prefix + label;
-                        while (displayText.length > prefix.length + 1 && ctx.measureText(displayText + '...').width > maxLen) {
+                        while (displayText.length > prefix.length + 1 && renderer.measureText(displayText + '...').width > maxLen) {
                             displayText = displayText.slice(0, -1);
                         }
                         displayText += '...';
                     }
-                    ctx.fillText(displayText, 0, 0);
-                    ctx.restore();
+                    renderer.fillText(displayText, 0, 0);
+                    renderer.restore();
                 }
             }
 
@@ -975,20 +976,20 @@ export class BpmnRenderer extends ShapeRenderer {
 
         // Pool name (rotated, in pool label column)
         if (el.containerText) {
-            ctx.save();
-            ctx.translate(x + poolLabelW / 2, y + h / 2);
-            ctx.rotate(-Math.PI / 2);
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = textColor;
-            ctx.font = font;
-            ctx.fillText(el.containerText, 0, 0);
-            ctx.restore();
+            renderer.save();
+            renderer.translate(x + poolLabelW / 2, y + h / 2);
+            renderer.rotate(-Math.PI / 2);
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillStyle = textColor;
+            renderer.font = font;
+            renderer.fillText(el.containerText, 0, 0);
+            renderer.restore();
         }
     }
 
     private renderPoolVerticalArch(
-        ctx: CanvasRenderingContext2D, el: DrawingElement,
+        renderer: IRenderer, el: DrawingElement,
         x: number, y: number, w: number, h: number,
         laneCount: number, labels: string[],
         textColor: string, font: string, smallFont: string,
@@ -999,17 +1000,17 @@ export class BpmnRenderer extends ShapeRenderer {
         const laneLabelH = hasLaneLabels ? this.getLaneLabelHeight(el) : 0;
 
         // Pool label row divider
-        ctx.beginPath();
-        ctx.moveTo(x, y + poolLabelH);
-        ctx.lineTo(x + w, y + poolLabelH);
-        ctx.stroke();
+        renderer.beginPath();
+        renderer.moveTo(x, y + poolLabelH);
+        renderer.lineTo(x + w, y + poolLabelH);
+        renderer.stroke();
 
         // Lane label row divider (only if multiple lanes)
         if (hasLaneLabels) {
-            ctx.beginPath();
-            ctx.moveTo(x, y + poolLabelH + laneLabelH);
-            ctx.lineTo(x + w, y + poolLabelH + laneLabelH);
-            ctx.stroke();
+            renderer.beginPath();
+            renderer.moveTo(x, y + poolLabelH + laneLabelH);
+            renderer.lineTo(x + w, y + poolLabelH + laneLabelH);
+            renderer.stroke();
         }
 
         // Lane dividers, backgrounds, and labels
@@ -1025,25 +1026,25 @@ export class BpmnRenderer extends ShapeRenderer {
             // Per-lane background color
             const laneBg = laneColors[i];
             if (laneBg && laneBg !== 'transparent') {
-                ctx.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
+                renderer.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
                 const laneBodyY = y + poolLabelH + laneLabelH;
-                ctx.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
+                renderer.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
             }
 
             // Collapsed lane: subtle hatching overlay
             if (isCollapsed) {
-                ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                renderer.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
                 const laneBodyY = y + poolLabelH + laneLabelH;
-                ctx.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
+                renderer.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
             }
 
             // Lane divider (skip first lane)
             if (i > 0) {
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.beginPath();
-                ctx.moveTo(laneX, y + poolLabelH);
-                ctx.lineTo(laneX, y + h);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.beginPath();
+                renderer.moveTo(laneX, y + poolLabelH);
+                renderer.lineTo(laneX, y + h);
+                renderer.stroke();
             }
 
             // Per-lane label (horizontal, in lane label row)
@@ -1053,23 +1054,23 @@ export class BpmnRenderer extends ShapeRenderer {
                     const laneTC = laneTextColors[i]
                         ? RenderPipeline.adjustColor(laneTextColors[i], isDarkMode)
                         : textColor;
-                    ctx.save();
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = laneTC;
-                    ctx.font = smallFont;
+                    renderer.save();
+                    renderer.textAlign = 'center';
+                    renderer.textBaseline = 'middle';
+                    renderer.fillStyle = laneTC;
+                    renderer.font = smallFont;
                     const maxLen = laneW - 10;
                     const prefix = isCollapsed ? '\u25B8 ' : '';
                     let displayText = prefix + label;
-                    if (ctx.measureText(displayText).width > maxLen && maxLen > 0) {
+                    if (renderer.measureText(displayText).width > maxLen && maxLen > 0) {
                         displayText = prefix + label;
-                        while (displayText.length > prefix.length + 1 && ctx.measureText(displayText + '...').width > maxLen) {
+                        while (displayText.length > prefix.length + 1 && renderer.measureText(displayText + '...').width > maxLen) {
                             displayText = displayText.slice(0, -1);
                         }
                         displayText += '...';
                     }
-                    ctx.fillText(displayText, laneX + laneW / 2, y + poolLabelH + laneLabelH / 2);
-                    ctx.restore();
+                    renderer.fillText(displayText, laneX + laneW / 2, y + poolLabelH + laneLabelH / 2);
+                    renderer.restore();
                 }
             }
 
@@ -1078,19 +1079,19 @@ export class BpmnRenderer extends ShapeRenderer {
 
         // Pool name (horizontal, in pool label row)
         if (el.containerText) {
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = textColor;
-            ctx.font = font;
-            ctx.fillText(el.containerText, x + w / 2, y + poolLabelH / 2);
-            ctx.restore();
+            renderer.save();
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillStyle = textColor;
+            renderer.font = font;
+            renderer.fillText(el.containerText, x + w / 2, y + poolLabelH / 2);
+            renderer.restore();
         }
     }
 
     // ── Sketch Pool Rendering ──
     private renderPoolSketch(
-        rc: any, ctx: CanvasRenderingContext2D, el: DrawingElement,
+        rc: any, renderer: IRenderer, el: DrawingElement,
         _cx: number, _cy: number, isDarkMode: boolean, options: any
     ): void {
         const { x, y, width: w, height: h } = el;
@@ -1108,14 +1109,14 @@ export class BpmnRenderer extends ShapeRenderer {
         const renderEl = el.isEditing ? { ...el, containerText: '' } : el;
 
         if (isVertical) {
-            this.renderPoolVerticalSketch(rc, ctx, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode, options);
+            this.renderPoolVerticalSketch(rc, renderer, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode, options);
         } else {
-            this.renderPoolHorizontalSketch(rc, ctx, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode, options);
+            this.renderPoolHorizontalSketch(rc, renderer, renderEl, x, y, w, h, laneCount, labels, textColor, font, smallFont, isDarkMode, options);
         }
     }
 
     private renderPoolHorizontalSketch(
-        rc: any, ctx: CanvasRenderingContext2D, el: DrawingElement,
+        rc: any, renderer: IRenderer, el: DrawingElement,
         x: number, y: number, w: number, h: number,
         laneCount: number, labels: string[],
         textColor: string, font: string, smallFont: string,
@@ -1146,16 +1147,16 @@ export class BpmnRenderer extends ShapeRenderer {
             // Per-lane background color
             const laneBg = laneColors[i];
             if (laneBg && laneBg !== 'transparent') {
-                ctx.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
+                renderer.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
                 const laneBodyX = x + poolLabelW + laneLabelW;
-                ctx.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
+                renderer.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
             }
 
             // Collapsed lane: subtle overlay
             if (isCollapsed) {
-                ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                renderer.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
                 const laneBodyX = x + poolLabelW + laneLabelW;
-                ctx.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
+                renderer.fillRect(laneBodyX, laneY, w - poolLabelW - laneLabelW, laneH);
             }
 
             if (i > 0) {
@@ -1169,25 +1170,25 @@ export class BpmnRenderer extends ShapeRenderer {
                     const laneTC = laneTextColors[i]
                         ? RenderPipeline.adjustColor(laneTextColors[i], isDarkMode)
                         : textColor;
-                    ctx.save();
-                    ctx.translate(x + poolLabelW + laneLabelW / 2, laneY + laneH / 2);
-                    ctx.rotate(-Math.PI / 2);
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = laneTC;
-                    ctx.font = smallFont;
+                    renderer.save();
+                    renderer.translate(x + poolLabelW + laneLabelW / 2, laneY + laneH / 2);
+                    renderer.rotate(-Math.PI / 2);
+                    renderer.textAlign = 'center';
+                    renderer.textBaseline = 'middle';
+                    renderer.fillStyle = laneTC;
+                    renderer.font = smallFont;
                     const maxLen = laneH - 10;
                     const prefix = isCollapsed ? '\u25B8 ' : '';
                     let displayText = prefix + label;
-                    if (ctx.measureText(displayText).width > maxLen && maxLen > 0) {
+                    if (renderer.measureText(displayText).width > maxLen && maxLen > 0) {
                         displayText = prefix + label;
-                        while (displayText.length > prefix.length + 1 && ctx.measureText(displayText + '...').width > maxLen) {
+                        while (displayText.length > prefix.length + 1 && renderer.measureText(displayText + '...').width > maxLen) {
                             displayText = displayText.slice(0, -1);
                         }
                         displayText += '...';
                     }
-                    ctx.fillText(displayText, 0, 0);
-                    ctx.restore();
+                    renderer.fillText(displayText, 0, 0);
+                    renderer.restore();
                 }
             }
 
@@ -1196,20 +1197,20 @@ export class BpmnRenderer extends ShapeRenderer {
 
         // Pool name
         if (el.containerText) {
-            ctx.save();
-            ctx.translate(x + poolLabelW / 2, y + h / 2);
-            ctx.rotate(-Math.PI / 2);
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = textColor;
-            ctx.font = font;
-            ctx.fillText(el.containerText, 0, 0);
-            ctx.restore();
+            renderer.save();
+            renderer.translate(x + poolLabelW / 2, y + h / 2);
+            renderer.rotate(-Math.PI / 2);
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillStyle = textColor;
+            renderer.font = font;
+            renderer.fillText(el.containerText, 0, 0);
+            renderer.restore();
         }
     }
 
     private renderPoolVerticalSketch(
-        rc: any, ctx: CanvasRenderingContext2D, el: DrawingElement,
+        rc: any, renderer: IRenderer, el: DrawingElement,
         x: number, y: number, w: number, h: number,
         laneCount: number, labels: string[],
         textColor: string, font: string, smallFont: string,
@@ -1240,16 +1241,16 @@ export class BpmnRenderer extends ShapeRenderer {
             // Per-lane background color
             const laneBg = laneColors[i];
             if (laneBg && laneBg !== 'transparent') {
-                ctx.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
+                renderer.fillStyle = RenderPipeline.adjustColor(laneBg, isDarkMode);
                 const laneBodyY = y + poolLabelH + laneLabelH;
-                ctx.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
+                renderer.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
             }
 
             // Collapsed lane: subtle overlay
             if (isCollapsed) {
-                ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                renderer.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
                 const laneBodyY = y + poolLabelH + laneLabelH;
-                ctx.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
+                renderer.fillRect(laneX, laneBodyY, laneW, h - poolLabelH - laneLabelH);
             }
 
             if (i > 0) {
@@ -1263,23 +1264,23 @@ export class BpmnRenderer extends ShapeRenderer {
                     const laneTC = laneTextColors[i]
                         ? RenderPipeline.adjustColor(laneTextColors[i], isDarkMode)
                         : textColor;
-                    ctx.save();
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = laneTC;
-                    ctx.font = smallFont;
+                    renderer.save();
+                    renderer.textAlign = 'center';
+                    renderer.textBaseline = 'middle';
+                    renderer.fillStyle = laneTC;
+                    renderer.font = smallFont;
                     const maxLen = laneW - 10;
                     const prefix = isCollapsed ? '\u25B8 ' : '';
                     let displayText = prefix + label;
-                    if (ctx.measureText(displayText).width > maxLen && maxLen > 0) {
+                    if (renderer.measureText(displayText).width > maxLen && maxLen > 0) {
                         displayText = prefix + label;
-                        while (displayText.length > prefix.length + 1 && ctx.measureText(displayText + '...').width > maxLen) {
+                        while (displayText.length > prefix.length + 1 && renderer.measureText(displayText + '...').width > maxLen) {
                             displayText = displayText.slice(0, -1);
                         }
                         displayText += '...';
                     }
-                    ctx.fillText(displayText, laneX + laneW / 2, y + poolLabelH + laneLabelH / 2);
-                    ctx.restore();
+                    renderer.fillText(displayText, laneX + laneW / 2, y + poolLabelH + laneLabelH / 2);
+                    renderer.restore();
                 }
             }
 
@@ -1288,51 +1289,51 @@ export class BpmnRenderer extends ShapeRenderer {
 
         // Pool name
         if (el.containerText) {
-            ctx.save();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = textColor;
-            ctx.font = font;
-            ctx.fillText(el.containerText, x + w / 2, y + poolLabelH / 2);
-            ctx.restore();
+            renderer.save();
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillStyle = textColor;
+            renderer.font = font;
+            renderer.fillText(el.containerText, x + w / 2, y + poolLabelH / 2);
+            renderer.restore();
         }
     }
 
     // ── Helper: Draw a gear/cog ──
-    private drawGear(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, teeth: number): void {
+    private drawGear(renderer: IRenderer, cx: number, cy: number, r: number, teeth: number): void {
         const innerR = r * 0.55;
         const toothH = r * 0.35;
-        ctx.beginPath();
+        renderer.beginPath();
         for (let i = 0; i < teeth; i++) {
             const a1 = (i * 2 * Math.PI) / teeth;
             const a2 = a1 + Math.PI / teeth * 0.4;
             const a3 = a1 + Math.PI / teeth * 0.6;
             const a4 = a1 + Math.PI / teeth;
-            ctx.lineTo(cx + (r + toothH) * Math.cos(a1), cy + (r + toothH) * Math.sin(a1));
-            ctx.lineTo(cx + (r + toothH) * Math.cos(a2), cy + (r + toothH) * Math.sin(a2));
-            ctx.lineTo(cx + r * Math.cos(a3), cy + r * Math.sin(a3));
-            ctx.lineTo(cx + r * Math.cos(a4), cy + r * Math.sin(a4));
+            renderer.lineTo(cx + (r + toothH) * Math.cos(a1), cy + (r + toothH) * Math.sin(a1));
+            renderer.lineTo(cx + (r + toothH) * Math.cos(a2), cy + (r + toothH) * Math.sin(a2));
+            renderer.lineTo(cx + r * Math.cos(a3), cy + r * Math.sin(a3));
+            renderer.lineTo(cx + r * Math.cos(a4), cy + r * Math.sin(a4));
         }
-        ctx.closePath();
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
-        ctx.stroke();
+        renderer.closePath();
+        renderer.stroke();
+        renderer.beginPath();
+        renderer.arc(cx, cy, innerR, 0, Math.PI * 2);
+        renderer.stroke();
     }
 
     // ── Helper: Canvas roundRect path ──
-    private roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.arcTo(x + w, y, x + w, y + r, r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-        ctx.lineTo(x + r, y + h);
-        ctx.arcTo(x, y + h, x, y + h - r, r);
-        ctx.lineTo(x, y + r);
-        ctx.arcTo(x, y, x + r, y, r);
-        ctx.closePath();
+    private roundRect(renderer: IRenderer, x: number, y: number, w: number, h: number, r: number): void {
+        renderer.beginPath();
+        renderer.moveTo(x + r, y);
+        renderer.lineTo(x + w - r, y);
+        renderer.arcTo(x + w, y, x + w, y + r, r);
+        renderer.lineTo(x + w, y + h - r);
+        renderer.arcTo(x + w, y + h, x + w - r, y + h, r);
+        renderer.lineTo(x + r, y + h);
+        renderer.arcTo(x, y + h, x, y + h - r, r);
+        renderer.lineTo(x, y + r);
+        renderer.arcTo(x, y, x + r, y, r);
+        renderer.closePath();
     }
 
     // ── Helper: SVG round-rect path for RoughJS ──

@@ -2,10 +2,11 @@ import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 import type { RenderContext } from "../base/types";
+import type { IRenderer } from "../../rendering/IRenderer";
 
 export class FlowchartRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
-        const { ctx, element: el, isDarkMode } = context;
+        const { renderer, element: el, isDarkMode } = context;
         const backgroundColor = el.backgroundColor === 'transparent' ? undefined : RenderPipeline.adjustColor(el.backgroundColor, isDarkMode);
 
         const x = el.x, y = el.y, w = el.width, h = el.height;
@@ -16,52 +17,52 @@ export class FlowchartRenderer extends ShapeRenderer {
                 const path = this.getDatabasePath(x, y, w, h, ellipseHeight);
                 const topEllipse = this.getDatabaseTopPath(x, y, w, h, ellipseHeight);
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = backgroundColor;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.stroke(new Path2D(path));
-                ctx.stroke(new Path2D(topEllipse));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(path);
+                renderer.strokePath(topEllipse);
                 break;
             }
             case 'document': {
                 const waveHeight = h * 0.1;
                 const path = this.getDocumentPath(x, y, w, h, waveHeight);
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fill(new Path2D(path));
+                    renderer.fillStyle = backgroundColor;
+                    renderer.fillPath(path);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.lineJoin = 'round';
-                ctx.stroke(new Path2D(path));
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.lineJoin = 'round';
+                renderer.strokePath(path);
                 break;
             }
             case 'predefinedProcess': {
                 const sideBarWidth = w * 0.1;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fillRect(x, y, w, h);
+                    renderer.fillStyle = backgroundColor;
+                    renderer.fillRect(x, y, w, h);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.strokeRect(x, y, w, h);
-                ctx.beginPath();
-                ctx.moveTo(x + sideBarWidth, y); ctx.lineTo(x + sideBarWidth, y + h);
-                ctx.moveTo(x + w - sideBarWidth, y); ctx.lineTo(x + w - sideBarWidth, y + h);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokeRect(x, y, w, h);
+                renderer.beginPath();
+                renderer.moveTo(x + sideBarWidth, y); renderer.lineTo(x + sideBarWidth, y + h);
+                renderer.moveTo(x + w - sideBarWidth, y); renderer.lineTo(x + w - sideBarWidth, y + h);
+                renderer.stroke();
                 break;
             }
             case 'internalStorage': {
                 const lineOffset = Math.min(w, h) * 0.15;
                 if (backgroundColor) {
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fillRect(x, y, w, h);
+                    renderer.fillStyle = backgroundColor;
+                    renderer.fillRect(x, y, w, h);
                 }
-                RenderPipeline.applyStrokeStyle(ctx, el, isDarkMode);
-                ctx.strokeRect(x, y, w, h);
-                ctx.beginPath();
-                ctx.moveTo(x + lineOffset, y); ctx.lineTo(x + lineOffset, y + h);
-                ctx.moveTo(x, y + lineOffset); ctx.lineTo(x + w, y + lineOffset);
-                ctx.stroke();
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokeRect(x, y, w, h);
+                renderer.beginPath();
+                renderer.moveTo(x + lineOffset, y); renderer.lineTo(x + lineOffset, y + h);
+                renderer.moveTo(x, y + lineOffset); renderer.lineTo(x + w, y + lineOffset);
+                renderer.stroke();
                 break;
             }
         }
@@ -135,10 +136,10 @@ export class FlowchartRenderer extends ShapeRenderer {
         `;
     }
 
-    protected definePath(ctx: CanvasRenderingContext2D, el: any): void {
+    protected definePath(renderer: IRenderer, el: any): void {
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
-        ctx.translate(el.x + el.width / 2, el.y + el.height / 2);
-        RenderPipeline.renderGeometry(ctx, geometry);
+        renderer.translate(el.x + el.width / 2, el.y + el.height / 2);
+        RenderPipeline.renderGeometry(renderer, geometry);
     }
 }
