@@ -84,8 +84,8 @@ interface ElementOptions {
     seed?: number;
     layerId?: string;
     curveType?: 'straight' | 'bezier' | 'elbow';
-    startBinding?: { elementId: string; focus: number; gap: number; position?: string } | null;
-    endBinding?: { elementId: string; focus: number; gap: number; position?: string } | null;
+    startBinding?: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number } | null;
+    endBinding?: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number } | null;
 
     // New Attributes
     text?: string;
@@ -1249,11 +1249,17 @@ export const YappyAPI = {
         const startP = intersect(sx, sy, tx, ty, source);
         const endP = intersect(tx, ty, sx, sy, target);
 
+        // Compute anchor fractions for stable bindings (endpoint position relative to shape bbox)
+        const startFx = source.width ? (startP.x - source.x) / source.width : 0.5;
+        const startFy = source.height ? (startP.y - source.y) / source.height : 0.5;
+        const endFx = target.width ? (endP.x - target.x) / target.width : 0.5;
+        const endFy = target.height ? (endP.y - target.y) / target.height : 0.5;
+
         const id = this.createElement(type as ElementType, startP.x, startP.y, endP.x - startP.x, endP.y - startP.y, {
             ...options,
             curveType,
-            startBinding: { elementId: sourceId, focus: 0, gap: 5 },
-            endBinding: { elementId: targetId, focus: 0, gap: 5 },
+            startBinding: { elementId: sourceId, focus: 0, gap: 5, anchorFractionX: startFx, anchorFractionY: startFy },
+            endBinding: { elementId: targetId, focus: 0, gap: 5, anchorFractionX: endFx, anchorFractionY: endFy },
             // Ensure points are reset when connecting to follow new path
             points: [0, 0, endP.x - startP.x, endP.y - startP.y]
         });
@@ -1770,6 +1776,16 @@ export const YappyAPI = {
             console.warn('[YappyDSL] Warnings:', result.warnings);
         }
         return renderDiagram(result.diagram, options);
+    },
+
+    // ─── AI Drawing ────────────────────────────────────────
+    /**
+     * Generate a diagram using AI from a natural language prompt.
+     * Requires API keys configured in AI Settings.
+     */
+    async generateDiagram(prompt: string, options?: { clearCanvas?: boolean; provider?: string; model?: string }) {
+        const { generateDiagram: gen } = await import('./ai/drawing-engine');
+        return gen(prompt, options as any);
     },
 };
 

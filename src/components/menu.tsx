@@ -11,7 +11,8 @@ import { clearAutoSave } from "../storage/auto-save";
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Download, Layout, Settings,
-    Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText
+    Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
+    Sparkles, Key
 } from "lucide-solid";
 import { P3ColorPicker } from "./p3-color-picker";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
@@ -25,7 +26,10 @@ const SaveDialog = lazy(() => import("./save-dialog"));
 const TemplateBrowser = lazy(() => import("./template-browser"));
 const CloudStorageDialogLazy = lazy(() => import("./cloud-storage-dialog").then(m => ({ default: m.CloudStorageDialog as any })));
 const DSLImportDialog = lazy(() => import("./dsl-import-dialog"));
+const AIPromptDialog = lazy(() => import("./ai-prompt-dialog"));
+const AISettingsDialog = lazy(() => import("./ai-settings-dialog"));
 import SettingsDialog from "./settings-dialog";
+import { showAISettings, setShowAISettings } from "./ai-settings-dialog";
 import { features } from "../config/features";
 import { cloudStorageManager } from "../storage/cloud";
 import type { CloudFileInfo } from "../storage/cloud/types";
@@ -47,6 +51,7 @@ export const [isCloudDialogOpen, setIsCloudDialogOpen] = createSignal(false);
 export const [cloudDialogMode, setCloudDialogMode] = createSignal<'save' | 'load'>('load');
 export const [isDSLImportOpen, setIsDSLImportOpen] = createSignal(false);
 export const [dslImportInitialText, setDslImportInitialText] = createSignal('');
+export const [isAIPromptOpen, setIsAIPromptOpen] = createSignal(false);
 
 // Exported handlers for App.tsx integration
 let sharedSetSaveIntent: (intent: 'workspace' | 'disk' | 'disk-json') => void = () => { };
@@ -474,6 +479,15 @@ const Menu: Component = () => {
                     onClose={() => { setIsDSLImportOpen(false); setDslImportInitialText(''); }}
                     initialText={dslImportInitialText()}
                 />
+
+                <AIPromptDialog
+                    isOpen={isAIPromptOpen()}
+                    onClose={() => setIsAIPromptOpen(false)}
+                />
+                <AISettingsDialog
+                    isOpen={showAISettings()}
+                    onClose={() => setShowAISettings(false)}
+                />
             </Suspense>
 
             <Show when={!store.zenMode}>
@@ -523,6 +537,13 @@ const Menu: Component = () => {
                                         <span class="label">Import from Text</span>
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+Shift+I</span>
+                                        </div>
+                                    </button>
+                                    <button class="menu-item" onClick={() => { setIsAIPromptOpen(true); setIsMenuOpen(false); }}>
+                                        <Sparkles size={16} />
+                                        <span class="label">AI Drawing</span>
+                                        <div class="menu-item-right">
+                                            <span class="shortcut">Ctrl+Shift+A</span>
                                         </div>
                                     </button>
                                     <div class="menu-separator"></div>
@@ -627,6 +648,10 @@ const Menu: Component = () => {
                                     <div class="menu-item" onClick={() => { setShowSettings(true); setIsMenuOpen(false); }}>
                                         <Settings size={16} />
                                         <span class="label">Settings</span>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { setShowAISettings(true); setIsMenuOpen(false); }}>
+                                        <Key size={16} />
+                                        <span class="label">AI Settings</span>
                                     </div>
                                     <div class="menu-separator"></div>
                                     <div style={{ padding: '4px 12px', "font-size": '12px', color: 'var(--text-secondary)' }}>

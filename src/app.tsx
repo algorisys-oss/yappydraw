@@ -36,7 +36,8 @@ import { WelcomeScreen } from './components/welcome-screen';
 import Menu, {
   handleNew, setShowHelp, setShowSettings,
   isDialogOpen, isSaveOpen, isLoadExportOpen, showHelp,
-  setIsLoadExportOpen, setLoadExportInitialTab
+  setIsLoadExportOpen, setLoadExportInitialTab,
+  isAIPromptOpen, setIsAIPromptOpen
 } from './components/menu';
 import StatusBar from './components/status-bar';
 import { initAPI } from './api';
@@ -69,7 +70,8 @@ const App: Component = () => {
         isSaveOpen() ||
         isLoadExportOpen() ||
         showHelp() ||
-        store.showExportDialog
+        store.showExportDialog ||
+        isAIPromptOpen()
       ) {
         return;
       }
@@ -120,6 +122,10 @@ const App: Component = () => {
         } else if (key === 'e' && e.shiftKey) {
           e.preventDefault();
           setIsExportOpen(true);
+          return;
+        } else if (key === 'a' && e.shiftKey) {
+          e.preventDefault();
+          setIsAIPromptOpen(true);
           return;
         } else if (key === '=' || key === '+') {
           e.preventDefault();

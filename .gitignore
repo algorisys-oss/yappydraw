@@ -1,6 +1,8 @@
 # Env
+.env
 .env.local
 .env.production
+!.env.example
 # Logs
 .claude/settings.json
 logs

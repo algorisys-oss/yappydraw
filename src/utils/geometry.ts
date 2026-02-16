@@ -225,7 +225,9 @@ export const intersectElementWithLine = (
         }
         return { x: ix, y: iy };
 
-    } else if (element.type === 'circle' || element.type === 'cloud') {
+    } else if (element.type === 'circle' || element.type === 'cloud' ||
+        element.type === 'bpmnStartEvent' || element.type === 'bpmnEndEvent' || element.type === 'bpmnIntermediateEvent' ||
+        element.type === 'bpmnDataStore' || element.type === 'umlUseCase') {
         const rx = element.width / 2 + gap;
         const ry = element.height / 2 + gap;
 
@@ -249,7 +251,9 @@ export const intersectElementWithLine = (
             return rotatePoint(ix, iy, cx, cy, element.angle);
         }
         return { x: ix, y: iy };
-    } else if (element.type === 'diamond') {
+    } else if (element.type === 'diamond' ||
+        element.type === 'bpmnExclusiveGateway' || element.type === 'bpmnParallelGateway' ||
+        element.type === 'bpmnInclusiveGateway' || element.type === 'bpmnEventGateway') {
         let p = { x: a.x, y: a.y };
         // Diamonds can also be rotated
         if (element.angle) {
@@ -369,5 +373,50 @@ export const intersectElementWithLine = (
         return closestPoint;
     }
 
-    return null;
+    // Default fallback: bounding box intersection for any unrecognized shape type
+    // (BPMN tasks, UML classes, DS types, charts, UI components, etc.)
+    {
+        let p = { x: a.x, y: a.y };
+        if (element.angle) {
+            p = rotatePoint(a.x, a.y, cx, cy, -element.angle);
+        }
+
+        const w = element.width;
+        const h = element.height;
+        const x1 = cx - w / 2 - gap;
+        const x2 = cx + w / 2 + gap;
+        const y1 = cy - h / 2 - gap;
+        const y2 = cy + h / 2 + gap;
+
+        const dx = p.x - cx;
+        const dy = p.y - cy;
+
+        if (dx === 0 && dy === 0) return { x: cx, y: cy };
+
+        let t = Infinity;
+
+        if (dx !== 0) {
+            const tx1 = (x1 - cx) / dx;
+            if (tx1 > 0) t = Math.min(t, tx1);
+            const tx2 = (x2 - cx) / dx;
+            if (tx2 > 0) t = Math.min(t, tx2);
+        }
+
+        if (dy !== 0) {
+            const ty1 = (y1 - cy) / dy;
+            if (ty1 > 0) t = Math.min(t, ty1);
+            const ty2 = (y2 - cy) / dy;
+            if (ty2 > 0) t = Math.min(t, ty2);
+        }
+
+        if (t === Infinity) return null;
+
+        const ix = cx + dx * t;
+        const iy = cy + dy * t;
+
+        if (element.angle) {
+            return rotatePoint(ix, iy, cx, cy, element.angle);
+        }
+        return { x: ix, y: iy };
+    }
 };

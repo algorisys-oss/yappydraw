@@ -1,0 +1,271 @@
+/* AI Prompt Dialog */
+.ai-prompt-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(2px);
+}
+
+.ai-prompt-modal {
+    background: var(--bg-panel, #ffffff);
+    color: var(--text-primary, #1f2937);
+    border-radius: 12px;
+    width: 560px;
+    max-width: 92vw;
+    max-height: 85vh;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+/* Header */
+.ai-prompt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.ai-prompt-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-prompt-title h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.ai-prompt-provider-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--bg-hover, #f3f4f6);
+    color: var(--text-secondary, #6b7280);
+    font-weight: 500;
+}
+
+.ai-prompt-header .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary, #6b7280);
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.ai-prompt-header .close-btn:hover {
+    background: var(--bg-hover, #f3f4f6);
+}
+
+.ai-prompt-header .close-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Body */
+.ai-prompt-body {
+    flex: 1;
+    min-height: 160px;
+}
+
+.ai-prompt-textarea {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    min-height: 160px;
+    padding: 16px 20px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary, #1f2937);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: none;
+}
+
+.ai-prompt-textarea::placeholder {
+    color: var(--text-secondary, #9ca3af);
+    opacity: 0.5;
+}
+
+.ai-prompt-textarea:disabled {
+    opacity: 0.6;
+}
+
+/* Options row */
+.ai-prompt-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.ai-prompt-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+    cursor: pointer;
+}
+
+.ai-prompt-checkbox input {
+    accent-color: var(--primary-color, #3b82f6);
+    cursor: pointer;
+}
+
+.ai-prompt-settings-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.ai-prompt-settings-link:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover, #f3f4f6);
+}
+
+/* Status */
+.ai-prompt-status {
+    padding: 8px 20px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.ai-prompt-success {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.ai-prompt-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    color: #dc2626;
+    line-height: 1.5;
+}
+
+.ai-prompt-error svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.ai-prompt-configure-btn {
+    margin-top: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--primary-color, #3b82f6);
+    cursor: pointer;
+}
+
+.ai-prompt-configure-btn:hover {
+    background: var(--bg-hover, #f3f4f6);
+}
+
+/* Footer */
+.ai-prompt-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.ai-prompt-hint {
+    font-size: 11px;
+    color: var(--text-secondary, #9ca3af);
+}
+
+.ai-prompt-footer-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.ai-prompt-cancel-btn {
+    padding: 6px 16px;
+    background: transparent;
+    color: var(--text-secondary, #6b7280);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.ai-prompt-cancel-btn:hover {
+    background: var(--bg-hover, #f3f4f6);
+}
+
+.ai-prompt-cancel-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ai-prompt-generate-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 20px;
+    background: var(--primary-color, #3b82f6);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+}
+
+.ai-prompt-generate-btn:hover:not(:disabled) {
+    background: var(--primary-hover, #2563eb);
+    color: white;
+}
+
+.ai-prompt-generate-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Spinner animation */
+.ai-prompt-spinner {
+    animation: ai-spin 1s linear infinite;
+}
+
+@keyframes ai-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

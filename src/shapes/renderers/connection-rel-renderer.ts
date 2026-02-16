@@ -8,7 +8,11 @@ export class ConnectionRelRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
         const { renderer, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
-        const x = el.x, y = el.y, w = el.width, h = el.height;
+        // Normalize so x,y is always top-left and w,h are always positive
+        // (handles drag-to-left/up where el.width/height become negative)
+        const w = Math.abs(el.width), h = Math.abs(el.height);
+        const x = el.width < 0 ? el.x + el.width : el.x;
+        const y = el.height < 0 ? el.y + el.height : el.y;
 
         switch (el.type) {
             case 'puzzlePiece': {
