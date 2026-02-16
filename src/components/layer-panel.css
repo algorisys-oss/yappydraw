@@ -323,6 +323,35 @@
     flex-shrink: 0;
 }
 
+/* Lock toggle */
+.layer-lock {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.layer-lock:hover {
+    opacity: 1;
+}
+
+.layer-lock.is-locked {
+    opacity: 0.9;
+    color: #ef4444;
+}
+
+.layer-item.active .layer-lock {
+    color: white;
+    opacity: 0.7;
+}
+
+.layer-item.active .layer-lock.is-locked {
+    opacity: 1;
+    color: #fca5a5;
+}
+
 /* Layer Grouping Styles */
 .layer-item.group {
     font-weight: 600;

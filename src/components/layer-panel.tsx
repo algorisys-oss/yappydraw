@@ -1,6 +1,6 @@
 import { type Component, For, createSignal, Show } from 'solid-js';
 import { store, addLayer, setActiveLayer, updateLayer, deleteLayer, duplicateLayer, reorderLayers, toggleLayerPanel, minimizeLayerPanel, toggleLayerGroupingMode, createLayerGroup, toggleLayerGroupExpansion } from '../store/app-store';
-import { X, Minus, ChevronUp, Eye, EyeOff, Plus, Maximize2, Folder, FolderOpen, ChevronRight, Layers, Crown } from 'lucide-solid';
+import { X, Minus, ChevronUp, Eye, EyeOff, Plus, Maximize2, Folder, FolderOpen, ChevronRight, Layers, Crown, Lock, Unlock } from 'lucide-solid';
 import LayerContextMenu from './layer-context-menu';
 import './layer-panel.css';
 
@@ -22,6 +22,14 @@ const LayerPanel: Component = () => {
         const layer = store.layers.find(l => l.id === id);
         if (layer) {
             updateLayer(id, { visible: !layer.visible });
+        }
+    };
+
+    const handleToggleLock = (id: string, e: MouseEvent) => {
+        e.stopPropagation();
+        const layer = store.layers.find(l => l.id === id);
+        if (layer) {
+            updateLayer(id, { locked: !layer.locked });
         }
     };
 
@@ -338,6 +346,9 @@ const LayerPanel: Component = () => {
                                         <span class="drag-handle" title="Drag to reorder">⋮⋮</span>
                                         <div class="layer-visibility" onClick={(e) => handleToggleVisibility(layer.id, e)}>
                                             {layer.visible !== false ? <Eye size={14} /> : <EyeOff size={14} />}
+                                        </div>
+                                        <div class={`layer-lock ${layer.locked ? 'is-locked' : ''}`} onClick={(e) => handleToggleLock(layer.id, e)} title={layer.locked ? 'Unlock layer' : 'Lock layer'}>
+                                            {layer.locked ? <Lock size={14} /> : <Unlock size={14} />}
                                         </div>
                                         <div class="layer-name-container">
                                             <Show when={layer.isGroup && store.layerGroupingModeEnabled}>

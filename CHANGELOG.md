@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.1] - 2026-02-16
+
+### Fixed
+- **Canvas background bleed between documents** — `loadDocument` now resets `canvasBackgroundColor` to default before applying theme and slide backgrounds, preventing previous document's background from persisting into newly loaded/created documents
+
+## [1.19.0] - 2026-02-16
+
+### Added
+- **Layer Lock Toggle** — inline lock/unlock button in each layer row for quick access (previously context-menu only)
+
+### Fixed
+- **HTML export missing fonts** — standalone player now includes Google Fonts `<link>` tags for all 8 font families (Caveat, Handlee, Inter, JetBrains Mono, Merriweather, Permanent Marker, Poppins, Source Code Pro)
+- **First slide animation not playing on export open** — exported HTML player now initializes `slideBuildManager` for on-load animations with proper timing after Canvas mount
+- **Manual arrow start point drift** — start binding fractions are now always computed regardless of end binding, preventing start point from shifting when connected shapes move
+
 ## [1.18.0] - 2026-02-16
 
 ### Added

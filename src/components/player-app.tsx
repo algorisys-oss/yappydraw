@@ -6,6 +6,7 @@ import { registerShapes } from "../shapes/register-shapes";
 import { PresentationControls } from "./presentation-controls";
 import type { SlideDocument } from "../types/slide-types";
 import { showToast } from "./toast";
+import { slideBuildManager } from "../utils/animation/slide-build-manager";
 import Toast from "./toast";
 import "./player-app.css";
 
@@ -72,6 +73,15 @@ const PlayerApp: Component = () => {
                 }
 
                 setIsReady(true);
+
+                // Trigger first-slide animations after Canvas fully mounts
+                // Need sufficient delay for SolidJS to render <Show> → Canvas → onMount chain
+                setTimeout(() => {
+                    if (store.docType === 'slides' && store.slides.length > 0) {
+                        slideBuildManager.init(store.activeSlideIndex);
+                        slideBuildManager.playInitial();
+                    }
+                }, 300);
             } catch (e) {
                 console.error("Failed to load presentation data:", e);
                 showToast("Failed to load presentation data", "error");

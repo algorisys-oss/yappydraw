@@ -1281,7 +1281,11 @@ export const loadDocument = (doc: any) => {
         }
         setStore("globalSettings", gs);
 
+        // Reset canvas background to default before theme applies
+        setStore("canvasBackgroundColor", '#ffffff');
+
         // Apply theme from document if present, otherwise keep current theme
+        // (setTheme adjusts canvasBackgroundColor for focus theme automatically)
         if (gs.theme) {
             setTheme(gs.theme);
         }
@@ -1298,6 +1302,12 @@ export const loadDocument = (doc: any) => {
 
         setStore("activeSlideIndex", 0);
         setStore("selection", []);
+
+        // Apply first slide's explicit background if set (overrides theme default)
+        const firstSlideBg = slides.length > 0 ? slides[0].backgroundColor : '';
+        if (firstSlideBg) {
+            setStore("canvasBackgroundColor", firstSlideBg);
+        }
 
         if (!layers.some((l: Layer) => l.id === store.activeLayerId)) {
             setStore("activeLayerId", layers[0]?.id || 'default-layer');
