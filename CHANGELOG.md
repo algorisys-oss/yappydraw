@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.0] - 2026-02-16
+
+### Added
+- **RichText Font Selection** — font family picker available in property panel, quick toolbar, and inline editing mini toolbar for RichText elements
+  - Per-span font switching via **F** button in the rich text mini toolbar (8 fonts: Virgil, Caveat, Marker, Inter, Poppins, Merriweather, Source Code Pro, JetBrains Mono)
+  - Property panel now shows fontSize, fontFamily, fontWeight, fontStyle, and textAlign for RichText
+  - Font family round-trip: `htmlToSpans` now parses `font-family` styles and `<font face>` tags back to internal keys
+
 ## [1.19.1] - 2026-02-16
 
 ### Fixed

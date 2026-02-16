@@ -4,7 +4,7 @@
  */
 
 import type { RichTextSpan, FontFamily } from '../types';
-import { resolveFontFamily } from './text-utils';
+import { resolveFontFamily, reverseFontFamily } from './text-utils';
 import type { IRenderer } from '../rendering/IRenderer';
 import { CanvasRenderer } from '../rendering/CanvasRenderer';
 
@@ -90,6 +90,15 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
         if (el.style.fontSize) {
             const px = parseFloat(el.style.fontSize);
             if (!isNaN(px)) style.fontSize = px;
+        }
+        if (el.style.fontFamily) {
+            const key = reverseFontFamily(el.style.fontFamily);
+            if (key) style.fontFamily = key as FontFamily;
+        }
+        // Handle <font face="..."> from execCommand('fontName')
+        if (tag === 'font' && (el as HTMLFontElement).face) {
+            const key = reverseFontFamily((el as HTMLFontElement).face);
+            if (key) style.fontFamily = key as FontFamily;
         }
 
         // Block elements (div/p): add newline before if preceded by non-block sibling

@@ -29,9 +29,21 @@ const TOOLBAR_COLORS = [
     '#2f9e44', '#1971c2', '#6741d9', '#ffffff'
 ];
 
+const TOOLBAR_FONTS = [
+    { key: 'hand-drawn', label: 'Virgil' },
+    { key: 'caveat', label: 'Caveat' },
+    { key: 'marker', label: 'Marker' },
+    { key: 'sans-serif', label: 'Inter' },
+    { key: 'poppins', label: 'Poppins' },
+    { key: 'serif', label: 'Merriweather' },
+    { key: 'monospace', label: 'Source Code' },
+    { key: 'code', label: 'JetBrains' },
+];
+
 const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) => {
     let editorRef: HTMLDivElement | undefined;
     const [showColorPicker, setShowColorPicker] = createSignal(false);
+    const [showFontPicker, setShowFontPicker] = createSignal(false);
     const [activeFormats, setActiveFormats] = createSignal<{
         bold: boolean; italic: boolean; underline: boolean; strikethrough: boolean;
     }>({ bold: false, italic: false, underline: false, strikethrough: false });
@@ -79,16 +91,20 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
         const related = e.relatedTarget as HTMLElement | null;
         if (related?.closest('.rt-toolbar')) return;
         if (related?.closest('.rt-color-popover')) return;
+        if (related?.closest('.rt-font-popover')) return;
         handleCommit();
         if ((store.selectedTool === 'text' || store.selectedTool === 'richtext') && !store.toolLocked) {
             setSelectedTool('selection');
         }
     };
 
-    // Close color picker on outside click
+    // Close color/font picker on outside click
     const handleDocClick = (e: MouseEvent) => {
         if (showColorPicker() && !(e.target as HTMLElement)?.closest('.rt-color-wrapper')) {
             setShowColorPicker(false);
+        }
+        if (showFontPicker() && !(e.target as HTMLElement)?.closest('.rt-font-wrapper')) {
+            setShowFontPicker(false);
         }
     };
 
@@ -185,7 +201,7 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                 <button
                                     class="rt-toolbar-btn rt-color-btn"
                                     title="Text Color"
-                                    onClick={() => setShowColorPicker(!showColorPicker())}
+                                    onClick={() => { setShowColorPicker(!showColorPicker()); setShowFontPicker(false); }}
                                 >
                                     <span class="rt-color-icon">A</span>
                                 </button>
@@ -200,6 +216,30 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                                     setShowColorPicker(false);
                                                 }}
                                             />
+                                        ))}
+                                    </div>
+                                </Show>
+                            </div>
+                            <span class="rt-toolbar-divider" />
+                            <div class="rt-font-wrapper">
+                                <button
+                                    class="rt-toolbar-btn rt-font-btn"
+                                    title="Font Family"
+                                    onClick={() => { setShowFontPicker(!showFontPicker()); setShowColorPicker(false); }}
+                                >
+                                    <span class="rt-font-icon">F</span>
+                                </button>
+                                <Show when={showFontPicker()}>
+                                    <div class="rt-font-popover">
+                                        {TOOLBAR_FONTS.map(font => (
+                                            <button
+                                                class="rt-font-option"
+                                                style={{ 'font-family': resolveFontFamily(font.key) }}
+                                                onClick={() => {
+                                                    execFormat('fontName', resolveFontFamily(font.key));
+                                                    setShowFontPicker(false);
+                                                }}
+                                            >{font.label}</button>
                                         ))}
                                     </div>
                                 </Show>

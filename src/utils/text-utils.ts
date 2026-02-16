@@ -24,6 +24,17 @@ export const resolveFontFamily = (fontFamily?: string): string => {
     return fontFamilyMap[fontFamily || 'hand-drawn'] || fontFamilyMap['hand-drawn'];
 };
 
+/** Reverse-lookup: map a resolved CSS font-family string back to an internal key */
+export const reverseFontFamily = (cssFont: string): string | undefined => {
+    if (!cssFont) return undefined;
+    const lower = cssFont.toLowerCase().replace(/['"]/g, '').trim();
+    for (const [key, value] of Object.entries(fontFamilyMap)) {
+        const primary = value.split(',')[0].trim().toLowerCase();
+        if (lower.includes(primary)) return key;
+    }
+    return undefined;
+};
+
 export const getFontString = (el: Partial<DrawingElement>) => {
     const fontSize = el.fontSize || 28;
     const fontFamily = resolveFontFamily(el.fontFamily);
