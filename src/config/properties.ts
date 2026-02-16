@@ -139,6 +139,15 @@ export const properties: PropertyConfig[] = [
         defaultValue: 3,
         dependsOn: 'flowAnimation'
     },
+    {
+        key: 'flowReverse',
+        label: 'Reverse',
+        type: 'toggle',
+        group: 'motion',
+        applicableTo: 'all',
+        defaultValue: false,
+        dependsOn: 'flowAnimation'
+    },
 
     // Canvas Properties
     {
@@ -1011,7 +1020,7 @@ export const properties: PropertyConfig[] = [
         max: 100,
         group: 'style',
         applicableTo: ['arrow', 'line', 'organicBranch'],
-        defaultValue: 12,
+        defaultValue: 28,
         dependsOn: { key: 'startArrowhead', value: ['arrow', 'triangle', 'diamond', 'diamondFilled', 'crowsfoot', 'circle', 'dot', 'bar'] }
     },
     {
@@ -1041,7 +1050,7 @@ export const properties: PropertyConfig[] = [
         max: 100,
         group: 'style',
         applicableTo: ['arrow', 'line', 'organicBranch'],
-        defaultValue: 12,
+        defaultValue: 28,
         dependsOn: { key: 'endArrowhead', value: ['arrow', 'triangle', 'diamond', 'diamondFilled', 'crowsfoot', 'circle', 'dot', 'bar'] }
     },
     {

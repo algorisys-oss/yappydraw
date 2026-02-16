@@ -228,8 +228,8 @@ export const exportToSvg = (onlySelected: boolean) => {
                 arrowG.appendChild(rc.line(el.x, el.y, endX, endY, options));
 
                 const angle = Math.atan2(el.height, el.width);
-                const startHeadLen = el.startArrowheadSize || 15;
-                const endHeadLen = el.endArrowheadSize || 15;
+                const startHeadLen = el.startArrowheadSize || 28;
+                const endHeadLen = el.endArrowheadSize || 28;
 
                 if (el.startArrowhead) {
                     const p1 = { x: el.x - startHeadLen * Math.cos(angle + Math.PI - Math.PI / 6), y: el.y - startHeadLen * Math.sin(angle + Math.PI - Math.PI / 6) };

@@ -21,7 +21,7 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         strokeColor: el.strokeColor ?? '#000000',
         backgroundColor: el.backgroundColor ?? 'transparent',
         fillStyle: el.fillStyle ?? 'hachure',
-        strokeWidth: el.strokeWidth ?? 1,
+        strokeWidth: el.strokeWidth ?? 4,
         strokeStyle: el.strokeStyle ?? 'solid',
         roughness: el.roughness ?? 1,
         opacity: el.opacity ?? 100,

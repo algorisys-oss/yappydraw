@@ -284,6 +284,24 @@ export class FreehandRenderer extends ShapeRenderer {
 
         renderer.closePath();
         renderer.fill();
+
+        // 9. Fill gaps at sharp corners with round joints
+        for (let i = 1; i < pts.length - 1; i++) {
+            const dx1 = pts[i].x - pts[i - 1].x;
+            const dy1 = pts[i].y - pts[i - 1].y;
+            const dx2 = pts[i + 1].x - pts[i].x;
+            const dy2 = pts[i + 1].y - pts[i].y;
+            const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1) || 1;
+            const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) || 1;
+            // dot product of normalized directions = cos(angle)
+            const dot = (dx1 * dx2 + dy1 * dy2) / (len1 * len2);
+            // dot < 0.5 means angle > ~60°; fill circle at sharp turns
+            if (dot < 0.5) {
+                renderer.beginPath();
+                renderer.arc(pts[i].x, pts[i].y, widths[i] / 2, 0, Math.PI * 2);
+                renderer.fill();
+            }
+        }
     }
 
     private renderMarker(renderer: IRenderer, pts: any[], width: number, opacity: number | undefined, layerOpacity: number, isDarkMode: boolean) {

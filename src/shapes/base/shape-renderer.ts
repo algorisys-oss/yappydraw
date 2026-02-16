@@ -230,7 +230,8 @@ export abstract class ShapeRenderer {
         const { renderer, element: el, isDarkMode } = context;
         const speed = el.flowSpeed !== undefined ? el.flowSpeed : 1;
         const time = globalTime();
-        const offset = (time / 20) * speed;
+        const direction = el.flowReverse ? -1 : 1;
+        const offset = (time / 20) * speed * direction;
 
         renderer.save();
         renderer.strokeStyle = RenderPipeline.adjustColor(el.flowColor || el.strokeColor, isDarkMode);

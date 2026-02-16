@@ -137,8 +137,8 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                 type="number"
                                 min={1}
                                 max={20}
-                                value={defaults().strokeWidth ?? 2}
-                                onChange={(e) => updateDefaultStyles({ strokeWidth: parseInt(e.currentTarget.value) || 2 })}
+                                value={defaults().strokeWidth ?? 4}
+                                onChange={(e) => updateDefaultStyles({ strokeWidth: parseInt(e.currentTarget.value) || 4 })}
                             />
                         </div>
 

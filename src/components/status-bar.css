@@ -146,9 +146,35 @@
     border-radius: 3px;
 }
 
-/* Mobile: hide full status bar */
+/* Mobile: compact status bar */
 @media (max-width: 768px) {
     .status-bar {
+        height: 36px;
+        padding: 0 2px;
+        gap: 0;
+        justify-content: space-between;
+    }
+
+    .status-section {
+        padding: 0 4px;
+        border-right: none;
+    }
+
+    /* Hide non-essential sections on mobile */
+    .status-doc-name,
+    .status-coords,
+    .status-hints,
+    .status-attribution {
         display: none;
+    }
+
+    .status-bar .status-btn {
+        width: 32px;
+        height: 32px;
+        touch-action: manipulation;
+    }
+
+    .status-bar .status-btn.text-btn {
+        font-size: 12px;
     }
 }

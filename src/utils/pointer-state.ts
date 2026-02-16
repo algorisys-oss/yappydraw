@@ -68,6 +68,10 @@ export interface PointerState {
     // Elbow multi-bend drawing state
     elbowCommittedPoints: { x: number; y: number }[];
     elbowDirection: 'h' | 'v' | null;
+
+    // Raw mouse position for connector endpoint (before anchor snapping)
+    lastRawEndX: number;
+    lastRawEndY: number;
 }
 
 export function createPointerState(): PointerState {
@@ -124,5 +128,7 @@ export function createPointerState(): PointerState {
         initial3DStartY: undefined,
         elbowCommittedPoints: [],
         elbowDirection: null,
+        lastRawEndX: 0,
+        lastRawEndY: 0,
     };
 }

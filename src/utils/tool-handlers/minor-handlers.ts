@@ -8,11 +8,13 @@ import { batch } from 'solid-js';
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, setViewState, addElement, updateElement, setStore, deleteElements, advancePresentation, isLayerVisible, toggleCollapse, setActiveDsOpsElement } from '../../store/app-store';
+import { store, setViewState, addElement, updateElement, setStore, deleteElements, pushToHistory, advancePresentation, isLayerVisible, toggleCollapse, setActiveDsOpsElement } from '../../store/app-store';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
 import { generateId } from '../id-generator';
 import { animateElement } from '../animation/element-animator';
+import { normalizePoints } from '../render-element';
+import { computeAnchorFractions } from '../binding-logic';
 
 // ─── OpenBox Click-to-Open Animation ─────────────────────────────────
 
@@ -619,6 +621,116 @@ export function inkOnDown(
 
 // ─── Eraser Tool ─────────────────────────────────────────────────────
 
+const FREEHAND_TYPES = ['fineliner', 'inkbrush', 'marker', 'ink'];
+const MIN_SEGMENT_POINTS = 4; // Minimum points to keep a segment (avoid tiny debris)
+
+/**
+ * Split a freehand stroke by removing points within the eraser radius.
+ * Returns an array of new DrawingElement segments (0 if fully erased, 1+ otherwise).
+ */
+function splitFreehandStroke(
+    el: DrawingElement,
+    worldX: number,
+    worldY: number,
+    threshold: number
+): DrawingElement[] {
+    const pts = normalizePoints(el.points);
+    if (pts.length < 2) return [];
+
+    // Local eraser position relative to element origin
+    const localX = worldX - el.x;
+    const localY = worldY - el.y;
+    const radius = threshold + (el.strokeWidth || 2) / 2;
+    const radiusSq = radius * radius;
+
+    // Mark each point as erased or kept
+    const kept: boolean[] = [];
+    for (let i = 0; i < pts.length; i++) {
+        const dx = pts[i].x - localX;
+        const dy = pts[i].y - localY;
+        kept.push(dx * dx + dy * dy > radiusSq);
+    }
+
+    // Collect contiguous segments of kept points
+    const segments: { x: number; y: number }[][] = [];
+    let current: { x: number; y: number }[] = [];
+    for (let i = 0; i < pts.length; i++) {
+        if (kept[i]) {
+            current.push(pts[i]);
+        } else {
+            if (current.length >= MIN_SEGMENT_POINTS) {
+                segments.push(current);
+            }
+            current = [];
+        }
+    }
+    if (current.length >= MIN_SEGMENT_POINTS) {
+        segments.push(current);
+    }
+
+    // If all points kept in one segment, no change needed — return original as-is
+    if (segments.length === 1 && segments[0].length === pts.length) {
+        return [el];
+    }
+
+    // Build new elements from segments
+    const batchIds = new Set<string>();
+    return segments.map(seg => {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const p of seg) {
+            if (p.x < minX) minX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y > maxY) maxY = p.y;
+        }
+
+        // Offset points relative to new bounding box origin
+        const newPoints = seg.map(p => ({ x: p.x - minX, y: p.y - minY }));
+
+        return {
+            ...JSON.parse(JSON.stringify(el)), // Deep clone all properties
+            id: generateId(el.type, batchIds),
+            x: el.x + minX,
+            y: el.y + minY,
+            width: maxX - minX,
+            height: maxY - minY,
+            points: newPoints,
+            pointsEncoding: undefined, // Segments use object points, not flat encoding
+        } as DrawingElement;
+    });
+}
+
+/** Core eraser logic shared by onDown and onMove */
+function eraseAtPoint(x: number, y: number, helpers: PointerHelpers): void {
+    const threshold = 10 / store.viewState.scale;
+    const elementMap = new Map<string, DrawingElement>();
+    for (const el of store.elements) elementMap.set(el.id, el);
+    const isPresentation = store.appMode === 'presentation';
+
+    for (let i = store.elements.length - 1; i >= 0; i--) {
+        const el = store.elements[i];
+        if (!helpers.canInteractWithElement(el)) continue;
+        if (!isLayerVisible(el.layerId)) continue;
+        if (isPresentation && !el.presentationDrawn) continue;
+        if (hitTestElement(helpers.applyMasterProjection(el), x, y, threshold, store.elements, elementMap)) {
+            if (FREEHAND_TYPES.includes(el.type) && el.points && el.points.length > 0) {
+                // Partial erase: split freehand stroke
+                const segments = splitFreehandStroke(el, x, y, threshold);
+                // If segments contain the original unchanged, skip (eraser didn't hit any points)
+                if (segments.length === 1 && segments[0].id === el.id) continue;
+                pushToHistory();
+                setStore("elements", els => [
+                    ...els.filter(e => e.id !== el.id),
+                    ...segments
+                ]);
+            } else {
+                // Whole-element delete for non-freehand types
+                deleteElements([el.id]);
+            }
+        }
+    }
+}
+
 export function eraserOnDown(
     x: number,
     y: number,
@@ -626,21 +738,7 @@ export function eraserOnDown(
     helpers: PointerHelpers
 ): void {
     pState.isDrawing = true;
-    const threshold = 10 / store.viewState.scale;
-    const elementMap = new Map<string, DrawingElement>();
-    for (const el of store.elements) elementMap.set(el.id, el);
-    const isPresentation = store.appMode === 'presentation';
-
-    for (let i = store.elements.length - 1; i >= 0; i--) {
-        const el = store.elements[i];
-        if (!helpers.canInteractWithElement(el)) continue;
-        if (!isLayerVisible(el.layerId)) continue;
-        // In presentation mode, only erase elements drawn during presentation
-        if (isPresentation && !el.presentationDrawn) continue;
-        if (hitTestElement(helpers.applyMasterProjection(el), x, y, threshold, store.elements, elementMap)) {
-            deleteElements([el.id]);
-        }
-    }
+    eraseAtPoint(x, y, helpers);
 }
 
 export function eraserOnMove(
@@ -648,21 +746,7 @@ export function eraserOnMove(
     y: number,
     helpers: PointerHelpers
 ): void {
-    const threshold = 10 / store.viewState.scale;
-    const elementMap = new Map<string, DrawingElement>();
-    for (const el of store.elements) elementMap.set(el.id, el);
-    const isPresentation = store.appMode === 'presentation';
-
-    for (let i = store.elements.length - 1; i >= 0; i--) {
-        const el = store.elements[i];
-        if (!helpers.canInteractWithElement(el)) continue;
-        if (!isLayerVisible(el.layerId)) continue;
-        // In presentation mode, only erase elements drawn during presentation
-        if (isPresentation && !el.presentationDrawn) continue;
-        if (hitTestElement(helpers.applyMasterProjection(el), x, y, threshold, store.elements, elementMap)) {
-            deleteElements([el.id]);
-        }
-    }
+    eraseAtPoint(x, y, helpers);
 }
 
 // ─── Connector Handle (Start arrow from connector) ──────────────────
@@ -738,6 +822,7 @@ export function connectorHandleOnDown(
         seed: Math.floor(Math.random() * 2 ** 31),
         layerId: store.activeLayerId,
         curveType: store.defaultElementStyles.curveType || 'straight',
+        endArrowhead: 'arrow',
         startBinding: { elementId: sourceEl.id, focus: 0, gap: 5, position: anchorPosition }
     } as DrawingElement;
 
@@ -758,14 +843,51 @@ export function connectorHandleOnUp(
     if (el) {
         if (signals.suggestedBinding()) {
             const binding = signals.suggestedBinding()!;
-            const bindingData = { elementId: binding.elementId, focus: 0, gap: 5, position: binding.position };
-            updateElement(pState.currentId, { endBinding: bindingData });
+            // Use raw mouse position (not snap point) for fractions so each connector
+            // preserves the user's intended position, even when snapped to the same anchor
+            const endBindingData = computeAnchorFractions(
+                { elementId: binding.elementId, focus: 0, gap: 5, position: binding.position },
+                pState.lastRawEndX, pState.lastRawEndY, store.elements
+            );
+            updateElement(pState.currentId, { endBinding: endBindingData });
 
             const target = store.elements.find(e => e.id === binding.elementId);
             if (target) {
                 const existing = target.boundElements || [];
                 if (!existing.find(b => b.id === pState.currentId)) {
                     updateElement(target.id, { boundElements: [...existing, { id: pState.currentId, type: 'arrow' }] });
+                }
+            }
+        }
+
+        // Always compute start binding fractions (stable anchoring regardless of end binding)
+        if (el.startBinding) {
+            const startFractions = computeAnchorFractions(
+                el.startBinding, pState.startX, pState.startY, store.elements
+            );
+            updateElement(pState.currentId, { startBinding: startFractions });
+        }
+
+        // Finalize: refresh bound line to snap endpoints to actual anchor positions
+        const updatedEl = store.elements.find(e => e.id === pState.currentId);
+        if (updatedEl && updatedEl.startBinding && updatedEl.endBinding) {
+            helpers.refreshBoundLine(pState.currentId);
+
+            // Refresh sibling connectors so they re-spread
+            const startTarget = store.elements.find(e => e.id === updatedEl.startBinding!.elementId);
+            if (startTarget?.boundElements) {
+                for (const b of startTarget.boundElements) {
+                    if (b.id !== pState.currentId) {
+                        const sibling = store.elements.find(e => e.id === b.id);
+                        if (sibling?.startBinding && sibling?.endBinding) {
+                            const sameShapePair =
+                                (sibling.startBinding.elementId === updatedEl.startBinding!.elementId &&
+                                 sibling.endBinding.elementId === updatedEl.endBinding!.elementId) ||
+                                (sibling.startBinding.elementId === updatedEl.endBinding!.elementId &&
+                                 sibling.endBinding.elementId === updatedEl.startBinding!.elementId);
+                            if (sameShapePair) helpers.refreshBoundLine(b.id);
+                        }
+                    }
                 }
             }
         }

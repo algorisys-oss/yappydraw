@@ -144,11 +144,117 @@ export function refreshLinePoints(
 }
 
 /**
+ * Compute anchor fractions (0-1) for a binding endpoint relative to a shape's bbox.
+ * These fractions allow precise, stable repositioning when shapes move.
+ */
+export function computeAnchorFractions(
+    binding: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number },
+    endpointX: number,
+    endpointY: number,
+    elements: DrawingElement[]
+): typeof binding {
+    const el = elements.find(e => e.id === binding.elementId);
+    if (!el || el.width === 0 || el.height === 0) return binding;
+
+    const fx = (endpointX - el.x) / el.width;
+    const fy = (endpointY - el.y) / el.height;
+
+    return { ...binding, anchorFractionX: fx, anchorFractionY: fy };
+}
+
+/**
+ * Resolve a binding to an absolute point on the target shape.
+ * Priority: anchorFractions > named anchor > edge intersection fallback.
+ */
+function resolveBindingPoint(
+    binding: { position?: string; gap: number; anchorFractionX?: number; anchorFractionY?: number },
+    el: DrawingElement,
+    otherEnd: { x: number; y: number }
+): { x: number; y: number } | null {
+    // 1. Precise fractions — always preferred when available
+    if (binding.anchorFractionX != null && binding.anchorFractionY != null) {
+        return {
+            x: el.x + binding.anchorFractionX * el.width,
+            y: el.y + binding.anchorFractionY * el.height
+        };
+    }
+
+    // 2. Named anchor position
+    const pos = binding.position;
+    if (pos && pos !== 'edge') {
+        const anchors = getAnchorPoints(el);
+        const anchor = anchors.find(a => a.position === pos);
+        if (anchor) return { x: anchor.x, y: anchor.y };
+    }
+
+    // 3. Edge intersection fallback (legacy 'edge' bindings without fractions)
+    return intersectElementWithLine(el, otherEnd, binding.gap);
+}
+
+// ── Sibling spread: offset connectors sharing the same anchors ───────
+
+const CONNECTOR_TYPES = new Set(['line', 'arrow', 'bezier', 'organicBranch']);
+const SPREAD_SPACING = 16;
+
+/** Find connectors sharing the exact same anchor positions (these overlap visually) */
+function getOverlappingSiblingIndex(
+    lineId: string,
+    startElId: string,
+    endElId: string,
+    startPos: string | undefined,
+    endPos: string | undefined,
+    elements: DrawingElement[]
+): { index: number; total: number } {
+    const siblings = elements.filter(el => {
+        if (!el.startBinding || !el.endBinding) return false;
+        if (!CONNECTOR_TYPES.has(el.type)) return false;
+        const sId = el.startBinding.elementId;
+        const eId = el.endBinding.elementId;
+        const sPos = el.startBinding.position;
+        const ePos = el.endBinding.position;
+        return ((sId === startElId && eId === endElId && sPos === startPos && ePos === endPos) ||
+                (sId === endElId && eId === startElId && sPos === endPos && ePos === startPos));
+    });
+
+    if (siblings.length <= 1) return { index: 0, total: 1 };
+
+    siblings.sort((a, b) => a.id.localeCompare(b.id));
+    const index = siblings.findIndex(s => s.id === lineId);
+    return { index: Math.max(0, index), total: siblings.length };
+}
+
+function computeSpreadOffset(
+    index: number,
+    total: number,
+    startPos: string | undefined,
+    sX: number, sY: number,
+    eX: number, eY: number
+): { dx: number; dy: number } {
+    if (total <= 1) return { dx: 0, dy: 0 };
+
+    const offset = (index - (total - 1) / 2) * SPREAD_SPACING;
+
+    if (startPos === 'left' || startPos === 'right') {
+        return { dx: 0, dy: offset };
+    } else if (startPos === 'top' || startPos === 'bottom') {
+        return { dx: offset, dy: 0 };
+    }
+
+    // Fallback: perpendicular to start→end vector
+    const vx = eX - sX;
+    const vy = eY - sY;
+    const len = Math.sqrt(vx * vx + vy * vy) || 1;
+    return { dx: (-vy / len) * offset, dy: (vx / len) * offset };
+}
+
+/**
  * Update a bound line's geometry when its connected shape(s) have moved.
- * Handles dynamic anchor switching and control point adjustments.
+ * Resolves stored anchor positions to actual coordinates — no automatic
+ * anchor switching. Connectors stick to whatever anchors the user set.
+ * Applies perpendicular spread to sibling connectors sharing identical anchors.
  *
  * @param lineId         The line element ID to refresh
- * @param getElements    Getter returning the current elements array (needed for recursive re-fetch after store mutation)
+ * @param getElements    Getter returning the current elements array
  * @param updateElementFn Store mutation function for updating element properties
  */
 export function refreshBoundLine(
@@ -166,71 +272,38 @@ export function refreshBoundLine(
     let eY = line.y + line.height;
     let changed = false;
 
-    const startEl = line.startBinding ? elements.find(e => e.id === line.startBinding?.elementId) : null;
-    const endEl = line.endBinding ? elements.find(e => e.id === line.endBinding?.elementId) : null;
-
-    // Dynamic Anchor Switching: Snap to the closest cardinal anchor
-    // Skip when both endpoints bind to the same element (e.g., partition lines inside a shape)
-    if (startEl && endEl && startEl.id !== endEl.id) {
-        const startCenterX = startEl.x + startEl.width / 2;
-        const startCenterY = startEl.y + startEl.height / 2;
-        const endCenterX = endEl.x + endEl.width / 2;
-        const endCenterY = endEl.y + endEl.height / 2;
-
-        const dx = endCenterX - startCenterX;
-        const dy = endCenterY - startCenterY;
-
-        const currentStartPos = line.startBinding?.position;
-        const currentEndPos = line.endBinding?.position;
-
-        let idealStartPos: string;
-        let idealEndPos: string;
-
-        if (Math.abs(dx) > Math.abs(dy)) {
-            idealStartPos = dx > 0 ? 'right' : 'left';
-            idealEndPos = dx > 0 ? 'left' : 'right';
-        } else {
-            idealStartPos = dy > 0 ? 'bottom' : 'top';
-            idealEndPos = dy > 0 ? 'top' : 'bottom';
-        }
-
-        if (currentStartPos !== idealStartPos || currentEndPos !== idealEndPos) {
-            updateElementFn(line.id, {
-                startBinding: { ...line.startBinding!, position: idealStartPos as any },
-                endBinding: { ...line.endBinding!, position: idealEndPos as any }
-            }, false);
-            // Re-fetch to get updated positions
-            return refreshBoundLine(lineId, getElements, updateElementFn);
-        }
-    }
-
     if (line.startBinding) {
-        const el = startEl || elements.find(e => e.id === line.startBinding!.elementId);
+        const el = elements.find(e => e.id === line.startBinding!.elementId);
         if (el) {
-            const pos = line.startBinding.position;
-            let p;
-            if (pos && pos !== 'edge') {
-                const anchors = getAnchorPoints(el);
-                const anchor = anchors.find(a => a.position === pos);
-                if (anchor) p = { x: anchor.x, y: anchor.y };
-            }
-            if (!p) p = intersectElementWithLine(el, { x: eX, y: eY }, line.startBinding.gap);
+            const p = resolveBindingPoint(line.startBinding, el, { x: eX, y: eY });
             if (p) { sX = p.x; sY = p.y; changed = true; }
         }
     }
 
     if (line.endBinding) {
-        const el = endEl || elements.find(e => e.id === line.endBinding!.elementId);
+        const el = elements.find(e => e.id === line.endBinding!.elementId);
         if (el) {
-            const pos = line.endBinding.position;
-            let p;
-            if (pos && pos !== 'edge') {
-                const anchors = getAnchorPoints(el);
-                const anchor = anchors.find(a => a.position === pos);
-                if (anchor) p = { x: anchor.x, y: anchor.y };
-            }
-            if (!p) p = intersectElementWithLine(el, { x: sX, y: sY }, line.endBinding.gap);
+            const p = resolveBindingPoint(line.endBinding, el, { x: sX, y: sY });
             if (p) { eX = p.x; eY = p.y; changed = true; }
+        }
+    }
+
+    // Spread connectors that share the exact same anchor positions
+    if (line.startBinding && line.endBinding &&
+        line.startBinding.elementId !== line.endBinding.elementId) {
+        const { index, total } = getOverlappingSiblingIndex(
+            line.id, line.startBinding.elementId, line.endBinding.elementId,
+            line.startBinding.position, line.endBinding.position, elements
+        );
+        if (total > 1) {
+            const spread = computeSpreadOffset(
+                index, total, line.startBinding.position, sX, sY, eX, eY
+            );
+            sX += spread.dx;
+            sY += spread.dy;
+            eX += spread.dx;
+            eY += spread.dy;
+            changed = true;
         }
     }
 

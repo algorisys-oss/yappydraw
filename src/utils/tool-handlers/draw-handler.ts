@@ -14,6 +14,7 @@ import { generateId } from '../id-generator';
 import { defaultTableData, defaultColWidths, defaultRowHeights } from '../table-utils';
 import { getUIShapeDef } from '../../config/ui-shape-defs';
 import { hitTestPoolLane, assignToPoolLane } from '../pool-containment';
+import { computeAnchorFractions } from '../binding-logic';
 
 // Shapes that default to solid stroke
 const SOLID_STROKE_SHAPES = [
@@ -262,6 +263,10 @@ export function drawOnMove(
     let finalX = x;
     let finalY = y;
 
+    // Track raw mouse position before snapping (used for precise anchor fractions)
+    pState.lastRawEndX = x;
+    pState.lastRawEndY = y;
+
     // Check binding for connector tools only (not plain lines)
     if (store.selectedTool === 'arrow' || store.selectedTool === 'bezier' || store.selectedTool === 'elbow' || store.selectedTool === 'organicBranch' || pState.draggingFromConnector) {
         if (pState.currentId) {
@@ -370,13 +375,13 @@ export function drawOnUp(
         // Binding for connectors (arrows/bezier/organicBranch) — not plain lines
         if ((el.type === 'arrow' || el.type === 'organicBranch' || (el.type === 'line' && el.curveType === 'bezier')) && signals.suggestedBinding()) {
             const binding = signals.suggestedBinding()!;
-            const bindingData = {
-                elementId: binding.elementId,
-                focus: 0,
-                gap: 5,
-                position: binding.position
-            };
-            updateElement(pState.currentId, { endBinding: bindingData });
+            // Use raw mouse position (not snap point) for fractions so each connector
+            // preserves the user's intended position, even when snapped to the same anchor
+            const endBindingData = computeAnchorFractions(
+                { elementId: binding.elementId, focus: 0, gap: 5, position: binding.position },
+                pState.lastRawEndX, pState.lastRawEndY, store.elements
+            );
+            updateElement(pState.currentId, { endBinding: endBindingData });
 
             const target = store.elements.find(e => e.id === binding.elementId);
             if (target) {
@@ -386,19 +391,41 @@ export function drawOnUp(
             signals.setSuggestedBinding(null);
         }
 
-        // Finalize elbow routing: use refreshBoundLine for smart anchor switching + routing
-        if (el.curveType === 'elbow' && pState.currentId) {
-            if (el.startBinding && el.endBinding) {
-                // refreshBoundLine picks ideal anchor positions (left/right/top/bottom)
-                // based on relative shape positions, then routes accordingly
+        // Always compute start binding fractions (stable anchoring regardless of end binding)
+        if (el.startBinding && (el.type === 'arrow' || el.type === 'organicBranch' || (el.type === 'line' && el.curveType === 'bezier'))) {
+            const startFractions = computeAnchorFractions(
+                el.startBinding, pState.startX, pState.startY, store.elements
+            );
+            updateElement(pState.currentId, { startBinding: startFractions });
+        }
+
+        // Finalize routing & re-spread siblings
+        if (pState.currentId) {
+            const updatedEl = store.elements.find(e => e.id === pState.currentId);
+            if (updatedEl && updatedEl.startBinding && updatedEl.endBinding) {
                 helpers.refreshBoundLine(pState.currentId);
-            } else {
-                const updatedEl = store.elements.find(e => e.id === pState.currentId);
-                if (updatedEl) {
-                    const pts = helpers.refreshLinePoints(updatedEl);
-                    if (pts) {
-                        updateElement(pState.currentId, { points: pts });
+
+                // Refresh sibling connectors so they re-spread
+                const startTarget = store.elements.find(e => e.id === updatedEl.startBinding!.elementId);
+                if (startTarget?.boundElements) {
+                    for (const b of startTarget.boundElements) {
+                        if (b.id !== pState.currentId) {
+                            const sibling = store.elements.find(e => e.id === b.id);
+                            if (sibling?.startBinding && sibling?.endBinding) {
+                                const sameShapePair =
+                                    (sibling.startBinding.elementId === updatedEl.startBinding!.elementId &&
+                                     sibling.endBinding.elementId === updatedEl.endBinding!.elementId) ||
+                                    (sibling.startBinding.elementId === updatedEl.endBinding!.elementId &&
+                                     sibling.endBinding.elementId === updatedEl.startBinding!.elementId);
+                                if (sameShapePair) helpers.refreshBoundLine(b.id);
+                            }
+                        }
                     }
+                }
+            } else if (updatedEl && el.curveType === 'elbow') {
+                const pts = helpers.refreshLinePoints(updatedEl);
+                if (pts) {
+                    updateElement(pState.currentId, { points: pts });
                 }
             }
         }

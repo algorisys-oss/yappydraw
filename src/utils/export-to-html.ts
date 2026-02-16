@@ -52,9 +52,15 @@ export const exportToHtml = async (doc: SlideDocument, filename: string) => {
         generatedAt: new Date().toISOString()
     };
 
-    // 2. Construct HTML
+    // 2. Construct HTML — preserve current theme
+    const theme = processedDoc.globalSettings?.theme || 'light';
+    const cssTheme = theme === 'focus' ? 'focus' : theme;
+    const isDarkTheme = theme === 'dark' || theme === 'focus';
+    const loaderBg = isDarkTheme ? '#1e1e1e' : '#f8fafc';
+    const loaderColor = isDarkTheme ? '#e5e7eb' : '#1e293b';
+
     const html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="${cssTheme}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -62,14 +68,14 @@ export const exportToHtml = async (doc: SlideDocument, filename: string) => {
     <style>
         /* Reset and Base Styles */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
-        
+
         /* Player CSS */
         ${PLAYER_CSS}
-        
+
         /* Loading Screen */
         #loader {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: #1e293b; color: white; display: flex;
+            background: ${loaderBg}; color: ${loaderColor}; display: flex;
             align-items: center; justify-content: center;
             font-family: system-ui, sans-serif; z-index: 9999;
             transition: opacity 0.5s;

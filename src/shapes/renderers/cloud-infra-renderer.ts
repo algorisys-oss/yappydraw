@@ -21,8 +21,10 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
                     renderer.fillStyle = options.fill;
                     renderer.beginPath();
+                    // Outer circle clockwise, inner circle counter-clockwise → donut fill
                     renderer.ellipse(ccx, ccy, outerR, outerR, 0, 0, Math.PI * 2);
-                    renderer.fill();
+                    renderer.ellipse(ccx, ccy, innerR, innerR, 0, Math.PI * 2, 0, true);
+                    renderer.fill('evenodd');
                 }
                 RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 renderer.beginPath();
@@ -271,16 +273,29 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 const outerR = Math.min(w, h) / 2;
                 const innerR = outerR * 0.35;
                 const spokes = 7;
-                rc.circle(ccx, ccy, outerR * 2, options);
-                rc.circle(ccx, ccy, innerR * 2, { ...options, fill: 'none' });
+                const { renderer } = context;
+                // Fill donut via canvas 2D with even-odd rule (roughjs can't do donut fills)
+                if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
+                    renderer.fillStyle = options.fill;
+                    renderer.beginPath();
+                    renderer.ellipse(ccx, ccy, outerR, outerR, 0, 0, Math.PI * 2);
+                    renderer.ellipse(ccx, ccy, innerR, innerR, 0, Math.PI * 2, 0, true);
+                    renderer.fill('evenodd');
+                }
+                // Roughjs for sketch-style strokes only (fill must be undefined, not 'none' —
+                // 'none' is truthy so roughjs generates fill ops with an invalid CSS color,
+                // causing the canvas to keep the previous fillStyle and leak fills)
+                const strokeOnly = { ...options, fill: undefined };
+                rc.circle(ccx, ccy, outerR * 2, strokeOnly);
+                rc.circle(ccx, ccy, innerR * 2, strokeOnly);
                 for (let i = 0; i < spokes; i++) {
                     const angle = (Math.PI * 2 * i) / spokes - Math.PI / 2;
                     const sx = ccx + Math.cos(angle) * innerR;
                     const sy = ccy + Math.sin(angle) * innerR;
                     const ex = ccx + Math.cos(angle) * outerR * 0.85;
                     const ey = ccy + Math.sin(angle) * outerR * 0.85;
-                    rc.line(sx, sy, ex, ey, { ...options, fill: 'none' });
-                    rc.circle(ex, ey, outerR * 0.16, { ...options, fill: 'none' });
+                    rc.line(sx, sy, ex, ey, strokeOnly);
+                    rc.circle(ex, ey, outerR * 0.16, strokeOnly);
                 }
                 break;
             }

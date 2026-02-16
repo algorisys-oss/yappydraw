@@ -243,8 +243,8 @@ export interface DrawingElement {
     boundElements?: { id: string; type: 'arrow' | 'text' | 'organicBranch' }[] | null;
     isSelected?: boolean;
     layerId: string; // Reference to parent layer
-    startBinding?: { elementId: string; focus: number; gap: number; position?: string } | null;
-    endBinding?: { elementId: string; focus: number; gap: number; position?: string } | null;
+    startBinding?: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number } | null;
+    endBinding?: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number } | null;
     curveType?: 'straight' | 'bezier' | 'elbow';
     constrained?: boolean; // Keep proportions
     autoResize?: boolean; // Auto-resize based on text
@@ -375,6 +375,7 @@ export interface DrawingElement {
     flowStyle?: 'dashes' | 'dots' | 'pulse';
     flowColor?: string;
     flowDensity?: number;        // 1 to 10
+    flowReverse?: boolean;       // Reverse flow direction
 
     // NEW: Persistent Animations
     spinEnabled?: boolean;

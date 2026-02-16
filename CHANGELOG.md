@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-02-16
+
+### Added
+- **Stable Connector Anchoring** — fraction-based positioning system for precise connector endpoints:
+  - `anchorFractionX`/`anchorFractionY` (0-1) stored per binding for sub-anchor precision
+  - Connectors maintain exact relative positions when shapes are moved
+  - Resolution priority: fractions > named anchor > edge intersection fallback
+  - Raw mouse position tracking for unique per-connector fractions
+- **Auto-Spread Overlapping Connectors** — perpendicular offset for sibling connectors sharing identical anchor positions
+- **Connector Handle Arrow Default** — drag-to-connect icon now creates arrows (with arrowhead) instead of plain lines
+- **Smart Partial Eraser** — freehand stroke eraser that splits strokes at the eraser path
+- **Flow Animation Reverse Direction** — option to reverse flow animation direction
+- **Larger Default Arrowhead** — increased default arrowhead size from 12 to 28
+- **Auto-Show Property Panel** — property panel automatically shows when a drawing tool is selected
+
+### Fixed
+- **Connector convergence/overlap when moving shapes** — removed dynamic anchor switching that caused all connectors to converge to the same point; replaced with stable fraction-based positioning
+- **Edge-type binding drift** — edge bindings no longer recalculate dynamically, preventing cumulative position drift
+- **Connector handle missing refreshBoundLine** — connector handle path now properly finalizes binding geometry
+- **Kubernetes shape fill color leak** — fixed fill state management in kubernetes shape renderer
+- **Zen mode exit button** — added visible exit button for zen mode
+- **Cross-platform checkbox styling** — consistent checkbox appearance on Windows
+- **Ink brush sharp corner gaps** — filled gaps at sharp corners in ink brush strokes
+- **HTML export theme preservation** — exported HTML now preserves current theme setting
+- **Mobile .yappy.txt save extension** — save-to-disk on mobile uses correct file extension
+- **Mobile status bar visibility** — status bar now shows on mobile devices
+
+### Changed
+- **Default stroke width** — changed to 4 across all contexts: store defaults, api.ts, migration.ts, settings dialog, data structure renderer fallbacks
+
 ## [1.17.0] - 2026-02-15
 
 ### Added

@@ -69,7 +69,8 @@ export class PathRenderer extends ShapeRenderer {
 
         const time = (window as any).yappyGlobalTime || performance.now();
         const speed = (el.flowSpeed ?? 2) * 50;
-        const offset = (time / 1000 * speed);
+        const direction = el.flowReverse ? -1 : 1;
+        const offset = (time / 1000 * speed) * direction;
         const color = RenderPipeline.adjustColor(el.flowColor || el.strokeColor, isDarkMode);
         const pulseSize = Math.max(2, el.strokeWidth * 1.5);
         const gap = 100 / (el.flowDensity || 3);
@@ -186,7 +187,7 @@ export class PathRenderer extends ShapeRenderer {
         // Draw arrowheads at start/end (scale to branch width)
         if (el.startArrowhead) {
             const startAngle = this.cubicBezierAngle(start, cp1, cp2, end, 0) + Math.PI;
-            const headLen = el.startArrowheadSize || Math.max(startWidth * 0.75, 12);
+            const headLen = el.startArrowheadSize || Math.max(startWidth * 0.75, 28);
             // Offset away from the branch so it doesn't overlap the wide body
             const ox = Math.cos(startAngle) * headLen * 0.6;
             const oy = Math.sin(startAngle) * headLen * 0.6;
@@ -194,7 +195,7 @@ export class PathRenderer extends ShapeRenderer {
         }
         if (el.endArrowhead) {
             const endAngle = this.cubicBezierAngle(start, cp1, cp2, end, 1);
-            const headLen = el.endArrowheadSize || Math.max(endWidth * 1.5, 12);
+            const headLen = el.endArrowheadSize || Math.max(endWidth * 1.5, 28);
             this.drawArrowhead(renderer, end.x, end.y, endAngle, el.endArrowhead, color, headLen);
         }
 

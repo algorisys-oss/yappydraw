@@ -131,6 +131,48 @@ input[type="text"]:focus {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
+/* Cross-platform checkbox styling */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border-color, #d1d5db);
+  border-radius: 4px;
+  background: var(--bg-panel, #ffffff);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--primary-color, #3b82f6);
+  border-color: var(--primary-color, #3b82f6);
+}
+
+input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4.5px;
+  top: 1.5px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+input[type="checkbox"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--primary-color, #3b82f6);
+  outline-offset: 1px;
+}
 
 a {
   font-weight: 500;
@@ -315,4 +357,29 @@ button:focus-visible {
 .floating-settings-btn.active {
   background: #3b82f6 !important;
   color: #ffffff !important;
+}
+
+/* Zen mode exit button */
+.zen-exit-btn {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--bg-panel, #ffffff);
+  color: var(--text-secondary, #6b7280);
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  z-index: 1000;
+  opacity: 0.5;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.zen-exit-btn:hover {
+  opacity: 1;
+  background: var(--primary-color, #3b82f6);
+  color: white;
 }

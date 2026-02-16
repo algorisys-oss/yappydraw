@@ -138,6 +138,7 @@ export interface ElementAnimationTarget {
     flowAnimation?: boolean;
     flowSpeed?: number;
     flowStyle?: string;
+    flowReverse?: boolean;
 }
 
 export interface ElementAnimationConfig extends Omit<AnimationConfig, 'onUpdate'> {

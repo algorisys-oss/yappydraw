@@ -223,7 +223,7 @@ export class DataStructureRenderer extends ShapeRenderer {
         const showIndices = el.dsShowIndices ?? true;
         const isVertical = el.dsDirection === 'vertical';
         const cornerRadius = Math.min((el.borderRadius ?? 4) * Math.min(el.width, el.height) / 100, el.width / 2, el.height / 2);
-        const strokeWidth = el.strokeWidth || 1;
+        const strokeWidth = el.strokeWidth || 4;
 
         const padding = 8;
         const hasTitle = !!el.containerText;
@@ -344,7 +344,7 @@ export class DataStructureRenderer extends ShapeRenderer {
         const font = resolveFontFamily(el.fontFamily || 'code');
         const isHorizontal = el.dsDirection === 'horizontal';
         const cornerRadius = Math.min((el.borderRadius ?? 4) * Math.min(el.width, el.height) / 100, el.width / 2, el.height / 2);
-        const strokeWidth = el.strokeWidth || 1;
+        const strokeWidth = el.strokeWidth || 4;
 
         const padding = 8;
         const hasTitle = !!el.containerText;
@@ -476,7 +476,7 @@ export class DataStructureRenderer extends ShapeRenderer {
         const font = resolveFontFamily(el.fontFamily || 'code');
         const isVertical = el.dsDirection === 'vertical';
         const cornerRadius = Math.min((el.borderRadius ?? 4) * Math.min(el.width, el.height) / 100, el.width / 2, el.height / 2);
-        const strokeWidth = el.strokeWidth || 1;
+        const strokeWidth = el.strokeWidth || 4;
 
         const padding = 8;
         const hasTitle = !!el.containerText;
@@ -603,7 +603,7 @@ export class DataStructureRenderer extends ShapeRenderer {
         const font = resolveFontFamily(el.fontFamily || 'code');
         const isVertical = el.dsDirection === 'vertical';
         const cornerRadius = Math.min((el.borderRadius ?? 4) * Math.min(el.width, el.height) / 100, el.width / 2, el.height / 2);
-        const strokeWidth = el.strokeWidth || 1;
+        const strokeWidth = el.strokeWidth || 4;
 
         const padding = 8;
         const hasTitle = !!el.containerText;
@@ -816,7 +816,7 @@ export class DataStructureRenderer extends ShapeRenderer {
         const fontSize = el.fontSize || 14;
         const font = resolveFontFamily(el.fontFamily || 'code');
         const cornerRadius = Math.min((el.borderRadius ?? 4) * Math.min(el.width, el.height) / 100, el.width / 2, el.height / 2);
-        const strokeWidth = el.strokeWidth || 1;
+        const strokeWidth = el.strokeWidth || 4;
 
         const padding = 8;
         const hasTitle = !!el.containerText;
@@ -955,7 +955,7 @@ export class DataStructureRenderer extends ShapeRenderer {
         const fontSize = el.fontSize || 14;
         const font = resolveFontFamily(el.fontFamily || 'code');
         const cornerRadius = Math.min((el.borderRadius ?? 4) * Math.min(el.width, el.height) / 100, el.width / 2, el.height / 2);
-        const strokeWidth = el.strokeWidth || 1;
+        const strokeWidth = el.strokeWidth || 4;
         const capacity = el.dsCapacity || 5;
         const showIndices = el.dsShowIndices ?? true;
 

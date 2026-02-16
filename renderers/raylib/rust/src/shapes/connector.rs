@@ -152,7 +152,7 @@ fn render_arrowhead(
         .extra
         .get("endArrowheadSize")
         .and_then(|v| v.as_f64())
-        .unwrap_or(12.0) as f32;
+        .unwrap_or(28.0) as f32;
 
     let stroke_color = get_stroke_color(el);
 

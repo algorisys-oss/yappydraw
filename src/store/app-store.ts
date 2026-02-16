@@ -137,7 +137,7 @@ const initialState: AppState = {
             strokeColor: (localStorage.getItem('theme') === 'focus') ? '#ffffff' : '#000000',
             backgroundColor: 'transparent',
             fillStyle: 'solid',
-            strokeWidth: 2,
+            strokeWidth: 4,
             strokeStyle: 'solid',
             roughness: 1,
             renderStyle: 'sketch',
@@ -153,8 +153,8 @@ const initialState: AppState = {
             verticalAlign: 'middle',
             startArrowhead: null,
             endArrowhead: null,
-            startArrowheadSize: 12,
-            endArrowheadSize: 12,
+            startArrowheadSize: 28,
+            endArrowheadSize: 28,
             autoResize: false,
             flowColor: undefined,
             seed: 0,
@@ -699,6 +699,12 @@ export const setSelectedTool = (tool: ToolType) => {
     } else {
         updateDefaultStyles({ autoResize: false });
     }
+
+    // Auto-show property panel when a drawing tool is selected
+    const NON_DRAWING_TOOLS = ['selection', 'lasso', 'pan', 'eraser'];
+    if (!NON_DRAWING_TOOLS.includes(tool) && !store.showPropertyPanel) {
+        setStore('showPropertyPanel', true);
+    }
 };
 
 export const setToolLocked = (locked: boolean) => {
@@ -729,7 +735,7 @@ export const resetDefaultStyles = () => {
         strokeColor: (store.theme === 'focus') ? '#ffffff' : '#000000',
         backgroundColor: 'transparent',
         fillStyle: 'solid',
-        strokeWidth: 2,
+        strokeWidth: 4,
         strokeStyle: 'solid',
         roughness: 1,
         renderStyle: 'sketch',

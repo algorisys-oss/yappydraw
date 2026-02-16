@@ -136,7 +136,7 @@ const Menu: Component = () => {
                     const compressedResponse = new Response(stream);
                     blob = await compressedResponse.blob();
                     fileNameWithExt = `${baseFilename}.yappy`;
-                    mimeType = 'application/gzip';
+                    mimeType = 'application/octet-stream';
                 }
 
                 // For sharing, we might need a file object

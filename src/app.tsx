@@ -988,6 +988,15 @@ const App: Component = () => {
             <LayerPanel />
             <StatusBar />
           </Show>
+          <Show when={store.zenMode}>
+            <button
+              class="zen-exit-btn"
+              onClick={() => toggleZenMode()}
+              title="Exit Zen Mode (Alt+Z)"
+            >
+              Exit Zen
+            </button>
+          </Show>
           <Menu />
         </Show>
         <Canvas />

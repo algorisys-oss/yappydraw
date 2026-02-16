@@ -50,7 +50,7 @@
 @media (max-width: 768px) {
     .toolbar-container {
         top: auto;
-        bottom: 0;
+        bottom: 36px;
         left: 0;
         right: 0;
         width: 100%;

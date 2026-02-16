@@ -172,6 +172,7 @@ interface ElementOptions {
     flowStyle?: 'dashes' | 'dots' | 'pulse';
     flowColor?: string;
     flowDensity?: number;
+    flowReverse?: boolean;
 
     // Text Styling
     textColor?: string;
@@ -260,7 +261,7 @@ export const YappyAPI = {
             strokeColor: options?.strokeColor ?? defaults.strokeColor ?? '#000000',
             backgroundColor: options?.backgroundColor ?? defaults.backgroundColor ?? 'transparent',
             fillStyle: options?.fillStyle ?? defaults.fillStyle ?? 'solid',
-            strokeWidth: options?.strokeWidth ?? defaults.strokeWidth ?? 1,
+            strokeWidth: options?.strokeWidth ?? defaults.strokeWidth ?? 4,
             strokeStyle: options?.strokeStyle ?? defaults.strokeStyle ?? 'solid',
             opacity: options?.opacity ?? defaults.opacity ?? 100,
             roughness: options?.roughness ?? defaults.roughness ?? 1,
