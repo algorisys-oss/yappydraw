@@ -641,7 +641,7 @@ export function renderLayersAndElements(
                 }
             }
 
-            if (renderedEl.type !== 'text' || editingId !== renderedEl.id) {
+            if ((renderedEl.type !== 'text' && renderedEl.type !== 'richtext') || editingId !== renderedEl.id) {
                 // For non-text elements being edited, set isEditing so the
                 // render pipeline skips text drawing (the textarea overlay shows it instead)
                 if (editingId === renderedEl.id) {

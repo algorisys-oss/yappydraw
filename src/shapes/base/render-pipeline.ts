@@ -336,7 +336,7 @@ export class RenderPipeline {
         renderer.font = getFontString(el);
 
         // Resolve Text Color
-        const textColorRaw = el.textColor || el.strokeColor;
+        const textColorRaw = el.textColor || el.strokeColor || '#000000';
         const textColor = this.adjustColor(textColorRaw, isDarkMode);
 
         // Apply text alignment (default to center for containerText)
@@ -468,6 +468,10 @@ export class RenderPipeline {
 
             const baselineY = lineY + lineHeight / 2;
 
+            // Track if we've drawn a list marker for this line
+            let listMarkerDrawn = false;
+            const INDENT_SIZE = 20;
+
             for (const seg of lineSegments) {
                 const span = seg.span;
                 renderer.font = buildSpanFontString(span, defaults);
@@ -475,6 +479,25 @@ export class RenderPipeline {
                 renderer.fillStyle = this.adjustColor(color, isDarkMode);
                 renderer.textBaseline = 'middle';
                 renderer.textAlign = 'left';
+
+                // Draw list marker (bullet or number) before first segment of list item
+                if (!listMarkerDrawn && span.listType && span.listType !== 'none') {
+                    const listLevel = span.listLevel || 0;
+                    const indent = listLevel * INDENT_SIZE;
+                    const markerX = xOffset + indent;
+
+                    if (span.listType === 'bullet') {
+                        // Draw bullet point
+                        const bulletChar = '•';
+                        renderer.fillText(bulletChar, markerX, baselineY);
+                    } else if (span.listType === 'ordered') {
+                        // Draw number
+                        const number = `${span.listIndex || 1}.`;
+                        renderer.fillText(number, markerX, baselineY);
+                    }
+                    listMarkerDrawn = true;
+                }
+
                 renderer.fillText(seg.text, xOffset + seg.x, baselineY);
 
                 // Draw underline

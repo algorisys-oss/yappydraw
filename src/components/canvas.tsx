@@ -345,6 +345,7 @@ const Canvas: Component = () => {
             e.fontWeight; e.fontStyle;
             e.textColor; e.textHighlightEnabled; e.textHighlightColor; e.textHighlightPadding; e.textHighlightRadius;
             e.startArrowhead; e.endArrowhead;
+            e.controlPoints; e.curveType; // Track control points and curve type for bezier lines
             e.containerText; e.labelPosition; // Track label properties for immediate updates
             e.isCollapsed; e.parentId; // Track hierarchy state for immediate updates
             e.starPoints; // Track star points for parametric stars

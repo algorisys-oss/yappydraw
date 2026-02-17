@@ -16,29 +16,54 @@ export class ConnectionRelRenderer extends ShapeRenderer {
 
         switch (el.type) {
             case 'puzzlePiece': {
-                // Puzzle piece with tab on right and slot on bottom
-                // Use beginPath/moveTo/lineTo/arc instead of Path2D for IRenderer compatibility
+                // Puzzle piece — flip geometry when dragged left/up so the
+                // tab/indent directions match what sketch mode produces
+                // (bumps invert to indents, tab moves to opposite side).
+                const flipX = el.width < 0;
                 const tabW = w * 0.15;
                 const slotH = h * 0.15;
 
                 renderer.beginPath();
                 renderer.moveTo(x, y);
-                // Top edge
-                renderer.lineTo(x + w * 0.35, y);
-                renderer.lineTo(x + w * 0.35, y - slotH);
-                renderer.arc(x + w * 0.5, y - slotH, w * 0.15, Math.PI, 0);
-                renderer.lineTo(x + w * 0.65, y);
-                renderer.lineTo(x + w, y);
-                // Right edge with tab
-                renderer.lineTo(x + w, y + h * 0.35);
-                renderer.lineTo(x + w + tabW, y + h * 0.35);
-                renderer.arc(x + w + tabW, y + h * 0.5, h * 0.15, -Math.PI / 2, Math.PI / 2);
-                renderer.lineTo(x + w, y + h * 0.65);
-                renderer.lineTo(x + w, y + h);
-                // Bottom edge
-                renderer.lineTo(x, y + h);
-                // Left edge
-                renderer.lineTo(x, y);
+
+                if (!flipX) {
+                    // Normal: bump on top, tab on right
+                    // Top edge with upward bump
+                    renderer.lineTo(x + w * 0.35, y);
+                    renderer.lineTo(x + w * 0.35, y - slotH);
+                    renderer.arc(x + w * 0.5, y - slotH, w * 0.15, Math.PI, 0);
+                    renderer.lineTo(x + w * 0.65, y);
+                    renderer.lineTo(x + w, y);
+                    // Right edge with tab
+                    renderer.lineTo(x + w, y + h * 0.35);
+                    renderer.lineTo(x + w + tabW, y + h * 0.35);
+                    renderer.arc(x + w + tabW, y + h * 0.5, h * 0.15, -Math.PI / 2, Math.PI / 2);
+                    renderer.lineTo(x + w, y + h * 0.65);
+                    renderer.lineTo(x + w, y + h);
+                    // Bottom edge
+                    renderer.lineTo(x, y + h);
+                    // Left edge
+                    renderer.lineTo(x, y);
+                } else {
+                    // Flipped: indent on top, tab on left
+                    // Top edge with downward indent
+                    renderer.lineTo(x + w * 0.35, y);
+                    renderer.lineTo(x + w * 0.35, y + slotH);
+                    renderer.arc(x + w * 0.5, y + slotH, w * 0.15, Math.PI, 0, true);
+                    renderer.lineTo(x + w * 0.65, y);
+                    renderer.lineTo(x + w, y);
+                    // Right edge (plain)
+                    renderer.lineTo(x + w, y + h);
+                    // Bottom edge
+                    renderer.lineTo(x, y + h);
+                    // Left edge with tab
+                    renderer.lineTo(x, y + h * 0.65);
+                    renderer.lineTo(x - tabW, y + h * 0.65);
+                    renderer.arc(x - tabW, y + h * 0.5, h * 0.15, Math.PI / 2, -Math.PI / 2, true);
+                    renderer.lineTo(x, y + h * 0.35);
+                    renderer.lineTo(x, y);
+                }
+
                 renderer.closePath();
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {

@@ -1028,7 +1028,7 @@ function handleControlPointDrag(
     y: number,
     id: string,
     pState: PointerState,
-    _helpers: PointerHelpers
+    helpers: PointerHelpers
 ): void {
     const index = parseInt(pState.draggingHandle!.replace('control-', ''), 10);
     const element = store.elements.find(e => e.id === id);
@@ -1057,7 +1057,14 @@ function handleControlPointDrag(
         } else {
             newControlPoints[index] = { x: x, y: y };
         }
-        updateElement(element.id, { controlPoints: newControlPoints });
+        // Auto-convert straight to bezier when user drags a control point
+        const updates: any = { controlPoints: newControlPoints };
+        if ((element.curveType === 'straight' || !element.curveType) &&
+            (element.type === 'line' || element.type === 'arrow')) {
+            updates.curveType = 'bezier';
+        }
+        updateElement(element.id, updates);
+        requestAnimationFrame(helpers.draw);
     }
 
     // Handle Custom Control Handles (Virtual handles like Top Control for Cube)

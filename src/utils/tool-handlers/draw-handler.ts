@@ -304,47 +304,30 @@ export function drawOnMove(
         updates.controlPoints = [cp1, cp2];
     }
 
-    // For elbow, track direction changes to build multi-bend orthogonal path
+    // For elbow, build a clean L-shaped orthogonal path (single bend)
     if (store.selectedTool === 'elbow') {
-        const BEND_THRESHOLD = 15;
+        const DIRECTION_THRESHOLD = 20;
         const relX = finalX - pState.startX;
         const relY = finalY - pState.startY;
-        const committed = pState.elbowCommittedPoints;
-        const last = committed[committed.length - 1];
-        const dx = relX - last.x;
-        const dy = relY - last.y;
 
         // Determine initial direction after sufficient movement
         if (pState.elbowDirection === null) {
-            if (Math.abs(dx) > BEND_THRESHOLD || Math.abs(dy) > BEND_THRESHOLD) {
-                pState.elbowDirection = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
+            if (Math.abs(relX) > DIRECTION_THRESHOLD || Math.abs(relY) > DIRECTION_THRESHOLD) {
+                pState.elbowDirection = Math.abs(relX) >= Math.abs(relY) ? 'h' : 'v';
             }
         }
 
-        // Detect direction change → commit bend point
-        if (pState.elbowDirection === 'h' && Math.abs(dy) > BEND_THRESHOLD) {
-            committed.push({ x: relX, y: last.y });
-            pState.elbowDirection = 'v';
-        } else if (pState.elbowDirection === 'v' && Math.abs(dx) > BEND_THRESHOLD) {
-            committed.push({ x: last.x, y: relY });
-            pState.elbowDirection = 'h';
-        }
-
-        // Build preview: committed points + trailing constrained segment + cursor endpoint
-        const updatedLast = committed[committed.length - 1];
-        const pts: { x: number; y: number }[] = [...committed];
+        // Build clean L-shaped path: origin → corner → endpoint (exactly 1 bend)
+        const pts: { x: number; y: number }[] = [{ x: 0, y: 0 }];
 
         if (pState.elbowDirection === 'h') {
-            pts.push({ x: relX, y: updatedLast.y });
-            // Add small perpendicular stub if cursor is offset
-            if (Math.abs(relY - updatedLast.y) > 1) {
-                pts.push({ x: relX, y: relY });
-            }
+            // Horizontal first, then vertical
+            pts.push({ x: relX, y: 0 });
+            pts.push({ x: relX, y: relY });
         } else if (pState.elbowDirection === 'v') {
-            pts.push({ x: updatedLast.x, y: relY });
-            if (Math.abs(relX - updatedLast.x) > 1) {
-                pts.push({ x: relX, y: relY });
-            }
+            // Vertical first, then horizontal
+            pts.push({ x: 0, y: relY });
+            pts.push({ x: relX, y: relY });
         } else {
             // No direction yet — just show endpoint
             pts.push({ x: relX, y: relY });
@@ -450,6 +433,32 @@ export function drawOnUp(
             }
         } else if (el.type === 'organicBranch') {
             normalizeOrganicBranch(pState.currentId, el);
+        }
+
+        // Auto-initialize a center control point for line/arrow (not elbow)
+        // so control points are visible by default when selected
+        if ((el.type === 'line' || el.type === 'arrow') && el.curveType !== 'elbow') {
+            const finalEl = store.elements.find(e => e.id === pState.currentId);
+            if (finalEl && !finalEl.controlPoints) {
+                const startX = finalEl.x;
+                const startY = finalEl.y;
+                const endX = finalEl.x + finalEl.width;
+                const endY = finalEl.y + finalEl.height;
+                const midX = (startX + endX) / 2;
+                const midY = (startY + endY) / 2;
+
+                if (finalEl.curveType === 'bezier') {
+                    // For bezier tool: offset CP from midpoint for visible curve
+                    const dx = endX - startX;
+                    const dy = endY - startY;
+                    const offsetX = Math.abs(dx) > Math.abs(dy) ? 0 : dy * 0.3;
+                    const offsetY = Math.abs(dx) > Math.abs(dy) ? -dx * 0.3 : 0;
+                    updateElement(pState.currentId!, { controlPoints: [{ x: midX + offsetX, y: midY + offsetY }] });
+                } else {
+                    // For straight line/arrow: CP at midpoint (visually straight)
+                    updateElement(pState.currentId!, { controlPoints: [{ x: midX, y: midY }] });
+                }
+            }
         }
 
         // Discard shapes created by click without drag (too small)

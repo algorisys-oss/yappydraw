@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.0] - 2026-02-17
+
+### Added
+- **Line/Arrow/Bezier Refactor** — lines and arrows now get default cubic bezier control points at creation (1/3 and 2/3 along the line), enabling smooth curves without manual conversion
+- **Double-Click Text Editing on Lines/Arrows** — lines and arrows now support double-click to edit containerText, with connector-aware sizing in the text overlay
+
+### Fixed
+- **Control point real-time preview** — dragging control points on bezier curves now updates the canvas in real-time; added `controlPoints`/`curveType` to SolidJS reactive tracking and `requestAnimationFrame` call to drag handler
+- **Elbow line too many bends** — replaced multi-bend algorithm (BEND_THRESHOLD=15) with clean L-shaped path producing exactly 1 bend; eliminates mouse wobble artifacts during interactive drawing
+- **Text jumping when editing standalone text** — switched from `translate(-50%, -50%)` to top-left anchoring with computed vertical padding matching canvas renderer formula
+- **Text jumping when editing containerText on shapes** — extended top-left anchoring to container shapes with `measureContainerText()` metrics and shape-specific Y offsets (doubleBanner, starPerson, lightbulb, signpost, UI shapes)
+- **Double border during text editing** — canvas renderer now skips text drawing when `isEditing` flag is set on element
+- **Consistent fontSize default** — unified all text element creation paths to use `store.defaults?.fontSize ?? 20`
+- **Text drag preview** — replaced distracting dashed outline with subtle semi-transparent fill
+- **Rich text bullet lists** — fixed bullet list rendering, indentation, text color, and drag visibility
+- **Invisible text elements** — added `textColor: '#000000'` default to prevent transparent text on newly created elements
+- **Puzzle piece architectural renderer** — normalized negative dimensions in connection-rel renderer to fix shapes becoming invisible when dragged left/upward
+
+## [1.21.0] - 2026-02-17
+
+### Added
+- **AI Drawing Engine** — generate entire diagrams from natural language prompts via LLM (OpenAI, Google Gemini, Anthropic); accessible via menu or `Ctrl+Shift+A`
+
+### Fixed
+- **Arrow connections for BPMN/UML shapes** — added BPMN events to ellipse intersection, gateways to diamond intersection, and default bounding-box fallback for all unrecognized types
+- **Stable anchor bindings** — `connect()` API now computes `anchorFractionX`/`anchorFractionY` for precise, stable bindings
+- **Puzzle piece invisible on drag-left** — normalized negative dimensions in architectural renderer
+
 ## [1.20.0] - 2026-02-16
 
 ### Added

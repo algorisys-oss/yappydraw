@@ -399,7 +399,7 @@ export function textOnDown(
         x,
         y,
         width: 0,
-        height: 30,
+        height: 24, // fontSize(20) * lineHeight(1.2)
         text: '',
         layerId: store.activeLayerId
     } as DrawingElement;
@@ -446,7 +446,7 @@ export function textOnUp(
     let finalX = el.x;
     let finalY = el.y;
 
-    const fontSize = el.fontSize || 28;
+    const fontSize = el.fontSize || 20; // match text-renderer default
     const lineHeight = fontSize * 1.2;
 
     // If width is too small (click rather than drag), use default width
@@ -501,7 +501,7 @@ export function richTextOnDown(
         x,
         y,
         width: 0,
-        height: 30,
+        height: 24, // fontSize(20) * lineHeight(1.2)
         text: '',
         richText: [], // Initialize empty rich text array
         layerId: store.activeLayerId
@@ -549,7 +549,7 @@ export function richTextOnUp(
     let finalX = el.x;
     let finalY = el.y;
 
-    const fontSize = el.fontSize || 28;
+    const fontSize = el.fontSize || 20; // match text-renderer default
     const lineHeight = fontSize * 1.2;
 
     // If width is too small (click rather than drag), use default width
@@ -890,6 +890,14 @@ export function connectorHandleOnUp(
                     }
                 }
             }
+        }
+
+        // Auto-initialize center control point (visible by default when selected)
+        const finalArrow = store.elements.find(e => e.id === pState.currentId);
+        if (finalArrow && !finalArrow.controlPoints && finalArrow.curveType !== 'elbow') {
+            const sx = finalArrow.x, sy = finalArrow.y;
+            const ex = finalArrow.x + finalArrow.width, ey = finalArrow.y + finalArrow.height;
+            updateElement(pState.currentId!, { controlPoints: [{ x: (sx + ex) / 2, y: (sy + ey) / 2 }] });
         }
 
         setStore('selection', [pState.currentId]);

@@ -14,27 +14,128 @@ import { CanvasRenderer } from '../rendering/CanvasRenderer';
  * Convert RichTextSpan[] to HTML string for contenteditable rendering.
  */
 export function spansToHtml(spans: RichTextSpan[]): string {
-    return spans.map(span => {
-        const styles: string[] = [];
-        if (span.bold) styles.push('font-weight:bold');
-        if (span.italic) styles.push('font-style:italic');
-        const decorations: string[] = [];
-        if (span.underline) decorations.push('underline');
-        if (span.strikethrough) decorations.push('line-through');
-        if (decorations.length) styles.push(`text-decoration:${decorations.join(' ')}`);
-        if (span.color) styles.push(`color:${span.color}`);
-        if (span.fontSize) styles.push(`font-size:${span.fontSize}px`);
-        if (span.fontFamily) styles.push(`font-family:${resolveFontFamily(span.fontFamily)}`);
+    if (spans.length === 0) return '';
 
-        const escaped = span.text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/\n/g, '<br>');
+    let html = '';
+    let i = 0;
 
-        if (styles.length === 0) return escaped;
-        return `<span style="${styles.join(';')}">${escaped}</span>`;
-    }).join('');
+    while (i < spans.length) {
+        const span = spans[i];
+
+        // Check if this is a list item
+        if (span.listType && span.listType !== 'none') {
+            // Collect all consecutive list items (including nested ones)
+            const listItems: RichTextSpan[] = [];
+            const startListType = span.listType;
+
+            while (i < spans.length) {
+                const currentSpan = spans[i];
+
+                // Skip newline spans between list items
+                if (currentSpan.text === '\n' && !currentSpan.listType) {
+                    i++;
+                    continue;
+                }
+
+                // Stop if we hit a non-list span
+                if (!currentSpan.listType || currentSpan.listType === 'none') {
+                    break;
+                }
+
+                listItems.push(currentSpan);
+                i++;
+            }
+
+            // Generate nested list HTML
+            const generateNestedList = (items: RichTextSpan[], currentLevel: number = 0, currentType: 'bullet' | 'ordered' = startListType): string => {
+                let html = '';
+                const tag = currentType === 'bullet' ? 'ul' : 'ol';
+                html += `<${tag}>`;
+
+                let j = 0;
+                while (j < items.length) {
+                    const item = items[j];
+                    const itemLevel = item.listLevel || 0;
+
+                    if (itemLevel === currentLevel && item.listType === currentType) {
+                        // Same level item - create <li>
+                        const styles: string[] = [];
+                        if (item.bold) styles.push('font-weight:bold');
+                        if (item.italic) styles.push('font-style:italic');
+                        const decorations: string[] = [];
+                        if (item.underline) decorations.push('underline');
+                        if (item.strikethrough) decorations.push('line-through');
+                        if (decorations.length) styles.push(`text-decoration:${decorations.join(' ')}`);
+                        if (item.color) styles.push(`color:${item.color}`);
+                        if (item.fontSize) styles.push(`font-size:${item.fontSize}px`);
+                        if (item.fontFamily) styles.push(`font-family:${resolveFontFamily(item.fontFamily)}`);
+
+                        const escaped = item.text
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/\n/g, '<br>');
+
+                        const content = styles.length > 0
+                            ? `<span style="${styles.join(';')}">${escaped}</span>`
+                            : escaped;
+
+                        html += `<li>${content}</li>`;
+                        j++;
+                    } else if (itemLevel > currentLevel) {
+                        // Nested list - collect nested items and recurse
+                        const nestedItems: RichTextSpan[] = [];
+                        const nestedLevel = itemLevel;
+                        const nestedType = item.listType as 'bullet' | 'ordered'; // Already filtered 'none' above
+
+                        while (j < items.length && (items[j].listLevel || 0) >= nestedLevel) {
+                            if ((items[j].listLevel || 0) === nestedLevel && items[j].listType === nestedType) {
+                                nestedItems.push(items[j]);
+                            }
+                            j++;
+                        }
+
+                        html += generateNestedList(nestedItems, nestedLevel, nestedType);
+                    } else {
+                        // Lower level - return to parent
+                        break;
+                    }
+                }
+
+                html += `</${tag}>`;
+                return html;
+            };
+
+            html += generateNestedList(listItems);
+        } else {
+            // Regular span (not a list item)
+            const styles: string[] = [];
+            if (span.bold) styles.push('font-weight:bold');
+            if (span.italic) styles.push('font-style:italic');
+            const decorations: string[] = [];
+            if (span.underline) decorations.push('underline');
+            if (span.strikethrough) decorations.push('line-through');
+            if (decorations.length) styles.push(`text-decoration:${decorations.join(' ')}`);
+            if (span.color) styles.push(`color:${span.color}`);
+            if (span.fontSize) styles.push(`font-size:${span.fontSize}px`);
+            if (span.fontFamily) styles.push(`font-family:${resolveFontFamily(span.fontFamily)}`);
+
+            const escaped = span.text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\n/g, '<br>');
+
+            if (styles.length === 0) {
+                html += escaped;
+            } else {
+                html += `<span style="${styles.join(';')}">${escaped}</span>`;
+            }
+            i++;
+        }
+    }
+
+    return html;
 }
 
 /**
@@ -43,7 +144,7 @@ export function spansToHtml(spans: RichTextSpan[]): string {
 export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
     const spans: RichTextSpan[] = [];
 
-    function walk(node: Node, inherited: Partial<RichTextSpan>) {
+    function walk(node: Node, inherited: Partial<RichTextSpan>, listContext: { type?: 'bullet' | 'ordered'; level: number; index: number } = { level: -1, index: 0 }) {
         if (node.nodeType === Node.TEXT_NODE) {
             const text = node.textContent || '';
             if (text.length > 0) {
@@ -55,6 +156,16 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
                 if (inherited.color) span.color = inherited.color;
                 if (inherited.fontSize) span.fontSize = inherited.fontSize;
                 if (inherited.fontFamily) span.fontFamily = inherited.fontFamily;
+
+                // Apply list context if we're inside a list item
+                if (listContext.type) {
+                    span.listType = listContext.type;
+                    span.listLevel = listContext.level;
+                    if (listContext.type === 'ordered') {
+                        span.listIndex = listContext.index;
+                    }
+                }
+
                 spans.push(span);
             }
             return;
@@ -72,6 +183,39 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
         // Build inherited style from this element
         const style = { ...inherited };
         const tag = el.tagName.toLowerCase();
+
+        // Handle list elements
+        if (tag === 'ul' || tag === 'ol') {
+            const listType: 'bullet' | 'ordered' = tag === 'ul' ? 'bullet' : 'ordered';
+            const newLevel = listContext.level + 1;
+
+            // Process each list item
+            const listItems = Array.from(el.children).filter(child => child.tagName.toLowerCase() === 'li');
+            listItems.forEach((li, index) => {
+                const newContext = { type: listType, level: newLevel, index: index + 1 };
+                walk(li, style, newContext);
+            });
+            return;
+        }
+
+        // Handle list item - just process children with current context
+        if (tag === 'li') {
+            const children = Array.from(el.childNodes);
+            for (let ci = 0; ci < children.length; ci++) {
+                const child = children[ci];
+                // Skip trailing <br> in list items — browsers insert a
+                // placeholder <br> that would create a spurious blank line
+                if (child instanceof HTMLElement && child.tagName === 'BR' && ci === children.length - 1) {
+                    continue;
+                }
+                walk(child, style, listContext);
+            }
+            // Add newline after list item if there's a next sibling list item
+            if (el.nextElementSibling && el.nextElementSibling.tagName.toLowerCase() === 'li') {
+                spans.push({ text: '\n' });
+            }
+            return;
+        }
 
         // Semantic tags
         if (tag === 'b' || tag === 'strong') style.bold = true;
@@ -95,10 +239,15 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
             const key = reverseFontFamily(el.style.fontFamily);
             if (key) style.fontFamily = key as FontFamily;
         }
-        // Handle <font face="..."> from execCommand('fontName')
-        if (tag === 'font' && (el as HTMLFontElement).face) {
-            const key = reverseFontFamily((el as HTMLFontElement).face);
-            if (key) style.fontFamily = key as FontFamily;
+        // Handle <font> attributes from execCommand('fontName'/'foreColor')
+        if (tag === 'font') {
+            if ((el as HTMLFontElement).face) {
+                const key = reverseFontFamily((el as HTMLFontElement).face);
+                if (key) style.fontFamily = key as FontFamily;
+            }
+            if ((el as HTMLFontElement).color) {
+                style.color = (el as HTMLFontElement).color;
+            }
         }
 
         // Block elements (div/p): add newline before if preceded by non-block sibling
@@ -116,7 +265,7 @@ export function htmlToSpans(container: HTMLElement): RichTextSpan[] {
 
         // Recurse children
         for (const child of Array.from(el.childNodes)) {
-            walk(child, style);
+            walk(child, style, listContext);
         }
 
         // Block elements (div/p) insert newline after unless it's the last child
@@ -157,7 +306,10 @@ function sameFormatting(a: RichTextSpan, b: RichTextSpan): boolean {
         (!!a.strikethrough === !!b.strikethrough) &&
         ((a.color || '') === (b.color || '')) &&
         ((a.fontSize || 0) === (b.fontSize || 0)) &&
-        ((a.fontFamily || '') === (b.fontFamily || ''));
+        ((a.fontFamily || '') === (b.fontFamily || '')) &&
+        ((a.listType || 'none') === (b.listType || 'none')) &&
+        ((a.listLevel || 0) === (b.listLevel || 0)) &&
+        ((a.listIndex || 0) === (b.listIndex || 0));
 }
 
 /**
@@ -231,9 +383,13 @@ export function layoutRichText(
     const segments: RichTextSegment[] = [];
     const lineHeights: number[] = [];
 
+    const INDENT_SIZE = 20; // Pixels per indent level
+    const MARKER_WIDTH = 20; // Space reserved for bullet/number
+
     let currentX = 0;
     let currentLineIndex = 0;
     let currentLineHeight = 0;
+    let currentListIndent = 0; // Track current list indentation
 
     // Tokenize spans into words and whitespace
     const tokens: Token[] = [];
@@ -260,7 +416,7 @@ export function layoutRichText(
     const finishLine = () => {
         lineHeights.push(currentLineHeight || getLineHeight(elementDefaults.fontSize || 28));
         currentLineIndex++;
-        currentX = 0;
+        currentX = currentListIndent; // Reset to indent position, not 0
         currentLineHeight = 0;
     };
 
@@ -274,17 +430,31 @@ export function layoutRichText(
         const lh = getLineHeight(fontSize);
         currentLineHeight = Math.max(currentLineHeight, lh);
 
+        // Calculate indentation for list items
+        const listLevel = token.span.listLevel || 0;
+        const isListItem = token.span.listType && token.span.listType !== 'none';
+        const indent = isListItem ? listLevel * INDENT_SIZE : 0;
+        const markerSpace = isListItem ? MARKER_WIDTH : 0;
+
+        // Update current indent if this is a new list item
+        if (isListItem && currentX === 0) {
+            currentListIndent = indent + markerSpace;
+            currentX = currentListIndent;
+        } else if (!isListItem && currentX === 0) {
+            currentListIndent = 0;
+        }
+
         ctx.font = buildSpanFontString(token.span, elementDefaults);
         const measured = ctx.measureText(token.text);
 
         // Word wrap
-        if (!token.isWhitespace && currentX + measured.width > maxWidth && currentX > 0) {
+        if (!token.isWhitespace && currentX + measured.width > maxWidth && currentX > currentListIndent) {
             finishLine();
             currentLineHeight = Math.max(currentLineHeight, lh);
         }
 
         // Skip leading whitespace on new line
-        if (token.isWhitespace && currentX === 0) continue;
+        if (token.isWhitespace && currentX === currentListIndent) continue;
 
         segments.push({
             text: token.text,

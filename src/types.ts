@@ -1,22 +1,22 @@
 import type { ElementAnimation } from './types/motion-types';
 export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | 'richtext' | 'fineliner' | 'inkbrush' | 'marker' | 'eraser' | 'pan' | 'selection' | 'image' | 'bezier' | 'diamond' | 'triangle' | 'hexagon' | 'octagon' | 'parallelogram' | 'star' | 'cloud' | 'heart' | 'cross' | 'checkmark' | 'arrowLeft' | 'arrowUp' | 'arrowDown' | 'arrowRight' | 'capsule' | 'stickyNote' | 'callout' | 'burst' | 'speechBubble' | 'ribbon' | 'bracketLeft' | 'bracketRight' | 'database' | 'document' | 'predefinedProcess' | 'internalStorage' | 'server' | 'loadBalancer' | 'firewall' | 'user' | 'messageQueue' | 'lambda' | 'router' | 'browser' | 'trapezoid' | 'rightTriangle' | 'pentagon' | 'septagon' | 'starPerson' | 'scroll' | 'wavyDivider' | 'doubleBanner' | 'lightbulb' | 'signpost' | 'burstBlob' | 'browserWindow' | 'mobilePhone' | 'ghostButton' | 'inputField' | 'organicBranch' | 'polygon' | 'dfdProcess' | 'dfdDataStore' | 'isometricCube' | 'cylinder' | 'stateStart' | 'stateEnd' | 'stateSync' | 'activationBar' | 'externalEntity' | 'ink' | 'laser' | 'umlClass' | 'umlInterface' | 'umlActor' | 'umlUseCase' | 'umlNote' | 'umlPackage' | 'solidBlock' | 'perspectiveBlock' | 'openBox' | 'umlComponent' | 'umlState' | 'umlLifeline' | 'umlFragment' | 'umlSignalSend' | 'umlSignalReceive' | 'umlProvidedInterface' | 'umlRequiredInterface'
-| 'trophy' | 'clock' | 'gear' | 'target' | 'rocket' | 'flag'
-| 'key' | 'magnifyingGlass' | 'book' | 'megaphone' | 'eye' | 'thoughtBubble'
-| 'stickFigure' | 'sittingPerson' | 'presentingPerson' | 'handPointRight' | 'thumbsUp' | 'faceHappy' | 'faceSad' | 'faceConfused'
-| 'checkbox' | 'checkboxChecked' | 'numberedBadge' | 'questionMark' | 'exclamationMark' | 'tag' | 'pin' | 'stamp'
-| 'kubernetes' | 'container' | 'apiGateway' | 'cdn' | 'storageBlob' | 'eventBus' | 'microservice' | 'shield'
-| 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'ganttChart' | 'journeyDiagram' | 'quadrantChart' | 'xyChart' | 'table'
-| 'puzzlePiece' | 'chainLink' | 'bridge' | 'magnet' | 'scale' | 'seedling' | 'tree' | 'mountain'
-| 'polyline' | 'elbow' | 'codeBlock'
-| 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable'
-| 'solidButton' | 'dropdown' | 'uiCheckbox' | 'radioButton' | 'toggleSwitch'
-| 'card' | 'searchBar' | 'progressBar' | 'avatar' | 'navbar'
-| 'tabBar' | 'badge' | 'tooltip' | 'slider'
-| 'bpmnStartEvent' | 'bpmnEndEvent' | 'bpmnIntermediateEvent'
-| 'bpmnExclusiveGateway' | 'bpmnParallelGateway' | 'bpmnInclusiveGateway'
-| 'bpmnTask' | 'bpmnSubProcess' | 'bpmnCallActivity'
-| 'bpmnDataObject' | 'bpmnAnnotation' | 'bpmnPool'
-| 'bpmnEventGateway' | 'bpmnDataStore' | 'bpmnGroup';
+    | 'trophy' | 'clock' | 'gear' | 'target' | 'rocket' | 'flag'
+    | 'key' | 'magnifyingGlass' | 'book' | 'megaphone' | 'eye' | 'thoughtBubble'
+    | 'stickFigure' | 'sittingPerson' | 'presentingPerson' | 'handPointRight' | 'thumbsUp' | 'faceHappy' | 'faceSad' | 'faceConfused'
+    | 'checkbox' | 'checkboxChecked' | 'numberedBadge' | 'questionMark' | 'exclamationMark' | 'tag' | 'pin' | 'stamp'
+    | 'kubernetes' | 'container' | 'apiGateway' | 'cdn' | 'storageBlob' | 'eventBus' | 'microservice' | 'shield'
+    | 'barChart' | 'pieChart' | 'trendUp' | 'trendDown' | 'funnel' | 'gauge' | 'ganttChart' | 'journeyDiagram' | 'quadrantChart' | 'xyChart' | 'table'
+    | 'puzzlePiece' | 'chainLink' | 'bridge' | 'magnet' | 'scale' | 'seedling' | 'tree' | 'mountain'
+    | 'polyline' | 'elbow' | 'codeBlock'
+    | 'dsArray' | 'dsStack' | 'dsQueue' | 'dsLinkedList' | 'dsBinaryTree' | 'dsHashTable'
+    | 'solidButton' | 'dropdown' | 'uiCheckbox' | 'radioButton' | 'toggleSwitch'
+    | 'card' | 'searchBar' | 'progressBar' | 'avatar' | 'navbar'
+    | 'tabBar' | 'badge' | 'tooltip' | 'slider'
+    | 'bpmnStartEvent' | 'bpmnEndEvent' | 'bpmnIntermediateEvent'
+    | 'bpmnExclusiveGateway' | 'bpmnParallelGateway' | 'bpmnInclusiveGateway'
+    | 'bpmnTask' | 'bpmnSubProcess' | 'bpmnCallActivity'
+    | 'bpmnDataObject' | 'bpmnAnnotation' | 'bpmnPool'
+    | 'bpmnEventGateway' | 'bpmnDataStore' | 'bpmnGroup';
 
 export type ToolType = ElementType | 'lasso' | 'crop';
 
@@ -37,6 +37,10 @@ export interface RichTextSpan {
     color?: string;
     fontSize?: number;
     fontFamily?: FontFamily;
+    // List properties
+    listType?: 'bullet' | 'ordered' | 'none';  // Type of list item
+    listLevel?: number;                         // Indent level (0-based, 0 = no indent)
+    listIndex?: number;                         // For ordered lists, the item number
 }
 
 export interface GradientStop {
@@ -223,9 +227,9 @@ export interface DrawingElement {
 
     // Image Pixel Effect Properties (animated reveal/transform)
     pixelEffect?: 'sequential-ltr' | 'sequential-rtl' | 'sequential-ttb' | 'sequential-btt' |
-                  'random-pixels' | 'wave-center' | 'wave-corner' | 'scan-lines' |
-                  'block-reveal' | 'spiral' | 'glitch' | 'curtain-vertical' |
-                  'curtain-horizontal' | 'dissolve' | 'pixel-rain';
+    'random-pixels' | 'wave-center' | 'wave-corner' | 'scan-lines' |
+    'block-reveal' | 'spiral' | 'glitch' | 'curtain-vertical' |
+    'curtain-horizontal' | 'dissolve' | 'pixel-rain';
     pixelEffectProgress?: number; // 0-1, current progress of pixel effect animation
     pixelEffectDuration?: number; // Duration in ms for pixel effect animation
     pixelEffectParams?: {         // Effect-specific parameters

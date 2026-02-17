@@ -5,7 +5,7 @@
  */
 
 import { type Component, createEffect, createSignal, onCleanup, Show } from "solid-js";
-import { Maximize2 } from "lucide-solid";
+import { Maximize2, List, ListOrdered } from "lucide-solid";
 import { store, setSelectedTool } from "../store/app-store";
 import { resolveFontFamily } from "../utils/text-utils";
 import { spansToHtml, htmlToSpans, spansToPlainText } from "../utils/rich-text-utils";
@@ -46,7 +46,8 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
     const [showFontPicker, setShowFontPicker] = createSignal(false);
     const [activeFormats, setActiveFormats] = createSignal<{
         bold: boolean; italic: boolean; underline: boolean; strikethrough: boolean;
-    }>({ bold: false, italic: false, underline: false, strikethrough: false });
+        bulletList: boolean; orderedList: boolean;
+    }>({ bold: false, italic: false, underline: false, strikethrough: false, bulletList: false, orderedList: false });
 
     const activeTextElement = () => {
         const id = props.editingId();
@@ -60,6 +61,8 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
             italic: document.queryCommandState('italic'),
             underline: document.queryCommandState('underline'),
             strikethrough: document.queryCommandState('strikeThrough'),
+            bulletList: document.queryCommandState('insertUnorderedList'),
+            orderedList: document.queryCommandState('insertOrderedList'),
         });
     };
 
@@ -197,6 +200,21 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                 onClick={() => execFormat('strikeThrough')}
                             ><s>S</s></button>
                             <span class="rt-toolbar-divider" />
+                            <button
+                                class={`rt-toolbar-btn ${activeFormats().bulletList ? 'active' : ''}`}
+                                title="Bullet List"
+                                onClick={() => execFormat('insertUnorderedList')}
+                            >
+                                <List size={14} />
+                            </button>
+                            <button
+                                class={`rt-toolbar-btn ${activeFormats().orderedList ? 'active' : ''}`}
+                                title="Numbered List"
+                                onClick={() => execFormat('insertOrderedList')}
+                            >
+                                <ListOrdered size={14} />
+                            </button>
+                            <span class="rt-toolbar-divider" />
                             <div class="rt-color-wrapper">
                                 <button
                                     class="rt-toolbar-btn rt-color-btn"
@@ -266,8 +284,22 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                         }
                                         return;
                                     }
-                                    // Always manually handle Enter — don't rely on browser default
                                     if (e.key === 'Enter') {
+                                        // Inside a list, let the browser handle Enter
+                                        // so it creates a new <li> naturally
+                                        const sel = window.getSelection();
+                                        const node = sel?.anchorNode;
+                                        const isInList = node && (
+                                            node instanceof HTMLElement
+                                                ? node.closest('li,ul,ol')
+                                                : node.parentElement?.closest('li,ul,ol')
+                                        );
+                                        if (isInList) {
+                                            e.stopImmediatePropagation();
+                                            setTimeout(() => { updateActiveFormats(); syncSpans(); }, 0);
+                                            return;
+                                        }
+                                        // Outside lists, manually insert line break
                                         e.preventDefault();
                                         e.stopImmediatePropagation();
                                         document.execCommand('insertLineBreak');

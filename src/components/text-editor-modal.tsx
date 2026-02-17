@@ -5,7 +5,7 @@
  */
 
 import { type Component, createEffect, createSignal, onCleanup, Show } from "solid-js";
-import { X } from "lucide-solid";
+import { X, List, ListOrdered } from "lucide-solid";
 import { resolveFontFamily } from "../utils/text-utils";
 import { spansToHtml, htmlToSpans, spansToPlainText } from "../utils/rich-text-utils";
 import type { RichTextSpan, DrawingElement } from "../types";
@@ -35,7 +35,8 @@ const TextEditorModal: Component<TextEditorModalProps> = (props) => {
     const [showColorPicker, setShowColorPicker] = createSignal(false);
     const [activeFormats, setActiveFormats] = createSignal<{
         bold: boolean; italic: boolean; underline: boolean; strikethrough: boolean;
-    }>({ bold: false, italic: false, underline: false, strikethrough: false });
+        bulletList: boolean; orderedList: boolean;
+    }>({ bold: false, italic: false, underline: false, strikethrough: false, bulletList: false, orderedList: false });
 
     const updateActiveFormats = () => {
         setActiveFormats({
@@ -43,6 +44,8 @@ const TextEditorModal: Component<TextEditorModalProps> = (props) => {
             italic: document.queryCommandState('italic'),
             underline: document.queryCommandState('underline'),
             strikethrough: document.queryCommandState('strikeThrough'),
+            bulletList: document.queryCommandState('insertUnorderedList'),
+            orderedList: document.queryCommandState('insertOrderedList'),
         });
     };
 
@@ -166,6 +169,21 @@ const TextEditorModal: Component<TextEditorModalProps> = (props) => {
                                 title="Strikethrough"
                                 onClick={() => execFormat('strikeThrough')}
                             ><s>S</s></button>
+                            <span class="rt-toolbar-divider" />
+                            <button
+                                class={`rt-toolbar-btn ${activeFormats().bulletList ? 'active' : ''}`}
+                                title="Bullet List"
+                                onClick={() => execFormat('insertUnorderedList')}
+                            >
+                                <List size={14} />
+                            </button>
+                            <button
+                                class={`rt-toolbar-btn ${activeFormats().orderedList ? 'active' : ''}`}
+                                title="Numbered List"
+                                onClick={() => execFormat('insertOrderedList')}
+                            >
+                                <ListOrdered size={14} />
+                            </button>
                             <span class="rt-toolbar-divider" />
                             <div class="rt-color-wrapper">
                                 <button

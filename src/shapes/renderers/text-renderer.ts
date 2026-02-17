@@ -31,8 +31,12 @@ export class TextRenderer extends ShapeRenderer {
             renderer.fillRect(el.x, el.y, el.width, el.height);
         }
 
-        // If no text yet, nothing to render
+        // If no text yet, show a subtle filled area so the drag region is visible
         if (!el.text && !(el.richText && el.richText.length > 0)) {
+            if (el.width > 0 && el.height > 0) {
+                renderer.fillStyle = isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                renderer.fillRect(el.x, el.y, el.width, el.height);
+            }
             renderer.restore();
             return;
         }
@@ -81,7 +85,7 @@ export class TextRenderer extends ShapeRenderer {
             verticalPadding = Math.max(0, el.height - totalTextHeight - padding);
         }
 
-        const textColorRaw = el.textColor || el.strokeColor;
+        const textColorRaw = el.textColor || el.strokeColor || '#000000';
         const textColor = RenderPipeline.adjustColor(textColorRaw, isDarkMode);
 
         // Apply text alignment
@@ -198,6 +202,10 @@ export class TextRenderer extends ShapeRenderer {
 
             const baselineY = lineY + lineHeight / 2;
 
+            // Track if we've drawn a list marker for this line
+            let listMarkerDrawn = false;
+            const INDENT_SIZE = 20;
+
             for (const seg of lineSegments) {
                 const span = seg.span;
                 renderer.font = buildSpanFontString(span, defaults);
@@ -205,6 +213,21 @@ export class TextRenderer extends ShapeRenderer {
                 renderer.fillStyle = RenderPipeline.adjustColor(color, isDarkMode);
                 renderer.textBaseline = 'middle';
                 renderer.textAlign = 'left';
+
+                // Draw list marker (bullet or number) before first segment of list item
+                if (!listMarkerDrawn && span.listType && span.listType !== 'none') {
+                    const listLevel = span.listLevel || 0;
+                    const indent = listLevel * INDENT_SIZE;
+                    const markerX = xOffset + indent;
+
+                    if (span.listType === 'bullet') {
+                        renderer.fillText('\u2022', markerX, baselineY);
+                    } else if (span.listType === 'ordered') {
+                        renderer.fillText(`${span.listIndex || 1}.`, markerX, baselineY);
+                    }
+                    listMarkerDrawn = true;
+                }
+
                 renderer.fillText(seg.text, xOffset + seg.x, baselineY);
 
                 if (span.underline) {

@@ -135,6 +135,7 @@ const initialState: AppState = {
     defaultElementStyles: (() => {
         const builtinDefaults: Partial<DrawingElement> = {
             strokeColor: (localStorage.getItem('theme') === 'focus') ? '#ffffff' : '#000000',
+            textColor: (localStorage.getItem('theme') === 'focus') ? '#ffffff' : '#000000',
             backgroundColor: 'transparent',
             fillStyle: 'solid',
             strokeWidth: 4,
@@ -1585,6 +1586,7 @@ export const setTheme = (theme: 'light' | 'dark' | 'focus') => {
     const oldStroke = isDark ? '#000000' : '#ffffff';
     const newStroke = isDark ? '#ffffff' : '#000000';
     setStore('defaultElementStyles', 'strokeColor', newStroke);
+    setStore('defaultElementStyles', 'textColor', newStroke);
 
     // Also update cached per-tool styles that still have the old default
     for (const tool of Object.keys(store.toolStyles)) {
