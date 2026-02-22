@@ -29,7 +29,7 @@ export const features = {
     /**
      * Enable "Export to Rocket" in the Export/Save dialog.
      * Converts entity diagrams (UML Class / Table shapes) to Rocket Backend import JSON.
-     * Defaults to true if not specified.
+     * Defaults to false if not specified — must be explicitly opted in.
      */
-    enableRocketExport: import.meta.env.VITE_ENABLE_ROCKET_EXPORT !== 'false',
+    enableRocketExport: import.meta.env.VITE_ENABLE_ROCKET_EXPORT === 'true',
 };
