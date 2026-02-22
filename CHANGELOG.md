@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.0] - 2026-02-22
+
+### Added
+- **AI Rocket Mode** — "Generate for Rocket Backend" checkbox in the AI Drawing dialog teaches the LLM entity field syntax, state diagram shapes, BPMN containerText conventions, and relation cardinality for Rocket-exportable diagrams
+- **One-Click Deploy to Rocket** — "Deploy to Rocket" option in the export dialog that authenticates, creates the app if missing, and imports the full schema (entities + state machines + workflows) in one step
+- **Rocket Settings Dialog** — persistent connection settings (URL, email, password, app name) stored in localStorage with base64 obfuscation; includes "Test Connection" button
+- **BPMN Workflow Exporter** — converts BPMN diagrams (start events, service tasks, user tasks, gateways, end events) to Rocket workflow schema with trigger config, field assignments, webhooks, and approval flows
+- **UML State Machine Exporter** — converts UML state diagrams (stateStart → state → stateEnd with transition labels) to Rocket state machine schema with events, guards, and effects
+- **UML Compartmented Renderers** — `umlEnum` and `umlInterface` shapes with scrollable sections and draggable dividers; `umlState` scroll support; default text for all UML shapes
+- **UML Class Enhancements** — scrollable sections, draggable section dividers, MCP server integration, Rocket entity export from class attributes
+- **Shape Aliases** — `state-start`, `state-end`, `state-sync` aliases for AI-friendly kebab-case naming
+- **Rocket Feature Flag** — `VITE_ENABLE_ROCKET_EXPORT` env variable to toggle all Rocket UI (export, deploy, AI checkbox, settings)
+
+### Changed
+- **Monorepo Reorganization** — project restructured into `frontend/` + `backend/` directories
+
+### Fixed
+- **Toast messages hidden behind slide toolbar** — raised toast `z-index` from 2000 to 10010, above all toolbars (10002) and presentation controls (10000)
+- **Rocket UI not gated behind feature flag** — wrapped AI dialog checkbox, Rocket Settings link, and RocketSettingsDialog behind `features.enableRocketExport`
+- **Leading whitespace lost in text rendering** — preserved leading whitespace in text element rendering
+
 ## [1.22.0] - 2026-02-17
 
 ### Added

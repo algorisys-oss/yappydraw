@@ -30,9 +30,9 @@
     "noUncheckedSideEffectImports": true
   },
   "include": [
-    "src"
+    "frontend/src"
   ],
   "exclude": [
-    "src/**/*.test.ts"
+    "frontend/src/**/*.test.ts"
   ]
 }

@@ -29,5 +29,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# Test results (auto-generated)
+test-results
+
 # Rust
 renderers/raylib/rust/target/
