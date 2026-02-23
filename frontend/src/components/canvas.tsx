@@ -446,6 +446,7 @@ const Canvas: Component = () => {
         store.canvasBackgroundColor;
         store.canvasTexture;
         store.theme;
+        store.activeSlideIndex; // Track slide switches for redraw (e.g., after duplicateSlide)
         store.focusBranchId;
         // Crop mode
         store.cropModeElementId;

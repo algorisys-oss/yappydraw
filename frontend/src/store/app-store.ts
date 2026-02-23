@@ -1096,7 +1096,8 @@ export const duplicateSlide = (index: number) => {
         name: `${sourceSlide.name} (Copy)`,
         spatialPosition: { x: newX, y: 0 },
         order: index + 1,
-        thumbnail: undefined
+        thumbnail: undefined,
+        lastViewState: undefined  // Clear so viewport is recalculated for the new spatial position
     };
 
     // 5. Update store

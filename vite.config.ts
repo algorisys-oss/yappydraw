@@ -3,6 +3,7 @@ import solid from 'vite-plugin-solid'
 
 export default defineConfig({
   root: 'frontend',
+  envDir: '..',  // .env files are in the project root, not in frontend/
   plugins: [solid()],
   base: './',
   build: {

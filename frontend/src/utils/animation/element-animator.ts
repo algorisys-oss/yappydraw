@@ -2957,13 +2957,29 @@ export function playExitAnimation(elementId: string, options: { isPreview?: bool
 /**
  * Helper to get text content and property name from an element
  * Works with both text elements (text property) and shapes with containerText
+ * Also returns rich text info so animations can temporarily clear it during playback
  */
-function getElementText(element: DrawingElement): { text: string; property: 'text' | 'containerText' } | null {
-    if ((element.type === 'text' || element.type === 'codeBlock') && element.text) {
-        return { text: element.text, property: 'text' };
+function getElementText(element: DrawingElement): {
+    text: string;
+    property: 'text' | 'containerText';
+    richTextKey?: 'richText' | 'richContainerText';
+    savedRichText?: any[];
+} | null {
+    if ((element.type === 'text' || element.type === 'richtext' || element.type === 'codeBlock') && element.text) {
+        const hasRichText = element.richText && element.richText.length > 0;
+        return {
+            text: element.text,
+            property: 'text',
+            ...(hasRichText ? { richTextKey: 'richText' as const, savedRichText: [...element.richText!] } : {})
+        };
     }
     if (element.containerText) {
-        return { text: element.containerText, property: 'containerText' };
+        const hasRichText = element.richContainerText && element.richContainerText.length > 0;
+        return {
+            text: element.containerText,
+            property: 'containerText',
+            ...(hasRichText ? { richTextKey: 'richContainerText' as const, savedRichText: [...element.richContainerText!] } : {})
+        };
     }
     return null;
 }
@@ -2994,7 +3010,7 @@ export function typewriter(elementId: string, duration: number = 1000, config: E
         return '';
     }
 
-    const { text: fullText, property: textProperty } = textInfo;
+    const { text: fullText, property: textProperty, richTextKey, savedRichText } = textInfo;
 
     const animId = generateAnimationId('typewriter');
     const targetProps = new Set<string>([textProperty]);
@@ -3005,8 +3021,8 @@ export function typewriter(elementId: string, duration: number = 1000, config: E
     }
     activeAnimations.get(elementId)!.set(animId, targetProps);
 
-    // Start with empty text
-    updateElement(elementId, { [textProperty]: '', opacity: 100 }, false);
+    // Start with empty text; clear richText so renderer uses plain text during animation
+    updateElement(elementId, { [textProperty]: '', opacity: 100, ...(richTextKey ? { [richTextKey]: undefined } : {}) }, false);
 
     let lastCharIndex = 0;
 
@@ -3027,8 +3043,8 @@ export function typewriter(elementId: string, duration: number = 1000, config: E
             delay: config.delay,
             onStart: config.onStart,
             onComplete: () => {
-                // Ensure full text is shown at the end
-                updateElement(elementId, { [textProperty]: fullText }, false);
+                // Ensure full text is shown at the end; restore richText formatting
+                updateElement(elementId, { [textProperty]: fullText, ...(richTextKey && savedRichText ? { [richTextKey]: savedRichText } : {}) }, false);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
@@ -3068,7 +3084,7 @@ export function typewriterCursor(elementId: string, duration: number = 1000, con
         return '';
     }
 
-    const { text: fullText, property: textProperty } = textInfo;
+    const { text: fullText, property: textProperty, richTextKey, savedRichText } = textInfo;
 
     const animId = generateAnimationId('typewriterCursor');
     const targetProps = new Set<string>([textProperty]);
@@ -3081,8 +3097,8 @@ export function typewriterCursor(elementId: string, duration: number = 1000, con
     }
     activeAnimations.get(elementId)!.set(animId, targetProps);
 
-    // Start with cursor only
-    updateElement(elementId, { [textProperty]: cursor, opacity: 100 }, false);
+    // Start with cursor only; clear richText so renderer uses plain text during animation
+    updateElement(elementId, { [textProperty]: cursor, opacity: 100, ...(richTextKey ? { [richTextKey]: undefined } : {}) }, false);
 
     let lastCharIndex = 0;
     let showCursor = true;
@@ -3112,8 +3128,8 @@ export function typewriterCursor(elementId: string, duration: number = 1000, con
             delay: config.delay,
             onStart: config.onStart,
             onComplete: () => {
-                // Show full text without cursor at the end
-                updateElement(elementId, { [textProperty]: fullText }, false);
+                // Show full text without cursor at the end; restore richText formatting
+                updateElement(elementId, { [textProperty]: fullText, ...(richTextKey && savedRichText ? { [richTextKey]: savedRichText } : {}) }, false);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
@@ -3156,7 +3172,7 @@ export function wordByWord(elementId: string, duration: number = 1000, config: E
         return '';
     }
 
-    const { text: fullText, property: textProperty } = textInfo;
+    const { text: fullText, property: textProperty, richTextKey, savedRichText } = textInfo;
 
     // Split into words while preserving whitespace
     const words = fullText.split(/(\s+)/);
@@ -3172,8 +3188,8 @@ export function wordByWord(elementId: string, duration: number = 1000, config: E
     }
     activeAnimations.get(elementId)!.set(animId, targetProps);
 
-    // Start with empty text
-    updateElement(elementId, { [textProperty]: '', opacity: 100 }, false);
+    // Start with empty text; clear richText so renderer uses plain text during animation
+    updateElement(elementId, { [textProperty]: '', opacity: 100, ...(richTextKey ? { [richTextKey]: undefined } : {}) }, false);
 
     let lastWordIndex = 0;
 
@@ -3206,8 +3222,8 @@ export function wordByWord(elementId: string, duration: number = 1000, config: E
             delay: config.delay,
             onStart: config.onStart,
             onComplete: () => {
-                // Ensure full text is shown at the end
-                updateElement(elementId, { [textProperty]: fullText }, false);
+                // Ensure full text is shown at the end; restore richText formatting
+                updateElement(elementId, { [textProperty]: fullText, ...(richTextKey && savedRichText ? { [richTextKey]: savedRichText } : {}) }, false);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
@@ -3251,7 +3267,7 @@ export function textScramble(elementId: string, duration: number = 1000, config:
         return '';
     }
 
-    const { text: fullText, property: textProperty } = textInfo;
+    const { text: fullText, property: textProperty, richTextKey, savedRichText } = textInfo;
 
     const animId = generateAnimationId('textScramble');
     const targetProps = new Set<string>([textProperty]);
@@ -3265,6 +3281,11 @@ export function textScramble(elementId: string, duration: number = 1000, config:
         activeAnimations.set(elementId, new Map());
     }
     activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Clear richText so renderer uses plain text during animation
+    if (richTextKey) {
+        updateElement(elementId, { [richTextKey]: undefined }, false);
+    }
 
     // Start with scrambled text
     const getRandomChar = () => charset[Math.floor(Math.random() * charset.length)];
@@ -3312,8 +3333,8 @@ export function textScramble(elementId: string, duration: number = 1000, config:
             delay: config.delay,
             onStart: config.onStart,
             onComplete: () => {
-                // Ensure full text is shown at the end
-                updateElement(elementId, { [textProperty]: fullText }, false);
+                // Ensure full text is shown at the end; restore richText formatting
+                updateElement(elementId, { [textProperty]: fullText, ...(richTextKey && savedRichText ? { [richTextKey]: savedRichText } : {}) }, false);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
@@ -3354,7 +3375,7 @@ export function textDelete(elementId: string, duration: number = 1000, config: E
         return '';
     }
 
-    const { text: fullText, property: textProperty } = textInfo;
+    const { text: fullText, property: textProperty, richTextKey } = textInfo;
 
     const animId = generateAnimationId('textDelete');
     const targetProps = new Set<string>([textProperty]);
@@ -3364,6 +3385,11 @@ export function textDelete(elementId: string, duration: number = 1000, config: E
         activeAnimations.set(elementId, new Map());
     }
     activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Clear richText so renderer uses plain text during animation
+    if (richTextKey) {
+        updateElement(elementId, { [richTextKey]: undefined }, false);
+    }
 
     let lastCharIndex = fullText.length;
 
@@ -3425,7 +3451,7 @@ export function textReplace(elementId: string, newText: string, duration: number
         return '';
     }
 
-    const { text: oldText, property: textProperty } = textInfo;
+    const { text: oldText, property: textProperty, richTextKey } = textInfo;
     if (!newText) return '';
 
     const animId = generateAnimationId('textReplace');
@@ -3436,6 +3462,11 @@ export function textReplace(elementId: string, newText: string, duration: number
         activeAnimations.set(elementId, new Map());
     }
     activeAnimations.get(elementId)!.set(animId, targetProps);
+
+    // Clear richText so renderer uses plain text during animation
+    if (richTextKey) {
+        updateElement(elementId, { [richTextKey]: undefined }, false);
+    }
 
     // Phase 1: Delete old text (0 to 0.4)
     // Phase 2: Brief pause (0.4 to 0.5)
@@ -3521,8 +3552,11 @@ export function textCountUp(
         return '';
     }
 
-    // Determine which text property to use
-    const textProperty: 'text' | 'containerText' = element.type === 'text' ? 'text' : 'containerText';
+    // Determine which text property to use and check for rich text
+    const textProperty: 'text' | 'containerText' = (element.type === 'text' || element.type === 'richtext') ? 'text' : 'containerText';
+    const richTextKey = textProperty === 'text'
+        ? (element.richText?.length ? 'richText' as const : undefined)
+        : (element.richContainerText?.length ? 'richContainerText' as const : undefined);
 
     const animId = generateAnimationId('textCountUp');
     const targetProps = new Set<string>([textProperty]);
@@ -3548,8 +3582,8 @@ export function textCountUp(
         return parts.join('.');
     };
 
-    // Set initial value
-    updateElement(elementId, { [textProperty]: `${prefix}${formatNumber(startValue)}${suffix}`, opacity: 100 }, false);
+    // Set initial value; clear richText so renderer uses plain text during animation
+    updateElement(elementId, { [textProperty]: `${prefix}${formatNumber(startValue)}${suffix}`, opacity: 100, ...(richTextKey ? { [richTextKey]: undefined } : {}) }, false);
 
     let lastValue = startValue;
 
@@ -3611,7 +3645,7 @@ export function lineByLine(elementId: string, duration: number = 1000, config: E
         return '';
     }
 
-    const { text: fullText, property: textProperty } = textInfo;
+    const { text: fullText, property: textProperty, richTextKey, savedRichText } = textInfo;
 
     const lines = fullText.split('\n');
     const lineCount = lines.length;
@@ -3626,8 +3660,8 @@ export function lineByLine(elementId: string, duration: number = 1000, config: E
     }
     activeAnimations.get(elementId)!.set(animId, targetProps);
 
-    // Start with empty text
-    updateElement(elementId, { [textProperty]: '', opacity: 100 }, false);
+    // Start with empty text; clear richText so renderer uses plain text during animation
+    updateElement(elementId, { [textProperty]: '', opacity: 100, ...(richTextKey ? { [richTextKey]: undefined } : {}) }, false);
 
     let lastLineIndex = 0;
 
@@ -3648,7 +3682,8 @@ export function lineByLine(elementId: string, duration: number = 1000, config: E
             delay: config.delay,
             onStart: config.onStart,
             onComplete: () => {
-                updateElement(elementId, { [textProperty]: fullText }, false);
+                // Restore richText formatting
+                updateElement(elementId, { [textProperty]: fullText, ...(richTextKey && savedRichText ? { [richTextKey]: savedRichText } : {}) }, false);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
