@@ -104,7 +104,7 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
 
     return (
         <Show when={props.isOpen}>
-            <div class="ai-prompt-overlay" onClick={(e) => { if (e.target === e.currentTarget && !isGenerating()) props.onClose(); }}>
+            <div class="ai-prompt-overlay" onClick={(e) => { if (e.target === e.currentTarget && !isGenerating() && !window.getSelection()?.toString()) props.onClose(); }}>
                 <div class="ai-prompt-modal" onClick={(e) => e.stopPropagation()}>
                     {/* Header */}
                     <div class="ai-prompt-header">

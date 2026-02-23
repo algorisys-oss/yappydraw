@@ -474,7 +474,7 @@ const Menu: Component = () => {
     return (
         <>
             <Show when={isMenuOpen() || isUtilityMenuOpen()}>
-                <div class="menu-backdrop" onClick={() => { setIsMenuOpen(false); setIsUtilityMenuOpen(false); }}></div>
+                <div class="menu-backdrop" onClick={(e) => { if (e.target === e.currentTarget && !window.getSelection()?.toString()) { setIsMenuOpen(false); setIsUtilityMenuOpen(false); } }}></div>
             </Show>
 
             <input

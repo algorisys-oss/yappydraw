@@ -76,7 +76,7 @@ const LoadExportDialog: Component<LoadExportDialogProps> = (props) => {
 
     return (
         <Show when={props.isOpen}>
-            <div class="load-export-backdrop" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
+            <div class="load-export-backdrop" onClick={(e) => { if (e.target === e.currentTarget && !window.getSelection()?.toString()) props.onClose(); }}>
                 <div class="load-export-dialog" onClick={(e) => e.stopPropagation()}>
                     <div class="dialog-header">
                         <div class="tabs">

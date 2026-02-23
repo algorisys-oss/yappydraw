@@ -35,7 +35,7 @@ const SaveDialog: Component<SaveDialogProps> = (props) => {
 
     return (
         <Show when={props.isOpen}>
-            <div class="save-overlay" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
+            <div class="save-overlay" onClick={(e) => { if (e.target === e.currentTarget && !window.getSelection()?.toString()) props.onClose(); }}>
                 <div class="save-modal" onClick={(e) => e.stopPropagation()}>
                     <div class="save-header">
                         <h2>Save Drawing</h2>

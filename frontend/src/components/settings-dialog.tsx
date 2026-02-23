@@ -41,7 +41,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
 
     return (
         <Show when={props.isOpen}>
-            <div class="settings-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
+            <div class="settings-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget && !window.getSelection()?.toString()) props.onClose(); }}>
                 <div class="settings-modal" onClick={(e) => e.stopPropagation()}>
                     <div class="settings-header">
                         <h3>Settings</h3>

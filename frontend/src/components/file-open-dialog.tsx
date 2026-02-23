@@ -134,7 +134,7 @@ const FileOpenDialog: Component<FileOpenDialogProps> = (props) => {
 
     return (
         <Show when={props.isOpen}>
-            <div class="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
+            <div class="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget && !window.getSelection()?.toString()) props.onClose(); }}>
                 <div class="modal-content" onClick={(e) => e.stopPropagation()}>
                     <div class="modal-header">
                         <h3>Open Drawing</h3>

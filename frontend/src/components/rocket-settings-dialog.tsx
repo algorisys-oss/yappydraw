@@ -83,7 +83,7 @@ const RocketSettingsDialog: Component<RocketSettingsDialogProps> = (props) => {
 
     return (
         <Show when={props.isOpen}>
-            <div class="rocket-settings-overlay" onClick={handleDone}>
+            <div class="rocket-settings-overlay" onClick={(e) => { if (e.target === e.currentTarget && !window.getSelection()?.toString()) handleDone(); }}>
                 <div class="rocket-settings-modal" onClick={(e) => e.stopPropagation()}>
                     <div class="rocket-settings-header">
                         <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>

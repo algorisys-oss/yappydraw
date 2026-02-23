@@ -41,7 +41,7 @@ const CommandPalette: Component = () => {
 
     return (
         <Show when={store.showCommandPalette}>
-            <div class="command-palette-backdrop" onClick={() => toggleCommandPalette(false)}>
+            <div class="command-palette-backdrop" onClick={(e) => { if (e.target === e.currentTarget && !window.getSelection()?.toString()) toggleCommandPalette(false); }}>
                 <div class="command-palette-container" onClick={(e) => e.stopPropagation()}>
                     <div class="command-palette-search">
                         <input

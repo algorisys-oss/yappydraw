@@ -137,7 +137,7 @@ const TextEditorModal: Component<TextEditorModalProps> = (props) => {
 
     return (
         <Show when={props.isOpen()}>
-            <div class="text-editor-modal-overlay" onClick={handleDone}>
+            <div class="text-editor-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget && !window.getSelection()?.toString()) handleDone(); }}>
                 <div class="text-editor-modal" onClick={(e) => e.stopPropagation()}>
                     <div class="text-editor-modal-header">
                         <h3>Edit Text</h3>

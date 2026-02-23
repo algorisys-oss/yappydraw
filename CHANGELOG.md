@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.2] - 2026-02-23
+
+### Fixed
+- **Dialogs still close when selecting text on Windows/Chrome** — on Windows/Chrome, drag-selecting text inside dialogs where the mouse drifts slightly onto the overlay backdrop still triggered dialog close despite the v1.23.1 fix; added `!window.getSelection()?.toString()` check to all 15 overlay `onClick` handlers to prevent closing when text is selected; also fixed 4 missed dialogs (text-editor-modal, rocket-settings-dialog, command-palette, menu backdrop) that had no `e.target === e.currentTarget` guard at all
+
 ## [1.23.1] - 2026-02-23
 
 ### Fixed
