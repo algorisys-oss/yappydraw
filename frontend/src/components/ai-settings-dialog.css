@@ -1,0 +1,205 @@
+.ai-settings-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.ai-settings-modal {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    padding: 24px;
+    border-radius: 12px;
+    width: 480px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.ai-settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ai-settings-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.ai-settings-header .close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.ai-settings-header .close-btn:hover {
+    background: var(--btn-hover);
+    color: var(--text-primary);
+}
+
+.ai-settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ai-settings-section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.ai-settings-provider-select {
+    display: flex;
+    gap: 6px;
+}
+
+.ai-settings-provider-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.15s;
+}
+
+.ai-settings-provider-btn:hover {
+    background: var(--btn-hover);
+    color: var(--text-primary);
+}
+
+.ai-settings-provider-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.ai-settings-provider-btn.active:hover {
+    background: var(--primary-color);
+    color: white;
+    opacity: 0.9;
+}
+
+.ai-settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.ai-settings-row label {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    min-width: 60px;
+}
+
+.ai-settings-row select {
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    min-width: 200px;
+}
+
+.ai-settings-row select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.ai-settings-key-input {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    min-width: 200px;
+}
+
+.ai-settings-key-input input {
+    flex: 1;
+    padding: 6px 10px;
+    border: none;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    font-family: monospace;
+    outline: none;
+}
+
+.ai-settings-key-input input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+    font-family: inherit;
+}
+
+.ai-settings-eye-btn {
+    background: none;
+    border: none;
+    border-left: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+}
+
+.ai-settings-eye-btn:hover {
+    color: var(--text-primary);
+    background: var(--btn-hover);
+}
+
+.ai-settings-note {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.ai-settings-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+}
+
+.ai-settings-done-btn {
+    padding: 6px 18px;
+    border: none;
+    border-radius: 6px;
+    background: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.ai-settings-done-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    opacity: 0.9;
+}

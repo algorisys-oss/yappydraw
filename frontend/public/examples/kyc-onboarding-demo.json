@@ -1,0 +1,336 @@
+{
+    "version": 3,
+    "metadata": {
+        "createdAt": "2026-01-24T13:10:00.000Z",
+        "updatedAt": "2026-01-24T13:22:00.000Z"
+    },
+    "slides": [
+        {
+            "id": "kyc-journey-slide",
+            "name": "KYC Onboarding Journey",
+            "elements": [
+                {
+                    "id": "user-app",
+                    "type": "browserWindow",
+                    "x": 50,
+                    "y": 150,
+                    "width": 300,
+                    "height": 450,
+                    "strokeColor": "#3b82f6",
+                    "backgroundColor": "#ffffff",
+                    "fillStyle": "solid",
+                    "strokeWidth": 2,
+                    "opacity": 100,
+                    "containerText": "Yappy Bank App",
+                    "layerId": "default-layer",
+                    "shadowEnabled": true,
+                    "shadowBlur": 15
+                },
+                {
+                    "id": "mobile-phone",
+                    "type": "mobilePhone",
+                    "x": 120,
+                    "y": 250,
+                    "width": 160,
+                    "height": 280,
+                    "strokeColor": "#1f2937",
+                    "backgroundColor": "#f9fafb",
+                    "fillStyle": "solid",
+                    "strokeWidth": 3,
+                    "opacity": 100,
+                    "containerText": "Enter Mobile",
+                    "layerId": "default-layer"
+                },
+                {
+                    "id": "backend-server",
+                    "type": "server",
+                    "x": 500,
+                    "y": 150,
+                    "width": 100,
+                    "height": 120,
+                    "strokeColor": "#4b5563",
+                    "backgroundColor": "#f3f4f6",
+                    "fillStyle": "solid",
+                    "opacity": 0,
+                    "containerText": "Backend",
+                    "layerId": "default-layer"
+                },
+                {
+                    "id": "ai-engine",
+                    "type": "lambda",
+                    "x": 750,
+                    "y": 150,
+                    "width": 100,
+                    "height": 120,
+                    "strokeColor": "#8b5cf6",
+                    "backgroundColor": "#f5f3ff",
+                    "fillStyle": "solid",
+                    "strokeWidth": 2,
+                    "opacity": 0,
+                    "containerText": "AI/ML Logic",
+                    "layerId": "default-layer",
+                    "gradientType": "linear",
+                    "gradientStops": [
+                        {
+                            "offset": 0,
+                            "color": "#8b5cf6"
+                        },
+                        {
+                            "offset": 1,
+                            "color": "#c084fc"
+                        }
+                    ]
+                },
+                {
+                    "id": "identity-docs",
+                    "type": "document",
+                    "x": 140,
+                    "y": 300,
+                    "width": 120,
+                    "height": 140,
+                    "opacity": 0,
+                    "containerText": "PAN / Aadhaar",
+                    "layerId": "default-layer"
+                },
+                {
+                    "id": "selfie-icon",
+                    "type": "circle",
+                    "x": 150,
+                    "y": 300,
+                    "width": 100,
+                    "height": 100,
+                    "opacity": 0,
+                    "containerText": "Selfie 🤳",
+                    "layerId": "default-layer",
+                    "strokeColor": "#10b981",
+                    "strokeWidth": 3
+                },
+                {
+                    "id": "flow-app-to-server",
+                    "type": "arrow",
+                    "x": 360,
+                    "y": 200,
+                    "width": 130,
+                    "height": 0,
+                    "opacity": 0,
+                    "flowAnimation": true,
+                    "flowSpeed": 4,
+                    "strokeColor": "#3b82f6",
+                    "layerId": "default-layer"
+                },
+                {
+                    "id": "flow-server-to-ai",
+                    "type": "arrow",
+                    "x": 610,
+                    "y": 200,
+                    "width": 130,
+                    "height": 0,
+                    "opacity": 0,
+                    "flowAnimation": true,
+                    "flowSpeed": 2,
+                    "strokeColor": "#8b5cf6",
+                    "layerId": "default-layer"
+                },
+                {
+                    "id": "success-ribbon",
+                    "type": "ribbon",
+                    "x": 350,
+                    "y": 450,
+                    "width": 300,
+                    "height": 80,
+                    "opacity": 0,
+                    "containerText": "KYC VERIFIED!",
+                    "strokeColor": "#059669",
+                    "backgroundColor": "#ecfdf5",
+                    "layerId": "default-layer",
+                    "fontSize": 20
+                },
+                {
+                    "id": "status-label",
+                    "type": "text",
+                    "x": 400,
+                    "y": 50,
+                    "width": 200,
+                    "height": 40,
+                    "text": "1. Mobile Verification",
+                    "fontSize": 22,
+                    "fontFamily": "sans-serif",
+                    "layerId": "default-layer",
+                    "textAlign": "center"
+                }
+            ],
+            "layers": [
+                {
+                    "id": "default-layer",
+                    "name": "Flow",
+                    "visible": true,
+                    "order": 0,
+                    "opacity": 1
+                }
+            ],
+            "viewState": {
+                "scale": 1,
+                "panX": 0,
+                "panY": 0
+            },
+            "states": [
+                {
+                    "id": "state-otp",
+                    "name": "1. Mobile & OTP",
+                    "overrides": {
+                        "status-label": {
+                            "text": "Step 1: Mobile & OTP Verification 📱"
+                        },
+                        "user-app": {
+                            "opacity": 100,
+                            "backgroundColor": "#ffffff",
+                            "strokeColor": "#3b82f6"
+                        },
+                        "mobile-phone": {
+                            "opacity": 100,
+                            "containerText": "Wait for OTP...",
+                            "backgroundColor": "#eff6ff"
+                        },
+                        "identity-docs": {
+                            "opacity": 0
+                        },
+                        "backend-server": {
+                            "opacity": 0
+                        },
+                        "ai-engine": {
+                            "opacity": 0
+                        },
+                        "selfie-icon": {
+                            "opacity": 0
+                        },
+                        "flow-app-to-server": {
+                            "opacity": 0
+                        },
+                        "flow-server-to-ai": {
+                            "opacity": 0
+                        },
+                        "success-ribbon": {
+                            "opacity": 0
+                        }
+                    }
+                },
+                {
+                    "id": "state-upload",
+                    "name": "2. Document Upload",
+                    "overrides": {
+                        "status-label": {
+                            "text": "Step 2: Document Scanning 📄"
+                        },
+                        "mobile-phone": {
+                            "opacity": 100,
+                            "containerText": "Scanning..."
+                        },
+                        "identity-docs": {
+                            "opacity": 100,
+                            "x": 140,
+                            "y": 300
+                        },
+                        "backend-server": {
+                            "opacity": 50
+                        },
+                        "ai-engine": {
+                            "opacity": 0
+                        }
+                    }
+                },
+                {
+                    "id": "state-verification",
+                    "name": "3. AI Verification",
+                    "overrides": {
+                        "status-label": {
+                            "text": "Step 3: Server Processing ⚙️"
+                        },
+                        "user-app": {
+                            "opacity": 100
+                        },
+                        "identity-docs": {
+                            "opacity": 100,
+                            "x": 380
+                        },
+                        "backend-server": {
+                            "opacity": 100,
+                            "x": 500
+                        },
+                        "ai-engine": {
+                            "opacity": 100
+                        },
+                        "flow-app-to-server": {
+                            "opacity": 100
+                        },
+                        "flow-server-to-ai": {
+                            "opacity": 100,
+                            "flowAnimation": true
+                        },
+                        "selfie-icon": {
+                            "opacity": 0
+                        }
+                    }
+                },
+                {
+                    "id": "state-selfie",
+                    "name": "4. Selfie Check",
+                    "overrides": {
+                        "status-label": {
+                            "text": "Step 4: Liveness Detection 📸"
+                        },
+                        "mobile-phone": {
+                            "opacity": 100,
+                            "containerText": "Smile!"
+                        },
+                        "selfie-icon": {
+                            "opacity": 100,
+                            "scale": 1.2
+                        },
+                        "identity-docs": {
+                            "opacity": 0
+                        },
+                        "flow-app-to-server": {
+                            "opacity": 0
+                        },
+                        "flow-server-to-ai": {
+                            "opacity": 0
+                        },
+                        "backend-server": {
+                            "opacity": 100
+                        }
+                    }
+                },
+                {
+                    "id": "state-success",
+                    "name": "5. Submission",
+                    "overrides": {
+                        "status-label": {
+                            "text": "Journey Complete! ✅"
+                        },
+                        "user-app": {
+                            "opacity": 100,
+                            "backgroundColor": "#f0fdf4",
+                            "strokeColor": "#10b981"
+                        },
+                        "mobile-phone": {
+                            "opacity": 0
+                        },
+                        "selfie-icon": {
+                            "opacity": 100,
+                            "x": 150,
+                            "y": 200
+                        },
+                        "success-ribbon": {
+                            "opacity": 100,
+                            "y": 450
+                        },
+                        "backend-server": {
+                            "opacity": 100,
+                            "backgroundColor": "#d1fae5"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

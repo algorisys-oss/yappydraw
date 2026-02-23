@@ -1,0 +1,35 @@
+---
+title: Cloud Infrastructure
+layout: tree-down
+hSpacing: 140
+vSpacing: 100
+---
+
+# Web application infrastructure
+users [user] "Users"
+cdn_node [cdn] "CDN"
+lb_node [lb] "Load Balancer"
+web1 [server] "Web Server 1"
+web2 [server] "Web Server 2"
+api_gw [api-gateway] "API Gateway"
+svc1 [microservice] "Auth Service"
+svc2 [microservice] "Order Service"
+svc3 [microservice] "Catalog Service"
+mq [queue] "Message Queue"
+db_main [db] "PostgreSQL"
+db_cache [db] "Redis Cache"
+
+users -> cdn_node
+cdn_node -> lb_node
+lb_node -> web1
+lb_node -> web2
+web1 -> api_gw
+web2 -> api_gw
+api_gw -> svc1
+api_gw -> svc2
+api_gw -> svc3
+svc2 -> mq
+mq -> svc3
+svc1 -> db_main
+svc2 -> db_main
+svc3 -> db_cache

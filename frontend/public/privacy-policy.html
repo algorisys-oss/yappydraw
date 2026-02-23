@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy — YappyDraw</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --bg-card: #1e1e2e;
+            --text: #e0e0e0;
+            --text-muted: #9ca3af;
+            --accent: #f5a623;
+            --border: #2d2d3d;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 48px 40px;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: white;
+        }
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        h2 {
+            font-size: 18px;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            color: var(--accent);
+        }
+        p, ul {
+            font-size: 15px;
+            margin-bottom: 14px;
+            color: var(--text);
+        }
+        ul {
+            padding-left: 24px;
+        }
+        li {
+            margin-bottom: 6px;
+        }
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .back-link:hover {
+            color: var(--text);
+        }
+        @media (max-width: 600px) {
+            .container { padding: 28px 20px; }
+            h1 { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="back-link" href="/">&larr; Back to YappyDraw</a>
+
+        <h1>Privacy Policy</h1>
+        <p class="subtitle">Last updated: February 12, 2026</p>
+
+        <h2>Summary</h2>
+        <p>
+            YappyDraw is a local-first drawing application. Your drawings and data stay on your
+            device by default. We do not collect, store, or sell your personal data.
+        </p>
+
+        <h2>What Data We Collect</h2>
+        <p>
+            YappyDraw does <strong>not</strong> collect any personal information. Specifically:
+        </p>
+        <ul>
+            <li>No account registration is required to use YappyDraw.</li>
+            <li>No drawings, files, or content are sent to our servers.</li>
+            <li>No cookies are used for tracking or advertising.</li>
+            <li>No analytics data is shared with third parties for advertising.</li>
+        </ul>
+
+        <h2>Anonymous Usage Analytics</h2>
+        <p>
+            We use <a href="https://www.goatcounter.com/" target="_blank" rel="noopener">GoatCounter</a>,
+            a privacy-friendly, open-source analytics service, to understand how many people visit the site.
+            GoatCounter does not use cookies, does not collect personal data, and is fully GDPR compliant.
+            It records only basic page view counts.
+        </p>
+
+        <h2>Local Storage</h2>
+        <p>
+            YappyDraw uses your browser's <code>localStorage</code> to auto-save your current drawing
+            for crash recovery. This data never leaves your device and can be cleared at any time
+            through your browser settings.
+        </p>
+
+        <h2>Google Drive Integration (Optional)</h2>
+        <p>
+            If you choose to connect your Google account, YappyDraw uses Google's OAuth 2.0 (PKCE)
+            to authenticate. When connected:
+        </p>
+        <ul>
+            <li>
+                <strong>Scope:</strong> We request the <code>drive.file</code> scope, which only grants
+                access to files created by or opened with YappyDraw — not your entire Google Drive.
+            </li>
+            <li>
+                <strong>What is stored:</strong> Your OAuth access token is stored in your browser's
+                localStorage to keep you signed in. It expires after 1 hour.
+            </li>
+            <li>
+                <strong>What is NOT stored:</strong> We do not store your Google password, and no tokens
+                or data are sent to any server operated by us. The OAuth flow runs entirely in your browser.
+            </li>
+            <li>
+                <strong>Your files:</strong> Drawings saved to Google Drive are stored in your own
+                Google Drive account, in a "YappyDraw" folder. We have no access to these files
+                outside of your active browser session.
+            </li>
+            <li>
+                <strong>Revoking access:</strong> You can sign out from YappyDraw at any time, or revoke
+                access from your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google Account permissions page</a>.
+            </li>
+        </ul>
+
+        <h2>Third-Party Services</h2>
+        <p>YappyDraw uses the following third-party services:</p>
+        <ul>
+            <li><strong>Google Drive API</strong> — only when you explicitly connect your Google account.</li>
+            <li><strong>Google Fonts</strong> — for loading typefaces used in drawings.</li>
+            <li><strong>GoatCounter</strong> — for anonymous, cookie-free page view analytics.</li>
+        </ul>
+
+        <h2>Children's Privacy</h2>
+        <p>
+            YappyDraw does not knowingly collect any personal information from children under 13.
+            Since we do not collect personal data from any users, this applies equally to all age groups.
+        </p>
+
+        <h2>Data Deletion</h2>
+        <p>
+            Since YappyDraw does not store your data on our servers, there is nothing to delete on our end.
+            To remove local data, clear your browser's localStorage for the YappyDraw site. To remove
+            files from Google Drive, delete them directly from your Google Drive.
+        </p>
+
+        <h2>Changes to This Policy</h2>
+        <p>
+            We may update this policy as new features are added. The "Last updated" date at the top
+            will reflect the most recent revision. Continued use of YappyDraw after changes constitutes
+            acceptance of the updated policy.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+            If you have questions about this privacy policy, please contact us at
+            <strong>support@algorisys.com</strong>.
+        </p>
+    </div>
+</body>
+</html>

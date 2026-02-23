@@ -1,0 +1,138 @@
+/* Expanded Text Editor Modal */
+.text-editor-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(2px);
+}
+
+.text-editor-modal {
+    background: var(--bg-panel, #ffffff);
+    color: var(--text-primary, #1f2937);
+    border-radius: 12px;
+    width: 700px;
+    max-width: 90vw;
+    max-height: 70vh;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.text-editor-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.text-editor-modal-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.text-editor-modal-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.text-editor-modal-toolbar .rt-toolbar-btn {
+    width: 28px;
+    height: 28px;
+}
+
+.text-editor-modal-toolbar .rt-color-popover {
+    z-index: 2010;
+}
+
+.text-editor-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    min-height: 200px;
+}
+
+.text-editor-modal-editor {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 100%;
+    padding: 16px 20px;
+    outline: none;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.text-editor-modal-textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 100%;
+    padding: 16px 20px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: inherit;
+    resize: none;
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.text-editor-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.text-editor-modal-done-btn {
+    padding: 6px 20px;
+    background: var(--primary-color, #3b82f6);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+}
+
+.text-editor-modal-done-btn:hover {
+    background: var(--primary-hover, #2563eb);
+}
+
+/* List styles for contenteditable */
+.text-editor-modal-editor ul,
+.text-editor-modal-editor ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.text-editor-modal-editor li {
+    margin: 0;
+    padding: 0;
+}
+
+.text-editor-modal-editor ul {
+    list-style-type: disc;
+}
+
+.text-editor-modal-editor ol {
+    list-style-type: decimal;
+}

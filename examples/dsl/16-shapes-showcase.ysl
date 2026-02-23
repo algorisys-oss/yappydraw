@@ -1,0 +1,33 @@
+---
+title: Shape Showcase
+layout: grid
+columns: 5
+hSpacing: 140
+vSpacing: 100
+---
+
+# Basic shapes
+s1 [rect] "Rectangle"
+s2 [circle] "Circle"
+s3 [diamond] "Diamond"
+s4 [triangle] "Triangle"
+s5 [hexagon] "Hexagon"
+s6 [star] "Star"
+s7 [heart] "Heart"
+s8 [cloud] "Cloud"
+s9 [cylinder] "Cylinder"
+s10 [capsule] "Capsule"
+
+# UML shapes
+s11 [class] "UML Class"
+s12 [actor] "Actor"
+s13 [state] "State"
+s14 [component] "Component"
+s15 [package] "Package"
+
+# Infrastructure
+s16 [server] "Server"
+s17 [db] "Database"
+s18 [browser] "Browser"
+s19 [firewall] "Firewall"
+s20 [queue] "Queue"

@@ -1,0 +1,178 @@
+.state-panel {
+    position: fixed;
+    top: 80px;
+    right: 320px;
+    /* Offset from Property Panel */
+    width: 280px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    user-select: none;
+}
+
+.state-panel.dragging {
+    cursor: grabbing;
+}
+
+.state-panel .panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+}
+
+.state-panel.dragging .panel-header {
+    cursor: grabbing;
+}
+
+.state-panel h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.state-panel .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.state-panel .close-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    opacity: 1;
+}
+
+.state-panel .panel-actions {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.state-panel .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.state-panel .input-group input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    font-size: 12px;
+    outline: none;
+}
+
+.state-panel .add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.state-panel .add-btn:hover {
+    background: #2563eb;
+}
+
+.state-panel .state-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.state-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: transparent;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.state-item:hover {
+    background: var(--bg-secondary);
+}
+
+.state-item.active {
+    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.state-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.state-name {
+    font-size: 12px;
+    font-weight: 500;
+    user-select: none;
+}
+
+.state-count {
+    font-size: 10px;
+    opacity: 0.5;
+}
+
+.state-controls {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.state-item:hover .state-controls {
+    opacity: 1;
+}
+
+.state-item .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+}
+
+.state-item .icon-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+.state-item .icon-btn.delete:hover {
+    color: #ef4444;
+}
+
+.empty-state {
+    padding: 32px 16px;
+    text-align: center;
+    font-size: 12px;
+    opacity: 0.5;
+    line-height: 1.5;
+}

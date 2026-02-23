@@ -1,0 +1,104 @@
+/* Shared styling for grouped tool menus (Pen and Shape tools) */
+.pen-tool-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tool-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropdown-indicator {
+    font-size: 8px;
+    margin-left: 2px;
+    opacity: 0.6;
+}
+
+.pen-tool-dropdown {
+    position: fixed;
+    min-width: 200px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    z-index: 10003;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    max-height: 70vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+/* Custom scrollbar for better visibility on mobile */
+.pen-tool-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.pen-tool-dropdown::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 3px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    color: inherit;
+    transition: background 0.2s;
+    touch-action: manipulation;
+}
+
+.dropdown-item:hover {
+    background: var(--btn-hover);
+}
+
+.dropdown-item.active {
+    background: var(--primary-color);
+    color: #ffffff;
+}
+
+.tool-label {
+    flex: 1;
+}
+
+.submenu-indicator {
+    font-size: 14px;
+    margin-left: 4px;
+    opacity: 1;
+    color: var(--primary-color);
+    fill: var(--primary-color);
+    vertical-align: middle;
+}
+
+.toolbar-btn:hover .submenu-indicator {
+    transform: rotate(180deg);
+    /* Add a hover effect for better visibility */
+}
+
+/* Tool locked indicator - small dot on the button */
+.toolbar-btn.tool-locked::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}

@@ -1,0 +1,475 @@
+/* ── Cloud Storage Dialog ─────────────────────────────── */
+
+.cloud-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(4px);
+}
+
+.cloud-dialog {
+    background: var(--bg-panel);
+    width: 90%;
+    max-width: 640px;
+    max-height: 80vh;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    animation: cloudDialogScale 0.2s ease-out;
+    user-select: none;
+}
+
+@keyframes cloudDialogScale {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Header ──────────────────────────────────────────── */
+
+.cloud-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cloud-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cloud-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cloud-provider-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--bg-canvas);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.cloud-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    transition: all 0.2s;
+}
+
+.cloud-close-btn:hover {
+    background: var(--btn-hover);
+    color: var(--text-primary);
+}
+
+/* ── Auth Section ────────────────────────────────────── */
+
+.cloud-auth {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cloud-auth-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cloud-auth-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.cloud-auth-avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.cloud-auth-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.cloud-auth-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.cloud-auth-email {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.cloud-auth-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.cloud-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--btn-bg);
+    color: var(--text-primary);
+}
+
+.cloud-btn:hover {
+    background: var(--btn-hover);
+}
+
+.cloud-btn.primary {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.cloud-btn.primary:hover {
+    filter: brightness(1.1);
+}
+
+.cloud-btn.danger {
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+    background: transparent;
+}
+
+.cloud-btn.danger:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
+.cloud-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Sign-in Card ────────────────────────────────────── */
+
+.cloud-signin {
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+}
+
+.cloud-signin-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--bg-canvas);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+}
+
+.cloud-signin p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    max-width: 360px;
+    line-height: 1.5;
+}
+
+/* ── Toolbar (folder path + search) ──────────────────── */
+
+.cloud-toolbar {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cloud-folder-path {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.cloud-folder-path span {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.cloud-search {
+    flex: 1;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-canvas);
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+}
+
+.cloud-search:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.cloud-search::placeholder {
+    color: var(--text-secondary);
+}
+
+/* ── File List ───────────────────────────────────────── */
+
+.cloud-file-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+    min-height: 200px;
+    max-height: 320px;
+}
+
+.cloud-file-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.cloud-file-item:hover {
+    background: var(--btn-hover);
+}
+
+.cloud-file-item.selected {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.cloud-file-icon {
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.cloud-file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cloud-file-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cloud-file-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.cloud-file-actions {
+    flex-shrink: 0;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.cloud-file-item:hover .cloud-file-actions {
+    opacity: 1;
+}
+
+.cloud-file-action-btn {
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    transition: all 0.15s;
+}
+
+.cloud-file-action-btn:hover {
+    background: var(--btn-hover);
+    color: var(--text-primary);
+}
+
+.cloud-file-action-btn.danger:hover {
+    color: var(--danger-color);
+}
+
+/* ── Empty / Loading States ──────────────────────────── */
+
+.cloud-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.cloud-loading {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.cloud-load-more {
+    padding: 8px 20px;
+    text-align: center;
+}
+
+.cloud-load-more button {
+    font-size: 12px;
+    color: var(--primary-color);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 12px;
+}
+
+.cloud-load-more button:hover {
+    text-decoration: underline;
+}
+
+/* ── Footer ──────────────────────────────────────────── */
+
+.cloud-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cloud-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cloud-save-input {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-canvas);
+    color: var(--text-primary);
+    font-size: 13px;
+    width: 220px;
+    outline: none;
+}
+
+.cloud-save-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.cloud-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Error Banner ────────────────────────────────────── */
+
+.cloud-error {
+    margin: 12px 20px;
+    padding: 10px 14px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    color: var(--danger-color);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+[data-theme='dark'] .cloud-error,
+[data-theme='focus'] .cloud-error {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* ── Confirm Dialog (inline) ─────────────────────────── */
+
+.cloud-confirm {
+    padding: 16px 20px;
+    background: var(--bg-canvas);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.cloud-confirm-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* ── Spinner ─────────────────────────────────────────── */
+
+@keyframes cloudSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.cloud-spin {
+    animation: cloudSpin 1s linear infinite;
+}

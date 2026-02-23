@@ -1,0 +1,136 @@
+.toolbar-container {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    right: auto;
+    margin: 0;
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: var(--bg-panel);
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    z-index: 10002;
+    border: 1px solid var(--border-color);
+    user-select: none;
+    transition: box-shadow 0.2s, background 0.2s;
+}
+
+.toolbar-container.dragging {
+    cursor: grabbing;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.drag-handle {
+    width: 12px;
+    height: 36px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.toolbar-container:hover .drag-handle {
+    opacity: 0.8;
+}
+
+.drag-dots {
+    width: 4px;
+    height: 18px;
+    background-image: radial-gradient(var(--text-secondary) 1px, transparent 1px);
+    background-size: 4px 4px;
+}
+
+/* Mobile: move toolbar to bottom, full width */
+@media (max-width: 768px) {
+    .toolbar-container {
+        top: auto;
+        bottom: 36px;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: 100%;
+        transform: none;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        padding: 8px 12px;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+        gap: 4px;
+        justify-content: flex-start;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .toolbar-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hide drag handle on mobile - toolbar is fixed at bottom */
+    .toolbar-container .drag-handle {
+        display: none;
+    }
+
+    .toolbar-btn {
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        touch-action: manipulation;
+    }
+
+    /* Ensure tool groups don't shrink */
+    .toolbar-container > * {
+        flex-shrink: 0;
+    }
+
+    /* Dropdown layout adjustments for mobile - open upward */
+    .pen-tool-dropdown {
+        width: calc(100vw - 40px);
+        max-width: 320px;
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+.toolbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background-color: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.toolbar-btn:hover {
+    background-color: var(--btn-hover);
+    color: var(--text-primary);
+}
+
+.toolbar-btn.active {
+    background-color: var(--primary-light);
+    /* Use theme variable */
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Mobile Property Panel Toggle - always visible, provides quick access */
+.mobile-property-toggle {
+    margin-left: 4px;
+    border-left: 1px solid #e5e7eb;
+    padding-left: 8px;
+}

@@ -1,0 +1,25 @@
+---
+title: BPMN Order Process
+layout: tree-right
+hSpacing: 120
+vSpacing: 80
+---
+
+# BPMN process flow
+start [start-event] "Start"
+receive [task] "Receive Order"
+check_stock [gateway] "In Stock?"
+fulfill [task] "Fulfill Order"
+backorder [task] "Place Backorder"
+notify [task] "Notify Customer"
+ship [task] "Ship Package"
+end_ok [end-event] "Done"
+
+start -> receive
+receive -> check_stock
+check_stock -> fulfill "Yes"
+check_stock -> backorder "No"
+backorder -> notify
+fulfill -> ship
+ship -> end_ok
+notify -> end_ok

@@ -1,0 +1,597 @@
+/**
+ * Draw Handler
+ * Handles shape/line/arrow/bezier/organicBranch creation, live dimension updates,
+ * end binding, and normalization on pointer up.
+ * Extracted from canvas.tsx handlePointerDown/Move/Up.
+ */
+
+import type { DrawingElement } from '../../types';
+import type { PointerState } from '../pointer-state';
+import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
+import { store, addElement, updateElement, deleteElements, setStore, setSelectedTool } from '../../store/app-store';
+import { snapPoint } from '../snap-helpers';
+import { generateId } from '../id-generator';
+import { defaultTableData, defaultColWidths, defaultRowHeights } from '../table-utils';
+import { getUIShapeDef } from '../../config/ui-shape-defs';
+import { hitTestPoolLane, assignToPoolLane } from '../pool-containment';
+import { computeAnchorFractions } from '../binding-logic';
+
+// Shapes that default to solid stroke
+const SOLID_STROKE_SHAPES = [
+    'rectangle', 'circle', 'diamond', 'triangle', 'hexagon', 'octagon',
+    'pentagon', 'septagon', 'star', 'cloud', 'heart', 'capsule', 'stickyNote',
+    'callout', 'speechBubble', 'database', 'document', 'cylinder',
+    'isometricCube', 'solidBlock', 'perspectiveBlock',
+    'umlClass', 'umlEnum', 'umlInterface', 'umlActor', 'umlComponent', 'umlState',
+    'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive',
+    'table', 'codeBlock',
+    'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable',
+    'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch',
+    'card', 'searchBar', 'progressBar', 'avatar', 'navbar',
+    'tabBar', 'badge', 'tooltip', 'slider',
+    'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent',
+    'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnEventGateway',
+    'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity',
+    'bpmnDataObject', 'bpmnAnnotation', 'bpmnPool', 'bpmnDataStore', 'bpmnGroup'
+];
+
+// Shapes that need negative-dimension normalization on finish
+const NORMALIZABLE_SHAPES = [
+    'rectangle', 'circle', 'diamond', 'triangle', 'hexagon', 'octagon',
+    'parallelogram', 'star', 'cloud', 'heart', 'capsule', 'stickyNote',
+    'callout', 'burst', 'speechBubble', 'ribbon', 'bracketLeft', 'bracketRight',
+    'database', 'document', 'predefinedProcess', 'internalStorage',
+    'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda',
+    'router', 'browser', 'trapezoid', 'rightTriangle', 'pentagon', 'septagon',
+    'browserWindow', 'mobilePhone', 'ghostButton', 'inputField',
+    'table',
+    // 3D shapes need normalization too
+    'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox',
+    'codeBlock',
+    'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable',
+    'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch',
+    'card', 'searchBar', 'progressBar', 'avatar', 'navbar',
+    'tabBar', 'badge', 'tooltip', 'slider',
+    'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent',
+    'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnEventGateway',
+    'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity',
+    'bpmnDataObject', 'bpmnAnnotation', 'bpmnPool', 'bpmnDataStore', 'bpmnGroup'
+];
+
+// Tools that stay active after drawing (don't switch to selection)
+const CONTINUOUS_TOOLS = [
+    'selection', 'pan', 'eraser', 'fineliner', 'inkbrush', 'marker',
+    'text', 'richtext', 'ink', 'polyline'
+];
+
+// ─── Pointer Down: Create element ───────────────────────────────────
+
+export function drawOnDown(
+    x: number,
+    y: number,
+    pState: PointerState,
+    helpers: PointerHelpers
+): void {
+    pState.isDrawing = true;
+    pState.penPointsBuffer = [];
+    pState.lastPenUpdateTime = 0;
+    pState.elbowCommittedPoints = [{ x: 0, y: 0 }];
+    pState.elbowDirection = null;
+
+    // Snap start position if enabled
+    let creationX = x;
+    let creationY = y;
+    if (store.gridSettings.snapToGrid) {
+        const snapped = snapPoint(x, y, store.gridSettings.gridSize);
+        creationX = snapped.x;
+        creationY = snapped.y;
+    }
+
+    pState.startX = creationX;
+    pState.startY = creationY;
+    pState.currentId = generateId(store.selectedTool);
+
+    const tool = store.selectedTool;
+    const actualType = tool === 'bezier' ? 'line' : (tool === 'elbow' ? 'arrow' : tool);
+    const actualCurveType = (tool === 'bezier' || tool === 'organicBranch')
+        ? 'bezier'
+        : (tool === 'elbow' ? 'elbow' : (store.defaultElementStyles.curveType || 'straight'));
+
+    // Check for start binding at creation time (connectors only — not plain lines)
+    let startBindingData: { elementId: string; focus: number; gap: number; position?: string } | undefined;
+    let snappedStartX = creationX;
+    let snappedStartY = creationY;
+
+    if (tool === 'arrow' || tool === 'bezier' || tool === 'elbow' || tool === 'organicBranch') {
+        const match = helpers.checkBinding(creationX, creationY, pState.currentId);
+        if (match) {
+            startBindingData = {
+                elementId: match.element.id,
+                focus: 0,
+                gap: 5,
+                position: match.position
+            };
+            snappedStartX = match.snapPoint.x;
+            snappedStartY = match.snapPoint.y;
+            pState.startX = snappedStartX;
+            pState.startY = snappedStartY;
+        }
+    }
+
+    const newElement = {
+        ...store.defaultElementStyles,
+        id: pState.currentId,
+        type: actualType,
+        x: snappedStartX,
+        y: snappedStartY,
+        width: 0,
+        height: 0,
+        seed: Math.floor(Math.random() * 2 ** 31) + 1,
+        layerId: store.activeLayerId,
+        curveType: actualCurveType as 'straight' | 'bezier' | 'elbow',
+        points: (tool === 'fineliner' || tool === 'inkbrush' || tool === 'marker') ? [0, 0] : undefined,
+        pointsEncoding: (tool === 'fineliner' || tool === 'inkbrush' || tool === 'marker') ? 'flat' : undefined,
+        startBinding: startBindingData,
+        strokeStyle: SOLID_STROKE_SHAPES.includes(actualType)
+            ? 'solid'
+            : store.defaultElementStyles.strokeStyle,
+    } as DrawingElement;
+
+    // Mark freehand strokes as presentation-drawn when in presentation mode
+    if (store.appMode === 'presentation' && (tool === 'fineliner' || tool === 'inkbrush' || tool === 'marker')) {
+        newElement.presentationDrawn = true;
+    }
+
+    // Apply specific defaults for Sticky Note
+    if (actualType === 'stickyNote') {
+        newElement.backgroundColor = '#fef08a';
+        newElement.fillStyle = 'solid';
+        newElement.strokeColor = '#000000';
+    }
+
+    // Apply specific defaults for Table
+    if (actualType === 'table') {
+        const tableRows = 3;
+        const tableCols = 3;
+        const hasHeader = true;
+        const totalVisualRows = hasHeader ? tableRows + 1 : tableRows;
+        // tableData row 0 = header labels, rows 1..N = body data
+        const headerRow = Array.from({ length: tableCols }, (_, i) => `Col ${i + 1}`);
+        const bodyData = defaultTableData(tableRows, tableCols);
+        newElement.tableRows = tableRows;
+        newElement.tableCols = tableCols;
+        newElement.tableHeaders = hasHeader;
+        newElement.tableData = [headerRow, ...bodyData];
+        newElement.tableColWidths = defaultColWidths(tableCols);
+        newElement.tableRowHeights = defaultRowHeights(totalVisualRows);
+        newElement.tableHeaderColor = '#e2e8f0';
+        newElement.tableHeaderTextColor = '';
+        newElement.tableRowColor = '';
+        newElement.tableAltRowColor = '';
+        newElement.tableSortCol = -1;
+        newElement.tableSortDir = 'asc';
+    }
+
+    // Apply specific defaults for BPMN Pool
+    if (actualType === 'bpmnPool') {
+        newElement.bpmnLaneCount = 2;
+        newElement.bpmnLaneLabels = ['Lane 1', 'Lane 2'];
+        newElement.bpmnOrientation = 'horizontal';
+        newElement.containerText = 'Pool';
+        newElement.fillStyle = 'solid';
+        // Use theme-aware colors so strokes remain visible against background
+        const isFocus = store.theme === 'focus';
+        newElement.backgroundColor = isFocus ? '#1e293b' : '#ffffff';
+        newElement.strokeColor = isFocus ? '#94a3b8' : '#000000';
+        newElement.textColor = isFocus ? '#e2e8f0' : '#000000';
+    }
+
+    // Apply specific defaults for UML shapes
+    if (actualType === 'umlClass') {
+        newElement.containerText = 'ClassName';
+        newElement.attributesText = '+ attribute: type';
+        newElement.methodsText = '+ method(): void';
+    }
+    if (actualType === 'umlEnum') {
+        newElement.containerText = 'EnumName';
+        newElement.attributesText = 'VALUE_1\nVALUE_2\nVALUE_3';
+    }
+    if (actualType === 'umlInterface') {
+        newElement.containerText = 'InterfaceName';
+        newElement.methodsText = '+ method(): void';
+    }
+    if (actualType === 'umlState') {
+        newElement.containerText = 'StateName';
+        newElement.attributesText = 'entry / action\ndo / activity';
+    }
+    if (actualType === 'umlLifeline') {
+        newElement.containerText = ':Object';
+    }
+    if (actualType === 'umlComponent') {
+        newElement.containerText = 'Component';
+    }
+    if (actualType === 'umlPackage') {
+        newElement.containerText = 'Package';
+    }
+    if (actualType === 'umlNote') {
+        newElement.containerText = 'Note text';
+    }
+    if (actualType === 'umlActor') {
+        newElement.containerText = 'Actor';
+    }
+    if (actualType === 'umlUseCase') {
+        newElement.containerText = 'Use Case';
+    }
+    if (actualType === 'umlFragment') {
+        newElement.containerText = 'alt';
+        newElement.attributesText = '[condition]';
+    }
+
+    // Apply specific defaults for Code Block
+    if (actualType === 'codeBlock') {
+        newElement.backgroundColor = '#1e293b';
+        newElement.fillStyle = 'solid';
+        newElement.strokeColor = '#334155';
+        newElement.textColor = '#e2e8f0';
+        newElement.fontFamily = 'code';
+        newElement.fontSize = 14;
+        newElement.textAlign = 'left';
+        newElement.codeShowLineNumbers = true;
+        newElement.codeStartLineNumber = 1;
+        newElement.borderRadius = 4;
+    }
+
+    // Apply specific defaults for Data Structure shapes
+    const DS_TYPES = ['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'];
+    if (DS_TYPES.includes(actualType)) {
+        newElement.backgroundColor = '#f8fafc';
+        newElement.fillStyle = 'solid';
+        newElement.strokeColor = '#334155';
+        newElement.textColor = '#1e293b';
+        newElement.fontFamily = 'code';
+        newElement.fontSize = 14;
+        newElement.borderRadius = 4;
+        if (actualType === 'dsArray') {
+            newElement.text = '1, 2, 3, 4, 5';
+            newElement.dsShowIndices = true;
+            newElement.dsDirection = 'horizontal';
+        } else if (actualType === 'dsStack') {
+            newElement.text = 'A, B, C';
+            newElement.dsDirection = 'vertical';
+        } else if (actualType === 'dsQueue') {
+            newElement.text = 'first, second, third';
+            newElement.dsDirection = 'horizontal';
+        } else if (actualType === 'dsLinkedList') {
+            newElement.text = 'A, B, C, D';
+            newElement.dsDirection = 'horizontal';
+        } else if (actualType === 'dsBinaryTree') {
+            newElement.text = '50, 30, 70, 20, 40, _, 80';
+        } else if (actualType === 'dsHashTable') {
+            newElement.text = 'name:Alice, age:30, id:42';
+            newElement.dsShowIndices = true;
+            newElement.dsCapacity = 5;
+        }
+    }
+
+    // Apply defaults for UI wireframe shapes from config
+    const uiDef = getUIShapeDef(actualType);
+    if (uiDef) {
+        newElement.fillStyle = 'solid';
+        newElement.strokeStyle = 'solid';
+    }
+
+    addElement(newElement);
+
+    // Update target's boundElements if we have a start binding
+    if (startBindingData) {
+        const target = store.elements.find(e => e.id === startBindingData!.elementId);
+        if (target) {
+            const existing = target.boundElements || [];
+            updateElement(target.id, { boundElements: [...existing, { id: pState.currentId, type: actualType as 'arrow' }] });
+        }
+    }
+}
+
+// ─── Pointer Move: Live dimension/binding updates ───────────────────
+
+export function drawOnMove(
+    x: number,
+    y: number,
+    pState: PointerState,
+    helpers: PointerHelpers,
+    signals: PointerSignals
+): void {
+    let finalX = x;
+    let finalY = y;
+
+    // Track raw mouse position before snapping (used for precise anchor fractions)
+    pState.lastRawEndX = x;
+    pState.lastRawEndY = y;
+
+    // Check binding for connector tools only (not plain lines)
+    if (store.selectedTool === 'arrow' || store.selectedTool === 'bezier' || store.selectedTool === 'elbow' || store.selectedTool === 'organicBranch' || pState.draggingFromConnector) {
+        if (pState.currentId) {
+            const match = helpers.checkBinding(x, y, pState.currentId);
+            if (match) {
+                signals.setSuggestedBinding({ elementId: match.element.id, px: match.snapPoint.x, py: match.snapPoint.y, position: match.position });
+                finalX = match.snapPoint.x;
+                finalY = match.snapPoint.y;
+            } else {
+                signals.setSuggestedBinding(null);
+            }
+        }
+    } else {
+        signals.setSuggestedBinding(null);
+    }
+
+    if (!signals.suggestedBinding() && store.gridSettings.snapToGrid) {
+        const snapped = snapPoint(x, y, store.gridSettings.gridSize);
+        finalX = snapped.x;
+        finalY = snapped.y;
+    }
+
+    const updates: Partial<DrawingElement> = {
+        width: finalX - pState.startX,
+        height: finalY - pState.startY
+    };
+
+    // For organicBranch, provide temporary points and controlPoints for live preview
+    if (store.selectedTool === 'organicBranch') {
+        const w = finalX - pState.startX;
+        const h = finalY - pState.startY;
+        updates.points = [0, 0, w, h];
+        const cp1 = { x: pState.startX + w * 0.5, y: pState.startY };
+        const cp2 = { x: finalX - w * 0.5, y: finalY };
+        updates.controlPoints = [cp1, cp2];
+    }
+
+    // For elbow, build a clean L-shaped orthogonal path (single bend)
+    if (store.selectedTool === 'elbow') {
+        const DIRECTION_THRESHOLD = 20;
+        const relX = finalX - pState.startX;
+        const relY = finalY - pState.startY;
+
+        // Determine initial direction after sufficient movement
+        if (pState.elbowDirection === null) {
+            if (Math.abs(relX) > DIRECTION_THRESHOLD || Math.abs(relY) > DIRECTION_THRESHOLD) {
+                pState.elbowDirection = Math.abs(relX) >= Math.abs(relY) ? 'h' : 'v';
+            }
+        }
+
+        // Build clean L-shaped path: origin → corner → endpoint (exactly 1 bend)
+        const pts: { x: number; y: number }[] = [{ x: 0, y: 0 }];
+
+        if (pState.elbowDirection === 'h') {
+            // Horizontal first, then vertical
+            pts.push({ x: relX, y: 0 });
+            pts.push({ x: relX, y: relY });
+        } else if (pState.elbowDirection === 'v') {
+            // Vertical first, then horizontal
+            pts.push({ x: 0, y: relY });
+            pts.push({ x: relX, y: relY });
+        } else {
+            // No direction yet — just show endpoint
+            pts.push({ x: relX, y: relY });
+        }
+
+        updates.points = pts as any;
+    }
+
+    if (pState.currentId) updateElement(pState.currentId, updates);
+}
+
+// ─── Pointer Up: Finalize drawing ───────────────────────────────────
+
+export function drawOnUp(
+    pState: PointerState,
+    helpers: PointerHelpers,
+    signals: PointerSignals
+): void {
+    if (!pState.isDrawing || !pState.currentId) {
+        pState.isDrawing = false;
+        pState.currentId = null;
+        pState.draggingFromConnector = null;
+        return;
+    }
+
+    const el = store.elements.find(e => e.id === pState.currentId);
+    if (el) {
+        // Binding for connectors (arrows/bezier/organicBranch) — not plain lines
+        if ((el.type === 'arrow' || el.type === 'organicBranch' || (el.type === 'line' && el.curveType === 'bezier')) && signals.suggestedBinding()) {
+            const binding = signals.suggestedBinding()!;
+            // Use raw mouse position (not snap point) for fractions so each connector
+            // preserves the user's intended position, even when snapped to the same anchor
+            const endBindingData = computeAnchorFractions(
+                { elementId: binding.elementId, focus: 0, gap: 5, position: binding.position },
+                pState.lastRawEndX, pState.lastRawEndY, store.elements
+            );
+            updateElement(pState.currentId, { endBinding: endBindingData });
+
+            const target = store.elements.find(e => e.id === binding.elementId);
+            if (target) {
+                const existing = target.boundElements || [];
+                updateElement(target.id, { boundElements: [...existing, { id: pState.currentId, type: el.type as any }] });
+            }
+            signals.setSuggestedBinding(null);
+        }
+
+        // Always compute start binding fractions (stable anchoring regardless of end binding)
+        if (el.startBinding && (el.type === 'arrow' || el.type === 'organicBranch' || (el.type === 'line' && el.curveType === 'bezier'))) {
+            const startFractions = computeAnchorFractions(
+                el.startBinding, pState.startX, pState.startY, store.elements
+            );
+            updateElement(pState.currentId, { startBinding: startFractions });
+        }
+
+        // Finalize routing & re-spread siblings
+        if (pState.currentId) {
+            const updatedEl = store.elements.find(e => e.id === pState.currentId);
+            if (updatedEl && updatedEl.startBinding && updatedEl.endBinding) {
+                helpers.refreshBoundLine(pState.currentId);
+
+                // Refresh sibling connectors so they re-spread
+                const startTarget = store.elements.find(e => e.id === updatedEl.startBinding!.elementId);
+                if (startTarget?.boundElements) {
+                    for (const b of startTarget.boundElements) {
+                        if (b.id !== pState.currentId) {
+                            const sibling = store.elements.find(e => e.id === b.id);
+                            if (sibling?.startBinding && sibling?.endBinding) {
+                                const sameShapePair =
+                                    (sibling.startBinding.elementId === updatedEl.startBinding!.elementId &&
+                                     sibling.endBinding.elementId === updatedEl.endBinding!.elementId) ||
+                                    (sibling.startBinding.elementId === updatedEl.endBinding!.elementId &&
+                                     sibling.endBinding.elementId === updatedEl.startBinding!.elementId);
+                                if (sameShapePair) helpers.refreshBoundLine(b.id);
+                            }
+                        }
+                    }
+                }
+            } else if (updatedEl && el.curveType === 'elbow') {
+                const pts = helpers.refreshLinePoints(updatedEl);
+                if (pts) {
+                    updateElement(pState.currentId, { points: pts });
+                }
+            }
+        }
+
+        // Normalize negative dimensions for geometric shapes
+        if (NORMALIZABLE_SHAPES.includes(el.type)) {
+            if (el.width < 0) {
+                updateElement(pState.currentId, { x: el.x + el.width, width: Math.abs(el.width) });
+            }
+            if (el.height < 0) {
+                updateElement(pState.currentId, { y: el.y + el.height, height: Math.abs(el.height) });
+            }
+        } else if (el.type === 'fineliner' || el.type === 'inkbrush' || el.type === 'marker' || el.type === 'ink') {
+            // Flush buffered pen points and normalize
+            helpers.flushPenPoints();
+            const updatedEl = store.elements.find(e => e.id === pState.currentId);
+            if (updatedEl && updatedEl.points && updatedEl.points.length > 2) {
+                const updates = helpers.normalizePencil({ ...updatedEl, points: updatedEl.points });
+                if (updates) {
+                    updateElement(pState.currentId, updates);
+                }
+            }
+        } else if (el.type === 'organicBranch') {
+            normalizeOrganicBranch(pState.currentId, el);
+        }
+
+        // Auto-initialize a center control point for line/arrow (not elbow)
+        // so control points are visible by default when selected
+        if ((el.type === 'line' || el.type === 'arrow') && el.curveType !== 'elbow') {
+            const finalEl = store.elements.find(e => e.id === pState.currentId);
+            if (finalEl && !finalEl.controlPoints) {
+                const startX = finalEl.x;
+                const startY = finalEl.y;
+                const endX = finalEl.x + finalEl.width;
+                const endY = finalEl.y + finalEl.height;
+                const midX = (startX + endX) / 2;
+                const midY = (startY + endY) / 2;
+
+                if (finalEl.curveType === 'bezier') {
+                    // For bezier tool: offset CP from midpoint for visible curve
+                    const dx = endX - startX;
+                    const dy = endY - startY;
+                    const offsetX = Math.abs(dx) > Math.abs(dy) ? 0 : dy * 0.3;
+                    const offsetY = Math.abs(dx) > Math.abs(dy) ? -dx * 0.3 : 0;
+                    updateElement(pState.currentId!, { controlPoints: [{ x: midX + offsetX, y: midY + offsetY }] });
+                } else {
+                    // For straight line/arrow: CP at midpoint (visually straight)
+                    updateElement(pState.currentId!, { controlPoints: [{ x: midX, y: midY }] });
+                }
+            }
+        }
+
+        // Discard shapes created by click without drag (too small)
+        // Excludes pen tools (fineliner/inkbrush/marker/ink), line/arrow, organicBranch, and text
+        const CLICK_EXEMPT = ['fineliner', 'inkbrush', 'marker', 'ink', 'line', 'arrow', 'organicBranch', 'text', 'richtext'];
+        if (!CLICK_EXEMPT.includes(el.type)) {
+            const MIN_DRAG = 5;
+            const currentEl = store.elements.find(e => e.id === pState.currentId);
+            if (currentEl && Math.abs(currentEl.width) < MIN_DRAG && Math.abs(currentEl.height) < MIN_DRAG) {
+                // UI shapes get default dimensions instead of being deleted
+                if (!getUIShapeDef(el.type)) {
+                    deleteElements([pState.currentId]);
+                    pState.currentId = null;
+                    helpers.draw();
+                    return;
+                }
+            }
+        }
+
+        // Apply minimum dimensions for UI shapes (click-to-create)
+        const uiShapeDef = getUIShapeDef(el.type);
+        if (uiShapeDef) {
+            const currentEl = store.elements.find(e => e.id === pState.currentId);
+            if (currentEl && Math.abs(currentEl.width) < 20 && Math.abs(currentEl.height) < 20) {
+                updateElement(pState.currentId!, {
+                    width: uiShapeDef.defaultWidth,
+                    height: uiShapeDef.defaultHeight,
+                });
+            }
+        }
+
+        // Auto-assign to pool lane if drawn inside one (skip pools themselves)
+        if (el.type !== 'bpmnPool') {
+            const finalEl = store.elements.find(e => e.id === pState.currentId);
+            if (finalEl) {
+                const cx = finalEl.x + finalEl.width / 2;
+                const cy = finalEl.y + finalEl.height / 2;
+                for (const pool of store.elements) {
+                    if (pool.type !== 'bpmnPool') continue;
+                    const lane = hitTestPoolLane(pool, cx, cy, true);
+                    if (lane >= 0) {
+                        assignToPoolLane(finalEl.id, pool.id, lane);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Switch back to selection tool after drawing (except for continuous tools or locked tools)
+        if (!CONTINUOUS_TOOLS.includes(store.selectedTool) && !store.toolLocked) {
+            setSelectedTool('selection');
+            // Auto-select the newly drawn element so property panel shows immediately
+            setStore('selection', [pState.currentId]);
+        }
+
+        // If drawn from a connector handle, select the new arrow
+        if (pState.draggingFromConnector) {
+            setStore('selection', [pState.currentId]);
+            setSelectedTool('selection');
+        }
+    }
+
+    pState.isDrawing = false;
+    pState.currentId = null;
+    pState.draggingFromConnector = null;
+}
+
+// ─── OrganicBranch normalization ─────────────────────────────────────
+
+function normalizeOrganicBranch(currentId: string, el: DrawingElement): void {
+    const normalizedX = Math.min(el.x, el.x + el.width);
+    const normalizedY = Math.min(el.y, el.y + el.height);
+    const normalizedW = Math.abs(el.width);
+    const normalizedH = Math.abs(el.height);
+
+    // Original Start/End relative to Normalized TL
+    const relStartX = el.x - normalizedX;
+    const relStartY = el.y - normalizedY;
+    const relEndX = (el.x + el.width) - normalizedX;
+    const relEndY = (el.y + el.height) - normalizedY;
+
+    // S-Curve control points
+    const dx = relEndX - relStartX;
+    const cp1 = { x: normalizedX + relStartX + dx * 0.5, y: normalizedY + relStartY };
+    const cp2 = { x: normalizedX + relEndX - dx * 0.5, y: normalizedY + relEndY };
+
+    updateElement(currentId, {
+        x: normalizedX,
+        y: normalizedY,
+        width: normalizedW,
+        height: normalizedH,
+        points: [relStartX, relStartY, relEndX, relEndY],
+        controlPoints: [cp1, cp2]
+    });
+}

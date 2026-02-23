@@ -1,0 +1,22 @@
+---
+title: Project Planning Mindmap
+layout: tree-right
+---
+
+# Mindmap using indentation-based hierarchy
+root [rect] "Project Plan"
+  design [rect] "Design"
+    ui [rect] "UI/UX"
+    arch [rect] "Architecture"
+    db [rect] "Database Schema"
+  develop [rect] "Development"
+    frontend [rect] "Frontend"
+    backend [rect] "Backend"
+    api [rect] "API Layer"
+  testing [rect] "Testing"
+    unit [rect] "Unit Tests"
+    integration [rect] "Integration"
+    e2e [rect] "E2E Tests"
+  deploy [rect] "Deployment"
+    staging [rect] "Staging"
+    prod [rect] "Production"

@@ -1,0 +1,231 @@
+.menu-container {
+    display: flex;
+    align-items: center;
+    background: var(--bg-panel);
+    padding: 6px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    gap: 4px;
+    border: 1px solid var(--border-color);
+    user-select: none;
+    transition: box-shadow 0.2s;
+}
+
+.menu-container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.drag-handle {
+    width: 12px;
+    height: 32px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    opacity: 0.3;
+    transition: opacity 0.2s;
+}
+
+.drag-handle.sm {
+    height: 24px;
+}
+
+.menu-container:hover .drag-handle {
+    opacity: 0.7;
+}
+
+.app-title:hover .drag-handle {
+    opacity: 0.7;
+}
+
+.drag-dots {
+    width: 4px;
+    height: 16px;
+    background-image: radial-gradient(var(--text-secondary) 1px, transparent 1px);
+    background-size: 4px 4px;
+}
+
+.title-input {
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 4px 8px;
+    font-size: 14px;
+    font-weight: 500;
+    width: 150px;
+    color: var(--text-primary);
+    border-radius: 4px;
+}
+
+.title-input:hover {
+    border-color: var(--border-color);
+}
+
+.title-input:focus {
+    border-color: var(--primary-color);
+    background: var(--bg-canvas);
+}
+
+.menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.menu-btn:hover {
+    background: var(--btn-hover);
+    color: var(--text-primary);
+}
+
+.menu-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.menu-btn.primary {
+    background: var(--primary-color);
+    color: white;
+    width: auto;
+    padding: 0 12px;
+}
+
+.menu-btn.primary:hover {
+    opacity: 0.9;
+}
+
+/* Dropdown Menu */
+.menu-dropdown {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    padding: 8px 0;
+    width: 300px;
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 480px) {
+    .menu-dropdown {
+        width: 280px;
+        left: 0;
+    }
+}
+
+/* Mobile: hide drag handles */
+@media (max-width: 768px) {
+    .menu-container .drag-handle {
+        display: none;
+    }
+
+    .menu-container {
+        padding: 4px;
+    }
+}
+
+.menu-item {
+    display: grid;
+    grid-template-columns: 20px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+    transition: background 0.2s;
+}
+
+.menu-item:hover {
+    background: var(--btn-hover);
+}
+
+.menu-item svg {
+    color: var(--text-secondary);
+}
+
+.menu-item .label {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 14px;
+}
+
+.menu-item-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    justify-content: flex-end;
+    min-width: 70px;
+}
+
+.menu-item .shortcut {
+    font-size: 11px;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    white-space: nowrap;
+    min-width: 40px;
+    text-align: right;
+}
+
+.check-icon {
+    color: var(--primary-color);
+}
+
+.menu-separator {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+
+/* Backdrop for clicking outside */
+.menu-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;
+    cursor: default;
+}
+
+.app-title {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-panel);
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    z-index: 100;
+    font-size: 13px;
+    pointer-events: none;
+    user-select: none;
+    /* Let clicks pass through if needed, but it's a block */
+}

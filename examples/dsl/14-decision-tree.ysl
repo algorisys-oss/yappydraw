@@ -1,0 +1,28 @@
+---
+title: Decision Tree
+layout: tree-down
+hSpacing: 140
+vSpacing: 90
+---
+
+# Decision tree for choosing a database
+start [decision] "Data Type?"
+relational [decision] "Scale?"
+nosql [decision] "Structure?"
+
+# Relational branch
+postgres [rect] "PostgreSQL" { backgroundColor: "#dbeafe" }
+mysql [rect] "MySQL" { backgroundColor: "#dbeafe" }
+
+# NoSQL branch
+mongo [rect] "MongoDB" { backgroundColor: "#dcfce7" }
+redis [rect] "Redis" { backgroundColor: "#dcfce7" }
+dynamo [rect] "DynamoDB" { backgroundColor: "#dcfce7" }
+
+start -> relational "Structured"
+start -> nosql "Unstructured"
+relational -> postgres "Large"
+relational -> mysql "Small/Medium"
+nosql -> mongo "Documents"
+nosql -> redis "Key-Value"
+nosql -> dynamo "Serverless"

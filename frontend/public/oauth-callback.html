@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>YappyDraw — Connecting...</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+        p { font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <p>Connecting to cloud storage... This window will close automatically.</p>
+    <script>
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            var code = params.get('code');
+            var error = params.get('error');
+
+            // Strategy 1: postMessage (works when COOP allows window.opener)
+            if (window.opener) {
+                try {
+                    if (code) {
+                        window.opener.postMessage(
+                            { type: 'yappy-oauth-callback', code: code },
+                            window.location.origin
+                        );
+                    } else {
+                        window.opener.postMessage(
+                            { type: 'yappy-oauth-error', error: error || 'Unknown error' },
+                            window.location.origin
+                        );
+                    }
+                } catch (e) {
+                    // COOP may block postMessage — fall through to localStorage
+                }
+            }
+
+            // Strategy 2: localStorage (COOP-proof fallback)
+            // The parent window listens for the 'storage' event
+            try {
+                if (code) {
+                    localStorage.setItem('yappy:oauth:result', JSON.stringify({
+                        type: 'yappy-oauth-callback',
+                        code: code,
+                        timestamp: Date.now()
+                    }));
+                } else {
+                    localStorage.setItem('yappy:oauth:result', JSON.stringify({
+                        type: 'yappy-oauth-error',
+                        error: error || 'Unknown error',
+                        timestamp: Date.now()
+                    }));
+                }
+            } catch (e) {
+                // localStorage may be unavailable in some contexts
+            }
+
+            window.close();
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+:root {
+  --font-hand: 'Handlee', 'Comic Sans MS', cursive;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Source Code Pro', 'Cascadia Code', monospace;
+  --font-caveat: 'Caveat', cursive;
+  --font-poppins: 'Poppins', sans-serif;
+  --font-serif: 'Merriweather', serif;
+  --font-marker: 'Permanent Marker', cursive;
+  --font-code: 'JetBrains Mono', monospace;
+
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Theme Variables - Light Mode (Default) */
+  --bg-canvas: #e2e8f0; /* Neutral workspace background, same in both themes */
+  --bg-panel: #ffffff;
+  /* Panels, Toolbars */
+  --bg-secondary: #f9fafb;
+  /* Headers, inputs */
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --btn-bg: #ffffff;
+  --btn-hover: #f3f4f6;
+  --btn-active: #e5e7eb;
+  --primary-color: #3b82f6;
+  --danger-color: #ef4444;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  color-scheme: light dark;
+  color: var(--text-primary);
+  background-color: var(--bg-canvas);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark Mode Overrides — only UI chrome, not canvas/slide content */
+[data-theme="dark"] {
+  --bg-canvas: #e2e8f0; /* Canvas area stays neutral regardless of theme */
+  --bg-panel: #1e1e1e;
+  --bg-secondary: #2d2d2d;
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --border-color: #404040;
+  --btn-bg: #2d2d2d;
+  --btn-hover: #3d3d3d;
+  --btn-active: #4d4d4d;
+  --primary-color: #60a5fa;
+  /* Lighter blue for dark mode */
+  --danger-color: #f87171;
+  /* Lighter red for dark mode */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Focus Mode — dark UI chrome AND dark canvas for distraction-free drawing */
+[data-theme="focus"] {
+  --bg-canvas: #1a1a2e;
+  --bg-panel: #1e1e1e;
+  --bg-secondary: #2d2d2d;
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --border-color: #404040;
+  --btn-bg: #2d2d2d;
+  --btn-hover: #3d3d3d;
+  --btn-active: #4d4d4d;
+  --primary-color: #60a5fa;
+  --danger-color: #f87171;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+}
+
+button {
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--btn-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+button:hover {
+  background-color: var(--btn-hover);
+  border-color: var(--border-color);
+}
+
+button:active {
+  background-color: var(--btn-active);
+  transform: translateY(1px);
+}
+
+button.active {
+  background-color: rgba(59, 130, 246, 0.1);
+  /* Transparent primary */
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Inputs */
+input[type="text"] {
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  background-color: var(--bg-panel);
+  /* Ensure inputs match theme */
+  color: var(--text-primary);
+  transition: border-color 0.2s;
+}
+
+input[type="text"]:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Cross-platform checkbox styling */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border-color, #d1d5db);
+  border-radius: 4px;
+  background: var(--bg-panel, #ffffff);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--primary-color, #3b82f6);
+  border-color: var(--primary-color, #3b82f6);
+}
+
+input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4.5px;
+  top: 1.5px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+input[type="checkbox"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--primary-color, #3b82f6);
+  outline-offset: 1px;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+button:hover {
+  background-color: #f9f9f9;
+  border-color: #bbb;
+}
+
+button:active {
+  background-color: #f0f0f0;
+  transform: translateY(1px);
+}
+
+button.active {
+  background-color: #e0efff;
+  border-color: #007acc;
+  color: #007acc;
+}
+
+input[type="text"] {
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input[type="text"]:focus {
+  border-color: #007acc;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+button:hover {
+  border-color: #646cff;
+}
+
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+
+  a:hover {
+    color: #747bff;
+  }
+
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+.unselectable {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Minimap Styles */
+.minimap-container {
+  position: fixed;
+  bottom: 48px;
+  right: 20px;
+  z-index: 1000;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  user-select: none;
+}
+
+.minimap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding: 0 4px;
+}
+
+.minimap-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.minimap-close {
+  background: transparent;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s, color 0.2s;
+  box-shadow: none;
+}
+
+.minimap-close:hover {
+  background-color: var(--btn-hover);
+  color: var(--text-primary);
+}
+
+.minimap-canvas {
+  display: block;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+}
+
+.minimap-canvas:active {
+  cursor: grabbing;
+}
+
+/* Floating Settings Button */
+.floating-settings-btn {
+  transition: all 0.2s ease;
+}
+
+.floating-settings-btn:hover {
+  transform: scale(1.1);
+}
+
+.floating-settings-btn.active {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* Zen mode exit button */
+.zen-exit-btn {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--bg-panel, #ffffff);
+  color: var(--text-secondary, #6b7280);
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  z-index: 1000;
+  opacity: 0.5;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.zen-exit-btn:hover {
+  opacity: 1;
+  background: var(--primary-color, #3b82f6);
+  color: white;
+}

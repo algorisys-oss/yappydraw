@@ -1,0 +1,18 @@
+---
+title: Horizontal Flowchart
+layout: tree-right
+---
+
+# Order processing flow (left to right)
+order [rect] "New Order"
+validate [decision] "Valid?"
+payment [rect] "Process Payment"
+reject [rect] "Reject Order" { backgroundColor: "#fecaca" }
+ship [rect] "Ship Items"
+deliver [capsule] "Delivered"
+
+order -> validate
+validate -> payment "Yes"
+validate -> reject "No"
+payment -> ship
+ship -> deliver

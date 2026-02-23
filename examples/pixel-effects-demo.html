@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yappy Image Pixel Effects Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        h1 {
+            text-align: center;
+            color: #6c5ce7;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #6c5ce7;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #5f4fd1;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .canvas-container {
+            background: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        #yappy-canvas {
+            border: 2px solid #444;
+            border-radius: 4px;
+            background: #fff;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2d2d2d;
+            border-radius: 6px;
+            border-left: 4px solid #6c5ce7;
+        }
+        .effect-name {
+            font-weight: bold;
+            color: #6c5ce7;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Image Pixel Effects Demo</h1>
+
+    <div class="info">
+        <p>Click any button below to see different pixel-by-pixel reveal effects!</p>
+        <p>Current effect: <span class="effect-name" id="current-effect">None</span></p>
+    </div>
+
+    <div class="controls">
+        <button onclick="applyEffect('revealLTR')">▶️ Reveal Left→Right</button>
+        <button onclick="applyEffect('dissolveIn')">✨ Dissolve In</button>
+        <button onclick="applyEffect('waveReveal')">🌊 Wave Reveal</button>
+        <button onclick="applyEffect('scanLines')">📺 Scan Lines</button>
+        <button onclick="applyEffect('glitch')">⚡ Glitch</button>
+        <button onclick="applyEffect('blockReveal')">▦ Block Reveal</button>
+        <button onclick="applyEffect('spiral')">🌀 Spiral</button>
+        <button onclick="applyEffect('curtainOpen')">🎭 Curtain Open</button>
+        <button onclick="applyEffect('randomScatter')">🎲 Random Scatter</button>
+        <button onclick="applyCustomEffect('sequential-rtl')">◀️ Reveal Right→Left</button>
+        <button onclick="applyCustomEffect('sequential-ttb')">⬇️ Reveal Top→Bottom</button>
+        <button onclick="applyCustomEffect('sequential-btt')">⬆️ Reveal Bottom→Top</button>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="yappy-canvas" width="800" height="600"></canvas>
+    </div>
+
+    <script>
+        // Initialize Yappy (you'll need to include Yappy bundle in your actual implementation)
+        // For this demo, we'll simulate the basic structure
+
+        let imageElementId = null;
+
+        // Sample image data (you can replace with any image)
+        const sampleImageUrl = 'data:image/svg+xml,' + encodeURIComponent(`
+            <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#6c5ce7;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#00d2d3;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <rect width="400" height="300" fill="url(#grad1)"/>
+                <text x="200" y="150" text-anchor="middle" font-size="48" fill="white" font-family="Arial">
+                    YAPPY
+                </text>
+                <circle cx="100" cy="100" r="40" fill="#fd79a8"/>
+                <circle cx="300" cy="200" r="50" fill="#fdcb6e"/>
+                <rect x="200" y="50" width="80" height="80" fill="#a29bfe" rx="10"/>
+            </svg>
+        `);
+
+        // Initialize when Yappy is ready
+        function initDemo() {
+            console.log('Demo initialized');
+            // In actual implementation, you would:
+            // 1. Initialize Yappy
+            // 2. Create an image element
+            // 3. Set imageElementId
+
+            // For now, show instructions
+            document.getElementById('current-effect').textContent = 'Ready! (Load Yappy to see effects)';
+        }
+
+        function applyEffect(presetName) {
+            document.getElementById('current-effect').textContent = presetName;
+
+            console.log(`Applying preset: ${presetName}`);
+
+            // In actual implementation with Yappy loaded:
+            // if (imageElementId && window.Yappy) {
+            //     window.Yappy.pixelEffectPresets[presetName](imageElementId, () => {
+            //         console.log('Effect complete!');
+            //     });
+            // }
+
+            showMessage(`Effect: ${presetName} (Requires Yappy integration)`);
+        }
+
+        function applyCustomEffect(effectType) {
+            document.getElementById('current-effect').textContent = effectType;
+
+            console.log(`Applying custom effect: ${effectType}`);
+
+            // In actual implementation with Yappy loaded:
+            // if (imageElementId && window.Yappy) {
+            //     window.Yappy.animatePixelEffect(imageElementId, {
+            //         effectType: effectType,
+            //         duration: 2000,
+            //         easing: 'easeOutCubic'
+            //     });
+            // }
+
+            showMessage(`Custom effect: ${effectType} (Requires Yappy integration)`);
+        }
+
+        function showMessage(msg) {
+            console.log(msg);
+        }
+
+        // Initialize demo
+        window.addEventListener('load', initDemo);
+    </script>
+
+    <div class="info" style="margin-top: 20px;">
+        <h3>Integration Instructions</h3>
+        <p>To use this demo with Yappy:</p>
+        <ol>
+            <li>Build and include the Yappy bundle in this HTML file</li>
+            <li>Initialize Yappy with the canvas: <code>Yappy.init({ canvas: document.getElementById('yappy-canvas') })</code></li>
+            <li>Create an image element: <code>const img = Yappy.addImage({ dataURL: '...', x: 200, y: 150, width: 400, height: 300 })</code></li>
+            <li>The buttons will then trigger real pixel effects!</li>
+        </ol>
+
+        <h3>Example Code:</h3>
+        <pre style="background: #1a1a1a; padding: 15px; border-radius: 4px; overflow-x: auto;">
+// Create image
+const img = Yappy.addImage({
+    x: 200,
+    y: 150,
+    width: 400,
+    height: 300,
+    dataURL: 'data:image/png;base64,...'
+});
+
+// Apply glitch effect
+Yappy.pixelEffectPresets.glitch(img.id, () => {
+    console.log('Glitch complete!');
+});
+
+// Or custom configuration
+Yappy.animatePixelEffect(img.id, {
+    effectType: 'wave-center',
+    duration: 3000,
+    easing: 'easeOutCubic',
+    params: { waveCount: 3 }
+});
+        </pre>
+    </div>
+</body>
+</html>
