@@ -57,7 +57,7 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
 
     return (
         <Show when={props.isOpen}>
-            <div class="export-modal-overlay" onClick={props.onClose}>
+            <div class="export-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
                 <div class="export-modal" onClick={(e) => e.stopPropagation()}>
                     <div class="export-header">
                         <h3>Export</h3>

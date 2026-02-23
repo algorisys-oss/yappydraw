@@ -85,7 +85,7 @@ const AISettingsDialog: Component<AISettingsDialogProps> = (props) => {
 
     return (
         <Show when={props.isOpen}>
-            <div class="ai-settings-overlay" onClick={props.onClose}>
+            <div class="ai-settings-overlay" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
                 <div class="ai-settings-modal" onClick={(e) => e.stopPropagation()}>
                     <div class="ai-settings-header">
                         <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>

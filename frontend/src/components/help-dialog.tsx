@@ -146,7 +146,7 @@ export default function HelpDialog(props: Props) {
 
     return (
         <Show when={props.isOpen}>
-            <div class="help-modal-overlay" onClick={props.onClose}>
+            <div class="help-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
                 <div class="help-modal-content" onClick={(e) => e.stopPropagation()}>
                     <div class="help-modal-header">
                         <h2>Help</h2>

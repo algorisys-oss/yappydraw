@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.1] - 2026-02-23
+
+### Fixed
+- **Dialogs close when selecting text** — all 11 modal dialogs (AI Drawing, Import from Text, Templates, Settings, Help, Export, Save, Load, Cloud Storage, AI Settings, File Open) closed unexpectedly when clicking inside textareas to select or edit text; added `e.target === e.currentTarget` guard to overlay click handlers so dialogs only close on direct backdrop clicks
+
 ## [1.23.0] - 2026-02-22
 
 ### Added

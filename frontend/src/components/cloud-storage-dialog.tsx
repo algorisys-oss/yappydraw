@@ -248,7 +248,7 @@ export function CloudStorageDialog(props: CloudStorageDialogProps) {
 
     return (
         <Show when={props.isOpen}>
-            <div class="cloud-backdrop" onClick={props.onClose}>
+            <div class="cloud-backdrop" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
                 <div class="cloud-dialog" onClick={(e) => e.stopPropagation()}>
                     {/* Header */}
                     <div class="cloud-header">

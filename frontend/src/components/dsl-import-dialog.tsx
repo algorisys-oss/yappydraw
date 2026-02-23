@@ -102,7 +102,7 @@ const DSLImportDialog: Component<DSLImportDialogProps> = (props) => {
 
     return (
         <Show when={props.isOpen}>
-            <div class="dsl-import-overlay" onClick={props.onClose}>
+            <div class="dsl-import-overlay" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
                 <div class="dsl-import-modal" onClick={(e) => e.stopPropagation()}>
                     {/* Header */}
                     <div class="dsl-import-header">

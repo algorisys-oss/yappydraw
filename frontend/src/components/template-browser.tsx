@@ -24,7 +24,7 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
 
     return (
         <Show when={props.isOpen}>
-            <div class="template-browser-backdrop" onClick={props.onClose}>
+            <div class="template-browser-backdrop" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
                 <div class="template-browser-dialog" onClick={(e) => e.stopPropagation()}>
                     <div class="template-browser-header">
                         <h2>Choose a Template</h2>
