@@ -78,6 +78,119 @@
     cursor: not-allowed;
 }
 
+/* Drag-over state */
+.ai-prompt-modal.drag-over {
+    outline: 2px dashed var(--primary-color, #3b82f6);
+    outline-offset: -2px;
+}
+
+/* Sketch Upload Area */
+.ai-prompt-sketch-area {
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.ai-prompt-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+}
+
+.ai-prompt-upload-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    border: 1px dashed var(--border-color, #d1d5db);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary, #6b7280);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.ai-prompt-upload-btn:hover:not(:disabled) {
+    border-color: var(--primary-color, #3b82f6);
+    color: var(--primary-color, #3b82f6);
+    background: var(--bg-hover, #f3f4f6);
+}
+
+.ai-prompt-upload-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ai-prompt-upload-hint {
+    font-size: 11px;
+    color: var(--text-secondary, #9ca3af);
+}
+
+/* Sketch Preview */
+.ai-prompt-sketch-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    background: var(--bg-hover, #f9fafb);
+}
+
+.ai-prompt-sketch-preview img {
+    max-height: 80px;
+    max-width: 120px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    object-fit: contain;
+}
+
+.ai-prompt-sketch-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ai-prompt-sketch-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary, #1f2937);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ai-prompt-sketch-label {
+    font-size: 11px;
+    color: var(--text-secondary, #9ca3af);
+}
+
+.ai-prompt-sketch-remove {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary, #9ca3af);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.ai-prompt-sketch-remove:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.ai-prompt-sketch-remove:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 /* Body */
 .ai-prompt-body {
     flex: 1;

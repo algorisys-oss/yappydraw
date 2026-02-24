@@ -1909,6 +1909,18 @@ export const YappyAPI = {
         return gen(prompt, options as any);
     },
 
+    /**
+     * Generate a diagram from an uploaded sketch image using AI vision.
+     * Requires a vision-capable model and API key configured in AI Settings.
+     *
+     * @param imageFile - The sketch image (File or Blob)
+     * @param options.additionalPrompt - Optional text to guide the conversion
+     */
+    async generateDiagramFromSketch(imageFile: File | Blob, options?: { clearCanvas?: boolean; provider?: string; model?: string; additionalPrompt?: string }) {
+        const { generateDiagramFromSketch: gen } = await import('./ai/drawing-engine');
+        return gen(imageFile, options as any);
+    },
+
     // ─── Deploy to Rocket ──────────────────────────────────
     /**
      * Deploy the current diagram to a Rocket Backend instance.

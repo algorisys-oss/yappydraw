@@ -1,10 +1,11 @@
 /**
- * AI Prompt Dialog — Enter a natural language prompt to generate diagrams with AI.
+ * AI Prompt Dialog — Enter a natural language prompt or upload a sketch
+ * to generate diagrams with AI.
  */
 
-import { type Component, createSignal, createEffect, onCleanup, Show } from "solid-js";
-import { X, Sparkles, Loader2, AlertTriangle, Check, Settings, Rocket } from "lucide-solid";
-import { generateDiagram, type GenerateResult } from "../ai/drawing-engine";
+import { type Component, createSignal, createEffect, onCleanup, Show, untrack } from "solid-js";
+import { X, Sparkles, Loader2, AlertTriangle, Check, Settings, Rocket, ImagePlus } from "lucide-solid";
+import { generateDiagram, generateDiagramFromSketch, type GenerateResult } from "../ai/drawing-engine";
 import { hasAnyApiKey, loadAIConfig, PROVIDER_LABELS } from "../ai/ai-settings";
 import { setShowAISettings } from "./ai-settings-dialog";
 import { setShowRocketSettings } from "./rocket-settings-dialog";
@@ -24,13 +25,27 @@ Examples:
   Mind map of React concepts: components, hooks, state, context, effects
   CI/CD pipeline: code push, build, test, deploy to staging, deploy to production`;
 
+const SKETCH_PLACEHOLDER = `Add optional description to guide the conversion...
+
+Examples:
+  This is a flowchart for user authentication
+  Architecture diagram — label the services clearly
+  UML class diagram with inheritance`;
+
 const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
     let textareaRef: HTMLTextAreaElement | undefined;
+    let fileInputRef: HTMLInputElement | undefined;
     const [prompt, setPrompt] = createSignal('');
     const [isGenerating, setIsGenerating] = createSignal(false);
     const [result, setResult] = createSignal<GenerateResult | null>(null);
     const [clearCanvas, setClearCanvas] = createSignal(true);
     const [rocketMode, setRocketMode] = createSignal(false);
+    const [sketchImage, setSketchImage] = createSignal<File | null>(null);
+    const [sketchPreview, setSketchPreview] = createSignal<string | null>(null);
+    const [isDragOver, setIsDragOver] = createSignal(false);
+
+    const hasSketch = () => sketchImage() !== null;
+    const canGenerate = () => (prompt().trim() || hasSketch()) && !isGenerating();
 
     // Escape key + Ctrl+Enter handling
     createEffect(() => {
@@ -40,7 +55,7 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                     e.preventDefault();
                     props.onClose();
                 }
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && prompt().trim() && !isGenerating()) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && canGenerate()) {
                     e.preventDefault();
                     handleGenerate();
                 }
@@ -51,14 +66,69 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
             // Focus textarea
             requestAnimationFrame(() => textareaRef?.focus());
 
-            // Reset state on open
+            // Reset state on open (untrack prevents clearSketch from
+            // subscribing to sketchPreview, which would re-trigger the effect)
             setResult(null);
+            untrack(() => clearSketch());
         }
     });
 
+    const handleSketchUpload = (file: File | null | undefined) => {
+        if (!file || !file.type.startsWith('image/')) return;
+        setSketchImage(file);
+        setResult(null);
+
+        // Generate preview URL
+        const url = URL.createObjectURL(file);
+        const prev = sketchPreview();
+        if (prev) URL.revokeObjectURL(prev);
+        setSketchPreview(url);
+    };
+
+    const clearSketch = () => {
+        setSketchImage(null);
+        const prev = sketchPreview();
+        if (prev) URL.revokeObjectURL(prev);
+        setSketchPreview(null);
+        if (fileInputRef) fileInputRef.value = '';
+    };
+
+    const handlePaste = (e: ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (const item of items) {
+            if (item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                if (file) {
+                    handleSketchUpload(file);
+                    e.preventDefault();
+                }
+                return;
+            }
+        }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+    };
+
+    const handleDrop = (e: DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const file = e.dataTransfer?.files?.[0];
+        if (file?.type.startsWith('image/')) handleSketchUpload(file);
+    };
+
     const handleGenerate = async () => {
         const text = prompt().trim();
-        if (!text || isGenerating()) return;
+        const sketch = sketchImage();
+        if ((!text && !sketch) || isGenerating()) return;
 
         if (!hasAnyApiKey()) {
             setResult({
@@ -72,10 +142,20 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
         setResult(null);
 
         try {
-            const res = await generateDiagram(text, { clearCanvas: clearCanvas(), rocketMode: rocketMode() });
+            let res: GenerateResult;
+            if (sketch) {
+                res = await generateDiagramFromSketch(sketch, {
+                    clearCanvas: clearCanvas(),
+                    additionalPrompt: text || undefined,
+                });
+            } else {
+                res = await generateDiagram(text, {
+                    clearCanvas: clearCanvas(),
+                    rocketMode: rocketMode(),
+                });
+            }
             setResult(res);
             if (res.success) {
-                // Close after brief success display
                 setTimeout(() => {
                     props.onClose();
                 }, 600);
@@ -105,7 +185,14 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
     return (
         <Show when={props.isOpen}>
             <div class="ai-prompt-overlay" onClick={(e) => { if (e.target === e.currentTarget && !isGenerating() && !window.getSelection()?.toString()) props.onClose(); }}>
-                <div class="ai-prompt-modal" onClick={(e) => e.stopPropagation()}>
+                <div
+                    class={`ai-prompt-modal ${isDragOver() ? 'drag-over' : ''}`}
+                    onClick={(e) => e.stopPropagation()}
+                    onPaste={handlePaste}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                >
                     {/* Header */}
                     <div class="ai-prompt-header">
                         <div class="ai-prompt-title">
@@ -118,6 +205,46 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                         </button>
                     </div>
 
+                    {/* Sketch Upload Area */}
+                    <div class="ai-prompt-sketch-area">
+                        <Show when={hasSketch()} fallback={
+                            <div class="ai-prompt-upload-row">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    accept="image/*"
+                                    style="display:none"
+                                    onChange={(e) => handleSketchUpload(e.currentTarget.files?.[0])}
+                                />
+                                <button
+                                    class="ai-prompt-upload-btn"
+                                    onClick={() => fileInputRef?.click()}
+                                    disabled={isGenerating()}
+                                >
+                                    <ImagePlus size={14} />
+                                    <span>Upload Sketch</span>
+                                </button>
+                                <span class="ai-prompt-upload-hint">or paste / drop an image</span>
+                            </div>
+                        }>
+                            <div class="ai-prompt-sketch-preview">
+                                <img src={sketchPreview()!} alt="Sketch preview" />
+                                <div class="ai-prompt-sketch-info">
+                                    <span class="ai-prompt-sketch-name">{sketchImage()!.name}</span>
+                                    <span class="ai-prompt-sketch-label">Sketch uploaded — add optional description below</span>
+                                </div>
+                                <button
+                                    class="ai-prompt-sketch-remove"
+                                    onClick={clearSketch}
+                                    disabled={isGenerating()}
+                                    title="Remove sketch"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        </Show>
+                    </div>
+
                     {/* Body */}
                     <div class="ai-prompt-body">
                         <textarea
@@ -125,7 +252,7 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                             class="ai-prompt-textarea"
                             value={prompt()}
                             onInput={(e) => setPrompt(e.currentTarget.value)}
-                            placeholder={PLACEHOLDER}
+                            placeholder={hasSketch() ? SKETCH_PLACEHOLDER : PLACEHOLDER}
                             disabled={isGenerating()}
                             spellcheck={false}
                         />
@@ -143,7 +270,7 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                                 />
                                 <span>Clear canvas before generating</span>
                             </label>
-                            <Show when={features.enableRocketExport}>
+                            <Show when={features.enableRocketExport && !hasSketch()}>
                                 <label class="ai-prompt-checkbox">
                                     <input
                                         type="checkbox"
@@ -160,7 +287,7 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                                 <Settings size={13} />
                                 <span>AI Settings</span>
                             </button>
-                            <Show when={features.enableRocketExport && rocketMode()}>
+                            <Show when={features.enableRocketExport && rocketMode() && !hasSketch()}>
                                 <button class="ai-prompt-settings-link" onClick={openRocketSettings}>
                                     <Rocket size={13} />
                                     <span>Rocket Settings</span>
@@ -214,9 +341,14 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                             <button
                                 class="ai-prompt-generate-btn"
                                 onClick={handleGenerate}
-                                disabled={!prompt().trim() || isGenerating()}
+                                disabled={!canGenerate()}
                             >
-                                <Show when={isGenerating()} fallback={<><Sparkles size={14} /> Generate</>}>
+                                <Show when={isGenerating()} fallback={
+                                    <>
+                                        <Sparkles size={14} />
+                                        {hasSketch() ? 'Generate from Sketch' : 'Generate'}
+                                    </>
+                                }>
                                     <Loader2 size={14} class="ai-prompt-spinner" /> Generating...
                                 </Show>
                             </button>

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.5] - 2026-02-24
+
+### Added
+- **Sketch-to-Diagram (AI Vision)** — upload, paste (Ctrl+V), or drag-drop a hand-drawn sketch or photo into the AI Drawing dialog; the LLM's vision capabilities analyze the image and generate a matching YappyDraw diagram using the correct domain shapes (flowchart, architecture, UML, BPMN)
+- **Vision support for all three AI providers** — OpenAI, Gemini, and Anthropic all support image input with provider-specific multi-part content formatting
+- **Image preprocessing** — uploaded images are automatically resized (max 2048px) and compressed (JPEG 0.85) to stay within API limits; retries at 1024px if result exceeds 4MB
+- **Sketch + text prompt** — optionally add a text description alongside the sketch to guide the AI conversion
+- **Relative shape sizing preserved** — vision prompt instructs the AI to set explicit width/height on nodes when shapes in the sketch differ noticeably in size
+- **Center-aligned text by default** — AI-generated shapes now have `textAlign: "center"` in their style so labels are centered
+
+### Fixed
+- **Sketch upload immediately cleared** — `clearSketch()` read `sketchPreview()` inside a `createEffect`, causing SolidJS to track it as a dependency; uploading an image triggered the effect which immediately cleared it; fixed with `untrack()`
+
 ## [1.23.4] - 2026-02-24
 
 ### Fixed

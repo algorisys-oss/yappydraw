@@ -12,7 +12,7 @@ export function buildSystemPrompt(): string {
   "meta": { "title": "Diagram Title" },
   "layout": { "strategy": "tree-down", "hSpacing": 120, "vSpacing": 100 },
   "nodes": [
-    { "id": "unique-id", "shape": "rect", "label": "Display Text", "style": { "backgroundColor": "#3498db", "textColor": "#ffffff" } }
+    { "id": "unique-id", "shape": "rect", "label": "Display Text", "width": 150, "height": 80, "style": { "backgroundColor": "#3498db", "textColor": "#ffffff" } }
   ],
   "edges": [
     { "from": "source-id", "to": "target-id", "type": "arrow", "label": "optional label" }
@@ -83,6 +83,7 @@ You MUST use the correct domain shapes when the diagram type calls for them. Nev
 - strokeWidth: number (default 2)
 - textColor: hex color for label text
 - fontSize: number (default 16)
+- textAlign: "center" (default), "left", "right"
 - opacity: 0-1 (default 1)
 - borderRadius: number for rounded corners
 
@@ -127,6 +128,61 @@ Backgrounds: #dbeafe, #dcfce7, #fef3c7, #fce7f3, #f3e8ff, #e0f2fe
 
 ### UML Class Diagram Example
 {"version":1,"meta":{"title":"User System"},"layout":{"strategy":"tree-down","hSpacing":200,"vSpacing":120},"nodes":[{"id":"user","shape":"class","label":"User","sections":{"attributes":"+ name: string\\n+ email: string\\n- password: string","methods":"+ login(): boolean\\n+ logout(): void"},"style":{"backgroundColor":"#dbeafe","strokeColor":"#3498db"}},{"id":"admin","shape":"class","label":"Admin","sections":{"attributes":"+ role: string\\n+ permissions: string[]","methods":"+ manageUsers(): void\\n+ viewLogs(): void"},"style":{"backgroundColor":"#dcfce7","strokeColor":"#27ae60"}},{"id":"profile","shape":"class","label":"Profile","sections":{"attributes":"+ avatar: string\\n+ bio: string\\n+ createdAt: Date","methods":"+ update(): void"},"style":{"backgroundColor":"#fef3c7","strokeColor":"#f59e0b"}}],"edges":[{"from":"admin","to":"user","type":"arrow","label":"extends"},{"from":"user","to":"profile","type":"arrow","label":"has"}]}`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Vision / Sketch-to-Diagram                                         */
+/* ------------------------------------------------------------------ */
+
+const VISION_PREAMBLE = `You are a sketch-to-diagram converter for YappyDraw. You analyze hand-drawn or photographed sketches/diagrams and convert them into valid YappyDSL JSON.
+
+## Your Task
+1. Analyze the uploaded image — identify all shapes, text labels, connectors/arrows, and spatial layout.
+2. Map each recognized shape to the closest matching YappyDraw shape (see Available Shapes below).
+3. Recognize connector lines and arrows between shapes — preserve direction and any labels.
+4. Preserve the relative spatial layout (which elements are above/below/left/right of each other).
+5. Preserve relative sizing — if a shape in the sketch is larger or wider than others, set explicit "width" and "height" on that node to reflect the proportions. For example, a wide banner-like rectangle should have a larger width than a small square box.
+6. Read any text written inside or near shapes and use it as the node label.
+7. Choose the most appropriate layout strategy based on the diagram structure.
+
+## Shape Matching Rules
+- Rectangle/box → "rect"
+- Rounded rectangles → "rect" (add borderRadius in style)
+- Circles/ovals → "circle" or "oval"
+- Diamonds/rhombuses → "decision" or "diamond"
+- Triangles → "triangle"
+- Cylinders (databases) → "db"
+- Cloud shapes → "cloud"
+- Stick figures/people → "user" or "actor"
+- Hexagons → "hexagon"
+- Parallelograms → "io"
+- Stars → "star"
+- Arrows between shapes → edges with type "arrow"
+- Plain lines → edges with type "line"
+- Dashed lines → edges with style { "strokeStyle": "dashed" }
+- If a shape does not match any known type, use the nearest available shape.
+- If text appears as a standalone label (not inside a shape), use "text" shape.
+
+## Important Guidelines
+- Do NOT describe the image. Output ONLY the JSON.
+- If the sketch is unclear or partially illegible, make your best guess.
+- Maintain the approximate spatial arrangement of the original sketch.
+- Preserve relative proportions: set "width" and "height" on nodes when shapes in the sketch differ noticeably in size. Omit them to use defaults when shapes are roughly uniform.
+- Use meaningful colors to differentiate different types of elements.
+- Always set "textAlign": "center" in the style for all shapes so labels are centered.
+- When the sketch shows a flowchart, use flowchart shapes (oval for start/end, decision for branching).
+- When the sketch shows an architecture diagram, use infrastructure shapes (server, db, lb, etc.).
+- When the sketch shows UML, use UML shapes (class, interface, actor, etc.).
+
+`;
+
+/**
+ * Build system prompt for vision-based sketch-to-diagram conversion.
+ * Prepends sketch-analysis instructions and shape-matching rules,
+ * then appends the full DSL spec from buildSystemPrompt().
+ */
+export function buildVisionSystemPrompt(): string {
+    return VISION_PREAMBLE + buildSystemPrompt();
 }
 
 /* ------------------------------------------------------------------ */

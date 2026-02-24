@@ -6,12 +6,20 @@
 
 import type { AIProvider } from './ai-settings';
 
+export interface ImageContent {
+    /** base64-encoded image data (without the data:image/... prefix) */
+    base64: string;
+    /** MIME type, e.g. 'image/jpeg', 'image/png', 'image/webp' */
+    mediaType: string;
+}
+
 export interface LLMRequest {
     provider: AIProvider;
     model: string;
     apiKey: string;
     systemPrompt: string;
     userPrompt: string;
+    images?: ImageContent[];
     temperature?: number;
     maxTokens?: number;
 }
@@ -40,11 +48,20 @@ export async function callLLM(request: LLMRequest): Promise<LLMResponse> {
 
 async function callOpenAI(req: LLMRequest): Promise<LLMResponse> {
     const url = 'https://api.openai.com/v1/chat/completions';
+    const userContent = req.images?.length
+        ? [
+            ...req.images.map(img => ({
+                type: 'image_url' as const,
+                image_url: { url: `data:${img.mediaType};base64,${img.base64}`, detail: 'high' as const },
+            })),
+            { type: 'text' as const, text: req.userPrompt },
+          ]
+        : req.userPrompt;
     const body = {
         model: req.model,
         messages: [
             { role: 'system', content: req.systemPrompt },
-            { role: 'user', content: req.userPrompt },
+            { role: 'user', content: userContent },
         ],
         temperature: req.temperature ?? 0.3,
         max_tokens: req.maxTokens ?? 4096,
@@ -84,9 +101,16 @@ async function callOpenAI(req: LLMRequest): Promise<LLMResponse> {
 
 async function callGemini(req: LLMRequest): Promise<LLMResponse> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${req.model}:generateContent?key=${req.apiKey}`;
+    const parts: any[] = [];
+    if (req.images?.length) {
+        for (const img of req.images) {
+            parts.push({ inlineData: { mimeType: img.mediaType, data: img.base64 } });
+        }
+    }
+    parts.push({ text: req.userPrompt });
     const body = {
         systemInstruction: { parts: [{ text: req.systemPrompt }] },
-        contents: [{ parts: [{ text: req.userPrompt }] }],
+        contents: [{ parts }],
         generationConfig: {
             temperature: req.temperature ?? 0.3,
             maxOutputTokens: req.maxTokens ?? 4096,
@@ -124,10 +148,19 @@ async function callGemini(req: LLMRequest): Promise<LLMResponse> {
 
 async function callAnthropic(req: LLMRequest): Promise<LLMResponse> {
     const url = 'https://api.anthropic.com/v1/messages';
+    const userContent = req.images?.length
+        ? [
+            ...req.images.map(img => ({
+                type: 'image' as const,
+                source: { type: 'base64' as const, media_type: img.mediaType, data: img.base64 },
+            })),
+            { type: 'text' as const, text: req.userPrompt },
+          ]
+        : req.userPrompt;
     const body = {
         model: req.model,
         system: req.systemPrompt,
-        messages: [{ role: 'user', content: req.userPrompt }],
+        messages: [{ role: 'user', content: userContent }],
         max_tokens: req.maxTokens ?? 4096,
         temperature: req.temperature ?? 0.3,
     };

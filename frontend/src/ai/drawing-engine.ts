@@ -6,7 +6,8 @@
 
 import { callLLM, type LLMResponse } from './ai-providers';
 import { loadAIConfig, getApiKey, type AIProvider } from './ai-settings';
-import { buildSystemPrompt, buildRocketSystemPrompt } from './system-prompt';
+import { buildSystemPrompt, buildRocketSystemPrompt, buildVisionSystemPrompt } from './system-prompt';
+import { processImageForVision } from './image-utils';
 import { parseDSL, renderDiagram } from '../dsl';
 import type { RenderResult, ParseResult } from '../dsl';
 
@@ -15,6 +16,11 @@ export interface GenerateOptions {
     provider?: AIProvider;
     model?: string;
     rocketMode?: boolean;
+}
+
+export interface SketchOptions extends GenerateOptions {
+    /** Optional text to guide the AI conversion */
+    additionalPrompt?: string;
 }
 
 export interface GenerateResult {
@@ -81,31 +87,116 @@ export async function generateDiagram(
         };
     }
 
-    // 3. Extract JSON from response
-    const jsonString = extractJSON(llmResponse.content);
-    if (!jsonString) {
+    // 3–5. Extract JSON, parse DSL, render to canvas
+    return processLLMResponse(llmResponse.content, startTime, options);
+}
+
+/**
+ * Generate a diagram from an uploaded sketch image using vision AI.
+ */
+export async function generateDiagramFromSketch(
+    imageFile: File | Blob,
+    options?: SketchOptions,
+): Promise<GenerateResult> {
+    const startTime = Date.now();
+
+    // 1. Load config and validate
+    const config = loadAIConfig();
+    const provider = options?.provider ?? config.activeProvider;
+    const providerConfig = config.providers[provider];
+    const apiKey = getApiKey(provider);
+
+    if (!apiKey) {
         return {
             success: false,
-            error: 'Could not extract valid JSON from LLM response. The AI may have returned an explanation instead of a diagram.',
+            error: `No API key configured for ${provider}. Open AI Settings to add one.`,
+        };
+    }
+
+    // 2. Process image for vision API
+    let image: { base64: string; mediaType: string };
+    try {
+        image = await processImageForVision(imageFile);
+    } catch (err: any) {
+        return {
+            success: false,
+            error: `Image processing failed: ${err.message}`,
+            duration: Date.now() - startTime,
+        };
+    }
+
+    // 3. Call LLM with vision
+    const model = options?.model ?? providerConfig.model;
+    const systemPrompt = buildVisionSystemPrompt();
+    const userPrompt = options?.additionalPrompt
+        ? `Convert this sketch into a YappyDraw diagram. Additional context: ${options.additionalPrompt}`
+        : 'Convert this hand-drawn sketch into a YappyDraw diagram. Identify all shapes, text labels, and connections. Output only the JSON.';
+
+    let llmResponse: LLMResponse;
+    try {
+        llmResponse = await callLLM({
+            provider,
+            model,
+            apiKey,
+            systemPrompt,
+            userPrompt,
+            images: [{ base64: image.base64, mediaType: image.mediaType }],
+            temperature: 0.3,
+            maxTokens: 8192,
+        });
+    } catch (err: any) {
+        return {
+            success: false,
+            error: `LLM call failed: ${err.message}`,
+            duration: Date.now() - startTime,
+        };
+    }
+
+    if (!llmResponse.success) {
+        return {
+            success: false,
+            error: llmResponse.error ?? 'Unknown LLM error',
             rawResponse: llmResponse.content,
             duration: Date.now() - startTime,
         };
     }
 
-    // 4. Validate with parseDSL()
+    // 4–6. Extract JSON, parse DSL, render to canvas
+    return processLLMResponse(llmResponse.content, startTime, options);
+}
+
+// ── Shared Pipeline ─────────────────────────────────────────
+
+/**
+ * Shared post-LLM pipeline: extract JSON → parse DSL → render diagram.
+ */
+function processLLMResponse(
+    content: string,
+    startTime: number,
+    options?: GenerateOptions,
+): GenerateResult {
+    const jsonString = extractJSON(content);
+    if (!jsonString) {
+        return {
+            success: false,
+            error: 'Could not extract valid JSON from LLM response. The AI could not recognize shapes in this image — try a clearer sketch or add a description.',
+            rawResponse: content,
+            duration: Date.now() - startTime,
+        };
+    }
+
     const parseResult = parseDSL(jsonString);
     if (!parseResult.success || !parseResult.diagram) {
         const errors = parseResult.errors?.map(e => e.message).join('; ') || 'Unknown parse error';
         return {
             success: false,
             error: `Invalid diagram DSL: ${errors}`,
-            rawResponse: llmResponse.content,
+            rawResponse: content,
             parseResult,
             duration: Date.now() - startTime,
         };
     }
 
-    // 5. Render to canvas
     try {
         const renderResult = renderDiagram(parseResult.diagram, {
             clearCanvas: options?.clearCanvas ?? true,
@@ -115,7 +206,7 @@ export async function generateDiagram(
         return {
             success: true,
             renderResult,
-            rawResponse: llmResponse.content,
+            rawResponse: content,
             parseResult,
             duration: Date.now() - startTime,
         };
@@ -123,7 +214,7 @@ export async function generateDiagram(
         return {
             success: false,
             error: `Render failed: ${err.message}`,
-            rawResponse: llmResponse.content,
+            rawResponse: content,
             parseResult,
             duration: Date.now() - startTime,
         };
