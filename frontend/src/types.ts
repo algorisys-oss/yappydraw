@@ -260,6 +260,7 @@ export interface DrawingElement {
     autoResize?: boolean; // Auto-resize based on text
     flipX?: boolean; // Mirror horizontally
     flipY?: boolean; // Mirror vertically
+    renderScale?: number; // Canvas-level scale for zoom animations (default: 1)
     parentId?: string | null;
     isCollapsed?: boolean;
     poolContainerId?: string | null;   // ID of containing bpmnPool element

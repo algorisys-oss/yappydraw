@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.4] - 2026-02-24
+
+### Fixed
+- **zoomIn/zoomOut animations not working on text elements** — zoom animations modified width/height which doesn't visually scale text (text renders at fixed fontSize); added `renderScale` property with canvas-level `ctx.scale()` transform so text elements zoom correctly via renderScale+opacity instead of width/height
+- **Slide panel not visible after localStorage restore** — auto-save skip guard `elementCount === 0` prevented restoring slide documents with no drawn elements; added `docType` and `slideCount` to auto-save metadata so the skip check distinguishes slides-mode documents from truly empty canvases
+- **Presentation numbering absent after restore** — same root cause as above; the `<Show when={docType === 'slides'}>` wrapper hid both SlideNavigator and PresentationControls when docType stayed as 'infinite'
+- **Slide order drift on load** — normalized slide `order` property to match array index in `loadDocument()` to prevent ordering inconsistencies
+- **activeSlideIndex out-of-bounds on restore** — added bounds validation against `store.slides.length` when restoring saved slide index from auto-save metadata
+
+## [1.23.3] - 2026-02-23
+
+### Fixed
+- **Text animations not rendering** — text animations (typewriter, wordByWord, textScramble, lineByLine) were invisible because the renderer prioritized `richText` spans over plain `text`; animations now temporarily clear richText during playback and restore on completion
+- **Duplicated slide not visible** — duplicated slides inherited the source's `lastViewState` viewport pointing at the wrong spatial position; cleared `lastViewState` on duplicate to force recalculation
+- **Canvas not redrawn when switching slides** — added `store.activeSlideIndex` to the canvas `createEffect` reactive dependency list
+- **Environment variables not loaded** — added `envDir: '..'` to vite.config.ts to load `.env.local` from project root
+- **Active slide styling improved** — enhanced the active slide highlight in the slide panel
+
 ## [1.23.2] - 2026-02-23
 
 ### Fixed

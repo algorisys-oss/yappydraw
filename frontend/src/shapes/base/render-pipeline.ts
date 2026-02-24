@@ -101,10 +101,12 @@ export class RenderPipeline {
         const cx = finalX + el.width / 2;
         const cy = finalY + el.height / 2;
 
-        if (finalAngle || el.flipX || el.flipY) {
+        const rs = el.renderScale;
+        if (finalAngle || el.flipX || el.flipY || (rs !== undefined && rs !== 1)) {
             renderer.translate(cx, cy);
             if (finalAngle) renderer.rotate(finalAngle);
             if (el.flipX || el.flipY) renderer.scale(el.flipX ? -1 : 1, el.flipY ? -1 : 1);
+            if (rs !== undefined && rs !== 1) renderer.scale(rs, rs);
             renderer.translate(-cx, -cy);
         }
 

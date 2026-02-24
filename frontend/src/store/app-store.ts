@@ -1263,10 +1263,12 @@ export const loadDocument = (doc: any) => {
         }
 
         // Ensure all slides have transition data (migration for older documents)
-        slides.forEach(slide => {
+        // and normalize order property to match array index
+        slides.forEach((slide, i) => {
             if (!slide.transition) {
                 slide.transition = { ...DEFAULT_SLIDE_TRANSITION };
             }
+            slide.order = i;
         });
 
         setStore("elements", JSON.parse(JSON.stringify(elements)));

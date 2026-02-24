@@ -98,8 +98,9 @@ export function loadAutoSave(): boolean {
         const metaRaw = localStorage.getItem(META_KEY);
         if (!metaRaw) return false;
         const meta: AutoSaveMeta = JSON.parse(metaRaw);
-        // Skip empty documents
-        if (meta.elementCount === 0) return false;
+        // Skip truly empty documents (no elements AND no slides beyond default)
+        const hasSlides = meta.docType === 'slides' || (meta.slideCount && meta.slideCount > 0);
+        if (meta.elementCount === 0 && !hasSlides) return false;
 
         const raw = localStorage.getItem(AUTOSAVE_KEY);
         if (!raw) return false;
@@ -112,7 +113,8 @@ export function loadAutoSave(): boolean {
         }
         // Restore view state and active slide after loadDocument's deferred zoomToFitSlide (100ms)
         setTimeout(() => {
-            if (meta.activeSlideIndex != null && meta.activeSlideIndex >= 0) {
+            if (meta.activeSlideIndex != null && meta.activeSlideIndex >= 0
+                && meta.activeSlideIndex < store.slides.length) {
                 setActiveSlide(meta.activeSlideIndex, true);
             }
             if (meta.viewState) {
@@ -137,6 +139,8 @@ interface AutoSaveMeta {
     sizeBytes: number;
     viewState?: { scale: number; panX: number; panY: number };
     activeSlideIndex?: number;
+    docType?: 'infinite' | 'slides';
+    slideCount?: number;
 }
 
 function scheduleAutoSave(): void {
@@ -184,6 +188,8 @@ function performAutoSave(): void {
             sizeBytes,
             viewState: { ...store.viewState },
             activeSlideIndex: store.activeSlideIndex,
+            docType: store.docType,
+            slideCount: store.slides.length,
         } satisfies AutoSaveMeta));
 
     } catch (e: any) {

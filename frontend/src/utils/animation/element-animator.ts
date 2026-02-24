@@ -92,7 +92,9 @@ export type AnimatableProperty =
     | 'shapeRatio'
     | 'sideRatio'
     // Code block properties
-    | 'codeHighlightLine';
+    | 'codeHighlightLine'
+    // Canvas scale (for zoom on text elements)
+    | 'renderScale';
 
 // Color properties that can be animated
 export type AnimatableColorProperty =
@@ -131,6 +133,8 @@ export interface ElementAnimationTarget {
     dsHighlightIndex2?: number;
     dsSortedBoundary?: number;
     dsSortedBoundaryEnd?: number;
+    // Canvas scale (for zoom on text elements)
+    renderScale?: number;
     // Color properties
     strokeColor?: string;
     backgroundColor?: string;
@@ -2486,6 +2490,31 @@ function zoomInEffect(elementId: string, from: { x?: number, y?: number, scale?:
     const targetHeight = element.height;
 
     const scale = from.scale ?? 0.1;
+    const isTextElement = element.type === 'text' || element.type === 'richtext';
+
+    if (isTextElement) {
+        // Text elements: use canvas renderScale to visually zoom (text doesn't scale with width/height)
+        const startX = from.x ?? targetX;
+        const startY = from.y ?? targetY;
+
+        updateElement(elementId, {
+            ...(from.x !== undefined || from.y !== undefined ? { x: startX, y: startY } : {}),
+            renderScale: scale,
+            opacity: 0
+        }, false);
+
+        return animateElement(elementId, {
+            ...(from.x !== undefined || from.y !== undefined ? { x: targetX, y: targetY } : {}),
+            renderScale: 1,
+            opacity: 100
+        }, {
+            duration,
+            easing: 'easeOutQuad',
+            ...config
+        });
+    }
+
+    // Non-text elements: use width/height scaling (original behavior)
     const startWidth = targetWidth * scale;
     const startHeight = targetHeight * scale;
     const startX = (from.x ?? targetX) + (targetWidth - startWidth) / 2;
@@ -2540,7 +2569,26 @@ function zoomOutEffect(elementId: string, to: { x?: number, y?: number, scale?: 
     if (!element) return '';
 
     const scale = to.scale ?? 0.1;
+    const isTextElement = element.type === 'text' || element.type === 'richtext';
 
+    if (isTextElement) {
+        // Text elements: use canvas renderScale to visually zoom
+        // Ensure renderScale starts at 1 so it can be animated (undefined would be applied immediately)
+        if (element.renderScale === undefined) {
+            updateElement(elementId, { renderScale: 1 }, false);
+        }
+        return animateElement(elementId, {
+            ...(to.x !== undefined || to.y !== undefined ? { x: to.x ?? element.x, y: to.y ?? element.y } : {}),
+            renderScale: scale,
+            opacity: 0
+        }, {
+            duration,
+            easing: 'easeInQuad',
+            ...config
+        });
+    }
+
+    // Non-text elements: use width/height scaling (original behavior)
     return animateElement(elementId, {
         x: (to.x ?? element.x) + (element.width * (1 - scale)) / 2,
         y: (to.y ?? element.y) + (element.height * (1 - scale)) / 2,
@@ -2669,7 +2717,8 @@ export function playEntranceAnimation(elementId: string, options: { isPreview?: 
             height: element.height,
             opacity: element.opacity,
             angle: element.angle,
-            drawProgress: undefined
+            drawProgress: undefined,
+            renderScale: element.renderScale
         });
     }
     const originalState = isPreview ? previewBaseStates.get(elementId) : null;
@@ -2846,7 +2895,8 @@ export function playExitAnimation(elementId: string, options: { isPreview?: bool
             height: element.height,
             opacity: element.opacity,
             angle: element.angle,
-            drawProgress: undefined
+            drawProgress: undefined,
+            renderScale: element.renderScale
         });
     }
     const originalState = isPreview ? previewBaseStates.get(elementId) : null;
