@@ -56,6 +56,7 @@ impl Viewport {
     }
 
     /// Convert world coordinates to screen coordinates.
+    #[allow(dead_code)]
     pub fn world_to_screen(&self, x: f32, y: f32) -> (f32, f32) {
         (x * self.scale + self.pan_x, y * self.scale + self.pan_y)
     }

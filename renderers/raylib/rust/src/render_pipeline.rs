@@ -1,4 +1,4 @@
-use crate::color::{parse_css_color, with_alpha};
+use crate::color::parse_css_color;
 use crate::renderer::RaylibRenderer;
 use crate::types::DrawingElement;
 use raylib::color::Color;
@@ -85,8 +85,3 @@ pub fn restore_transform(renderer: &mut RaylibRenderer) {
     renderer.restore();
 }
 
-/// Apply alpha with color.
-pub fn color_with_element_alpha(color: Color, el: &DrawingElement, layer_opacity: f64) -> Color {
-    let alpha = get_element_alpha(el, layer_opacity);
-    with_alpha(color, (alpha * 255.0) as u8)
-}

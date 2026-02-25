@@ -16,6 +16,7 @@ pub struct Transform2D {
 }
 
 impl Transform2D {
+    #[allow(dead_code)]
     pub fn identity() -> Self {
         Self {
             a: 1.0, b: 0.0,
@@ -179,18 +180,22 @@ impl<'d, 'h, 'r> RaylibRenderer<'d, 'h, 'r> {
 
     // ── Getters ──
 
+    #[allow(dead_code)]
     pub fn font_size(&self) -> f32 {
         self.state.font_size
     }
 
+    #[allow(dead_code)]
     pub fn text_align(&self) -> TextAlign {
         self.state.text_align
     }
 
+    #[allow(dead_code)]
     pub fn global_alpha(&self) -> f32 {
         self.state.global_alpha
     }
 
+    #[allow(dead_code)]
     pub fn line_width(&self) -> f32 {
         self.state.line_width
     }
@@ -244,6 +249,7 @@ impl<'d, 'h, 'r> RaylibRenderer<'d, 'h, 'r> {
     }
 
     /// Fill the current path as a polygon.
+    #[allow(dead_code)]
     pub fn fill(&mut self) {
         let points = self.collect_path_points();
         if points.len() < 3 {
@@ -473,6 +479,7 @@ impl<'d, 'h, 'r> RaylibRenderer<'d, 'h, 'r> {
         );
     }
 
+    #[allow(dead_code)]
     pub fn measure_text_width(&self, text: &str) -> f32 {
         let font_size = self.state.font_size * self.viewport.scale;
         let spacing = font_size * 0.05;

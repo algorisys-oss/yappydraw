@@ -3,6 +3,7 @@ use serde::Deserialize;
 /// A span of rich text with per-span formatting.
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct RichTextSpan {
     pub text: String,
     #[serde(default)]
@@ -20,6 +21,7 @@ pub struct RichTextSpan {
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct DrawingElement {
     pub id: String,
     #[serde(rename = "type")]
@@ -110,6 +112,7 @@ pub struct PointData {
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct Layer {
     pub id: String,
     pub name: String,
@@ -133,6 +136,7 @@ fn default_one() -> f64 {
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct SlideDocument {
     pub version: Option<u32>,
     pub metadata: Option<serde_json::Value>,

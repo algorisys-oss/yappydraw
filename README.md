@@ -8,7 +8,7 @@ YappyDraw is **vibe-architected** by **Rajesh Pillai**, with every major archite
 
 This is **not** a prompt-generated demo or a throwaway experiment.
 
-The first working version was built over **~100 focused engineering hours across ~15 days**, with continuous iteration, refactoring, and manual review of *every* critical code path. While AI was used as an accelerator, **all structure, boundaries, and correctness decisions were human-driven**.
+The project has been built over **~300+ focused engineering hours across ~40 active days** (1000+ commits), with continuous iteration, refactoring, and manual review of *every* critical code path. While AI was used as an accelerator, **all structure, boundaries, and correctness decisions were human-driven**.
 
 ---
 
@@ -286,6 +286,77 @@ Yappy.createSolidBlock(100, 100, 200, 150, { depth: 50, viewAngle: 45 })
 - **PPTX Export**: pptxgenjs
 - **State**: Centralized reactive store
 
+## Integrations
+
+### Raylib Rust Viewer
+
+Yappy includes a native desktop viewer built with [raylib](https://www.raylib.com/) and Rust. It reads `.yappy` files (gzip-compressed JSON) exported from the web app and renders them in a standalone desktop window with pan/zoom navigation.
+
+**Supported rendering:**
+- Rectangles (with rounded corners), circles, diamonds, triangles, sticky notes
+- Text with word wrapping, alignment, bold/italic/underline/strikethrough
+- Lines, arrows, bezier curves, and elbow connectors (with arrowheads)
+- Fill colors, stroke styles (solid, dashed, dotted), opacity, rotation, and flipping
+- Layer visibility and opacity
+- Background grid
+
+**Controls:**
+- **Mouse wheel** — Zoom in/out
+- **Right-click drag** — Pan the canvas
+- **ESC** — Quit
+
+**Tech stack:** Rust, raylib 5, serde, flate2
+
+#### Prerequisites
+
+- Rust toolchain (rustup)
+- Clang (for raylib-rs bindgen)
+- On Linux, if `stdarg.h` is missing from Clang, the `.cargo/config.toml` in the project sets `BINDGEN_EXTRA_CLANG_ARGS` to point to GCC headers
+
+#### Build & Run
+
+```bash
+cd renderers/raylib/rust
+cargo run --release -- <file.yappy>
+```
+
+Example:
+
+```bash
+cargo run --release -- ../../../data/default.yappy
+```
+
+The viewer opens a 1280x720 resizable window with a HUD showing FPS, element count, zoom level, and pan offset.
+
+#### Project Structure
+
+```
+renderers/raylib/rust/
+├── Cargo.toml
+├── .cargo/config.toml       # Clang/bindgen workaround
+└── src/
+    ├── main.rs              # Entry point — CLI arg parsing, window loop, HUD
+    ├── scene.rs             # .yappy file loading (gzip detection + JSON parsing)
+    ├── types.rs             # Serde structs matching the .yappy JSON format
+    ├── renderer.rs          # Canvas 2D-like drawing API over raylib
+    ├── render_pipeline.rs   # Common rendering utilities (color, transform, style)
+    ├── viewport.rs          # Pan/zoom viewport management
+    ├── color.rs             # CSS color parsing (#hex, rgb, rgba, named colors)
+    ├── text.rs              # Text rendering and measurement
+    └── shapes/              # Per-shape renderers
+        ├── rectangle.rs
+        ├── circle.rs
+        ├── diamond.rs
+        ├── triangle.rs
+        ├── text.rs
+        ├── connector.rs
+        └── sticky_note.rs
+```
+
+> The folder convention is `renderers/<backend>/<language>/`, allowing future viewers in other languages (Zig, C#, etc.) under the same `raylib/` folder.
+
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -342,6 +413,8 @@ yappy/
 │   ├── store/             # Reactive state management
 │   ├── utils/             # Drawing, hit-testing, geometry, animation, binding, layout
 │   └── App.tsx            # Root component
+├── renderers/
+│   └── raylib/rust/       # Native desktop viewer (Rust + raylib)
 ├── data/                  # Sample drawings (JSON)
 ├── docs/                  # Technical documentation
 ├── public/                # Static assets

@@ -103,8 +103,3 @@ fn hex_byte(hi: char, lo: char) -> u8 {
     hex_char(hi) * 16 + hex_char(lo)
 }
 
-/// Apply alpha (0-255) to a color, multiplying its existing alpha.
-pub fn with_alpha(color: Color, alpha: u8) -> Color {
-    let a = (color.a as u16 * alpha as u16 / 255) as u8;
-    Color::new(color.r, color.g, color.b, a)
-}

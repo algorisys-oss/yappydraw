@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.23.5] - 2026-02-24
+## [0.23.5] - 2026-02-24
 
 ### Added
 - **Sketch-to-Diagram (AI Vision)** — upload, paste (Ctrl+V), or drag-drop a hand-drawn sketch or photo into the AI Drawing dialog; the LLM's vision capabilities analyze the image and generate a matching YappyDraw diagram using the correct domain shapes (flowchart, architecture, UML, BPMN)
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Sketch upload immediately cleared** — `clearSketch()` read `sketchPreview()` inside a `createEffect`, causing SolidJS to track it as a dependency; uploading an image triggered the effect which immediately cleared it; fixed with `untrack()`
 
-## [1.23.4] - 2026-02-24
+## [0.23.4] - 2026-02-24
 
 ### Fixed
 - **zoomIn/zoomOut animations not working on text elements** — zoom animations modified width/height which doesn't visually scale text (text renders at fixed fontSize); added `renderScale` property with canvas-level `ctx.scale()` transform so text elements zoom correctly via renderScale+opacity instead of width/height
@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Slide order drift on load** — normalized slide `order` property to match array index in `loadDocument()` to prevent ordering inconsistencies
 - **activeSlideIndex out-of-bounds on restore** — added bounds validation against `store.slides.length` when restoring saved slide index from auto-save metadata
 
-## [1.23.3] - 2026-02-23
+## [0.23.3] - 2026-02-23
 
 ### Fixed
 - **Text animations not rendering** — text animations (typewriter, wordByWord, textScramble, lineByLine) were invisible because the renderer prioritized `richText` spans over plain `text`; animations now temporarily clear richText during playback and restore on completion
@@ -38,17 +38,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Environment variables not loaded** — added `envDir: '..'` to vite.config.ts to load `.env.local` from project root
 - **Active slide styling improved** — enhanced the active slide highlight in the slide panel
 
-## [1.23.2] - 2026-02-23
+## [0.23.2] - 2026-02-23
 
 ### Fixed
 - **Dialogs still close when selecting text on Windows/Chrome** — on Windows/Chrome, drag-selecting text inside dialogs where the mouse drifts slightly onto the overlay backdrop still triggered dialog close despite the v1.23.1 fix; added `!window.getSelection()?.toString()` check to all 15 overlay `onClick` handlers to prevent closing when text is selected; also fixed 4 missed dialogs (text-editor-modal, rocket-settings-dialog, command-palette, menu backdrop) that had no `e.target === e.currentTarget` guard at all
 
-## [1.23.1] - 2026-02-23
+## [0.23.1] - 2026-02-23
 
 ### Fixed
 - **Dialogs close when selecting text** — all 11 modal dialogs (AI Drawing, Import from Text, Templates, Settings, Help, Export, Save, Load, Cloud Storage, AI Settings, File Open) closed unexpectedly when clicking inside textareas to select or edit text; added `e.target === e.currentTarget` guard to overlay click handlers so dialogs only close on direct backdrop clicks
 
-## [1.23.0] - 2026-02-22
+## [0.23.0] - 2026-02-22
 
 ### Added
 - **AI Rocket Mode** — "Generate for Rocket Backend" checkbox in the AI Drawing dialog teaches the LLM entity field syntax, state diagram shapes, BPMN containerText conventions, and relation cardinality for Rocket-exportable diagrams
@@ -69,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rocket UI not gated behind feature flag** — wrapped AI dialog checkbox, Rocket Settings link, and RocketSettingsDialog behind `features.enableRocketExport`
 - **Leading whitespace lost in text rendering** — preserved leading whitespace in text element rendering
 
-## [1.22.0] - 2026-02-17
+## [0.22.0] - 2026-02-17
 
 ### Added
 - **Line/Arrow/Bezier Refactor** — lines and arrows now get default cubic bezier control points at creation (1/3 and 2/3 along the line), enabling smooth curves without manual conversion
@@ -87,7 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Invisible text elements** — added `textColor: '#000000'` default to prevent transparent text on newly created elements
 - **Puzzle piece architectural renderer** — normalized negative dimensions in connection-rel renderer to fix shapes becoming invisible when dragged left/upward
 
-## [1.21.0] - 2026-02-17
+## [0.21.0] - 2026-02-17
 
 ### Added
 - **AI Drawing Engine** — generate entire diagrams from natural language prompts via LLM (OpenAI, Google Gemini, Anthropic); accessible via menu or `Ctrl+Shift+A`
@@ -97,7 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Stable anchor bindings** — `connect()` API now computes `anchorFractionX`/`anchorFractionY` for precise, stable bindings
 - **Puzzle piece invisible on drag-left** — normalized negative dimensions in architectural renderer
 
-## [1.20.0] - 2026-02-16
+## [0.20.0] - 2026-02-16
 
 ### Added
 - **RichText Font Selection** — font family picker available in property panel, quick toolbar, and inline editing mini toolbar for RichText elements
@@ -105,12 +105,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Property panel now shows fontSize, fontFamily, fontWeight, fontStyle, and textAlign for RichText
   - Font family round-trip: `htmlToSpans` now parses `font-family` styles and `<font face>` tags back to internal keys
 
-## [1.19.1] - 2026-02-16
+## [0.19.1] - 2026-02-16
 
 ### Fixed
 - **Canvas background bleed between documents** — `loadDocument` now resets `canvasBackgroundColor` to default before applying theme and slide backgrounds, preventing previous document's background from persisting into newly loaded/created documents
 
-## [1.19.0] - 2026-02-16
+## [0.19.0] - 2026-02-16
 
 ### Added
 - **Layer Lock Toggle** — inline lock/unlock button in each layer row for quick access (previously context-menu only)
@@ -120,7 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **First slide animation not playing on export open** — exported HTML player now initializes `slideBuildManager` for on-load animations with proper timing after Canvas mount
 - **Manual arrow start point drift** — start binding fractions are now always computed regardless of end binding, preventing start point from shifting when connected shapes move
 
-## [1.18.0] - 2026-02-16
+## [0.18.0] - 2026-02-16
 
 ### Added
 - **Stable Connector Anchoring** — fraction-based positioning system for precise connector endpoints:
@@ -150,7 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Default stroke width** — changed to 4 across all contexts: store defaults, api.ts, migration.ts, settings dialog, data structure renderer fallbacks
 
-## [1.17.0] - 2026-02-15
+## [0.17.0] - 2026-02-15
 
 ### Added
 - **Image Pixel Effects** — pixel-by-pixel image reveal animations with 14 presets:
@@ -185,7 +185,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Toolbar layout** — moved Lasso and Crop tools after the Connector toolgroup for better logical grouping
 
-## [1.16.0] - 2026-02-14
+## [0.16.0] - 2026-02-14
 
 ### Added
 - **6 New Mermaid Diagram Types** — extending the Mermaid adapter to 13 total diagram types:
@@ -212,7 +212,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Mermaid pie chart** — now renders actual data slices instead of decorative placeholder
 
-## [1.15.0] - 2026-02-13
+## [0.15.0] - 2026-02-13
 
 ### Added
 - **YSL Scripting Language (Phase 1)** — full compiler pipeline extending the declarative text DSL with programming constructs:
@@ -235,7 +235,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rich text first newline lost on save** — `htmlToSpans()` now handles `<div>`/`<p>` elements preceded by non-block siblings (Chrome wraps lines in `text<div>next</div>` DOM structure)
 - **TypeScript strict mode errors** — resolved `erasableSyntaxOnly` violations (enum, parameter properties), unused variables/imports across YSL and existing codebase
 
-## [1.14.0] - 2026-02-13
+## [0.14.0] - 2026-02-13
 
 ### Added
 - **YappyDraw DSL Engine** — full text-to-diagram pipeline with JSON IR, compact text syntax, and auto-layout:
@@ -283,7 +283,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Accidental click-to-create** shapes for all shape tools (discard tiny elements).
 - **Rich text formatting** not persisted on commit.
 
-## [1.13.0] - 2026-02-12
+## [0.13.0] - 2026-02-12
 
 ### Added
 - **Image Filters** — Instagram-style filter system for image elements:
@@ -307,7 +307,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **YappyDraw Logo** — logo added to menu bar (24px) and welcome screen (96px desktop, 64px mobile)
 - **Favicon & Terms of Service** — custom favicon and terms of service page
 
-## [1.12.0] - 2026-02-12
+## [0.12.0] - 2026-02-12
 
 ### Added
 - **Google Drive Cloud Storage** — save and load drawings from your Google Drive:
@@ -331,7 +331,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Build errors in cloud storage API (replaced CommonJS `require()` with ES module imports)
 - Unused imports in cloud storage dialog, settings dialog, and menu
 
-## [1.11.1] - 2026-02-12
+## [0.11.1] - 2026-02-12
 
 ### Fixed
 - **Group toolbar/submenus broken on mobile and Safari** — all 15 tool group dropdowns now work reliably:
@@ -344,7 +344,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Line start arrowhead control** in quick toolbar — connectors now show both "Line Start" and "Line End" style selectors with mirrored arrow icons (None, Arrow, Triangle, Diamond)
 - **Elbow connector** added to quick toolbar connector types — elbow connectors now show the floating property toolbar
 
-## [1.11.0] - 2026-02-11
+## [0.11.0] - 2026-02-11
 
 ### Added
 - **BPMN Swimlane Pools** — full dynamic swimlane system for process diagrams:
@@ -376,7 +376,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unreachable code paths in BPMN pool renderer removed
 - Unused imports and parameters cleaned up across multiple files
 
-## [1.10.0] - 2026-02-11
+## [0.10.0] - 2026-02-11
 
 ### Added
 - **BPMN 2.0 shape library** with 15 dedicated shapes for business process modeling:
@@ -402,7 +402,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Property type mismatch** — `bpmnIconFilled` and `bpmnNonInterrupting` now use `'toggle'` type instead of invalid `'boolean'`
 - **Draw handler defaults** — BPMN shapes now correctly default to solid strokes and normalize negative dimensions
 
-## [1.9.0] - 2026-02-10
+## [0.9.0] - 2026-02-10
 
 ### Added
 - **14 new UI/UX wireframe shapes** for rapid prototyping:
@@ -421,13 +421,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shape registration, toolbar, icon maps, and property configs now auto-derived from config array
 - Wireframe tool group refactored from hard-coded tool list to config-driven categorized layout
 
-## [1.8.6] - 2026-02-10
+## [0.8.6] - 2026-02-10
 
 ### Fixed
 - Diamond shape fill color in architectural mode with borderRadius > 0 — was inheriting fill from previously rendered shape due to missing `ctx.fillStyle` and Path2D rendering quirk (Bug #22)
 - Multi-select property panel now only shows properties applicable to selected shape types — table-only properties (Row Color, Alt Row Color, Header Text, etc.) no longer appear when no table is selected (Bug #23)
 
-## [1.8.5] - 2026-02-09
+## [0.8.5] - 2026-02-09
 
 ### Added
 - Contextual modifier hints in status bar — reactive keyboard shortcut hints based on active tool and selection (shape, connector, drawing, mindmap, etc.)
@@ -445,7 +445,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Standardized mindmap drag behavior: Drag moves only the selected node, Alt+Drag moves the entire subtree (uniform for root and child nodes)
 - Settings dialog reorganized: new "General" section with Quick Toolbar toggle and Drawing Style; removed duplicate Render Style from defaults
 
-## [1.8.4] - 2026-02-09
+## [0.8.4] - 2026-02-09
 
 ### Added
 - localStorage auto-save with silent restore on startup (like Excalidraw/tldraw)
@@ -459,13 +459,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moving shape+arrow selections no longer corrupts arrow geometry — uses `batch()` and two-pass update (Bug #20)
 - SVG export now renders standalone text and container text with proper font, alignment, and word wrapping (Bug #21)
 
-## [1.8.3] - 2026-02-09
+## [0.8.3] - 2026-02-09
 
 ### Fixed
 - Pasted organic branches no longer change curve orientation — `controlPoints` (absolute coordinates) are now offset by the paste displacement
 - Pasted connectors no longer anchor to original shapes — bindings referencing elements outside the pasted selection are cleared instead of preserved
 
-## [1.8.2] - 2026-02-09
+## [0.8.2] - 2026-02-09
 
 ### Fixed
 - Copy-paste now maintains relative positions of shapes instead of stacking them at a single point
@@ -479,13 +479,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `generateId()` now accepts optional `batchIds` parameter for multi-element operations
 - `generateId()` now scans all store collections (elements, layers, slides, states) for prefix uniqueness
 
-## [1.8.1] - 2026-02-09
+## [0.8.1] - 2026-02-09
 
 ### Fixed
 - Text tool not switching to selection on first click outside (pointerdown/blur race condition)
 - Bold/Italic toggles now disabled for fonts without those variants (Handlee, Permanent Marker, Caveat italic)
 
-## [1.7.0] - 2026-02-06
+## [0.7.0] - 2026-02-06
 
 ### Added
 - **Organic branch connectors**: Mindmap connectors rendered as smooth bezier curves with curved text labels
@@ -508,7 +508,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - getBranchInfo counting connectors as children (wrong PALETTE color assignment)
 - Bezier midpoint text editing overlay position for organicBranch
 
-## [1.6.0] - 2026-02-05
+## [0.6.0] - 2026-02-05
 
 ### Added
 - **Open Box click-to-open animation**: Click openBox in presentation mode to animate lid opening with element reveal
@@ -530,7 +530,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Perspective block rotation handle position corrected
 - 3D shape depth now scales proportionally with shape size
 
-## [1.5.0] - 2026-02-04
+## [0.5.0] - 2026-02-04
 
 ### Added
 - **Excalidraw-like text element behavior**: Text elements now support drag-to-create with customizable width and height
@@ -549,7 +549,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Resize handlers now correctly oriented when shape is rotated
 
-## [1.4.0] - 2026-01-XX
+## [0.4.0] - 2026-01-XX
 
 ### Added
 - Ink highlighter and eraser tools in infinite canvas presentation mode
