@@ -16,6 +16,8 @@ import {
 } from './geometry';
 import { normalizePoints } from './render-element';
 import { isElementHiddenByHierarchy } from './hierarchy';
+import { isWasmEnabled } from '../wasm/feature-flags';
+import { wasmHitTestElement } from '../wasm/bridge/hit-testing-bridge';
 
 /**
  * Inverse-rotate a point around a center by the given angle.
@@ -47,6 +49,14 @@ export function hitTestElement(
     elementMap?: Map<string, DrawingElement>
 ): boolean {
     if (isElementHiddenByHierarchy(el, elements, elementMap)) return false;
+
+    // WASM fast-path: delegate broad + narrow phase to WASM when available.
+    // Extruding shapes (solidBlock, openBox, perspectiveBlock) have custom broad-phase
+    // logic that isn't in the WASM module yet, so they fall through to JS.
+    if (isWasmEnabled('hitTesting') &&
+        el.type !== 'solidBlock' && el.type !== 'openBox' && el.type !== 'perspectiveBlock') {
+        return wasmHitTestElement(el, x, y, threshold);
+    }
 
     // Transform point to local non-rotated space
     const cx = el.x + el.width / 2;

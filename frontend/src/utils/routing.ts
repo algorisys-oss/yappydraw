@@ -1,4 +1,6 @@
 import type { DrawingElement, Point } from "../types";
+import { isWasmEnabled } from "../wasm/feature-flags";
+import { wasmCalculateSmartElbowRoute } from "../wasm/bridge/routing-bridge";
 
 /**
  * Calculates a simple orthogonal path (elbow) between two points.
@@ -120,6 +122,15 @@ export const calculateSmartElbowRoute = (
     startPos?: string,
     endPos?: string
 ): Point[] => {
+    // WASM fast path: grid construction in JS, A* in WASM
+    if (isWasmEnabled('routing')) {
+        const wasmResult = wasmCalculateSmartElbowRoute(
+            start, end, allElements, startElement, endElement, startPos, endPos
+        );
+        if (wasmResult) return wasmResult;
+        // Fall through to JS if WASM returned null (no path or no obstacles)
+    }
+
     const MARGIN = 15;
     const GRID_OFFSET = 20;
 

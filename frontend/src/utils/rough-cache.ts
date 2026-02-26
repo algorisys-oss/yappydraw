@@ -1,6 +1,8 @@
 import type { RoughCanvas } from 'roughjs/bin/canvas';
 import type { Drawable } from 'roughjs/bin/core';
 import type { DrawingElement } from '../types';
+import { isWasmEnabled } from '../wasm/feature-flags';
+import { wasmGenerateDrawable, isWasmSketchMethod } from '../wasm/bridge/sketch-engine-bridge';
 
 // ── Cache storage ────────────────────────────────────────────────
 type CacheEntry = { hash: string; drawables: Drawable[] };
@@ -72,7 +74,20 @@ export function createCachedRc(rc: RoughCanvas): RoughCanvas {
                         return drawable;
                     }
 
-                    // Cache miss — generate via generator, collect, then draw
+                    // Cache miss — try WASM sketch engine first
+                    if (isWasmEnabled('sketchEngine') && isWasmSketchMethod(prop)) {
+                        // Merge options with RoughJS defaults (last arg is options)
+                        const resolvedOpts = (target.generator as any)._o(args[args.length - 1]);
+                        const wasmDrawable = wasmGenerateDrawable(prop, args, resolvedOpts);
+                        if (wasmDrawable) {
+                            currentDrawables.push(wasmDrawable);
+                            currentIndex++;
+                            target.draw(wasmDrawable);
+                            return wasmDrawable;
+                        }
+                    }
+
+                    // Fallback — generate via RoughJS generator
                     const drawable: Drawable = (target.generator as any)[prop](...args);
                     currentDrawables.push(drawable);
                     currentIndex++;

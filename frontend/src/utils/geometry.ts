@@ -1,6 +1,9 @@
 import type { Point } from "../types";
+import { isWasmEnabled } from "../wasm/feature-flags";
+import * as wasmGeometry from "../wasm/bridge/geometry-bridge";
 
 export const isPointInPolygon = (p: Point, polygon: Point[]): boolean => {
+    if (isWasmEnabled('geometry')) return wasmGeometry.isPointInPolygon(p, polygon);
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
         const xi = polygon[i].x, yi = polygon[i].y;
@@ -14,6 +17,7 @@ export const isPointInPolygon = (p: Point, polygon: Point[]): boolean => {
 };
 
 export const distanceToSegment = (p: Point, a: Point, b: Point): number => {
+    if (isWasmEnabled('geometry')) return wasmGeometry.distanceToSegment(p, a, b);
     const x = p.x;
     const y = p.y;
     const x1 = a.x;
@@ -66,6 +70,7 @@ const cubicBezierAngle = (p0: Point, p1: Point, p2: Point, p3: Point, t: number)
 export const getOrganicBranchPolygon = (
     start: Point, end: Point, cp1: Point, cp2: Point, strokeWidth: number
 ): Point[] => {
+    if (isWasmEnabled('geometry')) return wasmGeometry.getOrganicBranchPolygon(start, end, cp1, cp2, strokeWidth);
     const segments = 20;
     const startWidth = Math.max(strokeWidth * 8, 4);
     const endWidth = Math.max(strokeWidth * 2, 2);
@@ -91,6 +96,7 @@ export const getOrganicBranchPolygon = (
 };
 
 export const getBezierPoints = (start: Point, cp1: Point, cp2: Point, end: Point, segments: number = 20) => {
+    if (isWasmEnabled('geometry')) return wasmGeometry.getBezierPoints(start, cp1, cp2, end, segments);
     const points: Point[] = [];
     for (let i = 0; i <= segments; i++) {
         const t = i / segments;
@@ -103,11 +109,13 @@ export const getBezierPoints = (start: Point, cp1: Point, cp2: Point, end: Point
 };
 
 export const isPointOnBezier = (p: Point, start: Point, cp1: Point, cp2: Point, end: Point, threshold: number): boolean => {
+    if (isWasmEnabled('geometry')) return wasmGeometry.isPointOnBezier(p, start, cp1, cp2, end, threshold);
     const points = getBezierPoints(start, cp1, cp2, end, 20); // 20 segments for precision
     return isPointOnPolyline(p, points, threshold);
 };
 
 export const isPointOnPolyline = (p: Point, points: Point[], threshold: number): boolean => {
+    if (isWasmEnabled('geometry')) return wasmGeometry.isPointOnPolyline(p, points, threshold);
     if (points.length < 2) return false;
     for (let i = 0; i < points.length - 1; i++) {
         if (distanceToSegment(p, points[i], points[i + 1]) <= threshold) {
@@ -118,6 +126,7 @@ export const isPointOnPolyline = (p: Point, points: Point[], threshold: number):
 };
 
 export const isPointInEllipse = (p: Point, x: number, y: number, w: number, h: number, threshold: number = 0): boolean => {
+    if (isWasmEnabled('geometry')) return wasmGeometry.isPointInEllipse(p, x, y, w, h, threshold);
     // Standardize
     const rx = Math.abs(w / 2) + threshold;
     const ry = Math.abs(h / 2) + threshold;
@@ -131,6 +140,7 @@ export const isPointInEllipse = (p: Point, x: number, y: number, w: number, h: n
 };
 
 export const isPointNearEllipseStroke = (p: Point, x: number, y: number, w: number, h: number, threshold: number): boolean => {
+    if (isWasmEnabled('geometry')) return wasmGeometry.isPointNearEllipseStroke(p, x, y, w, h, threshold);
     // Simplification: check if inside outer ellipse and outside inner ellipse?
     // Using simple distance check is hard for ellipse. 
     // Approximation: Closest point on ellipse?
@@ -165,6 +175,7 @@ export const isPointNearEllipseStroke = (p: Point, x: number, y: number, w: numb
 
 // Helper: Rotate point (x,y) around center (cx,cy) by angle
 export const rotatePoint = (x: number, y: number, cx: number, cy: number, angle: number) => {
+    if (isWasmEnabled('geometry')) return wasmGeometry.rotatePoint(x, y, cx, cy, angle);
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
     return {

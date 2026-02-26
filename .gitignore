@@ -34,3 +34,6 @@ test-results
 
 # Rust
 renderers/raylib/rust/target/
+
+# WASM build artifacts
+frontend/src/wasm/build/

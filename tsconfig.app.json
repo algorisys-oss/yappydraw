@@ -33,6 +33,7 @@
     "frontend/src"
   ],
   "exclude": [
-    "frontend/src/**/*.test.ts"
+    "frontend/src/**/*.test.ts",
+    "frontend/src/wasm/assemblyscript/assembly"
   ]
 }

@@ -19,6 +19,9 @@ import { projectMasterPosition } from './slide-utils';
 import { getImage } from './image-cache';
 import { computeCellRects, defaultColWidths, defaultRowHeights, normalizeCellSelection } from './table-utils';
 import { getPoolLaneRect } from './pool-containment';
+import { CanvasRenderer } from '../rendering/CanvasRenderer';
+import { isWasmEnabled } from '../wasm/feature-flags';
+import { syncElementBounds, wasmBatchViewportCull } from '../wasm/bridge/batch-renderer-bridge';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -521,6 +524,7 @@ export function renderLayersAndElements(
     } = params;
 
     const cachedRc = createCachedRc(rc);
+    const sharedRenderer = new CanvasRenderer(ctx);
     const sortedLayers = [...layers].sort((a, b) => a.order - b.order);
     let totalRendered = 0;
 
@@ -549,9 +553,38 @@ export function renderLayersAndElements(
         // Filter elements for this layer with viewport culling
         const bucket = elementsByLayer.get(layer.id);
         if (!bucket) return;
-        const layerElements = bucket.filter(el => {
+
+        // WASM batch viewport cull: pre-filter by AABB in one call
+        let wasmVisibleSet: Set<number> | null = null;
+        if (isWasmEnabled('batchRenderer') && !layer.isMaster) {
+            const syncCount = syncElementBounds(bucket);
+            const visibleIndices = wasmBatchViewportCull(syncCount, vp, scale);
+            if (visibleIndices) {
+                wasmVisibleSet = new Set(visibleIndices);
+            }
+        }
+
+        const layerElements = bucket.filter((el, idx) => {
             if (el.id === currentDrawingId) return true;
             if (layer.isMaster) return true;
+
+            // Fast viewport check first (WASM batch or JS fallback)
+            if (wasmVisibleSet) {
+                if (!wasmVisibleSet.has(idx)) return false;
+            } else {
+                // JS fallback: sub-pixel skip + AABB viewport check
+                const screenWidth = Math.abs(el.width) * scale;
+                const screenHeight = Math.abs(el.height) * scale;
+                if (screenWidth < 1 && screenHeight < 1) return false;
+
+                const margin = Math.max(Math.abs(el.width), Math.abs(el.height)) * 0.5;
+                if (el.x + el.width + margin < vp.minX - vp.bufferX ||
+                    el.x - margin > vp.maxX + vp.bufferX ||
+                    el.y + el.height + margin < vp.minY - vp.bufferY ||
+                    el.y - margin > vp.maxY + vp.bufferY) return false;
+            }
+
+            // JS-only visibility checks on viewport-surviving elements
             if (isElementHiddenByHierarchy(el, elements, elementMap)) return false;
 
             // Hide elements contained in collapsed pool lanes
@@ -575,17 +608,7 @@ export function renderLayersAndElements(
                 }
             }
 
-            // Skip sub-pixel elements
-            const screenWidth = Math.abs(el.width) * scale;
-            const screenHeight = Math.abs(el.height) * scale;
-            if (screenWidth < 1 && screenHeight < 1) return false;
-
-            // AABB viewport check
-            const margin = Math.max(Math.abs(el.width), Math.abs(el.height)) * 0.5;
-            return !(el.x + el.width + margin < vp.minX - vp.bufferX ||
-                el.x - margin > vp.maxX + vp.bufferX ||
-                el.y + el.height + margin < vp.minY - vp.bufferY ||
-                el.y - margin > vp.maxY + vp.bufferY);
+            return true;
         });
 
         totalRendered += layerElements.length;
@@ -651,7 +674,7 @@ export function renderLayersAndElements(
                 const layerOpacity = (layer?.opacity ?? 1) * (isFocusDimmed ? 0.12 : 1);
                 const shouldCache = !animState && !isFocusDimmed;
                 if (shouldCache) beginElement(renderedEl.id, computeElementHash(renderedEl));
-                renderElement(cachedRc, ctx, renderedEl, isDarkMode, layerOpacity);
+                renderElement(cachedRc, ctx, renderedEl, isDarkMode, layerOpacity, sharedRenderer);
                 if (shouldCache) endElement();
             }
 

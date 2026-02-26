@@ -1,4 +1,6 @@
 import type { DrawingElement } from "../types";
+import { isWasmEnabled } from "../wasm/feature-flags";
+import { wasmGetShapeGeometry } from "../wasm/bridge/shape-paths-bridge";
 
 export type ShapeGeometry =
     | { type: 'rect', x: number, y: number, w: number, h: number, r?: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
@@ -40,6 +42,13 @@ export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
     if (el.points && el.points.length > 0) {
         console.log('[getShapeGeometry] Using custom points:', el.id, el.points.length);
         return { type: 'points', points: el.points as { x: number; y: number }[] };
+    }
+
+    // WASM fast path: polygon shapes computed in WASM
+    if (isWasmEnabled('shapePaths')) {
+        const wasmResult = wasmGetShapeGeometry(el);
+        if (wasmResult) return wasmResult;
+        // Fall through to JS for unsupported shapes
     }
 
     const w = el.width;

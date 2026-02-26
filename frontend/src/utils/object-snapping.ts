@@ -1,5 +1,7 @@
 
 import type { DrawingElement } from "../types";
+import { isWasmEnabled } from "../wasm/feature-flags";
+import { wasmGetSnappingGuides } from "../wasm/bridge/snapping-bridge";
 
 export interface SnappingGuide {
     type: 'vertical' | 'horizontal';
@@ -20,6 +22,13 @@ export const getSnappingGuides = (
     dy: number,
     threshold: number
 ): SnappedResult => {
+    // WASM fast path: element filtering in JS, two-pass comparison in WASM
+    if (isWasmEnabled('snapping')) {
+        const wasmResult = wasmGetSnappingGuides(activeIds, allElements, dx, dy, threshold);
+        if (wasmResult) return wasmResult;
+        // Fall through to JS if WASM returned null
+    }
+
     const activeElements = allElements.filter(el => activeIds.includes(el.id));
     if (activeElements.length === 0) return { dx, dy, guides: [] };
 

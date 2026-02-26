@@ -427,6 +427,29 @@ Contributions welcome. Fork, branch, and open a PR.
 
 ## License
 
+## WASM Acceleration (Opt-in)
+
+YappyDraw includes optional WebAssembly modules (via AssemblyScript) for accelerating performance-critical operations like geometry calculations, hit testing, and path routing. **WASM is disabled by default** — the app runs on JS+Canvas as always.
+
+### Enable/Disable
+
+| Method | How | Example |
+|--------|-----|---------|
+| **URL param** | Add `?wasm=on` or `?wasm=off` to the URL | `http://localhost:5173/?wasm=on` |
+| **Specific features** | `?wasm=geometry,hitTesting` | Only enable selected modules |
+| **localStorage** | `localStorage.setItem('yappy-wasm', 'off')` | Master kill switch |
+| **Disable specific** | `localStorage.setItem('yappy-wasm-disable', 'sketchEngine')` | Disable one module |
+
+Available feature flags: `geometry`, `hitTesting`, `routing`, `snapping`, `shapePaths`, `sketchEngine`, `batchRenderer`
+
+### Build
+
+WASM modules are compiled automatically during `npm run build` and `npm run dev` via the Vite AssemblyScript plugin. No manual steps needed.
+
+To compile manually: `cd frontend/src/wasm/assemblyscript && npx asc --target release`
+
+---
+
 **Dual Licensed**
 
 YappyDraw is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).

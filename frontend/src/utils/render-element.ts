@@ -1,5 +1,6 @@
 import type { DrawingElement } from "../types";
 import type { RoughCanvas } from "roughjs/bin/canvas";
+import type { IRenderer } from "../rendering/IRenderer";
 import { shapeRegistry } from "../shapes/shape-registry";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 
@@ -104,12 +105,13 @@ export const renderElement = (
     ctx: CanvasRenderingContext2D,
     el: DrawingElement,
     isDarkMode: boolean = false,
-    layerOpacity: number = 1
+    layerOpacity: number = 1,
+    sharedRenderer?: IRenderer
 ) => {
     const shapeRenderer = shapeRegistry.getRenderer(el.type);
     if (shapeRenderer) {
         try {
-            const renderer = new CanvasRenderer(ctx);
+            const renderer = sharedRenderer || new CanvasRenderer(ctx);
             shapeRenderer.render({ rc, renderer, element: el, isDarkMode, layerOpacity });
         } catch (err) {
             console.warn(`Render error for ${el.type} (${el.id}):`, err);

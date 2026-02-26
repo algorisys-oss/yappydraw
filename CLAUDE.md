@@ -8,5 +8,5 @@ Additional Action items :
 - Record all learnings with each commits in docs/learnings.md
 - Update help docs (for hotkeys)
 - When a new shape is created or attributes or features are added, ensure api.ts is updated.
-
+- WASM parity: When modifying JS code in `utils/geometry.ts`, `utils/hit-testing.ts`, `utils/routing.ts`, or `utils/object-snapping.ts`, ensure the corresponding WASM AssemblyScript module (`wasm/assemblyscript/assembly/`) and bridge (`wasm/bridge/`) stay in sync. The WASM path must produce identical results to the JS fallback.
 
