@@ -970,6 +970,7 @@ export const retreatPresentation = async () => {
 };
 
 export const addSlide = () => {
+    pushToHistory();
     saveActiveSlide();
 
     const nextIndex = store.slides.length;
@@ -987,6 +988,7 @@ export const addSlide = () => {
 };
 
 export const insertNewSlide = (targetIndex: number, position: 'before' | 'after') => {
+    pushToHistory();
     saveActiveSlide();
 
     // 1. Determine new slide position (Spatially always at the end to avoid collision)
@@ -1122,6 +1124,8 @@ export const deleteSlide = (index: number) => {
         return;
     }
 
+    pushToHistory();
+
     // Clone distinct from store
     const newSlides = store.slides
         .filter((_, i) => i !== index)
@@ -1135,8 +1139,15 @@ export const deleteSlide = (index: number) => {
         nextIndex = newSlides.length - 1;
     }
 
+    // When deleting the active slide, the slide at nextIndex changes.
+    // Force setActiveSlide to run by temporarily setting activeSlideIndex to -1.
+    const deletingActive = index === store.activeSlideIndex;
+
     batch(() => {
         setStore("slides", newSlides);
+        if (deletingActive) {
+            setStore("activeSlideIndex", -1);
+        }
         setActiveSlide(nextIndex);
     });
 
@@ -1145,6 +1156,11 @@ export const deleteSlide = (index: number) => {
 
 export const reorderSlides = (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
+    if (fromIndex < 0 || fromIndex >= store.slides.length) return;
+    if (toIndex < 0 || toIndex >= store.slides.length) return;
+
+    pushToHistory();
+    saveActiveSlide();
 
     // Clone slides
     const newSlides = store.slides.map(s => ({ ...s }));
@@ -1164,8 +1180,10 @@ export const reorderSlides = (fromIndex: number, toIndex: number) => {
         newActiveIndex++;
     }
 
-    setStore("slides", newSlides);
-    setStore("activeSlideIndex", newActiveIndex);
+    batch(() => {
+        setStore("slides", newSlides);
+        setStore("activeSlideIndex", newActiveIndex);
+    });
 };
 
 /**
@@ -2179,6 +2197,17 @@ export const zoomToFitSlide = () => {
 const dsTextSnapshots = new Map<string, string>();
 const DS_TYPES_SNAP = ['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'];
 
+// Snapshot of animated element properties for restore on presentation exit
+// Captures full element state before animations run, so we can restore cleanly
+const animatedElementSnapshots = new Map<string, Record<string, any>>();
+const ANIMATED_PROPS = [
+    'x', 'y', 'width', 'height', 'opacity', 'angle',
+    'strokeColor', 'backgroundColor', 'strokeWidth', 'roughness',
+    'depth', 'viewAngle', 'openAmount', 'taper', 'skewX', 'skewY',
+    'frontTaper', 'frontSkewX', 'frontSkewY', 'shapeRatio', 'sideRatio',
+    'drawProgress', 'renderScale'
+];
+
 export const togglePresentationMode = async (visible?: boolean, fromSlide?: number) => {
     const isPresentation = store.appMode === 'presentation';
     const newState = visible ?? !isPresentation;
@@ -2201,6 +2230,20 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
             for (const el of store.elements) {
                 if (DS_TYPES_SNAP.includes(el.type)) {
                     dsTextSnapshots.set(el.id, el.text || '');
+                }
+            }
+
+            // Snapshot animated element properties for restore on exit
+            animatedElementSnapshots.clear();
+            for (const el of store.elements) {
+                if ((el.animations && el.animations.length > 0) || el.spinEnabled || el.orbitEnabled) {
+                    const snap: Record<string, any> = {};
+                    for (const prop of ANIMATED_PROPS) {
+                        if ((el as any)[prop] !== undefined) {
+                            snap[prop] = (el as any)[prop];
+                        }
+                    }
+                    animatedElementSnapshots.set(el.id, snap);
                 }
             }
 
@@ -2240,11 +2283,18 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
             slideBuildManager.init(store.activeSlideIndex);
             slideBuildManager.playInitial();
         } else {
-            // Exiting presentation mode - restore hidden elements and reset openBox
-            slideBuildManager.restoreAll();
+            // Exiting presentation mode - stop all animations and restore state
+            // Use reset() instead of restoreAll() to stop running animations first
+            slideBuildManager.reset();
             resetOpenBoxElements();
             abortDsAlgorithm();
             setStore('activeDsOpsElementId', null);
+
+            // Restore animated element properties to pre-presentation state
+            for (const [id, snap] of animatedElementSnapshots) {
+                updateElement(id, snap as any, false);
+            }
+            animatedElementSnapshots.clear();
 
             // Restore DS element text unless dsPersistChanges is enabled
             for (const [id, originalText] of dsTextSnapshots) {

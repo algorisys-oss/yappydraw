@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.6] - 2026-02-26
+
+### Fixed
+- **Animation state not restored on presentation exit** — exiting slideshow left elements in mid-animation positions (moved, rotated, faded) because only startHidden opacity was restored, not animated properties; now captures full element state before entering presentation and restores after stopping all animations on exit
+- **Slide drag-to-reorder loses active slide data** — `reorderSlides()` was missing `saveActiveSlide()` call, causing active slide background/dimensions/thumbnail to be lost during reorder
+- **Slide operations lack undo support** — added `pushToHistory()` to `addSlide`, `insertNewSlide`, `deleteSlide`, and `reorderSlides` so all slide operations can be undone with Ctrl+Z
+- **Deleting active slide leaves stale canvas state** — `deleteSlide()` called `setActiveSlide(nextIndex)` but when the index didn't change, it returned early leaving stale background/dimensions; fixed by invalidating the active index before re-setting it
+
 ## [0.23.5] - 2026-02-24
 
 ### Added
