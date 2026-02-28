@@ -1,6 +1,5 @@
 import { type Component, Show, For, createMemo, createSignal, onCleanup, createEffect } from "solid-js";
 import { store, stopVideoPlayback, updateElement, pushToHistory } from "../store/app-store";
-import type { DrawingElement } from "../types";
 import { X, Lock, LockOpen, GripHorizontal } from "lucide-solid";
 import "./video-overlay.css";
 
@@ -162,7 +161,7 @@ const SingleVideoOverlay: Component<{ elementId: string }> = (props) => {
                                 src={debouncedSrc()}
                                 class="video-overlay-iframe"
                                 allow="autoplay; encrypted-media; fullscreen"
-                                allowFullScreen
+                                allowfullscreen
                             />
                         </Show>
                     </Show>

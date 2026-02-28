@@ -1,4 +1,4 @@
-import { type Component, Show, createSignal, createEffect, onCleanup } from "solid-js";
+import { type Component, Show, createSignal, createEffect } from "solid-js";
 import { X, Video, Play } from "lucide-solid";
 import { isValidVideoURL, detectVideoProvider, getPosterURL, fetchVimeoPoster, type VideoProvider } from "../utils/video-utils";
 import "./video-url-dialog.css";

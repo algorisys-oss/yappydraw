@@ -22,7 +22,7 @@ import ConnectorToolGroup from "./connector-tool-group";
 import DsToolGroup from "./ds-tool-group";
 import BpmnToolGroup from "./bpmn-tool-group";
 import VideoUrlDialog from "./video-url-dialog";
-import { detectVideoProvider, getEmbedURL, fetchPoster, type VideoProvider } from "../utils/video-utils";
+import { getEmbedURL, fetchPoster, type VideoProvider } from "../utils/video-utils";
 import { getImage } from "../utils/image-cache";
 import "./toolbar.css";
 
