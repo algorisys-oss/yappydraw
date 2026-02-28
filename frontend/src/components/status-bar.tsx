@@ -65,6 +65,7 @@ function getContextHints(tool: string, hasSelection: boolean): Hint[] {
     if (tool === 'eraser') return [{ key: 'Click/Drag', action: 'Erase' }];
     if (tool === 'table') return [{ key: 'Drag', action: 'Draw table' }];
     if (tool === 'image') return [{ key: 'Click', action: 'Place image' }];
+    if (tool === 'video') return [{ key: 'Click', action: 'Insert video' }];
     return [];
 }
 

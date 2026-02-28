@@ -3,7 +3,7 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback } from "../store/app-store";
 import { normalizePoints } from "../utils/render-element";
 import type { DrawingElement } from "../types";
 import ContextMenu from "./context-menu";
@@ -47,6 +47,7 @@ import { fitShapeToText, fitUmlClassToContent } from "../utils/text-utils";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { effectiveTime } from "../utils/animation/animation-engine";
 import RecordingOverlay from "./recording-overlay";
+import VideoOverlay from "./video-overlay";
 import { setupRecording } from "../utils/recording-manager";
 export { requestRecording, setRequestRecording } from "../utils/recording-manager";
 import ScrollBackButton from "./scroll-back-button";
@@ -867,6 +868,15 @@ const Canvas: Component = () => {
             }
         }
 
+        // Video element double-click → play video
+        if (store.selection.length === 1) {
+            const selEl = store.elements.find(el => el.id === store.selection[0]);
+            if (selEl?.type === 'video' && selEl.videoURL) {
+                toggleVideoPlayback(selEl.id);
+                return;
+            }
+        }
+
         handleDoubleClickHandler(e, textEditCtx);
     };
 
@@ -1135,6 +1145,9 @@ const Canvas: Component = () => {
             <Show when={store.isRecording}>
                 <RecordingOverlay onStop={handleStopRecording} />
             </Show>
+
+            {/* Video Playback Overlay */}
+            <VideoOverlay />
 
             {/* Path Editor Overlay */}
             <Show when={store.pathEditState.isActive}>

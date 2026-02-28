@@ -91,6 +91,7 @@ const SHAPE_DEFAULTS: Partial<Record<ElementType, ShapeSize>> = {
     table: { width: 400, height: 200 },
     codeBlock: { width: 400, height: 200 },
     image: { width: 200, height: 200 },
+    video: { width: 480, height: 270 },
 
     // ─── UI/Wireframe ────────────────────────────────────
     browserWindow: { width: 400, height: 300 },

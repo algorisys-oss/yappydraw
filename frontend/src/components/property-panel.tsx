@@ -1,5 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
 import type { DrawingElement } from "../types";
@@ -9,13 +9,15 @@ import {
     AlignStartVertical, AlignCenterVertical, AlignEndVertical,
     AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
     Plus, ArrowDown, LayoutGrid, LayoutList, Target,
-    X, Play, Menu
+    X, Play, Square, Menu
 } from "lucide-solid";
 import "./property-panel.css";
 import { properties, fontCapabilities, type PropertyConfig } from "../config/properties";
 import { getGradientPreset } from "../config/gradient-presets";
 import { getImageFilterPreset } from "../config/image-filter-presets";
 import { getOpenBoxPreset } from "../config/openbox-presets";
+import { detectVideoProvider, getEmbedURL, getPosterURL, fetchPoster } from "../utils/video-utils";
+import { getImage } from "../utils/image-cache";
 import { showToast } from "./toast";
 import { playSequence } from "../utils/animation/orchestrator";
 import { AnimationPanel } from "./animation-panel";
@@ -225,6 +227,34 @@ const ImagePixelEffectActions: Component<{ elementId: string }> = (props) => {
                 <div class="group-title" style={{ "margin-top": "8px", "font-size": "10px", "opacity": "0.7" }}>
                     Quick previews • Use Animation panel below for triggers & persistence
                 </div>
+            </div>
+        </Show>
+    );
+};
+
+const VideoActions: Component<{ elementId: string }> = (props) => {
+    const el = createMemo(() => store.elements.find(e => e.id === props.elementId));
+    const isVideo = createMemo(() => el()?.type === 'video');
+
+    return (
+        <Show when={isVideo()}>
+            <div class="property-group">
+                <div class="group-title">VIDEO</div>
+                <div class="alignment-row" style={{ gap: "6px" }}>
+                    <button
+                        class="icon-btn"
+                        style={{ flex: 1, "font-size": "12px" }}
+                        onClick={() => toggleVideoPlayback(props.elementId)}
+                        title={isVideoPlaying(props.elementId) ? "Stop video" : "Play video"}
+                    >
+                        {isVideoPlaying(props.elementId) ? <><Square size={14} /> Stop</> : <><Play size={14} /> Play</>}
+                    </button>
+                </div>
+                <Show when={el()?.videoURL}>
+                    <div style={{ "font-size": "11px", color: "var(--text-secondary)", "margin-top": "6px", "word-break": "break-all" }}>
+                        {el()!.videoURL!.length > 60 ? el()!.videoURL!.slice(0, 57) + '...' : el()!.videoURL}
+                    </div>
+                </Show>
             </div>
         </Show>
     );
@@ -837,6 +867,32 @@ const PropertyPanel: Component = () => {
             return;
         }
 
+        // Auto-recompute derived video properties when videoURL changes
+        if (key === 'videoURL') {
+            const url = String(finalValue || '');
+            const provider = detectVideoProvider(url);
+            const embedURL = getEmbedURL(url, provider);
+            const posterURL = getPosterURL(url, provider);
+            const updates: Partial<DrawingElement> = {
+                videoURL: url,
+                videoProvider: provider,
+                videoEmbedURL: embedURL || undefined,
+                videoPosterURL: posterURL || undefined,
+            };
+            if (target.type === 'element') {
+                updateElement(targetId || target.data.id!, updates, history);
+            } else if (target.type === 'multi') {
+                store.selection.forEach(id => updateElement(id, updates, history));
+            }
+            // Async poster fetch for Vimeo / direct video
+            if (url) {
+                fetchPoster(url, provider).then(poster => {
+                    if (poster) getImage(poster);
+                });
+            }
+            return;
+        }
+
         if (target.type === 'element') {
             updateElement(targetId || target.data.id!, { [key]: finalValue }, history);
         } else if (target.type === 'multi') {
@@ -1189,6 +1245,7 @@ const PropertyPanel: Component = () => {
                                 <Show when={isElement()}>
                                     <MindmapActions elementId={targetElementId()} />
                                     <ImagePixelEffectActions elementId={targetElementId()} />
+                                    <VideoActions elementId={targetElementId()} />
                                 </Show>
                                 <Show when={targetType() === 'slide'}>
                                     <SlideActions />

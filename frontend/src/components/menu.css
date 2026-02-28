@@ -11,6 +11,27 @@
     transition: box-shadow 0.2s;
 }
 
+/* Text-based logo */
+.text-logo {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    line-height: 1;
+    flex-shrink: 0;
+    padding: 0 2px;
+}
+
+.text-logo-yappy {
+    color: var(--text-primary);
+}
+
+.text-logo-draw {
+    color: var(--logo-accent, #4f6df5);
+}
+
 .menu-container:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }

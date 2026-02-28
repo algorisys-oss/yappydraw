@@ -830,6 +830,48 @@ export const properties: PropertyConfig[] = [
     // Quick preview buttons appear when an image is selected
     // Use Animation Panel to add persistent pixel effects with triggers (on-load, on-click, etc.)
 
+    // Video Properties
+    {
+        key: 'videoURL',
+        label: 'Video URL',
+        type: 'input',
+        group: 'interaction',
+        applicableTo: ['video'],
+        defaultValue: ''
+    },
+    {
+        key: 'videoAutoplay',
+        label: 'Autoplay (Presentation)',
+        type: 'toggle',
+        group: 'interaction',
+        applicableTo: ['video'],
+        defaultValue: false
+    },
+    {
+        key: 'videoLoop',
+        label: 'Loop',
+        type: 'toggle',
+        group: 'interaction',
+        applicableTo: ['video'],
+        defaultValue: false
+    },
+    {
+        key: 'videoMuted',
+        label: 'Muted',
+        type: 'toggle',
+        group: 'interaction',
+        applicableTo: ['video'],
+        defaultValue: true
+    },
+    {
+        key: 'videoLocked',
+        label: 'Lock Position',
+        type: 'toggle',
+        group: 'interaction',
+        applicableTo: ['video'],
+        defaultValue: false
+    },
+
     // Text Specific
     {
         key: 'fontSize',

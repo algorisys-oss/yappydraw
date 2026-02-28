@@ -36,6 +36,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Eraser', keys: 'E or 7' },
             { label: 'Pencil', keys: 'P or 8' },
             { label: 'Insert Image', keys: 'I or 9' },
+            { label: 'Insert Video', keys: 'Toolbar button' },
             { label: 'Bezier Curve', keys: 'B or 0' },
             { label: 'Pan Mode', keys: 'H' },
             { label: 'Laser Pointer', keys: 'Shift+P' },

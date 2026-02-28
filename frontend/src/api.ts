@@ -51,6 +51,7 @@ import {
     copyStyle, pasteStyle
 } from "./utils/object-context-actions";
 import { generateId } from "./utils/id-generator";
+import { detectVideoProvider, getEmbedURL, getPosterURL } from "./utils/video-utils";
 import { forceAutoSave, clearAutoSave } from "./storage/auto-save";
 import { cloudStorageManager } from "./storage/cloud";
 import { drawingId } from "./components/menu";
@@ -519,6 +520,39 @@ export const YappyAPI = {
             // @ts-ignore
             dataURL: dataURL,
             status: 'loaded'
+        });
+    },
+
+    // --- Video Elements ---
+
+    /**
+     * Create a video element
+     * @param x - X position
+     * @param y - Y position
+     * @param videoURL - Video URL (YouTube, Vimeo, or direct MP4/WebM)
+     * @param width - Width (default 480)
+     * @param height - Height (default 270)
+     * @param options - Additional element options
+     */
+    createVideo(x: number, y: number, videoURL: string, width: number = 480, height: number = 270, options?: ElementOptions) {
+        const provider = detectVideoProvider(videoURL);
+        const embedURL = getEmbedURL(videoURL, provider);
+        const posterURL = getPosterURL(videoURL, provider);
+
+        return this.createElement('video', x, y, width, height, {
+            ...options,
+            backgroundColor: '#1a1a2e',
+            fillStyle: 'solid',
+            strokeWidth: 0,
+            // @ts-ignore - video-specific properties
+            videoURL,
+            videoEmbedURL: embedURL || undefined,
+            videoPosterURL: posterURL || undefined,
+            videoProvider: provider,
+            videoAutoplay: false,
+            videoLoop: false,
+            videoMuted: true,
+            videoLocked: false,
         });
     },
 

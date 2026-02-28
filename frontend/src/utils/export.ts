@@ -371,6 +371,15 @@ export const exportToSvg = (onlySelected: boolean) => {
                 image.setAttribute('style', `filter: ${filterStr}`);
             }
             node = image;
+        } else if (el.type === 'video' && (el.videoPosterDataURL || el.videoPosterURL)) {
+            // Export video as poster frame image
+            const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+            image.setAttribute('href', el.videoPosterDataURL || el.videoPosterURL!);
+            image.setAttribute('x', `${el.x}`);
+            image.setAttribute('y', `${el.y}`);
+            image.setAttribute('width', `${el.width}`);
+            image.setAttribute('height', `${el.height}`);
+            node = image;
         }
 
         // Canvas fallback for shape types without native SVG rendering

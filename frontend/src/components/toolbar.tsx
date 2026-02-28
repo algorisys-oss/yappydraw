@@ -2,7 +2,7 @@ import { type Component, For, createSignal, onMount, onCleanup } from "solid-js"
 import { store, setSelectedTool, addElement, setStore } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import type { ToolType } from "../types";
-import { MousePointer2, Eraser, Hand, Image as ImageIcon, Zap, Highlighter, Lasso, Crop } from "lucide-solid";
+import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop } from "lucide-solid";
 import PenToolGroup from "./pen-tool-group";
 import TextToolGroup from "./text-tool-group";
 import ShapeToolGroup from "./shape-tool-group";
@@ -21,6 +21,9 @@ import ConnectionRelToolGroup from "./connection-rel-tool-group";
 import ConnectorToolGroup from "./connector-tool-group";
 import DsToolGroup from "./ds-tool-group";
 import BpmnToolGroup from "./bpmn-tool-group";
+import VideoUrlDialog from "./video-url-dialog";
+import { detectVideoProvider, getEmbedURL, fetchPoster, type VideoProvider } from "../utils/video-utils";
+import { getImage } from "../utils/image-cache";
 import "./toolbar.css";
 
 // Navigation tools (rendered before grouped tools)
@@ -38,6 +41,7 @@ const selectUtilTools: { type: ToolType; icon: Component<{ size?: number; color?
 // Utility tools (rendered after grouped tools)
 const utilityTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
     { type: 'image', icon: ImageIcon, label: 'Insert Image (I or 9)' },
+    { type: 'video' as ToolType, icon: Video, label: 'Insert Video' },
     { type: 'eraser', icon: Eraser, label: 'Eraser (E or 7)' },
     { type: 'laser', icon: Zap, label: 'Laser Pointer (Shift+P)' },
     { type: 'ink', icon: Highlighter, label: 'Ink Overlay (Alt+I)' },
@@ -45,6 +49,7 @@ const utilityTools: { type: ToolType; icon: Component<{ size?: number; color?: s
 
 const Toolbar: Component = () => {
     let fileInputRef: HTMLInputElement | null = null;
+    const [showVideoDialog, setShowVideoDialog] = createSignal(false);
     const [position, setPosition] = createSignal({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = createSignal(false);
     const [dragStart, setDragStart] = createSignal({ x: 0, y: 0 });
@@ -82,19 +87,73 @@ const Toolbar: Component = () => {
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', handleResize);
 
+        // Expose global trigger for keyboard shortcut
+        (window as any).triggerVideoDialog = () => setShowVideoDialog(true);
+
         onCleanup(() => {
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
             window.removeEventListener('resize', handleResize);
+            delete (window as any).triggerVideoDialog;
         });
     });
 
     const handleToolClick = (type: ToolType) => {
         if (type === 'image') {
             fileInputRef?.click();
+        } else if (type === 'video') {
+            setShowVideoDialog(true);
         } else {
             setSelectedTool(type);
         }
+    };
+
+    const handleVideoInsert = (url: string, provider: VideoProvider, posterURL: string | null) => {
+        setShowVideoDialog(false);
+        const embedURL = getEmbedURL(url, provider);
+
+        // Create the video element
+        addElement({
+            id: generateId('video'),
+            type: 'video',
+            x: 100,
+            y: 100,
+            width: 480,
+            height: 270,
+            strokeColor: "transparent",
+            backgroundColor: "#1a1a2e",
+            fillStyle: "solid",
+            strokeWidth: 0,
+            strokeStyle: "solid",
+            roughness: 0,
+            opacity: 100,
+            angle: 0,
+            renderStyle: "architectural",
+            seed: Math.floor(Math.random() * 2 ** 31),
+            roundness: null,
+            locked: false,
+            link: null,
+            videoURL: url,
+            videoEmbedURL: embedURL || undefined,
+            videoPosterURL: posterURL || undefined,
+            videoProvider: provider,
+            videoAutoplay: false,
+            videoLoop: false,
+            videoMuted: true,
+            layerId: store.activeLayerId
+        });
+
+        // Pre-load poster into the image cache for canvas rendering
+        if (posterURL) {
+            getImage(posterURL);
+        }
+
+        // Also try to fetch a higher-quality poster asynchronously and cache it as dataURL
+        fetchPoster(url, provider).then(poster => {
+            if (poster) {
+                getImage(poster);
+            }
+        });
     };
 
     const handleRightClick = (e: MouseEvent) => {
@@ -295,6 +354,12 @@ const Toolbar: Component = () => {
                     </button>
                 )}
             </For>
+
+            <VideoUrlDialog
+                isOpen={showVideoDialog()}
+                onCancel={() => setShowVideoDialog(false)}
+                onSubmit={handleVideoInsert}
+            />
         </div>
     );
 };

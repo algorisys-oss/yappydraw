@@ -192,7 +192,7 @@ export const intersectElementWithLine = (
     const cx = element.x + element.width / 2;
     const cy = element.y + element.height / 2;
 
-    if (element.type === 'rectangle' || element.type === 'image' || element.type === 'text') {
+    if (element.type === 'rectangle' || element.type === 'image' || element.type === 'video' || element.type === 'text') {
         let p = { x: a.x, y: a.y };
         if (element.angle) {
             p = rotatePoint(a.x, a.y, cx, cy, -element.angle);

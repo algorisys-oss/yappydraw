@@ -85,8 +85,8 @@ export class RenderPipeline {
             renderer.shadowColor = 'transparent';
         }
 
-        // Apply CSS Filter (for images with filter properties)
-        if (el.type === 'image') {
+        // Apply CSS Filter (for images/videos with filter properties)
+        if (el.type === 'image' || el.type === 'video') {
             const filterStr = buildFilterString(el);
             if (filterStr !== 'none') {
                 renderer.filter = filterStr;

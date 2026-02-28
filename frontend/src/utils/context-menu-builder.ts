@@ -14,7 +14,8 @@ import {
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
     addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling,
-    zoomToFit, zoomToFitSlide, updateGlobalSettings
+    zoomToFit, zoomToFitSlide, updateGlobalSettings,
+    toggleVideoPlayback, isVideoPlaying
 } from '../store/app-store';
 import {
     copyToClipboard, cutToClipboard, pasteFromClipboard,
@@ -121,7 +122,7 @@ export function getContextMenuItems(
             const shapesInSelection = allSelectedElements.filter(el => {
                 if (isPolylineShapeEl(el)) return true;
                 const type = el.type;
-                return type !== 'line' && type !== 'arrow' && type !== 'bezier' && type !== 'organicBranch' && type !== 'text' && type !== 'image';
+                return type !== 'line' && type !== 'arrow' && type !== 'bezier' && type !== 'organicBranch' && type !== 'text' && type !== 'image' && type !== 'video';
             });
 
             const connectorsInSelection = allSelectedElements.filter(el => {
@@ -762,7 +763,7 @@ export function getContextMenuItems(
         const shapesInSelection = allSelectedElements.filter(el => {
             if (isPolylineShapeEl(el)) return true;
             const type = el.type;
-            return type !== 'line' && type !== 'arrow' && type !== 'bezier' && type !== 'organicBranch' && type !== 'text' && type !== 'image';
+            return type !== 'line' && type !== 'arrow' && type !== 'bezier' && type !== 'organicBranch' && type !== 'text' && type !== 'image' && type !== 'video';
         });
 
         const connectorsInSelection = allSelectedElements.filter(el => {
@@ -920,6 +921,25 @@ export function getContextMenuItems(
                 });
             }
             items.push({ separator: true });
+        }
+
+        // Video-specific actions
+        if (store.selection.length === 1) {
+            const selEl = store.elements.find(e => e.id === store.selection[0]);
+            if (selEl?.type === 'video' && selEl.videoURL) {
+                const playing = isVideoPlaying(selEl.id);
+                items.push(
+                    {
+                        label: playing ? 'Stop Video' : 'Play Video',
+                        onClick: () => toggleVideoPlayback(selEl.id)
+                    },
+                    {
+                        label: 'Copy Video URL',
+                        onClick: () => navigator.clipboard.writeText(selEl.videoURL || '')
+                    },
+                    { separator: true }
+                );
+            }
         }
 
         // Lock / Flip / Delete

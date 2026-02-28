@@ -16,7 +16,8 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
     | 'bpmnExclusiveGateway' | 'bpmnParallelGateway' | 'bpmnInclusiveGateway'
     | 'bpmnTask' | 'bpmnSubProcess' | 'bpmnCallActivity'
     | 'bpmnDataObject' | 'bpmnAnnotation' | 'bpmnPool'
-    | 'bpmnEventGateway' | 'bpmnDataStore' | 'bpmnGroup';
+    | 'bpmnEventGateway' | 'bpmnDataStore' | 'bpmnGroup'
+    | 'video';
 
 export type ToolType = ElementType | 'lasso' | 'crop';
 
@@ -247,6 +248,17 @@ export interface DrawingElement {
         columnWidth?: number;     // For pixel-rain: width of each column
         trailLength?: number;     // For pixel-rain: trail length
     };
+
+    // Specific to Video
+    videoURL?: string;              // Source URL (MP4, WebM, YouTube, Vimeo)
+    videoEmbedURL?: string;         // Computed embed URL for YouTube/Vimeo iframe
+    videoPosterURL?: string;        // Poster/thumbnail image URL
+    videoPosterDataURL?: string;    // Poster cached as data URL for canvas rendering
+    videoAutoplay?: boolean;        // Auto-play in presentation mode
+    videoLoop?: boolean;            // Loop playback
+    videoMuted?: boolean;           // Muted by default
+    videoLocked?: boolean;          // Lock position while playing
+    videoProvider?: 'direct' | 'youtube' | 'vimeo' | 'unknown';
 
     // Meta
     groupIds?: string[];

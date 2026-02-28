@@ -22,7 +22,7 @@ export function getAnchorPoints(element: DrawingElement): AnchorPoint[] {
 
     let anchors: AnchorPoint[] = [];
 
-    if (element.type === 'rectangle' || element.type === 'image' || element.type === 'text') {
+    if (element.type === 'rectangle' || element.type === 'image' || element.type === 'video' || element.type === 'text') {
         // 8 anchors: 4 edges + 4 corners
         const rawAnchors: AnchorPoint[] = [
             // Corners

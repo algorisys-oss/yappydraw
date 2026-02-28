@@ -103,6 +103,9 @@ interface AppState {
     // Image Crop Mode
     cropModeElementId: string | null;
     cropRect: { x: number; y: number; width: number; height: number } | null;
+
+    // Video Playback
+    activeVideoElementIds: string[];
 }
 
 const initialDoc = createSlideDocument();
@@ -234,6 +237,7 @@ const initialState: AppState = {
     },
     cropModeElementId: null,
     cropRect: null,
+    activeVideoElementIds: [],
 };
 
 export const [store, setStore] = createStore<AppState>(initialState);
@@ -348,6 +352,25 @@ export const addChildNode = (parentId: string) => {
         childY = lastChild.y + lastChild.height + vGap;
     }
 
+    // Inherit type-specific properties from parent (video, image)
+    const typeSpecificProps: Partial<DrawingElement> = {};
+    if (parent.type === 'video') {
+        typeSpecificProps.videoURL = parent.videoURL;
+        typeSpecificProps.videoEmbedURL = parent.videoEmbedURL;
+        typeSpecificProps.videoPosterURL = parent.videoPosterURL;
+        typeSpecificProps.videoPosterDataURL = parent.videoPosterDataURL;
+        typeSpecificProps.videoProvider = parent.videoProvider;
+        typeSpecificProps.videoAutoplay = parent.videoAutoplay;
+        typeSpecificProps.videoLoop = parent.videoLoop;
+        typeSpecificProps.videoMuted = parent.videoMuted ?? true;
+        typeSpecificProps.videoLocked = false;
+        typeSpecificProps.backgroundColor = parent.backgroundColor || '#1a1a2e';
+    } else if (parent.type === 'image') {
+        typeSpecificProps.dataURL = parent.dataURL;
+        typeSpecificProps.mimeType = parent.mimeType;
+        typeSpecificProps.backgroundColor = parent.backgroundColor || 'transparent';
+    }
+
     const newElement: DrawingElement = {
         ...store.defaultElementStyles,
         // Inherit styles from parent, with depth-based tapering
@@ -361,7 +384,7 @@ export const addChildNode = (parentId: string) => {
         strokeStyle: parent.strokeStyle || 'solid',
 
         id: newId,
-        type: (parent.type === 'image' || parent.type === 'line' || parent.type === 'arrow') ? 'rectangle' : parent.type,
+        type: (parent.type === 'line' || parent.type === 'arrow') ? 'rectangle' : parent.type,
         x: childX,
         y: childY,
         width: parent.width > 0 ? parent.width : 100,
@@ -375,6 +398,7 @@ export const addChildNode = (parentId: string) => {
         roundness: null,
         locked: false,
         link: null,
+        ...typeSpecificProps,
     };
 
     // Compute organicBranch connector with proper S-curve control points
@@ -449,6 +473,23 @@ export const addSiblingNode = (siblingId: string) => {
     // Resolve branch color — new sibling gets its own branch color from PALETTE
     const branch = getBranchInfo(parentId, store.elements);
 
+    // Inherit type-specific properties from sibling (video, image)
+    const siblingTypeProps: Partial<DrawingElement> = {};
+    if (sibling.type === 'video') {
+        siblingTypeProps.videoURL = sibling.videoURL;
+        siblingTypeProps.videoEmbedURL = sibling.videoEmbedURL;
+        siblingTypeProps.videoPosterURL = sibling.videoPosterURL;
+        siblingTypeProps.videoPosterDataURL = sibling.videoPosterDataURL;
+        siblingTypeProps.videoProvider = sibling.videoProvider;
+        siblingTypeProps.videoAutoplay = sibling.videoAutoplay;
+        siblingTypeProps.videoLoop = sibling.videoLoop;
+        siblingTypeProps.videoMuted = sibling.videoMuted ?? true;
+        siblingTypeProps.videoLocked = false;
+    } else if (sibling.type === 'image') {
+        siblingTypeProps.dataURL = sibling.dataURL;
+        siblingTypeProps.mimeType = sibling.mimeType;
+    }
+
     const newElement: DrawingElement = {
         ...store.defaultElementStyles,
         // Inherit styles from sibling, with depth-based tapering
@@ -476,6 +517,7 @@ export const addSiblingNode = (siblingId: string) => {
         roundness: null,
         locked: false,
         link: null,
+        ...siblingTypeProps,
     };
 
     // Compute organicBranch connector from parent to new sibling
@@ -823,6 +865,35 @@ export const resetCrop = (elementId: string) => {
     setStore('cropRect', null);
 };
 
+// --- Video Playback Actions ---
+export const startVideoPlayback = (elementId: string) => {
+    const el = store.elements.find(e => e.id === elementId);
+    if (!el || el.type !== 'video' || !el.videoURL) return;
+    if (!store.activeVideoElementIds.includes(elementId)) {
+        setStore('activeVideoElementIds', ids => [...ids, elementId]);
+    }
+};
+
+export const stopVideoPlayback = (elementId?: string) => {
+    if (elementId) {
+        setStore('activeVideoElementIds', ids => ids.filter(id => id !== elementId));
+    } else {
+        setStore('activeVideoElementIds', []);
+    }
+};
+
+export const toggleVideoPlayback = (elementId: string) => {
+    if (store.activeVideoElementIds.includes(elementId)) {
+        stopVideoPlayback(elementId);
+    } else {
+        startVideoPlayback(elementId);
+    }
+};
+
+export const isVideoPlaying = (elementId: string): boolean => {
+    return store.activeVideoElementIds.includes(elementId);
+};
+
 // --- Slide Management Actions ---
 
 export const updateSlideThumbnail = (index: number, dataUrl: string) => {
@@ -921,8 +992,17 @@ export const setActiveSlide = async (index: number, skipAnimation?: boolean) => 
         // Trigger Build Animations in Presentation Mode
         if (store.appMode === 'presentation') {
             hideOpenBoxRevealElements();
+            stopVideoPlayback(); // Stop any playing video from previous slide
             slideBuildManager.init(index);
             slideBuildManager.playInitial();
+
+            // Auto-play videos with videoAutoplay enabled
+            const autoPlayVideo = store.elements.find(
+                el => el.type === 'video' && el.videoAutoplay && el.videoURL
+            );
+            if (autoPlayVideo) {
+                startVideoPlayback(autoPlayVideo.id);
+            }
         }
     }
 

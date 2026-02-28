@@ -82,6 +82,10 @@ export const SHAPE_ALIASES: Record<string, ElementType> = {
     'table': 'table',
     'code': 'codeBlock',
     'image': 'image',
+    'video': 'video',
+    'vid': 'video',
+    'youtube': 'video',
+    'vimeo': 'video',
 
     // Data Visualizations
     'gantt': 'ganttChart',

@@ -7,7 +7,7 @@ import type { ElementType } from '../types';
 import { IMAGE_FILTER_PRESETS } from './image-filter-presets';
 
 /** Broad families that group element types for toolbar purposes */
-export type ElementFamily = 'shape' | 'connector' | 'text' | 'drawing' | 'image';
+export type ElementFamily = 'shape' | 'connector' | 'text' | 'drawing' | 'image' | 'video';
 
 /** Control types that can render in the compact toolbar */
 export type QuickControlType = 'color-dot' | 'icon-toggle' | 'icon-select' | 'mini-slider' | 'preset-select';
@@ -52,6 +52,7 @@ export function getElementFamily(type: ElementType): ElementFamily | null {
     if (type === 'text' || type === 'richtext') return 'text';
     if (DRAWING_TYPES.includes(type)) return 'drawing';
     if (type === 'image') return 'image';
+    if (type === 'video') return 'video';
     return 'shape';
 }
 
@@ -209,12 +210,18 @@ const imageProperties: QuickPropertyDef[] = [
     { key: 'filterSaturate', controlType: 'mini-slider', label: 'Saturation', min: 0, max: 200, step: 5 },
 ];
 
+/** Quick properties for video elements */
+const videoProperties: QuickPropertyDef[] = [
+    { key: 'opacity', controlType: 'mini-slider', label: 'Opacity', min: 0, max: 100, step: 5 },
+];
+
 const familyConfigs: Record<ElementFamily, QuickPropertyDef[]> = {
     shape: shapeProperties,
     connector: connectorProperties,
     text: textProperties,
     drawing: drawingProperties,
     image: imageProperties,
+    video: videoProperties,
 };
 
 /** Get the quick property definitions for a given element type */

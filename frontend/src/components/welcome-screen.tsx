@@ -457,38 +457,7 @@ export const WelcomeScreen: Component = () => {
                     "align-items": "center",
                     "gap": "1rem"
                 }}>
-                    <img
-                        src="/logo.svg"
-                        alt="YappyDraw Logo"
-                        style={{
-                            "width": windowSize().width < 768 ? "64px" : "96px",
-                            "height": windowSize().width < 768 ? "64px" : "96px",
-                            "border-radius": "18px",
-                            "opacity": "0",
-                            "animation": "welcomeScaleIn 0.6s ease-out 0s forwards"
-                        }}
-                    />
-                    <h1 style={{
-                        "font-size": windowSize().width < 768 ? "2.5rem" : "5rem",
-                        "margin": "0",
-                        "line-height": "1.2",
-                        "display": "flex",
-                        "align-items": "baseline",
-                        "gap": "0.2rem",
-                        "opacity": "0",
-                        "animation": "welcomeScaleIn 0.7s ease-out 0.1s forwards"
-                    }}>
-                        <span style={{
-                            "background": "linear-gradient(135deg, color(display-p3 0 0.5 1), color(display-p3 0.2 0.6 1))",
-                            "-webkit-background-clip": "text",
-                            "-webkit-text-fill-color": "transparent"
-                        }}>Yappy</span>
-                        <span style={{
-                            "background": "linear-gradient(135deg, color(display-p3 1 0.8 0), color(display-p3 1 0.9 0.2))",
-                            "-webkit-background-clip": "text",
-                            "-webkit-text-fill-color": "transparent"
-                        }}>Draw</span>
-                    </h1>
+                    
                     <p style={{
                         "font-size": windowSize().width < 768 ? "0.9rem" : "1.2rem",
                         "opacity": "0",

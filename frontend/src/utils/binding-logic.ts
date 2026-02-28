@@ -38,7 +38,7 @@ export function checkBinding(
 
         let isHit = false;
 
-        if (target.type === 'text' || target.type === 'image' || target.type === 'rectangle') {
+        if (target.type === 'text' || target.type === 'image' || target.type === 'video' || target.type === 'rectangle') {
             if (x >= target.x - threshold && x <= target.x + target.width + threshold &&
                 y >= target.y - threshold && y <= target.y + target.height + threshold) {
                 isHit = true;

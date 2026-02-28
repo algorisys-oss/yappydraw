@@ -1,35 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Rounded square background -->
-  <rect width="512" height="512" rx="96" ry="96" fill="#4f6df5"/>
-  <!-- Subtle second layer for depth -->
-  <rect width="512" height="512" rx="96" ry="96" fill="#6366f1" opacity="0.4"/>
-  <!-- Canvas/paper -->
-  <rect x="80" y="80" width="280" height="320" rx="16" ry="16" fill="white" opacity="0.95"/>
-  <!-- Sketch lines on canvas -->
-  <path d="M120 180 Q160 140 200 180 Q240 220 280 180" stroke="#3b82f6" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.5"/>
-  <rect x="120" y="220" width="80" height="60" rx="8" fill="#3b82f6" opacity="0.2" stroke="#3b82f6" stroke-width="3"/>
-  <circle cx="280" cy="250" r="35" fill="#6366f1" opacity="0.2" stroke="#6366f1" stroke-width="3"/>
-  <line x1="120" y1="320" x2="320" y2="320" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
-  <line x1="120" y1="345" x2="260" y2="345" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
-  <!-- Pencil -->
-  <g transform="translate(300, 100) rotate(35)">
-    <!-- Pencil body -->
-    <rect x="0" y="-18" width="220" height="36" rx="4" fill="#f59e0b"/>
-    <!-- Pencil stripe -->
-    <rect x="40" y="-18" width="140" height="36" fill="#fbbf24" opacity="0.6"/>
-    <!-- Pencil band -->
-    <rect x="180" y="-20" width="16" height="40" rx="2" fill="#a8a29e"/>
-    <!-- Eraser -->
-    <rect x="196" y="-18" width="30" height="36" rx="4" fill="#fb7185"/>
-    <!-- Pencil tip -->
-    <polygon points="0,-18 -30,0 0,18" fill="#78716c"/>
-    <polygon points="-10,-8 -30,0 -10,8" fill="#1e1b4b"/>
-  </g>
-  <!-- Sparkle/star accents -->
-  <g fill="white" opacity="0.8">
-    <polygon points="420,380 426,396 442,396 429,406 434,422 420,412 406,422 411,406 398,396 414,396"/>
-    <polygon points="140,100 143,108 152,108 145,114 148,122 140,116 132,122 135,114 128,108 137,108" transform="scale(0.7) translate(60,40)"/>
-  </g>
-  <!-- "Y" lettermark -->
-  <text x="406" y="480" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="72" fill="white" text-anchor="middle" opacity="0.9">Y</text>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" ry="96" fill="url(#bg)"/>
+  <text x="256" y="320" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="240" fill="white" letter-spacing="-8">YD</text>
 </svg>
