@@ -30,6 +30,7 @@ export interface GenerateResult {
     parseResult?: ParseResult;
     error?: string;
     duration?: number;
+    usage?: { promptTokens: number; completionTokens: number };
 }
 
 /**
@@ -88,7 +89,7 @@ export async function generateDiagram(
     }
 
     // 3–5. Extract JSON, parse DSL, render to canvas
-    return processLLMResponse(llmResponse.content, startTime, options);
+    return processLLMResponse(llmResponse.content, startTime, options, llmResponse.usage);
 }
 
 /**
@@ -162,7 +163,7 @@ export async function generateDiagramFromSketch(
     }
 
     // 4–6. Extract JSON, parse DSL, render to canvas
-    return processLLMResponse(llmResponse.content, startTime, options);
+    return processLLMResponse(llmResponse.content, startTime, options, llmResponse.usage);
 }
 
 // ── Shared Pipeline ─────────────────────────────────────────
@@ -174,6 +175,7 @@ function processLLMResponse(
     content: string,
     startTime: number,
     options?: GenerateOptions,
+    usage?: { promptTokens: number; completionTokens: number },
 ): GenerateResult {
     const jsonString = extractJSON(content);
     if (!jsonString) {
@@ -209,6 +211,7 @@ function processLLMResponse(
             rawResponse: content,
             parseResult,
             duration: Date.now() - startTime,
+            usage,
         };
     } catch (err: any) {
         return {

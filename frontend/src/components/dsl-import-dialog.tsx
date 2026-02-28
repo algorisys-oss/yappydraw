@@ -8,6 +8,9 @@ import { type Component, createSignal, createEffect, onCleanup, Show, For } from
 import { X, FileText, AlertTriangle, Check } from "lucide-solid";
 import { parseDSL, renderDiagram } from "../dsl";
 import type { ParseResult, DSLLayoutStrategy } from "../dsl";
+import { isMarkdownSlideContent, parseMarkdownToSlides } from "../utils/markdown-to-slides";
+import { loadDocument } from "../store/app-store";
+import { showToast } from "./toast";
 import "./dsl-import-dialog.css";
 
 interface DSLImportDialogProps {
@@ -33,7 +36,7 @@ const DSLImportDialog: Component<DSLImportDialogProps> = (props) => {
     const [inputText, setInputText] = createSignal('');
     const [layoutOverride, setLayoutOverride] = createSignal<string>('');
     const [parseResult, setParseResult] = createSignal<ParseResult | null>(null);
-    const [detectedFormat, setDetectedFormat] = createSignal<'json' | 'text' | 'mermaid' | ''>('');
+    const [detectedFormat, setDetectedFormat] = createSignal<'json' | 'text' | 'mermaid' | 'markdown' | ''>('');
 
     // Escape key
     createEffect(() => {
@@ -71,6 +74,11 @@ const DSLImportDialog: Component<DSLImportDialogProps> = (props) => {
             setDetectedFormat('json');
         } else if (/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|pie|mindmap)\b/m.test(trimmed)) {
             setDetectedFormat('mermaid');
+        } else if (isMarkdownSlideContent(trimmed)) {
+            setDetectedFormat('markdown');
+            // Don't parse as DSL — markdown handled separately
+            setParseResult(null);
+            return;
         } else {
             setDetectedFormat('text');
         }
@@ -80,6 +88,21 @@ const DSLImportDialog: Component<DSLImportDialogProps> = (props) => {
     });
 
     const handleImport = () => {
+        // Markdown → slides import
+        if (detectedFormat() === 'markdown') {
+            try {
+                const doc = parseMarkdownToSlides(inputText());
+                loadDocument(doc);
+                const slideCount = doc.slides?.length || 0;
+                showToast(`Markdown imported — ${slideCount} slides`, 'success');
+            } catch (err: any) {
+                showToast(`Import failed: ${err.message}`, 'error');
+            }
+            props.onClose();
+            setInputText('');
+            return;
+        }
+
         const result = parseResult();
         if (!result?.success || !result.diagram) return;
 
@@ -95,6 +118,11 @@ const DSLImportDialog: Component<DSLImportDialogProps> = (props) => {
         props.onClose();
         setInputText('');
         setParseResult(null);
+    };
+
+    const canImport = () => {
+        if (detectedFormat() === 'markdown') return inputText().trim().length > 0;
+        return parseResult()?.success === true;
     };
 
     const nodeCount = () => parseResult()?.diagram?.nodes?.length ?? 0;
@@ -119,8 +147,8 @@ const DSLImportDialog: Component<DSLImportDialogProps> = (props) => {
                     <div class="dsl-import-toolbar">
                         <div class="dsl-import-format">
                             <Show when={detectedFormat()}>
-                                <span class="format-badge">
-                                    {detectedFormat() === 'json' ? 'JSON' : detectedFormat() === 'mermaid' ? 'Mermaid' : 'Text DSL'}
+                                <span class={`format-badge ${detectedFormat() === 'markdown' ? 'format-badge-markdown' : ''}`}>
+                                    {detectedFormat() === 'json' ? 'JSON' : detectedFormat() === 'mermaid' ? 'Mermaid' : detectedFormat() === 'markdown' ? 'Markdown → Slides' : 'Text DSL'}
                                 </span>
                             </Show>
                         </div>
@@ -151,6 +179,12 @@ const DSLImportDialog: Component<DSLImportDialogProps> = (props) => {
 
                     {/* Status / Errors */}
                     <div class="dsl-import-status">
+                        <Show when={detectedFormat() === 'markdown'}>
+                            <div class="dsl-status-success">
+                                <Check size={14} />
+                                <span>Markdown detected — will create slides from headings and content</span>
+                            </div>
+                        </Show>
                         <Show when={parseResult()?.success}>
                             <div class="dsl-status-success">
                                 <Check size={14} />
@@ -191,10 +225,10 @@ const DSLImportDialog: Component<DSLImportDialogProps> = (props) => {
                         </button>
                         <button
                             class="dsl-import-btn"
-                            disabled={!parseResult()?.success}
+                            disabled={!canImport()}
                             onClick={handleImport}
                         >
-                            Import Diagram
+                            {detectedFormat() === 'markdown' ? 'Import Slides' : 'Import Diagram'}
                         </button>
                     </div>
                 </div>

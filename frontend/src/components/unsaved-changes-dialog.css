@@ -1,0 +1,111 @@
+.unsaved-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: unsaved-fade-in 0.15s ease-out;
+}
+
+@keyframes unsaved-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.unsaved-modal {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    width: min(380px, 90vw);
+    box-shadow: var(--shadow-lg);
+    color: var(--text-primary);
+    animation: unsaved-slide-up 0.15s ease-out;
+}
+
+@keyframes unsaved-slide-up {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.unsaved-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.unsaved-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.unsaved-body {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.unsaved-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.unsaved-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+}
+
+.unsaved-btn-cancel {
+    border: 1px solid var(--border-color);
+    background: var(--bg-panel);
+    color: var(--text-secondary);
+}
+
+.unsaved-btn-cancel:hover {
+    background: var(--btn-hover);
+    color: var(--text-primary);
+}
+
+.unsaved-btn-discard {
+    border: 1px solid var(--border-color);
+    background: var(--bg-panel);
+    color: #ef4444;
+}
+
+.unsaved-btn-discard:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.unsaved-btn-discard:active {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.unsaved-btn-save {
+    border: none;
+    background: var(--primary-color);
+    color: white;
+}
+
+.unsaved-btn-save:hover {
+    background: var(--primary-color);
+    opacity: 0.9;
+}
+
+.unsaved-btn-save:active {
+    background: var(--primary-color);
+    opacity: 0.85;
+}

@@ -17,6 +17,45 @@ import { getMeasurementContext, getFontString } from '../text-utils';
 // Map<elementId, Map<animationId, Set<propertyName>>>
 const activeAnimations = new Map<string, Map<string, Set<string>>>();
 
+// Snapshot of original text state before text animations modify it.
+// Used to restore text when animations are force-stopped (slide change, exit presentation).
+// Map<elementId, { text/containerText, richText/richContainerText }>
+const textAnimSnapshots = new Map<string, Record<string, any>>();
+
+/**
+ * Save original text state before a text animation starts.
+ * Only saves if no snapshot already exists (first animation wins).
+ */
+function saveTextSnapshot(elementId: string, textProperty: string, richTextKey?: string, savedRichText?: any[]): void {
+    if (textAnimSnapshots.has(elementId)) return; // Already captured
+    const element = store.elements.find(el => el.id === elementId);
+    if (!element) return;
+    const snap: Record<string, any> = {
+        [textProperty]: (element as any)[textProperty],
+    };
+    if (richTextKey) {
+        snap[richTextKey] = savedRichText ? [...savedRichText] : (element as any)[richTextKey];
+    }
+    textAnimSnapshots.set(elementId, snap);
+}
+
+/**
+ * Restore text state from snapshot and remove the entry.
+ */
+function restoreTextSnapshot(elementId: string): void {
+    const snap = textAnimSnapshots.get(elementId);
+    if (!snap) return;
+    updateElement(elementId, snap as any, false);
+    textAnimSnapshots.delete(elementId);
+}
+
+/**
+ * Clear a text snapshot without restoring (used when onComplete fires normally).
+ */
+function clearTextSnapshot(elementId: string): void {
+    textAnimSnapshots.delete(elementId);
+}
+
 /**
  * Stop animations that conflict with the given properties
  */
@@ -39,7 +78,13 @@ export function stopConflictingAnimations(
         }
     }
 
+    // Check if any stopped animations are text animations
+    let stoppingTextAnim = false;
     toStop.forEach(id => {
+        const props = elementAnims.get(id);
+        if (props && (props.has('text') || props.has('containerText'))) {
+            stoppingTextAnim = true;
+        }
         animationEngine.stop(id);
         elementAnims.delete(id);
     });
@@ -47,16 +92,37 @@ export function stopConflictingAnimations(
     if (elementAnims.size === 0) {
         activeAnimations.delete(elementId);
     }
+
+    // Restore text state if we stopped a text animation
+    if (stoppingTextAnim) {
+        restoreTextSnapshot(elementId);
+    }
 }
 
 /**
- * Stop all active animations for a specific element
+ * Stop all active animations for a specific element.
+ * Restores original text state if a text animation was in progress.
+ * Cleans up kinetic word elements if a kinetic typography animation was running.
  */
 export function stopAllElementAnimations(elementId: string): void {
     const animIds = activeAnimations.get(elementId);
     if (animIds) {
         animIds.forEach((_, id) => animationEngine.stop(id));
         activeAnimations.delete(elementId);
+    }
+
+    // Restore text to pre-animation state (text, containerText, richText, richContainerText)
+    restoreTextSnapshot(elementId);
+
+    // Clean up kinetic typography word elements
+    const cached = kineticWordCache.get(elementId);
+    if (cached) {
+        // Restore original element opacity/position
+        updateElement(elementId, cached.originalState as any, false);
+        // Remove word elements from store
+        const wordIdSet = new Set(cached.wordIds);
+        setStore("elements", els => els.filter(el => !wordIdSet.has(el.id)));
+        kineticWordCache.delete(elementId);
     }
 }
 
@@ -3062,6 +3128,8 @@ export function typewriter(elementId: string, duration: number = 1000, config: E
 
     const { text: fullText, property: textProperty, richTextKey, savedRichText } = textInfo;
 
+    saveTextSnapshot(elementId, textProperty, richTextKey, savedRichText);
+
     const animId = generateAnimationId('typewriter');
     const targetProps = new Set<string>([textProperty]);
 
@@ -3095,6 +3163,7 @@ export function typewriter(elementId: string, duration: number = 1000, config: E
             onComplete: () => {
                 // Ensure full text is shown at the end; restore richText formatting
                 updateElement(elementId, { [textProperty]: fullText, ...(richTextKey && savedRichText ? { [richTextKey]: savedRichText } : {}) }, false);
+                clearTextSnapshot(elementId);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
@@ -3135,6 +3204,8 @@ export function typewriterCursor(elementId: string, duration: number = 1000, con
     }
 
     const { text: fullText, property: textProperty, richTextKey, savedRichText } = textInfo;
+
+    saveTextSnapshot(elementId, textProperty, richTextKey, savedRichText);
 
     const animId = generateAnimationId('typewriterCursor');
     const targetProps = new Set<string>([textProperty]);
@@ -3180,6 +3251,7 @@ export function typewriterCursor(elementId: string, duration: number = 1000, con
             onComplete: () => {
                 // Show full text without cursor at the end; restore richText formatting
                 updateElement(elementId, { [textProperty]: fullText, ...(richTextKey && savedRichText ? { [richTextKey]: savedRichText } : {}) }, false);
+                clearTextSnapshot(elementId);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
@@ -3223,6 +3295,8 @@ export function wordByWord(elementId: string, duration: number = 1000, config: E
     }
 
     const { text: fullText, property: textProperty, richTextKey, savedRichText } = textInfo;
+
+    saveTextSnapshot(elementId, textProperty, richTextKey, savedRichText);
 
     // Split into words while preserving whitespace
     const words = fullText.split(/(\s+)/);
@@ -3274,6 +3348,7 @@ export function wordByWord(elementId: string, duration: number = 1000, config: E
             onComplete: () => {
                 // Ensure full text is shown at the end; restore richText formatting
                 updateElement(elementId, { [textProperty]: fullText, ...(richTextKey && savedRichText ? { [richTextKey]: savedRichText } : {}) }, false);
+                clearTextSnapshot(elementId);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
@@ -3318,6 +3393,8 @@ export function textScramble(elementId: string, duration: number = 1000, config:
     }
 
     const { text: fullText, property: textProperty, richTextKey, savedRichText } = textInfo;
+
+    saveTextSnapshot(elementId, textProperty, richTextKey, savedRichText);
 
     const animId = generateAnimationId('textScramble');
     const targetProps = new Set<string>([textProperty]);
@@ -3385,6 +3462,7 @@ export function textScramble(elementId: string, duration: number = 1000, config:
             onComplete: () => {
                 // Ensure full text is shown at the end; restore richText formatting
                 updateElement(elementId, { [textProperty]: fullText, ...(richTextKey && savedRichText ? { [richTextKey]: savedRichText } : {}) }, false);
+                clearTextSnapshot(elementId);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
@@ -3425,7 +3503,9 @@ export function textDelete(elementId: string, duration: number = 1000, config: E
         return '';
     }
 
-    const { text: fullText, property: textProperty, richTextKey } = textInfo;
+    const { text: fullText, property: textProperty, richTextKey, savedRichText } = textInfo;
+
+    saveTextSnapshot(elementId, textProperty, richTextKey, savedRichText);
 
     const animId = generateAnimationId('textDelete');
     const targetProps = new Set<string>([textProperty]);
@@ -3460,6 +3540,7 @@ export function textDelete(elementId: string, duration: number = 1000, config: E
             onStart: config.onStart,
             onComplete: () => {
                 updateElement(elementId, { [textProperty]: '' }, false);
+                clearTextSnapshot(elementId);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
@@ -3501,8 +3582,10 @@ export function textReplace(elementId: string, newText: string, duration: number
         return '';
     }
 
-    const { text: oldText, property: textProperty, richTextKey } = textInfo;
+    const { text: oldText, property: textProperty, richTextKey, savedRichText } = textInfo;
     if (!newText) return '';
+
+    saveTextSnapshot(elementId, textProperty, richTextKey, savedRichText);
 
     const animId = generateAnimationId('textReplace');
     const targetProps = new Set<string>([textProperty]);
@@ -3556,6 +3639,7 @@ export function textReplace(elementId: string, newText: string, duration: number
             onStart: config.onStart,
             onComplete: () => {
                 updateElement(elementId, { [textProperty]: newText }, false);
+                clearTextSnapshot(elementId);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
@@ -3608,6 +3692,10 @@ export function textCountUp(
         ? (element.richText?.length ? 'richText' as const : undefined)
         : (element.richContainerText?.length ? 'richContainerText' as const : undefined);
 
+    // Save text snapshot for restoration in case of force-stop
+    const savedRichText = richTextKey ? (element as any)[richTextKey] : undefined;
+    saveTextSnapshot(elementId, textProperty, richTextKey, savedRichText ? [...savedRichText] : undefined);
+
     const animId = generateAnimationId('textCountUp');
     const targetProps = new Set<string>([textProperty]);
 
@@ -3655,6 +3743,7 @@ export function textCountUp(
             onStart: config.onStart,
             onComplete: () => {
                 updateElement(elementId, { [textProperty]: `${prefix}${formatNumber(endValue)}${suffix}` }, false);
+                clearTextSnapshot(elementId);
                 const animIds = activeAnimations.get(elementId);
                 if (animIds) {
                     animIds.delete(animId);
@@ -3696,6 +3785,8 @@ export function lineByLine(elementId: string, duration: number = 1000, config: E
     }
 
     const { text: fullText, property: textProperty, richTextKey, savedRichText } = textInfo;
+
+    saveTextSnapshot(elementId, textProperty, richTextKey, savedRichText);
 
     const lines = fullText.split('\n');
     const lineCount = lines.length;

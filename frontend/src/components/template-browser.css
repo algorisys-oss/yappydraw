@@ -289,3 +289,76 @@
 [data-theme="focus"] .template-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
+
+/* ─── Presentation template cards ─────────────────────────── */
+.template-card-presentation {
+    height: auto;
+    overflow: visible;
+}
+
+.template-slide-strip {
+    display: flex;
+    gap: 4px;
+    padding: 14px 14px 0 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.template-slide-strip::-webkit-scrollbar {
+    display: none;
+}
+
+.template-mini-slide {
+    flex: 0 0 40px;
+    height: 26px;
+    border-radius: 3px;
+    border: 1.5px solid;
+    padding: 4px 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition: transform 0.15s;
+}
+
+.template-card-presentation:hover .template-mini-slide {
+    transform: scaleY(1.1);
+}
+
+.template-mini-line {
+    height: 2px;
+    border-radius: 1px;
+    width: 80%;
+}
+
+.template-mini-line.short {
+    width: 55%;
+}
+
+.template-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.template-slide-badge {
+    flex-shrink: 0;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    background: #dbeafe;
+    color: #1e40af;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .template-slide-badge,
+[data-theme="focus"] .template-slide-badge {
+    background: #1e3a5f;
+    color: #93c5fd;
+}
+
+.template-card-presentation .template-info {
+    border-top: none;
+}

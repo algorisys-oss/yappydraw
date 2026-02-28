@@ -2205,7 +2205,10 @@ const ANIMATED_PROPS = [
     'strokeColor', 'backgroundColor', 'strokeWidth', 'roughness',
     'depth', 'viewAngle', 'openAmount', 'taper', 'skewX', 'skewY',
     'frontTaper', 'frontSkewX', 'frontSkewY', 'shapeRatio', 'sideRatio',
-    'drawProgress', 'renderScale'
+    'drawProgress', 'renderScale',
+    // Text properties — text animations temporarily clear/modify these during playback.
+    // Without snapshotting, exiting presentation mid-animation leaves partial/empty text.
+    'text', 'containerText', 'richText', 'richContainerText'
 ];
 
 export const togglePresentationMode = async (visible?: boolean, fromSlide?: number) => {
@@ -2440,6 +2443,64 @@ export const loadTemplate = (templateData: {
         canvasBackgroundColor: templateData.canvasBackgroundColor || store.canvasBackgroundColor,
         selection: []
     });
+};
+
+/**
+ * Load a multi-slide PresentationTemplate into the canvas.
+ * Converts template slides into a v4 SlideDocument and delegates to loadDocument().
+ */
+export const loadPresentationTemplate = (template: {
+    slides: Array<{
+        name: string;
+        backgroundColor?: string;
+        fillStyle?: string;
+        gradientStops?: any[];
+        gradientDirection?: number;
+        elements: Partial<DrawingElement>[];
+        transition?: SlideTransition;
+    }>;
+    palette?: { primary: string; secondary: string; accent: string; background: string; text: string };
+}) => {
+    const SLIDE_GAP = 2000;
+    const allElements: DrawingElement[] = [];
+    const slides: Slide[] = [];
+
+    template.slides.forEach((slideTemplate, index) => {
+        const spatialX = index * SLIDE_GAP;
+        const spatialY = 0;
+
+        // Offset elements to spatial position
+        const slideElements = slideTemplate.elements.map(el => ({
+            ...el,
+            x: (el.x || 0) + spatialX,
+            y: (el.y || 0) + spatialY,
+        })) as DrawingElement[];
+
+        allElements.push(...slideElements);
+
+        slides.push({
+            id: generateId('slide'),
+            name: slideTemplate.name || `Slide ${index + 1}`,
+            spatialPosition: { x: spatialX, y: spatialY },
+            dimensions: { width: 1920, height: 1080 },
+            order: index,
+            backgroundColor: slideTemplate.backgroundColor || template.palette?.background || '',
+            fillStyle: (slideTemplate.fillStyle as any) || undefined,
+            gradientStops: slideTemplate.gradientStops || undefined,
+            gradientDirection: slideTemplate.gradientDirection || undefined,
+            transition: slideTemplate.transition || { ...DEFAULT_SLIDE_TRANSITION },
+        });
+    });
+
+    const doc = {
+        version: 4,
+        metadata: { name: 'Presentation', docType: 'slides' as const },
+        elements: allElements,
+        layers: [{ id: 'default-layer', name: 'Layer 1', visible: true, locked: false, opacity: 1, order: 0, backgroundColor: 'transparent' }],
+        slides,
+        globalSettings: {},
+    };
+    loadDocument(doc);
 };
 
 

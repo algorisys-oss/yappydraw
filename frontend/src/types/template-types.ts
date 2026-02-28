@@ -9,7 +9,8 @@ export type TemplateCategory =
     | 'sketchnotes'
     | 'animations'
     | 'wireframes'
-    | 'dsl-examples';
+    | 'dsl-examples'
+    | 'presentations';
 
 /**
  * Template metadata
@@ -55,4 +56,48 @@ export interface CategoryInfo {
     name: string;
     description: string;
     icon?: string;
+}
+
+// ─── Presentation Templates ────────────────────────────────
+
+/**
+ * Color palette for a presentation template or AI-generated deck
+ */
+export interface SlidePalette {
+    primary: string;      // Main accent (titles, key elements)
+    secondary: string;    // Darker shade (backgrounds, containers)
+    accent: string;       // Contrasting pop color
+    background: string;   // Slide background
+    text: string;         // Primary text color
+    // Optional tints — auto-derived if missing
+    primaryLight?: string;   // Tinted primary (e.g. primary at 15% opacity)
+    accentLight?: string;    // Tinted accent (e.g. accent at 20% opacity)
+    gradientFrom?: string;   // Gradient start color
+    gradientTo?: string;     // Gradient end color
+}
+
+/**
+ * A single slide within a presentation template.
+ * Element positions are relative to slide origin (0,0 = top-left).
+ */
+export interface PresentationSlideTemplate {
+    name: string;
+    backgroundColor?: string;
+    fillStyle?: import('../types').FillStyle;
+    gradientStops?: import('../types').GradientStop[];
+    gradientDirection?: number;
+    elements: Partial<DrawingElement>[];
+    transition?: import('./slide-types').SlideTransition;
+}
+
+/**
+ * A multi-slide presentation template.
+ * Used by the template browser, AI generator, and markdown import.
+ */
+export interface PresentationTemplate {
+    metadata: TemplateMetadata;
+    slides: PresentationSlideTemplate[];
+    palette?: SlidePalette;
+    /** Dummy data field — not used, but satisfies Template['data'] when registered */
+    data: DrawingData;
 }

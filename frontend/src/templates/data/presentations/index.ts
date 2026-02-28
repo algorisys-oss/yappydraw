@@ -1,0 +1,10 @@
+export { pitchDeck } from './pitch-deck';
+export { businessReport } from './business-report';
+export { educational } from './educational';
+export { creative } from './creative';
+export { minimalist } from './minimalist';
+export { darkPro } from './dark-pro';
+export { startup } from './startup';
+export { teamIntro } from './team-intro';
+export { techArchitecture } from './tech-architecture';
+export { quarterlyReview } from './quarterly-review';

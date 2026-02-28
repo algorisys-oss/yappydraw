@@ -1,7 +1,12 @@
 import { type Component, createSignal, For, Show } from 'solid-js';
 import { getActiveCategories, getTemplatesByCategory } from '../templates/registry';
-import type { Template, TemplateCategory } from '../types/template-types';
+import type { Template, TemplateCategory, PresentationTemplate } from '../types/template-types';
 import './template-browser.css';
+
+/** Check if a template is a multi-slide presentation */
+function isPresentationTemplate(t: Template): t is PresentationTemplate & Template {
+    return (t as any).slides?.length > 0;
+}
 
 interface TemplateBrowserProps {
     isOpen: boolean;
@@ -50,31 +55,61 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
                     {/* Template Grid */}
                     <div class="template-grid">
                         <For each={templates()}>
-                            {(template) => (
-                                template.dslContent ? (
-                                    <div
-                                        class="template-card template-card-dsl"
-                                        onClick={() => handleSelect(template)}
-                                    >
-                                        <div class="template-dsl-header">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                                                <polyline points="14 2 14 8 20 8" />
-                                                <line x1="8" y1="13" x2="16" y2="13" />
-                                                <line x1="8" y1="17" x2="12" y2="17" />
-                                            </svg>
-                                            <span class="template-dsl-badge">
-                                                {template.metadata.tags?.includes('mermaid') ? 'Mermaid' : 'YSL'}
-                                            </span>
+                            {(template) => {
+                                if (isPresentationTemplate(template)) {
+                                    const pt = template as unknown as PresentationTemplate;
+                                    const pal = pt.palette;
+                                    return (
+                                        <div class="template-card template-card-presentation" onClick={() => handleSelect(template)}>
+                                            <div class="template-slide-strip">
+                                                <For each={pt.slides}>
+                                                    {(slide) => (
+                                                        <div
+                                                            class="template-mini-slide"
+                                                            style={{
+                                                                background: slide.backgroundColor || pal?.background || '#ffffff',
+                                                                'border-color': pal?.primary || '#ccc',
+                                                            }}
+                                                        >
+                                                            <div class="template-mini-line" style={{ background: pal?.primary || '#333' }} />
+                                                            <div class="template-mini-line short" style={{ background: (pal?.text || '#666') + '66' }} />
+                                                        </div>
+                                                    )}
+                                                </For>
+                                            </div>
+                                            <div class="template-info">
+                                                <div class="template-name-row">
+                                                    <h3 class="template-name">{template.metadata.name}</h3>
+                                                    <span class="template-slide-badge">{pt.slides.length} slides</span>
+                                                </div>
+                                                <p class="template-description">{template.metadata.description}</p>
+                                            </div>
                                         </div>
-                                        <h3 class="template-name">{template.metadata.name}</h3>
-                                        <p class="template-description">{template.metadata.description}</p>
-                                    </div>
-                                ) : (
-                                    <div
-                                        class="template-card"
-                                        onClick={() => handleSelect(template)}
-                                    >
+                                    );
+                                }
+
+                                if (template.dslContent) {
+                                    return (
+                                        <div class="template-card template-card-dsl" onClick={() => handleSelect(template)}>
+                                            <div class="template-dsl-header">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                                    <polyline points="14 2 14 8 20 8" />
+                                                    <line x1="8" y1="13" x2="16" y2="13" />
+                                                    <line x1="8" y1="17" x2="12" y2="17" />
+                                                </svg>
+                                                <span class="template-dsl-badge">
+                                                    {template.metadata.tags?.includes('mermaid') ? 'Mermaid' : 'YSL'}
+                                                </span>
+                                            </div>
+                                            <h3 class="template-name">{template.metadata.name}</h3>
+                                            <p class="template-description">{template.metadata.description}</p>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div class="template-card" onClick={() => handleSelect(template)}>
                                         <div class="template-thumbnail">
                                             <Show when={template.metadata.thumbnail} fallback={
                                                 <div class="template-placeholder">
@@ -93,8 +128,8 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
                                             <p class="template-description">{template.metadata.description}</p>
                                         </div>
                                     </div>
-                                )
-                            )}
+                                );
+                            }}
                         </For>
                     </div>
 

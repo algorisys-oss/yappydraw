@@ -1921,6 +1921,39 @@ export const YappyAPI = {
         return gen(imageFile, options as any);
     },
 
+    /**
+     * Generate a full slide deck from a text prompt using AI.
+     * Requires an API key configured in AI Settings.
+     *
+     * Slide types generated: title, content, bullets, two-column, quote, section-break,
+     * closing, image-text, metrics, timeline, card-grid, comparison.
+     * All slides include gradients, shadows, and decorative shapes for rich visuals.
+     *
+     * @param prompt - Topic or description for the presentation
+     * @param options.style - Color palette: 'auto' | 'corporate' | 'forest' | 'royal' | 'sunset' | 'dark' | 'minimalist'
+     * @param options.slideCount - Number of slides (0 = auto, or 6-50)
+     * @param options.mode - 'quick' (single LLM call, fast) or 'deep' (2-stage agentic, richer content)
+     */
+    async generatePresentation(prompt: string, options?: { style?: string; slideCount?: number; mode?: 'quick' | 'deep' }) {
+        const { generatePresentation: gen } = await import('./ai/slide-generator');
+        return gen(prompt, { ...options, clearCanvas: true });
+    },
+
+    /**
+     * Import markdown text as a slide deck.
+     * Headings become slide titles, bullets become content, `---` creates slide breaks.
+     *
+     * @param markdown - Markdown-formatted text
+     * @param palette - Optional color palette name
+     */
+    async importMarkdownSlides(markdown: string, palette?: string) {
+        const { parseMarkdownToSlides } = await import('./utils/markdown-to-slides');
+        const { loadDocument } = await import('./store/app-store');
+        const doc = parseMarkdownToSlides(markdown, palette);
+        loadDocument(doc);
+        return { success: true, slideCount: doc.slides?.length || 0 };
+    },
+
     // ─── Deploy to Rocket ──────────────────────────────────
     /**
      * Deploy the current diagram to a Rocket Backend instance.

@@ -1,6 +1,7 @@
 import type { Template, TemplateCategory, CategoryInfo } from '../types/template-types';
 import * as diagramTemplates from './data/diagrams';
 import * as dslExamples from './data/dsl-examples';
+import * as presentations from './data/presentations';
 
 /**
  * Template Registry
@@ -48,6 +49,12 @@ class TemplateRegistry {
             name: 'Text Diagrams',
             description: 'Diagrams from YSL and Mermaid text syntax'
         });
+
+        this.categoriesInfo.set('presentations', {
+            id: 'presentations',
+            name: 'Presentations',
+            description: 'Multi-slide presentation decks'
+        });
     }
 
     /**
@@ -94,6 +101,18 @@ class TemplateRegistry {
         this.registerTemplate(dslExamples.mermaidXYChartTemplate);
         this.registerTemplate(dslExamples.mermaidBlockTemplate);
         this.registerTemplate(dslExamples.mermaidGitGraphTemplate);
+
+        // Register presentation templates
+        this.registerTemplate(presentations.pitchDeck as unknown as Template);
+        this.registerTemplate(presentations.businessReport as unknown as Template);
+        this.registerTemplate(presentations.educational as unknown as Template);
+        this.registerTemplate(presentations.creative as unknown as Template);
+        this.registerTemplate(presentations.minimalist as unknown as Template);
+        this.registerTemplate(presentations.darkPro as unknown as Template);
+        this.registerTemplate(presentations.startup as unknown as Template);
+        this.registerTemplate(presentations.teamIntro as unknown as Template);
+        this.registerTemplate(presentations.techArchitecture as unknown as Template);
+        this.registerTemplate(presentations.quarterlyReview as unknown as Template);
     }
 
     /**

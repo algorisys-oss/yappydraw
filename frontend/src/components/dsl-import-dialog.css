@@ -90,6 +90,11 @@
     font-weight: 500;
 }
 
+.format-badge-markdown {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
 .dsl-import-layout-select {
     display: flex;
     align-items: center;

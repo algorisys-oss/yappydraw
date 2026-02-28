@@ -311,6 +311,14 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                                             {res().duration ? ` in ${(res().duration! / 1000).toFixed(1)}s` : ''}
                                         </span>
                                     </div>
+                                    <Show when={res().usage}>
+                                        <div class="ai-prompt-usage">
+                                            {(res().usage!.promptTokens + res().usage!.completionTokens).toLocaleString()} tokens
+                                            <span class="ai-prompt-usage-detail">
+                                                ({res().usage!.promptTokens.toLocaleString()} in / {res().usage!.completionTokens.toLocaleString()} out)
+                                            </span>
+                                        </div>
+                                    </Show>
                                 </Show>
                                 <Show when={!res().success}>
                                     <div class="ai-prompt-error">

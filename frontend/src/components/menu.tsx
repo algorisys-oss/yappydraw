@@ -4,7 +4,7 @@ import { storage } from "../storage/file-system-storage";
 import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleStatePanel, toggleSlideToolbar,
-    toggleUtilityToolbar, loadTemplate, loadDocument, resetToNewDocument, saveActiveSlide, setIsExportOpen,
+    toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
@@ -26,7 +26,9 @@ const SaveDialog = lazy(() => import("./save-dialog"));
 const TemplateBrowser = lazy(() => import("./template-browser"));
 const CloudStorageDialogLazy = lazy(() => import("./cloud-storage-dialog").then(m => ({ default: m.CloudStorageDialog as any })));
 const DSLImportDialog = lazy(() => import("./dsl-import-dialog"));
+const UnsavedChangesDialog = lazy(() => import("./unsaved-changes-dialog"));
 const AIPromptDialog = lazy(() => import("./ai-prompt-dialog"));
+const AISlidesDialog = lazy(() => import("./ai-slides-dialog"));
 const AISettingsDialog = lazy(() => import("./ai-settings-dialog"));
 const RocketSettingsDialog = lazy(() => import("./rocket-settings-dialog"));
 import SettingsDialog from "./settings-dialog";
@@ -56,6 +58,11 @@ export const [cloudDialogMode, setCloudDialogMode] = createSignal<'save' | 'load
 export const [isDSLImportOpen, setIsDSLImportOpen] = createSignal(false);
 export const [dslImportInitialText, setDslImportInitialText] = createSignal('');
 export const [isAIPromptOpen, setIsAIPromptOpen] = createSignal(false);
+export const [isAISlidesOpen, setIsAISlidesOpen] = createSignal(false);
+export const [isUnsavedDialogOpen, setIsUnsavedDialogOpen] = createSignal(false);
+
+// Pending action to execute after save/discard in unsaved changes dialog
+let pendingUnsavedAction: (() => void) | null = null;
 
 // Exported handlers for App.tsx integration
 let sharedSetSaveIntent: (intent: 'workspace' | 'disk' | 'disk-json') => void = () => { };
@@ -67,10 +74,18 @@ export const handleSaveRequest = (intent: 'workspace' | 'disk' | 'disk-json') =>
 };
 
 export const handleNew = (docType: 'infinite' | 'slides' = 'slides') => {
-    if (confirm(`Start new ${docType === 'slides' ? 'presentation' : 'sketch'}? Unsaved changes will be lost.`)) {
+    const proceed = () => {
         resetToNewDocument(docType);
         setDrawingId('Untitled');
+    };
+
+    if (!store.isDirty) {
+        proceed();
+        return;
     }
+
+    pendingUnsavedAction = proceed;
+    setIsUnsavedDialogOpen(true);
 };
 
 const Menu: Component = () => {
@@ -82,6 +97,26 @@ const Menu: Component = () => {
     const [saveIntent, setSaveIntent] = createSignal<'workspace' | 'disk' | 'disk-json'>('workspace');
     sharedSetSaveIntent = setSaveIntent;
     const [isTemplateBrowserOpen, setIsTemplateBrowserOpen] = createSignal(false);
+
+    const handleUnsavedCancel = () => {
+        pendingUnsavedAction = null;
+        setIsUnsavedDialogOpen(false);
+    };
+
+    const handleUnsavedDiscard = () => {
+        const action = pendingUnsavedAction;
+        pendingUnsavedAction = null;
+        setIsUnsavedDialogOpen(false);
+        if (action) action();
+    };
+
+    const handleUnsavedSave = () => {
+        // Close unsaved dialog, open the standard export/save dialog.
+        // The pending action will execute after the user completes the save.
+        setIsUnsavedDialogOpen(false);
+        setLoadExportInitialTab('save');
+        setIsLoadExportOpen(true);
+    };
     const [isP3PickerOpen, setIsP3PickerOpen] = createSignal(false);
     let p3PickerRef: HTMLDivElement | undefined;
 
@@ -210,13 +245,7 @@ const Menu: Component = () => {
     };
 
 
-    const handleTemplateSelect = (template: Template) => {
-        if (store.elements.length > 0) {
-            if (!confirm('Loading a template will clear the current canvas. Continue?')) {
-                return;
-            }
-        }
-
+    const loadTemplateAction = (template: Template) => {
         // DSL-based template: open import dialog with code pre-loaded
         if (template.dslContent) {
             setIsTemplateBrowserOpen(false);
@@ -225,9 +254,27 @@ const Menu: Component = () => {
             return;
         }
 
+        // Presentation template: multi-slide deck
+        if ((template as any).slides?.length > 0) {
+            loadPresentationTemplate(template as any);
+            setIsTemplateBrowserOpen(false);
+            const slideCount = (template as any).slides.length;
+            showToast(`"${template.metadata.name}" loaded — ${slideCount} slides`, 'success');
+            return;
+        }
+
         loadTemplate(template.data);
         setIsTemplateBrowserOpen(false);
         showToast(`Template "${template.metadata.name}" loaded`, 'success');
+    };
+
+    const handleTemplateSelect = (template: Template) => {
+        if (store.isDirty) {
+            pendingUnsavedAction = () => loadTemplateAction(template);
+            setIsUnsavedDialogOpen(true);
+            return;
+        }
+        loadTemplateAction(template);
     };
 
     const handleOpenJson = async (e: Event) => {
@@ -566,6 +613,10 @@ const Menu: Component = () => {
                     isOpen={isAIPromptOpen()}
                     onClose={() => setIsAIPromptOpen(false)}
                 />
+                <AISlidesDialog
+                    isOpen={isAISlidesOpen()}
+                    onClose={() => setIsAISlidesOpen(false)}
+                />
                 <AISettingsDialog
                     isOpen={showAISettings()}
                     onClose={() => setShowAISettings(false)}
@@ -576,6 +627,13 @@ const Menu: Component = () => {
                         onClose={() => setShowRocketSettings(false)}
                     />
                 </Show>
+
+                <UnsavedChangesDialog
+                    isOpen={isUnsavedDialogOpen()}
+                    onCancel={handleUnsavedCancel}
+                    onDiscard={handleUnsavedDiscard}
+                    onSave={handleUnsavedSave}
+                />
             </Suspense>
 
             <Show when={!store.zenMode}>
@@ -633,6 +691,10 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+Shift+A</span>
                                         </div>
+                                    </button>
+                                    <button class="menu-item" onClick={() => { setIsAISlidesOpen(true); setIsMenuOpen(false); }}>
+                                        <Sparkles size={16} />
+                                        <span class="label">AI Presentation</span>
                                     </button>
                                     <div class="menu-separator"></div>
                                     <button class="menu-item" onClick={() => { setLoadExportInitialTab('load'); setIsLoadExportOpen(true); setIsMenuOpen(false); }}>
