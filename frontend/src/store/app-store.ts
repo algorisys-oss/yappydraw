@@ -148,6 +148,7 @@ const initialState: AppState = {
             opacity: 100,
             angle: 0,
             roundness: null,
+            borderRadius: 9,
             locked: false,
             fontSize: 28,
             fontFamily: 'hand-drawn',
@@ -957,7 +958,11 @@ const resetOpenBoxElements = () => {
 
 export const setActiveSlide = async (index: number, skipAnimation?: boolean) => {
     if (index < 0 || index >= store.slides.length) return;
-    if (index === store.activeSlideIndex && !slideTransitionManager.transitioning) return;
+    if (index === store.activeSlideIndex && !slideTransitionManager.transitioning) {
+        // Still re-center the viewport in case it drifted (e.g. after exiting presentation mode)
+        zoomToFitSlide();
+        return;
+    }
 
     // Save current viewport state to the slide we are leaving (only in design mode)
     if (store.appMode === 'design' && store.activeSlideIndex !== -1) {
@@ -1006,7 +1011,6 @@ export const setActiveSlide = async (index: number, skipAnimation?: boolean) => 
         }
     }
 
-    showToast(`Slide ${index + 1}`, 'info');
 };
 
 /**

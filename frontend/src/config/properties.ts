@@ -307,7 +307,7 @@ export const properties: PropertyConfig[] = [
         step: 1,
         group: 'style',
         applicableTo: ['rectangle', 'diamond', 'capsule', 'speechBubble', 'browserWindow', 'mobilePhone', 'ghostButton', 'inputField', 'solidButton', 'dropdown', 'card', 'searchBar', 'badge', 'tooltip', 'dfdProcess', 'isometricCube', 'cylinder', 'stateSync', 'activationBar', 'externalEntity', 'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity'],
-        defaultValue: 0
+        defaultValue: 9
     },
     {
         key: 'drawInnerBorder',
