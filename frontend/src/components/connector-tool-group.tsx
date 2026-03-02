@@ -8,10 +8,10 @@ import "./connector-tool-group.css";
 export type ConnectorType = 'arrow' | 'line' | 'bezier' | 'elbow' | 'polyline';
 
 const connectorTools: { type: ConnectorType; icon: Component<{ size?: number }>; label: string }[] = [
-    { type: 'line', icon: Minus, label: 'Line (L or 4)' },
+    { type: 'line', icon: Minus, label: 'Line (L or 6)' },
     { type: 'arrow', icon: MoveUpRight, label: 'Arrow (A or 5)' },
     { type: 'elbow', icon: CornerDownRight, label: 'Elbow Connector' },
-    { type: 'bezier', icon: Spline, label: 'Bezier Curve (B or 0)' },
+    { type: 'bezier', icon: Spline, label: 'Bezier Curve (B)' },
     { type: 'polyline', icon: Waypoints, label: 'Polyline (click to place points)' },
 ];
 
@@ -96,7 +96,7 @@ const ConnectorToolGroup: Component = () => {
                 class={`toolbar-btn ${isConnectorToolActive() ? 'active' : ''} ${isConnectorToolActive() && store.toolLocked ? 'tool-locked' : ''}`}
                 on:click={toggleMenu}
                 onContextMenu={handleRightClick}
-                title={`${getCurrentTool().label} (Click for more)`}
+                title={`${getCurrentTool().label} (A or 5 - Click for more)`}
             >
                 <div class="tool-icon-wrapper">
                     {(() => {
@@ -108,6 +108,7 @@ const ConnectorToolGroup: Component = () => {
                         class="submenu-indicator"
                     />
                 </div>
+                <span class="hotkey-badge">5</span>
             </button>
 
             <Show when={isOpen()}>

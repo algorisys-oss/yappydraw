@@ -61,8 +61,8 @@ const SeptagonIcon: Component<{ size?: number; color?: string }> = (props) => (
 const shapeTools: { type: ElementType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
     // Basic shapes (formerly standalone toolbar buttons)
     { type: 'rectangle', icon: Square, label: 'Rectangle (R or 2)' },
-    { type: 'circle', icon: Circle, label: 'Circle (O or 3)' },
-    { type: 'diamond', icon: Diamond, label: 'Diamond (D)' },
+    { type: 'circle', icon: Circle, label: 'Ellipse (O or 4)' },
+    { type: 'diamond', icon: Diamond, label: 'Diamond (D or 3)' },
     // Geometric shapes
     { type: 'triangle', icon: Triangle, label: 'Triangle' },
     { type: 'hexagon', icon: Hexagon, label: 'Hexagon' },
@@ -183,7 +183,7 @@ const ShapeToolGroup: Component = () => {
                 class={`toolbar-btn ${isActive() ? 'active' : ''} ${isActive() && store.toolLocked ? 'tool-locked' : ''}`}
                 on:click={toggleMenu}
                 onContextMenu={handleRightClick}
-                title={`${activeTool().label} (Click for more)`}
+                title={`${activeTool().label} (R or 2 - Click for more)`}
             >
                 <div class="tool-icon-wrapper">
                     {(() => {
@@ -195,6 +195,7 @@ const ShapeToolGroup: Component = () => {
                         class="submenu-indicator"
                     />
                 </div>
+                <span class="hotkey-badge">2</span>
             </button>
 
             <Show when={isOpen()}>

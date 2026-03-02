@@ -542,17 +542,17 @@ const App: Component = () => {
         else {
           if (key === 'v' || key === '1') setSelectedTool('selection');
           else if (key === 'r' || key === '2') setSelectedTool('rectangle');
-          else if (key === 'o' || key === '3') setSelectedTool('circle');
-          else if (key === 'l' || key === '4') setSelectedTool('line');
+          else if (key === 'd' || key === '3') setSelectedTool('diamond');
+          else if (key === 'o' || key === '4') setSelectedTool('circle');
           else if (key === 'a' || key === '5') setSelectedTool('arrow');
-          else if (key === 't' || key === '6') setSelectedTool(store.selectedTextType);
-          else if (key === 'e' || key === '7') setSelectedTool('eraser');
-          else if (key === 'p' || key === '8') setSelectedTool('fineliner');
+          else if (key === 'l' || key === '6') setSelectedTool('line');
+          else if (key === 'p' || key === '7') setSelectedTool('fineliner');
+          else if (key === 't' || key === '8') setSelectedTool(store.selectedTextType);
           else if (key === '9' || key === 'i') {
             (window as any).triggerImageUpload?.();
           }
-          else if (key === 'b' || key === '0') setSelectedTool('bezier');
-          else if (key === 'd') setSelectedTool('diamond');
+          else if (key === 'e' || key === '0') setSelectedTool('eraser');
+          else if (key === 'b') setSelectedTool('bezier');
           else if (key === 'h') setSelectedTool('pan');
         }
       }

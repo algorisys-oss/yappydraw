@@ -518,7 +518,7 @@ export class ConnectorRenderer extends ShapeRenderer {
             for (let i = 0; i <= steps; i++) {
                 const t = i / steps;
                 const d = t * approxLen;
-                if ((d + offset) % gap < speed / 10) {
+                if (((d + offset) % gap + gap) % gap < speed / 10) {
                     const px = cubicBezier(start.x, cp1.x, cp2.x, end.x, t);
                     const py = cubicBezier(start.y, cp1.y, cp2.y, end.y, t);
 
@@ -543,7 +543,7 @@ export class ConnectorRenderer extends ShapeRenderer {
                 for (let j = 0; j <= steps; j++) {
                     const t = j / steps;
                     const d = totalDist + t * segmentLen;
-                    if ((d + offset) % gap < speed / 10) {
+                    if (((d + offset) % gap + gap) % gap < speed / 10) {
                         const px = p1.x + (p2.x - p1.x) * t;
                         const py = p1.y + (p2.y - p1.y) * t;
                         this.drawPulse(renderer, px, py, pulseSize, el.flowStyle, angle);
@@ -560,7 +560,7 @@ export class ConnectorRenderer extends ShapeRenderer {
             for (let i = 0; i <= steps; i++) {
                 const t = i / steps;
                 const d = t * len;
-                if ((d + offset) % gap < speed / 10) {
+                if (((d + offset) % gap + gap) % gap < speed / 10) {
                     const px = start.x + dx * t;
                     const py = start.y + dy * t;
                     this.drawPulse(renderer, px, py, pulseSize, el.flowStyle, angle);

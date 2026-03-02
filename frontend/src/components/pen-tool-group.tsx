@@ -27,7 +27,7 @@ const CustomMarkerIcon: Component<{ size?: number }> = (props) => (
 );
 
 const penTools: { type: PenType; icon: Component<{ size?: number }>; label: string }[] = [
-    { type: 'fineliner', icon: Pen, label: 'Fine Liner (P or 8)' },
+    { type: 'fineliner', icon: Pen, label: 'Fine Liner (P or 7)' },
     { type: 'inkbrush', icon: Brush, label: 'Ink Brush' },
     { type: 'marker', icon: CustomMarkerIcon, label: 'Marker' }, // Updated to use custom marker icon
 ];
@@ -94,7 +94,7 @@ const PenToolGroup: Component = () => {
                 class={`toolbar-btn ${isPenToolActive() ? 'active' : ''}`}
                 on:click={toggleMenu}
                 onContextMenu={handleRightClick}
-                title={`${getCurrentPenTool().label} (P or 8 - Click for more)`}
+                title={`${getCurrentPenTool().label} (P or 7 - Click for more)`}
             >
                 <div class="tool-icon-wrapper">
                     {(() => {
@@ -106,6 +106,7 @@ const PenToolGroup: Component = () => {
                         class="submenu-indicator"
                     />
                 </div>
+                <span class="hotkey-badge">7</span>
             </button>
 
             <Show when={isOpen()}>

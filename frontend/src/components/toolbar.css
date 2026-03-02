@@ -101,6 +101,7 @@
 }
 
 .toolbar-btn {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -114,6 +115,18 @@
     cursor: pointer;
     transition: all 0.2s;
     user-select: none;
+}
+
+.hotkey-badge {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    font-size: 8px;
+    line-height: 1;
+    color: var(--text-secondary);
+    opacity: 0.45;
+    pointer-events: none;
+    font-family: system-ui, sans-serif;
 }
 
 .toolbar-btn:hover {

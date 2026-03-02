@@ -152,6 +152,13 @@ export function commitText(ctx: TextEditingContext): void {
             } else {
                 updateElement(id, { [prop]: newText }, true);
             }
+        } else if (isLine && newText) {
+            // Auto-enable text highlight with white background for line shapes
+            updateElement(id, {
+                [prop]: newText,
+                textHighlightEnabled: true,
+                textHighlightColor: 'rgba(255,255,255,0.85)',
+            }, true);
         } else {
             updateElement(id, { [prop]: newText }, true);
         }

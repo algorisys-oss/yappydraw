@@ -95,9 +95,9 @@ export function setupRecording(getCanvasRef: () => HTMLCanvasElement | undefined
     // Trigger thumbnail capture on slide change or debounced element changes
     let thumbTimeout: any;
     createEffect(() => {
-        // Track slide index and element count/versions (implicitly)
+        // Track slide index and element count (not deep property changes)
         store.activeSlideIndex;
-        store.elements;
+        store.elements.length;
 
         window.clearTimeout(thumbTimeout);
         thumbTimeout = window.setTimeout(() => {

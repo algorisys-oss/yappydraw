@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.3] - 2026-03-02
+
+### Added
+- **Toolbar hotkey badges** — small numeric indicators on toolbar buttons showing keyboard shortcut at a glance
+- **Reordered toolbar hotkeys** — numeric shortcuts (1-0) now match the toolbar's left-to-right visual order: Selection(1), Rectangle(2), Diamond(3), Ellipse(4), Arrow(5), Line(6), Pen(7), Text(8), Image(9), Eraser(0)
+
+### Fixed
+- **High CPU usage on idle canvas** — animation engine rAF loop kept running for paused/idle animations; SolidJS time signals updated every frame triggering continuous 60fps redraws; ink cleanup interval ran every 500ms forever; cursor position store writes unthrottled at 60+/sec; recording manager thumbnail effect tracked entire elements proxy
+- **Flow animation reverse shows solid dark line** — JavaScript negative modulo caused all pulse positions to render when direction was reversed, producing a solid line instead of animated dashes
+- **Auto-grow text element height while typing** — text elements now expand vertically as content grows
+- **Line/connector text editing and auto-highlight** — improved text editing UX on lines and connectors
+- **Lasso and Crop tools moved to end of toolbar** — better toolbar organization
+
 ## [0.23.6] - 2026-02-26
 
 ### Fixed

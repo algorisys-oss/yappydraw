@@ -27,22 +27,22 @@ import { getImage } from "../utils/image-cache";
 import "./toolbar.css";
 
 // Navigation tools (rendered before grouped tools)
-const navTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
+const navTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string }[] = [
     { type: 'pan', icon: Hand, label: 'Pan Tool (H)' },
-    { type: 'selection', icon: MousePointer2, label: 'Selection (V or 1)' },
+    { type: 'selection', icon: MousePointer2, label: 'Selection (V or 1)', hotkey: '1' },
 ];
 
 // Lasso & Crop tools (rendered after connector/line toolgroup)
-const selectUtilTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
+const selectUtilTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string }[] = [
     { type: 'lasso', icon: Lasso, label: 'Lasso Select (Shift+L)' },
     { type: 'crop', icon: Crop, label: 'Crop Image (Shift+C)' },
 ];
 
 // Utility tools (rendered after grouped tools)
-const utilityTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
-    { type: 'image', icon: ImageIcon, label: 'Insert Image (I or 9)' },
+const utilityTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string }[] = [
+    { type: 'image', icon: ImageIcon, label: 'Insert Image (I or 9)', hotkey: '9' },
     { type: 'video' as ToolType, icon: Video, label: 'Insert Video' },
-    { type: 'eraser', icon: Eraser, label: 'Eraser (E or 7)' },
+    { type: 'eraser', icon: Eraser, label: 'Eraser (E or 0)', hotkey: '0' },
     { type: 'laser', icon: Zap, label: 'Laser Pointer (Shift+P)' },
     { type: 'ink', icon: Highlighter, label: 'Ink Overlay (Alt+I)' },
 ];
@@ -275,6 +275,7 @@ const Toolbar: Component = () => {
                         title={tool.label}
                     >
                         <tool.icon size={18} />
+                        {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
                     </button>
                 )}
             </For>
@@ -284,20 +285,6 @@ const Toolbar: Component = () => {
 
             {/* Connector Tool Group (Arrow, Line, Bezier, Polyline) */}
             <ConnectorToolGroup />
-
-            {/* Lasso & Crop (after lines) */}
-            <For each={selectUtilTools}>
-                {(tool) => (
-                    <button
-                        class={`toolbar-btn ${store.selectedTool === tool.type ? 'active' : ''}`}
-                        onClick={() => handleToolClick(tool.type)}
-                        onContextMenu={handleRightClick}
-                        title={tool.label}
-                    >
-                        <tool.icon size={18} />
-                    </button>
-                )}
-            </For>
 
             {/* Shape Tool Group (Rectangle, Circle, Diamond, Triangle, Hexagon, etc.) */}
             <ShapeToolGroup />
@@ -341,6 +328,21 @@ const Toolbar: Component = () => {
             {/* Text Tool Group (Text, Rich Text) */}
             <TextToolGroup />
 
+            {/* Lasso & Crop */}
+            <For each={selectUtilTools}>
+                {(tool) => (
+                    <button
+                        class={`toolbar-btn ${store.selectedTool === tool.type ? 'active' : ''}`}
+                        onClick={() => handleToolClick(tool.type)}
+                        onContextMenu={handleRightClick}
+                        title={tool.label}
+                    >
+                        <tool.icon size={18} />
+                        {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
+                    </button>
+                )}
+            </For>
+
             {/* Image, Eraser, Laser, Ink */}
             <For each={utilityTools}>
                 {(tool) => (
@@ -351,6 +353,7 @@ const Toolbar: Component = () => {
                         title={tool.label}
                     >
                         <tool.icon size={18} />
+                        {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
                     </button>
                 )}
             </For>

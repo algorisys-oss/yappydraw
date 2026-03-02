@@ -8,7 +8,7 @@ import { batch } from 'solid-js';
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, setViewState, addElement, updateElement, setStore, deleteElements, pushToHistory, advancePresentation, isLayerVisible, toggleCollapse, setActiveDsOpsElement } from '../../store/app-store';
+import { store, setViewState, addElement, updateElement, setStore, deleteElements, pushToHistory, advancePresentation, isLayerVisible, toggleCollapse, setActiveDsOpsElement, startInkCleanupIfNeeded } from '../../store/app-store';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
 import { generateId } from '../id-generator';
@@ -611,12 +611,13 @@ export function inkOnDown(
         opacity: 100,
         points: [0, 0],
         pointsEncoding: 'flat',
-        ttl: Date.now() + 3000, // 3 seconds
+        ttl: Date.now() + 3000,
         presentationDrawn: true, // Mark as drawn during presentation (erasable in presentation mode)
         layerId: store.activeLayerId,
         seed: Math.floor(Math.random() * 2 ** 31)
     } as DrawingElement;
     addElement(newElement);
+    startInkCleanupIfNeeded();
 }
 
 // ─── Eraser Tool ─────────────────────────────────────────────────────

@@ -202,18 +202,28 @@ class AnimationEngine {
         // Check global animation setting
         const animationsEnabled = store.globalSettings?.animationEnabled ?? true;
 
+        // Pre-scan: check if any animations are actively running
         let hasRunningAnimations = false;
-        batch(() => {
-            setGlobalTime(timestamp);
+        for (const animation of this.animations.values()) {
+            if (animation.state === 'running') {
+                hasRunningAnimations = true;
+                break;
+            }
+        }
 
-            if (!isGlobalPaused()) {
-                setEffectiveTime(t => t + deltaTime);
+        // Only update time signals when there's actual work to drive rendering
+        const shouldUpdateTime = hasRunningAnimations || this.forceTicker;
+
+        batch(() => {
+            if (shouldUpdateTime) {
+                setGlobalTime(timestamp);
+                if (!isGlobalPaused()) {
+                    setEffectiveTime(t => t + deltaTime);
+                }
             }
 
             for (const animation of this.animations.values()) {
                 if (animation.state !== 'running') continue;
-
-                hasRunningAnimations = true;
 
                 // If animations are globally disabled, force complete immediately
                 if (!animationsEnabled) {
@@ -280,7 +290,7 @@ class AnimationEngine {
         setIsGlobalPlaying(hasRunningAnimations);
         setIsGlobalPaused(hasPausedAnimations);
 
-        if (hasRunningAnimations || this.animations.size > 0 || this.forceTicker) {
+        if (hasRunningAnimations || this.forceTicker) {
             this.rafId = requestAnimationFrame(this.tick);
         } else {
             this.stopLoop();

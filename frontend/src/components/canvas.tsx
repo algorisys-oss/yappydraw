@@ -3,7 +3,7 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded } from "../store/app-store";
 import { normalizePoints } from "../utils/render-element";
 import type { DrawingElement } from "../types";
 import ContextMenu from "./context-menu";
@@ -193,6 +193,7 @@ const Canvas: Component = () => {
             // For ink tool, also update ttl
             if (el.type === 'ink') {
                 updates.ttl = Date.now() + 3000;
+                startInkCleanupIfNeeded();
             }
             updateElement(pState.currentId, updates, false);
             pState.penPointsBuffer = [];

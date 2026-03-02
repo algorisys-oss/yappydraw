@@ -91,7 +91,7 @@ export class PathRenderer extends ShapeRenderer {
         for (let i = 0; i <= steps; i++) {
             const t = i / steps;
             const d = t * approxLen;
-            if ((d + offset) % gap < speed / 10) {
+            if (((d + offset) % gap + gap) % gap < speed / 10) {
                 const px = this.cubicBezier(start.x, cp1.x, cp2.x, end.x, t);
                 const py = this.cubicBezier(start.y, cp1.y, cp2.y, end.y, t);
 

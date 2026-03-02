@@ -8,7 +8,7 @@ import "./pen-tool-group.css";
 export type TextType = 'text' | 'richtext';
 
 const textTools: { type: TextType; icon: Component<{ size?: number; color?: string }>; label: string }[] = [
-    { type: 'text', icon: Type, label: 'Text (T or 6)' },
+    { type: 'text', icon: Type, label: 'Text (T or 8)' },
     { type: 'richtext', icon: FileText, label: 'Rich Text (Shift+T)' },
 ];
 
@@ -93,7 +93,7 @@ const TextToolGroup: Component = () => {
                 class={`toolbar-btn ${isTextToolActive() ? 'active' : ''} ${isTextToolActive() && store.toolLocked ? 'tool-locked' : ''}`}
                 on:click={toggleMenu}
                 onContextMenu={handleRightClick}
-                title={`${getCurrentTextTool().label} (Click for more)`}
+                title={`${getCurrentTextTool().label} (T or 8 - Click for more)`}
             >
                 <div class="tool-icon-wrapper">
                     {(() => {
@@ -105,6 +105,7 @@ const TextToolGroup: Component = () => {
                         class="submenu-indicator"
                     />
                 </div>
+                <span class="hotkey-badge">8</span>
             </button>
 
             <Show when={isOpen()}>

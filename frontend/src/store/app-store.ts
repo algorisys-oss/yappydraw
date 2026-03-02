@@ -701,8 +701,20 @@ export const setViewState = (updates: Partial<ViewState>) => {
     setStore("viewState", (vs) => ({ ...vs, ...updates }));
 };
 
+let pendingCursorPos: { x: number; y: number } | null = null;
+let cursorRafId: number | null = null;
+
 export const setCursorPosition = (pos: { x: number; y: number }) => {
-    setStore("cursorPosition", pos);
+    pendingCursorPos = pos;
+    if (cursorRafId === null) {
+        cursorRafId = requestAnimationFrame(() => {
+            if (pendingCursorPos) {
+                setStore("cursorPosition", pendingCursorPos);
+                pendingCursorPos = null;
+            }
+            cursorRafId = null;
+        });
+    }
 };
 
 export const setSelectedTool = (tool: ToolType) => {
@@ -2675,18 +2687,27 @@ export const applyMindmapStyling = (rootId: string) => {
 };
 
 // --- Transient Element Cleanup (Ink Overlay) ---
-if (typeof window !== 'undefined') {
-    setInterval(() => {
+let inkCleanupIntervalId: ReturnType<typeof setInterval> | null = null;
+
+export function startInkCleanupIfNeeded() {
+    if (inkCleanupIntervalId !== null) return;
+
+    inkCleanupIntervalId = setInterval(() => {
         const now = Date.now();
         const expiredIds = store.elements
             .filter(el => el.ttl && now > el.ttl)
             .map(el => el.id);
 
         if (expiredIds.length > 0) {
-            // Delete without history
             setStore("elements", (elements) =>
                 elements.filter(el => !expiredIds.includes(el.id))
             );
+        }
+
+        // Stop interval when no more TTL elements exist
+        if (!store.elements.some(el => el.ttl)) {
+            clearInterval(inkCleanupIntervalId!);
+            inkCleanupIntervalId = null;
         }
     }, 500);
 }

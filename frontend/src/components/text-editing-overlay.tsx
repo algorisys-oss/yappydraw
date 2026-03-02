@@ -7,8 +7,8 @@
 
 import { type Component, createEffect, Show } from "solid-js";
 import { Maximize2 } from "lucide-solid";
-import { store, setSelectedTool } from "../store/app-store";
-import { measureContainerText, resolveFontFamily } from "../utils/text-utils";
+import { store, setSelectedTool, updateElement } from "../store/app-store";
+import { measureContainerText, measureWrappedTextHeight, resolveFontFamily } from "../utils/text-utils";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
 import { normalizePoints } from "../utils/render-element";
@@ -58,15 +58,45 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 return;
             }
             if (el && (el.type === 'text' || el.type === 'richtext')) {
-                // Standalone text elements use computed vertical padding — don't auto-resize
+                // Auto-grow height based on text content
+                const text = props.editText();
+                const fontSize = el.fontSize || (el.type === 'text' ? 20 : 28);
+                const existingWidth = el.width || 200;
+                const measuredHeight = measureWrappedTextHeight(text, existingWidth, fontSize, el.fontFamily);
+                // Only grow, never shrink — preserve existing height to prevent text jumping
+                const newHeight = Math.max(measuredHeight, el.height, fontSize * 1.2);
+
+                // Update element height in store (no history — commit records history)
+                if (Math.abs(newHeight - el.height) > 1) {
+                    updateElement(el.id, { height: newHeight });
+                }
+
+                // Update overlay container and textarea padding to match new height
+                const { scale } = store.viewState;
+                const textareaHeight = newHeight * scale;
+                const containerDiv = textInputRef.parentElement as HTMLDivElement;
+                if (containerDiv) {
+                    containerDiv.style.height = `${textareaHeight}px`;
+                }
+
+                // Recalculate vertical padding using wrapped text height to match canvas renderer
+                const totalTextH = measuredHeight * scale;
+                const vAlign = el.verticalAlign || 'middle';
+                let textPaddingTop = 4 * scale;
+                if (vAlign === 'middle') {
+                    textPaddingTop = Math.max(0, (textareaHeight - totalTextH) / 2);
+                } else if (vAlign === 'bottom') {
+                    textPaddingTop = Math.max(0, textareaHeight - totalTextH - 4 * scale);
+                }
+                textInputRef.style.padding = `${textPaddingTop}px 4px 0 4px`;
                 return;
             }
             // Container shapes use fixed height matching element — don't auto-resize
-            const isConnector = el && (el.type === 'organicBranch' || ((el.type === 'line' || el.type === 'arrow') && el.controlPoints && el.controlPoints.length > 0));
+            const isConnector = el && (el.type === 'organicBranch' || el.type === 'line' || el.type === 'arrow');
             if (el && !isConnector && props.editingProperty() === 'containerText') {
                 return;
             }
-            textInputRef.style.height = 'auto';
+            textInputRef.style.height = '0';
             textInputRef.style.height = textInputRef.scrollHeight + 'px';
         }
     });
@@ -134,6 +164,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         centerY = (midY - 15) * scale + panY; // offset up like renderer's textOffset
                         textareaWidth = Math.max(200, Math.abs(elW) * scale);
                     }
+                    textAlign = 'center'; // connector renderer always uses center
                     fontSizeVal = el.fontSize || 16;
                 } else if ((el.type === 'line' || el.type === 'arrow') && el.controlPoints && el.controlPoints.length > 0) {
                     // Position at bezier curve midpoint for lines/arrows with control points
@@ -146,7 +177,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         const midX = 0.25 * startPt.x + 0.5 * cp.x + 0.25 * endPt.x;
                         const midY = 0.25 * startPt.y + 0.5 * cp.y + 0.25 * endPt.y;
                         centerX = midX * scale + panX;
-                        centerY = (midY - 15) * scale + panY;
+                        centerY = midY * scale + panY;
                     } else {
                         // Cubic bezier midpoint (2 CPs)
                         const cp2 = el.controlPoints[1];
@@ -154,9 +185,15 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         const midX = k*k*k*startPt.x + 3*k*k*t*cp.x + 3*k*t*t*cp2.x + t*t*t*endPt.x;
                         const midY = k*k*k*startPt.y + 3*k*k*t*cp.y + 3*k*t*t*cp2.y + t*t*t*endPt.y;
                         centerX = midX * scale + panX;
-                        centerY = (midY - 15) * scale + panY;
+                        centerY = midY * scale + panY;
                     }
                     textareaWidth = Math.max(200, Math.abs(elW) * scale);
+                    textAlign = 'center'; // connector renderer always uses center
+                    fontSizeVal = el.fontSize || 14;
+                } else if ((el.type === 'line' || el.type === 'arrow') && (!el.controlPoints || el.controlPoints.length === 0)) {
+                    // Straight line/arrow — midpoint is already computed as default centerX/centerY
+                    textareaWidth = Math.max(200, Math.abs(elW) * scale);
+                    textAlign = 'center'; // connector renderer always uses center
                     fontSizeVal = el.fontSize || 14;
                 } else if (el.type === 'umlClass') {
                     const prop = props.editingProperty();
@@ -229,12 +266,13 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 const fontStyle = el.fontStyle || 'normal';
 
                 // For text elements and shapes, use element height for vertical centering
-                const isConnectorType = el.type === 'organicBranch' || ((el.type === 'line' || el.type === 'arrow') && el.controlPoints && el.controlPoints.length > 0);
+                const isConnectorType = el.type === 'organicBranch' || el.type === 'line' || el.type === 'arrow';
                 const textareaHeight = isTableCell ? cellHeight
                     : isUmlSection ? umlSectionHeight
                     : isConnectorType ? Math.max(40, fontSizeVal * scale * 2)
                     : elH * scale;
-                const lineHeightPx = fontSizeVal * scale * 1.2;
+                // Connector renderer uses 1.3 line-height; text/shape renderers use 1.2
+                const lineHeightPx = fontSizeVal * scale * (isConnectorType ? 1.3 : 1.2);
 
                 const isStandaloneText = el.type === 'text' || el.type === 'richtext';
                 // Container shapes: editing containerText on regular shapes (not connectors)
@@ -254,10 +292,12 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 }
 
                 // For standalone text/richtext: compute vertical padding to match canvas renderer
+                // Use measureWrappedTextHeight to account for word-wrapped lines (not just explicit \n)
+                // measureWrappedTextHeight returns N * lineHeight which matches CSS line-height spacing
                 if (isStandaloneText) {
-                    const scaledFontSize = fontSizeVal * scale;
-                    const numLines = Math.max(1, (props.editText() || '').split('\n').length);
-                    const totalTextH = (numLines - 1) * lineHeightPx + scaledFontSize;
+                    const text = props.editText() || '';
+                    const wrappedHeight = measureWrappedTextHeight(text, el.width || 200, fontSizeVal, el.fontFamily);
+                    const totalTextH = wrappedHeight * scale;
                     const vAlign = el.verticalAlign || 'middle';
                     if (vAlign === 'top') {
                         textPaddingTop = 4 * scale;
@@ -324,6 +364,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                             border: useTopLeftAnchor ? 'none' : '1px dashed #007acc',
                             overflow: useTopLeftAnchor ? 'hidden' : undefined,
                             background: isTableCell ? 'rgba(255,255,255,0.95)'
+                                : isConnectorType ? 'rgba(255,255,255,0.9)'
                                 : (el.type?.startsWith('ds') ? 'rgba(255,255,255,0.9)' : 'transparent'),
                         }}
                     >

@@ -21,14 +21,14 @@ export const getCommands = (): Command[] => {
         // Tools
         { id: 'tool-selection', label: 'Selection Tool', category: 'Tools', action: () => setSelectedTool('selection'), shortcut: 'V' },
         { id: 'tool-rectangle', label: 'Rectangle Tool', category: 'Tools', action: () => setSelectedTool('rectangle'), shortcut: 'R' },
-        { id: 'tool-circle', label: 'Circle Tool', category: 'Tools', action: () => setSelectedTool('circle'), shortcut: 'O' },
-        { id: 'tool-line', label: 'Line Tool', category: 'Tools', action: () => setSelectedTool('line'), shortcut: 'L' },
+        { id: 'tool-diamond', label: 'Diamond Tool', category: 'Tools', action: () => setSelectedTool('diamond'), shortcut: 'D' },
+        { id: 'tool-circle', label: 'Ellipse Tool', category: 'Tools', action: () => setSelectedTool('circle'), shortcut: 'O' },
         { id: 'tool-arrow', label: 'Arrow Tool', category: 'Tools', action: () => setSelectedTool('arrow'), shortcut: 'A' },
+        { id: 'tool-line', label: 'Line Tool', category: 'Tools', action: () => setSelectedTool('line'), shortcut: 'L' },
         { id: 'tool-text', label: 'Text Tool', category: 'Tools', action: () => setSelectedTool(store.selectedTextType), shortcut: 'T' },
         { id: 'tool-richtext', label: 'Rich Text Tool', category: 'Tools', action: () => setSelectedTool('richtext'), shortcut: 'Shift+T' },
         { id: 'tool-eraser', label: 'Eraser Tool', category: 'Tools', action: () => setSelectedTool('eraser'), shortcut: 'E' },
         { id: 'tool-bezier', label: 'Bezier Tool', category: 'Tools', action: () => setSelectedTool('bezier'), shortcut: 'B' },
-        { id: 'tool-diamond', label: 'Diamond Tool', category: 'Tools', action: () => setSelectedTool('diamond'), shortcut: 'D' },
         { id: 'tool-pan', label: 'Pan Tool', category: 'Tools', action: () => setSelectedTool('pan'), shortcut: 'H' },
         { id: 'tool-lasso', label: 'Lasso Selection Tool', category: 'Tools', action: () => setSelectedTool('lasso'), shortcut: 'Shift+L' },
 
