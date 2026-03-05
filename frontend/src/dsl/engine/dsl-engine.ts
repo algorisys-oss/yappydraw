@@ -13,7 +13,7 @@ import { getShapeDefaults } from '../shape-defaults';
 import { mergeNodeStyle, mergeEdgeStyle, mapStyleToOptions } from './render-helpers';
 import { computeLayout } from '../layout/layout-manager';
 import { YappyAPI } from '../../api';
-import { store, pushToHistory, deleteElements } from '../../store/app-store';
+import { store, setStore, pushToHistory, deleteElements } from '../../store/app-store';
 
 /**
  * Render a DSLDiagram to the canvas.
@@ -33,6 +33,12 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
         if (allIds.length > 0) {
             deleteElements(allIds);
         }
+        // Reset to a clean infinite canvas (clears slides so drawings
+        // don't get added into an existing slide deck)
+        setStore("slides", []);
+        setStore("docType", "infinite");
+        setStore("showSlideNavigator", false);
+        setStore("activeSlideIndex", 0);
     }
 
     const allNodes = flattenNodes(diagram.nodes);

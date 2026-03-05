@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.6] - 2026-03-05
+
+### Fixed
+- **AI Drawing / DSL import adds to existing slides** — when using AI Drawing or DSL import with "Clear canvas" on a slide document, elements were added into the existing slide deck instead of starting fresh; now resets to a clean infinite canvas before rendering
+
 ## [0.25.5] - 2026-03-05
 
 ### Fixed
