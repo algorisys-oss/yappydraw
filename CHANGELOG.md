@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.4] - 2026-03-05
+
+### Added
+- **Elixir BYOF slide deck** — 42-slide presentation covering "Build Your Own Elixir Phoenix + LiveView Framework" tutorial (40 steps from TCP socket to production deployment)
+
+### Fixed
+- **Presentation mode: clicking locked elements now advances slide** — in slide view (F5), clicking on locked elements was selecting them instead of advancing to the next slide; locked elements now pass through to slide navigation while unlocked elements (annotations, ink) remain interactive
+
 ## [0.25.3] - 2026-03-02
 
 ### Added

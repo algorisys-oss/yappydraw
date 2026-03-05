@@ -187,6 +187,8 @@ export function presentationOnDown(
                     setActiveDsOpsElement(store.activeDsOpsElementId === el.id ? null : el.id);
                     return true;
                 }
+                // Locked elements: skip to slide advance (don't select)
+                if (el.locked) break;
                 // Element hit — fall through to selectionOnDown for select/move
                 return false;
             }
