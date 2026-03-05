@@ -649,6 +649,8 @@ const App: Component = () => {
     let _dragHasFiles = false; // Track whether current drag contains files (from dragover types)
     // _lastDragCoords removed — was unused (reserved for future fallback file picker positioning)
     const handleGlobalDragEnter = (e: DragEvent) => {
+      // Let slide navigator / layer panel handle their own drag-to-rearrange
+      if ((e.target as HTMLElement)?.closest?.('.slide-navigator, .layer-panel')) return;
       e.preventDefault();
       ++_dragOverCount;
       if (e.dataTransfer) {
@@ -662,6 +664,8 @@ const App: Component = () => {
       }
     };
     const handleGlobalDragOver = (e: DragEvent) => {
+      // Let slide navigator / layer panel handle their own drag-to-rearrange
+      if ((e.target as HTMLElement)?.closest?.('.slide-navigator, .layer-panel')) return;
       e.preventDefault();
       ++_dragOverCount;
       if (e.dataTransfer) {
@@ -920,6 +924,9 @@ const App: Component = () => {
     // NON-ASYNC drop handlers — extract DataTransfer synchronously, then process async.
     // Critical: the browser clears DataTransfer after the synchronous handler returns.
     const handleGlobalDrop = (e: DragEvent) => {
+      // Let slide navigator / layer panel handle their own drag-to-rearrange drops
+      if ((e.target as HTMLElement)?.closest?.('.slide-navigator, .layer-panel')) return;
+
       const dragCount = _dragOverCount;
       const hadDragActivity = dragCount > 0;
       _dragOverCount = 0;

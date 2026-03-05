@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.5] - 2026-03-05
+
+### Fixed
+- **Slide panel drag-to-rearrange not working** — global drag-and-drop handlers (for image file drops) registered on window capture phase were intercepting all drop events with `stopPropagation()`, preventing the slide navigator's drop handler from firing; added early-return guards so the slide navigator and layer panel handle their own drag-to-rearrange events
+
 ## [0.25.4] - 2026-03-05
 
 ### Added
