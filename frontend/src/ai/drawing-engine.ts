@@ -7,6 +7,8 @@
 import { callLLM, type LLMResponse } from './ai-providers';
 import { loadAIConfig, getApiKey, type AIProvider } from './ai-settings';
 import { buildSystemPrompt, buildRocketSystemPrompt, buildVisionSystemPrompt } from './system-prompt';
+import { buildDeepDiagramSystemPrompt } from './drawing-visual-prompt';
+import { DRAWING_RESEARCH_PROMPT, buildResearchUserPrompt } from './drawing-content-prompt';
 import { processImageForVision } from './image-utils';
 import { parseDSL, renderDiagram } from '../dsl';
 import type { RenderResult, ParseResult } from '../dsl';
@@ -16,6 +18,7 @@ export interface GenerateOptions {
     provider?: AIProvider;
     model?: string;
     rocketMode?: boolean;
+    mode?: 'quick' | 'deep';
 }
 
 export interface SketchOptions extends GenerateOptions {
@@ -31,14 +34,30 @@ export interface GenerateResult {
     error?: string;
     duration?: number;
     usage?: { promptTokens: number; completionTokens: number };
+    stage?: string;
 }
 
 /**
  * Generate a diagram from a natural language prompt.
+ * Dispatches to quick (single-shot) or deep (2-stage agentic) mode.
  */
 export async function generateDiagram(
     userPrompt: string,
     options?: GenerateOptions,
+    onProgress?: (stage: string) => void,
+): Promise<GenerateResult> {
+    if (options?.mode === 'deep') {
+        return generateDiagramDeep(userPrompt, options, onProgress);
+    }
+    return generateDiagramQuick(userPrompt, options, onProgress);
+}
+
+// ── Quick Mode (single LLM call) ─────────────────────────
+
+async function generateDiagramQuick(
+    userPrompt: string,
+    options?: GenerateOptions,
+    onProgress?: (stage: string) => void,
 ): Promise<GenerateResult> {
     const startTime = Date.now();
 
@@ -58,6 +77,8 @@ export async function generateDiagram(
     const model = options?.model ?? providerConfig.model;
     const systemPrompt = options?.rocketMode ? buildRocketSystemPrompt() : buildSystemPrompt();
     const maxTokens = options?.rocketMode ? 8192 : 4096;
+
+    onProgress?.('Generating diagram...');
 
     // 2. Call LLM
     let llmResponse: LLMResponse;
@@ -90,6 +111,124 @@ export async function generateDiagram(
 
     // 3–5. Extract JSON, parse DSL, render to canvas
     return processLLMResponse(llmResponse.content, startTime, options, llmResponse.usage);
+}
+
+// ── Deep Mode (2-stage agentic pipeline) ──────────────────
+
+async function generateDiagramDeep(
+    userPrompt: string,
+    options?: GenerateOptions,
+    onProgress?: (stage: string) => void,
+): Promise<GenerateResult> {
+    const startTime = Date.now();
+
+    // 1. Load config and validate
+    const config = loadAIConfig();
+    const provider = options?.provider ?? config.activeProvider;
+    const providerConfig = config.providers[provider];
+    const apiKey = getApiKey(provider);
+
+    if (!apiKey) {
+        return {
+            success: false,
+            error: `No API key configured for ${provider}. Open AI Settings to add one.`,
+        };
+    }
+
+    const model = options?.model ?? providerConfig.model;
+
+    // ── Stage 1: Research Agent ──
+    onProgress?.('Researching topic deeply...');
+
+    const researchPrompt = buildResearchUserPrompt(userPrompt);
+    let researchResponse: LLMResponse;
+    try {
+        researchResponse = await callLLM({
+            provider,
+            model,
+            apiKey,
+            systemPrompt: DRAWING_RESEARCH_PROMPT,
+            userPrompt: researchPrompt,
+            temperature: 0.5,
+            maxTokens: 8192,
+        });
+    } catch (err: any) {
+        return {
+            success: false,
+            error: `Research agent failed: ${err.message}`,
+            duration: Date.now() - startTime,
+            stage: 'research',
+        };
+    }
+
+    if (!researchResponse.success) {
+        return {
+            success: false,
+            error: `Research agent failed: ${researchResponse.error ?? 'Unknown error'}`,
+            rawResponse: researchResponse.content,
+            duration: Date.now() - startTime,
+            stage: 'research',
+        };
+    }
+
+    // Accumulate token usage
+    const totalUsage = {
+        promptTokens: researchResponse.usage?.promptTokens || 0,
+        completionTokens: researchResponse.usage?.completionTokens || 0,
+    };
+
+    // Validate research output is parseable JSON
+    const researchJSON = extractJSON(researchResponse.content);
+    if (!researchJSON) {
+        return {
+            success: false,
+            error: 'Research agent returned invalid JSON. Please try again.',
+            rawResponse: researchResponse.content,
+            duration: Date.now() - startTime,
+            stage: 'research',
+        };
+    }
+
+    // ── Stage 2: Diagram Composer ──
+    onProgress?.('Composing detailed diagram...');
+
+    const composerSystemPrompt = buildDeepDiagramSystemPrompt();
+    let composerResponse: LLMResponse;
+    try {
+        composerResponse = await callLLM({
+            provider,
+            model,
+            apiKey,
+            systemPrompt: composerSystemPrompt,
+            userPrompt: researchJSON,
+            temperature: 0.3,
+            maxTokens: 8192,
+        });
+    } catch (err: any) {
+        return {
+            success: false,
+            error: `Diagram composer failed: ${err.message}`,
+            duration: Date.now() - startTime,
+            stage: 'composer',
+        };
+    }
+
+    if (!composerResponse.success) {
+        return {
+            success: false,
+            error: `Diagram composer failed: ${composerResponse.error ?? 'Unknown error'}`,
+            rawResponse: composerResponse.content,
+            duration: Date.now() - startTime,
+            stage: 'composer',
+        };
+    }
+
+    // Add composer usage
+    totalUsage.promptTokens += composerResponse.usage?.promptTokens || 0;
+    totalUsage.completionTokens += composerResponse.usage?.completionTokens || 0;
+
+    // 3–5. Extract JSON, parse DSL, render to canvas
+    return processLLMResponse(composerResponse.content, startTime, options, totalUsage);
 }
 
 /**

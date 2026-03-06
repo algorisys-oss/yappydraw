@@ -4,7 +4,7 @@
  */
 
 import { type Component, createSignal, createEffect, onCleanup, Show, untrack } from "solid-js";
-import { X, Sparkles, Loader2, AlertTriangle, Check, Settings, Rocket, ImagePlus } from "lucide-solid";
+import { X, Sparkles, Loader2, AlertTriangle, Check, Settings, Rocket, ImagePlus, BrainCircuit } from "lucide-solid";
 import { generateDiagram, generateDiagramFromSketch, type GenerateResult } from "../ai/drawing-engine";
 import { hasAnyApiKey, loadAIConfig, PROVIDER_LABELS } from "../ai/ai-settings";
 import { setShowAISettings } from "./ai-settings-dialog";
@@ -43,6 +43,8 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
     const [sketchImage, setSketchImage] = createSignal<File | null>(null);
     const [sketchPreview, setSketchPreview] = createSignal<string | null>(null);
     const [isDragOver, setIsDragOver] = createSignal(false);
+    const [deepMode, setDeepMode] = createSignal(false);
+    const [progressStage, setProgressStage] = createSignal<string | null>(null);
 
     const hasSketch = () => sketchImage() !== null;
     const canGenerate = () => (prompt().trim() || hasSketch()) && !isGenerating();
@@ -140,6 +142,7 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
 
         setIsGenerating(true);
         setResult(null);
+        setProgressStage(null);
 
         try {
             let res: GenerateResult;
@@ -152,7 +155,8 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                 res = await generateDiagram(text, {
                     clearCanvas: clearCanvas(),
                     rocketMode: rocketMode(),
-                });
+                    mode: deepMode() ? 'deep' : 'quick',
+                }, (stage) => setProgressStage(stage));
             }
             setResult(res);
             if (res.success) {
@@ -270,6 +274,18 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                                 />
                                 <span>Clear canvas before generating</span>
                             </label>
+                            <Show when={!hasSketch()}>
+                                <label class="ai-prompt-checkbox" title="2-stage AI pipeline: researches the topic deeply, then composes a detailed diagram with more components and connections">
+                                    <input
+                                        type="checkbox"
+                                        checked={deepMode()}
+                                        onChange={(e) => setDeepMode(e.currentTarget.checked)}
+                                        disabled={isGenerating()}
+                                    />
+                                    <BrainCircuit size={13} />
+                                    <span>Deep Mode</span>
+                                </label>
+                            </Show>
                             <Show when={features.enableRocketExport && !hasSketch()}>
                                 <label class="ai-prompt-checkbox">
                                     <input
@@ -357,7 +373,7 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                                         {hasSketch() ? 'Generate from Sketch' : 'Generate'}
                                     </>
                                 }>
-                                    <Loader2 size={14} class="ai-prompt-spinner" /> Generating...
+                                    <Loader2 size={14} class="ai-prompt-spinner" /> {progressStage() || 'Generating...'}
                                 </Show>
                             </button>
                         </div>

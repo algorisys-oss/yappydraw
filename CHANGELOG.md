@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.7] - 2026-03-06
+
+### Added
+- **AI Drawing Deep Mode** — 2-stage agentic pipeline for generating richer, more detailed technical diagrams; Stage 1 (Research Agent) deeply analyzes the topic's architecture, components, data flows, and internals; Stage 2 (Diagram Composer) converts the research into a color-coded, multi-layered diagram with 20-50 nodes; ideal for complex topics like Node.js event loop, Elixir BEAM VM, Kubernetes architecture, etc.
+- Deep Mode checkbox with BrainCircuit icon in AI Drawing dialog
+- Real-time progress feedback during deep generation ("Researching topic deeply..." → "Composing detailed diagram...")
+
 ## [0.25.6] - 2026-03-05
 
 ### Fixed

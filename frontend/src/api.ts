@@ -1937,8 +1937,9 @@ export const YappyAPI = {
      * Requires API keys configured in AI Settings.
      *
      * @param options.rocketMode - Enable Rocket Backend mode (extended prompt for entities, state machines, workflows)
+     * @param options.mode - 'quick' (default, single LLM call) or 'deep' (2-stage: research agent → diagram composer — richer output for complex technical topics)
      */
-    async generateDiagram(prompt: string, options?: { clearCanvas?: boolean; provider?: string; model?: string; rocketMode?: boolean }) {
+    async generateDiagram(prompt: string, options?: { clearCanvas?: boolean; provider?: string; model?: string; rocketMode?: boolean; mode?: 'quick' | 'deep' }) {
         const { generateDiagram: gen } = await import('./ai/drawing-engine');
         return gen(prompt, options as any);
     },
