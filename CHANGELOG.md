@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.8] - 2026-03-17
+
+### Added
+- **Image Deep Mode** — 2-stage agentic vision pipeline for converting complex diagram images/screenshots into accurate YappyDraw diagrams; Stage 1 (Vision Analyst) deeply analyzes the image to extract every node, text label, color, hierarchy level, and connection into structured research JSON; Stage 2 (Diagram Composer) converts the research into a properly laid-out diagram — reuses the existing text Deep Mode composer
+- Deep Mode checkbox now available for sketch/image uploads (not just text prompts)
+- Progress feedback for image deep mode ("Analyzing image deeply..." → "Composing detailed diagram...")
+
+### Improved
+- **Auto-sizing nodes to fit text** — DSL-rendered nodes now automatically compute text-fitted dimensions using offscreen canvas measurement before layout; shapes expand to contain their labels instead of using fixed defaults, producing cleaner diagrams across all modes (quick, deep, sketch)
+- **Brainstorm Mode** — toggle on the toolbar to switch between full toolbar (16 tool groups) and a compact 10-tool flat bar (Selection, Pen, Line, Arrow, Rectangle, Diamond, Ellipse, Text, Image, Eraser); defaults to brainstorm mode; preference persisted in localStorage; all hotkeys work in both modes
+
 ## [0.25.7] - 2026-03-06
 
 ### Added

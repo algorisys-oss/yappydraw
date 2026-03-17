@@ -8,7 +8,7 @@ import { callLLM, type LLMResponse } from './ai-providers';
 import { loadAIConfig, getApiKey, type AIProvider } from './ai-settings';
 import { buildSystemPrompt, buildRocketSystemPrompt, buildVisionSystemPrompt } from './system-prompt';
 import { buildDeepDiagramSystemPrompt } from './drawing-visual-prompt';
-import { DRAWING_RESEARCH_PROMPT, buildResearchUserPrompt } from './drawing-content-prompt';
+import { DRAWING_RESEARCH_PROMPT, buildResearchUserPrompt, VISION_RESEARCH_PROMPT, buildVisionResearchUserPrompt } from './drawing-content-prompt';
 import { processImageForVision } from './image-utils';
 import { parseDSL, renderDiagram } from '../dsl';
 import type { RenderResult, ParseResult } from '../dsl';
@@ -233,10 +233,25 @@ async function generateDiagramDeep(
 
 /**
  * Generate a diagram from an uploaded sketch image using vision AI.
+ * Dispatches to quick (single-shot) or deep (2-stage agentic) mode.
  */
 export async function generateDiagramFromSketch(
     imageFile: File | Blob,
     options?: SketchOptions,
+    onProgress?: (stage: string) => void,
+): Promise<GenerateResult> {
+    if (options?.mode === 'deep') {
+        return generateDiagramFromSketchDeep(imageFile, options, onProgress);
+    }
+    return generateDiagramFromSketchQuick(imageFile, options, onProgress);
+}
+
+// ── Sketch Quick Mode (single vision LLM call) ──────────────
+
+async function generateDiagramFromSketchQuick(
+    imageFile: File | Blob,
+    options?: SketchOptions,
+    onProgress?: (stage: string) => void,
 ): Promise<GenerateResult> {
     const startTime = Date.now();
 
@@ -272,6 +287,8 @@ export async function generateDiagramFromSketch(
         ? `Convert this sketch into a YappyDraw diagram. Additional context: ${options.additionalPrompt}`
         : 'Convert this hand-drawn sketch into a YappyDraw diagram. Identify all shapes, text labels, and connections. Output only the JSON.';
 
+    onProgress?.('Generating from sketch...');
+
     let llmResponse: LLMResponse;
     try {
         llmResponse = await callLLM({
@@ -303,6 +320,137 @@ export async function generateDiagramFromSketch(
 
     // 4–6. Extract JSON, parse DSL, render to canvas
     return processLLMResponse(llmResponse.content, startTime, options, llmResponse.usage);
+}
+
+// ── Sketch Deep Mode (2-stage: vision analyst → diagram composer) ──
+
+async function generateDiagramFromSketchDeep(
+    imageFile: File | Blob,
+    options?: SketchOptions,
+    onProgress?: (stage: string) => void,
+): Promise<GenerateResult> {
+    const startTime = Date.now();
+
+    // 1. Load config and validate
+    const config = loadAIConfig();
+    const provider = options?.provider ?? config.activeProvider;
+    const providerConfig = config.providers[provider];
+    const apiKey = getApiKey(provider);
+
+    if (!apiKey) {
+        return {
+            success: false,
+            error: `No API key configured for ${provider}. Open AI Settings to add one.`,
+        };
+    }
+
+    // 2. Process image for vision API
+    let image: { base64: string; mediaType: string };
+    try {
+        image = await processImageForVision(imageFile);
+    } catch (err: any) {
+        return {
+            success: false,
+            error: `Image processing failed: ${err.message}`,
+            duration: Date.now() - startTime,
+        };
+    }
+
+    const model = options?.model ?? providerConfig.model;
+
+    // ── Stage 1: Vision Research Agent ──
+    onProgress?.('Analyzing image deeply...');
+
+    const userPrompt = buildVisionResearchUserPrompt(options?.additionalPrompt);
+    let researchResponse: LLMResponse;
+    try {
+        researchResponse = await callLLM({
+            provider,
+            model,
+            apiKey,
+            systemPrompt: VISION_RESEARCH_PROMPT,
+            userPrompt,
+            images: [{ base64: image.base64, mediaType: image.mediaType }],
+            temperature: 0.5,
+            maxTokens: 8192,
+        });
+    } catch (err: any) {
+        return {
+            success: false,
+            error: `Vision analysis failed: ${err.message}`,
+            duration: Date.now() - startTime,
+            stage: 'research',
+        };
+    }
+
+    if (!researchResponse.success) {
+        return {
+            success: false,
+            error: `Vision analysis failed: ${researchResponse.error ?? 'Unknown error'}`,
+            rawResponse: researchResponse.content,
+            duration: Date.now() - startTime,
+            stage: 'research',
+        };
+    }
+
+    // Accumulate token usage
+    const totalUsage = {
+        promptTokens: researchResponse.usage?.promptTokens || 0,
+        completionTokens: researchResponse.usage?.completionTokens || 0,
+    };
+
+    // Validate research output is parseable JSON
+    const researchJSON = extractJSON(researchResponse.content);
+    if (!researchJSON) {
+        return {
+            success: false,
+            error: 'Vision analysis returned invalid JSON — the image may be too complex or unclear. Try adding a description.',
+            rawResponse: researchResponse.content,
+            duration: Date.now() - startTime,
+            stage: 'research',
+        };
+    }
+
+    // ── Stage 2: Diagram Composer (reuse text deep mode composer) ──
+    onProgress?.('Composing detailed diagram...');
+
+    const composerSystemPrompt = buildDeepDiagramSystemPrompt();
+    let composerResponse: LLMResponse;
+    try {
+        composerResponse = await callLLM({
+            provider,
+            model,
+            apiKey,
+            systemPrompt: composerSystemPrompt,
+            userPrompt: researchJSON,
+            temperature: 0.3,
+            maxTokens: 8192,
+        });
+    } catch (err: any) {
+        return {
+            success: false,
+            error: `Diagram composer failed: ${err.message}`,
+            duration: Date.now() - startTime,
+            stage: 'composer',
+        };
+    }
+
+    if (!composerResponse.success) {
+        return {
+            success: false,
+            error: `Diagram composer failed: ${composerResponse.error ?? 'Unknown error'}`,
+            rawResponse: composerResponse.content,
+            duration: Date.now() - startTime,
+            stage: 'composer',
+        };
+    }
+
+    // Add composer usage
+    totalUsage.promptTokens += composerResponse.usage?.promptTokens || 0;
+    totalUsage.completionTokens += composerResponse.usage?.completionTokens || 0;
+
+    // 3–5. Extract JSON, parse DSL, render to canvas
+    return processLLMResponse(composerResponse.content, startTime, options, totalUsage);
 }
 
 // ── Shared Pipeline ─────────────────────────────────────────

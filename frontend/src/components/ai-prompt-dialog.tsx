@@ -150,7 +150,8 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                 res = await generateDiagramFromSketch(sketch, {
                     clearCanvas: clearCanvas(),
                     additionalPrompt: text || undefined,
-                });
+                    mode: deepMode() ? 'deep' : 'quick',
+                }, (stage) => setProgressStage(stage));
             } else {
                 res = await generateDiagram(text, {
                     clearCanvas: clearCanvas(),
@@ -274,8 +275,7 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                                 />
                                 <span>Clear canvas before generating</span>
                             </label>
-                            <Show when={!hasSketch()}>
-                                <label class="ai-prompt-checkbox" title="2-stage AI pipeline: researches the topic deeply, then composes a detailed diagram with more components and connections">
+                                <label class="ai-prompt-checkbox" title={hasSketch() ? '2-stage AI pipeline: analyzes the image deeply to extract all nodes and connections, then composes a detailed diagram' : '2-stage AI pipeline: researches the topic deeply, then composes a detailed diagram with more components and connections'}>
                                     <input
                                         type="checkbox"
                                         checked={deepMode()}
@@ -285,7 +285,6 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                                     <BrainCircuit size={13} />
                                     <span>Deep Mode</span>
                                 </label>
-                            </Show>
                             <Show when={features.enableRocketExport && !hasSketch()}>
                                 <label class="ai-prompt-checkbox">
                                     <input

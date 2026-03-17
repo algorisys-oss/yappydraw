@@ -14,6 +14,7 @@ import { mergeNodeStyle, mergeEdgeStyle, mapStyleToOptions } from './render-help
 import { computeLayout } from '../layout/layout-manager';
 import { YappyAPI } from '../../api';
 import { store, setStore, pushToHistory, deleteElements } from '../../store/app-store';
+import { fitShapeToText, getMeasurementRenderer } from '../../utils/text-utils';
 
 /**
  * Render a DSLDiagram to the canvas.
@@ -40,6 +41,10 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
         setStore("showSlideNavigator", false);
         setStore("activeSlideIndex", 0);
     }
+
+    // Pre-compute text-fitted sizes on nodes that lack explicit dimensions.
+    // This ensures the layout engine spaces nodes correctly based on label length.
+    applyAutoSizing(diagram.nodes);
 
     const allNodes = flattenNodes(diagram.nodes);
     const hasPools = diagram.pools && diagram.pools.length > 0;
@@ -427,4 +432,60 @@ function findLaneIndex(diagram: DSLDiagram, poolId: string, laneId: string): num
     const pool = diagram.pools?.find(p => p.id === poolId);
     if (!pool) return -1;
     return pool.lanes.findIndex(l => l.id === laneId);
+}
+
+/**
+ * Walk the DSLNode tree and stamp auto-sized width/height on nodes whose
+ * DSL didn't provide explicit dimensions. This ensures the layout engine
+ * allocates enough space for every label *before* positioning begins.
+ */
+function applyAutoSizing(nodes: DSLNode[]): void {
+    for (const node of nodes) {
+        if (!node.width && !node.height && node.label) {
+            const resolvedType = resolveShapeType(node.shape) as ElementType;
+            if (resolvedType === 'text') continue;
+            const defaults = getShapeDefaults(resolvedType);
+            const fitted = computeFittedSize(resolvedType, node.label, defaults, node.style?.fontSize);
+            node.width = Math.max(defaults.width, fitted.width);
+            node.height = Math.max(defaults.height, fitted.height);
+        }
+        if (node.children && node.children.length > 0) {
+            applyAutoSizing(node.children);
+        }
+    }
+}
+
+/**
+ * Compute text-fitted dimensions for a node label.
+ * Uses the shared offscreen canvas renderer to measure text accurately,
+ * ensuring shapes are large enough to contain their labels.
+ */
+function computeFittedSize(
+    type: ElementType,
+    label: string,
+    defaults: { width: number; height: number },
+    fontSize?: number,
+): { width: number; height: number } {
+    try {
+        const renderer = getMeasurementRenderer();
+        const fitted = fitShapeToText(renderer, {
+            type,
+            width: defaults.width,
+            height: defaults.height,
+            fontSize: fontSize ?? 16,
+        }, label);
+        return {
+            width: Math.ceil(fitted.width),
+            height: Math.ceil(fitted.height),
+        };
+    } catch {
+        // Fallback: simple character-count heuristic if canvas unavailable
+        const fs = fontSize ?? 16;
+        const charWidth = fs * 0.6;
+        const padding = 32;
+        const estWidth = Math.max(defaults.width, label.length * charWidth + padding);
+        const lines = Math.ceil((label.length * charWidth) / (estWidth - padding));
+        const estHeight = Math.max(defaults.height, lines * fs * 1.4 + padding);
+        return { width: estWidth, height: estHeight };
+    }
 }

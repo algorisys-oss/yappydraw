@@ -134,6 +134,14 @@
     color: var(--text-primary);
 }
 
+.brainstorm-toggle {
+    opacity: 0.5;
+    transition: opacity 0.2s, background-color 0.2s;
+}
+.brainstorm-toggle:hover {
+    opacity: 1;
+}
+
 .toolbar-btn.active {
     background-color: var(--primary-light);
     /* Use theme variable */

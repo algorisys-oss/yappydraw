@@ -2,7 +2,7 @@ import { type Component, For, createSignal, onMount, onCleanup } from "solid-js"
 import { store, setSelectedTool, addElement, setStore } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import type { ToolType } from "../types";
-import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop } from "lucide-solid";
+import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen } from "lucide-solid";
 import PenToolGroup from "./pen-tool-group";
 import TextToolGroup from "./text-tool-group";
 import ShapeToolGroup from "./shape-tool-group";
@@ -47,6 +47,22 @@ const utilityTools: { type: ToolType; icon: Component<{ size?: number; color?: s
     { type: 'ink', icon: Highlighter, label: 'Ink Overlay (Alt+I)' },
 ];
 
+// Brainstorm mode: minimal flat toolbar for quick ideation
+const brainstormTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string; setSubType?: () => void }[] = [
+    { type: 'selection', icon: MousePointer2, label: 'Selection (V)', hotkey: '1' },
+    { type: 'fineliner', icon: Pen, label: 'Pen (P)', hotkey: '7' },
+    { type: 'line', icon: Minus, label: 'Line' },
+    { type: 'arrow', icon: MoveUpRight, label: 'Arrow (5)', hotkey: '5' },
+    { type: 'rectangle', icon: Square, label: 'Rectangle (2)', hotkey: '2' },
+    { type: 'diamond', icon: Diamond, label: 'Diamond (3)', hotkey: '3' },
+    { type: 'circle', icon: Circle, label: 'Ellipse (4)', hotkey: '4' },
+    { type: 'text', icon: Type, label: 'Text (8)', hotkey: '8' },
+    { type: 'image', icon: ImageIcon, label: 'Image (9)', hotkey: '9' },
+    { type: 'eraser', icon: Eraser, label: 'Eraser (0)', hotkey: '0' },
+];
+
+const BRAINSTORM_KEY = 'yappy-brainstorm-mode';
+
 const Toolbar: Component = () => {
     let fileInputRef: HTMLInputElement | null = null;
     const [showVideoDialog, setShowVideoDialog] = createSignal(false);
@@ -54,6 +70,13 @@ const Toolbar: Component = () => {
     const [isDragging, setIsDragging] = createSignal(false);
     const [dragStart, setDragStart] = createSignal({ x: 0, y: 0 });
     const [isMobile, setIsMobile] = createSignal(window.innerWidth <= 768);
+    const [brainstormMode, setBrainstormMode] = createSignal(localStorage.getItem(BRAINSTORM_KEY) !== 'false');
+
+    const toggleBrainstormMode = () => {
+        const next = !brainstormMode();
+        setBrainstormMode(next);
+        localStorage.setItem(BRAINSTORM_KEY, String(next));
+    };
 
     const onMouseDown = (e: MouseEvent) => {
         // Drag if clicked on the container's padding or gaps, or the handle itself
@@ -265,98 +288,128 @@ const Toolbar: Component = () => {
                 accept="image/*"
                 style={{ display: 'none' }}
             />
-            {/* Pan, Selection */}
-            <For each={navTools}>
-                {(tool) => (
-                    <button
-                        class={`toolbar-btn ${store.selectedTool === tool.type ? 'active' : ''}`}
-                        onClick={() => handleToolClick(tool.type)}
-                        onContextMenu={handleRightClick}
-                        title={tool.label}
-                    >
-                        <tool.icon size={18} />
-                        {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
-                    </button>
-                )}
-            </For>
 
-            {/* Pen Tool Group (Fine Liner, Ink Brush, Marker) */}
-            <PenToolGroup />
+            {/* Brainstorm / Full toggle */}
+            <button
+                class="toolbar-btn brainstorm-toggle"
+                onClick={toggleBrainstormMode}
+                title={brainstormMode() ? 'Full Toolbar' : 'Brainstorm Mode'}
+            >
+                {brainstormMode() ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            </button>
 
-            {/* Connector Tool Group (Arrow, Line, Bezier, Polyline) */}
-            <ConnectorToolGroup />
+            {brainstormMode() ? (
+                /* ── Brainstorm Mode: flat minimal toolbar ── */
+                <For each={brainstormTools}>
+                    {(tool) => (
+                        <button
+                            class={`toolbar-btn ${store.selectedTool === tool.type ? 'active' : ''}`}
+                            onClick={() => handleToolClick(tool.type)}
+                            onContextMenu={handleRightClick}
+                            title={tool.label}
+                        >
+                            <tool.icon size={18} />
+                            {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
+                        </button>
+                    )}
+                </For>
+            ) : (
+                /* ── Full Mode: all tool groups ── */
+                <>
+                    {/* Pan, Selection */}
+                    <For each={navTools}>
+                        {(tool) => (
+                            <button
+                                class={`toolbar-btn ${store.selectedTool === tool.type ? 'active' : ''}`}
+                                onClick={() => handleToolClick(tool.type)}
+                                onContextMenu={handleRightClick}
+                                title={tool.label}
+                            >
+                                <tool.icon size={18} />
+                                {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
+                            </button>
+                        )}
+                    </For>
 
-            {/* Shape Tool Group (Rectangle, Circle, Diamond, Triangle, Hexagon, etc.) */}
-            <ShapeToolGroup />
+                    {/* Pen Tool Group (Fine Liner, Ink Brush, Marker) */}
+                    <PenToolGroup />
 
-            {/* Mindmap Tool Group (Organic Branch, Central Topic) */}
-            <MindmapToolGroup />
+                    {/* Connector Tool Group (Arrow, Line, Bezier, Polyline) */}
+                    <ConnectorToolGroup />
 
-            {/* Sketchnote & People Group (Stick Figure, Star Person, Lightbulb, etc.) */}
-            <SketchnoteToolGroup />
+                    {/* Shape Tool Group (Rectangle, Circle, Diamond, Triangle, Hexagon, etc.) */}
+                    <ShapeToolGroup />
 
-            {/* Status & Annotation Group (Checkbox, Badge, Tag, Pin, etc.) */}
-            <StatusToolGroup />
+                    {/* Mindmap Tool Group (Organic Branch, Central Topic) */}
+                    <MindmapToolGroup />
 
-            {/* Cloud & Container Infrastructure (Kubernetes, Container, API Gateway, etc.) */}
-            <CloudInfraToolGroup />
+                    {/* Sketchnote & People Group (Stick Figure, Star Person, Lightbulb, etc.) */}
+                    <SketchnoteToolGroup />
 
-            {/* Data & Metrics (Bar Chart, Pie Chart, Trend, Funnel, Gauge, Table) */}
-            <DataMetricsToolGroup />
+                    {/* Status & Annotation Group (Checkbox, Badge, Tag, Pin, etc.) */}
+                    <StatusToolGroup />
 
-            {/* Connection & Relationship (Puzzle, Chain, Bridge, Magnet, Scale, etc.) */}
-            <ConnectionRelToolGroup />
+                    {/* Cloud & Container Infrastructure (Kubernetes, Container, API Gateway, etc.) */}
+                    <CloudInfraToolGroup />
 
-            {/* Infrastructure Tool Group (Server, LB, Cloud, User, etc.) */}
-            <InfraToolGroup />
+                    {/* Data & Metrics (Bar Chart, Pie Chart, Trend, Funnel, Gauge, Table) */}
+                    <DataMetricsToolGroup />
 
-            {/* Wireframing Essentials (Browser Window, Mobile, Input, Button) */}
-            <WireframeToolGroup />
+                    {/* Connection & Relationship (Puzzle, Chain, Bridge, Magnet, Scale, etc.) */}
+                    <ConnectionRelToolGroup />
 
-            {/* Data Structures (Array, Stack, Queue, LinkedList, BinaryTree, HashTable) */}
-            <DsToolGroup />
+                    {/* Infrastructure Tool Group (Server, LB, Cloud, User, etc.) */}
+                    <InfraToolGroup />
 
-            {/* Technical Diagramming Group (DFD, Isometric Cube, Cylinder) */}
-            <TechnicalToolGroup />
+                    {/* Wireframing Essentials (Browser Window, Mobile, Input, Button) */}
+                    <WireframeToolGroup />
 
-            {/* UML Tool Group (Class, Actor, UseCase) */}
-            <UmlToolGroup />
+                    {/* Data Structures (Array, Stack, Queue, LinkedList, BinaryTree, HashTable) */}
+                    <DsToolGroup />
 
-            {/* BPMN Tool Group (Events, Gateways, Activities, Artifacts) */}
-            <BpmnToolGroup />
+                    {/* Technical Diagramming Group (DFD, Isometric Cube, Cylinder) */}
+                    <TechnicalToolGroup />
 
-            {/* Text Tool Group (Text, Rich Text) */}
-            <TextToolGroup />
+                    {/* UML Tool Group (Class, Actor, UseCase) */}
+                    <UmlToolGroup />
 
-            {/* Lasso & Crop */}
-            <For each={selectUtilTools}>
-                {(tool) => (
-                    <button
-                        class={`toolbar-btn ${store.selectedTool === tool.type ? 'active' : ''}`}
-                        onClick={() => handleToolClick(tool.type)}
-                        onContextMenu={handleRightClick}
-                        title={tool.label}
-                    >
-                        <tool.icon size={18} />
-                        {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
-                    </button>
-                )}
-            </For>
+                    {/* BPMN Tool Group (Events, Gateways, Activities, Artifacts) */}
+                    <BpmnToolGroup />
 
-            {/* Image, Eraser, Laser, Ink */}
-            <For each={utilityTools}>
-                {(tool) => (
-                    <button
-                        class={`toolbar-btn ${store.selectedTool === tool.type ? 'active' : ''}`}
-                        onClick={() => handleToolClick(tool.type)}
-                        onContextMenu={handleRightClick}
-                        title={tool.label}
-                    >
-                        <tool.icon size={18} />
-                        {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
-                    </button>
-                )}
-            </For>
+                    {/* Text Tool Group (Text, Rich Text) */}
+                    <TextToolGroup />
+
+                    {/* Lasso & Crop */}
+                    <For each={selectUtilTools}>
+                        {(tool) => (
+                            <button
+                                class={`toolbar-btn ${store.selectedTool === tool.type ? 'active' : ''}`}
+                                onClick={() => handleToolClick(tool.type)}
+                                onContextMenu={handleRightClick}
+                                title={tool.label}
+                            >
+                                <tool.icon size={18} />
+                                {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
+                            </button>
+                        )}
+                    </For>
+
+                    {/* Image, Eraser, Laser, Ink */}
+                    <For each={utilityTools}>
+                        {(tool) => (
+                            <button
+                                class={`toolbar-btn ${store.selectedTool === tool.type ? 'active' : ''}`}
+                                onClick={() => handleToolClick(tool.type)}
+                                onContextMenu={handleRightClick}
+                                title={tool.label}
+                            >
+                                <tool.icon size={18} />
+                                {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
+                            </button>
+                        )}
+                    </For>
+                </>
+            )}
 
             <VideoUrlDialog
                 isOpen={showVideoDialog()}
