@@ -106,6 +106,9 @@ interface AppState {
 
     // Video Playback
     activeVideoElementIds: string[];
+
+    // Monotonic counter bumped by mutations that don't otherwise trigger autosave signals
+    dirtyRevision: number;
 }
 
 const initialDoc = createSlideDocument();
@@ -239,6 +242,7 @@ const initialState: AppState = {
     cropModeElementId: null,
     cropRect: null,
     activeVideoElementIds: [],
+    dirtyRevision: 0,
 };
 
 export const [store, setStore] = createStore<AppState>(initialState);
@@ -249,27 +253,52 @@ export const setAppMode = (mode: AppMode) => {
     setStore('appMode', mode);
 };
 
-// History Stacks - Now include layers
+/** Bump to notify autosave of mutations that don't change array lengths or push history */
+export const bumpDirtyRevision = () => {
+    setStore('dirtyRevision', store.dirtyRevision + 1);
+};
+
+// History Stacks - include full document state
 interface HistorySnapshot {
     elements: DrawingElement[];
     layers: Layer[];
+    slides: Slide[];
+    states: DisplayState[];
+    gridSettings: GridSettings;
+    canvasBackgroundColor: string;
+    docType: 'infinite' | 'slides';
 }
 const undoStack: HistorySnapshot[] = [];
 const redoStack: HistorySnapshot[] = [];
 
+const deepCopy = <T>(val: T): T => val != null ? JSON.parse(JSON.stringify(val)) : val;
+
+const captureSnapshot = (): HistorySnapshot => ({
+    elements: deepCopy(store.elements) ?? [],
+    layers: deepCopy(store.layers) ?? [],
+    slides: deepCopy(store.slides) ?? [],
+    states: deepCopy(store.states) ?? [],
+    gridSettings: deepCopy(store.gridSettings),
+    canvasBackgroundColor: store.canvasBackgroundColor,
+    docType: store.docType,
+});
+
+const restoreSnapshot = (snapshot: HistorySnapshot) => {
+    setStore("elements", snapshot.elements);
+    setStore("layers", snapshot.layers);
+    setStore("slides", snapshot.slides);
+    setStore("states", snapshot.states);
+    setStore("gridSettings", snapshot.gridSettings);
+    setStore("canvasBackgroundColor", snapshot.canvasBackgroundColor);
+    setStore("docType", snapshot.docType);
+    setStore("selection", []); // Clear selection to avoid stale IDs
+};
+
 export const pushToHistory = () => {
-    // Deep copy current elements and layers
-    const snapshot: HistorySnapshot = {
-        elements: JSON.parse(JSON.stringify(store.elements)),
-        layers: JSON.parse(JSON.stringify(store.layers))
-    };
-    undoStack.push(snapshot);
-    // Limit stack size? Say 50
+    undoStack.push(captureSnapshot());
     if (undoStack.length > 50) undoStack.shift();
-    // Clear redo
     redoStack.length = 0;
 
-    // Update store for reactivity
     setStore("undoStackLength", undoStack.length);
     setStore("redoStackLength", 0);
 };
@@ -277,22 +306,13 @@ export const pushToHistory = () => {
 export const undo = () => {
     if (undoStack.length === 0) return;
 
-    // Save current state to redo
-    const currentSnapshot: HistorySnapshot = {
-        elements: JSON.parse(JSON.stringify(store.elements)),
-        layers: JSON.parse(JSON.stringify(store.layers))
-    };
-    redoStack.push(currentSnapshot);
+    redoStack.push(captureSnapshot());
 
-    // Restore from undo
     const previousState = undoStack.pop();
     if (previousState) {
-        setStore("elements", previousState.elements);
-        setStore("layers", previousState.layers);
-        setStore("selection", []); // Clear selection to avoid stale IDs
+        restoreSnapshot(previousState);
     }
 
-    // Update store for reactivity
     setStore("undoStackLength", undoStack.length);
     setStore("redoStackLength", redoStack.length);
 };
@@ -300,22 +320,13 @@ export const undo = () => {
 export const redo = () => {
     if (redoStack.length === 0) return;
 
-    // Save current to undo
-    const currentSnapshot: HistorySnapshot = {
-        elements: JSON.parse(JSON.stringify(store.elements)),
-        layers: JSON.parse(JSON.stringify(store.layers))
-    };
-    undoStack.push(currentSnapshot);
+    undoStack.push(captureSnapshot());
 
-    // Restore from redo
     const nextState = redoStack.pop();
     if (nextState) {
-        setStore("elements", nextState.elements);
-        setStore("layers", nextState.layers);
-        setStore("selection", []); // Clear selection to avoid stale IDs
+        restoreSnapshot(nextState);
     }
 
-    // Update store for reactivity
     setStore("undoStackLength", undoStack.length);
     setStore("redoStackLength", redoStack.length);
 };
@@ -1222,6 +1233,20 @@ export const deleteSlide = (index: number) => {
 
     pushToHistory();
 
+    // Identify elements whose center lies inside the deleted slide's bounds
+    const deletedSlide = store.slides[index];
+    const { x: sX, y: sY } = deletedSlide.spatialPosition;
+    const { width: sW, height: sH } = deletedSlide.dimensions;
+    const orphanIds = new Set(
+        store.elements
+            .filter(el => {
+                const cx = el.x + (el.width || 0) / 2;
+                const cy = el.y + (el.height || 0) / 2;
+                return cx >= sX && cx <= sX + sW && cy >= sY && cy <= sY + sH;
+            })
+            .map(el => el.id)
+    );
+
     // Clone distinct from store
     const newSlides = store.slides
         .filter((_, i) => i !== index)
@@ -1240,6 +1265,9 @@ export const deleteSlide = (index: number) => {
     const deletingActive = index === store.activeSlideIndex;
 
     batch(() => {
+        if (orphanIds.size > 0) {
+            setStore("elements", els => els.filter(el => !orphanIds.has(el.id)));
+        }
         setStore("slides", newSlides);
         if (deletingActive) {
             setStore("activeSlideIndex", -1);
@@ -1294,6 +1322,7 @@ export const updateSlideTransition = (slideIndex: number, transition: Partial<Sl
         ...currentTransition,
         ...transition
     });
+    bumpDirtyRevision();
 };
 
 /**
@@ -1319,6 +1348,7 @@ export const updateSlideBackground = (slideIndex: number, updates: Partial<Slide
             setStore("canvasBackgroundColor", updates.backgroundColor);
         }
     }
+    bumpDirtyRevision();
 };
 
 export const loadDocument = (doc: any) => {
@@ -1483,6 +1513,7 @@ export const addDisplayState = (name: string) => {
     const newState: DisplayState = { id, name, overrides: overrides as any };
     setStore("states", (prev) => [...prev, newState]);
     setStore("activeStateId", id);
+    bumpDirtyRevision();
     showToast(`State "${name}" captured`, 'success');
 };
 
@@ -1506,6 +1537,7 @@ export const updateDisplayState = (id: string) => {
     });
 
     setStore("states", stateIndex, "overrides", overrides as any);
+    bumpDirtyRevision();
     showToast(`State updated`, 'success');
 };
 
@@ -1514,6 +1546,7 @@ export const deleteDisplayState = (id: string) => {
     if (store.activeStateId === id) {
         setStore("activeStateId", undefined);
     }
+    bumpDirtyRevision();
     showToast(`State deleted`, 'info');
 };
 
@@ -1943,17 +1976,46 @@ export const duplicateLayer = (id: string) => {
         expanded: original.expanded
     };
 
-    // Duplicate all elements on this layer
+    // Duplicate all elements on this layer with binding remapping
     const elementsOnLayer = store.elements.filter(el => el.layerId === id);
     const layerBatchIds = new Set<string>();
-    const duplicatedElements = elementsOnLayer.map(el => ({
-        ...el,
-        id: generateId(el.type, layerBatchIds),
-        layerId: newLayerId,
-        // Offset duplicated elements slightly so they're visible
-        x: el.x + 10,
-        y: el.y + 10
-    }));
+    const idMap = new Map<string, string>();
+    elementsOnLayer.forEach(el => idMap.set(el.id, generateId(el.type, layerBatchIds)));
+
+    const duplicatedElements = elementsOnLayer.map(el => {
+        const newEl: DrawingElement = JSON.parse(JSON.stringify(el));
+        newEl.id = idMap.get(el.id)!;
+        newEl.layerId = newLayerId;
+        newEl.x += 10;
+        newEl.y += 10;
+
+        // Remap internal bindings (same pattern as duplicateSlide)
+        if (newEl.startBinding && idMap.has(newEl.startBinding.elementId)) {
+            newEl.startBinding.elementId = idMap.get(newEl.startBinding.elementId)!;
+        } else if (newEl.startBinding) {
+            newEl.startBinding = undefined;
+        }
+
+        if (newEl.endBinding && idMap.has(newEl.endBinding.elementId)) {
+            newEl.endBinding.elementId = idMap.get(newEl.endBinding.elementId)!;
+        } else if (newEl.endBinding) {
+            newEl.endBinding = undefined;
+        }
+
+        if (newEl.boundElements) {
+            newEl.boundElements = newEl.boundElements
+                .filter(b => idMap.has(b.id))
+                .map(b => ({ ...b, id: idMap.get(b.id)! }));
+        }
+
+        if (newEl.parentId && idMap.has(newEl.parentId)) {
+            newEl.parentId = idMap.get(newEl.parentId)!;
+        } else if (newEl.parentId) {
+            newEl.parentId = undefined;
+        }
+
+        return newEl;
+    });
 
     // Add new layer and elements
     setStore('layers', [...store.layers, newLayer]);

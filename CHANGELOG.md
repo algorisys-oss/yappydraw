@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.9] - 2026-03-18
+
+### Fixed
+- **Backend path traversal guard** — `startsWith(DATA_DIR)` was bypassable for sibling paths sharing the `data` prefix (e.g. `../data2/secrets`); now compares against `DATA_DIR + path.sep`
+- **Slide deletion orphans elements** — deleting a slide now removes elements whose centers lie within the slide's spatial bounds, matching the ownership model used by `duplicateSlide`
+- **Undo/redo snapshots incomplete** — history snapshots now capture `slides`, `states`, `gridSettings`, `canvasBackgroundColor`, and `docType` so undo truly restores full document state
+- **Autosave misses silent edits** — slide transition/background changes and display state mutations now trigger autosave via a `dirtyRevision` counter; `states.length` also tracked
+- **Layer duplication stale bindings** — duplicated elements now get remapped `startBinding`, `endBinding`, `boundElements`, and `parentId` references (same pattern as `duplicateSlide`)
+
 ## [0.25.8] - 2026-03-17
 
 ### Added

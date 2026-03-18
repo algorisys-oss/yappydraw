@@ -39,7 +39,9 @@ export function initAutoSave(): void {
                 store.elements.length,
                 store.slides.length,
                 store.layers.length,
+                store.states.length,
                 store.docType,
+                store.dirtyRevision,
             ],
             () => {
                 if (_isSaving) return;
@@ -164,12 +166,12 @@ function performAutoSave(): void {
                 updatedAt: new Date().toISOString(),
                 docType: store.docType,
             },
-            elements: JSON.parse(JSON.stringify(store.elements)),
-            layers: JSON.parse(JSON.stringify(store.layers)),
-            slides: JSON.parse(JSON.stringify(store.slides)),
-            globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
-            gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
-            states: JSON.parse(JSON.stringify(store.states)),
+            elements: JSON.parse(JSON.stringify(store.elements ?? [])),
+            layers: JSON.parse(JSON.stringify(store.layers ?? [])),
+            slides: JSON.parse(JSON.stringify(store.slides ?? [])),
+            globalSettings: JSON.parse(JSON.stringify(store.globalSettings ?? {})),
+            gridSettings: JSON.parse(JSON.stringify(store.gridSettings ?? {})),
+            states: JSON.parse(JSON.stringify(store.states ?? [])),
         };
 
         const json = JSON.stringify(slideDoc);
