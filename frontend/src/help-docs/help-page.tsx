@@ -32,6 +32,7 @@ const TableDoc = lazy(() => import('./shapes/table-doc'));
 const AnimationDoc = lazy(() => import('./features/animation-doc'));
 const EmbeddingDoc = lazy(() => import('./features/embedding-doc'));
 const YslTutorialDoc = lazy(() => import('./features/ysl-tutorial-doc'));
+const BulkEditingDoc = lazy(() => import('./features/bulk-editing-doc'));
 
 // Registry of all shape documentation - organized by category in logical sequence
 const shapeDocuments: ShapeDoc[] = [
@@ -152,6 +153,14 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Features',
         description: 'Create diagrams from text using the Yappy Scripting Language',
         content: YslTutorialDoc
+    },
+    {
+        id: 'bulk-editing',
+        name: 'Bulk Editing',
+        icon: '✏️',
+        category: 'Features',
+        description: 'Select and edit multiple shapes at once with common property editing',
+        content: BulkEditingDoc
     },
 ];
 

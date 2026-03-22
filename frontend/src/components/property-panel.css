@@ -587,3 +587,31 @@ input[type="text"] {
 .uml-add-option:hover {
     background: var(--bg-hover, rgba(59, 130, 246, 0.1));
 }
+
+/* ─── Multi-select & Mixed Value Indicators ─────────────────── */
+
+.multi-select-summary {
+    padding: 4px 12px 8px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.mixed-badge {
+    display: inline-block;
+    font-size: 10px;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin-left: 12px;
+    margin-bottom: 2px;
+}
+
+.mixed-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-weight: normal;
+    font-style: italic;
+}

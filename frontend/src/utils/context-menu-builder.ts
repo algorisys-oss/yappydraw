@@ -39,6 +39,128 @@ import {
 } from './table-utils';
 import type { TableCellFormat, TableCellBorder, TableBorderStyle } from '../types';
 
+// Shape type categories for "Select by Type" menu
+const LINEAR_TYPES = ['line', 'arrow'];
+const TEXT_TYPES = ['text', 'richtext', 'stickyNote'];
+const IMAGE_TYPES = ['image'];
+const VIDEO_TYPES = ['video'];
+
+const TYPE_CATEGORIES: { label: string; types: string[] }[] = [
+    { label: 'Lines & Arrows', types: LINEAR_TYPES },
+    { label: 'Text & Notes', types: TEXT_TYPES },
+    { label: 'Images', types: IMAGE_TYPES },
+    { label: 'Videos', types: VIDEO_TYPES },
+];
+
+function buildSelectByTypeMenu(): MenuItem[] {
+    const items: MenuItem[] = [];
+
+    // Category-based selections
+    for (const cat of TYPE_CATEGORIES) {
+        const matching = store.elements.filter(e => cat.types.includes(e.type));
+        if (matching.length > 0) {
+            items.push({
+                label: `All ${cat.label} (${matching.length})`,
+                onClick: () => setStore('selection', matching.map(e => e.id))
+            });
+        }
+    }
+
+    // "All Shapes" — everything that's NOT linear, text, image, video
+    const specialTypes = new Set([...LINEAR_TYPES, ...TEXT_TYPES, ...IMAGE_TYPES, ...VIDEO_TYPES]);
+    const shapes = store.elements.filter(e => !specialTypes.has(e.type));
+    if (shapes.length > 0) {
+        items.push({
+            label: `All Shapes (${shapes.length})`,
+            onClick: () => setStore('selection', shapes.map(e => e.id))
+        });
+    }
+
+    if (items.length > 0) items.push({ separator: true });
+
+    // Dynamic: list each unique type present on canvas
+    const typeCounts: Record<string, string[]> = {};
+    store.elements.forEach(e => {
+        if (!typeCounts[e.type]) typeCounts[e.type] = [];
+        typeCounts[e.type].push(e.id);
+    });
+
+    const sorted = Object.entries(typeCounts).sort((a, b) => b[1].length - a[1].length);
+    for (const [type, ids] of sorted) {
+        if (ids.length > 0) {
+            items.push({
+                label: `${type} (${ids.length})`,
+                onClick: () => setStore('selection', [...ids])
+            });
+        }
+    }
+
+    // "Same as Selected" — select all elements of the same type(s) as current selection
+    if (store.selection.length > 0) {
+        const selectedTypes = new Set(
+            store.selection
+                .map(id => store.elements.find(e => e.id === id)?.type)
+                .filter(Boolean) as string[]
+        );
+        if (selectedTypes.size > 0) {
+            const matching = store.elements.filter(e => selectedTypes.has(e.type));
+            if (matching.length > store.selection.length) {
+                items.unshift({
+                    label: `All Same Type (${matching.length})`,
+                    onClick: () => setStore('selection', matching.map(e => e.id))
+                });
+                items.splice(1, 0, { separator: true });
+            }
+        }
+    }
+
+    return items;
+}
+
+// Properties to match against for "Select by Same Property"
+const MATCHABLE_PROPERTIES: { key: string; label: string; format?: (v: any) => string }[] = [
+    { key: 'backgroundColor', label: 'Fill Color', format: v => v || 'transparent' },
+    { key: 'strokeColor', label: 'Stroke Color' },
+    { key: 'textColor', label: 'Text Color' },
+    { key: 'strokeWidth', label: 'Stroke Width', format: v => `${v}px` },
+    { key: 'fontSize', label: 'Font Size', format: v => `${v}px` },
+    { key: 'fontFamily', label: 'Font Family' },
+    { key: 'opacity', label: 'Opacity', format: v => `${Math.round((v ?? 1) * 100)}%` },
+    { key: 'fillStyle', label: 'Fill Style' },
+    { key: 'strokeStyle', label: 'Stroke Style' },
+    { key: 'renderStyle', label: 'Drawing Style' },
+];
+
+function buildSelectBySamePropertyMenu(): MenuItem[] {
+    if (store.selection.length !== 1) return [];
+    const el = store.elements.find(e => e.id === store.selection[0]);
+    if (!el) return [];
+
+    const items: MenuItem[] = [];
+
+    for (const prop of MATCHABLE_PROPERTIES) {
+        const val = (el as any)[prop.key];
+        if (val === undefined && prop.key !== 'backgroundColor') continue;
+
+        const matching = store.elements.filter(e => {
+            const v = (e as any)[prop.key];
+            if (val == null && v == null) return true;
+            return v === val;
+        });
+
+        // Only show if there are other elements with the same value
+        if (matching.length > 1) {
+            const displayVal = prop.format ? prop.format(val) : String(val ?? 'none');
+            items.push({
+                label: `Same ${prop.label}: ${displayVal} (${matching.length})`,
+                onClick: () => setStore('selection', matching.map(e => e.id))
+            });
+        }
+    }
+
+    return items;
+}
+
 export function getContextMenuItems(
     redrawFn: () => void,
     worldX?: number,
@@ -870,6 +992,15 @@ export function getContextMenuItems(
             items.push({ label: 'Ungroup', shortcut: 'Ctrl+Shift+G', onClick: ungroupSelected });
         }
 
+        // Select by Type / Same Property
+        items.push({ label: 'Select by Type', submenu: buildSelectByTypeMenu() });
+        if (selectionCount === 1) {
+            const samePropertyMenu = buildSelectBySamePropertyMenu();
+            if (samePropertyMenu.length > 0) {
+                items.push({ label: 'Select by Same Property', submenu: samePropertyMenu });
+            }
+        }
+
         items.push({ separator: true });
 
         // Export Selection
@@ -980,6 +1111,7 @@ export function getContextMenuItems(
             { label: 'Paste', shortcut: 'Ctrl+V', onClick: pasteFromClipboard },
             { separator: true },
             { label: 'Select all', shortcut: 'Ctrl+A', onClick: () => setStore('selection', store.elements.map(e => e.id)) },
+            { label: 'Select by Type', submenu: buildSelectByTypeMenu() },
             { label: 'Zoom to Fit', shortcut: 'Ctrl+1', onClick: store.docType === 'slides' ? zoomToFitSlide : zoomToFit },
             { separator: true },
             { label: 'Show Grid', checked: store.gridSettings.enabled, onClick: toggleGrid },

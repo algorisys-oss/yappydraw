@@ -27,6 +27,10 @@ import {
     pixelGlitch, pixelBlockReveal, pixelSpiral, pixelCurtainV, pixelRandomScatter, pixelRain
 } from "../utils/animation";
 
+// ─── Mixed Value Sentinel (multi-select) ───────────────────────
+const MIXED_VALUE = Symbol('mixed');
+const isMixed = (val: any): val is typeof MIXED_VALUE => val === MIXED_VALUE;
+
 // ─── UML Add Menu ──────────────────────────────────────────────
 
 const UML_ATTR_TEMPLATES = [
@@ -635,12 +639,12 @@ const PropertyPanel: Component = () => {
                     return false;
                 }
             } else if (target.type === 'multi') {
-                // For multi-selection, show 'all' properties OR properties where at least one selected element matches
+                // For multi-selection, show 'all' properties OR properties common to ALL selected element types
                 if ((p.applicableTo as any) !== 'all') {
                     if (Array.isArray(p.applicableTo)) {
                         const selectedTypes = store.selection.map(id => store.elements.find(e => e.id === id)?.type).filter(Boolean);
-                        const hasMatch = selectedTypes.some(t => (p.applicableTo as string[]).includes(t as string));
-                        if (!hasMatch) return false;
+                        const allMatch = selectedTypes.every(t => (p.applicableTo as string[]).includes(t as string));
+                        if (!allMatch) return false;
                     } else {
                         return false;
                     }
@@ -663,6 +667,22 @@ const PropertyPanel: Component = () => {
                     currentValue = (store.defaultElementStyles as any)[depKey];
                 } else if (target.type === 'slide') {
                     currentValue = (target.data as any)[depKey];
+                } else if (target.type === 'multi') {
+                    // For multi-select, show property if ANY element satisfies the dependency
+                    const depProp = properties.find(dp => dp.key === depKey);
+                    const defaultVal = depProp?.defaultValue;
+                    const anySatisfies = store.selection.some(id => {
+                        const el = store.elements.find(e => e.id === id);
+                        if (!el) return false;
+                        let cv = (el as any)[depKey];
+                        if (cv === undefined) cv = defaultVal;
+                        if (typeof requiredVal === 'boolean') return !!cv === requiredVal;
+                        if (Array.isArray(requiredVal)) return requiredVal.includes(cv);
+                        return cv === requiredVal;
+                    });
+                    if (!anySatisfies) return false;
+                    // Skip the single-value check below
+                    return true;
                 }
 
                 // If undefined, use default from property config
@@ -961,9 +981,24 @@ const PropertyPanel: Component = () => {
             return (slide as any)[prop.key];
         }
         if (target.type === 'multi') {
-            const firstId = store.selection[0];
-            const el = store.elements.find(e => e.id === firstId);
-            return el ? (el as any)[prop.key] : undefined;
+            const elements = store.selection
+                .map(id => store.elements.find(e => e.id === id))
+                .filter(Boolean) as DrawingElement[];
+            if (elements.length === 0) return undefined;
+            const firstVal = (elements[0] as any)[prop.key];
+            const allSame = elements.every(e => {
+                const v = (e as any)[prop.key];
+                if (v === firstVal) return true;
+                if (v == null && firstVal == null) return true;
+                // Deep compare for arrays/objects
+                if (typeof v === 'object' && typeof firstVal === 'object') {
+                    return JSON.stringify(v) === JSON.stringify(firstVal);
+                }
+                return false;
+            });
+            if (!allSame) return MIXED_VALUE;
+            if (prop.key === 'roundness') return !!firstVal;
+            return firstVal;
         }
         if (target.type === 'element') {
             const val = (target.data as any)[prop.key];
@@ -987,24 +1022,33 @@ const PropertyPanel: Component = () => {
     // Helper to render a control based on config
     const renderControl = (prop: PropertyConfig) => {
         switch (prop.type) {
-            case 'color':
+            case 'color': {
+                const colorVal = () => getPropertyValue(prop);
                 return (
-                    <ColorControl
-                        prop={prop}
-                        value={getPropertyValue(prop)}
-                        onChange={(val) => handleChange(prop.key, val, activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined, false)}
-                    />
+                    <div>
+                        <Show when={isMixed(colorVal())}>
+                            <div class="mixed-badge">Mixed</div>
+                        </Show>
+                        <ColorControl
+                            prop={prop}
+                            value={isMixed(colorVal()) ? undefined : colorVal()}
+                            onChange={(val) => handleChange(prop.key, val, activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined, false)}
+                        />
+                    </div>
                 );
-            case 'slider':
+            }
+            case 'slider': {
+                const sliderVal = () => getPropertyValue(prop);
+                const sliderDisplay = () => isMixed(sliderVal()) ? prop.defaultValue : (sliderVal() ?? prop.defaultValue);
                 return (
                     <div class="control-row">
-                        <label>{prop.label}</label>
+                        <label>{prop.label}{isMixed(sliderVal()) ? <span class="mixed-label"> (Mixed)</span> : null}</label>
                         <div class="slider-group">
                             <div class="slider-wrapper">
                                 <input
                                     type="range"
                                     min={prop.min} max={prop.max} step={prop.step}
-                                    value={getPropertyValue(prop) ?? prop.defaultValue}
+                                    value={sliderDisplay()}
                                     onMouseDown={() => pushToHistory()}
                                     onInput={(e) => handleChange(prop.key, Number(e.currentTarget.value), activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined, false)}
                                 />
@@ -1013,13 +1057,15 @@ const PropertyPanel: Component = () => {
                                 type="number"
                                 class="precise-number-input"
                                 min={prop.min} max={prop.max} step={prop.step}
-                                value={getPropertyValue(prop) ?? prop.defaultValue}
+                                value={isMixed(sliderVal()) ? '' : (sliderVal() ?? prop.defaultValue)}
+                                placeholder={isMixed(sliderVal()) ? '—' : undefined}
                                 onFocus={() => pushToHistory()}
                                 onInput={(e) => handleChange(prop.key, Number(e.currentTarget.value), activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined, false)}
                             />
                         </div>
                     </div>
                 );
+            }
             case 'select': {
                 // Read target fresh in reactive/handler contexts to avoid stale closures
                 const filteredOptions = () => {
@@ -1031,19 +1077,24 @@ const PropertyPanel: Component = () => {
                         !o.excludeFrom || !elType || !o.excludeFrom.includes(elType as any)
                     ) ?? [];
                 };
+                const selectVal = () => getPropertyValue(prop);
                 return (
                     <div class="control-row">
                         <label>{prop.label}</label>
                         <select
-                            value={getPropertyValue(prop) ?? prop.defaultValue}
+                            value={isMixed(selectVal()) ? '__mixed__' : (selectVal() ?? prop.defaultValue)}
                             onChange={(e) => {
                                 const target = activeTarget();
                                 const val = e.currentTarget.value;
+                                if (val === '__mixed__') return;
                                 // Try to parse number if options are numbers
                                 const isNum = prop.options?.some(o => typeof o.value === 'number');
                                 handleChange(prop.key, isNum ? Number(val) : val, target?.type, target?.type === 'element' ? target?.data?.id : undefined);
                             }}
                         >
+                            <Show when={isMixed(selectVal())}>
+                                <option value="__mixed__" disabled>(Mixed)</option>
+                            </Show>
                             <For each={filteredOptions()}>
                                 {(opt) => <option value={opt.value ?? ''}>{opt.label}</option>}
                             </For>
@@ -1062,36 +1113,42 @@ const PropertyPanel: Component = () => {
                     if (!caps) return false;
                     return prop.key === 'fontWeight' ? !caps.bold : !caps.italic;
                 };
+                const toggleVal = () => getPropertyValue(prop);
                 return (
                     <div class="control-row" style={{ opacity: isDisabled() ? 0.4 : 1 }}>
-                        <label>{prop.label}</label>
+                        <label>{prop.label}{isMixed(toggleVal()) ? <span class="mixed-label"> (Mixed)</span> : null}</label>
                         <input
                             type="checkbox"
-                            checked={!!getPropertyValue(prop)}
+                            checked={isMixed(toggleVal()) ? false : !!toggleVal()}
+                            ref={(el) => { if (isMixed(toggleVal())) el.indeterminate = true; }}
                             disabled={isDisabled()}
-                            title={isDisabled() ? 'This font does not support ' + prop.label.toLowerCase() : ''}
+                            title={isDisabled() ? 'This font does not support ' + prop.label.toLowerCase() : isMixed(toggleVal()) ? 'Mixed values — click to set all' : ''}
                             onChange={(e) => handleChange(prop.key, e.currentTarget.checked, activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined)}
                         />
                     </div>
                 );
             }
-            case 'input':
+            case 'input': {
+                const inputVal = () => getPropertyValue(prop);
                 return (
                     <div class="control-row">
                         <label>{prop.label}</label>
                         <input
                             type="text"
-                            value={getPropertyValue(prop) || ''}
+                            value={isMixed(inputVal()) ? '' : (inputVal() || '')}
+                            placeholder={isMixed(inputVal()) ? '(Mixed)' : undefined}
                             onInput={(e) => handleChange(prop.key, e.currentTarget.value, activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined)}
                         />
                     </div>
                 );
+            }
             case 'textarea': {
                 const elType = activeTarget()?.type === 'element' ? (activeTarget()?.data as any)?.type : undefined;
                 const isUmlField = elType && (
                     (prop.key === 'attributesText' && (elType === 'umlClass' || elType === 'umlEnum'))
                     || (prop.key === 'methodsText' && (elType === 'umlClass' || elType === 'umlInterface'))
                 );
+                const textareaVal = () => getPropertyValue(prop);
 
                 const appendLine = (line: string) => {
                     const current = (getPropertyValue(prop) || '') as string;
@@ -1112,7 +1169,8 @@ const PropertyPanel: Component = () => {
                         </div>
                         <div class="textarea-wrapper">
                             <textarea
-                                value={getPropertyValue(prop) || ''}
+                                value={isMixed(textareaVal()) ? '' : (textareaVal() || '')}
+                                placeholder={isMixed(textareaVal()) ? '(Mixed values)' : undefined}
                                 onInput={(e) => handleChange(prop.key, e.currentTarget.value, activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined)}
                                 onKeyDown={(e) => e.stopPropagation()}
                                 rows={3}
@@ -1121,18 +1179,21 @@ const PropertyPanel: Component = () => {
                     </div>
                 );
             }
-            case 'number':
+            case 'number': {
+                const numVal = () => getPropertyValue(prop);
                 return (
                     <div class="control-row">
                         <label>{prop.label}</label>
                         <input
                             type="number"
-                            value={getPropertyValue(prop) ?? 0}
+                            value={isMixed(numVal()) ? '' : (numVal() ?? 0)}
+                            placeholder={isMixed(numVal()) ? '—' : undefined}
                             onFocus={() => pushToHistory()}
                             onInput={(e) => handleChange(prop.key, Number(e.currentTarget.value), activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined, false)}
                         />
                     </div>
                 );
+            }
             default:
                 return null;
         }
@@ -1208,7 +1269,7 @@ const PropertyPanel: Component = () => {
                                 </button>
                                 <Show when={!store.isPropertyPanelMinimized}>
                                     <div style={{ display: 'flex', 'flex-direction': 'column', gap: '2px' }}>
-                                        <h3 style={{ 'line-height': '1' }}>{targetType() === 'element' ? 'Properties' : targetType() === 'canvas' ? 'Canvas' : targetType() === 'slide' ? `Slide ${store.activeSlideIndex + 1}` : targetType() === 'multi' ? 'Selection' : targetType() === 'defaults' ? 'Defaults' : 'Properties'}</h3>
+                                        <h3 style={{ 'line-height': '1' }}>{targetType() === 'element' ? 'Properties' : targetType() === 'canvas' ? 'Canvas' : targetType() === 'slide' ? `Slide ${store.activeSlideIndex + 1}` : targetType() === 'multi' ? `Selection (${store.selection.length})` : targetType() === 'defaults' ? 'Defaults' : 'Properties'}</h3>
                                         <div
                                             class="mode-badge"
                                             classList={{ [store.appMode]: true }}
@@ -1221,10 +1282,12 @@ const PropertyPanel: Component = () => {
                             </div>
 
                             <div class="header-actions">
-                                <Show when={isElement() && !store.isPropertyPanelMinimized}>
-                                    <button onClick={() => duplicateElement(targetElementId())} title="Duplicate">
-                                        <Copy size={16} />
-                                    </button>
+                                <Show when={isElementOrMulti() && !store.isPropertyPanelMinimized}>
+                                    <Show when={isElement()}>
+                                        <button onClick={() => duplicateElement(targetElementId())} title="Duplicate">
+                                            <Copy size={16} />
+                                        </button>
+                                    </Show>
                                     <button class="delete-btn" onClick={handleDelete} title="Delete">
                                         <Trash2 size={16} />
                                     </button>
@@ -1241,6 +1304,20 @@ const PropertyPanel: Component = () => {
                             <div class="property-content" ref={contentRef} onScroll={handleContentScroll}>
                                 <Show when={isMulti()}>
                                     <AlignmentControls />
+                                    <div class="multi-select-summary">
+                                        {(() => {
+                                            const typeCounts: Record<string, number> = {};
+                                            store.selection.forEach(id => {
+                                                const el = store.elements.find(e => e.id === id);
+                                                if (el) typeCounts[el.type] = (typeCounts[el.type] || 0) + 1;
+                                            });
+                                            const entries = Object.entries(typeCounts);
+                                            if (entries.length <= 3) {
+                                                return entries.map(([t, c]) => `${c} ${t}`).join(', ');
+                                            }
+                                            return `${store.selection.length} elements (${entries.length} types)`;
+                                        })()}
+                                    </div>
                                 </Show>
                                 <Show when={isElement()}>
                                     <MindmapActions elementId={targetElementId()} />
