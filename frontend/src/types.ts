@@ -267,6 +267,7 @@ export interface DrawingElement {
     layerId: string; // Reference to parent layer
     startBinding?: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number } | null;
     endBinding?: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number } | null;
+    arrowAnchorAlign?: 'top' | 'middle' | 'bottom'; // Bias left/right arrow anchors vertically
     curveType?: 'straight' | 'bezier' | 'elbow';
     constrained?: boolean; // Keep proportions
     autoResize?: boolean; // Auto-resize based on text

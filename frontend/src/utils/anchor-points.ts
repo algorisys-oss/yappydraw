@@ -174,6 +174,21 @@ export function getAnchorPoints(element: DrawingElement): AnchorPoint[] {
         }
     }
 
+    // Apply arrowAnchorAlign: shift left/right anchor Y positions
+    const align = element.arrowAnchorAlign;
+    if (align && align !== 'middle') {
+        const padding = Math.min(h * 0.25, 20);
+        for (const anchor of anchors) {
+            if (anchor.position === 'left' || anchor.position === 'right') {
+                if (align === 'top') {
+                    anchor.y = element.y + padding;
+                } else if (align === 'bottom') {
+                    anchor.y = element.y + h - padding;
+                }
+            }
+        }
+    }
+
     return anchors;
 }
 

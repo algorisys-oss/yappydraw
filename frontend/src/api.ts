@@ -86,6 +86,7 @@ interface ElementOptions {
     seed?: number;
     layerId?: string;
     curveType?: 'straight' | 'bezier' | 'elbow';
+    arrowAnchorAlign?: 'top' | 'middle' | 'bottom';
     startBinding?: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number } | null;
     endBinding?: { elementId: string; focus: number; gap: number; position?: string; anchorFractionX?: number; anchorFractionY?: number } | null;
 
@@ -282,6 +283,7 @@ export const YappyAPI = {
             tag: options?.tag ?? null,
             layerId: options?.layerId ?? store.activeLayerId,
             curveType: options?.curveType ?? 'straight',
+            arrowAnchorAlign: options?.arrowAnchorAlign,
             containerText: options?.containerText ?? '',
 
             // New Properties Defaults

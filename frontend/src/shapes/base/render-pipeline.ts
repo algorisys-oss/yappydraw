@@ -346,7 +346,17 @@ export class RenderPipeline {
         renderer.textAlign = textAlign;
         renderer.textBaseline = 'middle';
 
-        const startY = cy - metrics.textHeight / 2 + metrics.lineHeight / 2 + startYOffset;
+        // Apply vertical alignment for containerText
+        const verticalAlign = el.verticalAlign || 'middle';
+        const padding = 10;
+        let startY: number;
+        if (verticalAlign === 'top') {
+            startY = cy - el.height / 2 + padding + metrics.lineHeight / 2 + startYOffset;
+        } else if (verticalAlign === 'bottom') {
+            startY = cy + el.height / 2 - metrics.textHeight - padding + metrics.lineHeight / 2 + startYOffset;
+        } else {
+            startY = cy - metrics.textHeight / 2 + metrics.lineHeight / 2 + startYOffset;
+        }
 
         // Fine-tune baseline shift for better visual centering (font dependent)
         const baselineShift = el.fontFamily === 'hand-drawn' ? 2 : 0;
@@ -443,7 +453,17 @@ export class RenderPipeline {
         const layout = layoutRichText(renderer, spans, maxWidth, defaults);
 
         const textAlign = el.textAlign || 'center';
-        const startY = cy - layout.totalHeight / 2 + startYOffset;
+        // Apply vertical alignment for rich containerText
+        const verticalAlign = el.verticalAlign || 'middle';
+        const padding = 10;
+        let startY: number;
+        if (verticalAlign === 'top') {
+            startY = cy - el.height / 2 + padding + startYOffset;
+        } else if (verticalAlign === 'bottom') {
+            startY = cy + el.height / 2 - layout.totalHeight - padding + startYOffset;
+        } else {
+            startY = cy - layout.totalHeight / 2 + startYOffset;
+        }
 
         // Accumulate y offset per line
         let lineY = startY;

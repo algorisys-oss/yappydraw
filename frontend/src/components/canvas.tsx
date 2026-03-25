@@ -384,6 +384,7 @@ const Canvas: Component = () => {
             e.renderStyle; // Track drawing style (Sketch/Architectural)
             e.startArrowhead; e.endArrowhead;
             e.startArrowheadSize; e.endArrowheadSize;
+            e.arrowAnchorAlign;
             e.fillDensity; // Track fill density
             // Track gradient properties
             e.gradientStart; e.gradientEnd; e.gradientDirection;

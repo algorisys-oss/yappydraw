@@ -50,6 +50,7 @@ interface AppState {
     zenMode: boolean;
     appMode: AppMode;
     showCommandPalette: boolean;
+    commandPaletteFilter: string | null;
     selectedPenType: 'fineliner' | 'inkbrush' | 'marker';
     selectedTextType: 'text' | 'richtext';
     selectedConnectorType: 'arrow' | 'line' | 'bezier' | 'elbow' | 'polyline';
@@ -209,6 +210,7 @@ const initialState: AppState = {
     zenMode: false,
     appMode: 'design',
     showCommandPalette: false,
+    commandPaletteFilter: null,
     selectedPenType: 'fineliner',
     selectedTextType: 'text',
     selectedConnectorType: 'arrow',
@@ -666,6 +668,15 @@ export const updateElement = (id: string, updates: Partial<DrawingElement>, reco
     setStore("elements", (el) => el.id === id, updates);
     if ('flowAnimation' in updates) {
         updateGlobalTickerState();
+    }
+    // When arrowAnchorAlign changes, refresh all bound connectors
+    if ('arrowAnchorAlign' in updates) {
+        const el = store.elements.find(e => e.id === id);
+        if (el?.boundElements) {
+            for (const b of el.boundElements) {
+                refreshBoundLine(b.id, () => store.elements, (bid, upd) => updateElement(bid, upd, false));
+            }
+        }
     }
 };
 
@@ -2498,7 +2509,8 @@ export const setSelectedBpmnType = (type: AppState['selectedBpmnType']) => {
     setStore('selectedBpmnType', type);
 };
 
-export const toggleCommandPalette = (visible?: boolean) => {
+export const toggleCommandPalette = (visible?: boolean, filter?: string | null) => {
+    setStore('commandPaletteFilter', filter ?? null);
     setStore('showCommandPalette', (v) => visible ?? !v);
 };
 

@@ -554,6 +554,7 @@ const App: Component = () => {
           else if (key === 'e' || key === '0') setSelectedTool('eraser');
           else if (key === 'b') setSelectedTool('bezier');
           else if (key === 'h') setSelectedTool('pan');
+          else if (key === '/') { e.preventDefault(); toggleCommandPalette(true, 'Shapes'); }
         }
       }
     };

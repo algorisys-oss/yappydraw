@@ -20,6 +20,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Save Drawing', keys: 'Ctrl+Alt+S' },
             { label: 'Export / Share', keys: 'Ctrl+Shift+E' },
             { label: 'Command Palette', keys: 'Ctrl+K' },
+            { label: 'Quick Tool Finder', keys: '/' },
             { label: 'New Sketch', keys: 'Alt+N' },
         ]
     },

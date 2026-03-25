@@ -7,28 +7,230 @@ import {
 } from "../store/app-store";
 import { flipSelected, lockSelected } from "./object-context-actions";
 import { setIsDSLImportOpen } from "../components/menu";
+import type { ToolType } from "../types";
 
 export interface Command {
     id: string;
     label: string;
-    category: 'Tools' | 'Actions' | 'View' | 'Layers' | 'File';
+    category: 'Tools' | 'Shapes' | 'Actions' | 'View' | 'Layers' | 'File';
     action: () => void;
     shortcut?: string;
 }
+
+// All shape/tool types with human-readable labels, grouped by toolbar category
+const shapeToolCatalog: { type: ToolType; label: string; group: string }[] = [
+    // Shapes — Basic
+    { type: 'rectangle', label: 'Rectangle', group: 'Shapes' },
+    { type: 'circle', label: 'Ellipse', group: 'Shapes' },
+    { type: 'diamond', label: 'Diamond', group: 'Shapes' },
+    { type: 'triangle', label: 'Triangle', group: 'Shapes' },
+    { type: 'hexagon', label: 'Hexagon', group: 'Shapes' },
+    { type: 'octagon', label: 'Octagon', group: 'Shapes' },
+    { type: 'parallelogram', label: 'Parallelogram', group: 'Shapes' },
+    { type: 'star', label: 'Star', group: 'Shapes' },
+    { type: 'polygon', label: 'Polygon', group: 'Shapes' },
+    { type: 'cloud', label: 'Cloud', group: 'Shapes' },
+    { type: 'heart', label: 'Heart', group: 'Shapes' },
+    { type: 'cross', label: 'Cross', group: 'Shapes' },
+    { type: 'checkmark', label: 'Checkmark', group: 'Shapes' },
+    { type: 'arrowLeft', label: 'Arrow Left', group: 'Shapes' },
+    { type: 'arrowRight', label: 'Arrow Right', group: 'Shapes' },
+    { type: 'arrowUp', label: 'Arrow Up', group: 'Shapes' },
+    { type: 'arrowDown', label: 'Arrow Down', group: 'Shapes' },
+    { type: 'trapezoid', label: 'Trapezoid', group: 'Shapes' },
+    { type: 'rightTriangle', label: 'Right-Angle Triangle', group: 'Shapes' },
+    { type: 'pentagon', label: 'Pentagon', group: 'Shapes' },
+    { type: 'septagon', label: 'Septagon', group: 'Shapes' },
+    { type: 'capsule', label: 'Capsule', group: 'Shapes' },
+    { type: 'stickyNote', label: 'Sticky Note', group: 'Shapes' },
+    { type: 'callout', label: 'Callout', group: 'Shapes' },
+    { type: 'speechBubble', label: 'Speech Bubble', group: 'Shapes' },
+    { type: 'burst', label: 'Burst', group: 'Shapes' },
+    { type: 'ribbon', label: 'Ribbon', group: 'Shapes' },
+    { type: 'bracketLeft', label: 'Left Bracket', group: 'Shapes' },
+    { type: 'bracketRight', label: 'Right Bracket', group: 'Shapes' },
+    { type: 'database', label: 'Database', group: 'Shapes' },
+    { type: 'document', label: 'Document', group: 'Shapes' },
+    { type: 'predefinedProcess', label: 'Predefined Process', group: 'Shapes' },
+    { type: 'internalStorage', label: 'Internal Storage', group: 'Shapes' },
+
+    // Connectors
+    { type: 'arrow', label: 'Arrow', group: 'Connectors' },
+    { type: 'line', label: 'Line', group: 'Connectors' },
+    { type: 'bezier', label: 'Bezier Curve', group: 'Connectors' },
+    { type: 'elbow', label: 'Elbow Connector', group: 'Connectors' },
+    { type: 'polyline', label: 'Polyline', group: 'Connectors' },
+
+    // Pen / Drawing
+    { type: 'fineliner', label: 'Fine Liner Pen', group: 'Drawing' },
+    { type: 'inkbrush', label: 'Ink Brush', group: 'Drawing' },
+    { type: 'marker', label: 'Marker', group: 'Drawing' },
+
+    // Text
+    { type: 'text', label: 'Text', group: 'Text' },
+    { type: 'richtext', label: 'Rich Text', group: 'Text' },
+    { type: 'codeBlock', label: 'Code Block', group: 'Text' },
+
+    // Infrastructure
+    { type: 'server', label: 'Server', group: 'Infrastructure' },
+    { type: 'loadBalancer', label: 'Load Balancer', group: 'Infrastructure' },
+    { type: 'firewall', label: 'Firewall', group: 'Infrastructure' },
+    { type: 'user', label: 'User / Client', group: 'Infrastructure' },
+    { type: 'messageQueue', label: 'Message Queue', group: 'Infrastructure' },
+    { type: 'lambda', label: 'Lambda / Function', group: 'Infrastructure' },
+    { type: 'router', label: 'Router', group: 'Infrastructure' },
+    { type: 'browser', label: 'Browser / Web', group: 'Infrastructure' },
+
+    // Cloud Infrastructure
+    { type: 'kubernetes', label: 'Kubernetes', group: 'Cloud' },
+    { type: 'container', label: 'Container', group: 'Cloud' },
+    { type: 'apiGateway', label: 'API Gateway', group: 'Cloud' },
+    { type: 'cdn', label: 'CDN', group: 'Cloud' },
+    { type: 'storageBlob', label: 'Storage Blob', group: 'Cloud' },
+    { type: 'eventBus', label: 'Event Bus', group: 'Cloud' },
+    { type: 'microservice', label: 'Microservice', group: 'Cloud' },
+    { type: 'shield', label: 'Shield / Security', group: 'Cloud' },
+
+    // UML
+    { type: 'umlClass', label: 'UML Class', group: 'UML' },
+    { type: 'umlInterface', label: 'UML Interface', group: 'UML' },
+    { type: 'umlActor', label: 'UML Actor', group: 'UML' },
+    { type: 'umlUseCase', label: 'UML Use Case', group: 'UML' },
+    { type: 'umlNote', label: 'UML Note', group: 'UML' },
+    { type: 'umlPackage', label: 'UML Package', group: 'UML' },
+    { type: 'umlComponent', label: 'UML Component', group: 'UML' },
+    { type: 'umlState', label: 'UML State', group: 'UML' },
+    { type: 'umlLifeline', label: 'UML Lifeline', group: 'UML' },
+    { type: 'umlFragment', label: 'UML Fragment', group: 'UML' },
+    { type: 'umlEnum', label: 'UML Enum', group: 'UML' },
+    { type: 'umlSignalSend', label: 'UML Signal Send', group: 'UML' },
+    { type: 'umlSignalReceive', label: 'UML Signal Receive', group: 'UML' },
+    { type: 'umlProvidedInterface', label: 'UML Provided Interface', group: 'UML' },
+    { type: 'umlRequiredInterface', label: 'UML Required Interface', group: 'UML' },
+
+    // BPMN
+    { type: 'bpmnStartEvent', label: 'BPMN Start Event', group: 'BPMN' },
+    { type: 'bpmnEndEvent', label: 'BPMN End Event', group: 'BPMN' },
+    { type: 'bpmnIntermediateEvent', label: 'BPMN Intermediate Event', group: 'BPMN' },
+    { type: 'bpmnExclusiveGateway', label: 'BPMN Exclusive Gateway (XOR)', group: 'BPMN' },
+    { type: 'bpmnParallelGateway', label: 'BPMN Parallel Gateway (AND)', group: 'BPMN' },
+    { type: 'bpmnInclusiveGateway', label: 'BPMN Inclusive Gateway (OR)', group: 'BPMN' },
+    { type: 'bpmnEventGateway', label: 'BPMN Event Gateway', group: 'BPMN' },
+    { type: 'bpmnTask', label: 'BPMN Task', group: 'BPMN' },
+    { type: 'bpmnSubProcess', label: 'BPMN Sub-Process', group: 'BPMN' },
+    { type: 'bpmnCallActivity', label: 'BPMN Call Activity', group: 'BPMN' },
+    { type: 'bpmnDataObject', label: 'BPMN Data Object', group: 'BPMN' },
+    { type: 'bpmnDataStore', label: 'BPMN Data Store', group: 'BPMN' },
+    { type: 'bpmnAnnotation', label: 'BPMN Annotation', group: 'BPMN' },
+    { type: 'bpmnGroup', label: 'BPMN Group', group: 'BPMN' },
+    { type: 'bpmnPool', label: 'BPMN Pool / Lane', group: 'BPMN' },
+
+    // Technical / Flowchart
+    { type: 'dfdProcess', label: 'DFD Process', group: 'Technical' },
+    { type: 'dfdDataStore', label: 'DFD Data Store', group: 'Technical' },
+    { type: 'externalEntity', label: 'External Entity', group: 'Technical' },
+    { type: 'isometricCube', label: 'Isometric Cube', group: 'Technical' },
+    { type: 'cylinder', label: 'Cylinder', group: 'Technical' },
+    { type: 'solidBlock', label: 'Solid Block', group: 'Technical' },
+    { type: 'perspectiveBlock', label: 'Perspective Block', group: 'Technical' },
+    { type: 'openBox', label: 'Open Box', group: 'Technical' },
+    { type: 'stateStart', label: 'Initial State', group: 'Technical' },
+    { type: 'stateEnd', label: 'Final State', group: 'Technical' },
+    { type: 'stateSync', label: 'Sync Bar', group: 'Technical' },
+    { type: 'activationBar', label: 'Activation Bar', group: 'Technical' },
+
+    // Data Structures
+    { type: 'dsArray', label: 'Array', group: 'Data Structures' },
+    { type: 'dsStack', label: 'Stack', group: 'Data Structures' },
+    { type: 'dsQueue', label: 'Queue', group: 'Data Structures' },
+    { type: 'dsLinkedList', label: 'Linked List', group: 'Data Structures' },
+    { type: 'dsBinaryTree', label: 'Binary Tree', group: 'Data Structures' },
+    { type: 'dsHashTable', label: 'Hash Table', group: 'Data Structures' },
+
+    // Charts & Data
+    { type: 'barChart', label: 'Bar Chart', group: 'Charts' },
+    { type: 'pieChart', label: 'Pie Chart', group: 'Charts' },
+    { type: 'trendUp', label: 'Trend Up', group: 'Charts' },
+    { type: 'trendDown', label: 'Trend Down', group: 'Charts' },
+    { type: 'funnel', label: 'Funnel', group: 'Charts' },
+    { type: 'gauge', label: 'Gauge', group: 'Charts' },
+    { type: 'table', label: 'Table', group: 'Charts' },
+
+    // Sketchnote / Icons
+    { type: 'starPerson', label: 'Star Person', group: 'Sketchnote' },
+    { type: 'scroll', label: 'Scroll Container', group: 'Sketchnote' },
+    { type: 'wavyDivider', label: 'Wavy Divider', group: 'Sketchnote' },
+    { type: 'doubleBanner', label: 'Double Banner', group: 'Sketchnote' },
+    { type: 'lightbulb', label: 'Lightbulb', group: 'Sketchnote' },
+    { type: 'signpost', label: 'Signpost', group: 'Sketchnote' },
+    { type: 'burstBlob', label: 'Burst Blob', group: 'Sketchnote' },
+    { type: 'trophy', label: 'Trophy', group: 'Sketchnote' },
+    { type: 'clock', label: 'Clock', group: 'Sketchnote' },
+    { type: 'gear', label: 'Gear', group: 'Sketchnote' },
+    { type: 'target', label: 'Target', group: 'Sketchnote' },
+    { type: 'rocket', label: 'Rocket', group: 'Sketchnote' },
+    { type: 'flag', label: 'Flag', group: 'Sketchnote' },
+    { type: 'key', label: 'Key', group: 'Sketchnote' },
+    { type: 'magnifyingGlass', label: 'Magnifying Glass', group: 'Sketchnote' },
+    { type: 'book', label: 'Book', group: 'Sketchnote' },
+    { type: 'megaphone', label: 'Megaphone', group: 'Sketchnote' },
+    { type: 'eye', label: 'Eye', group: 'Sketchnote' },
+    { type: 'thoughtBubble', label: 'Thought Bubble', group: 'Sketchnote' },
+    { type: 'stickFigure', label: 'Stick Figure', group: 'Sketchnote' },
+    { type: 'sittingPerson', label: 'Sitting Person', group: 'Sketchnote' },
+    { type: 'presentingPerson', label: 'Presenting Person', group: 'Sketchnote' },
+    { type: 'handPointRight', label: 'Pointing Hand', group: 'Sketchnote' },
+    { type: 'thumbsUp', label: 'Thumbs Up', group: 'Sketchnote' },
+    { type: 'faceHappy', label: 'Happy Face', group: 'Sketchnote' },
+    { type: 'faceSad', label: 'Sad Face', group: 'Sketchnote' },
+    { type: 'faceConfused', label: 'Confused Face', group: 'Sketchnote' },
+
+    // Status / Badges
+    { type: 'checkbox', label: 'Checkbox', group: 'Status' },
+    { type: 'checkboxChecked', label: 'Checkbox Checked', group: 'Status' },
+    { type: 'numberedBadge', label: 'Numbered Badge', group: 'Status' },
+    { type: 'questionMark', label: 'Question Mark', group: 'Status' },
+    { type: 'exclamationMark', label: 'Exclamation Mark', group: 'Status' },
+    { type: 'tag', label: 'Tag', group: 'Status' },
+    { type: 'pin', label: 'Map Pin', group: 'Status' },
+    { type: 'stamp', label: 'Stamp', group: 'Status' },
+
+    // Connections & Relationships
+    { type: 'puzzlePiece', label: 'Puzzle Piece', group: 'Connections' },
+    { type: 'chainLink', label: 'Chain Link', group: 'Connections' },
+    { type: 'bridge', label: 'Bridge', group: 'Connections' },
+    { type: 'magnet', label: 'Magnet', group: 'Connections' },
+    { type: 'scale', label: 'Scale / Balance', group: 'Connections' },
+    { type: 'seedling', label: 'Seedling', group: 'Connections' },
+    { type: 'tree', label: 'Tree', group: 'Connections' },
+    { type: 'mountain', label: 'Mountain', group: 'Connections' },
+
+    // Wireframe / UI
+    { type: 'browserWindow', label: 'Browser Window', group: 'Wireframe' },
+    { type: 'mobilePhone', label: 'Mobile Phone', group: 'Wireframe' },
+    { type: 'ghostButton', label: 'Ghost Button', group: 'Wireframe' },
+    { type: 'inputField', label: 'Input Field', group: 'Wireframe' },
+    { type: 'solidButton', label: 'Solid Button', group: 'Wireframe' },
+    { type: 'dropdown', label: 'Dropdown', group: 'Wireframe' },
+    { type: 'uiCheckbox', label: 'UI Checkbox', group: 'Wireframe' },
+    { type: 'radioButton', label: 'Radio Button', group: 'Wireframe' },
+    { type: 'toggleSwitch', label: 'Toggle Switch', group: 'Wireframe' },
+    { type: 'card', label: 'Card', group: 'Wireframe' },
+    { type: 'searchBar', label: 'Search Bar', group: 'Wireframe' },
+    { type: 'progressBar', label: 'Progress Bar', group: 'Wireframe' },
+    { type: 'avatar', label: 'Avatar', group: 'Wireframe' },
+    { type: 'navbar', label: 'Navigation Bar', group: 'Wireframe' },
+    { type: 'tabBar', label: 'Tab Bar', group: 'Wireframe' },
+    { type: 'badge', label: 'Badge', group: 'Wireframe' },
+    { type: 'tooltip', label: 'Tooltip', group: 'Wireframe' },
+    { type: 'slider', label: 'Slider', group: 'Wireframe' },
+];
 
 export const getCommands = (): Command[] => {
     const commands: Command[] = [
         // Tools
         { id: 'tool-selection', label: 'Selection Tool', category: 'Tools', action: () => setSelectedTool('selection'), shortcut: 'V' },
-        { id: 'tool-rectangle', label: 'Rectangle Tool', category: 'Tools', action: () => setSelectedTool('rectangle'), shortcut: 'R' },
-        { id: 'tool-diamond', label: 'Diamond Tool', category: 'Tools', action: () => setSelectedTool('diamond'), shortcut: 'D' },
-        { id: 'tool-circle', label: 'Ellipse Tool', category: 'Tools', action: () => setSelectedTool('circle'), shortcut: 'O' },
-        { id: 'tool-arrow', label: 'Arrow Tool', category: 'Tools', action: () => setSelectedTool('arrow'), shortcut: 'A' },
-        { id: 'tool-line', label: 'Line Tool', category: 'Tools', action: () => setSelectedTool('line'), shortcut: 'L' },
-        { id: 'tool-text', label: 'Text Tool', category: 'Tools', action: () => setSelectedTool(store.selectedTextType), shortcut: 'T' },
-        { id: 'tool-richtext', label: 'Rich Text Tool', category: 'Tools', action: () => setSelectedTool('richtext'), shortcut: 'Shift+T' },
         { id: 'tool-eraser', label: 'Eraser Tool', category: 'Tools', action: () => setSelectedTool('eraser'), shortcut: 'E' },
-        { id: 'tool-bezier', label: 'Bezier Tool', category: 'Tools', action: () => setSelectedTool('bezier'), shortcut: 'B' },
         { id: 'tool-pan', label: 'Pan Tool', category: 'Tools', action: () => setSelectedTool('pan'), shortcut: 'H' },
         { id: 'tool-lasso', label: 'Lasso Selection Tool', category: 'Tools', action: () => setSelectedTool('lasso'), shortcut: 'Shift+L' },
 
@@ -98,6 +300,16 @@ export const getCommands = (): Command[] => {
         { id: 'file-import-dsl', label: 'Import Diagram from Text', category: 'File', action: () => setIsDSLImportOpen(true), shortcut: 'Ctrl+Shift+I' },
     ];
 
+    // Register all shapes/tools from catalog
+    for (const tool of shapeToolCatalog) {
+        commands.push({
+            id: `shape-${tool.type}`,
+            label: `${tool.label}`,
+            category: 'Shapes',
+            action: () => setSelectedTool(tool.type),
+        });
+    }
+
     // Dynamic Layer Commands
     store.layers.forEach(layer => {
         commands.push({
@@ -112,14 +324,19 @@ export const getCommands = (): Command[] => {
 };
 
 // Helper for fuzzy search or prefix search
-export const searchCommands = (query: string): Command[] => {
-    const all = getCommands();
-    if (!query) return all.slice(0, 10); // Default items
+export const searchCommands = (query: string, categoryFilter?: string): Command[] => {
+    let all = getCommands();
+    if (categoryFilter) {
+        all = all.filter(c => c.category === categoryFilter);
+    }
+
+    if (!query) return all.slice(0, categoryFilter ? 20 : 10); // Show more for filtered views
 
     const q = query.toLowerCase();
     return all.filter(c =>
         c.label.toLowerCase().includes(q) ||
-        c.category.toLowerCase().includes(q)
+        c.category.toLowerCase().includes(q) ||
+        c.id.toLowerCase().includes(q)
     ).sort((a, b) => {
         // Boost exact matches or prefix matches
         const aLabel = a.label.toLowerCase();

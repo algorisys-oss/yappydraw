@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.2] - 2026-03-25
+
+### Added
+- **Quick Tool Finder** — press `/` to instantly search and select any of 160+ shapes and tools; fuzzy search by name (e.g. "api gateway", "uml class", "database"); `Ctrl+K` command palette now also includes all shapes
+- Help dialog updated with `/` shortcut
+
+## [0.26.1] - 2026-03-25
+
+### Added
+- **containerText Vertical Align** — `verticalAlign` property (top/middle/bottom) now works for text inside shapes; previously ignored, always centered
+- **Arrow Anchor Align** — new `arrowAnchorAlign` property (top/middle/bottom) on shapes; controls where the API Gateway inner arrow renders and where bound connectors attach on left/right edges
+- **Property panel entries** — both Vertical Align and Arrow Align are now exposed in the property panel (text and dimensions groups respectively)
+- **Learn-to-Draw tutorial** — article covering HLD, sequence, flowchart, DFD, component, ER diagrams with 7 companion Yappy diagram files
+
+### Fixed
+- **containerText overlapping arrows** — shapes with bound arrows had text rendering at vertical center, overlapping connector paths; verticalAlign now lets users position text away from arrows
+- **arrowAnchorAlign real-time update** — added property to canvas reactive tracking so changes reflect immediately without requiring shape move
+- **API Gateway inner arrow alignment** — the decorative arrow inside `apiGateway` shape now respects `arrowAnchorAlign` in both architectural and sketch render paths
+
 ## [0.25.9] - 2026-03-18
 
 ### Fixed

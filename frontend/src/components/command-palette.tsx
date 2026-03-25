@@ -8,7 +8,8 @@ const CommandPalette: Component = () => {
     const [selectedIndex, setSelectedIndex] = createSignal(0);
     let inputRef: HTMLInputElement | undefined;
 
-    const results = () => searchCommands(query());
+    const filter = () => store.commandPaletteFilter ?? undefined;
+    const results = () => searchCommands(query(), filter());
 
     createEffect(() => {
         if (store.showCommandPalette) {
@@ -39,6 +40,12 @@ const CommandPalette: Component = () => {
         }
     };
 
+    const placeholder = () => {
+        const f = filter();
+        if (f === 'Shapes') return "Search shapes and tools... (type to filter)";
+        return "Type a command or search...";
+    };
+
     return (
         <Show when={store.showCommandPalette}>
             <div class="command-palette-backdrop" onClick={(e) => { if (e.target === e.currentTarget && !window.getSelection()?.toString()) toggleCommandPalette(false); }}>
@@ -47,7 +54,7 @@ const CommandPalette: Component = () => {
                         <input
                             ref={inputRef}
                             type="text"
-                            placeholder="Type a command or search layers..."
+                            placeholder={placeholder()}
                             value={query()}
                             onInput={(e) => {
                                 setQuery(e.currentTarget.value);
@@ -83,8 +90,11 @@ const CommandPalette: Component = () => {
                     </div>
                     <div class="command-palette-footer">
                         <span>↑↓ to navigate</span>
-                        <span>↵ to execute</span>
+                        <span>↵ to select</span>
                         <span>esc to close</span>
+                        <Show when={!filter()}>
+                            <span>/ for shapes</span>
+                        </Show>
                     </div>
                 </div>
             </div>

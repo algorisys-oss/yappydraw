@@ -82,8 +82,11 @@ export class CloudInfraRenderer extends ShapeRenderer {
                 RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                 this.roundRect(renderer, x, y, w, h, r);
                 renderer.stroke();
-                // Arrow pointing right through center
-                const arrowY = y + h / 2;
+                // Arrow pointing right — position based on arrowAnchorAlign
+                const padding = Math.min(h * 0.25, 20);
+                const arrowY = el.arrowAnchorAlign === 'top' ? y + padding + h * 0.12
+                    : el.arrowAnchorAlign === 'bottom' ? y + h - padding - h * 0.12
+                    : y + h / 2;
                 const arrowL = x + w * 0.2;
                 const arrowR = x + w * 0.8;
                 const arrowH = h * 0.12;
@@ -310,7 +313,10 @@ export class CloudInfraRenderer extends ShapeRenderer {
             }
             case 'apiGateway': {
                 rc.rectangle(x, y, w, h, options);
-                const arrowY = y + h / 2;
+                const gPadding = Math.min(h * 0.25, 20);
+                const arrowY = el.arrowAnchorAlign === 'top' ? y + gPadding + h * 0.12
+                    : el.arrowAnchorAlign === 'bottom' ? y + h - gPadding - h * 0.12
+                    : y + h / 2;
                 const arrowL = x + w * 0.2;
                 const arrowR = x + w * 0.8;
                 const arrowH = h * 0.12;

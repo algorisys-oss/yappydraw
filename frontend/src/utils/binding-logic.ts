@@ -171,24 +171,46 @@ function resolveBindingPoint(
     el: DrawingElement,
     otherEnd: { x: number; y: number }
 ): { x: number; y: number } | null {
+    let point: { x: number; y: number } | null = null;
+
     // 1. Precise fractions — always preferred when available
     if (binding.anchorFractionX != null && binding.anchorFractionY != null) {
-        return {
+        point = {
             x: el.x + binding.anchorFractionX * el.width,
             y: el.y + binding.anchorFractionY * el.height
         };
     }
 
     // 2. Named anchor position
-    const pos = binding.position;
-    if (pos && pos !== 'edge') {
-        const anchors = getAnchorPoints(el);
-        const anchor = anchors.find(a => a.position === pos);
-        if (anchor) return { x: anchor.x, y: anchor.y };
+    if (!point) {
+        const pos = binding.position;
+        if (pos && pos !== 'edge') {
+            const anchors = getAnchorPoints(el);
+            const anchor = anchors.find(a => a.position === pos);
+            if (anchor) point = { x: anchor.x, y: anchor.y };
+        }
     }
 
     // 3. Edge intersection fallback (legacy 'edge' bindings without fractions)
-    return intersectElementWithLine(el, otherEnd, binding.gap);
+    if (!point) {
+        point = intersectElementWithLine(el, otherEnd, binding.gap);
+    }
+
+    // Apply arrowAnchorAlign: override Y for left/right edge connections
+    if (point && el.arrowAnchorAlign && el.arrowAnchorAlign !== 'middle') {
+        const isOnLeftEdge = Math.abs(point.x - el.x) < 2;
+        const isOnRightEdge = Math.abs(point.x - (el.x + el.width)) < 2;
+        if (isOnLeftEdge || isOnRightEdge) {
+            const padding = Math.min(el.height * 0.25, 20);
+            if (el.arrowAnchorAlign === 'top') {
+                point.y = el.y + padding;
+            } else if (el.arrowAnchorAlign === 'bottom') {
+                point.y = el.y + el.height - padding;
+            }
+        }
+    }
+
+    return point;
 }
 
 // ── Sibling spread: offset connectors sharing the same anchors ───────
