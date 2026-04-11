@@ -61,6 +61,7 @@ export interface Slide {
     gradientDirection?: number;
     backgroundImage?: string;
     backgroundOpacity?: number;
+    canvasTexture?: 'none' | 'dots' | 'grid' | 'graph' | 'paper' | 'notebook';
     thumbnail?: string; // Data URL preview
     transition?: SlideTransition; // Transition when entering this slide
     lastViewState?: { scale: number; panX: number; panY: number }; // Persisted viewport state

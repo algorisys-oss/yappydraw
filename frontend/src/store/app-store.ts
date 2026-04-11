@@ -64,7 +64,7 @@ interface AppState {
     selectedWireframeType: ElementType;
     layerGroupingModeEnabled: boolean;
     maxLayers: number;
-    canvasTexture: 'none' | 'dots' | 'grid' | 'graph' | 'paper';
+    canvasTexture: 'none' | 'dots' | 'grid' | 'graph' | 'paper' | 'notebook';
     isPreviewing: boolean;
     isRecording: boolean;
     selectedTechnicalType: 'dfdProcess' | 'dfdDataStore' | 'isometricCube' | 'cylinder' | 'stateStart' | 'stateEnd' | 'stateSync' | 'activationBar' | 'externalEntity' | 'codeBlock';
@@ -941,6 +941,7 @@ export const saveActiveSlide = () => {
 
     const currentSlideValues: Partial<Slide> = {
         backgroundColor: store.canvasBackgroundColor,
+        canvasTexture: store.canvasTexture,
         dimensions: JSON.parse(JSON.stringify(store.dimensions)),
         thumbnail: store.slides[store.activeSlideIndex].thumbnail,
     };
@@ -1026,6 +1027,7 @@ export const setActiveSlide = async (index: number, skipAnimation?: boolean) => 
         if (nextSlide.backgroundColor) {
             setStore("canvasBackgroundColor", nextSlide.backgroundColor);
         }
+        setStore("canvasTexture", nextSlide.canvasTexture ?? 'none');
         setStore("dimensions", JSON.parse(JSON.stringify(nextSlide.dimensions)));
 
         // Trigger Build Animations in Presentation Mode
@@ -1467,6 +1469,8 @@ export const loadDocument = (doc: any) => {
         if (firstSlideBg) {
             setStore("canvasBackgroundColor", firstSlideBg);
         }
+        // Apply first slide's canvas texture (or reset to 'none' if unset)
+        setStore("canvasTexture", slides[0]?.canvasTexture ?? 'none');
 
         if (!layers.some((l: Layer) => l.id === store.activeLayerId)) {
             setStore("activeLayerId", layers[0]?.id || 'default-layer');
@@ -2198,8 +2202,14 @@ export const setCanvasBackgroundColor = (color: string) => {
     }
 };
 
-export const setCanvasTexture = (texture: 'none' | 'dots' | 'grid' | 'graph' | 'paper') => {
+export const setCanvasTexture = (texture: 'none' | 'dots' | 'grid' | 'graph' | 'paper' | 'notebook') => {
     setStore('canvasTexture', texture);
+    // Persist per-slide so each canvas keeps its own texture on reload / slide switch.
+    const idx = store.activeSlideIndex;
+    if (idx >= 0 && idx < store.slides.length) {
+        setStore('slides', idx, 'canvasTexture', texture);
+        bumpDirtyRevision();
+    }
 };
 
 export const setSelectedPenType = (penType: 'fineliner' | 'inkbrush' | 'marker') => {

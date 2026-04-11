@@ -1036,7 +1036,7 @@ const Canvas: Component = () => {
             </div>
 
             {/* Global Texture Overlay */}
-            <Show when={store.canvasTexture !== 'none' && store.canvasTexture !== 'grid' && store.canvasTexture !== 'graph'}>
+            <Show when={store.canvasTexture !== 'none' && store.canvasTexture !== 'grid' && store.canvasTexture !== 'graph' && store.canvasTexture !== 'notebook'}>
                 <div
                     style={{
                         position: 'fixed',

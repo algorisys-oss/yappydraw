@@ -383,7 +383,23 @@ export function renderCanvasTexture(
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-    if (texture === 'dots' || texture === 'grid' || texture === 'graph') {
+    if (texture === 'notebook') {
+        // Ruled horizontal lines, like a classroom notebook.
+        // Screen-space repetition so it works in both infinite and slides mode —
+        // no vertical margin line, since it would have no meaningful anchor on an infinite canvas.
+        const spacing = 32;
+        const lineColor = 'rgba(30, 90, 180, 0.18)'; // faint blue rule
+        const gridStartY = (panY % (spacing * scale));
+
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let y = gridStartY; y < canvas.height; y += spacing * scale) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+        }
+        ctx.stroke();
+    } else if (texture === 'dots' || texture === 'grid' || texture === 'graph') {
         const spacing = texture === 'graph' ? 40 : 20;
         const subSpacing = spacing / 4;
         // Canvas textures use fixed subtle colors so content isn't affected by UI theme

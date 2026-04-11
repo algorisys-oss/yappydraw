@@ -174,7 +174,8 @@ export const properties: PropertyConfig[] = [
             { label: 'Dots', value: 'dots' },
             { label: 'Grid', value: 'grid' },
             { label: 'Graph Paper', value: 'graph' },
-            { label: 'Recycled Paper', value: 'paper' }
+            { label: 'Recycled Paper', value: 'paper' },
+            { label: 'Notebook', value: 'notebook' }
         ],
         group: 'canvas',
         applicableTo: ['canvas'],

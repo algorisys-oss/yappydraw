@@ -1406,7 +1406,7 @@ export const YappyAPI = {
 
     // Canvas
     setCanvasBackgroundColor(color: string) { setCanvasBackgroundColor(color); },
-    setCanvasTexture(texture: 'none' | 'dots' | 'grid' | 'graph' | 'paper') { setCanvasTexture(texture); },
+    setCanvasTexture(texture: 'none' | 'dots' | 'grid' | 'graph' | 'paper' | 'notebook') { setCanvasTexture(texture); },
     zoomToFitSlide() { zoomToFitSlide(); },
 
     // Tool Selection
