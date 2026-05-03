@@ -179,11 +179,11 @@ export function drawOnDown(
         newElement.bpmnOrientation = 'horizontal';
         newElement.containerText = 'Pool';
         newElement.fillStyle = 'solid';
-        // Use theme-aware colors so strokes remain visible against background
-        const isFocus = store.theme === 'focus';
-        newElement.backgroundColor = isFocus ? '#1e293b' : '#ffffff';
-        newElement.strokeColor = isFocus ? '#94a3b8' : '#000000';
-        newElement.textColor = isFocus ? '#e2e8f0' : '#000000';
+        // Canonical (light-mode) colors. Dark/focus presentation is handled by
+        // the CSS invert filter on the host canvas — no per-shape variant needed.
+        newElement.backgroundColor = '#ffffff';
+        newElement.strokeColor = '#000000';
+        newElement.textColor = '#000000';
     }
 
     // Apply specific defaults for UML shapes

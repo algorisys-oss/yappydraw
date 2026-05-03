@@ -52,9 +52,15 @@ export const exportToHtml = async (doc: SlideDocument, filename: string) => {
         generatedAt: new Date().toISOString()
     };
 
-    // 2. Construct HTML — preserve current theme
-    const theme = processedDoc.globalSettings?.theme || 'light';
-    const cssTheme = theme === 'focus' ? 'focus' : theme;
+    // 2. Construct HTML — preserve current theme.  `system` is resolved against
+    // the current OS preference at export time so the exported file ships with
+    // a concrete theme; viewers on a different OS theme will still see the
+    // chosen presentation.
+    const rawTheme = processedDoc.globalSettings?.theme || 'light';
+    const systemDark = typeof window !== 'undefined' && !!window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = rawTheme === 'system' ? (systemDark ? 'dark' : 'light') : rawTheme;
+    const cssTheme = theme;
     const isDarkTheme = theme === 'dark' || theme === 'focus';
     const loaderBg = isDarkTheme ? '#1e1e1e' : '#f8fafc';
     const loaderColor = isDarkTheme ? '#e5e7eb' : '#1e293b';

@@ -10,7 +10,7 @@ import {
 import { clearAutoSave } from "../storage/auto-save";
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
-    Moon, Sun, Focus, Download, Layout, Settings,
+    Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
     Sparkles, Key
 } from "lucide-solid";
@@ -885,8 +885,11 @@ const Menu: Component = () => {
                                     </Show>
                                 </div>
                                 <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 4px' }}></div>
-                                <button class="menu-btn" onClick={toggleTheme} title="Toggle Theme (Light / Dark / Focus)">
-                                    {store.theme === 'light' ? <Moon size={16} /> : store.theme === 'dark' ? <Focus size={16} /> : <Sun size={16} />}
+                                <button class="menu-btn" onClick={toggleTheme} title={`Toggle Theme — currently ${store.theme} (Light → Dark → Focus → System)`}>
+                                    {store.theme === 'light' ? <Moon size={16} />
+                                        : store.theme === 'dark' ? <Focus size={16} />
+                                            : store.theme === 'focus' ? <Monitor size={16} />
+                                                : <Sun size={16} />}
                                 </button>
 
                             </div>
@@ -927,8 +930,11 @@ const Menu: Component = () => {
                                         </button>
                                         <div class="menu-separator"></div>
                                         <button class="menu-item" onClick={() => { toggleTheme(); setIsUtilityMenuOpen(false); }}>
-                                            {store.theme === 'light' ? <Moon size={16} /> : store.theme === 'dark' ? <Focus size={16} /> : <Sun size={16} />}
-                                            <span class="label">Toggle Theme</span>
+                                            {store.theme === 'light' ? <Moon size={16} />
+                                                : store.theme === 'dark' ? <Focus size={16} />
+                                                    : store.theme === 'focus' ? <Monitor size={16} />
+                                                        : <Sun size={16} />}
+                                            <span class="label">Toggle Theme ({store.theme})</span>
                                         </button>
                                     </div>
                                 </Show>

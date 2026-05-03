@@ -14,6 +14,34 @@ import { refreshBoundLine } from "../utils/binding-logic";
 import { abortDsAlgorithm } from "../utils/ds-operations";
 import { getImage } from "../utils/image-cache";
 
+export type Theme = 'light' | 'dark' | 'focus' | 'system';
+export type ResolvedTheme = 'light' | 'dark' | 'focus';
+
+const systemPrefersDark = (): boolean =>
+    typeof window !== 'undefined' &&
+    !!window.matchMedia &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+export const resolveTheme = (theme: Theme): ResolvedTheme =>
+    theme === 'system' ? (systemPrefersDark() ? 'dark' : 'light') : theme;
+
+// One-time migration: previous focus theme stored white as default stroke.
+// With the dark-mode CSS filter inverting black→white at render time,
+// stored colors should be canonical (light-mode) so reset white defaults to black.
+try {
+    if (typeof localStorage !== 'undefined' && !localStorage.getItem('theme-canonical-v1')) {
+        const raw = localStorage.getItem('defaultElementStyles');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            let changed = false;
+            if (parsed?.strokeColor === '#ffffff') { parsed.strokeColor = '#000000'; changed = true; }
+            if (parsed?.textColor === '#ffffff') { parsed.textColor = '#000000'; changed = true; }
+            if (changed) localStorage.setItem('defaultElementStyles', JSON.stringify(parsed));
+        }
+        localStorage.setItem('theme-canonical-v1', '1');
+    }
+} catch { /* ignore */ }
+
 interface AppState {
     // Current Active Slide properties (for performance and compatibility)
     elements: DrawingElement[];
@@ -34,7 +62,8 @@ interface AppState {
     toolLocked: boolean; // When true, tool stays active after drawing
     selection: string[]; // IDs of selected elements
     defaultElementStyles: Partial<DrawingElement>; // Styles for new elements
-    theme: 'light' | 'dark' | 'focus';
+    theme: Theme;
+    resolvedTheme: ResolvedTheme;
     globalSettings: GlobalSettings;
     showCanvasProperties: boolean;
     undoStackLength: number;
@@ -141,8 +170,8 @@ const initialState: AppState = {
     welcomeDismissed: false,
     defaultElementStyles: (() => {
         const builtinDefaults: Partial<DrawingElement> = {
-            strokeColor: (localStorage.getItem('theme') === 'focus') ? '#ffffff' : '#000000',
-            textColor: (localStorage.getItem('theme') === 'focus') ? '#ffffff' : '#000000',
+            strokeColor: '#000000',
+            textColor: '#000000',
             backgroundColor: 'transparent',
             fillStyle: 'solid',
             strokeWidth: 4,
@@ -190,9 +219,10 @@ const initialState: AppState = {
         fineliner: { strokeWidth: 4 },
         inkbrush: { strokeWidth: 6 },
     } as Record<string, Partial<any>>,
-    theme: (localStorage.getItem('theme') as 'light' | 'dark' | 'focus') || 'light',
+    theme: ((localStorage.getItem('theme') as Theme) || 'light'),
+    resolvedTheme: resolveTheme((localStorage.getItem('theme') as Theme) || 'light'),
     globalSettings: {
-        theme: (localStorage.getItem('theme') as 'light' | 'dark' | 'focus') || 'light',
+        theme: ((localStorage.getItem('theme') as Theme) || 'light'),
         animationEnabled: true,
         reducedMotion: false,
         renderStyle: 'sketch',
@@ -810,7 +840,7 @@ export const updateDefaultStyles = (updates: Partial<DrawingElement>) => {
 
 export const resetDefaultStyles = () => {
     const builtinDefaults: Partial<DrawingElement> = {
-        strokeColor: (store.theme === 'focus') ? '#ffffff' : '#000000',
+        strokeColor: '#000000',
         backgroundColor: 'transparent',
         fillStyle: 'solid',
         strokeWidth: 4,
@@ -1733,51 +1763,22 @@ export const moveElementZIndex = (id: string, direction: 'front' | 'back' | 'for
     });
 };
 
-const FOCUS_CANVAS_BG = '#1a1a2e';
-const DEFAULT_CANVAS_BG = '#ffffff';
-
-export const setTheme = (theme: 'light' | 'dark' | 'focus') => {
-    const prevTheme = store.theme;
+export const setTheme = (theme: Theme) => {
     setStore('theme', theme);
     setStore('globalSettings', 'theme', theme);
     localStorage.setItem('theme', theme);
 
-    // Focus uses dark UI chrome; map to CSS data-theme accordingly
-    const cssTheme = theme === 'focus' ? 'focus' : theme;
-    document.documentElement.setAttribute('data-theme', cssTheme);
+    // Resolve `system` to either light or dark via prefers-color-scheme.
+    const resolved = resolveTheme(theme);
+    setStore('resolvedTheme', resolved);
 
-    // Only focus uses light strokes — dark mode is same as light for canvas
-    const isDark = theme === 'focus';
-    const oldStroke = isDark ? '#000000' : '#ffffff';
-    const newStroke = isDark ? '#ffffff' : '#000000';
-    setStore('defaultElementStyles', 'strokeColor', newStroke);
-    setStore('defaultElementStyles', 'textColor', newStroke);
-
-    // Also update cached per-tool styles that still have the old default
-    for (const tool of Object.keys(store.toolStyles)) {
-        if ((store.toolStyles as any)[tool]?.strokeColor === oldStroke) {
-            setStore('toolStyles', tool as any, 'strokeColor' as any, newStroke);
-        }
-    }
-
-    // In infinite canvas mode, swap the canvas background when entering/leaving
-    // focus so the stored value matches the visual.  In slides mode the slide
-    // rectangle stays WYSIWYG — only the workspace area around it goes dark.
-    if (store.docType === 'infinite') {
-        if (theme === 'focus' && prevTheme !== 'focus') {
-            if (store.canvasBackgroundColor === DEFAULT_CANVAS_BG) {
-                setStore('canvasBackgroundColor', FOCUS_CANVAS_BG);
-            }
-        } else if (theme !== 'focus' && prevTheme === 'focus') {
-            if (store.canvasBackgroundColor === FOCUS_CANVAS_BG) {
-                setStore('canvasBackgroundColor', DEFAULT_CANVAS_BG);
-            }
-        }
-    }
+    // CSS variables are driven by the *resolved* theme so panels theme correctly
+    // when the user picks `system` and the OS is dark.
+    document.documentElement.setAttribute('data-theme', resolved);
 };
 
 export const toggleTheme = () => {
-    const order: ('light' | 'dark' | 'focus')[] = ['light', 'dark', 'focus'];
+    const order: Theme[] = ['light', 'dark', 'focus', 'system'];
     const idx = order.indexOf(store.theme);
     const next = order[(idx + 1) % order.length];
     setTheme(next);
@@ -2524,8 +2525,21 @@ export const toggleCommandPalette = (visible?: boolean, filter?: string | null) 
     setStore('showCommandPalette', (v) => visible ?? !v);
 };
 
-// Initialize theme on load
-document.documentElement.setAttribute('data-theme', initialState.theme);
+// Initialize theme on load — apply the *resolved* theme so the `system` option
+// follows the OS at first paint.
+document.documentElement.setAttribute('data-theme', initialState.resolvedTheme);
+
+// When the user's choice is `system`, re-resolve and re-apply whenever the OS
+// theme flips.  Other choices (light/dark/focus) are unaffected.
+if (typeof window !== 'undefined' && window.matchMedia) {
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = () => { if (store.theme === 'system') setTheme('system'); };
+    if (typeof mql.addEventListener === 'function') {
+        mql.addEventListener('change', handler);
+    } else if (typeof (mql as any).addListener === 'function') {
+        (mql as any).addListener(handler);
+    }
+}
 
 import { calculateAlignment, calculateDistribution, type AlignmentType, type DistributionType } from "../utils/alignment";
 

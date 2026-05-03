@@ -1031,7 +1031,19 @@ const Canvas: Component = () => {
                         setContextMenuPos({ x: e.clientX, y: e.clientY });
                         setContextMenuOpen(true);
                     }}
-                    style={{ display: "block", "touch-action": "none", cursor: cursor(), "user-select": "none" }}
+                    style={{
+                        display: "block",
+                        "touch-action": "none",
+                        cursor: cursor(),
+                        "user-select": "none",
+                        // Excalidraw-style dark mode: invert canonical (light-mode) colors
+                        // for dark/focus presentation without mutating stored values.
+                        // TODO: pre-invert images for dark-mode CSS filter so embedded
+                        // raster images render true-color instead of inverted.
+                        filter: (store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus')
+                            ? 'invert(93%) hue-rotate(180deg)'
+                            : 'none',
+                    }}
                 />
             </div>
 
@@ -1052,7 +1064,12 @@ const Canvas: Component = () => {
                             : store.canvasTexture === 'dots'
                                 ? `radial-gradient(#000000 1px, transparent 1px)`
                                 : 'none',
-                        "background-size": store.canvasTexture === 'dots' ? '20px 20px' : 'auto'
+                        "background-size": store.canvasTexture === 'dots' ? '20px 20px' : 'auto',
+                        // Match the canvas filter so the texture overlay reads
+                        // correctly against the inverted canvas in dark/focus.
+                        filter: (store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus')
+                            ? 'invert(93%) hue-rotate(180deg)'
+                            : 'none',
                     }}
                 />
             </Show>

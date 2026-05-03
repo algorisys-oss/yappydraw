@@ -34,7 +34,8 @@ export const properties: PropertyConfig[] = [
         options: [
             { label: 'Light', value: 'light' },
             { label: 'Dark', value: 'dark' },
-            { label: 'Focus (Dark Canvas)', value: 'focus' }
+            { label: 'Focus (Dark Canvas)', value: 'focus' },
+            { label: 'System (Follow OS)', value: 'system' }
         ],
         group: 'canvas',
         applicableTo: ['canvas'],

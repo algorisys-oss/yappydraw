@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-05-03
+
+### Added
+- **System theme** — new `system` choice in the theme cycle (Light → Dark → Focus → System) follows the OS `prefers-color-scheme` and updates live when the OS theme flips, via a `matchMedia` listener at app boot
+- **Excalidraw-style dark mode** — `dark` mode now darkens the canvas surface (not just UI chrome) via a `filter: invert(93%) hue-rotate(180deg)` on the host `<canvas>` element; legacy black-on-white drawings render legibly without any stored colors being mutated
+- `setTheme(theme)`, `getTheme()`, `getResolvedTheme()` exposed on the public Yappy API
+
+### Changed
+- Theme model split into the user's *choice* (`store.theme`: `light | dark | focus | system`) and the displayed *resolved* theme (`store.resolvedTheme`: `light | dark | focus`)
+- Stored colors are now treated as **theme-canonical** (light-mode); dark/focus presentation is a pure render-time transform — round-tripping a scene through a theme switch is byte-identical
+- Default stroke colors are always canonical `#000000` regardless of theme; dropped the focus-mode white-stroke flip from `setTheme`, `defaultElementStyles` init, `resetDefaultStyles`, and BPMN Pool defaults
+- `[data-theme="dark"]` workspace background is now dark for consistency with the inverted canvas (was `#e2e8f0`, now `#1a1a2e`)
+- Theme dropdown gains a "System (Follow OS)" option; toggle button shows a `Monitor` icon when system is active
+- HTML export resolves `system` to the current OS preference at export time so the exported file ships with a concrete theme
+
+### Migration
+- One-time localStorage migration (gated by the `theme-canonical-v1` flag) flips any saved `#ffffff` default stroke/text from older focus-mode users back to `#000000` so they don't draw invisible strokes on the newly inverted canvas
+
+### Known limitation
+- The canvas filter also inverts embedded raster images; in dark/focus mode PNGs/JPGs appear color-inverted. Per-image counter-inversion (offscreen pre-invert before `drawImage`) is the planned follow-up — TODO marker is in `frontend/src/components/canvas.tsx`
+
 ## [0.26.2] - 2026-03-25
 
 ### Added

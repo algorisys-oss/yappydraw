@@ -275,7 +275,7 @@ export const getCommands = (): Command[] => {
         { id: 'view-zoom-reset', label: 'Reset Zoom (100%)', category: 'View', action: () => setViewState({ scale: 1 }), shortcut: 'Ctrl+0' },
         { id: 'view-zoom-fit', label: 'Zoom to Fit', category: 'View', action: () => zoomToFit(), shortcut: 'Ctrl+1' },
         { id: 'view-zoom-selection', label: 'Zoom to Selection', category: 'View', action: () => zoomToSelection(), shortcut: 'Ctrl+2' },
-        { id: 'view-theme', label: 'Toggle Theme', category: 'View', action: () => toggleTheme() },
+        { id: 'view-theme', label: 'Toggle Theme (Light / Dark / Focus / System)', category: 'View', action: () => toggleTheme() },
         { id: 'view-present-start', label: 'Present from Beginning', category: 'View', action: () => togglePresentationMode(true, 0), shortcut: 'F5' },
         { id: 'view-present-current', label: 'Present from Current Slide', category: 'View', action: () => togglePresentationMode(true), shortcut: 'Shift+F5' },
 

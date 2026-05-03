@@ -1,6 +1,6 @@
 import {
     store, addElement, updateElement, deleteElements, setViewState, pushToHistory, setStore, zoomToFit,
-    undo, redo, groupSelected, ungroupSelected, duplicateElement, toggleTheme,
+    undo, redo, groupSelected, ungroupSelected, duplicateElement, toggleTheme, setTheme, type Theme,
     addLayer, deleteLayer, setActiveLayer, mergeLayerDown, flattenLayers, isolateLayer, showAllLayers,
     updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion,
     isLayerVisible, isLayerLocked,
@@ -1326,6 +1326,21 @@ export const YappyAPI = {
     // Transformation
     duplicate(id: string) { duplicateElement(id); },
     toggleTheme() { toggleTheme(); },
+
+    /**
+     * Set the theme explicitly. Choices: 'light', 'dark', 'focus', 'system'.
+     * 'system' follows the OS prefers-color-scheme and live-updates when it
+     * changes. Stored colors are not mutated; dark/focus inversion is purely
+     * a render-time CSS filter on the canvas.
+     */
+    setTheme(theme: Theme) { setTheme(theme); },
+
+    /** The user's current theme choice (may be 'system'). */
+    getTheme(): Theme { return store.theme; },
+
+    /** The currently displayed theme ('system' resolved to 'light' or 'dark'). */
+    getResolvedTheme(): 'light' | 'dark' | 'focus' { return store.resolvedTheme; },
+
 
     // Layers
     addLayer(name?: string) { return addLayer(name); },

@@ -170,19 +170,17 @@ export function decayLaserTrail(
 export function renderWorkspaceBackground(
     ctx: CanvasRenderingContext2D,
     canvas: HTMLCanvasElement,
-    theme: string,
+    _theme: string,
     docType?: string,
     canvasBackgroundColor?: string
 ): void {
+    // Stored colors are theme-canonical (light-mode); dark/focus presentation
+    // is handled by a CSS invert filter on the host <canvas> element, so this
+    // function paints in canonical (light-mode) colors regardless of theme.
     if (docType === 'infinite') {
-        // Infinite canvas: use the user's background color, but in focus mode
-        // default to dark canvas when the bg hasn't been customised
-        const isDefault = !canvasBackgroundColor || canvasBackgroundColor === '#ffffff';
-        ctx.fillStyle = (theme === 'focus' && isDefault) ? '#1a1a2e' : (canvasBackgroundColor || '#ffffff');
+        ctx.fillStyle = canvasBackgroundColor || '#ffffff';
     } else {
-        // Slides mode: neutral workspace behind the slide rectangle
-        // Focus mode uses a dark workspace to match the dark-canvas intent
-        ctx.fillStyle = theme === 'focus' ? '#1a1a2e' : '#e2e8f0';
+        ctx.fillStyle = '#e2e8f0';
     }
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }

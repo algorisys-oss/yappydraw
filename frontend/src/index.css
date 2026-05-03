@@ -38,9 +38,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dark Mode Overrides — only UI chrome, not canvas/slide content */
+/* Dark Mode Overrides — UI chrome and workspace go dark; canvas content
+   inversion is handled by a CSS filter on the host <canvas> element. */
 [data-theme="dark"] {
-  --bg-canvas: #e2e8f0; /* Canvas area stays neutral regardless of theme */
+  --bg-canvas: #1a1a2e;
   --bg-panel: #1e1e1e;
   --bg-secondary: #2d2d2d;
   --text-primary: #e5e7eb;

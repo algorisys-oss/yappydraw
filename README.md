@@ -230,7 +230,7 @@ Yappy.createSolidBlock(100, 100, 200, 150, { depth: 50, viewAngle: 45 })
 - **Transform shape** — right-click to convert between shape types within the same family
 - **Curve style switching** — change connectors between straight, bezier, and elbow
 - **Grid & snap** — configurable grid overlay (lines/dots), snap-to-grid, snap-to-objects
-- **Dark mode** — full theme support with localStorage persistence
+- **Dark mode** — Light / Dark / Focus / System (follows OS `prefers-color-scheme`); render-time canvas inversion preserves stored colors
 - **Minimap** — visual canvas overview with click-to-navigate
 - **Zen mode** (Alt+Z) — hide all panels for distraction-free drawing
 - **Copy/paste styles** — format painter for element formatting
