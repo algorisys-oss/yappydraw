@@ -5,7 +5,7 @@ import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
-    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo
+    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import {
@@ -724,6 +724,15 @@ const Menu: Component = () => {
                                             <Show when={store.showPropertyPanel}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+Enter</span>
                                         </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => {
+                                        setStore("selection", []);
+                                        setShowCanvasProperties(true);
+                                        togglePropertyPanel(true);
+                                        setIsMenuOpen(false);
+                                    }}>
+                                        <Settings size={16} />
+                                        <span class="label">Canvas Settings</span>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleLayerPanel(); setIsMenuOpen(false); }}>
                                         <Layers size={16} />

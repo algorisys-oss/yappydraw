@@ -176,6 +176,18 @@ const Canvas: Component = () => {
     let cropDragStartY = 0;
     let cropDragStartRect: { x: number; y: number; width: number; height: number } | null = null;
 
+    // Heuristic: PointerEvent.width/height on iPad Safari report the contact
+    // area in CSS pixels. Apple Pencil's tip is ~1-2 px; finger ~25-40 px;
+    // palm 50+ px. iPad sometimes reports a quick consecutive Pencil tap as
+    // pointerType='touch' with the small Pencil-tip area — this distinguishes
+    // a misclassified pen from real palm contact.
+    const isPencilSizedTouch = (e: PointerEvent): boolean => {
+        const w = (e as any).width;
+        const h = (e as any).height;
+        if (w == null || h == null) return false;
+        return w > 0 && w <= 5 && h > 0 && h <= 5;
+    };
+
     // Throttle constants
     const SNAPPING_THROTTLE_MS = 16; // ~60 FPS
     const LASER_THROTTLE_MS = 8; // ~120fps for smooth trail
@@ -597,9 +609,16 @@ const Canvas: Component = () => {
     const handlePointerDown = (e: PointerEvent) => {
         if (store.appMode === 'embed') return;
 
-        // Palm rejection (iPad / Apple Pencil): if a pen is currently down or was
-        // down within the last 700ms, ignore touch events. This prevents the
-        // resting palm from drawing or moving the canvas.
+        // Palm rejection (iPad / Apple Pencil): block touch events while a pen
+        // is in flight or was used in the last 700ms.
+        //
+        // Apple Pencil quirk: on rapid consecutive contacts iPad Safari
+        // occasionally misclassifies the first pointerdown of the next stroke
+        // as `pointerType: 'touch'` instead of 'pen'. Such events still report
+        // a pencil-tip-sized contact area (width/height ≤ ~5 px) and non-zero
+        // pressure — palm/finger contacts report much larger. Letting these
+        // through prevents the "alternate characters draw, alternate empty"
+        // pattern users see when writing fast.
         const PEN_RECENT_WINDOW_MS = 700;
         if (e.pointerType === 'pen') {
             pState.activePenPointerId = e.pointerId;
@@ -607,7 +626,13 @@ const Canvas: Component = () => {
         } else if (e.pointerType === 'touch') {
             const penActive = pState.activePenPointerId !== null;
             const penRecent = Date.now() - pState.lastPenInputAt < PEN_RECENT_WINDOW_MS;
-            if (penActive || penRecent) return;
+            const looksLikePen = isPencilSizedTouch(e);
+            if ((penActive || penRecent) && !looksLikePen) return;
+            if (looksLikePen) {
+                // Promote misclassified pen contact: track it like a pen.
+                pState.activePenPointerId = e.pointerId;
+                pState.lastPenInputAt = Date.now();
+            }
         }
         pState.lastPointerType = (e.pointerType as 'mouse' | 'pen' | 'touch') || null;
 
@@ -704,13 +729,17 @@ const Canvas: Component = () => {
     };
 
     const handlePointerMove = (e: PointerEvent) => {
-        // Palm rejection on move: if a pen is active, drop touch moves entirely.
+        // Palm rejection on move: drop palm-sized touch moves while a pen is
+        // active or recently active. Pencil-tip-sized touch (the misclassified
+        // Apple Pencil case) is allowed through — see handlePointerDown.
         if (e.pointerType === 'pen') {
             pState.lastPenInputAt = Date.now();
         } else if (e.pointerType === 'touch') {
             const penActive = pState.activePenPointerId !== null;
             const penRecent = Date.now() - pState.lastPenInputAt < 700;
-            if (penActive || penRecent) return;
+            const looksLikePen = isPencilSizedTouch(e);
+            if ((penActive || penRecent) && !looksLikePen) return;
+            if (looksLikePen) pState.lastPenInputAt = Date.now();
         }
 
         if (presentationOnMove(e, pState)) return;
@@ -788,7 +817,8 @@ const Canvas: Component = () => {
     };
 
     const handlePointerUp = (e: PointerEvent) => {
-        // Palm rejection: drop touch up if a pen is still in control.
+        // Palm rejection: drop palm-sized touch up if a pen is still in control,
+        // but let pencil-tip-sized touch ups through (matches handlePointerDown).
         if (e.pointerType === 'pen') {
             if (pState.activePenPointerId === e.pointerId) {
                 pState.activePenPointerId = null;
@@ -797,9 +827,14 @@ const Canvas: Component = () => {
         } else if (e.pointerType === 'touch') {
             const penActive = pState.activePenPointerId !== null;
             const penRecent = Date.now() - pState.lastPenInputAt < 700;
-            if (penActive || penRecent) {
+            const looksLikePen = isPencilSizedTouch(e);
+            if ((penActive || penRecent) && !looksLikePen) {
                 try { (e.currentTarget as Element).releasePointerCapture(e.pointerId); } catch { /* noop */ }
                 return;
+            }
+            if (looksLikePen && pState.activePenPointerId === e.pointerId) {
+                pState.activePenPointerId = null;
+                pState.lastPenInputAt = Date.now();
             }
         }
 
@@ -1064,6 +1099,7 @@ const Canvas: Component = () => {
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
                     onDblClick={handleDoubleClick}
                     onContextMenu={(e) => {
                         e.preventDefault();

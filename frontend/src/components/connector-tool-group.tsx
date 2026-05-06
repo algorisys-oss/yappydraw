@@ -68,7 +68,6 @@ const ConnectorToolGroup: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
-        if (e.button !== 2) return; // ignore touch/pen long-press (iPad palm rest)
         setStore("showPropertyPanel", true);
         setStore("isPropertyPanelMinimized", false);
     };
@@ -97,6 +96,7 @@ const ConnectorToolGroup: Component = () => {
                 class={`toolbar-btn ${isConnectorToolActive() ? 'active' : ''} ${isConnectorToolActive() && store.toolLocked ? 'tool-locked' : ''}`}
                 on:click={toggleMenu}
                 onContextMenu={handleRightClick}
+                onDblClick={handleRightClick}
                 title={`${getCurrentTool().label} (A or 5 - Click for more)`}
             >
                 <div class="tool-icon-wrapper">

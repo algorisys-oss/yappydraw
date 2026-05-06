@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.5] - 2026-05-06
+
+### Added
+- **Touch-friendly access to per-tool defaults** — every toolbar button (simple tools and tool groups) now responds to **long-press** *and* **double-tap** by opening the property panel for that tool. Combined with desktop right-click, every device has a one-gesture path to a tool's defaults: right-click on mouse, long-press or double-tap on touch. Setting properties there persists per tool, so future strokes/shapes drawn with that tool use those defaults.
+
+### Changed
+- Toolbar `handleRightClick` no longer filters on `e.button === 2`. The filter was only added to suppress canvas palm-rest contextmenu, but toolbar buttons aren't a palm-rest target, and the filter was incidentally blocking iPad's native long-press gesture for opening the property panel. Canvas `onContextMenu` keeps its filter — palm-rest there still suppresses the menu.
+
+## [0.27.4] - 2026-05-06
+
+### Fixed
+- **iPad alternate-stroke loss with Apple Pencil** — writing fast produced "alternate characters draw, alternate empty". Cause: iPad Safari occasionally misclassifies the first `pointerdown` of a rapid consecutive Pencil tap as `pointerType: 'touch'` instead of 'pen', so v0.27.1's palm rejection blocked it (within the 700 ms post-pen window) and `drawOnDown` never ran for that stroke. Added a contact-area heuristic: a touch event with `width ≤ 5 && height ≤ 5` is treated as a misclassified pen contact (Apple Pencil tip is ~1-2 px; finger is ~25-40 px; palm is 50+ px). Real palm contacts are still rejected.
+- **Pointer cancel cleanup** — added an `onPointerCancel` handler that mirrors `pointerup` so iPad system-cancel events (e.g. when iOS interrupts a stroke for a gesture) don't leave the pointer-state machine in `isDrawing: true`.
+
+### Added
+- **Canvas Settings menu item** — accessible from the main hamburger menu under "Properties Panel". Previously the only entry point was the canvas right-click context menu, which after the v0.27.1 contextmenu filter requires `e.button === 2` (real mouse right-click) — leaving iPad users with no way to open canvas settings.
+
 ## [0.27.3] - 2026-05-06
 
 ### Fixed

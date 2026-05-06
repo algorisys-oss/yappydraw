@@ -65,7 +65,6 @@ const PenToolGroup: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
-        if (e.button !== 2) return; // ignore touch/pen long-press (iPad palm rest)
         store.showPropertyPanel ? () => { } : setSelectedTool(store.selectedTool); // Dummy for context, actual trigger:
         setStore("showPropertyPanel", true);
         setStore("isPropertyPanelMinimized", false);
@@ -95,6 +94,7 @@ const PenToolGroup: Component = () => {
                 class={`toolbar-btn ${isPenToolActive() ? 'active' : ''}`}
                 on:click={toggleMenu}
                 onContextMenu={handleRightClick}
+                onDblClick={handleRightClick}
                 title={`${getCurrentPenTool().label} (P or 7 - Click for more)`}
             >
                 <div class="tool-icon-wrapper">

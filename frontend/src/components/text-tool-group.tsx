@@ -65,7 +65,6 @@ const TextToolGroup: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
-        if (e.button !== 2) return; // ignore touch/pen long-press (iPad palm rest)
         setStore("showPropertyPanel", true);
         setStore("isPropertyPanelMinimized", false);
     };
@@ -94,6 +93,7 @@ const TextToolGroup: Component = () => {
                 class={`toolbar-btn ${isTextToolActive() ? 'active' : ''} ${isTextToolActive() && store.toolLocked ? 'tool-locked' : ''}`}
                 on:click={toggleMenu}
                 onContextMenu={handleRightClick}
+                onDblClick={handleRightClick}
                 title={`${getCurrentTextTool().label} (T or 8 - Click for more)`}
             >
                 <div class="tool-icon-wrapper">

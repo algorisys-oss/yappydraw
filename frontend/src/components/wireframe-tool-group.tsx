@@ -135,7 +135,6 @@ const WireframeToolGroup: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
-        if (e.button !== 2) return; // ignore touch/pen long-press (iPad palm rest)
         setStore("showPropertyPanel", true);
         setStore("isPropertyPanelMinimized", false);
     };
@@ -167,6 +166,7 @@ const WireframeToolGroup: Component = () => {
                 class={`toolbar-btn ${isActive() ? 'active' : ''} ${isActive() && store.toolLocked ? 'tool-locked' : ''}`}
                 on:click={toggleMenu}
                 onContextMenu={handleRightClick}
+                onDblClick={handleRightClick}
                 title={activeTool().label}
             >
                 <div class="tool-icon-wrapper">

@@ -67,7 +67,6 @@ const MindmapToolGroup: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
-        if (e.button !== 2) return; // ignore touch/pen long-press (iPad palm rest)
         setStore("showPropertyPanel", true);
         setStore("isPropertyPanelMinimized", false);
     };
@@ -99,6 +98,7 @@ const MindmapToolGroup: Component = () => {
                 class={`toolbar-btn ${isActive() ? 'active' : ''} ${isActive() && store.toolLocked ? 'tool-locked' : ''}`}
                 on:click={toggleMenu}
                 onContextMenu={handleRightClick}
+                onDblClick={handleRightClick}
                 title="Mindmap Tools"
             >
                 <div class="tool-icon-wrapper">
