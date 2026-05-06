@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.7] - 2026-05-06
+
+### Fixed
+- **iPad alternate-stroke loss with Apple Pencil — defensive layer** — even after v0.27.6's history-snapshot fix, the user reported every-other-stroke still going empty when writing fast with the pen lifting between letters. Several plausible failure modes that all trigger only on rapid pen lift+contact:
+  - **`setPointerCapture` throwing `InvalidStateError`** when the previous stroke's pointer hasn't been fully released by the time the next `pointerdown` fires. A throw here aborts `handlePointerDown` before `drawOnDown` runs and the stroke is silently lost. Wrapped `setPointerCapture` and `releasePointerCapture` in try/catch.
+  - **Palm-rejection 700 ms grace window** rejecting legitimate Apple Pencil pointerdowns that iPad Safari occasionally ships as `pointerType: 'touch'`. Even with the v0.27.4 width heuristic, edge cases (no width reported, pressure 0) slipped through. Removed the time window — we now only filter touch events when a pen is **currently** in contact, not "was recent". iPadOS does its own system-level palm rejection for paired Apple Pencils, so this is a safety net rather than the primary defense.
+  - **`penUpdatePending` RAF flag stuck `true`** between strokes if the previous stroke's RAF hadn't fired yet by the time the next stroke started. Doesn't lose data (the stale RAF eventually flushes), but it can delay visual updates. Reset to `false` on every `pointerdown` to start each stroke clean.
+
 ## [0.27.6] - 2026-05-06
 
 ### Fixed

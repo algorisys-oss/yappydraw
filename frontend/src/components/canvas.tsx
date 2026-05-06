@@ -609,35 +609,34 @@ const Canvas: Component = () => {
     const handlePointerDown = (e: PointerEvent) => {
         if (store.appMode === 'embed') return;
 
-        // Palm rejection (iPad / Apple Pencil): block touch events while a pen
-        // is in flight or was used in the last 700ms.
-        //
-        // Apple Pencil quirk: on rapid consecutive contacts iPad Safari
-        // occasionally misclassifies the first pointerdown of the next stroke
-        // as `pointerType: 'touch'` instead of 'pen'. Such events still report
-        // a pencil-tip-sized contact area (width/height ≤ ~5 px) and non-zero
-        // pressure — palm/finger contacts report much larger. Letting these
-        // through prevents the "alternate characters draw, alternate empty"
-        // pattern users see when writing fast.
-        const PEN_RECENT_WINDOW_MS = 700;
+        // Palm rejection (iPad / Apple Pencil): only block touch while a pen is
+        // CURRENTLY in contact. The previous "pen recent (700ms)" window was
+        // dropping legitimate Apple Pencil pointerdowns between fast strokes —
+        // iPad Safari sometimes ships the next stroke's down as a misclassified
+        // touch event, and the 700ms window blocked it. Without the window,
+        // every Pencil-down between strokes lands; only palm contact during an
+        // ongoing pen stroke is filtered. iPadOS also does its own system-level
+        // palm rejection when Apple Pencil is paired, so this is a safety net,
+        // not the primary defense.
         if (e.pointerType === 'pen') {
             pState.activePenPointerId = e.pointerId;
             pState.lastPenInputAt = Date.now();
         } else if (e.pointerType === 'touch') {
-            const penActive = pState.activePenPointerId !== null;
-            const penRecent = Date.now() - pState.lastPenInputAt < PEN_RECENT_WINDOW_MS;
-            const looksLikePen = isPencilSizedTouch(e);
-            if ((penActive || penRecent) && !looksLikePen) return;
-            if (looksLikePen) {
-                // Promote misclassified pen contact: track it like a pen.
-                pState.activePenPointerId = e.pointerId;
-                pState.lastPenInputAt = Date.now();
-            }
+            if (pState.activePenPointerId !== null && !isPencilSizedTouch(e)) return;
         }
         pState.lastPointerType = (e.pointerType as 'mouse' | 'pen' | 'touch') || null;
 
+        // Reset RAF flush flag in case a previous stroke's RAF didn't fire by
+        // the time this stroke starts. Prevents the new stroke's pointermoves
+        // from skipping their flush schedule.
+        pState.penUpdatePending = false;
+        pState.penPointsBuffer = [];
+
         if (presentationOnDown(e, pState, pHelpers)) return;
-        (e.currentTarget as Element).setPointerCapture(e.pointerId);
+        // setPointerCapture can throw InvalidStateError on iPad when the
+        // previous pointer hasn't been fully released. Don't let that abort
+        // the rest of handlePointerDown — drawOnDown still needs to run.
+        try { (e.currentTarget as Element).setPointerCapture(e.pointerId); } catch { /* noop */ }
         const { x, y } = getWorldCoordinates(e.clientX, e.clientY);
 
         // Crop mode interception
@@ -729,17 +728,12 @@ const Canvas: Component = () => {
     };
 
     const handlePointerMove = (e: PointerEvent) => {
-        // Palm rejection on move: drop palm-sized touch moves while a pen is
-        // active or recently active. Pencil-tip-sized touch (the misclassified
-        // Apple Pencil case) is allowed through — see handlePointerDown.
+        // Palm rejection on move: only block palm-sized touch while a pen is
+        // currently in contact. Misclassified pencil-tip touches pass through.
         if (e.pointerType === 'pen') {
             pState.lastPenInputAt = Date.now();
         } else if (e.pointerType === 'touch') {
-            const penActive = pState.activePenPointerId !== null;
-            const penRecent = Date.now() - pState.lastPenInputAt < 700;
-            const looksLikePen = isPencilSizedTouch(e);
-            if ((penActive || penRecent) && !looksLikePen) return;
-            if (looksLikePen) pState.lastPenInputAt = Date.now();
+            if (pState.activePenPointerId !== null && !isPencilSizedTouch(e)) return;
         }
 
         if (presentationOnMove(e, pState)) return;
@@ -817,28 +811,25 @@ const Canvas: Component = () => {
     };
 
     const handlePointerUp = (e: PointerEvent) => {
-        // Palm rejection: drop palm-sized touch up if a pen is still in control,
-        // but let pencil-tip-sized touch ups through (matches handlePointerDown).
+        // Palm rejection: drop palm-sized touch up if a pen is currently in
+        // control. Pencil-sized touch ups pass through.
         if (e.pointerType === 'pen') {
             if (pState.activePenPointerId === e.pointerId) {
                 pState.activePenPointerId = null;
             }
             pState.lastPenInputAt = Date.now();
         } else if (e.pointerType === 'touch') {
-            const penActive = pState.activePenPointerId !== null;
-            const penRecent = Date.now() - pState.lastPenInputAt < 700;
-            const looksLikePen = isPencilSizedTouch(e);
-            if ((penActive || penRecent) && !looksLikePen) {
+            if (pState.activePenPointerId !== null && pState.activePenPointerId !== e.pointerId && !isPencilSizedTouch(e)) {
                 try { (e.currentTarget as Element).releasePointerCapture(e.pointerId); } catch { /* noop */ }
                 return;
             }
-            if (looksLikePen && pState.activePenPointerId === e.pointerId) {
+            if (pState.activePenPointerId === e.pointerId) {
                 pState.activePenPointerId = null;
                 pState.lastPenInputAt = Date.now();
             }
         }
 
-        (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+        try { (e.currentTarget as Element).releasePointerCapture(e.pointerId); } catch { /* noop */ }
 
         // Crop mode: finish drag
         if (cropDragHandle) {
