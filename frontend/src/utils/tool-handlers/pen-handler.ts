@@ -28,8 +28,16 @@ export function penOnMove(
         pState.penPointsBuffer.push(px, py);
     }
 
-    // Flush every move: store update naturally batches with the RAF draw the
-    // outer pointermove handler schedules. The previous 16ms wall-clock throttle
-    // dropped a frame for Apple Pencil and made strokes feel laggy/jittery.
-    helpers.flushPenPoints();
+    // RAF-driven flush. Coalesced events keep full input resolution in the
+    // buffer; the store is updated at most once per animation frame so Solid's
+    // reactive cascade can't saturate the main thread on iPad with Apple Pencil
+    // (which fires pointermove at ~120Hz). One flush per frame matches the
+    // display refresh and is what `requestAnimationFrame(draw)` will pick up.
+    if (!pState.penUpdatePending) {
+        pState.penUpdatePending = true;
+        requestAnimationFrame(() => {
+            pState.penUpdatePending = false;
+            helpers.flushPenPoints();
+        });
+    }
 }

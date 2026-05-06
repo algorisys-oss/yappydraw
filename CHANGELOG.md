@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.2] - 2026-05-06
+
+### Fixed
+- **iPad/Apple Pencil dropped strokes and inkbrush flicker** — 0.27.1 removed the 16 ms wall-clock throttle in `pen-handler` and started flushing the points buffer to the store on *every* `pointermove`. At Apple Pencil's ~120 Hz sample rate this saturated the JS main thread on iPad with 120 `setStore`/reactive-cascade cycles per second, which (a) caused intermittent `pointerdown` events to be missed between letters/strokes ("write a letter, next one doesn't appear, third one works"), and (b) made inkbrush render incomplete frames that looked like the stroke was being erased to white. Mouse on desktop was unaffected because mouse fires at ~60 Hz.
+- Replaced with RAF-driven flush: coalesced events still capture every Pencil sample (no resolution lost), but the store updates at most once per animation frame. This caps store mutations at the display refresh rate, frees the main thread for incoming pointer events, and matches the existing `requestAnimationFrame(draw)` cadence in `handlePointerMove`.
+
+### Notes
+- The drawing latency improvement from 0.27.1 is preserved — points still flow into the buffer immediately, only the store write is deferred to the next animation frame, so the visible stroke is always at most one frame behind the Pencil tip.
+
 ## [0.27.1] - 2026-05-06
 
 ### Fixed
