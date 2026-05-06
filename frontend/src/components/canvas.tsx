@@ -792,8 +792,32 @@ const Canvas: Component = () => {
         if (!pState.isDrawing || !pState.currentId) {
             if (pState.isDrawing && store.selectedTool === 'eraser') {
                 eraserOnMove(x, y, pHelpers);
+                return;
             }
-            return;
+
+            // Recovery for missed pointerdown — iPadOS occasionally swallows
+            // the next stroke's `pointerdown` for Apple Pencil when it's
+            // checking for the system "Apple Pencil double-tap" gesture
+            // (lift + recontact within ~150 ms). When that happens, the user's
+            // intent is clearly a new stroke (pressure > 0), but `isDrawing`
+            // stayed false because `drawOnDown` never ran. Synthesize it from
+            // the first move so the stroke isn't lost.
+            const isPenStrokeStart = e.pointerType === 'pen'
+                && typeof (e as any).pressure === 'number'
+                && (e as any).pressure > 0
+                && !pState.isDragging
+                && !pState.isPolylineBuilding
+                && !pState.draggingFromConnector;
+            const drawingTool = store.selectedTool === 'fineliner'
+                || store.selectedTool === 'inkbrush'
+                || store.selectedTool === 'marker'
+                || store.selectedTool === 'ink';
+            if (isPenStrokeStart && drawingTool) {
+                drawOnDown(x, y, pState, pHelpers);
+                // Fall through to the pen-on-move branch below.
+            } else {
+                return;
+            }
         }
 
         if (store.selectedTool === 'fineliner' || store.selectedTool === 'marker' || store.selectedTool === 'inkbrush' || store.selectedTool === 'ink') {

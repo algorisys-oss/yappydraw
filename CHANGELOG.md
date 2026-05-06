@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.8] - 2026-05-06
+
+### Fixed
+- **iPad Apple Pencil double-tap gesture swallowing alternate `pointerdown` events** — diagnosed via the user's report that finger and mouse work fine, only Apple Pencil fails on rapid lift+recontact. When iPadOS detects a possible Apple Pencil side-tap gesture (the system shortcut that toggles tools), it can suppress the alternate `pointerdown` event from reaching JavaScript. The `pointermove` and `pointerup` events for that stroke still fire — but `isDrawing` is false (because `drawOnDown` never ran), so `handlePointerMove` early-returns and the whole stroke disappears.
+
+  Added a recovery path: when a pen `pointermove` fires with `pressure > 0` while a pen-drawing tool is active and no stroke is in flight, synthesize the missed `drawOnDown` from the move's coordinates. The stroke starts ~1 pointermove later than ideal but the first sample lands within the same animation frame, so the visible offset is invisible. This is a workaround for an iPadOS-level event suppression we can't otherwise prevent from web code.
+
 ## [0.27.7] - 2026-05-06
 
 ### Fixed
