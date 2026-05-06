@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.12] - 2026-05-06
+
+### Fixed
+- **iPad Apple Pencil stroke latency on both Safari and Chrome** — the canvas's main redraw effect was iterating every element and reading 80+ properties on each (`store.elements.forEach(e => { e.x; e.y; ...; e.bpmnEventType; ... })`) to subscribe to all possible property changes for redraw triggering. At Apple Pencil's ~120 Hz event rate that proxy-property iteration dominated per-frame cost on iPad and produced the visible stroke lag the user reported (consistent across Safari and Chrome on iPad — both use WebKit on iOS, so the bottleneck is engine-wide). The reference demo at https://github.com/shuding/apple-pencil-safari-api-test runs smoothly because it has no reactive system at all.
+- Replaced the per-element property iteration with a single dependency on `store.dirtyRevision`, bumped by `updateElement` / `addElement` / `deleteElements`. The redraw effect now sees one dep change per mutation instead of N elements × ~80 property accesses. Cost drops from O(elements × properties) to O(1) per mutation. The redraw still fires on every change — the mechanism is just a coarse counter instead of granular property reads.
+
 ## [0.27.11] - 2026-05-06
 
 ### Fixed

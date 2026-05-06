@@ -707,6 +707,11 @@ export const updateElement = (id: string, updates: Partial<DrawingElement>, reco
     }
 
     setStore("elements", (el) => el.id === id, updates);
+    // Bump the coarse "something changed" counter so the canvas's big redraw
+    // effect can subscribe to a single signal instead of iterating every
+    // element × 80+ properties on each mutation. On iPad with Apple Pencil
+    // writing at ~120 Hz, that iteration was the dominant per-frame cost.
+    bumpDirtyRevision();
     if ('flowAnimation' in updates) {
         updateGlobalTickerState();
     }

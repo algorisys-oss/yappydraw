@@ -363,77 +363,13 @@ const Canvas: Component = () => {
         store.isPreviewing; // Track preview state
         store.theme; // Track theme changes
         store.elements.length;
-        store.elements.forEach(e => {
-            e.x; e.y; e.width; e.height;
-            if (e.points) e.points.length;
-            e.angle; e.opacity; e.flipX; e.flipY;
-            e.strokeColor; e.backgroundColor; e.lidColor; e.fillStyle; e.strokeWidth; e.strokeStyle;
-            e.roughness; e.roundness;
-            e.text; e.fontSize; e.fontFamily; e.textAlign; e.verticalAlign;
-            e.fontWeight; e.fontStyle;
-            e.textColor; e.textHighlightEnabled; e.textHighlightColor; e.textHighlightPadding; e.textHighlightRadius;
-            e.startArrowhead; e.endArrowhead;
-            e.controlPoints; e.curveType; // Track control points and curve type for bezier lines
-            e.containerText; e.attributesText; e.methodsText; e.labelPosition; // Track label properties for immediate updates
-            e.umlHeaderHeight; e.umlAttrHeight; e.umlAttrScrollY; e.umlMethodsScrollY; // Track UML section layout + scroll
-            e.isCollapsed; e.parentId; // Track hierarchy state for immediate updates
-            e.starPoints; // Track star points for parametric stars
-            e.polygonSides; // Track polygon sides for parametric polygons
-            e.borderRadius; // Track border radius
-            e.burstPoints; // Track burst points for parametric burst
-            e.tailPosition; // Track tail position for speech bubble
-            e.shapeRatio; // Track shape ratio (sharpness)
-            e.sideRatio; // Track side ratio (perspective)
-            e.depth; // Track depth for 3D shapes
-            e.viewAngle; // Track viewing angle for 3D shapes
-            e.openAmount; // Track lid open state for 3D boxes
-            e.lidPosition; e.lidStyle; e.showLidHinge; e.lidStrokeColor; // Track lid configuration for openBox
-            e.taper; e.skewX; e.skewY;
-            e.frontTaper; e.frontSkewX; e.frontSkewY;
-            e.drawInnerBorder; // Track double border toggle
-            e.innerBorderDistance; // Track double border distance
-            e.strokeStyle; // Track stroke style (solid/dashed/dotted)
-            e.renderStyle; // Track drawing style (Sketch/Architectural)
-            e.startArrowhead; e.endArrowhead;
-            e.startArrowheadSize; e.endArrowheadSize;
-            e.arrowAnchorAlign;
-            e.fillDensity; // Track fill density
-            // Track gradient properties
-            e.gradientStart; e.gradientEnd; e.gradientDirection;
-            e.gradientStops; e.gradientType;
-            // Track shadow properties
-            e.shadowEnabled; e.shadowColor; e.shadowBlur; e.shadowOffsetX; e.shadowOffsetY;
-            // Effects
-            e.blendMode;
-            // Image filter properties
-            e.filterBrightness; e.filterContrast; e.filterSaturate;
-            e.filterBlur; e.filterHueRotate; e.filterInvert; e.filterSepia;
-            e.filterPreset;
-            e.crop; // Image crop
-            // Table properties
-            e.tableRows; e.tableCols; e.tableHeaders; e.tableData;
-            e.tableColWidths; e.tableRowHeights; e.tableColOrder;
-            e.tableSortCol; e.tableSortDir;
-            e.tableHeaderColor; e.tableHeaderTextColor; e.tableRowColor; e.tableAltRowColor;
-            e.tableColAlignments; e.tableMergedCells; e.tableCellFormats; e.tableCellBorders;
-            // Data Structure properties
-            e.dsShowIndices; e.dsDirection; e.dsItemColor; e.dsCapacity;
-            e.dsHighlightIndex; e.dsHighlightIndex2; e.dsHighlightColor; e.dsHighlightColor2;
-            e.dsSortedBoundary; e.dsSortedBoundaryEnd;
-            e.dsAnimProgress; e.dsAnimStyle; e.dsPersistChanges;
-            // BPMN properties
-            e.bpmnEventType; e.bpmnTaskType; e.bpmnLoopType;
-            e.bpmnIconScale; e.bpmnIconColor; e.bpmnIconFilled;
-            e.bpmnNonInterrupting; e.bpmnLaneCount;
-            e.bpmnLaneLabels; e.bpmnLaneHeights; e.bpmnOrientation;
-            e.bpmnLaneColors; e.bpmnLaneTextColors;
-            e.bpmnPoolLabelSize; e.bpmnLaneLabelSize;
-            e.bpmnLaneCollapsed;
-            e.poolContainerId; e.poolLaneIndex;
-            // Animations
-            e.spinEnabled; e.spinSpeed;
-            e.orbitEnabled; e.orbitCenterId; e.orbitRadius; e.orbitSpeed; e.orbitDirection;
-        });
+        // Coarse "something on an element changed" counter, bumped by
+        // updateElement / addElement / deleteElements / etc. Replaces the
+        // previous 80+ per-element property reads that ran on every store
+        // mutation — at Apple Pencil's ~120 Hz, that iteration dominated
+        // per-frame cost on iPad and produced visible stroke lag. A single
+        // counter dep is O(1) and gives the same redraw triggering.
+        store.dirtyRevision;
         // Track slide background changes for real-time updates
         store.slides.forEach(s => {
             s.backgroundColor; s.fillStyle; s.gradientStops; s.gradientDirection;
