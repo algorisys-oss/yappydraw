@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.14] - 2026-05-06
+
+### Fixed
+- **iPad alternate-empty-stroke pattern (1, _, 3, _, 5, ...) — touchend self-heal** — user reported the symptom is strict alternation: "I write 1, 2, 3, 4, 5 and only 1, 3, 5 appear". Strict alternation means stroke 2's `touchstart` IS reaching the handler — but my handler was bailing on `pState.isDrawing === true`, which means stroke 1's `touchend` had not finalized properly, leaving the flag stuck.
+  - On iPad, `touchend` events sometimes don't carry our tracked touch identifier in `changedTouches` (the gate I added in v0.27.11 to ignore palm lifts). When that gate dropped a legitimate touchend, `pState.isDrawing` and `touchDrivingPenStroke` stayed true, blocking the next stroke entirely.
+  - Removed the gate: `handleTouchEnd` now finalizes the stroke unconditionally when `touchDrivingPenStroke` is true. iPadOS's system-level palm rejection means non-pen touches don't reach us when an Apple Pencil is paired, so the gate was unneeded.
+  - Added a self-heal in `handleTouchStart`: if a previous stroke is somehow still in flight when a new `touchstart` arrives, force-finalize before starting the new one. A stuck flag from any cause now resolves itself instead of dropping every subsequent stroke.
+
 ## [0.27.13] - 2026-05-06
 
 ### Fixed

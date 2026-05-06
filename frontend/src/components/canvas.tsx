@@ -573,10 +573,33 @@ const Canvas: Component = () => {
         return null;
     };
 
+    // Force-finalize the current touch-driven stroke. Always safe to call.
+    const finalizeTouchStroke = () => {
+        if (!touchDrivingPenStroke && !pState.isDrawing) return;
+        try {
+            flushPenPoints();
+            drawOnUp(pState, pHelpers, pSignals);
+        } catch { /* noop */ }
+        touchDrivingPenStroke = false;
+        activeTouchIdentifier = -1;
+        // drawOnUp already clears these, but be defensive — a stuck flag is
+        // exactly what blocks the next stroke from starting.
+        pState.isDrawing = false;
+        pState.currentId = null;
+    };
+
     const handleTouchStart = (e: TouchEvent) => {
         if (store.appMode === 'embed') return;
-        if (!isPenDrawingTool()) return;             // only intercept for pen tools
-        if (pState.isDrawing) return;                // already in a stroke
+        if (!isPenDrawingTool()) return;
+        // Self-heal: if a previous stroke is somehow still in flight (touchend
+        // was missed, fired out of order, or its changedTouches didn't carry
+        // our tracked identifier on iPad), finalize it before starting the
+        // new one. Without this, a stuck `pState.isDrawing=true` blocks every
+        // subsequent stroke — exactly the alternate-empty-stroke pattern the
+        // user kept seeing.
+        if (touchDrivingPenStroke || pState.isDrawing) {
+            finalizeTouchStroke();
+        }
         const t = pickStylusTouch(e);
         if (!t) return;
         e.preventDefault();
@@ -593,7 +616,7 @@ const Canvas: Component = () => {
             return;
         }
         drawOnDown(x, y, pState, pHelpers);
-        requestAnimationFrame(draw);
+        draw();
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -605,28 +628,24 @@ const Canvas: Component = () => {
         e.preventDefault();
         const { x: ex, y: ey } = getWorldCoordinates(t.clientX, t.clientY);
         pState.penPointsBuffer.push(ex - pState.startX, ey - pState.startY);
-        // Match the working demo's latency profile: flush + draw synchronously
-        // inside the event handler. The RAF chain previously added 1-2 frames
-        // of perceptible lag between pen tip and visible stroke. With v0.27.12's
-        // O(1) reactive cascade, sync flush is sub-ms; sync draw is O(elements)
-        // and fits inside a frame at typical doc sizes. The display compositor
-        // takes the new canvas state at next vsync.
+        // Sync flush + sync draw — match the reference demo's latency profile.
+        // With v0.27.12's O(1) reactive cascade this fits inside a frame at
+        // typical doc sizes; the compositor picks up the canvas at next vsync.
         flushPenPoints();
         draw();
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
         if (!touchDrivingPenStroke) return;
-        // End only when OUR tracked touch ends — palm lifting shouldn't end
-        // the stroke.
-        const t = findTouchById(e, activeTouchIdentifier);
-        if (!t) return;
+        // Always finalize on touchend when we're driving a stroke. The
+        // previous "find tracked touch in changedTouches" gate was dropping
+        // legitimate ends on iPad when the changedTouches list didn't carry
+        // our identifier, leaving the stroke stuck and blocking the next one.
+        // System-level palm rejection means non-pen touches don't reach us
+        // when an Apple Pencil is paired, so this is safe.
         e.preventDefault();
-        flushPenPoints();
-        drawOnUp(pState, pHelpers, pSignals);
-        touchDrivingPenStroke = false;
-        activeTouchIdentifier = -1;
-        requestAnimationFrame(draw);
+        finalizeTouchStroke();
+        draw();
     };
 
     const handlePointerDown = (e: PointerEvent) => {
