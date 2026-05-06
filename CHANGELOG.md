@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.9] - 2026-05-06
+
+### Fixed
+- **iPad Apple Pencil pen-tool drawing now uses TouchEvents instead of PointerEvents** — root-cause traced via the user's reference to https://github.com/shuding/apple-pencil-safari-api-test, which works perfectly on iPad+Pencil and uses TouchEvents (not PointerEvents). iPad Safari's PointerEvent delivery for Apple Pencil is unreliable on rapid lift+recontact — the OS swallows alternate `pointerdown` events for gesture-detection windows. TouchEvents are unaffected.
+  - Added native `touchstart` / `touchmove` / `touchend` / `touchcancel` listeners on the canvas (registered with `passive: false` so `preventDefault()` works).
+  - For pen-drawing tools (fineliner, inkbrush, marker, ink), TouchEvents drive the entire stroke: `touchstart` → `drawOnDown`, `touchmove` → buffer points + RAF flush, `touchend` → `drawOnUp`.
+  - A `touchDrivingPenStroke` flag tells the existing pointer handlers to skip cleanly when TouchEvents are in flight, preventing double-handling on iOS where both event families fire for the same physical contact.
+  - For non-drawing tools (selection, pan, eraser, shapes, etc.) and for desktop mouse, PointerEvents continue to handle everything as before.
+
 ## [0.27.8] - 2026-05-06
 
 ### Fixed

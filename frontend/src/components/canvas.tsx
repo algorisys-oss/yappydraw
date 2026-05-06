@@ -606,8 +606,69 @@ const Canvas: Component = () => {
         get textInputRef() { return textInputRef; }
     };
 
+    // True while a TouchEvent is driving a pen-tool stroke. iPad Safari's
+    // PointerEvent delivery for Apple Pencil is unreliable on rapid lift +
+    // recontact (alternate strokes get dropped); TouchEvents are reliable.
+    // For pen-drawing tools we bind both event families and let TouchEvents
+    // win when both fire — this flag lets pointer handlers skip cleanly.
+    let touchDrivingPenStroke = false;
+    const isPenDrawingTool = (): boolean => {
+        const t = store.selectedTool;
+        return t === 'fineliner' || t === 'inkbrush' || t === 'marker' || t === 'ink';
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+        if (store.appMode === 'embed') return;
+        if (e.touches.length !== 1) return;          // multi-touch — leave it to pointer
+        if (!isPenDrawingTool()) return;             // only intercept for pen tools
+        if (pState.isDrawing) return;                // already in a stroke
+        const t = e.changedTouches[0];
+        if (!t) return;
+        e.preventDefault();
+        touchDrivingPenStroke = true;
+        pState.penUpdatePending = false;
+        pState.penPointsBuffer = [];
+        const { x, y } = getWorldCoordinates(t.clientX, t.clientY);
+        // Layer-visibility / lock checks mirror handlePointerDown's guards.
+        const activeLayer = store.layers.find(l => l.id === store.activeLayerId);
+        if (!activeLayer?.visible || activeLayer?.locked) {
+            touchDrivingPenStroke = false;
+            return;
+        }
+        drawOnDown(x, y, pState, pHelpers);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+        if (!touchDrivingPenStroke) return;
+        const t = e.changedTouches[0];
+        if (!t) return;
+        e.preventDefault();
+        const { x: ex, y: ey } = getWorldCoordinates(t.clientX, t.clientY);
+        setCursorPosition({ x: Math.round(ex), y: Math.round(ey) });
+        pState.penPointsBuffer.push(ex - pState.startX, ey - pState.startY);
+        if (!pState.penUpdatePending) {
+            pState.penUpdatePending = true;
+            requestAnimationFrame(() => {
+                pState.penUpdatePending = false;
+                flushPenPoints();
+                requestAnimationFrame(draw);
+            });
+        }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+        if (!touchDrivingPenStroke) return;
+        e.preventDefault();
+        flushPenPoints();
+        drawOnUp(pState, pHelpers, pSignals);
+        touchDrivingPenStroke = false;
+        requestAnimationFrame(draw);
+    };
+
     const handlePointerDown = (e: PointerEvent) => {
         if (store.appMode === 'embed') return;
+        // TouchEvent path is handling this stroke — skip pointer duplicate.
+        if (touchDrivingPenStroke) return;
 
         // Palm rejection (iPad / Apple Pencil): only block touch while a pen is
         // CURRENTLY in contact. The previous "pen recent (700ms)" window was
@@ -728,6 +789,7 @@ const Canvas: Component = () => {
     };
 
     const handlePointerMove = (e: PointerEvent) => {
+        if (touchDrivingPenStroke) return;
         // Palm rejection on move: only block palm-sized touch while a pen is
         // currently in contact. Misclassified pencil-tip touches pass through.
         if (e.pointerType === 'pen') {
@@ -795,26 +857,34 @@ const Canvas: Component = () => {
                 return;
             }
 
-            // Recovery for missed pointerdown — iPadOS occasionally swallows
-            // the next stroke's `pointerdown` for Apple Pencil when it's
-            // checking for the system "Apple Pencil double-tap" gesture
-            // (lift + recontact within ~150 ms). When that happens, the user's
-            // intent is clearly a new stroke (pressure > 0), but `isDrawing`
-            // stayed false because `drawOnDown` never ran. Synthesize it from
-            // the first move so the stroke isn't lost.
-            const isPenStrokeStart = e.pointerType === 'pen'
-                && typeof (e as any).pressure === 'number'
-                && (e as any).pressure > 0
-                && !pState.isDragging
-                && !pState.isPolylineBuilding
-                && !pState.draggingFromConnector;
+            // Recovery for missed pointerdown — iPadOS sometimes swallows the
+            // next stroke's `pointerdown` for Apple Pencil when checking for
+            // a system gesture (e.g., the "Apple Pencil double-tap" shortcut
+            // for paired Pencils). pointermove and pointerup still fire, but
+            // `isDrawing` is false because `drawOnDown` never ran — so the
+            // stroke is silently dropped. When a pen pointermove arrives in a
+            // pen-drawing tool with no active stroke, synthesize the missed
+            // `drawOnDown` from this move's coordinates.
+            //
+            // Also skip the pressure check: iPad Safari sometimes reports
+            // `pressure: 0` or omits it on the very first move of a stroke,
+            // which would block recovery. Pen events with `pointerType: 'pen'`
+            // landing in a draw tool are reliably stroke starts.
             const drawingTool = store.selectedTool === 'fineliner'
                 || store.selectedTool === 'inkbrush'
                 || store.selectedTool === 'marker'
                 || store.selectedTool === 'ink';
-            if (isPenStrokeStart && drawingTool) {
+            const canSynthesize = e.pointerType === 'pen'
+                && drawingTool
+                && !pState.isDragging
+                && !pState.isPolylineBuilding
+                && !pState.draggingFromConnector
+                && !editingId();
+            if (canSynthesize) {
                 drawOnDown(x, y, pState, pHelpers);
-                // Fall through to the pen-on-move branch below.
+                try { (e.currentTarget as Element).setPointerCapture(e.pointerId); } catch { /* noop */ }
+                // Fall through to the pen-on-move branch below to record this
+                // move as the stroke's first sample.
             } else {
                 return;
             }
@@ -835,6 +905,7 @@ const Canvas: Component = () => {
     };
 
     const handlePointerUp = (e: PointerEvent) => {
+        if (touchDrivingPenStroke) return;
         // Palm rejection: drop palm-sized touch up if a pen is currently in
         // control. Pencil-sized touch ups pass through.
         if (e.pointerType === 'pen') {
@@ -977,6 +1048,21 @@ const Canvas: Component = () => {
             draw();
         });
 
+        // TouchEvent listeners for pen-drawing tools. iPad Safari's PointerEvent
+        // delivery for Apple Pencil drops alternate strokes on rapid lift +
+        // recontact (gesture-detection windows swallow the next pointerdown).
+        // TouchEvents are reliable on iPad — the Apple Pencil Safari API exposes
+        // pen data through TouchEvents (force, touchType: 'stylus', altitudeAngle,
+        // azimuthAngle). We bind both event families and let TouchEvents win for
+        // pen-drawing tools via the `touchDrivingPenStroke` flag.
+        // Use addEventListener with `passive: false` so preventDefault() works.
+        if (canvasRef) {
+            canvasRef.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvasRef.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvasRef.addEventListener('touchend', handleTouchEnd, { passive: false });
+            canvasRef.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+        }
+
         // Crop mode keyboard shortcuts (Enter to apply, Escape to cancel)
         const handleCropKeys = (e: KeyboardEvent) => {
             if (!store.cropModeElementId) return;
@@ -1099,6 +1185,12 @@ const Canvas: Component = () => {
             window.removeEventListener('keydown', handlePolylineKeys, true);
             window.removeEventListener("resize", handleResize);
             document.removeEventListener("fullscreenchange", handleResize);
+            if (canvasRef) {
+                canvasRef.removeEventListener('touchstart', handleTouchStart);
+                canvasRef.removeEventListener('touchmove', handleTouchMove);
+                canvasRef.removeEventListener('touchend', handleTouchEnd);
+                canvasRef.removeEventListener('touchcancel', handleTouchEnd);
+            }
         });
     });
 
