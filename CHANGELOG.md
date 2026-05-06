@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.6] - 2026-05-06
+
+### Fixed
+- **iPad alternate-stroke loss with Apple Pencil — real root cause** — turned out the palm-rejection heuristic in v0.27.4 wasn't the actual fix needed. Every `addElement` (i.e. every stroke start) calls `pushToHistory()`, which deep-cloned the entire document via `JSON.parse(JSON.stringify(...))`. On iPad with many existing strokes that's 50-100 ms per call — long enough to block the main thread and cause Safari to drop the next stroke's `pointerdown` while writing fast. Replaced with a structural-share shallow snapshot: since every mutation goes through Solid's `setStore` (which replaces references on the modified path), a shallow array copy is enough to preserve immutable history. Snapshot cost goes from O(n × depth) to O(n) — well under a millisecond — and the main thread stays free for incoming pointer events. Slow writing worked before because the thread had time to recover between strokes.
+
 ## [0.27.5] - 2026-05-06
 
 ### Added

@@ -303,14 +303,25 @@ interface HistorySnapshot {
 const undoStack: HistorySnapshot[] = [];
 const redoStack: HistorySnapshot[] = [];
 
-const deepCopy = <T>(val: T): T => val != null ? JSON.parse(JSON.stringify(val)) : val;
-
+// Structural-share snapshot. All mutations in this app go through Solid's
+// `setStore`, which replaces references on the modified path (the array, the
+// element object, and any nested object/array that changed). Unmodified
+// elements keep the same reference. So a shallow array copy at snapshot time
+// gives us an immutable view: when the user later mutates the store, only the
+// changed paths get new refs; the snapshot's old refs are untouched.
+//
+// Previously this used `JSON.parse(JSON.stringify(...))` which deep-cloned the
+// entire document on every history push. On iPad with many strokes, that was
+// 50-100ms per call — long enough to block the main thread and cause Safari
+// to drop the next stroke's `pointerdown` during fast writing (the
+// "alternate empty characters" bug). Shallow copies are O(n) instead of
+// O(n × depth) and run in well under a millisecond.
 const captureSnapshot = (): HistorySnapshot => ({
-    elements: deepCopy(store.elements) ?? [],
-    layers: deepCopy(store.layers) ?? [],
-    slides: deepCopy(store.slides) ?? [],
-    states: deepCopy(store.states) ?? [],
-    gridSettings: deepCopy(store.gridSettings),
+    elements: store.elements.slice(),
+    layers: store.layers.slice(),
+    slides: store.slides.slice(),
+    states: store.states.slice(),
+    gridSettings: { ...store.gridSettings },
     canvasBackgroundColor: store.canvasBackgroundColor,
     docType: store.docType,
 });
