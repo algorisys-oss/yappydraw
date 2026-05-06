@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.11] - 2026-05-06
+
+### Fixed
+- **iPad Apple Pencil multi-touch handling — palm + pen no longer drops strokes** — v0.27.9's TouchEvent handler bailed when `e.touches.length !== 1`, which blocked stroke-start whenever the palm was on the screen alongside the Pencil. Now picks the `touchType: 'stylus'` Touch from the changedTouches list (Apple Pencil reports `'stylus'`, finger reports `'direct'`), tracks it by `identifier` across the whole stroke, and ignores moves/ends for any other touch (palm shifting, palm lift). This is the working pattern from https://github.com/shuding/apple-pencil-safari-api-test made multi-touch-safe.
+- **Stroke draw cadence on TouchEvent path** — match the pointer-path RAF schedule: call `requestAnimationFrame(draw)` on every `touchmove` so the visible stroke keeps pace with the pen tip. Multiple RAFs in the same frame coalesce to a single draw.
+
 ## [0.27.10] - 2026-05-06
 
 ### Fixed

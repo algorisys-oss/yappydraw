@@ -612,19 +612,39 @@ const Canvas: Component = () => {
     // For pen-drawing tools we bind both event families and let TouchEvents
     // win when both fire — this flag lets pointer handlers skip cleanly.
     let touchDrivingPenStroke = false;
+    let activeTouchIdentifier = -1; // identifier of the Touch we're tracking
     const isPenDrawingTool = (): boolean => {
         const t = store.selectedTool;
         return t === 'fineliner' || t === 'inkbrush' || t === 'marker' || t === 'ink';
     };
 
+    // When palm + pen are both on the screen, `e.touches` has length 2. We need
+    // to pick the stylus touch specifically — Apple Pencil reports
+    // `touchType: 'stylus'`, finger reports `'direct'`. If `touchType` isn't
+    // set (older devices/contexts), fall back to the first changedTouch.
+    const pickStylusTouch = (e: TouchEvent): Touch | null => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            const t = e.changedTouches[i];
+            if ((t as any).touchType === 'stylus') return t;
+        }
+        return e.changedTouches[0] ?? null;
+    };
+
+    const findTouchById = (e: TouchEvent, id: number): Touch | null => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === id) return e.changedTouches[i];
+        }
+        return null;
+    };
+
     const handleTouchStart = (e: TouchEvent) => {
         if (store.appMode === 'embed') return;
-        if (e.touches.length !== 1) return;          // multi-touch — leave it to pointer
         if (!isPenDrawingTool()) return;             // only intercept for pen tools
         if (pState.isDrawing) return;                // already in a stroke
-        const t = e.changedTouches[0];
+        const t = pickStylusTouch(e);
         if (!t) return;
         e.preventDefault();
+        activeTouchIdentifier = t.identifier;
         touchDrivingPenStroke = true;
         pState.penUpdatePending = false;
         pState.penPointsBuffer = [];
@@ -633,14 +653,18 @@ const Canvas: Component = () => {
         const activeLayer = store.layers.find(l => l.id === store.activeLayerId);
         if (!activeLayer?.visible || activeLayer?.locked) {
             touchDrivingPenStroke = false;
+            activeTouchIdentifier = -1;
             return;
         }
         drawOnDown(x, y, pState, pHelpers);
+        requestAnimationFrame(draw);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
         if (!touchDrivingPenStroke) return;
-        const t = e.changedTouches[0];
+        // Only react to the move of OUR tracked touch — palm shifting fires
+        // touchmove events too, and we don't want them adding points.
+        const t = findTouchById(e, activeTouchIdentifier);
         if (!t) return;
         e.preventDefault();
         const { x: ex, y: ey } = getWorldCoordinates(t.clientX, t.clientY);
@@ -651,17 +675,25 @@ const Canvas: Component = () => {
             requestAnimationFrame(() => {
                 pState.penUpdatePending = false;
                 flushPenPoints();
-                requestAnimationFrame(draw);
             });
         }
+        // Match the pointer-path cadence: schedule a draw on every move so
+        // the visible stroke keeps up with the pen tip (RAFs in the same
+        // frame coalesce to a single draw).
+        requestAnimationFrame(draw);
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
         if (!touchDrivingPenStroke) return;
+        // End only when OUR tracked touch ends — palm lifting shouldn't end
+        // the stroke.
+        const t = findTouchById(e, activeTouchIdentifier);
+        if (!t) return;
         e.preventDefault();
         flushPenPoints();
         drawOnUp(pState, pHelpers, pSignals);
         touchDrivingPenStroke = false;
+        activeTouchIdentifier = -1;
         requestAnimationFrame(draw);
     };
 
