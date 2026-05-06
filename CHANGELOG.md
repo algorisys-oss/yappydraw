@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.13] - 2026-05-06
+
+### Fixed
+- **iPad Apple Pencil stroke latency — sync flush+draw in touchmove** — the RAF chain (`requestAnimationFrame(flushPenPoints)` then `requestAnimationFrame(draw)`) was adding 1-2 frames of latency between Pencil tip and visible stroke. The reference demo at https://github.com/shuding/apple-pencil-safari-api-test runs `drawOnCanvas(...)` synchronously inside `touchmove` — that's where its low-latency feel comes from. Switched our touchmove to do the same: push to buffer → `flushPenPoints()` (sync) → `draw()` (sync). With v0.27.12's O(1) reactive cascade, this fits inside a frame at typical doc sizes; the display compositor picks up the new canvas state at next vsync.
+
 ## [0.27.12] - 2026-05-06
 
 ### Fixed

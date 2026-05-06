@@ -604,19 +604,15 @@ const Canvas: Component = () => {
         if (!t) return;
         e.preventDefault();
         const { x: ex, y: ey } = getWorldCoordinates(t.clientX, t.clientY);
-        setCursorPosition({ x: Math.round(ex), y: Math.round(ey) });
         pState.penPointsBuffer.push(ex - pState.startX, ey - pState.startY);
-        if (!pState.penUpdatePending) {
-            pState.penUpdatePending = true;
-            requestAnimationFrame(() => {
-                pState.penUpdatePending = false;
-                flushPenPoints();
-            });
-        }
-        // Match the pointer-path cadence: schedule a draw on every move so
-        // the visible stroke keeps up with the pen tip (RAFs in the same
-        // frame coalesce to a single draw).
-        requestAnimationFrame(draw);
+        // Match the working demo's latency profile: flush + draw synchronously
+        // inside the event handler. The RAF chain previously added 1-2 frames
+        // of perceptible lag between pen tip and visible stroke. With v0.27.12's
+        // O(1) reactive cascade, sync flush is sub-ms; sync draw is O(elements)
+        // and fits inside a frame at typical doc sizes. The display compositor
+        // takes the new canvas state at next vsync.
+        flushPenPoints();
+        draw();
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
