@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.3] - 2026-05-06
+
+### Fixed
+- **iPad fast-write triggers iOS "Copy / Look Up / Translate" callout** — when writing quickly with Apple Pencil, iOS occasionally misinterpreted the rapid contact as a text-selection gesture and popped its native selection menu. The previous fix only set `-webkit-touch-callout: none` and `-webkit-user-select: none` inline on the `<canvas>`, but the callout could still trigger from rapid contact landing momentarily on the surrounding wrapper or page chrome. Moved the suppression to `html, body` so it inherits everywhere, with an explicit override on `input`, `textarea`, and `[contenteditable]` so editable surfaces keep normal text selection.
+- Added `-webkit-tap-highlight-color: transparent` and `overscroll-behavior: none` on `html, body` to suppress iOS's tap flash and bounce respectively. `touch-action` is intentionally left default so scrollable panels (property panel, layer panel, slide navigator, etc.) keep scrolling on touch — only the canvas surface sets `touch-action: none` inline.
+
 ## [0.27.2] - 2026-05-06
 
 ### Fixed
