@@ -854,40 +854,8 @@ const Canvas: Component = () => {
         if (!pState.isDrawing || !pState.currentId) {
             if (pState.isDrawing && store.selectedTool === 'eraser') {
                 eraserOnMove(x, y, pHelpers);
-                return;
             }
-
-            // Recovery for missed pointerdown — iPadOS sometimes swallows the
-            // next stroke's `pointerdown` for Apple Pencil when checking for
-            // a system gesture (e.g., the "Apple Pencil double-tap" shortcut
-            // for paired Pencils). pointermove and pointerup still fire, but
-            // `isDrawing` is false because `drawOnDown` never ran — so the
-            // stroke is silently dropped. When a pen pointermove arrives in a
-            // pen-drawing tool with no active stroke, synthesize the missed
-            // `drawOnDown` from this move's coordinates.
-            //
-            // Also skip the pressure check: iPad Safari sometimes reports
-            // `pressure: 0` or omits it on the very first move of a stroke,
-            // which would block recovery. Pen events with `pointerType: 'pen'`
-            // landing in a draw tool are reliably stroke starts.
-            const drawingTool = store.selectedTool === 'fineliner'
-                || store.selectedTool === 'inkbrush'
-                || store.selectedTool === 'marker'
-                || store.selectedTool === 'ink';
-            const canSynthesize = e.pointerType === 'pen'
-                && drawingTool
-                && !pState.isDragging
-                && !pState.isPolylineBuilding
-                && !pState.draggingFromConnector
-                && !editingId();
-            if (canSynthesize) {
-                drawOnDown(x, y, pState, pHelpers);
-                try { (e.currentTarget as Element).setPointerCapture(e.pointerId); } catch { /* noop */ }
-                // Fall through to the pen-on-move branch below to record this
-                // move as the stroke's first sample.
-            } else {
-                return;
-            }
+            return;
         }
 
         if (store.selectedTool === 'fineliner' || store.selectedTool === 'marker' || store.selectedTool === 'inkbrush' || store.selectedTool === 'ink') {

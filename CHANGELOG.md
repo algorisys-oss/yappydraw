@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.10] - 2026-05-06
+
+### Fixed
+- **Apple Pencil hover triggered drawing** — Apple Pencil 2 / Pro report hover-near-screen as `pointermove` events with `pointerType: 'pen'` and `pressure: 0`. The v0.27.8 pointermove recovery branch synthesized a `drawOnDown` from any pen pointermove without an active stroke, which made strokes appear from the pen's hover before it actually touched. Removed that recovery — v0.27.9's TouchEvent path is the load-bearing fix for missed pointerdowns; the pointermove synthesizer was a redundant safety net that turned out to be hover-active.
+
 ## [0.27.9] - 2026-05-06
 
 ### Fixed
