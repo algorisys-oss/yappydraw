@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.1] - 2026-05-06
+
+### Fixed
+- **iPad palm rejection** — resting a palm on the screen while drawing with Apple Pencil no longer pops the canvas context menu or a tool's property panel; touch events are filtered while a pen is in flight (or used within the last 700 ms)
+- **iPad context menus on long-press** — every `contextmenu` handler (canvas + 17 toolbar/tool-group buttons) now requires `e.button === 2`, so iOS Safari's synthesized long-press contextmenu is silently dropped instead of opening UI
+- **Apple Pencil stroke smoothness** — removed the 16 ms wall-clock throttle in `pen-handler`; coalesced events still capture the full ~120 Hz Pencil sample rate but the store now flushes every move and batches naturally with the existing RAF draw, eliminating the extra-frame lag
+
+### Changed
+- Canvas surface gains `-webkit-user-select: none` and `-webkit-touch-callout: none` to suppress iOS's own copy/look-up callout during long strokes
+- `PointerState` tracks `lastPenInputAt`, `activePenPointerId`, and `lastPointerType` for input-type discrimination
+
 ## [0.27.0] - 2026-05-03
 
 ### Added

@@ -27,6 +27,16 @@ export interface PointerState {
     penPointsBuffer: number[];
     lastPenUpdateTime: number;
     penUpdatePending: boolean;
+
+    // iPad / Apple Pencil palm rejection
+    // Last timestamp (ms) we observed a 'pen' pointer event. While this is recent,
+    // touch (= palm) events are ignored.
+    lastPenInputAt: number;
+    // Track active 'pen' pointer ids — when any pen is currently down, ignore touch.
+    activePenPointerId: number | null;
+    // Last pointerType seen on pointerdown — used to filter contextmenu so iOS
+    // long-press from palm/finger doesn't open the canvas/property context menu.
+    lastPointerType: 'mouse' | 'pen' | 'touch' | null;
     isPolylineBuilding: boolean;
     polylinePoints: { x: number; y: number }[];
     lassoPoints: { x: number; y: number }[];
@@ -105,6 +115,9 @@ export function createPointerState(): PointerState {
         penPointsBuffer: [],
         lastPenUpdateTime: 0,
         penUpdatePending: false,
+        lastPenInputAt: 0,
+        activePenPointerId: null,
+        lastPointerType: null,
         isPolylineBuilding: false,
         polylinePoints: [],
         lassoPoints: [],

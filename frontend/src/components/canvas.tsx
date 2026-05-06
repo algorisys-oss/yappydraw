@@ -596,6 +596,21 @@ const Canvas: Component = () => {
 
     const handlePointerDown = (e: PointerEvent) => {
         if (store.appMode === 'embed') return;
+
+        // Palm rejection (iPad / Apple Pencil): if a pen is currently down or was
+        // down within the last 700ms, ignore touch events. This prevents the
+        // resting palm from drawing or moving the canvas.
+        const PEN_RECENT_WINDOW_MS = 700;
+        if (e.pointerType === 'pen') {
+            pState.activePenPointerId = e.pointerId;
+            pState.lastPenInputAt = Date.now();
+        } else if (e.pointerType === 'touch') {
+            const penActive = pState.activePenPointerId !== null;
+            const penRecent = Date.now() - pState.lastPenInputAt < PEN_RECENT_WINDOW_MS;
+            if (penActive || penRecent) return;
+        }
+        pState.lastPointerType = (e.pointerType as 'mouse' | 'pen' | 'touch') || null;
+
         if (presentationOnDown(e, pState, pHelpers)) return;
         (e.currentTarget as Element).setPointerCapture(e.pointerId);
         const { x, y } = getWorldCoordinates(e.clientX, e.clientY);
@@ -689,6 +704,15 @@ const Canvas: Component = () => {
     };
 
     const handlePointerMove = (e: PointerEvent) => {
+        // Palm rejection on move: if a pen is active, drop touch moves entirely.
+        if (e.pointerType === 'pen') {
+            pState.lastPenInputAt = Date.now();
+        } else if (e.pointerType === 'touch') {
+            const penActive = pState.activePenPointerId !== null;
+            const penRecent = Date.now() - pState.lastPenInputAt < 700;
+            if (penActive || penRecent) return;
+        }
+
         if (presentationOnMove(e, pState)) return;
         let { x, y } = getWorldCoordinates(e.clientX, e.clientY);
         setCursorPosition({ x: Math.round(x), y: Math.round(y) });
@@ -764,6 +788,21 @@ const Canvas: Component = () => {
     };
 
     const handlePointerUp = (e: PointerEvent) => {
+        // Palm rejection: drop touch up if a pen is still in control.
+        if (e.pointerType === 'pen') {
+            if (pState.activePenPointerId === e.pointerId) {
+                pState.activePenPointerId = null;
+            }
+            pState.lastPenInputAt = Date.now();
+        } else if (e.pointerType === 'touch') {
+            const penActive = pState.activePenPointerId !== null;
+            const penRecent = Date.now() - pState.lastPenInputAt < 700;
+            if (penActive || penRecent) {
+                try { (e.currentTarget as Element).releasePointerCapture(e.pointerId); } catch { /* noop */ }
+                return;
+            }
+        }
+
         (e.currentTarget as Element).releasePointerCapture(e.pointerId);
 
         // Crop mode: finish drag
@@ -1028,6 +1067,12 @@ const Canvas: Component = () => {
                     onDblClick={handleDoubleClick}
                     onContextMenu={(e) => {
                         e.preventDefault();
+                        // Suppress context menu when triggered by touch/pen long-press
+                        // (e.g. iPad palm rest). Only show on real mouse right-click.
+                        // contextmenu MouseEvents from a real right-click report button=2;
+                        // touch/pen long-press synthesize button=0.
+                        const isMouseRightClick = e.button === 2 && pState.lastPointerType !== 'touch' && pState.lastPointerType !== 'pen';
+                        if (!isMouseRightClick) return;
                         setContextMenuPos({ x: e.clientX, y: e.clientY });
                         setContextMenuOpen(true);
                     }}
@@ -1036,6 +1081,8 @@ const Canvas: Component = () => {
                         "touch-action": "none",
                         cursor: cursor(),
                         "user-select": "none",
+                        "-webkit-user-select": "none",
+                        "-webkit-touch-callout": "none",
                         // Excalidraw-style dark mode: invert canonical (light-mode) colors
                         // for dark/focus presentation without mutating stored values.
                         // TODO: pre-invert images for dark-mode CSS filter so embedded

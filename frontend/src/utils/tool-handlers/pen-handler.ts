@@ -13,9 +13,11 @@ export function penOnMove(
     e: PointerEvent,
     pState: PointerState,
     helpers: PointerHelpers,
-    PEN_UPDATE_THROTTLE_MS: number
+    _PEN_UPDATE_THROTTLE_MS: number
 ): void {
-    // Use coalesced events for higher point density during fast strokes
+    // Use coalesced events for higher point density during fast strokes.
+    // Apple Pencil delivers up to ~120Hz; coalesced events surface every sample
+    // captured between frames so no resolution is lost.
     const coalescedEvents = e.getCoalescedEvents?.() ?? [];
     const events = coalescedEvents.length > 0 ? coalescedEvents : [e];
 
@@ -26,17 +28,8 @@ export function penOnMove(
         pState.penPointsBuffer.push(px, py);
     }
 
-    const now = Date.now();
-    // Throttle store updates but ensure smooth visual feedback
-    if (now - pState.lastPenUpdateTime >= PEN_UPDATE_THROTTLE_MS) {
-        pState.lastPenUpdateTime = now;
-        helpers.flushPenPoints();
-    } else if (!pState.penUpdatePending) {
-        // Schedule a flush if not already pending
-        pState.penUpdatePending = true;
-        requestAnimationFrame(() => {
-            pState.penUpdatePending = false;
-            helpers.flushPenPoints();
-        });
-    }
+    // Flush every move: store update naturally batches with the RAF draw the
+    // outer pointermove handler schedules. The previous 16ms wall-clock throttle
+    // dropped a frame for Apple Pencil and made strokes feel laggy/jittery.
+    helpers.flushPenPoints();
 }

@@ -65,6 +65,7 @@ const PenToolGroup: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
+        if (e.button !== 2) return; // ignore touch/pen long-press (iPad palm rest)
         store.showPropertyPanel ? () => { } : setSelectedTool(store.selectedTool); // Dummy for context, actual trigger:
         setStore("showPropertyPanel", true);
         setStore("isPropertyPanelMinimized", false);
