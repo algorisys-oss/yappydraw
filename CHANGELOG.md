@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.16] - 2026-05-07
+
+### Fixed
+- **Ink Brush — earlier strokes appeared lightened/erased where a new stroke crossed them (iPad-visible)** — `renderInkbrush` built one closed polygon per stroke (left edge forward → end-cap arc → right edge reversed → start-cap arc) and filled it once. With smoothed edges and `quadraticCurveTo` on both sides, that polygon could self-intersect on curvy strokes. Under the canvas default `nonzero` fill rule, regions with even winding count don't fill — leaving small holes inside the new stroke. Where a hole landed over an earlier stroke, the canvas behind bled through and the earlier stroke read as "lightened/erased" at the overlap. Fineliner uses `stroke()` and was unaffected.
+- Replaced the single-polygon-and-fill with per-segment trapezoids + per-point joint circles, each rendered with its own `beginPath() + fill()`. Independent opaque fills compose cleanly via `source-over` — overlap regions stay opaque regardless of how often the stroke crosses itself or earlier strokes, no winding-direction interactions to worry about. Variable width and velocity-based taper preserved. Joint circles also serve as round start/end caps.
+
 ## [0.27.14] - 2026-05-06
 
 ### Fixed
