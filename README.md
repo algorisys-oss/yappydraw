@@ -391,6 +391,48 @@ npm run deploy
 
 Builds and pushes to the `gh-pages` branch for GitHub Pages.
 
+### Publish to OSS (Algorisys open-source mirror)
+
+The `scripts/publish-oss.sh` helper produces a cleaned, client-only snapshot of
+the repo and pushes it to the public mirror at
+[`github.com/algorisys-oss/yappydraw`](https://github.com/algorisys-oss/yappydraw).
+It uses `.ossignore` (at the repo root) to drop server code, internal docs, and
+anything else that shouldn't ship with the OSS build, and patches `package.json`
+and `vite.config.ts` to remove server-only deps / the dev proxy.
+
+**Dry run (recommended first):**
+
+```bash
+./scripts/publish-oss.sh
+```
+
+This prints the cleaned tree and the resulting `package.json` scripts/deps so
+you can verify what would be published — no changes are pushed.
+
+**Publish for real:**
+
+```bash
+./scripts/publish-oss.sh --push
+```
+
+Commits the snapshot to the OSS remote with a message like
+`chore: sync from upstream YYYY-MM-DD` plus the source commit SHA.
+
+**Configuration (env vars, all optional):**
+
+| Variable      | Default                                                | Purpose                                |
+|---------------|--------------------------------------------------------|----------------------------------------|
+| `OSS_REMOTE`  | `https://github.com/algorisys-oss/yappydraw.git`       | Target remote                          |
+| `OSS_BRANCH`  | `main`                                                 | Branch on the OSS remote               |
+| `OSS_MESSAGE` | *(auto-generated)*                                     | Custom commit message for this sync    |
+
+Example with a custom message:
+
+```bash
+OSS_MESSAGE="feat: color palettes + standalone palette/theme buttons" \
+  ./scripts/publish-oss.sh --push
+```
+
 ## Sample Data
 
 The `data/` directory contains sample drawings that can be loaded into Yappy:
