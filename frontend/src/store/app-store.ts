@@ -226,7 +226,8 @@ const initialState: AppState = {
         animationEnabled: true,
         reducedMotion: false,
         renderStyle: 'sketch',
-        showQuickToolbar: true // Default to showing the toolbar
+        showQuickToolbar: true, // Default to showing the toolbar
+        colorPalette: (localStorage.getItem('colorPalette') || 'default')
     },
     showCanvasProperties: false,
     undoStackLength: 0,
@@ -264,7 +265,7 @@ const initialState: AppState = {
     showMainToolbar: true,
     slideToolbarPosition: { x: window.innerWidth / 2 - 150, y: window.innerHeight - 80 },
     showExportDialog: false,
-    showUtilityToolbar: true,
+    showUtilityToolbar: false,
     showCanvasToolbar: true,
     pathEditState: {
         isActive: false,
@@ -883,6 +884,11 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
                 setStore('toolStyles', tool as any, 'renderStyle' as any, updates.renderStyle);
             }
         }
+    }
+
+    // Persist palette across reloads even when no document is saved.
+    if (updates.colorPalette !== undefined) {
+        try { localStorage.setItem('colorPalette', updates.colorPalette); } catch { /* ignore */ }
     }
 };
 
@@ -1505,7 +1511,7 @@ export const loadDocument = (doc: any) => {
         setStore("docType", loadedDocType);
         setStore("showSlideNavigator", loadedDocType === 'slides');
         setStore("showSlideToolbar", true);
-        setStore("showUtilityToolbar", true);
+        setStore("showUtilityToolbar", false);
 
         setStore("activeSlideIndex", 0);
         setStore("selection", []);
@@ -1661,7 +1667,7 @@ export const resetToNewDocument = (docType: 'infinite' | 'slides' = 'slides') =>
     setStore("isDirty", false);
     setStore("welcomeDismissed", true);
     setStore("showSlideToolbar", true);
-    setStore("showUtilityToolbar", true);
+    setStore("showUtilityToolbar", false);
     // Default to 100% zoom for new documents, centered on the first slide
     setTimeout(() => {
         const firstSlide = store.slides[0];

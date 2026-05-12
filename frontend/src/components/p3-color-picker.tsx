@@ -1,22 +1,14 @@
 import { type Component, For, createSignal, Show } from 'solid-js';
 import { store, updateElement, pushToHistory, updateSlideBackground } from '../store/app-store';
 import { AdvancedP3Picker } from './advanced-p3-picker';
+import { COLOR_PALETTES, getColorPalette } from '../config/color-palettes';
 
-const P3_COLORS = [
-    { name: 'P3 Red', value: 'color(display-p3 1 0 0)' },
-    { name: 'P3 Green', value: 'color(display-p3 0 1 0)' },
-    { name: 'P3 Blue', value: 'color(display-p3 0 0 1)' },
-    { name: 'P3 Yellow', value: 'color(display-p3 1 1 0)' },
-    { name: 'P3 Magenta', value: 'color(display-p3 1 0 1)' },
-    { name: 'P3 Cyan', value: 'color(display-p3 0 1 1)' },
-    { name: 'P3 Orange', value: 'color(display-p3 1 0.5 0)' },
-    { name: 'P3 Purple', value: 'color(display-p3 0.5 0 1)' },
-    { name: 'P3 Pink', value: 'color(display-p3 1 0 0.5)' },
-];
-
-
-export const P3ColorPicker: Component = () => {
+export const ColorPalettePicker: Component = () => {
     const [showAdvanced, setShowAdvanced] = createSignal(false);
+    const [activePaletteId, setActivePaletteId] = createSignal<string>(
+        store.globalSettings.colorPalette ?? 'p3'
+    );
+    const activePalette = () => getColorPalette(activePaletteId());
 
     const applyAsset = (data: string) => {
         const isImage = data.startsWith('http') || data.startsWith('data:image');
@@ -83,7 +75,30 @@ export const P3ColorPicker: Component = () => {
                 </div>
             }>
                 <div style={{ padding: '8px' }}>
-                    <div style={{ 'font-size': '10px', 'font-weight': 'bold', color: 'var(--text-secondary)', 'margin-bottom': '4px' }}>P3 COLORS</div>
+                    <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', 'margin-bottom': '8px' }}>
+                        <span style={{ 'font-size': '10px', 'font-weight': 'bold', color: 'var(--text-secondary)', 'flex-shrink': 0 }}>PALETTE</span>
+                        <select
+                            value={activePaletteId()}
+                            onChange={(e) => setActivePaletteId(e.currentTarget.value)}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            style={{
+                                flex: 1,
+                                'min-width': 0,
+                                padding: '3px 6px',
+                                'font-size': '11px',
+                                background: 'var(--bg-primary)',
+                                color: 'var(--text-primary)',
+                                border: '1px solid var(--border-color)',
+                                'border-radius': '4px',
+                                cursor: 'pointer',
+                                'color-scheme': 'light dark'
+                            }}
+                        >
+                            <For each={COLOR_PALETTES}>
+                                {(p) => <option value={p.id}>{p.name}</option>}
+                            </For>
+                        </select>
+                    </div>
                     <div
                         style={{
                             display: 'grid',
@@ -92,24 +107,24 @@ export const P3ColorPicker: Component = () => {
                             'margin-bottom': '12px'
                         }}
                     >
-                        <For each={P3_COLORS}>
-                            {(color) => (
+                        <For each={activePalette().swatches}>
+                            {(swatch) => (
                                 <div
                                     draggable={true}
                                     onDragStart={(e) => {
                                         e.stopPropagation();
-                                        handleDragStart(e, color.value);
+                                        handleDragStart(e, swatch.value);
                                     }}
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        applyAsset(color.value);
+                                        applyAsset(swatch.value);
                                     }}
-                                    title={`${color.name} (Drag to shape/slide)`}
+                                    title={`${swatch.label} (Drag to shape/slide)`}
                                     style={{
                                         width: '24px',
                                         height: '24px',
-                                        background: color.value,
+                                        background: swatch.value === 'transparent' ? 'white' : swatch.value,
                                         'border-radius': '6px',
                                         cursor: 'grab',
                                         border: '1px solid rgba(0,0,0,0.1)',
@@ -120,30 +135,30 @@ export const P3ColorPicker: Component = () => {
                                 />
                             )}
                         </For>
-                        <button
-                            onClick={() => setShowAdvanced(true)}
-                            title="Advanced Picker"
-                            style={{
-                                width: '24px',
-                                height: '24px',
-                                background: 'var(--toolbar-bg)',
-                                'border-radius': '6px',
-                                cursor: 'pointer',
-                                border: '1px dashed var(--border-color)',
-                                display: 'flex',
-                                'align-items': 'center',
-                                'justify-content': 'center',
-                                'font-size': '14px',
-                                color: 'var(--text-secondary)'
-                            }}
-                        >
-                            +
-                        </button>
+                        <Show when={activePaletteId() === 'p3'}>
+                            <button
+                                onClick={() => setShowAdvanced(true)}
+                                title="Advanced OKLCH Picker"
+                                style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    background: 'var(--toolbar-bg)',
+                                    'border-radius': '6px',
+                                    cursor: 'pointer',
+                                    border: '1px dashed var(--border-color)',
+                                    display: 'flex',
+                                    'align-items': 'center',
+                                    'justify-content': 'center',
+                                    'font-size': '14px',
+                                    color: 'var(--text-secondary)'
+                                }}
+                            >
+                                +
+                            </button>
+                        </Show>
                     </div>
-
                 </div>
             </Show>
         </div>
     );
 };
-

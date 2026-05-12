@@ -205,6 +205,50 @@
     border: 1px solid var(--border-color);
 }
 
+.palette-selector-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.palette-selector {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 6px;
+    font-size: 11px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    color-scheme: light dark;
+}
+
+.palette-selector option {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.palette-reset-btn {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.palette-reset-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary, var(--bg-secondary));
+}
+
 .color-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -335,6 +379,13 @@ select {
     background: var(--bg-panel);
     cursor: pointer;
     min-width: 120px;
+    /* Make the OS-native option dropdown follow our theme. */
+    color-scheme: light dark;
+}
+
+select option {
+    background: var(--bg-panel);
+    color: var(--text-primary);
 }
 
 select:focus {
@@ -463,6 +514,18 @@ input[type="text"] {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.swatch-circle .diagonal-line-sm {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(to top right,
+        transparent calc(50% - 1px),
+        #e03131 calc(50% - 1px),
+        #e03131 calc(50% + 1px),
+        transparent calc(50% + 1px));
+    pointer-events: none;
 }
 
 .rainbow-gradient {

@@ -13,6 +13,7 @@ import {
 } from "lucide-solid";
 import "./property-panel.css";
 import { properties, fontCapabilities, type PropertyConfig } from "../config/properties";
+import { COLOR_PALETTES, getColorPalette } from "../config/color-palettes";
 import { getGradientPreset } from "../config/gradient-presets";
 import { getImageFilterPreset } from "../config/image-filter-presets";
 import { getOpenBoxPreset } from "../config/openbox-presets";
@@ -302,10 +303,20 @@ const AlignmentControls: Component = () => (
 const ColorControl: Component<{ prop: PropertyConfig, value: any, onChange: (val: any) => void }> = (props) => {
     const hasOptions = () => props.prop.options && props.prop.options.length > 0;
     const [showPicker, setShowPicker] = createSignal(false);
+    // Per-control palette override; null means "follow canvas default".
+    const [localPaletteId, setLocalPaletteId] = createSignal<string | null>(null);
+
+    const activePaletteId = () => localPaletteId() ?? store.globalSettings.colorPalette ?? 'default';
+    const activePalette = () => getColorPalette(activePaletteId());
+    // Swatches from the active palette, mapped into the same shape as prop.options.
+    const paletteSwatches = () => activePalette().swatches.map(s => ({ label: s.label, value: s.value }));
+    // For color props without their own preset options, the palette drives the swatch row.
+    const swatches = () => hasOptions() ? (props.prop.options ?? []) : paletteSwatches();
 
     createEffect(() => {
-        if (hasOptions() && props.value) {
-            const isPreset = props.prop.options?.some(o => o.value === props.value);
+        const list = swatches();
+        if (props.value && list.length > 0) {
+            const isPreset = list.some(o => o.value === props.value);
             if (!isPreset && !showPicker()) setShowPicker(true);
         }
     });
@@ -314,58 +325,61 @@ const ColorControl: Component<{ prop: PropertyConfig, value: any, onChange: (val
         <div class="control-col">
             <label>{props.prop.label}</label>
             <div class="color-picker-container">
-                <Show when={hasOptions()}>
-                    <div class="swatch-row">
-                        <For each={props.prop.options}>
-                            {(opt) => (
-                                <button
-                                    class="swatch-circle"
-                                    classList={{ selected: props.value === opt.value }}
-                                    style={{ background: opt.value, border: opt.value === '#ffffff' ? '1px solid #e0e0e0' : 'none' }}
-                                    title={opt.label}
-                                    onClick={() => {
-                                        pushToHistory();
-                                        props.onChange(opt.value);
-                                        setShowPicker(false);
-                                    }}
-                                />
-                            )}
-                        </For>
-                        <button
-                            class="swatch-circle rainbow"
-                            classList={{ active: showPicker() }}
-                            title="Custom Color"
-                            onClick={() => setShowPicker(!showPicker())}
+                <Show when={!hasOptions()}>
+                    <div class="palette-selector-row">
+                        <select
+                            class="palette-selector"
+                            value={activePaletteId()}
+                            title="Palette"
+                            onChange={(e) => setLocalPaletteId(e.currentTarget.value)}
                         >
-                            <Palette size={14} class="rainbow-icon" />
-                        </button>
+                            <For each={COLOR_PALETTES}>
+                                {(p) => <option value={p.id}>{p.name}</option>}
+                            </For>
+                        </select>
+                        <Show when={localPaletteId() !== null}>
+                            <button
+                                class="palette-reset-btn"
+                                title="Use canvas default palette"
+                                onClick={() => setLocalPaletteId(null)}
+                            >↺</button>
+                        </Show>
                     </div>
                 </Show>
 
-                <Show when={!hasOptions() || showPicker()}>
-                    <Show when={!hasOptions()}>
-                        <div class="color-grid">
-                            <For each={[
-                                'transparent', '#ffffff', '#f8f9fa', '#f1f3f5', '#fff5f5', '#fff0f6',
-                                '#f3f0ff', '#e03131', '#e8590c', '#fcc419', '#2f9e44', '#1971c2',
-                                '#6741d9', '#c2255c', '#343a40'
-                            ]}>
-                                {(c) => (
-                                    <button
-                                        class="color-swatch"
-                                        classList={{ selected: props.value === c }}
-                                        style={{ background: c === 'transparent' ? 'white' : c }}
-                                        onClick={() => props.onChange(c)}
-                                        title={c}
-                                    >
-                                        {c === 'transparent' && <div class="diagonal-line-sm"></div>}
-                                    </button>
-                                )}
-                            </For>
-                        </div>
-                    </Show>
+                <div class="swatch-row">
+                    <For each={swatches()}>
+                        {(opt) => (
+                            <button
+                                class="swatch-circle"
+                                classList={{ selected: props.value === opt.value }}
+                                style={{
+                                    background: opt.value === 'transparent' ? 'white' : opt.value,
+                                    border: opt.value === '#ffffff' || opt.value === '#FFFFFF' ? '1px solid #e0e0e0' : 'none'
+                                }}
+                                title={opt.label}
+                                onClick={() => {
+                                    pushToHistory();
+                                    props.onChange(opt.value);
+                                    setShowPicker(false);
+                                }}
+                            >
+                                {opt.value === 'transparent' && <div class="diagonal-line-sm"></div>}
+                            </button>
+                        )}
+                    </For>
+                    <button
+                        class="swatch-circle rainbow"
+                        classList={{ active: showPicker() }}
+                        title="Custom Color"
+                        onClick={() => setShowPicker(!showPicker())}
+                    >
+                        <Palette size={14} class="rainbow-icon" />
+                    </button>
+                </div>
 
-                    <div class="hex-input-row" style={{ "margin-top": hasOptions() ? "12px" : "0" }}>
+                <Show when={showPicker()}>
+                    <div class="hex-input-row" style={{ "margin-top": "12px" }}>
                         <span class="hash">#</span>
                         <input
                             type="text"
@@ -932,6 +946,7 @@ const PropertyPanel: Component = () => {
             else if (key === 'canvasTexture') setCanvasTexture(value);
             else if (key === 'renderStyle') updateGlobalSettings({ renderStyle: value });
             else if (key === 'showQuickToolbar') updateGlobalSettings({ showQuickToolbar: value });
+            else if (key === 'colorPalette') updateGlobalSettings({ colorPalette: value });
             else if (key === 'docType') setDocType(value);
         } else if (target.type === 'slide') {
             const slideIndex = store.activeSlideIndex;
@@ -964,6 +979,7 @@ const PropertyPanel: Component = () => {
             if (prop.key === 'maxLayers') return store.maxLayers;
             if (prop.key === 'renderStyle') return store.globalSettings.renderStyle;
             if (prop.key === 'showQuickToolbar') return store.globalSettings.showQuickToolbar;
+            if (prop.key === 'colorPalette') return store.globalSettings.colorPalette ?? 'default';
             if (prop.key === 'docType') return store.docType;
             return (store as any)[prop.key];
         }

@@ -930,6 +930,27 @@ const App: Component = () => {
 
       const dragCount = _dragOverCount;
       const hadDragActivity = dragCount > 0;
+
+      const data = extractDropData(e, 'window-capture');
+      console.log('[DND drop] dragOverCount was:', dragCount, 'hadDragActivity:', hadDragActivity);
+
+      const hasFiles = data.filesFromList.length > 0 || data.filesFromItems.length > 0;
+      const text = data.textPlain || '';
+      const isColorText = !hasFiles && (
+        text.startsWith('#') ||
+        text.startsWith('color(') ||
+        text.startsWith('rgb(') ||
+        text.startsWith('rgba(') ||
+        text.startsWith('oklch(') ||
+        text.startsWith('hsl(') ||
+        text.includes('display-p3') ||
+        text === 'transparent'
+      );
+
+      // Color-swatch drops are handled by the canvas drop listener (sets backgroundColor
+      // on the dropped-on element / active slide). Let the event continue to bubble.
+      if (isColorText) return;
+
       _dragOverCount = 0;
       _dragHasFiles = false;
 
@@ -937,10 +958,6 @@ const App: Component = () => {
       e.preventDefault();
       e.stopPropagation();
 
-      const data = extractDropData(e, 'window-capture');
-      console.log('[DND drop] dragOverCount was:', dragCount, 'hadDragActivity:', hadDragActivity);
-
-      const hasFiles = data.filesFromList.length > 0 || data.filesFromItems.length > 0;
       const hasImageUrls = data.uriList || data.textPlain;
       if (hasFiles || hasImageUrls) {
         processExtractedDrop(data);

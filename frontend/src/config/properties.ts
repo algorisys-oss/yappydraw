@@ -1,4 +1,5 @@
 import type { ElementType } from "../types";
+import { COLOR_PALETTES } from "./color-palettes";
 
 /** Which style variants each font supports (based on Google Fonts availability) */
 export const fontCapabilities: Record<string, { bold: boolean; italic: boolean }> = {
@@ -40,6 +41,15 @@ export const properties: PropertyConfig[] = [
         group: 'canvas',
         applicableTo: ['canvas'],
         defaultValue: 'light'
+    },
+    {
+        key: 'colorPalette',
+        label: 'Color Palette',
+        type: 'select',
+        options: COLOR_PALETTES.map(p => ({ label: p.name, value: p.id })),
+        group: 'canvas',
+        applicableTo: ['canvas'],
+        defaultValue: 'default'
     },
     {
         key: 'showQuickToolbar',

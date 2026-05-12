@@ -3,8 +3,11 @@
 .env.local
 .env.production
 !.env.example
+# Claude Code (track shared settings.json / mcp.json; ignore personal + runtime)
+.claude/settings.local.json
+.claude/*.lock
+
 # Logs
-.claude/settings.json
 logs
 *.log
 npm-debug.log*

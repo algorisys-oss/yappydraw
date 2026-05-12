@@ -295,7 +295,7 @@ const Toolbar: Component = () => {
                 onClick={toggleBrainstormMode}
                 title={brainstormMode() ? 'Full Toolbar' : 'Brainstorm Mode'}
             >
-                {brainstormMode() ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+                {brainstormMode() ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
             </button>
 
             {brainstormMode() ? (
@@ -309,7 +309,7 @@ const Toolbar: Component = () => {
                             onDblClick={handleRightClick}
                             title={tool.label}
                         >
-                            <tool.icon size={18} />
+                            <tool.icon size={16} />
                             {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
                         </button>
                     )}
@@ -327,7 +327,7 @@ const Toolbar: Component = () => {
                                 onDblClick={handleRightClick}
                                 title={tool.label}
                             >
-                                <tool.icon size={18} />
+                                <tool.icon size={16} />
                                 {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
                             </button>
                         )}
@@ -391,7 +391,7 @@ const Toolbar: Component = () => {
                                 onDblClick={handleRightClick}
                                 title={tool.label}
                             >
-                                <tool.icon size={18} />
+                                <tool.icon size={16} />
                                 {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
                             </button>
                         )}
@@ -407,7 +407,7 @@ const Toolbar: Component = () => {
                                 onDblClick={handleRightClick}
                                 title={tool.label}
                             >
-                                <tool.icon size={18} />
+                                <tool.icon size={16} />
                                 {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
                             </button>
                         )}

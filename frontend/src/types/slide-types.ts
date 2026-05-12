@@ -87,6 +87,7 @@ export interface GlobalSettings {
     reducedMotion?: boolean;    // Accessibility preference
     renderStyle?: 'sketch' | 'architectural'; // Default style for new elements
     showQuickToolbar?: boolean; // Toggle floating quick toolbar
+    colorPalette?: string;      // ID of the active color palette (see config/color-palettes.ts)
 }
 
 /**

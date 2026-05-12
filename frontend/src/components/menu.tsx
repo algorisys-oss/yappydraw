@@ -14,7 +14,7 @@ import {
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
     Sparkles, Key
 } from "lucide-solid";
-import { P3ColorPicker } from "./p3-color-picker";
+import { ColorPalettePicker } from "./p3-color-picker";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
 import { isGlobalPlaying, isGlobalPaused, animationEngine } from "../utils/animation/animation-engine";
 import { clickOutside } from "../utils/click-outside";
@@ -117,12 +117,12 @@ const Menu: Component = () => {
         setLoadExportInitialTab('save');
         setIsLoadExportOpen(true);
     };
-    const [isP3PickerOpen, setIsP3PickerOpen] = createSignal(false);
-    let p3PickerRef: HTMLDivElement | undefined;
+    const [isPalettePickerOpen, setIsPalettePickerOpen] = createSignal(false);
+    let palettePickerRef: HTMLDivElement | undefined;
 
     createEffect(() => {
-        if (isP3PickerOpen() && p3PickerRef) {
-            clickOutside(p3PickerRef, () => () => setIsP3PickerOpen(false));
+        if (isPalettePickerOpen() && palettePickerRef) {
+            clickOutside(palettePickerRef, () => () => setIsPalettePickerOpen(false));
         }
     });
 
@@ -717,6 +717,7 @@ const Menu: Component = () => {
                                         </div>
                                     </button>
                                     <div class="menu-separator"></div>
+                                    <div class="menu-header">Panels</div>
                                     <div class="menu-item" onClick={() => { togglePropertyPanel(); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
                                         <span class="label">Properties Panel</span>
@@ -724,15 +725,6 @@ const Menu: Component = () => {
                                             <Show when={store.showPropertyPanel}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+Enter</span>
                                         </div>
-                                    </div>
-                                    <div class="menu-item" onClick={() => {
-                                        setStore("selection", []);
-                                        setShowCanvasProperties(true);
-                                        togglePropertyPanel(true);
-                                        setIsMenuOpen(false);
-                                    }}>
-                                        <Settings size={16} />
-                                        <span class="label">Canvas Settings</span>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleLayerPanel(); setIsMenuOpen(false); }}>
                                         <Layers size={16} />
@@ -756,6 +748,25 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <Show when={store.minimapVisible}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+M</span>
+                                        </div>
+                                    </div>
+                                    <Show when={store.docType === 'slides'}>
+                                        <div class="menu-item" onClick={() => { toggleSlideNavigator(); setIsMenuOpen(false); }}>
+                                            <Layout size={16} />
+                                            <span class="label">Slide Panel</span>
+                                            <div class="menu-item-right">
+                                                <Show when={store.showSlideNavigator}><Check size={14} class="check-icon" /></Show>
+                                            </div>
+                                        </div>
+                                    </Show>
+
+                                    <div class="menu-separator"></div>
+                                    <div class="menu-header">Toolbars</div>
+                                    <div class="menu-item" onClick={() => { toggleMainToolbar(); setIsMenuOpen(false); }}>
+                                        <Layout size={16} />
+                                        <span class="label">Drawing Toolbar</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.showMainToolbar}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleUtilityToolbar(); setIsMenuOpen(false); }}>
@@ -783,25 +794,18 @@ const Menu: Component = () => {
                                             </div>
                                         </div>
                                     </Show>
+
                                     <div class="menu-separator"></div>
-                                    <div class="menu-header">View</div>
-                                    <Show when={store.docType === 'slides'}>
-                                        <div class="menu-item" onClick={() => { toggleSlideNavigator(); setIsMenuOpen(false); }}>
-                                            <Layout size={16} />
-                                            <span class="label">Slide Panel</span>
-                                            <div class="menu-item-right">
-                                                <Show when={store.showSlideNavigator}><Check size={14} class="check-icon" /></Show>
-                                            </div>
-                                        </div>
-                                    </Show>
-                                    <div class="menu-item" onClick={() => { toggleMainToolbar(); setIsMenuOpen(false); }}>
-                                        <Layout size={16} />
-                                        <span class="label">Drawing Toolbar</span>
-                                        <div class="menu-item-right">
-                                            <Show when={store.showMainToolbar}><Check size={14} class="check-icon" /></Show>
-                                        </div>
+                                    <div class="menu-header">Settings</div>
+                                    <div class="menu-item" onClick={() => {
+                                        setStore("selection", []);
+                                        setShowCanvasProperties(true);
+                                        togglePropertyPanel(true);
+                                        setIsMenuOpen(false);
+                                    }}>
+                                        <Settings size={16} />
+                                        <span class="label">Canvas Settings</span>
                                     </div>
-                                    <div class="menu-separator"></div>
                                     <div class="menu-item" onClick={() => { setShowSettings(true); setIsMenuOpen(false); }}>
                                         <Settings size={16} />
                                         <span class="label">Settings</span>
@@ -834,7 +838,7 @@ const Menu: Component = () => {
                             style={{
                                 position: 'fixed',
                                 top: '12px',
-                                right: '12px',
+                                right: '108px',
                                 "z-index": 10000,
                                 transform: `translate(${rightPos().x}px, ${rightPos().y}px)`
                             }}
@@ -867,40 +871,59 @@ const Menu: Component = () => {
                                 >
                                     <Square size={16} color="#ef4444" fill="#ef4444" />
                                 </button>
-                                <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 4px' }}></div>
-                                <div ref={p3PickerRef} style={{ position: 'relative' }}>
-                                    <button
-                                        class={`menu-btn ${isP3PickerOpen() ? 'active' : ''}`}
-                                        onClick={() => setIsP3PickerOpen(!isP3PickerOpen())}
-                                        title="P3 Color Palette"
+                            </div>
+                        </div>
+                    </Show>
+
+                    {/* Desktop: standalone palette picker, always visible at top-right */}
+                    <Show when={!isMobile()}>
+                        <div
+                            ref={palettePickerRef}
+                            style={{ position: 'fixed', top: '12px', right: '60px', "z-index": 10000 }}
+                        >
+                            <div class="menu-container" style={{ position: 'relative' }}>
+                                <button
+                                    class={`menu-btn ${isPalettePickerOpen() ? 'active' : ''}`}
+                                    onClick={() => setIsPalettePickerOpen(!isPalettePickerOpen())}
+                                    title="Color Palettes"
+                                >
+                                    <Palette size={16} color="#f43f5e" />
+                                </button>
+                                <Show when={isPalettePickerOpen()}>
+                                    <div
+                                        class="menu-dropdown"
+                                        style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            left: 'auto',
+                                            right: 0,
+                                            margin: '8px 0 0 0',
+                                            padding: '4px',
+                                            width: 'auto',
+                                            'min-width': '220px'
+                                        }}
                                     >
-                                        <Palette size={16} color="#f43f5e" />
-                                    </button>
-                                    <Show when={isP3PickerOpen()}>
-                                        <div
-                                            class="menu-dropdown"
-                                            style={{
-                                                position: 'absolute',
-                                                top: '100%',
-                                                right: 0,
-                                                margin: '8px 0 0 0',
-                                                padding: '4px',
-                                                width: 'auto',
-                                                'min-width': '180px'
-                                            }}
-                                        >
-                                            <P3ColorPicker />
-                                        </div>
-                                    </Show>
-                                </div>
-                                <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 4px' }}></div>
-                                <button class="menu-btn" onClick={toggleTheme} title={`Toggle Theme — currently ${store.theme} (Light → Dark → Focus → System)`}>
+                                        <ColorPalettePicker />
+                                    </div>
+                                </Show>
+                            </div>
+                        </div>
+                    </Show>
+
+                    {/* Desktop: standalone theme toggle, always visible at top-right */}
+                    <Show when={!isMobile()}>
+                        <div style={{ position: 'fixed', top: '12px', right: '12px', "z-index": 10000 }}>
+                            <div class="menu-container">
+                                <button
+                                    class="menu-btn"
+                                    onClick={toggleTheme}
+                                    title={`Toggle Theme — currently ${store.theme} (Light → Dark → Focus → System)`}
+                                >
                                     {store.theme === 'light' ? <Moon size={16} />
                                         : store.theme === 'dark' ? <Focus size={16} />
                                             : store.theme === 'focus' ? <Monitor size={16} />
                                                 : <Sun size={16} />}
                                 </button>
-
                             </div>
                         </div>
                     </Show>
