@@ -6,7 +6,13 @@
 
 import { callLLM, type LLMResponse } from './ai-providers';
 import { loadAIConfig, getApiKey, type AIProvider } from './ai-settings';
-import { buildSystemPrompt, buildRocketSystemPrompt, buildVisionSystemPrompt } from './system-prompt';
+import {
+    buildSystemPrompt,
+    buildRocketSystemPrompt,
+    buildVisionSystemPrompt,
+    build3DStyleSystemPrompt,
+    build3DVisionSystemPrompt,
+} from './system-prompt';
 import { buildDeepDiagramSystemPrompt } from './drawing-visual-prompt';
 import { DRAWING_RESEARCH_PROMPT, buildResearchUserPrompt, VISION_RESEARCH_PROMPT, buildVisionResearchUserPrompt } from './drawing-content-prompt';
 import { processImageForVision } from './image-utils';
@@ -19,6 +25,8 @@ export interface GenerateOptions {
     model?: string;
     rocketMode?: boolean;
     mode?: 'quick' | 'deep';
+    /** When true, render in the 3D concept-diagram style. Ignored if rocketMode is on. */
+    style3D?: boolean;
 }
 
 export interface SketchOptions extends GenerateOptions {
@@ -75,7 +83,11 @@ async function generateDiagramQuick(
     }
 
     const model = options?.model ?? providerConfig.model;
-    const systemPrompt = options?.rocketMode ? buildRocketSystemPrompt() : buildSystemPrompt();
+    const systemPrompt = options?.rocketMode
+        ? buildRocketSystemPrompt()
+        : options?.style3D
+            ? build3DStyleSystemPrompt()
+            : buildSystemPrompt();
     const maxTokens = options?.rocketMode ? 8192 : 4096;
 
     onProgress?.('Generating diagram...');
@@ -192,7 +204,7 @@ async function generateDiagramDeep(
     // ── Stage 2: Diagram Composer ──
     onProgress?.('Composing detailed diagram...');
 
-    const composerSystemPrompt = buildDeepDiagramSystemPrompt();
+    const composerSystemPrompt = buildDeepDiagramSystemPrompt({ style3D: options?.style3D });
     let composerResponse: LLMResponse;
     try {
         composerResponse = await callLLM({
@@ -282,7 +294,7 @@ async function generateDiagramFromSketchQuick(
 
     // 3. Call LLM with vision
     const model = options?.model ?? providerConfig.model;
-    const systemPrompt = buildVisionSystemPrompt();
+    const systemPrompt = options?.style3D ? build3DVisionSystemPrompt() : buildVisionSystemPrompt();
     const userPrompt = options?.additionalPrompt
         ? `Convert this sketch into a YappyDraw diagram. Additional context: ${options.additionalPrompt}`
         : 'Convert this hand-drawn sketch into a YappyDraw diagram. Identify all shapes, text labels, and connections. Output only the JSON.';
@@ -414,7 +426,7 @@ async function generateDiagramFromSketchDeep(
     // ── Stage 2: Diagram Composer (reuse text deep mode composer) ──
     onProgress?.('Composing detailed diagram...');
 
-    const composerSystemPrompt = buildDeepDiagramSystemPrompt();
+    const composerSystemPrompt = buildDeepDiagramSystemPrompt({ style3D: options?.style3D });
     let composerResponse: LLMResponse;
     try {
         composerResponse = await callLLM({

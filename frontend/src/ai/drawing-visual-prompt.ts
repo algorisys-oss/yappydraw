@@ -5,15 +5,18 @@
  * valid YappyDraw JSON DSL with proper shapes, layout, colors, and edges.
  */
 
-import { buildSystemPrompt } from './system-prompt';
+import { buildSystemPrompt, build3DStyleSystemPrompt } from './system-prompt';
 
 /**
  * Build Stage 2 system prompt — prepends composer instructions to the
  * standard DSL spec so the LLM knows both HOW to map research → diagram
  * and WHAT the valid DSL output format is.
+ *
+ * Pass `style3D: true` to use the 3D concept-diagram style.
  */
-export function buildDeepDiagramSystemPrompt(): string {
-    return COMPOSER_PREAMBLE + buildSystemPrompt();
+export function buildDeepDiagramSystemPrompt(opts?: { style3D?: boolean }): string {
+    const base = opts?.style3D ? build3DStyleSystemPrompt() : buildSystemPrompt();
+    return COMPOSER_PREAMBLE + base;
 }
 
 const COMPOSER_PREAMBLE = `You are a diagram composer. You receive a structured JSON research breakdown of a technical topic and convert it into a visually rich, detailed YappyDraw diagram.

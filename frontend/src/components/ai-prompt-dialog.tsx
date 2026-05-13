@@ -4,7 +4,7 @@
  */
 
 import { type Component, createSignal, createEffect, onCleanup, Show, untrack } from "solid-js";
-import { X, Sparkles, Loader2, AlertTriangle, Check, Settings, Rocket, ImagePlus, BrainCircuit } from "lucide-solid";
+import { X, Sparkles, Loader2, AlertTriangle, Check, Settings, Rocket, ImagePlus, BrainCircuit, Box } from "lucide-solid";
 import { generateDiagram, generateDiagramFromSketch, type GenerateResult } from "../ai/drawing-engine";
 import { hasAnyApiKey, loadAIConfig, PROVIDER_LABELS } from "../ai/ai-settings";
 import { setShowAISettings } from "./ai-settings-dialog";
@@ -44,6 +44,7 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
     const [sketchPreview, setSketchPreview] = createSignal<string | null>(null);
     const [isDragOver, setIsDragOver] = createSignal(false);
     const [deepMode, setDeepMode] = createSignal(false);
+    const [style3D, setStyle3D] = createSignal(false);
     const [progressStage, setProgressStage] = createSignal<string | null>(null);
 
     const hasSketch = () => sketchImage() !== null;
@@ -151,12 +152,14 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                     clearCanvas: clearCanvas(),
                     additionalPrompt: text || undefined,
                     mode: deepMode() ? 'deep' : 'quick',
+                    style3D: style3D(),
                 }, (stage) => setProgressStage(stage));
             } else {
                 res = await generateDiagram(text, {
                     clearCanvas: clearCanvas(),
                     rocketMode: rocketMode(),
                     mode: deepMode() ? 'deep' : 'quick',
+                    style3D: style3D() && !rocketMode(),
                 }, (stage) => setProgressStage(stage));
             }
             setResult(res);
@@ -284,6 +287,16 @@ const AIPromptDialog: Component<AIPromptDialogProps> = (props) => {
                                     />
                                     <BrainCircuit size={13} />
                                     <span>Deep Mode</span>
+                                </label>
+                                <label class="ai-prompt-checkbox" title="Render in 3D concept-diagram style: solidBlock / perspectiveBlock containers, isometric cubes, openBox queues, pastel palette. Disabled when Rocket mode is on.">
+                                    <input
+                                        type="checkbox"
+                                        checked={style3D() && !rocketMode()}
+                                        onChange={(e) => setStyle3D(e.currentTarget.checked)}
+                                        disabled={isGenerating() || rocketMode()}
+                                    />
+                                    <Box size={13} />
+                                    <span>3D Style</span>
                                 </label>
                             <Show when={features.enableRocketExport && !hasSketch()}>
                                 <label class="ai-prompt-checkbox">

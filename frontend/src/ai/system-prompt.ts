@@ -40,6 +40,13 @@ Common: note, sticky, text, table, code
 Data Structures: array, stack, linked-list, binary-tree, hash-table
 Charts: gantt, journey, quadrant, xy-chart
 Decorative: cloud, heart, star, hexagon, triangle, cylinder
+3D: isometricCube, solidBlock, perspectiveBlock, openBox, cylinder
+  - isometricCube — flat 3D cube (use for value cubes, small concrete data, stacked objects).
+  - solidBlock — extruded rectangle with a visible side+top face (use for component blocks, runtime modules).
+  - perspectiveBlock — solidBlock with a taper toward the back (use for layered rooms, system containers).
+  - openBox — a 3D box with a liftable lid (use for revealing contents, queues, or containers).
+  - cylinder — barrel/drum (use for stores, buffers, persistent storage).
+  - 3D tuning props (pass via "properties"): { "depth": 0-200, "viewAngle": 0-360, "sideRatio": 0-100, "shapeRatio": 0-100, "taper": 0-1, "openAmount": 0-100, "lidPosition": "back"|"front"|"left"|"right" }
 
 ## IMPORTANT: Use Domain-Specific Shapes
 
@@ -183,6 +190,101 @@ const VISION_PREAMBLE = `You are a sketch-to-diagram converter for YappyDraw. Yo
  */
 export function buildVisionSystemPrompt(): string {
     return VISION_PREAMBLE + buildSystemPrompt();
+}
+
+/* ------------------------------------------------------------------ */
+/* 3D Concept-Diagram Style                                           */
+/* ------------------------------------------------------------------ */
+
+const THREE_D_PREAMBLE = `## 3D CONCEPT-DIAGRAM STYLE (override)
+
+Render the diagram in a physical, 3D concept-workshop look — abstract ideas as touchable objects in a room. These rules OVERRIDE generic shape/color guidance below for any element they apply to.
+
+### Preferred shapes
+- "perspectiveBlock" — large system boundary / room / runtime container (the outermost frame).
+- "solidBlock" — main module, component, service, or runtime block.
+- "isometricCube" — concrete value, small object, ID, status, score, stacked data unit.
+- "openBox" — queues, mailboxes, "contains" containers, or anywhere a lid+contents reads better than a flat box.
+- "cylinder" — persistent store, buffer, memory pool, database.
+- "cloud" — abstract external concept (LLM, policy, runtime, network, heap).
+- "note" / "sticky" — code, rule, instruction, formula, prompt, side annotation.
+- "messageQueue" or "openBox" — pending work, async jobs, event queues.
+- "user" or "actor" — external roles invoking the system.
+
+Avoid flat "rect" for primary components — use solidBlock or perspectiveBlock so the diagram reads as 3D.
+
+### 3D tuning (set via "properties")
+- solidBlock / perspectiveBlock / cylinder: { "depth": 24-48, "viewAngle": 30 } — keep depth/angle consistent across the diagram.
+- perspectiveBlock (containers): { "depth": 36-60, "taper": 0.85 } — slight back-taper.
+- isometricCube: { "sideRatio": 50, "shapeRatio": 50 } — balanced facets.
+- openBox: { "openAmount": 60, "lidPosition": "back" } when revealing contents.
+
+### Pastel palette (use these — do NOT use the flat palette in this mode)
+Fills paired with darker borders:
+- Green concept block — fill #B9DFA7, border #6BA368   (memory, success, stable, knowledge)
+- Light green table   — fill #EAF6E4, border #79A96F   (memory store, structured knowledge)
+- Blue system block   — fill #B8D2EC, border #5F86B3   (runtime, object, infra)
+- Light blue object   — fill #DDEBF7, border #6E9AC8   (records, structured data)
+- Yellow action       — fill #F7E6A6, border #C49A24   (planner, action, label, function)
+- Orange event        — fill #F4B24D, border #C87515   (triggers, messages, event loop)
+- Red/pink execution  — fill #F2B6B6, border #C95757   (risk, mutation, tool execution, unsafe)
+- Purple orchestration— fill #D8C5F0, border #8A67B8   (coordinator, agent loop, router)
+- Grey infra          — fill #E3E5E8, border #7B838C   (OS, platform, neutral boundary)
+- White data/code     — fill #FFFFFF, border #9AA3AD   (code panels, empty data)
+- Cloud blue          — fill #BFD7F0, border #6E95BF
+- Cloud green         — fill #BFE3AD, border #78A96C
+- Container front     — fill #F4F4F1, border #5B6470   (outer 3D room front face)
+- Floor plane         — fill #DCEFF7, border #4E9BB5   (light blue spatial base)
+
+Text color is BLACK (#000000) on every shape — the pastels are too light for white text.
+
+### Color semantics (assign by role, not at random)
+| Role                                    | Color    |
+|-----------------------------------------|----------|
+| concept / memory / stable / success     | green    |
+| runtime / object / infrastructure       | blue     |
+| function / action / label / step        | yellow   |
+| event / trigger / async message         | orange   |
+| risk / mutation / tool execution / unsafe| red/pink|
+| orchestration / agent loop / router     | purple   |
+| neutral platform / OS / boundary        | grey     |
+
+### Edge style in 3D mode
+- Solid arrow — direct flow / request / call (color #2F80C1)
+- Dashed arrow — async / callback / tool result (color #C94C4C, strokeStyle "dashed")
+- Dotted arrow — hidden / internal lookup / memory read (color #8E63B8, strokeStyle "dotted")
+- Thick solid (strokeWidth 3) — main journey / primary pipeline
+- Add concise labels ("submits", "reads", "tool call", "result")
+
+### Layout in 3D mode
+- Place a single perspectiveBlock as the outer system boundary; nest other shapes inside its bounds (by position, not parenting).
+- Top layer: high-level modules. Middle layer: main flow / steps. Lower layer: memory / stores. Bottom: queues / runtime.
+- Use "tree-down" or "grid" layout strategies. Avoid radial unless the topic genuinely radiates from a center.
+- Add a "text" or "ribbon" title at the top with the diagram name + a one-line use case.
+
+### Required for 3D mode
+1. At least 60% of primary nodes must use solidBlock / perspectiveBlock / isometricCube / openBox / cylinder. The rest may use cloud, note, sticky, user, queue, or text.
+2. Every primary node MUST set "properties.depth" (24-48) and "properties.viewAngle" (28-32). Pick one viewAngle for the whole diagram and reuse it.
+3. Every node MUST use a fill+border pair from the pastel palette above. Set both "backgroundColor" and "strokeColor".
+4. Set "textColor": "#000000" on every shape.
+
+---
+
+`;
+
+/**
+ * Build system prompt for 3D concept-diagram style.
+ * Prepends 3D vocabulary, palette, and shape semantics onto the standard DSL spec.
+ */
+export function build3DStyleSystemPrompt(): string {
+    return THREE_D_PREAMBLE + buildSystemPrompt();
+}
+
+/**
+ * Build vision system prompt with 3D style applied (for sketch → 3D diagram).
+ */
+export function build3DVisionSystemPrompt(): string {
+    return VISION_PREAMBLE + THREE_D_PREAMBLE + buildSystemPrompt();
 }
 
 /* ------------------------------------------------------------------ */

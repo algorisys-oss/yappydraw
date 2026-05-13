@@ -1955,8 +1955,9 @@ export const YappyAPI = {
      *
      * @param options.rocketMode - Enable Rocket Backend mode (extended prompt for entities, state machines, workflows)
      * @param options.mode - 'quick' (default, single LLM call) or 'deep' (2-stage: research agent → diagram composer — richer output for complex technical topics)
+     * @param options.style3D - Render in the 3D concept-diagram style (pastel palette, solidBlock/perspectiveBlock containers, isometric cubes). Ignored when rocketMode is true.
      */
-    async generateDiagram(prompt: string, options?: { clearCanvas?: boolean; provider?: string; model?: string; rocketMode?: boolean; mode?: 'quick' | 'deep' }) {
+    async generateDiagram(prompt: string, options?: { clearCanvas?: boolean; provider?: string; model?: string; rocketMode?: boolean; mode?: 'quick' | 'deep'; style3D?: boolean }) {
         const { generateDiagram: gen } = await import('./ai/drawing-engine');
         return gen(prompt, options as any);
     },
@@ -1967,8 +1968,9 @@ export const YappyAPI = {
      *
      * @param imageFile - The sketch image (File or Blob)
      * @param options.additionalPrompt - Optional text to guide the conversion
+     * @param options.style3D - Render in the 3D concept-diagram style.
      */
-    async generateDiagramFromSketch(imageFile: File | Blob, options?: { clearCanvas?: boolean; provider?: string; model?: string; additionalPrompt?: string }) {
+    async generateDiagramFromSketch(imageFile: File | Blob, options?: { clearCanvas?: boolean; provider?: string; model?: string; additionalPrompt?: string; mode?: 'quick' | 'deep'; style3D?: boolean }) {
         const { generateDiagramFromSketch: gen } = await import('./ai/drawing-engine');
         return gen(imageFile, options as any);
     },
