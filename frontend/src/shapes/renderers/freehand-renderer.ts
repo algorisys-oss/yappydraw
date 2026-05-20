@@ -4,6 +4,16 @@ import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { normalizePoints } from "../../utils/render-element";
 
+// Drop touchdown/lift jitter at stroke endpoints. When a stylus first
+// contacts (or just before lift), the reported position twitches by 1–2px
+// before the real motion starts. Those near-coincident endpoint samples
+// drive the Q-spline control points sideways and produce a small hook at
+// the start and end of every fineliner/ink/inkbrush stroke. Trimming any
+// endpoint samples closer than this threshold to their neighbor removes
+// the hook without affecting legitimate strokes (normal stylus motion
+// covers >3px per sample at any usable speed).
+const STROKE_JITTER_TRIM_PX = 1.5;
+
 export class FreehandRenderer extends ShapeRenderer {
     /**
      * Override base render to bypass the custom points check for freehand elements.
@@ -64,6 +74,29 @@ export class FreehandRenderer extends ShapeRenderer {
         renderer.restore();
     }
 
+    // Drop leading/trailing samples that sit within STROKE_JITTER_TRIM_PX
+    // of their neighbor. Preserves at least 3 points so downstream
+    // rendering paths (Q-spline / trapezoid) still have enough geometry.
+    private trimEndpointJitter(pts: any[]): any[] {
+        if (pts.length < 5) return pts;
+        const sq = STROKE_JITTER_TRIM_PX * STROKE_JITTER_TRIM_PX;
+        let start = 0;
+        let end = pts.length - 1;
+        while (end - start > 3) {
+            const dx = pts[start + 1].x - pts[start].x;
+            const dy = pts[start + 1].y - pts[start].y;
+            if (dx * dx + dy * dy > sq) break;
+            start++;
+        }
+        while (end - start > 3) {
+            const dx = pts[end].x - pts[end - 1].x;
+            const dy = pts[end].y - pts[end - 1].y;
+            if (dx * dx + dy * dy > sq) break;
+            end--;
+        }
+        return (start === 0 && end === pts.length - 1) ? pts : pts.slice(start, end + 1);
+    }
+
     private smoothPoints(pts: any[], intensity: number): any[] {
         if (pts.length < 3) return pts;
         const smoothed = [pts[0]];
@@ -82,7 +115,8 @@ export class FreehandRenderer extends ShapeRenderer {
         return smoothed;
     }
 
-    private renderFineliner(renderer: IRenderer, pts: any[], width: number) {
+    private renderFineliner(renderer: IRenderer, rawPts: any[], width: number) {
+        const pts = this.trimEndpointJitter(rawPts);
         if (pts.length < 6) {
             renderer.beginPath(); renderer.arc(pts[0].x, pts[0].y, width / 2, 0, Math.PI * 2); renderer.fill();
             return;
@@ -98,7 +132,11 @@ export class FreehandRenderer extends ShapeRenderer {
         renderer.stroke();
     }
 
-    private renderInkbrush(renderer: IRenderer, rawPts: any[], baseWidth: number, taperAmount = 0.15, velocitySensitivity = 0.5) {
+    private renderInkbrush(renderer: IRenderer, rawPtsIn: any[], baseWidth: number, taperAmount = 0.15, velocitySensitivity = 0.5) {
+        // Trim touchdown/lift jitter before any other filtering so the
+        // endpoint samples used for taper-width + trapezoid-perpendicular
+        // come from real motion, not stylus-landing twitch.
+        const rawPts = this.trimEndpointJitter(rawPtsIn);
         if (rawPts.length < 2) {
             renderer.beginPath(); renderer.arc(rawPts[0].x, rawPts[0].y, baseWidth / 2, 0, Math.PI * 2); renderer.fill();
             return;
@@ -150,12 +188,18 @@ export class FreehandRenderer extends ShapeRenderer {
 
             const taperLength = Math.min(pts.length * taperAmount, 20);
             if (taperLength > 0) {
+                // Floor raised from 0.1 → 0.4 (40% width at the very
+                // endpoint). The previous 10% width at the last point
+                // produced a needle-point with a perpendicular twist —
+                // perceived as a "hook." 40% keeps a visible taper but
+                // ends with enough thickness that the joint circle reads
+                // as a clean round cap instead of a curl.
                 if (i < taperLength) {
-                    width *= (i / taperLength) * 0.9 + 0.1;
+                    width *= (i / taperLength) * 0.6 + 0.4;
                 }
                 if (i > pts.length - taperLength - 1) {
                     const endPos = pts.length - 1 - i;
-                    width *= (endPos / taperLength) * 0.9 + 0.1;
+                    width *= (endPos / taperLength) * 0.6 + 0.4;
                 }
             }
 

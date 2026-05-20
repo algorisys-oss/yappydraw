@@ -697,24 +697,26 @@ const Canvas: Component = () => {
 
     // Hard-cancel any in-flight pointer/touch interaction so it doesn't
     // leak through into the gesture. Discards the in-progress draft
-    // element if a draw was just started (typical case: 2nd finger lands
-    // ~50ms after 1st, after the 1st finger's pointerdown already created
-    // a draft shape). Does NOT undo moves of pre-existing elements being
-    // dragged — leaving them at the current cursor position is acceptable.
+    // element (typical case with a pen-drawing tool active: 1st finger's
+    // touchstart already created a stroke element via drawOnDown; 2nd
+    // finger lands ~50ms later and we want that stroke gone). Does NOT
+    // undo moves of pre-existing elements being dragged — leaving them
+    // at the current cursor position is acceptable.
     const cancelInflightForGesture = () => {
+        // Capture the draft id BEFORE any finalize call clears it.
+        const draftId = pState.currentId;
+        const wasDrawing = pState.isDrawing || touchDrivingPenStroke;
+        const wasDragging = pState.isDragging;
+
         if (touchDrivingPenStroke || pState.isDrawing) {
-            // Finalize the touch-driven pen stroke if any (commits whatever
-            // was drawn so far — safer than discarding because a long
-            // committed stroke is undoable while a partial discard is not).
             try { finalizeTouchStroke(); } catch { /* noop */ }
         }
-        // For pointer-driven drawing tools, the draft element was just
-        // created in handlePointerDown. Remove it directly (no history
-        // push — the user didn't intend to draw).
-        if (pState.isDrawing && pState.currentId && !pState.isDragging) {
-            const draftId = pState.currentId;
+        // Delete the just-created draft element (drawing only — not drag).
+        // No pushToHistory: the user never intended to draw.
+        if (draftId && wasDrawing && !wasDragging) {
             setStore("elements", arr => arr.filter(el => el.id !== draftId));
         }
+
         pState.isDrawing = false;
         pState.isDragging = false;
         pState.isSelecting = false;
@@ -772,11 +774,11 @@ const Canvas: Component = () => {
 
     const handleTouchStartGesture = (e: TouchEvent) => {
         // Fires before the pen-drawing touchstart handler (registered
-        // first). When 2+ fingers are on the canvas, we own the gesture.
+        // first). When 2+ FINGERS are on the canvas (stylus contacts
+        // excluded by pickFingerTouches), we own the gesture — even if
+        // finger 1's touchstart already started a pen stroke a moment
+        // ago. cancelInflightForGesture will discard the stray stroke.
         if (store.appMode === 'embed') return;
-        // Don't pre-empt an Apple Pencil stroke that's already underway via
-        // the TouchEvent path.
-        if (touchDrivingPenStroke) return;
         const fingers = pickFingerTouches(e);
         if (fingers.length >= 2) {
             e.preventDefault();

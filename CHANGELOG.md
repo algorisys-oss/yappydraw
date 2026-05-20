@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.20] - 2026-05-20
+
+### Fixed
+- **Pen tools (fineliner / ink / marker / inkbrush) — small hooks at the beginning and end of strokes** — when a stylus first contacted (or just before lift) the reported position twitched by 1–2px before the real motion started. Those near-coincident endpoint samples drove the Q-spline control points sideways at the boundary, producing a visible hook curl at both ends of every stroke.
+  - Added `trimEndpointJitter()` in `FreehandRenderer`: drops leading/trailing samples within 1.5px of their neighbor before the renderer touches them. Preserves ≥3 points so the Q-spline and trapezoid paths still have geometry. Threshold is well below normal stylus sample spacing (>3px at any usable drawing speed), so legitimate strokes aren't affected.
+  - For `renderInkbrush`, the taper floor was also raised from 0.1 → 0.4 (40% width at the very endpoint). The previous 10% width produced a needle-point with a perpendicular twist that read as a hook. 40% keeps the visible taper but lets the joint circle close as a clean round cap.
+
+## [0.27.19] - 2026-05-20
+
+### Fixed
+- **Two-finger gesture preempted by pen-tool stroke** — when a pen-drawing tool (fineliner/marker/ink/inkbrush) was selected and the user started a 2-finger gesture, the first finger's touchstart immediately created a stroke via the TouchEvent path. The gesture handler then bailed out because `touchDrivingPenStroke` was true, so the second finger's contact did nothing and the user saw a stray short stroke instead of a pan/pinch.
+  - Removed the `touchDrivingPenStroke` early-return in `handleTouchStartGesture`. Now any 2-finger landing engages the gesture regardless of whether finger 1 already kicked off a stroke.
+  - `cancelInflightForGesture` now captures `pState.currentId` BEFORE calling `finalizeTouchStroke`, then deletes the resulting element from the store. Result: the brief stray stroke is wiped, the canvas just pans/pinches as intended.
+  - Apple Pencil drawing remains protected: stylus contacts are filtered out by `pickFingerTouches`, so a Pencil + palm-rest still has finger-count of 1 and the gesture doesn't engage.
+
 ## [0.27.18] - 2026-05-20
 
 ### Added
