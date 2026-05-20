@@ -7,13 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.27.20] - 2026-05-20
-
-### Fixed
-- **Pen tools (fineliner / ink / marker / inkbrush) — small hooks at the beginning and end of strokes** — when a stylus first contacted (or just before lift) the reported position twitched by 1–2px before the real motion started. Those near-coincident endpoint samples drove the Q-spline control points sideways at the boundary, producing a visible hook curl at both ends of every stroke.
-  - Added `trimEndpointJitter()` in `FreehandRenderer`: drops leading/trailing samples within 1.5px of their neighbor before the renderer touches them. Preserves ≥3 points so the Q-spline and trapezoid paths still have geometry. Threshold is well below normal stylus sample spacing (>3px at any usable drawing speed), so legitimate strokes aren't affected.
-  - For `renderInkbrush`, the taper floor was also raised from 0.1 → 0.4 (40% width at the very endpoint). The previous 10% width produced a needle-point with a perpendicular twist that read as a hook. 40% keeps the visible taper but lets the joint circle close as a clean round cap.
-
 ## [0.27.19] - 2026-05-20
 
 ### Fixed
