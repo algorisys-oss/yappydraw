@@ -3,7 +3,7 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore } from "../store/app-store";
 import { normalizePoints } from "../utils/render-element";
 import type { DrawingElement } from "../types";
 import ContextMenu from "./context-menu";
@@ -590,6 +590,9 @@ const Canvas: Component = () => {
 
     const handleTouchStart = (e: TouchEvent) => {
         if (store.appMode === 'embed') return;
+        // 2-finger gesture owns the canvas; pen stroke must not start.
+        if (gestureActive || gestureCooldown) return;
+        if (pickFingerTouches(e).length >= 2) return;
         if (!isPenDrawingTool()) return;
         // Self-heal: if a previous stroke is somehow still in flight (touchend
         // was missed, fired out of order, or its changedTouches didn't carry
@@ -620,6 +623,7 @@ const Canvas: Component = () => {
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+        if (gestureActive) return;
         if (!touchDrivingPenStroke) return;
         // Only react to the move of OUR tracked touch — palm shifting fires
         // touchmove events too, and we don't want them adding points.
@@ -636,6 +640,7 @@ const Canvas: Component = () => {
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
+        if (gestureActive) return;
         if (!touchDrivingPenStroke) return;
         // Always finalize on touchend when we're driving a stroke. The
         // previous "find tracked touch in changedTouches" gate was dropping
@@ -648,10 +653,165 @@ const Canvas: Component = () => {
         draw();
     };
 
+    // ─── Two-finger pan + pinch-zoom (iPad / touch) ──────────────────────
+    // When two fingers land on the canvas, we take over for the duration of
+    // the gesture: pan by the centroid delta, zoom by the pinch distance
+    // ratio (centered on the centroid). Coexists with single-finger pen
+    // drawing by hard-cancelling any in-flight stroke or pointer drag the
+    // moment a 2nd finger touches down.
+    let gestureActive = false;
+    let gestureLastDist = 0;
+    let gestureLastCx = 0;
+    let gestureLastCy = 0;
+    // After a gesture ends with fingers still down, block any
+    // single-finger interaction (pen stroke, pointer drag) until ALL
+    // fingers lift. Otherwise the leftover finger immediately starts a
+    // stray stroke at gesture-release.
+    let gestureCooldown = false;
+
+    // Count contacts that are fingers (not stylus). Used so an Apple Pencil
+    // contact + palm rest doesn't get mistaken for a 2-finger gesture.
+    const pickFingerTouches = (e: TouchEvent): Touch[] => {
+        const fingers: Touch[] = [];
+        for (let i = 0; i < e.touches.length; i++) {
+            const t = e.touches[i];
+            if ((t as any).touchType !== 'stylus') {
+                fingers.push(t);
+                if (fingers.length === 2) break;
+            }
+        }
+        return fingers;
+    };
+
+    const twoFingerMetrics = (e: TouchEvent) => {
+        const f = pickFingerTouches(e);
+        if (f.length < 2) return null;
+        const t0 = f[0];
+        const t1 = f[1];
+        const cx = (t0.clientX + t1.clientX) / 2;
+        const cy = (t0.clientY + t1.clientY) / 2;
+        const dx = t0.clientX - t1.clientX;
+        const dy = t0.clientY - t1.clientY;
+        return { cx, cy, dist: Math.hypot(dx, dy) };
+    };
+
+    // Hard-cancel any in-flight pointer/touch interaction so it doesn't
+    // leak through into the gesture. Discards the in-progress draft
+    // element if a draw was just started (typical case: 2nd finger lands
+    // ~50ms after 1st, after the 1st finger's pointerdown already created
+    // a draft shape). Does NOT undo moves of pre-existing elements being
+    // dragged — leaving them at the current cursor position is acceptable.
+    const cancelInflightForGesture = () => {
+        if (touchDrivingPenStroke || pState.isDrawing) {
+            // Finalize the touch-driven pen stroke if any (commits whatever
+            // was drawn so far — safer than discarding because a long
+            // committed stroke is undoable while a partial discard is not).
+            try { finalizeTouchStroke(); } catch { /* noop */ }
+        }
+        // For pointer-driven drawing tools, the draft element was just
+        // created in handlePointerDown. Remove it directly (no history
+        // push — the user didn't intend to draw).
+        if (pState.isDrawing && pState.currentId && !pState.isDragging) {
+            const draftId = pState.currentId;
+            setStore("elements", arr => arr.filter(el => el.id !== draftId));
+        }
+        pState.isDrawing = false;
+        pState.isDragging = false;
+        pState.isSelecting = false;
+        pState.currentId = null;
+        pState.draggingHandle = null;
+        pState.draggingFromConnector = null;
+        pState.hoveredConnector = null;
+        pState.initialPositions.clear();
+    };
+
+    const beginGesture = (e: TouchEvent) => {
+        const m = twoFingerMetrics(e);
+        if (!m) return;
+        cancelInflightForGesture();
+        gestureLastDist = m.dist;
+        gestureLastCx = m.cx;
+        gestureLastCy = m.cy;
+        gestureActive = true;
+    };
+
+    const updateGesture = (e: TouchEvent) => {
+        if (!canvasRef) return;
+        const m = twoFingerMetrics(e);
+        if (!m) return;
+        const rect = canvasRef.getBoundingClientRect();
+        const { scale, panX, panY } = store.viewState;
+
+        // Pinch: scale ratio per-frame, anchored on the previous centroid
+        // (so the world point that was under the centroid stays under it
+        // through the zoom step). Guard against zero/near-zero start dist.
+        const ratio = gestureLastDist > 1 ? m.dist / gestureLastDist : 1;
+        const newScale = Math.min(Math.max(scale * ratio, 0.1), 10);
+
+        const screenLastCx = gestureLastCx - rect.left;
+        const screenLastCy = gestureLastCy - rect.top;
+        const worldX = (screenLastCx - panX) / scale;
+        const worldY = (screenLastCy - panY) / scale;
+        let newPanX = screenLastCx - worldX * newScale;
+        let newPanY = screenLastCy - worldY * newScale;
+
+        // Pan: centroid screen-space delta this frame.
+        newPanX += (m.cx - gestureLastCx);
+        newPanY += (m.cy - gestureLastCy);
+
+        setViewState({ scale: newScale, panX: newPanX, panY: newPanY });
+
+        gestureLastDist = m.dist;
+        gestureLastCx = m.cx;
+        gestureLastCy = m.cy;
+    };
+
+    const endGesture = () => {
+        gestureActive = false;
+    };
+
+    const handleTouchStartGesture = (e: TouchEvent) => {
+        // Fires before the pen-drawing touchstart handler (registered
+        // first). When 2+ fingers are on the canvas, we own the gesture.
+        if (store.appMode === 'embed') return;
+        // Don't pre-empt an Apple Pencil stroke that's already underway via
+        // the TouchEvent path.
+        if (touchDrivingPenStroke) return;
+        const fingers = pickFingerTouches(e);
+        if (fingers.length >= 2) {
+            e.preventDefault();
+            if (!gestureActive) beginGesture(e);
+        }
+    };
+
+    const handleTouchMoveGesture = (e: TouchEvent) => {
+        if (!gestureActive) return;
+        const fingers = pickFingerTouches(e);
+        if (fingers.length >= 2) {
+            e.preventDefault();
+            updateGesture(e);
+        }
+    };
+
+    const handleTouchEndGesture = (e: TouchEvent) => {
+        const fingers = pickFingerTouches(e);
+        if (gestureActive && fingers.length < 2) {
+            e.preventDefault();
+            endGesture();
+            if (e.touches.length > 0) gestureCooldown = true;
+        }
+        if (e.touches.length === 0) gestureCooldown = false;
+    };
+
     const handlePointerDown = (e: PointerEvent) => {
         if (store.appMode === 'embed') return;
         // TouchEvent path is handling this stroke — skip pointer duplicate.
         if (touchDrivingPenStroke) return;
+        // 2-finger gesture in progress (or cooling down with a finger still
+        // resting on the canvas) — don't let synthetic touch-pointers drive
+        // the tool. Only touch-derived pointers are blocked; mouse + pen
+        // continue to work (e.g. user palms while pinching with stylus).
+        if ((gestureActive || gestureCooldown) && e.pointerType === 'touch') return;
 
         // Palm rejection (iPad / Apple Pencil): only block touch while a pen is
         // CURRENTLY in contact. The previous "pen recent (700ms)" window was
@@ -773,6 +933,7 @@ const Canvas: Component = () => {
 
     const handlePointerMove = (e: PointerEvent) => {
         if (touchDrivingPenStroke) return;
+        if ((gestureActive || gestureCooldown) && e.pointerType === 'touch') return;
         // Palm rejection on move: only block palm-sized touch while a pen is
         // currently in contact. Misclassified pencil-tip touches pass through.
         if (e.pointerType === 'pen') {
@@ -857,6 +1018,13 @@ const Canvas: Component = () => {
 
     const handlePointerUp = (e: PointerEvent) => {
         if (touchDrivingPenStroke) return;
+        // Gesture path consumed this — but DO let the touch pointerup
+        // through if we're still mid-gesture's cooldown, so the OS-level
+        // pointer capture is released cleanly.
+        if (gestureActive && e.pointerType === 'touch') {
+            try { (e.currentTarget as Element).releasePointerCapture(e.pointerId); } catch { /* noop */ }
+            return;
+        }
         // Palm rejection: drop palm-sized touch up if a pen is currently in
         // control. Pencil-sized touch ups pass through.
         if (e.pointerType === 'pen') {
@@ -1008,6 +1176,14 @@ const Canvas: Component = () => {
         // pen-drawing tools via the `touchDrivingPenStroke` flag.
         // Use addEventListener with `passive: false` so preventDefault() works.
         if (canvasRef) {
+            // Register gesture handlers FIRST so they observe 2-finger
+            // touchstarts before the pen-stroke handler short-circuits on
+            // touches.length >= 2.
+            canvasRef.addEventListener('touchstart', handleTouchStartGesture, { passive: false });
+            canvasRef.addEventListener('touchmove', handleTouchMoveGesture, { passive: false });
+            canvasRef.addEventListener('touchend', handleTouchEndGesture, { passive: false });
+            canvasRef.addEventListener('touchcancel', handleTouchEndGesture, { passive: false });
+
             canvasRef.addEventListener('touchstart', handleTouchStart, { passive: false });
             canvasRef.addEventListener('touchmove', handleTouchMove, { passive: false });
             canvasRef.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -1137,6 +1313,10 @@ const Canvas: Component = () => {
             window.removeEventListener("resize", handleResize);
             document.removeEventListener("fullscreenchange", handleResize);
             if (canvasRef) {
+                canvasRef.removeEventListener('touchstart', handleTouchStartGesture);
+                canvasRef.removeEventListener('touchmove', handleTouchMoveGesture);
+                canvasRef.removeEventListener('touchend', handleTouchEndGesture);
+                canvasRef.removeEventListener('touchcancel', handleTouchEndGesture);
                 canvasRef.removeEventListener('touchstart', handleTouchStart);
                 canvasRef.removeEventListener('touchmove', handleTouchMove);
                 canvasRef.removeEventListener('touchend', handleTouchEnd);

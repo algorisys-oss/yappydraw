@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.18] - 2026-05-20
+
+### Added
+- **Two-finger pan + pinch-zoom on iPad / touch devices** — the canvas now responds to two-finger drag (pans by centroid delta) and pinch (zooms around the centroid, clamped 0.1×–10×), matching Figma/FigJam/Freeform conventions on iPad. Single-finger interactions (Apple Pencil drawing, stylus + palm rejection, tap-to-select) are unaffected: contacts are filtered by `touchType` so a stylus + palm-rest never registers as 2 fingers, and the pen-drawing TouchEvent path still wins for single-stylus strokes.
+  - Gesture handlers register before the pen-drawing touch handlers so they observe 2-finger touchstarts first and can `preventDefault()` before a stroke begins.
+  - When the second finger lands ~50ms after the first (the typical case), any draft element the first finger's synthetic `pointerdown` already created is removed directly via `setStore` — no `pushToHistory`, since the user never intended to draw. Drags of pre-existing elements aren't undone; the element stays at the current cursor position.
+  - A cooldown flag blocks new single-touch interactions until all fingers lift, preventing the leftover finger from immediately starting a stroke when the user releases one finger of two.
+  - Pinch math anchors the previous centroid (not the current one) so the world point under the centroid stays under it through each zoom step — no drift during combined pan+pinch.
+
 ## [0.27.16] - 2026-05-07
 
 ### Fixed
