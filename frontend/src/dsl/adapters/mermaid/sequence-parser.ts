@@ -119,11 +119,15 @@ export function parseMermaidSequence(input: string): AdapterResult {
         }
     }
 
-    // Build nodes from participant order
+    // Build nodes from participant order.
+    // fontSize 16 keeps participant labels readable inside the 60 px lifeline
+    // head-box even when the label wraps to 2 lines (2 × 16 × 1.2 ≈ 38 px fits).
+    // The shape default of 28 px would overflow the head-box bottom.
     const nodes: DSLNode[] = participantOrder.map(id => ({
         id,
         shape: participantShapes.get(id) ?? 'lifeline',
         label: participantLabels.get(id) ?? id,
+        style: { fontSize: 16 },
     }));
 
     if (nodes.length === 0) {

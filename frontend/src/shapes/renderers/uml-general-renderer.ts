@@ -24,7 +24,7 @@ export class UmlGeneralRenderer extends ShapeRenderer {
         } else if (el.type === 'umlComponent') {
             renderer.rect(x, y, w, h);
         } else if (el.type === 'umlLifeline') {
-            const boxH = Math.max(30, h * 0.2);
+            const boxH = Math.min(60, Math.max(30, h * 0.2));
             renderer.rect(x, y, w, boxH);
         } else if (el.type === 'umlFragment') {
             renderer.rect(x, y, w, h);
@@ -67,7 +67,7 @@ export class UmlGeneralRenderer extends ShapeRenderer {
 
         // Lifeline: dashed vertical line below object box
         if (el.type === 'umlLifeline') {
-            const boxH = Math.max(30, h * 0.2);
+            const boxH = Math.min(60, Math.max(30, h * 0.2));
             renderer.save();
             renderer.setLineDash([8, 6]);
             renderer.beginPath();
@@ -96,7 +96,7 @@ export class UmlGeneralRenderer extends ShapeRenderer {
 
         // Text: lifeline renders text in top box only
         if (el.type === 'umlLifeline') {
-            const boxH = Math.max(30, h * 0.2);
+            const boxH = Math.min(60, Math.max(30, h * 0.2));
             const textCy = el.y + boxH / 2;
             RenderPipeline.renderText(context, cx, textCy);
         } else {
@@ -142,7 +142,7 @@ export class UmlGeneralRenderer extends ShapeRenderer {
             rc.rectangle(tabX, y + h * 0.25 - tabH / 2, tabW, tabH, options);
             rc.rectangle(tabX, y + h * 0.55 - tabH / 2, tabW, tabH, options);
         } else if (el.type === 'umlLifeline') {
-            const boxH = Math.max(30, h * 0.2);
+            const boxH = Math.min(60, Math.max(30, h * 0.2));
             rc.rectangle(x, y, w, boxH, options);
             // Dashed line
             const dashOptions = { ...options, strokeLineDash: [8, 6], fill: 'none' };
@@ -158,7 +158,7 @@ export class UmlGeneralRenderer extends ShapeRenderer {
 
         // Text: lifeline renders text in top box only
         if (el.type === 'umlLifeline') {
-            const boxH = Math.max(30, h * 0.2);
+            const boxH = Math.min(60, Math.max(30, h * 0.2));
             const textCy = el.y + boxH / 2;
             RenderPipeline.renderText(context, cx, textCy);
         } else {

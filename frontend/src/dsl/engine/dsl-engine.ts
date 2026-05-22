@@ -12,9 +12,13 @@ import { resolveShapeType } from '../shape-aliases';
 import { getShapeDefaults } from '../shape-defaults';
 import { mergeNodeStyle, mergeEdgeStyle, mapStyleToOptions } from './render-helpers';
 import { computeLayout } from '../layout/layout-manager';
+import {
+    SEQUENCE_HEADER_HEIGHT,
+    SEQUENCE_MESSAGE_TOP_PADDING,
+} from '../layout/strategies/sequence-layout';
 import { YappyAPI } from '../../api';
 import { store, setStore, pushToHistory, deleteElements } from '../../store/app-store';
-import { fitShapeToText, getMeasurementRenderer } from '../../utils/text-utils';
+import { fitShapeToText, getMeasurementRenderer, getFontString } from '../../utils/text-utils';
 
 /**
  * Render a DSLDiagram to the canvas.
@@ -118,6 +122,10 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
 
     // ─── Render edges ────────────────────────────────────
     if (diagram.edges) {
+        const isSequence = diagram.layout?.strategy === 'sequence';
+        const vSpacing = diagram.layout?.vSpacing ?? 60;
+        let messageIndex = 0;
+
         for (const edge of diagram.edges) {
             const sourceCanvasId = nodeIdMap.get(edge.from);
             const targetCanvasId = nodeIdMap.get(edge.to);
@@ -126,12 +134,15 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
                 continue;
             }
 
-            const edgeElementId = renderEdge(edge, sourceCanvasId, targetCanvasId, diagram);
+            const edgeElementId = isSequence
+                ? renderSequenceEdge(edge, sourceCanvasId, targetCanvasId, messageIndex, vSpacing, diagram)
+                : renderEdge(edge, sourceCanvasId, targetCanvasId, diagram);
             if (edgeElementId) {
                 const edgeKey = edge.id ?? `${edge.from}->${edge.to}`;
                 edgeIdMap.set(edgeKey, edgeElementId);
                 elementCount++;
             }
+            if (isSequence) messageIndex++;
         }
     }
 
@@ -241,6 +252,85 @@ function renderEdge(
     }
 
     return connectorId;
+}
+
+/**
+ * Render a sequence-diagram message as a horizontal arrow at a cascading Y.
+ *
+ * Standard messages: straight arrow from source lifeline's centerline to
+ * target lifeline's centerline at `y = headerBottom + topPadding + i*vSpacing`.
+ *
+ * Self-messages (source === target): a U-shaped 3-segment arrow that goes
+ * right off the lifeline, drops by `vSpacing/2`, and returns — the classic
+ * UML "method calls itself" notation.
+ *
+ * We bypass `connect()` deliberately: its intersection routing assumes nodes
+ * are point-shaped and would land every message on the same horizontal line
+ * because all lifelines share a Y.
+ */
+function renderSequenceEdge(
+    edge: DSLEdge,
+    sourceCanvasId: string,
+    targetCanvasId: string,
+    messageIndex: number,
+    vSpacing: number,
+    diagram: DSLDiagram,
+): string | null {
+    const source = YappyAPI.getElement(sourceCanvasId);
+    const target = YappyAPI.getElement(targetCanvasId);
+    if (!source || !target) return null;
+
+    const mergedStyle = mergeEdgeStyle(edge.style, diagram.defaults);
+    const styleOpts = mapStyleToOptions(mergedStyle);
+
+    // Cascading Y inside the message area, anchored to the source lifeline's top.
+    const messageY = source.y
+        + SEQUENCE_HEADER_HEIGHT
+        + SEQUENCE_MESSAGE_TOP_PADDING
+        + messageIndex * vSpacing;
+
+    const sourceCx = source.x + source.width / 2;
+    const targetCx = target.x + target.width / 2;
+    const isSelf = sourceCanvasId === targetCanvasId;
+
+    let arrowId: string | null;
+
+    if (isSelf) {
+        // U-shape on the right side of the lifeline (out, down, back).
+        const loopWidth = 60;
+        const loopHeight = Math.max(20, vSpacing * 0.4);
+        arrowId = YappyAPI.createElement(
+            'arrow',
+            sourceCx,
+            messageY,
+            loopWidth,
+            loopHeight,
+            {
+                ...styleOpts,
+                curveType: 'elbow',
+                points: [0, 0, loopWidth, 0, loopWidth, loopHeight, 0, loopHeight],
+            },
+        );
+    } else {
+        const width = targetCx - sourceCx;
+        arrowId = YappyAPI.createElement(
+            'arrow',
+            sourceCx,
+            messageY,
+            width,
+            0,
+            {
+                ...styleOpts,
+                curveType: 'straight',
+                points: [0, 0, width, 0],
+            },
+        );
+    }
+
+    if (arrowId && edge.label) {
+        YappyAPI.updateElement(arrowId, { containerText: edge.label });
+    }
+    return arrowId;
 }
 
 // ─── Pool Layout Computation ────────────────────────────
@@ -466,6 +556,32 @@ function computeFittedSize(
     defaults: { width: number; height: number },
     fontSize?: number,
 ): { width: number; height: number } {
+    // umlLifeline renders its label only inside the small head-box (capped at
+    // SEQUENCE_HEADER_HEIGHT). The generic fitter targets a square-ish aspect
+    // ratio and produces a narrow shape, which forces the label to wrap into
+    // many lines that then overflow the head-box. Size lifelines wide enough
+    // that the label fits in ≤ 2 lines instead.
+    //
+    // The font default here MUST match `getFontString` (28 px, hand-drawn) —
+    // measuring at the wrong size yields wraps the renderer disagrees with.
+    if (type === 'umlLifeline') {
+        try {
+            const renderer = getMeasurementRenderer();
+            renderer.font = getFontString({ fontSize });
+            const singleLineW = renderer.measureText(label).width;
+            const padding = 24;
+            const SINGLE_LINE_MAX = 260;
+            // For >SINGLE_LINE_MAX labels, pick a width that wraps into ~2 lines
+            // with breathing room (÷1.7 instead of /2 absorbs wrap-inefficiency
+            // from word boundaries).
+            const width = singleLineW + padding <= SINGLE_LINE_MAX
+                ? Math.ceil(singleLineW) + padding
+                : Math.ceil(singleLineW / 1.7) + padding;
+            return { width: Math.max(defaults.width, width), height: defaults.height };
+        } catch {
+            // fall through to generic fitter
+        }
+    }
     try {
         const renderer = getMeasurementRenderer();
         const fitted = fitShapeToText(renderer, {

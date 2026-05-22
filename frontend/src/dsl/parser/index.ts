@@ -15,7 +15,13 @@ adapterRegistry.register(new MermaidAdapter());
 
 /**
  * Parse DSL input (auto-detects format).
- * Checks: JSON → YSL script → Mermaid → Text DSL.
+ * Checks: JSON → Mermaid → YSL script → Text DSL.
+ *
+ * Mermaid runs before YSL because Mermaid sequence diagrams legitimately
+ * contain words like `end` / `for` (e.g. `loop ... end`) that would otherwise
+ * trip isYSLScript's heuristic. The Mermaid adapter's canParse is strict —
+ * it requires a recognised diagram header on the first non-comment line —
+ * so it can't false-positive on a real YSL script.
  */
 export function parseDSL(input: string): ParseResult {
     const trimmed = input.trim();
@@ -33,12 +39,7 @@ export function parseDSL(input: string): ParseResult {
         return parseJsonDSL(trimmed);
     }
 
-    // YSL scripting language (has variables, loops, functions, etc.)
-    if (isYSLScript(trimmed)) {
-        return parseYSL(trimmed);
-    }
-
-    // Try Mermaid adapter (checks for graph/flowchart/sequenceDiagram etc.)
+    // Try Mermaid adapter first (strict header-line detection: graph/flowchart/sequenceDiagram etc.)
     const adapterResult = adapterRegistry.autoParse(trimmed);
     if (adapterResult) {
         return {
@@ -47,6 +48,11 @@ export function parseDSL(input: string): ParseResult {
             errors: adapterResult.errors,
             warnings: adapterResult.warnings,
         };
+    }
+
+    // YSL scripting language (has variables, loops, functions, etc.)
+    if (isYSLScript(trimmed)) {
+        return parseYSL(trimmed);
     }
 
     // Text DSL format (fallback)

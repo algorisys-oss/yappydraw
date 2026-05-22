@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.21] - 2026-05-22
+
+### Fixed
+- **Mermaid `sequenceDiagram` import failed with "YSL lexer error" on Unicode arrows** — `parseDSL` routed input to the YSL parser before the Mermaid adapter. `isYSLScript`'s heuristic flagged any line starting with `end`/`for`/etc., and Mermaid sequence diagrams legitimately contain `end` (closing `loop`/`alt`/`opt`). The YSL lexer then crashed on the first non-ASCII char it didn't recognise (e.g. `→` in an edge label). Reordered so the Mermaid adapter — whose `canParse` requires a strict diagram header — runs before the YSL heuristic.
+- **Mermaid `sequenceDiagram` rendered all messages overlapping on one horizontal line** — the sequence layout only positioned the lifeline nodes; edges fell through to the default `connect()` routing, which computes each connector by intersecting source-center → target-center against the source/target bounding boxes. With every lifeline at the same Y, every message resolved to the same horizontal line. Added a sequence-specific edge renderer `renderSequenceEdge` that places each message as a standalone arrow at `y = sourceLifelineTop + headerHeight + topPadding + i * vSpacing`, with self-messages (`A->>A`) drawn as a 3-segment elbow U-loop. Lifelines also now share a uniform tall height so their dashed bodies align.
+- **Lifeline header-box absurdly tall on long sequence diagrams** — `umlLifeline` sized its head-box as `max(30, h * 0.2)`, so making a lifeline tall enough for many messages (e.g. `h = 1400`) gave it a ~280 px header. Capped at 60 px (`min(60, max(30, h * 0.2))`). Backward-compatible: for `h ≤ 300` (all existing usage), the cap is a no-op.
+- **Participant labels overflowed above/below the lifeline head-box** — two layered bugs: (a) the generic `fitShapeToText` targeted a square-ish aspect ratio and produced narrow lifelines that forced labels to wrap into 3–4 lines that overflowed the 60 px head-box upward; (b) the autosize measured text at 16 px while `getFontString` defaulted to 28 px when `fontSize` was undefined, so a 2-line wrap at render time was ~67 px and overflowed the head-box downward. Fixed by giving `umlLifeline` a custom autosize path that measures with the renderer's actual font string and picks a width that wraps into ≤ 2 lines, plus setting `fontSize: 16` on lifeline nodes in the Mermaid sequence parser so 2 lines come in at ~38 px and fit cleanly inside the 60 px head-box.
+
 ## [0.27.19] - 2026-05-20
 
 ### Fixed
