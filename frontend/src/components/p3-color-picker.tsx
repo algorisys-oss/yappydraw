@@ -1,7 +1,19 @@
 import { type Component, For, createSignal, Show } from 'solid-js';
+import { Pin, PinOff } from 'lucide-solid';
 import { store, updateElement, pushToHistory, updateSlideBackground, updateDefaultStyles } from '../store/app-store';
 import { AdvancedP3Picker } from './advanced-p3-picker';
 import { COLOR_PALETTES, getColorPalette } from '../config/color-palettes';
+
+const PALETTE_PINNED_KEY = 'palettePinned';
+const [palettePinned, setPalettePinnedSignal] = createSignal<boolean>(
+    (() => { try { return localStorage.getItem(PALETTE_PINNED_KEY) === '1'; } catch { return false; } })()
+);
+
+export const isPalettePinned = palettePinned;
+export const setPalettePinned = (v: boolean) => {
+    setPalettePinnedSignal(v);
+    try { localStorage.setItem(PALETTE_PINNED_KEY, v ? '1' : '0'); } catch { /* ignore */ }
+};
 
 export const ColorPalettePicker: Component = () => {
     const [showAdvanced, setShowAdvanced] = createSignal(false);
@@ -116,6 +128,25 @@ export const ColorPalettePicker: Component = () => {
                                 {(p) => <option value={p.id}>{p.name}</option>}
                             </For>
                         </select>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setPalettePinned(!isPalettePinned()); }}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            title={isPalettePinned() ? 'Unpin palette (will close on outside click)' : 'Pin palette (stays open; Esc to close)'}
+                            style={{
+                                background: 'none',
+                                border: '1px solid var(--border-color)',
+                                'border-radius': '4px',
+                                padding: '3px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                'align-items': 'center',
+                                'justify-content': 'center',
+                                color: isPalettePinned() ? 'var(--accent-color, #f43f5e)' : 'var(--text-secondary)',
+                                'flex-shrink': 0
+                            }}
+                        >
+                            {isPalettePinned() ? <Pin size={12} /> : <PinOff size={12} />}
+                        </button>
                     </div>
                     <div
                         style={{

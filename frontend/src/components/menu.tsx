@@ -14,7 +14,7 @@ import {
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
     Sparkles, Key
 } from "lucide-solid";
-import { ColorPalettePicker } from "./p3-color-picker";
+import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
 import { isGlobalPlaying, isGlobalPaused, animationEngine } from "../utils/animation/animation-engine";
 import { clickOutside } from "../utils/click-outside";
@@ -117,14 +117,23 @@ const Menu: Component = () => {
         setLoadExportInitialTab('save');
         setIsLoadExportOpen(true);
     };
-    const [isPalettePickerOpen, setIsPalettePickerOpen] = createSignal(false);
+    const [isPalettePickerOpen, setIsPalettePickerOpen] = createSignal(isPalettePinned());
     let palettePickerRef: HTMLDivElement | undefined;
 
     createEffect(() => {
-        if (isPalettePickerOpen() && palettePickerRef) {
+        // Pinned palettes ignore outside clicks; Esc still closes (see keydown handler below).
+        if (isPalettePickerOpen() && palettePickerRef && !isPalettePinned()) {
             clickOutside(palettePickerRef, () => () => setIsPalettePickerOpen(false));
         }
     });
+
+    const onPaletteEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && isPalettePickerOpen()) {
+            setIsPalettePickerOpen(false);
+        }
+    };
+    onMount(() => document.addEventListener('keydown', onPaletteEscape));
+    onCleanup(() => document.removeEventListener('keydown', onPaletteEscape));
 
     (window as any).triggerImageUpload = () => fileInputRef?.click();
 

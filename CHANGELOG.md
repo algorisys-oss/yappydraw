@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.23] - 2026-05-27
+
+### Added
+- **Pin the color palette to keep it open** — added a pin/unpin toggle inside the palette popover (next to the PALETTE dropdown). When pinned, the popover stays open on outside clicks and auto-reopens on app load. State is persisted in `localStorage('palettePinned')`. `Esc` closes the popover even when pinned (without unpinning), so a quick "get it out of the way" gesture still works.
+
 ## [0.27.22] - 2026-05-27
 
 ### Added
