@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.22] - 2026-05-27
+
+### Added
+- **Global palette: click swatch to set current stroke color** — the top-right palette popover now interprets clicks via a Shift modifier: **plain click = stroke**, **Shift+click = fill**. Each click arms the corresponding default (`defaultElementStyles.strokeColor` / `backgroundColor`, persisted to localStorage) so future drawings inherit it, and also applies the color to any current selection (or slide background, for fill on slide docs). Drag-and-drop is unchanged. The palette button now shows a small color dot reflecting the currently armed stroke color. Image swatches always behave as fill (no stroke equivalent).
+
 ## [0.27.21] - 2026-05-22
 
 ### Fixed

@@ -885,9 +885,25 @@ const Menu: Component = () => {
                                 <button
                                     class={`menu-btn ${isPalettePickerOpen() ? 'active' : ''}`}
                                     onClick={() => setIsPalettePickerOpen(!isPalettePickerOpen())}
-                                    title="Color Palettes"
+                                    title={`Color Palettes — current stroke: ${store.defaultElementStyles.strokeColor ?? '#000000'}`}
+                                    style={{ position: 'relative' }}
                                 >
                                     <Palette size={16} color="#f43f5e" />
+                                    <span
+                                        aria-hidden="true"
+                                        style={{
+                                            position: 'absolute',
+                                            bottom: '2px',
+                                            right: '2px',
+                                            width: '8px',
+                                            height: '8px',
+                                            'border-radius': '50%',
+                                            background: (store.defaultElementStyles.strokeColor as string) ?? '#000000',
+                                            border: '1px solid var(--bg-primary, white)',
+                                            'box-shadow': '0 0 0 1px rgba(0,0,0,0.2)',
+                                            'pointer-events': 'none'
+                                        }}
+                                    />
                                 </button>
                                 <Show when={isPalettePickerOpen()}>
                                     <div

@@ -59,6 +59,8 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Send to Back', keys: 'Ctrl+[' },
             { label: 'Group / Ungroup', keys: 'Ctrl+G / Ctrl+Shift+G' },
             { label: 'Copy / Paste Style', keys: 'Ctrl+Alt+C / V' },
+            { label: 'Palette: Set Stroke Color', keys: 'Click swatch' },
+            { label: 'Palette: Set Fill Color', keys: 'Shift+Click swatch' },
             { label: 'Select by Type', keys: 'Right-click → Select by Type' },
             { label: 'Select by Same Property', keys: 'Right-click → Select by Same Property' },
             { label: 'Flip Horizontal', keys: 'Shift+H' },

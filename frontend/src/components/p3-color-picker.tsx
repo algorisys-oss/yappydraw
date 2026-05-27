@@ -1,5 +1,5 @@
 import { type Component, For, createSignal, Show } from 'solid-js';
-import { store, updateElement, pushToHistory, updateSlideBackground } from '../store/app-store';
+import { store, updateElement, pushToHistory, updateSlideBackground, updateDefaultStyles } from '../store/app-store';
 import { AdvancedP3Picker } from './advanced-p3-picker';
 import { COLOR_PALETTES, getColorPalette } from '../config/color-palettes';
 
@@ -10,8 +10,23 @@ export const ColorPalettePicker: Component = () => {
     );
     const activePalette = () => getColorPalette(activePaletteId());
 
-    const applyAsset = (data: string) => {
+    const applyAsset = (data: string, mode: 'stroke' | 'fill' = 'fill') => {
         const isImage = data.startsWith('http') || data.startsWith('data:image');
+        // Images only make sense as fill (replace element with image / slide bg)
+        if (isImage) mode = 'fill';
+
+        if (mode === 'stroke') {
+            // Arm this color as the default stroke for future drawings,
+            // and apply to any currently selected elements.
+            updateDefaultStyles({ strokeColor: data });
+            if (store.selection.length > 0) {
+                pushToHistory();
+                store.selection.forEach(id => updateElement(id, { strokeColor: data }));
+            }
+            return;
+        }
+
+        // Fill mode: apply to selection / slide background, and also arm the default fill.
         if (store.selection.length > 0) {
             pushToHistory();
             store.selection.forEach(id => {
@@ -28,6 +43,9 @@ export const ColorPalettePicker: Component = () => {
             } else {
                 updateSlideBackground(store.activeSlideIndex, { backgroundColor: data, fillStyle: 'solid' });
             }
+        }
+        if (!isImage) {
+            updateDefaultStyles({ backgroundColor: data, fillStyle: 'solid' });
         }
     };
 
@@ -118,9 +136,9 @@ export const ColorPalettePicker: Component = () => {
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        applyAsset(swatch.value);
+                                        applyAsset(swatch.value, e.shiftKey ? 'fill' : 'stroke');
                                     }}
-                                    title={`${swatch.label} (Drag to shape/slide)`}
+                                    title={`${swatch.label} — Click: set stroke • Shift+click: set fill • Drag: apply to shape/slide`}
                                     style={{
                                         width: '24px',
                                         height: '24px',
