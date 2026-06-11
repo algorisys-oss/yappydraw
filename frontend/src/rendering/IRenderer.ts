@@ -59,6 +59,8 @@ export interface IRenderer {
     fillPath(svgPath: string): void;
     /** Stroke an SVG path string directly (Canvas uses Path2D internally). */
     strokePath(svgPath: string): void;
+    /** Intersect the clip region with an SVG path string (Canvas uses Path2D internally). */
+    clipPath(svgPath: string): void;
 
     // ── Styling Properties ──
     fillStyle: FillStyle;

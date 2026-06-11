@@ -96,14 +96,15 @@ export abstract class ShapeRenderer {
         }
 
         // --- Phase 2: Fill fade-in ---
+        const hasImageFill = el.fillStyle === 'image' && !!el.backgroundImage;
         if (fillProgress > 0) {
             const fill = el.backgroundColor;
-            if (fill && fill !== 'transparent' && fill !== 'none') {
+            if (hasImageFill || (fill && fill !== 'transparent' && fill !== 'none')) {
                 renderer.save();
                 renderer.globalAlpha *= fillProgress;
 
                 const fillStyle = el.fillStyle;
-                const useComplexFill = ['linear', 'radial', 'conic', 'dots'].includes(fillStyle as string);
+                const useComplexFill = ['linear', 'radial', 'conic', 'dots', 'image'].includes(fillStyle as string);
 
                 if (useComplexFill) {
                     RenderPipeline.applyComplexFills(context, cx, cy);

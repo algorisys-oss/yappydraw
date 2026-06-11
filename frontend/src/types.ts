@@ -375,6 +375,11 @@ export interface DrawingElement {
     gradientPreset?: string; // Predefined gradient preset ID
     gradientHandlePositions?: { start: Point; end: Point };
 
+    // Image Fill (active when fillStyle === 'image') — paints an image clipped to the shape outline
+    backgroundImage?: string;          // Image URL or data URL used as the fill
+    backgroundImageFit?: 'cover' | 'contain' | 'fill' | 'tile'; // How the image maps into the shape bounds (default 'cover')
+    backgroundOpacity?: number;        // 0-1, opacity of the fill image (default 1)
+
     // Effects
     blendMode?: BlendMode;
     filter?: string; // CSS filter string (e.g. "blur(5px)")

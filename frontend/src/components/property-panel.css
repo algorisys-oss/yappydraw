@@ -205,6 +205,65 @@
     border: 1px solid var(--border-color);
 }
 
+/* Image fill upload control */
+.image-fill-preview {
+    width: 100%;
+    height: 72px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* checkerboard so transparent images are visible */
+    background-color: var(--bg-secondary);
+}
+
+.image-fill-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.image-fill-upload-btn {
+    flex: 1;
+    text-align: center;
+    padding: 5px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.image-fill-upload-btn:hover {
+    background: var(--bg-secondary);
+}
+
+.image-fill-remove-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.image-fill-remove-btn:hover {
+    background: var(--bg-secondary);
+}
+
+.image-fill-url {
+    width: 100%;
+    padding: 4px 6px;
+    font-size: 11px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
 .palette-selector-row {
     display: flex;
     align-items: center;

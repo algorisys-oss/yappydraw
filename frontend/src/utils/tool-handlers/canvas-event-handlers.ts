@@ -97,7 +97,14 @@ export async function handleDrop(e: DragEvent, ctx: CanvasEventContext): Promise
         if (isColor) {
             updateElement(hitId, { backgroundColor: data, fillStyle: 'solid' });
         } else if (isImage) {
-            updateElement(hitId, { type: 'image', dataURL: data });
+            const hitEl = elementMap.get(hitId);
+            if (hitEl?.type === 'image') {
+                // Dropping onto an existing image element swaps its source
+                updateElement(hitId, { dataURL: data });
+            } else {
+                // Fill the shape with the image, clipped to its outline
+                updateElement(hitId, { fillStyle: 'image', backgroundImage: data });
+            }
         }
     } else if (store.docType === 'slides') {
         // Drop anywhere on the canvas (even outside slide bounds) updates the ACTIVE slide background

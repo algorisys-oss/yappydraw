@@ -154,6 +154,11 @@ interface ElementOptions {
     gradientType?: GradientType;
     gradientHandlePositions?: { start: Point; end: Point };
 
+    // Image fill (use with fillStyle: 'image') — paints an image clipped to the shape
+    backgroundImage?: string;          // Image URL or data URL
+    backgroundImageFit?: 'cover' | 'contain' | 'fill' | 'tile'; // default 'cover'
+    backgroundOpacity?: number;        // 0-1, default 1
+
     // Border Extras
     drawInnerBorder?: boolean;
     innerBorderColor?: string;
@@ -309,6 +314,10 @@ export const YappyAPI = {
             gradientStops: options?.gradientStops,
             gradientType: options?.gradientType,
             gradientHandlePositions: options?.gradientHandlePositions,
+
+            backgroundImage: options?.backgroundImage,
+            backgroundImageFit: options?.backgroundImageFit,
+            backgroundOpacity: options?.backgroundOpacity,
 
             drawInnerBorder: options?.drawInnerBorder,
             innerBorderColor: options?.innerBorderColor,

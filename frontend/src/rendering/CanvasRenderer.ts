@@ -67,6 +67,9 @@ export class CanvasRenderer implements IRenderer {
     strokePath(svgPath: string): void {
         this.ctx.stroke(new Path2D(svgPath));
     }
+    clipPath(svgPath: string): void {
+        this.ctx.clip(new Path2D(svgPath));
+    }
 
     // ── Styling Properties ──
     get fillStyle(): FillStyle { return this.ctx.fillStyle as FillStyle; }

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Auto-refresh the .repograph/ map before each commit and stage it — but only
+# when staged changes touch a directory in the map's scope, so trivial commits
+# (docs, config, the hook itself) don't pay the regen cost. Never blocks a
+# commit: the refresh script no-ops when the repograph tool is absent, and any
+# failure exits 0.
+#
+# Keep SCOPE_RE in sync with the --include dirs in scripts/repograph-refresh.sh.
+set -e
+ROOT="$(git rev-parse --show-toplevel)"
+SCOPE_RE='^(frontend|backend|renderers|tests|scripts|examples)/'
+
+git diff --cached --name-only --diff-filter=ACMR | grep -qE "$SCOPE_RE" || exit 0
+
+bash "$ROOT/scripts/repograph-refresh.sh" || exit 0
+git add "$ROOT/.repograph/" 2>/dev/null || true

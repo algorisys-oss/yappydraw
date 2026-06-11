@@ -6,6 +6,7 @@ import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils
 import type { RenderContext } from "./types";
 import { getUIShapeDef } from "../../config/ui-shape-defs";
 import { buildFilterString } from "../../utils/image-filter-utils";
+import { getImage } from "../../utils/image-cache";
 import type { IRenderer } from "../../rendering/IRenderer";
 
 export class RenderPipeline {
@@ -142,9 +143,9 @@ export class RenderPipeline {
         const stroke = this.adjustColor(el.strokeColor, isDarkMode);
         let fill = el.backgroundColor === 'transparent' ? undefined : this.adjustColor(el.backgroundColor, isDarkMode);
 
-        // Suppress RoughJS fill if complex fill (gradient/dots) is active
+        // Suppress RoughJS fill if complex fill (gradient/dots/image) is active
         // Also use 'solid' fillStyle for RoughJS since it doesn't understand gradient types
-        const isComplexFill = ['linear', 'radial', 'conic', 'dots'].includes(el.fillStyle as string);
+        const isComplexFill = ['linear', 'radial', 'conic', 'dots', 'image'].includes(el.fillStyle as string);
         if (isComplexFill) {
             fill = undefined;
         }
@@ -180,11 +181,18 @@ export class RenderPipeline {
         const useGradient = (['linear', 'radial', 'conic'].includes(fillStyle as string)) ||
             ((el.gradientType as any) !== 'none' && el.gradientType !== undefined);
         const useDots = fillStyle === 'dots';
+        const useImage = fillStyle === 'image' && !!el.backgroundImage;
 
-        if (!useGradient && !useDots) return;
+        if (!useGradient && !useDots && !useImage) return;
 
         renderer.save();
         renderer.translate(cx, cy);
+
+        if (useImage) {
+            this.applyImageFill(renderer, el);
+            renderer.restore();
+            return;
+        }
 
         if (useGradient) {
             renderer.beginPath();
@@ -200,6 +208,65 @@ export class RenderPipeline {
             renderer.fill();
         }
 
+        renderer.restore();
+    }
+
+    /**
+     * Paints an image clipped to the shape outline (fillStyle === 'image').
+     * Runs in a coordinate space already translated to the shape's center.
+     * If the image isn't cached yet, getImage() kicks off a load and triggers
+     * a redraw on completion, so this no-ops gracefully until then.
+     */
+    private static applyImageFill(renderer: IRenderer, el: DrawingElement) {
+        const img = getImage(el.backgroundImage!) as HTMLImageElement | null;
+        if (!img || !img.width || !img.height) return;
+
+        const geometry = getShapeGeometry(el);
+        if (!geometry) return;
+
+        renderer.save();
+
+        // Clip to the shape outline so the image only shows inside the shape.
+        if (geometry.type === 'path') {
+            renderer.clipPath(geometry.path);
+        } else {
+            renderer.beginPath();
+            this.renderGeometry(renderer, geometry);
+            renderer.clip();
+        }
+
+        const opacity = el.backgroundOpacity ?? 1;
+        if (opacity !== 1) renderer.globalAlpha = renderer.globalAlpha * opacity;
+
+        const w = el.width;
+        const h = el.height;
+        const fit = el.backgroundImageFit || 'cover';
+
+        if (fit === 'tile') {
+            const pattern = renderer.createPattern(img, 'repeat');
+            if (pattern) {
+                renderer.fillStyle = pattern as any;
+                renderer.beginPath();
+                renderer.rect(-w / 2, -h / 2, w, h);
+                renderer.fill();
+            }
+            renderer.restore();
+            return;
+        }
+
+        const imgAspect = img.width / img.height;
+        const boxAspect = w / h;
+        let dw = w, dh = h; // 'fill' (stretch) uses the full box
+
+        if (fit === 'cover') {
+            if (imgAspect > boxAspect) { dh = h; dw = h * imgAspect; }
+            else { dw = w; dh = w / imgAspect; }
+        } else if (fit === 'contain') {
+            if (imgAspect > boxAspect) { dw = w; dh = w / imgAspect; }
+            else { dh = h; dw = h * imgAspect; }
+        }
+
+        renderer.drawImage(img, -dw / 2, -dh / 2, dw, dh);
         renderer.restore();
     }
 

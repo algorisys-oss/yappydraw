@@ -1195,6 +1195,50 @@ const PropertyPanel: Component = () => {
                     </div>
                 );
             }
+            case 'image-upload': {
+                const imgVal = () => (getPropertyValue(prop) as string) || '';
+                const commit = (val: string) =>
+                    handleChange(prop.key, val, activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined);
+                const onFile = (e: Event) => {
+                    const input = e.currentTarget as HTMLInputElement;
+                    const file = input.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => { if (typeof reader.result === 'string') commit(reader.result); };
+                    reader.readAsDataURL(file);
+                    input.value = ''; // allow re-selecting the same file
+                };
+                return (
+                    <div class="control-col">
+                        <label>{prop.label}</label>
+                        <Show when={imgVal()}>
+                            <div class="image-fill-preview" style={{ 'background-image': `url("${imgVal()}")` }} />
+                        </Show>
+                        <div class="image-fill-actions">
+                            <label class="image-fill-upload-btn">
+                                {imgVal() ? 'Replace' : 'Upload'}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ display: 'none' }}
+                                    onChange={onFile}
+                                />
+                            </label>
+                            <Show when={imgVal()}>
+                                <button class="image-fill-remove-btn" onClick={() => commit('')}>Remove</button>
+                            </Show>
+                        </div>
+                        <input
+                            type="text"
+                            class="image-fill-url"
+                            placeholder="…or paste an image URL"
+                            value={imgVal().startsWith('data:') ? '' : imgVal()}
+                            onInput={(e) => commit(e.currentTarget.value)}
+                            onKeyDown={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                );
+            }
             case 'number': {
                 const numVal = () => getPropertyValue(prop);
                 return (
