@@ -33,6 +33,18 @@ export interface PropertyConfig {
  */
 export const FILLABLE_TARGETS: (ElementType | 'canvas' | 'slide')[] = ['slide', 'line', 'rectangle', 'circle', 'diamond', 'triangle', 'hexagon', 'octagon', 'parallelogram', 'polygon', 'star', 'cloud', 'heart', 'cross', 'checkmark', 'arrowLeft', 'arrowRight', 'arrowUp', 'arrowDown', 'capsule', 'stickyNote', 'callout', 'burst', 'speechBubble', 'ribbon', 'database', 'document', 'predefinedProcess', 'internalStorage', 'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda', 'router', 'browser', 'trapezoid', 'rightTriangle', 'pentagon', 'septagon', 'browserWindow', 'mobilePhone', 'ghostButton', 'inputField', 'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch', 'card', 'searchBar', 'progressBar', 'avatar', 'navbar', 'tabBar', 'badge', 'tooltip', 'slider', 'starPerson', 'lightbulb', 'signpost', 'burstBlob', 'scroll', 'wavyDivider', 'doubleBanner', 'trophy', 'clock', 'gear', 'target', 'rocket', 'flag', 'key', 'magnifyingGlass', 'book', 'megaphone', 'eye', 'thoughtBubble', 'stickFigure', 'sittingPerson', 'presentingPerson', 'handPointRight', 'thumbsUp', 'faceHappy', 'faceSad', 'faceConfused', 'checkbox', 'checkboxChecked', 'numberedBadge', 'questionMark', 'exclamationMark', 'tag', 'pin', 'stamp', 'kubernetes', 'container', 'apiGateway', 'cdn', 'storageBlob', 'eventBus', 'microservice', 'shield', 'barChart', 'pieChart', 'trendUp', 'trendDown', 'funnel', 'gauge', 'puzzlePiece', 'chainLink', 'bridge', 'magnet', 'scale', 'seedling', 'tree', 'mountain', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'stateStart', 'stateEnd', 'stateSync', 'activationBar', 'externalEntity', 'umlClass', 'umlInterface', 'umlActor', 'umlUseCase', 'umlNote', 'umlPackage', 'umlComponent', 'umlState', 'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface', 'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable', 'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent', 'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnEventGateway', 'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity', 'bpmnDataObject', 'bpmnDataStore', 'bpmnAnnotation', 'bpmnGroup', 'bpmnPool'];
 
+/**
+ * Shapes where image fill has no visible effect, so the 'Image' fill option and
+ * its controls are hidden. These are the 3D shapes that `ShapeRenderer.render`
+ * skips in `applyComplexFills` (they paint gradients per-face and have no per-face
+ * image path) — keep in sync with the `is3D` list in `shapes/base/shape-renderer.ts`.
+ */
+export const IMAGE_FILL_EXCLUDED: ElementType[] = ['solidBlock', 'cylinder', 'isometricCube', 'perspectiveBlock', 'openBox'];
+
+/** Targets that support an image fill (fillable shapes minus the ones where it has no effect). */
+export const IMAGE_FILL_TARGETS: (ElementType | 'canvas' | 'slide')[] =
+    FILLABLE_TARGETS.filter(t => !IMAGE_FILL_EXCLUDED.includes(t as ElementType));
+
 export const properties: PropertyConfig[] = [
     {
         key: 'theme',
@@ -409,7 +421,7 @@ export const properties: PropertyConfig[] = [
             { label: 'Linear Gradient', value: 'linear' },
             { label: 'Radial Gradient', value: 'radial' },
             { label: 'Conic Gradient', value: 'conic' },
-            { label: 'Image', value: 'image', excludeFrom: ['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable'] }
+            { label: 'Image', value: 'image', excludeFrom: ['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable', ...IMAGE_FILL_EXCLUDED] }
         ],
         applicableTo: FILLABLE_TARGETS,
         defaultValue: 'solid'
@@ -431,7 +443,7 @@ export const properties: PropertyConfig[] = [
         label: 'Fill Image',
         type: 'image-upload',
         group: 'background',
-        applicableTo: FILLABLE_TARGETS,
+        applicableTo: IMAGE_FILL_TARGETS,
         defaultValue: '',
         dependsOn: { key: 'fillStyle', value: 'image' }
     },
@@ -446,7 +458,7 @@ export const properties: PropertyConfig[] = [
             { label: 'Stretch', value: 'fill' },
             { label: 'Tile', value: 'tile' }
         ],
-        applicableTo: FILLABLE_TARGETS.filter(t => t !== 'slide'),
+        applicableTo: IMAGE_FILL_TARGETS.filter(t => t !== 'slide'),
         defaultValue: 'cover',
         dependsOn: { key: 'fillStyle', value: 'image' }
     },
@@ -458,7 +470,7 @@ export const properties: PropertyConfig[] = [
         max: 1,
         step: 0.1,
         group: 'background',
-        applicableTo: FILLABLE_TARGETS,
+        applicableTo: IMAGE_FILL_TARGETS,
         defaultValue: 1,
         dependsOn: { key: 'fillStyle', value: 'image' }
     },

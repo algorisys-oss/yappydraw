@@ -9,6 +9,7 @@ import { store, setViewState, updateElement, pushToHistory, updateSlideBackgroun
 import { calculateAllAnimatedStates } from '../animation-utils';
 import { hitTestElement } from '../hit-testing';
 import { calculateUmlClassLayout, calculateUml2SectionLayout } from '../uml-layout-utils';
+import { IMAGE_FILL_EXCLUDED } from '../../config/properties';
 import type { IRenderer } from '../../rendering/IRenderer';
 
 /**
@@ -101,6 +102,9 @@ export async function handleDrop(e: DragEvent, ctx: CanvasEventContext): Promise
             if (hitEl?.type === 'image') {
                 // Dropping onto an existing image element swaps its source
                 updateElement(hitId, { dataURL: data });
+            } else if (hitEl && IMAGE_FILL_EXCLUDED.includes(hitEl.type as any)) {
+                // 3D shapes can't display an image fill — replace with a standalone image
+                updateElement(hitId, { type: 'image', dataURL: data });
             } else {
                 // Fill the shape with the image, clipped to its outline
                 updateElement(hitId, { fillStyle: 'image', backgroundImage: data });
