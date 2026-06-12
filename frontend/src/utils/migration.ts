@@ -39,6 +39,7 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         // Optional properties (passed through if present)
         ...(el.points && { points: el.points }),
         ...(el.pointsEncoding !== undefined && { pointsEncoding: el.pointsEncoding }),
+        ...(el.eraseStrokes !== undefined && { eraseStrokes: el.eraseStrokes }),
         ...(el.startArrowhead !== undefined && { startArrowhead: el.startArrowhead }),
         ...(el.endArrowhead !== undefined && { endArrowhead: el.endArrowhead }),
         ...(el.text !== undefined && { text: el.text }),

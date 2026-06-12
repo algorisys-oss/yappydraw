@@ -159,6 +159,11 @@ interface ElementOptions {
     backgroundImageFit?: 'cover' | 'contain' | 'fill' | 'tile'; // default 'cover'
     backgroundOpacity?: number;        // 0-1, default 1
 
+    // Non-destructive partial erase (eraser tool). Each stroke punches holes into
+    // the rendered shape via destination-out compositing; points are element-local
+    // (relative to x/y, flat-encoded [x, y, x, y...]), radius in world units.
+    eraseStrokes?: { points: number[]; radius: number }[];
+
     // Border Extras
     drawInnerBorder?: boolean;
     innerBorderColor?: string;

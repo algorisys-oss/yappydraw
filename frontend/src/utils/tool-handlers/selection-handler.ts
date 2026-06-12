@@ -57,9 +57,33 @@ function captureInitialPositions(
                 height: el.height,
                 fontSize: el.fontSize,
                 points: el.points ? [...el.points] : undefined,
-                controlPoints: el.controlPoints ? el.controlPoints.map(cp => ({ ...cp })) : undefined
+                controlPoints: el.controlPoints ? el.controlPoints.map(cp => ({ ...cp })) : undefined,
+                eraseStrokes: el.eraseStrokes ? el.eraseStrokes.map(s => ({ points: [...s.points], radius: s.radius })) : undefined
             });
         }
+    });
+}
+
+/**
+ * Scale erase-mask strokes proportionally with a resize so holes track the shape.
+ * Points are element-local; radius scales by the geometric mean (area-preserving)
+ * since the data model stores a single circular radius per dab.
+ */
+function scaleEraseStrokes(
+    strokes: { points: number[]; radius: number }[] | undefined,
+    scaleX: number,
+    scaleY: number
+): { points: number[]; radius: number }[] | undefined {
+    if (!strokes) return undefined;
+    const rScale = Math.sqrt(Math.abs(scaleX * scaleY)) || 1;
+    return strokes.map(s => {
+        const pts = s.points;
+        const np = new Array(pts.length);
+        for (let i = 0; i + 1 < pts.length; i += 2) {
+            np[i] = pts[i] * scaleX;
+            np[i + 1] = pts[i + 1] * scaleY;
+        }
+        return { points: np, radius: s.radius * rScale };
     });
 }
 
@@ -166,7 +190,8 @@ export function selectionOnDown(
                             width: el.width,
                             height: el.height,
                             fontSize: el.fontSize,
-                            points: el.points ? [...el.points] : undefined
+                            points: el.points ? [...el.points] : undefined,
+                            eraseStrokes: el.eraseStrokes ? el.eraseStrokes.map(s => ({ points: [...s.points], radius: s.radius })) : undefined
                         });
                     }
                 });
@@ -188,7 +213,8 @@ export function selectionOnDown(
                     width: el.width,
                     height: el.height,
                     fontSize: el.fontSize,
-                    points: el.points ? [...el.points] : undefined
+                    points: el.points ? [...el.points] : undefined,
+                    eraseStrokes: el.eraseStrokes ? el.eraseStrokes.map(s => ({ points: [...s.points], radius: s.radius })) : undefined
                 });
 
                 // Also capture contained children so pool resize can reposition them
@@ -1509,6 +1535,10 @@ function applyResize(
                 }
             }
 
+            if (init.eraseStrokes) {
+                updates.eraseStrokes = scaleEraseStrokes(init.eraseStrokes, scaleX, scaleY);
+            }
+
             const element = store.elements.find(e => e.id === selId);
             if (element && (element.type === 'text' || element.type === 'richtext')) {
                 updates.fontSize = Math.max(8, (init.fontSize || 28) * scaleY);
@@ -1587,6 +1617,14 @@ function applyResize(
                 const newCp1 = { x: newStartX + newWidth * 0.5, y: newStartY };
                 const newCp2 = { x: newEndX - newWidth * 0.5, y: newEndY };
                 updates.controlPoints = [newCp1, newCp2];
+            }
+
+            // Scale erase-mask holes proportionally (any shape type)
+            if (singleEl.eraseStrokes && singleEl.eraseStrokes.length > 0) {
+                const init = pState.initialPositions.get(id);
+                if (init && init.eraseStrokes) {
+                    updates.eraseStrokes = scaleEraseStrokes(init.eraseStrokes, scaleX, scaleY);
+                }
             }
 
             updateElement(id, updates, false);

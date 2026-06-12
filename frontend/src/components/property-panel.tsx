@@ -1,5 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
 import type { DrawingElement } from "../types";
@@ -597,9 +597,14 @@ const PropertyPanel: Component = () => {
             }
         }
 
+        // Eraser tool: show only the eraser-specific controls (width).
+        if (store.selectedTool === 'eraser') {
+            return { type: 'eraser' as const, data: null };
+        }
+
         // Show defaults for the current tool
         const tool = store.selectedTool;
-        if (tool === 'selection' || tool === 'pan' || tool === 'eraser') {
+        if (tool === 'selection' || tool === 'pan') {
             return null;
         }
         return { type: 'defaults' as const, data: null };
@@ -616,11 +621,13 @@ const PropertyPanel: Component = () => {
             targetType = 'canvas';
         } else if (target.type === 'slide') {
             targetType = 'slide';
+        } else if (target.type === 'eraser') {
+            targetType = 'eraser';
         } else if (target.type === 'defaults') {
             const tool = store.selectedTool;
-            // If selection/pan/eraser, show generic "shape" defaults (approx. rectangle)
+            // If selection/pan, show generic "shape" defaults (approx. rectangle)
             // This allows setting default colors/fills for any future shape.
-            if (tool === 'selection' || tool === 'pan' || tool === 'eraser') {
+            if (tool === 'selection' || tool === 'pan') {
                 targetType = 'rectangle';
             } else if (tool === 'bezier') {
                 targetType = 'line';
@@ -632,6 +639,11 @@ const PropertyPanel: Component = () => {
         }
 
         return properties.filter(p => {
+            // Eraser tool: only its own controls (e.g. eraser width), nothing else.
+            if (target.type === 'eraser') {
+                return Array.isArray(p.applicableTo) && (p.applicableTo as any).includes('eraser');
+            }
+
             // Filter out properties that don't make sense for defaults (like locked, link, angle, width/height?)
             if (target.type === 'defaults') {
                 if (['locked', 'link', 'tag', 'angle', 'containerText', 'text', 'shadowOffsetX', 'shadowOffsetY'].includes(p.key)) return false;
@@ -959,6 +971,8 @@ const PropertyPanel: Component = () => {
             else if (key === 'backgroundOpacity') updateSlideBackground(slideIndex, { backgroundOpacity: value });
             else if (key === 'gradientStops') updateSlideBackground(slideIndex, { gradientStops: value });
             else if (key === 'gradientDirection') updateSlideBackground(slideIndex, { gradientDirection: value });
+        } else if (target.type === 'eraser') {
+            if (key === 'eraserWidth') setEraserWidth(Number(finalValue));
         } else {
             updateDefaultStyles({ [key]: finalValue });
         }
@@ -1025,6 +1039,13 @@ const PropertyPanel: Component = () => {
             const val = (store.defaultElementStyles as any)[prop.key];
             if (prop.key === 'roundness') return !!val;
             return val;
+        }
+        if (target.type === 'eraser') {
+            if (prop.key === 'eraserWidth') {
+                // Default to the current stroke width until the user sets it explicitly.
+                return store.eraserWidth ?? store.defaultElementStyles.strokeWidth ?? prop.defaultValue;
+            }
+            return undefined;
         }
         return undefined;
     };

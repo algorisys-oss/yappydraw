@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.25] - 2026-06-12
+
+### Added
+- **Partial erase for any shape** — the eraser now removes just the part you drag over on *any* shape (rectangle, circle, polygon, image, text, table…), not only freehand strokes. It's **non-destructive**: the shape keeps its type and stays fully editable (resizable, recolorable) — erased regions are stored as a mask and punched out at render time via `destination-out` compositing, so both fill and stroke disappear under the brush. Undo reverses each drag. Connectors (line/arrow/bezier) are still erased whole, and freehand strokes keep their existing split behavior. Raster exports (PNG/JPEG/PDF) include the erased holes automatically (SVG export does not yet). Exposed on the `window.Yappy` API via `eraseStrokes`.
+- **Adjustable eraser width** — a new **Eraser Width** slider appears in the properties panel while the eraser tool is active. It defaults to the current stroke width and is remembered across sessions. A larger brush also reaches shapes it overlaps, not just the one directly under the cursor.
+
+### Fixed
+- **Erased regions now track the shape on resize** — previously, resizing a partially-erased shape left the holes at their original size/position so the shape looked wrong; the erase mask now scales with the shape (and through flips). Clicking/selecting *through* an erased hole is also treated as a miss (hole-aware hit-testing).
+
 ## [0.27.24] - 2026-06-11
 
 ### Added

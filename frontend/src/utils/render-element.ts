@@ -3,6 +3,7 @@ import type { RoughCanvas } from "roughjs/bin/canvas";
 import type { IRenderer } from "../rendering/IRenderer";
 import { shapeRegistry } from "../shapes/shape-registry";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
+import { renderWithEraseMask } from "../shapes/base/erase-mask";
 
 // Helper to normalize points (supports both old Point[] and new packed number[])
 export const normalizePoints = (points: any[] | number[] | undefined): { x: number; y: number }[] => {
@@ -101,6 +102,23 @@ export const drawOrganicBranch = (
  * Delegates to specialized renderers in the shape registry.
  */
 export const renderElement = (
+    rc: RoughCanvas,
+    ctx: CanvasRenderingContext2D,
+    el: DrawingElement,
+    isDarkMode: boolean = false,
+    layerOpacity: number = 1,
+    sharedRenderer?: IRenderer
+) => {
+    // Partial erase: render the element to an isolated layer, punch holes, blit back.
+    // (Raster export paths go through renderElement too, so they get masking for free.)
+    if (el.eraseStrokes && el.eraseStrokes.length > 0) {
+        renderWithEraseMask(ctx, el, isDarkMode, layerOpacity, renderElementCore);
+        return;
+    }
+    renderElementCore(rc, ctx, el, isDarkMode, layerOpacity, sharedRenderer);
+};
+
+const renderElementCore = (
     rc: RoughCanvas,
     ctx: CanvasRenderingContext2D,
     el: DrawingElement,

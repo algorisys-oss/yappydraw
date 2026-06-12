@@ -18,7 +18,7 @@ import {
     textOnDown, textOnMove, textOnUp,
     richTextOnDown, richTextOnMove, richTextOnUp,
     inkOnDown,
-    eraserOnDown, eraserOnMove,
+    eraserOnDown, eraserOnMove, eraserOnUp,
     connectorHandleOnUp,
     handleAutoScroll
 } from "../utils/tool-handlers/minor-handlers";
@@ -1057,6 +1057,7 @@ const Canvas: Component = () => {
         if (presentationOnUp(e, pState)) return;
         if (store.selectedTool === 'pan') { panOnUp(pState, pHelpers); return; }
         if (store.selectedTool === 'laser') { laserOnUp(pState, pHelpers); return; }
+        if (store.selectedTool === 'eraser') { eraserOnUp(pState); return; }
 
         // Handle connector drawing first (before selection tool handling)
         if (pState.draggingFromConnector && pState.isDrawing && pState.currentId) {

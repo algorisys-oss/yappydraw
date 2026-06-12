@@ -171,6 +171,13 @@ export interface DrawingElement {
     // Specific to Linear (Line, Arrow, Pencil)
     points?: Point[] | number[];
     pointsEncoding?: 'packed' | 'flat'; // flat is [x, y, x, y...], packed could be delta encoded in future
+
+    // Non-destructive partial erase ("erase mask"). Each stroke punches holes into
+    // the rendered shape at render time via destination-out compositing — the shape
+    // keeps its type/identity and stays fully editable. Points are element-local
+    // (relative to x/y, in the unrotated/unscaled frame), flat-encoded [x, y, x, y...].
+    // radius is in world units (eraser threshold + half stroke width).
+    eraseStrokes?: { points: number[]; radius: number }[];
     // Control points for bezier curves and smart elbow routing
     // For bezier: [ { x, y } ] (absolute coordinates ideally, or relative to start/center?)
     // Let's use absolute coordinates for simplicity in hit testing, but they must move with shape

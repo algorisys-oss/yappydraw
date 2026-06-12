@@ -93,6 +93,7 @@ interface AppState {
     selectedWireframeType: ElementType;
     layerGroupingModeEnabled: boolean;
     maxLayers: number;
+    eraserWidth?: number; // Eraser brush diameter (world units). Undefined = follow stroke width.
     canvasTexture: 'none' | 'dots' | 'grid' | 'graph' | 'paper' | 'notebook';
     isPreviewing: boolean;
     isRecording: boolean;
@@ -255,6 +256,13 @@ const initialState: AppState = {
     selectedWireframeType: 'browserWindow',
     layerGroupingModeEnabled: false,
     maxLayers: 20,
+    eraserWidth: (() => {
+        try {
+            const saved = localStorage.getItem('eraserWidth');
+            if (saved !== null) { const n = Number(saved); if (n > 0) return n; }
+        } catch { /* ignore */ }
+        return undefined;
+    })(),
     selectedTechnicalType: 'dfdProcess',
     selectedDsType: 'dsArray',
     activeDsOpsElementId: null,
@@ -2280,6 +2288,11 @@ export const setGridStyle = (style: 'lines' | 'dots') => {
 };
 
 export const setMaxLayers = (layers: number) => setStore('maxLayers', layers);
+
+export const setEraserWidth = (width: number) => {
+    setStore('eraserWidth', width);
+    try { localStorage.setItem('eraserWidth', String(width)); } catch { /* ignore storage errors */ }
+};
 export const setIsPreviewing = (value: boolean) => setStore('isPreviewing', value);
 
 // Panel Management

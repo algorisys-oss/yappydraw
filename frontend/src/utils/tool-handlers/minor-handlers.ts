@@ -627,6 +627,48 @@ export function inkOnDown(
 const FREEHAND_TYPES = ['fineliner', 'inkbrush', 'marker', 'ink'];
 const MIN_SEGMENT_POINTS = 4; // Minimum points to keep a segment (avoid tiny debris)
 
+// Connectors are erased whole (partial erase of a connector isn't meaningful);
+// everything else (rect, circle, polygon, image, text, …) gets a non-destructive
+// erase mask so only the touched region disappears while the shape keeps its type.
+const CONNECTOR_TYPES = ['line', 'arrow', 'bezier', 'organicBranch'];
+const ERASE_MIN_STEP = 1.5; // min local distance between appended mask points (decimation)
+
+// Active partial-erase session for one eraser drag. Tracks which mask-stroke
+// index belongs to each element so a continuous drag appends to one stroke (and
+// one undo entry) instead of spawning a fresh stroke per pointer sample.
+let eraseSession: { historyPushed: boolean; strokeByElement: Map<string, number> } | null = null;
+
+/** Append the current eraser point to an element's non-destructive erase mask. */
+function appendEraseStroke(el: DrawingElement, worldX: number, worldY: number, radius: number): void {
+    const localX = worldX - el.x;
+    const localY = worldY - el.y;
+
+    if (eraseSession && !eraseSession.historyPushed) {
+        pushToHistory();
+        eraseSession.historyPushed = true;
+    }
+
+    setStore("elements", els => els.map(e => {
+        if (e.id !== el.id) return e;
+        const strokes = e.eraseStrokes ? e.eraseStrokes.slice() : [];
+        let idx = eraseSession?.strokeByElement.get(e.id);
+        if (idx === undefined || idx >= strokes.length) {
+            strokes.push({ points: [localX, localY], radius });
+            eraseSession?.strokeByElement.set(e.id, strokes.length - 1);
+        } else {
+            const cur = strokes[idx];
+            const p = cur.points;
+            const lastX = p[p.length - 2];
+            const lastY = p[p.length - 1];
+            const dx = localX - lastX, dy = localY - lastY;
+            if (dx * dx + dy * dy >= ERASE_MIN_STEP * ERASE_MIN_STEP) {
+                strokes[idx] = { ...cur, points: [...p, localX, localY] };
+            }
+        }
+        return { ...e, eraseStrokes: strokes };
+    }));
+}
+
 /**
  * Split a freehand stroke by removing points within the eraser radius.
  * Returns an array of new DrawingElement segments (0 if fully erased, 1+ otherwise).
@@ -635,7 +677,7 @@ function splitFreehandStroke(
     el: DrawingElement,
     worldX: number,
     worldY: number,
-    threshold: number
+    eraseRadius: number
 ): DrawingElement[] {
     const pts = normalizePoints(el.points);
     if (pts.length < 2) return [];
@@ -643,7 +685,8 @@ function splitFreehandStroke(
     // Local eraser position relative to element origin
     const localX = worldX - el.x;
     const localY = worldY - el.y;
-    const radius = threshold + (el.strokeWidth || 2) / 2;
+    // Include half the stroke width so a thick stroke is fully cut at the brush.
+    const radius = eraseRadius + (el.strokeWidth || 2) / 2;
     const radiusSq = radius * radius;
 
     // Mark each point as erased or kept
@@ -703,9 +746,21 @@ function splitFreehandStroke(
     });
 }
 
+/**
+ * Resolve the eraser brush half-width in world units. Driven by the user's
+ * eraser-width setting; defaults to the current stroke width when unset.
+ */
+function getEraserRadius(): number {
+    const width = store.eraserWidth ?? store.defaultElementStyles.strokeWidth ?? 4;
+    return Math.max(1, (width as number) / 2);
+}
+
 /** Core eraser logic shared by onDown and onMove */
 function eraseAtPoint(x: number, y: number, helpers: PointerHelpers): void {
-    const threshold = 10 / store.viewState.scale;
+    const eraseRadius = getEraserRadius();
+    // Detection tolerance: at least a comfortable screen-space grab radius, but
+    // expand to the brush radius so a large eraser reaches shapes it overlaps.
+    const threshold = Math.max(10 / store.viewState.scale, eraseRadius);
     const elementMap = new Map<string, DrawingElement>();
     for (const el of store.elements) elementMap.set(el.id, el);
     const isPresentation = store.appMode === 'presentation';
@@ -717,8 +772,8 @@ function eraseAtPoint(x: number, y: number, helpers: PointerHelpers): void {
         if (isPresentation && !el.presentationDrawn) continue;
         if (hitTestElement(helpers.applyMasterProjection(el), x, y, threshold, store.elements, elementMap)) {
             if (FREEHAND_TYPES.includes(el.type) && el.points && el.points.length > 0) {
-                // Partial erase: split freehand stroke
-                const segments = splitFreehandStroke(el, x, y, threshold);
+                // Partial erase: split freehand stroke (brush sized by eraser width)
+                const segments = splitFreehandStroke(el, x, y, eraseRadius);
                 // If segments contain the original unchanged, skip (eraser didn't hit any points)
                 if (segments.length === 1 && segments[0].id === el.id) continue;
                 pushToHistory();
@@ -726,9 +781,12 @@ function eraseAtPoint(x: number, y: number, helpers: PointerHelpers): void {
                     ...els.filter(e => e.id !== el.id),
                     ...segments
                 ]);
-            } else {
-                // Whole-element delete for non-freehand types
+            } else if (CONNECTOR_TYPES.includes(el.type)) {
+                // Whole-element delete for connectors (partial erase isn't meaningful)
                 deleteElements([el.id]);
+            } else {
+                // Non-destructive partial erase: accumulate an erase-mask stroke
+                appendEraseStroke(el, x, y, eraseRadius);
             }
         }
     }
@@ -741,6 +799,9 @@ export function eraserOnDown(
     helpers: PointerHelpers
 ): void {
     pState.isDrawing = true;
+    // Start a fresh partial-erase session for this drag (one undo entry, one
+    // continuous mask stroke per element touched).
+    eraseSession = { historyPushed: false, strokeByElement: new Map() };
     eraseAtPoint(x, y, helpers);
 }
 
@@ -750,6 +811,11 @@ export function eraserOnMove(
     helpers: PointerHelpers
 ): void {
     eraseAtPoint(x, y, helpers);
+}
+
+export function eraserOnUp(pState: PointerState): void {
+    pState.isDrawing = false;
+    eraseSession = null;
 }
 
 // ─── Connector Handle (Start arrow from connector) ──────────────────

@@ -49,7 +49,25 @@ export function hitTestElement(
     elementMap?: Map<string, DrawingElement>
 ): boolean {
     if (isElementHiddenByHierarchy(el, elements, elementMap)) return false;
+    if (!hitTestGeometry(el, x, y, threshold)) return false;
 
+    // Hole-aware: a non-destructive erase mask punches holes into the shape.
+    // A point that lands inside an erased hole is a miss (you can click through it).
+    if (el.eraseStrokes && el.eraseStrokes.length > 0 && isPointInEraseHole(el, x, y)) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Geometry-only hit test (broad + narrow phase), ignoring erase masks.
+ */
+function hitTestGeometry(
+    el: DrawingElement,
+    x: number,
+    y: number,
+    threshold: number
+): boolean {
     // WASM fast-path: delegate broad + narrow phase to WASM when available.
     // Extruding shapes (solidBlock, openBox, perspectiveBlock) have custom broad-phase
     // logic that isn't in the WASM module yet, so they fall through to JS.
@@ -269,5 +287,51 @@ export function hitTestElement(
 
     }
 
+    return false;
+}
+
+/**
+ * Whether a world-coordinate point falls inside one of the element's erase-mask
+ * holes. Mirrors the render-time transform: erase points are stored element-local
+ * in the unrotated/unscaled frame, so the world point is mapped back through the
+ * element's rotation, flip, and renderScale before testing against each stroke.
+ */
+function isPointInEraseHole(el: DrawingElement, x: number, y: number): boolean {
+    const strokes = el.eraseStrokes;
+    if (!strokes || strokes.length === 0) return false;
+
+    const cx = el.x + el.width / 2;
+    const cy = el.y + el.height / 2;
+
+    // Undo rotation (about center).
+    const ur = unrotatePoint(x, y, cx, cy, el.angle || 0);
+    let lx = ur.x;
+    let ly = ur.y;
+    // Undo flip (reflection about center).
+    if (el.flipX) lx = 2 * cx - lx;
+    if (el.flipY) ly = 2 * cy - ly;
+    // Undo renderScale (about center).
+    const rs = el.renderScale;
+    if (rs !== undefined && rs !== 1 && rs !== 0) {
+        lx = cx + (lx - cx) / rs;
+        ly = cy + (ly - cy) / rs;
+    }
+    // Into the element-local frame the mask points are stored in.
+    const local = { x: lx - el.x, y: ly - el.y };
+
+    for (const stroke of strokes) {
+        const pts = normalizePoints(stroke.points);
+        if (pts.length === 0) continue;
+        const r = Math.max(0.5, stroke.radius);
+        if (pts.length === 1) {
+            const dx = local.x - pts[0].x;
+            const dy = local.y - pts[0].y;
+            if (dx * dx + dy * dy <= r * r) return true;
+        } else {
+            for (let i = 1; i < pts.length; i++) {
+                if (distanceToSegment(local, pts[i - 1], pts[i]) <= r) return true;
+            }
+        }
+    }
     return false;
 }

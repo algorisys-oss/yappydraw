@@ -497,6 +497,19 @@ export const properties: PropertyConfig[] = [
         defaultValue: 3
     },
     {
+        // Eraser brush width — shown only when the eraser tool is active.
+        // Defaults to the current stroke width (resolved in the panel/handler).
+        key: 'eraserWidth',
+        label: 'Eraser Width',
+        type: 'slider',
+        min: 2,
+        max: 100,
+        step: 1,
+        group: 'stroke',
+        applicableTo: ['eraser'],
+        defaultValue: 10
+    },
+    {
         key: 'taperAmount',
         label: 'Tapering',
         type: 'slider',
