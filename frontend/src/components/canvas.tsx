@@ -588,6 +588,28 @@ const Canvas: Component = () => {
         pState.currentId = null;
     };
 
+    // Begin a touch-driven pen stroke for the given stylus Touch. Returns true
+    // if a stroke actually started (false if the active layer is hidden/locked).
+    // Shared by handleTouchStart and the heal-on-move path so both set up the
+    // stroke identically.
+    const beginTouchPenStroke = (t: Touch): boolean => {
+        activeTouchIdentifier = t.identifier;
+        touchDrivingPenStroke = true;
+        pState.penUpdatePending = false;
+        pState.penPointsBuffer = [];
+        const { x, y } = getWorldCoordinates(t.clientX, t.clientY);
+        // Layer-visibility / lock checks mirror handlePointerDown's guards.
+        const activeLayer = store.layers.find(l => l.id === store.activeLayerId);
+        if (!activeLayer?.visible || activeLayer?.locked) {
+            touchDrivingPenStroke = false;
+            activeTouchIdentifier = -1;
+            return false;
+        }
+        drawOnDown(x, y, pState, pHelpers);
+        draw();
+        return true;
+    };
+
     const handleTouchStart = (e: TouchEvent) => {
         if (store.appMode === 'embed') return;
         // 2-finger gesture owns the canvas; pen stroke must not start.
@@ -606,25 +628,34 @@ const Canvas: Component = () => {
         const t = pickStylusTouch(e);
         if (!t) return;
         e.preventDefault();
-        activeTouchIdentifier = t.identifier;
-        touchDrivingPenStroke = true;
-        pState.penUpdatePending = false;
-        pState.penPointsBuffer = [];
-        const { x, y } = getWorldCoordinates(t.clientX, t.clientY);
-        // Layer-visibility / lock checks mirror handlePointerDown's guards.
-        const activeLayer = store.layers.find(l => l.id === store.activeLayerId);
-        if (!activeLayer?.visible || activeLayer?.locked) {
-            touchDrivingPenStroke = false;
-            activeTouchIdentifier = -1;
-            return;
-        }
-        drawOnDown(x, y, pState, pHelpers);
-        draw();
+        beginTouchPenStroke(t);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
         if (gestureActive) return;
-        if (!touchDrivingPenStroke) return;
+        if (!touchDrivingPenStroke) {
+            // Heal a DROPPED touchstart: iPadOS Safari drops touchstart (and
+            // pointerdown) on fast Apple Pencil taps, so the first event we see
+            // for a stroke can be a move. Without this, that whole stroke is
+            // lost — the "alternate strokes go missing" pattern. Begin the
+            // stroke here from the stylus's current position instead.
+            //
+            // Guards mirror handleTouchStart so we never start a phantom
+            // stroke: no active/cooling gesture, a pen-drawing tool, not a
+            // 2-finger contact, and a REAL stylus touch (touchType 'stylus') —
+            // the fallback-to-finger of pickStylusTouch is intentionally
+            // excluded here so a resting finger jiggling after a legit touchend
+            // can't re-open a stroke.
+            if (gestureCooldown) return;
+            if (!isPenDrawingTool()) return;
+            if (pickFingerTouches(e).length >= 2) return;
+            const st = pickStylusTouch(e);
+            if (!st || (st as { touchType?: string }).touchType !== 'stylus') return;
+            if (pState.isDrawing) finalizeTouchStroke();
+            e.preventDefault();
+            beginTouchPenStroke(st);
+            return; // stroke started at this point; subsequent moves extend it
+        }
         // Only react to the move of OUR tracked touch — palm shifting fires
         // touchmove events too, and we don't want them adding points.
         const t = findTouchById(e, activeTouchIdentifier);
