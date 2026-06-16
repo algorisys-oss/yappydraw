@@ -9,6 +9,24 @@ the `repograph` devDependency, so it works after `npm install`; the refresh no-o
 if it isn't installed. A `.githooks/pre-commit` hook auto-refreshes the map when a
 commit touches in-scope source dirs (enable per clone: `git config core.hooksPath .githooks`).
 
+### Reference codebases (read-only, for design inspiration)
+
+When a feature would benefit from a mature reference implementation (vector path
+editing, boolean/pathfinder ops, brush engines, masks, SVG handling, etc.),
+consult these local clones. They are **reference only — never edit them**; each
+has its own `.repograph/` map, so navigate via `.repograph/index.txt` there the
+same way you do here.
+
+- **Inkscape** (C++/GTK vector editor) — `/home/rajesh/opensource/graphics/inkscape`
+  (`.repograph/index.txt`). Strong reference for vector paths, pathfinder/boolean
+  ops (`src/path/path-boolop.cpp`), live path effects (`src/live_effects/`), SVG,
+  and 2geom. Refresh its map with `bash scripts/repograph-refresh.sh` in that repo
+  (uses the `repograph` CLI from this project's `node_modules`, scope: `src/` minus
+  3rdparty submodules + tracked `*.py`).
+- **Krita** (C++/Qt raster painting app) — `/home/rajesh/opensource/graphics/krita`
+  (`.repograph/index.txt`, already set up). Reference for brush engines, pressure/
+  stylus input, layers/masks, and canvas compositing.
+
 The main features are in todo.md.  Rest of the filed in docs/ folder are learnings, technical specs etc.
 
 It has all details, to create new shapes, behaviors, minimap, resize, connectors, properties etc.

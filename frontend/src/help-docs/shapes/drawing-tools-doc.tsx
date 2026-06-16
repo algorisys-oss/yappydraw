@@ -292,6 +292,25 @@ export const DrawingToolsDoc: Component = () => {
                     width. Turn pressure on or off in <strong>Settings → Pen &amp; Input</strong>.
                 </p>
             </section>
+
+            {/* Text on Path */}
+            <section class="doc-section">
+                <h2>Text on Path (Curved Text)</h2>
+                <p>
+                    Any path-like element can carry a text label that follows its shape. Double-click the
+                    element to type, then toggle <strong>Curved Text</strong> in the quick toolbar to make
+                    the text flow along the path.
+                </p>
+                <ul>
+                    <li><strong>Pen strokes</strong> (Fineliner, Ink Brush, Marker) — text follows the stroke you drew.</li>
+                    <li><strong>Connectors</strong> — lines, arrows, bezier curves, elbows, and polylines.</li>
+                    <li><strong>Closed shapes</strong> — rectangle, circle, diamond, triangle, polygons, etc.; the text wraps around the outline.</li>
+                </ul>
+                <p>
+                    With Curved Text off, the label stays a normal centered caption. On closed shapes you
+                    can nudge where the text starts and whether it sits on or just outside the outline.
+                </p>
+            </section>
         </div>
     );
 };

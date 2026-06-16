@@ -2,6 +2,7 @@ import { ShapeRenderer } from "../base/shape-renderer";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import { normalizePoints } from "../../utils/render-element";
+import { drawTextAlongPath } from "../../utils/text-on-path";
 import type { IRenderer } from "../../rendering/IRenderer";
 
 export class PathRenderer extends ShapeRenderer {
@@ -236,73 +237,18 @@ export class PathRenderer extends ShapeRenderer {
         end: { x: number, y: number },
         fontSize: number
     ) {
-        // Build a lookup table of arc-length → t
+        // Sample this branch's cubic bezier into a polyline, then defer to the
+        // shared arc-length engine (one implementation for every path type).
         const steps = 200;
-        const arcLengths: number[] = [0];
-        let prevX = start.x, prevY = start.y;
-        for (let i = 1; i <= steps; i++) {
+        const pts: { x: number; y: number }[] = [];
+        for (let i = 0; i <= steps; i++) {
             const t = i / steps;
-            const x = this.cubicBezier(start.x, cp1.x, cp2.x, end.x, t);
-            const y = this.cubicBezier(start.y, cp1.y, cp2.y, end.y, t);
-            arcLengths.push(arcLengths[i - 1] + Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2));
-            prevX = x;
-            prevY = y;
+            pts.push({
+                x: this.cubicBezier(start.x, cp1.x, cp2.x, end.x, t),
+                y: this.cubicBezier(start.y, cp1.y, cp2.y, end.y, t),
+            });
         }
-        const totalLen = arcLengths[steps];
-
-        // Map arc-length distance to t parameter
-        const distToT = (d: number): number => {
-            if (d <= 0) return 0;
-            if (d >= totalLen) return 1;
-            let lo = 0, hi = steps;
-            while (lo < hi) {
-                const mid = (lo + hi) >> 1;
-                if (arcLengths[mid] < d) lo = mid + 1; else hi = mid;
-            }
-            const segStart = lo - 1;
-            const segFrac = (d - arcLengths[segStart]) / (arcLengths[lo] - arcLengths[segStart]);
-            return (segStart + segFrac) / steps;
-        };
-
-        // Measure total text width
-        const charWidths: number[] = [];
-        let totalTextWidth = 0;
-        for (const ch of text) {
-            const w = renderer.measureText(ch).width;
-            charWidths.push(w);
-            totalTextWidth += w;
-        }
-
-        // Determine text direction — flip if curve goes right-to-left
-        const midAngle = this.cubicBezierAngle(start, cp1, cp2, end, 0.5);
-        const flip = midAngle > Math.PI / 2 || midAngle < -Math.PI / 2;
-
-        // Center text along the curve
-        let curDist = (totalLen - totalTextWidth) / 2;
-        const textOffset = -fontSize * 0.8; // offset above the curve
-
-        renderer.textAlign = 'center';
-        renderer.textBaseline = 'middle';
-
-        const chars = flip ? [...text].reverse() : [...text];
-        const widths = flip ? [...charWidths].reverse() : charWidths;
-
-        for (let i = 0; i < chars.length; i++) {
-            curDist += widths[i] / 2;
-            const t = distToT(curDist);
-            const x = this.cubicBezier(start.x, cp1.x, cp2.x, end.x, t);
-            const y = this.cubicBezier(start.y, cp1.y, cp2.y, end.y, t);
-            let angle = this.cubicBezierAngle(start, cp1, cp2, end, t);
-            if (flip) angle += Math.PI;
-
-            renderer.save();
-            renderer.translate(x, y);
-            renderer.rotate(angle);
-            renderer.fillText(chars[i], 0, textOffset);
-            renderer.restore();
-
-            curDist += widths[i] / 2;
-        }
+        drawTextAlongPath(renderer, text, pts, fontSize);
     }
 
     private drawArrowhead(renderer: IRenderer, x: number, y: number, angle: number, type: string, color: string, headLen: number = 12) {

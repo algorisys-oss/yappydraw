@@ -93,6 +93,10 @@ interface ElementOptions {
     // New Attributes
     text?: string;
     containerText?: string;
+    curvedText?: boolean;             // flow containerText along the element's path / outline
+    textPathOffset?: number;          // 0..1 start position for curved text along the path
+    textPathSpacing?: number;         // extra px between glyphs for curved text
+    textPathSide?: 'on' | 'outside';  // baseline placement for curved text
     locked?: boolean;
     link?: string | null;
     tag?: string | null;
@@ -295,6 +299,10 @@ export const YappyAPI = {
             curveType: options?.curveType ?? 'straight',
             arrowAnchorAlign: options?.arrowAnchorAlign,
             containerText: options?.containerText ?? '',
+            curvedText: options?.curvedText ?? undefined,
+            textPathOffset: options?.textPathOffset,
+            textPathSpacing: options?.textPathSpacing,
+            textPathSide: options?.textPathSide,
 
             // New Properties Defaults
             parentId: options?.parentId ?? null,

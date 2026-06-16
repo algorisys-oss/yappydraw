@@ -1717,7 +1717,7 @@ export const duplicateElement = (id: string) => {
         id: newId,
         x: el.x + offset,
         y: el.y + offset,
-        points: el.points ? (el.pointsEncoding === 'flat' ? [...(el.points as number[])] : (el.points as any[]).map(p => ({ ...p }))) : undefined,
+        points: el.points ? ((el.points.length > 0 && typeof el.points[0] === 'number') ? [...(el.points as number[])] : (el.points as any[]).map(p => ({ ...p }))) : undefined,
         roundness: el.roundness ? { ...el.roundness } : null,
         crop: el.crop ? { ...el.crop } : null,
         // bounds/meta might need attention too but boundElements usually reset or logic specific

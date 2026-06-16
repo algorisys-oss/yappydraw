@@ -482,7 +482,11 @@ const Canvas: Component = () => {
             y: el.y + minY,
             width: newWidth,
             height: newHeight,
-            points: newPoints
+            points: newPoints,
+            // newPoints is an {x,y} object array — clear the stale 'flat' flag so
+            // resize / SVG export / clone (which branch on pointsEncoding) don't
+            // treat these objects as a flat number[] (→ NaN coords → invisible).
+            pointsEncoding: undefined,
         };
     };
 

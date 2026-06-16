@@ -45,6 +45,19 @@ export const IMAGE_FILL_EXCLUDED: ElementType[] = ['solidBlock', 'cylinder', 'is
 export const IMAGE_FILL_TARGETS: (ElementType | 'canvas' | 'slide')[] =
     FILLABLE_TARGETS.filter(t => !IMAGE_FILL_EXCLUDED.includes(t as ElementType));
 
+/** Closed shapes whose outline can carry curved text (mirrors text-on-path.ts getOutlinePath). */
+export const CURVED_TEXT_SHAPES: ElementType[] = [
+    'rectangle', 'circle', 'diamond', 'triangle',
+    'pentagon', 'hexagon', 'septagon', 'octagon', 'polygon',
+    'capsule', 'parallelogram', 'star',
+];
+
+/** Every element type that can flow text along its path / outline (Curved Text). */
+export const TEXT_PATH_TARGETS: ElementType[] = [
+    'organicBranch', 'line', 'arrow', 'fineliner', 'inkbrush', 'marker',
+    ...CURVED_TEXT_SHAPES,
+];
+
 export const properties: PropertyConfig[] = [
     {
         key: 'theme',
@@ -1116,6 +1129,51 @@ export const properties: PropertyConfig[] = [
         applicableTo: 'all',
         defaultValue: 2,
         dependsOn: 'textHighlightEnabled'
+    },
+    {
+        key: 'curvedText',
+        label: 'Text on Path',
+        type: 'toggle',
+        group: 'text',
+        applicableTo: TEXT_PATH_TARGETS,
+        defaultValue: false,
+    },
+    {
+        key: 'textPathSide',
+        label: 'Text Position',
+        type: 'select',
+        options: [
+            { label: 'On the line', value: 'on' },
+            { label: 'Outside', value: 'outside' },
+        ],
+        group: 'text',
+        applicableTo: TEXT_PATH_TARGETS,
+        defaultValue: 'on',
+        dependsOn: { key: 'curvedText', value: true },
+    },
+    {
+        key: 'textPathOffset',
+        label: 'Start Position',
+        type: 'slider',
+        min: 0,
+        max: 1,
+        step: 0.01,
+        group: 'text',
+        applicableTo: TEXT_PATH_TARGETS, // slide the text along the path / around the loop
+        defaultValue: 0,
+        dependsOn: { key: 'curvedText', value: true },
+    },
+    {
+        key: 'textPathSpacing',
+        label: 'Letter Spacing',
+        type: 'slider',
+        min: -5,
+        max: 40,
+        step: 1,
+        group: 'text',
+        applicableTo: TEXT_PATH_TARGETS,
+        defaultValue: 0,
+        dependsOn: { key: 'curvedText', value: true },
     },
 
     // Linear

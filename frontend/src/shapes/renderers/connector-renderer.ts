@@ -4,6 +4,7 @@ import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { normalizePoints, cubicBezier } from "../../utils/render-element";
 import { resolveFontFamily } from "../../utils/text-utils";
+import { drawTextAlongPath, getElementTextPath } from "../../utils/text-on-path";
 
 export class ConnectorRenderer extends ShapeRenderer {
     /**
@@ -48,6 +49,27 @@ export class ConnectorRenderer extends ShapeRenderer {
         const { renderer, element: el, isDarkMode } = context;
         const text = el.containerText;
         if (!text || el.isEditing) return;
+
+        // Curved Text: flow the label along the connector path instead of a
+        // centered horizontal label at the midpoint.
+        if (el.curvedText) {
+            const path = getElementTextPath(el);
+            if (path) {
+                const fontSize = el.fontSize || 14;
+                const fontFamily = resolveFontFamily(el.fontFamily);
+                renderer.save();
+                renderer.font = `${el.fontWeight || 'normal'} ${el.fontStyle || 'normal'} ${fontSize}px ${fontFamily}`;
+                renderer.fillStyle = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
+                drawTextAlongPath(renderer, text, path.points, fontSize, {
+                    closed: path.closed,
+                    startOffset: el.textPathOffset,
+                    letterSpacing: el.textPathSpacing,
+                    sideOffset: el.textPathSide === 'outside' ? fontSize * 0.4 : undefined,
+                });
+                renderer.restore();
+                return;
+            }
+        }
 
         const pts = normalizePoints(el.points);
         let midX: number, midY: number;

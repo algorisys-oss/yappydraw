@@ -5,6 +5,7 @@ import { getFontString, measureContainerText } from "../../utils/text-utils";
 import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils";
 import type { RenderContext } from "./types";
 import { getUIShapeDef } from "../../config/ui-shape-defs";
+import { drawTextAlongPath, getOutlinePath, isClosedShapeForText } from "../../utils/text-on-path";
 import { buildFilterString } from "../../utils/image-filter-utils";
 import { getImage } from "../../utils/image-cache";
 import type { IRenderer } from "../../rendering/IRenderer";
@@ -375,6 +376,27 @@ export class RenderPipeline {
 
         const textStr = el.containerText || el.text;
         if (!textStr) return;
+
+        // Curved Text: wrap the label around the shape's outline instead of
+        // centering it inside. Single branch covers every closed shape since
+        // all shape renderers route text through here.
+        if (el.curvedText && isClosedShapeForText(el.type)) {
+            const outline = getOutlinePath(el);
+            if (outline.length >= 2) {
+                const fontSize = el.fontSize || 16;
+                renderer.save();
+                renderer.font = getFontString(el);
+                renderer.fillStyle = this.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
+                drawTextAlongPath(renderer, textStr, outline, fontSize, {
+                    closed: true,
+                    startOffset: el.textPathOffset,
+                    letterSpacing: el.textPathSpacing,
+                    sideOffset: el.textPathSide === 'outside' ? fontSize * 0.4 : undefined,
+                });
+                renderer.restore();
+                return;
+            }
+        }
 
         renderer.save();
 

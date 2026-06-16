@@ -3,6 +3,8 @@ import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { normalizePoints } from "../../utils/render-element";
+import { drawTextAlongPath } from "../../utils/text-on-path";
+import { getFontString } from "../../utils/text-utils";
 
 export class FreehandRenderer extends ShapeRenderer {
     /**
@@ -62,6 +64,36 @@ export class FreehandRenderer extends ShapeRenderer {
             this.renderFineliner(renderer, absPoints, el.strokeWidth);
         }
 
+        // Optional text label following the stroke.
+        if (el.containerText && !el.isEditing && absPoints.length >= 2) {
+            this.renderStrokeText(renderer, el, absPoints, isDarkMode);
+        }
+
+        renderer.restore();
+    }
+
+    private renderStrokeText(renderer: IRenderer, el: any, absPoints: { x: number; y: number }[], isDarkMode: boolean): void {
+        const fontSize = el.fontSize || 16;
+        renderer.save();
+        renderer.font = getFontString(el);
+        renderer.fillStyle = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
+        if (el.curvedText) {
+            drawTextAlongPath(renderer, el.containerText, absPoints, fontSize, {
+                startOffset: el.textPathOffset,
+                letterSpacing: el.textPathSpacing,
+                sideOffset: el.textPathSide === 'outside' ? fontSize * 0.4 : undefined,
+            });
+        } else {
+            // Centered horizontal label at the stroke's bounding-box center.
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const p of absPoints) {
+                if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y;
+                if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y;
+            }
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillText(el.containerText, (minX + maxX) / 2, (minY + maxY) / 2);
+        }
         renderer.restore();
     }
 

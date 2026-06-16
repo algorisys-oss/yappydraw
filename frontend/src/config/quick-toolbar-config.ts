@@ -68,6 +68,13 @@ const fontFamilyOptions = [
     { value: 'code', icon: 'fontCode', label: 'JetBrains Mono' },
 ];
 
+/** Closed shapes whose outline can carry curved text (mirrors text-on-path.ts). */
+const CURVED_TEXT_SHAPES: ElementType[] = [
+    'rectangle', 'circle', 'diamond', 'triangle',
+    'pentagon', 'hexagon', 'septagon', 'octagon', 'polygon',
+    'capsule', 'parallelogram', 'star',
+];
+
 /** Quick properties for shapes (rectangle, circle, diamond, star, etc.) */
 const shapeProperties: QuickPropertyDef[] = [
     { key: 'strokeColor', controlType: 'color-dot', label: 'Stroke Color' },
@@ -114,6 +121,7 @@ const shapeProperties: QuickPropertyDef[] = [
             { value: 'bottom', icon: 'alignBottom', label: 'Bottom' },
         ]
     },
+    { key: 'curvedText', controlType: 'icon-toggle', label: 'Curved Text (wrap around outline)', applicableTo: CURVED_TEXT_SHAPES },
 ];
 
 /** Quick properties for connectors (line, arrow, bezier) */
@@ -154,10 +162,8 @@ const connectorProperties: QuickPropertyDef[] = [
             { value: 'diamond', icon: 'diamond', label: 'Diamond' },
         ]
     },
-    {
-        key: 'curvedText', controlType: 'icon-toggle', label: 'Curved Text',
-        applicableTo: ['organicBranch']
-    },
+    // Connectors: line/arrow (any curveType: straight/bezier/elbow/polyline) + organicBranch.
+    { key: 'curvedText', controlType: 'icon-toggle', label: 'Curved Text', applicableTo: ['organicBranch', 'line', 'arrow'] },
 ];
 
 /** Quick properties for text elements */
@@ -192,6 +198,7 @@ const textProperties: QuickPropertyDef[] = [
 const drawingProperties: QuickPropertyDef[] = [
     { key: 'strokeColor', controlType: 'color-dot', label: 'Stroke Color' },
     { key: 'strokeWidth', controlType: 'mini-slider', label: 'Stroke Width', min: 1, max: 20, step: 1 },
+    { key: 'curvedText', controlType: 'icon-toggle', label: 'Curved Text (follow stroke)', applicableTo: ['fineliner', 'inkbrush', 'marker'] },
 ];
 
 /** Filter preset options for the quick toolbar dropdown */

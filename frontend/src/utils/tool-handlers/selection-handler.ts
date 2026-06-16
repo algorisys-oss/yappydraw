@@ -1576,7 +1576,11 @@ function applyResize(
             if ((singleEl.type === 'fineliner' || singleEl.type === 'inkbrush' || singleEl.type === 'marker') && singleEl.points) {
                 const init = pState.initialPositions.get(id);
                 if (init && init.points) {
-                    if (singleEl.pointsEncoding === 'flat' || (init.points.length > 0 && typeof init.points[0] === 'number')) {
+                    // Detect encoding by the actual runtime type, NOT el.pointsEncoding:
+                    // normalizePencil() rewrites finalized strokes to {x,y} objects but
+                    // leaves pointsEncoding === 'flat' stale, so trusting the flag here
+                    // multiplied objects as numbers → NaN points → invisible stroke.
+                    if (init.points.length > 0 && typeof init.points[0] === 'number') {
                         const pts = init.points as number[];
                         const newPts = [];
                         for (let i = 0; i < pts.length; i += 2) {

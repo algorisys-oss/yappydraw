@@ -343,8 +343,10 @@ export const exportToSvg = (onlySelected: boolean) => {
             node = textGroup;
         } else if ((el.type === 'fineliner' || el.type === 'inkbrush' || el.type === 'marker' || el.type === 'ink') && el.points) {
             // Helper to normalize
+            // Detect encoding by the actual runtime type, not el.pointsEncoding —
+            // finalized strokes are {x,y} objects but may carry a stale 'flat' flag.
             let points: { x: number, y: number }[] = [];
-            if (el.pointsEncoding === 'flat') {
+            if (el.points.length > 0 && typeof el.points[0] === 'number') {
                 const flat = el.points as number[];
                 for (let i = 0; i < flat.length; i += 2) points.push({ x: flat[i], y: flat[i + 1] });
             } else {

@@ -404,6 +404,9 @@ export interface DrawingElement {
 
     // Text rendering on paths
     curvedText?: boolean;
+    textPathOffset?: number;          // 0..1 start position along the path (default 0 = start / top of a loop)
+    textPathSpacing?: number;         // extra px between glyphs for curved text (default 0)
+    textPathSide?: 'on' | 'outside';  // baseline placement relative to the path (default 'on')
 
     // Motion Graphics
     flowAnimation?: boolean;
