@@ -21,3 +21,12 @@ Additional Action items :
 - When a new shape is created or attributes or features are added, ensure api.ts is updated.
 - WASM parity: When modifying JS code in `utils/geometry.ts`, `utils/hit-testing.ts`, `utils/routing.ts`, or `utils/object-snapping.ts`, ensure the corresponding WASM AssemblyScript module (`wasm/assemblyscript/assembly/`) and bridge (`wasm/bridge/`) stay in sync. The WASM path must produce identical results to the JS fallback.
 
+## "Ship it" — release workflow
+
+When I say **"ship it"** (or "ship"), run the full release sequence:
+1. **Update docs** — record learnings in `docs/learnings.md`, log any fixes in `docs/bugs/bug-fixes.md`, refresh help docs / hotkeys, and update `api.ts` if features/attributes changed.
+2. **Bump the version** in `package.json` (patch unless I say otherwise).
+3. **Refresh the repo map** (`npm run repograph`) and verify the build passes (`npm run build`).
+4. **Commit and keep `main` in sync** — commit on the working branch, then make sure local `main` and the remote (`origin`) `main` are in sync and **push** (fast-forward/merge as appropriate).
+5. **Publish to the OSS repo** with `./scripts/publish-oss.sh --push` (publishes a cleaned client-only copy to the `algorisys-oss/yappydraw` remote). Use a dry-run first if anything looks off.
+

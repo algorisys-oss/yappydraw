@@ -6,6 +6,7 @@
 
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers } from '../pointer-helpers';
+import { store } from '../../store/app-store';
 
 // ─── Pointer Move: Buffer pen points ─────────────────────────────────
 
@@ -21,11 +22,20 @@ export function penOnMove(
     const coalescedEvents = e.getCoalescedEvents?.() ?? [];
     const events = coalescedEvents.length > 0 ? coalescedEvents : [e];
 
+    // Capture per-point pressure only when enabled. Pointer 'pen' carries real
+    // force in e.pressure; mouse reports 0.5 while a button is down (≈ constant
+    // width, which is the sensible fallback). 0 means "no pressure info".
+    const capturePressure = store.globalSettings.penPressure !== false;
+
     for (const ce of events) {
         const { x: ex, y: ey } = helpers.getWorldCoordinates(ce.clientX, ce.clientY);
         const px = ex - pState.startX;
         const py = ey - pState.startY;
         pState.penPointsBuffer.push(px, py);
+        if (capturePressure) {
+            const raw = (ce as PointerEvent).pressure;
+            pState.penPressureBuffer.push(raw && raw > 0 ? raw : 0.5);
+        }
     }
 
     // RAF-driven flush. Coalesced events keep full input resolution in the

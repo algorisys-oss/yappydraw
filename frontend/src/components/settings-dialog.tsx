@@ -78,6 +78,34 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                     </div>
 
                     <div class="settings-section">
+                        <p class="settings-section-title">Pen &amp; Input</p>
+
+                        <div class="settings-row">
+                            <label title="Hold a pen stroke still for a moment to snap it to a clean shape">Smart Shapes (hold to correct)</label>
+                            <label class="settings-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={store.globalSettings.smartShape !== false}
+                                    onChange={(e) => updateGlobalSettings({ smartShape: e.currentTarget.checked })}
+                                />
+                                <span class="settings-toggle-slider" />
+                            </label>
+                        </div>
+
+                        <div class="settings-row">
+                            <label title="Use Apple Pencil / stylus pressure for variable stroke width on the brush pen">Pressure Sensitivity</label>
+                            <label class="settings-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={store.globalSettings.penPressure !== false}
+                                    onChange={(e) => updateGlobalSettings({ penPressure: e.currentTarget.checked })}
+                                />
+                                <span class="settings-toggle-slider" />
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
                         <p class="settings-section-title">Text Defaults</p>
 
                         <div class="settings-row">

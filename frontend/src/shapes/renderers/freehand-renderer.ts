@@ -38,7 +38,8 @@ export class FreehandRenderer extends ShapeRenderer {
         const { renderer, element: el, isDarkMode, layerOpacity } = context;
         if (!el.points || el.points.length === 0) return;
 
-        let absPoints = normalizePoints(el.points).map(p => ({ x: el.x + p.x, y: el.y + p.y }));
+        const pressures = el.pressures as number[] | undefined;
+        let absPoints = normalizePoints(el.points).map((p, i) => ({ x: el.x + p.x, y: el.y + p.y, p: pressures?.[i] }));
 
         // Apply smoothing if property exists
         if (el.smoothing && el.smoothing > 0) {
@@ -76,7 +77,7 @@ export class FreehandRenderer extends ShapeRenderer {
                 sumY += pts[j].y;
                 count++;
             }
-            smoothed.push({ x: sumX / count, y: sumY / count });
+            smoothed.push({ x: sumX / count, y: sumY / count, p: pts[i].p });
         }
         smoothed.push(pts[pts.length - 1]);
         return smoothed;
@@ -139,14 +140,36 @@ export class FreehandRenderer extends ShapeRenderer {
 
         const maxVelocity = Math.max(...smoothedVelocities, 1);
 
-        // 4. Calculate raw widths from velocity
+        // 4. Calculate raw widths. Prefer real input pressure (Apple Pencil
+        // force / pointer pressure) when the stroke carries meaningful
+        // variation; otherwise fall back to velocity-derived width (mouse /
+        // finger record a constant pressure, which we treat as "no pressure").
         const minWidth = baseWidth * (1 - velocitySensitivity * 0.7);
         const maxWidth = baseWidth * (1 + velocitySensitivity * 0.5);
+        let hasPressure = false;
+        {
+            let mn = Infinity, mx = -Infinity;
+            for (const pt of pts) {
+                if (typeof pt.p === 'number') {
+                    if (pt.p < mn) mn = pt.p;
+                    if (pt.p > mx) mx = pt.p;
+                }
+            }
+            hasPressure = mx >= 0 && (mx - mn) > 0.05;
+        }
+        const pMinWidth = baseWidth * 0.4;
+        const pMaxWidth = baseWidth * 1.3;
         const rawWidths: number[] = [];
 
         for (let i = 0; i < pts.length; i++) {
-            const velocityFactor = smoothedVelocities[i] / maxVelocity;
-            let width = maxWidth - (maxWidth - minWidth) * velocityFactor;
+            let width: number;
+            if (hasPressure) {
+                const pr = Math.max(0, Math.min(1, pts[i].p ?? 0.5));
+                width = pMinWidth + (pMaxWidth - pMinWidth) * pr;
+            } else {
+                const velocityFactor = smoothedVelocities[i] / maxVelocity;
+                width = maxWidth - (maxWidth - minWidth) * velocityFactor;
+            }
 
             const taperLength = Math.min(pts.length * taperAmount, 20);
             if (taperLength > 0) {

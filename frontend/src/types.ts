@@ -429,6 +429,7 @@ export interface DrawingElement {
     smoothing?: number;
     taperAmount?: number;
     velocitySensitivity?: number;
+    pressures?: number[];  // Per-point input pressure (0-1), aligned 1:1 with points. Apple Pencil force / pointer pressure. Drives variable width on inkbrush.
 
     // Table Specific
     tableRows?: number;           // number of data rows (default 3)

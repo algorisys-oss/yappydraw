@@ -91,6 +91,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Zen Mode', keys: 'Alt+Z' },
             { label: 'Toggle Grid', keys: "Shift+'" },
             { label: 'Snap to Grid', keys: 'Shift+;' },
+            { label: 'Smart Shapes (hold pen to correct)', keys: 'Shift+Q' },
             { label: 'Help Dialog', keys: 'Shift+?' },
             { label: 'Present from Start', keys: 'F5' },
             { label: 'Present from Current', keys: 'Shift+F5' },

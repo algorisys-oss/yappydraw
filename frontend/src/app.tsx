@@ -8,8 +8,9 @@ import {
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
-  setActiveDsOpsElement
+  setActiveDsOpsElement, updateGlobalSettings
 } from './store/app-store';
+import { showToast } from './components/toast';
 import Canvas from './components/canvas';
 import Toolbar from './components/toolbar';
 import {
@@ -538,6 +539,11 @@ const App: Component = () => {
         } else if (e.shiftKey && key === 'v') {
           e.preventDefault();
           if (store.selection.length > 0) flipSelected('vertical');
+        } else if (e.shiftKey && key === 'q') {
+          e.preventDefault();
+          const next = store.globalSettings.smartShape === false;
+          updateGlobalSettings({ smartShape: next });
+          showToast(`Smart shapes ${next ? 'on' : 'off'}`, 'info');
         }
         else {
           if (key === 'v' || key === '1') setSelectedTool('selection');

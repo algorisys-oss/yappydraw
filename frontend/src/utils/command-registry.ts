@@ -3,7 +3,8 @@ import {
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, zoomToFit, zoomToSelection,
     groupSelected, ungroupSelected, bringToFront, sendToBack,
     moveElementZIndex, undo, redo, deleteElements, toggleTheme,
-    setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode
+    setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode,
+    updateGlobalSettings
 } from "../store/app-store";
 import { flipSelected, lockSelected } from "./object-context-actions";
 import { setIsDSLImportOpen } from "../components/menu";
@@ -255,6 +256,8 @@ export const getCommands = (): Command[] => {
         { id: 'view-grid', label: 'Toggle Grid', category: 'View', action: () => toggleGrid(), shortcut: 'Shift+\'' },
         { id: 'view-snap', label: 'Toggle Snap to Grid', category: 'View', action: () => toggleSnapToGrid(), shortcut: 'Shift+;' },
         { id: 'view-zen', label: 'Toggle Zen Mode', category: 'View', action: () => toggleZenMode(), shortcut: 'Alt+Z' },
+        { id: 'view-smart-shape', label: 'Toggle Smart Shapes (hold to correct)', category: 'View', action: () => updateGlobalSettings({ smartShape: store.globalSettings.smartShape === false }), shortcut: 'Shift+Q' },
+        { id: 'view-pen-pressure', label: 'Toggle Pen Pressure Sensitivity', category: 'View', action: () => updateGlobalSettings({ penPressure: store.globalSettings.penPressure === false }) },
         { id: 'view-properties', label: 'Toggle Properties Panel', category: 'View', action: () => togglePropertyPanel(), shortcut: 'Alt+Enter' },
         { id: 'view-layers', label: 'Toggle Layers Panel', category: 'View', action: () => toggleLayerPanel(), shortcut: 'Alt+L' },
         { id: 'view-minimap', label: 'Toggle Minimap', category: 'View', action: () => toggleMinimap(), shortcut: 'Alt+M' },

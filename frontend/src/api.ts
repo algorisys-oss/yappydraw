@@ -18,7 +18,7 @@ import {
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
-    saveActiveSlide
+    saveActiveSlide, updateGlobalSettings
 } from "./store/app-store";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
@@ -1376,6 +1376,14 @@ export const YappyAPI = {
     // Grid & Snapping
     toggleGrid() { toggleGrid(); },
     toggleSnapToGrid() { toggleSnapToGrid(); },
+
+    // Pen & Input
+    /** Smart shapes: dwell at the end of a pen stroke to snap it to a clean shape. */
+    setSmartShape(enabled: boolean) { updateGlobalSettings({ smartShape: enabled }); },
+    isSmartShapeEnabled() { return store.globalSettings.smartShape !== false; },
+    /** Pressure-driven width on the brush pen (Apple Pencil force / pointer pressure). */
+    setPenPressure(enabled: boolean) { updateGlobalSettings({ penPressure: enabled }); },
+    isPenPressureEnabled() { return store.globalSettings.penPressure !== false; },
 
     // Display States
     addDisplayState(name: string) { addDisplayState(name); },

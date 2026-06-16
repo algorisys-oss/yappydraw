@@ -5,6 +5,7 @@ import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
 import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore } from "../store/app-store";
 import { normalizePoints } from "../utils/render-element";
+import { recognizeStrokeShape } from "../utils/shape-recognition";
 import type { DrawingElement } from "../types";
 import ContextMenu from "./context-menu";
 import { setImageLoadCallback } from "../utils/image-cache";
@@ -194,6 +195,11 @@ const Canvas: Component = () => {
     const LASER_DECAY_MS = 800;
     const LASER_MAX_POINTS = 100;
     const PEN_UPDATE_THROTTLE_MS = 16; // ~60fps store updates
+    // Palm-rejection recency window: ignore palm-sized touch for this long after
+    // the pen was last seen (covers the gap between fast strokes where iPadOS
+    // hasn't yet re-suppressed the resting palm). Pencil-sized touches are
+    // exempt so a misclassified Pencil tap still draws.
+    const PEN_RECENT_MS = 500;
 
     const flushPenPoints = () => {
         if (!pState.currentId || pState.penPointsBuffer.length === 0) return;
@@ -202,6 +208,17 @@ const Canvas: Component = () => {
             const existingPoints = el.points as number[];
             const newPoints = [...existingPoints, ...pState.penPointsBuffer];
             const updates: Partial<DrawingElement> = { points: newPoints };
+            // Persist per-point pressure aligned 1:1 with points. Pad any
+            // pre-existing points (e.g. the initial [0,0]) with a neutral value
+            // so element.pressures stays the same length as the point list.
+            if (pState.penPressureBuffer.length > 0) {
+                const existingCount = existingPoints.length / 2;
+                const prev = (el.pressures as number[] | undefined) ?? [];
+                const padded = prev.length >= existingCount
+                    ? prev.slice(0, existingCount)
+                    : [...prev, ...Array(existingCount - prev.length).fill(0.5)];
+                updates.pressures = [...padded, ...pState.penPressureBuffer];
+            }
             // For ink tool, also update ttl
             if (el.type === 'ink') {
                 updates.ttl = Date.now() + 3000;
@@ -209,6 +226,7 @@ const Canvas: Component = () => {
             }
             updateElement(pState.currentId, updates, false);
             pState.penPointsBuffer = [];
+            pState.penPressureBuffer = [];
         }
     };
 
@@ -575,6 +593,7 @@ const Canvas: Component = () => {
 
     // Force-finalize the current touch-driven stroke. Always safe to call.
     const finalizeTouchStroke = () => {
+        cancelShapeHold();
         if (!touchDrivingPenStroke && !pState.isDrawing) return;
         try {
             flushPenPoints();
@@ -588,6 +607,112 @@ const Canvas: Component = () => {
         pState.currentId = null;
     };
 
+    // ─── Smart shape (hold-to-correct) ──────────────────────────────────
+    // While drawing with a pen tool, dwelling (holding the tip nearly still)
+    // for HOLD_MS snaps the freehand stroke to a clean primitive — like
+    // happypaint's quick-shape. The recognizer is JS-only and runs once per
+    // dwell, not on the per-point path.
+    const SHAPE_HOLD_MS = 600;
+    const SHAPE_MOVE_EPS = 4; // CSS px dead-zone for pen jitter while holding
+    let shapeHoldTimer: ReturnType<typeof setTimeout> | null = null;
+    let shapeHoldId: string | null = null;
+    let shapeLastClient: { x: number; y: number } | null = null;
+    // After a successful snap the pen is usually still in contact; this blocks
+    // the heal-on-move paths from immediately opening a fresh stroke until the
+    // pen actually lifts (touchend / pointerup).
+    let smartShapeSuppress = false;
+
+    const smartShapeEnabled = () =>
+        store.globalSettings.smartShape !== false &&
+        (store.selectedTool === 'fineliner' || store.selectedTool === 'inkbrush' || store.selectedTool === 'marker');
+
+    const cancelShapeHold = () => {
+        if (shapeHoldTimer !== null) { clearTimeout(shapeHoldTimer); shapeHoldTimer = null; }
+        shapeHoldId = null;
+        shapeLastClient = null;
+    };
+
+    // Reset all stroke state without re-running pen normalization (used after a
+    // smart-shape conversion, which has already set the element's geometry).
+    const resetActiveStroke = () => {
+        touchDrivingPenStroke = false;
+        activeTouchIdentifier = -1;
+        pState.isDrawing = false;
+        pState.currentId = null;
+        pState.penPointsBuffer = [];
+        pState.penPressureBuffer = [];
+        pState.penUpdatePending = false;
+    };
+
+    const fireShapeHold = () => {
+        shapeHoldTimer = null;
+        const id = shapeHoldId;
+        cancelShapeHold();
+        if (!id || pState.currentId !== id || !pState.isDrawing) return;
+        if (!smartShapeEnabled()) return;
+        flushPenPoints();
+        const el = store.elements.find(e => e.id === id);
+        if (!el || !el.points || el.points.length < 6) return;
+        const pts = normalizePoints(el.points);
+        const shape = recognizeStrokeShape(pts);
+        if (!shape) return; // ambiguous — keep the freehand ink
+
+        const clearStroke = {
+            points: undefined, pointsEncoding: undefined,
+            pressures: undefined, smoothing: undefined,
+        } as Partial<DrawingElement>;
+
+        if (shape.kind === 'line') {
+            const minX = Math.min(shape.a.x, shape.b.x);
+            const minY = Math.min(shape.a.y, shape.b.y);
+            const maxX = Math.max(shape.a.x, shape.b.x);
+            const maxY = Math.max(shape.a.y, shape.b.y);
+            updateElement(id, {
+                type: 'line', curveType: 'straight',
+                x: el.x + minX, y: el.y + minY,
+                width: maxX - minX, height: maxY - minY,
+                points: [{ x: shape.a.x - minX, y: shape.a.y - minY }, { x: shape.b.x - minX, y: shape.b.y - minY }],
+                pointsEncoding: undefined, pressures: undefined, smoothing: undefined,
+            });
+        } else {
+            const typeMap = { rect: 'rectangle', ellipse: 'circle', triangle: 'triangle', diamond: 'diamond' } as const;
+            updateElement(id, {
+                type: typeMap[shape.kind],
+                x: el.x + shape.minX, y: el.y + shape.minY,
+                width: shape.maxX - shape.minX, height: shape.maxY - shape.minY,
+                strokeStyle: 'solid',
+                ...clearStroke,
+            });
+        }
+
+        // End the stroke and present the corrected shape selected for editing.
+        if (touchDrivingPenStroke) smartShapeSuppress = true;
+        resetActiveStroke();
+        setStore('selection', [id]);
+        setSelectedTool('selection');
+        draw();
+    };
+
+    const armShapeHold = (id: string | null) => {
+        cancelShapeHold();
+        if (!id || !smartShapeEnabled()) return;
+        shapeHoldId = id;
+        shapeLastClient = null;
+        shapeHoldTimer = setTimeout(fireShapeHold, SHAPE_HOLD_MS);
+    };
+
+    const noteShapeMove = (clientX: number, clientY: number) => {
+        if (shapeHoldId === null) return;
+        if (shapeLastClient === null) { shapeLastClient = { x: clientX, y: clientY }; return; }
+        if (Math.hypot(clientX - shapeLastClient.x, clientY - shapeLastClient.y) < SHAPE_MOVE_EPS) return;
+        // Moved beyond jitter — restart the dwell timer from here.
+        shapeLastClient = { x: clientX, y: clientY };
+        if (shapeHoldTimer !== null) clearTimeout(shapeHoldTimer);
+        shapeHoldTimer = setTimeout(fireShapeHold, SHAPE_HOLD_MS);
+    };
+
+    const smartShape = { arm: armShapeHold, note: noteShapeMove, cancel: cancelShapeHold };
+
     // Begin a touch-driven pen stroke for the given stylus Touch. Returns true
     // if a stroke actually started (false if the active layer is hidden/locked).
     // Shared by handleTouchStart and the heal-on-move path so both set up the
@@ -597,6 +722,7 @@ const Canvas: Component = () => {
         touchDrivingPenStroke = true;
         pState.penUpdatePending = false;
         pState.penPointsBuffer = [];
+        pState.penPressureBuffer = [];
         const { x, y } = getWorldCoordinates(t.clientX, t.clientY);
         // Layer-visibility / lock checks mirror handlePointerDown's guards.
         const activeLayer = store.layers.find(l => l.id === store.activeLayerId);
@@ -606,6 +732,7 @@ const Canvas: Component = () => {
             return false;
         }
         drawOnDown(x, y, pState, pHelpers);
+        smartShape.arm(pState.currentId);
         draw();
         return true;
     };
@@ -616,6 +743,15 @@ const Canvas: Component = () => {
         if (gestureActive || gestureCooldown) return;
         if (pickFingerTouches(e).length >= 2) return;
         if (!isPenDrawingTool()) return;
+        // Palm rejection: a finger/palm landing while the Apple Pencil is mid
+        // stroke arrives as a touchstart with no 'stylus' touch. Ignore it
+        // rather than finalizing — otherwise resting your hand cuts the stroke
+        // short. (iPadOS also rejects palm at the system level when a Pencil is
+        // paired; this is the in-app safety net for unpaired / edge cases.)
+        const hasStylus = Array.from(e.changedTouches).some(
+            t => (t as { touchType?: string }).touchType === 'stylus'
+        );
+        if (touchDrivingPenStroke && !hasStylus) { e.preventDefault(); return; }
         // Self-heal: if a previous stroke is somehow still in flight (touchend
         // was missed, fired out of order, or its changedTouches didn't carry
         // our tracked identifier on iPad), finalize it before starting the
@@ -627,6 +763,7 @@ const Canvas: Component = () => {
         }
         const t = pickStylusTouch(e);
         if (!t) return;
+        smartShapeSuppress = false; // fresh deliberate stroke
         e.preventDefault();
         beginTouchPenStroke(t);
     };
@@ -634,6 +771,10 @@ const Canvas: Component = () => {
     const handleTouchMove = (e: TouchEvent) => {
         if (gestureActive) return;
         if (!touchDrivingPenStroke) {
+            // A smart-shape snap just ended this stroke while the pen is still
+            // on the glass — swallow moves until the pen lifts so we don't
+            // immediately heal a brand-new stroke out of the trailing contact.
+            if (smartShapeSuppress) { e.preventDefault(); return; }
             // Heal a DROPPED touchstart: iPadOS Safari drops touchstart (and
             // pointerdown) on fast Apple Pencil taps, so the first event we see
             // for a stroke can be a move. Without this, that whole stroke is
@@ -663,6 +804,14 @@ const Canvas: Component = () => {
         e.preventDefault();
         const { x: ex, y: ey } = getWorldCoordinates(t.clientX, t.clientY);
         pState.penPointsBuffer.push(ex - pState.startX, ey - pState.startY);
+        // Apple Pencil reports tip force in touch.force (0–1). Capture it when
+        // pressure mode is on so inkbrush width can follow it. Finger touches
+        // report 0 → neutral 0.5 (constant width).
+        if (store.globalSettings.penPressure !== false) {
+            const f = (t as Touch & { force?: number }).force;
+            pState.penPressureBuffer.push(f && f > 0 ? f : 0.5);
+        }
+        smartShape.note(t.clientX, t.clientY);
         // Sync flush + sync draw — match the reference demo's latency profile.
         // With v0.27.12's O(1) reactive cascade this fits inside a frame at
         // typical doc sizes; the compositor picks up the canvas at next vsync.
@@ -672,7 +821,9 @@ const Canvas: Component = () => {
 
     const handleTouchEnd = (e: TouchEvent) => {
         if (gestureActive) return;
-        if (!touchDrivingPenStroke) return;
+        // Pen lifted — clear the post-snap suppression regardless of stroke state.
+        smartShapeSuppress = false;
+        if (!touchDrivingPenStroke) { cancelShapeHold(); return; }
         // Always finalize on touchend when we're driving a stroke. The
         // previous "find tracked touch in changedTouches" gate was dropping
         // legitimate ends on iPad when the changedTouches list didn't carry
@@ -858,8 +1009,11 @@ const Canvas: Component = () => {
         if (e.pointerType === 'pen') {
             pState.activePenPointerId = e.pointerId;
             pState.lastPenInputAt = Date.now();
+            smartShapeSuppress = false; // a fresh pen-down starts a new stroke
         } else if (e.pointerType === 'touch') {
-            if (pState.activePenPointerId !== null && !isPencilSizedTouch(e)) return;
+            const penActive = pState.activePenPointerId !== null
+                || (Date.now() - pState.lastPenInputAt) < PEN_RECENT_MS;
+            if (penActive && !isPencilSizedTouch(e)) return;
         }
         pState.lastPointerType = (e.pointerType as 'mouse' | 'pen' | 'touch') || null;
 
@@ -962,6 +1116,7 @@ const Canvas: Component = () => {
         if (store.selectedTool === 'polyline' || pState.isPolylineBuilding) { polylineOnDown(x, y, pState, pHelpers); return; }
 
         drawOnDown(x, y, pState, pHelpers);
+        smartShape.arm(pState.currentId); // no-op unless a pen tool + enabled
     };
 
     const handlePointerMove = (e: PointerEvent) => {
@@ -972,7 +1127,9 @@ const Canvas: Component = () => {
         if (e.pointerType === 'pen') {
             pState.lastPenInputAt = Date.now();
         } else if (e.pointerType === 'touch') {
-            if (pState.activePenPointerId !== null && !isPencilSizedTouch(e)) return;
+            const penActive = pState.activePenPointerId !== null
+                || (Date.now() - pState.lastPenInputAt) < PEN_RECENT_MS;
+            if (penActive && !isPencilSizedTouch(e)) return;
         }
 
         if (presentationOnMove(e, pState)) return;
@@ -1028,6 +1185,20 @@ const Canvas: Component = () => {
             return;
         }
 
+        // Heal a dropped pointerdown for genuine pointer-driven pens (Surface,
+        // Wacom, Chromebook styli). iPad pen tools run on the TouchEvent path —
+        // touchDrivingPenStroke short-circuits this handler at the top — so this
+        // only fires for real pointer pens. !smartShapeSuppress stops a trailing
+        // post-snap contact from re-opening a stroke.
+        if (!pState.isDrawing && !smartShapeSuppress && e.pointerType === 'pen'
+            && isPenDrawingTool() && ((e.buttons & 1) !== 0 || e.pressure > 0)) {
+            const layer = store.layers.find(l => l.id === store.activeLayerId);
+            if (layer?.visible && !layer?.locked) {
+                drawOnDown(x, y, pState, pHelpers);
+                smartShape.arm(pState.currentId);
+            }
+        }
+
         if (!pState.isDrawing || !pState.currentId) {
             if (pState.isDrawing && store.selectedTool === 'eraser') {
                 eraserOnMove(x, y, pHelpers);
@@ -1037,6 +1208,7 @@ const Canvas: Component = () => {
 
         if (store.selectedTool === 'fineliner' || store.selectedTool === 'marker' || store.selectedTool === 'inkbrush' || store.selectedTool === 'ink') {
             penOnMove(e, pState, pHelpers, PEN_UPDATE_THROTTLE_MS);
+            smartShape.note(e.clientX, e.clientY);
         } else {
             drawOnMove(x, y, pState, pHelpers, pSignals);
         }
@@ -1065,8 +1237,12 @@ const Canvas: Component = () => {
                 pState.activePenPointerId = null;
             }
             pState.lastPenInputAt = Date.now();
+            cancelShapeHold();      // pen lifted — drop any pending dwell
+            smartShapeSuppress = false;
         } else if (e.pointerType === 'touch') {
-            if (pState.activePenPointerId !== null && pState.activePenPointerId !== e.pointerId && !isPencilSizedTouch(e)) {
+            const penActive = (pState.activePenPointerId !== null && pState.activePenPointerId !== e.pointerId)
+                || (Date.now() - pState.lastPenInputAt) < PEN_RECENT_MS;
+            if (penActive && !isPencilSizedTouch(e)) {
                 try { (e.currentTarget as Element).releasePointerCapture(e.pointerId); } catch { /* noop */ }
                 return;
             }

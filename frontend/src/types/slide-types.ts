@@ -88,6 +88,8 @@ export interface GlobalSettings {
     renderStyle?: 'sketch' | 'architectural'; // Default style for new elements
     showQuickToolbar?: boolean; // Toggle floating quick toolbar
     colorPalette?: string;      // ID of the active color palette (see config/color-palettes.ts)
+    smartShape?: boolean;       // Hold-to-correct: dwell at end of a pen stroke snaps it to a clean shape (default on)
+    penPressure?: boolean;      // Use Apple Pencil force / pointer pressure for variable stroke width (default on)
 }
 
 /**

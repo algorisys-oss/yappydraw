@@ -228,7 +228,9 @@ const initialState: AppState = {
         reducedMotion: false,
         renderStyle: 'sketch',
         showQuickToolbar: true, // Default to showing the toolbar
-        colorPalette: (localStorage.getItem('colorPalette') || 'default')
+        colorPalette: (localStorage.getItem('colorPalette') || 'default'),
+        smartShape: (localStorage.getItem('smartShape') ?? '1') !== '0',
+        penPressure: (localStorage.getItem('penPressure') ?? '1') !== '0',
     },
     showCanvasProperties: false,
     undoStackLength: 0,
@@ -897,6 +899,13 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     // Persist palette across reloads even when no document is saved.
     if (updates.colorPalette !== undefined) {
         try { localStorage.setItem('colorPalette', updates.colorPalette); } catch { /* ignore */ }
+    }
+    // Persist input-behaviour toggles independently of any saved document.
+    if (updates.smartShape !== undefined) {
+        try { localStorage.setItem('smartShape', updates.smartShape ? '1' : '0'); } catch { /* ignore */ }
+    }
+    if (updates.penPressure !== undefined) {
+        try { localStorage.setItem('penPressure', updates.penPressure ? '1' : '0'); } catch { /* ignore */ }
     }
 };
 

@@ -25,6 +25,9 @@ export interface PointerState {
     laserRafPending: boolean;
     lastLaserUpdateTime: number;
     penPointsBuffer: number[];
+    // Per-point pressure captured alongside penPointsBuffer (1 value per point).
+    // Flushed into element.pressures so width can follow Apple Pencil force.
+    penPressureBuffer: number[];
     lastPenUpdateTime: number;
     penUpdatePending: boolean;
 
@@ -113,6 +116,7 @@ export function createPointerState(): PointerState {
         laserRafPending: false,
         lastLaserUpdateTime: 0,
         penPointsBuffer: [],
+        penPressureBuffer: [],
         lastPenUpdateTime: 0,
         penUpdatePending: false,
         lastPenInputAt: 0,

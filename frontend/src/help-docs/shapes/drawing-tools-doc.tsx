@@ -251,7 +251,46 @@ export const DrawingToolsDoc: Component = () => {
                         </div>
                         <span class="shortcut-desc">Decrease/increase brush size</span>
                     </div>
+                    <div class="shortcut-item">
+                        <div class="shortcut-keys">
+                            <span class="kbd">Shift</span>+<span class="kbd">Q</span>
+                        </div>
+                        <span class="shortcut-desc">Toggle Smart Shapes</span>
+                    </div>
                 </div>
+            </section>
+
+            {/* Smart Shapes */}
+            <section class="doc-section">
+                <h2>Smart Shapes (hold to correct)</h2>
+                <p>
+                    Draw a shape freehand with any pen tool (Pencil, Fineliner, Ink Brush, Marker)
+                    and <strong>hold the pen still for about half a second</strong> before lifting.
+                    The freehand stroke instantly snaps to a clean geometric shape and is selected so
+                    you can resize, fill, or connect it like any other shape.
+                </p>
+                <ul>
+                    <li>A roughly straight stroke becomes a <strong>line</strong>.</li>
+                    <li>A closed round stroke becomes an <strong>ellipse / circle</strong>.</li>
+                    <li>A four-cornered stroke becomes a <strong>rectangle</strong> (or a <strong>diamond</strong> when drawn on its points).</li>
+                    <li>A three-cornered stroke becomes a <strong>triangle</strong>.</li>
+                </ul>
+                <p>
+                    If the stroke is ambiguous it is left as freehand ink, so holding still never
+                    forces a wrong shape. Toggle the feature with <span class="kbd">Shift</span>+<span class="kbd">Q</span>,
+                    from the Command Palette, or in <strong>Settings → Pen &amp; Input</strong>.
+                </p>
+            </section>
+
+            {/* Pressure Sensitivity */}
+            <section class="doc-section">
+                <h2>Pressure Sensitivity</h2>
+                <p>
+                    With an Apple Pencil or other pressure-capable stylus, the <strong>Ink Brush</strong>
+                    varies its width with how hard you press — light for fast, fine lines and heavy for
+                    bold strokes. Input without pressure (mouse, finger) falls back to velocity-based
+                    width. Turn pressure on or off in <strong>Settings → Pen &amp; Input</strong>.
+                </p>
             </section>
         </div>
     );
