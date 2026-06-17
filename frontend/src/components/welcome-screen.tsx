@@ -1,6 +1,6 @@
 
 import { type Component, Show, createEffect, onCleanup, createSignal, For } from 'solid-js';
-import { store } from '../store/app-store';
+import { store, setStore } from '../store/app-store';
 import rough from 'roughjs';
 import { renderElement } from '../utils/render-element';
 import type { DrawingElement, Point } from '../types';
@@ -14,6 +14,14 @@ export const WelcomeScreen: Component = () => {
         store.appMode !== 'presentation' &&
         !store.zenMode &&
         !store.welcomeDismissed;
+
+    // Once the user has drawn anything, permanently dismiss the welcome screen
+    // so it does not reappear after they delete all elements.
+    createEffect(() => {
+        if (store.elements.length > 0 && !store.welcomeDismissed) {
+            setStore('welcomeDismissed', true);
+        }
+    });
 
     // Reactive window dimensions
     const [windowSize, setWindowSize] = createSignal({ width: window.innerWidth, height: window.innerHeight });

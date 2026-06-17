@@ -176,7 +176,7 @@ frontend/src/components/video-overlay.css | - | 70 |
 frontend/src/components/video-overlay.tsx | typescript | 202 | Component:1 onDragStart:67 onDragMove:81 onDragEnd:89 toggleLock:96 close:102 VideoOverlay:175 handleKeyDown:177
 frontend/src/components/video-url-dialog.css | - | 183 |
 frontend/src/components/video-url-dialog.tsx | typescript | 129 | Component:1 VideoProvider:3 VideoUrlDialogProps:6 VideoUrlDialog:13 handleSubmit:54 handleKeyDown:60
-frontend/src/components/welcome-screen.tsx | typescript | 529 | Component:2 WelcomeScreen:8 isVisible:11 handler:22 createArrow:77 renderArrow:87 getCategoryIcon:181
+frontend/src/components/welcome-screen.tsx | typescript | 537 | Component:2 WelcomeScreen:8 isVisible:11 handler:30 createArrow:85 renderArrow:95 getCategoryIcon:189
 frontend/src/components/wireframe-tool-group.tsx | typescript | 268 | Component:1 UIShapeCategory:5 as:67 WireframeToolGroup:84 handler:91 getActiveTool:101 handleToolClick:114 handleRightClick:136 toggleMenu:142 activeTool:149 isActive:150 getDropdownPosition:152 as:219
 frontend/src/config/color-palettes.ts | typescript | 109 | ColorPaletteEntry:1 ColorPalette:6 getColorPalette:107
 frontend/src/config/features.ts | typescript | 35 |
