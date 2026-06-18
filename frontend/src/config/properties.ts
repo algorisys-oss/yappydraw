@@ -510,6 +510,20 @@ export const properties: PropertyConfig[] = [
         defaultValue: 3
     },
     {
+        // Stroke stabilization (pulled-string "lazy brush"). Global setting,
+        // not per-element — read/written via globalSettings in the panel
+        // (special-cased like eraserWidth). Shown as a 0–100% slider.
+        key: 'penStabilization',
+        label: 'Stabilization',
+        type: 'slider',
+        min: 0,
+        max: 100,
+        step: 5,
+        group: 'stroke',
+        applicableTo: ['fineliner', 'inkbrush', 'marker'],
+        defaultValue: 0
+    },
+    {
         // Eraser brush width — shown only when the eraser tool is active.
         // Defaults to the current stroke width (resolved in the panel/handler).
         key: 'eraserWidth',

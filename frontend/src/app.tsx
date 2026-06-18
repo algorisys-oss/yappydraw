@@ -8,7 +8,7 @@ import {
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
-  setActiveDsOpsElement, updateGlobalSettings
+  setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization
 } from './store/app-store';
 import { showToast } from './components/toast';
 import { ColorDropHud } from './components/color-drop-hud';
@@ -545,6 +545,11 @@ const App: Component = () => {
           const next = store.globalSettings.smartShape === false;
           updateGlobalSettings({ smartShape: next });
           showToast(`Smart shapes ${next ? 'on' : 'off'}`, 'info');
+        } else if (e.shiftKey && key === 's') {
+          e.preventDefault();
+          togglePenStabilization();
+          const on = (store.globalSettings.penStabilization ?? 0) > 0;
+          showToast(`Stabilization ${on ? `on (${Math.round((store.globalSettings.penStabilization ?? 0) * 100)}%)` : 'off'}`, 'info');
         }
         else {
           if (key === 'v' || key === '1') setSelectedTool('selection');

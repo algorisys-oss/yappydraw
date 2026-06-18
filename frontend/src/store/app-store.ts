@@ -913,6 +913,24 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
 };
 
+// Remembered strength so the quick toggle can restore the user's last setting
+// when flipping stabilization back on. Seeded from the persisted value.
+let lastStabilizationStrength = (() => {
+    const v = store.globalSettings.penStabilization ?? 0;
+    return v > 0 ? v : 0.5;
+})();
+
+/** Flip stroke stabilization on/off, remembering the last non-zero strength. */
+export const togglePenStabilization = () => {
+    const cur = store.globalSettings.penStabilization ?? 0;
+    if (cur > 0) {
+        lastStabilizationStrength = cur;
+        updateGlobalSettings({ penStabilization: 0 });
+    } else {
+        updateGlobalSettings({ penStabilization: lastStabilizationStrength || 0.5 });
+    }
+};
+
 // --- Path Editor Actions ---
 export const setPathEditing = (isActive: boolean, elementId: string | null = null, animationId: string | null = null) => {
     setStore("pathEditState", {

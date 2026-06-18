@@ -297,16 +297,20 @@ export const DrawingToolsDoc: Component = () => {
             <section class="doc-section">
                 <h2>Stroke Stabilization (lazy brush)</h2>
                 <p>
-                    For confident, clean inking, turn on <strong>stroke stabilization</strong> in
-                    <strong> Settings → Pen &amp; Input</strong>. The brush trails your cursor on a
-                    "pulled string" — small jitter inside the string's length is absorbed, and the
-                    line is dragged along only once you pull past it. Higher strength means a longer
-                    string: smoother and heavier, with a little more lag. The same Procreate/Krita
-                    inking feel, and it works with mouse, finger, and Apple Pencil.
+                    For confident, clean inking, turn on <strong>stroke stabilization</strong>. The
+                    brush trails your cursor on a "pulled string" — small jitter inside the string's
+                    length is absorbed, and the line is dragged along only once you pull past it.
+                    Higher strength means a longer string: smoother and heavier, with a little more
+                    lag. The same Procreate/Krita inking feel, and it works with mouse, finger, and
+                    Apple Pencil.
                 </p>
                 <p>
-                    Leave it at 0% for raw, 1:1 strokes; nudge it up when drawing long curves or
-                    lettering. It stacks on top of the always-on light smoothing.
+                    Because you'll flip it on and off as you work, it's available several ways:
+                    a quick toggle with <span class="kbd">Shift</span>+<span class="kbd">S</span>,
+                    the <strong>stabilization button</strong> in the toolbar (shown while a pen tool
+                    is active), the <strong>brush properties panel</strong> (a 0–100% strength slider),
+                    the Command Palette, and <strong>Settings → Pen &amp; Input</strong>. The toggle
+                    remembers your last strength. It stacks on top of the always-on light smoothing.
                 </p>
             </section>
 

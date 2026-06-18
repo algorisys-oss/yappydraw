@@ -1,8 +1,10 @@
-import { type Component, For, createSignal, onMount, onCleanup } from "solid-js";
-import { store, setSelectedTool, addElement, setStore } from "../store/app-store";
+import { type Component, For, Show, createSignal, onMount, onCleanup } from "solid-js";
+import { store, setSelectedTool, addElement, setStore, togglePenStabilization } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import type { ToolType } from "../types";
-import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen } from "lucide-solid";
+import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline } from "lucide-solid";
+
+const BRUSH_TOOLS: ToolType[] = ['fineliner', 'inkbrush', 'marker'];
 import PenToolGroup from "./pen-tool-group";
 import TextToolGroup from "./text-tool-group";
 import ShapeToolGroup from "./shape-tool-group";
@@ -412,6 +414,18 @@ const Toolbar: Component = () => {
                             </button>
                         )}
                     </For>
+
+                    {/* Stroke stabilization toggle — only while a brush tool is active */}
+                    <Show when={BRUSH_TOOLS.includes(store.selectedTool)}>
+                        <button
+                            class={`toolbar-btn ${(store.globalSettings.penStabilization ?? 0) > 0 ? 'active' : ''}`}
+                            onClick={() => togglePenStabilization()}
+                            onContextMenu={handleRightClick}
+                            title={`Stroke Stabilization ${(store.globalSettings.penStabilization ?? 0) > 0 ? `(on, ${Math.round((store.globalSettings.penStabilization ?? 0) * 100)}%)` : '(off)'} — Shift+S`}
+                        >
+                            <Spline size={16} />
+                        </button>
+                    </Show>
                 </>
             )}
 

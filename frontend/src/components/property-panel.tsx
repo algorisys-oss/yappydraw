@@ -973,6 +973,9 @@ const PropertyPanel: Component = () => {
             else if (key === 'gradientDirection') updateSlideBackground(slideIndex, { gradientDirection: value });
         } else if (target.type === 'eraser') {
             if (key === 'eraserWidth') setEraserWidth(Number(finalValue));
+        } else if (key === 'penStabilization') {
+            // Global setting, surfaced as a 0–100% slider in the brush panel.
+            updateGlobalSettings({ penStabilization: Math.min(1, Math.max(0, Number(finalValue) / 100)) });
         } else {
             updateDefaultStyles({ [key]: finalValue });
         }
@@ -1036,6 +1039,10 @@ const PropertyPanel: Component = () => {
             return val;
         }
         if (target.type === 'defaults') {
+            if (prop.key === 'penStabilization') {
+                // Global setting shown as 0–100%.
+                return Math.round((store.globalSettings.penStabilization ?? 0) * 100);
+            }
             const val = (store.defaultElementStyles as any)[prop.key];
             if (prop.key === 'roundness') return !!val;
             return val;

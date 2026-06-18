@@ -18,7 +18,7 @@ import {
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
-    saveActiveSlide, updateGlobalSettings
+    saveActiveSlide, updateGlobalSettings, togglePenStabilization
 } from "./store/app-store";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
@@ -1395,6 +1395,8 @@ export const YappyAPI = {
     /** Pulled-string "lazy brush" stabilization strength for freehand inking (0..1; 0 = off). */
     setPenStabilization(strength: number) { updateGlobalSettings({ penStabilization: Math.min(1, Math.max(0, strength)) }); },
     getPenStabilization() { return store.globalSettings.penStabilization ?? 0; },
+    /** Flip stabilization on/off, remembering the last non-zero strength (Shift+S). */
+    togglePenStabilization() { togglePenStabilization(); },
 
     // Display States
     addDisplayState(name: string) { addDisplayState(name); },
