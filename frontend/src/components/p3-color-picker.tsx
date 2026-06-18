@@ -3,6 +3,7 @@ import { Pin, PinOff } from 'lucide-solid';
 import { store, updateElement, pushToHistory, updateSlideBackground, updateDefaultStyles } from '../store/app-store';
 import { AdvancedP3Picker } from './advanced-p3-picker';
 import { COLOR_PALETTES, getColorPalette } from '../config/color-palettes';
+import { startColorDrop, moveColorDrop, commitColorDrop } from '../utils/color-drop';
 
 const PALETTE_PINNED_KEY = 'palettePinned';
 const [palettePinned, setPalettePinnedSignal] = createSignal<boolean>(
@@ -58,6 +59,42 @@ export const ColorPalettePicker: Component = () => {
         }
         if (!isImage) {
             updateDefaultStyles({ backgroundColor: data, fillStyle: 'solid' });
+        }
+    };
+
+    // Touch/pen ColorDrop: drag a swatch onto a shape to fill it. Mouse keeps
+    // the native HTML5 drag-and-drop + click-to-set-stroke below; we only take
+    // over for touch/pen, where HTML5 DnD never fires. A short press that
+    // doesn't move past SLOP stays a tap (→ onClick sets stroke).
+    const DRAG_SLOP = 8;
+    let drag: { id: number; x: number; y: number; color: string; active: boolean } | null = null;
+    let suppressClick = false;
+
+    const onSwatchPointerDown = (e: PointerEvent, color: string) => {
+        if (e.pointerType === 'mouse') return;
+        drag = { id: e.pointerId, x: e.clientX, y: e.clientY, color, active: false };
+        try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* ignore */ }
+    };
+    const onSwatchPointerMove = (e: PointerEvent) => {
+        if (!drag || e.pointerId !== drag.id) return;
+        const moved = Math.hypot(e.clientX - drag.x, e.clientY - drag.y);
+        if (!drag.active) {
+            if (moved < DRAG_SLOP) return;
+            drag.active = true;
+            startColorDrop(drag.color, e.clientX, e.clientY);
+        } else {
+            moveColorDrop(e.clientX, e.clientY);
+        }
+        e.preventDefault();
+    };
+    const onSwatchPointerUp = (e: PointerEvent) => {
+        if (!drag || e.pointerId !== drag.id) return;
+        const wasActive = drag.active;
+        drag = null;
+        try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+        if (wasActive) {
+            commitColorDrop(e.clientX, e.clientY);
+            suppressClick = true; // the drop already acted — don't also set stroke
         }
     };
 
@@ -165,11 +202,16 @@ export const ColorPalettePicker: Component = () => {
                                         handleDragStart(e, swatch.value);
                                     }}
                                     onMouseDown={(e) => e.stopPropagation()}
+                                    onPointerDown={(e) => onSwatchPointerDown(e, swatch.value)}
+                                    onPointerMove={onSwatchPointerMove}
+                                    onPointerUp={onSwatchPointerUp}
+                                    onPointerCancel={onSwatchPointerUp}
                                     onClick={(e) => {
                                         e.stopPropagation();
+                                        if (suppressClick) { suppressClick = false; return; }
                                         applyAsset(swatch.value, e.shiftKey ? 'fill' : 'stroke');
                                     }}
-                                    title={`${swatch.label} — Click: set stroke • Shift+click: set fill • Drag: apply to shape/slide`}
+                                    title={`${swatch.label} — Click: set stroke • Shift+click: set fill • Drag onto a shape: set its fill`}
                                     style={{
                                         width: '24px',
                                         height: '24px',
@@ -178,6 +220,7 @@ export const ColorPalettePicker: Component = () => {
                                         cursor: 'grab',
                                         border: '1px solid rgba(0,0,0,0.1)',
                                         transition: 'transform 0.2s',
+                                        'touch-action': 'none',
                                     }}
                                     onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
                                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}

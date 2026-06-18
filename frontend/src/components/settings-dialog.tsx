@@ -103,6 +103,25 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                 <span class="settings-toggle-slider" />
                             </label>
                         </div>
+
+                        <div class="settings-row">
+                            <label title="Pulled-string 'lazy brush' for cleaner freehand inking. Higher = smoother and heavier, with more lag. 0% = off.">
+                                Stroke Stabilization
+                            </label>
+                            <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    step="5"
+                                    value={Math.round((store.globalSettings.penStabilization ?? 0) * 100)}
+                                    onInput={(e) => updateGlobalSettings({ penStabilization: e.currentTarget.valueAsNumber / 100 })}
+                                />
+                                <span style={{ 'min-width': '34px', 'text-align': 'right', 'font-variant-numeric': 'tabular-nums' }}>
+                                    {Math.round((store.globalSettings.penStabilization ?? 0) * 100)}%
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="settings-section">

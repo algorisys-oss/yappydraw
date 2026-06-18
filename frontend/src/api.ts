@@ -1392,6 +1392,9 @@ export const YappyAPI = {
     /** Pressure-driven width on the brush pen (Apple Pencil force / pointer pressure). */
     setPenPressure(enabled: boolean) { updateGlobalSettings({ penPressure: enabled }); },
     isPenPressureEnabled() { return store.globalSettings.penPressure !== false; },
+    /** Pulled-string "lazy brush" stabilization strength for freehand inking (0..1; 0 = off). */
+    setPenStabilization(strength: number) { updateGlobalSettings({ penStabilization: Math.min(1, Math.max(0, strength)) }); },
+    getPenStabilization() { return store.globalSettings.penStabilization ?? 0; },
 
     // Display States
     addDisplayState(name: string) { addDisplayState(name); },

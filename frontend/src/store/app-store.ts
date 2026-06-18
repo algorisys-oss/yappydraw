@@ -231,6 +231,7 @@ const initialState: AppState = {
         colorPalette: (localStorage.getItem('colorPalette') || 'default'),
         smartShape: (localStorage.getItem('smartShape') ?? '1') !== '0',
         penPressure: (localStorage.getItem('penPressure') ?? '1') !== '0',
+        penStabilization: (() => { const v = parseFloat(localStorage.getItem('penStabilization') ?? '0'); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0; })(),
     },
     showCanvasProperties: false,
     undoStackLength: 0,
@@ -906,6 +907,9 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.penPressure !== undefined) {
         try { localStorage.setItem('penPressure', updates.penPressure ? '1' : '0'); } catch { /* ignore */ }
+    }
+    if (updates.penStabilization !== undefined) {
+        try { localStorage.setItem('penStabilization', String(updates.penStabilization)); } catch { /* ignore */ }
     }
 };
 

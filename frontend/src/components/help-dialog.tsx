@@ -111,6 +111,20 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Cycle Fill Style', keys: 'F' },
         ]
     },
+    {
+        title: 'Touch & Pen Gestures',
+        shortcuts: [
+            { label: 'Pan / Zoom Canvas', keys: 'Two-finger drag / pinch' },
+            { label: 'Undo', keys: 'Two-finger tap' },
+            { label: 'Keep Undoing', keys: 'Two-finger hold' },
+            { label: 'Redo', keys: 'Three-finger tap' },
+            { label: 'Copy Selection', keys: 'Three-finger swipe down' },
+            { label: 'Toggle Zen Mode', keys: 'Four-finger tap' },
+            { label: 'Zoom to Fit', keys: 'Quick pinch-in flick' },
+            { label: 'Set Shape Fill (ColorDrop)', keys: 'Drag palette swatch onto shape' },
+            { label: 'Smart Shapes (hold pen to correct)', keys: 'Draw + hold' },
+        ]
+    },
 ];
 
 /** Parse a key string like "Ctrl+Shift+E" into individual key caps */

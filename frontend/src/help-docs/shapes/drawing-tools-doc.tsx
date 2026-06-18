@@ -293,6 +293,56 @@ export const DrawingToolsDoc: Component = () => {
                 </p>
             </section>
 
+            {/* Stroke Stabilization */}
+            <section class="doc-section">
+                <h2>Stroke Stabilization (lazy brush)</h2>
+                <p>
+                    For confident, clean inking, turn on <strong>stroke stabilization</strong> in
+                    <strong> Settings → Pen &amp; Input</strong>. The brush trails your cursor on a
+                    "pulled string" — small jitter inside the string's length is absorbed, and the
+                    line is dragged along only once you pull past it. Higher strength means a longer
+                    string: smoother and heavier, with a little more lag. The same Procreate/Krita
+                    inking feel, and it works with mouse, finger, and Apple Pencil.
+                </p>
+                <p>
+                    Leave it at 0% for raw, 1:1 strokes; nudge it up when drawing long curves or
+                    lettering. It stacks on top of the always-on light smoothing.
+                </p>
+            </section>
+
+            {/* Touch Gestures */}
+            <section class="doc-section">
+                <h2>Touch Gestures (iPad &amp; touch)</h2>
+                <p>
+                    On a touchscreen, multi-finger gestures give you quick, keyboard-free shortcuts
+                    while you draw — inspired by Procreate. One finger draws (with palm rejection when
+                    an Apple Pencil is paired); extra fingers act as commands.
+                </p>
+                <ul>
+                    <li><strong>Two-finger drag / pinch</strong> — pan and zoom the canvas.</li>
+                    <li><strong>Two-finger tap</strong> — undo. Hold two fingers still to keep undoing.</li>
+                    <li><strong>Three-finger tap</strong> — redo.</li>
+                    <li><strong>Three-finger swipe down</strong> — copy the current selection.</li>
+                    <li><strong>Four-finger tap</strong> — toggle Zen mode (hide the UI chrome).</li>
+                    <li><strong>Quick pinch-in flick</strong> — zoom to fit.</li>
+                </ul>
+                <p>
+                    A quick two-finger tap no longer nudges the canvas — panning only begins once your
+                    fingers actually move, so taps stay crisp commands.
+                </p>
+            </section>
+
+            {/* ColorDrop */}
+            <section class="doc-section">
+                <h2>ColorDrop — drag a colour onto a shape</h2>
+                <p>
+                    Open the colour palette and <strong>drag a swatch onto any shape</strong> to set its
+                    fill — a colour chip follows your finger and the shape under it is filled on release.
+                    A plain tap on a swatch still sets the stroke colour (<span class="kbd">Shift</span>+click
+                    for fill on desktop). On desktop you can also drag a swatch onto a shape with the mouse.
+                </p>
+            </section>
+
             {/* Text on Path */}
             <section class="doc-section">
                 <h2>Text on Path (Curved Text)</h2>

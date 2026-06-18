@@ -15,6 +15,11 @@ import { defaultTableData, defaultColWidths, defaultRowHeights } from '../table-
 import { getUIShapeDef } from '../../config/ui-shape-defs';
 import { hitTestPoolLane, assignToPoolLane } from '../pool-containment';
 import { computeAnchorFractions } from '../binding-logic';
+import { createStrokeStabilizer, finishStabilizer } from '../stroke-stabilizer';
+
+// Freehand pen tools that support the pulled-string stabilizer. (The ephemeral
+// 'ink' presentation tool has its own pointer-down path and is left unchanged.)
+const FREEHAND_TOOLS = ['fineliner', 'inkbrush', 'marker'];
 
 // Shapes that default to solid stroke
 const SOLID_STROKE_SHAPES = [
@@ -77,6 +82,14 @@ export function drawOnDown(
     pState.lastPenUpdateTime = 0;
     pState.elbowCommittedPoints = [{ x: 0, y: 0 }];
     pState.elbowDirection = null;
+
+    // Arm the pulled-string stabilizer for freehand inking when enabled. Primed
+    // at the stroke origin (relative (0,0)) so the leash is measured from where
+    // the pen touched down. Off (strength 0) → no stabilizer, behaviour unchanged.
+    const stabStrength = store.globalSettings.penStabilization ?? 0;
+    pState.stabilizer = (stabStrength > 0 && FREEHAND_TOOLS.includes(store.selectedTool))
+        ? createStrokeStabilizer(stabStrength, { x: 0, y: 0, pressure: 0.5 })
+        : null;
 
     // Snap start position if enabled
     let creationX = x;
@@ -463,7 +476,9 @@ export function drawOnUp(
                 updateElement(pState.currentId, { y: el.y + el.height, height: Math.abs(el.height) });
             }
         } else if (el.type === 'fineliner' || el.type === 'inkbrush' || el.type === 'marker' || el.type === 'ink') {
-            // Flush buffered pen points and normalize
+            // Draw the stabilizer's string out to the final cursor, then flush
+            // buffered pen points and normalize.
+            finishStabilizer(pState, store.globalSettings.penPressure !== false);
             helpers.flushPenPoints();
             const updatedEl = store.elements.find(e => e.id === pState.currentId);
             if (updatedEl && updatedEl.points && updatedEl.points.length > 2) {

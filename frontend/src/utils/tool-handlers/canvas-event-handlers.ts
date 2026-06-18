@@ -50,7 +50,21 @@ export async function handleDrop(e: DragEvent, ctx: CanvasEventContext): Promise
 
     const data = e.dataTransfer?.getData('text/plain');
     if (!data) return;
+    applyAssetAtClientPoint(e.clientX, e.clientY, data, ctx);
+}
 
+/**
+ * Apply a color/image asset to the element under a client-space point (or the
+ * slide background if nothing is hit). Shared by the desktop HTML5 drop handler
+ * and the touch/pen ColorDrop drag (drag a palette swatch onto a shape).
+ * Returns true if it recognised the data as a color/image (regardless of hit).
+ */
+export function applyAssetAtClientPoint(
+    clientX: number,
+    clientY: number,
+    data: string,
+    ctx: CanvasEventContext,
+): boolean {
     // Loosened color detection to be very inclusive for various color strings
     const isColor = data.startsWith('color(') ||
         data.startsWith('#') ||
@@ -62,9 +76,9 @@ export async function handleDrop(e: DragEvent, ctx: CanvasEventContext): Promise
         data.includes('oklch');
     const isImage = data.startsWith('http') || data.startsWith('data:image');
 
-    if (!isColor && !isImage) return;
+    if (!isColor && !isImage) return false;
 
-    const { x, y } = ctx.getWorldCoordinates(e.clientX, e.clientY);
+    const { x, y } = ctx.getWorldCoordinates(clientX, clientY);
     const threshold = 10 / store.viewState.scale;
 
     const elementMap = new Map<string, DrawingElement>();
@@ -133,6 +147,7 @@ export async function handleDrop(e: DragEvent, ctx: CanvasEventContext): Promise
             else if (isImage) updateSlideBackground(0, { backgroundImage: data, fillStyle: 'image' });
         }
     }
+    return true;
 }
 
 // ─── UML Section Scroll Context ──────────────────────────────────────

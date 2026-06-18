@@ -3,7 +3,8 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode } from "../store/app-store";
+import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { recognizeStrokeShape } from "../utils/shape-recognition";
 import type { DrawingElement } from "../types";
@@ -39,7 +40,9 @@ import { getContextMenuItems } from "../utils/context-menu-builder";
 import PathEditorOverlay from "./path-editor-overlay";
 import { commitText as commitTextHandler, commitRichText as commitRichTextHandler, handleDoubleClick as handleDoubleClickHandler, type TextEditingContext } from "../utils/tool-handlers/text-editing-handler";
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestColEdge, measureColumnOptimalWidth, getNextCell } from "../utils/table-utils";
-import { handleDragOver, handleDrop as handleDropHandler, handleWheel, type CanvasEventContext, type WheelContext } from "../utils/tool-handlers/canvas-event-handlers";
+import { handleDragOver, handleDrop as handleDropHandler, handleWheel, applyAssetAtClientPoint, type CanvasEventContext, type WheelContext } from "../utils/tool-handlers/canvas-event-handlers";
+import { registerColorDropCommit } from "../utils/color-drop";
+import { pushStabilizedSample } from "../utils/stroke-stabilizer";
 import { showToast } from "./toast";
 import { hitTestElement } from "../utils/hit-testing";
 import { renderCropOverlay, hitTestCropHandle, applyCropDrag, getCropHandleCursor, finalizeCropRect, type CropHandle } from "../utils/image-crop-utils";
@@ -646,6 +649,7 @@ const Canvas: Component = () => {
         pState.penPointsBuffer = [];
         pState.penPressureBuffer = [];
         pState.penUpdatePending = false;
+        pState.stabilizer = null;
     };
 
     const fireShapeHold = () => {
@@ -807,14 +811,16 @@ const Canvas: Component = () => {
         if (!t) return;
         e.preventDefault();
         const { x: ex, y: ey } = getWorldCoordinates(t.clientX, t.clientY);
-        pState.penPointsBuffer.push(ex - pState.startX, ey - pState.startY);
         // Apple Pencil reports tip force in touch.force (0–1). Capture it when
         // pressure mode is on so inkbrush width can follow it. Finger touches
-        // report 0 → neutral 0.5 (constant width).
+        // report 0 → neutral 0.5 (constant width). Route through the stabilizer
+        // so the pulled-string lazy-brush applies on the iPad touch path too.
+        let pressure: number | null = null;
         if (store.globalSettings.penPressure !== false) {
             const f = (t as Touch & { force?: number }).force;
-            pState.penPressureBuffer.push(f && f > 0 ? f : 0.5);
+            pressure = f && f > 0 ? f : 0.5;
         }
+        pushStabilizedSample(pState, ex - pState.startX, ey - pState.startY, pressure);
         smartShape.note(t.clientX, t.clientY);
         // Sync flush + sync draw — match the reference demo's latency profile.
         // With v0.27.12's O(1) reactive cascade this fits inside a frame at
@@ -854,6 +860,69 @@ const Canvas: Component = () => {
     // fingers lift. Otherwise the leftover finger immediately starts a
     // stray stroke at gesture-release.
     let gestureCooldown = false;
+
+    // ─── Procreate-style multi-finger gesture vocabulary ─────────────────
+    // Layered on top of the 2-finger pan/zoom above. We DON'T commit to
+    // panning until a finger crosses TAP_SLOP, so a quick multi-finger tap
+    // (which moves <slop) is recognised as a discrete command instead of
+    // nudging the canvas. Mapping (matches HappyPaint / Procreate):
+    //   two-finger tap          → undo  (hold still → repeat undo)
+    //   three-finger tap        → redo
+    //   four-finger tap         → toggle zen mode (hide chrome)
+    //   three-finger swipe ↓    → copy selection
+    //   quick pinch-in flick    → zoom to fit
+    const TAP_MAX_MS = 350;
+    const TAP_SLOP = 14;            // px of finger travel that disqualifies a tap
+    const SWIPE_DOWN_DIST = 60;     // px downward for a 3-finger swipe
+    const QUICK_PINCH_MS = 320;     // a pinch-in faster than this …
+    const QUICK_PINCH_SCALE = 0.6;  // … and below this cumulative scale = fit
+    const UNDO_REPEAT_DELAY_MS = 600;
+    const UNDO_REPEAT_MS = 150;
+
+    let gStartT = 0;                // gesture start time (ms, event timeStamp)
+    let gMaxFingers = 0;            // most simultaneous fingers seen this gesture
+    let gFingerCount = 0;           // fingers as of the last move
+    let gMoved = false;             // travelled past TAP_SLOP → not a tap
+    let gCommitted = false;         // committed to pan/zoom transform
+    let gSwipeFired = false;        // 3-finger swipe already triggered
+    let gCumScale = 1;              // cumulative pinch scale while committed
+    const gStarts = new Map<number, { x: number; y: number }>(); // touch id → start
+    let gUndoRepeatTimer: number | null = null;
+    let gUndoRepeatInterval: number | null = null;
+
+    const clearUndoRepeat = () => {
+        if (gUndoRepeatTimer !== null) { clearTimeout(gUndoRepeatTimer); gUndoRepeatTimer = null; }
+        if (gUndoRepeatInterval !== null) { clearInterval(gUndoRepeatInterval); gUndoRepeatInterval = null; }
+    };
+
+    // All current finger contacts (stylus excluded), uncapped — the 2-finger
+    // pickFingerTouches() above stops at 2, but tap/swipe need 3–4.
+    const allFingerTouches = (e: TouchEvent): Touch[] => {
+        const fingers: Touch[] = [];
+        for (let i = 0; i < e.touches.length; i++) {
+            const t = e.touches[i];
+            if ((t as { touchType?: string }).touchType !== 'stylus') fingers.push(t);
+        }
+        return fingers;
+    };
+
+    const fitView = () => { store.docType === 'slides' ? zoomToFitSlide() : zoomToFit(); };
+
+    // Two fingers held stationary keep undoing (Procreate). Armed on a 2-finger
+    // start; fires only if the gesture stays a still, uncommitted 2-finger hold.
+    const armUndoRepeat = () => {
+        clearUndoRepeat();
+        gUndoRepeatTimer = window.setTimeout(() => {
+            gUndoRepeatTimer = null;
+            if (!gestureActive || gMoved || gCommitted || gMaxFingers !== 2) return;
+            gMoved = true; // the release must not fire another tap-undo
+            undo();
+            gUndoRepeatInterval = window.setInterval(() => {
+                if (!gestureActive || gMaxFingers !== 2) { clearUndoRepeat(); return; }
+                undo();
+            }, UNDO_REPEAT_MS);
+        }, UNDO_REPEAT_DELAY_MS);
+    };
 
     // Count contacts that are fingers (not stylus). Used so an Apple Pencil
     // contact + palm rest doesn't get mistaken for a 2-finger gesture.
@@ -911,6 +980,7 @@ const Canvas: Component = () => {
         pState.draggingFromConnector = null;
         pState.hoveredConnector = null;
         pState.initialPositions.clear();
+        pState.stabilizer = null;
     };
 
     const beginGesture = (e: TouchEvent) => {
@@ -921,6 +991,18 @@ const Canvas: Component = () => {
         gestureLastCx = m.cx;
         gestureLastCy = m.cy;
         gestureActive = true;
+        // Reset multi-finger recognition state for this gesture.
+        const fingers = allFingerTouches(e);
+        gStartT = e.timeStamp;
+        gMaxFingers = fingers.length;
+        gFingerCount = fingers.length;
+        gMoved = false;
+        gCommitted = false;
+        gSwipeFired = false;
+        gCumScale = 1;
+        gStarts.clear();
+        for (const t of fingers) gStarts.set(t.identifier, { x: t.clientX, y: t.clientY });
+        if (fingers.length === 2) armUndoRepeat();
     };
 
     const updateGesture = (e: TouchEvent) => {
@@ -934,6 +1016,7 @@ const Canvas: Component = () => {
         // (so the world point that was under the centroid stays under it
         // through the zoom step). Guard against zero/near-zero start dist.
         const ratio = gestureLastDist > 1 ? m.dist / gestureLastDist : 1;
+        gCumScale *= ratio;
         const newScale = Math.min(Math.max(scale * ratio, 0.1), 10);
 
         const screenLastCx = gestureLastCx - rect.left;
@@ -956,39 +1039,131 @@ const Canvas: Component = () => {
 
     const endGesture = () => {
         gestureActive = false;
+        gFingerCount = 0;
+        clearUndoRepeat();
+    };
+
+    // Fire a discrete multi-finger tap command (no canvas movement).
+    const fireTap = (fingers: number) => {
+        if (fingers === 2) { undo(); showToast('Undo', 'info', 900); }
+        else if (fingers === 3) { redo(); showToast('Redo', 'info', 900); }
+        else if (fingers >= 4) { toggleZenMode(); }
     };
 
     const handleTouchStartGesture = (e: TouchEvent) => {
         // Fires before the pen-drawing touchstart handler (registered
         // first). When 2+ FINGERS are on the canvas (stylus contacts
-        // excluded by pickFingerTouches), we own the gesture — even if
-        // finger 1's touchstart already started a pen stroke a moment
-        // ago. cancelInflightForGesture will discard the stray stroke.
+        // excluded), we own the gesture — even if finger 1's touchstart
+        // already started a pen stroke a moment ago. cancelInflightForGesture
+        // (via beginGesture) discards the stray stroke.
         if (store.appMode === 'embed') return;
-        const fingers = pickFingerTouches(e);
+        const fingers = allFingerTouches(e);
         if (fingers.length >= 2) {
             e.preventDefault();
-            if (!gestureActive) beginGesture(e);
+            if (!gestureActive) {
+                beginGesture(e);
+            } else {
+                // Another finger joined an active gesture (e.g. 2→3 for redo).
+                // Track the higher count and the new finger's start position; a
+                // 3rd/4th finger also cancels the held-undo repeat.
+                if (fingers.length > gMaxFingers) gMaxFingers = fingers.length;
+                if (gMaxFingers !== 2) clearUndoRepeat();
+                for (const t of fingers) {
+                    if (!gStarts.has(t.identifier)) gStarts.set(t.identifier, { x: t.clientX, y: t.clientY });
+                }
+            }
         }
     };
 
     const handleTouchMoveGesture = (e: TouchEvent) => {
         if (!gestureActive) return;
-        const fingers = pickFingerTouches(e);
-        if (fingers.length >= 2) {
-            e.preventDefault();
-            updateGesture(e);
+        const fingers = allFingerTouches(e);
+        const count = fingers.length;
+        if (count < 2) return; // a single leftover finger: wait for it to lift
+        e.preventDefault();
+
+        // How far has any finger drifted from where it landed?
+        let maxMove = 0;
+        for (const t of fingers) {
+            const s = gStarts.get(t.identifier);
+            if (s) maxMove = Math.max(maxMove, Math.hypot(t.clientX - s.x, t.clientY - s.y));
         }
+        if (maxMove > TAP_SLOP && !gMoved) { gMoved = true; clearUndoRepeat(); }
+
+        // Three-finger swipe down → copy. Detected before we commit to panning.
+        if (count >= 3 && !gSwipeFired && !gCommitted) {
+            const allDown = fingers.every(t => {
+                const s = gStarts.get(t.identifier);
+                return !!s && (t.clientY - s.y) > SWIPE_DOWN_DIST && Math.abs(t.clientX - s.x) < SWIPE_DOWN_DIST;
+            });
+            if (allDown) {
+                gSwipeFired = true;
+                gMoved = true; // disqualify the tap
+                clearUndoRepeat();
+                void copyToClipboard();
+                showToast('Copied', 'info', 900);
+                return;
+            }
+        }
+
+        // Pan/zoom only with exactly two fingers — 3+ fingers are reserved for
+        // discrete commands (Procreate: 2 = navigate, 3+ = actions).
+        if (count !== 2) { gFingerCount = count; return; }
+
+        // Re-baseline when transitioning back to two fingers so the pan doesn't
+        // jump by the centroid shift that happened while a 3rd finger was down.
+        if (gFingerCount !== 2) {
+            const m = twoFingerMetrics(e);
+            if (m) { gestureLastDist = m.dist; gestureLastCx = m.cx; gestureLastCy = m.cy; }
+            gFingerCount = 2;
+            return;
+        }
+        gFingerCount = 2;
+
+        if (!gCommitted) {
+            if (maxMove <= TAP_SLOP) return; // still could be a tap — don't move
+            // Commit to navigation; re-baseline to avoid a jump on first frame.
+            gCommitted = true;
+            const m = twoFingerMetrics(e);
+            if (m) { gestureLastDist = m.dist; gestureLastCx = m.cx; gestureLastCy = m.cy; }
+            return;
+        }
+        updateGesture(e);
     };
 
     const handleTouchEndGesture = (e: TouchEvent) => {
-        const fingers = pickFingerTouches(e);
-        if (gestureActive && fingers.length < 2) {
-            e.preventDefault();
-            endGesture();
-            if (e.touches.length > 0) gestureCooldown = true;
+        if (!gestureActive) {
+            if (e.touches.length === 0) gestureCooldown = false;
+            return;
         }
-        if (e.touches.length === 0) gestureCooldown = false;
+        // Drop the lifted touches from our start tracking.
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            gStarts.delete(e.changedTouches[i].identifier);
+        }
+
+        if (e.touches.length === 0) {
+            // All contacts gone — finalize. A still, quick gesture is a tap;
+            // otherwise a fast pinch-in becomes zoom-to-fit.
+            e.preventDefault();
+            const dur = e.timeStamp - gStartT;
+            const cancelled = e.type === 'touchcancel';
+            if (cancelled) {
+                // System aborted the gesture — don't fire any command.
+            } else if (!gMoved && !gSwipeFired && dur <= TAP_MAX_MS + 120) {
+                fireTap(gMaxFingers);
+            } else if (gCommitted && dur < QUICK_PINCH_MS && gCumScale < QUICK_PINCH_SCALE) {
+                fitView();
+                showToast('Fit to screen', 'info', 900);
+            }
+            endGesture();
+            gestureCooldown = false;
+        } else {
+            // Some contacts remain. Keep the gesture alive (so the final tap can
+            // still be decided and a leftover finger can't start a stroke), but
+            // block single-finger drawing until everything lifts.
+            e.preventDefault();
+            gestureCooldown = true;
+        }
     };
 
     const handlePointerDown = (e: PointerEvent) => {
@@ -1453,6 +1628,14 @@ const Canvas: Component = () => {
         dropZone.addEventListener('dragover', handleDragOver);
         dropZone.addEventListener('drop', dropHandler);
 
+        // Touch/pen ColorDrop: the palette swatch drives the drag and calls this
+        // on release to fill the shape under the finger (HTML5 DnD doesn't fire
+        // on touch, so this is the mobile-friendly path to the same fill logic).
+        registerColorDropCommit((cx, cy, color) => {
+            applyAssetAtClientPoint(cx, cy, color, canvasEventCtx);
+            requestAnimationFrame(draw);
+        });
+
         window.addEventListener("resize", handleResize);
         document.addEventListener("fullscreenchange", handleResize);
         handleResize();
@@ -1520,6 +1703,8 @@ const Canvas: Component = () => {
 
         onCleanup(() => {
             delete (window as any).__tableCellNav;
+            clearUndoRepeat();
+            registerColorDropCommit(null);
             dropZone.removeEventListener('dragover', handleDragOver);
             dropZone.removeEventListener('drop', dropHandler);
             window.removeEventListener('keydown', handleCropKeys, true);

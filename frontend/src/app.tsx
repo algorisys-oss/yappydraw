@@ -11,6 +11,7 @@ import {
   setActiveDsOpsElement, updateGlobalSettings
 } from './store/app-store';
 import { showToast } from './components/toast';
+import { ColorDropHud } from './components/color-drop-hud';
 import Canvas from './components/canvas';
 import Toolbar from './components/toolbar';
 import {
@@ -1146,6 +1147,7 @@ const App: Component = () => {
           <QuickToolbar />
         </Show>
         <Toast />
+        <ColorDropHud />
       </Suspense>
     </div >
   );

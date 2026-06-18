@@ -90,6 +90,7 @@ export interface GlobalSettings {
     colorPalette?: string;      // ID of the active color palette (see config/color-palettes.ts)
     smartShape?: boolean;       // Hold-to-correct: dwell at end of a pen stroke snaps it to a clean shape (default on)
     penPressure?: boolean;      // Use Apple Pencil force / pointer pressure for variable stroke width (default on)
+    penStabilization?: number;  // Pulled-string "lazy brush" strength 0..1 for freehand inking (0 = off, default)
 }
 
 /**

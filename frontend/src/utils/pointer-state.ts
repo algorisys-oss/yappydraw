@@ -30,6 +30,9 @@ export interface PointerState {
     penPressureBuffer: number[];
     lastPenUpdateTime: number;
     penUpdatePending: boolean;
+    // Opt-in pulled-string stabilizer for the current freehand stroke (null when
+    // stabilization is off). Set in drawOnDown, cleared at stroke end.
+    stabilizer: import('./stroke-stabilizer').StrokeStabilizer | null;
 
     // iPad / Apple Pencil palm rejection
     // Last timestamp (ms) we observed a 'pen' pointer event. While this is recent,
@@ -117,6 +120,7 @@ export function createPointerState(): PointerState {
         lastLaserUpdateTime: 0,
         penPointsBuffer: [],
         penPressureBuffer: [],
+        stabilizer: null,
         lastPenUpdateTime: 0,
         penUpdatePending: false,
         lastPenInputAt: 0,
