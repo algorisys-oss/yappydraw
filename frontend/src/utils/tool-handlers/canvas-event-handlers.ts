@@ -8,6 +8,7 @@ import type { DrawingElement } from '../../types';
 import { store, setViewState, updateElement, pushToHistory, updateSlideBackground, isLayerVisible } from '../../store/app-store';
 import { calculateAllAnimatedStates } from '../animation-utils';
 import { hitTestElement } from '../hit-testing';
+import { screenToWorld } from '../viewport-transforms';
 import { calculateUmlClassLayout, calculateUml2SectionLayout } from '../uml-layout-utils';
 import { IMAGE_FILL_EXCLUDED } from '../../config/properties';
 import type { IRenderer } from '../../rendering/IRenderer';
@@ -255,10 +256,8 @@ export function handleWheel(e: WheelEvent, wheelCtx?: WheelContext): void {
 
         const mouseX = e.clientX;
         const mouseY = e.clientY;
-        const { scale, panX, panY } = store.viewState;
 
-        const worldX = (mouseX - panX) / scale;
-        const worldY = (mouseY - panY) / scale;
+        const { x: worldX, y: worldY } = screenToWorld(mouseX, mouseY, store.viewState);
 
         const newPanX = mouseX - worldX * newScale;
         const newPanY = mouseY - worldY * newScale;

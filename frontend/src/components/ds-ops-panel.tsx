@@ -6,7 +6,7 @@
  */
 
 import { type Component, Show, createSignal, createMemo, createEffect, onCleanup, For } from 'solid-js';
-import { store } from '../store/app-store';
+import { store, currentViewport } from '../store/app-store';
 import { setActiveDsOpsElement } from '../store/app-store';
 import {
     executeDsOperation, executeDsSortSearch, getOperationsForType,
@@ -14,6 +14,7 @@ import {
     getDsAnimationSpeed, setDsAnimationSpeed,
     type DsOperation,
 } from '../utils/ds-operations';
+import { worldToScreen } from "../utils/viewport-transforms";
 
 const DsOpsPanel: Component = () => {
     const [inputValue, setInputValue] = createSignal('');
@@ -66,9 +67,9 @@ const DsOpsPanel: Component = () => {
     const panelPosition = createMemo(() => {
         const el = element();
         if (!el) return { x: 0, y: 0 };
-        const { scale, panX, panY } = store.viewState;
-        const screenX = (el.x + el.width / 2) * scale + panX;
-        const screenY = (el.y + el.height) * scale + panY + 12;
+        const _p = worldToScreen(el.x + el.width / 2, el.y + el.height, currentViewport());
+        const screenX = _p.x;
+        const screenY = _p.y + 12;
         const panelWidth = 320;
         const clampedX = Math.max(10, Math.min(screenX - panelWidth / 2, window.innerWidth - panelWidth - 10));
         const clampedY = Math.min(screenY, window.innerHeight - 200);

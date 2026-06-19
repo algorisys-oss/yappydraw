@@ -1,5 +1,5 @@
 import {
-    store, addElement, updateElement, deleteElements, setViewState, pushToHistory, setStore, zoomToFit,
+    store, addElement, updateElement, deleteElements, setViewState, rotateView, resetRotation, pushToHistory, setStore, zoomToFit,
     undo, redo, groupSelected, ungroupSelected, duplicateElement, toggleTheme, setTheme, type Theme,
     addLayer, deleteLayer, setActiveLayer, mergeLayerDown, flattenLayers, isolateLayer, showAllLayers,
     updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion,
@@ -1231,8 +1231,18 @@ export const YappyAPI = {
         setStore("selection", []);
     },
 
-    setView(scale: number, panX: number, panY: number) {
-        setViewState({ scale, panX, panY });
+    setView(scale: number, panX: number, panY: number, rotation?: number) {
+        setViewState({ scale, panX, panY, ...(rotation !== undefined ? { rotation } : {}) });
+    },
+
+    /** Rotate the canvas view by `deltaRadians` about the viewport centre. */
+    rotateView(deltaRadians: number) {
+        rotateView(deltaRadians);
+    },
+
+    /** Snap the canvas view back to upright (rotation 0). */
+    resetRotation() {
+        resetRotation();
     },
 
     updateGridSettings(settings: any) {

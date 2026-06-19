@@ -76,6 +76,17 @@
     font-variant-numeric: tabular-nums;
 }
 
+.status-bar .status-btn.rotation-compass {
+    width: auto;
+    gap: 3px;
+    padding: 0 4px;
+}
+
+.status-bar .status-btn.rotation-compass .rotation-deg {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
 .status-doc-name {
     font-weight: 500;
     color: var(--text-primary, #111827);

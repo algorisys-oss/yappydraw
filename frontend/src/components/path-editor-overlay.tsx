@@ -8,6 +8,7 @@
 import { type Component, createMemo, Show, For } from 'solid-js';
 import { store, updateAnimation, pushToHistory, setPathEditing } from '../store/app-store';
 import { PathUtils } from '../utils/math/path-utils';
+import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
 
 const PathEditorOverlay: Component<{
     elementId: string | null;
@@ -81,8 +82,7 @@ const PathEditorOverlay: Component<{
                             worldY = cy + point.y;
                         }
 
-                        const screenX = worldX * props.scale + props.panX;
-                        const screenY = worldY * props.scale + props.panY;
+                        const _p = worldToScreen(worldX, worldY, { scale: props.scale, panX: props.panX, panY: props.panY }); const screenX = _p.x; const screenY = _p.y;
 
                         const isControlInSmooth = isSmooth() && point.type !== 'anchor';
 
@@ -210,8 +210,7 @@ const PathEditorOverlay: Component<{
                         const isRelative = (anim as any).isRelative ?? true;
 
                         // Calculate World Coordinates
-                        const clickX = (e.clientX - props.panX) / props.scale;
-                        const clickY = (e.clientY - props.panY) / props.scale;
+                        const { x: clickX, y: clickY } = screenToWorld(e.clientX, e.clientY, { scale: props.scale, panX: props.panX, panY: props.panY });
 
                         let newPointX = clickX;
                         let newPointY = clickY;

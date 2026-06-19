@@ -10,6 +10,7 @@ import { store, setSelectedTool } from "../store/app-store";
 import { resolveFontFamily } from "../utils/text-utils";
 import { spansToHtml, htmlToSpans, spansToPlainText } from "../utils/rich-text-utils";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
+import { worldToScreen } from "../utils/viewport-transforms";
 import type { RichTextSpan } from "../types";
 import "./rich-text-editing-overlay.css";
 
@@ -160,10 +161,11 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                 const elY = baseState ? baseState.y : el.y;
                 const elW = baseState ? baseState.width : el.width;
                 const elH = baseState ? baseState.height : el.height;
-                const { scale, panX, panY } = store.viewState;
+                const { scale } = store.viewState;
 
-                const centerX = (elX + elW / 2) * scale + panX;
-                const centerY = (elY + elH / 2) * scale + panY;
+                const _p = worldToScreen(elX + elW / 2, elY + elH / 2, store.viewState);
+                const centerX = _p.x;
+                const centerY = _p.y;
                 const fontSizeVal = el.fontSize || (el.type === 'text' ? 20 : 28);
                 const fontFamily = resolveFontFamily(el.fontFamily);
                 const textareaWidth = elW * scale;

@@ -781,6 +781,51 @@ export const setViewState = (updates: Partial<ViewState>) => {
     setStore("viewState", (vs) => ({ ...vs, ...updates }));
 };
 
+// ─── Canvas (view) rotation ──────────────────────────────────────────────
+// Rotation is a screen-space spin of the whole canvas about the viewport
+// centre (Procreate-style), for comfortable freehand sketching on large
+// illustrations. It is orthogonal to pan/zoom: panX/panY/scale are untouched,
+// only `rotation` changes, and the render + input chokepoints pivot about the
+// viewport centre — so the world point under the screen centre stays put.
+const TAU = Math.PI * 2;
+const ROTATION_SNAP_RAD = (2 * Math.PI) / 180; // snap to 0 within ±2°
+
+// Wrap to (-π, π] so the readout and snap behave near the 0/360 seam.
+export const normalizeRotation = (r: number): number => {
+    r = r % TAU;
+    if (r > Math.PI) r -= TAU;
+    else if (r <= -Math.PI) r += TAU;
+    return r;
+};
+
+/** Rotate the canvas view by `deltaRadians` about the viewport centre. */
+export const rotateView = (deltaRadians: number) => {
+    let next = normalizeRotation((store.viewState.rotation || 0) + deltaRadians);
+    if (Math.abs(next) < ROTATION_SNAP_RAD) next = 0; // gentle detent at upright
+    setViewState({ rotation: next });
+};
+
+/** Snap the canvas view back to upright (rotation 0). No-op if already upright. */
+export const resetRotation = () => {
+    if (!store.viewState.rotation) return;
+    setViewState({ rotation: 0 });
+};
+
+/**
+ * The full viewport transform incl. the rotation pivot, for DOM overlays that
+ * position themselves with worldToScreen(). The canvas is full-window, so the
+ * pivot is the window centre (matches canvas.tsx's canvasRef.width/2 pivot).
+ * Reads store.viewState fields so callers stay reactive.
+ */
+export const currentViewport = () => ({
+    scale: store.viewState.scale,
+    panX: store.viewState.panX,
+    panY: store.viewState.panY,
+    rotation: store.viewState.rotation,
+    centerX: window.innerWidth / 2,
+    centerY: window.innerHeight / 2,
+});
+
 let pendingCursorPos: { x: number; y: number } | null = null;
 let cursorRafId: number | null = null;
 
@@ -933,6 +978,12 @@ export const togglePenStabilization = () => {
 
 // --- Path Editor Actions ---
 export const setPathEditing = (isActive: boolean, elementId: string | null = null, animationId: string | null = null) => {
+    // The path-editor SVG overlay isn't rotation-aware yet; block entry while the
+    // canvas is rotated (Shift+0 to reset). Turning OFF is always allowed.
+    if (isActive && store.viewState.rotation) {
+        showToast('Reset canvas rotation (Shift+0) to edit paths', 'info', 1800);
+        return;
+    }
     setStore("pathEditState", {
         isActive,
         elementId,

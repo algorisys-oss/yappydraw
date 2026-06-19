@@ -1,6 +1,7 @@
 import { type Component, Show, For, createMemo, createSignal, onCleanup, createEffect } from "solid-js";
-import { store, stopVideoPlayback, updateElement, pushToHistory } from "../store/app-store";
+import { store, stopVideoPlayback, updateElement, pushToHistory, currentViewport } from "../store/app-store";
 import { X, Lock, LockOpen, GripHorizontal } from "lucide-solid";
+import { worldToScreen } from "../utils/viewport-transforms";
 import "./video-overlay.css";
 
 /** Single video player overlay — one per playing video */
@@ -19,10 +20,11 @@ const SingleVideoOverlay: Component<{ elementId: string }> = (props) => {
     const screenRect = createMemo(() => {
         const el = videoEl();
         if (!el) return null;
-        const { scale, panX, panY } = store.viewState;
+        const { scale } = store.viewState;
+        const _p = worldToScreen(el.x, el.y, currentViewport());
         return {
-            x: el.x * scale + panX,
-            y: el.y * scale + panY,
+            x: _p.x,
+            y: _p.y,
             width: el.width * scale,
             height: el.height * scale,
         };

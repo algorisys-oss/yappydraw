@@ -84,6 +84,8 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Reset Zoom (100%)', keys: 'Ctrl+0' },
             { label: 'Zoom to Fit', keys: 'Ctrl+1' },
             { label: 'Zoom to Selection', keys: 'Ctrl+2' },
+            { label: 'Rotate Canvas Left / Right (the , and . keys)', keys: 'Shift+, / Shift+.' },
+            { label: 'Reset Canvas Rotation', keys: 'Shift+0' },
             { label: 'Toggle Properties', keys: 'Alt+Enter' },
             { label: 'Toggle Layers', keys: 'Alt+L' },
             { label: 'Toggle Minimap', keys: 'Alt+M' },
@@ -116,6 +118,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
         title: 'Touch & Pen Gestures',
         shortcuts: [
             { label: 'Pan / Zoom Canvas', keys: 'Two-finger drag / pinch' },
+            { label: 'Rotate Canvas', keys: 'Two-finger twist' },
             { label: 'Undo', keys: 'Two-finger tap' },
             { label: 'Keep Undoing', keys: 'Two-finger hold' },
             { label: 'Redo', keys: 'Three-finger tap' },

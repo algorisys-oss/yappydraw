@@ -16,6 +16,7 @@ import { getElementFamily, getQuickPropertiesForType, QUICK_COLORS, type QuickPr
 import { getImageFilterPreset } from "../config/image-filter-presets";
 import { fontCapabilities } from "../config/properties";
 import { plainTextToSpans, spansToPlainText } from "../utils/rich-text-utils";
+import { worldToScreen } from "../utils/viewport-transforms";
 import "./quick-toolbar.css";
 
 // ============ Sub-Components ============
@@ -395,6 +396,11 @@ export const QuickToolbar: Component = () => {
         if (store.appMode === 'presentation') return false;
         if (store.zenMode) return false;
 
+        // Hide while the canvas is rotated: the toolbar's placement logic assumes
+        // an axis-aligned screen bbox, which doesn't hold under view rotation.
+        // Returns automatically once rotation snaps back to upright (Shift+0).
+        if (store.viewState.rotation) return false;
+
         // Respect user toggle
         if (!store.globalSettings.showQuickToolbar) return false;
 
@@ -517,7 +523,7 @@ const ToolbarContainer: Component<{
 
                     if (props.isExpanded()) {
                         const toolbarWidth = containerRef?.offsetWidth ?? 300;
-                        const base = (elX + elW / 2) * store.viewState.scale + store.viewState.panX - toolbarWidth / 2;
+                        const base = worldToScreen(elX + elW / 2, 0, store.viewState).x - toolbarWidth / 2;
 
                         // Collision avoidance with Property Panel
                         if (store.showPropertyPanel && !store.isPropertyPanelMinimized) {
@@ -531,7 +537,7 @@ const ToolbarContainer: Component<{
                     }
                     // Collapsed: position at top-right of element (avoid rotate handle at center)
                     const iconSize = 32;
-                    const base = (elX + elW) * store.viewState.scale + store.viewState.panX + 8;
+                    const base = worldToScreen(elX + elW, 0, store.viewState).x + 8;
                     return Math.min(Math.max(base, 10), window.innerWidth - iconSize - 10);
                 };
 
@@ -540,7 +546,7 @@ const ToolbarContainer: Component<{
                     const elY = baseState ? baseState.y : el().y;
                     const toolbarHeight = props.isExpanded() ? 50 : 32;
                     const margin = props.isExpanded() ? 20 : 12;
-                    const calculated = elY * store.viewState.scale + store.viewState.panY - toolbarHeight - margin;
+                    const calculated = worldToScreen(0, elY, store.viewState).y - toolbarHeight - margin;
                     return Math.max(calculated, 60);
                 };
 

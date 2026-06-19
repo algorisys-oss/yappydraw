@@ -3,9 +3,10 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
+import { screenToWorld } from "../utils/viewport-transforms";
 import { recognizeStrokeShape } from "../utils/shape-recognition";
 import type { DrawingElement } from "../types";
 import ContextMenu from "./context-menu";
@@ -156,7 +157,19 @@ const Canvas: Component = () => {
     const pState = createPointerState();
 
     // Text Editing State
-    const [editingId, setEditingId] = createSignal<string | null>(null);
+    const [editingId, setEditingIdRaw] = createSignal<string | null>(null);
+    // Text-editing DOM overlays (rich-text, UML section bounds, table-cell grids)
+    // assume an axis-aligned layout and aren't rotation-correct yet, so block
+    // *entering* edit while the canvas is rotated — clears (null) always pass.
+    // One Shift+0 returns to upright. This is the deliberate scoped-mode boundary
+    // (see docs/canvas-rotation-research.md).
+    const setEditingId = (v: string | null) => {
+        if (v && store.viewState.rotation) {
+            showToast('Reset canvas rotation (Shift+0) to edit text', 'info', 1800);
+            return;
+        }
+        setEditingIdRaw(v);
+    };
     const [editingProperty, setEditingProperty] = createSignal<import("../utils/tool-handlers/text-editing-handler").EditingPropertyType>('containerText');
     const [editText, setEditText] = createSignal("");
     const [tableEditingCell, setTableEditingCell] = createSignal<import("../utils/tool-handlers/text-editing-handler").TableEditingCell | null>(null);
@@ -290,6 +303,19 @@ const Canvas: Component = () => {
 
         // 4. Enter world-space for elements
         ctx.save();
+        // Canvas (view) rotation: spin everything in world-space about the
+        // viewport centre. Applied OUTERMOST (before pan/scale) so the CTM is
+        // Rot(θ,C)·translate(pan)·scale — matching the Rot(θ,C)·(world·scale+pan)
+        // model that utils/viewport-transforms.ts inverts for hit-testing. Pivot
+        // must stay in sync with viewportTransform()'s centreX/centreY.
+        const viewRotation = store.viewState.rotation || 0;
+        if (viewRotation) {
+            const cx = canvasRef.width / 2;
+            const cy = canvasRef.height / 2;
+            ctx.translate(cx, cy);
+            ctx.rotate(viewRotation);
+            ctx.translate(-cx, -cy);
+        }
         ctx.translate(panX, panY);
         ctx.scale(scale, scale);
 
@@ -399,6 +425,7 @@ const Canvas: Component = () => {
         store.viewState.scale;
         store.viewState.panX;
         store.viewState.panY;
+        store.viewState.rotation;
         store.selection.length;
         selectionBox();
         lassoPoints();
@@ -441,14 +468,23 @@ const Canvas: Component = () => {
         });
     });
 
+    // The viewport transform for screen↔world conversions, including the
+    // rotation pivot (viewport centre, in canvas-local px). Rotation is read
+    // from store.viewState; when 0/undefined the helpers reduce to plain
+    // pan/zoom math. Keep the pivot in sync with the render block below.
+    const viewportTransform = () => ({
+        scale: store.viewState.scale,
+        panX: store.viewState.panX,
+        panY: store.viewState.panY,
+        rotation: store.viewState.rotation,
+        centerX: canvasRef ? canvasRef.width / 2 : 0,
+        centerY: canvasRef ? canvasRef.height / 2 : 0,
+    });
+
     const getWorldCoordinates = (clientX: number, clientY: number) => {
         if (!canvasRef) return { x: 0, y: 0 };
-        const { scale, panX, panY } = store.viewState;
         const rect = canvasRef.getBoundingClientRect();
-        return {
-            x: (clientX - rect.left - panX) / scale,
-            y: (clientY - rect.top - panY) / scale
-        };
+        return screenToWorld(clientX - rect.left, clientY - rect.top, viewportTransform());
     };
 
     // Lazily-initialized wheel context for UML section scroll
@@ -855,6 +891,9 @@ const Canvas: Component = () => {
     let gestureLastDist = 0;
     let gestureLastCx = 0;
     let gestureLastCy = 0;
+    let gestureLastAngle = 0;       // finger-vector angle (rad) at the last frame
+    let gRotActive = false;         // canvas rotation broke past the deadzone
+    let gRotAccum = 0;              // cumulative raw finger rotation (for deadzone)
     // After a gesture ends with fingers still down, block any
     // single-finger interaction (pen stroke, pointer drag) until ALL
     // fingers lift. Otherwise the leftover finger immediately starts a
@@ -876,6 +915,8 @@ const Canvas: Component = () => {
     const SWIPE_DOWN_DIST = 60;     // px downward for a 3-finger swipe
     const QUICK_PINCH_MS = 320;     // a pinch-in faster than this …
     const QUICK_PINCH_SCALE = 0.6;  // … and below this cumulative scale = fit
+    const ROT_DEADZONE_RAD = (5 * Math.PI) / 180; // twist past 5° to start rotating
+    const ROT_END_SNAP_RAD = (3 * Math.PI) / 180; // settle to upright within ±3°
     const UNDO_REPEAT_DELAY_MS = 600;
     const UNDO_REPEAT_MS = 150;
 
@@ -947,7 +988,7 @@ const Canvas: Component = () => {
         const cy = (t0.clientY + t1.clientY) / 2;
         const dx = t0.clientX - t1.clientX;
         const dy = t0.clientY - t1.clientY;
-        return { cx, cy, dist: Math.hypot(dx, dy) };
+        return { cx, cy, dist: Math.hypot(dx, dy), angle: Math.atan2(dy, dx) };
     };
 
     // Hard-cancel any in-flight pointer/touch interaction so it doesn't
@@ -990,6 +1031,9 @@ const Canvas: Component = () => {
         gestureLastDist = m.dist;
         gestureLastCx = m.cx;
         gestureLastCy = m.cy;
+        gestureLastAngle = m.angle;
+        gRotActive = false;
+        gRotAccum = 0;
         gestureActive = true;
         // Reset multi-finger recognition state for this gesture.
         const fingers = allFingerTouches(e);
@@ -1010,31 +1054,50 @@ const Canvas: Component = () => {
         const m = twoFingerMetrics(e);
         if (!m) return;
         const rect = canvasRef.getBoundingClientRect();
-        const { scale, panX, panY } = store.viewState;
+        const vp = viewportTransform();
+        const cx = vp.centerX;
+        const cy = vp.centerY;
 
-        // Pinch: scale ratio per-frame, anchored on the previous centroid
-        // (so the world point that was under the centroid stays under it
-        // through the zoom step). Guard against zero/near-zero start dist.
+        // Pinch: scale ratio per-frame. Guard against zero/near-zero start dist.
         const ratio = gestureLastDist > 1 ? m.dist / gestureLastDist : 1;
         gCumScale *= ratio;
-        const newScale = Math.min(Math.max(scale * ratio, 0.1), 10);
+        const newScale = Math.min(Math.max(vp.scale * ratio, 0.1), 10);
 
-        const screenLastCx = gestureLastCx - rect.left;
-        const screenLastCy = gestureLastCy - rect.top;
-        const worldX = (screenLastCx - panX) / scale;
-        const worldY = (screenLastCy - panY) / scale;
-        let newPanX = screenLastCx - worldX * newScale;
-        let newPanY = screenLastCy - worldY * newScale;
+        // Twist → canvas rotation. Accumulate the raw finger-vector rotation and
+        // only engage past a deadzone, so a pure pinch/pan doesn't drift. Once
+        // engaged, apply 1:1 from the break point (no sudden jump).
+        gRotAccum += normalizeRotation(m.angle - gestureLastAngle);
+        let newRot = vp.rotation || 0;
+        if (!gRotActive && Math.abs(gRotAccum) > ROT_DEADZONE_RAD) {
+            gRotActive = true;
+            newRot += gRotAccum - Math.sign(gRotAccum) * ROT_DEADZONE_RAD;
+        } else if (gRotActive) {
+            newRot += normalizeRotation(m.angle - gestureLastAngle);
+        }
+        newRot = normalizeRotation(newRot);
 
-        // Pan: centroid screen-space delta this frame.
-        newPanX += (m.cx - gestureLastCx);
-        newPanY += (m.cy - gestureLastCy);
+        // Keep the world point under the previous centroid pinned under the
+        // current centroid, across the new scale AND rotation. Solve pan from
+        // the inverse render transform: screen = Rot(θ,C)·(world·scale + pan),
+        // so pan = Rot(θ,C)⁻¹(centroidNow) − world·scale.
+        const prevX = gestureLastCx - rect.left;
+        const prevY = gestureLastCy - rect.top;
+        const { x: worldX, y: worldY } = screenToWorld(prevX, prevY, vp);
+        const curX = (m.cx - rect.left) - cx;
+        const curY = (m.cy - rect.top) - cy;
+        const cos = Math.cos(-newRot);
+        const sin = Math.sin(-newRot);
+        const unrotX = cx + (curX * cos - curY * sin);
+        const unrotY = cy + (curX * sin + curY * cos);
+        const newPanX = unrotX - worldX * newScale;
+        const newPanY = unrotY - worldY * newScale;
 
-        setViewState({ scale: newScale, panX: newPanX, panY: newPanY });
+        setViewState({ scale: newScale, panX: newPanX, panY: newPanY, rotation: newRot });
 
         gestureLastDist = m.dist;
         gestureLastCx = m.cx;
         gestureLastCy = m.cy;
+        gestureLastAngle = m.angle;
     };
 
     const endGesture = () => {
@@ -1114,7 +1177,7 @@ const Canvas: Component = () => {
         // jump by the centroid shift that happened while a 3rd finger was down.
         if (gFingerCount !== 2) {
             const m = twoFingerMetrics(e);
-            if (m) { gestureLastDist = m.dist; gestureLastCx = m.cx; gestureLastCy = m.cy; }
+            if (m) { gestureLastDist = m.dist; gestureLastCx = m.cx; gestureLastCy = m.cy; gestureLastAngle = m.angle; }
             gFingerCount = 2;
             return;
         }
@@ -1125,7 +1188,7 @@ const Canvas: Component = () => {
             // Commit to navigation; re-baseline to avoid a jump on first frame.
             gCommitted = true;
             const m = twoFingerMetrics(e);
-            if (m) { gestureLastDist = m.dist; gestureLastCx = m.cx; gestureLastCy = m.cy; }
+            if (m) { gestureLastDist = m.dist; gestureLastCx = m.cx; gestureLastCy = m.cy; gestureLastAngle = m.angle; }
             return;
         }
         updateGesture(e);
@@ -1154,6 +1217,11 @@ const Canvas: Component = () => {
             } else if (gCommitted && dur < QUICK_PINCH_MS && gCumScale < QUICK_PINCH_SCALE) {
                 fitView();
                 showToast('Fit to screen', 'info', 900);
+            }
+            // Settle a barely-twisted canvas back to upright so a near-zero
+            // rotation doesn't linger after the fingers lift.
+            if (gRotActive && Math.abs(store.viewState.rotation || 0) < ROT_END_SNAP_RAD) {
+                resetRotation();
             }
             endGesture();
             gestureCooldown = false;

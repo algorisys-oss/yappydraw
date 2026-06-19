@@ -8,7 +8,7 @@ import {
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
-  setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization
+  setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation
 } from './store/app-store';
 import { showToast } from './components/toast';
 import { ColorDropHud } from './components/color-drop-hud';
@@ -22,6 +22,7 @@ import {
 } from './utils/object-context-actions';
 import { parseClipboardTableData, defaultColWidths, defaultRowHeights, getNextCell, normalizeCellSelection } from './utils/table-utils';
 import { generateId } from './utils/id-generator';
+import { screenToWorld } from './utils/viewport-transforms';
 import { updateElement } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
@@ -170,6 +171,26 @@ const App: Component = () => {
       if (isInputFocused) {
         // Let the browser handle standard text editing shortcuts (Ctrl+A, C, V, Z, etc.)
         return;
+      }
+
+      // 2a. CANVAS (VIEW) ROTATION — Shift+, / Shift+. spin the canvas about its
+      // centre in 15° steps; Shift+0 snaps back to upright. For comfortable
+      // freehand sketching on large illustrations (mirrors the two-finger twist).
+      if (e.shiftKey && !isCtrlOrMeta && !e.altKey) {
+        const ROTATE_STEP = Math.PI / 12; // 15°
+        if (key === '<' || code === 'Comma') {
+          e.preventDefault();
+          rotateView(-ROTATE_STEP);
+          return;
+        } else if (key === '>' || code === 'Period') {
+          e.preventDefault();
+          rotateView(ROTATE_STEP);
+          return;
+        } else if (code === 'Digit0') {
+          e.preventDefault();
+          resetRotation();
+          return;
+        }
       }
 
       // 2b. TABLE CELL NAVIGATION — when table is selected with cell highlight, not editing
@@ -734,9 +755,7 @@ const App: Component = () => {
         const files = input.files;
         if (!files || files.length === 0) { cleanup(); return; }
         if (!store.welcomeDismissed) setStore('welcomeDismissed', true);
-        const { scale, panX, panY } = store.viewState;
-        const worldX = (clientX - panX) / scale;
-        const worldY = (clientY - panY) / scale;
+        const { x: worldX, y: worldY } = screenToWorld(clientX, clientY, store.viewState);
         const STAGGER = 30;
         const ids: string[] = [];
         for (let i = 0; i < files.length; i++) {
@@ -911,9 +930,7 @@ const App: Component = () => {
         setStore('welcomeDismissed', true);
       }
 
-      const { scale, panX, panY } = store.viewState;
-      const worldX = (data.clientX - panX) / scale;
-      const worldY = (data.clientY - panY) / scale;
+      const { x: worldX, y: worldY } = screenToWorld(data.clientX, data.clientY, store.viewState);
 
       const STAGGER = 30;
       const ids: string[] = [];

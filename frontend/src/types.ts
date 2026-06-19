@@ -525,4 +525,11 @@ export interface ViewState {
     scale: number;
     panX: number;
     panY: number;
+    /**
+     * Canvas (view) rotation in radians, about the viewport center. Default 0.
+     * Rotates the whole canvas Procreate-style for comfortable freehand sketching
+     * on large illustrations — orthogonal to pan/zoom. Optional so existing
+     * persisted/serialized view states (which omit it) load as un-rotated.
+     */
+    rotation?: number;
 }

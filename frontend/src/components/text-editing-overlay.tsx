@@ -13,6 +13,7 @@ import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
 import { normalizePoints } from "../utils/render-element";
 import { getUIShapeDef } from "../config/ui-shape-defs";
+import { worldToScreen } from "../utils/viewport-transforms";
 import type { TableEditingCell } from "../utils/tool-handlers/text-editing-handler";
 
 interface TextEditingOverlayProps {
@@ -121,11 +122,12 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 const elY = baseState ? baseState.y : el.y;
                 const elW = baseState ? baseState.width : el.width;
                 const elH = baseState ? baseState.height : el.height;
-                const { scale, panX, panY } = store.viewState;
+                const { scale } = store.viewState;
 
                 // Calculate Center based on Editing Property
-                let centerX = (elX + elW / 2) * scale + panX;
-                let centerY = (elY + elH / 2) * scale + panY;
+                const _center = worldToScreen(elX + elW / 2, elY + elH / 2, store.viewState);
+                let centerX = _center.x;
+                let centerY = _center.y;
                 let textAlign = el.textAlign || 'center';
                 let fontSizeVal = el.fontSize || (el.type === 'text' ? 20 : 28);
                 let textareaWidth = elW * scale;
@@ -141,8 +143,9 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                     const cell = props.tableEditingCell();
                     if (cell) {
                         isTableCell = true;
-                        centerX = cell.cellX * scale + panX;
-                        centerY = cell.cellY * scale + panY;
+                        const _p = worldToScreen(cell.cellX, cell.cellY, store.viewState);
+                        centerX = _p.x;
+                        centerY = _p.y;
                         textareaWidth = cell.cellW * scale;
                         cellHeight = cell.cellH * scale;
                         fontSizeVal = el.fontSize ?? 14;
@@ -160,8 +163,9 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         const t = 0.5, k = 0.5;
                         const midX = k*k*k*start.x + 3*k*k*t*cp1.x + 3*k*t*t*cp2.x + t*t*t*end.x;
                         const midY = k*k*k*start.y + 3*k*k*t*cp1.y + 3*k*t*t*cp2.y + t*t*t*end.y;
-                        centerX = midX * scale + panX;
-                        centerY = (midY - 15) * scale + panY; // offset up like renderer's textOffset
+                        const _p = worldToScreen(midX, midY - 15, store.viewState); // -15 offset up like renderer's textOffset
+                        centerX = _p.x;
+                        centerY = _p.y;
                         textareaWidth = Math.max(200, Math.abs(elW) * scale);
                     }
                     textAlign = 'center'; // connector renderer always uses center
@@ -176,16 +180,18 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         // Quadratic bezier midpoint
                         const midX = 0.25 * startPt.x + 0.5 * cp.x + 0.25 * endPt.x;
                         const midY = 0.25 * startPt.y + 0.5 * cp.y + 0.25 * endPt.y;
-                        centerX = midX * scale + panX;
-                        centerY = midY * scale + panY;
+                        const _p = worldToScreen(midX, midY, store.viewState);
+                        centerX = _p.x;
+                        centerY = _p.y;
                     } else {
                         // Cubic bezier midpoint (2 CPs)
                         const cp2 = el.controlPoints[1];
                         const t = 0.5, k = 0.5;
                         const midX = k*k*k*startPt.x + 3*k*k*t*cp.x + 3*k*t*t*cp2.x + t*t*t*endPt.x;
                         const midY = k*k*k*startPt.y + 3*k*k*t*cp.y + 3*k*t*t*cp2.y + t*t*t*endPt.y;
-                        centerX = midX * scale + panX;
-                        centerY = midY * scale + panY;
+                        const _p = worldToScreen(midX, midY, store.viewState);
+                        centerX = _p.x;
+                        centerY = _p.y;
                     }
                     textareaWidth = Math.max(200, Math.abs(elW) * scale);
                     textAlign = 'center'; // connector renderer always uses center
@@ -208,8 +214,9 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
 
                     if (prop === 'containerText') {
                         // Header section — anchor to top of element, height = headerHeight
-                        centerX = elX * scale + panX;
-                        centerY = elY * scale + panY;
+                        const _p = worldToScreen(elX, elY, store.viewState);
+                        centerX = _p.x;
+                        centerY = _p.y;
                         umlSectionHeight = headerHeight * scale;
                         isUmlSection = true;
                     } else if (prop === 'attributesText' || prop === 'methodsText') {
@@ -223,13 +230,15 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         }
 
                         if (prop === 'attributesText') {
-                            centerX = elX * scale + panX;
-                            centerY = (elY + headerHeight) * scale + panY;
+                            const _p = worldToScreen(elX, elY + headerHeight, store.viewState);
+                            centerX = _p.x;
+                            centerY = _p.y;
                             umlSectionHeight = attrHeight * scale;
                         } else if (prop === 'methodsText') {
                             const methodOffsetY = headerHeight + attrHeight;
-                            centerX = elX * scale + panX;
-                            centerY = (elY + methodOffsetY) * scale + panY;
+                            const _p = worldToScreen(elX, elY + methodOffsetY, store.viewState);
+                            centerX = _p.x;
+                            centerY = _p.y;
                             umlSectionHeight = (elH - methodOffsetY) * scale;
                         }
                         isUmlSection = true;
@@ -246,16 +255,18 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
 
                     if (prop === 'containerText') {
                         // Header section — anchor to top of element, height = headerHeight
-                        centerX = elX * scale + panX;
-                        centerY = elY * scale + panY;
+                        const _p = worldToScreen(elX, elY, store.viewState);
+                        centerX = _p.x;
+                        centerY = _p.y;
                         umlSectionHeight = headerHeight * scale;
                         isUmlSection = true;
                     } else if ((prop === 'methodsText' && el.type === 'umlInterface') ||
                                (prop === 'attributesText' && (el.type === 'umlEnum' || el.type === 'umlState'))) {
                         textAlign = 'left';
                         fontSizeVal = fontSizeVal * 0.9;
-                        centerX = elX * scale + panX;
-                        centerY = (elY + headerHeight) * scale + panY;
+                        const _p = worldToScreen(elX, elY + headerHeight, store.viewState);
+                        centerX = _p.x;
+                        centerY = _p.y;
                         umlSectionHeight = (elH - headerHeight) * scale;
                         isUmlSection = true;
                     }
@@ -338,10 +349,10 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 // translate(-50%,-50%) depending on rendered content size
                 // UML sections override posTop/posLeft with centerY/centerX (section-specific position)
                 const posTop = isUmlSection ? centerY
-                    : useTopLeftAnchor ? elY * scale + panY
+                    : useTopLeftAnchor ? worldToScreen(elX, elY, store.viewState).y
                     : isTableCell ? centerY : centerY;
                 const posLeft = isUmlSection ? centerX
-                    : useTopLeftAnchor ? elX * scale + panX
+                    : useTopLeftAnchor ? worldToScreen(elX, elY, store.viewState).x
                     : isTableCell ? centerX : centerX;
                 const posTransform = useTopLeftAnchor
                     ? 'none'

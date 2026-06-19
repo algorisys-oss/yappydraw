@@ -1,7 +1,8 @@
 import { type Component, Show, For } from "solid-js";
-import { store, setViewState, undo, redo, togglePresentationMode } from "../store/app-store";
+import { store, setViewState, undo, redo, togglePresentationMode, resetRotation } from "../store/app-store";
 import { drawingId } from "./menu";
 import { Plus, Minus, Undo2, Redo2, Play } from "lucide-solid";
+import { screenToWorld } from "../utils/viewport-transforms";
 import pkg from '../../../package.json';
 import "./status-bar.css";
 
@@ -116,11 +117,9 @@ const StatusBar: Component = () => {
     };
 
     const zoomToCenter = (newScale: number) => {
-        const { scale, panX, panY } = store.viewState;
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
-        const worldX = (centerX - panX) / scale;
-        const worldY = (centerY - panY) / scale;
+        const { x: worldX, y: worldY } = screenToWorld(centerX, centerY, store.viewState);
         const newPanX = centerX - worldX * newScale;
         const newPanY = centerY - worldY * newScale;
         setViewState({ scale: newScale, panX: newPanX, panY: newPanY });
@@ -129,6 +128,9 @@ const StatusBar: Component = () => {
     const resetZoom = () => {
         setViewState({ scale: 1 });
     };
+
+    // Canvas rotation, in whole degrees, for the compass dial/readout.
+    const rotationDeg = () => Math.round((store.viewState.rotation || 0) * 180 / Math.PI);
 
     const toolLabel = () => TOOL_LABELS[store.selectedTool] || store.selectedTool;
 
@@ -213,6 +215,29 @@ const StatusBar: Component = () => {
                     <Plus size={14} />
                 </button>
             </div>
+
+            {/* Canvas rotation compass — needle tilts with the view; click resets
+                to upright. Only shown once the canvas is actually rotated. */}
+            <Show when={Math.abs(store.viewState.rotation || 0) > 1e-4}>
+                <div class="status-section" style={{ gap: '2px' }}>
+                    <button
+                        class="status-btn rotation-compass"
+                        onClick={resetRotation}
+                        title={`Canvas rotated ${rotationDeg()}° — click to reset (Shift+0)`}
+                        aria-label={`Reset canvas rotation (currently ${rotationDeg()} degrees)`}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                            <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5" />
+                            <g transform={`rotate(${rotationDeg()} 8 8)`}>
+                                {/* North needle (filled) + south tail */}
+                                <path d="M8 2.5 L6 8 L10 8 Z" fill="currentColor" />
+                                <path d="M8 13.5 L6 8 L10 8 Z" fill="currentColor" opacity="0.35" />
+                            </g>
+                        </svg>
+                        <span class="rotation-deg">{rotationDeg()}°</span>
+                    </button>
+                </div>
+            </Show>
 
             {/* Undo / Redo */}
             <div class="status-section" style={{ gap: '2px' }}>
