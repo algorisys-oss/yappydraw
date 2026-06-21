@@ -1,4 +1,4 @@
-import { type Component, onMount, onCleanup, Show, lazy, Suspense } from 'solid-js';
+import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal } from 'solid-js';
 import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel,
   toggleMinimap, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
@@ -53,6 +53,36 @@ import { initCloudStorage } from './storage/cloud';
 
 const App: Component = () => {
   // Removed showHelp state as it is now in Menu.tsx
+
+  // ── App-drawn pen cursor ──
+  // On Linux, Chromium often stops painting the system cursor for a tablet pen
+  // (e.g. Huion) while it hovers our own surfaces — the page is treated as a
+  // drawing target — so the pointer "disappears" over the canvas and panels even
+  // though hover still works. We draw our own dot that follows the pen across the
+  // whole editor. Mouse/touch keep the normal system cursor (dot hidden).
+  const [penPos, setPenPos] = createSignal<{ x: number; y: number } | null>(null);
+  onMount(() => {
+    // Show the dot for the pen; null it for mouse/touch (they keep the system
+    // cursor). We DON'T hide on `pointerout` — its `relatedTarget` goes null when
+    // the canvas grabs pointer capture on contact, which would blink the dot off
+    // the instant you start drawing. The dot simply tracks the last pen position;
+    // it's hidden only when the window loses focus or another pointer type moves.
+    const onPenMove = (e: PointerEvent) => {
+      if (e.pointerType !== 'pen') { setPenPos(null); return; }
+      setPenPos({ x: e.clientX, y: e.clientY });
+    };
+    const hidePen = () => setPenPos(null);
+    window.addEventListener('pointermove', onPenMove, { passive: true, capture: true });
+    window.addEventListener('pointerdown', onPenMove, { passive: true, capture: true });
+    window.addEventListener('pointerup', onPenMove, { passive: true, capture: true });
+    window.addEventListener('blur', hidePen);
+    onCleanup(() => {
+      window.removeEventListener('pointermove', onPenMove, { capture: true });
+      window.removeEventListener('pointerdown', onPenMove, { capture: true });
+      window.removeEventListener('pointerup', onPenMove, { capture: true });
+      window.removeEventListener('blur', hidePen);
+    });
+  });
 
   onMount(() => {
     console.log('App: Registering shapes...');
@@ -1170,6 +1200,11 @@ const App: Component = () => {
         </Show>
         <Toast />
         <ColorDropHud />
+        <Show when={penPos()}>
+          {(p) => (
+            <div class="pen-cursor" style={{ left: `${p().x}px`, top: `${p().y}px` }} aria-hidden="true" />
+          )}
+        </Show>
       </Suspense>
     </div >
   );

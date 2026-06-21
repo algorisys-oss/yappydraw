@@ -315,24 +315,31 @@ interface HistorySnapshot {
 const undoStack: HistorySnapshot[] = [];
 const redoStack: HistorySnapshot[] = [];
 
-// Structural-share snapshot. All mutations in this app go through Solid's
-// `setStore`, which replaces references on the modified path (the array, the
-// element object, and any nested object/array that changed). Unmodified
-// elements keep the same reference. So a shallow array copy at snapshot time
-// gives us an immutable view: when the user later mutates the store, only the
-// changed paths get new refs; the snapshot's old refs are untouched.
+// One-level-deep snapshot: copy the container arrays AND shallow-clone every
+// item inside them.
 //
-// Previously this used `JSON.parse(JSON.stringify(...))` which deep-cloned the
-// entire document on every history push. On iPad with many strokes, that was
-// 50-100ms per call — long enough to block the main thread and cause Safari
-// to drop the next stroke's `pointerdown` during fast writing (the
-// "alternate empty characters" bug). Shallow copies are O(n) instead of
-// O(n × depth) and run in well under a millisecond.
+// Why the per-item clone is mandatory: Solid's `setStore("elements", pred,
+// updates)` (used by updateElement, updateLayer, etc.) MERGES `updates` into the
+// existing object IN PLACE — the object keeps its identity, only the changed
+// keys get new values. A bare `store.elements.slice()` would therefore capture
+// references to the very objects a later edit mutates, so undo would restore the
+// already-mutated values (i.e. text/move/resize/recolor edits silently failed to
+// undo). Add/delete/reorder happened to work only because they replace the whole
+// array. Cloning each item decouples the snapshot from in-place merges.
+//
+// This is NOT a full deep clone: the spread copies top-level props only, so
+// nested arrays (e.g. a stroke's `points`) are shared by reference. That's safe
+// because every code path that changes a nested array does so by assigning a
+// brand-new array (function updaters returning `[...]`), never by mutating the
+// existing one in place. It keeps the cost O(elements × props) instead of
+// O(total points) — the old `JSON.parse(JSON.stringify(...))` deep clone was
+// 50-100ms per push on iPad with many strokes, long enough to block the main
+// thread and drop the next stroke's `pointerdown` during fast writing.
 const captureSnapshot = (): HistorySnapshot => ({
-    elements: store.elements.slice(),
-    layers: store.layers.slice(),
-    slides: store.slides.slice(),
-    states: store.states.slice(),
+    elements: store.elements.map(e => ({ ...e })),
+    layers: store.layers.map(l => ({ ...l })),
+    slides: store.slides.map(s => ({ ...s })),
+    states: store.states.map(s => ({ ...s })),
     gridSettings: { ...store.gridSettings },
     canvasBackgroundColor: store.canvasBackgroundColor,
     docType: store.docType,

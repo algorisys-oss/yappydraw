@@ -76,7 +76,7 @@ frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/api.ts | typescript | 2094 | Theme:3 ElementOptions:70 ElementType:450 as:450 Window:2086
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1178 | Component:1 App:54 handleKeyDown:69 handleFullscreenChange:595 handleBeforeUnload:601 handlePaste:605 handleGlobalDragEnter:685 handleGlobalDragOver:700 showDropFallbackPrompt:719 cleanup:749 outsideClick:777 isImageFile:789 first:790 must:803 extractDropData:805 processExtractedDrop:860 handleGlobalDrop:956 handleDocumentDrop:1002
+frontend/src/app.tsx | typescript | 1213 | Component:1 App:54 moves:69 onPenMove:70 hidePen:74 handleKeyDown:99 handleFullscreenChange:625 handleBeforeUnload:631 handlePaste:635 handleGlobalDragEnter:715 handleGlobalDragOver:730 showDropFallbackPrompt:749 cleanup:779 outsideClick:807 isImageFile:819 first:820 must:833 extractDropData:835 processExtractedDrop:890 handleGlobalDrop:986 handleDocumentDrop:1032
 frontend/src/assets/player-assets.ts | typescript | 3 | hh:2
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/components/advanced-p3-picker.tsx | typescript | 188 | Component:1 OKLCH:2 Props:4 AdvancedP3Picker:9 handleCanvasMouseDown:75 update:77 onMouseMove:90 onMouseUp:91 handleHueMouseDown:99 update:101 onMouseMove:111 onMouseUp:112
@@ -252,7 +252,7 @@ frontend/src/help-docs/shapes/sketchnote-doc.tsx | typescript | 370 | Sketchnote
 frontend/src/help-docs/shapes/table-doc.tsx | typescript | 740 | TableDoc:7 with:427 with:436
 frontend/src/help-docs/shapes/uml-doc.tsx | typescript | 301 | UmlDoc:8 diagrams:14 with:34 or:49
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 236 | WireframingDoc:8
-frontend/src/index.css | - | 405 |
+frontend/src/index.css | - | 426 |
 frontend/src/index.tsx | typescript | 109 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84
 frontend/src/player.tsx | typescript | 14 |
 frontend/src/rendering/CanvasRenderer.ts | typescript | 164 | CanvasRenderer:11{constructor:13 save:18 restore:19 translate:22 rotate:23 scale:24 beginPath:27 closePath:28 moveTo:29 lineTo:30 arc:31 ellipse:34 rect:37 roundRect:38 quadraticCurveTo:41 bezierCurveTo:44 arcTo:47 fill:52 stroke:56 fillRect:57 strokeRect:58 clip:59 fillPath:64 strokePath:67 clipPath:70 fillStyle:75 strokeStyle:78 lineWidth:81 lineCap:84 lineJoin:87 setLineDash:90 lineDashOffset:92 globalAlpha:96 globalCompositeOperation:99 shadowColor:103 shadowBlur:106 shadowOffsetX:109 shadowOffsetY:112 filter:116 font:120 textAlign:123 textBaseline:126 fillText:129 measureText:134 createLinearGradient:139 createRadialGradient:142 createConicGradient:145 createPattern:148 drawImage:153 drawImageCropped:161}
@@ -308,7 +308,7 @@ frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 Folder
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 2968 | LayoutDirection:8 Theme:17 ResolvedTheme:18 AppState:45 HistorySnapshot:306 AlignmentType:2661 DistributionType:2661 startInkCleanupIfNeeded:2907
+frontend/src/store/app-store.ts | typescript | 2975 | LayoutDirection:8 Theme:17 ResolvedTheme:18 AppState:45 HistorySnapshot:306 AlignmentType:2668 DistributionType:2668 startInkCleanupIfNeeded:2914
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |

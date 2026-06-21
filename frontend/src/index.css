@@ -403,3 +403,24 @@ button:focus-visible {
   background: var(--primary-color, #3b82f6);
   color: white;
 }
+
+/* App-drawn pen cursor — a small dot that tracks the stylus across the whole
+   editor (UI + canvas). On Linux, Chromium often stops painting the system
+   cursor for a tablet pen while it hovers our drawing surfaces, so the pointer
+   "disappears"; this dot restores a visible position indicator. White fill +
+   dark ring so it reads on any background; never eats input. */
+.pen-cursor {
+  position: fixed;
+  z-index: 2147483647;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  /* Center dot (radial fill) + white ring + dark outline so it reads on any
+     background. */
+  background:
+    radial-gradient(circle at center, #fff 0 2px, transparent 3px),
+    radial-gradient(circle at center, rgba(0, 0, 0, 0.9) 0 3.5px, transparent 4px);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9), 0 0 0 2px rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+}
