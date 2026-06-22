@@ -323,6 +323,11 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                 color: el.textColor || el.strokeColor,
                                 'text-align': textAlign,
                                 'line-height': `${fontSizeVal * scale * 1.2}px`,
+                                // Mirror the dark/focus canvas invert filter (canvas.tsx) so the
+                                // text being edited shows the same color as the committed result.
+                                filter: (store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus')
+                                    ? 'invert(93%) hue-rotate(180deg)'
+                                    : 'none',
                             }}
                             onBlur={handleBlur}
                             onInput={() => { updateActiveFormats(); syncSpans(); }}

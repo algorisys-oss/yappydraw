@@ -138,7 +138,7 @@ frontend/src/components/quick-toolbar.tsx | typescript | 744 | Component:7 Quick
 frontend/src/components/recording-overlay.css | - | 100 |
 frontend/src/components/recording-overlay.tsx | typescript | 42 | Component:1 Props:5 RecordingOverlay:9 formatTime:19
 frontend/src/components/rich-text-editing-overlay.css | - | 182 |
-frontend/src/components/rich-text-editing-overlay.tsx | typescript | 338 | Component:7 RichTextEditingOverlayProps:17 RichTextEditingOverlay:44 activeTextElement:53 updateActiveFormats:59 syncSpans:71 execFormat:78 handleCommit:85 handleBlur:93 handleDocClick:106
+frontend/src/components/rich-text-editing-overlay.tsx | typescript | 343 | Component:7 RichTextEditingOverlayProps:17 RichTextEditingOverlay:44 activeTextElement:53 updateActiveFormats:59 syncSpans:71 execFormat:78 handleCommit:85 handleBlur:93 handleDocClick:106
 frontend/src/components/rocket-settings-dialog.css | - | 183 |
 frontend/src/components/rocket-settings-dialog.tsx | typescript | 182 | Component:5 RocketConfig:7 RocketSettingsDialogProps:13 RocketSettingsDialog:18 handleKeyDown:38 handleDone:49 handleTest:59
 frontend/src/components/save-dialog.css | - | 120 |
@@ -162,7 +162,7 @@ frontend/src/components/status-tool-group.tsx | typescript | 162 | Component:1 S
 frontend/src/components/technical-tool-group.tsx | typescript | 141 | Component:1 TechnicalToolGroup:26 handler:33 getActiveTool:43 handleToolClick:52 as:60 as:66 handleRightClick:74 toggleMenu:80 activeTool:87 isActive:88 getDropdownPosition:90
 frontend/src/components/template-browser.css | - | 364 |
 frontend/src/components/template-browser.tsx | typescript | 147 | Component:1 isPresentationTemplate:7 TemplateBrowserProps:11 TemplateBrowser:17 templates:23 handleSelect:25
-frontend/src/components/text-editing-overlay.tsx | typescript | 489 | section:4 Component:8 TextEditingOverlayProps:19 TextEditingOverlay:33 activeTextElement:36 handleTextBlur:42 section:135 sections:298
+frontend/src/components/text-editing-overlay.tsx | typescript | 494 | section:4 Component:8 TextEditingOverlayProps:19 TextEditingOverlay:33 activeTextElement:36 handleTextBlur:42 section:135 sections:298
 frontend/src/components/text-editor-modal.css | - | 138 |
 frontend/src/components/text-editor-modal.tsx | typescript | 247 | Component:7 TextEditorModalProps:15 TextEditorModal:32 updateActiveFormats:41 syncSpans:52 execFormat:59 handleDone:66 handleKeyDown:79 handleDocClick:91 getFontStyle:126
 frontend/src/components/text-tool-group.tsx | typescript | 133 | Component:1 TextType:8 TextToolGroup:15 handler:22 getCurrentTextTool:32 isTextToolActive:36 handleSelectText:44 handleRightClick:66 toggleMenu:72 getDropdownPosition:79

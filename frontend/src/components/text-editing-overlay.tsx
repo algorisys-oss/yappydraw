@@ -476,7 +476,12 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                 resize: 'none',
                                 overflow: 'hidden',
                                 'text-align': textAlign as any,
-                                'line-height': `${lineHeightPx}px`
+                                'line-height': `${lineHeightPx}px`,
+                                // Mirror the dark/focus canvas invert filter (canvas.tsx) so the
+                                // text being edited shows the same color as the committed result.
+                                filter: (store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus')
+                                    ? 'invert(93%) hue-rotate(180deg)'
+                                    : 'none',
                             }}
                         />
                     </div>
