@@ -1419,8 +1419,8 @@ export const YappyAPI = {
     applyPreviousState() { applyPreviousState(); },
 
     // Hierarchy / Mindmap actions
-    addChildNode(parentId: string) { addChildNode(parentId); },
-    addSiblingNode(siblingId: string) { addSiblingNode(siblingId); },
+    addChildNode(parentId: string) { return addChildNode(parentId); },
+    addSiblingNode(siblingId: string) { return addSiblingNode(siblingId); },
     toggleCollapseSelection() { toggleCollapseSelection(); },
     toggleCollapse(id: string) { toggleCollapse(id); },
     setParent(childId: string, parentId: string | null) { setParent(childId, parentId); },

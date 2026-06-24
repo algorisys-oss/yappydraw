@@ -196,6 +196,22 @@ function resolveBindingPoint(
         point = intersectElementWithLine(el, otherEnd, binding.gap);
     }
 
+    // 4. Dynamic re-facing: if the stored anchor now points AWAY from the other
+    // endpoint (e.g. the other shape was moved to the opposite side), re-anchor to
+    // the boundary point facing it so the connector stays aligned. A stored anchor
+    // that still faces the other shape (dot >= 0) is kept, preserving intentional
+    // placement. When geometry returns to facing, the stored anchor re-applies.
+    if (point) {
+        const cx = el.x + el.width / 2;
+        const cy = el.y + el.height / 2;
+        const nx = point.x - cx, ny = point.y - cy;      // anchor's outward direction
+        const ox = otherEnd.x - cx, oy = otherEnd.y - cy; // toward the other endpoint
+        if (nx * ox + ny * oy < 0) {
+            const dyn = intersectElementWithLine(el, otherEnd, binding.gap);
+            if (dyn) point = dyn;
+        }
+    }
+
     // Apply arrowAnchorAlign: override Y for left/right edge connections
     if (point && el.arrowAnchorAlign && el.arrowAnchorAlign !== 'middle') {
         const isOnLeftEdge = Math.abs(point.x - el.x) < 2;
@@ -271,8 +287,10 @@ function computeSpreadOffset(
 
 /**
  * Update a bound line's geometry when its connected shape(s) have moved.
- * Resolves stored anchor positions to actual coordinates — no automatic
- * anchor switching. Connectors stick to whatever anchors the user set.
+ * Resolves stored anchor positions to actual coordinates. A stored anchor is kept
+ * while it still faces the other endpoint; if a shape is moved so the anchor would
+ * point away (e.g. to the opposite side), the endpoint re-faces to the boundary
+ * point toward the other shape so the connector stays aligned.
  * Applies perpendicular spread to sibling connectors sharing identical anchors.
  *
  * @param lineId         The line element ID to refresh
@@ -294,20 +312,22 @@ export function refreshBoundLine(
     let eY = line.y + line.height;
     let changed = false;
 
-    if (line.startBinding) {
-        const el = elements.find(e => e.id === line.startBinding!.elementId);
-        if (el) {
-            const p = resolveBindingPoint(line.startBinding, el, { x: eX, y: eY });
-            if (p) { sX = p.x; sY = p.y; changed = true; }
-        }
+    // Resolve each bound endpoint toward the OTHER element's centre (not the line's
+    // current endpoint) so the dynamic re-facing test is stable and order-independent.
+    const startEl = line.startBinding ? elements.find(e => e.id === line.startBinding!.elementId) : undefined;
+    const endEl = line.endBinding ? elements.find(e => e.id === line.endBinding!.elementId) : undefined;
+    const centerOf = (el: DrawingElement) => ({ x: el.x + el.width / 2, y: el.y + el.height / 2 });
+
+    if (startEl) {
+        const toward = endEl ? centerOf(endEl) : { x: eX, y: eY };
+        const p = resolveBindingPoint(line.startBinding!, startEl, toward);
+        if (p) { sX = p.x; sY = p.y; changed = true; }
     }
 
-    if (line.endBinding) {
-        const el = elements.find(e => e.id === line.endBinding!.elementId);
-        if (el) {
-            const p = resolveBindingPoint(line.endBinding, el, { x: sX, y: sY });
-            if (p) { eX = p.x; eY = p.y; changed = true; }
-        }
+    if (endEl) {
+        const toward = startEl ? centerOf(startEl) : { x: sX, y: sY };
+        const p = resolveBindingPoint(line.endBinding!, endEl, toward);
+        if (p) { eX = p.x; eY = p.y; changed = true; }
     }
 
     // Spread connectors that share the exact same anchor positions

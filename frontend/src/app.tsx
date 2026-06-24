@@ -563,7 +563,9 @@ const App: Component = () => {
         } else if (key === 'tab') {
           if (store.selection.length === 1) {
             e.preventDefault();
-            const newId = addChildNode(store.selection[0]);
+            // Reflow instantly (not animated): editing opens immediately, so the node
+            // must already be at its final slot or the text overlay would be misplaced.
+            const newId = addChildNode(store.selection[0], { animate: false });
             // Drop straight into editing so the new node can be labelled (keyboard-only flow)
             if (newId) (window as any).__nodeTextEdit?.startEditing(newId);
           }
@@ -573,7 +575,7 @@ const App: Component = () => {
             const selEl = store.elements.find(el => el.id === store.selection[0]);
             if (selEl?.parentId) {
               e.preventDefault();
-              const newId = addSiblingNode(store.selection[0]);
+              const newId = addSiblingNode(store.selection[0], { animate: false });
               if (newId) (window as any).__nodeTextEdit?.startEditing(newId);
             }
           }

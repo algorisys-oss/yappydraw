@@ -72,6 +72,7 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         ...(el.curveType !== undefined && { curveType: el.curveType }),
         ...(el.parentId !== undefined && { parentId: el.parentId }),
         ...(el.isCollapsed !== undefined && { isCollapsed: el.isCollapsed }),
+        ...(el.mindmapDir !== undefined && { mindmapDir: el.mindmapDir }),
         ...(el.constrained !== undefined && { constrained: el.constrained }),
         ...(el.autoResize !== undefined && { autoResize: el.autoResize }),
         ...(el.starPoints !== undefined && { starPoints: el.starPoints }),

@@ -125,6 +125,39 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                     </div>
 
                     <div class="settings-section">
+                        <p class="settings-section-title">Mindmap</p>
+
+                        <div class="settings-row">
+                            <label title="Automatically arrange mindmap nodes into a tidy layout as you add, collapse, delete, or reparent. Turn off to position nodes manually.">
+                                Auto Layout (reflow &amp; animate)
+                            </label>
+                            <label class="settings-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={store.globalSettings.mindmapAutoLayout !== false}
+                                    onChange={(e) => updateGlobalSettings({ mindmapAutoLayout: e.currentTarget.checked })}
+                                />
+                                <span class="settings-toggle-slider" />
+                            </label>
+                        </div>
+
+                        <div class="settings-row">
+                            <label title="Default arrangement for new mindmaps (trees you haven't given an explicit layout).">Default Layout</label>
+                            <select
+                                value={store.globalSettings.mindmapLayoutDirection ?? 'balanced'}
+                                onChange={(e) => updateGlobalSettings({ mindmapLayoutDirection: e.currentTarget.value as any })}
+                            >
+                                <option value="balanced">Balanced</option>
+                                <option value="horizontal-right">Horizontal (Right)</option>
+                                <option value="horizontal-left">Horizontal (Left)</option>
+                                <option value="vertical-down">Vertical (Down)</option>
+                                <option value="vertical-up">Vertical (Up)</option>
+                                <option value="radial">Radial</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
                         <p class="settings-section-title">Text Defaults</p>
 
                         <div class="settings-row">

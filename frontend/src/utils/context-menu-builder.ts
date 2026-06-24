@@ -220,6 +220,7 @@ export function getContextMenuItems(
                 }
 
                 const autoLayoutItems: MenuItem[] = [
+                    { label: 'Balanced', icon: '🌐', onClick: () => reorderMindmap(firstId, 'balanced') },
                     { label: 'Horizontal (Right)', icon: '➡️', onClick: () => reorderMindmap(firstId, 'horizontal-right') },
                     { label: 'Horizontal (Left)', icon: '⬅️', onClick: () => reorderMindmap(firstId, 'horizontal-left') },
                     { label: 'Vertical (Down)', icon: '⬇️', onClick: () => reorderMindmap(firstId, 'vertical-down') },
@@ -349,6 +350,7 @@ export function getContextMenuItems(
 
             // Mindmap Auto Layout Submenu
             const autoLayoutItems: MenuItem[] = [
+                { label: 'Balanced', icon: '🌐', onClick: () => reorderMindmap(firstId, 'balanced') },
                 { label: 'Horizontal (Right)', icon: '➡️', onClick: () => reorderMindmap(firstId, 'horizontal-right') },
                 { label: 'Horizontal (Left)', icon: '⬅️', onClick: () => reorderMindmap(firstId, 'horizontal-left') },
                 { label: 'Vertical (Down)', icon: '⬇️', onClick: () => reorderMindmap(firstId, 'vertical-down') },

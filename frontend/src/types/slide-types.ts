@@ -91,6 +91,8 @@ export interface GlobalSettings {
     smartShape?: boolean;       // Hold-to-correct: dwell at end of a pen stroke snaps it to a clean shape (default on)
     penPressure?: boolean;      // Use Apple Pencil force / pointer pressure for variable stroke width (default on)
     penStabilization?: number;  // Pulled-string "lazy brush" strength 0..1 for freehand inking (0 = off, default)
+    mindmapAutoLayout?: boolean;       // Auto-reflow mindmap trees on every add/collapse/delete/reparent (default on)
+    mindmapLayoutDirection?: 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial' | 'balanced'; // Default direction for trees with no explicit choice
 }
 
 /**

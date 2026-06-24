@@ -13,7 +13,7 @@ export interface MindmapNode {
     styleUpdates?: Partial<DrawingElement>; // Style properties to update
 }
 
-export type LayoutDirection = 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial';
+export type LayoutDirection = 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial' | 'balanced';
 
 /** A node in a parsed text outline (for smart-paste → mindmap subtree). */
 export interface OutlineNode {
@@ -105,7 +105,7 @@ export class MindmapLayoutEngine {
     /**
      * Builds a tree structure starting from the root element.
      */
-    buildTree(rootId: string, elements: readonly DrawingElement[], visited?: Set<string>): MindmapNode | null {
+    buildTree(rootId: string, elements: readonly DrawingElement[], visited?: Set<string>, skipCollapsed = false): MindmapNode | null {
         const _visited = visited || new Set<string>();
         if (_visited.has(rootId)) return null;
         _visited.add(rootId);
@@ -123,13 +123,18 @@ export class MindmapLayoutEngine {
             y: rootElement.y
         };
 
+        // When skipCollapsed is set, a collapsed node is treated as a leaf so its
+        // (hidden) subtree reserves no space and siblings pack tighter. Its hidden
+        // descendants keep their positions until the node is expanded and re-laid-out.
+        if (skipCollapsed && rootElement.isCollapsed) return node;
+
         // Filter out connector types — they can inherit parentId from SolidJS proxy spread
         const CONNECTOR_TYPES = ['organicBranch', 'arrow', 'line', 'bezier'];
         const childrenElements = elements.filter(e =>
             e.parentId === rootId && !CONNECTOR_TYPES.includes(e.type)
         );
         for (const childEl of childrenElements) {
-            const childNode = this.buildTree(childEl.id, elements, _visited);
+            const childNode = this.buildTree(childEl.id, elements, _visited, skipCollapsed);
             if (childNode) {
                 node.children.push(childNode);
             }
@@ -144,6 +149,34 @@ export class MindmapLayoutEngine {
     layoutHorizontal(root: MindmapNode, direction: 'right' | 'left' = 'right') {
         this.calculateSubtreeHeights(root);
         this.assignHorizontalPositions(root, root.x, root.y, direction);
+    }
+
+    /**
+     * Balanced layout: top-level branches are split left/right of the root so the
+     * map stays compact and symmetric (the classic mind-map look). Each side's
+     * subtrees are stacked vertically and centred on the root; the root stays put.
+     */
+    layoutBalanced(root: MindmapNode) {
+        this.calculateSubtreeHeights(root);
+        const kids = root.children;
+        if (kids.length === 0) return;
+        const mid = Math.ceil(kids.length / 2);
+        this.placeBalancedSide(root, kids.slice(0, mid), 'right');
+        this.placeBalancedSide(root, kids.slice(mid), 'left');
+    }
+
+    private placeBalancedSide(root: MindmapNode, kids: MindmapNode[], dir: 'right' | 'left') {
+        if (kids.length === 0) return;
+        const totalH = kids.reduce((a, c) => a + c.totalHeight!, 0) + (kids.length - 1) * this.vSpacing;
+        let currentY = root.y + (root.height / 2) - (totalH / 2);
+        const startX = dir === 'right' ? root.x + root.width + this.hSpacing : root.x - this.hSpacing;
+        for (const child of kids) {
+            const childX = dir === 'right' ? startX : startX - child.width;
+            const childY = currentY + (child.totalHeight! / 2) - (child.height / 2);
+            // Each branch (and its whole subtree) flows outward in its side's direction.
+            this.assignHorizontalPositions(child, childX, childY, dir);
+            currentY += child.totalHeight! + this.vSpacing;
+        }
     }
 
     /**

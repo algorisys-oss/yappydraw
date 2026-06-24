@@ -195,8 +195,17 @@ export const MindmapDoc: Component = () => {
 
                 <h3>Auto Layout</h3>
                 <p>
-                    Mind maps automatically arrange nodes to prevent overlap and maintain
-                    readable spacing. The layout updates as you add or remove nodes.
+                    Mind maps automatically reflow into a tidy arrangement every time you add,
+                    collapse, expand, delete, or reparent a node — and the change animates so the
+                    tree stays readable as it reorganizes. New maps use a <strong>Balanced</strong>
+                    layout (branches split left and right of the central topic); you can switch a
+                    tree to Horizontal, Vertical, or Radial from the property panel or right-click
+                    menu, and that choice is remembered. Collapsing a branch frees its space so the
+                    rest of the map packs in tighter.
+                </p>
+                <p>
+                    Prefer to place nodes by hand? Turn off <strong>Settings → Mindmap → Auto
+                    Layout</strong> and nodes stay exactly where you put them.
                 </p>
 
                 <h3>Manual Adjustment</h3>

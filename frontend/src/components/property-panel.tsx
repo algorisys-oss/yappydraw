@@ -8,7 +8,7 @@ import {
     AlignLeft, AlignCenterHorizontal, AlignRight,
     AlignStartVertical, AlignCenterVertical, AlignEndVertical,
     AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
-    Plus, ArrowDown, LayoutGrid, LayoutList, Target,
+    Plus, ArrowDown, LayoutGrid, LayoutList, Target, Network,
     X, Play, Square, Menu
 } from "lucide-solid";
 import "./property-panel.css";
@@ -185,6 +185,7 @@ const MindmapActions: Component<{ elementId: string }> = (props) => {
                 </div>
                 <div class="group-title" style={{ "margin-top": "12px", "margin-bottom": "8px" }}>AUTO LAYOUT</div>
                 <div class="alignment-row">
+                    <button class="icon-btn" onClick={() => reorderMindmap(props.elementId, 'balanced')} title="Balanced (auto, default)"><Network size={18} /></button>
                     <button class="icon-btn" onClick={() => reorderMindmap(props.elementId, 'horizontal-right')} title="Horizontal Right"><LayoutList size={18} /></button>
                     <button class="icon-btn" onClick={() => reorderMindmap(props.elementId, 'vertical-down')} title="Vertical Down"><LayoutGrid size={18} /></button>
                     <button class="icon-btn" onClick={() => reorderMindmap(props.elementId, 'radial')} title="Radial"><Target size={18} /></button>

@@ -232,6 +232,11 @@ const initialState: AppState = {
         smartShape: (localStorage.getItem('smartShape') ?? '1') !== '0',
         penPressure: (localStorage.getItem('penPressure') ?? '1') !== '0',
         penStabilization: (() => { const v = parseFloat(localStorage.getItem('penStabilization') ?? '0'); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0; })(),
+        // Default OFF for now — the balanced auto-reflow needs more work (lays out
+        // vertically in practice). Re-enable via Settings → Mindmap. Existing explicit
+        // choices in localStorage are still respected.
+        mindmapAutoLayout: (localStorage.getItem('mindmapAutoLayout') ?? '0') !== '0',
+        mindmapLayoutDirection: (localStorage.getItem('mindmapLayoutDirection') as GlobalSettings['mindmapLayoutDirection']) || 'horizontal-right',
     },
     showCanvasProperties: false,
     undoStackLength: 0,
@@ -398,7 +403,7 @@ export const addElement = (element: DrawingElement) => {
     setStore("elements", (els) => [...els, element]);
 };
 
-export const addChildNode = (parentId: string, opts: { recordHistory?: boolean; text?: string; select?: boolean } = {}) => {
+export const addChildNode = (parentId: string, opts: { recordHistory?: boolean; text?: string; select?: boolean; reflow?: boolean; animate?: boolean } = {}) => {
     const parent = store.elements.find(e => e.id === parentId);
     if (!parent) return;
 
@@ -530,6 +535,9 @@ export const addChildNode = (parentId: string, opts: { recordHistory?: boolean; 
     refreshBoundLine(connectorId, () => store.elements, (id, upd) => updateElement(id, upd, false));
 
     if (opts.select !== false) setStore("selection", [newId]);
+    // Auto-reflow the tree so the new node lands in a tidy slot (unless the caller
+    // opts out — e.g. paste builds many nodes then lays out once at the end).
+    if (opts.reflow !== false) relayoutMindmap(parent.id, { animate: opts.animate });
     return newId;
 };
 
@@ -548,7 +556,7 @@ export const pasteMindmapOutline = (parentId: string, outline: OutlineNode[]): s
     const created: string[] = [];
     const build = (pId: string, nodes: OutlineNode[]) => {
         for (const n of nodes) {
-            const id = addChildNode(pId, { recordHistory: false, text: n.text, select: false });
+            const id = addChildNode(pId, { recordHistory: false, text: n.text, select: false, reflow: false });
             if (!id) continue;
             created.push(id);
             if (n.children.length) build(id, n.children);
@@ -558,16 +566,18 @@ export const pasteMindmapOutline = (parentId: string, outline: OutlineNode[]): s
 
     if (created.length === 0) return [];
 
-    // Tidy just the pasted subtree, anchored at the paste target (which stays put).
-    // Scoping to `parentId` rather than the true root avoids overriding a layout
-    // direction the user may have chosen for the rest of the map.
-    layoutMindmapTree(parentId, 'horizontal-right');
+    // Tidy the whole tree with its resolved direction (balanced by default) so the
+    // pasted nodes match the layout auto-reflow uses — no jump on the next edit.
+    // Done unconditionally (paste is an explicit bulk action), even if auto-layout
+    // is toggled off.
+    const rootId = findMindmapRoot(parentId);
+    layoutMindmapTree(rootId, resolveMindmapDirection(rootId));
 
     setStore("selection", created);
     return created;
 };
 
-export const addSiblingNode = (siblingId: string) => {
+export const addSiblingNode = (siblingId: string, opts: { animate?: boolean } = {}) => {
     const sibling = store.elements.find(e => e.id === siblingId);
     if (!sibling) return;
 
@@ -683,16 +693,23 @@ export const addSiblingNode = (siblingId: string) => {
     refreshBoundLine(connectorId, () => store.elements, (id, upd) => updateElement(id, upd, false));
 
     setStore("selection", [newId]);
+    relayoutMindmap(parentId, { animate: opts.animate });
     return newId;
 };
 
 export const toggleCollapseSelection = () => {
     if (store.selection.length === 0) return;
     pushToHistory();
+    const affected = [...store.selection];
     setStore('elements',
         el => store.selection.includes(el.id),
         el => ({ isCollapsed: !el.isCollapsed })
     );
+    // Reflow each affected tree so siblings close the gap (collapse) or open up (expand).
+    // One shared animation channel, so only animate when a single tree is affected.
+    const roots = new Set(affected.map(id => findMindmapRoot(id)));
+    const animate = roots.size === 1;
+    for (const r of roots) relayoutMindmap(r, { animate });
 };
 
 export const setShowCanvasProperties = (visible: boolean) => {
@@ -720,8 +737,23 @@ export const deleteElements = (ids: string[]) => {
             }
         });
     }
+    // Mindmap: remember surviving parents of deleted nodes so we can reflow their
+    // trees (siblings close the gap) after the deletion.
+    const deletedSet = new Set(ids);
+    const survivingParents = new Set<string>();
+    for (const id of ids) {
+        const el = store.elements.find(e => e.id === id);
+        if (el?.parentId && !deletedSet.has(el.parentId)) survivingParents.add(el.parentId);
+    }
+
     setStore("elements", (els) => els.filter(el => !ids.includes(el.id)));
     setStore("selection", []); // Clear selection
+
+    if (survivingParents.size > 0) {
+        const roots = new Set([...survivingParents].map(id => findMindmapRoot(id)));
+        const animate = roots.size === 1;
+        for (const r of roots) relayoutMindmap(r, { animate });
+    }
 };
 
 export const bringToFront = (ids: string[]) => {
@@ -997,6 +1029,12 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.penStabilization !== undefined) {
         try { localStorage.setItem('penStabilization', String(updates.penStabilization)); } catch { /* ignore */ }
+    }
+    if (updates.mindmapAutoLayout !== undefined) {
+        try { localStorage.setItem('mindmapAutoLayout', updates.mindmapAutoLayout ? '1' : '0'); } catch { /* ignore */ }
+    }
+    if (updates.mindmapLayoutDirection !== undefined) {
+        try { localStorage.setItem('mindmapLayoutDirection', updates.mindmapLayoutDirection); } catch { /* ignore */ }
     }
 };
 
@@ -2861,11 +2899,21 @@ export const toggleCollapse = (id: string) => {
     const el = store.elements.find(e => e.id === id);
     if (el) {
         updateElement(id, { isCollapsed: !el.isCollapsed }, true);
+        relayoutMindmap(id, { animate: true });
     }
 };
 
 export const setParent = (childId: string, parentId: string | null) => {
+    const oldParentId = store.elements.find(e => e.id === childId)?.parentId ?? null;
     updateElement(childId, { parentId }, true);
+    // Reflow the destination tree; the source tree only animates if it's the same
+    // tree (single shared animation channel), else snap it tidy without animation.
+    const newRoot = findMindmapRoot(parentId ?? childId);
+    relayoutMindmap(newRoot, { animate: true });
+    if (oldParentId) {
+        const oldRoot = findMindmapRoot(oldParentId);
+        if (oldRoot !== newRoot) relayoutMindmap(oldRoot, { animate: false });
+    }
 };
 
 export const clearParent = (id: string) => {
@@ -2876,45 +2924,117 @@ export const clearParent = (id: string) => {
  * positions, and refresh bound connectors. Does NOT push history or toast — that's
  * the caller's job — so it can be reused by paste/auto-clean paths.
  */
-export const layoutMindmapTree = (rootId: string, direction: LayoutDirection) => {
+/** Run the chosen layout strategy and collect target updates (no store mutation). */
+export const computeMindmapLayout = (rootId: string, direction: LayoutDirection, skipCollapsed = false): Map<string, Partial<DrawingElement>> | null => {
     const engine = new MindmapLayoutEngine();
-    const tree = engine.buildTree(rootId, store.elements);
-    if (!tree) return false;
+    const tree = engine.buildTree(rootId, store.elements, undefined, skipCollapsed);
+    if (!tree) return null;
 
-    if (direction.startsWith('horizontal')) {
+    if (direction === 'balanced') {
+        engine.layoutBalanced(tree);
+    } else if (direction.startsWith('horizontal')) {
         engine.layoutHorizontal(tree, direction === 'horizontal-right' ? 'right' : 'left');
     } else if (direction.startsWith('vertical')) {
         engine.layoutVertical(tree, direction === 'vertical-down' ? 'down' : 'up');
     } else if (direction === 'radial') {
         engine.layoutRadial(tree);
     }
+    return engine.getUpdates(tree, store.elements);
+};
 
-    const updates = engine.getUpdates(tree, store.elements);
-
-    // Batch update elements
-    const newElements = store.elements.map(el => {
-        const update = updates.get(el.id);
-        if (update) {
-            return { ...el, ...update };
-        }
-        return el;
-    });
-
-    setStore("elements", newElements);
-
-    // Refresh all bound connectors after layout repositioning
+const refreshMindmapConnectors = () => {
     for (const el of store.elements) {
         if ((el.type === 'organicBranch' || el.type === 'arrow' || el.type === 'line')
             && (el.startBinding || el.endBinding)) {
             refreshBoundLine(el.id, () => store.elements, (id, upd) => updateElement(id, upd, false));
         }
     }
+};
+
+const applyMindmapUpdates = (updates: Map<string, Partial<DrawingElement>>) => {
+    setStore("elements", store.elements.map(el => updates.has(el.id) ? { ...el, ...updates.get(el.id) } : el));
+    refreshMindmapConnectors();
+};
+
+export const layoutMindmapTree = (rootId: string, direction: LayoutDirection) => {
+    const updates = computeMindmapLayout(rootId, direction);
+    if (!updates) return false;
+    applyMindmapUpdates(updates);
     return true;
+};
+
+/** Walk parentId up to the topmost ancestor (the mindmap root). */
+const findMindmapRoot = (id: string): string => {
+    let cur = store.elements.find(e => e.id === id);
+    let guard = 0;
+    while (cur?.parentId && guard++ < 1000) {
+        const p = store.elements.find(e => e.id === cur!.parentId);
+        if (!p) break;
+        cur = p;
+    }
+    return cur?.id ?? id;
+};
+
+const resolveMindmapDirection = (rootId: string): LayoutDirection => {
+    const root = store.elements.find(e => e.id === rootId);
+    return (root?.mindmapDir as LayoutDirection) || store.globalSettings.mindmapLayoutDirection || 'balanced';
+};
+
+// Single in-flight reflow animation; a new mutation cancels and retargets it.
+let reflowRaf: number | null = null;
+const cancelReflowAnim = () => {
+    if (reflowRaf != null && typeof cancelAnimationFrame !== 'undefined') cancelAnimationFrame(reflowRaf);
+    reflowRaf = null;
+};
+
+/**
+ * Auto-reflow the mindmap tree containing `nodeId` into a tidy layout. Gated by
+ * the `mindmapAutoLayout` setting. Collapsed subtrees are treated as leaves so
+ * collapsing frees space. Animates positions (~180ms ease-out) unless disabled,
+ * reduced-motion is set, or there's no rAF. Does NOT push history — the caller's
+ * mutation already did.
+ */
+export const relayoutMindmap = (nodeId: string, opts: { animate?: boolean } = {}) => {
+    if (store.globalSettings.mindmapAutoLayout === false) return;
+    const rootId = findMindmapRoot(nodeId);
+    const updates = computeMindmapLayout(rootId, resolveMindmapDirection(rootId), true);
+    if (!updates) return;
+
+    const animate = opts.animate !== false
+        && store.globalSettings.reducedMotion !== true
+        && typeof requestAnimationFrame !== 'undefined';
+
+    if (!animate) { applyMindmapUpdates(updates); return; }
+
+    cancelReflowAnim();
+    const from = new Map<string, { x: number; y: number }>();
+    for (const [id] of updates) {
+        const el = store.elements.find(e => e.id === id);
+        if (el) from.set(id, { x: el.x, y: el.y });
+    }
+    const start = performance.now();
+    const DUR = 180;
+    const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+    const step = (now: number) => {
+        const t = Math.min(1, (now - start) / DUR);
+        const e = ease(t);
+        setStore("elements", store.elements.map(el => {
+            const target = updates.get(el.id);
+            const f = from.get(el.id);
+            if (!target || !f) return el;
+            if (t >= 1) return { ...el, ...target }; // snap to exact target (+ any non-position props)
+            return { ...el, x: f.x + ((target.x as number) - f.x) * e, y: f.y + ((target.y as number) - f.y) * e };
+        }));
+        refreshMindmapConnectors();
+        reflowRaf = t < 1 ? requestAnimationFrame(step) : null;
+    };
+    reflowRaf = requestAnimationFrame(step);
 };
 
 export const reorderMindmap = (rootId: string, direction: LayoutDirection) => {
     if (!store.elements.some(e => e.id === rootId)) return;
     pushToHistory();
+    updateElement(rootId, { mindmapDir: direction }, false); // remember the choice for auto-reflow
     if (layoutMindmapTree(rootId, direction)) {
         showToast(`Mindmap layout updated (${direction})`, 'success');
     }

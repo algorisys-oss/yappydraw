@@ -283,6 +283,8 @@ export interface DrawingElement {
     renderScale?: number; // Canvas-level scale for zoom animations (default: 1)
     parentId?: string | null;
     isCollapsed?: boolean;
+    // Per-tree mindmap layout direction (set on the root node); drives auto-reflow.
+    mindmapDir?: 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial' | 'balanced';
     poolContainerId?: string | null;   // ID of containing bpmnPool element
     poolLaneIndex?: number;            // 0-based lane index within the pool
     starPoints?: number; // Number of points for star shapes (3-12, default: 5)
