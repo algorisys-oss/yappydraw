@@ -55,8 +55,9 @@ export interface IRenderer {
     strokeRect(x: number, y: number, w: number, h: number): void;
     clip(fillRule?: CanvasFillRule): void;
 
-    /** Fill an SVG path string directly (Canvas uses Path2D internally). */
-    fillPath(svgPath: string): void;
+    /** Fill an SVG path string directly (Canvas uses Path2D internally). Pass
+     *  'evenodd' for multi-subpath paths so overlapping closed subpaths punch holes. */
+    fillPath(svgPath: string, fillRule?: CanvasFillRule): void;
     /** Stroke an SVG path string directly (Canvas uses Path2D internally). */
     strokePath(svgPath: string): void;
     /** Intersect the clip region with an SVG path string (Canvas uses Path2D internally). */

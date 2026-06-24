@@ -6,7 +6,7 @@ import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-type
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
-import { runBooleanOp, ringToPathAnchors, type BooleanOp } from "../utils/path-boolean";
+import { runBooleanOp, polyToPathSubpaths, type BooleanOp, type Poly } from "../utils/path-boolean";
 import { shapeToPath } from "../utils/shape-to-path";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { animationEngine } from "../utils/animation/animation-engine";
@@ -241,6 +241,7 @@ const initialState: AppState = {
         mindmapAutoLayout: (localStorage.getItem('mindmapAutoLayout') ?? '0') !== '0',
         mindmapLayoutDirection: (localStorage.getItem('mindmapLayoutDirection') as GlobalSettings['mindmapLayoutDirection']) || 'horizontal-right',
         toolbarVertical: (localStorage.getItem('toolbarVertical') ?? '0') !== '0',
+        toolbarWrap: parseInt(localStorage.getItem('toolbarWrap') ?? '0', 10) || 0,
     },
     showCanvasProperties: false,
     undoStackLength: 0,
@@ -1042,6 +1043,9 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.toolbarVertical !== undefined) {
         try { localStorage.setItem('toolbarVertical', updates.toolbarVertical ? '1' : '0'); } catch { /* ignore */ }
+    }
+    if (updates.toolbarWrap !== undefined) {
+        try { localStorage.setItem('toolbarWrap', String(updates.toolbarWrap)); } catch { /* ignore */ }
     }
 };
 
@@ -3059,21 +3063,13 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
     // Back → front (store order) so subtract is deterministic ("minus front").
     els.sort((a, b) => store.elements.indexOf(a) - store.elements.indexOf(b));
 
-    const rings = runBooleanOp(els, op);
-    if (rings.length === 0) { showToast('Pathfinder: empty result', 'info'); return []; }
+    const polys = runBooleanOp(els, op);
+    if (polys.length === 0) { showToast('Pathfinder: empty result', 'info'); return []; }
 
     const base = els[0];
     const created: DrawingElement[] = [];
-    for (const ring of rings) {
-        const norm = ringToPathAnchors(ring);
-        if (!norm) continue;
-        created.push({
-            ...store.defaultElementStyles,
-            id: generateId('path'),
-            type: 'path',
-            x: norm.minX, y: norm.minY, width: norm.width, height: norm.height,
-            pathAnchors: norm.anchors,
-            pathClosed: true,
+    for (const poly of polys) {
+        const path = buildPathFromPoly(poly, {
             strokeColor: base.strokeColor,
             backgroundColor: base.backgroundColor,
             fillStyle: base.fillStyle,
@@ -3083,12 +3079,8 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
             opacity: base.opacity,
             roughness: base.roughness,
             layerId: base.layerId,
-            angle: 0,
-            seed: Math.floor(Math.random() * 2 ** 31),
-            roundness: null,
-            locked: false,
-            link: null,
-        } as DrawingElement);
+        });
+        if (path) created.push(path);
     }
     if (created.length === 0) return [];
 
@@ -3126,16 +3118,25 @@ export const convertToPath = (ids: string[]): string[] => {
     return out;
 };
 
-function buildPathFromRing(ring: [number, number][], style: Partial<DrawingElement>): DrawingElement | null {
-    const norm = ringToPathAnchors(ring);
+/**
+ * Build a `path` element from one boolean/offset result polygon (outer ring + holes).
+ * A single ring becomes a node-editable `pathAnchors` path; a polygon with holes becomes
+ * a multi-subpath `pathSubpaths` path (even-odd fill). World coords are normalized to the
+ * polygon's bbox.
+ */
+function buildPathFromPoly(poly: Poly, style: Partial<DrawingElement>): DrawingElement | null {
+    const norm = polyToPathSubpaths(poly);
     if (!norm) return null;
+    const single = norm.subpaths.length === 1;
     return {
         ...store.defaultElementStyles,
         id: generateId('path'),
         type: 'path',
         x: norm.minX, y: norm.minY, width: norm.width, height: norm.height,
-        pathAnchors: norm.anchors,
-        pathClosed: true,
+        // Single ring → editable pathAnchors; holes → pathSubpaths (even-odd).
+        pathAnchors: single ? norm.subpaths[0].anchors : undefined,
+        pathClosed: single ? true : undefined,
+        pathSubpaths: single ? undefined : norm.subpaths,
         angle: 0,
         seed: Math.floor(Math.random() * 2 ** 31),
         roundness: null,
@@ -3156,11 +3157,11 @@ export const outlineStroke = (ids: string[]): string[] => {
     const created: DrawingElement[] = [];
     const replaceIds = new Set<string>();
     for (const el of targets) {
-        const rings = computeOutlineStroke(el);
-        if (rings.length === 0) continue;
+        const polys = computeOutlineStroke(el);
+        if (polys.length === 0) continue;
         replaceIds.add(el.id);
-        for (const ring of rings) {
-            const path = buildPathFromRing(ring, {
+        for (const poly of polys) {
+            const path = buildPathFromPoly(poly, {
                 backgroundColor: el.strokeColor, fillStyle: 'solid',
                 strokeColor: 'transparent', strokeWidth: 0,
                 renderStyle: el.renderStyle, opacity: el.opacity, layerId: el.layerId,
@@ -3184,9 +3185,9 @@ export const offsetPath = (ids: string[], distance: number): string[] => {
     const targets = store.elements.filter(e => ids.includes(e.id));
     const created: DrawingElement[] = [];
     for (const el of targets) {
-        const rings = computeOffsetPath(el, distance);
-        for (const ring of rings) {
-            const path = buildPathFromRing(ring, {
+        const polys = computeOffsetPath(el, distance);
+        for (const poly of polys) {
+            const path = buildPathFromPoly(poly, {
                 backgroundColor: el.backgroundColor, fillStyle: el.fillStyle,
                 strokeColor: el.strokeColor, strokeWidth: el.strokeWidth, strokeStyle: el.strokeStyle,
                 renderStyle: el.renderStyle, opacity: el.opacity, layerId: el.layerId,

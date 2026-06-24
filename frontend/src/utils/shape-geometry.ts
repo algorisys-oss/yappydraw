@@ -1,12 +1,12 @@
 import type { DrawingElement } from "../types";
 import { isWasmEnabled } from "../wasm/feature-flags";
 import { wasmGetShapeGeometry } from "../wasm/bridge/shape-paths-bridge";
-import { anchorsToPathData } from "./math/path-utils";
+import { getPathSubpaths, subpathsToPathData } from "./math/path-utils";
 
 export type ShapeGeometry =
     | { type: 'rect', x: number, y: number, w: number, h: number, r?: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
     | { type: 'ellipse', cx: number, cy: number, rx: number, ry: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
-    | { type: 'path', path: string, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
+    | { type: 'path', path: string, evenOdd?: boolean, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
     | { type: 'points', points: { x: number, y: number }[], isClosed?: boolean, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
     | { type: 'multi', shapes: ShapeGeometry[] };
 
@@ -62,10 +62,12 @@ export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
     switch (el.type) {
         case 'path': {
             // Editable vector path: anchors are origin-relative; shift to the centered
-            // geometry frame (origin = element centre).
-            if (!el.pathAnchors || el.pathAnchors.length < 2) return null;
-            const d = anchorsToPathData(el.pathAnchors, el.pathClosed ?? false, -mw, -mh);
-            return d ? { type: 'path', path: d } : null;
+            // geometry frame (origin = element centre). Multiple subpaths punch holes via
+            // the even-odd fill rule.
+            const subs = getPathSubpaths(el);
+            if (subs.length === 0) return null;
+            const d = subpathsToPathData(subs, -mw, -mh);
+            return d ? { type: 'path', path: d, evenOdd: subs.length > 1 } : null;
         }
 
         case 'rectangle':

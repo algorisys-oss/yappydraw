@@ -166,7 +166,7 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
             if (fillVisible && backgroundColor) {
                 renderer.fillStyle = backgroundColor;
                 if (isPathGeo) {
-                    renderer.fillPath((geometry as any).path);
+                    renderer.fillPath((geometry as any).path, (geometry as any).evenOdd ? 'evenodd' : undefined);
                 } else {
                     renderer.beginPath();
                     RenderPipeline.renderGeometry(renderer, geometry);

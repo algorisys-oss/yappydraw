@@ -75,6 +75,21 @@ const Toolbar: Component = () => {
     const [dragStart, setDragStart] = createSignal({ x: 0, y: 0 });
     const [isMobile, setIsMobile] = createSignal(window.innerWidth <= 768);
     const [brainstormMode, setBrainstormMode] = createSignal(localStorage.getItem(BRAINSTORM_KEY) !== 'false');
+    const [isResizing, setIsResizing] = createSignal(false);
+    const [resizeStart, setResizeStart] = createSignal({ x: 0, y: 0, w: 0 });
+
+    // Wrap width (px): when > 0 the toolbar flows its icons into a grid of that width,
+    // so the user can drag it to e.g. 2-per-row. 0 = off (single line).
+    const wrapWidth = () => store.globalSettings.toolbarWrap ?? 0;
+
+    const onResizeDown = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const el = (e.currentTarget as HTMLElement).closest('.toolbar-container') as HTMLElement | null;
+        const curW = wrapWidth() || (el?.offsetWidth ?? 220);
+        setIsResizing(true);
+        setResizeStart({ x: e.clientX, y: e.clientY, w: curW });
+    };
 
     const toggleBrainstormMode = () => {
         const next = !brainstormMode();
@@ -96,6 +111,12 @@ const Toolbar: Component = () => {
     };
 
     const onMouseMove = (e: MouseEvent) => {
+        if (isResizing()) {
+            const s = resizeStart();
+            const next = Math.round(Math.max(96, Math.min(900, s.w + (e.clientX - s.x))));
+            updateGlobalSettings({ toolbarWrap: next });
+            return;
+        }
         if (!isDragging()) return;
         setPosition({
             x: e.clientX - dragStart().x,
@@ -105,6 +126,7 @@ const Toolbar: Component = () => {
 
     const onMouseUp = () => {
         setIsDragging(false);
+        setIsResizing(false);
     };
 
     onMount(() => {
@@ -275,12 +297,22 @@ const Toolbar: Component = () => {
     return (
         <div
             class="toolbar-container"
-            classList={{ dragging: isDragging(), vertical: !isMobile() && !!store.globalSettings.toolbarVertical }}
+            classList={{ dragging: isDragging(), resizing: isResizing(), vertical: !isMobile() && !!store.globalSettings.toolbarVertical, wrap: !isMobile() && wrapWidth() > 0 }}
             onContextMenu={(e) => e.preventDefault()}
             onMouseDown={isMobile() ? undefined : onMouseDown}
             style={isMobile() ? {} : {
-                // Centre on the anchored axis: X for the top (horizontal) bar, Y for the left (vertical) bar.
-                transform: `${store.globalSettings.toolbarVertical ? 'translateY(-50%)' : 'translateX(-50%)'} translate(${position().x}px, ${position().y}px)`
+                // Centre on the anchored axis: X for the top (horizontal) bar, Y for the left
+                // (vertical) bar. In wrap mode the bar grows downward, so drop the vertical
+                // centering (it would clip a tall grid off the top) — CSS pins it to the top.
+                transform: (() => {
+                    const wrapped = wrapWidth() > 0;
+                    const vertical = !!store.globalSettings.toolbarVertical;
+                    const center = wrapped
+                        ? (vertical ? '' : 'translateX(-50%)')
+                        : (vertical ? 'translateY(-50%)' : 'translateX(-50%)');
+                    return `${center} translate(${position().x}px, ${position().y}px)`.trim();
+                })(),
+                ...(wrapWidth() > 0 ? { width: `${wrapWidth()}px` } : {})
             }}
         >
             <div class="drag-handle" title="Drag to move toolbar">
@@ -448,6 +480,17 @@ const Toolbar: Component = () => {
                 onCancel={() => setShowVideoDialog(false)}
                 onSubmit={handleVideoInsert}
             />
+
+            {/* Resize grip — drag to wrap icons into a grid (e.g. 2 per row);
+                double-click to reset to a single line. */}
+            <Show when={!isMobile()}>
+                <div
+                    class="toolbar-resize-handle"
+                    title="Drag to resize (icons per row) · double-click to reset"
+                    onMouseDown={onResizeDown}
+                    onDblClick={() => updateGlobalSettings({ toolbarWrap: 0 })}
+                />
+            </Show>
         </div>
     );
 };

@@ -9,6 +9,7 @@ import type { DrawingElement } from '../types';
 import { normalizePoints } from './render-element';
 import { getOrganicBranchPolygon, rotatePoint } from './geometry';
 import { getDescendants } from './hierarchy';
+import { getPathSubpaths } from './math/path-utils';
 
 const MINDMAP_CONNECTOR_TYPES = ['line', 'arrow', 'organicBranch', 'bezier', 'polyline'];
 
@@ -456,10 +457,11 @@ export function renderElementOverlays(
         }
 
         // --- Editable vector path: anchors (squares) + Bézier handles (circles) ---
-        if (el.type === 'path' && el.pathAnchors && selectedTool === 'selection') {
+        // Draws every subpath (compound paths / holes show all their nodes).
+        if (el.type === 'path' && selectedTool === 'selection') {
             const sq = 8 / scale;   // anchor square side
             const hd = 7 / scale;   // handle circle diameter
-            for (const a of el.pathAnchors) {
+            for (const sp of getPathSubpaths(el)) for (const a of sp.anchors) {
                 const ax = el.x + a.x, ay = el.y + a.y;
                 // Handle lines + circles.
                 const drawHandle = (hx?: number, hy?: number) => {

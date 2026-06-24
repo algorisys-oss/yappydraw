@@ -59,6 +59,7 @@ function captureInitialPositions(
                 points: el.points ? [...el.points] : undefined,
                 controlPoints: el.controlPoints ? el.controlPoints.map(cp => ({ ...cp })) : undefined,
                 pathAnchors: el.pathAnchors ? el.pathAnchors.map(a => ({ ...a })) : undefined,
+                pathSubpaths: cloneSubpaths(el.pathSubpaths),
                 eraseStrokes: el.eraseStrokes ? el.eraseStrokes.map(s => ({ points: [...s.points], radius: s.radius })) : undefined
             });
         }
@@ -104,6 +105,15 @@ function scalePathAnchors(anchors: any[] | undefined, scaleX: number, scaleY: nu
         ...(a.outX !== undefined ? { outX: a.outX * scaleX } : {}),
         ...(a.outY !== undefined ? { outY: a.outY * scaleY } : {}),
     }));
+}
+
+function scalePathSubpaths(subpaths: any[] | undefined, scaleX: number, scaleY: number): any[] | undefined {
+    if (!subpaths) return undefined;
+    return subpaths.map((sp: any) => ({ ...sp, anchors: scalePathAnchors(sp.anchors, scaleX, scaleY) }));
+}
+
+function cloneSubpaths(subpaths: any[] | undefined): any[] | undefined {
+    return subpaths ? subpaths.map((sp: any) => ({ ...sp, anchors: sp.anchors.map((a: any) => ({ ...a })) })) : undefined;
 }
 
 function initMoveState(
@@ -163,15 +173,14 @@ export function selectionOnDown(
         }
 
         // Vector path: Alt-click an anchor converts it corner ↔ smooth (no drag).
-        if (hitHandle.handle.startsWith('path-anchor-') && e.altKey) {
-            const idx = parseInt(hitHandle.handle.replace('path-anchor-', ''), 10);
-            convertPathAnchor(hitHandle.id, idx);
+        const anchorMatch = hitHandle.handle.match(/^path-anchor-(\d+)-(\d+)$/);
+        if (anchorMatch && e.altKey) {
+            convertPathAnchor(hitHandle.id, parseInt(anchorMatch[1], 10), parseInt(anchorMatch[2], 10));
             return;
         }
         // Vector path: Ctrl/Cmd-click an anchor deletes it.
-        if (hitHandle.handle.startsWith('path-anchor-') && (e.ctrlKey || e.metaKey)) {
-            const idx = parseInt(hitHandle.handle.replace('path-anchor-', ''), 10);
-            deletePathAnchor(hitHandle.id, idx);
+        if (anchorMatch && (e.ctrlKey || e.metaKey)) {
+            deletePathAnchor(hitHandle.id, parseInt(anchorMatch[1], 10), parseInt(anchorMatch[2], 10));
             return;
         }
 
@@ -230,6 +239,7 @@ export function selectionOnDown(
                             fontSize: el.fontSize,
                             points: el.points ? [...el.points] : undefined,
                             pathAnchors: el.pathAnchors ? el.pathAnchors.map(a => ({ ...a })) : undefined,
+                pathSubpaths: cloneSubpaths(el.pathSubpaths),
                             eraseStrokes: el.eraseStrokes ? el.eraseStrokes.map(s => ({ points: [...s.points], radius: s.radius })) : undefined
                         });
                     }
@@ -254,6 +264,7 @@ export function selectionOnDown(
                     fontSize: el.fontSize,
                     points: el.points ? [...el.points] : undefined,
                     pathAnchors: el.pathAnchors ? el.pathAnchors.map(a => ({ ...a })) : undefined,
+                pathSubpaths: cloneSubpaths(el.pathSubpaths),
                     eraseStrokes: el.eraseStrokes ? el.eraseStrokes.map(s => ({ points: [...s.points], radius: s.radius })) : undefined
                 });
 
@@ -1511,14 +1522,65 @@ function handlePolypointDrag(
 
 // ─── Vector Path Node Dragging (anchor move / handle reshape) ────────
 
+// ── Compound-path editing helpers (work for both legacy single-subpath paths and
+//    multi-subpath compound paths). Anchors are addressed by (subpath, index). ──
+
+type EditSub = { anchors: any[]; closed: boolean };
+
+/** Deep-copy a path's subpaths for editing. Legacy `pathAnchors` → one subpath. */
+function editableSubpaths(el: DrawingElement): EditSub[] {
+    if (el.pathSubpaths && el.pathSubpaths.length) {
+        return el.pathSubpaths.map(sp => ({ closed: sp.closed, anchors: sp.anchors.map(a => ({ ...a })) }));
+    }
+    if (el.pathAnchors && el.pathAnchors.length) {
+        return [{ closed: el.pathClosed ?? false, anchors: el.pathAnchors.map(a => ({ ...a })) }];
+    }
+    return [];
+}
+
+/**
+ * Re-normalize ALL subpaths to their shared bbox and write them back. `baseX/baseY` is
+ * the frame the input anchors are relative to (the element's current origin). World
+ * positions stay invariant. Writes `pathSubpaths` when >1 subpath remains, else collapses
+ * to the node-editable legacy `pathAnchors`/`pathClosed`.
+ */
+function writeEditableSubpaths(id: string, baseX: number, baseY: number, subs: EditSub[]): void {
+    const kept = subs.filter(sp => sp.anchors.length >= 2);
+    if (kept.length === 0) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const sp of kept) for (const an of sp.anchors) {
+        const pts = [
+            [an.x, an.y],
+            [an.x + (an.outX ?? 0), an.y + (an.outY ?? 0)],
+            [an.x + (an.inX ?? 0), an.y + (an.inY ?? 0)],
+        ];
+        for (const [px, py] of pts) {
+            minX = Math.min(minX, px); minY = Math.min(minY, py);
+            maxX = Math.max(maxX, px); maxY = Math.max(maxY, py);
+        }
+    }
+    if (!isFinite(minX)) return;
+    const normSubs = kept.map(sp => ({ closed: sp.closed, anchors: sp.anchors.map(an => ({ ...an, x: an.x - minX, y: an.y - minY })) }));
+    const base = { x: baseX + minX, y: baseY + minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };
+    if (normSubs.length > 1) {
+        updateElement(id, { ...base, pathSubpaths: normSubs, pathAnchors: undefined, pathClosed: undefined }, false);
+    } else {
+        updateElement(id, { ...base, pathAnchors: normSubs[0].anchors, pathClosed: normSubs[0].closed, pathSubpaths: undefined }, false);
+    }
+}
+
 function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerState): void {
     const el = store.elements.find(e => e.id === id);
-    if (!el || !el.pathAnchors) return;
-    const m = pState.draggingHandle!.match(/^path-(anchor|in|out)-(\d+)$/);
+    if (!el) return;
+    const m = pState.draggingHandle!.match(/^path-(anchor|in|out)-(\d+)-(\d+)$/);
     if (!m) return;
     const kind = m[1] as 'anchor' | 'in' | 'out';
-    const i = parseInt(m[2], 10);
-    if (i < 0 || i >= el.pathAnchors.length) return;
+    const sub = parseInt(m[2], 10);
+    const i = parseInt(m[3], 10);
+    const subs = editableSubpaths(el);
+    if (sub < 0 || sub >= subs.length) return;
+    const anchors = subs[sub].anchors;
+    if (i < 0 || i >= anchors.length) return;
 
     let tx = x, ty = y;
     if (store.gridSettings.snapToGrid) {
@@ -1526,7 +1588,6 @@ function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerSta
         tx = s.x; ty = s.y;
     }
 
-    const anchors = el.pathAnchors.map(a => ({ ...a }));
     const a = anchors[i];
     if (kind === 'anchor') {
         // Move the anchor; its handles are relative, so they travel with it.
@@ -1544,45 +1605,20 @@ function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerSta
         }
     }
 
-    writePathAnchors(id, el.x, el.y, anchors);
-}
-
-/**
- * Re-normalize anchors to their bbox and write them to the element. `baseX/baseY` is
- * the frame the input anchors are relative to (the element's current origin). World
- * positions are invariant: world.x = baseX + a.x = (baseX + minX) + (a.x - minX).
- */
-function writePathAnchors(id: string, baseX: number, baseY: number, anchors: any[]): void {
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const an of anchors) {
-        const pts = [
-            [an.x, an.y],
-            [an.x + (an.outX ?? 0), an.y + (an.outY ?? 0)],
-            [an.x + (an.inX ?? 0), an.y + (an.inY ?? 0)],
-        ];
-        for (const [px, py] of pts) {
-            minX = Math.min(minX, px); minY = Math.min(minY, py);
-            maxX = Math.max(maxX, px); maxY = Math.max(maxY, py);
-        }
-    }
-    const norm = anchors.map(an => ({ ...an, x: an.x - minX, y: an.y - minY }));
-    updateElement(id, {
-        x: baseX + minX,
-        y: baseY + minY,
-        width: Math.max(1, maxX - minX),
-        height: Math.max(1, maxY - minY),
-        pathAnchors: norm,
-    }, false);
+    writeEditableSubpaths(id, el.x, el.y, subs);
 }
 
 /**
  * Convert a path anchor between corner and smooth. Smoothing derives collinear
  * handles from the neighbour tangent (1/3 of the spans); corner-ing drops the handles.
  */
-export function convertPathAnchor(id: string, i: number): void {
+export function convertPathAnchor(id: string, sub: number, i: number): void {
     const el = store.elements.find(e => e.id === id);
-    if (!el || !el.pathAnchors || i < 0 || i >= el.pathAnchors.length) return;
-    const anchors = el.pathAnchors.map(a => ({ ...a }));
+    if (!el) return;
+    const subs = editableSubpaths(el);
+    if (sub < 0 || sub >= subs.length) return;
+    const anchors = subs[sub].anchors;
+    if (i < 0 || i >= anchors.length) return;
     const a = anchors[i];
     if (a.kind === 'smooth') {
         delete a.inX; delete a.inY; delete a.outX; delete a.outY;
@@ -1601,49 +1637,54 @@ export function convertPathAnchor(id: string, i: number): void {
         a.kind = 'smooth';
     }
     pushToHistory();
-    writePathAnchors(id, el.x, el.y, anchors);
+    writeEditableSubpaths(id, el.x, el.y, subs);
 }
 
-/** Delete a path anchor (needs > 2 to remain a valid path). */
-export function deletePathAnchor(id: string, i: number): void {
+/** Delete a path anchor (its subpath needs > 2 to remain valid). */
+export function deletePathAnchor(id: string, sub: number, i: number): void {
     const el = store.elements.find(e => e.id === id);
-    if (!el || !el.pathAnchors || el.pathAnchors.length <= 2) return;
-    if (i < 0 || i >= el.pathAnchors.length) return;
-    const anchors = el.pathAnchors.map(a => ({ ...a }));
+    if (!el) return;
+    const subs = editableSubpaths(el);
+    if (sub < 0 || sub >= subs.length) return;
+    const anchors = subs[sub].anchors;
+    if (anchors.length <= 2 || i < 0 || i >= anchors.length) return;
     anchors.splice(i, 1);
     pushToHistory();
-    writePathAnchors(id, el.x, el.y, anchors);
+    writeEditableSubpaths(id, el.x, el.y, subs);
 }
 
 /**
- * Find the path segment nearest a world point and the parameter t along it. Returns
- * null if the nearest point is farther than `tol`. Segments are the cubic between
- * consecutive anchors (plus the closing segment for closed paths).
+ * Find the path segment nearest a world point — across all subpaths — and the parameter
+ * t along it. Returns null if the nearest point is farther than `tol`. Segments are the
+ * cubic between consecutive anchors (plus the closing segment for closed subpaths).
  */
-function findClosestPathSegment(el: DrawingElement, wx: number, wy: number, tol: number):
-    { seg: number; t: number } | null {
-    const A = el.pathAnchors!;
-    const n = A.length;
-    const segCount = el.pathClosed ? n : n - 1;
+function findClosestPathSegment(el: DrawingElement, subs: EditSub[], wx: number, wy: number, tol: number):
+    { sub: number; seg: number; t: number } | null {
     const lx = wx - el.x, ly = wy - el.y; // element-local
-    let best: { seg: number; t: number; d: number } | null = null;
+    let best: { sub: number; seg: number; t: number; d: number } | null = null;
     const N = 24;
-    for (let s = 0; s < segCount; s++) {
-        const a = A[s], b = A[(s + 1) % n];
-        const p0x = a.x, p0y = a.y;
-        const p1x = a.x + (a.outX ?? 0), p1y = a.y + (a.outY ?? 0);
-        const p2x = b.x + (b.inX ?? 0), p2y = b.y + (b.inY ?? 0);
-        const p3x = b.x, p3y = b.y;
-        for (let k = 0; k <= N; k++) {
-            const t = k / N, mt = 1 - t;
-            const bx = mt * mt * mt * p0x + 3 * mt * mt * t * p1x + 3 * mt * t * t * p2x + t * t * t * p3x;
-            const by = mt * mt * mt * p0y + 3 * mt * mt * t * p1y + 3 * mt * t * t * p2y + t * t * t * p3y;
-            const d = Math.hypot(bx - lx, by - ly);
-            if (!best || d < best.d) best = { seg: s, t, d };
+    for (let su = 0; su < subs.length; su++) {
+        const A = subs[su].anchors;
+        const n = A.length;
+        if (n < 2) continue;
+        const segCount = subs[su].closed ? n : n - 1;
+        for (let s = 0; s < segCount; s++) {
+            const a = A[s], b = A[(s + 1) % n];
+            const p0x = a.x, p0y = a.y;
+            const p1x = a.x + (a.outX ?? 0), p1y = a.y + (a.outY ?? 0);
+            const p2x = b.x + (b.inX ?? 0), p2y = b.y + (b.inY ?? 0);
+            const p3x = b.x, p3y = b.y;
+            for (let k = 0; k <= N; k++) {
+                const t = k / N, mt = 1 - t;
+                const bx = mt * mt * mt * p0x + 3 * mt * mt * t * p1x + 3 * mt * t * t * p2x + t * t * t * p3x;
+                const by = mt * mt * mt * p0y + 3 * mt * mt * t * p1y + 3 * mt * t * t * p2y + t * t * t * p3y;
+                const d = Math.hypot(bx - lx, by - ly);
+                if (!best || d < best.d) best = { sub: su, seg: s, t, d };
+            }
         }
     }
     if (!best || best.d > tol) return null;
-    return { seg: best.seg, t: best.t };
+    return { sub: best.sub, seg: best.seg, t: best.t };
 }
 
 /**
@@ -1652,11 +1693,13 @@ function findClosestPathSegment(el: DrawingElement, wx: number, wy: number, tol:
  */
 export function insertPathAnchorAt(id: string, wx: number, wy: number, scale: number): boolean {
     const el = store.elements.find(e => e.id === id);
-    if (!el || !el.pathAnchors || el.pathAnchors.length < 2) return false;
-    const hit = findClosestPathSegment(el, wx, wy, 10 / scale);
+    if (!el) return false;
+    const subs = editableSubpaths(el);
+    if (subs.length === 0) return false;
+    const hit = findClosestPathSegment(el, subs, wx, wy, 10 / scale);
     if (!hit) return false;
-    const { seg: s, t } = hit;
-    const anchors = el.pathAnchors.map(a => ({ ...a }));
+    const { sub, seg: s, t } = hit;
+    const anchors = subs[sub].anchors;
     const n = anchors.length;
     const a = anchors[s], b = anchors[(s + 1) % n];
     const curved = a.outX !== undefined || a.outY !== undefined || b.inX !== undefined || b.inY !== undefined;
@@ -1685,7 +1728,7 @@ export function insertPathAnchorAt(id: string, wx: number, wy: number, scale: nu
     }
     anchors.splice(s + 1, 0, newAnchor);
     pushToHistory();
-    writePathAnchors(id, el.x, el.y, anchors);
+    writeEditableSubpaths(id, el.x, el.y, subs);
     return true;
 }
 
@@ -1778,6 +1821,9 @@ function applyResize(
             if (init.pathAnchors) {
                 updates.pathAnchors = scalePathAnchors(init.pathAnchors, scaleX, scaleY);
             }
+            if (init.pathSubpaths) {
+                updates.pathSubpaths = scalePathSubpaths(init.pathSubpaths, scaleX, scaleY);
+            }
 
             const element = store.elements.find(e => e.id === selId);
             if (element && (element.type === 'text' || element.type === 'richtext')) {
@@ -1842,6 +1888,9 @@ function applyResize(
                 const init = pState.initialPositions.get(id);
                 if (init?.pathAnchors) {
                     updates.pathAnchors = scalePathAnchors(init.pathAnchors, scaleX, scaleY);
+                }
+                if (init?.pathSubpaths) {
+                    updates.pathSubpaths = scalePathSubpaths(init.pathSubpaths, scaleX, scaleY);
                 }
             }
 
@@ -2136,9 +2185,14 @@ export function selectionOnUp(
             pState.lassoPoints = [];
             signals.setLassoPoints(null);
         } else {
-            // Rectangle selection: AABB intersection test
+            // Rectangle selection: AABB intersection test. A pure click (no meaningful
+            // drag) is NOT a marquee — it already missed narrow-phase hit-testing on
+            // pointer-down, so it must clear, not bbox-select. Otherwise clicking inside a
+            // shape's bbox but outside its actual fill (a path hole, a triangle's empty
+            // corner) would wrongly select it. Real drag marquees keep AABB selection.
             const box = signals.selectionBox();
-            if (box) {
+            const minDrag = 3 / store.viewState.scale;
+            if (box && (box.w > minDrag || box.h > minDrag)) {
                 const selectedIds: string[] = [];
                 const bx = box.x;
                 const by = box.y;

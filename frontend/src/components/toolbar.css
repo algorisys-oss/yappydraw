@@ -23,6 +23,55 @@
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
+/* Wrap mode: the user dragged the resize grip, so icons flow into a grid of the set
+   width (e.g. 2 per row). Row-wrap overrides the column direction of vertical mode too,
+   so both orientations become a compact icon grid. */
+.toolbar-container.wrap {
+    flex-flow: row wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+    justify-content: center;
+    /* Pin to the top and grow downward; never exceed the viewport (slim scrollbar). */
+    top: 12px;
+    bottom: auto;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 12px;
+}
+/* In vertical orientation the base rule centres on Y (top:50%); wrap must override that
+   so a tall grid doesn't clip off the top. */
+.toolbar-container.vertical.wrap {
+    flex-flow: row wrap;
+    top: 12px;
+    left: 12px;
+}
+.toolbar-container.resizing {
+    cursor: nwse-resize;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Resize grip in the bottom-right corner. */
+.toolbar-resize-handle {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 12px;
+    height: 12px;
+    cursor: nwse-resize;
+    border-radius: 0 0 6px 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+    background:
+        linear-gradient(135deg, transparent 0 50%, var(--text-secondary, #94a3b8) 50% 60%, transparent 60% 70%, var(--text-secondary, #94a3b8) 70% 80%, transparent 80%);
+}
+.toolbar-container:hover .toolbar-resize-handle {
+    opacity: 0.7;
+}
+.toolbar-resize-handle:hover {
+    opacity: 1 !important;
+}
+
 /* Vertical orientation: dock to the left edge, stack tools in a column.
    The inline transform switches to translateY(-50%) to centre on the Y axis. */
 .toolbar-container.vertical {

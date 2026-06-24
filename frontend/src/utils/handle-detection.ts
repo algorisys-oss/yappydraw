@@ -8,6 +8,7 @@ import type { DrawingElement } from '../types';
 import { rotatePoint } from './geometry';
 import { normalizePoints } from './render-element';
 import { isElementHiddenByHierarchy } from './hierarchy';
+import { getPathSubpaths } from './math/path-utils';
 
 /**
  * Inverse-rotate a point around a center by the given angle.
@@ -105,21 +106,25 @@ export function getHandleAtPosition(
     //     corner handle) is node-edited rather than resized. Handles win over anchors.
     if (selection.length === 1) {
         const el = elements.find(e => e.id === selection[0]);
-        if (el && el.type === 'path' && el.pathAnchors) {
+        if (el && el.type === 'path') {
+            const subs = getPathSubpaths(el);
             const r = handleSize / 2 + 2 / scale;
-            for (let i = 0; i < el.pathAnchors.length; i++) {
-                const a = el.pathAnchors[i];
-                const ax = el.x + a.x, ay = el.y + a.y;
-                if (a.outX !== undefined && a.outY !== undefined &&
-                    Math.abs(x - (ax + a.outX)) <= r && Math.abs(y - (ay + a.outY)) <= r) {
-                    return { id: el.id, handle: `path-out-${i}` };
-                }
-                if (a.inX !== undefined && a.inY !== undefined &&
-                    Math.abs(x - (ax + a.inX)) <= r && Math.abs(y - (ay + a.inY)) <= r) {
-                    return { id: el.id, handle: `path-in-${i}` };
-                }
-                if (Math.abs(x - ax) <= r && Math.abs(y - ay) <= r) {
-                    return { id: el.id, handle: `path-anchor-${i}` };
+            for (let su = 0; su < subs.length; su++) {
+                const anchors = subs[su].anchors;
+                for (let i = 0; i < anchors.length; i++) {
+                    const a = anchors[i];
+                    const ax = el.x + a.x, ay = el.y + a.y;
+                    if (a.outX !== undefined && a.outY !== undefined &&
+                        Math.abs(x - (ax + a.outX)) <= r && Math.abs(y - (ay + a.outY)) <= r) {
+                        return { id: el.id, handle: `path-out-${su}-${i}` };
+                    }
+                    if (a.inX !== undefined && a.inY !== undefined &&
+                        Math.abs(x - (ax + a.inX)) <= r && Math.abs(y - (ay + a.inY)) <= r) {
+                        return { id: el.id, handle: `path-in-${su}-${i}` };
+                    }
+                    if (Math.abs(x - ax) <= r && Math.abs(y - ay) <= r) {
+                        return { id: el.id, handle: `path-anchor-${su}-${i}` };
+                    }
                 }
             }
         }

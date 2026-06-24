@@ -18,7 +18,7 @@ import { normalizePoints } from './render-element';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { isWasmEnabled } from '../wasm/feature-flags';
 import { wasmHitTestElement } from '../wasm/bridge/hit-testing-bridge';
-import { PathUtils, anchorsToPathData } from './math/path-utils';
+import { PathUtils, anchorsToPathData, getPathSubpaths } from './math/path-utils';
 
 /**
  * Inverse-rotate a point around a center by the given angle.
@@ -305,28 +305,27 @@ function hitTestGeometry(
  * a polyline and accepts a hit near the stroke, or inside a filled closed path.
  */
 export function hitTestPathElement(el: DrawingElement, lx: number, ly: number, threshold: number): boolean {
-    const anchors = el.pathAnchors;
-    if (!anchors || anchors.length < 2) return false;
-    const d = anchorsToPathData(anchors, el.pathClosed ?? false, -el.width / 2, -el.height / 2);
-    if (!d) return false;
-    const cmds = PathUtils.parsePath(d);
-    if (cmds.length === 0) return false;
-
-    const N = 96;
-    const pts: { x: number; y: number }[] = [];
-    for (let i = 0; i <= N; i++) {
-        const pt = PathUtils.getPointOnPath(cmds, i / N);
-        pts.push({ x: pt.x, y: pt.y });
-    }
-
+    const subs = getPathSubpaths(el);
+    if (subs.length === 0) return false;
     const local = { x: lx, y: ly };
     const tol = threshold + (el.strokeWidth || 1) / 2 + 2;
-    if (isPointOnPolyline(local, pts, tol)) return true;
-
-    const filled = !!el.pathClosed && !!el.backgroundColor &&
-        el.backgroundColor !== 'transparent' && el.backgroundColor !== 'none';
-    if (filled && isPointInPolygon(local, pts)) return true;
-    return false;
+    const ox = -el.width / 2, oy = -el.height / 2;
+    const fillable = !!el.backgroundColor && el.backgroundColor !== 'transparent' && el.backgroundColor !== 'none';
+    // Sample each subpath; stroke hit = on any polyline; fill hit = odd number of closed
+    // subpaths contain the point (even-odd rule, so holes register as outside).
+    let inside = false;
+    const N = 96;
+    for (const sp of subs) {
+        const d = anchorsToPathData(sp.anchors, sp.closed, ox, oy);
+        if (!d) continue;
+        const cmds = PathUtils.parsePath(d);
+        if (cmds.length === 0) continue;
+        const pts: { x: number; y: number }[] = [];
+        for (let i = 0; i <= N; i++) { const pt = PathUtils.getPointOnPath(cmds, i / N); pts.push({ x: pt.x, y: pt.y }); }
+        if (isPointOnPolyline(local, pts, tol)) return true;
+        if (fillable && sp.closed && isPointInPolygon(local, pts)) inside = !inside;
+    }
+    return inside;
 }
 
 /**

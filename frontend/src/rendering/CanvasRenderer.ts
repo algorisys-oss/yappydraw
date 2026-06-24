@@ -61,8 +61,9 @@ export class CanvasRenderer implements IRenderer {
         else this.ctx.clip();
     }
 
-    fillPath(svgPath: string): void {
-        this.ctx.fill(new Path2D(svgPath));
+    fillPath(svgPath: string, fillRule?: CanvasFillRule): void {
+        if (fillRule) this.ctx.fill(new Path2D(svgPath), fillRule);
+        else this.ctx.fill(new Path2D(svgPath));
     }
     strokePath(svgPath: string): void {
         this.ctx.stroke(new Path2D(svgPath));

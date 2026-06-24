@@ -19,6 +19,7 @@ import { PathUtils } from './math/path-utils';
 
 type Pt = { x: number; y: number };
 type Ring = [number, number][];
+type Poly = Ring[];
 
 /** Sample an element's outline to a world-space polyline (+ closed flag). */
 export function samplePathPolyline(el: DrawingElement): { pts: Pt[]; closed: boolean } | null {
@@ -57,8 +58,9 @@ function circleRing(c: Pt, r: number, n = 16): Ring {
     return ring;
 }
 
-/** Minkowski stroke outline: union of segment rects + vertex disks. Returns outer rings. */
-export function computeOutlineStroke(el: DrawingElement): Ring[] {
+/** Minkowski stroke outline: union of segment rects + vertex disks. Returns polygons
+ *  (outer ring + any holes, e.g. the inner edge of a thin closed-loop stroke). */
+export function computeOutlineStroke(el: DrawingElement): Poly[] {
     const poly = samplePathPolyline(el);
     if (!poly) return [];
     const r = Math.max(0.5, (el.strokeWidth || 1) / 2);
@@ -75,11 +77,11 @@ export function computeOutlineStroke(el: DrawingElement): Ring[] {
     if (parts.length === 0) return [];
     let result: any;
     try { result = polygonClipping.union(parts[0] as any, ...(parts.slice(1) as any)); } catch { return []; }
-    return (result || []).map((poly2: any) => poly2[0]).filter((ring: Ring) => ring && ring.length >= 4);
+    return (result || []).filter((poly2: Poly) => poly2 && poly2[0] && poly2[0].length >= 4);
 }
 
-/** Offset the (closed) outline by `d` (outward +, inward −); cleaned via union. */
-export function computeOffsetPath(el: DrawingElement, d: number): Ring[] {
+/** Offset the (closed) outline by `d` (outward +, inward −); cleaned via union. Returns polygons. */
+export function computeOffsetPath(el: DrawingElement, d: number): Poly[] {
     const poly = samplePathPolyline(el);
     if (!poly || poly.pts.length < 3) return [];
     const pts = poly.pts;
@@ -101,6 +103,6 @@ export function computeOffsetPath(el: DrawingElement, d: number): Ring[] {
     }
     out.push([out[0][0], out[0][1]]);
     let result: any;
-    try { result = polygonClipping.union([out] as any); } catch { return [[...out]]; }
-    return (result || []).map((poly2: any) => poly2[0]).filter((ring: Ring) => ring && ring.length >= 4);
+    try { result = polygonClipping.union([out] as any); } catch { return [[[...out]]]; }
+    return (result || []).filter((poly2: Poly) => poly2 && poly2[0] && poly2[0].length >= 4);
 }

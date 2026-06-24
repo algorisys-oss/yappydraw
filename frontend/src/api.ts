@@ -20,7 +20,7 @@ import {
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
     saveActiveSlide, updateGlobalSettings, togglePenStabilization
 } from "./store/app-store";
-import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor } from "./types";
+import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
 import type { LayoutDirection } from "./utils/mindmap-layout";
@@ -76,6 +76,7 @@ interface ElementOptions {
     strokeStyle?: StrokeStyle;
     pathAnchors?: PathAnchor[];
     pathClosed?: boolean;
+    pathSubpaths?: PathSubpath[];
     opacity?: number;
     roughness?: number;
     angle?: number;
@@ -523,11 +524,41 @@ export const YappyAPI = {
         });
     },
 
-    /** Read back an editable path's anchors + closed flag (null if not a path). */
-    getPath(id: string): { anchors: PathAnchor[]; closed: boolean } | null {
+    /**
+     * Create a multi-subpath `path` element (holes / disjoint islands). Each subpath's
+     * anchors are in a shared frame; the whole set is normalized to its combined bbox.
+     * Overlapping closed subpaths punch holes via the even-odd fill rule.
+     */
+    createMultiPath(subpaths: PathSubpath[], options?: ElementOptions): string | null {
+        const usable = (subpaths ?? []).filter(sp => sp.anchors && sp.anchors.length >= 2);
+        if (usable.length === 0) return null;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const sp of usable) for (const a of sp.anchors) {
+            const xs = [a.x, a.x + (a.outX ?? 0), a.x + (a.inX ?? 0)];
+            const ys = [a.y, a.y + (a.outY ?? 0), a.y + (a.inY ?? 0)];
+            minX = Math.min(minX, ...xs); maxX = Math.max(maxX, ...xs);
+            minY = Math.min(minY, ...ys); maxY = Math.max(maxY, ...ys);
+        }
+        const width = Math.max(1, maxX - minX), height = Math.max(1, maxY - minY);
+        const norm: PathSubpath[] = usable.map(sp => ({
+            closed: sp.closed,
+            anchors: sp.anchors.map(a => ({ ...a, x: a.x - minX, y: a.y - minY })),
+        }));
+        return this.createElement('path', minX, minY, width, height, {
+            ...options,
+            pathSubpaths: norm,
+            pathAnchors: undefined,
+            backgroundColor: options?.backgroundColor ?? '#cccccc',
+        });
+    },
+
+    /** Read back an editable path's anchors + closed flag, or its subpaths (null if not a path). */
+    getPath(id: string): { anchors?: PathAnchor[]; closed?: boolean; subpaths?: PathSubpath[] } | null {
         const el = this.getElement(id);
-        if (!el || el.type !== 'path' || !el.pathAnchors) return null;
-        return { anchors: el.pathAnchors, closed: !!el.pathClosed };
+        if (!el || el.type !== 'path') return null;
+        if (el.pathSubpaths && el.pathSubpaths.length) return { subpaths: el.pathSubpaths };
+        if (el.pathAnchors) return { anchors: el.pathAnchors, closed: !!el.pathClosed };
+        return null;
     },
 
     // --- Specialized Elements ---

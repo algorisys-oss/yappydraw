@@ -22,6 +22,7 @@ const BasicShapesDoc = lazy(() => import('./shapes/basic-shapes-doc'));
 const GeometricShapesDoc = lazy(() => import('./shapes/geometric-shapes-doc'));
 const DrawingToolsDoc = lazy(() => import('./shapes/drawing-tools-doc'));
 const ConnectorsDoc = lazy(() => import('./shapes/connectors-doc'));
+const VectorPathsDoc = lazy(() => import('./shapes/vector-paths-doc'));
 const FlowchartDoc = lazy(() => import('./shapes/flowchart-doc'));
 const UmlDoc = lazy(() => import('./shapes/uml-doc'));
 const InfrastructureDoc = lazy(() => import('./shapes/infrastructure-doc'));
@@ -69,6 +70,14 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Drawing',
         description: 'Lines, arrows, bezier curves, and smart connectors',
         content: ConnectorsDoc
+    },
+    {
+        id: 'vector-paths',
+        name: 'Vector Paths',
+        icon: '✒️',
+        category: 'Drawing',
+        description: 'Pen tool, node editing, Convert to Path, Pathfinder booleans, Outline Stroke, Offset Path, and holes',
+        content: VectorPathsDoc
     },
     // Diagrams
     {

@@ -3,20 +3,20 @@
  *
  * Each element is flattened to world-space polygon rings (curves sampled to a
  * tolerance — a quality trade-off noted in the roadmap), the requested boolean is run
- * via `polygon-clipping`, and the result rings are converted to corner-anchor
- * `pathAnchors` for new `path` elements. Holes (inner rings) are dropped in this first
- * version — a single-subpath `path` can't render them yet.
+ * via `polygon-clipping`, and the result polygons are converted to corner-anchor
+ * subpaths for new `path` elements. A polygon's outer ring + any inner rings (holes)
+ * become a multi-subpath path rendered with the even-odd fill rule.
  */
 
 import polygonClipping from 'polygon-clipping';
-import type { DrawingElement, PathAnchor } from '../types';
+import type { DrawingElement, PathAnchor, PathSubpath } from '../types';
 import { getShapeGeometry } from './shape-geometry';
 import { PathUtils } from './math/path-utils';
 
 export type BooleanOp = 'union' | 'subtract' | 'intersect' | 'exclude';
 
-type Ring = [number, number][];
-type Poly = Ring[];
+export type Ring = [number, number][];
+export type Poly = Ring[];
 type MultiPoly = Poly[];
 
 function ringFromPoints(pts: { x: number; y: number }[]): Ring {
@@ -80,11 +80,40 @@ export function ringToPathAnchors(ring: Ring): { anchors: PathAnchor[]; minX: nu
     return { anchors, minX, minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };
 }
 
+/** Drop the duplicated closing point and return a clean ring (≥3 distinct points) or null. */
+function cleanRing(ring: Ring): Ring | null {
+    let pts = ring.slice();
+    if (pts.length > 1) {
+        const a = pts[0], b = pts[pts.length - 1];
+        if (a[0] === b[0] && a[1] === b[1]) pts = pts.slice(0, -1);
+    }
+    return pts.length >= 3 ? pts : null;
+}
+
+/**
+ * A result polygon (outer ring + holes) → multiple corner-anchor subpaths, all relative
+ * to the polygon's combined bbox. The outer ring + every inner hole become subpaths;
+ * even-odd fill turns the inner rings into holes. Returns null if the outer ring is degenerate.
+ */
+export function polyToPathSubpaths(poly: Poly): { subpaths: PathSubpath[]; minX: number; minY: number; width: number; height: number } | null {
+    const rings = poly.map(cleanRing).filter((r): r is Ring => !!r);
+    if (rings.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const r of rings) for (const [x, y] of r) {
+        minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+    }
+    const subpaths: PathSubpath[] = rings.map(r => ({
+        anchors: r.map(([x, y]) => ({ x: x - minX, y: y - minY, kind: 'corner' as const })),
+        closed: true,
+    }));
+    return { subpaths, minX, minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };
+}
+
 /**
  * Run a boolean op over elements (in the given order — `subtract` is first minus the
- * rest). Returns the result polygons' outer rings (world-space), or [] if empty.
+ * rest). Returns the result polygons (world-space; each = outer ring + holes), or [] if empty.
  */
-export function runBooleanOp(elements: DrawingElement[], op: BooleanOp): Ring[] {
+export function runBooleanOp(elements: DrawingElement[], op: BooleanOp): Poly[] {
     if (elements.length < 2) return [];
     const polys = elements.map(elementToMultiPolygon).filter(mp => mp.length > 0);
     if (polys.length < 2) return [];
@@ -98,6 +127,6 @@ export function runBooleanOp(elements: DrawingElement[], op: BooleanOp): Ring[] 
     } catch {
         return [];
     }
-    // Each result polygon: ring[0] is the outer boundary (holes dropped for now).
-    return (result || []).map(poly => poly[0]).filter(r => r && r.length >= 4);
+    // Each result polygon keeps its outer ring + any holes (even-odd subpaths downstream).
+    return (result || []).filter(poly => poly && poly.length > 0 && poly[0] && poly[0].length >= 4);
 }

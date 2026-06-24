@@ -24,60 +24,68 @@ export function checkBinding(
 ): { element: DrawingElement; snapPoint: { x: number; y: number }; position: string } | null {
     const threshold = 40 / scale;
     const anchorSnapThreshold = 25 / scale;
-    let bindingHit = null;
 
-    for (const target of elements) {
+    // A target is "hit" when the point is within `t` of its geometry. Returns the area of
+    // the target (for innermost-preference) when hit at threshold `t`, else null.
+    const hitArea = (target: DrawingElement, isPolylineShape: boolean, t: number): number | null => {
+        if (target.type === 'circle') {
+            const cx = target.x + target.width / 2;
+            const cy = target.y + target.height / 2;
+            const rx = target.width / 2 + t;
+            const ry = target.height / 2 + t;
+            if (((x - cx) ** 2) / (rx ** 2) + ((y - cy) ** 2) / (ry ** 2) <= 1) {
+                return Math.abs(target.width * target.height);
+            }
+            return null;
+        }
+        if (isPolylineShape && target.points && Array.isArray(target.points) && (target.points as any[]).length >= 2) {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (const p of target.points as { x: number; y: number }[]) {
+                minX = Math.min(minX, target.x + p.x); minY = Math.min(minY, target.y + p.y);
+                maxX = Math.max(maxX, target.x + p.x); maxY = Math.max(maxY, target.y + p.y);
+            }
+            if (x >= minX - t && x <= maxX + t && y >= minY - t && y <= maxY + t) {
+                return Math.abs((maxX - minX) * (maxY - minY));
+            }
+            return null;
+        }
+        // rectangle / text / image / video / generic shapes: bbox test
+        if (x >= target.x - t && x <= target.x + target.width + t &&
+            y >= target.y - t && y <= target.y + target.height + t) {
+            return Math.abs(target.width * target.height);
+        }
+        return null;
+    };
+
+    // Collect every candidate the point is near, then pick the most specific one so a
+    // connector targets the inner child rather than the container it sits inside.
+    // Preference (best first): the point is actually *inside* the shape over merely near
+    // it; then smaller area (the inner/nested child); then higher z-order (drawn on top).
+    type Cand = { target: DrawingElement; area: number; inside: boolean; idx: number };
+    const candidates: Cand[] = [];
+    const tightT = Math.min(threshold, 4 / scale);
+    for (let idx = 0; idx < elements.length; idx++) {
+        const target = elements[idx];
         if (target.id === excludeId) continue;
         if (!canInteract(target)) continue;
-        // Skip connectors as targets, but allow unbound polylines (they act as shapes)
         const isPolylineShape = target.type === 'line' && target.curveType === 'elbow' && !target.startBinding && !target.endBinding;
         if ((target.type === 'line' || target.type === 'arrow' || target.type === 'bezier' || target.type === 'organicBranch') && !isPolylineShape) continue;
         // Skip pool containers — connectors should bind to shapes inside the pool, not the pool itself
         if (target.type === 'bpmnPool') continue;
         if (target.layerId !== activeLayerId) continue;
 
-        let isHit = false;
-
-        if (target.type === 'text' || target.type === 'image' || target.type === 'video' || target.type === 'rectangle') {
-            if (x >= target.x - threshold && x <= target.x + target.width + threshold &&
-                y >= target.y - threshold && y <= target.y + target.height + threshold) {
-                isHit = true;
-            }
-        } else if (target.type === 'circle') {
-            const cx = target.x + target.width / 2;
-            const cy = target.y + target.height / 2;
-            const rx = target.width / 2 + threshold;
-            const ry = target.height / 2 + threshold;
-            if (((x - cx) ** 2) / (rx ** 2) + ((y - cy) ** 2) / (ry ** 2) <= 1) {
-                isHit = true;
-            }
-        } else if (isPolylineShape && target.points && Array.isArray(target.points) && (target.points as any[]).length >= 2) {
-            // Polyline shape: compute actual AABB from points (not element.x/width which is origin-relative)
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            for (const p of target.points as { x: number; y: number }[]) {
-                const absX = target.x + p.x;
-                const absY = target.y + p.y;
-                minX = Math.min(minX, absX);
-                minY = Math.min(minY, absY);
-                maxX = Math.max(maxX, absX);
-                maxY = Math.max(maxY, absY);
-            }
-            if (x >= minX - threshold && x <= maxX + threshold &&
-                y >= minY - threshold && y <= maxY + threshold) {
-                isHit = true;
-            }
-        } else {
-            if (x >= target.x - threshold && x <= target.x + target.width + threshold &&
-                y >= target.y - threshold && y <= target.y + target.height + threshold) {
-                isHit = true;
-            }
-        }
-
-        if (isHit) {
-            bindingHit = target;
-            break;
-        }
+        const area = hitArea(target, isPolylineShape, threshold);
+        if (area === null) continue;
+        const inside = hitArea(target, isPolylineShape, tightT) !== null;
+        candidates.push({ target, area, inside, idx });
     }
+
+    candidates.sort((a, b) => {
+        if (a.inside !== b.inside) return a.inside ? -1 : 1; // inside beats merely-near
+        if (a.area !== b.area) return a.area - b.area;        // innermost (smallest) wins
+        return b.idx - a.idx;                                 // topmost z as tiebreak
+    });
+    const bindingHit = candidates.length ? candidates[0].target : null;
 
     if (bindingHit) {
         // Try anchor snap first

@@ -38,6 +38,19 @@ export interface PathAnchor {
     kind: 'corner' | 'smooth';
 }
 
+/**
+ * One subpath of a multi-subpath `path` element — its own ordered anchor list (relative
+ * to the element origin) plus a closed flag. Multiple subpaths let a single `path` hold
+ * holes (a donut, the counter of an 'O') and disjoint islands; fill uses the even-odd
+ * rule so overlapping closed subpaths punch holes. When `pathSubpaths` is present it is
+ * the source of truth; the legacy single-subpath `pathAnchors`/`pathClosed` is the
+ * fallback for older paths and for node-editable results.
+ */
+export interface PathSubpath {
+    anchors: PathAnchor[];
+    closed: boolean;
+}
+
 export type AppMode = 'design' | 'presentation' | 'prototype' | 'embed';
 export type FillStyle = 'hachure' | 'solid' | 'cross-hatch' | 'zigzag' | 'dots' | 'dashed' | 'zigzag-line' | 'linear' | 'radial' | 'conic' | 'image';
 export type StrokeStyle = 'solid' | 'dashed' | 'dotted';
@@ -304,6 +317,9 @@ export interface DrawingElement {
     // closed flag. The SVG `d` for rendering/hit-test is derived from these.
     pathAnchors?: PathAnchor[];
     pathClosed?: boolean;
+    // Multiple subpaths (holes / disjoint islands). When set, supersedes pathAnchors;
+    // rendered + hit-tested with the even-odd fill rule. See PathSubpath.
+    pathSubpaths?: PathSubpath[];
     // Per-tree mindmap layout direction (set on the root node); drives auto-reflow.
     mindmapDir?: 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial' | 'balanced';
     poolContainerId?: string | null;   // ID of containing bpmnPool element

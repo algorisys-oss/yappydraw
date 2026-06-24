@@ -39,6 +39,35 @@ export function anchorsToPathData(anchors: PathAnchor[], closed = false, ox = 0,
     return d;
 }
 
+/** Minimal shape of a path-bearing element (avoids a DrawingElement import here). */
+interface PathLike {
+    pathSubpaths?: { anchors: PathAnchor[]; closed: boolean }[];
+    pathAnchors?: PathAnchor[];
+    pathClosed?: boolean;
+}
+
+/**
+ * Normalize a `path` element to its list of subpaths. `pathSubpaths` wins when present;
+ * otherwise the legacy single subpath (`pathAnchors`/`pathClosed`) is wrapped. Empty list
+ * if the element has no usable anchors.
+ */
+export function getPathSubpaths(el: PathLike): { anchors: PathAnchor[]; closed: boolean }[] {
+    if (el.pathSubpaths && el.pathSubpaths.length) {
+        return el.pathSubpaths.filter(sp => sp.anchors && sp.anchors.length >= 2);
+    }
+    if (el.pathAnchors && el.pathAnchors.length >= 2) {
+        return [{ anchors: el.pathAnchors, closed: el.pathClosed ?? false }];
+    }
+    return [];
+}
+
+/** Serialize several subpaths into a single multi-`M` SVG `d` string. */
+export function subpathsToPathData(
+    subpaths: { anchors: PathAnchor[]; closed: boolean }[], ox = 0, oy = 0
+): string {
+    return subpaths.map(sp => anchorsToPathData(sp.anchors, sp.closed, ox, oy)).filter(Boolean).join(' ');
+}
+
 export interface PathPoint {
     x: number;
     y: number;

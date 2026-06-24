@@ -424,3 +424,30 @@ button:focus-visible {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9), 0 0 0 2px rgba(255, 255, 255, 0.9);
   pointer-events: none;
 }
+/* ── Modern slim scrollbars (app-wide) ──────────────────────────────
+   Replaces the bulky default OS scrollbars with a thin, rounded, low-
+   contrast thumb that only asserts itself on hover. Firefox uses the
+   standard `scrollbar-width/color`; Chromium/WebKit use ::-webkit-*. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, rgba(120, 120, 135, 0.45)) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb, rgba(120, 120, 135, 0.45));
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover, rgba(100, 100, 120, 0.7));
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

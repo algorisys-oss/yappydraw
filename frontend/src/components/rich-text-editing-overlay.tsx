@@ -286,6 +286,16 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                         }
                                         return;
                                     }
+                                    // Ctrl/Cmd+Enter: commit and stay on the current shape (selected).
+                                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                                        e.preventDefault();
+                                        e.stopImmediatePropagation();
+                                        handleCommit();
+                                        if (!store.toolLocked) {
+                                            setSelectedTool('selection');
+                                        }
+                                        return;
+                                    }
                                     if (e.key === 'Enter') {
                                         // Inside a list, let the browser handle Enter
                                         // so it creates a new <li> naturally

@@ -421,6 +421,17 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                         }
                                         return;
                                     }
+                                    // Ctrl/Cmd+Enter: commit text and stay on the current shape
+                                    // (keeps it selected; no newline, no new mindmap node).
+                                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                                        e.preventDefault();
+                                        e.stopImmediatePropagation();
+                                        props.onCommitText();
+                                        if (!store.toolLocked) {
+                                            setSelectedTool('selection');
+                                        }
+                                        return;
+                                    }
                                     // Table cell navigation
                                     if (props.editingProperty() === 'tableCell' && props.onTableCellNavigate) {
                                         if (e.key === 'Tab') {
