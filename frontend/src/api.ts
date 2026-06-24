@@ -9,7 +9,7 @@ import {
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
-    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
+    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1506,6 +1506,8 @@ export const YappyAPI = {
     pathfinder(ids: string[], op: 'union' | 'subtract' | 'intersect' | 'exclude') { return applyPathfinder(ids, op); },
     /** Convert shapes to editable vector paths (in place). Returns the converted ids. */
     convertToPath(ids: string[]) { return convertToPath(ids); },
+    /** Text → Outlines: replace text elements with editable vector glyph paths (async). Returns a promise of new path ids. */
+    convertTextToOutlines(ids: string[]) { return convertTextToOutlines(ids); },
     /** Outline Stroke: replace each element with a filled path of its stroke outline. Returns new ids. */
     outlineStroke(ids: string[]) { return outlineStroke(ids); },
     /** Offset Path: add a parallel path offset by `distance` (outward +, inward −). Returns new ids. */

@@ -83,6 +83,41 @@ export const LogoToolkitDoc: Component = () => {
                 </p>
             </section>
 
+            {/* Text → Outlines */}
+            <section class="doc-section">
+                <h2>Text → Outlines</h2>
+                <p>
+                    Turn a text element into a fully-editable vector <strong>path</strong> of its glyph
+                    shapes — the Illustrator "Create Outlines" move, and the foundation of wordmark and
+                    monogram design. Select a text element and run <strong>Create Outlines</strong> from the
+                    right-click <em>Path</em> submenu, the Command Palette, or press
+                    <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">O</span>.
+                </p>
+                <p>
+                    The result is a real vector path: the counters (the holes in <em>o, e, a, g, D…</em>)
+                    become separate subpaths punched out with the even-odd fill rule, and every contour is
+                    node-editable. Because it's now a path, the whole vector toolkit applies — reshape nodes,
+                    combine letters with <strong>Pathfinder</strong> booleans, add <strong>Offset Path</strong>
+                    borders, and weld with <strong>Outline Stroke</strong>.
+                </p>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Note</th><th>Detail</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Editable</td><td>Drag anchors and Bézier handles like any path; counters stay as holes.</td></tr>
+                        <tr><td>Colour</td><td>The path inherits the text colour as a solid fill (no stroke).</td></tr>
+                        <tr><td>Fonts</td><td>Works with the bundled font families (the ones in the font picker). Italic text outlines upright in this version.</td></tr>
+                        <tr><td>Layout</td><td>Honours font size, weight, alignment, and hard line breaks. (No soft-wrap — break lines yourself for multi-line marks.)</td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    <strong>Monogram recipe:</strong> type the letters → <em>Create Outlines</em> →
+                    reposition / overlap the glyphs → select all → <em>Pathfinder → Unite</em> for a single
+                    welded mark, or <em>Offset Path</em> for an outlined badge.
+                </p>
+            </section>
+
             {/* Recipes */}
             <section class="doc-section">
                 <h2>Worked Recipes</h2>

@@ -9,6 +9,7 @@ import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchI
 import { runBooleanOp, polyToPathSubpaths, type BooleanOp, type Poly } from "../utils/path-boolean";
 import { shapeToPath } from "../utils/shape-to-path";
 import { normalizePoints } from "../utils/render-element";
+import { textElementToOutline } from "../utils/text-to-outlines";
 import { getPathSubpaths } from "../utils/math/path-utils";
 import type { PathAnchor, PathSubpath } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
@@ -3365,6 +3366,53 @@ export const convertToPath = (ids: string[]): string[] => {
     setStore('selection', out);
     showToast(`Converted ${out.length} to path`, 'success');
     return out;
+};
+
+/**
+ * Text → Outlines — replace each selected text element with an editable vector
+ * `path` element of its glyph outlines (Illustrator "Create Outlines"). Async
+ * because the glyph font binary is fetched + parsed lazily. Counters become
+ * holes via even-odd fill. The path inherits the text colour as a solid fill.
+ */
+export const convertTextToOutlines = async (ids: string[]): Promise<string[]> => {
+    const texts = store.elements.filter(e => ids.includes(e.id) && e.type === 'text');
+    if (texts.length === 0) { showToast('Select a text element to outline', 'info'); return []; }
+
+    const results: { srcId: string; res: Awaited<ReturnType<typeof textElementToOutline>> }[] = [];
+    for (const el of texts) {
+        try {
+            const res = await textElementToOutline(el);
+            if (res) results.push({ srcId: el.id, res });
+        } catch (e) {
+            console.error('[outline] failed for', el.id, e);
+        }
+    }
+    if (results.length === 0) { showToast('Could not outline text', 'error'); return []; }
+
+    pushToHistory();
+    const newIds: string[] = [];
+    setStore('elements', list => list.map(el => {
+        const r = results.find(x => x.srcId === el.id);
+        if (!r || !r.res) return el;
+        const fill = el.textColor || el.strokeColor || '#000000';
+        const id = generateId('path');
+        newIds.push(id);
+        return {
+            ...el,
+            id, type: 'path',
+            x: r.res.x, y: r.res.y, width: r.res.width, height: r.res.height,
+            pathSubpaths: r.res.subpaths,
+            pathAnchors: undefined, pathClosed: undefined,
+            points: undefined, controlPoints: undefined,
+            text: undefined, rawText: undefined, richText: undefined, containerText: undefined,
+            backgroundColor: fill, fillStyle: 'solid',
+            strokeColor: 'transparent', strokeWidth: 0,
+        } as DrawingElement;
+    }));
+    setStore('selection', newIds);
+    bumpDirtyRevision();
+    showToast(`Outlined ${newIds.length} text → path`, 'success');
+    return newIds;
 };
 
 /**

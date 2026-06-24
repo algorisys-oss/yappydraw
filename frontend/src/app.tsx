@@ -9,7 +9,7 @@ import {
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
   setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation,
-  transformAgain, recordTransform
+  transformAgain, recordTransform, convertTextToOutlines
 } from './store/app-store';
 import { showToast } from './components/toast';
 import { ColorDropHud } from './components/color-drop-hud';
@@ -440,6 +440,10 @@ const App: Component = () => {
             const isLocked = store.selection.some(id => store.elements.find(e => e.id === id)?.locked);
             lockSelected(!isLocked);
           }
+        } else if (key === 'o' && e.shiftKey) {
+          // Create Outlines — convert selected text into editable vector paths.
+          e.preventDefault();
+          if (store.selection.length > 0) void convertTextToOutlines([...store.selection]);
         }
         return;
       }

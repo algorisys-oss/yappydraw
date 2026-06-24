@@ -14,7 +14,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     zoomToFit, zoomToFitSlide, updateGlobalSettings,
     toggleVideoPlayback, isVideoPlaying
 } from '../store/app-store';
@@ -325,6 +325,9 @@ export function getContextMenuItems(
         if (convertible || hasPathish) {
             const pathOps: MenuItem[] = [];
             if (convertible) pathOps.push({ label: 'Convert to Path', icon: '✎', onClick: () => convertToPath([...store.selection]) });
+            if (store.selection.some(id => store.elements.find(x => x.id === id)?.type === 'text')) {
+                pathOps.push({ label: 'Create Outlines (text → vector)', icon: '🆎', shortcut: 'Ctrl+Shift+O', onClick: () => { void convertTextToOutlines([...store.selection]); } });
+            }
             if (hasPathish) pathOps.push(
                 { label: 'Outline Stroke', icon: '▱', onClick: () => outlineStroke([...store.selection]) },
                 { label: 'Offset Path (+10)', icon: '⊕', onClick: () => offsetPath([...store.selection], 10) },
