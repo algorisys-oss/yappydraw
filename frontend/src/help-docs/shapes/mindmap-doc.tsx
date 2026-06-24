@@ -44,13 +44,13 @@ export const MindmapDoc: Component = () => {
                         <div class="shortcut-keys">
                             <span class="kbd">Tab</span>
                         </div>
-                        <span class="shortcut-desc">Add child node</span>
+                        <span class="shortcut-desc">Add child node (opens text editing)</span>
                     </div>
                     <div class="shortcut-item">
                         <div class="shortcut-keys">
                             <span class="kbd">Enter</span>
                         </div>
-                        <span class="shortcut-desc">Add sibling node</span>
+                        <span class="shortcut-desc">Add sibling node (opens text editing)</span>
                     </div>
                     <div class="shortcut-item">
                         <div class="shortcut-keys">
@@ -76,6 +76,18 @@ export const MindmapDoc: Component = () => {
                         </div>
                         <span class="shortcut-desc">Edit node text</span>
                     </div>
+                </div>
+
+                <div class="tip-box">
+                    <h5>Keyboard-only flow</h5>
+                    <p>
+                        After a root exists, build the whole map without the mouse:
+                        press <span class="kbd">Tab</span>/<span class="kbd">Enter</span> to
+                        add a node — it drops straight into text editing so you can type
+                        its label. Press <span class="kbd">Esc</span> to commit, then
+                        <span class="kbd">Tab</span>/<span class="kbd">Enter</span> again
+                        for the next. <span class="kbd">F2</span> re-edits the selected node.
+                    </p>
                 </div>
             </section>
 

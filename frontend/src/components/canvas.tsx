@@ -49,6 +49,7 @@ import { hitTestElement } from "../utils/hit-testing";
 import { renderCropOverlay, hitTestCropHandle, applyCropDrag, getCropHandleCursor, finalizeCropRect, type CropHandle } from "../utils/image-crop-utils";
 import { perfMonitor } from "../utils/performance-monitor";
 import { fitShapeToText, fitUmlClassToContent } from "../utils/text-utils";
+import { plainTextToSpans } from "../utils/rich-text-utils";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { effectiveTime } from "../utils/animation/animation-engine";
 import RecordingOverlay from "./recording-overlay";
@@ -1769,8 +1770,54 @@ const Canvas: Component = () => {
             getEditingId: () => editingId(),
         };
 
+        // Expose node text editing for the global keyboard handler (app.tsx).
+        // Backs F2 ("edit node text") and auto-edit-on-create for mindmap nodes,
+        // mirroring the containerText/text branch of handleDoubleClick so a node
+        // can be labelled without the mouse. Returns false if editing couldn't
+        // start (missing element, or blocked by the canvas-rotation guard).
+        (window as any).__nodeTextEdit = {
+            startEditing: (elementId: string, opts?: { selectAll?: boolean }) => {
+                const el = store.elements.find(e => e.id === elementId);
+                if (!el) return false;
+                // Bare connectors aren't node-text editable.
+                if (el.type === 'line' || el.type === 'arrow' || el.type === 'bezier'
+                    || el.type === 'polyline' || el.type === 'organicBranch') return false;
+
+                const useTextProp = el.type === 'text' || el.type === 'richtext' || el.type === 'codeBlock'
+                    || el.type === 'dsArray' || el.type === 'dsStack' || el.type === 'dsQueue'
+                    || el.type === 'dsLinkedList' || el.type === 'dsBinaryTree' || el.type === 'dsHashTable';
+                const prop: 'text' | 'containerText' = useTextProp ? 'text' : 'containerText';
+                const text = useTextProp ? (el.text || '') : (el.containerText || '');
+
+                const existingSpans = useTextProp ? el.richText : el.richContainerText;
+                let spans: RichTextSpan[] = existingSpans && existingSpans.length > 0 ? existingSpans : [];
+                if (el.type === 'richtext' && spans.length === 0 && text) {
+                    spans = plainTextToSpans(text);
+                }
+
+                batch(() => {
+                    setEditingProperty(prop);
+                    setEditText(text);
+                    setRichTextSpans(spans);
+                    setEditingId(el.id); // last — triggers overlay render; respects the rotation guard
+                });
+
+                // Rotation guard (or any block) leaves editingId unchanged — don't focus a stale overlay.
+                if (editingId() !== el.id) return false;
+
+                setTimeout(() => {
+                    textInputRef?.focus();
+                    if (opts?.selectAll) textInputRef?.select();
+                    else textInputRef?.setSelectionRange(text.length, text.length);
+                }, 0);
+                return true;
+            },
+            getEditingId: () => editingId(),
+        };
+
         onCleanup(() => {
             delete (window as any).__tableCellNav;
+            delete (window as any).__nodeTextEdit;
             clearUndoRepeat();
             registerColorDropCommit(null);
             dropZone.removeEventListener('dragover', handleDragOver);

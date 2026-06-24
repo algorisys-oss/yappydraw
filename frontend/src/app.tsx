@@ -551,10 +551,20 @@ const App: Component = () => {
               moveSelectedElements(dx, dy, true);
             }
           }
+        } else if (key === 'f2') {
+          // Edit selected node's text (documented mindmap shortcut; works for any
+          // single text-bearing element). Backed by the __nodeTextEdit bridge so a
+          // node can be labelled without the mouse. select-all so typing replaces.
+          if (store.selection.length === 1) {
+            e.preventDefault();
+            (window as any).__nodeTextEdit?.startEditing(store.selection[0], { selectAll: true });
+          }
         } else if (key === 'tab') {
           if (store.selection.length === 1) {
             e.preventDefault();
-            addChildNode(store.selection[0]);
+            const newId = addChildNode(store.selection[0]);
+            // Drop straight into editing so the new node can be labelled (keyboard-only flow)
+            if (newId) (window as any).__nodeTextEdit?.startEditing(newId);
           }
         } else if (key === 'enter') {
           if (store.selection.length === 1) {
@@ -562,7 +572,8 @@ const App: Component = () => {
             const selEl = store.elements.find(el => el.id === store.selection[0]);
             if (selEl?.parentId) {
               e.preventDefault();
-              addSiblingNode(store.selection[0]);
+              const newId = addSiblingNode(store.selection[0]);
+              if (newId) (window as any).__nodeTextEdit?.startEditing(newId);
             }
           }
         } else if (key === ' ') {
