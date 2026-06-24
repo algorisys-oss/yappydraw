@@ -86,7 +86,9 @@ const Toolbar: Component = () => {
         e.preventDefault();
         e.stopPropagation();
         const el = (e.currentTarget as HTMLElement).closest('.toolbar-container') as HTMLElement | null;
-        const curW = wrapWidth() || (el?.offsetWidth ?? 220);
+        // Anchor to the actual rendered width (the bar hugs its content), so the drag
+        // tracks the visible right edge.
+        const curW = el?.offsetWidth ?? wrapWidth() ?? 220;
         setIsResizing(true);
         setResizeStart({ x: e.clientX, y: e.clientY, w: curW });
     };
@@ -312,7 +314,9 @@ const Toolbar: Component = () => {
                         : (vertical ? 'translateY(-50%)' : 'translateX(-50%)');
                     return `${center} translate(${position().x}px, ${position().y}px)`.trim();
                 })(),
-                ...(wrapWidth() > 0 ? { width: `${wrapWidth()}px` } : {})
+                // Use max-width (not width) so the bar hugs its icons and only wraps when
+                // dragged NARROWER than the content — no empty space on a single row.
+                ...(wrapWidth() > 0 ? { 'max-width': `${wrapWidth()}px` } : {})
             }}
         >
             <div class="drag-handle" title="Drag to move toolbar">

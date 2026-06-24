@@ -30,7 +30,10 @@
     flex-flow: row wrap;
     align-items: flex-start;
     align-content: flex-start;
-    justify-content: center;
+    justify-content: flex-start;
+    /* Hug the icons (width:max-content capped by the inline max-width) so there's no
+       empty space on a single row; only wrap when dragged narrower than the content. */
+    width: max-content;
     /* Pin to the top and grow downward; never exceed the viewport (slim scrollbar). */
     top: 12px;
     bottom: auto;

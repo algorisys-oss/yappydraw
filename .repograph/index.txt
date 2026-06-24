@@ -168,8 +168,8 @@ frontend/src/components/text-editor-modal.tsx | typescript | 247 | Component:7 T
 frontend/src/components/text-tool-group.tsx | typescript | 133 | Component:1 TextType:8 TextToolGroup:15 handler:22 getCurrentTextTool:32 isTextToolActive:36 handleSelectText:44 handleRightClick:66 toggleMenu:72 getDropdownPosition:79
 frontend/src/components/toast.css | - | 109 |
 frontend/src/components/toast.tsx | typescript | 55 | ToastType:5 showToast:15 hideToast:31 Toast:36
-frontend/src/components/toolbar.css | - | 228 |
-frontend/src/components/toolbar.tsx | typescript | 498 | Component:1 VideoProvider:27 Toolbar:70 wrapWidth:83 onResizeDown:85 toggleBrainstormMode:94 onMouseDown:100 onMouseMove:113 onMouseUp:127 handleResize:136 handleToolClick:150 handleVideoInsert:160 handleRightClick:208 handleImageUpload:214
+frontend/src/components/toolbar.css | - | 231 |
+frontend/src/components/toolbar.tsx | typescript | 502 | Component:1 VideoProvider:27 Toolbar:70 wrapWidth:83 onResizeDown:85 toggleBrainstormMode:96 onMouseDown:102 onMouseMove:115 onMouseUp:129 handleResize:138 handleToolClick:152 handleVideoInsert:162 handleRightClick:210 handleImageUpload:216
 frontend/src/components/uml-tool-group.tsx | typescript | 145 | Component:1 UmlToolGroup:30 handler:37 getActiveUmlTool:47 handleToolClick:56 as:64 as:70 handleRightClick:78 toggleMenu:84 activeTool:91 isActive:92 getDropdownPosition:94
 frontend/src/components/unsaved-changes-dialog.css | - | 111 |
 frontend/src/components/unsaved-changes-dialog.tsx | typescript | 53 | Component:1 UnsavedChangesDialogProps:5 UnsavedChangesDialog:12 handleKeyDown:13
