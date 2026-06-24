@@ -21,10 +21,10 @@ export const MindmapDoc: Component = () => {
             <section class="doc-section">
                 <h2>Getting Started</h2>
                 <ol>
-                    <li>Select the <strong>Mind Map</strong> tool from the toolbar</li>
-                    <li>Click on the canvas to create a central topic</li>
+                    <li>Press <span class="kbd">M</span> (or pick the <strong>Mind Map</strong> tool) and click to create a central topic</li>
                     <li>Use keyboard shortcuts to add child and sibling nodes</li>
-                    <li>The layout automatically arranges as you build</li>
+                    <li>Or click the <strong>＋</strong> on a selected node to add a child with the mouse</li>
+                    <li>Paste an indented / bulleted outline onto a node to build a whole subtree at once</li>
                 </ol>
 
                 <div class="tip-box">
@@ -89,6 +89,24 @@ export const MindmapDoc: Component = () => {
                         for the next. <span class="kbd">F2</span> re-edits the selected node.
                     </p>
                 </div>
+            </section>
+
+            {/* Build faster */}
+            <section class="doc-section">
+                <h2>Build Faster</h2>
+                <ul>
+                    <li><strong>Paste an outline:</strong> copy an indented or bulleted list
+                        (2-space, 4-space, or tab indentation all work) and paste it onto a
+                        selected node — each line becomes a node, nesting is preserved, and the
+                        new subtree is laid out tidily in one step.</li>
+                    <li><strong>Add-child handle:</strong> a selected node shows a <strong>＋</strong>
+                        button on its right edge — click it to add a child (the mouse equivalent
+                        of <span class="kbd">Tab</span>).</li>
+                    <li><strong>Collapsed counts:</strong> a collapsed node shows a badge with the
+                        number of hidden descendants, so you know how much is tucked away.</li>
+                    <li><strong>Drag to reparent:</strong> drag a node over another; a dashed
+                        preview branch shows the new connection before you drop.</li>
+                </ul>
             </section>
 
             {/* Node Types */}

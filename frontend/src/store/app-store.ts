@@ -5,7 +5,7 @@ import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } fro
 import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-types';
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
-import { MindmapLayoutEngine, type LayoutDirection, getBranchInfo } from "../utils/mindmap-layout";
+import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
 import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
@@ -398,11 +398,11 @@ export const addElement = (element: DrawingElement) => {
     setStore("elements", (els) => [...els, element]);
 };
 
-export const addChildNode = (parentId: string) => {
+export const addChildNode = (parentId: string, opts: { recordHistory?: boolean; text?: string; select?: boolean } = {}) => {
     const parent = store.elements.find(e => e.id === parentId);
     if (!parent) return;
 
-    pushToHistory();
+    if (opts.recordHistory !== false) pushToHistory();
     const newId = generateId(parent.type);
     const hOffset = 100;
     const vGap = 40;
@@ -466,6 +466,7 @@ export const addChildNode = (parentId: string) => {
         layerId: store.activeLayerId,
         parentId: parent.id,
         text: "",
+        ...(opts.text ? { containerText: opts.text } : {}),
         isCollapsed: false,
         angle: 0,
         seed: Math.floor(Math.random() * 2 ** 31),
@@ -528,8 +529,42 @@ export const addChildNode = (parentId: string) => {
     // Snap connector endpoints to actual shape boundaries (important for non-rectangular shapes like cloud)
     refreshBoundLine(connectorId, () => store.elements, (id, upd) => updateElement(id, upd, false));
 
-    setStore("selection", [newId]);
+    if (opts.select !== false) setStore("selection", [newId]);
     return newId;
+};
+
+/**
+ * Smart paste: turn an indented / bulleted text outline into a mindmap subtree
+ * under `parentId`. Builds every node + connector in a single history step, then
+ * runs the layout engine over the whole tree so the result is tidy (no auto-reflow
+ * elsewhere, so this is the one place paste cleans up after itself). Returns the
+ * ids of the created nodes (empty if the outline was trivial/single-line).
+ */
+export const pasteMindmapOutline = (parentId: string, outline: OutlineNode[]): string[] => {
+    const parent = store.elements.find(e => e.id === parentId);
+    if (!parent || outline.length === 0) return [];
+
+    pushToHistory();
+    const created: string[] = [];
+    const build = (pId: string, nodes: OutlineNode[]) => {
+        for (const n of nodes) {
+            const id = addChildNode(pId, { recordHistory: false, text: n.text, select: false });
+            if (!id) continue;
+            created.push(id);
+            if (n.children.length) build(id, n.children);
+        }
+    };
+    build(parentId, outline);
+
+    if (created.length === 0) return [];
+
+    // Tidy just the pasted subtree, anchored at the paste target (which stays put).
+    // Scoping to `parentId` rather than the true root avoids overriding a layout
+    // direction the user may have chosen for the rest of the map.
+    layoutMindmapTree(parentId, 'horizontal-right');
+
+    setStore("selection", created);
+    return created;
 };
 
 export const addSiblingNode = (siblingId: string) => {
@@ -2836,12 +2871,15 @@ export const setParent = (childId: string, parentId: string | null) => {
 export const clearParent = (id: string) => {
     updateElement(id, { parentId: null }, true);
 };
-export const reorderMindmap = (rootId: string, direction: LayoutDirection) => {
+/**
+ * Core layout pass: build the tree from `rootId`, run the chosen strategy, write
+ * positions, and refresh bound connectors. Does NOT push history or toast — that's
+ * the caller's job — so it can be reused by paste/auto-clean paths.
+ */
+export const layoutMindmapTree = (rootId: string, direction: LayoutDirection) => {
     const engine = new MindmapLayoutEngine();
     const tree = engine.buildTree(rootId, store.elements);
-    if (!tree) return;
-
-    pushToHistory();
+    if (!tree) return false;
 
     if (direction.startsWith('horizontal')) {
         engine.layoutHorizontal(tree, direction === 'horizontal-right' ? 'right' : 'left');
@@ -2871,8 +2909,15 @@ export const reorderMindmap = (rootId: string, direction: LayoutDirection) => {
             refreshBoundLine(el.id, () => store.elements, (id, upd) => updateElement(id, upd, false));
         }
     }
+    return true;
+};
 
-    showToast(`Mindmap layout updated (${direction})`, 'success');
+export const reorderMindmap = (rootId: string, direction: LayoutDirection) => {
+    if (!store.elements.some(e => e.id === rootId)) return;
+    pushToHistory();
+    if (layoutMindmapTree(rootId, direction)) {
+        showToast(`Mindmap layout updated (${direction})`, 'success');
+    }
 };
 
 export const applyMindmapStyling = (rootId: string) => {

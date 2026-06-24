@@ -68,6 +68,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Flip Vertical', keys: 'Shift+V' },
             { label: 'Lock / Unlock', keys: 'Ctrl+Shift+L' },
             { label: 'Unlock Aspect Ratio', keys: 'Shift+Drag' },
+            { label: 'Mindmap Tool (central topic)', keys: 'M' },
             { label: 'Add Child Node (+ edit)', keys: 'Tab' },
             { label: 'Add Sibling Node (+ edit)', keys: 'Enter' },
             { label: 'Edit Node Text', keys: 'F2' },

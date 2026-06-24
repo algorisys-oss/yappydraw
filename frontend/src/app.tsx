@@ -3,7 +3,7 @@ import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel,
   toggleMinimap, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
-  addChildNode, addSiblingNode, toggleCollapseSelection, togglePresentationMode,
+  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
@@ -23,6 +23,7 @@ import {
 import { parseClipboardTableData, defaultColWidths, defaultRowHeights, getNextCell, normalizeCellSelection } from './utils/table-utils';
 import { generateId } from './utils/id-generator';
 import { screenToWorld } from './utils/viewport-transforms';
+import { parseOutline } from './utils/mindmap-layout';
 import { updateElement } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
@@ -628,6 +629,7 @@ const App: Component = () => {
           else if (key === 'e' || key === '0') setSelectedTool('eraser');
           else if (key === 'b') setSelectedTool('bezier');
           else if (key === 'h') setSelectedTool('pan');
+          else if (key === 'm') setSelectedTool('cloud'); // Mindmap: central topic / drop a root
           else if (key === '/') { e.preventDefault(); toggleCommandPalette(true, 'Shapes'); }
         }
       }
@@ -709,6 +711,28 @@ const App: Component = () => {
                 tableRowHeights: defaultRowHeights(parsedData.length),
               }, false);
               return;
+            }
+          }
+        }
+
+        // Smart paste: a single selected node + an indented/bulleted outline →
+        // build a mindmap subtree under that node (instead of one text blob).
+        if (store.selection.length === 1) {
+          const selectedEl = store.elements.find(el => el.id === store.selection[0]);
+          const CONNECTOR_TYPES = ['line', 'arrow', 'bezier', 'organicBranch', 'polyline'];
+          if (selectedEl && !CONNECTOR_TYPES.includes(selectedEl.type)) {
+            const outline = parseOutline(text);
+            // Only treat the paste as a subtree when intent is clear: the text has
+            // real indentation hierarchy, OR the target is already a mindmap node.
+            // (A flat multi-line paste onto a random shape stays a text element.)
+            const hasHierarchy = outline.some(n => n.children.length > 0);
+            const isMindmapNode = !!selectedEl.parentId || store.elements.some(el => el.parentId === selectedEl.id);
+            if (outline.length > 0 && (hasHierarchy || isMindmapNode)) {
+              const created = pasteMindmapOutline(selectedEl.id, outline);
+              if (created.length > 0) {
+                showToast(`Added ${created.length} node${created.length === 1 ? '' : 's'} from outline`, 'success');
+                return;
+              }
             }
           }
         }

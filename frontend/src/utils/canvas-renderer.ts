@@ -739,7 +739,8 @@ export function renderSelectionOverlays(
     // Reparent drop target highlight
     if (params.reparentDropTarget) {
         const target = elements.find(e => e.id === params.reparentDropTarget);
-        if (target) renderDropTargetHighlight(ctx, target, scale);
+        const dragged = selection.length === 1 ? elements.find(e => e.id === selection[0]) : null;
+        if (target) renderDropTargetHighlight(ctx, target, scale, dragged);
     }
 
     // Pool lane drop target highlight

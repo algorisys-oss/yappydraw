@@ -8,6 +8,9 @@
 import type { DrawingElement } from '../types';
 import { normalizePoints } from './render-element';
 import { getOrganicBranchPolygon, rotatePoint } from './geometry';
+import { getDescendants } from './hierarchy';
+
+const MINDMAP_CONNECTOR_TYPES = ['line', 'arrow', 'organicBranch', 'bezier', 'polyline'];
 
 export interface ElementOverlayOptions {
     scale: number;
@@ -695,7 +698,59 @@ export function renderMindmapToggles(
             ctx.lineTo(centerX, centerY + toggleSize / 4);
         }
         ctx.stroke();
+
+        // Collapsed → show how many descendant nodes are hidden, as a pill beside the toggle.
+        if (el.isCollapsed) {
+            const hidden = getDescendants(el.id, elements)
+                .filter(d => !MINDMAP_CONNECTOR_TYPES.includes(d.type)).length;
+            if (hidden > 0) {
+                const label = String(hidden);
+                ctx.font = `${11 / scale}px sans-serif`;
+                const padX = 5 / scale;
+                const pillH = 16 / scale;
+                const pillW = ctx.measureText(label).width + padX * 2;
+                const px = centerX + toggleSize / 2 + 6 / scale;
+                const py = centerY - pillH / 2;
+                ctx.beginPath();
+                ctx.roundRect(px, py, pillW, pillH, pillH / 2);
+                ctx.fillStyle = '#10b981';
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(label, px + padX, centerY + 0.5 / scale);
+            }
+        }
         ctx.restore();
+    }
+
+    // Add-child "＋" affordance on the single selected node (mouse parity with Tab).
+    // Editing-only — hidden in presentation. Sits where a new child would appear.
+    if (appMode !== 'presentation' && selection.length === 1) {
+        const el = elements.find(e => e.id === selection[0]);
+        const isMindmapNode = el && (!!el.parentId || elements.some(e => e.parentId === el.id));
+        if (el && isMindmapNode && !MINDMAP_CONNECTOR_TYPES.includes(el.type)) {
+            const r = 11 / scale;
+            const cx = el.x + el.width + 28 / scale; // clear of the right-middle resize handle
+            const cy = el.y + el.height / 2;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.fillStyle = isDarkMode ? '#1f2937' : '#fff';
+            ctx.fill();
+            ctx.strokeStyle = '#6366f1';
+            ctx.lineWidth = 2 / scale;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.strokeStyle = '#6366f1';
+            ctx.lineWidth = 2 / scale;
+            ctx.moveTo(cx - r / 2, cy);
+            ctx.lineTo(cx + r / 2, cy);
+            ctx.moveTo(cx, cy - r / 2);
+            ctx.lineTo(cx, cy + r / 2);
+            ctx.stroke();
+            ctx.restore();
+        }
     }
 }
 
@@ -705,7 +760,8 @@ export function renderMindmapToggles(
 export function renderDropTargetHighlight(
     ctx: CanvasRenderingContext2D,
     el: DrawingElement,
-    scale: number
+    scale: number,
+    draggedEl?: DrawingElement | null
 ): void {
     ctx.save();
     ctx.strokeStyle = '#10b981';
@@ -717,5 +773,27 @@ export function renderDropTargetHighlight(
     ctx.roundRect(el.x - pad, el.y - pad, el.width + pad * 2, el.height + pad * 2, 8 / scale);
     ctx.fill();
     ctx.stroke();
+
+    // Live preview of the prospective branch: a dashed line from the new parent's
+    // centre to the dragged node's centre, so the relationship is visible pre-drop.
+    if (draggedEl) {
+        const px = el.x + el.width / 2;
+        const py = el.y + el.height / 2;
+        const cxd = draggedEl.x + draggedEl.width / 2;
+        const cyd = draggedEl.y + draggedEl.height / 2;
+        ctx.beginPath();
+        ctx.setLineDash([6 / scale, 4 / scale]);
+        ctx.lineWidth = 2 / scale;
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
+        ctx.moveTo(px, py);
+        ctx.lineTo(cxd, cyd);
+        ctx.stroke();
+        // Small dot at the parent end to read as the branch origin.
+        ctx.beginPath();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#10b981';
+        ctx.arc(px, py, 3 / scale, 0, Math.PI * 2);
+        ctx.fill();
+    }
     ctx.restore();
 }

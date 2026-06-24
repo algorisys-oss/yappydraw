@@ -9,7 +9,7 @@ import { batch } from 'solid-js';
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, updateElement, setStore, pushToHistory, isLayerVisible, toggleCollapse, setShowCanvasProperties } from '../../store/app-store';
+import { store, updateElement, setStore, pushToHistory, isLayerVisible, toggleCollapse, addChildNode, setShowCanvasProperties } from '../../store/app-store';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition, getSelectionBoundingBox } from '../handle-detection';
 import { getDescendants } from '../hierarchy';
@@ -134,6 +134,12 @@ export function selectionOnDown(
         // Mindmap toggle logic
         if (hitHandle.handle === 'mindmap-toggle') {
             toggleCollapse(hitHandle.id);
+            return;
+        }
+
+        // Mindmap add-child "＋" handle — mouse parity with Tab.
+        if (hitHandle.handle === 'mindmap-add-child') {
+            addChildNode(hitHandle.id);
             return;
         }
 
@@ -802,6 +808,9 @@ export function selectionOnMove(
             } else if (hit.handle.startsWith('connector-')) {
                 helpers.setCursor('crosshair');
                 pState.hoveredConnector = { elementId: hit.id, handle: hit.handle };
+            } else if (hit.handle === 'mindmap-toggle' || hit.handle === 'mindmap-add-child') {
+                helpers.setCursor('pointer');
+                pState.hoveredConnector = null;
             } else {
                 pState.hoveredConnector = null;
             }

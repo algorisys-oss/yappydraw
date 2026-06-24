@@ -80,6 +80,26 @@ export function getHandleAtPosition(
         }
     }
 
+    // 1b. Mindmap add-child handle on the single selected node (mouse parity with Tab).
+    //     Checked before element selection so the click isn't swallowed.
+    if (selection.length === 1) {
+        const el = elements.find(e => e.id === selection[0]);
+        const CONNECTORS = ['line', 'arrow', 'organicBranch', 'bezier', 'polyline'];
+        const isMindmapNode = el && (!!el.parentId || elements.some(e => e.parentId === el.id));
+        if (el && isMindmapNode && !CONNECTORS.includes(el.type) && !isElementHiddenByHierarchy(el, elements)) {
+            const ecx = el.x + el.width / 2;
+            const ecy = el.y + el.height / 2;
+            const local = unrotatePoint(x, y, ecx, ecy, el.angle || 0);
+            const cx = el.x + el.width + 28 / scale; // matches renderer; clear of 'rm' resize handle
+            const cy = el.y + el.height / 2;
+            const dist = Math.sqrt(Math.pow(local.x - cx, 2) + Math.pow(local.y - cy, 2));
+            if (dist <= 14 / scale) {
+                return { id: el.id, handle: 'mindmap-add-child' };
+            }
+
+        }
+    }
+
     // 2. Mindmap Toggle Handles (Priority over element selection)
     for (let i = elements.length - 1; i >= 0; i--) {
         const el = elements[i];

@@ -9,7 +9,7 @@ import {
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
-    setParent, reorderMindmap, applyMindmapStyling,
+    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
@@ -24,6 +24,7 @@ import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, T
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
 import type { LayoutDirection } from "./utils/mindmap-layout";
+import { parseOutline } from "./utils/mindmap-layout";
 import {
     animateElement,
     animateElements,
@@ -1425,6 +1426,8 @@ export const YappyAPI = {
     setParent(childId: string, parentId: string | null) { setParent(childId, parentId); },
     reorderMindmap(rootId: string, direction: LayoutDirection) { reorderMindmap(rootId, direction); },
     applyMindmapStyling(rootId: string) { applyMindmapStyling(rootId); },
+    /** Build a mindmap subtree under `parentId` from an indented/bulleted text outline. Returns the new node ids. */
+    mindmapFromOutline(parentId: string, outline: string) { return pasteMindmapOutline(parentId, parseOutline(outline)); },
 
     // UI Panels
     toggleCommandPalette(visible?: boolean) { toggleCommandPalette(visible); },

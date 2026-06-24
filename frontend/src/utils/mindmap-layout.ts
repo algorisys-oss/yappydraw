@@ -15,6 +15,72 @@ export interface MindmapNode {
 
 export type LayoutDirection = 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial';
 
+/** A node in a parsed text outline (for smart-paste → mindmap subtree). */
+export interface OutlineNode {
+    text: string;
+    children: OutlineNode[];
+}
+
+/**
+ * Parse an indented / bulleted plain-text outline into a tree. Indentation is
+ * measured in leading whitespace (a tab counts as one level; spaces are bucketed
+ * by the smallest non-zero indent seen, so 2- or 4-space outlines both work).
+ * Leading bullet markers (-, *, •, –, or "1." / "1)") are stripped. Blank lines
+ * are ignored. Returns the top-level nodes; an empty array if there's nothing
+ * meaningful (e.g. a single line — that's a normal paste, not an outline).
+ */
+export function parseOutline(raw: string): OutlineNode[] {
+    const rawLines = raw.replace(/\r\n?/g, '\n').split('\n');
+    type Parsed = { indent: number; text: string };
+    const lines: Parsed[] = [];
+
+    for (const line of rawLines) {
+        if (!line.trim()) continue;
+        // Measure indent: tabs as 1 "unit" each, spaces counted raw (bucketed later).
+        const m = line.match(/^([ \t]*)(.*)$/);
+        const ws = m![1];
+        let body = m![2];
+        // Tab-based indent → unit count; otherwise raw space count (bucketed below).
+        const tabCount = (ws.match(/\t/g) || []).length;
+        const spaceCount = ws.replace(/\t/g, '').length;
+        const indent = tabCount > 0 ? tabCount : spaceCount;
+        // Strip a leading bullet / numbering marker.
+        body = body.replace(/^\s*([-*•–]|\d+[.)])\s+/, '').trim();
+        if (!body) continue;
+        lines.push({ indent, text: body });
+    }
+
+    if (lines.length < 2 && (lines.length === 0 || lines[0].indent === 0)) {
+        // 0 lines, or a single top-level line → not a meaningful outline.
+        return [];
+    }
+
+    // Bucket raw space indents into levels by the smallest indent step observed.
+    const step = lines
+        .map(l => l.indent)
+        .filter(i => i > 0)
+        .reduce((min, i) => (min === 0 ? i : Math.min(min, i)), 0) || 1;
+
+    const roots: OutlineNode[] = [];
+    // stack[level] = last node created at that depth
+    const stack: { level: number; node: OutlineNode }[] = [];
+
+    for (const l of lines) {
+        const level = l.indent === 0 ? 0 : Math.round(l.indent / step);
+        const node: OutlineNode = { text: l.text, children: [] };
+        // Pop deeper-or-equal levels off the stack.
+        while (stack.length && stack[stack.length - 1].level >= level) stack.pop();
+        if (stack.length === 0) {
+            roots.push(node);
+        } else {
+            stack[stack.length - 1].node.children.push(node);
+        }
+        stack.push({ level, node });
+    }
+
+    return roots;
+}
+
 export const PALETTE = [
     '#e03131', // Red
     '#1971c2', // Blue
@@ -28,8 +94,13 @@ export const PALETTE = [
 ];
 
 export class MindmapLayoutEngine {
-    private hSpacing = 100;
-    private vSpacing = 40;
+    private hSpacing: number;
+    private vSpacing: number;
+
+    constructor(spacing?: { hSpacing?: number; vSpacing?: number }) {
+        this.hSpacing = spacing?.hSpacing ?? 100;
+        this.vSpacing = spacing?.vSpacing ?? 40;
+    }
 
     /**
      * Builds a tree structure starting from the root element.
@@ -101,14 +172,14 @@ export class MindmapLayoutEngine {
 
         if (node.children.length === 0) return;
 
-        const startX = direction === 'right' ? x + node.width + this.hSpacing : x - this.hSpacing; // simplified for left
-        // For left we need to adjust by child width, handled below
+        // Right: children sit a gap to the right of the parent's right edge.
+        // Left:  children sit a gap to the left, so each child's RIGHT edge is the
+        // anchor (childX = anchor - child.width, computed in the loop).
+        const startX = direction === 'right' ? x + node.width + this.hSpacing : x - this.hSpacing;
 
-        let currentY = y - (node.totalHeight! / 2) + (node.children[0].totalHeight! / 2);
-
-        // Center the middle child with parent if possible, or just stack
+        // Vertically center the children block against the parent.
         const totalChildrenHeight = node.children.reduce((acc, c) => acc + c.totalHeight!, 0) + (node.children.length - 1) * this.vSpacing;
-        currentY = y + (node.height / 2) - (totalChildrenHeight / 2);
+        let currentY = y + (node.height / 2) - (totalChildrenHeight / 2);
 
         for (const child of node.children) {
             const childX = direction === 'right' ? startX : startX - child.width;
@@ -153,7 +224,11 @@ export class MindmapLayoutEngine {
      * Calculates positions for a radial (neuron) layout.
      */
     layoutRadial(root: MindmapNode) {
-        this.assignRadialPositions(root, root.x, root.y, 0, Math.PI * 2, 250);
+        // Scale the first ring with fan-out so many top-level branches don't crowd
+        // (circumference grows with child count, keeping arc-spacing roughly constant).
+        const childCount = root.children.length;
+        const radius = Math.max(250, Math.round((childCount * 90) / (2 * Math.PI)) + 180);
+        this.assignRadialPositions(root, root.x, root.y, 0, Math.PI * 2, radius);
     }
 
     private assignRadialPositions(node: MindmapNode, x: number, y: number, startAngle: number, endAngle: number, radius: number) {
@@ -179,9 +254,10 @@ export class MindmapLayoutEngine {
             const childX = childCenterX - child.width / 2;
             const childY = childCenterY - child.height / 2;
 
-            // Sub-children get a smaller wedge of the parent's angle to prevent overlap
+            // Sub-children get a smaller wedge of the parent's angle to prevent overlap.
+            // Keep a radius floor so deep branches don't collapse into the centre.
             const wedge = Math.min(Math.PI / 2, anglePerChild * 0.9);
-            this.assignRadialPositions(child, childX, childY, angle - wedge / 2, angle + wedge / 2, radius * 0.8);
+            this.assignRadialPositions(child, childX, childY, angle - wedge / 2, angle + wedge / 2, Math.max(160, radius * 0.8));
         }
     }
 
@@ -195,24 +271,31 @@ export class MindmapLayoutEngine {
         // Root remains neutral or user-defined, but let's ensure it has styleUpdates initialized
         root.styleUpdates = {};
 
+        // Curated typography: deeper nodes get a slightly smaller font so the
+        // hierarchy reads visually. Floored so labels never overflow fixed-size
+        // nodes (we only ever shrink relative to the root, never grow).
+        const baseFont = root.element.fontSize || 20;
+
         root.children.forEach((branchRoot, index) => {
             const branchColor = PALETTE[index % PALETTE.length];
-            this.styleSubtree(branchRoot, branchColor, 1);
+            this.styleSubtree(branchRoot, branchColor, 1, baseFont);
         });
     }
 
-    private styleSubtree(node: MindmapNode, color: string, depth: number) {
+    private styleSubtree(node: MindmapNode, color: string, depth: number, baseFont: number) {
         const strokeWidth = Math.max(1.5, 4 - depth * 1);
         const opacity = Math.max(40, 100 - depth * 10);
+        const fontSize = Math.max(14, Math.round(baseFont - depth * 2));
 
         node.styleUpdates = {
             strokeColor: color,
             strokeWidth,
-            opacity
+            opacity,
+            fontSize
         };
 
         for (const child of node.children) {
-            this.styleSubtree(child, color, depth + 1);
+            this.styleSubtree(child, color, depth + 1, baseFont);
         }
     }
 
