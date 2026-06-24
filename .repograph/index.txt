@@ -74,7 +74,7 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 2141 | Theme:3 ElementOptions:71 ElementType:453 as:453 Window:2133
+frontend/src/api.ts | typescript | 2147 | Theme:3 ElementOptions:71 ElementType:453 as:453 Window:2139
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1250 | Component:1 App:55 moves:70 onPenMove:71 hidePen:75 handleKeyDown:100 handleFullscreenChange:640 handleBeforeUnload:646 handlePaste:650 handleGlobalDragEnter:752 handleGlobalDragOver:767 showDropFallbackPrompt:786 cleanup:816 outsideClick:844 isImageFile:856 first:857 must:870 extractDropData:872 processExtractedDrop:927 handleGlobalDrop:1023 handleDocumentDrop:1069
 frontend/src/assets/player-assets.ts | typescript | 3 | hh:2
@@ -308,7 +308,7 @@ frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 Folder
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 3197 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Theme:18 ResolvedTheme:19 AppState:46 HistorySnapshot:313 AlignmentType:2746 DistributionType:2746 startInkCleanupIfNeeded:3136
+frontend/src/store/app-store.ts | typescript | 3302 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Theme:20 ResolvedTheme:21 AppState:48 HistorySnapshot:315 AlignmentType:2748 DistributionType:2748 buildPathFromRing:3129 startInkCleanupIfNeeded:3241
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -357,7 +357,7 @@ frontend/src/utils/click-outside.ts | typescript | 23 | clickOutside:3 JSX:18 Di
 frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:28
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 352 | Command:13
-frontend/src/utils/context-menu-builder.ts | typescript | 1324 | MergedCellRegion:39 buildSelectByTypeMenu:55 buildSelectBySamePropertyMenu:134 getContextMenuItems:164 buildFormatMenuItems:1155 buildBorderMenuItems:1250
+frontend/src/utils/context-menu-builder.ts | typescript | 1342 | MergedCellRegion:40 buildSelectByTypeMenu:56 buildSelectBySamePropertyMenu:135 getContextMenuItems:165 buildFormatMenuItems:1173 buildBorderMenuItems:1268
 frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperationParams:23 getOperationsForType:79 parseValues:87 bstInsert:99 bstRemove:138 nodeAt:154 bstDeleteAt:159 moveSubtreeUp:192 collectRelative:211 clearSubtree:219 relToAbs:227 simpleHash:247 hashTablePut:259 hashTableRemove:270 animateDsOperation:287 executeDsOperation:350 abortDsAlgorithm:544 isDsAlgorithmRunning:551 setDsAnimationSpeed:555 getDsAnimationSpeed:559 clearDsHighlights:563 animateDsStep:580 compareValues:604 bubbleSort:613 selectionSort:662 insertionSort:714 linearSearch:765 binarySearch:796 bfsTraversal:853 dfsInorderTraversal:882 dfsPreorderTraversal:912 executeDsSortSearch:944
 frontend/src/utils/element-transforms.ts | typescript | 362 | changeElementType:4 isConnectorType:11 getTransformOptions:99 getShapeIcon:153 getShapeTooltip:343 getCurveTypeOptions:347 getCurveTypeIcon:351 getCurveTypeTooltip:360
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
@@ -380,6 +380,7 @@ frontend/src/utils/mindmap-layout.ts | typescript | 416 | MindmapNode:3 LayoutDi
 frontend/src/utils/object-context-actions.ts | typescript | 477 | copyToClipboard:9 cutToClipboard:27 getViewportCenter:33 pasteImageFromBlob:39 done:43 pasteAsTextElement:120 pasteYappyElements:233 tryPasteYappyJson:295 pasteFromClipboard:310 flipSelected:347 lockSelected:418 copyStyle:427 pasteStyle:471
 frontend/src/utils/object-snapping.ts | typescript | 131 | SnappingGuide:6 SnappedResult:12
 frontend/src/utils/path-boolean.ts | typescript | 103 | BooleanOp:16 Ring:18 Poly:19 MultiPoly:20 ringFromPoints:22 geometryToRings:32 elementToMultiPolygon:61 ringToPathAnchors:69 runBooleanOp:87
+frontend/src/utils/path-offset.ts | typescript | 106 | Pt:20 Ring:21 samplePathPolyline:24 circleRing:54 computeOutlineStroke:61 computeOffsetPath:82
 frontend/src/utils/performance-monitor.ts | typescript | 49 | PerformanceMonitor:1{constructor:8 measureFrame:13 setEnabled:43}
 frontend/src/utils/pointer-helpers.ts | typescript | 53 | PointerHelpers:15 PointerSignals:33
 frontend/src/utils/pointer-state.ts | typescript | 176 | PointerState:7 createPointerState:105
@@ -393,6 +394,7 @@ frontend/src/utils/routing.ts | typescript | 313 | Node:197
 frontend/src/utils/selection-renderer.ts | typescript | 831 | ElementOverlayOptions:15 renderElementOverlays:30
 frontend/src/utils/shape-geometry.ts | typescript | 1782 | ShapeGeometry:6 LidConfig:742 LidWithPosition:907
 frontend/src/utils/shape-recognition.ts | typescript | 157 | Pt:16 RecognizedShape:18 dist:28 perpDist:32 rdp:39 meanEdgeDist:56 recognizeStrokeShape:75
+frontend/src/utils/shape-to-path.ts | typescript | 92 | rdp:19 shapeToPath:44
 frontend/src/utils/slide-element-factory.ts | typescript | 972 | genId:20 resolvePalette:25 textEl:44 rectEl:76 gradientRectEl:99 cardEl:125 shapeEl:156 createTitleSlideElements:183 createContentSlideElements:231 createTwoColumnElements:286 createQuoteElements:349 createSectionBreakElements:397 createClosingElements:438 createImageTextElements:480 createMetricsSlideElements:523 createTimelineSlideElements:594 createCardGridSlideElements:656 createComparisonSlideElements:787 AISlideContent:897 createSlideElements:919 offsetElements:966
 frontend/src/utils/slide-utils.ts | typescript | 58 |
 frontend/src/utils/snap-helpers.ts | typescript | 28 | snapToGrid:8 snapDimension:25

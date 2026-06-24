@@ -7,6 +7,8 @@ import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
 import { runBooleanOp, ringToPathAnchors, type BooleanOp } from "../utils/path-boolean";
+import { shapeToPath } from "../utils/shape-to-path";
+import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
@@ -3094,6 +3096,109 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
     setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), ...created]);
     setStore('selection', created.map(c => c.id));
     showToast(`Pathfinder: ${op}`, 'success');
+    return created.map(c => c.id);
+};
+
+/**
+ * Convert shapes to editable vector `path` elements in place (same id, z-order, style,
+ * and connector bindings preserved). Skips elements that are already paths or have no
+ * convertible geometry. Returns the converted ids.
+ */
+export const convertToPath = (ids: string[]): string[] => {
+    const anchorsById = new Map<string, ReturnType<typeof shapeToPath>>();
+    for (const el of store.elements) {
+        if (ids.includes(el.id) && el.type !== 'path') {
+            const r = shapeToPath(el);
+            if (r) anchorsById.set(el.id, r);
+        }
+    }
+    if (anchorsById.size === 0) return [];
+
+    pushToHistory();
+    setStore('elements', list => list.map(el => {
+        const r = anchorsById.get(el.id);
+        if (!r) return el;
+        return { ...el, type: 'path', pathAnchors: r.anchors, pathClosed: r.closed, points: undefined, controlPoints: undefined } as DrawingElement;
+    }));
+    const out = [...anchorsById.keys()];
+    setStore('selection', out);
+    showToast(`Converted ${out.length} to path`, 'success');
+    return out;
+};
+
+function buildPathFromRing(ring: [number, number][], style: Partial<DrawingElement>): DrawingElement | null {
+    const norm = ringToPathAnchors(ring);
+    if (!norm) return null;
+    return {
+        ...store.defaultElementStyles,
+        id: generateId('path'),
+        type: 'path',
+        x: norm.minX, y: norm.minY, width: norm.width, height: norm.height,
+        pathAnchors: norm.anchors,
+        pathClosed: true,
+        angle: 0,
+        seed: Math.floor(Math.random() * 2 ** 31),
+        roundness: null,
+        locked: false,
+        link: null,
+        layerId: store.activeLayerId,
+        ...style,
+    } as DrawingElement;
+}
+
+/**
+ * Outline Stroke: replace each element with a filled `path` of its stroke outline
+ * (Minkowski sum of the centerline with a disk of strokeWidth/2). The result is filled
+ * with the original stroke color and has no stroke. Returns the new ids.
+ */
+export const outlineStroke = (ids: string[]): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id));
+    const created: DrawingElement[] = [];
+    const replaceIds = new Set<string>();
+    for (const el of targets) {
+        const rings = computeOutlineStroke(el);
+        if (rings.length === 0) continue;
+        replaceIds.add(el.id);
+        for (const ring of rings) {
+            const path = buildPathFromRing(ring, {
+                backgroundColor: el.strokeColor, fillStyle: 'solid',
+                strokeColor: 'transparent', strokeWidth: 0,
+                renderStyle: el.renderStyle, opacity: el.opacity, layerId: el.layerId,
+            });
+            if (path) created.push(path);
+        }
+    }
+    if (created.length === 0) { showToast('Outline stroke: nothing to outline', 'info'); return []; }
+    pushToHistory();
+    setStore('elements', list => [...list.filter(e => !replaceIds.has(e.id)), ...created]);
+    setStore('selection', created.map(c => c.id));
+    showToast('Outlined stroke', 'success');
+    return created.map(c => c.id);
+};
+
+/**
+ * Offset Path: add a parallel `path` offset by `distance` (outward +, inward −),
+ * keeping the original. Returns the new ids.
+ */
+export const offsetPath = (ids: string[], distance: number): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id));
+    const created: DrawingElement[] = [];
+    for (const el of targets) {
+        const rings = computeOffsetPath(el, distance);
+        for (const ring of rings) {
+            const path = buildPathFromRing(ring, {
+                backgroundColor: el.backgroundColor, fillStyle: el.fillStyle,
+                strokeColor: el.strokeColor, strokeWidth: el.strokeWidth, strokeStyle: el.strokeStyle,
+                renderStyle: el.renderStyle, opacity: el.opacity, layerId: el.layerId,
+            });
+            if (path) created.push(path);
+        }
+    }
+    if (created.length === 0) { showToast('Offset path: empty result', 'info'); return []; }
+    pushToHistory();
+    setStore('elements', list => [...list, ...created]);
+    setStore('selection', created.map(c => c.id));
+    showToast(`Offset path (${distance > 0 ? '+' : ''}${distance})`, 'success');
     return created.map(c => c.id);
 };
 

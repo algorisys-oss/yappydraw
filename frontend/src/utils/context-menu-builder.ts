@@ -13,7 +13,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, outlineStroke, offsetPath,
     zoomToFit, zoomToFitSlide, updateGlobalSettings,
     toggleVideoPlayback, isVideoPlaying
 } from '../store/app-store';
@@ -27,6 +27,7 @@ import {
 } from './element-transforms';
 import { shiftLaneIndicesOnRemove, hitTestPoolLane } from './pool-containment';
 import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng } from './export';
+import { shapeToPath } from './shape-to-path';
 import {
     computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData,
     hitTestTableCell, insertTableRow, deleteTableRow, insertTableColumn, deleteTableColumn,
@@ -312,6 +313,23 @@ export function getContextMenuItems(
             { label: 'Duplicate', shortcut: 'Ctrl+D', onClick: () => store.selection.forEach(id => duplicateElement(id)) },
             { separator: true }
         );
+
+        // Convert to editable vector path (shown when a selected shape can be converted).
+        const convertible = store.selection.some(id => {
+            const e = store.elements.find(x => x.id === id);
+            return e && e.type !== 'path' && !!shapeToPath(e);
+        });
+        const hasPathish = convertible || store.selection.some(id => store.elements.find(x => x.id === id)?.type === 'path');
+        if (convertible || hasPathish) {
+            const pathOps: MenuItem[] = [];
+            if (convertible) pathOps.push({ label: 'Convert to Path', icon: '✎', onClick: () => convertToPath([...store.selection]) });
+            if (hasPathish) pathOps.push(
+                { label: 'Outline Stroke', icon: '▱', onClick: () => outlineStroke([...store.selection]) },
+                { label: 'Offset Path (+10)', icon: '⊕', onClick: () => offsetPath([...store.selection], 10) },
+                { label: 'Offset Path (−10)', icon: '⊖', onClick: () => offsetPath([...store.selection], -10) },
+            );
+            items.push({ label: 'Path', icon: '✐', submenu: pathOps }, { separator: true });
+        }
 
         // Hierarchy Submenu
         const firstId = store.selection[0];
