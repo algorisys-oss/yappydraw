@@ -132,6 +132,33 @@ export const VectorPathsDoc: Component = () => {
                 </p>
             </section>
 
+            {/* Path ops: simplify + compound */}
+            <section class="doc-section">
+                <h2>Simplify &amp; Compound Paths</h2>
+                <p>In the right-click <strong>Path</strong> submenu:</p>
+                <table class="api-table">
+                    <thead><tr><th>Op</th><th>What it does</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Simplify</strong></td><td>Reduces a path's anchor count while preserving its shape (great after Pathfinder/Outline produce dense corners)</td></tr>
+                        <tr><td><strong>Join Paths</strong></td><td>Connects 2+ open paths into one by chaining nearest endpoints; auto-closes if the free ends meet</td></tr>
+                        <tr><td><strong>Make Compound Path</strong></td><td>Combines 2+ selected shapes into one path; overlapping areas become <em>holes</em> (even-odd) — the way a donut or the letter “O” is built</td></tr>
+                        <tr><td><strong>Release Compound Path</strong></td><td>Splits a compound path back into separate, individually editable paths</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            {/* Export */}
+            <section class="doc-section">
+                <h2>Exporting as Vector</h2>
+                <p>
+                    Export to <strong>SVG</strong> (Export dialog → SVG) writes every shape and path as a
+                    real, scalable <em>&lt;path&gt;</em> — including compound holes (even-odd), rotation, and
+                    flips. Sketch-style shapes export as vector rough strokes; architectural shapes export as
+                    clean paths. The result opens losslessly in Illustrator, Inkscape, or any browser, with no
+                    pixelation.
+                </p>
+            </section>
+
             {/* Holes / multi-subpath */}
             <section class="doc-section">
                 <h2>Holes &amp; Compound Paths</h2>

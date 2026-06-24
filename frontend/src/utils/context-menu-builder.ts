@@ -13,7 +13,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, outlineStroke, offsetPath,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     zoomToFit, zoomToFitSlide, updateGlobalSettings,
     toggleVideoPlayback, isVideoPlaying
 } from '../store/app-store';
@@ -328,6 +328,14 @@ export function getContextMenuItems(
                 { label: 'Offset Path (+10)', icon: '⊕', onClick: () => offsetPath([...store.selection], 10) },
                 { label: 'Offset Path (−10)', icon: '⊖', onClick: () => offsetPath([...store.selection], -10) },
             );
+            // Simplify on a selected path; compound-path ops on multi-select / compound paths.
+            const selPaths = store.selection.map(id => store.elements.find(x => x.id === id)).filter((e): e is DrawingElement => !!e && e.type === 'path');
+            if (selPaths.length >= 1) pathOps.push({ label: 'Simplify', icon: '⌇', onClick: () => simplifyPath([...store.selection]) });
+            // Join: 2+ selected paths that have at least one open subpath between them.
+            const openPathCount = selPaths.filter(e => e.pathSubpaths ? e.pathSubpaths.some(sp => !sp.closed) : !e.pathClosed).length;
+            if (openPathCount >= 2) pathOps.push({ label: 'Join Paths', icon: '⌒', onClick: () => joinPaths([...store.selection]) });
+            if (store.selection.length >= 2) pathOps.push({ label: 'Make Compound Path', icon: '◎', onClick: () => makeCompoundPath([...store.selection]) });
+            if (selPaths.some(e => (e.pathSubpaths?.length ?? 0) > 1)) pathOps.push({ label: 'Release Compound Path', icon: '⊟', onClick: () => releaseCompoundPath([...store.selection]) });
             items.push({ label: 'Path', icon: '✐', submenu: pathOps }, { separator: true });
         }
 

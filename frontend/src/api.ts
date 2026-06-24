@@ -5,11 +5,11 @@ import {
     updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion,
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
-    toggleLayerPanel, toggleMinimap, toggleZenMode, toggleSlideNavigator,
+    toggleLayerPanel, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
-    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, outlineStroke, offsetPath,
+    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
@@ -1509,6 +1509,14 @@ export const YappyAPI = {
     outlineStroke(ids: string[]) { return outlineStroke(ids); },
     /** Offset Path: add a parallel path offset by `distance` (outward +, inward −). Returns new ids. */
     offsetPath(ids: string[], distance: number) { return offsetPath(ids, distance); },
+    /** Simplify: reduce a path's anchor count (Ramer–Douglas–Peucker). Returns affected ids. */
+    simplifyPath(ids: string[]) { return simplifyPath(ids); },
+    /** Make Compound Path: combine selected shapes/paths into one even-odd path (holes). Returns new id. */
+    makeCompoundPath(ids: string[]) { return makeCompoundPath(ids); },
+    /** Release Compound Path: split a compound path's subpaths into separate paths. Returns new ids. */
+    releaseCompoundPath(ids: string[]) { return releaseCompoundPath(ids); },
+    /** Join: connect selected open paths into one by chaining nearest endpoints. Returns new id. */
+    joinPaths(ids: string[]) { return joinPaths(ids); },
 
     // UI Panels
     toggleCommandPalette(visible?: boolean) { toggleCommandPalette(visible); },
@@ -1516,6 +1524,16 @@ export const YappyAPI = {
     togglePresentationMode(visible?: boolean) { togglePresentationMode(visible); },
     toggleLayerPanel(visible?: boolean) { toggleLayerPanel(visible); },
     toggleMinimap(visible?: boolean) { toggleMinimap(visible); },
+    /** Show/hide the edge rulers + guide system (Alt+R). */
+    toggleRulers(visible?: boolean) { toggleRulers(visible); },
+    /** Add a ruler guide. axis 'h' = horizontal line at world y=pos; 'v' = vertical line at world x=pos. Returns the guide id. */
+    addGuide(axis: 'h' | 'v', pos: number) { return addGuide(axis, pos); },
+    /** Move an existing guide to a new world coordinate. */
+    updateGuide(id: string, pos: number) { updateGuide(id, pos); },
+    /** Remove a single guide by id. */
+    removeGuide(id: string) { removeGuide(id); },
+    /** Remove all guides. */
+    clearGuides() { clearGuides(); },
     toggleZenMode(visible?: boolean) { toggleZenMode(visible); },
     toggleSlideNavigator(visible?: boolean) { toggleSlideNavigator(visible); },
     toggleMainToolbar(visible?: boolean) { toggleMainToolbar(visible); },

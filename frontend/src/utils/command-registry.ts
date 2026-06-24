@@ -1,6 +1,6 @@
 import {
     store, setStore, setSelectedTool, toggleGrid, toggleSnapToGrid, toggleZenMode,
-    togglePropertyPanel, toggleLayerPanel, toggleMinimap, zoomToFit, zoomToSelection,
+    togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection,
     groupSelected, ungroupSelected, bringToFront, sendToBack,
     moveElementZIndex, undo, redo, deleteElements, toggleTheme,
     setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode,
@@ -262,6 +262,8 @@ export const getCommands = (): Command[] => {
         { id: 'view-properties', label: 'Toggle Properties Panel', category: 'View', action: () => togglePropertyPanel(), shortcut: 'Alt+Enter' },
         { id: 'view-layers', label: 'Toggle Layers Panel', category: 'View', action: () => toggleLayerPanel(), shortcut: 'Alt+L' },
         { id: 'view-minimap', label: 'Toggle Minimap', category: 'View', action: () => toggleMinimap(), shortcut: 'Alt+M' },
+        { id: 'view-rulers', label: 'Toggle Rulers & Guides', category: 'View', action: () => toggleRulers(), shortcut: 'Alt+R' },
+        { id: 'view-clear-guides', label: 'Clear All Guides', category: 'View', action: () => clearGuides() },
         { id: 'view-zoom-in', label: 'Zoom In', category: 'View', action: () => {
             const s = store.viewState;
             const newScale = Math.min(s.scale * 1.1, 10);

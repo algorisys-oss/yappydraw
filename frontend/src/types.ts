@@ -560,6 +560,16 @@ export interface GridSettings {
     style: 'lines' | 'dots'; // Grid style
 }
 
+/**
+ * A persistent ruler guide line. `axis: 'h'` is a horizontal guide at world y=`pos`;
+ * `axis: 'v'` is a vertical guide at world x=`pos`. Created by dragging off a ruler.
+ */
+export interface Guide {
+    id: string;
+    axis: 'h' | 'v';
+    pos: number;
+}
+
 export interface ViewState {
     scale: number;
     panX: number;

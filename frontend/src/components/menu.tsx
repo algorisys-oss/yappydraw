@@ -3,7 +3,7 @@ import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
 import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
-    togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleStatePanel, toggleSlideToolbar,
+    togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore
 } from "../store/app-store";
@@ -12,7 +12,7 @@ import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
-    Sparkles, Key
+    Sparkles, Key, Ruler
 } from "lucide-solid";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
@@ -757,6 +757,14 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <Show when={store.minimapVisible}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+M</span>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { toggleRulers(); setIsMenuOpen(false); }}>
+                                        <Ruler size={16} />
+                                        <span class="label">Rulers & Guides</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.showRulers}><Check size={14} class="check-icon" /></Show>
+                                            <span class="shortcut">Alt+R</span>
                                         </div>
                                     </div>
                                     <Show when={store.docType === 'slides'}>

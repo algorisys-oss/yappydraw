@@ -97,6 +97,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Toggle Properties', keys: 'Alt+Enter' },
             { label: 'Toggle Layers', keys: 'Alt+L' },
             { label: 'Toggle Minimap', keys: 'Alt+M' },
+            { label: 'Toggle Rulers & Guides', keys: 'Alt+R' },
             { label: 'Toggle Panels', keys: 'Alt+\\' },
             { label: 'Zen Mode', keys: 'Alt+Z' },
             { label: 'Toggle Grid', keys: "Shift+'" },

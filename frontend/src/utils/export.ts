@@ -6,6 +6,49 @@ import PptxGenJS from "pptxgenjs";
 import { resolveFontFamily, wrapText, getMeasurementRenderer } from "./text-utils";
 import { buildFilterString } from "./image-filter-utils";
 import { layoutRichText } from "./rich-text-utils";
+import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
+
+/**
+ * Convert a shape's geometry (centred frame: origin at the element centre) into one or
+ * more SVG path `d` strings. Used to export shapes as true vector `<path>`s instead of
+ * embedded raster images. Returns `{ ds, evenOdd }` — `evenOdd` requests the even-odd
+ * fill rule (compound paths / holes).
+ */
+function geometryToDs(geo: ShapeGeometry): { ds: string[]; evenOdd: boolean } {
+    const round = (n: number) => Math.round(n * 1000) / 1000;
+    const collect = (g: ShapeGeometry, out: string[]): boolean => {
+        let eo = false;
+        if (g.type === 'rect') {
+            const { x, y, w, h, r } = g;
+            if (r && r > 0) {
+                const rr = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+                out.push(`M ${round(x + rr)} ${round(y)} H ${round(x + w - rr)} A ${round(rr)} ${round(rr)} 0 0 1 ${round(x + w)} ${round(y + rr)} V ${round(y + h - rr)} A ${round(rr)} ${round(rr)} 0 0 1 ${round(x + w - rr)} ${round(y + h)} H ${round(x + rr)} A ${round(rr)} ${round(rr)} 0 0 1 ${round(x)} ${round(y + h - rr)} V ${round(y + rr)} A ${round(rr)} ${round(rr)} 0 0 1 ${round(x + rr)} ${round(y)} Z`);
+            } else {
+                out.push(`M ${round(x)} ${round(y)} h ${round(w)} v ${round(h)} h ${round(-w)} Z`);
+            }
+        } else if (g.type === 'ellipse') {
+            const { cx, cy, rx, ry } = g;
+            out.push(`M ${round(cx - rx)} ${round(cy)} a ${round(rx)} ${round(ry)} 0 1 0 ${round(rx * 2)} 0 a ${round(rx)} ${round(ry)} 0 1 0 ${round(-rx * 2)} 0 Z`);
+        } else if (g.type === 'points') {
+            const pts = g.points;
+            if (pts.length >= 2) {
+                let d = `M ${round(pts[0].x)} ${round(pts[0].y)}`;
+                for (let i = 1; i < pts.length; i++) d += ` L ${round(pts[i].x)} ${round(pts[i].y)}`;
+                if (g.isClosed !== false) d += ' Z';
+                out.push(d);
+            }
+        } else if (g.type === 'path') {
+            out.push(g.path);
+            if ((g as any).evenOdd) eo = true;
+        } else if (g.type === 'multi') {
+            for (const s of g.shapes) eo = collect(s, out) || eo;
+        }
+        return eo;
+    };
+    const ds: string[] = [];
+    const evenOdd = collect(geo, ds);
+    return { ds, evenOdd };
+}
 
 
 export const exportToPng = async (scale: number, background: boolean, onlySelected: boolean) => {
@@ -206,11 +249,15 @@ export const exportToSvg = (onlySelected: boolean) => {
             strokeLineDash: el.strokeStyle === 'dashed' ? [10, 10] : (el.strokeStyle === 'dotted' ? [5, 10] : undefined),
         };
 
-        if (el.type === 'rectangle') {
+        // Architectural rect/circle/diamond fall through to the clean-path branch below
+        // (leave node null) so they export as crisp vectors instead of rough/sketchy SVG.
+        const archClean = (el.renderStyle ?? 'sketch') === 'architectural';
+
+        if (el.type === 'rectangle' && !archClean) {
             node = rc.rectangle(el.x, el.y, el.width, el.height, options);
-        } else if (el.type === 'circle') {
+        } else if (el.type === 'circle' && !archClean) {
             node = rc.ellipse(el.x + el.width / 2, el.y + el.height / 2, Math.abs(el.width), Math.abs(el.height), options);
-        } else if (el.type === 'diamond') {
+        } else if (el.type === 'diamond' && !archClean) {
             const dcx = el.x + el.width / 2;
             const dcy = el.y + el.height / 2;
             node = rc.polygon([
@@ -382,6 +429,53 @@ export const exportToSvg = (onlySelected: boolean) => {
             image.setAttribute('width', `${el.width}`);
             image.setAttribute('height', `${el.height}`);
             node = image;
+        }
+
+        // True vector export for shapes with clean geometry (path elements + the ~150
+        // specialty shapes that previously fell back to a raster image). Emits real SVG
+        // <path>s — sketch style uses rough.js (still vector), architectural uses a clean
+        // path — wrapped in a <g> that places/rotates/flips the centred geometry.
+        if (!node && el.type !== 'text') {
+            const geo = getShapeGeometry(el);
+            const { ds, evenOdd } = geo ? geometryToDs(geo) : { ds: [], evenOdd: false };
+            if (ds.length > 0) {
+                const cx = el.x + el.width / 2;
+                const cy = el.y + el.height / 2;
+                // Inner <g> places the centred geometry at the element centre; the outer <g>
+                // (the `node`) is where the downstream finalizer applies opacity + rotate/flip
+                // (around the same centre), so the two transforms compose correctly.
+                const grp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                const inner = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                inner.setAttribute('transform', `translate(${cx}, ${cy})`);
+                grp.appendChild(inner);
+                const fill = (el.backgroundColor && el.backgroundColor !== 'transparent' && el.backgroundColor !== 'none') ? el.backgroundColor : 'none';
+                const strokeVisible = el.strokeColor && el.strokeColor !== 'transparent' && el.strokeColor !== 'none' && el.strokeWidth > 0;
+                const isSketch = (el.renderStyle ?? 'sketch') === 'sketch';
+                for (const d of ds) {
+                    if (isSketch) {
+                        // rough.js produces a vector (sketchy) <g> from the path data.
+                        const rNode = rc.path(d, { ...options, fillStyle: el.fillStyle });
+                        inner.appendChild(rNode);
+                    } else {
+                        const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        pathEl.setAttribute('d', d);
+                        pathEl.setAttribute('fill', fill);
+                        if (evenOdd) pathEl.setAttribute('fill-rule', 'evenodd');
+                        if (strokeVisible) {
+                            pathEl.setAttribute('stroke', el.strokeColor);
+                            pathEl.setAttribute('stroke-width', `${el.strokeWidth}`);
+                            pathEl.setAttribute('stroke-linejoin', el.strokeLineJoin || 'round');
+                            pathEl.setAttribute('stroke-linecap', 'round');
+                            if (el.strokeStyle === 'dashed') pathEl.setAttribute('stroke-dasharray', '10 10');
+                            else if (el.strokeStyle === 'dotted') pathEl.setAttribute('stroke-dasharray', '2 8');
+                        } else {
+                            pathEl.setAttribute('stroke', 'none');
+                        }
+                        inner.appendChild(pathEl);
+                    }
+                }
+                node = grp;
+            }
         }
 
         // Canvas fallback for shape types without native SVG rendering

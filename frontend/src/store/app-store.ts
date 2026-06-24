@@ -1,6 +1,6 @@
 import { batch } from "solid-js";
 import { createStore } from "solid-js/store";
-import type { DrawingElement, ViewState, ToolType, Layer, GridSettings, AppMode, ElementType } from "../types";
+import type { DrawingElement, ViewState, ToolType, Layer, GridSettings, AppMode, ElementType, Guide } from "../types";
 import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } from '../types/slide-types';
 import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-types';
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
@@ -8,6 +8,8 @@ import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
 import { runBooleanOp, polyToPathSubpaths, type BooleanOp, type Poly } from "../utils/path-boolean";
 import { shapeToPath } from "../utils/shape-to-path";
+import { getPathSubpaths } from "../utils/math/path-utils";
+import type { PathAnchor, PathSubpath } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
@@ -79,6 +81,8 @@ interface AppState {
     isPropertyPanelMinimized: boolean;
     isLayerPanelMinimized: boolean;
     minimapVisible: boolean;
+    showRulers: boolean;
+    guides: Guide[];
     zenMode: boolean;
     appMode: AppMode;
     showCommandPalette: boolean;
@@ -252,6 +256,8 @@ const initialState: AppState = {
     isPropertyPanelMinimized: false,
     isLayerPanelMinimized: false,
     minimapVisible: false,
+    showRulers: (() => { try { return localStorage.getItem('showRulers') === '1'; } catch { return false; } })(),
+    guides: [],
     zenMode: false,
     appMode: 'design',
     showCommandPalette: false,
@@ -2543,6 +2549,29 @@ export const toggleMinimap = (visible?: boolean) => {
     setStore('minimapVisible', (v) => visible ?? !v);
 };
 
+// ── Rulers & guides ──────────────────────────────────────────────────────────
+export const toggleRulers = (visible?: boolean) => {
+    const next = visible ?? !store.showRulers;
+    setStore('showRulers', next);
+    try { localStorage.setItem('showRulers', next ? '1' : '0'); } catch { /* ignore */ }
+};
+
+export const addGuide = (axis: 'h' | 'v', pos: number): string => {
+    const id = generateId('guide');
+    setStore('guides', g => [...g, { id, axis, pos: Math.round(pos) }]);
+    return id;
+};
+
+export const updateGuide = (id: string, pos: number) => {
+    setStore('guides', g => g.map(gd => gd.id === id ? { ...gd, pos: Math.round(pos) } : gd));
+};
+
+export const removeGuide = (id: string) => {
+    setStore('guides', g => g.filter(gd => gd.id !== id));
+};
+
+export const clearGuides = () => setStore('guides', []);
+
 export const toggleZenMode = (visible?: boolean) => {
     setStore('zenMode', (v) => visible ?? !v);
 };
@@ -2763,6 +2792,7 @@ export const alignSelectedElements = (type: AlignmentType) => {
                 return update ? { ...el, ...update } : el;
             }
         );
+        bumpDirtyRevision();
     }
 };
 
@@ -2783,6 +2813,7 @@ export const cycleStrokeStyle = () => {
         const next = styles[(styles.indexOf(current) + 1) % styles.length];
         return { strokeStyle: next };
     });
+    bumpDirtyRevision();
 };
 
 export const cycleFillStyle = () => {
@@ -2802,6 +2833,7 @@ export const cycleFillStyle = () => {
         const next = styles[(styles.indexOf(current) + 1) % styles.length];
         return { fillStyle: next };
     });
+    bumpDirtyRevision();
 };
 
 export const distributeSelectedElements = (type: DistributionType) => {
@@ -2816,6 +2848,7 @@ export const distributeSelectedElements = (type: DistributionType) => {
                 return update ? { ...el, ...update } : el;
             }
         );
+        bumpDirtyRevision();
     }
 };
 
@@ -3200,6 +3233,228 @@ export const offsetPath = (ids: string[], distance: number): string[] => {
     setStore('elements', list => [...list, ...created]);
     setStore('selection', created.map(c => c.id));
     showToast(`Offset path (${distance > 0 ? '+' : ''}${distance})`, 'success');
+    return created.map(c => c.id);
+};
+
+// ── Path ops: Simplify, Make/Release Compound Path ──────────────────────────
+// All operate on the (subpath, anchor) model. A "world subpath" carries anchors in
+// absolute canvas coordinates; helpers normalize a set of them to a shared bbox.
+
+type WorldSub = { anchors: PathAnchor[]; closed: boolean };
+
+/** Ramer–Douglas–Peucker on a closed/open anchor ring (positions only). */
+function rdpAnchors(anchors: PathAnchor[], eps: number): PathAnchor[] {
+    if (anchors.length < 3) return anchors;
+    const d2 = (p: PathAnchor, a: PathAnchor, b: PathAnchor) => {
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const len = dx * dx + dy * dy;
+        if (len === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+        let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / len;
+        t = Math.max(0, Math.min(1, t));
+        return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+    };
+    const simplify = (pts: PathAnchor[]): PathAnchor[] => {
+        if (pts.length < 3) return pts;
+        let maxD = 0, idx = 0;
+        for (let i = 1; i < pts.length - 1; i++) {
+            const dist = d2(pts[i], pts[0], pts[pts.length - 1]);
+            if (dist > maxD) { maxD = dist; idx = i; }
+        }
+        if (maxD > eps) {
+            const left = simplify(pts.slice(0, idx + 1));
+            const right = simplify(pts.slice(idx));
+            return left.slice(0, -1).concat(right);
+        }
+        return [pts[0], pts[pts.length - 1]];
+    };
+    return simplify(anchors);
+}
+
+/** Normalize a set of world-space subpaths to their shared bbox (origin-relative). */
+function normalizeWorldSubs(subs: WorldSub[]): { subpaths: PathSubpath[]; x: number; y: number; width: number; height: number } | null {
+    const kept = subs.filter(s => s.anchors.length >= 2);
+    if (kept.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const s of kept) for (const a of s.anchors) {
+        for (const [px, py] of [[a.x, a.y], [a.x + (a.outX ?? 0), a.y + (a.outY ?? 0)], [a.x + (a.inX ?? 0), a.y + (a.inY ?? 0)]]) {
+            minX = Math.min(minX, px); minY = Math.min(minY, py); maxX = Math.max(maxX, px); maxY = Math.max(maxY, py);
+        }
+    }
+    if (!isFinite(minX)) return null;
+    const subpaths: PathSubpath[] = kept.map(s => ({ closed: s.closed, anchors: s.anchors.map(a => ({ ...a, x: a.x - minX, y: a.y - minY })) }));
+    return { subpaths, x: minX, y: minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };
+}
+
+/** Build a `path` element from normalized world subpaths (single → editable pathAnchors). */
+function makePathFromWorldSubs(subs: WorldSub[], style: Partial<DrawingElement>): DrawingElement | null {
+    const norm = normalizeWorldSubs(subs);
+    if (!norm) return null;
+    const single = norm.subpaths.length === 1;
+    return {
+        ...store.defaultElementStyles,
+        id: generateId('path'),
+        type: 'path',
+        x: norm.x, y: norm.y, width: norm.width, height: norm.height,
+        pathAnchors: single ? norm.subpaths[0].anchors : undefined,
+        pathClosed: single ? norm.subpaths[0].closed : undefined,
+        pathSubpaths: single ? undefined : norm.subpaths,
+        angle: 0, seed: Math.floor(Math.random() * 2 ** 31), roundness: null,
+        locked: false, link: null, layerId: store.activeLayerId,
+        ...style,
+    } as DrawingElement;
+}
+
+/** Element → its subpaths in WORLD coords (paths via getPathSubpaths, others via shapeToPath). */
+function elementToWorldSubs(el: DrawingElement): WorldSub[] {
+    const toWorld = (anchors: PathAnchor[], closed: boolean): WorldSub => ({
+        closed, anchors: anchors.map(a => ({ ...a, x: el.x + a.x, y: el.y + a.y })),
+    });
+    if (el.type === 'path') return getPathSubpaths(el).map(sp => toWorld(sp.anchors, sp.closed));
+    const r = shapeToPath(el);
+    return r ? [toWorld(r.anchors, r.closed)] : [];
+}
+
+/**
+ * Simplify: reduce the anchor count of each subpath via Ramer–Douglas–Peucker, keeping
+ * the shape within a small tolerance. Useful after booleans/outline produce dense corners.
+ */
+export const simplifyPath = (ids: string[]): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
+    if (targets.length === 0) { showToast('Simplify: select a path', 'info'); return []; }
+    let changed = false;
+    pushToHistory();
+    setStore('elements', list => list.map(el => {
+        if (!targets.find(t => t.id === el.id)) return el;
+        const eps = Math.max(1.2, Math.hypot(el.width, el.height) * 0.012);
+        const subs = getPathSubpaths(el).map(sp => ({ closed: sp.closed, anchors: rdpAnchors(sp.anchors.map(a => ({ ...a })), eps) }));
+        // Re-normalize in the element's own frame (origin unchanged → just replace anchors).
+        const single = subs.length === 1;
+        const before = getPathSubpaths(el).reduce((n, s) => n + s.anchors.length, 0);
+        const after = subs.reduce((n, s) => n + s.anchors.length, 0);
+        if (after < before) changed = true;
+        return {
+            ...el,
+            pathAnchors: single ? subs[0].anchors : undefined,
+            pathClosed: single ? subs[0].closed : undefined,
+            pathSubpaths: single ? undefined : subs,
+        } as DrawingElement;
+    }));
+    showToast(changed ? 'Simplified path' : 'Path already simple', changed ? 'success' : 'info');
+    return targets.map(t => t.id);
+};
+
+/**
+ * Join: connect the selected OPEN paths into a single path by chaining nearest endpoints
+ * (each path's anchor list is appended, reversed if that end is closer). If the two free
+ * ends meet, the result is closed. Closed paths are ignored.
+ */
+export const joinPaths = (ids: string[]): string[] => {
+    const els = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
+    // Gather open subpaths in world coords.
+    const open: PathAnchor[][] = [];
+    for (const el of els) for (const sub of elementToWorldSubs(el)) {
+        if (!sub.closed && sub.anchors.length >= 2) open.push(sub.anchors);
+    }
+    if (open.length < 2) { showToast('Join: select 2+ open paths', 'info'); return []; }
+
+    const endpt = (a: PathAnchor[], end: 0 | 1) => end === 0 ? a[0] : a[a.length - 1];
+    const dist = (p: PathAnchor, q: PathAnchor) => Math.hypot(p.x - q.x, p.y - q.y);
+    const rev = (a: PathAnchor[]): PathAnchor[] => a.slice().reverse().map(an => ({
+        ...an,
+        inX: an.outX, inY: an.outY, outX: an.inX, outY: an.inY, // swap handles on reverse
+    }));
+
+    // Greedy chain starting from the first path.
+    let chain = open.shift()!;
+    while (open.length) {
+        const tail = endpt(chain, 1);
+        let best = -1, bestRev = false, bestD = Infinity;
+        for (let i = 0; i < open.length; i++) {
+            const dStart = dist(tail, endpt(open[i], 0));
+            const dEnd = dist(tail, endpt(open[i], 1));
+            if (dStart < bestD) { bestD = dStart; best = i; bestRev = false; }
+            if (dEnd < bestD) { bestD = dEnd; best = i; bestRev = true; }
+        }
+        const next = bestRev ? rev(open[best]) : open[best];
+        open.splice(best, 1);
+        // Merge coincident seam anchors: if the chain's tail meets next's head, keep one
+        // anchor and adopt next's outgoing handle for a continuous curve.
+        const tailA = chain[chain.length - 1];
+        if (dist(tailA, next[0]) < 6) {
+            tailA.outX = next[0].outX; tailA.outY = next[0].outY;
+            chain = chain.concat(next.slice(1));
+        } else {
+            chain = chain.concat(next);
+        }
+    }
+
+    // Close if the two free ends coincide (within a small tolerance).
+    const closed = dist(endpt(chain, 0), endpt(chain, 1)) < 6;
+    if (closed) chain = chain.slice(0, -1); // drop the duplicate closing anchor
+
+    const base = els[0];
+    const path = makePathFromWorldSubs([{ anchors: chain, closed }], {
+        backgroundColor: base.backgroundColor, fillStyle: base.fillStyle,
+        strokeColor: base.strokeColor, strokeWidth: base.strokeWidth, strokeStyle: base.strokeStyle,
+        renderStyle: base.renderStyle, opacity: base.opacity, roughness: base.roughness, layerId: base.layerId,
+    });
+    if (!path) return [];
+    pushToHistory();
+    setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), path]);
+    setStore('selection', [path.id]);
+    showToast(closed ? 'Joined paths (closed)' : 'Joined paths', 'success');
+    return [path.id];
+};
+
+/**
+ * Make Compound Path: combine the selected shapes/paths into ONE path with multiple
+ * subpaths (even-odd fill), so overlapping regions become holes (donut, letter "O").
+ */
+export const makeCompoundPath = (ids: string[]): string[] => {
+    const els = store.elements.filter(e => ids.includes(e.id));
+    if (els.length < 2) { showToast('Make Compound: select 2+ shapes', 'info'); return []; }
+    els.sort((a, b) => store.elements.indexOf(a) - store.elements.indexOf(b));
+    const worldSubs = els.flatMap(elementToWorldSubs);
+    if (worldSubs.length < 2) { showToast('Make Compound: need 2+ subpaths', 'info'); return []; }
+    const base = els[0];
+    const path = makePathFromWorldSubs(worldSubs, {
+        backgroundColor: base.backgroundColor, fillStyle: base.fillStyle,
+        strokeColor: base.strokeColor, strokeWidth: base.strokeWidth, strokeStyle: base.strokeStyle,
+        renderStyle: base.renderStyle, opacity: base.opacity, roughness: base.roughness, layerId: base.layerId,
+    });
+    if (!path) return [];
+    pushToHistory();
+    setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), path]);
+    setStore('selection', [path.id]);
+    showToast('Made compound path', 'success');
+    return [path.id];
+};
+
+/**
+ * Release Compound Path: split a compound path's subpaths into separate single-subpath
+ * path elements (the inverse of Make Compound). Each released subpath is node-editable.
+ */
+export const releaseCompoundPath = (ids: string[]): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'path' && (e.pathSubpaths?.length ?? 0) > 1);
+    if (targets.length === 0) { showToast('Release: select a compound path', 'info'); return []; }
+    const created: DrawingElement[] = [];
+    for (const el of targets) {
+        for (const sp of getPathSubpaths(el)) {
+            const worldSub: WorldSub = { closed: sp.closed, anchors: sp.anchors.map(a => ({ ...a, x: el.x + a.x, y: el.y + a.y })) };
+            const path = makePathFromWorldSubs([worldSub], {
+                backgroundColor: el.backgroundColor, fillStyle: el.fillStyle,
+                strokeColor: el.strokeColor, strokeWidth: el.strokeWidth, strokeStyle: el.strokeStyle,
+                renderStyle: el.renderStyle, opacity: el.opacity, roughness: el.roughness, layerId: el.layerId,
+            });
+            if (path) created.push(path);
+        }
+    }
+    if (created.length === 0) return [];
+    const releaseIds = new Set(targets.map(t => t.id));
+    pushToHistory();
+    setStore('elements', list => [...list.filter(e => !releaseIds.has(e.id)), ...created]);
+    setStore('selection', created.map(c => c.id));
+    showToast(`Released ${created.length} subpaths`, 'success');
     return created.map(c => c.id);
 };
 

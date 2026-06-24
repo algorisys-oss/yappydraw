@@ -1,7 +1,7 @@
 import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal } from 'solid-js';
 import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel,
-  toggleMinimap, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
+  toggleMinimap, toggleRulers, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
   addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
@@ -13,6 +13,7 @@ import {
 import { showToast } from './components/toast';
 import { ColorDropHud } from './components/color-drop-hud';
 import Canvas from './components/canvas';
+import { RulerOverlay } from './components/ruler-overlay';
 import Toolbar from './components/toolbar';
 import {
   copyToClipboard, cutToClipboard,
@@ -320,6 +321,9 @@ const App: Component = () => {
         } else if (code === 'KeyM' || key === 'm') {
           e.preventDefault();
           toggleMinimap();
+        } else if (code === 'KeyR' || key === 'r') {
+          e.preventDefault();
+          toggleRulers();
         } else if (code === 'KeyZ' || key === 'z') {
           e.preventDefault();
           const nextZen = !store.zenMode;
@@ -1127,6 +1131,9 @@ const App: Component = () => {
           <Menu />
         </Show>
         <Canvas />
+        <Show when={store.showRulers && store.appMode !== 'presentation' && !store.zenMode}>
+          <RulerOverlay />
+        </Show>
         <Show when={store.docType === 'slides'}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={
             <Show when={store.appMode === 'presentation'}>
