@@ -9,7 +9,7 @@ import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
     duplicateElement, groupSelected, ungroupSelected,
-    mirrorCopy, transformAgain,
+    mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
@@ -352,6 +352,9 @@ export function getContextMenuItems(
                 { separator: true },
                 { label: 'Mirror Copy →', icon: '⇆', onClick: () => mirrorCopy('horizontal') },
                 { label: 'Mirror Copy ↓', icon: '⇅', onClick: () => mirrorCopy('vertical') },
+                ...(store.symmetry.enabled
+                    ? [{ label: 'Mirror Across Symmetry Guide', icon: '⋈', onClick: () => mirrorAcrossSymmetry() }]
+                    : []),
             ]
         }, { separator: true });
 

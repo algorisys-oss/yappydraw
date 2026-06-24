@@ -3,6 +3,7 @@ import {
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection,
     groupSelected, ungroupSelected, bringToFront, sendToBack,
     mirrorCopy, transformAgain, convertTextToOutlines,
+    toggleSymmetryGuide, setSymmetryAxis, mirrorAcrossSymmetry,
     moveElementZIndex, undo, redo, deleteElements, toggleTheme,
     setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode,
     updateGlobalSettings, togglePenStabilization
@@ -253,6 +254,15 @@ export const getCommands = (): Command[] => {
         { id: 'action-mirror-h', label: 'Mirror Copy (horizontal)', category: 'Actions', action: () => mirrorCopy('horizontal') },
         { id: 'action-mirror-v', label: 'Mirror Copy (vertical)', category: 'Actions', action: () => mirrorCopy('vertical') },
         { id: 'action-repeat', label: 'Repeat (Radial / Grid)…', category: 'Actions', action: () => openRepeatDialog() },
+        { id: 'action-symmetry-toggle', label: 'Toggle Symmetry Guide', category: 'Actions', shortcut: 'Alt+Y', action: () => {
+            const s = store.viewState;
+            const cx = (window.innerWidth / 2 - s.panX) / s.scale;
+            const cy = (window.innerHeight / 2 - s.panY) / s.scale;
+            const next = !store.symmetry.enabled;
+            toggleSymmetryGuide(next, store.symmetry.axis === 'vertical' ? cx : cy);
+        } },
+        { id: 'action-symmetry-axis', label: 'Symmetry Guide: Switch Axis (V/H)', category: 'Actions', action: () => setSymmetryAxis(store.symmetry.axis === 'vertical' ? 'horizontal' : 'vertical') },
+        { id: 'action-symmetry-mirror', label: 'Mirror Across Symmetry Guide', category: 'Actions', action: () => mirrorAcrossSymmetry() },
         { id: 'action-transform-again', label: 'Transform Again', category: 'Actions', action: () => transformAgain(), shortcut: 'Ctrl+Shift+D' },
         { id: 'action-lock', label: 'Lock / Unlock', category: 'Actions', action: () => {
             const isLocked = store.selection.some(id => store.elements.find(e => e.id === id)?.locked);

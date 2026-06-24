@@ -85,6 +85,7 @@ interface AppState {
     minimapVisible: boolean;
     showRulers: boolean;
     guides: Guide[];
+    symmetry: { enabled: boolean; axis: 'vertical' | 'horizontal'; pos: number };
     zenMode: boolean;
     appMode: AppMode;
     showCommandPalette: boolean;
@@ -260,6 +261,7 @@ const initialState: AppState = {
     minimapVisible: false,
     showRulers: (() => { try { return localStorage.getItem('showRulers') === '1'; } catch { return false; } })(),
     guides: [],
+    symmetry: { enabled: false, axis: 'vertical', pos: 0 },
     zenMode: false,
     appMode: 'design',
     showCommandPalette: false,
@@ -3003,40 +3005,74 @@ export const gridRepeat = (rows: number, cols: number, opts?: { gapX?: number; g
  * toggle flipX/flipY (canvas-level mirror); point-based elements reflect their
  * points. Rotation is negated so rotated shapes mirror correctly.
  */
+// Reflect a clone of `src` across an axis line. `vertical` axis = a vertical line
+// at world x=`value` (left↔right mirror); `horizontal` axis = horizontal line at
+// world y=`value` (up↕down mirror). Shapes toggle flipX/flipY; point elements
+// reflect their local points; rotation is negated.
+const reflectClone = (clone: DrawingElement, src: DrawingElement, axis: 'horizontal' | 'vertical', value: number): DrawingElement => {
+    const ecx = src.x + src.width / 2, ecy = src.y + src.height / 2;
+    if (axis === 'horizontal') {
+        const ncx = 2 * value - ecx;
+        const out: DrawingElement = { ...clone, x: ncx - src.width / 2, angle: -(src.angle || 0) };
+        if (src.points) {
+            out.points = normalizePoints(src.points).map(p => ({ x: src.width - p.x, y: p.y })) as any;
+            out.pointsEncoding = undefined;
+        } else out.flipX = !src.flipX;
+        return out;
+    } else {
+        const ncy = 2 * value - ecy;
+        const out: DrawingElement = { ...clone, y: ncy - src.height / 2, angle: -(src.angle || 0) };
+        if (src.points) {
+            out.points = normalizePoints(src.points).map(p => ({ x: p.x, y: src.height - p.y })) as any;
+            out.pointsEncoding = undefined;
+        } else out.flipY = !src.flipY;
+        return out;
+    }
+};
+
 export const mirrorCopy = (axis: 'horizontal' | 'vertical') => {
     if (store.selection.length === 0) return;
     const bb = selectionBBox(store.selection);
+    // Reflect across the bbox's far edge so the copy sits adjacent.
+    const value = axis === 'horizontal' ? bb.maxX : bb.maxY;
     const selIds = [...store.selection];
     pushToHistory();
-    const newIds = cloneSelection(selIds, (clone, src) => {
-        const ecx = src.x + src.width / 2, ecy = src.y + src.height / 2;
-        if (axis === 'horizontal') {
-            const ncx = 2 * bb.maxX - ecx; // reflect centre across right edge
-            const out: DrawingElement = { ...clone, x: ncx - src.width / 2, angle: -(src.angle || 0) };
-            if (src.points) {
-                const pts = normalizePoints(src.points);
-                out.points = pts.map(p => ({ x: src.width - p.x, y: p.y })) as any;
-                out.pointsEncoding = undefined;
-            } else {
-                out.flipX = !src.flipX;
-            }
-            return out;
-        } else {
-            const ncy = 2 * bb.maxY - ecy; // reflect centre across bottom edge
-            const out: DrawingElement = { ...clone, y: ncy - src.height / 2, angle: -(src.angle || 0) };
-            if (src.points) {
-                const pts = normalizePoints(src.points);
-                out.points = pts.map(p => ({ x: p.x, y: src.height - p.y })) as any;
-                out.pointsEncoding = undefined;
-            } else {
-                out.flipY = !src.flipY;
-            }
-            return out;
-        }
-    });
+    const newIds = cloneSelection(selIds, (clone, src) => reflectClone(clone, src, axis, value));
     setStore('selection', [...selIds, ...newIds]);
     bumpDirtyRevision();
     showToast(`Mirrored ${axis === 'horizontal' ? '↔' : '↕'}`, 'success');
+};
+
+// ── Symmetry guide (a persistent reflection axis) ────────────────────────────
+// `axis: 'vertical'` is a vertical guide line at world x=`pos` (left↔right);
+// `horizontal` is at world y=`pos`. Pure construction aid — it never auto-mirrors
+// while drawing; use mirrorAcrossSymmetry() to reflect the selection across it.
+export const toggleSymmetryGuide = (enabled?: boolean, pos?: number) => {
+    setStore('symmetry', s => ({
+        ...s,
+        enabled: enabled ?? !s.enabled,
+        pos: pos ?? s.pos,
+    }));
+};
+export const setSymmetryAxis = (axis: 'vertical' | 'horizontal') => setStore('symmetry', 'axis', axis);
+export const setSymmetryPos = (pos: number) => setStore('symmetry', 'pos', Math.round(pos));
+
+/**
+ * Mirror the selection across the symmetry guide — the "draw one half, mirror it"
+ * move. A vertical guide reflects left↔right (axis 'horizontal' in reflectClone),
+ * a horizontal guide reflects up↕down. Adds the reflected clones to the canvas.
+ */
+export const mirrorAcrossSymmetry = () => {
+    if (store.selection.length === 0) return;
+    const { axis, pos } = store.symmetry;
+    // A vertical guide line mirrors along the X axis (horizontal reflection).
+    const reflectAxis: 'horizontal' | 'vertical' = axis === 'vertical' ? 'horizontal' : 'vertical';
+    const selIds = [...store.selection];
+    pushToHistory();
+    const newIds = cloneSelection(selIds, (clone, src) => reflectClone(clone, src, reflectAxis, pos));
+    setStore('selection', [...selIds, ...newIds]);
+    bumpDirtyRevision();
+    showToast('Mirrored across guide', 'success');
 };
 
 // Last rigid transform applied to a selection, replayed by transformAgain (Ctrl+Shift+D).

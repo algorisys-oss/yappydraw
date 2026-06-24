@@ -9,13 +9,14 @@ import {
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
   setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation,
-  transformAgain, recordTransform, convertTextToOutlines
+  transformAgain, recordTransform, convertTextToOutlines, toggleSymmetryGuide
 } from './store/app-store';
 import { showToast } from './components/toast';
 import { ColorDropHud } from './components/color-drop-hud';
 import Canvas from './components/canvas';
 import { RulerOverlay } from './components/ruler-overlay';
 import { RepeatDialog } from './components/repeat-dialog';
+import { SymmetryOverlay } from './components/symmetry-overlay';
 import Toolbar from './components/toolbar';
 import {
   copyToClipboard, cutToClipboard,
@@ -326,6 +327,15 @@ const App: Component = () => {
         } else if (code === 'KeyR' || key === 'r') {
           e.preventDefault();
           toggleRulers();
+        } else if (code === 'KeyY' || key === 'y') {
+          e.preventDefault();
+          // Toggle the symmetry guide; when turning on, drop the axis at the
+          // viewport centre so it's where the user is looking.
+          const s = store.viewState;
+          const cx = (window.innerWidth / 2 - s.panX) / s.scale;
+          const cy = (window.innerHeight / 2 - s.panY) / s.scale;
+          const next = !store.symmetry.enabled;
+          toggleSymmetryGuide(next, store.symmetry.axis === 'vertical' ? cx : cy);
         } else if (code === 'KeyZ' || key === 'z') {
           e.preventDefault();
           const nextZen = !store.zenMode;
@@ -1146,6 +1156,7 @@ const App: Component = () => {
           <RulerOverlay />
         </Show>
         <RepeatDialog />
+        <SymmetryOverlay />
         <Show when={store.docType === 'slides'}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={
             <Show when={store.appMode === 'presentation'}>

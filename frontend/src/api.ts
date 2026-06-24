@@ -11,6 +11,7 @@ import {
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain,
+    toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
@@ -1530,6 +1531,14 @@ export const YappyAPI = {
     mirrorCopy(axis: 'horizontal' | 'vertical') { mirrorCopy(axis); },
     /** Transform Again: clone the selection and replay the last move/duplicate transform (step-and-repeat). */
     transformAgain() { transformAgain(); },
+    /** Show/hide the symmetry guide; optional world `pos` for the axis. */
+    toggleSymmetryGuide(enabled?: boolean, pos?: number) { toggleSymmetryGuide(enabled, pos); },
+    /** Set the symmetry guide axis ('vertical' = left↔right mirror line). */
+    setSymmetryAxis(axis: 'vertical' | 'horizontal') { setSymmetryAxis(axis); },
+    /** Move the symmetry guide to world coordinate `pos`. */
+    setSymmetryPos(pos: number) { setSymmetryPos(pos); },
+    /** Mirror the selection across the symmetry guide (reflected clones). */
+    mirrorAcrossSymmetry() { mirrorAcrossSymmetry(); },
 
     // UI Panels
     toggleCommandPalette(visible?: boolean) { toggleCommandPalette(visible); },

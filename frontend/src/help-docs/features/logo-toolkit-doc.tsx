@@ -118,6 +118,28 @@ export const LogoToolkitDoc: Component = () => {
                 </p>
             </section>
 
+            {/* Symmetry guide */}
+            <section class="doc-section">
+                <h2>Symmetry Guide</h2>
+                <p>
+                    A persistent reflection axis for building symmetric marks. Toggle it with
+                    <span class="kbd">Alt</span>+<span class="kbd">Y</span> (or the Command Palette) — a dashed
+                    line appears at the centre of your view. <strong>Drag the line</strong> to reposition it,
+                    and switch between a vertical (left↔right) or horizontal (up↕down) axis from the Command
+                    Palette (<em>Symmetry Guide: Switch Axis</em>).
+                </p>
+                <p>
+                    Draw one half of your mark, select it, then run <strong>Mirror Across Symmetry Guide</strong>
+                    (Command Palette, or right-click → <em>Repeat &amp; Mirror</em>) to drop a reflected copy on
+                    the other side. Unlike <em>Mirror Copy</em> (which reflects across the selection's own edge),
+                    this reflects across the shared guide — so every half you mirror lines up on the same axis.
+                </p>
+                <p class="tip-box">
+                    The guide is a construction aid: it doesn't auto-mirror while you draw — you mirror on
+                    demand, which keeps you in control of when each half is duplicated.
+                </p>
+            </section>
+
             {/* Recipes */}
             <section class="doc-section">
                 <h2>Worked Recipes</h2>
