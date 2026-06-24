@@ -2,11 +2,13 @@ import {
     store, setStore, setSelectedTool, toggleGrid, toggleSnapToGrid, toggleZenMode,
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection,
     groupSelected, ungroupSelected, bringToFront, sendToBack,
+    mirrorCopy, transformAgain,
     moveElementZIndex, undo, redo, deleteElements, toggleTheme,
     setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode,
     updateGlobalSettings, togglePenStabilization
 } from "../store/app-store";
 import { flipSelected, lockSelected } from "./object-context-actions";
+import { openRepeatDialog } from "../components/repeat-dialog";
 import { setIsDSLImportOpen } from "../components/menu";
 import type { ToolType } from "../types";
 
@@ -247,6 +249,10 @@ export const getCommands = (): Command[] => {
         { id: 'action-delete', label: 'Delete Selected', category: 'Actions', action: () => deleteElements(store.selection), shortcut: 'Del' },
         { id: 'action-flip-h', label: 'Flip Horizontal', category: 'Actions', action: () => flipSelected('horizontal'), shortcut: 'Shift+H' },
         { id: 'action-flip-v', label: 'Flip Vertical', category: 'Actions', action: () => flipSelected('vertical'), shortcut: 'Shift+V' },
+        { id: 'action-mirror-h', label: 'Mirror Copy (horizontal)', category: 'Actions', action: () => mirrorCopy('horizontal') },
+        { id: 'action-mirror-v', label: 'Mirror Copy (vertical)', category: 'Actions', action: () => mirrorCopy('vertical') },
+        { id: 'action-repeat', label: 'Repeat (Radial / Grid)…', category: 'Actions', action: () => openRepeatDialog() },
+        { id: 'action-transform-again', label: 'Transform Again', category: 'Actions', action: () => transformAgain(), shortcut: 'Ctrl+Shift+D' },
         { id: 'action-lock', label: 'Lock / Unlock', category: 'Actions', action: () => {
             const isLocked = store.selection.some(id => store.elements.find(e => e.id === id)?.locked);
             lockSelected(!isLocked);

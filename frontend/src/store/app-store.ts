@@ -8,6 +8,7 @@ import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
 import { runBooleanOp, polyToPathSubpaths, type BooleanOp, type Poly } from "../utils/path-boolean";
 import { shapeToPath } from "../utils/shape-to-path";
+import { normalizePoints } from "../utils/render-element";
 import { getPathSubpaths } from "../utils/math/path-utils";
 import type { PathAnchor, PathSubpath } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
@@ -860,6 +861,9 @@ export const moveSelectedElements = (dx: number, dy: number, recordHistory = fal
         x: el.x + dx,
         y: el.y + dy
     }));
+    // Remember as the replayable transform for Transform Again (Ctrl+Shift+D).
+    recordTransform({ dx, dy });
+    bumpDirtyRevision();
 };
 
 export const setViewState = (updates: Partial<ViewState>) => {
@@ -2850,6 +2854,218 @@ export const distributeSelectedElements = (type: DistributionType) => {
         );
         bumpDirtyRevision();
     }
+};
+
+// ── Repeat & symmetry (radial / grid / mirror / transform-again) ──────────────
+//
+// All of these build on one primitive: deep-clone the current selection (with
+// group-aware id remapping, mirroring the Ctrl+D handler) and apply a rigid
+// transform to each clone. Element rotation is stored as `angle` (radians) about
+// the element centre, so a rigid rotation about an arbitrary pivot is: rotate the
+// element centre about the pivot, then add the same delta to `angle`. This works
+// uniformly for every element type without touching its local geometry.
+
+interface SelBBox { minX: number; minY: number; maxX: number; maxY: number; cx: number; cy: number; w: number; h: number; }
+
+const selectionBBox = (ids: string[]): SelBBox => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const el of store.elements) {
+        if (!ids.includes(el.id)) continue;
+        minX = Math.min(minX, el.x);
+        minY = Math.min(minY, el.y);
+        maxX = Math.max(maxX, el.x + el.width);
+        maxY = Math.max(maxY, el.y + el.height);
+    }
+    if (!isFinite(minX)) { minX = minY = maxX = maxY = 0; }
+    return { minX, minY, maxX, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, w: maxX - minX, h: maxY - minY };
+};
+
+const rotatePoint = (px: number, py: number, cx: number, cy: number, theta: number) => {
+    const c = Math.cos(theta), s = Math.sin(theta);
+    const dx = px - cx, dy = py - cy;
+    return { x: cx + dx * c - dy * s, y: cy + dx * s + dy * c };
+};
+
+/**
+ * Deep-clone the elements in `ids` (group-aware: shared groupIds are remapped to
+ * fresh ids so the copies stay grouped together but separate from the originals),
+ * apply `mutate(clone, source)` to each, append them to the store, and return the
+ * new ids. Does NOT push history or change selection — callers do that.
+ */
+const cloneSelection = (ids: string[], mutate: (clone: DrawingElement, src: DrawingElement) => DrawingElement): string[] => {
+    const src = store.elements.filter(e => ids.includes(e.id));
+    if (src.length === 0) return [];
+    const batchIds = new Set<string>();
+    const idMap = new Map<string, string>();
+    const groupMap = new Map<string, string>();
+    src.forEach(el => {
+        idMap.set(el.id, generateId(el.type, batchIds));
+        el.groupIds?.forEach(g => { if (!groupMap.has(g)) groupMap.set(g, generateId('group', batchIds)); });
+    });
+    const clones = src.map(el => {
+        const base: DrawingElement = {
+            ...el,
+            id: idMap.get(el.id)!,
+            points: el.points
+                ? ((el.points.length > 0 && typeof el.points[0] === 'number')
+                    ? [...(el.points as number[])]
+                    : (el.points as any[]).map(p => ({ ...p })))
+                : undefined,
+            roundness: el.roundness ? { ...el.roundness } : null,
+            crop: el.crop ? { ...el.crop } : null,
+            boundElements: null,
+            groupIds: el.groupIds?.map(g => groupMap.get(g)!) ?? undefined,
+            seed: Math.floor(Math.random() * 2147483647),
+        } as DrawingElement;
+        return mutate(base, el);
+    });
+    setStore('elements', els => [...els, ...clones]);
+    return clones.map(c => c.id);
+};
+
+/** Apply a rigid rotation of `theta` about (cx,cy) to a clone, given the source's geometry. */
+const placeRotated = (clone: DrawingElement, src: DrawingElement, cx: number, cy: number, theta: number, rotateSelf: boolean): DrawingElement => {
+    const ecx = src.x + src.width / 2, ecy = src.y + src.height / 2;
+    const r = rotatePoint(ecx, ecy, cx, cy, theta);
+    return {
+        ...clone,
+        x: r.x - src.width / 2,
+        y: r.y - src.height / 2,
+        angle: rotateSelf ? (src.angle || 0) + theta : (src.angle || 0),
+    };
+};
+
+/**
+ * Radial repeat — arrange `count` copies of the selection evenly around a ring.
+ * `radius` pushes each instance out from the selection centre (0 = rotate in
+ * place, e.g. count=2 → a 180° rotational mark). `faceCenter` rotates each copy
+ * to keep its orientation radial; otherwise copies keep their upright orientation.
+ */
+export const radialRepeat = (count: number, opts?: { radius?: number; faceCenter?: boolean }) => {
+    if (store.selection.length === 0 || count < 2) return;
+    const radius = opts?.radius ?? 0;
+    const face = opts?.faceCenter ?? false;
+    const bb = selectionBBox(store.selection);
+    const Cx = bb.cx, Cy = bb.cy;            // ring centre = selection centre
+    const tdx = 0, tdy = -radius;            // base offset: push instance to top of ring
+    const step = (2 * Math.PI) / count;
+    pushToHistory();
+
+    const selIds = [...store.selection];
+    // Instance 0: move the originals onto the ring (no rotation).
+    if (radius !== 0) {
+        setStore('elements', (el) => selIds.includes(el.id), (el) => ({ ...el, x: el.x + tdx, y: el.y + tdy }));
+    }
+    // Instances 1..count-1: rotated clones about the ring centre.
+    const newIds: string[] = [];
+    for (let i = 1; i < count; i++) {
+        const theta = step * i;
+        const ids = cloneSelection(selIds, (clone, srcOrig) => {
+            // src position = the instance-0 (moved) position
+            const src = { ...srcOrig, x: srcOrig.x + tdx, y: srcOrig.y + tdy } as DrawingElement;
+            return placeRotated(clone, src, Cx, Cy, theta, face);
+        });
+        newIds.push(...ids);
+    }
+    setStore('selection', [...selIds, ...newIds]);
+    bumpDirtyRevision();
+    showToast(`Radial repeat ×${count}`, 'success');
+};
+
+/**
+ * Grid repeat — tile `rows × cols` copies of the selection. Spacing defaults to
+ * the selection's bounding box plus `gap` so copies sit edge-to-edge with a gutter.
+ */
+export const gridRepeat = (rows: number, cols: number, opts?: { gapX?: number; gapY?: number }) => {
+    if (store.selection.length === 0 || rows < 1 || cols < 1 || (rows === 1 && cols === 1)) return;
+    const bb = selectionBBox(store.selection);
+    const dx = bb.w + (opts?.gapX ?? 20);
+    const dy = bb.h + (opts?.gapY ?? 20);
+    const selIds = [...store.selection];
+    pushToHistory();
+    const newIds: string[] = [];
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            if (r === 0 && c === 0) continue; // cell 0,0 = original
+            const ids = cloneSelection(selIds, (clone, src) => ({ ...clone, x: src.x + c * dx, y: src.y + r * dy }));
+            newIds.push(...ids);
+        }
+    }
+    setStore('selection', [...selIds, ...newIds]);
+    bumpDirtyRevision();
+    showToast(`Grid repeat ${rows}×${cols}`, 'success');
+};
+
+/**
+ * Mirror copy — duplicate the selection reflected across the far edge of its
+ * bounding box, so the mirror sits adjacent and forms a symmetric pair. Shapes
+ * toggle flipX/flipY (canvas-level mirror); point-based elements reflect their
+ * points. Rotation is negated so rotated shapes mirror correctly.
+ */
+export const mirrorCopy = (axis: 'horizontal' | 'vertical') => {
+    if (store.selection.length === 0) return;
+    const bb = selectionBBox(store.selection);
+    const selIds = [...store.selection];
+    pushToHistory();
+    const newIds = cloneSelection(selIds, (clone, src) => {
+        const ecx = src.x + src.width / 2, ecy = src.y + src.height / 2;
+        if (axis === 'horizontal') {
+            const ncx = 2 * bb.maxX - ecx; // reflect centre across right edge
+            const out: DrawingElement = { ...clone, x: ncx - src.width / 2, angle: -(src.angle || 0) };
+            if (src.points) {
+                const pts = normalizePoints(src.points);
+                out.points = pts.map(p => ({ x: src.width - p.x, y: p.y })) as any;
+                out.pointsEncoding = undefined;
+            } else {
+                out.flipX = !src.flipX;
+            }
+            return out;
+        } else {
+            const ncy = 2 * bb.maxY - ecy; // reflect centre across bottom edge
+            const out: DrawingElement = { ...clone, y: ncy - src.height / 2, angle: -(src.angle || 0) };
+            if (src.points) {
+                const pts = normalizePoints(src.points);
+                out.points = pts.map(p => ({ x: p.x, y: src.height - p.y })) as any;
+                out.pointsEncoding = undefined;
+            } else {
+                out.flipY = !src.flipY;
+            }
+            return out;
+        }
+    });
+    setStore('selection', [...selIds, ...newIds]);
+    bumpDirtyRevision();
+    showToast(`Mirrored ${axis === 'horizontal' ? '↔' : '↕'}`, 'success');
+};
+
+// Last rigid transform applied to a selection, replayed by transformAgain (Ctrl+Shift+D).
+// Recorded by duplicate (Ctrl+D) and arrow-key nudges.
+interface LastTransform { dx: number; dy: number; angle?: number; pivotX?: number; pivotY?: number; }
+let lastTransform: LastTransform | null = null;
+export const recordTransform = (t: LastTransform) => { lastTransform = t; };
+
+/**
+ * Transform Again — clone the selection and replay the last recorded transform.
+ * Duplicate (offset), then Ctrl+Shift+D repeatedly → a step-and-repeat array in
+ * the same direction. Falls back to a default diagonal offset if nothing recorded.
+ */
+export const transformAgain = () => {
+    if (store.selection.length === 0) return;
+    const off = 20 / store.viewState.scale;
+    const t = lastTransform ?? { dx: off, dy: off };
+    const selIds = [...store.selection];
+    pushToHistory();
+    const newIds = cloneSelection(selIds, (clone, src) => {
+        let nx = src.x + t.dx, ny = src.y + t.dy, ang = src.angle || 0;
+        if (t.angle && t.pivotX != null && t.pivotY != null) {
+            const moved = { ...src, x: nx, y: ny } as DrawingElement;
+            const r = placeRotated(clone, moved, t.pivotX, t.pivotY, t.angle, true);
+            return { ...r };
+        }
+        return { ...clone, x: nx, y: ny, angle: ang };
+    });
+    setStore('selection', newIds);
+    bumpDirtyRevision();
 };
 
 /**

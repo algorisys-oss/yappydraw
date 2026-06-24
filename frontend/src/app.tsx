@@ -8,12 +8,14 @@ import {
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
-  setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation
+  setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation,
+  transformAgain, recordTransform
 } from './store/app-store';
 import { showToast } from './components/toast';
 import { ColorDropHud } from './components/color-drop-hud';
 import Canvas from './components/canvas';
 import { RulerOverlay } from './components/ruler-overlay';
+import { RepeatDialog } from './components/repeat-dialog';
 import Toolbar from './components/toolbar';
 import {
   copyToClipboard, cutToClipboard,
@@ -389,6 +391,10 @@ const App: Component = () => {
         } else if (key === '[') {
           e.preventDefault();
           if (store.selection.length > 0) sendToBack(store.selection);
+        } else if (key === 'd' && e.shiftKey) {
+          // Transform Again — replay the last move/duplicate transform on a fresh copy.
+          e.preventDefault();
+          if (store.selection.length > 0) transformAgain();
         } else if (key === 'd') {
           e.preventDefault();
           const selectedElements = store.elements.filter(el => store.selection.includes(el.id));
@@ -426,6 +432,7 @@ const App: Component = () => {
 
             setStore('elements', [...store.elements, ...newElements]);
             setStore('selection', newElements.map(el => el.id));
+            recordTransform({ dx: offset, dy: offset });
           }
         } else if (key === 'l' && e.shiftKey) {
           e.preventDefault();
@@ -1134,6 +1141,7 @@ const App: Component = () => {
         <Show when={store.showRulers && store.appMode !== 'presentation' && !store.zenMode}>
           <RulerOverlay />
         </Show>
+        <RepeatDialog />
         <Show when={store.docType === 'slides'}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={
             <Show when={store.appMode === 'presentation'}>

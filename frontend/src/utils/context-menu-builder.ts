@@ -9,6 +9,7 @@ import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
     duplicateElement, groupSelected, ungroupSelected,
+    mirrorCopy, transformAgain,
     bringToFront, sendToBack, moveElementZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
@@ -26,6 +27,7 @@ import {
     changeElementType, getCurveTypeOptions, getCurveTypeIcon, getCurveTypeTooltip
 } from './element-transforms';
 import { shiftLaneIndicesOnRemove, hitTestPoolLane } from './pool-containment';
+import { openRepeatDialog } from '../components/repeat-dialog';
 import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng } from './export';
 import { shapeToPath } from './shape-to-path';
 import {
@@ -338,6 +340,17 @@ export function getContextMenuItems(
             if (selPaths.some(e => (e.pathSubpaths?.length ?? 0) > 1)) pathOps.push({ label: 'Release Compound Path', icon: '⊟', onClick: () => releaseCompoundPath([...store.selection]) });
             items.push({ label: 'Path', icon: '✐', submenu: pathOps }, { separator: true });
         }
+
+        // Repeat & Mirror submenu (radial/grid arrays, symmetric mirror copies).
+        items.push({
+            label: 'Repeat & Mirror', icon: '⟳', submenu: [
+                { label: 'Repeat (Radial / Grid)…', icon: '⊞', onClick: () => openRepeatDialog() },
+                { label: 'Transform Again', icon: '⤸', shortcut: 'Ctrl+Shift+D', onClick: () => transformAgain() },
+                { separator: true },
+                { label: 'Mirror Copy →', icon: '⇆', onClick: () => mirrorCopy('horizontal') },
+                { label: 'Mirror Copy ↓', icon: '⇅', onClick: () => mirrorCopy('vertical') },
+            ]
+        }, { separator: true });
 
         // Hierarchy Submenu
         const firstId = store.selection[0];

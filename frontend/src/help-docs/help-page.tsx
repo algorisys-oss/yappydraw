@@ -34,6 +34,7 @@ const AnimationDoc = lazy(() => import('./features/animation-doc'));
 const EmbeddingDoc = lazy(() => import('./features/embedding-doc'));
 const YslTutorialDoc = lazy(() => import('./features/ysl-tutorial-doc'));
 const BulkEditingDoc = lazy(() => import('./features/bulk-editing-doc'));
+const LogoToolkitDoc = lazy(() => import('./features/logo-toolkit-doc'));
 
 // Registry of all shape documentation - organized by category in logical sequence
 const shapeDocuments: ShapeDoc[] = [
@@ -105,6 +106,14 @@ const shapeDocuments: ShapeDoc[] = [
         content: InfrastructureDoc
     },
     // Design
+    {
+        id: 'logo-toolkit',
+        name: 'Logo & Design Toolkit',
+        icon: '✦',
+        category: 'Design',
+        description: 'Repeat & symmetry (radial / grid / mirror / transform-again) and Text → Outlines for logo construction',
+        content: LogoToolkitDoc
+    },
     {
         id: 'wireframing',
         name: 'Wireframing',

@@ -10,6 +10,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
@@ -1517,6 +1518,16 @@ export const YappyAPI = {
     releaseCompoundPath(ids: string[]) { return releaseCompoundPath(ids); },
     /** Join: connect selected open paths into one by chaining nearest endpoints. Returns new id. */
     joinPaths(ids: string[]) { return joinPaths(ids); },
+
+    // Repeat & symmetry (operate on the current selection)
+    /** Radial repeat: `count` copies around the selection centre. `radius` pushes them into a ring; `faceCenter` orients each outward. */
+    radialRepeat(count: number, opts?: { radius?: number; faceCenter?: boolean }) { radialRepeat(count, opts); },
+    /** Grid repeat: tile the selection into `rows × cols` (spacing = bbox + gap). */
+    gridRepeat(rows: number, cols: number, opts?: { gapX?: number; gapY?: number }) { gridRepeat(rows, cols, opts); },
+    /** Mirror copy: duplicate the selection reflected across its far edge (adjacent symmetric pair). */
+    mirrorCopy(axis: 'horizontal' | 'vertical') { mirrorCopy(axis); },
+    /** Transform Again: clone the selection and replay the last move/duplicate transform (step-and-repeat). */
+    transformAgain() { transformAgain(); },
 
     // UI Panels
     toggleCommandPalette(visible?: boolean) { toggleCommandPalette(visible); },
