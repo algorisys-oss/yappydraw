@@ -9,7 +9,7 @@ import {
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
-    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline,
+    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
@@ -20,7 +20,7 @@ import {
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
     saveActiveSlide, updateGlobalSettings, togglePenStabilization
 } from "./store/app-store";
-import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan } from "./types";
+import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
 import type { LayoutDirection } from "./utils/mindmap-layout";
@@ -74,6 +74,8 @@ interface ElementOptions {
     fillStyle?: FillStyle;
     strokeWidth?: number;
     strokeStyle?: StrokeStyle;
+    pathAnchors?: PathAnchor[];
+    pathClosed?: boolean;
     opacity?: number;
     roughness?: number;
     angle?: number;
@@ -491,6 +493,41 @@ export const YappyAPI = {
             curveType: 'bezier',
             strokeWidth: options?.strokeWidth ?? 3, // Branches usually thicker
         });
+    },
+
+    /**
+     * Create an editable vector `path` element from a list of anchors. Anchor
+     * coordinates may be in any local frame; the element is placed at the anchors'
+     * bounding box and the stored anchors are normalized relative to that origin
+     * (handles included in the bbox so they aren't clipped). Returns the new id, or
+     * null if fewer than 2 anchors were given.
+     */
+    createPath(anchors: PathAnchor[], options?: ElementOptions & { closed?: boolean }): string | null {
+        if (!anchors || anchors.length < 2) return null;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const a of anchors) {
+            const xs = [a.x, a.x + (a.outX ?? 0), a.x + (a.inX ?? 0)];
+            const ys = [a.y, a.y + (a.outY ?? 0), a.y + (a.inY ?? 0)];
+            minX = Math.min(minX, ...xs); maxX = Math.max(maxX, ...xs);
+            minY = Math.min(minY, ...ys); maxY = Math.max(maxY, ...ys);
+        }
+        const width = Math.max(1, maxX - minX);
+        const height = Math.max(1, maxY - minY);
+        const normalized: PathAnchor[] = anchors.map(a => ({ ...a, x: a.x - minX, y: a.y - minY }));
+        const { closed, ...rest } = options ?? {};
+        return this.createElement('path', minX, minY, width, height, {
+            ...rest,
+            pathAnchors: normalized,
+            pathClosed: closed ?? options?.pathClosed ?? false,
+            backgroundColor: options?.backgroundColor ?? 'transparent',
+        });
+    },
+
+    /** Read back an editable path's anchors + closed flag (null if not a path). */
+    getPath(id: string): { anchors: PathAnchor[]; closed: boolean } | null {
+        const el = this.getElement(id);
+        if (!el || el.type !== 'path' || !el.pathAnchors) return null;
+        return { anchors: el.pathAnchors, closed: !!el.pathClosed };
     },
 
     // --- Specialized Elements ---
@@ -1228,6 +1265,11 @@ export const YappyAPI = {
         setStore("selection", ids);
     },
 
+    /** Currently selected element ids. */
+    getSelection(): string[] {
+        return [...store.selection];
+    },
+
     clearSelection() {
         setStore("selection", []);
     },
@@ -1428,6 +1470,8 @@ export const YappyAPI = {
     applyMindmapStyling(rootId: string) { applyMindmapStyling(rootId); },
     /** Build a mindmap subtree under `parentId` from an indented/bulleted text outline. Returns the new node ids. */
     mindmapFromOutline(parentId: string, outline: string) { return pasteMindmapOutline(parentId, parseOutline(outline)); },
+    /** Pathfinder boolean over ≥2 element ids: 'union' | 'subtract' | 'intersect' | 'exclude'. Returns new path ids. */
+    pathfinder(ids: string[], op: 'union' | 'subtract' | 'intersect' | 'exclude') { return applyPathfinder(ids, op); },
 
     // UI Panels
     toggleCommandPalette(visible?: boolean) { toggleCommandPalette(visible); },

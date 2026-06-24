@@ -37,6 +37,7 @@ Additional Action items :
 - Record all learnings with each commits in docs/learnings.md
 - Update help docs (for hotkeys)
 - When a new shape is created or attributes or features are added, ensure api.ts is updated.
+- **Render-style parity: BOTH `sketch` and `architectural` drawing styles must work for every shape/feature.** A shape must render correctly (fill **and** stroke) in both modes. Sketch goes through rough.js (`renderSketchGeometry` → `rc.path`/`rc.polygon`/…); architectural goes through the clean canvas path (`renderArchitectural` → `RenderPipeline.renderGeometry` + `fill()`/`stroke()`). Gotcha: SVG-`path` geometry is a self-contained `Path2D` — it must be filled via `renderer.fillPath(d)` and stroked via `renderer.strokePath(d)`, because the `beginPath()+renderGeometry()+fill()/stroke()` pattern only works for geometries that append to the current path (rect/ellipse/points). When adding or changing a shape, verify it visually in **both** styles (a path-geometry shape that only sets up fill will silently lose its stroke in architectural mode).
 - WASM parity: When modifying JS code in `utils/geometry.ts`, `utils/hit-testing.ts`, `utils/routing.ts`, or `utils/object-snapping.ts`, ensure the corresponding WASM AssemblyScript module (`wasm/assemblyscript/assembly/`) and bridge (`wasm/bridge/`) stay in sync. The WASM path must produce identical results to the JS fallback.
 
 ## "Ship it" — release workflow

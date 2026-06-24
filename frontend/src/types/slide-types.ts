@@ -93,6 +93,7 @@ export interface GlobalSettings {
     penStabilization?: number;  // Pulled-string "lazy brush" strength 0..1 for freehand inking (0 = off, default)
     mindmapAutoLayout?: boolean;       // Auto-reflow mindmap trees on every add/collapse/delete/reparent (default on)
     mindmapLayoutDirection?: 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial' | 'balanced'; // Default direction for trees with no explicit choice
+    toolbarVertical?: boolean;         // Orient the main toolbar vertically (left edge) instead of horizontally (top)
 }
 
 /**

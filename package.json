@@ -1,6 +1,6 @@
 {
   "name": "yappy",
-  "version": "0.27.40",
+  "version": "0.27.50",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,7 @@
   "dependencies": {
     "jspdf": "^4.0.0",
     "lucide-solid": "^0.562.0",
+    "polygon-clipping": "^0.15.7",
     "pptxgenjs": "^4.0.1",
     "roughjs": "^4.6.6",
     "solid-js": "^1.9.11",

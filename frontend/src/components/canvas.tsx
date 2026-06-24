@@ -28,6 +28,7 @@ import {
 import { drawOnDown, drawOnMove, drawOnUp } from "../utils/tool-handlers/draw-handler";
 import { penOnMove } from "../utils/tool-handlers/pen-handler";
 import { polylineOnDown, polylineOnMove, polylineOnUp, polylineFinalize, polylineUndo } from "../utils/tool-handlers/polyline-handler";
+import { penOnDown as penPathDown, penOnMove as penPathMove, penOnUp as penPathUp, penFinalize as penPathFinalize, penUndo as penPathUndo } from "../utils/tool-handlers/pen-path-handler";
 import { selectionOnDown, selectionOnMove, selectionOnUp } from "../utils/tool-handlers/selection-handler";
 import { checkBinding as checkBindingUtil, refreshLinePoints as refreshLinePointsUtil, refreshBoundLine as refreshBoundLineUtil } from "../utils/binding-logic";
 import {
@@ -1362,6 +1363,7 @@ const Canvas: Component = () => {
         if (store.selectedTool === 'eraser') { eraserOnDown(x, y, pState, pHelpers); return; }
         if (store.selectedTool === 'pan') { panOnDown(pState, pHelpers); return; }
         if (store.selectedTool === 'polyline' || pState.isPolylineBuilding) { polylineOnDown(x, y, pState, pHelpers); return; }
+        if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers); requestAnimationFrame(draw); return; }
 
         drawOnDown(x, y, pState, pHelpers);
         smartShape.arm(pState.currentId); // no-op unless a pen tool + enabled
@@ -1429,6 +1431,12 @@ const Canvas: Component = () => {
 
         if (pState.isPolylineBuilding) {
             polylineOnMove(x, y, pState, pHelpers, pSignals);
+            requestAnimationFrame(draw);
+            return;
+        }
+
+        if (pState.isPenBuilding) {
+            penPathMove(x, y, pState, pHelpers, pSignals);
             requestAnimationFrame(draw);
             return;
         }
@@ -1525,6 +1533,12 @@ const Canvas: Component = () => {
             return;
         }
 
+        if (pState.isPenBuilding) {
+            penPathUp(pState);
+            requestAnimationFrame(draw);
+            return;
+        }
+
         if (store.selectedTool === 'selection' || store.selectedTool === 'lasso') {
             const { x: upX, y: upY } = getWorldCoordinates(e.clientX, e.clientY);
             selectionOnUp(e, upX, upY, pState, pHelpers, pSignals);
@@ -1547,6 +1561,12 @@ const Canvas: Component = () => {
     const handleDoubleClick = (e: MouseEvent) => {
         if (pState.isPolylineBuilding) {
             polylineFinalize(pState, pHelpers, pSignals);
+            requestAnimationFrame(draw);
+            return;
+        }
+
+        if (pState.isPenBuilding) {
+            penPathFinalize(pState);
             requestAnimationFrame(draw);
             return;
         }
@@ -1690,6 +1710,23 @@ const Canvas: Component = () => {
         };
         window.addEventListener('keydown', handlePolylineKeys, true);
 
+        // Pen (vector path) keyboard shortcuts: Enter/Escape to finish, Backspace to undo last anchor.
+        const handlePenKeys = (e: KeyboardEvent) => {
+            if (!pState.isPenBuilding) return;
+            if (e.key === 'Escape' || e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                penPathFinalize(pState);
+                requestAnimationFrame(draw);
+            } else if (e.key === 'Backspace') {
+                e.preventDefault();
+                e.stopPropagation();
+                penPathUndo(pState);
+                requestAnimationFrame(draw);
+            }
+        };
+        window.addEventListener('keydown', handlePenKeys, true);
+
         // Drag-and-drop for color/URL drops on canvas elements (image file drops handled globally in app.tsx)
         // Attach to parent wrapper div instead of canvas directly — canvas is a weak drop target on Linux/Wayland
         const dropHandler = (e: DragEvent) => handleDropHandler(e, canvasEventCtx);
@@ -1824,6 +1861,7 @@ const Canvas: Component = () => {
             dropZone.removeEventListener('drop', dropHandler);
             window.removeEventListener('keydown', handleCropKeys, true);
             window.removeEventListener('keydown', handlePolylineKeys, true);
+            window.removeEventListener('keydown', handlePenKeys, true);
             window.removeEventListener("resize", handleResize);
             document.removeEventListener("fullscreenchange", handleResize);
             if (canvasRef) {

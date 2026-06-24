@@ -4,6 +4,41 @@
  * Helper functions for SVG path parsing and interpolation
  */
 
+import type { PathAnchor } from '../../types';
+
+/**
+ * Serialize an editable anchor list into an SVG path `d` string.
+ *
+ * Anchor coords are relative to the element origin; `ox`/`oy` shift them into the
+ * target frame (e.g. pass `-w/2, -h/2` for the centered geometry frame). A segment
+ * becomes a cubic `C` when either endpoint has a Bézier handle, else a line `L`. A
+ * missing handle defaults to its own anchor (so a half-curved segment still works).
+ * Returns `''` for fewer than 2 anchors.
+ */
+export function anchorsToPathData(anchors: PathAnchor[], closed = false, ox = 0, oy = 0): string {
+    if (!anchors || anchors.length < 2) return '';
+    const ax = (a: PathAnchor) => a.x + ox;
+    const ay = (a: PathAnchor) => a.y + oy;
+    const outX = (a: PathAnchor) => a.x + (a.outX ?? 0) + ox;
+    const outY = (a: PathAnchor) => a.y + (a.outY ?? 0) + oy;
+    const inX = (a: PathAnchor) => a.x + (a.inX ?? 0) + ox;
+    const inY = (a: PathAnchor) => a.y + (a.inY ?? 0) + oy;
+
+    const seg = (from: PathAnchor, to: PathAnchor) => {
+        const hasCurve = from.outX !== undefined || from.outY !== undefined ||
+            to.inX !== undefined || to.inY !== undefined;
+        if (!hasCurve) return `L ${ax(to)} ${ay(to)}`;
+        return `C ${outX(from)} ${outY(from)} ${inX(to)} ${inY(to)} ${ax(to)} ${ay(to)}`;
+    };
+
+    let d = `M ${ax(anchors[0])} ${ay(anchors[0])}`;
+    for (let i = 1; i < anchors.length; i++) d += ` ${seg(anchors[i - 1], anchors[i])}`;
+    if (closed && anchors.length > 2) {
+        d += ` ${seg(anchors[anchors.length - 1], anchors[0])} Z`;
+    }
+    return d;
+}
+
 export interface PathPoint {
     x: number;
     y: number;

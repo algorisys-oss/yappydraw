@@ -18,6 +18,7 @@ import { normalizePoints } from './render-element';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { isWasmEnabled } from '../wasm/feature-flags';
 import { wasmHitTestElement } from '../wasm/bridge/hit-testing-bridge';
+import { PathUtils, anchorsToPathData } from './math/path-utils';
 
 /**
  * Inverse-rotate a point around a center by the given angle.
@@ -73,6 +74,8 @@ function hitTestGeometry(
     // logic that isn't in the WASM module yet, so they fall through to JS.
     if (isWasmEnabled('hitTesting') &&
         el.type !== 'solidBlock' && el.type !== 'openBox' && el.type !== 'perspectiveBlock') {
+        // 'path' goes through WASM broad-phase + the shared JS narrow phase
+        // (hitTestPathElement), so JS and WASM produce identical results.
         return wasmHitTestElement(el, x, y, threshold);
     }
 
@@ -124,6 +127,12 @@ function hitTestGeometry(
     if (p.x < x1 - threshold || p.x > x2 + threshold ||
         p.y < y1 - threshold || p.y > y2 + threshold) {
         return false;
+    }
+
+    if (el.type === 'path') {
+        // Narrow phase: sample the path to a polyline (centred frame) and test
+        // stroke proximity, plus point-in-polygon when it's a filled closed path.
+        return hitTestPathElement(el, p.x - cx, p.y - cy, threshold);
     }
 
     if (el.type === 'rectangle' || el.type === 'solidBlock' || el.type === 'isometricCube' || el.type === 'perspectiveBlock' || el.type === 'openBox') {
@@ -287,6 +296,36 @@ function hitTestGeometry(
 
     }
 
+    return false;
+}
+
+/**
+ * Narrow-phase hit test for an editable `path` element. `lx`/`ly` are the query
+ * point in the element-centred frame (origin = element centre). Samples the path to
+ * a polyline and accepts a hit near the stroke, or inside a filled closed path.
+ */
+export function hitTestPathElement(el: DrawingElement, lx: number, ly: number, threshold: number): boolean {
+    const anchors = el.pathAnchors;
+    if (!anchors || anchors.length < 2) return false;
+    const d = anchorsToPathData(anchors, el.pathClosed ?? false, -el.width / 2, -el.height / 2);
+    if (!d) return false;
+    const cmds = PathUtils.parsePath(d);
+    if (cmds.length === 0) return false;
+
+    const N = 96;
+    const pts: { x: number; y: number }[] = [];
+    for (let i = 0; i <= N; i++) {
+        const pt = PathUtils.getPointOnPath(cmds, i / N);
+        pts.push({ x: pt.x, y: pt.y });
+    }
+
+    const local = { x: lx, y: ly };
+    const tol = threshold + (el.strokeWidth || 1) / 2 + 2;
+    if (isPointOnPolyline(local, pts, tol)) return true;
+
+    const filled = !!el.pathClosed && !!el.backgroundColor &&
+        el.backgroundColor !== 'transparent' && el.backgroundColor !== 'none';
+    if (filled && isPointInPolygon(local, pts)) return true;
     return false;
 }
 

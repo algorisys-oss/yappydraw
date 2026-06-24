@@ -1,6 +1,7 @@
 import type { DrawingElement } from "../types";
 import { isWasmEnabled } from "../wasm/feature-flags";
 import { wasmGetShapeGeometry } from "../wasm/bridge/shape-paths-bridge";
+import { anchorsToPathData } from "./math/path-utils";
 
 export type ShapeGeometry =
     | { type: 'rect', x: number, y: number, w: number, h: number, r?: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
@@ -59,6 +60,14 @@ export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
     const y = -mh;
 
     switch (el.type) {
+        case 'path': {
+            // Editable vector path: anchors are origin-relative; shift to the centered
+            // geometry frame (origin = element centre).
+            if (!el.pathAnchors || el.pathAnchors.length < 2) return null;
+            const d = anchorsToPathData(el.pathAnchors, el.pathClosed ?? false, -mw, -mh);
+            return d ? { type: 'path', path: d } : null;
+        }
+
         case 'rectangle':
         case 'image':
         case 'text':

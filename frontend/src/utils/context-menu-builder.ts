@@ -13,7 +13,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder,
     zoomToFit, zoomToFitSlide, updateGlobalSettings,
     toggleVideoPlayback, isVideoPlaying
 } from '../store/app-store';
@@ -983,6 +983,15 @@ export function getContextMenuItems(
         // Grouping
         if (selectionCount > 1) {
             items.push({ label: 'Group', shortcut: 'Ctrl+G', onClick: groupSelected });
+            items.push({
+                label: 'Pathfinder', icon: '⬗',
+                submenu: [
+                    { label: 'Unite', icon: '⬤', onClick: () => applyPathfinder([...store.selection], 'union') },
+                    { label: 'Subtract (minus front)', icon: '◐', onClick: () => applyPathfinder([...store.selection], 'subtract') },
+                    { label: 'Intersect', icon: '◑', onClick: () => applyPathfinder([...store.selection], 'intersect') },
+                    { label: 'Exclude', icon: '◓', onClick: () => applyPathfinder([...store.selection], 'exclude') },
+                ],
+            });
         }
 
         const isAnyGrouped = store.selection.some(id => {

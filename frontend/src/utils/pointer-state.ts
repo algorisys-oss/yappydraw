@@ -45,6 +45,11 @@ export interface PointerState {
     lastPointerType: 'mouse' | 'pen' | 'touch' | null;
     isPolylineBuilding: boolean;
     polylinePoints: { x: number; y: number }[];
+    // Pen tool (editable vector path) build state.
+    isPenBuilding: boolean;
+    penAnchors: import('../types').PathAnchor[]; // committed anchors, relative to startX/startY
+    penActiveIdx: number;                         // index of the anchor being dragged (curving), or -1
+    penDragging: boolean;                         // pointer is down on the active anchor
     lassoPoints: { x: number; y: number }[];
 
     // Table interaction state
@@ -126,6 +131,10 @@ export function createPointerState(): PointerState {
         lastPenInputAt: 0,
         activePenPointerId: null,
         lastPointerType: null,
+        isPenBuilding: false,
+        penAnchors: [],
+        penActiveIdx: -1,
+        penDragging: false,
         isPolylineBuilding: false,
         polylinePoints: [],
         lassoPoints: [],

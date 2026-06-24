@@ -58,6 +58,7 @@ function captureInitialPositions(
                 fontSize: el.fontSize,
                 points: el.points ? [...el.points] : undefined,
                 controlPoints: el.controlPoints ? el.controlPoints.map(cp => ({ ...cp })) : undefined,
+                pathAnchors: el.pathAnchors ? el.pathAnchors.map(a => ({ ...a })) : undefined,
                 eraseStrokes: el.eraseStrokes ? el.eraseStrokes.map(s => ({ points: [...s.points], radius: s.radius })) : undefined
             });
         }
@@ -85,6 +86,24 @@ function scaleEraseStrokes(
         }
         return { points: np, radius: s.radius * rScale };
     });
+}
+
+/**
+ * Scale an editable path's anchors (and their Bézier handles) with a resize so the
+ * vector geometry tracks the bounding box. Anchors/handles are origin-relative, so a
+ * straight per-axis multiply is correct.
+ */
+function scalePathAnchors(anchors: any[] | undefined, scaleX: number, scaleY: number): any[] | undefined {
+    if (!anchors) return undefined;
+    return anchors.map((a: any) => ({
+        ...a,
+        x: a.x * scaleX,
+        y: a.y * scaleY,
+        ...(a.inX !== undefined ? { inX: a.inX * scaleX } : {}),
+        ...(a.inY !== undefined ? { inY: a.inY * scaleY } : {}),
+        ...(a.outX !== undefined ? { outX: a.outX * scaleX } : {}),
+        ...(a.outY !== undefined ? { outY: a.outY * scaleY } : {}),
+    }));
 }
 
 function initMoveState(
@@ -143,6 +162,19 @@ export function selectionOnDown(
             return;
         }
 
+        // Vector path: Alt-click an anchor converts it corner ↔ smooth (no drag).
+        if (hitHandle.handle.startsWith('path-anchor-') && e.altKey) {
+            const idx = parseInt(hitHandle.handle.replace('path-anchor-', ''), 10);
+            convertPathAnchor(hitHandle.id, idx);
+            return;
+        }
+        // Vector path: Ctrl/Cmd-click an anchor deletes it.
+        if (hitHandle.handle.startsWith('path-anchor-') && (e.ctrlKey || e.metaKey)) {
+            const idx = parseInt(hitHandle.handle.replace('path-anchor-', ''), 10);
+            deletePathAnchor(hitHandle.id, idx);
+            return;
+        }
+
         // Check if it's a connector handle
         if (hitHandle.handle.startsWith('connector-')) {
             pushToHistory();
@@ -197,6 +229,7 @@ export function selectionOnDown(
                             height: el.height,
                             fontSize: el.fontSize,
                             points: el.points ? [...el.points] : undefined,
+                            pathAnchors: el.pathAnchors ? el.pathAnchors.map(a => ({ ...a })) : undefined,
                             eraseStrokes: el.eraseStrokes ? el.eraseStrokes.map(s => ({ points: [...s.points], radius: s.radius })) : undefined
                         });
                     }
@@ -220,6 +253,7 @@ export function selectionOnDown(
                     height: el.height,
                     fontSize: el.fontSize,
                     points: el.points ? [...el.points] : undefined,
+                    pathAnchors: el.pathAnchors ? el.pathAnchors.map(a => ({ ...a })) : undefined,
                     eraseStrokes: el.eraseStrokes ? el.eraseStrokes.map(s => ({ points: [...s.points], radius: s.radius })) : undefined
                 });
 
@@ -240,6 +274,14 @@ export function selectionOnDown(
             }
         }
         return;
+    }
+
+    // Vector path: Alt-click on a segment (not a node) inserts an anchor there.
+    if (e.altKey && store.selection.length === 1) {
+        const selEl = store.elements.find(el => el.id === store.selection[0]);
+        if (selEl?.type === 'path' && insertPathAnchorAt(selEl.id, x, y, store.viewState.scale)) {
+            return;
+        }
     }
 
     // Table column/row resize and header sort detection (on already-selected table)
@@ -802,6 +844,9 @@ export function selectionOnMove(
             } else if (hit.handle.startsWith('control-')) {
                 helpers.setCursor('move');
                 pState.hoveredConnector = null;
+            } else if (hit.handle.startsWith('path-')) {
+                helpers.setCursor('move');
+                pState.hoveredConnector = null;
             } else if (hit.handle === 'table-move') {
                 helpers.setCursor('move');
                 pState.hoveredConnector = null;
@@ -1277,6 +1322,8 @@ function handleResize(
         handlePolypointDrag(x, y, id, pState);
     } else if (pState.draggingHandle && pState.draggingHandle.startsWith('control-')) {
         handleControlPointDrag(x, y, id, pState, helpers);
+    } else if (pState.draggingHandle && pState.draggingHandle.startsWith('path-')) {
+        handlePathNodeDrag(x, y, id, pState);
     } else {
         // APPLY RESIZE (Single or Group)
         applyResize(id, el, isMulti, newX, newY, newWidth, newHeight, pState, helpers);
@@ -1462,6 +1509,186 @@ function handlePolypointDrag(
     updateElement(id, { points: newPoints }, false);
 }
 
+// ─── Vector Path Node Dragging (anchor move / handle reshape) ────────
+
+function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerState): void {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || !el.pathAnchors) return;
+    const m = pState.draggingHandle!.match(/^path-(anchor|in|out)-(\d+)$/);
+    if (!m) return;
+    const kind = m[1] as 'anchor' | 'in' | 'out';
+    const i = parseInt(m[2], 10);
+    if (i < 0 || i >= el.pathAnchors.length) return;
+
+    let tx = x, ty = y;
+    if (store.gridSettings.snapToGrid) {
+        const s = snapPoint(x, y, store.gridSettings.gridSize);
+        tx = s.x; ty = s.y;
+    }
+
+    const anchors = el.pathAnchors.map(a => ({ ...a }));
+    const a = anchors[i];
+    if (kind === 'anchor') {
+        // Move the anchor; its handles are relative, so they travel with it.
+        a.x = tx - el.x;
+        a.y = ty - el.y;
+    } else {
+        const hx = tx - (el.x + a.x);
+        const hy = ty - (el.y + a.y);
+        if (kind === 'out') {
+            a.outX = hx; a.outY = hy;
+            if (a.kind === 'smooth') { a.inX = -hx; a.inY = -hy; }
+        } else {
+            a.inX = hx; a.inY = hy;
+            if (a.kind === 'smooth') { a.outX = -hx; a.outY = -hy; }
+        }
+    }
+
+    writePathAnchors(id, el.x, el.y, anchors);
+}
+
+/**
+ * Re-normalize anchors to their bbox and write them to the element. `baseX/baseY` is
+ * the frame the input anchors are relative to (the element's current origin). World
+ * positions are invariant: world.x = baseX + a.x = (baseX + minX) + (a.x - minX).
+ */
+function writePathAnchors(id: string, baseX: number, baseY: number, anchors: any[]): void {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const an of anchors) {
+        const pts = [
+            [an.x, an.y],
+            [an.x + (an.outX ?? 0), an.y + (an.outY ?? 0)],
+            [an.x + (an.inX ?? 0), an.y + (an.inY ?? 0)],
+        ];
+        for (const [px, py] of pts) {
+            minX = Math.min(minX, px); minY = Math.min(minY, py);
+            maxX = Math.max(maxX, px); maxY = Math.max(maxY, py);
+        }
+    }
+    const norm = anchors.map(an => ({ ...an, x: an.x - minX, y: an.y - minY }));
+    updateElement(id, {
+        x: baseX + minX,
+        y: baseY + minY,
+        width: Math.max(1, maxX - minX),
+        height: Math.max(1, maxY - minY),
+        pathAnchors: norm,
+    }, false);
+}
+
+/**
+ * Convert a path anchor between corner and smooth. Smoothing derives collinear
+ * handles from the neighbour tangent (1/3 of the spans); corner-ing drops the handles.
+ */
+export function convertPathAnchor(id: string, i: number): void {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || !el.pathAnchors || i < 0 || i >= el.pathAnchors.length) return;
+    const anchors = el.pathAnchors.map(a => ({ ...a }));
+    const a = anchors[i];
+    if (a.kind === 'smooth') {
+        delete a.inX; delete a.inY; delete a.outX; delete a.outY;
+        a.kind = 'corner';
+    } else {
+        const n = anchors.length;
+        const prev = anchors[(i - 1 + n) % n];
+        const next = anchors[(i + 1) % n];
+        let tx = next.x - prev.x, ty = next.y - prev.y;
+        const len = Math.hypot(tx, ty) || 1;
+        tx /= len; ty /= len;
+        const dOut = Math.hypot(next.x - a.x, next.y - a.y) / 3 || 20;
+        const dIn = Math.hypot(a.x - prev.x, a.y - prev.y) / 3 || 20;
+        a.outX = tx * dOut; a.outY = ty * dOut;
+        a.inX = -tx * dIn; a.inY = -ty * dIn;
+        a.kind = 'smooth';
+    }
+    pushToHistory();
+    writePathAnchors(id, el.x, el.y, anchors);
+}
+
+/** Delete a path anchor (needs > 2 to remain a valid path). */
+export function deletePathAnchor(id: string, i: number): void {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || !el.pathAnchors || el.pathAnchors.length <= 2) return;
+    if (i < 0 || i >= el.pathAnchors.length) return;
+    const anchors = el.pathAnchors.map(a => ({ ...a }));
+    anchors.splice(i, 1);
+    pushToHistory();
+    writePathAnchors(id, el.x, el.y, anchors);
+}
+
+/**
+ * Find the path segment nearest a world point and the parameter t along it. Returns
+ * null if the nearest point is farther than `tol`. Segments are the cubic between
+ * consecutive anchors (plus the closing segment for closed paths).
+ */
+function findClosestPathSegment(el: DrawingElement, wx: number, wy: number, tol: number):
+    { seg: number; t: number } | null {
+    const A = el.pathAnchors!;
+    const n = A.length;
+    const segCount = el.pathClosed ? n : n - 1;
+    const lx = wx - el.x, ly = wy - el.y; // element-local
+    let best: { seg: number; t: number; d: number } | null = null;
+    const N = 24;
+    for (let s = 0; s < segCount; s++) {
+        const a = A[s], b = A[(s + 1) % n];
+        const p0x = a.x, p0y = a.y;
+        const p1x = a.x + (a.outX ?? 0), p1y = a.y + (a.outY ?? 0);
+        const p2x = b.x + (b.inX ?? 0), p2y = b.y + (b.inY ?? 0);
+        const p3x = b.x, p3y = b.y;
+        for (let k = 0; k <= N; k++) {
+            const t = k / N, mt = 1 - t;
+            const bx = mt * mt * mt * p0x + 3 * mt * mt * t * p1x + 3 * mt * t * t * p2x + t * t * t * p3x;
+            const by = mt * mt * mt * p0y + 3 * mt * mt * t * p1y + 3 * mt * t * t * p2y + t * t * t * p3y;
+            const d = Math.hypot(bx - lx, by - ly);
+            if (!best || d < best.d) best = { seg: s, t, d };
+        }
+    }
+    if (!best || best.d > tol) return null;
+    return { seg: best.seg, t: best.t };
+}
+
+/**
+ * Insert an anchor on a path segment at parameter t, preserving the curve via a
+ * de Casteljau split (straight segments stay straight as a plain corner anchor).
+ */
+export function insertPathAnchorAt(id: string, wx: number, wy: number, scale: number): boolean {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || !el.pathAnchors || el.pathAnchors.length < 2) return false;
+    const hit = findClosestPathSegment(el, wx, wy, 10 / scale);
+    if (!hit) return false;
+    const { seg: s, t } = hit;
+    const anchors = el.pathAnchors.map(a => ({ ...a }));
+    const n = anchors.length;
+    const a = anchors[s], b = anchors[(s + 1) % n];
+    const curved = a.outX !== undefined || a.outY !== undefined || b.inX !== undefined || b.inY !== undefined;
+
+    const lerp = (px: number, py: number, qx: number, qy: number) => ({ x: px + (qx - px) * t, y: py + (qy - py) * t });
+
+    let newAnchor: any;
+    if (!curved) {
+        const m = lerp(a.x, a.y, b.x, b.y);
+        newAnchor = { x: m.x, y: m.y, kind: 'corner' };
+    } else {
+        const p0 = { x: a.x, y: a.y };
+        const p1 = { x: a.x + (a.outX ?? 0), y: a.y + (a.outY ?? 0) };
+        const p2 = { x: b.x + (b.inX ?? 0), y: b.y + (b.inY ?? 0) };
+        const p3 = { x: b.x, y: b.y };
+        const A1 = lerp(p0.x, p0.y, p1.x, p1.y);
+        const B1 = lerp(p1.x, p1.y, p2.x, p2.y);
+        const C1 = lerp(p2.x, p2.y, p3.x, p3.y);
+        const D1 = lerp(A1.x, A1.y, B1.x, B1.y);
+        const E1 = lerp(B1.x, B1.y, C1.x, C1.y);
+        const F = lerp(D1.x, D1.y, E1.x, E1.y); // split point
+        // Adjust neighbour handles to the split tangents.
+        a.outX = A1.x - a.x; a.outY = A1.y - a.y;
+        b.inX = C1.x - b.x; b.inY = C1.y - b.y;
+        newAnchor = { x: F.x, y: F.y, inX: D1.x - F.x, inY: D1.y - F.y, outX: E1.x - F.x, outY: E1.y - F.y, kind: 'smooth' };
+    }
+    anchors.splice(s + 1, 0, newAnchor);
+    pushToHistory();
+    writePathAnchors(id, el.x, el.y, anchors);
+    return true;
+}
+
 // ─── Elbow Segment Dragging ─────────────────────────────────────────
 
 function handleSegmentDrag(
@@ -1548,6 +1775,10 @@ function applyResize(
                 updates.eraseStrokes = scaleEraseStrokes(init.eraseStrokes, scaleX, scaleY);
             }
 
+            if (init.pathAnchors) {
+                updates.pathAnchors = scalePathAnchors(init.pathAnchors, scaleX, scaleY);
+            }
+
             const element = store.elements.find(e => e.id === selId);
             if (element && (element.type === 'text' || element.type === 'richtext')) {
                 updates.fontSize = Math.max(8, (init.fontSize || 28) * scaleY);
@@ -1603,6 +1834,14 @@ function applyResize(
                             ...(p.p !== undefined ? { p: p.p } : {})
                         }));
                     }
+                }
+            }
+
+            // Scale editable vector path anchors + handles with the bbox.
+            if (singleEl.type === 'path') {
+                const init = pState.initialPositions.get(id);
+                if (init?.pathAnchors) {
+                    updates.pathAnchors = scalePathAnchors(init.pathAnchors, scaleX, scaleY);
                 }
             }
 

@@ -13,6 +13,7 @@ import {
   getOrganicBranchPolygon
 } from '../../utils/geometry';
 import { normalizePoints } from '../../utils/render-element';
+import { hitTestPathElement } from '../../utils/hit-testing';
 
 // Shape type enum matching assembly/hit-testing.ts
 const SHAPE_BBOX = 0;
@@ -37,6 +38,7 @@ function getShapeTypeEnum(type: string): number {
     case 'inkbrush':
     case 'ink':
     case 'organicBranch':
+    case 'path':
       return SHAPE_COMPLEX;
     default:
       return SHAPE_BBOX;
@@ -95,6 +97,12 @@ function jsNarrowPhase(
   p: { x: number; y: number },
   threshold: number
 ): boolean {
+  // Editable vector path: shared narrow phase (identical to the JS-only path).
+  // `p` is un-rotated world space; hitTestPathElement wants element-centred-local.
+  if (el.type === 'path') {
+    return hitTestPathElement(el, p.x - (el.x + el.width / 2), p.y - (el.y + el.height / 2), threshold);
+  }
+
   if (el.type === 'line' || el.type === 'arrow') {
     const endX = el.x + el.width;
     const endY = el.y + el.height;

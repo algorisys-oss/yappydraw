@@ -23,6 +23,28 @@
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
+/* Vertical orientation: dock to the left edge, stack tools in a column.
+   The inline transform switches to translateY(-50%) to centre on the Y axis. */
+.toolbar-container.vertical {
+    flex-direction: column;
+    top: 50%;
+    left: 12px;
+    right: auto;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    overflow-x: visible;
+}
+
+/* Drag handle becomes a horizontal grip at the top of the column. */
+.toolbar-container.vertical .drag-handle {
+    width: 36px;
+    height: 12px;
+}
+.toolbar-container.vertical .drag-dots {
+    width: 18px;
+    height: 4px;
+}
+
 .drag-handle {
     width: 12px;
     height: 36px;

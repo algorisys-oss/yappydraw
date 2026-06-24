@@ -1,8 +1,8 @@
 import { type Component, For, Show, createSignal, onMount, onCleanup } from "solid-js";
-import { store, setSelectedTool, addElement, setStore, togglePenStabilization } from "../store/app-store";
+import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import type { ToolType } from "../types";
-import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline } from "lucide-solid";
+import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw } from "lucide-solid";
 
 const BRUSH_TOOLS: ToolType[] = ['fineliner', 'inkbrush', 'marker'];
 import PenToolGroup from "./pen-tool-group";
@@ -36,6 +36,7 @@ const navTools: { type: ToolType; icon: Component<{ size?: number; color?: strin
 
 // Lasso & Crop tools (rendered after connector/line toolgroup)
 const selectUtilTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string }[] = [
+    { type: 'path', icon: PenTool, label: 'Pen / Vector Path — click to add points, drag to curve' },
     { type: 'lasso', icon: Lasso, label: 'Lasso Select (Shift+L)' },
     { type: 'crop', icon: Crop, label: 'Crop Image (Shift+C)' },
 ];
@@ -58,6 +59,7 @@ const brainstormTools: { type: ToolType; icon: Component<{ size?: number; color?
     { type: 'rectangle', icon: Square, label: 'Rectangle (2)', hotkey: '2' },
     { type: 'diamond', icon: Diamond, label: 'Diamond (3)', hotkey: '3' },
     { type: 'circle', icon: Circle, label: 'Ellipse (4)', hotkey: '4' },
+    { type: 'path', icon: PenTool, label: 'Pen / Vector Path — click to add points, drag to curve' },
     { type: 'text', icon: Type, label: 'Text (8)', hotkey: '8' },
     { type: 'image', icon: ImageIcon, label: 'Image (9)', hotkey: '9' },
     { type: 'eraser', icon: Eraser, label: 'Eraser (0)', hotkey: '0' },
@@ -273,11 +275,12 @@ const Toolbar: Component = () => {
     return (
         <div
             class="toolbar-container"
-            classList={{ dragging: isDragging() }}
+            classList={{ dragging: isDragging(), vertical: !isMobile() && !!store.globalSettings.toolbarVertical }}
             onContextMenu={(e) => e.preventDefault()}
             onMouseDown={isMobile() ? undefined : onMouseDown}
             style={isMobile() ? {} : {
-                transform: `translateX(-50%) translate(${position().x}px, ${position().y}px)`
+                // Centre on the anchored axis: X for the top (horizontal) bar, Y for the left (vertical) bar.
+                transform: `${store.globalSettings.toolbarVertical ? 'translateY(-50%)' : 'translateX(-50%)'} translate(${position().x}px, ${position().y}px)`
             }}
         >
             <div class="drag-handle" title="Drag to move toolbar">
@@ -299,6 +302,17 @@ const Toolbar: Component = () => {
             >
                 {brainstormMode() ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
             </button>
+
+            {/* Orientation toggle: horizontal (top) ↔ vertical (left) */}
+            <Show when={!isMobile()}>
+                <button
+                    class="toolbar-btn"
+                    onClick={() => updateGlobalSettings({ toolbarVertical: !store.globalSettings.toolbarVertical })}
+                    title={store.globalSettings.toolbarVertical ? 'Horizontal toolbar' : 'Vertical toolbar'}
+                >
+                    <RotateCw size={16} />
+                </button>
+            </Show>
 
             {brainstormMode() ? (
                 /* ── Brainstorm Mode: flat minimal toolbar ── */

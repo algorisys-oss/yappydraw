@@ -155,22 +155,36 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
                 }
             });
         } else {
-            // Standard Merged Rendering (2D shapes)
+            // Standard Merged Rendering (2D shapes).
+            // SVG-`path` geometry is self-contained (a Path2D): it must be filled via
+            // fillPath and stroked via strokePath. The beginPath+renderGeometry+fill/
+            // stroke pattern only works for geometries that append to the current path
+            // (rect/ellipse/points) — for 'path', renderGeometry fills but leaves the
+            // current path empty, so a plain stroke() would draw nothing.
+            const isPathGeo = geometry.type === 'path';
             const fillVisible = options.fill && options.fill !== 'transparent' && options.fill !== 'none';
             if (fillVisible && backgroundColor) {
                 renderer.fillStyle = backgroundColor;
-                renderer.beginPath();
-                RenderPipeline.renderGeometry(renderer, geometry);
-                renderer.fill();
+                if (isPathGeo) {
+                    renderer.fillPath((geometry as any).path);
+                } else {
+                    renderer.beginPath();
+                    RenderPipeline.renderGeometry(renderer, geometry);
+                    renderer.fill();
+                }
             }
 
             // Only stroke if color is visible
             const strokeVisible = strokeColor && strokeColor !== 'transparent' && strokeColor !== 'none' && el.strokeWidth > 0;
             if (strokeVisible) {
                 RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
-                renderer.beginPath();
-                RenderPipeline.renderGeometry(renderer, geometry);
-                renderer.stroke();
+                if (isPathGeo) {
+                    renderer.strokePath((geometry as any).path);
+                } else {
+                    renderer.beginPath();
+                    RenderPipeline.renderGeometry(renderer, geometry);
+                    renderer.stroke();
+                }
             }
 
             if (el.drawInnerBorder) {

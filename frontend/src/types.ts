@@ -17,9 +17,26 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
     | 'bpmnTask' | 'bpmnSubProcess' | 'bpmnCallActivity'
     | 'bpmnDataObject' | 'bpmnAnnotation' | 'bpmnPool'
     | 'bpmnEventGateway' | 'bpmnDataStore' | 'bpmnGroup'
+    | 'path'
     | 'video';
 
 export type ToolType = ElementType | 'lasso' | 'crop';
+
+/**
+ * An anchor on an editable vector path. Position is relative to the element origin
+ * (top-left, same convention as `points`). Bézier handles (`in`/`out`) are stored
+ * relative to the anchor; absent = no handle (a straight segment on that side).
+ * `kind: 'smooth'` keeps the two handles collinear; `'corner'` lets them move freely.
+ */
+export interface PathAnchor {
+    x: number;
+    y: number;
+    inX?: number;
+    inY?: number;
+    outX?: number;
+    outY?: number;
+    kind: 'corner' | 'smooth';
+}
 
 export type AppMode = 'design' | 'presentation' | 'prototype' | 'embed';
 export type FillStyle = 'hachure' | 'solid' | 'cross-hatch' | 'zigzag' | 'dots' | 'dashed' | 'zigzag-line' | 'linear' | 'radial' | 'conic' | 'image';
@@ -283,6 +300,10 @@ export interface DrawingElement {
     renderScale?: number; // Canvas-level scale for zoom animations (default: 1)
     parentId?: string | null;
     isCollapsed?: boolean;
+    // Editable vector path ('path' element): ordered anchors (relative to origin) +
+    // closed flag. The SVG `d` for rendering/hit-test is derived from these.
+    pathAnchors?: PathAnchor[];
+    pathClosed?: boolean;
     // Per-tree mindmap layout direction (set on the root node); drives auto-reflow.
     mindmapDir?: 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial' | 'balanced';
     poolContainerId?: string | null;   // ID of containing bpmnPool element

@@ -100,6 +100,31 @@ export function getHandleAtPosition(
         }
     }
 
+    // 1c. Editable vector path: anchors + Bézier handles on the single selected path.
+    //     Checked BEFORE the bbox resize handles so an extreme anchor (which sits on a
+    //     corner handle) is node-edited rather than resized. Handles win over anchors.
+    if (selection.length === 1) {
+        const el = elements.find(e => e.id === selection[0]);
+        if (el && el.type === 'path' && el.pathAnchors) {
+            const r = handleSize / 2 + 2 / scale;
+            for (let i = 0; i < el.pathAnchors.length; i++) {
+                const a = el.pathAnchors[i];
+                const ax = el.x + a.x, ay = el.y + a.y;
+                if (a.outX !== undefined && a.outY !== undefined &&
+                    Math.abs(x - (ax + a.outX)) <= r && Math.abs(y - (ay + a.outY)) <= r) {
+                    return { id: el.id, handle: `path-out-${i}` };
+                }
+                if (a.inX !== undefined && a.inY !== undefined &&
+                    Math.abs(x - (ax + a.inX)) <= r && Math.abs(y - (ay + a.inY)) <= r) {
+                    return { id: el.id, handle: `path-in-${i}` };
+                }
+                if (Math.abs(x - ax) <= r && Math.abs(y - ay) <= r) {
+                    return { id: el.id, handle: `path-anchor-${i}` };
+                }
+            }
+        }
+    }
+
     // 2. Mindmap Toggle Handles (Priority over element selection)
     for (let i = elements.length - 1; i >= 0; i--) {
         const el = elements[i];

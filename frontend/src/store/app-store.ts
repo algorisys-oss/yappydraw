@@ -6,6 +6,7 @@ import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-type
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
+import { runBooleanOp, ringToPathAnchors, type BooleanOp } from "../utils/path-boolean";
 import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
@@ -237,6 +238,7 @@ const initialState: AppState = {
         // choices in localStorage are still respected.
         mindmapAutoLayout: (localStorage.getItem('mindmapAutoLayout') ?? '0') !== '0',
         mindmapLayoutDirection: (localStorage.getItem('mindmapLayoutDirection') as GlobalSettings['mindmapLayoutDirection']) || 'horizontal-right',
+        toolbarVertical: (localStorage.getItem('toolbarVertical') ?? '0') !== '0',
     },
     showCanvasProperties: false,
     undoStackLength: 0,
@@ -1035,6 +1037,9 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.mindmapLayoutDirection !== undefined) {
         try { localStorage.setItem('mindmapLayoutDirection', updates.mindmapLayoutDirection); } catch { /* ignore */ }
+    }
+    if (updates.toolbarVertical !== undefined) {
+        try { localStorage.setItem('toolbarVertical', updates.toolbarVertical ? '1' : '0'); } catch { /* ignore */ }
     }
 };
 
@@ -3038,6 +3043,58 @@ export const reorderMindmap = (rootId: string, direction: LayoutDirection) => {
     if (layoutMindmapTree(rootId, direction)) {
         showToast(`Mindmap layout updated (${direction})`, 'success');
     }
+};
+
+/**
+ * Pathfinder boolean op (union/subtract/intersect/exclude) over ≥2 selected elements.
+ * Flattens each to polygons, runs the op (subtract = backmost minus the rest, in
+ * z-order), replaces the inputs with the result `path`(s), and selects them.
+ * Returns the new element ids.
+ */
+export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
+    const els = store.elements.filter(e => ids.includes(e.id));
+    if (els.length < 2) return [];
+    // Back → front (store order) so subtract is deterministic ("minus front").
+    els.sort((a, b) => store.elements.indexOf(a) - store.elements.indexOf(b));
+
+    const rings = runBooleanOp(els, op);
+    if (rings.length === 0) { showToast('Pathfinder: empty result', 'info'); return []; }
+
+    const base = els[0];
+    const created: DrawingElement[] = [];
+    for (const ring of rings) {
+        const norm = ringToPathAnchors(ring);
+        if (!norm) continue;
+        created.push({
+            ...store.defaultElementStyles,
+            id: generateId('path'),
+            type: 'path',
+            x: norm.minX, y: norm.minY, width: norm.width, height: norm.height,
+            pathAnchors: norm.anchors,
+            pathClosed: true,
+            strokeColor: base.strokeColor,
+            backgroundColor: base.backgroundColor,
+            fillStyle: base.fillStyle,
+            strokeWidth: base.strokeWidth,
+            strokeStyle: base.strokeStyle,
+            renderStyle: base.renderStyle,
+            opacity: base.opacity,
+            roughness: base.roughness,
+            layerId: base.layerId,
+            angle: 0,
+            seed: Math.floor(Math.random() * 2 ** 31),
+            roundness: null,
+            locked: false,
+            link: null,
+        } as DrawingElement);
+    }
+    if (created.length === 0) return [];
+
+    pushToHistory();
+    setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), ...created]);
+    setStore('selection', created.map(c => c.id));
+    showToast(`Pathfinder: ${op}`, 'success');
+    return created.map(c => c.id);
 };
 
 export const applyMindmapStyling = (rootId: string) => {

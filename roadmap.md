@@ -1,5 +1,11 @@
 # Yappy → Illustrator-Power Roadmap
 
+> **Canonical, operationalized version:** [docs/vector-illustration-roadmap.md](docs/vector-illustration-roadmap.md)
+> (validated current-state corrections, sprint-ready Tier 1 sequencing, and a
+> reusable-building-blocks table). Keystone deep-dive:
+> [docs/vector-path-tool-spec.md](docs/vector-path-tool-spec.md). This root file is the
+> original brief; keep edits in the `docs/` versions going forward.
+
 Prioritized feature roadmap for moving Yappy toward Adobe Illustrator-class
 vector power. Capabilities below were verified against `.repograph/index.txt`
 and `frontend/src/types.ts`. Complexity: **S**mall / **M**edium / **L**arge / **XL**.

@@ -455,6 +455,38 @@ export function renderElementOverlays(
             }
         }
 
+        // --- Editable vector path: anchors (squares) + Bézier handles (circles) ---
+        if (el.type === 'path' && el.pathAnchors && selectedTool === 'selection') {
+            const sq = 8 / scale;   // anchor square side
+            const hd = 7 / scale;   // handle circle diameter
+            for (const a of el.pathAnchors) {
+                const ax = el.x + a.x, ay = el.y + a.y;
+                // Handle lines + circles.
+                const drawHandle = (hx?: number, hy?: number) => {
+                    if (hx === undefined || hy === undefined) return;
+                    const px = ax + hx, py = ay + hy;
+                    ctx.strokeStyle = 'rgba(59,130,246,0.6)';
+                    ctx.lineWidth = 1 / scale;
+                    ctx.setLineDash([]);
+                    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(px, py); ctx.stroke();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.lineWidth = 1.5 / scale;
+                    ctx.beginPath(); ctx.arc(px, py, hd / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                };
+                drawHandle(a.outX, a.outY);
+                drawHandle(a.inX, a.inY);
+                // Anchor square: filled blue for smooth, hollow for corner.
+                ctx.fillStyle = a.kind === 'smooth' ? '#3b82f6' : '#ffffff';
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 1.5 / scale;
+                ctx.beginPath();
+                ctx.rect(ax - sq / 2, ay - sq / 2, sq, sq);
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+
         // --- Connector Handles ---
         const isPolylineShape = el.type === 'line' && el.curveType === 'elbow' && !el.startBinding && !el.endBinding;
         if (((el.type !== 'line' && el.type !== 'arrow') || isPolylineShape) && selectedTool === 'selection') {
