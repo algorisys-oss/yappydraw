@@ -18,6 +18,7 @@ import { RulerOverlay } from './components/ruler-overlay';
 import { RepeatDialog } from './components/repeat-dialog';
 import { SymmetryOverlay } from './components/symmetry-overlay';
 import { MeshOverlay } from './components/mesh-overlay';
+import { ArtboardOverlay } from './components/artboard-overlay';
 import Toolbar from './components/toolbar';
 import {
   copyToClipboard, cutToClipboard,
@@ -1164,6 +1165,7 @@ const App: Component = () => {
         <RepeatDialog />
         <SymmetryOverlay />
         <MeshOverlay />
+        <ArtboardOverlay />
         <Show when={store.docType === 'slides'}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={
             <Show when={store.appMode === 'presentation'}>

@@ -611,10 +611,8 @@ export function renderLayersAndElements(
             ctx.strokeStyle = isDarkMode ? '#555' : '#bbb';
             ctx.lineWidth = 1 / scale;
             ctx.strokeRect(ab.x, ab.y, ab.width, ab.height);
-            ctx.fillStyle = isDarkMode ? '#aaa' : '#888';
-            ctx.font = `${12 / scale}px sans-serif`;
-            ctx.textBaseline = 'bottom';
-            ctx.fillText(`${ab.name}  ${Math.round(ab.width)}×${Math.round(ab.height)}`, ab.x, ab.y - 4 / scale);
+            // The artboard name + size is shown by the interactive ArtboardOverlay
+            // chip (drag-to-move / click-to-select); no static label drawn here.
         }
         ctx.restore();
     }

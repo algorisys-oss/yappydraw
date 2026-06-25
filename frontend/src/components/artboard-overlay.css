@@ -1,0 +1,65 @@
+.artboard-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 36;
+}
+
+/* Name chip above each artboard's top-left corner */
+.ab-chip {
+    position: absolute;
+    transform: translateX(0);
+    max-width: 200px;
+    padding: 2px 7px;
+    font-size: 11px;
+    line-height: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-secondary, #888);
+    background: var(--bg-panel, #fff);
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 4px;
+    cursor: grab;
+    pointer-events: auto;
+    user-select: none;
+}
+
+.ab-chip:active { cursor: grabbing; }
+
+.ab-chip.active {
+    color: #fff;
+    background: var(--primary-color, #3b82f6);
+    border-color: var(--primary-color, #3b82f6);
+}
+
+/* Selection frame — visual only; move is via the chip, resize via the handles,
+   so the artboard interior stays fully drawable. */
+.ab-frame {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1.5px solid var(--primary-color, #3b82f6);
+    pointer-events: none;
+    background: transparent;
+}
+
+.ab-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    background: #fff;
+    border: 1.5px solid var(--primary-color, #3b82f6);
+    border-radius: 2px;
+    pointer-events: auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.ab-nw { cursor: nwse-resize; }
+.ab-se { cursor: nwse-resize; }
+.ab-ne { cursor: nesw-resize; }
+.ab-sw { cursor: nesw-resize; }
+.ab-n  { cursor: ns-resize; }
+.ab-s  { cursor: ns-resize; }
+.ab-e  { cursor: ew-resize; }
+.ab-w  { cursor: ew-resize; }

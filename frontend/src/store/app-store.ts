@@ -2031,6 +2031,9 @@ export const addArtboard = (preset?: string, x?: number, y?: number): string => 
 export const deleteArtboard = (id: string) => { pushToHistory(); setStore('artboards', list => list.filter(a => a.id !== id)); bumpDirtyRevision(); };
 export const renameArtboard = (id: string, name: string) => { setStore('artboards', (a: Artboard) => a.id === id, 'name', () => name); bumpDirtyRevision(); };
 export const updateArtboard = (id: string, patch: Partial<Artboard>) => { pushToHistory(); setStore('artboards', (a: Artboard) => a.id === id, () => patch); bumpDirtyRevision(); };
+/** Live (no-history) artboard rect update — for drag/resize gestures. Call
+ *  pushToHistory() once at the start of the gesture, then this on each move. */
+export const updateArtboardLive = (id: string, patch: Partial<Artboard>) => { setStore('artboards', (a: Artboard) => a.id === id, () => patch); bumpDirtyRevision(); };
 
 // ── Symbols / instances ──────────────────────────────────────────────────────
 
