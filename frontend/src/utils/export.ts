@@ -8,6 +8,7 @@ import { buildFilterString } from "./image-filter-utils";
 import { layoutRichText } from "./rich-text-utils";
 import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
 import { svgFillPaint } from "./svg-paint";
+import { SvgRenderer } from "../rendering/SvgRenderer";
 import { getImage } from "./image-cache";
 import { rasterizeWarpedImage } from "./image-warp";
 
@@ -568,6 +569,22 @@ export const exportToSvg = (onlySelected: boolean) => {
                 }
                 node = grp;
             }
+        }
+
+        // Vector fallback for architectural shapes without geometry coverage
+        // (data-structures, BPMN, tables): record the clean render pipeline's
+        // draw calls as real SVG via SvgRenderer. Safe — discards on anything it
+        // can't represent, letting the raster fallback below take over.
+        if (!node && el.type !== 'text' && (el.renderStyle ?? 'sketch') === 'architectural') {
+            try {
+                const svgR = new SvgRenderer(defs);
+                const tmpC = document.createElement('canvas');
+                renderElement(rough.canvas(tmpC) as any, tmpC.getContext('2d') as any, el, false, 1, svgR as any);
+                if (!svgR.failed && svgR.root.childNodes.length > 0) {
+                    node = svgR.root;
+                    isCanvasFallback = true; // transform/opacity baked into the emitted matrix attrs
+                }
+            } catch { /* fall through to raster */ }
         }
 
         // Canvas fallback for shape types without native SVG rendering
