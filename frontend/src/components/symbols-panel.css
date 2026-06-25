@@ -1,7 +1,9 @@
 .symbols-panel {
     position: absolute;
     left: 0;
-    bottom: 28px;
+    /* Sits above the bottom-left floating controls (Settings/Properties/Help,
+       which occupy ~bottom 34–70px) so the card action buttons aren't covered. */
+    bottom: 80px;
     width: 248px;
     max-height: 340px;
     background: var(--bg-panel);
@@ -114,7 +116,7 @@
 }
 
 .sp-thumb:hover {
-    border-color: var(--accent-color, #3b82f6);
+    border-color: var(--primary-color, #3b82f6);
 }
 
 .sp-count {
@@ -128,7 +130,7 @@
     line-height: 14px;
     text-align: center;
     color: #fff;
-    background: var(--accent-color, #3b82f6);
+    background: var(--primary-color, #3b82f6);
     border-radius: 7px;
 }
 
@@ -149,7 +151,7 @@
     margin-top: 4px;
     font-size: 11px;
     text-align: center;
-    border: 1px solid var(--accent-color, #3b82f6);
+    border: 1px solid var(--primary-color, #3b82f6);
     border-radius: 3px;
     background: var(--bg-panel);
     color: var(--text-primary);
@@ -166,6 +168,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex: 0 0 auto;
     width: 22px;
     height: 22px;
     border: none;
@@ -173,6 +176,21 @@
     color: var(--text-secondary);
     border-radius: 4px;
     cursor: pointer;
+}
+
+/* lucide icons render as <svg> with width/height *attributes*; as flex items
+   inside these centred buttons they can collapse to 0 main-size (a Chromium
+   SVG-in-flex quirk), leaving the icon invisible. Pin the icon box in CSS. */
+.symbols-panel .sp-act svg {
+    flex: 0 0 auto;
+    width: 13px;
+    height: 13px;
+}
+
+.symbols-panel .sp-icon-btn svg {
+    flex: 0 0 auto;
+    width: 15px;
+    height: 15px;
 }
 
 .sp-act:hover:not(:disabled) {
@@ -185,7 +203,16 @@
     cursor: default;
 }
 
+/* Delete: tinted with the theme's danger colour at rest (adapts light/dark —
+   #ef4444 light, #f87171 dark) so it's clearly the destructive action and
+   keeps adequate contrast in both themes. */
+.sp-act.sp-danger {
+    color: var(--danger-color, #ef4444);
+    opacity: 0.85;
+}
+
 .sp-act.sp-danger:hover:not(:disabled) {
-    background: #ef444422;
-    color: #ef4444;
+    opacity: 1;
+    background: color-mix(in srgb, var(--danger-color, #ef4444) 16%, transparent);
+    color: var(--danger-color, #ef4444);
 }
