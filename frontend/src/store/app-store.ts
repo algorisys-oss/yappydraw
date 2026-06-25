@@ -89,6 +89,8 @@ interface AppState {
     showSymbolsPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
     meshEditActive: boolean;
+    /** Artboard currently selected on-canvas for move/resize/delete (transient, not persisted). */
+    activeArtboardId: string | null;
     isPropertyPanelMinimized: boolean;
     isLayerPanelMinimized: boolean;
     minimapVisible: boolean;
@@ -270,6 +272,7 @@ const initialState: AppState = {
     showLayerPanel: false,
     showSymbolsPanel: false,
     meshEditActive: false,
+    activeArtboardId: null,
     isPropertyPanelMinimized: false,
     isLayerPanelMinimized: false,
     minimapVisible: false,
@@ -2028,7 +2031,8 @@ export const addArtboard = (preset?: string, x?: number, y?: number): string => 
     return ab.id;
 };
 
-export const deleteArtboard = (id: string) => { pushToHistory(); setStore('artboards', list => list.filter(a => a.id !== id)); bumpDirtyRevision(); };
+export const setActiveArtboard = (id: string | null) => setStore('activeArtboardId', id);
+export const deleteArtboard = (id: string) => { pushToHistory(); setStore('artboards', list => list.filter(a => a.id !== id)); if (store.activeArtboardId === id) setStore('activeArtboardId', null); bumpDirtyRevision(); };
 export const renameArtboard = (id: string, name: string) => { setStore('artboards', (a: Artboard) => a.id === id, 'name', () => name); bumpDirtyRevision(); };
 export const updateArtboard = (id: string, patch: Partial<Artboard>) => { pushToHistory(); setStore('artboards', (a: Artboard) => a.id === id, () => patch); bumpDirtyRevision(); };
 /** Live (no-history) artboard rect update — for drag/resize gestures. Call

@@ -1,5 +1,5 @@
-import { Show, For, createSignal, createMemo, onMount, onCleanup } from 'solid-js';
-import { store, pushToHistory, updateArtboardLive } from '../store/app-store';
+import { Show, For, createMemo, onMount, onCleanup } from 'solid-js';
+import { store, pushToHistory, updateArtboardLive, setActiveArtboard, deleteArtboard } from '../store/app-store';
 import './artboard-overlay.css';
 
 /**
@@ -16,7 +16,8 @@ type HandleKey = typeof HANDLES[number];
 const MIN = 20;
 
 export const ArtboardOverlay = () => {
-    const [activeId, setActiveId] = createSignal<string | null>(null);
+    const activeId = () => store.activeArtboardId;
+    const setActiveId = setActiveArtboard;
 
     const scale = () => store.viewState.scale;
     const w2sx = (wx: number) => wx * store.viewState.scale + store.viewState.panX;
@@ -99,6 +100,14 @@ export const ArtboardOverlay = () => {
                                         class="ab-frame"
                                         style={{ left: `${r().left}px`, top: `${r().top}px`, width: `${r().w}px`, height: `${r().h}px` }}
                                     />
+                                    {/* Delete button at the frame's top-right */}
+                                    <button
+                                        class="ab-delete"
+                                        style={{ left: `${r().left + r().w}px`, top: `${r().top - 22}px` }}
+                                        title="Delete artboard (Del)"
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => { e.stopPropagation(); deleteArtboard(ab.id); }}
+                                    >✕</button>
                                     {/* 8 resize handles */}
                                     <For each={HANDLES}>
                                         {(k) => {

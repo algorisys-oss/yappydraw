@@ -30,7 +30,7 @@ import { parseClipboardTableData, defaultColWidths, defaultRowHeights, getNextCe
 import { generateId } from './utils/id-generator';
 import { screenToWorld } from './utils/viewport-transforms';
 import { parseOutline } from './utils/mindmap-layout';
-import { updateElement } from './store/app-store';
+import { updateElement, deleteArtboard } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
 const SymbolsPanel = lazy(() => import('./components/symbols-panel'));
@@ -534,7 +534,8 @@ const App: Component = () => {
           toggleSnapToGrid();
         } else if (key === 'delete' || key === 'backspace') {
           e.preventDefault();
-          if (store.selection.length > 0) deleteElements(store.selection);
+          if (store.activeArtboardId) deleteArtboard(store.activeArtboardId);
+          else if (store.selection.length > 0) deleteElements(store.selection);
         } else if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
           if (store.selection.length > 0) {
             e.preventDefault();

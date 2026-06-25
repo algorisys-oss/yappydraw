@@ -55,6 +55,29 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+.ab-delete {
+    position: absolute;
+    transform: translateX(-100%);
+    width: 18px;
+    height: 18px;
+    margin-top: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    line-height: 1;
+    color: #fff;
+    background: var(--danger-color, #ef4444);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.ab-delete:hover { filter: brightness(1.1); }
+
 .ab-nw { cursor: nwse-resize; }
 .ab-se { cursor: nwse-resize; }
 .ab-ne { cursor: nesw-resize; }
