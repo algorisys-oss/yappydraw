@@ -88,7 +88,7 @@ frontend/src/components/ai-slides-dialog.css | - | 350 |
 frontend/src/components/ai-slides-dialog.tsx | typescript | 278 | Component:5 GeneratePresResult:7 AISlidesDialogProps:12 AISlidesDialog:47 canGenerate:57 handleKeyDown:61 handleGenerate:79 openSettings:113 activeProviderLabel:118
 frontend/src/components/animation-panel.tsx | typescript | 1549 | Component:1 StaggerConfig:5 getPresetsForType:67 getKeyframeDefaults:139 AnimationPanel:188 toggleExpanded:207 addPreset:216 addPathAnimation:238 addMorphAnimation:259 addRotateAnimation:279 addAutoSpinAnimation:299 addKeyframeAnimation:319 removeAnimation:340 updateAnimProperty:348 handleReorder:355 handlePlay:362 handleStop:369 handlePlayStagger:376 handleApplyStagger:440 handleClearStagger:468 kfAnim:1334 keyframes:1335 updateKeyframe:1337 addKeyframe:1343 removeKeyframe:1354 isColorProp:1361 propStep:1363 propHint:1371
 frontend/src/components/artboard-overlay.css | - | 88 |
-frontend/src/components/artboard-overlay.tsx | typescript | 133 | HandleKey:15 ArtboardOverlay:18 activeId:19 scale:22 w2sx:23 w2sy:24 startDrag:28 onMove:38 onUp:56 onKey:62 rect:73 r:84 isActive:85 hx:114 hy:115
+frontend/src/components/artboard-overlay.tsx | typescript | 143 | HandleKey:15 ArtboardOverlay:18 activeId:19 scale:22 w2sx:23 w2sy:24 startDrag:28 onMove:38 onUp:56 onKey:62 onWinDown:66 rect:82 r:93 isActive:94 hx:124 hy:125
 frontend/src/components/bpmn-tool-group.tsx | typescript | 249 | Component:1 BpmnToolGroup:137 handler:144 getActiveTool:154 handleToolClick:163 as:171 as:177 handleRightClick:185 toggleMenu:191 activeTool:198 isActive:199 getDropdownPosition:201
 frontend/src/components/canvas-toolbar.tsx | typescript | 124 | Component:1 CanvasToolbar:5 resetHideTimeout:9 toolBtnStyle:27
 frontend/src/components/canvas.tsx | typescript | 2066 | Component:1 TextEditingContext:43 CanvasEventContext:45 CropHandle:50 Canvas:66 setEditingId:168 isPencilSizedTouch:203 flushPenPoints:222 handleResize:251 draw:276 viewportTransform:477 getWorldCoordinates:486 getWheelCtx:494 onWheel:500 normalizePencil:503 applyMasterProjection:539 canInteractWithElement:549 checkBinding:555 refreshLinePoints:558 refreshBoundLine:561 commitText:580 commitRichText:588 isPenDrawingTool:615 pickStylusTouch:624 findTouchById:632 finalizeTouchStroke:640 smartShapeEnabled:670 cancelShapeHold:674 resetActiveStroke:682 fireShapeHold:693 armShapeHold:742 noteShapeMove:750 beginTouchPenStroke:766 handleTouchStart:786 handleTouchMove:817 handleTouchEnd:870 clearUndoRepeat:936 allFingerTouches:943 fitView:952 armUndoRepeat:956 pickFingerTouches:972 twoFingerMetrics:984 cancelInflightForGesture:1003 beginGesture:1029 updateGesture:1054 endGesture:1105 fireTap:1112 handleTouchStartGesture:1118 handleTouchMoveGesture:1143 handleTouchEndGesture:1199 handlePointerDown:1239 handlePointerMove:1372 handlePointerUp:1480 handleDoubleClick:1561 handleCropKeys:1672 handlePolylineKeys:1697 handlePenKeys:1714 dropHandler:1732 for:1749
@@ -494,7 +494,7 @@ tests/_mesh.spec.ts | typescript | 48 | w2s:33 key:42
 tests/alignment.spec.ts | typescript | 79 |
 tests/api.spec.ts | typescript | 155 |
 tests/appearance-stack.spec.ts | typescript | 102 | count:83
-tests/artboard-delete.spec.ts | typescript | 45 | G:22
+tests/artboard-delete.spec.ts | typescript | 55 | G:23
 tests/artboard-overlay.spec.ts | typescript | 52 |
 tests/artboards.spec.ts | typescript | 28 |
 tests/bpmn.spec.ts | typescript | 327 | markers:152

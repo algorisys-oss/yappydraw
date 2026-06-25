@@ -61,11 +61,20 @@ export const ArtboardOverlay = () => {
         window.addEventListener('pointercancel', onUp);
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setActiveId(null); };
         window.addEventListener('keydown', onKey);
+        // Clicking anything outside the overlay (canvas, panels, toolbar) deselects
+        // the artboard. Capture-phase so it runs before the canvas's own handler.
+        const onWinDown = (e: PointerEvent) => {
+            if (!store.activeArtboardId) return;
+            const t = e.target as HTMLElement | null;
+            if (!t || !t.closest?.('.artboard-overlay')) setActiveId(null);
+        };
+        window.addEventListener('pointerdown', onWinDown, true);
         onCleanup(() => {
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onUp);
             window.removeEventListener('pointercancel', onUp);
             window.removeEventListener('keydown', onKey);
+            window.removeEventListener('pointerdown', onWinDown, true);
         });
     });
 
@@ -103,10 +112,11 @@ export const ArtboardOverlay = () => {
                                     {/* Delete button at the frame's top-right */}
                                     <button
                                         class="ab-delete"
-                                        style={{ left: `${r().left + r().w}px`, top: `${r().top - 22}px` }}
+                                        style={{ left: `${r().left + r().w}px`, top: `${r().top - 26}px` }}
                                         title="Delete artboard (Del)"
-                                        onPointerDown={(e) => e.stopPropagation()}
-                                        onClick={(e) => { e.stopPropagation(); deleteArtboard(ab.id); }}
+                                        // Act on pointerdown: a canvas redraw between down/up can recreate
+                                        // this node and swallow the click, so we don't rely on click.
+                                        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); deleteArtboard(ab.id); }}
                                     >✕</button>
                                     {/* 8 resize handles */}
                                     <For each={HANDLES}>
