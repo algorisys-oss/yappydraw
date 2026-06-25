@@ -3,7 +3,7 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { screenToWorld } from "../utils/viewport-transforms";
@@ -1569,6 +1569,24 @@ const Canvas: Component = () => {
             penPathFinalize(pState);
             requestAnimationFrame(draw);
             return;
+        }
+
+        // Double-click a symbol instance → edit its master in place. Hit-test the
+        // point so a cold double-click (no prior selection) works too.
+        if (store.selectedTool === 'selection') {
+            const { x: wx, y: wy } = getWorldCoordinates(e.clientX, e.clientY);
+            const threshold = 8 / store.viewState.scale;
+            const elementMap = new Map<string, DrawingElement>();
+            for (const el of store.elements) elementMap.set(el.id, el);
+            for (let i = store.elements.length - 1; i >= 0; i--) {
+                const el = store.elements[i];
+                if (el.type === 'symbolInstance' && el.symbolId && hitTestElement(el, wx, wy, threshold, store.elements, elementMap)) {
+                    e.preventDefault();
+                    enterSymbolEdit(el.id);
+                    requestAnimationFrame(draw);
+                    return;
+                }
+            }
         }
 
         // Check for table column edge double-click (auto-fit column width)

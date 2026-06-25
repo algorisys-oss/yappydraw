@@ -91,6 +91,8 @@ interface AppState {
     meshEditActive: boolean;
     /** Artboard currently selected on-canvas for move/resize/delete (transient, not persisted). */
     activeArtboardId: string | null;
+    /** Active symbol edit-in-place session (transient, not persisted). */
+    symbolEdit: { symbolId: string; groupId: string; name: string; x: number; y: number } | null;
     isPropertyPanelMinimized: boolean;
     isLayerPanelMinimized: boolean;
     minimapVisible: boolean;
@@ -273,6 +275,7 @@ const initialState: AppState = {
     showSymbolsPanel: false,
     meshEditActive: false,
     activeArtboardId: null,
+    symbolEdit: null,
     isPropertyPanelMinimized: false,
     isLayerPanelMinimized: false,
     minimapVisible: false,
@@ -2130,6 +2133,62 @@ export const detachInstance = (ids: string[]) => {
     setStore('selection', additions.map(a => a.id));
     bumpDirtyRevision();
     showToast('Instance detached', 'success');
+};
+
+/**
+ * Edit-in-place: open a symbol's contents for editing from one of its instances.
+ * The instance is temporarily expanded into editable copies (grouped) at its
+ * place; on exit the edits are written back to the symbol (updating every
+ * instance) and the instance is restored.
+ */
+export const enterSymbolEdit = (instanceId: string) => {
+    if (store.symbolEdit) return; // one session at a time
+    const inst = store.elements.find(e => e.id === instanceId && e.type === 'symbolInstance' && e.symbolId);
+    if (!inst) return;
+    const sym = store.symbols.find(s => s.id === inst.symbolId);
+    if (!sym) return;
+    pushToHistory();
+    const sx = sym.width ? inst.width / sym.width : 1, sy = sym.height ? inst.height / sym.height : 1;
+    const gid = generateId('grp' as any);
+    const batch = new Set<string>();
+    const additions: DrawingElement[] = [];
+    for (const child of sym.elements) {
+        const id = generateId(child.type as any, batch); batch.add(id);
+        const copy: any = { ...child, id, x: inst.x + child.x * sx, y: inst.y + child.y * sy, width: child.width * sx, height: child.height * sy, groupIds: [gid], layerId: inst.layerId };
+        if (child.points) copy.points = scalePoints(child.points, sx, sy);
+        if (child.pathAnchors) copy.pathAnchors = scalePathAnchors(child.pathAnchors as any, sx, sy);
+        if (child.pathSubpaths) copy.pathSubpaths = scalePathSubpaths(child.pathSubpaths as any, sx, sy);
+        additions.push(copy);
+    }
+    setStore('elements', list => [...list.filter(e => e.id !== inst.id), ...additions]);
+    setStore('selection', additions.map(a => a.id));
+    setStore('symbolEdit', { symbolId: sym.id, groupId: gid, name: sym.name, x: inst.x, y: inst.y });
+    bumpDirtyRevision();
+    showToast(`Editing symbol “${sym.name}”`, 'info');
+};
+
+/** Close an edit-in-place session: save (redefine the symbol from the edited
+ *  copies, updating all instances) or cancel, then restore a single instance. */
+export const exitSymbolEdit = (save = true) => {
+    const session = store.symbolEdit;
+    if (!session) return;
+    const ids = store.elements.filter(e => (e.groupIds || []).includes(session.groupId)).map(e => e.id);
+    if (save && ids.length) {
+        redefineSymbol(session.symbolId, ids); // pushes its own history + updates instances
+    }
+    const newInst: DrawingElement = {
+        ...store.defaultElementStyles,
+        id: generateId('symi' as any), type: 'symbolInstance', symbolId: session.symbolId,
+        x: session.x, y: session.y,
+        width: store.symbols.find(s => s.id === session.symbolId)?.width ?? 100,
+        height: store.symbols.find(s => s.id === session.symbolId)?.height ?? 100,
+        angle: 0, seed: 1, roundness: null, locked: false, link: null, layerId: store.activeLayerId,
+    } as DrawingElement;
+    setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), newInst]);
+    setStore('selection', [newInst.id]);
+    setStore('symbolEdit', null);
+    bumpDirtyRevision();
+    showToast(save ? 'Symbol updated' : 'Edit cancelled', save ? 'success' : 'info');
 };
 
 /** Select every live instance of a symbol on the canvas (no-op if there are none). */

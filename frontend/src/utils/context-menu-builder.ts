@@ -8,7 +8,7 @@ import type { DrawingElement, TableCellSelection } from '../types';
 import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
-    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance, addArtboard, deleteArtboard,
+    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance, enterSymbolEdit, addArtboard, deleteArtboard,
     addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
@@ -1072,6 +1072,10 @@ export function getContextMenuItems(
         if (selectionCount >= 1) {
             const anyInstance = store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'symbolInstance');
             items.push({ label: 'Create Symbol', icon: '◈', onClick: () => createSymbol([...store.selection]) });
+            if (anyInstance && store.selection.length === 1) {
+                const instId = store.selection[0];
+                items.push({ label: 'Edit Symbol (in place)', icon: '✎', onClick: () => enterSymbolEdit(instId) });
+            }
             if (anyInstance) items.push({ label: 'Detach Instance', icon: '⛓', onClick: () => detachInstance([...store.selection]) });
             items.push({ label: 'Artboard from Selection', icon: '▭', onClick: () => addArtboard('selection') });
         }

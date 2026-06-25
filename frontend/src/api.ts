@@ -13,7 +13,7 @@ import {
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
-    createSymbol, placeInstance, redefineSymbol, detachInstance, renameSymbol, deleteSymbol, toggleSymbolsPanel, addArtboard, deleteArtboard, renameArtboard, updateArtboard,
+    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, addArtboard, deleteArtboard, renameArtboard, updateArtboard,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1421,6 +1421,10 @@ export const YappyAPI = {
     redefineSymbol(symbolId: string, fromIds: string[]) { redefineSymbol(symbolId, fromIds); },
     /** Detach (break link): replace selected instances with editable copies. */
     detachInstance(ids?: string[]) { detachInstance(ids ?? store.selection); },
+    /** Edit-in-place: open a symbol's master for editing from an instance (defaults to the single selected instance). */
+    enterSymbolEdit(instanceId?: string) { const id = instanceId ?? (store.selection.length === 1 ? store.selection[0] : undefined); if (id) enterSymbolEdit(id); },
+    /** Finish an edit-in-place session: save (redefine + update instances) or cancel. */
+    exitSymbolEdit(save = true) { exitSymbolEdit(save); },
     /** Rename a symbol definition. */
     renameSymbol(symbolId: string, name: string) { renameSymbol(symbolId, name); },
     /** Delete a symbol definition; by default its instances are detached into editable copies first. */
