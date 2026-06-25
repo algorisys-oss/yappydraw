@@ -7,6 +7,7 @@ import { resolveFontFamily, wrapText, getMeasurementRenderer } from "./text-util
 import { buildFilterString } from "./image-filter-utils";
 import { layoutRichText } from "./rich-text-utils";
 import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
+import { svgFillPaint } from "./svg-paint";
 import { getImage } from "./image-cache";
 import { rasterizeWarpedImage } from "./image-warp";
 
@@ -537,7 +538,9 @@ export const exportToSvg = (onlySelected: boolean) => {
                 const inner = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 inner.setAttribute('transform', `translate(${cx}, ${cy})`);
                 grp.appendChild(inner);
-                const fill = (el.backgroundColor && el.backgroundColor !== 'transparent' && el.backgroundColor !== 'none') ? el.backgroundColor : 'none';
+                // Solid colour, or a real <linearGradient>/<radialGradient>/<pattern>
+                // (gradient & mesh fills) appended to <defs> → true-vector fill.
+                const fill = svgFillPaint(el, defs, el.id);
                 const strokeVisible = el.strokeColor && el.strokeColor !== 'transparent' && el.strokeColor !== 'none' && el.strokeWidth > 0;
                 const isSketch = (el.renderStyle ?? 'sketch') === 'sketch';
                 for (const d of ds) {
