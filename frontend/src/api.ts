@@ -19,7 +19,7 @@ import {
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
@@ -1728,8 +1728,12 @@ export const YappyAPI = {
     moveElementZIndex(id: string, direction: 'front' | 'back' | 'forward' | 'backward') { moveElementZIndex(id, direction); },
 
     // Alignment & Distribution
-    alignSelectedElements(type: AlignmentType) { alignSelectedElements(type); },
+    alignSelectedElements(type: AlignmentType, keyId?: string) { alignSelectedElements(type, keyId); },
     distributeSelectedElements(type: DistributionType) { distributeSelectedElements(type); },
+    /** Distribute by equal edge-to-edge spacing, or a fixed `gap` px between each. */
+    distributeSpacing(type: DistributionType, gap?: number) { distributeSpacing(type, gap); },
+    /** Toggle align-to-key-object mode (key = last-selected element stays put). */
+    toggleAlignToKey(on?: boolean) { toggleAlignToKey(on); },
 
     // Canvas
     setCanvasBackgroundColor(color: string) { setCanvasBackgroundColor(color); },

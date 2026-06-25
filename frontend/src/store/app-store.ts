@@ -93,6 +93,8 @@ interface AppState {
     activeArtboardId: string | null;
     /** Active symbol edit-in-place session (transient, not persisted). */
     symbolEdit: { symbolId: string; groupId: string; name: string; x: number; y: number } | null;
+    /** Align to the key (last-selected) object instead of the selection bbox. */
+    alignToKeyObject: boolean;
     isPropertyPanelMinimized: boolean;
     isLayerPanelMinimized: boolean;
     minimapVisible: boolean;
@@ -276,6 +278,7 @@ const initialState: AppState = {
     meshEditActive: false,
     activeArtboardId: null,
     symbolEdit: null,
+    alignToKeyObject: false,
     isPropertyPanelMinimized: false,
     isLayerPanelMinimized: false,
     minimapVisible: false,
@@ -3276,11 +3279,16 @@ if (typeof window !== 'undefined' && window.matchMedia) {
     }
 }
 
-import { calculateAlignment, calculateDistribution, type AlignmentType, type DistributionType } from "../utils/alignment";
+import { calculateAlignment, calculateDistribution, calculateSpacingDistribution, type AlignmentType, type DistributionType } from "../utils/alignment";
 
-export const alignSelectedElements = (type: AlignmentType) => {
+export const toggleAlignToKey = (on?: boolean) => setStore('alignToKeyObject', v => on ?? !v);
+
+export const alignSelectedElements = (type: AlignmentType, keyId?: string) => {
     if (store.selection.length < 2) return;
-    const updates = calculateAlignment(store.selection, store.elements, type);
+    // Align-to-key: with the toggle on, the key object is the last-selected
+    // element (it stays put; the rest align to it).
+    const key = keyId ?? (store.alignToKeyObject ? store.selection[store.selection.length - 1] : undefined);
+    const updates = calculateAlignment(store.selection, store.elements, type, key);
     if (updates.length > 0) {
         pushToHistory();
         setStore('elements',
@@ -3337,6 +3345,23 @@ export const cycleFillStyle = () => {
 export const distributeSelectedElements = (type: DistributionType) => {
     if (store.selection.length < 3) return;
     const updates = calculateDistribution(store.selection, store.elements, type);
+    if (updates.length > 0) {
+        pushToHistory();
+        setStore('elements',
+            (el) => updates.some(u => u.id === el.id),
+            (el) => {
+                const update = updates.find(u => u.id === el.id)?.updates;
+                return update ? { ...el, ...update } : el;
+            }
+        );
+        bumpDirtyRevision();
+    }
+};
+
+/** Distribute by equal edge-to-edge spacing (or a fixed `gap` px between each). */
+export const distributeSpacing = (type: DistributionType, gap?: number) => {
+    if (store.selection.length < (gap !== undefined ? 2 : 3)) return;
+    const updates = calculateSpacingDistribution(store.selection, store.elements, type, gap);
     if (updates.length > 0) {
         pushToHistory();
         setStore('elements',

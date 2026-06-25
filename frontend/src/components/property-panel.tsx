@@ -1,5 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
 import type { DrawingElement } from "../types";
@@ -8,6 +8,7 @@ import {
     AlignLeft, AlignCenterHorizontal, AlignRight,
     AlignStartVertical, AlignCenterVertical, AlignEndVertical,
     AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
+    AlignHorizontalSpaceAround, AlignVerticalSpaceAround, Crosshair,
     Plus, ArrowDown, LayoutGrid, LayoutList, Target, Network,
     X, Play, Square, Menu
 } from "lucide-solid";
@@ -283,23 +284,44 @@ const SlideActions: Component = () => {
     );
 };
 
-const AlignmentControls: Component = () => (
-    <div class="property-group">
-        <div class="group-title">ALIGNMENT</div>
-        <div class="alignment-row">
-            <button class="icon-btn" onClick={() => alignSelectedElements('left')} title="Align Left"><AlignLeft size={18} /></button>
-            <button class="icon-btn" onClick={() => alignSelectedElements('center')} title="Align Horizontal Center"><AlignCenterHorizontal size={18} /></button>
-            <button class="icon-btn" onClick={() => alignSelectedElements('right')} title="Align Right"><AlignRight size={18} /></button>
-            <button class="icon-btn" onClick={() => distributeSelectedElements('horizontal')} title="Distribute Horizontal"><AlignHorizontalDistributeCenter size={18} /></button>
+const AlignmentControls: Component = () => {
+    const [gap, setGap] = createSignal<string>('');
+    const gapVal = () => { const n = parseFloat(gap()); return Number.isFinite(n) ? n : undefined; };
+    return (
+        <div class="property-group">
+            <div class="group-title">ALIGNMENT</div>
+            <div class="alignment-row">
+                <button class="icon-btn" onClick={() => alignSelectedElements('left')} title="Align Left"><AlignLeft size={18} /></button>
+                <button class="icon-btn" onClick={() => alignSelectedElements('center')} title="Align Horizontal Center"><AlignCenterHorizontal size={18} /></button>
+                <button class="icon-btn" onClick={() => alignSelectedElements('right')} title="Align Right"><AlignRight size={18} /></button>
+                <button class="icon-btn" onClick={() => distributeSelectedElements('horizontal')} title="Distribute Horizontal Centers"><AlignHorizontalDistributeCenter size={18} /></button>
+            </div>
+            <div class="alignment-row">
+                <button class="icon-btn" onClick={() => alignSelectedElements('top')} title="Align Top"><AlignStartVertical size={18} /></button>
+                <button class="icon-btn" onClick={() => alignSelectedElements('middle')} title="Align Vertical Center"><AlignCenterVertical size={18} /></button>
+                <button class="icon-btn" onClick={() => alignSelectedElements('bottom')} title="Align Bottom"><AlignEndVertical size={18} /></button>
+                <button class="icon-btn" onClick={() => distributeSelectedElements('vertical')} title="Distribute Vertical Centers"><AlignVerticalDistributeCenter size={18} /></button>
+            </div>
+            <div class="alignment-row" style={{ gap: '6px', 'align-items': 'center', 'margin-top': '4px' }}>
+                <button
+                    class={`icon-btn ${store.alignToKeyObject ? 'active' : ''}`}
+                    style={store.alignToKeyObject ? { background: 'var(--primary-color, #3b82f6)', color: '#fff' } : {}}
+                    onClick={() => toggleAlignToKey()}
+                    title="Align to key object (the last-selected object stays put; others align to it)"
+                ><Crosshair size={16} /></button>
+                <span style={{ 'font-size': '11px', color: 'var(--text-secondary)' }}>Spacing</span>
+                <button class="icon-btn" onClick={() => distributeSpacing('horizontal', gapVal())} title="Distribute spacing — equal horizontal gaps (or the gap below)"><AlignHorizontalSpaceAround size={18} /></button>
+                <button class="icon-btn" onClick={() => distributeSpacing('vertical', gapVal())} title="Distribute spacing — equal vertical gaps (or the gap below)"><AlignVerticalSpaceAround size={18} /></button>
+                <input
+                    type="number" placeholder="gap" value={gap()} min="0"
+                    style={{ width: '52px', 'font-size': '11px' }}
+                    title="Fixed gap in px (blank = equalize gaps)"
+                    onInput={(e) => setGap(e.currentTarget.value)}
+                />
+            </div>
         </div>
-        <div class="alignment-row">
-            <button class="icon-btn" onClick={() => alignSelectedElements('top')} title="Align Top"><AlignStartVertical size={18} /></button>
-            <button class="icon-btn" onClick={() => alignSelectedElements('middle')} title="Align Vertical Center"><AlignCenterVertical size={18} /></button>
-            <button class="icon-btn" onClick={() => alignSelectedElements('bottom')} title="Align Bottom"><AlignEndVertical size={18} /></button>
-            <button class="icon-btn" onClick={() => distributeSelectedElements('vertical')} title="Distribute Vertical"><AlignVerticalDistributeCenter size={18} /></button>
-        </div>
-    </div>
-);
+    );
+};
 
 const ColorControl: Component<{ prop: PropertyConfig, value: any, onChange: (val: any) => void }> = (props) => {
     const hasOptions = () => props.prop.options && props.prop.options.length > 0;

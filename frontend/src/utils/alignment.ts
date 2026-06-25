@@ -3,18 +3,25 @@ import type { DrawingElement } from "../types";
 export type AlignmentType = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
 export type DistributionType = 'horizontal' | 'vertical';
 
-export const calculateAlignment = (ids: string[], elements: DrawingElement[], type: AlignmentType): { id: string, updates: Partial<DrawingElement> }[] => {
+export const calculateAlignment = (ids: string[], elements: DrawingElement[], type: AlignmentType, keyId?: string): { id: string, updates: Partial<DrawingElement> }[] => {
     const selectedElements = elements.filter(el => ids.includes(el.id));
     if (selectedElements.length < 2) return [];
 
-    // Find bounding box of the selection
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    selectedElements.forEach(el => {
-        minX = Math.min(minX, el.x);
-        minY = Math.min(minY, el.y);
-        maxX = Math.max(maxX, el.x + el.width);
-        maxY = Math.max(maxY, el.y + el.height);
-    });
+    // The alignment frame is normally the selection's bounding box; with a key
+    // object it's that object's box instead (and the key object never moves).
+    const key = keyId ? selectedElements.find(el => el.id === keyId) : undefined;
+    let minX: number, minY: number, maxX: number, maxY: number;
+    if (key) {
+        minX = key.x; minY = key.y; maxX = key.x + key.width; maxY = key.y + key.height;
+    } else {
+        minX = Infinity; minY = Infinity; maxX = -Infinity; maxY = -Infinity;
+        selectedElements.forEach(el => {
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y);
+            maxX = Math.max(maxX, el.x + el.width);
+            maxY = Math.max(maxY, el.y + el.height);
+        });
+    }
 
     const midX = minX + (maxX - minX) / 2;
     const midY = minY + (maxY - minY) / 2;
@@ -22,6 +29,7 @@ export const calculateAlignment = (ids: string[], elements: DrawingElement[], ty
     const updates: { id: string, updates: Partial<DrawingElement> }[] = [];
 
     selectedElements.forEach(el => {
+        if (key && el.id === key.id) return; // the key object stays put
         const up: Partial<DrawingElement> = {};
 
         switch (type) {
@@ -109,4 +117,49 @@ export const calculateDistribution = (ids: string[], elements: DrawingElement[],
         });
         return updates;
     }
+};
+
+/**
+ * Distribute by SPACING — make the edge-to-edge gaps between adjacent objects
+ * equal (unlike `calculateDistribution`, which equalizes centres). With an
+ * explicit `gap`, pack the objects from the first with exactly that gap;
+ * otherwise spread them so the gaps are equal while keeping the first and last
+ * objects in place. Needs ≥ 3 objects (or ≥ 2 when an explicit gap is given).
+ */
+export const calculateSpacingDistribution = (
+    ids: string[], elements: DrawingElement[], type: DistributionType, gap?: number,
+): { id: string, updates: Partial<DrawingElement> }[] => {
+    const selectedElements = elements.filter(el => ids.includes(el.id));
+    const horizontal = type === 'horizontal';
+    const size = (el: DrawingElement) => (horizontal ? el.width : el.height);
+    const pos = (el: DrawingElement) => (horizontal ? el.x : el.y);
+    const sorted = [...selectedElements].sort((a, b) => pos(a) - pos(b));
+    if (sorted.length < (gap !== undefined ? 2 : 3)) return [];
+
+    const updates: { id: string, updates: Partial<DrawingElement> }[] = [];
+
+    if (gap !== undefined) {
+        // Pack with a fixed gap, starting at the first object's position.
+        let cursor = pos(sorted[0]) + size(sorted[0]) + gap;
+        for (let i = 1; i < sorted.length; i++) {
+            const el = sorted[i];
+            updates.push({ id: el.id, updates: horizontal ? { x: cursor } : { y: cursor } });
+            cursor += size(el) + gap;
+        }
+        return updates;
+    }
+
+    // Equal gaps between first and last (both ends fixed).
+    const startEdge = pos(sorted[0]) + size(sorted[0]);
+    const lastEl = sorted[sorted.length - 1];
+    const endEdge = pos(lastEl);
+    const totalSize = sorted.slice(1, -1).reduce((s, el) => s + size(el), 0);
+    const equalGap = (endEdge - startEdge - totalSize) / (sorted.length - 1);
+    let cursor = startEdge + equalGap;
+    for (let i = 1; i < sorted.length - 1; i++) {
+        const el = sorted[i];
+        updates.push({ id: el.id, updates: horizontal ? { x: cursor } : { y: cursor } });
+        cursor += size(el) + equalGap;
+    }
+    return updates;
 };
