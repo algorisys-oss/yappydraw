@@ -5,7 +5,7 @@ import {
     updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion,
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
-    toggleLayerPanel, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
+    toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
@@ -1433,6 +1433,10 @@ export const YappyAPI = {
     listSymbols() { return store.symbols.map(s => ({ id: s.id, name: s.name, width: s.width, height: s.height, instances: store.elements.filter(e => e.type === 'symbolInstance' && e.symbolId === s.id).length })); },
     /** Show/hide the Symbols panel. */
     toggleSymbolsPanel(visible?: boolean) { toggleSymbolsPanel(visible); },
+    /** Show/hide the undo-History panel. */
+    toggleHistoryPanel(visible?: boolean) { toggleHistoryPanel(visible); },
+    /** Jump to a history timeline index (see the History panel). */
+    jumpToHistory(index: number) { jumpToHistory(index); },
 
     /** Artboards: add a named export region (preset name, 'selection', or default). Returns id. */
     addArtboard(preset?: string, x?: number, y?: number) { return addArtboard(preset, x, y); },

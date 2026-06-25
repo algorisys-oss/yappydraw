@@ -1,6 +1,6 @@
 import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal } from 'solid-js';
 import {
-  undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel,
+  undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel,
   toggleMinimap, toggleRulers, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
   addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode,
@@ -35,6 +35,7 @@ import { updateElement, deleteArtboard } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
 const SymbolsPanel = lazy(() => import('./components/symbols-panel'));
+const HistoryPanel = lazy(() => import('./components/history-panel'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
 const StatePanel = lazy(() => import('./components/state-panel').then(m => ({ default: m.StatePanel })));
 const Toast = lazy(() => import('./components/toast'));
@@ -354,6 +355,9 @@ const App: Component = () => {
         } else if (code === 'KeyB' || key === 'b') {
           e.preventDefault();
           toggleSymbolsPanel();
+        } else if (code === 'KeyH' || key === 'h') {
+          e.preventDefault();
+          toggleHistoryPanel();
         } else if (key === '\\' || code === 'Backslash') {
           e.preventDefault();
           const anyVisible = store.showPropertyPanel || store.showLayerPanel;
@@ -1147,6 +1151,7 @@ const App: Component = () => {
             <PropertyPanel />
             <LayerPanel />
             <SymbolsPanel />
+            <HistoryPanel />
             <StatusBar />
           </Show>
           <Show when={store.zenMode}>

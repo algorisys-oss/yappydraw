@@ -3,7 +3,7 @@ import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
 import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
-    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
+    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore
 } from "../store/app-store";
@@ -12,7 +12,7 @@ import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
-    Sparkles, Key, Ruler, Component as ComponentIcon
+    Sparkles, Key, Ruler, Component as ComponentIcon, History
 } from "lucide-solid";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
@@ -753,6 +753,14 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <Show when={store.showSymbolsPanel}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+B</span>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { toggleHistoryPanel(); setIsMenuOpen(false); }}>
+                                        <History size={16} />
+                                        <span class="label">History Panel</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.showHistoryPanel}><Check size={14} class="check-icon" /></Show>
+                                            <span class="shortcut">Alt+H</span>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleStatePanel(); setIsMenuOpen(false); }}>

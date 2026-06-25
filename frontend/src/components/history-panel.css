@@ -1,0 +1,68 @@
+.history-panel {
+    position: absolute;
+    left: 0;
+    top: 96px;
+    width: 210px;
+    max-height: 50vh;
+    background: var(--bg-panel, #fff);
+    border: 1px solid var(--border-color, #ddd);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.12);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    user-select: none;
+}
+
+.history-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.hp-title { display: flex; align-items: center; gap: 6px; color: var(--text-primary); }
+.hp-title h3 { margin: 0; font-size: 13px; font-weight: 600; }
+
+.hp-close {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border: none; background: transparent;
+    color: var(--text-secondary); border-radius: 4px; cursor: pointer;
+}
+.hp-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.history-panel-body { overflow-y: auto; padding: 4px; }
+
+.hp-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    padding: 5px 8px;
+    border: none;
+    background: transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-primary);
+    text-align: left;
+}
+
+.hp-row:hover { background: var(--bg-hover, #eef); }
+
+.hp-row.current { background: color-mix(in srgb, var(--primary-color, #3b82f6) 16%, transparent); font-weight: 600; }
+.hp-row.future { opacity: 0.55; }
+
+.hp-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-secondary, #999);
+    flex: 0 0 auto;
+}
+.hp-row.current .hp-dot { background: var(--primary-color, #3b82f6); }
+
+.hp-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hp-count { font-size: 10px; color: var(--text-secondary); flex: 0 0 auto; }

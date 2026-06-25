@@ -87,6 +87,8 @@ interface AppState {
     showPropertyPanel: boolean;
     showLayerPanel: boolean;
     showSymbolsPanel: boolean;
+    /** Undo-history panel visibility (transient, not persisted). */
+    showHistoryPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
     meshEditActive: boolean;
     /** Artboard currently selected on-canvas for move/resize/delete (transient, not persisted). */
@@ -275,6 +277,7 @@ const initialState: AppState = {
     showPropertyPanel: false,
     showLayerPanel: false,
     showSymbolsPanel: false,
+    showHistoryPanel: false,
     meshEditActive: false,
     activeArtboardId: null,
     symbolEdit: null,
@@ -442,6 +445,24 @@ export const redo = () => {
 
     setStore("undoStackLength", undoStack.length);
     setStore("redoStackLength", redoStack.length);
+};
+
+export const toggleHistoryPanel = (visible?: boolean) => setStore('showHistoryPanel', v => visible ?? !v);
+
+/** History timeline for the panel: past states (oldest→newest), the current
+ *  state, then redoable future states. Each entry carries its element count. */
+export const getHistoryEntries = (): { index: number; count: number; isCurrent: boolean }[] => {
+    const past = undoStack.map((s, i) => ({ index: i, count: s.elements.length, isCurrent: false }));
+    const current = { index: undoStack.length, count: store.elements.length, isCurrent: true };
+    const future = redoStack.slice().reverse().map((s, j) => ({ index: undoStack.length + 1 + j, count: s.elements.length, isCurrent: false }));
+    return [...past, current, ...future];
+};
+
+/** Jump to a timeline index (see getHistoryEntries) by undo/redo-ing the delta. */
+export const jumpToHistory = (targetIndex: number) => {
+    const cur = undoStack.length;
+    if (targetIndex < cur) { for (let k = 0; k < cur - targetIndex; k++) undo(); }
+    else if (targetIndex > cur) { for (let k = 0; k < targetIndex - cur; k++) redo(); }
 };
 
 export const addElement = (element: DrawingElement) => {
