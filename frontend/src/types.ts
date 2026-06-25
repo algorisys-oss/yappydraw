@@ -74,6 +74,9 @@ export interface MeshGradient {
      *  Absent → an even grid. Boundary nodes stay on the 0/1 edges so the mesh
      *  always covers the element; interior nodes may move freely (warped mesh). */
     points?: { x: number; y: number }[];
+    /** Smooth (bicubic Catmull-Rom) colour interpolation instead of per-cell
+     *  bilinear — removes the soft creases at cell borders (C1). Even grid only. */
+    smooth?: boolean;
 }
 export type StrokeStyle = 'solid' | 'dashed' | 'dotted';
 export type FontFamily = 'hand-drawn' | 'sans-serif' | 'monospace' | 'caveat' | 'poppins' | 'serif' | 'marker' | 'code';

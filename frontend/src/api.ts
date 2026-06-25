@@ -12,7 +12,7 @@ import {
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
-    applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, clearMeshGradient, toggleMeshEdit,
+    applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     createSymbol, placeInstance, redefineSymbol, detachInstance, renameSymbol, deleteSymbol, toggleSymbolsPanel, addArtboard, deleteArtboard, renameArtboard, updateArtboard,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
@@ -1401,6 +1401,8 @@ export const YappyAPI = {
     setMeshNodePosition(row: number, col: number, x: number, y: number, ids?: string[]) { setMeshNodePosition(ids ?? store.selection, row, col, x, y); },
     /** Reset all mesh node positions back to the even grid (un-warp). */
     resetMeshNodes(ids?: string[]) { resetMeshNodes(ids ?? store.selection); },
+    /** Toggle bicubic (smooth) vs bilinear mesh colour interpolation. */
+    setMeshSmooth(smooth: boolean, ids?: string[]) { setMeshSmooth(ids ?? store.selection, smooth); },
     /** Remove the mesh fill (revert to a solid fill). */
     clearMeshGradient(ids?: string[]) { clearMeshGradient(ids ?? store.selection); },
     /** Toggle on-canvas mesh node editing (shows the node grid on the selected mesh shape). */

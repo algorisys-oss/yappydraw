@@ -2290,6 +2290,16 @@ export const resetMeshNodes = (ids: string[]) => {
     bumpDirtyRevision();
 };
 
+/** Toggle bicubic (smooth) vs bilinear mesh colour interpolation. */
+export const setMeshSmooth = (ids: string[], smooth: boolean) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id) && !!e.meshGradient, (e: DrawingElement) => ({
+        meshGradient: { ...(e.meshGradient as MeshGradient), smooth },
+    }));
+    bumpDirtyRevision();
+};
+
 /** Remove a mesh fill, reverting to a solid fill. */
 export const clearMeshGradient = (ids: string[]) => {
     if (ids.length === 0) return;

@@ -66,7 +66,7 @@ export function defaultMesh(rows = 3, cols = 3, base = '#3b82f6'): MeshGradient 
             colors.push(rgbToHex(b.r * f, b.g * f, b.b * f));
         }
     }
-    return { rows, cols, colors };
+    return { rows, cols, colors, smooth: true };
 }
 
 /** Resize a mesh to new node counts, preserving colours where they overlap and
@@ -181,17 +181,33 @@ function inverseBilinear(
     return { s: Math.max(0, Math.min(1, s)), t: Math.max(0, Math.min(1, t)) };
 }
 
+/** Catmull-Rom 1D interpolation of 4 samples (p1..p2 at t∈[0,1]). */
+const catmullRom = (p0: number, p1: number, p2: number, p3: number, t: number) => {
+    const t2 = t * t, t3 = t2 * t;
+    return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+};
+
+// Small LRU-ish cache so identical meshes aren't re-rasterized every canvas
+// frame (the bicubic path especially is ~16× the work of bilinear).
+const _cache = new Map<string, HTMLCanvasElement>();
+const CACHE_MAX = 40;
+
 /**
  * Rasterize the mesh into an offscreen canvas of `w × h` px (device-independent;
  * caller scales when drawing). Returns the canvas, or null if dimensions are
  * degenerate. The result is opaque RGB; alpha is applied by the caller.
- * Uses the fast even-grid path unless custom node `points` are set, in which
- * case each cell is a quad rasterized via inverse-bilinear (a warped mesh).
+ * Even grid → fast per-row bilinear (or bicubic Catmull-Rom when `smooth`);
+ * custom node `points` → each cell is a quad rasterized via inverse-bilinear.
  */
 export function rasterizeMesh(mesh: MeshGradient, w: number, h: number): HTMLCanvasElement | null {
     if (!isValidMesh(mesh)) return null;
     const W = Math.max(1, Math.min(1024, Math.round(w)));
     const H = Math.max(1, Math.min(1024, Math.round(h)));
+
+    const key = `${W}x${H}|${mesh.rows}x${mesh.cols}|${mesh.smooth ? 's' : ''}|${mesh.colors.join(',')}|${mesh.points ? mesh.points.map(p => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(';') : ''}`;
+    const hit = _cache.get(key);
+    if (hit) { _cache.delete(key); _cache.set(key, hit); return hit; } // touch (LRU)
+
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
@@ -201,8 +217,29 @@ export function rasterizeMesh(mesh: MeshGradient, w: number, h: number): HTMLCan
     const nodes = mesh.colors.map(parseHex);
     const { rows, cols } = mesh;
     const warped = !!(mesh.points && mesh.points.length === rows * cols);
+    const smooth = !!mesh.smooth && rows >= 2 && cols >= 2;
 
-    if (!warped) {
+    if (!warped && smooth) {
+        // Bicubic Catmull-Rom across the node grid (C1, no cell-border creases).
+        const at = (r: number, c: number) => nodes[Math.max(0, Math.min(rows - 1, r)) * cols + Math.max(0, Math.min(cols - 1, c))];
+        for (let y = 0; y < H; y++) {
+            const fv = (H > 1 ? y / (H - 1) : 0) * (rows - 1);
+            const rr = Math.min(rows - 2, Math.floor(fv)), tv = fv - rr;
+            for (let x = 0; x < W; x++) {
+                const fu = (W > 1 ? x / (W - 1) : 0) * (cols - 1);
+                const cc = Math.min(cols - 2, Math.floor(fu)), tu = fu - cc;
+                const i = (y * W + x) * 4;
+                for (let ch = 0; ch < 3; ch++) {
+                    const k = ch === 0 ? 'r' : ch === 1 ? 'g' : 'b';
+                    const row = (rOff: number) => catmullRom(
+                        (at(rr + rOff, cc - 1) as any)[k], (at(rr + rOff, cc) as any)[k],
+                        (at(rr + rOff, cc + 1) as any)[k], (at(rr + rOff, cc + 2) as any)[k], tu);
+                    data[i + ch] = catmullRom(row(-1), row(0), row(1), row(2), tv);
+                }
+                data[i + 3] = 255;
+            }
+        }
+    } else if (!warped) {
         for (let y = 0; y < H; y++) {
             const fv = (H > 1 ? y / (H - 1) : 0) * (rows - 1);
             const r0 = Math.floor(fv), r1 = Math.min(rows - 1, r0 + 1), tv = fv - r0;
@@ -252,5 +289,7 @@ export function rasterizeMesh(mesh: MeshGradient, w: number, h: number): HTMLCan
         }
     }
     ctx.putImageData(img, 0, 0);
+    _cache.set(key, canvas);
+    if (_cache.size > CACHE_MAX) { const oldest = _cache.keys().next().value; if (oldest !== undefined) _cache.delete(oldest); }
     return canvas;
 }

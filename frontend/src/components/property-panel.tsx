@@ -1,5 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
 import type { DrawingElement } from "../types";
@@ -458,7 +458,7 @@ const AppearanceEditor: Component<{ el: () => any }> = (props) => {
 /** Gradient-mesh editor — a rows×cols grid of node colour swatches plus size
  *  steppers. Operates on the active element's `meshGradient`. */
 const MeshEditor: Component<{ el: () => any }> = (props) => {
-    const mesh = () => props.el()?.meshGradient as { rows: number; cols: number; colors: string[]; points?: any[] } | undefined;
+    const mesh = () => props.el()?.meshGradient as { rows: number; cols: number; colors: string[]; points?: any[]; smooth?: boolean } | undefined;
     const ids = () => [props.el()?.id].filter(Boolean);
     const sw = { width: '100%', height: '20px', padding: '0', border: '1px solid var(--border-color)', 'border-radius': '3px', cursor: 'pointer' } as any;
     const btn = { padding: '1px 7px', cursor: 'pointer', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', 'border-radius': '4px', 'font-size': '11px' } as any;
@@ -491,6 +491,10 @@ const MeshEditor: Component<{ el: () => any }> = (props) => {
                         );
                     }}</For>
                 </div>
+                <label class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-top': '6px', 'font-size': '11px', cursor: 'pointer' }} title="Bicubic colour blending (smoother, no cell-edge creases). Even grid only.">
+                    <input type="checkbox" checked={mesh()!.smooth !== false} onChange={(e) => setMeshSmooth(ids(), e.currentTarget.checked)} />
+                    <span>Smooth (bicubic)</span>
+                </label>
                 <div class="control-row" style={{ gap: '6px', 'margin-top': '6px' }}>
                     <button
                         style={{ ...btn, ...(store.meshEditActive ? { background: 'var(--primary-color, #3b82f6)', color: '#fff', 'border-color': 'var(--primary-color, #3b82f6)' } : {}) }}
