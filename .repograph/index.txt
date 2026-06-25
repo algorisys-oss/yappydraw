@@ -74,7 +74,7 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 2295 | Theme:3 ElementOptions:75 ElementType:458 as:458 Window:2287
+frontend/src/api.ts | typescript | 2304 | Theme:3 ElementOptions:76 ElementType:459 as:459 Window:2296
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1280 | Component:1 App:59 moves:74 onPenMove:75 hidePen:79 handleKeyDown:104 handleFullscreenChange:665 handleBeforeUnload:671 handlePaste:675 handleGlobalDragEnter:777 handleGlobalDragOver:792 showDropFallbackPrompt:811 cleanup:841 outsideClick:869 isImageFile:881 first:882 must:895 extractDropData:897 processExtractedDrop:952 handleGlobalDrop:1048 handleDocumentDrop:1094
 frontend/src/assets/player-assets.ts | typescript | 3 | hh:2
@@ -264,7 +264,7 @@ frontend/src/rendering/CanvasRenderer.ts | typescript | 166 | CanvasRenderer:11{
 frontend/src/rendering/IRenderer.ts | typescript | 107 | ICanvasGradient:14{addColorStop:15} ICanvasPattern:18 FillStyle:20 TextMetrics:22 IRenderer:28{save:30 restore:31 translate:34 rotate:35 scale:36 transform:38 beginPath:41 closePath:42 moveTo:43 lineTo:44 arc:45 ellipse:46 rect:47 roundRect:48 quadraticCurveTo:49 bezierCurveTo:50 arcTo:51 fill:54 stroke:55 fillRect:56 strokeRect:57 clip:58 fillPath:62 strokePath:64 clipPath:66 setLineDash:74 fillText:94 measureText:95 createLinearGradient:98 createRadialGradient:99 createConicGradient:100 createPattern:101 drawImage:104 drawImageCropped:106}
 frontend/src/rendering/index.ts | typescript | 2 |
 frontend/src/shapes/base/erase-mask.ts | typescript | 203 | CoreRender:23 acquirePool:41 readLocalPoints:56 paddedWorldAABB:68 applyEraseStrokes:87 renderWithEraseMask:141
-frontend/src/shapes/base/render-pipeline.ts | typescript | 646 | RenderPipeline:13{adjustColor:14 shadeColor:20 applyTransformations:69 restoreTransformations:122 applyStrokeStyle:129 buildRenderOptions:147 applyComplexFills:182 applyImageFill:225 applyGradient:278}
+frontend/src/shapes/base/render-pipeline.ts | typescript | 699 | RenderPipeline:14{adjustColor:15 shadeColor:21 applyTransformations:70 restoreTransformations:123 applyStrokeStyle:130 buildRenderOptions:148 applyComplexFills:183 applyImageFill:226 applyGradient:279}
 frontend/src/shapes/base/shape-renderer.ts | typescript | 277 | ShapeRenderer:6{render:11}
 frontend/src/shapes/base/types.ts | typescript | 13 | RenderContext:5 RenderStyle:13
 frontend/src/shapes/register-shapes.ts | typescript | 146 | registerShapes:34
@@ -313,7 +313,7 @@ frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 Folder
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 4060 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 Theme:28 ResolvedTheme:29 AppState:56 HistorySnapshot:330 AlignmentType:2837 DistributionType:2837 SelBBox:2920 LastTransform:3170 buildPathFromPoly:3662 WorldSub:3745 rdpAnchors:3748 normalizeWorldSubs:3776 makePathFromWorldSubs:3791 elementToWorldSubs:3810 startInkCleanupIfNeeded:3999
+frontend/src/store/app-store.ts | typescript | 4095 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 Theme:28 ResolvedTheme:29 AppState:56 HistorySnapshot:330 AlignmentType:2872 DistributionType:2872 SelBBox:2955 LastTransform:3205 buildPathFromPoly:3697 WorldSub:3780 rdpAnchors:3783 normalizeWorldSubs:3811 makePathFromWorldSubs:3826 elementToWorldSubs:3845 startInkCleanupIfNeeded:4034
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -337,7 +337,7 @@ frontend/src/templates/data/presentations/startup.ts | typescript | 105 |
 frontend/src/templates/data/presentations/team-intro.ts | typescript | 80 |
 frontend/src/templates/data/presentations/tech-architecture.ts | typescript | 96 |
 frontend/src/templates/registry.ts | typescript | 200 | TemplateRegistry:10
-frontend/src/types.ts | typescript | 599 | ElementType:2 ToolType:23 PathAnchor:31 PathSubpath:49 AppMode:54 FillStyle:55 StrokeStyle:56 FontFamily:57 TextAlign:58 VerticalAlign:59 ArrowHead:60 RichTextSpan:62 GradientStop:77 GradientType:82 BlendMode:84 Point:106 EntranceAnimation:113 ExitAnimation:149 DrawingElement:174 TableCellSelection:516 TableCellFormatType:524 TableCellFormat:526 TableBorderStyle:539 TableCellBorder:541 TableCellBorders:546 Layer:553 GridSettings:568 Guide:582 ViewState:588
+frontend/src/types.ts | typescript | 607 | ElementType:2 ToolType:23 PathAnchor:31 PathSubpath:49 AppMode:54 FillStyle:55 StrokeStyle:56 FontFamily:57 TextAlign:58 VerticalAlign:59 ArrowHead:60 RichTextSpan:62 GradientStop:77 GradientType:82 BlendMode:84 Point:106 EntranceAnimation:113 ExitAnimation:149 PaintFill:175 PaintStroke:177 DrawingElement:179 TableCellSelection:524 TableCellFormatType:532 TableCellFormat:534 TableBorderStyle:547 TableCellBorder:549 TableCellBorders:554 Layer:561 GridSettings:576 Guide:590 ViewState:596
 frontend/src/types/motion-types.ts | typescript | 116 | AnimationTrigger:3 AnimationAction:11 BaseAnimation:22 PresetAnimation:35 PropertyAnimation:42 PathAnimation:51 RotateAnimation:60 AutoSpinAnimation:68 MorphAnimation:76 AnimationKeyframe:83 KeyframeAnimation:89 ElementAnimation:95 DrawingElementState:99 DisplayState:112
 frontend/src/types/slide-types.ts | typescript | 159 | SlideTransitionType:7 SlideTransitionEasing:20 SlideTransition:34 Slide:52 SlideDocumentMetadata:73 GlobalSettings:83 SlideDocument:103
 frontend/src/types/template-types.ts | typescript | 103 | TemplateCategory:7 TemplateMetadata:18 DrawingData:32 Template:44 CategoryInfo:54 SlidePalette:66 PresentationSlideTemplate:83 PresentationTemplate:97
@@ -363,13 +363,14 @@ frontend/src/utils/clip-mask.ts | typescript | 58 | ShapeGeometry:11 geometryToP
 frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:28
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 371 | Command:16
-frontend/src/utils/context-menu-builder.ts | typescript | 1424 | MergedCellRegion:43 buildSelectByTypeMenu:59 buildSelectBySamePropertyMenu:138 getContextMenuItems:168 buildFormatMenuItems:1255 buildBorderMenuItems:1350
+frontend/src/utils/context-menu-builder.ts | typescript | 1438 | MergedCellRegion:44 buildSelectByTypeMenu:60 buildSelectBySamePropertyMenu:139 getContextMenuItems:169 buildFormatMenuItems:1269 buildBorderMenuItems:1364
 frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperationParams:23 getOperationsForType:79 parseValues:87 bstInsert:99 bstRemove:138 nodeAt:154 bstDeleteAt:159 moveSubtreeUp:192 collectRelative:211 clearSubtree:219 relToAbs:227 simpleHash:247 hashTablePut:259 hashTableRemove:270 animateDsOperation:287 executeDsOperation:350 abortDsAlgorithm:544 isDsAlgorithmRunning:551 setDsAnimationSpeed:555 getDsAnimationSpeed:559 clearDsHighlights:563 animateDsStep:580 compareValues:604 bubbleSort:613 selectionSort:662 insertionSort:714 linearSearch:765 binarySearch:796 bfsTraversal:853 dfsInorderTraversal:882 dfsPreorderTraversal:912 executeDsSortSearch:944
 frontend/src/utils/element-transforms.ts | typescript | 362 | changeElementType:4 isConnectorType:11 getTransformOptions:99 getShapeIcon:153 getShapeTooltip:343 getCurveTypeOptions:347 getCurveTypeIcon:351 getCurveTypeTooltip:360
 frontend/src/utils/envelope-warp.ts | typescript | 252 | Pt:20 WarpGrid:21 getWarpGrid:26 defaultWarpGrid:40 catmull:59 subdivideGrid:66 getEffectiveGrid:98 defaultWarpCorners:105 bilinear:112 invBilinear:120 pointInQuad:142 meshWarpPoint:154 geoToSubpolylines:188 warpGeometry:237
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
 frontend/src/utils/export.ts | typescript | 914 | ShapeGeometry:9 geometryToDs:19
 frontend/src/utils/geometry-scale.ts | typescript | 69 | scalePoints:13 scalePathAnchors:33 scalePathSubpaths:47 scaleEraseStrokes:53
+frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
 frontend/src/utils/geometry.ts | typescript | 433 | isPointInPolygon:5 distanceToSegment:19 cubicBezier:59 cubicBezierAngle:64 getBezierPoints:98 isPointOnBezier:111 isPointOnPolyline:117 isPointInEllipse:128 isPointNearEllipseStroke:142 rotatePoint:177 with:356
 frontend/src/utils/group-utils.ts | typescript | 81 | getGroupBoundingBox:6 isPointInGroupBounds:42 getGroupsSortedByPriority:56
 frontend/src/utils/handle-detection.ts | typescript | 459 | unrotatePoint:18 getSelectionBoundingBox:25 getHandleAtPosition:53
@@ -395,7 +396,7 @@ frontend/src/utils/pointer-helpers.ts | typescript | 53 | PointerHelpers:15 Poin
 frontend/src/utils/pointer-state.ts | typescript | 183 | PointerState:7 createPointerState:109
 frontend/src/utils/pool-containment.ts | typescript | 179 | getPoolLabelWidth:11 getLaneLabelWidth:14 getPoolLabelHeight:17 getLaneLabelHeight:20 computeLaneSizes:26 LaneRect:50 getPoolLaneRect:58 hitTestPoolLane:102 assignToPoolLane:145 unassignFromPool:149 shiftLaneIndicesOnRemove:154 shiftLaneIndicesOnInsert:168
 frontend/src/utils/recording-manager.ts | typescript | 144 | setupRecording:23
-frontend/src/utils/render-element.ts | typescript | 152 | cubicBezier:22 cubicBezierAngle:28 adjustColor:148
+frontend/src/utils/render-element.ts | typescript | 155 | cubicBezier:23 cubicBezierAngle:29 adjustColor:151
 frontend/src/utils/reparent.ts | typescript | 186 | confirmAndReparent:17
 frontend/src/utils/rich-text-utils.ts | typescript | 499 | spansToHtml:16 htmlToSpans:144 mergeAdjacentSpans:287 sameFormatting:302 spansToPlainText:318 plainTextToSpans:325 RichTextSegment:333 RichTextLayout:341 Token:348 buildSpanFontString:358 getLineHeight:369 layoutRichText:377 measureRichTextHeight:488
 frontend/src/utils/rough-cache.ts | typescript | 189 | CacheEntry:8 beginElement:27 endElement:42 clearRoughCache:54 createCachedRc:60 computeElementHash:106
@@ -481,6 +482,7 @@ scripts/repograph-refresh.sh | shell | 25 |
 scripts/test_relative_path.ts | typescript | 58 |
 tests/alignment.spec.ts | typescript | 79 |
 tests/api.spec.ts | typescript | 155 |
+tests/appearance-stack.spec.ts | typescript | 51 |
 tests/bpmn.spec.ts | typescript | 327 | markers:152
 tests/clipping-mask.spec.ts | typescript | 45 |
 tests/code-block.spec.ts | typescript | 163 | hello:35 App:128

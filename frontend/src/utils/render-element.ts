@@ -4,6 +4,7 @@ import type { IRenderer } from "../rendering/IRenderer";
 import { shapeRegistry } from "../shapes/shape-registry";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { renderWithEraseMask } from "../shapes/base/erase-mask";
+import { RenderPipeline } from "../shapes/base/render-pipeline";
 
 // Helper to normalize points (supports both old Point[] and new packed number[])
 export const normalizePoints = (points: any[] | number[] | undefined): { x: number; y: number }[] => {
@@ -131,6 +132,8 @@ const renderElementCore = (
         try {
             const renderer = sharedRenderer || new CanvasRenderer(ctx);
             shapeRenderer.render({ rc, renderer, element: el, isDarkMode, layerOpacity });
+            // Appearance stack: extra fills/strokes drawn over the base shape (both styles).
+            if (el.appearance) RenderPipeline.renderAppearance(rc, renderer, el, layerOpacity);
         } catch (err) {
             console.warn(`Render error for ${el.type} (${el.id}):`, err);
         }

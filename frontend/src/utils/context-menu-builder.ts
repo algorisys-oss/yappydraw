@@ -9,6 +9,7 @@ import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, releaseClippingMask,
+    addAppearanceFill, addAppearanceStroke, clearAppearance,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
@@ -1073,6 +1074,19 @@ export function getContextMenuItems(
         if (isAnyClipped) {
             items.push({ label: 'Release Clipping Mask', shortcut: 'Ctrl+Alt+7', icon: '✂', onClick: releaseClippingMask });
         }
+
+        // Appearance stack — extra fills/strokes over the base shape.
+        const anyAppearance = store.selection.some(id => {
+            const el = store.elements.find(e => e.id === id);
+            return el?.appearance && ((el.appearance.fills?.length ?? 0) > 0 || (el.appearance.strokes?.length ?? 0) > 0);
+        });
+        items.push({
+            label: 'Appearance', icon: '◑', submenu: [
+                { label: 'Add Fill', onClick: () => addAppearanceFill([...store.selection]) },
+                { label: 'Add Stroke', onClick: () => addAppearanceStroke([...store.selection]) },
+                ...(anyAppearance ? [{ label: 'Clear Appearance', onClick: () => clearAppearance([...store.selection]) }] : []),
+            ],
+        });
 
         // Select by Type / Same Property
         items.push({ label: 'Select by Type', submenu: buildSelectByTypeMenu() });

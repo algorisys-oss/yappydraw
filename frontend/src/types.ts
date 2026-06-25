@@ -171,6 +171,11 @@ export type ExitAnimation = 'none' |
     // Text exit animations (for text elements only)
     'textDelete';
 
+/** One extra fill in the appearance stack. */
+export interface PaintFill { color: string; opacity?: number; visible?: boolean; }
+/** One extra stroke in the appearance stack. */
+export interface PaintStroke { color: string; width: number; opacity?: number; dash?: 'solid' | 'dashed' | 'dotted'; visible?: boolean; }
+
 export interface DrawingElement {
     id: string;
     type: ElementType;
@@ -316,6 +321,9 @@ export interface DrawingElement {
     isClipMask?: boolean;
     clipMaskId?: string | null;
     maskType?: 'clip' | 'opacity';
+    // Appearance stack — extra fills/strokes drawn OVER the base shape, bottom-to-top.
+    // Absent = just the base backgroundColor/strokeColor (fully back-compatible).
+    appearance?: { fills?: PaintFill[]; strokes?: PaintStroke[] };
     // General Free-Transform shear factors (NOT the perspectiveBlock-specific skewX/skewY
     // below, which warp that shape's 3D back face). Applied about the element centre as the
     // matrix [[1, shearX],[shearY, 1]] — shearX shifts x by shearX·y, shearY shifts y by shearY·x.

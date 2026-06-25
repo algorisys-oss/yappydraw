@@ -13,7 +13,7 @@ import { textElementToOutline } from "../utils/text-to-outlines";
 import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
-import type { PathAnchor, PathSubpath } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
 import { defaultWarpGrid, getWarpGrid } from "../utils/envelope-warp";
@@ -2001,6 +2001,41 @@ export const releaseClippingMask = () => {
     bumpDirtyRevision();
     showToast('Clipping mask released', 'success');
 };
+
+// ── Appearance stack (extra fills/strokes) ───────────────────────────────────
+
+/** Append an extra fill to the appearance stack of each given element. */
+export const addAppearanceFill = (ids: string[], fill: PaintFill = { color: '#3b82f6', opacity: 0.5 }) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), (e: DrawingElement) => ({
+        appearance: { ...e.appearance, fills: [...(e.appearance?.fills || []), { ...fill }] },
+    }));
+    bumpDirtyRevision();
+    showToast('Fill added', 'success');
+};
+
+/** Append an extra stroke to the appearance stack of each given element. */
+export const addAppearanceStroke = (ids: string[], stroke: PaintStroke = { color: '#ef4444', width: 6 }) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), (e: DrawingElement) => ({
+        appearance: { ...e.appearance, strokes: [...(e.appearance?.strokes || []), { ...stroke }] },
+    }));
+    bumpDirtyRevision();
+    showToast('Stroke added', 'success');
+};
+
+/** Replace the entire appearance stack of each given element. */
+export const setAppearance = (ids: string[], appearance: { fills?: PaintFill[]; strokes?: PaintStroke[] } | undefined) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ appearance }));
+    bumpDirtyRevision();
+};
+
+/** Remove the appearance stack, leaving only the base fill/stroke. */
+export const clearAppearance = (ids: string[]) => setAppearance(ids, undefined);
 
 export const moveElementZIndex = (id: string, direction: 'front' | 'back' | 'forward' | 'backward') => {
     const idx = store.elements.findIndex(e => e.id === id);

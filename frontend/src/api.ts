@@ -11,6 +11,7 @@ import {
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, releaseClippingMask,
+    addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1378,6 +1379,14 @@ export const YappyAPI = {
     bakeWarp(ids?: string[]): string[] {
         return bakeWarp(ids ?? store.selection);
     },
+
+    /** Appearance stack: add an extra fill/stroke over the base shape (both render styles). */
+    addAppearanceFill(fill?: any, ids?: string[]) { addAppearanceFill(ids ?? store.selection, fill); },
+    addAppearanceStroke(stroke?: any, ids?: string[]) { addAppearanceStroke(ids ?? store.selection, stroke); },
+    /** Replace the whole appearance stack ({fills,strokes}) of the selection. */
+    setAppearance(appearance: any, ids?: string[]) { setAppearance(ids ?? store.selection, appearance); },
+    /** Remove the appearance stack (back to base fill/stroke). */
+    clearAppearance(ids?: string[]) { clearAppearance(ids ?? store.selection); },
 
     /** Make a clipping mask: the top selected object clips the others to its outline. */
     makeClippingMask() { makeClippingMask(); },

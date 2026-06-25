@@ -1,6 +1,7 @@
 import type { Options } from "roughjs/bin/core";
 import type { DrawingElement } from "../../types";
 import { getShapeGeometry } from "../../utils/shape-geometry";
+import { geometryToDs } from "../../utils/geometry-to-ds";
 import { getFontString, measureContainerText } from "../../utils/text-utils";
 import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils";
 import type { RenderContext } from "./types";
@@ -366,6 +367,58 @@ export class RenderPipeline {
         } else if (geo.type === 'multi') {
             geo.shapes.forEach((s: any) => this.renderGeometry(renderer, s));
         }
+    }
+
+    /**
+     * Appearance stack — draw extra fills/strokes OVER the base shape, bottom-to-top.
+     * Both render styles: sketch uses rough.js (rc.path), architectural the clean path.
+     * Called after the base shape renders; no-ops when `el.appearance` is empty.
+     */
+    static renderAppearance(rc: any, renderer: IRenderer, el: DrawingElement, layerOpacity: number) {
+        const ap = el.appearance;
+        if (!ap) return;
+        const fills = (ap.fills || []).filter(f => f.visible !== false && f.color && f.color !== 'transparent');
+        const strokes = (ap.strokes || []).filter(s => s.visible !== false && s.color && s.color !== 'transparent' && s.width > 0);
+        if (!fills.length && !strokes.length) return;
+        const geo = getShapeGeometry(el);
+        if (!geo) return;
+        const { ds, evenOdd } = geometryToDs(geo);
+        if (!ds.length) return;
+
+        const sketch = (el.renderStyle ?? 'sketch') === 'sketch';
+        const { cx, cy } = this.applyTransformations(renderer, el, layerOpacity);
+        renderer.translate(cx, cy);
+        const dash = (d?: string) => d === 'dashed' ? [8, 8] : d === 'dotted' ? [2, 4] : undefined;
+
+        for (const f of fills) {
+            renderer.save();
+            renderer.globalAlpha = renderer.globalAlpha * (f.opacity ?? 1);
+            if (sketch) {
+                for (const d of ds) rc.path(d, { fill: f.color, fillStyle: 'solid', stroke: 'none', roughness: el.roughness ?? 1, seed: el.seed || 1 });
+            } else {
+                renderer.fillStyle = f.color;
+                for (const d of ds) renderer.fillPath(d, evenOdd ? 'evenodd' : undefined);
+            }
+            renderer.restore();
+        }
+        for (const s of strokes) {
+            renderer.save();
+            renderer.globalAlpha = renderer.globalAlpha * (s.opacity ?? 1);
+            if (sketch) {
+                for (const d of ds) rc.path(d, { stroke: s.color, strokeWidth: s.width, fill: 'none', roughness: el.roughness ?? 1, seed: el.seed || 1, strokeLineDash: dash(s.dash) });
+            } else {
+                renderer.strokeStyle = s.color;
+                renderer.lineWidth = s.width;
+                renderer.lineCap = 'round';
+                renderer.lineJoin = 'round';
+                const dd = dash(s.dash);
+                renderer.setLineDash(dd || []);
+                for (const d of ds) renderer.strokePath(d);
+                renderer.setLineDash([]);
+            }
+            renderer.restore();
+        }
+        this.restoreTransformations(renderer);
     }
 
     static renderText(context: RenderContext, cx: number, cy: number) {
