@@ -14,7 +14,7 @@ import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
-import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle } from "../types";
 import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos } from "../utils/mesh-gradient";
 import { getStyleSnapshot } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
@@ -88,6 +88,8 @@ interface AppState {
     showPropertyPanel: boolean;
     showLayerPanel: boolean;
     showSymbolsPanel: boolean;
+    /** Graphic Styles panel visibility (transient, not persisted). */
+    showGraphicStylesPanel: boolean;
     /** Undo-history panel visibility (transient, not persisted). */
     showHistoryPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
@@ -135,6 +137,8 @@ interface AppState {
     // Reusable symbols (definitions referenced by 'symbolInstance' elements)
     symbols: SymbolDef[];
     artboards: Artboard[];
+    // Reusable named appearances applied to objects in one click
+    graphicStyles: GraphicStyle[];
     showSlideNavigator: boolean;
     showSlideToolbar: boolean;
     showMainToolbar: boolean;
@@ -280,6 +284,7 @@ const initialState: AppState = {
     showPropertyPanel: false,
     showLayerPanel: false,
     showSymbolsPanel: false,
+    showGraphicStylesPanel: false,
     showHistoryPanel: false,
     meshEditActive: false,
     activeArtboardId: null,
@@ -322,6 +327,7 @@ const initialState: AppState = {
     states: [],
     symbols: [],
     artboards: [],
+    graphicStyles: [],
     showStatePanel: false,
     showSlideNavigator: true,
     showSlideToolbar: true,
@@ -362,6 +368,7 @@ interface HistorySnapshot {
     states: DisplayState[];
     symbols: SymbolDef[];
     artboards: Artboard[];
+    graphicStyles: GraphicStyle[];
     gridSettings: GridSettings;
     canvasBackgroundColor: string;
     docType: 'infinite' | 'slides';
@@ -396,6 +403,7 @@ const captureSnapshot = (): HistorySnapshot => ({
     states: store.states.map(s => ({ ...s })),
     symbols: store.symbols.map(s => ({ ...s, elements: s.elements.map(e => ({ ...e })) })),
     artboards: store.artboards.map(a => ({ ...a })),
+    graphicStyles: store.graphicStyles.map(g => ({ ...g, style: { ...g.style } })),
     gridSettings: { ...store.gridSettings },
     canvasBackgroundColor: store.canvasBackgroundColor,
     docType: store.docType,
@@ -408,6 +416,7 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("states", snapshot.states);
     setStore("symbols", snapshot.symbols || []);
     setStore("artboards", snapshot.artboards || []);
+    setStore("graphicStyles", snapshot.graphicStyles || []);
     setStore("gridSettings", snapshot.gridSettings);
     setStore("canvasBackgroundColor", snapshot.canvasBackgroundColor);
     setStore("docType", snapshot.docType);
@@ -1736,6 +1745,7 @@ export const loadDocument = (doc: any) => {
         setStore("states", JSON.parse(JSON.stringify(states)));
         setStore("symbols", JSON.parse(JSON.stringify(doc.symbols || [])));
         setStore("artboards", JSON.parse(JSON.stringify(doc.artboards || [])));
+        setStore("graphicStyles", JSON.parse(JSON.stringify(doc.graphicStyles || [])));
         setStore("gridSettings", JSON.parse(JSON.stringify(gridSettings)));
 
         // Migrate old showMindmapToolbar -> showQuickToolbar
@@ -3320,6 +3330,58 @@ export const startEyedropper = (targetIds?: string[]) => {
 };
 
 export const cancelEyedropper = () => setStore('eyedropper', { active: false, targets: [] });
+
+// ── Graphic styles (named reusable appearances) ──────────────────────────────
+
+export const toggleGraphicStylesPanel = (visible?: boolean) => setStore('showGraphicStylesPanel', v => visible ?? !v);
+
+/** Save the (first) selected element's appearance as a named graphic style. */
+export const createGraphicStyle = (ids?: string[], name?: string): string | null => {
+    const sel = ids ?? store.selection;
+    const el = store.elements.find(e => e.id === sel[0]);
+    if (!el) { showToast('Graphic style: select an object', 'info'); return null; }
+    const id = generateId('gstyle' as any);
+    const gs: GraphicStyle = { id, name: name || `Style ${store.graphicStyles.length + 1}`, style: getStyleSnapshot(el) };
+    pushToHistory();
+    setStore('graphicStyles', list => [...list, gs]);
+    bumpDirtyRevision();
+    showToast(`Saved ${gs.name}`, 'success');
+    return id;
+};
+
+/** Apply a saved graphic style's appearance to the given elements (default: selection). */
+export const applyGraphicStyle = (styleId: string, ids?: string[]) => {
+    const gs = store.graphicStyles.find(g => g.id === styleId);
+    const targets = ids ?? store.selection;
+    if (!gs || targets.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => targets.includes(e.id), () => ({ ...gs.style }));
+    bumpDirtyRevision();
+    showToast(`Applied ${gs.name}`, 'success');
+};
+
+/** Redefine a graphic style from the (first) selected element. */
+export const updateGraphicStyle = (styleId: string, fromId?: string) => {
+    const el = store.elements.find(e => e.id === (fromId ?? store.selection[0]));
+    if (!el) return;
+    pushToHistory();
+    setStore('graphicStyles', g => g.id === styleId, () => ({ style: getStyleSnapshot(el) }));
+    bumpDirtyRevision();
+    showToast('Graphic style updated', 'success');
+};
+
+export const renameGraphicStyle = (styleId: string, name: string) => {
+    const n = name.trim();
+    if (!n) return;
+    setStore('graphicStyles', g => g.id === styleId, () => ({ name: n }));
+    bumpDirtyRevision();
+};
+
+export const deleteGraphicStyle = (styleId: string) => {
+    pushToHistory();
+    setStore('graphicStyles', list => list.filter(g => g.id !== styleId));
+    bumpDirtyRevision();
+};
 
 /** Apply the source object's style to the armed targets, then disarm. */
 export const applyEyedropperFrom = (sourceId: string) => {

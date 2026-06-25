@@ -153,6 +153,21 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                     <code>width</code> and <code>dash</code> (<code>solid</code>/<code>dashed</code>/<code>dotted</code>).
                     <code>Y.clearAppearance()</code> removes the stack; the base fill/stroke always remain.
                 </p>
+
+                <h3>Graphic Styles</h3>
+                <p>
+                    Save an object's whole look — fill, stroke, gradient/mesh, appearance stack, shadow, opacity — as a
+                    named <strong>graphic style</strong>, then apply it to other objects in one click. Open the panel
+                    with <strong>Alt+G</strong> (or View → <strong>Graphic Styles</strong>): the <strong>+</strong>
+                    saves the selection's style; click a card (or its 🎨) to apply it to the current selection; ↻
+                    redefines it from the selection; 🗑 deletes it. Styles are stored in the document, so they travel
+                    with the file. (Right-click → <strong>Save as Graphic Style</strong>; API
+                    <code>createGraphicStyle</code>/<code>applyGraphicStyle</code>.)
+                </p>
+                <p class="tip-box">
+                    Graphic styles vs. the <strong>eyedropper</strong>: the eyedropper copies a look once from a
+                    clicked object; a graphic style is a reusable, named, document-saved look you can re-apply anytime.
+                </p>
             </section>
 
             {/* ─── GRADIENT MESH ──────────────────────────────────────── */}

@@ -3,7 +3,7 @@ import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
 import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
-    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
+    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore
 } from "../store/app-store";
@@ -161,6 +161,7 @@ const Menu: Component = () => {
                 gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
                 states: JSON.parse(JSON.stringify(store.states)),
                 symbols: JSON.parse(JSON.stringify(store.symbols)),
+                graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
                 artboards: JSON.parse(JSON.stringify(store.artboards))
             };
             const baseFilename = filename.replace(/\.(json|yappy)$/i, '');
@@ -365,6 +366,7 @@ const Menu: Component = () => {
                 gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
                 states: JSON.parse(JSON.stringify(store.states)),
                 symbols: JSON.parse(JSON.stringify(store.symbols)),
+                graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
                 artboards: JSON.parse(JSON.stringify(store.artboards))
             };
 
@@ -761,6 +763,14 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <Show when={store.showHistoryPanel}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+H</span>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { toggleGraphicStylesPanel(); setIsMenuOpen(false); }}>
+                                        <Palette size={16} />
+                                        <span class="label">Graphic Styles</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.showGraphicStylesPanel}><Check size={14} class="check-icon" /></Show>
+                                            <span class="shortcut">Alt+G</span>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleStatePanel(); setIsMenuOpen(false); }}>

@@ -26,6 +26,10 @@ export interface SymbolDef { id: string; name: string; width: number; height: nu
 /** A named rectangular export region on the infinite canvas. */
 export interface Artboard { id: string; name: string; x: number; y: number; width: number; height: number; background?: string; }
 
+/** A reusable named appearance (fill/stroke/gradient/mesh/appearance/effects)
+ *  applied to objects in one click. `style` is a subset of DrawingElement props. */
+export interface GraphicStyle { id: string; name: string; style: Partial<DrawingElement>; }
+
 export type ToolType = ElementType | 'lasso' | 'crop';
 
 /**

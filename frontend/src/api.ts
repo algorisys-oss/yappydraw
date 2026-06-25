@@ -5,7 +5,7 @@ import {
     updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion,
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
-    toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
+    toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
@@ -1435,6 +1435,20 @@ export const YappyAPI = {
     toggleSymbolsPanel(visible?: boolean) { toggleSymbolsPanel(visible); },
     /** Show/hide the undo-History panel. */
     toggleHistoryPanel(visible?: boolean) { toggleHistoryPanel(visible); },
+    /** Show/hide the Graphic Styles panel. */
+    toggleGraphicStylesPanel(visible?: boolean) { toggleGraphicStylesPanel(visible); },
+    /** Save the (first) selected object's appearance as a named graphic style; returns its id. */
+    createGraphicStyle(name?: string, ids?: string[]) { return createGraphicStyle(ids, name); },
+    /** Apply a saved graphic style to the selection (or given ids). */
+    applyGraphicStyle(styleId: string, ids?: string[]) { applyGraphicStyle(styleId, ids); },
+    /** Redefine a graphic style from the (first) selected object. */
+    updateGraphicStyle(styleId: string, fromId?: string) { updateGraphicStyle(styleId, fromId); },
+    /** Rename a graphic style. */
+    renameGraphicStyle(styleId: string, name: string) { renameGraphicStyle(styleId, name); },
+    /** Delete a graphic style. */
+    deleteGraphicStyle(styleId: string) { deleteGraphicStyle(styleId); },
+    /** List saved graphic styles. */
+    listGraphicStyles() { return store.graphicStyles.map(g => ({ id: g.id, name: g.name })); },
     /** Jump to a history timeline index (see the History panel). */
     jumpToHistory(index: number) { jumpToHistory(index); },
 
@@ -2086,6 +2100,7 @@ export const YappyAPI = {
                 gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
                 states: JSON.parse(JSON.stringify(store.states)),
                 symbols: JSON.parse(JSON.stringify(store.symbols)),
+                graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
                 artboards: JSON.parse(JSON.stringify(store.artboards)),
             };
             return cloudStorageManager.save(doc, options);

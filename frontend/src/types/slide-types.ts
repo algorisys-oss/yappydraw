@@ -111,6 +111,7 @@ export interface SlideDocument {
     states?: DisplayState[];
     symbols?: import('../types').SymbolDef[];
     artboards?: import('../types').Artboard[];
+    graphicStyles?: import('../types').GraphicStyle[];
 }
 
 /**
