@@ -8,7 +8,7 @@ import type { DrawingElement, TableCellSelection } from '../types';
 import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
-    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, releaseClippingMask,
+    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, clearAppearance, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
@@ -1046,7 +1046,8 @@ export function getContextMenuItems(
         // Grouping
         if (selectionCount > 1) {
             items.push({ label: 'Group', shortcut: 'Ctrl+G', onClick: groupSelected });
-            items.push({ label: 'Make Clipping Mask', shortcut: 'Ctrl+7', icon: '✂', onClick: makeClippingMask });
+            items.push({ label: 'Make Clipping Mask', shortcut: 'Ctrl+7', icon: '✂', onClick: () => makeClippingMask() });
+            items.push({ label: 'Make Opacity Mask', icon: '◐', onClick: () => makeOpacityMask() });
             items.push({
                 label: 'Pathfinder', icon: '⬗',
                 submenu: [

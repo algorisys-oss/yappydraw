@@ -44,6 +44,21 @@ const MasksAppearanceTraceDoc: Component = () => {
                     <em>behind</em> the mask anytime to re-frame it — like a live, adjustable crop.
                 </p>
 
+                <h3>Opacity masks (soft fades)</h3>
+                <p>
+                    A <strong>clipping mask</strong> is a hard cut — inside the shape or out. An
+                    <strong> opacity mask</strong> is soft: the <em>brightness</em> of the mask becomes the
+                    content’s transparency — <strong>white = fully visible, black = invisible, grays = partial</strong>.
+                    Put a <strong>white→black gradient</strong> on top and choose right-click →
+                    <strong> Make Opacity Mask</strong> to fade artwork out, feather an edge, or blend two images.
+                </p>
+                <pre><code>{`const Y = window.Yappy; Y.clear();
+const art  = Y.createRectangle(150, 160, 300, 180, { backgroundColor:'#2563eb', fillStyle:'solid' });
+const fade = Y.createRectangle(150, 160, 300, 180,   // white→black gradient = the mask
+  { fillStyle:'linear', gradientType:'linear', gradientStart:'#fff', gradientEnd:'#000', gradientAngle:0 });
+Y.setSelected([art, fade]);
+Y.makeOpacityMask();                 // → the blue fades from solid (left) to clear (right)`}</code></pre>
+
                 <h3>Clipping mask vs. eraser / crop</h3>
                 <table class="api-table">
                     <thead><tr><th></th><th>Clipping mask</th><th>Eraser / crop</th></tr></thead>

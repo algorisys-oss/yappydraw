@@ -14,6 +14,63 @@ import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
 import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight } from './selection-renderer';
 import { renderSnappingGuides, renderSpacingGuides } from './snap-renderer';
+import rough from 'roughjs';
+
+// ── Opacity masks: the mask shape's luminance becomes the content's alpha ──────────────
+// Content and mask are rendered to off-screen canvases (same viewport transform), then the
+// mask's luminance is folded into the content's alpha via a `luminanceToAlpha` SVG filter
+// + destination-in compositing. Scratch canvases (+ their rough canvases) are reused.
+
+let _omScratch: { a: HTMLCanvasElement; actx: CanvasRenderingContext2D; arc: any; b: HTMLCanvasElement; bctx: CanvasRenderingContext2D; brc: any; w: number; h: number } | null = null;
+function omScratch(w: number, h: number) {
+    if (!_omScratch || _omScratch.w !== w || _omScratch.h !== h) {
+        const a = document.createElement('canvas'); a.width = w; a.height = h;
+        const b = document.createElement('canvas'); b.width = w; b.height = h;
+        _omScratch = { a, actx: a.getContext('2d')!, arc: rough.canvas(a), b, bctx: b.getContext('2d')!, brc: rough.canvas(b), w, h };
+    }
+    return _omScratch;
+}
+
+let _lumFilterReady = false;
+function ensureLumFilter() {
+    if (_lumFilterReady || typeof document === 'undefined') return;
+    if (!document.getElementById('yappy-lum-filter-svg')) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('id', 'yappy-lum-filter-svg');
+        svg.setAttribute('width', '0'); svg.setAttribute('height', '0');
+        svg.style.position = 'absolute'; svg.style.width = '0'; svg.style.height = '0';
+        svg.innerHTML = '<filter id="yappy-lum" color-interpolation-filters="sRGB"><feColorMatrix type="luminanceToAlpha"/></filter>';
+        document.body.appendChild(svg);
+    }
+    _lumFilterReady = true;
+}
+
+function renderOpacityMasked(ctx: CanvasRenderingContext2D, el: DrawingElement, mask: DrawingElement, isDarkMode: boolean, layerOpacity: number) {
+    ensureLumFilter();
+    const W = ctx.canvas.width, H = ctx.canvas.height;
+    const s = omScratch(W, H);
+    const ctm = ctx.getTransform();
+    // 1. content → scratch A (same viewport transform).
+    s.actx.setTransform(1, 0, 0, 1, 0, 0); s.actx.clearRect(0, 0, W, H); s.actx.filter = 'none';
+    s.actx.setTransform(ctm);
+    renderElement(s.arc, s.actx, el, isDarkMode, layerOpacity);
+    // 2. mask shape (rendered visible, with its own colours) → scratch B.
+    s.bctx.setTransform(1, 0, 0, 1, 0, 0); s.bctx.clearRect(0, 0, W, H); s.bctx.filter = 'none';
+    s.bctx.setTransform(ctm);
+    renderElement(s.brc, s.bctx, { ...mask, isClipMask: false, clipMaskId: null } as DrawingElement, isDarkMode, 1);
+    // 3. fold mask luminance into content alpha (content α *= mask luminance).
+    s.actx.setTransform(1, 0, 0, 1, 0, 0);
+    s.actx.globalCompositeOperation = 'destination-in';
+    s.actx.filter = 'url(#yappy-lum)';
+    s.actx.drawImage(s.b, 0, 0);
+    s.actx.filter = 'none';
+    s.actx.globalCompositeOperation = 'source-over';
+    // 4. blit the masked content onto the main canvas (device space).
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(s.a, 0, 0);
+    ctx.restore();
+}
 import { getSelectionBoundingBox } from './handle-detection';
 import { getAnchorPoints } from './anchor-points';
 import { projectMasterPosition } from './slide-utils';
@@ -689,18 +746,23 @@ export function renderLayersAndElements(
                 }
                 const isFocusDimmed = focusBranchIds && focusBranchIds.size > 0 && !focusBranchIds.has(el.id);
                 const layerOpacity = (layer?.opacity ?? 1) * (isFocusDimmed ? 0.12 : 1);
-                // Clipping mask: constrain this element's draw to the mask shape's region.
+                // Clipping / opacity mask: constrain or fade this element by the mask shape.
                 const mask = renderedEl.clipMaskId ? elementMap.get(renderedEl.clipMaskId) : undefined;
+                const opacityMask = mask && renderedEl.maskType === 'opacity';
                 let clipped = false;
-                if (mask) {
+                if (mask && !opacityMask) {
                     const clipPath = buildClipPath2D(mask);
                     if (clipPath) { ctx.save(); ctx.clip(clipPath, maskFillRule(mask)); clipped = true; }
                 }
-                // Masked elements skip the element cache so the clip tracks a moving mask live.
+                // Masked elements skip the element cache so the mask tracks live edits.
                 const shouldCache = !animState && !isFocusDimmed && !mask;
-                if (shouldCache) beginElement(renderedEl.id, computeElementHash(renderedEl));
-                renderElement(cachedRc, ctx, renderedEl, isDarkMode, layerOpacity, sharedRenderer);
-                if (shouldCache) endElement();
+                if (opacityMask) {
+                    renderOpacityMasked(ctx, renderedEl, mask!, isDarkMode, layerOpacity);
+                } else {
+                    if (shouldCache) beginElement(renderedEl.id, computeElementHash(renderedEl));
+                    renderElement(cachedRc, ctx, renderedEl, isDarkMode, layerOpacity, sharedRenderer);
+                    if (shouldCache) endElement();
+                }
                 if (clipped) ctx.restore();
             }
 

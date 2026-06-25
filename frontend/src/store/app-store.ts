@@ -1963,9 +1963,9 @@ export const ungroupSelected = () => {
  * that masks the other selected objects to its outline. The mask is hidden (isClipMask) and
  * the clipped objects reference it via clipMaskId; all are grouped so they move together.
  */
-export const makeClippingMask = () => {
+export const makeClippingMask = (maskType: 'clip' | 'opacity' = 'clip') => {
     const sel = [...store.selection];
-    if (sel.length < 2) { showToast('Clipping mask: select 2+ objects', 'info'); return; }
+    if (sel.length < 2) { showToast('Mask: select 2+ objects', 'info'); return; }
     const idxOf = (id: string) => store.elements.findIndex(e => e.id === id);
     let maskId = sel[0];
     for (const id of sel) if (idxOf(id) > idxOf(maskId)) maskId = id; // topmost in z-order
@@ -1975,11 +1975,14 @@ export const makeClippingMask = () => {
     const groupId = generateId('clip');
     setStore('elements', (e: DrawingElement) => sel.includes(e.id), 'groupIds', (ids: string[] | undefined) => [...(ids || []), groupId]);
     setStore('elements', (e: DrawingElement) => e.id === maskId, 'isClipMask', () => true);
-    setStore('elements', (e: DrawingElement) => clippedIds.includes(e.id), 'clipMaskId', () => maskId);
+    setStore('elements', (e: DrawingElement) => clippedIds.includes(e.id), () => ({ clipMaskId: maskId, maskType }));
     setStore('selection', clippedIds);
     bumpDirtyRevision();
-    showToast('Clipping mask created', 'success');
+    showToast(maskType === 'opacity' ? 'Opacity mask created' : 'Clipping mask created', 'success');
 };
+
+/** Make an opacity (luminance) mask — the top object's brightness becomes the others' alpha. */
+export const makeOpacityMask = () => makeClippingMask('opacity');
 
 /** Release Clipping Mask — un-hide the mask shape and drop the clip from its targets. */
 export const releaseClippingMask = () => {
@@ -1997,7 +2000,7 @@ export const releaseClippingMask = () => {
     // Drop the shared clip group (outermost groupId) so they ungroup again.
     setStore('elements', (e: DrawingElement) => members.has(e.id), 'groupIds', (ids: string[] | undefined) => (ids && ids.length ? ids.slice(0, -1) : ids));
     setStore('elements', (e: DrawingElement) => masks.has(e.id), 'isClipMask', () => undefined);
-    setStore('elements', (e: DrawingElement) => !!e.clipMaskId && masks.has(e.clipMaskId), 'clipMaskId', () => undefined);
+    setStore('elements', (e: DrawingElement) => !!e.clipMaskId && masks.has(e.clipMaskId), () => ({ clipMaskId: undefined, maskType: undefined }));
     setStore('selection', [...members]);
     bumpDirtyRevision();
     showToast('Clipping mask released', 'success');

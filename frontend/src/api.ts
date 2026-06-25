@@ -10,7 +10,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, releaseClippingMask,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
@@ -1395,7 +1395,9 @@ export const YappyAPI = {
 
     /** Make a clipping mask: the top selected object clips the others to its outline. */
     makeClippingMask() { makeClippingMask(); },
-    /** Release the clipping mask on the current selection. */
+    /** Make an opacity mask: the top object's luminance becomes the others' alpha (soft fade). */
+    makeOpacityMask() { makeOpacityMask(); },
+    /** Release the clipping/opacity mask on the current selection. */
     releaseClippingMask() { releaseClippingMask(); },
 
     setView(scale: number, panX: number, panY: number, rotation?: number) {
