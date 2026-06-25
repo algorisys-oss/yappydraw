@@ -527,6 +527,7 @@ tests/mesh-overlay.spec.ts | typescript | 53 | w2s:27 near:31
 tests/mesh-smooth.spec.ts | typescript | 40 | S:9 sample:22
 tests/pen-features.spec.ts | typescript | 146 |
 tests/productivity-features.spec.ts | typescript | 116 |
+tests/quick-toolbar-fontsize.spec.ts | typescript | 35 |
 tests/repeat-symmetry.spec.ts | typescript | 75 |
 tests/rocket-workflow-export.spec.ts | typescript | 227 |
 tests/slides.spec.ts | typescript | 243 | to:13

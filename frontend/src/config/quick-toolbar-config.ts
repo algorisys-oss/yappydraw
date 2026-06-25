@@ -97,9 +97,9 @@ const shapeProperties: QuickPropertyDef[] = [
     },
     { key: 'opacity', controlType: 'mini-slider', label: 'Opacity', min: 0, max: 100, step: 5 },
     {
+        // Shown for all shapes (a shape can hold text), matching Font / Align below.
         key: 'fontSize', controlType: 'mini-slider', label: 'Font Size',
-        min: 8, max: 72, step: 1,
-        applicableTo: ['codeBlock', 'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable']
+        min: 8, max: 200, step: 2,
     },
     {
         key: 'fontFamily', controlType: 'icon-select', label: 'Font',
