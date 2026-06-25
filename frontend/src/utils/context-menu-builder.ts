@@ -9,6 +9,7 @@ import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
+    blendShapes,
     addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
@@ -1169,6 +1170,17 @@ export function getContextMenuItems(
                 { label: 'Eyedropper — pick style from…', icon: '💧', onClick: () => startEyedropper() },
                 { label: 'Save as Graphic Style', icon: '🎨', onClick: () => createGraphicStyle([...store.selection]) },
             );
+        }
+        if (selectionCount === 2) {
+            const two = [...store.selection];
+            items.push({
+                label: 'Blend', icon: '⇉', submenu: [
+                    { label: '2 steps', onClick: () => blendShapes(two, 2) },
+                    { label: '4 steps', onClick: () => blendShapes(two, 4) },
+                    { label: '8 steps', onClick: () => blendShapes(two, 8) },
+                    { label: '16 steps', onClick: () => blendShapes(two, 16) },
+                ],
+            });
         }
         if (selectionCount === 1) {
             items.push(

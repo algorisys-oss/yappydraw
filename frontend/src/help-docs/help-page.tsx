@@ -147,7 +147,7 @@ const shapeDocuments: ShapeDoc[] = [
         name: 'Workspace & Productivity',
         icon: '🛠',
         category: 'Features',
-        description: 'Smart toolbar, align & distribute (key object + spacing), history panel, and vector SVG export',
+        description: 'Smart toolbar, align & distribute (key object + spacing), blend, history panel, and vector SVG export',
         content: WorkspaceDoc
     },
     {

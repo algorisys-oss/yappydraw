@@ -59,6 +59,21 @@ const WorkspaceDoc: Component = () => {
                 </p>
             </section>
 
+            {/* ─── BLEND ──────────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Blend</h2>
+                <p>
+                    Select exactly <strong>two</strong> objects, then right-click → <strong>Blend</strong> → choose a
+                    step count (2–16). Yappy creates that many in-between copies, smoothly interpolating
+                    <strong> position, size, rotation, colour, opacity and stroke width</strong> from the first object
+                    to the second — a graduated chain (e.g. a small red circle blending into a large blue one).
+                </p>
+                <p class="tip-box">
+                    The blend uses the first object's shape for the steps (it grows/recolours toward the second), so
+                    it's ideal for graduated copies along a line. <code>Yappy.blend(steps)</code>.
+                </p>
+            </section>
+
             {/* ─── HISTORY PANEL ──────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>History panel</h2>

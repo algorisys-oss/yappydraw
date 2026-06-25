@@ -15,7 +15,7 @@ import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
 import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch } from "../types";
-import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos } from "../utils/mesh-gradient";
+import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos, parseHex, rgbToHex } from "../utils/mesh-gradient";
 import { getStyleSnapshot } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
@@ -3455,6 +3455,55 @@ export const deleteSwatch = (swatchId: string) => {
     setStore('elements', (e: DrawingElement) => e.fillSwatchId === swatchId, () => ({ fillSwatchId: undefined }));
     setStore('elements', (e: DrawingElement) => e.strokeSwatchId === swatchId, () => ({ strokeSwatchId: undefined }));
     bumpDirtyRevision();
+};
+
+// ── Blend (interpolated steps between two objects) ───────────────────────────
+
+/** Create `steps` intermediate copies between two objects, interpolating
+ *  position, size, rotation, opacity, stroke width and colours. Uses the first
+ *  object's shape (a graduated blend, not shape-morphing). */
+export const blendShapes = (ids?: string[], steps = 4) => {
+    const sel = ids ?? store.selection;
+    const a = store.elements.find(e => e.id === sel[0]);
+    const b = store.elements.find(e => e.id === sel[1]);
+    if (!a || !b || a.id === b.id) { showToast('Blend: select two objects', 'info'); return; }
+    const n = Math.max(1, Math.min(50, Math.round(steps)));
+    const lerp = (x: number, y: number, t: number) => x + (y - x) * t;
+    const lerpColor = (c1?: string, c2?: string, t = 0): string | undefined => {
+        if (!c1 || c1 === 'transparent') return c2;
+        if (!c2 || c2 === 'transparent') return c1;
+        const A = parseHex(c1), B = parseHex(c2);
+        return rgbToHex(lerp(A.r, B.r, t), lerp(A.g, B.g, t), lerp(A.b, B.b, t));
+    };
+    pushToHistory();
+    const batch = new Set<string>();
+    const additions: DrawingElement[] = [];
+    for (let k = 1; k <= n; k++) {
+        const t = k / (n + 1);
+        const id = generateId(a.type as any, batch); batch.add(id);
+        const clone = {
+            ...a, id,
+            x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t),
+            width: lerp(a.width, b.width, t), height: lerp(a.height, b.height, t),
+            angle: lerp(a.angle || 0, b.angle || 0, t),
+            opacity: lerp(a.opacity ?? 100, b.opacity ?? 100, t),
+            strokeWidth: lerp(a.strokeWidth ?? 1, b.strokeWidth ?? 1, t),
+            backgroundColor: lerpColor(a.backgroundColor, b.backgroundColor, t) ?? a.backgroundColor,
+            strokeColor: lerpColor(a.strokeColor, b.strokeColor, t) ?? a.strokeColor,
+            groupIds: undefined, fillSwatchId: undefined, strokeSwatchId: undefined,
+        } as DrawingElement;
+        additions.push(clone);
+    }
+    // Insert the intermediates just after the first object in z-order.
+    setStore('elements', (list: DrawingElement[]) => {
+        const idx = list.findIndex(e => e.id === a.id);
+        const copy = [...list];
+        copy.splice(idx + 1, 0, ...additions);
+        return copy;
+    });
+    setStore('selection', [a.id, ...additions.map(x => x.id), b.id]);
+    bumpDirtyRevision();
+    showToast(`Blended — ${n} steps`, 'success');
 };
 
 /** Apply the source object's style to the armed targets, then disarm. */
