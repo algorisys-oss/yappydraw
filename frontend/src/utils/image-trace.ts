@@ -117,6 +117,103 @@ function rdp(points: Pt[], eps: number): Pt[] {
     return [a, b];
 }
 
+// ── Centre-line trace (Zhang–Suen thinning → skeleton polylines) ──────────────
+
+/** Zhang–Suen thinning: erode a binary mask to a 1px-wide skeleton (medial axis). */
+function skeletonize(bin: Uint8Array, w: number, h: number): Uint8Array {
+    const s = bin.slice();
+    const at = (x: number, y: number) => (x >= 0 && x < w && y >= 0 && y < h) ? s[y * w + x] : 0;
+    let changed = true, guard = 0;
+    while (changed && guard++ < 400) {
+        changed = false;
+        for (let step = 0; step < 2; step++) {
+            const rm: number[] = [];
+            for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+                if (!s[y * w + x]) continue;
+                const p2 = at(x, y - 1), p3 = at(x + 1, y - 1), p4 = at(x + 1, y), p5 = at(x + 1, y + 1), p6 = at(x, y + 1), p7 = at(x - 1, y + 1), p8 = at(x - 1, y), p9 = at(x - 1, y - 1);
+                const B = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
+                if (B < 2 || B > 6) continue;
+                const seq = [p2, p3, p4, p5, p6, p7, p8, p9, p2];
+                let A = 0; for (let i = 0; i < 8; i++) if (seq[i] === 0 && seq[i + 1] === 1) A++;
+                if (A !== 1) continue;
+                if (step === 0) { if (p2 * p4 * p6 !== 0 || p4 * p6 * p8 !== 0) continue; }
+                else { if (p2 * p4 * p8 !== 0 || p2 * p6 * p8 !== 0) continue; }
+                rm.push(y * w + x);
+            }
+            if (rm.length) { changed = true; for (const i of rm) s[i] = 0; }
+        }
+    }
+    return s;
+}
+
+/** Walk a skeleton into polylines: follow degree-2 chains between nodes (endpoints/junctions). */
+function traceSkeleton(skel: Uint8Array, w: number, h: number): Pt[][] {
+    const NB = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
+    const on = (x: number, y: number) => (x >= 0 && x < w && y >= 0 && y < h) ? skel[y * w + x] : 0;
+    const deg = (x: number, y: number) => NB.reduce((n, [dx, dy]) => n + on(x + dx, y + dy), 0);
+    const usedEdge = new Set<string>();
+    const ek = (ax: number, ay: number, bx: number, by: number) => ax < bx || (ax === bx && ay <= by) ? `${ax},${ay}-${bx},${by}` : `${bx},${by}-${ax},${ay}`;
+    const lines: Pt[][] = [];
+    const walk = (sx: number, sy: number, fx: number, fy: number) => {
+        const line: Pt[] = [{ x: sx, y: sy }];
+        let px = sx, py = sy, nx = fx, ny = fy;
+        while (true) {
+            usedEdge.add(ek(px, py, nx, ny));
+            line.push({ x: nx, y: ny });
+            if (deg(nx, ny) !== 2) break;                    // reached a node
+            let adv = false;
+            for (const [dx, dy] of NB) {
+                const cx = nx + dx, cy = ny + dy;
+                if (!on(cx, cy)) continue;
+                if (cx === px && cy === py) continue;
+                if (usedEdge.has(ek(nx, ny, cx, cy))) continue;
+                px = nx; py = ny; nx = cx; ny = cy; adv = true; break;
+            }
+            if (!adv) break;
+        }
+        if (line.length >= 2) lines.push(line);
+    };
+    // Start from every node (endpoint or junction), one walk per unused incident edge.
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        if (!skel[y * w + x]) continue;
+        const d = deg(x, y);
+        if (d === 2) continue;
+        for (const [dx, dy] of NB) {
+            const cx = x + dx, cy = y + dy;
+            if (on(cx, cy) && !usedEdge.has(ek(x, y, cx, cy))) walk(x, y, cx, cy);
+        }
+    }
+    // Remaining pure loops (all degree-2): start anywhere on an unused edge.
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        if (!skel[y * w + x]) continue;
+        for (const [dx, dy] of NB) {
+            const cx = x + dx, cy = y + dy;
+            if (on(cx, cy) && !usedEdge.has(ek(x, y, cx, cy))) walk(x, y, cx, cy);
+        }
+    }
+    return lines;
+}
+
+/** Centre-line trace: returns OPEN polylines (normalized [0,1]²) of the image's skeleton. */
+export function traceImageCenterline(
+    data: Uint8ClampedArray, w: number, h: number,
+    opts: { threshold?: number; simplify?: number; minLen?: number } = {}
+): { points: Pt[]; closed: boolean }[] {
+    const bin = toBinary(data, w, h, opts.threshold ?? 128);
+    const skel = skeletonize(bin, w, h);
+    const lines = traceSkeleton(skel, w, h);
+    const eps = opts.simplify ?? 1.2;
+    const minLen = opts.minLen ?? 4;
+    const out: { points: Pt[]; closed: boolean }[] = [];
+    for (const ln of lines) {
+        if (ln.length < minLen) continue;
+        const simp = rdp(ln, eps);
+        if (simp.length < 2) continue;
+        out.push({ points: simp.map(p => ({ x: (p.x + 0.5) / w, y: (p.y + 0.5) / h })), closed: false });
+    }
+    return out;
+}
+
 // ── Colour trace (k-means quantize → one filled layer per colour) ─────────────
 
 /** k-means colour quantization. Returns centroids + a per-pixel label (-1 = transparent). */

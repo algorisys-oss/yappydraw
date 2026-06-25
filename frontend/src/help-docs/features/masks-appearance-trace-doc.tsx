@@ -167,8 +167,10 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                 <p>
                     Right-click an image → <strong>Image Trace</strong>. <strong>B&amp;W</strong> traces a single
                     silhouette path (with holes); <strong>Colour — 6 / 12 / 16</strong> quantizes the image into that
-                    many colours and traces <em>one filled path per colour</em> (stacked, grouped). The new paths are
-                    placed over the image; <strong>delete the image</strong> to keep just the vectors.
+                    many colours and traces <em>one filled path per colour</em> (stacked, grouped).
+                    <strong> Centre-line</strong> is for line art — it finds the <em>skeleton</em> (centre) of strokes
+                    and emits thin <em>open</em> paths instead of filled outlines (ideal for hand-drawn lines, signatures,
+                    maps). The new paths are placed over the image; <strong>delete the image</strong> to keep just the vectors.
                 </p>
 
                 <h3>Example</h3>

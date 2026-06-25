@@ -1085,6 +1085,7 @@ export function getContextMenuItems(
                     { label: 'Trace Colour — 6', onClick: () => traceImage([...store.selection], { colors: 6 }) },
                     { label: 'Trace Colour — 12', onClick: () => traceImage([...store.selection], { colors: 12 }) },
                     { label: 'Trace Colour — 16 (detail)', onClick: () => traceImage([...store.selection], { colors: 16, simplify: 0.5 }) },
+                    { label: 'Trace Centre-line (line art)', onClick: () => traceImage([...store.selection], { centerline: true }) },
                 ],
             });
         }

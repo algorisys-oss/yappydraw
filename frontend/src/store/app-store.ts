@@ -13,7 +13,7 @@ import { textElementToOutline } from "../utils/text-to-outlines";
 import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
-import { traceImageData, traceImageDataColor } from "../utils/image-trace";
+import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
 import type { PathAnchor, PathSubpath, PaintFill, PaintStroke } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
@@ -2046,7 +2046,7 @@ export const clearAppearance = (ids: string[]) => setAppearance(ids, undefined);
  * via marching squares; holes via even-odd). The new path is placed over the image filled
  * black; delete the image to keep just the vector. Returns the new path ids.
  */
-export const traceImage = (ids: string[], options: { threshold?: number; simplify?: number; colors?: number } = {}): string[] => {
+export const traceImage = (ids: string[], options: { threshold?: number; simplify?: number; colors?: number; centerline?: boolean } = {}): string[] => {
     const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'image' && e.dataURL);
     if (targets.length === 0) { showToast('Trace: select an image', 'info'); return []; }
     const newPaths: DrawingElement[] = [];
@@ -2067,7 +2067,17 @@ export const traceImage = (ids: string[], options: { threshold?: number; simplif
         const toWorldSubs = (subs: { points: { x: number; y: number }[]; closed: boolean }[]): WorldSub[] =>
             subs.map(sp => ({ closed: true, anchors: sp.points.map(p => ({ x: el.x + p.x * el.width, y: el.y + p.y * el.height, kind: 'corner' as const })) }));
 
-        if (options.colors && options.colors >= 2) {
+        if (options.centerline) {
+            // Centre-line trace → open stroked polylines of the skeleton.
+            const lines = traceImageCenterline(data, tw, th, { threshold: options.threshold ?? 128, simplify: options.simplify ?? 1.2 });
+            if (lines.length === 0) { showToast('Trace: no centre-lines found', 'info'); continue; }
+            const path = makePathFromWorldSubs(
+                lines.map(ln => ({ closed: false, anchors: ln.points.map(p => ({ x: el.x + p.x * el.width, y: el.y + p.y * el.height, kind: 'corner' as const })) })),
+                { backgroundColor: 'transparent', strokeColor: '#000000', strokeWidth: 2, fillStyle: 'solid', renderStyle: 'architectural' },
+                batch
+            );
+            if (path) newPaths.push(path);
+        } else if (options.colors && options.colors >= 2) {
             // Colour trace → one filled path per quantized colour, grouped & stacked.
             const layers = traceImageDataColor(data, tw, th, { colors: options.colors, simplify: options.simplify ?? 1.0 });
             if (layers.length === 0) { showToast('Trace: nothing found', 'info'); continue; }
