@@ -185,7 +185,9 @@ export const LogoToolkitDoc: Component = () => {
                     <strong>Mesh warp.</strong> For finer control, right-click → <em>Path → Mesh Warp</em> and pick a
                     grid (2×2 up to 5×5). Dragging the <strong>interior</strong> control points bulges and waves the
                     middle of the shape — distortions a 4-corner cage can't make (think flowing ribbons, fish-eye
-                    badges, organic blobs). Hit-testing and SVG export follow the mesh.
+                    badges, organic blobs). Hit-testing and SVG export follow the mesh. Toggle
+                    <em>Mesh: Smooth</em> for flowing bicubic curves (vs sharp straight cells). <strong>Images</strong>
+                    warp too — the bitmap is texture-mapped through the mesh (great for mockups on curved surfaces).
                 </p>
                 <p>
                     <strong>Shear (slant).</strong> Hold <span class="kbd">Ctrl</span> (or <span class="kbd">Cmd</span>)

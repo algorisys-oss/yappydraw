@@ -3,6 +3,39 @@ import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { getImage } from "../../utils/image-cache";
 import { generatePixelMask, applyPixelMaskToImage } from "../../utils/image-pixel-effects";
+import { getEffectiveGrid, meshWarpPoint } from "../../utils/envelope-warp";
+
+type Pt = { x: number; y: number };
+
+/** Affine matrix (canvas `transform` form) mapping source triangle s0..s2 → dest d0..d2. */
+function affineFromTriangles(s0: Pt, s1: Pt, s2: Pt, d0: Pt, d1: Pt, d2: Pt) {
+    // Solve S·[a c e]ᵀ = dx and S·[b d f]ᵀ = dy, where S rows are [sx, sy, 1].
+    const a00 = s0.x, a01 = s0.y, a10 = s1.x, a11 = s1.y, a20 = s2.x, a21 = s2.y;
+    const det = a00 * (a11 - a21) - a01 * (a10 - a20) + (a10 * a21 - a20 * a11);
+    if (Math.abs(det) < 1e-9) return null;
+    const id = 1 / det;
+    const i00 = (a11 - a21) * id, i01 = (a21 - a01) * id, i02 = (a01 - a11) * id;
+    const i10 = (a20 - a10) * id, i11 = (a00 - a20) * id, i12 = (a10 - a00) * id;
+    const i20 = (a10 * a21 - a20 * a11) * id, i21 = (a20 * a01 - a00 * a21) * id, i22 = (a00 * a11 - a10 * a01) * id;
+    return {
+        a: i00 * d0.x + i01 * d1.x + i02 * d2.x,
+        c: i10 * d0.x + i11 * d1.x + i12 * d2.x,
+        e: i20 * d0.x + i21 * d1.x + i22 * d2.x,
+        b: i00 * d0.y + i01 * d1.y + i02 * d2.y,
+        d: i10 * d0.y + i11 * d1.y + i12 * d2.y,
+        f: i20 * d0.y + i21 * d1.y + i22 * d2.y,
+    };
+}
+
+/** Inflate a triangle slightly around its centroid to hide hairline seams between cells. */
+function inflate(d0: Pt, d1: Pt, d2: Pt, px = 0.5): [Pt, Pt, Pt] {
+    const gx = (d0.x + d1.x + d2.x) / 3, gy = (d0.y + d1.y + d2.y) / 3;
+    const out = (p: Pt): Pt => {
+        const dx = p.x - gx, dy = p.y - gy, len = Math.hypot(dx, dy) || 1;
+        return { x: p.x + (dx / len) * px, y: p.y + (dy / len) * px };
+    };
+    return [out(d0), out(d1), out(d2)];
+}
 
 export class ImageRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, _cx: number, _cy: number): void {
@@ -19,6 +52,10 @@ export class ImageRenderer extends ShapeRenderer {
 
         const img = getImage(el.dataURL);
         if (img) {
+            // Envelope / mesh warp: texture-map the bitmap through the control grid.
+            if (el.warp && this.renderWarped(context, img)) {
+                return;
+            }
             // Check if pixel effect is active
             if (el.pixelEffect && el.pixelEffectProgress !== undefined) {
                 this.renderWithPixelEffect(context, img);
@@ -45,6 +82,58 @@ export class ImageRenderer extends ShapeRenderer {
             renderer.fillText("Loading image...", el.x + 10, el.y + 20);
             renderer.restore();
         }
+    }
+
+    /**
+     * Warp the image through its `el.warp` mesh by tessellating a fine triangle grid and
+     * affine-mapping each source-image triangle onto its warped destination triangle.
+     * Returns false (caller falls back to a normal draw) if the canvas ctx isn't available.
+     */
+    private renderWarped(context: RenderContext, img: HTMLImageElement): boolean {
+        const { renderer, element: el } = context;
+        const ctx: CanvasRenderingContext2D | undefined = (renderer as any).ctx;
+        if (!ctx || !(ctx instanceof CanvasRenderingContext2D)) return false;
+        const grid = getEffectiveGrid(el.warp);
+        if (!grid) return false;
+
+        const w = el.width, h = el.height, mw = w / 2, mh = h / 2;
+        const cx = el.x + mw, cy = el.y + mh;
+        const srcX = el.crop?.x ?? 0, srcY = el.crop?.y ?? 0;
+        const srcW = el.crop?.width ?? (img.naturalWidth || img.width);
+        const srcH = el.crop?.height ?? (img.naturalHeight || img.height);
+
+        // Tessellate the unit square; warp each vertex (dest in world coords, pre-CTM).
+        const N = 24;
+        const src: Pt[] = [], dest: Pt[] = [];
+        for (let j = 0; j <= N; j++) {
+            for (let i = 0; i <= N; i++) {
+                const u = i / N, v = j / N;
+                src.push({ x: srcX + u * srcW, y: srcY + v * srcH });
+                const wc = meshWarpPoint(u * w - mw, v * h - mh, w, h, grid);
+                dest.push({ x: cx + wc.x, y: cy + wc.y });
+            }
+        }
+        const idx = (i: number, j: number) => j * (N + 1) + i;
+        const drawTri = (s0: Pt, s1: Pt, s2: Pt, d0: Pt, d1: Pt, d2: Pt) => {
+            const m = affineFromTriangles(s0, s1, s2, d0, d1, d2);
+            if (!m) return;
+            const [e0, e1, e2] = inflate(d0, d1, d2);
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(e0.x, e0.y); ctx.lineTo(e1.x, e1.y); ctx.lineTo(e2.x, e2.y); ctx.closePath();
+            ctx.clip();
+            ctx.transform(m.a, m.b, m.c, m.d, m.e, m.f);
+            ctx.drawImage(img, 0, 0);
+            ctx.restore();
+        };
+        for (let j = 0; j < N; j++) {
+            for (let i = 0; i < N; i++) {
+                const a = idx(i, j), b = idx(i + 1, j), c = idx(i + 1, j + 1), d = idx(i, j + 1);
+                drawTri(src[a], src[b], src[c], dest[a], dest[b], dest[c]);
+                drawTri(src[a], src[c], src[d], dest[a], dest[c], dest[d]);
+            }
+        }
+        return true;
     }
 
     private renderWithPixelEffect(context: RenderContext, img: HTMLImageElement): void {

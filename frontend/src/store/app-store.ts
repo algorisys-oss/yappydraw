@@ -3487,7 +3487,9 @@ const applyWarpGrid = (ids: string[], rows: number, cols: number, mode: 'toggle'
             if (g) { out.push(el.id); const { warp, ...rest } = el as any; return rest as DrawingElement; }
         }
         let base = el;
-        if (el.type !== 'path') {
+        // Images warp as bitmaps (texture-mapped in the image renderer) — keep them as
+        // images; only vector shapes are converted to a path so the warp deforms an outline.
+        if (el.type !== 'path' && el.type !== 'image') {
             const r = shapeToPath(el);
             if (!r) return el;
             base = { ...el, type: 'path', pathAnchors: r.anchors, pathClosed: r.closed, points: undefined, controlPoints: undefined } as DrawingElement;

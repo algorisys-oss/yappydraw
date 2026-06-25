@@ -240,7 +240,7 @@ frontend/src/examples/examples-page.tsx | typescript | 337 | Component:6 Example
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
-frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 236 | LogoToolkitDoc:9 the:115
+frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 238 | LogoToolkitDoc:9 the:115
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 525 | YslTutorialDoc:8
 frontend/src/help-docs/help-page.css | - | 408 |
 frontend/src/help-docs/help-page.tsx | typescript | 295 | Component:6 ShapeDoc:11 getShapeFromHash:189 HelpPage:195 handleHashChange:201 navigateToShape:212 filteredShapes:217 currentDoc:227 handleBackToApp:229
@@ -280,7 +280,7 @@ frontend/src/shapes/renderers/data-structure-renderer.ts | typescript | 1066 | D
 frontend/src/shapes/renderers/diamond-renderer.ts | typescript | 185 | DiamondRenderer:6{renderArchitectural:7 renderSketch:25 getRadius:74 drawDiamondArch:80 getRoundedDiamondPath:117 definePath:140 executePath:155}
 frontend/src/shapes/renderers/flowchart-renderer.ts | typescript | 145 | FlowchartRenderer:7{renderArchitectural:8 renderSketch:73 getDatabasePath:109 getDatabaseTopPath:120 getDocumentPath:128 definePath:139}
 frontend/src/shapes/renderers/freehand-renderer.ts | typescript | 317 | FreehandRenderer:9{render:14 renderArchitectural:31 renderSketch:35 renderCommon:39 renderStrokeText:75 smoothPoints:100 renderFineliner:118 renderInkbrush:134 for:143 if:150}
-frontend/src/shapes/renderers/image-renderer.ts | typescript | 111 | ImageRenderer:7{renderArchitectural:8 renderSketch:12 renderCommon:16 renderWithPixelEffect:50 definePath:108}
+frontend/src/shapes/renderers/image-renderer.ts | typescript | 200 | Pt:8 affineFromTriangles:11 inflate:31 ImageRenderer:40{renderArchitectural:41 renderSketch:45 renderCommon:49 renderWarped:92 for:129}
 frontend/src/shapes/renderers/infra-renderer.ts | typescript | 254 | InfraRenderer:6{renderArchitectural:7}
 frontend/src/shapes/renderers/path-renderer.ts | typescript | 325 | PathRenderer:8{render:14 RenderPipeline:37 renderSketch:44 renderCommon:48 renderFlow:67 renderer:109 cubicBezier:134 cubicBezierAngle:139 drawOrganicBranch:145 drawCurvedText:231 drawArrowhead:254 definePath:310}
 frontend/src/shapes/renderers/people-renderer.ts | typescript | 463 | PeopleRenderer:7{renderArchitectural:8 renderSketch:172 renderFace:251 renderFaceSketch:314 getHandPointRightPath:361 getThumbsUpPath:413 definePath:457}
@@ -313,7 +313,7 @@ frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 Folder
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 3954 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 Theme:26 ResolvedTheme:27 AppState:54 HistorySnapshot:328 AlignmentType:2790 DistributionType:2790 SelBBox:2873 LastTransform:3123 buildPathFromPoly:3556 WorldSub:3639 rdpAnchors:3642 normalizeWorldSubs:3670 makePathFromWorldSubs:3685 elementToWorldSubs:3704 startInkCleanupIfNeeded:3893
+frontend/src/store/app-store.ts | typescript | 3956 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 Theme:26 ResolvedTheme:27 AppState:54 HistorySnapshot:328 AlignmentType:2790 DistributionType:2790 SelBBox:2873 LastTransform:3123 buildPathFromPoly:3558 WorldSub:3641 rdpAnchors:3644 normalizeWorldSubs:3672 makePathFromWorldSubs:3687 elementToWorldSubs:3706 startInkCleanupIfNeeded:3895
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -491,7 +491,7 @@ tests/free-transform-numeric.spec.ts | typescript | 62 |
 tests/free-transform-pivot.spec.ts | typescript | 72 |
 tests/free-transform-rotated-resize.spec.ts | typescript | 111 | toClient:40
 tests/free-transform-shear.spec.ts | typescript | 86 | clickWorld:25
-tests/free-transform-warp.spec.ts | typescript | 200 | clickWorld:25
+tests/free-transform-warp.spec.ts | typescript | 234 | clickWorld:25
 tests/generate-samples.spec.ts | typescript | 122 | saveState:13
 tests/global.d.ts | typescript | 241 | Window:2
 tests/hotkeys.spec.ts | typescript | 199 |
