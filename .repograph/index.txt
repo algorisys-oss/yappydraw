@@ -87,7 +87,7 @@ frontend/src/components/ai-settings-dialog.tsx | typescript | 171 | Component:5 
 frontend/src/components/ai-slides-dialog.css | - | 350 |
 frontend/src/components/ai-slides-dialog.tsx | typescript | 278 | Component:5 GeneratePresResult:7 AISlidesDialogProps:12 AISlidesDialog:47 canGenerate:57 handleKeyDown:61 handleGenerate:79 openSettings:113 activeProviderLabel:118
 frontend/src/components/animation-panel.tsx | typescript | 1549 | Component:1 StaggerConfig:5 getPresetsForType:67 getKeyframeDefaults:139 AnimationPanel:188 toggleExpanded:207 addPreset:216 addPathAnimation:238 addMorphAnimation:259 addRotateAnimation:279 addAutoSpinAnimation:299 addKeyframeAnimation:319 removeAnimation:340 updateAnimProperty:348 handleReorder:355 handlePlay:362 handleStop:369 handlePlayStagger:376 handleApplyStagger:440 handleClearStagger:468 kfAnim:1334 keyframes:1335 updateKeyframe:1337 addKeyframe:1343 removeKeyframe:1354 isColorProp:1361 propStep:1363 propHint:1371
-frontend/src/components/artboard-overlay.css | - | 92 |
+frontend/src/components/artboard-overlay.css | - | 97 |
 frontend/src/components/artboard-overlay.tsx | typescript | 149 | HandleKey:15 ArtboardOverlay:18 activeId:19 scale:22 w2sx:23 w2sy:24 startDrag:28 onMove:38 onUp:56 onKey:62 onWinDown:66 rect:82 r:93 isActive:94 hx:130 hy:131
 frontend/src/components/bpmn-tool-group.tsx | typescript | 249 | Component:1 BpmnToolGroup:137 handler:144 getActiveTool:154 handleToolClick:163 as:171 as:177 handleRightClick:185 toggleMenu:191 activeTool:198 isActive:199 getDropdownPosition:201
 frontend/src/components/canvas-toolbar.tsx | typescript | 124 | Component:1 CanvasToolbar:5 resetHideTimeout:9 toolBtnStyle:27

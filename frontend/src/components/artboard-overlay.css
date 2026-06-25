@@ -58,7 +58,12 @@
     cursor: pointer;
 }
 
-.ab-chip-del:hover { filter: brightness(1.12); }
+/* Pin the hover colours so a global button:hover (light bg) can't override them. */
+.ab-chip-del:hover {
+    background: var(--danger-color, #ef4444);
+    color: #fff;
+    filter: brightness(1.1);
+}
 
 /* Selection frame — visual only; move is via the chip, resize via the handles,
    so the artboard interior stays fully drawable. */
