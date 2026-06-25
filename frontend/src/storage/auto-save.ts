@@ -174,6 +174,7 @@ function performAutoSave(): void {
             states: JSON.parse(JSON.stringify(store.states ?? [])),
             symbols: JSON.parse(JSON.stringify(store.symbols ?? [])),
             graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles ?? [])),
+            swatches: JSON.parse(JSON.stringify(store.swatches ?? [])),
             artboards: JSON.parse(JSON.stringify(store.artboards ?? [])),
         };
 

@@ -164,6 +164,16 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                     with the file. (Right-click → <strong>Save as Graphic Style</strong>; API
                     <code>createGraphicStyle</code>/<code>applyGraphicStyle</code>.)
                 </p>
+                <h3>Global swatches</h3>
+                <p>
+                    A document <strong>colour palette</strong> with live links. Open it with <strong>Alt+W</strong>
+                    (or View → <strong>Swatches</strong>): <strong>+</strong> adds a swatch (from the selection's fill);
+                    click a chip to fill the selection (the little corner dot recolours the swatch itself); the
+                    <strong> S</strong> button applies it as a stroke. Objects you apply a swatch to are
+                    <strong> linked</strong> — recolour the swatch and every linked object updates at once. Editing an
+                    object's colour directly breaks its link. Swatches are saved in the document.
+                </p>
+
                 <h3>Eyedropper</h3>
                 <p>
                     Select the object(s) you want to restyle, then right-click → <strong>Eyedropper — pick style

@@ -14,7 +14,7 @@ import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
-import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch } from "../types";
 import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos } from "../utils/mesh-gradient";
 import { getStyleSnapshot } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
@@ -90,6 +90,8 @@ interface AppState {
     showSymbolsPanel: boolean;
     /** Graphic Styles panel visibility (transient, not persisted). */
     showGraphicStylesPanel: boolean;
+    /** Swatches panel visibility (transient, not persisted). */
+    showSwatchesPanel: boolean;
     /** Undo-history panel visibility (transient, not persisted). */
     showHistoryPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
@@ -139,6 +141,8 @@ interface AppState {
     artboards: Artboard[];
     // Reusable named appearances applied to objects in one click
     graphicStyles: GraphicStyle[];
+    // Document-level named colours; objects link via fill/strokeSwatchId
+    swatches: Swatch[];
     showSlideNavigator: boolean;
     showSlideToolbar: boolean;
     showMainToolbar: boolean;
@@ -285,6 +289,7 @@ const initialState: AppState = {
     showLayerPanel: false,
     showSymbolsPanel: false,
     showGraphicStylesPanel: false,
+    showSwatchesPanel: false,
     showHistoryPanel: false,
     meshEditActive: false,
     activeArtboardId: null,
@@ -328,6 +333,7 @@ const initialState: AppState = {
     symbols: [],
     artboards: [],
     graphicStyles: [],
+    swatches: [],
     showStatePanel: false,
     showSlideNavigator: true,
     showSlideToolbar: true,
@@ -369,6 +375,7 @@ interface HistorySnapshot {
     symbols: SymbolDef[];
     artboards: Artboard[];
     graphicStyles: GraphicStyle[];
+    swatches: Swatch[];
     gridSettings: GridSettings;
     canvasBackgroundColor: string;
     docType: 'infinite' | 'slides';
@@ -404,6 +411,7 @@ const captureSnapshot = (): HistorySnapshot => ({
     symbols: store.symbols.map(s => ({ ...s, elements: s.elements.map(e => ({ ...e })) })),
     artboards: store.artboards.map(a => ({ ...a })),
     graphicStyles: store.graphicStyles.map(g => ({ ...g, style: { ...g.style } })),
+    swatches: store.swatches.map(s => ({ ...s })),
     gridSettings: { ...store.gridSettings },
     canvasBackgroundColor: store.canvasBackgroundColor,
     docType: store.docType,
@@ -417,6 +425,7 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("symbols", snapshot.symbols || []);
     setStore("artboards", snapshot.artboards || []);
     setStore("graphicStyles", snapshot.graphicStyles || []);
+    setStore("swatches", snapshot.swatches || []);
     setStore("gridSettings", snapshot.gridSettings);
     setStore("canvasBackgroundColor", snapshot.canvasBackgroundColor);
     setStore("docType", snapshot.docType);
@@ -871,6 +880,11 @@ export const updateElement = (id: string, updates: Partial<DrawingElement>, reco
             updates = { ...updates, richText: undefined };
         }
     }
+
+    // Editing fill/stroke colour directly breaks the global-swatch link (unless
+    // the swatch id is being set in the same patch, i.e. applySwatch).
+    if ('backgroundColor' in updates && !('fillSwatchId' in updates)) updates = { ...updates, fillSwatchId: undefined };
+    if ('strokeColor' in updates && !('strokeSwatchId' in updates)) updates = { ...updates, strokeSwatchId: undefined };
 
     setStore("elements", (el) => el.id === id, updates);
     // Bump the coarse "something changed" counter so the canvas's big redraw
@@ -1746,6 +1760,7 @@ export const loadDocument = (doc: any) => {
         setStore("symbols", JSON.parse(JSON.stringify(doc.symbols || [])));
         setStore("artboards", JSON.parse(JSON.stringify(doc.artboards || [])));
         setStore("graphicStyles", JSON.parse(JSON.stringify(doc.graphicStyles || [])));
+        setStore("swatches", JSON.parse(JSON.stringify(doc.swatches || [])));
         setStore("gridSettings", JSON.parse(JSON.stringify(gridSettings)));
 
         // Migrate old showMindmapToolbar -> showQuickToolbar
@@ -3380,6 +3395,65 @@ export const renameGraphicStyle = (styleId: string, name: string) => {
 export const deleteGraphicStyle = (styleId: string) => {
     pushToHistory();
     setStore('graphicStyles', list => list.filter(g => g.id !== styleId));
+    bumpDirtyRevision();
+};
+
+// ── Global swatches (document-level named colours with live links) ───────────
+
+export const toggleSwatchesPanel = (visible?: boolean) => setStore('showSwatchesPanel', v => visible ?? !v);
+
+/** Create a swatch (from a colour, or the first selected element's fill). */
+export const createSwatch = (color?: string, name?: string): string | null => {
+    let c = color;
+    if (!c) {
+        const el = store.elements.find(e => e.id === store.selection[0]);
+        c = el && el.backgroundColor && el.backgroundColor !== 'transparent' ? el.backgroundColor : '#3b82f6';
+    }
+    const id = generateId('swatch' as any);
+    const sw: Swatch = { id, name: name || c!, color: c! };
+    pushToHistory();
+    setStore('swatches', list => [...list, sw]);
+    bumpDirtyRevision();
+    showToast('Swatch added', 'success');
+    return id;
+};
+
+/** Apply a swatch to the given elements' fill or stroke, linking them to it. */
+export const applySwatch = (swatchId: string, target: 'fill' | 'stroke' = 'fill', ids?: string[]) => {
+    const sw = store.swatches.find(s => s.id === swatchId);
+    const targets = ids ?? store.selection;
+    if (!sw || targets.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => targets.includes(e.id), () => (
+        target === 'fill'
+            ? { backgroundColor: sw.color, fillSwatchId: sw.id }
+            : { strokeColor: sw.color, strokeSwatchId: sw.id }
+    ));
+    bumpDirtyRevision();
+};
+
+/** Change a swatch's colour — every linked object's fill/stroke updates with it. */
+export const updateSwatchColor = (swatchId: string, color: string) => {
+    if (!store.swatches.some(s => s.id === swatchId)) return;
+    pushToHistory();
+    setStore('swatches', s => s.id === swatchId, () => ({ color }));
+    setStore('elements', (e: DrawingElement) => e.fillSwatchId === swatchId, () => ({ backgroundColor: color }));
+    setStore('elements', (e: DrawingElement) => e.strokeSwatchId === swatchId, () => ({ strokeColor: color }));
+    bumpDirtyRevision();
+};
+
+export const renameSwatch = (swatchId: string, name: string) => {
+    const n = name.trim(); if (!n) return;
+    setStore('swatches', s => s.id === swatchId, () => ({ name: n }));
+    bumpDirtyRevision();
+};
+
+/** Delete a swatch and drop the link from any objects that referenced it. */
+export const deleteSwatch = (swatchId: string) => {
+    pushToHistory();
+    setStore('swatches', list => list.filter(s => s.id !== swatchId));
+    setStore('elements', (e: DrawingElement) => e.fillSwatchId === swatchId, () => ({ fillSwatchId: undefined }));
+    setStore('elements', (e: DrawingElement) => e.strokeSwatchId === swatchId, () => ({ strokeSwatchId: undefined }));
     bumpDirtyRevision();
 };
 

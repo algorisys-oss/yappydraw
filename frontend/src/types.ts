@@ -30,6 +30,10 @@ export interface Artboard { id: string; name: string; x: number; y: number; widt
  *  applied to objects in one click. `style` is a subset of DrawingElement props. */
 export interface GraphicStyle { id: string; name: string; style: Partial<DrawingElement>; }
 
+/** A document-level named colour. Objects that link to it (via fillSwatchId /
+ *  strokeSwatchId) update automatically when the swatch's colour changes. */
+export interface Swatch { id: string; name: string; color: string; }
+
 export type ToolType = ElementType | 'lasso' | 'crop';
 
 /**
@@ -481,6 +485,11 @@ export interface DrawingElement {
 
     // Gradient mesh fill (active when fillStyle === 'mesh') — see MeshGradient
     meshGradient?: MeshGradient;
+
+    // Global swatch links — when set, the colour follows the swatch's colour.
+    // Cleared automatically if the fill/stroke colour is edited directly.
+    fillSwatchId?: string;
+    strokeSwatchId?: string;
 
     // Effects
     blendMode?: BlendMode;

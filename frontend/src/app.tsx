@@ -1,6 +1,6 @@
 import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal } from 'solid-js';
 import {
-  undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel,
+  undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel,
   toggleMinimap, toggleRulers, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
   addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper,
@@ -36,6 +36,7 @@ const PropertyPanel = lazy(() => import('./components/property-panel'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
 const SymbolsPanel = lazy(() => import('./components/symbols-panel'));
 const GraphicStylesPanel = lazy(() => import('./components/graphic-styles-panel'));
+const SwatchesPanel = lazy(() => import('./components/swatches-panel'));
 const HistoryPanel = lazy(() => import('./components/history-panel'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
 const StatePanel = lazy(() => import('./components/state-panel').then(m => ({ default: m.StatePanel })));
@@ -367,6 +368,9 @@ const App: Component = () => {
         } else if (code === 'KeyG' || key === 'g') {
           e.preventDefault();
           toggleGraphicStylesPanel();
+        } else if (code === 'KeyW' || key === 'w') {
+          e.preventDefault();
+          toggleSwatchesPanel();
         } else if (key === '\\' || code === 'Backslash') {
           e.preventDefault();
           const anyVisible = store.showPropertyPanel || store.showLayerPanel;
@@ -1161,6 +1165,7 @@ const App: Component = () => {
             <LayerPanel />
             <SymbolsPanel />
             <GraphicStylesPanel />
+            <SwatchesPanel />
             <HistoryPanel />
             <StatusBar />
           </Show>

@@ -5,7 +5,8 @@ import {
     updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion,
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
-    toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
+    toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
+    toggleSwatchesPanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
@@ -1449,6 +1450,21 @@ export const YappyAPI = {
     deleteGraphicStyle(styleId: string) { deleteGraphicStyle(styleId); },
     /** List saved graphic styles. */
     listGraphicStyles() { return store.graphicStyles.map(g => ({ id: g.id, name: g.name })); },
+
+    /** Show/hide the Swatches panel. */
+    toggleSwatchesPanel(visible?: boolean) { toggleSwatchesPanel(visible); },
+    /** Create a global colour swatch (from a colour, or the selection's fill). Returns its id. */
+    createSwatch(color?: string, name?: string) { return createSwatch(color, name); },
+    /** Apply a swatch to the selection's fill or stroke, linking them to it. */
+    applySwatch(swatchId: string, target: 'fill' | 'stroke' = 'fill', ids?: string[]) { applySwatch(swatchId, target, ids); },
+    /** Recolour a swatch — every linked object updates with it. */
+    updateSwatchColor(swatchId: string, color: string) { updateSwatchColor(swatchId, color); },
+    /** Rename a swatch. */
+    renameSwatch(swatchId: string, name: string) { renameSwatch(swatchId, name); },
+    /** Delete a swatch (links on objects are dropped). */
+    deleteSwatch(swatchId: string) { deleteSwatch(swatchId); },
+    /** List global swatches. */
+    listSwatches() { return store.swatches.map(s => ({ id: s.id, name: s.name, color: s.color })); },
     /** Jump to a history timeline index (see the History panel). */
     jumpToHistory(index: number) { jumpToHistory(index); },
 
@@ -2101,6 +2117,7 @@ export const YappyAPI = {
                 states: JSON.parse(JSON.stringify(store.states)),
                 symbols: JSON.parse(JSON.stringify(store.symbols)),
                 graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
+                swatches: JSON.parse(JSON.stringify(store.swatches)),
                 artboards: JSON.parse(JSON.stringify(store.artboards)),
             };
             return cloudStorageManager.save(doc, options);
