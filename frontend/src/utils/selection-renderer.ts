@@ -11,6 +11,7 @@ import { getOrganicBranchPolygon, rotatePoint } from './geometry';
 import { getDescendants } from './hierarchy';
 import { getPathSubpaths } from './math/path-utils';
 import { getCustomPivot } from './transform-pivot';
+import { getWarpGrid } from './envelope-warp';
 
 const MINDMAP_CONNECTOR_TYPES = ['line', 'arrow', 'organicBranch', 'bezier', 'polyline'];
 
@@ -199,28 +200,40 @@ export function renderElementOverlays(
                     ctx.restore();
                 });
 
-                // Envelope warp quad + 4 corner handles (orange, distinct from the blue
-                // bbox handles). Corners are centred-local; lift to world via the rotation.
-                if (el.warp && el.warp.corners && el.warp.corners.length === 4) {
-                    const wc = el.warp.corners.map(c => {
+                // Envelope / mesh warp lattice + control-point handles (orange, distinct
+                // from the blue bbox handles). Points are centred-local; lift to world.
+                const warpGrid = getWarpGrid(el.warp);
+                if (warpGrid) {
+                    const { rows, cols, points } = warpGrid;
+                    const W = points.map(c => {
                         const p = { x: hcx + c.x, y: hcy + c.y };
                         return hAngle ? rotatePoint(p.x, p.y, hcx, hcy, hAngle) : p;
                     });
                     ctx.save();
                     ctx.strokeStyle = '#ef6820';
-                    ctx.lineWidth = 1.5 / scale;
+                    ctx.lineWidth = 1.25 / scale;
                     ctx.setLineDash([]);
-                    ctx.beginPath();
-                    ctx.moveTo(wc[0].x, wc[0].y);
-                    for (let i = 1; i < 4; i++) ctx.lineTo(wc[i].x, wc[i].y);
-                    ctx.closePath();
-                    ctx.stroke();
+                    // Row lines.
+                    for (let r = 0; r < rows; r++) {
+                        ctx.beginPath();
+                        ctx.moveTo(W[r * cols].x, W[r * cols].y);
+                        for (let c = 1; c < cols; c++) ctx.lineTo(W[r * cols + c].x, W[r * cols + c].y);
+                        ctx.stroke();
+                    }
+                    // Column lines.
+                    for (let c = 0; c < cols; c++) {
+                        ctx.beginPath();
+                        ctx.moveTo(W[c].x, W[c].y);
+                        for (let r = 1; r < rows; r++) ctx.lineTo(W[r * cols + c].x, W[r * cols + c].y);
+                        ctx.stroke();
+                    }
+                    // Control-point dots.
                     ctx.fillStyle = '#ef6820';
                     ctx.strokeStyle = '#ffffff';
                     ctx.lineWidth = 1.5 / scale;
-                    for (const c of wc) {
+                    for (const p of W) {
                         ctx.beginPath();
-                        ctx.arc(c.x, c.y, handleSize / 1.5, 0, Math.PI * 2);
+                        ctx.arc(p.x, p.y, handleSize / 1.5, 0, Math.PI * 2);
                         ctx.fill();
                         ctx.stroke();
                     }

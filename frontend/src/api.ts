@@ -10,7 +10,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1355,6 +1355,14 @@ export const YappyAPI = {
      */
     toggleEnvelopeWarp(ids?: string[]): string[] {
         return toggleEnvelopeWarp(ids ?? store.selection);
+    },
+
+    /**
+     * Free Transform: apply an R×C mesh warp to the given (or selected) elements (drag the
+     * orange grid control points to distort). Default 3×3; non-path shapes are converted first.
+     */
+    applyMeshWarp(rows = 3, cols = 3, ids?: string[]): string[] {
+        return applyMeshWarp(ids ?? store.selection, rows, cols);
     },
 
     setView(scale: number, panX: number, panY: number, rotation?: number) {

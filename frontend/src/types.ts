@@ -315,9 +315,10 @@ export interface DrawingElement {
     // matrix [[1, shearX],[shearY, 1]] — shearX shifts x by shearX·y, shearY shifts y by shearY·x.
     shearX?: number; // Horizontal shear factor (default: 0)
     shearY?: number; // Vertical shear factor (default: 0)
-    // Envelope warp — 4-corner bilinear free-distort. Corners [TL,TR,BR,BL] in the
-    // element's centred-local frame; absent = no warp. See utils/envelope-warp.ts.
-    warp?: { corners: { x: number; y: number }[] };
+    // Envelope / mesh warp — non-affine free-distort by an R×C control-point grid (row-major
+    // `points`, in the centred-local frame). `corners` [TL,TR,BR,BL] is the legacy 2×2 form,
+    // still read for back-compat. Absent = no warp. See utils/envelope-warp.ts.
+    warp?: { corners?: { x: number; y: number }[]; rows?: number; cols?: number; points?: { x: number; y: number }[] };
     renderScale?: number; // Canvas-level scale for zoom animations (default: 1)
     parentId?: string | null;
     isCollapsed?: boolean;

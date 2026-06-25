@@ -14,7 +14,7 @@ import { getPathSubpaths } from "../utils/math/path-utils";
 import type { PathAnchor, PathSubpath } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
-import { defaultWarpCorners } from "../utils/envelope-warp";
+import { defaultWarpGrid, getWarpGrid } from "../utils/envelope-warp";
 import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
@@ -3453,14 +3453,26 @@ export const convertToPath = (ids: string[]): string[] => {
  * handles can then be dragged; non-path shapes are converted to a `path` first (the warp
  * flows through the path branch of getShapeGeometry). Toggling again clears the warp.
  */
-export const toggleEnvelopeWarp = (ids: string[]): string[] => {
+export const toggleEnvelopeWarp = (ids: string[]): string[] => applyWarpGrid(ids, 2, 2, 'toggle');
+
+/**
+ * Mesh Warp — a finer R×C control-point grid (default 3×3). Re-applying with the same
+ * selection re-initializes the grid (so you can switch resolutions); `toggle` removes it.
+ */
+export const applyMeshWarp = (ids: string[], rows = 3, cols = 3): string[] => applyWarpGrid(ids, rows, cols, 'set');
+
+const applyWarpGrid = (ids: string[], rows: number, cols: number, mode: 'toggle' | 'set'): string[] => {
     const targets = store.elements.filter(e => ids.includes(e.id));
-    if (targets.length === 0) { showToast('Envelope: select a shape', 'info'); return []; }
+    if (targets.length === 0) { showToast('Warp: select a shape', 'info'); return []; }
     pushToHistory();
     const out: string[] = [];
     setStore('elements', list => list.map(el => {
         if (!ids.includes(el.id)) return el;
-        if (el.warp) { out.push(el.id); const { warp, ...rest } = el as any; return rest as DrawingElement; }
+        // Toggle off when the existing grid already matches the requested resolution.
+        if (mode === 'toggle' && el.warp) {
+            const g = getWarpGrid(el.warp);
+            if (g) { out.push(el.id); const { warp, ...rest } = el as any; return rest as DrawingElement; }
+        }
         let base = el;
         if (el.type !== 'path') {
             const r = shapeToPath(el);
@@ -3468,10 +3480,10 @@ export const toggleEnvelopeWarp = (ids: string[]): string[] => {
             base = { ...el, type: 'path', pathAnchors: r.anchors, pathClosed: r.closed, points: undefined, controlPoints: undefined } as DrawingElement;
         }
         out.push(el.id);
-        return { ...base, warp: { corners: defaultWarpCorners(base.width, base.height) } } as DrawingElement;
+        return { ...base, warp: defaultWarpGrid(base.width, base.height, rows, cols) } as DrawingElement;
     }));
     bumpDirtyRevision();
-    showToast(out.length ? 'Envelope distort toggled' : 'Envelope: unsupported shape', out.length ? 'success' : 'info');
+    showToast(out.length ? `Warp ${cols}×${rows}` : 'Warp: unsupported shape', out.length ? 'success' : 'info');
     return out;
 };
 

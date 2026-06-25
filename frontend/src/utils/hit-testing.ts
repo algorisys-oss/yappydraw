@@ -19,7 +19,7 @@ import { isElementHiddenByHierarchy } from './hierarchy';
 import { isWasmEnabled } from '../wasm/feature-flags';
 import { wasmHitTestElement } from '../wasm/bridge/hit-testing-bridge';
 import { PathUtils, anchorsToPathData, getPathSubpaths } from './math/path-utils';
-import { unwarpCenteredPoint } from './envelope-warp';
+import { getWarpGrid, unmeshWarpPoint } from './envelope-warp';
 
 /**
  * Inverse-rotate a point around a center by the given angle.
@@ -103,11 +103,14 @@ function hitTestGeometry(
     const cy = el.y + el.height / 2;
     let p = unshearPoint(unrotatePoint(x, y, cx, cy, el.angle || 0), cx, cy, el.shearX || 0, el.shearY || 0);
 
-    // Undo the envelope warp: map the click back into the un-warped shape (whose anchors
-    // the narrow phase tests). Inverse bilinear about the centred frame.
-    if (el.warp && el.warp.corners && el.warp.corners.length === 4) {
-        const uw = unwarpCenteredPoint(p.x - cx, p.y - cy, el.width, el.height, el.warp.corners);
-        p = { x: uw.x + cx, y: uw.y + cy };
+    // Undo the envelope/mesh warp: map the click back into the un-warped shape (whose
+    // anchors the narrow phase tests), via the inverse mesh map about the centred frame.
+    if (el.warp) {
+        const grid = getWarpGrid(el.warp);
+        if (grid) {
+            const uw = unmeshWarpPoint(p.x - cx, p.y - cy, el.width, el.height, grid);
+            p = { x: uw.x + cx, y: uw.y + cy };
+        }
     }
 
     // Check if inside bounding box (broad phase)

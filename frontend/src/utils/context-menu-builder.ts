@@ -14,7 +14,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp,
     zoomToFit, zoomToFitSlide, updateGlobalSettings,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
@@ -345,6 +345,14 @@ export function getContextMenuItems(
             // Envelope Distort — toggle a 4-corner free-distort (drag the orange corners).
             const anyWarped = store.selection.some(id => !!store.elements.find(x => x.id === id)?.warp);
             pathOps.push({ label: anyWarped ? 'Remove Envelope Distort' : 'Envelope Distort', icon: '◰', onClick: () => toggleEnvelopeWarp([...store.selection]) });
+            pathOps.push({
+                label: 'Mesh Warp', icon: '▦', submenu: [
+                    { label: '2 × 2', onClick: () => applyMeshWarp([...store.selection], 2, 2) },
+                    { label: '3 × 3', onClick: () => applyMeshWarp([...store.selection], 3, 3) },
+                    { label: '4 × 4', onClick: () => applyMeshWarp([...store.selection], 4, 4) },
+                    { label: '5 × 5', onClick: () => applyMeshWarp([...store.selection], 5, 5) },
+                ]
+            });
             items.push({ label: 'Path', icon: '✐', submenu: pathOps }, { separator: true });
         }
 

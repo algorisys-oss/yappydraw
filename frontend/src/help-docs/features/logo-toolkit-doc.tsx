@@ -182,6 +182,12 @@ export const LogoToolkitDoc: Component = () => {
                     <em>Remove Envelope Distort</em> to clear the cage. Works in both render styles and exports to SVG.
                 </p>
                 <p>
+                    <strong>Mesh warp.</strong> For finer control, right-click → <em>Path → Mesh Warp</em> and pick a
+                    grid (2×2 up to 5×5). Dragging the <strong>interior</strong> control points bulges and waves the
+                    middle of the shape — distortions a 4-corner cage can't make (think flowing ribbons, fish-eye
+                    badges, organic blobs). Hit-testing and SVG export follow the mesh.
+                </p>
+                <p>
                     <strong>Shear (slant).</strong> Hold <span class="kbd">Ctrl</span> (or <span class="kbd">Cmd</span>)
                     and drag a <strong>side</strong> handle to slant the shape — drag the top/bottom handle sideways
                     for horizontal shear, the left/right handle up/down for vertical shear. For exact values, type

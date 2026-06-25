@@ -10,6 +10,7 @@ import { normalizePoints } from './render-element';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { getPathSubpaths } from './math/path-utils';
 import { getCustomPivot } from './transform-pivot';
+import { getWarpGrid } from './envelope-warp';
 
 /**
  * Inverse-rotate a point around a center by the given angle.
@@ -107,11 +108,12 @@ export function getHandleAtPosition(
     // default quad sits exactly on those). Tested in the element's unrotated frame.
     if (selection.length === 1) {
         const el = elements.find(e => e.id === selection[0]);
-        if (el && el.warp && el.warp.corners && el.warp.corners.length === 4) {
+        const grid = el ? getWarpGrid(el.warp) : null;
+        if (el && grid) {
             const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
             const local = unrotatePoint(x, y, cx, cy, el.angle || 0);
-            for (let wi = 0; wi < 4; wi++) {
-                const wc = el.warp.corners[wi];
+            for (let wi = 0; wi < grid.points.length; wi++) {
+                const wc = grid.points[wi];
                 if (Math.abs(local.x - (cx + wc.x)) <= handleSize / 2 && Math.abs(local.y - (cy + wc.y)) <= handleSize / 2) {
                     return { id: el.id, handle: `warp-${wi}` };
                 }
