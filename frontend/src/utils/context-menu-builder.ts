@@ -8,7 +8,7 @@ import type { DrawingElement, TableCellSelection } from '../types';
 import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
-    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance, addArtboard,
+    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance, addArtboard, deleteArtboard,
     addAppearanceFill, addAppearanceStroke, clearAppearance, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
@@ -1289,7 +1289,16 @@ export function getContextMenuItems(
                     { label: 'Add — Web 1280', onClick: () => addArtboard('Web 1280') },
                     ...(store.artboards.length ? [
                         { separator: true } as MenuItem,
-                        ...store.artboards.map(ab => ({ label: `Export “${ab.name}”`, onClick: () => exportArtboard(ab.id, 2) })),
+                        ...store.artboards.map(ab => ({
+                            label: ab.name, submenu: [
+                                { label: 'Export PNG (2×)', onClick: () => exportArtboard(ab.id, 2) },
+                                { label: 'Export PNG (1×)', onClick: () => exportArtboard(ab.id, 1) },
+                                { separator: true } as MenuItem,
+                                { label: 'Remove Artboard', onClick: () => deleteArtboard(ab.id) },
+                            ],
+                        })),
+                        { separator: true } as MenuItem,
+                        { label: 'Remove All Artboards', onClick: () => store.artboards.slice().forEach(ab => deleteArtboard(ab.id)) },
                     ] : []),
                 ],
             },
