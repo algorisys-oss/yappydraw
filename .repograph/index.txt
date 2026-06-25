@@ -416,7 +416,7 @@ frontend/src/utils/tool-handlers/minor-handlers.ts | typescript | 1009 | trigger
 frontend/src/utils/tool-handlers/pen-handler.ts | typescript | 55 | penOnMove:14
 frontend/src/utils/tool-handlers/pen-path-handler.ts | typescript | 190 | snap:23 writePenElement:33 resetPen:65 penOnDown:76 penOnMove:130 penOnUp:152 penFinalize:161 penUndo:178
 frontend/src/utils/tool-handlers/polyline-handler.ts | typescript | 208 | polylineOnDown:17 polylineOnMove:93 polylineOnUp:148 polylineFinalize:154 polylineUndo:190
-frontend/src/utils/tool-handlers/selection-handler.ts | typescript | 2454 | getMeasureRenderer:36 captureInitialPositions:46 scaleEraseStrokes:74 scalePathAnchors:97 scalePathSubpaths:110 cloneSubpaths:115 initMoveState:119 selectionOnDown:153 selectionOnMove:816 handleResize:1218 handleControlPointDrag:1346 handlePerspectiveBlockControl:1436 handlePolypointDrag:1505 EditSub:1528 editableSubpaths:1531 writeEditableSubpaths:1547 handlePathNodeDrag:1572 convertPathAnchor:1615 deletePathAnchor:1644 findClosestPathSegment:1661 insertPathAnchorAt:1694 handleSegmentDrag:1737 applyResize:1771 handle3DViewAngle:1963 handleMove:2009 selectionOnUp:2156
+frontend/src/utils/tool-handlers/selection-handler.ts | typescript | 2493 | getMeasureRenderer:36 captureInitialPositions:46 scaleEraseStrokes:74 scalePathAnchors:97 scalePathSubpaths:110 cloneSubpaths:115 initMoveState:119 selectionOnDown:153 selectionOnMove:816 handleResize:1226 handleControlPointDrag:1385 handlePerspectiveBlockControl:1475 handlePolypointDrag:1544 EditSub:1567 editableSubpaths:1570 writeEditableSubpaths:1586 handlePathNodeDrag:1611 convertPathAnchor:1654 deletePathAnchor:1683 findClosestPathSegment:1700 insertPathAnchorAt:1733 handleSegmentDrag:1776 applyResize:1810 handle3DViewAngle:2002 handleMove:2048 selectionOnUp:2195
 frontend/src/utils/tool-handlers/text-editing-handler.ts | typescript | 488 | TableEditingCell:20 EditingPropertyType:29 TextEditingContext:31 commitText:52 commitRichText:174 handleDoubleClick:224
 frontend/src/utils/uml-layout-utils.ts | typescript | 117 | UmlClassLayout:9 calculateUmlClassLayout:21 Uml2SectionLayout:76 calculateUml2SectionLayout:83
 frontend/src/utils/video-recorder.ts | typescript | 104 | VideoFormat:6 VideoRecorder:8{constructor:15 start:19 stop:63 saveFile:70 cleanup:96}
@@ -484,6 +484,7 @@ tests/dsl.spec.ts | typescript | 899 |
 tests/element-management.spec.ts | typescript | 419 |
 tests/export_shortcut.spec.ts | typescript | 33 |
 tests/flowchart.spec.ts | typescript | 66 |
+tests/free-transform-rotated-resize.spec.ts | typescript | 111 | toClient:40
 tests/generate-samples.spec.ts | typescript | 122 | saveState:13
 tests/global.d.ts | typescript | 241 | Window:2
 tests/hotkeys.spec.ts | typescript | 199 |

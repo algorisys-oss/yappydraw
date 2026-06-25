@@ -1215,6 +1215,14 @@ export function selectionOnMove(
 
 // ─── Resize/Rotate logic ────────────────────────────────────────────
 
+// Local-centred sign of the FIXED anchor (corner/edge opposite the dragged handle),
+// in half-extent units. Used by rotation-aware resize to keep that anchor pinned in
+// world space while the element scales along its own (rotated) axes.
+const RESIZE_ANCHOR_SIGNS: Record<string, [number, number]> = {
+    tl: [1, 1], tr: [-1, 1], bl: [1, -1], br: [-1, -1],
+    tm: [0, 1], bm: [0, -1], lm: [1, 0], rm: [-1, 0],
+};
+
 function handleResize(
     e: PointerEvent,
     x: number,
@@ -1259,8 +1267,20 @@ function handleResize(
         resizeY = snapped.y;
     }
 
-    const dx = resizeX - pState.startX;
-    const dy = resizeY - pState.startY;
+    // Rotation-aware resize: for a single rotated element, project the world-space
+    // drag delta into the element's local (un-rotated) frame so corner/edge handles
+    // scale along the element's own axes. newX/newY are recomputed below from a pinned
+    // anchor. (Multi-selection group resize stays world-axis-aligned, like Illustrator.)
+    const isMultiResize = store.selection.length > 1;
+    const resizeAngle = (!isMultiResize && el) ? (el.angle || 0) : 0;
+    let dx = resizeX - pState.startX;
+    let dy = resizeY - pState.startY;
+    if (resizeAngle) {
+        const c = Math.cos(resizeAngle), s = Math.sin(resizeAngle);
+        const ldx = dx * c + dy * s;   // Rot(-angle) · worldDelta
+        const ldy = -dx * s + dy * c;
+        dx = ldx; dy = ldy;
+    }
 
     let newX = pState.initialElementX;
     let newY = pState.initialElementY;
@@ -1325,6 +1345,25 @@ function handleResize(
                 newX = (pState.initialElementX + pState.initialElementWidth) - newWidth;
             }
         }
+    }
+
+    // For a rotated single element, recompute the top-left (newX/newY) so the anchor
+    // — the corner/edge opposite the dragged handle — stays fixed in world space.
+    // anchorWorld is computed from the OLD half-extents; the new centre places the new
+    // anchor (new half-extents) back onto that fixed world point.
+    const anchorSigns = resizeAngle ? RESIZE_ANCHOR_SIGNS[pState.draggingHandle!] : undefined;
+    if (anchorSigns) {
+        const c = Math.cos(resizeAngle), s = Math.sin(resizeAngle);
+        const hw0 = pState.initialElementWidth / 2, hh0 = pState.initialElementHeight / 2;
+        const c0x = pState.initialElementX + hw0, c0y = pState.initialElementY + hh0;
+        const [ax, ay] = anchorSigns;
+        const awx = c0x + (ax * hw0) * c - (ay * hh0) * s;
+        const awy = c0y + (ax * hw0) * s + (ay * hh0) * c;
+        const hw1 = newWidth / 2, hh1 = newHeight / 2;
+        const c1x = awx - ((ax * hw1) * c - (ay * hh1) * s);
+        const c1y = awy - ((ax * hw1) * s + (ay * hh1) * c);
+        newX = c1x - hw1;
+        newY = c1y - hh1;
     }
 
     if (pState.draggingHandle && pState.draggingHandle.startsWith('segment-')) {
