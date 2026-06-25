@@ -16,7 +16,8 @@ import { getHandleAtPosition, getSelectionBoundingBox } from '../handle-detectio
 import { getDescendants } from '../hierarchy';
 import { snapPoint } from '../snap-helpers';
 import { confirmAndReparent } from '../reparent';
-import { isPointInPolygon } from '../geometry';
+import { isPointInPolygon, rotatePoint } from '../geometry';
+import { defaultWarpCorners } from '../envelope-warp';
 import { getSnappingGuides } from '../object-snapping';
 import { getSpacingGuides } from '../spacing';
 import { calculateAllAnimatedStates } from '../animation-utils';
@@ -1294,6 +1295,20 @@ function handleResize(
         } else {
             updateElement(id, { angle: newAngle });
         }
+        return;
+    }
+
+    // Envelope warp — drag one of the 4 quad corners. The pointer is mapped into the
+    // element's centred-local frame (un-rotate, then subtract centre) where the corners live.
+    if (pState.draggingHandle && pState.draggingHandle.startsWith('warp-')) {
+        const wi = parseInt(pState.draggingHandle.slice(5), 10);
+        const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+        const ur = rotatePoint(x, y, cx, cy, -(el.angle || 0));
+        const base = (el.warp && el.warp.corners && el.warp.corners.length === 4)
+            ? el.warp.corners.map(c => ({ ...c }))
+            : defaultWarpCorners(el.width, el.height);
+        if (wi >= 0 && wi < 4) base[wi] = { x: ur.x - cx, y: ur.y - cy };
+        updateElement(id, { warp: { corners: base } }, false);
         return;
     }
 

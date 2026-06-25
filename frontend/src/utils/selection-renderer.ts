@@ -199,6 +199,34 @@ export function renderElementOverlays(
                     ctx.restore();
                 });
 
+                // Envelope warp quad + 4 corner handles (orange, distinct from the blue
+                // bbox handles). Corners are centred-local; lift to world via the rotation.
+                if (el.warp && el.warp.corners && el.warp.corners.length === 4) {
+                    const wc = el.warp.corners.map(c => {
+                        const p = { x: hcx + c.x, y: hcy + c.y };
+                        return hAngle ? rotatePoint(p.x, p.y, hcx, hcy, hAngle) : p;
+                    });
+                    ctx.save();
+                    ctx.strokeStyle = '#ef6820';
+                    ctx.lineWidth = 1.5 / scale;
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.moveTo(wc[0].x, wc[0].y);
+                    for (let i = 1; i < 4; i++) ctx.lineTo(wc[i].x, wc[i].y);
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.fillStyle = '#ef6820';
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5 / scale;
+                    for (const c of wc) {
+                        ctx.beginPath();
+                        ctx.arc(c.x, c.y, handleSize / 1.5, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+
                 // Rotate Handle - compute position then rotate
                 const localRotH = { x: el.x + el.width / 2, y: el.y - padding - 20 / scale };
                 const localRotLineStart = { x: el.x + el.width / 2, y: el.y - padding };

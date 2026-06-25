@@ -102,6 +102,23 @@ export function getHandleAtPosition(
         }
     }
 
+    // 1b-warp. Envelope warp corner handles — highest priority for a warped element, so a
+    // warp corner wins over both path-anchor editing and the bbox resize corners (the
+    // default quad sits exactly on those). Tested in the element's unrotated frame.
+    if (selection.length === 1) {
+        const el = elements.find(e => e.id === selection[0]);
+        if (el && el.warp && el.warp.corners && el.warp.corners.length === 4) {
+            const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+            const local = unrotatePoint(x, y, cx, cy, el.angle || 0);
+            for (let wi = 0; wi < 4; wi++) {
+                const wc = el.warp.corners[wi];
+                if (Math.abs(local.x - (cx + wc.x)) <= handleSize / 2 && Math.abs(local.y - (cy + wc.y)) <= handleSize / 2) {
+                    return { id: el.id, handle: `warp-${wi}` };
+                }
+            }
+        }
+    }
+
     // 1c. Editable vector path: anchors + Bézier handles on the single selected path.
     //     Checked BEFORE the bbox resize handles so an extreme anchor (which sits on a
     //     corner handle) is node-edited rather than resized. Handles win over anchors.

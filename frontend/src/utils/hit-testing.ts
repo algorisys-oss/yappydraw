@@ -19,6 +19,7 @@ import { isElementHiddenByHierarchy } from './hierarchy';
 import { isWasmEnabled } from '../wasm/feature-flags';
 import { wasmHitTestElement } from '../wasm/bridge/hit-testing-bridge';
 import { PathUtils, anchorsToPathData, getPathSubpaths } from './math/path-utils';
+import { unwarpCenteredPoint } from './envelope-warp';
 
 /**
  * Inverse-rotate a point around a center by the given angle.
@@ -88,10 +89,11 @@ function hitTestGeometry(
     // WASM fast-path: delegate broad + narrow phase to WASM when available.
     // Extruding shapes (solidBlock, openBox, perspectiveBlock) have custom broad-phase
     // logic that isn't in the WASM module yet, so they fall through to JS.
-    if (isWasmEnabled('hitTesting') &&
+    if (isWasmEnabled('hitTesting') && !el.warp &&
         el.type !== 'solidBlock' && el.type !== 'openBox' && el.type !== 'perspectiveBlock') {
         // 'path' goes through WASM broad-phase + the shared JS narrow phase
         // (hitTestPathElement), so JS and WASM produce identical results.
+        // Warped elements always use the JS path so the inverse-warp below applies.
         return wasmHitTestElement(el, x, y, threshold);
     }
 
@@ -99,7 +101,14 @@ function hitTestGeometry(
     // broad/narrow phases below see the un-sheared shape. Inverse of [[1,shearX],[shearY,1]].
     const cx = el.x + el.width / 2;
     const cy = el.y + el.height / 2;
-    const p = unshearPoint(unrotatePoint(x, y, cx, cy, el.angle || 0), cx, cy, el.shearX || 0, el.shearY || 0);
+    let p = unshearPoint(unrotatePoint(x, y, cx, cy, el.angle || 0), cx, cy, el.shearX || 0, el.shearY || 0);
+
+    // Undo the envelope warp: map the click back into the un-warped shape (whose anchors
+    // the narrow phase tests). Inverse bilinear about the centred frame.
+    if (el.warp && el.warp.corners && el.warp.corners.length === 4) {
+        const uw = unwarpCenteredPoint(p.x - cx, p.y - cy, el.width, el.height, el.warp.corners);
+        p = { x: uw.x + cx, y: uw.y + cy };
+    }
 
     // Check if inside bounding box (broad phase)
     // Normalize bounds to handle negative width/height

@@ -14,7 +14,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp,
     zoomToFit, zoomToFitSlide, updateGlobalSettings,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
@@ -342,6 +342,9 @@ export function getContextMenuItems(
             if (openPathCount >= 2) pathOps.push({ label: 'Join Paths', icon: '⌒', onClick: () => joinPaths([...store.selection]) });
             if (store.selection.length >= 2) pathOps.push({ label: 'Make Compound Path', icon: '◎', onClick: () => makeCompoundPath([...store.selection]) });
             if (selPaths.some(e => (e.pathSubpaths?.length ?? 0) > 1)) pathOps.push({ label: 'Release Compound Path', icon: '⊟', onClick: () => releaseCompoundPath([...store.selection]) });
+            // Envelope Distort — toggle a 4-corner free-distort (drag the orange corners).
+            const anyWarped = store.selection.some(id => !!store.elements.find(x => x.id === id)?.warp);
+            pathOps.push({ label: anyWarped ? 'Remove Envelope Distort' : 'Envelope Distort', icon: '◰', onClick: () => toggleEnvelopeWarp([...store.selection]) });
             items.push({ label: 'Path', icon: '✐', submenu: pathOps }, { separator: true });
         }
 

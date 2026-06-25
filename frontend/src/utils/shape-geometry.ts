@@ -2,6 +2,7 @@ import type { DrawingElement } from "../types";
 import { isWasmEnabled } from "../wasm/feature-flags";
 import { wasmGetShapeGeometry } from "../wasm/bridge/shape-paths-bridge";
 import { getPathSubpaths, subpathsToPathData } from "./math/path-utils";
+import { warpGeometry } from "./envelope-warp";
 
 export type ShapeGeometry =
     | { type: 'rect', x: number, y: number, w: number, h: number, r?: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
@@ -39,6 +40,16 @@ const getRoundedRectPath = (x: number, y: number, w: number, h: number, r: numbe
 };
 
 export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
+    const geo = getBaseShapeGeometry(el);
+    // Envelope warp deforms the sampled outline (non-affine) → a warped path geometry,
+    // so both render styles and SVG export pick it up unchanged.
+    if (geo && el.warp && el.warp.corners && el.warp.corners.length === 4) {
+        return warpGeometry(geo, el.width, el.height, el.warp.corners) as ShapeGeometry;
+    }
+    return geo;
+};
+
+const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
     // If element has custom points (e.g., during morph animation), use them directly
     if (el.points && el.points.length > 0) {
         return { type: 'points', points: el.points as { x: number; y: number }[] };

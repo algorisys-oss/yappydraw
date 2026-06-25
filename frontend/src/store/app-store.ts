@@ -14,6 +14,7 @@ import { getPathSubpaths } from "../utils/math/path-utils";
 import type { PathAnchor, PathSubpath } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
+import { defaultWarpCorners } from "../utils/envelope-warp";
 import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
@@ -3443,6 +3444,34 @@ export const convertToPath = (ids: string[]): string[] => {
     const out = [...anchorsById.keys()];
     setStore('selection', out);
     showToast(`Converted ${out.length} to path`, 'success');
+    return out;
+};
+
+/**
+ * Envelope Distort — toggle a 4-corner bilinear free-distort on the selection. Turning it
+ * on initializes the warp quad to the bounding box (identity) so the 4 orange corner
+ * handles can then be dragged; non-path shapes are converted to a `path` first (the warp
+ * flows through the path branch of getShapeGeometry). Toggling again clears the warp.
+ */
+export const toggleEnvelopeWarp = (ids: string[]): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id));
+    if (targets.length === 0) { showToast('Envelope: select a shape', 'info'); return []; }
+    pushToHistory();
+    const out: string[] = [];
+    setStore('elements', list => list.map(el => {
+        if (!ids.includes(el.id)) return el;
+        if (el.warp) { out.push(el.id); const { warp, ...rest } = el as any; return rest as DrawingElement; }
+        let base = el;
+        if (el.type !== 'path') {
+            const r = shapeToPath(el);
+            if (!r) return el;
+            base = { ...el, type: 'path', pathAnchors: r.anchors, pathClosed: r.closed, points: undefined, controlPoints: undefined } as DrawingElement;
+        }
+        out.push(el.id);
+        return { ...base, warp: { corners: defaultWarpCorners(base.width, base.height) } } as DrawingElement;
+    }));
+    bumpDirtyRevision();
+    showToast(out.length ? 'Envelope distort toggled' : 'Envelope: unsupported shape', out.length ? 'success' : 'info');
     return out;
 };
 

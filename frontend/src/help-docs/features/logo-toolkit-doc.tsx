@@ -175,6 +175,13 @@ export const LogoToolkitDoc: Component = () => {
                     about the shape's own centre.
                 </p>
                 <p>
+                    <strong>Envelope distort.</strong> Right-click → <em>Path → Envelope Distort</em> to wrap a
+                    shape in a 4-corner cage — drag the <strong>orange corner handles</strong> to bend it into a
+                    perspective or free-distort quad (great for ribbons, badges, and faux-3D wordmarks).
+                    Non-path shapes are converted to an editable path automatically; choose
+                    <em>Remove Envelope Distort</em> to clear the cage. Works in both render styles and exports to SVG.
+                </p>
+                <p>
                     <strong>Shear (slant).</strong> Hold <span class="kbd">Ctrl</span> (or <span class="kbd">Cmd</span>)
                     and drag a <strong>side</strong> handle to slant the shape — drag the top/bottom handle sideways
                     for horizontal shear, the left/right handle up/down for vertical shear. For exact values, type

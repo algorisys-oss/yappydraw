@@ -10,7 +10,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1346,6 +1346,15 @@ export const YappyAPI = {
     /** Serialize the drawing (or selection) to an SVG string. Also triggers a download. */
     exportSVG(onlySelected = false): string | undefined {
         return exportToSvg(onlySelected);
+    },
+
+    /**
+     * Free Transform: toggle a 4-corner envelope distort on the given (or selected)
+     * elements. On: initializes the warp quad to the bbox (drag the orange corner handles
+     * to distort); non-path shapes are converted to a path first. Off: clears the warp.
+     */
+    toggleEnvelopeWarp(ids?: string[]): string[] {
+        return toggleEnvelopeWarp(ids ?? store.selection);
     },
 
     setView(scale: number, panX: number, panY: number, rotation?: number) {
