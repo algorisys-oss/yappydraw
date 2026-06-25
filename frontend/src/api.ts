@@ -20,7 +20,7 @@ import {
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
@@ -1770,6 +1770,11 @@ export const YappyAPI = {
     toggleAlignToKey(on?: boolean) { toggleAlignToKey(on); },
     /** Blend: create `steps` interpolated copies between two objects (default 4). */
     blend(steps = 4, ids?: string[]) { blendShapes(ids, steps); },
+    /** Recolor Artwork: open the panel / remap a colour / shift the palette's HSL across the selection. */
+    toggleRecolorPanel(visible?: boolean) { toggleRecolorPanel(visible); },
+    getSelectionColors(ids?: string[]) { return getSelectionColors(ids); },
+    recolorSelectionColor(from: string, to: string, ids?: string[]) { recolorSelectionColor(from, to, ids); },
+    adjustSelectionColors(opts: { hue?: number; lightness?: number; saturation?: number }, ids?: string[]) { adjustSelectionColors(opts, ids); },
     /** Eyedropper: arm picking a style onto targets (default: selection); next canvas click on an object copies its style. */
     startEyedropper(targetIds?: string[]) { startEyedropper(targetIds); },
     /** Directly apply a source object's style to the armed targets. */

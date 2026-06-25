@@ -10,6 +10,7 @@ import {
     store, setStore, pushToHistory, updateElement,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
     blendShapes,
+    toggleRecolorPanel,
     addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
@@ -1169,6 +1170,7 @@ export function getContextMenuItems(
             items.push(
                 { label: 'Eyedropper — pick style from…', icon: '💧', onClick: () => startEyedropper() },
                 { label: 'Save as Graphic Style', icon: '🎨', onClick: () => createGraphicStyle([...store.selection]) },
+                { label: 'Recolor Artwork…', icon: '🌈', onClick: () => toggleRecolorPanel(true) },
             );
         }
         if (selectionCount === 2) {

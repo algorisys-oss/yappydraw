@@ -176,6 +176,15 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                     object's colour directly breaks its link. Swatches are saved in the document.
                 </p>
 
+                <h3>Recolor Artwork</h3>
+                <p>
+                    Select several objects, then right-click → <strong>Recolor Artwork…</strong>. The panel shows the
+                    <strong> palette</strong> actually used by the selection (each colour with its usage count). Click a
+                    swatch to <strong>remap</strong> that colour everywhere in the selection at once — great for trying
+                    palette variants. The <strong>Adjust all</strong> controls shift the whole palette's
+                    <strong> hue / lightness / saturation</strong> together. Every step is undoable.
+                </p>
+
                 <h3>Eyedropper</h3>
                 <p>
                     Select the object(s) you want to restyle, then right-click → <strong>Eyedropper — pick style

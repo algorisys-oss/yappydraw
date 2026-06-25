@@ -16,6 +16,7 @@ import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
 import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch } from "../types";
 import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos, parseHex, rgbToHex } from "../utils/mesh-gradient";
+import { isSolidColor, shiftHexHue, adjustHexLightness, adjustHexSaturation } from "../utils/color-adjust";
 import { getStyleSnapshot } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
@@ -92,6 +93,8 @@ interface AppState {
     showGraphicStylesPanel: boolean;
     /** Swatches panel visibility (transient, not persisted). */
     showSwatchesPanel: boolean;
+    /** Recolor Artwork panel visibility (transient, not persisted). */
+    showRecolorPanel: boolean;
     /** Undo-history panel visibility (transient, not persisted). */
     showHistoryPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
@@ -290,6 +293,7 @@ const initialState: AppState = {
     showSymbolsPanel: false,
     showGraphicStylesPanel: false,
     showSwatchesPanel: false,
+    showRecolorPanel: false,
     showHistoryPanel: false,
     meshEditActive: false,
     activeArtboardId: null,
@@ -3540,6 +3544,67 @@ export const blendShapes = (ids?: string[], steps = 4) => {
     setStore('selection', [a.id, ...additions.map(x => x.id), b.id]);
     bumpDirtyRevision();
     showToast(`Blended — ${n} steps`, 'success');
+};
+
+// ── Recolor artwork ──────────────────────────────────────────────────────────
+
+export const toggleRecolorPanel = (visible?: boolean) => setStore('showRecolorPanel', v => visible ?? !v);
+
+/** Distinct solid fill/stroke colours used across the given elements, each with
+ *  a usage count (most-used first) — the palette for Recolor Artwork. */
+export const getSelectionColors = (ids?: string[]): { color: string; count: number }[] => {
+    const sel = ids ?? store.selection;
+    const counts = new Map<string, number>();
+    for (const e of store.elements) {
+        if (!sel.includes(e.id)) continue;
+        for (const c of [e.backgroundColor, e.strokeColor]) {
+            if (isSolidColor(c)) counts.set(c, (counts.get(c) || 0) + 1);
+        }
+        for (const s of e.gradientStops || []) {
+            if (isSolidColor(s.color)) counts.set(s.color, (counts.get(s.color) || 0) + 1);
+        }
+    }
+    return [...counts.entries()].map(([color, count]) => ({ color, count })).sort((a, b) => b.count - a.count);
+};
+
+/** Replace every occurrence of `from` (fill, stroke, gradient stop) with `to`
+ *  across the selection. */
+export const recolorSelectionColor = (from: string, to: string, ids?: string[]) => {
+    const sel = ids ?? store.selection;
+    if (sel.length === 0 || from === to) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => sel.includes(e.id), (e: DrawingElement) => {
+        const patch: Partial<DrawingElement> = {};
+        if (e.backgroundColor === from) { patch.backgroundColor = to; patch.fillSwatchId = undefined; }
+        if (e.strokeColor === from) { patch.strokeColor = to; patch.strokeSwatchId = undefined; }
+        if (e.gradientStops?.some(s => s.color === from)) {
+            patch.gradientStops = e.gradientStops.map(s => s.color === from ? { ...s, color: to } : s);
+        }
+        return patch;
+    });
+    bumpDirtyRevision();
+};
+
+/** Apply a global HSL transform to every fill/stroke/gradient colour in the
+ *  selection (hue shift in degrees, lightness delta −1..1, saturation factor). */
+export const adjustSelectionColors = (opts: { hue?: number; lightness?: number; saturation?: number }, ids?: string[]) => {
+    const sel = ids ?? store.selection;
+    if (sel.length === 0) return;
+    const tx = (c?: string): string | undefined => {
+        if (!isSolidColor(c)) return c;
+        let out = c;
+        if (opts.hue) out = shiftHexHue(out, opts.hue);
+        if (opts.saturation !== undefined && opts.saturation !== 1) out = adjustHexSaturation(out, opts.saturation);
+        if (opts.lightness) out = adjustHexLightness(out, opts.lightness);
+        return out;
+    };
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => sel.includes(e.id), (e: DrawingElement) => {
+        const patch: Partial<DrawingElement> = { backgroundColor: tx(e.backgroundColor), strokeColor: tx(e.strokeColor) };
+        if (e.gradientStops) patch.gradientStops = e.gradientStops.map(s => ({ ...s, color: tx(s.color) || s.color }));
+        return patch;
+    });
+    bumpDirtyRevision();
 };
 
 /** Apply the source object's style to the armed targets, then disarm. */
