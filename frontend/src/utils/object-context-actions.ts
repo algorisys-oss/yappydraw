@@ -428,48 +428,53 @@ export const lockSelected = (locked: boolean) => {
 // Style Copy/Paste
 let clipboardStyle: any = null;
 
+/** The set of "style" properties copied by copy-style / the eyedropper. */
+export const getStyleSnapshot = (el: DrawingElement): Partial<DrawingElement> => ({
+    strokeColor: el.strokeColor,
+    backgroundColor: el.backgroundColor,
+    fillStyle: el.fillStyle,
+    strokeWidth: el.strokeWidth,
+    strokeStyle: el.strokeStyle,
+    roughness: el.roughness,
+    opacity: el.opacity,
+    fontFamily: el.fontFamily,
+    fontSize: el.fontSize,
+    textAlign: el.textAlign,
+    roundness: el.roundness,
+    // Gradient Properties
+    gradientStart: el.gradientStart,
+    gradientEnd: el.gradientEnd,
+    gradientDirection: el.gradientDirection,
+    gradientStops: el.gradientStops ? JSON.parse(JSON.stringify(el.gradientStops)) : undefined,
+    gradientType: el.gradientType,
+    gradientHandlePositions: el.gradientHandlePositions ? JSON.parse(JSON.stringify(el.gradientHandlePositions)) : undefined,
+    // Mesh gradient
+    meshGradient: el.meshGradient ? JSON.parse(JSON.stringify(el.meshGradient)) : undefined,
+    // Shadow Properties
+    shadowEnabled: el.shadowEnabled,
+    shadowColor: el.shadowColor,
+    shadowBlur: el.shadowBlur,
+    shadowOffsetX: el.shadowOffsetX,
+    shadowOffsetY: el.shadowOffsetY,
+    // Border & Fill extras
+    drawInnerBorder: el.drawInnerBorder,
+    innerBorderColor: el.innerBorderColor,
+    innerBorderDistance: el.innerBorderDistance,
+    strokeLineJoin: el.strokeLineJoin,
+    fillDensity: el.fillDensity,
+    renderStyle: el.renderStyle,
+    // Appearance stack
+    appearance: el.appearance ? JSON.parse(JSON.stringify(el.appearance)) : undefined,
+    // Motion
+    flowAnimation: el.flowAnimation,
+    flowSpeed: el.flowSpeed,
+    flowStyle: el.flowStyle,
+});
+
 export const copyStyle = () => {
     if (store.selection.length !== 1) return;
     const el = store.elements.find(e => e.id === store.selection[0]);
-    if (el) {
-        clipboardStyle = {
-            strokeColor: el.strokeColor,
-            backgroundColor: el.backgroundColor,
-            fillStyle: el.fillStyle,
-            strokeWidth: el.strokeWidth,
-            strokeStyle: el.strokeStyle,
-            roughness: el.roughness,
-            opacity: el.opacity,
-            fontFamily: el.fontFamily,
-            fontSize: el.fontSize,
-            textAlign: el.textAlign,
-            roundness: el.roundness,
-            // Gradient Properties
-            gradientStart: el.gradientStart,
-            gradientEnd: el.gradientEnd,
-            gradientDirection: el.gradientDirection,
-            gradientStops: el.gradientStops ? JSON.parse(JSON.stringify(el.gradientStops)) : undefined,
-            gradientType: el.gradientType,
-            gradientHandlePositions: el.gradientHandlePositions ? JSON.parse(JSON.stringify(el.gradientHandlePositions)) : undefined,
-            // Shadow Properties
-            shadowEnabled: el.shadowEnabled,
-            shadowColor: el.shadowColor,
-            shadowBlur: el.shadowBlur,
-            shadowOffsetX: el.shadowOffsetX,
-            shadowOffsetY: el.shadowOffsetY,
-            // Border & Fill extras
-            drawInnerBorder: el.drawInnerBorder,
-            innerBorderColor: el.innerBorderColor,
-            innerBorderDistance: el.innerBorderDistance,
-            strokeLineJoin: el.strokeLineJoin,
-            fillDensity: el.fillDensity,
-            renderStyle: el.renderStyle,
-            // Motion
-            flowAnimation: el.flowAnimation,
-            flowSpeed: el.flowSpeed,
-            flowStyle: el.flowStyle
-        };
-    }
+    if (el) clipboardStyle = getStyleSnapshot(el);
 };
 
 export const pasteStyle = () => {

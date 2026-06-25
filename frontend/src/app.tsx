@@ -3,7 +3,7 @@ import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel,
   toggleMinimap, toggleRulers, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
-  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode,
+  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
@@ -129,6 +129,11 @@ const App: Component = () => {
           // F5: Present from beginning
           togglePresentationMode(true, 0);
         }
+        return;
+      }
+      if (e.key === 'Escape' && store.eyedropper.active) {
+        e.preventDefault();
+        cancelEyedropper();
         return;
       }
       if (e.key === 'Escape' && store.appMode === 'presentation') {

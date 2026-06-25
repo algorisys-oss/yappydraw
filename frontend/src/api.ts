@@ -19,7 +19,7 @@ import {
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
@@ -1738,6 +1738,12 @@ export const YappyAPI = {
     distributeSpacing(type: DistributionType, gap?: number) { distributeSpacing(type, gap); },
     /** Toggle align-to-key-object mode (key = last-selected element stays put). */
     toggleAlignToKey(on?: boolean) { toggleAlignToKey(on); },
+    /** Eyedropper: arm picking a style onto targets (default: selection); next canvas click on an object copies its style. */
+    startEyedropper(targetIds?: string[]) { startEyedropper(targetIds); },
+    /** Directly apply a source object's style to the armed targets. */
+    applyEyedropperFrom(sourceId: string) { applyEyedropperFrom(sourceId); },
+    /** Cancel an armed eyedropper. */
+    cancelEyedropper() { cancelEyedropper(); },
 
     // Canvas
     setCanvasBackgroundColor(color: string) { setCanvasBackgroundColor(color); },

@@ -3,7 +3,7 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, applyEyedropperFrom, cancelEyedropper } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { screenToWorld } from "../utils/viewport-transforms";
@@ -1246,6 +1246,24 @@ const Canvas: Component = () => {
         // continue to work (e.g. user palms while pinching with stylus).
         if ((gestureActive || gestureCooldown) && e.pointerType === 'touch') return;
 
+        // Eyedropper armed: the next click copies the clicked object's style to
+        // the armed targets (then disarms). Consumes the click.
+        if (store.eyedropper.active) {
+            e.preventDefault();
+            const { x: wx, y: wy } = getWorldCoordinates(e.clientX, e.clientY);
+            const threshold = 6 / store.viewState.scale;
+            const emap = new Map<string, DrawingElement>();
+            for (const el of store.elements) emap.set(el.id, el);
+            let hit: DrawingElement | null = null;
+            for (let i = store.elements.length - 1; i >= 0; i--) {
+                const el = store.elements[i];
+                if (hitTestElement(el, wx, wy, threshold, store.elements, emap)) { hit = el; break; }
+            }
+            if (hit) applyEyedropperFrom(hit.id); else cancelEyedropper();
+            requestAnimationFrame(draw);
+            return;
+        }
+
         // Palm rejection (iPad / Apple Pencil): only block touch while a pen is
         // CURRENTLY in contact. The previous "pen recent (700ms)" window was
         // dropping legitimate Apple Pencil pointerdowns between fast strokes —
@@ -1923,7 +1941,7 @@ const Canvas: Component = () => {
                     style={{
                         display: "block",
                         "touch-action": "none",
-                        cursor: cursor(),
+                        cursor: store.eyedropper.active ? 'crosshair' : cursor(),
                         "user-select": "none",
                         "-webkit-user-select": "none",
                         "-webkit-touch-callout": "none",

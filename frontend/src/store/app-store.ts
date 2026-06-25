@@ -16,6 +16,7 @@ import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
 import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient } from "../types";
 import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos } from "../utils/mesh-gradient";
+import { getStyleSnapshot } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
 import { defaultWarpGrid, getWarpGrid } from "../utils/envelope-warp";
@@ -97,6 +98,8 @@ interface AppState {
     symbolEdit: { symbolId: string; groupId: string; name: string; x: number; y: number } | null;
     /** Align to the key (last-selected) object instead of the selection bbox. */
     alignToKeyObject: boolean;
+    /** Eyedropper mode: next canvas click copies that object's style to these targets. */
+    eyedropper: { active: boolean; targets: string[] };
     isPropertyPanelMinimized: boolean;
     isLayerPanelMinimized: boolean;
     minimapVisible: boolean;
@@ -282,6 +285,7 @@ const initialState: AppState = {
     activeArtboardId: null,
     symbolEdit: null,
     alignToKeyObject: false,
+    eyedropper: { active: false, targets: [] },
     isPropertyPanelMinimized: false,
     isLayerPanelMinimized: false,
     minimapVisible: false,
@@ -3303,6 +3307,35 @@ if (typeof window !== 'undefined' && window.matchMedia) {
 import { calculateAlignment, calculateDistribution, calculateSpacingDistribution, type AlignmentType, type DistributionType } from "../utils/alignment";
 
 export const toggleAlignToKey = (on?: boolean) => setStore('alignToKeyObject', v => on ?? !v);
+
+// ── Eyedropper (pick a style from any object onto the selection) ──────────────
+
+/** Arm the eyedropper: the next canvas click on an object copies its style to
+ *  the given targets (defaults to the current selection). */
+export const startEyedropper = (targetIds?: string[]) => {
+    const targets = targetIds ?? [...store.selection];
+    if (targets.length === 0) { showToast('Eyedropper: select an object first', 'info'); return; }
+    setStore('eyedropper', { active: true, targets });
+    showToast('Eyedropper: click an object to copy its style', 'info');
+};
+
+export const cancelEyedropper = () => setStore('eyedropper', { active: false, targets: [] });
+
+/** Apply the source object's style to the armed targets, then disarm. */
+export const applyEyedropperFrom = (sourceId: string) => {
+    const ed = store.eyedropper;
+    if (!ed.active) return;
+    const src = store.elements.find(e => e.id === sourceId);
+    const targets = ed.targets.filter(id => id !== sourceId && store.elements.some(e => e.id === id));
+    if (src && targets.length) {
+        const style = getStyleSnapshot(src);
+        pushToHistory();
+        setStore('elements', (e: DrawingElement) => targets.includes(e.id), () => ({ ...style }));
+        bumpDirtyRevision();
+        showToast('Style applied', 'success');
+    }
+    cancelEyedropper();
+};
 
 export const alignSelectedElements = (type: AlignmentType, keyId?: string) => {
     if (store.selection.length < 2) return;
