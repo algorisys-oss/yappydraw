@@ -173,6 +173,11 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                     add nodes, then click any swatch to recolour that node. <em>Remove mesh</em> reverts to a solid
                     fill.
                 </p>
+                <p>
+                    For direct editing, click <strong>Edit on canvas</strong> (in the mesh editor) — the node grid
+                    appears right on the shape as colour dots; click any dot to recolour that node live.
+                    Double-click the background to exit. (<code>Yappy.toggleMeshEdit()</code>.)
+                </p>
                 <h3>Example</h3>
                 <pre><code>{`const Y = window.Yappy; Y.clear();
 const id = Y.createCircle(180, 150, 300, 230, { backgroundColor:'#8b5cf6', fillStyle:'solid' });

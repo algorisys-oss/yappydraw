@@ -87,6 +87,8 @@ interface AppState {
     showPropertyPanel: boolean;
     showLayerPanel: boolean;
     showSymbolsPanel: boolean;
+    /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
+    meshEditActive: boolean;
     isPropertyPanelMinimized: boolean;
     isLayerPanelMinimized: boolean;
     minimapVisible: boolean;
@@ -267,6 +269,7 @@ const initialState: AppState = {
     showPropertyPanel: false,
     showLayerPanel: false,
     showSymbolsPanel: false,
+    meshEditActive: false,
     isPropertyPanelMinimized: false,
     isLayerPanelMinimized: false,
     minimapVisible: false,
@@ -2875,6 +2878,10 @@ export const toggleLayerPanel = (visible?: boolean) => {
 
 export const toggleSymbolsPanel = (visible?: boolean) => {
     setStore('showSymbolsPanel', (v) => visible ?? !v);
+};
+
+export const toggleMeshEdit = (active?: boolean) => {
+    setStore('meshEditActive', (v) => active ?? !v);
 };
 
 export const toggleSlideToolbar = (visible?: boolean) => {

@@ -12,7 +12,7 @@ import {
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
-    applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient,
+    applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit,
     createSymbol, placeInstance, redefineSymbol, detachInstance, renameSymbol, deleteSymbol, toggleSymbolsPanel, addArtboard, deleteArtboard, renameArtboard, updateArtboard,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
@@ -1399,6 +1399,8 @@ export const YappyAPI = {
     setMeshNodeColor(row: number, col: number, color: string, ids?: string[]) { setMeshNodeColor(ids ?? store.selection, row, col, color); },
     /** Remove the mesh fill (revert to a solid fill). */
     clearMeshGradient(ids?: string[]) { clearMeshGradient(ids ?? store.selection); },
+    /** Toggle on-canvas mesh node editing (shows the node grid on the selected mesh shape). */
+    toggleMeshEdit(active?: boolean) { toggleMeshEdit(active); },
 
     /** Image Trace: vectorize selected image(s) into editable path elements (threshold trace). */
     traceImage(options?: { threshold?: number; simplify?: number }, ids?: string[]): string[] {
