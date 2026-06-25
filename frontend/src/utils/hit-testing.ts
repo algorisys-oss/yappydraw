@@ -74,6 +74,11 @@ export function hitTestElement(
     if (el.eraseStrokes && el.eraseStrokes.length > 0 && isPointInEraseHole(el, x, y)) {
         return false;
     }
+    // Clip-aware: a clipped element is only "there" where the mask shape covers it.
+    if (el.clipMaskId) {
+        const mask = elementMap ? elementMap.get(el.clipMaskId) : elements.find(e => e.id === el.clipMaskId);
+        if (mask && !hitTestGeometry(mask, x, y, threshold)) return false;
+    }
     return true;
 }
 

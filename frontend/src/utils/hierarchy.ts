@@ -8,6 +8,9 @@ export const isElementHiddenByHierarchy = (
     elements: readonly DrawingElement[],
     elementMap?: Map<string, DrawingElement>
 ): boolean => {
+    // A clip/opacity mask shape isn't drawn or selectable on its own.
+    if (el.isClipMask) return true;
+
     // If it's a bound connector, hide it if its target node is hidden
     if ((el.type === 'line' || el.type === 'arrow' || el.type === 'bezier' || el.type === 'organicBranch') && el.endBinding) {
         const targetId = el.endBinding.elementId;

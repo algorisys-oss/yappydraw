@@ -310,6 +310,12 @@ export interface DrawingElement {
     autoResize?: boolean; // Auto-resize based on text
     flipX?: boolean; // Mirror horizontally
     flipY?: boolean; // Mirror vertically
+    // Clipping / opacity mask. The mask shape has isClipMask=true (not drawn on its own);
+    // each clipped element points at it via clipMaskId. maskType 'clip' = hard vector clip,
+    // 'opacity' = the mask's luminance becomes the clipped content's alpha (soft fade).
+    isClipMask?: boolean;
+    clipMaskId?: string | null;
+    maskType?: 'clip' | 'opacity';
     // General Free-Transform shear factors (NOT the perspectiveBlock-specific skewX/skewY
     // below, which warp that shape's 3D back face). Applied about the element centre as the
     // matrix [[1, shearX],[shearY, 1]] — shearX shifts x by shearX·y, shearY shifts y by shearY·x.

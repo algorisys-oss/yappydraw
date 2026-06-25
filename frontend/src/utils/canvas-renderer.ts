@@ -10,6 +10,7 @@ import type { SpacingGuide } from './spacing';
 import { isLayerVisible } from '../store/app-store';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { renderElement } from './render-element';
+import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
 import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight } from './selection-renderer';
 import { renderSnappingGuides, renderSpacingGuides } from './snap-renderer';
@@ -580,6 +581,8 @@ export function renderLayersAndElements(
 
         const layerElements = bucket.filter((el, idx) => {
             if (el.id === currentDrawingId) return true;
+            // A clip/opacity mask shape is not drawn on its own — only used to clip its target.
+            if (el.isClipMask) return false;
             if (layer.isMaster) return true;
 
             // Fast viewport check first (WASM batch or JS fallback)
@@ -686,10 +689,19 @@ export function renderLayersAndElements(
                 }
                 const isFocusDimmed = focusBranchIds && focusBranchIds.size > 0 && !focusBranchIds.has(el.id);
                 const layerOpacity = (layer?.opacity ?? 1) * (isFocusDimmed ? 0.12 : 1);
-                const shouldCache = !animState && !isFocusDimmed;
+                // Clipping mask: constrain this element's draw to the mask shape's region.
+                const mask = renderedEl.clipMaskId ? elementMap.get(renderedEl.clipMaskId) : undefined;
+                let clipped = false;
+                if (mask) {
+                    const clipPath = buildClipPath2D(mask);
+                    if (clipPath) { ctx.save(); ctx.clip(clipPath, maskFillRule(mask)); clipped = true; }
+                }
+                // Masked elements skip the element cache so the clip tracks a moving mask live.
+                const shouldCache = !animState && !isFocusDimmed && !mask;
                 if (shouldCache) beginElement(renderedEl.id, computeElementHash(renderedEl));
                 renderElement(cachedRc, ctx, renderedEl, isDarkMode, layerOpacity, sharedRenderer);
                 if (shouldCache) endElement();
+                if (clipped) ctx.restore();
             }
 
             renderElementOverlays(ctx, el, renderedEl, {

@@ -10,7 +10,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, releaseClippingMask,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1378,6 +1378,11 @@ export const YappyAPI = {
     bakeWarp(ids?: string[]): string[] {
         return bakeWarp(ids ?? store.selection);
     },
+
+    /** Make a clipping mask: the top selected object clips the others to its outline. */
+    makeClippingMask() { makeClippingMask(); },
+    /** Release the clipping mask on the current selection. */
+    releaseClippingMask() { releaseClippingMask(); },
 
     setView(scale: number, panX: number, panY: number, rotation?: number) {
         setViewState({ scale, panX, panY, ...(rotation !== undefined ? { rotation } : {}) });

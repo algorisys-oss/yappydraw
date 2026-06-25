@@ -1957,6 +1957,51 @@ export const ungroupSelected = () => {
     );
 };
 
+/**
+ * Make Clipping Mask (Illustrator Ctrl+7) — the TOP selected object becomes a clip shape
+ * that masks the other selected objects to its outline. The mask is hidden (isClipMask) and
+ * the clipped objects reference it via clipMaskId; all are grouped so they move together.
+ */
+export const makeClippingMask = () => {
+    const sel = [...store.selection];
+    if (sel.length < 2) { showToast('Clipping mask: select 2+ objects', 'info'); return; }
+    const idxOf = (id: string) => store.elements.findIndex(e => e.id === id);
+    let maskId = sel[0];
+    for (const id of sel) if (idxOf(id) > idxOf(maskId)) maskId = id; // topmost in z-order
+    const clippedIds = sel.filter(id => id !== maskId);
+    if (clippedIds.length === 0) return;
+    pushToHistory();
+    const groupId = generateId('clip');
+    setStore('elements', (e: DrawingElement) => sel.includes(e.id), 'groupIds', (ids: string[] | undefined) => [...(ids || []), groupId]);
+    setStore('elements', (e: DrawingElement) => e.id === maskId, 'isClipMask', () => true);
+    setStore('elements', (e: DrawingElement) => clippedIds.includes(e.id), 'clipMaskId', () => maskId);
+    setStore('selection', clippedIds);
+    bumpDirtyRevision();
+    showToast('Clipping mask created', 'success');
+};
+
+/** Release Clipping Mask — un-hide the mask shape and drop the clip from its targets. */
+export const releaseClippingMask = () => {
+    const sel = [...store.selection];
+    const masks = new Set<string>();
+    store.elements.forEach(e => {
+        if (!sel.includes(e.id)) return;
+        if (e.clipMaskId) masks.add(e.clipMaskId);
+        if (e.isClipMask) masks.add(e.id);
+    });
+    if (masks.size === 0) { showToast('Release: select a clipped object', 'info'); return; }
+    pushToHistory();
+    const members = new Set<string>(masks);
+    store.elements.forEach(e => { if (e.clipMaskId && masks.has(e.clipMaskId)) members.add(e.id); });
+    // Drop the shared clip group (outermost groupId) so they ungroup again.
+    setStore('elements', (e: DrawingElement) => members.has(e.id), 'groupIds', (ids: string[] | undefined) => (ids && ids.length ? ids.slice(0, -1) : ids));
+    setStore('elements', (e: DrawingElement) => masks.has(e.id), 'isClipMask', () => undefined);
+    setStore('elements', (e: DrawingElement) => !!e.clipMaskId && masks.has(e.clipMaskId), 'clipMaskId', () => undefined);
+    setStore('selection', [...members]);
+    bumpDirtyRevision();
+    showToast('Clipping mask released', 'success');
+};
+
 export const moveElementZIndex = (id: string, direction: 'front' | 'back' | 'forward' | 'backward') => {
     const idx = store.elements.findIndex(e => e.id === id);
     if (idx === -1) return;

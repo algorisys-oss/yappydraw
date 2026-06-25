@@ -8,7 +8,7 @@ import type { DrawingElement, TableCellSelection } from '../types';
 import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
-    duplicateElement, groupSelected, ungroupSelected,
+    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, releaseClippingMask,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
@@ -1045,6 +1045,7 @@ export function getContextMenuItems(
         // Grouping
         if (selectionCount > 1) {
             items.push({ label: 'Group', shortcut: 'Ctrl+G', onClick: groupSelected });
+            items.push({ label: 'Make Clipping Mask', shortcut: 'Ctrl+7', icon: '✂', onClick: makeClippingMask });
             items.push({
                 label: 'Pathfinder', icon: '⬗',
                 submenu: [
@@ -1063,6 +1064,14 @@ export function getContextMenuItems(
 
         if (isAnyGrouped) {
             items.push({ label: 'Ungroup', shortcut: 'Ctrl+Shift+G', onClick: ungroupSelected });
+        }
+
+        const isAnyClipped = store.selection.some(id => {
+            const el = store.elements.find(e => e.id === id);
+            return el?.clipMaskId || el?.isClipMask;
+        });
+        if (isAnyClipped) {
+            items.push({ label: 'Release Clipping Mask', shortcut: 'Ctrl+Alt+7', icon: '✂', onClick: releaseClippingMask });
         }
 
         // Select by Type / Same Property
