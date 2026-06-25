@@ -1,7 +1,7 @@
 import { type Component, For, Show, createSignal, onMount, createEffect } from 'solid-js';
 import {
     store, toggleSymbolsPanel, placeInstance, renameSymbol, deleteSymbol,
-    redefineSymbol, createSymbol,
+    redefineSymbol, createSymbol, selectInstancesOf,
 } from '../store/app-store';
 import { renderElement } from '../utils/render-element';
 import { screenToWorld } from '../utils/viewport-transforms';
@@ -120,7 +120,12 @@ const SymbolsPanel: Component = () => {
                             <For each={store.symbols}>
                                 {(sym) => (
                                     <div class="sp-card">
-                                        <div class="sp-thumb" title="Place instance" onClick={() => place(sym.id)}>
+                                        <div
+                                            class="sp-thumb"
+                                            title="Click to select instances · double-click to place"
+                                            onClick={() => selectInstancesOf(sym.id)}
+                                            onDblClick={() => place(sym.id)}
+                                        >
                                             <SymbolThumb sym={sym} />
                                             <span class="sp-count">{instanceCount(sym.id)}</span>
                                         </div>

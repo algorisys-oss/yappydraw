@@ -2121,6 +2121,12 @@ export const detachInstance = (ids: string[]) => {
     showToast('Instance detached', 'success');
 };
 
+/** Select every live instance of a symbol on the canvas (no-op if there are none). */
+export const selectInstancesOf = (symbolId: string) => {
+    const ids = store.elements.filter(e => e.type === 'symbolInstance' && e.symbolId === symbolId).map(e => e.id);
+    setStore('selection', ids);
+};
+
 /** Rename a symbol definition. */
 export const renameSymbol = (symbolId: string, name: string) => {
     const n = name.trim();
