@@ -38,6 +38,7 @@ const LogoToolkitDoc = lazy(() => import('./features/logo-toolkit-doc'));
 const MasksAppearanceTraceDoc = lazy(() => import('./features/masks-appearance-trace-doc'));
 const SymbolsDoc = lazy(() => import('./features/symbols-doc'));
 const ArtboardsDoc = lazy(() => import('./features/artboards-doc'));
+const WorkspaceDoc = lazy(() => import('./features/workspace-doc'));
 
 // Registry of all shape documentation - organized by category in logical sequence
 const shapeDocuments: ShapeDoc[] = [
@@ -140,6 +141,14 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Design',
         description: 'Named export-region frames: presets, on-canvas move/resize/delete, and per-region PNG export',
         content: ArtboardsDoc
+    },
+    {
+        id: 'workspace',
+        name: 'Workspace & Productivity',
+        icon: '🛠',
+        category: 'Features',
+        description: 'Smart toolbar, align & distribute (key object + spacing), history panel, and vector SVG export',
+        content: WorkspaceDoc
     },
     {
         id: 'wireframing',

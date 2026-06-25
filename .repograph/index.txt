@@ -256,9 +256,10 @@ frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | Embedding
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 306 | LogoToolkitDoc:9 the:115
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 268 | MasksAppearanceTraceDoc:8 tools:14
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
+frontend/src/help-docs/features/workspace-doc.tsx | typescript | 103 | WorkspaceDoc:9 and:32
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 525 | YslTutorialDoc:8
 frontend/src/help-docs/help-page.css | - | 408 |
-frontend/src/help-docs/help-page.tsx | typescript | 322 | Component:6 ShapeDoc:11 getShapeFromHash:216 HelpPage:222 handleHashChange:228 navigateToShape:239 filteredShapes:244 currentDoc:254 handleBackToApp:256
+frontend/src/help-docs/help-page.tsx | typescript | 331 | Component:6 ShapeDoc:11 getShapeFromHash:225 HelpPage:231 handleHashChange:237 navigateToShape:248 filteredShapes:253 currentDoc:263 handleBackToApp:265
 frontend/src/help-docs/shapes/basic-shapes-doc.tsx | typescript | 284 | BasicShapesDoc:8
 frontend/src/help-docs/shapes/bpmn-doc.tsx | typescript | 526 | BpmnDoc:8
 frontend/src/help-docs/shapes/connectors-doc.tsx | typescript | 273 | ConnectorsDoc:8
