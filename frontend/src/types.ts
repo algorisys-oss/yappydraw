@@ -23,6 +23,9 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
 /** A reusable symbol definition: a normalized (origin-0) snapshot of elements. */
 export interface SymbolDef { id: string; name: string; width: number; height: number; elements: DrawingElement[]; }
 
+/** A named rectangular export region on the infinite canvas. */
+export interface Artboard { id: string; name: string; x: number; y: number; width: number; height: number; background?: string; }
+
 export type ToolType = ElementType | 'lasso' | 'crop';
 
 /**

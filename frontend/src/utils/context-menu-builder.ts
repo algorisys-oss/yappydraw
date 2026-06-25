@@ -8,7 +8,7 @@ import type { DrawingElement, TableCellSelection } from '../types';
 import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
-    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance,
+    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance, addArtboard,
     addAppearanceFill, addAppearanceStroke, clearAppearance, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
@@ -30,7 +30,7 @@ import {
 import { shiftLaneIndicesOnRemove, hitTestPoolLane } from './pool-containment';
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from './transform-pivot';
 import { openRepeatDialog } from '../components/repeat-dialog';
-import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng } from './export';
+import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng, exportArtboard } from './export';
 import { shapeToPath } from './shape-to-path';
 import {
     computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData,
@@ -1073,6 +1073,7 @@ export function getContextMenuItems(
             const anyInstance = store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'symbolInstance');
             items.push({ label: 'Create Symbol', icon: '◈', onClick: () => createSymbol([...store.selection]) });
             if (anyInstance) items.push({ label: 'Detach Instance', icon: '⛓', onClick: () => detachInstance([...store.selection]) });
+            items.push({ label: 'Artboard from Selection', icon: '▭', onClick: () => addArtboard('selection') });
         }
 
         const isAnyClipped = store.selection.some(id => {
@@ -1277,6 +1278,20 @@ export function getContextMenuItems(
                     { separator: true },
                     { label: 'Copy as PNG', onClick: () => copyCanvasAsPng(2) },
                 ]
+            },
+            { separator: true },
+            {
+                label: 'Artboards', icon: '▭',
+                submenu: [
+                    { label: 'Add — Square 1080', onClick: () => addArtboard('Square 1080') },
+                    { label: 'Add — A4 Portrait', onClick: () => addArtboard('A4 Portrait') },
+                    { label: 'Add — Instagram Story', onClick: () => addArtboard('Instagram Story') },
+                    { label: 'Add — Web 1280', onClick: () => addArtboard('Web 1280') },
+                    ...(store.artboards.length ? [
+                        { separator: true } as MenuItem,
+                        ...store.artboards.map(ab => ({ label: `Export “${ab.name}”`, onClick: () => exportArtboard(ab.id, 2) })),
+                    ] : []),
+                ],
             },
             { separator: true },
             { label: 'Canvas Settings', onClick: () => setShowCanvasProperties(true) }

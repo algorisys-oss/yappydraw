@@ -7,7 +7,7 @@
 import type { DrawingElement } from '../types';
 import type { SnappingGuide } from './object-snapping';
 import type { SpacingGuide } from './spacing';
-import { isLayerVisible } from '../store/app-store';
+import { isLayerVisible, store } from '../store/app-store';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { renderElement } from './render-element';
 import { buildClipPath2D, maskFillRule } from './clip-mask';
@@ -599,6 +599,25 @@ export function renderLayersAndElements(
     const sharedRenderer = new CanvasRenderer(ctx);
     const sortedLayers = [...layers].sort((a, b) => a.order - b.order);
     let totalRendered = 0;
+
+    // Artboards: named export-region frames drawn behind all content.
+    if (store.artboards && store.artboards.length && store.docType !== 'slides') {
+        ctx.save();
+        for (const ab of store.artboards) {
+            if (ab.background && ab.background !== 'none' && ab.background !== 'transparent') {
+                ctx.fillStyle = ab.background;
+                ctx.fillRect(ab.x, ab.y, ab.width, ab.height);
+            }
+            ctx.strokeStyle = isDarkMode ? '#555' : '#bbb';
+            ctx.lineWidth = 1 / scale;
+            ctx.strokeRect(ab.x, ab.y, ab.width, ab.height);
+            ctx.fillStyle = isDarkMode ? '#aaa' : '#888';
+            ctx.font = `${12 / scale}px sans-serif`;
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(`${ab.name}  ${Math.round(ab.width)}×${Math.round(ab.height)}`, ab.x, ab.y - 4 / scale);
+        }
+        ctx.restore();
+    }
 
     const elementMap = new Map<string, DrawingElement>();
     const elementsByLayer = new Map<string, DrawingElement[]>();

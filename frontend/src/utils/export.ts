@@ -151,6 +151,32 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     link.click();
 };
 
+/** Export a single artboard region to PNG (elements clipped to its bounds). */
+export const exportArtboard = (artboardId: string, scale = 1, download = true): string | undefined => {
+    const ab = store.artboards.find(a => a.id === artboardId);
+    if (!ab) return undefined;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(ab.width * scale));
+    canvas.height = Math.max(1, Math.round(ab.height * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return undefined;
+    if (ab.background && ab.background !== 'none' && ab.background !== 'transparent') {
+        ctx.fillStyle = ab.background; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    ctx.scale(scale, scale);
+    ctx.translate(-ab.x, -ab.y);
+    ctx.beginPath(); ctx.rect(ab.x, ab.y, ab.width, ab.height); ctx.clip();
+    const rc = rough.canvas(canvas);
+    for (const el of store.elements) {
+        if (el.isClipMask) continue;
+        if (el.x + el.width < ab.x || el.x > ab.x + ab.width || el.y + el.height < ab.y || el.y > ab.y + ab.height) continue; // outside the artboard
+        try { renderElement(rc, ctx, el); } catch { /* skip */ }
+    }
+    const url = canvas.toDataURL('image/png');
+    if (download) { const link = document.createElement('a'); link.download = `${ab.name}.png`; link.href = url; link.click(); }
+    return url;
+};
+
 export const exportToJpg = async (scale: number, onlySelected: boolean) => {
     let elements = store.elements;
     if (onlySelected) {

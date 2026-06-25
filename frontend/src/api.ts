@@ -12,7 +12,7 @@ import {
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
-    createSymbol, placeInstance, redefineSymbol, detachInstance,
+    createSymbol, placeInstance, redefineSymbol, detachInstance, addArtboard, deleteArtboard, renameArtboard, updateArtboard,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -25,7 +25,7 @@ import {
     saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
-import { exportToSvg } from "./utils/export";
+import { exportToSvg, exportArtboard } from "./utils/export";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
@@ -1405,6 +1405,15 @@ export const YappyAPI = {
     /** List the document's symbol definitions. */
     listSymbols() { return store.symbols.map(s => ({ id: s.id, name: s.name, width: s.width, height: s.height })); },
 
+    /** Artboards: add a named export region (preset name, 'selection', or default). Returns id. */
+    addArtboard(preset?: string, x?: number, y?: number) { return addArtboard(preset, x, y); },
+    deleteArtboard(id: string) { deleteArtboard(id); },
+    renameArtboard(id: string, name: string) { renameArtboard(id, name); },
+    updateArtboard(id: string, patch: any) { updateArtboard(id, patch); },
+    listArtboards() { return store.artboards.map(a => ({ ...a })); },
+    /** Export an artboard region to PNG (downloads + returns the data URL). */
+    exportArtboard(id: string, scale = 1) { return exportArtboard(id, scale, true); },
+
     /** Make a clipping mask: the top selected object clips the others to its outline. */
     makeClippingMask() { makeClippingMask(); },
     /** Make an opacity mask: the top object's luminance becomes the others' alpha (soft fade). */
@@ -2034,6 +2043,7 @@ export const YappyAPI = {
                 gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
                 states: JSON.parse(JSON.stringify(store.states)),
                 symbols: JSON.parse(JSON.stringify(store.symbols)),
+                artboards: JSON.parse(JSON.stringify(store.artboards)),
             };
             return cloudStorageManager.save(doc, options);
         },

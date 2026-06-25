@@ -167,6 +167,7 @@ export function CloudStorageDialog(props: CloudStorageDialogProps) {
                 gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
                 states: JSON.parse(JSON.stringify(store.states)),
                 symbols: JSON.parse(JSON.stringify(store.symbols)),
+                artboards: JSON.parse(JSON.stringify(store.artboards)),
             };
 
             // If no file explicitly selected, find existing file with the same name

@@ -160,7 +160,8 @@ const Menu: Component = () => {
                 globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
                 gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
                 states: JSON.parse(JSON.stringify(store.states)),
-                symbols: JSON.parse(JSON.stringify(store.symbols))
+                symbols: JSON.parse(JSON.stringify(store.symbols)),
+                artboards: JSON.parse(JSON.stringify(store.artboards))
             };
             const baseFilename = filename.replace(/\.(json|yappy)$/i, '');
 
@@ -363,7 +364,8 @@ const Menu: Component = () => {
                 globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
                 gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
                 states: JSON.parse(JSON.stringify(store.states)),
-                symbols: JSON.parse(JSON.stringify(store.symbols))
+                symbols: JSON.parse(JSON.stringify(store.symbols)),
+                artboards: JSON.parse(JSON.stringify(store.artboards))
             };
 
             await exportToHtml(slideDoc, drawingId());

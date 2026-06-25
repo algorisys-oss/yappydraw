@@ -14,7 +14,7 @@ import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
-import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
 import { defaultWarpGrid, getWarpGrid } from "../utils/envelope-warp";
@@ -119,6 +119,7 @@ interface AppState {
     showStatePanel: boolean;
     // Reusable symbols (definitions referenced by 'symbolInstance' elements)
     symbols: SymbolDef[];
+    artboards: Artboard[];
     showSlideNavigator: boolean;
     showSlideToolbar: boolean;
     showMainToolbar: boolean;
@@ -298,6 +299,7 @@ const initialState: AppState = {
     activeDsOpsElementId: null,
     states: [],
     symbols: [],
+    artboards: [],
     showStatePanel: false,
     showSlideNavigator: true,
     showSlideToolbar: true,
@@ -337,6 +339,7 @@ interface HistorySnapshot {
     slides: Slide[];
     states: DisplayState[];
     symbols: SymbolDef[];
+    artboards: Artboard[];
     gridSettings: GridSettings;
     canvasBackgroundColor: string;
     docType: 'infinite' | 'slides';
@@ -370,6 +373,7 @@ const captureSnapshot = (): HistorySnapshot => ({
     slides: store.slides.map(s => ({ ...s })),
     states: store.states.map(s => ({ ...s })),
     symbols: store.symbols.map(s => ({ ...s, elements: s.elements.map(e => ({ ...e })) })),
+    artboards: store.artboards.map(a => ({ ...a })),
     gridSettings: { ...store.gridSettings },
     canvasBackgroundColor: store.canvasBackgroundColor,
     docType: store.docType,
@@ -381,6 +385,7 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("slides", snapshot.slides);
     setStore("states", snapshot.states);
     setStore("symbols", snapshot.symbols || []);
+    setStore("artboards", snapshot.artboards || []);
     setStore("gridSettings", snapshot.gridSettings);
     setStore("canvasBackgroundColor", snapshot.canvasBackgroundColor);
     setStore("docType", snapshot.docType);
@@ -1690,6 +1695,7 @@ export const loadDocument = (doc: any) => {
         setStore("layers", JSON.parse(JSON.stringify(layers)));
         setStore("states", JSON.parse(JSON.stringify(states)));
         setStore("symbols", JSON.parse(JSON.stringify(doc.symbols || [])));
+        setStore("artboards", JSON.parse(JSON.stringify(doc.artboards || [])));
         setStore("gridSettings", JSON.parse(JSON.stringify(gridSettings)));
 
         // Migrate old showMindmapToolbar -> showQuickToolbar
@@ -1990,6 +1996,35 @@ export const makeClippingMask = (maskType: 'clip' | 'opacity' = 'clip') => {
 
 /** Make an opacity (luminance) mask — the top object's brightness becomes the others' alpha. */
 export const makeOpacityMask = () => makeClippingMask('opacity');
+
+// ── Artboards (named export regions) ─────────────────────────────────────────
+
+export const ARTBOARD_PRESETS: Record<string, [number, number]> = {
+    'Square 1080': [1080, 1080], 'A4 Portrait': [794, 1123], 'A4 Landscape': [1123, 794],
+    'Instagram Story': [1080, 1920], 'Web 1280': [1280, 800], 'Slide 16:9': [1920, 1080],
+};
+
+/** Add an artboard (preset size, or 'selection' to fit the current selection's bounds). */
+export const addArtboard = (preset?: string, x?: number, y?: number): string => {
+    let w = 1080, h = 1080;
+    if (preset === 'selection' && store.selection.length) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const e of store.elements) if (store.selection.includes(e.id)) { minX = Math.min(minX, e.x); minY = Math.min(minY, e.y); maxX = Math.max(maxX, e.x + e.width); maxY = Math.max(maxY, e.y + e.height); }
+        x = minX - 20; y = minY - 20; w = (maxX - minX) + 40; h = (maxY - minY) + 40;
+    } else if (preset && ARTBOARD_PRESETS[preset]) { [w, h] = ARTBOARD_PRESETS[preset]; }
+    const ax = x ?? (store.artboards.length ? Math.max(...store.artboards.map(a => a.x + a.width)) + 40 : 0);
+    const ay = y ?? 0;
+    const ab: Artboard = { id: generateId('ab' as any), name: (preset && preset !== 'selection' ? preset : `Artboard ${store.artboards.length + 1}`), x: ax, y: ay, width: Math.max(1, w), height: Math.max(1, h), background: '#ffffff' };
+    pushToHistory();
+    setStore('artboards', list => [...list, ab]);
+    bumpDirtyRevision();
+    showToast(`Artboard added (${Math.round(ab.width)}×${Math.round(ab.height)})`, 'success');
+    return ab.id;
+};
+
+export const deleteArtboard = (id: string) => { pushToHistory(); setStore('artboards', list => list.filter(a => a.id !== id)); bumpDirtyRevision(); };
+export const renameArtboard = (id: string, name: string) => { setStore('artboards', (a: Artboard) => a.id === id, 'name', () => name); bumpDirtyRevision(); };
+export const updateArtboard = (id: string, patch: Partial<Artboard>) => { pushToHistory(); setStore('artboards', (a: Artboard) => a.id === id, () => patch); bumpDirtyRevision(); };
 
 // ── Symbols / instances ──────────────────────────────────────────────────────
 
