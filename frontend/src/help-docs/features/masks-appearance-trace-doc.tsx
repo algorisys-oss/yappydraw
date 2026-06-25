@@ -168,7 +168,8 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                 <p>
                     A document <strong>colour palette</strong> with live links. Open it with <strong>Alt+W</strong>
                     (or View → <strong>Swatches</strong>): <strong>+</strong> adds a swatch (from the selection's fill);
-                    click a chip to fill the selection and set it as the active colour for new shapes (the little
+                    click a chip to fill the selection and make it the active drawing colour — both the fill and the
+                    brush/stroke colour, so the next shape or pen stroke uses it (the little
                     corner dot recolours the swatch itself); the
                     <strong> S</strong> button applies it as a stroke. Objects you apply a swatch to are
                     <strong> linked</strong> — recolour the swatch and every linked object updates at once. Editing an

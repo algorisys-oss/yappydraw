@@ -3459,8 +3459,12 @@ export const applySwatch = (swatchId: string, target: 'fill' | 'stroke' = 'fill'
                 : { strokeColor: sw.color, strokeSwatchId: sw.id }
         ));
     }
-    // Set the active/default colour so the next shape drawn uses it.
-    updateDefaultStyles(target === 'fill' ? { backgroundColor: sw.color } : { strokeColor: sw.color });
+    // Make the swatch the active drawing colour. A fill swatch also updates the
+    // stroke/"brush" default (the toolbar's colour indicator) so picking a colour
+    // changes what the pen/brush draws too; a stroke swatch sets the stroke only.
+    updateDefaultStyles(target === 'fill'
+        ? { backgroundColor: sw.color, fillStyle: 'solid', strokeColor: sw.color }
+        : { strokeColor: sw.color });
     bumpDirtyRevision();
 };
 
