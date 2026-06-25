@@ -3,7 +3,7 @@ import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
 import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
-    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
+    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore
 } from "../store/app-store";
@@ -781,6 +781,13 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <Show when={store.showSwatchesPanel}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+W</span>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { toggleMeasure(); setIsMenuOpen(false); }}>
+                                        <Ruler size={16} />
+                                        <span class="label">Measure Tool</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.measureActive}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleStatePanel(); setIsMenuOpen(false); }}>

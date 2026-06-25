@@ -59,6 +59,17 @@ const WorkspaceDoc: Component = () => {
                 </p>
             </section>
 
+            {/* ─── MEASURE ────────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Measure tool</h2>
+                <p>
+                    Turn it on from ☰ → View → <strong>Measure Tool</strong> (or <code>Yappy.toggleMeasure()</code>),
+                    then <strong>drag</strong> anywhere on the canvas to lay down a measuring line. A readout shows the
+                    <strong> length</strong> (in canvas units) and the <strong>angle</strong> from horizontal. The line
+                    stays until your next drag; press <strong>Esc</strong> to exit.
+                </p>
+            </section>
+
             {/* ─── BLEND ──────────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Blend</h2>
