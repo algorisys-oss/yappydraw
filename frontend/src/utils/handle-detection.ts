@@ -9,6 +9,7 @@ import { rotatePoint } from './geometry';
 import { normalizePoints } from './render-element';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { getPathSubpaths } from './math/path-utils';
+import { getCustomPivot } from './transform-pivot';
 
 /**
  * Inverse-rotate a point around a center by the given angle.
@@ -203,6 +204,18 @@ export function getHandleAtPosition(
         for (const h of handles) {
             if (Math.abs(local.x - h.x) <= handleSize / 2 && Math.abs(local.y - h.y) <= handleSize / 2) {
                 return { id: el.id, handle: h.type };
+            }
+        }
+
+        // Custom rotation pivot — only when the user has placed one (no default-centre
+        // grab, so clicking the body to MOVE is never hijacked). Tested in world space
+        // (the pivot is a world point, independent of element rotation). Generous radius
+        // so it's easy to grab with a finger/pen as well as a mouse.
+        const customPivot = getCustomPivot(selection);
+        if (customPivot) {
+            const pr = handleSize; // ~24px box at scale 1 — touch-friendly
+            if (Math.abs(x - customPivot.x) <= pr && Math.abs(y - customPivot.y) <= pr) {
+                return { id: el.id, handle: 'pivot' };
             }
         }
 

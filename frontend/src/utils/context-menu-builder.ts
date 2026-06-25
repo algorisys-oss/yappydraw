@@ -16,7 +16,7 @@ import {
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
     addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     zoomToFit, zoomToFitSlide, updateGlobalSettings,
-    toggleVideoPlayback, isVideoPlaying
+    toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
 import {
     copyToClipboard, cutToClipboard, pasteFromClipboard,
@@ -27,6 +27,7 @@ import {
     changeElementType, getCurveTypeOptions, getCurveTypeIcon, getCurveTypeTooltip
 } from './element-transforms';
 import { shiftLaneIndicesOnRemove, hitTestPoolLane } from './pool-containment';
+import { setTransformPivot, clearTransformPivot, getCustomPivot } from './transform-pivot';
 import { openRepeatDialog } from '../components/repeat-dialog';
 import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng } from './export';
 import { shapeToPath } from './shape-to-path';
@@ -1145,6 +1146,24 @@ export function getContextMenuItems(
                 label: 'Flip Vertical', shortcut: 'Shift+V',
                 onClick: () => flipSelected('vertical')
             },
+        );
+
+        // Rotation pivot (Free Transform) — place at the click point, then drag the
+        // on-canvas crosshair to fine-tune; rotation orbits about it. Single element only.
+        if (selectionCount === 1 && worldX !== undefined && worldY !== undefined) {
+            items.push({
+                label: 'Set Rotation Point Here', icon: '⊕',
+                onClick: () => { setTransformPivot(worldX, worldY, store.selection); bumpDirtyRevision(); }
+            });
+            if (getCustomPivot(store.selection)) {
+                items.push({
+                    label: 'Reset Rotation Point', icon: '⊗',
+                    onClick: () => { clearTransformPivot(); bumpDirtyRevision(); }
+                });
+            }
+        }
+
+        items.push(
             { separator: true },
             {
                 label: 'Delete', shortcut: 'Delete',

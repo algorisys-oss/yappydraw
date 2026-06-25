@@ -20,8 +20,9 @@ import {
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
-    saveActiveSlide, updateGlobalSettings, togglePenStabilization
+    saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision
 } from "./store/app-store";
+import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
@@ -1305,6 +1306,23 @@ export const YappyAPI = {
 
     clearSelection() {
         setStore("selection", []);
+    },
+
+    /** Free Transform: place the rotation pivot for the current selection at a world point. */
+    setRotationPivot(x: number, y: number) {
+        setTransformPivot(x, y, store.selection);
+        bumpDirtyRevision();
+    },
+
+    /** Free Transform: reset the rotation pivot back to the element/selection centre. */
+    clearRotationPivot() {
+        clearTransformPivot();
+        bumpDirtyRevision();
+    },
+
+    /** The custom rotation pivot for the current selection, or null if at centre. */
+    getRotationPivot(): { x: number; y: number } | null {
+        return getCustomPivot(store.selection);
     },
 
     setView(scale: number, panX: number, panY: number, rotation?: number) {

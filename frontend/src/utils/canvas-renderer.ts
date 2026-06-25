@@ -696,6 +696,7 @@ export function renderLayersAndElements(
                 scale,
                 isSelected: selection.includes(el.id),
                 selectionLength: selection.length,
+                selection,
                 isDarkMode,
                 elements,
                 selectedTool,

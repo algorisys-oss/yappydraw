@@ -10,6 +10,7 @@ import { normalizePoints } from './render-element';
 import { getOrganicBranchPolygon, rotatePoint } from './geometry';
 import { getDescendants } from './hierarchy';
 import { getPathSubpaths } from './math/path-utils';
+import { getCustomPivot } from './transform-pivot';
 
 const MINDMAP_CONNECTOR_TYPES = ['line', 'arrow', 'organicBranch', 'bezier', 'polyline'];
 
@@ -17,6 +18,8 @@ export interface ElementOverlayOptions {
     scale: number;
     isSelected: boolean;
     selectionLength: number;
+    /** Current selection ids — used to look up a custom rotation pivot. */
+    selection?: string[];
     isDarkMode: boolean;
     elements: DrawingElement[];
     selectedTool: string;
@@ -210,6 +213,30 @@ export function renderElementOverlays(
                 ctx.arc(rotH.x, rotH.y, handleSize / 2, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
+
+                // Custom rotation pivot (Free Transform) — a crosshair-in-ring at the
+                // world point the user placed; rotation orbits about it. Drawn in world
+                // space (not the element's rotated frame) since the pivot is independent
+                // of the element's angle. Only for a single selected element.
+                const pivot = selectionLength === 1 && opts.selection ? getCustomPivot(opts.selection) : null;
+                if (pivot) {
+                    const r = handleSize / 2 + 1 / scale;
+                    ctx.save();
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.lineWidth = 1.5 / scale;
+                    ctx.beginPath();
+                    ctx.arc(pivot.x, pivot.y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(pivot.x - r, pivot.y);
+                    ctx.lineTo(pivot.x + r, pivot.y);
+                    ctx.moveTo(pivot.x, pivot.y - r);
+                    ctx.lineTo(pivot.x, pivot.y + r);
+                    ctx.stroke();
+                    ctx.restore();
+                }
 
                 // Move handle for tables — rendered at top-left corner
                 if (el.type === 'table') {

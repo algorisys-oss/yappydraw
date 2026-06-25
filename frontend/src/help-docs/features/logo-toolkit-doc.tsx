@@ -140,6 +140,30 @@ export const LogoToolkitDoc: Component = () => {
                 </p>
             </section>
 
+            {/* Free Transform */}
+            <section class="doc-section">
+                <h2>Free Transform</h2>
+                <p>
+                    <strong>Rotation-aware resize.</strong> Rotate a shape, then drag any corner or edge
+                    handle — it now scales along the shape's <em>own</em> axes (not the screen's), and the
+                    handle opposite the one you drag stays pinned. Hold <span class="kbd">Shift</span> to keep
+                    the aspect ratio. This makes adjusting a tilted wordmark or emblem feel natural instead of
+                    skewing off-axis.
+                </p>
+                <p>
+                    <strong>Custom rotation point.</strong> By default a shape rotates about its centre. To
+                    rotate about a different point, right-click (or long-press on a tablet) and choose
+                    <em>Set Rotation Point Here</em> — a crosshair (⊕) appears at that spot. Drag the crosshair
+                    to fine-tune it, then drag the rotate handle and the shape orbits that point. Right-click →
+                    <em>Reset Rotation Point</em> returns it to the centre.
+                </p>
+                <p class="tip-box">
+                    The rotation point is per-selection and resets automatically when you select something else.
+                    It's perfect for swinging a motif around a shared hub — place the point at the hub, then
+                    rotate-and-duplicate to build a radial mark by hand.
+                </p>
+            </section>
+
             {/* Recipes */}
             <section class="doc-section">
                 <h2>Worked Recipes</h2>

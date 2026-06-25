@@ -9,7 +9,8 @@ import { batch } from 'solid-js';
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, updateElement, setStore, pushToHistory, isLayerVisible, toggleCollapse, addChildNode, setShowCanvasProperties } from '../../store/app-store';
+import { store, updateElement, setStore, pushToHistory, isLayerVisible, toggleCollapse, addChildNode, setShowCanvasProperties, bumpDirtyRevision } from '../../store/app-store';
+import { setTransformPivot, getElementPivot, getCustomPivot } from '../transform-pivot';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition, getSelectionBoundingBox } from '../handle-detection';
 import { getDescendants } from '../hierarchy';
@@ -194,6 +195,16 @@ export function selectionOnDown(
         // Table move handle — enter move mode (not resize)
         if (hitHandle.handle === 'table-move') {
             initMoveState(pState, x, y);
+            return;
+        }
+
+        // Rotation pivot — drag to reposition the rotation centre. Pure UI state, so
+        // no history entry (unlike rotate/resize, which mutate the document).
+        if (hitHandle.handle === 'pivot') {
+            pState.isDragging = true;
+            pState.draggingHandle = 'pivot';
+            pState.startX = x;
+            pState.startY = y;
             return;
         }
 
@@ -1247,12 +1258,31 @@ function handleResize(
         signals.setSuggestedBinding(null);
     }
 
-    // Rotate
+    // Move the rotation pivot. Pure UI state — no element mutation, no history.
+    if (pState.draggingHandle === 'pivot') {
+        setTransformPivot(x, y, store.selection);
+        bumpDirtyRevision();
+        return;
+    }
+
+    // Rotate — about the (possibly custom) reference point, not always the centre.
     if (pState.draggingHandle === 'rotate') {
-        const cx = el.x + el.width / 2;
-        const cy = el.y + el.height / 2;
-        const angle = Math.atan2(y - cy, x - cx);
-        updateElement(id, { angle: angle + Math.PI / 2 });
+        const pivot = getElementPivot(el, store.selection);
+        const newAngle = Math.atan2(y - pivot.y, x - pivot.x) + Math.PI / 2;
+        const custom = getCustomPivot(store.selection);
+        if (custom) {
+            // Rotating about an off-centre pivot also orbits the element's centre:
+            // rotate the centre around the pivot by this move's angle delta.
+            const d = newAngle - (el.angle || 0);
+            const cosd = Math.cos(d), sind = Math.sin(d);
+            const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+            const rx = cx - pivot.x, ry = cy - pivot.y;
+            const ncx = pivot.x + rx * cosd - ry * sind;
+            const ncy = pivot.y + rx * sind + ry * cosd;
+            updateElement(id, { angle: newAngle, x: ncx - el.width / 2, y: ncy - el.height / 2 });
+        } else {
+            updateElement(id, { angle: newAngle });
+        }
         return;
     }
 
