@@ -175,8 +175,11 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                 </p>
                 <p>
                     For direct editing, click <strong>Edit on canvas</strong> (in the mesh editor) — the node grid
-                    appears right on the shape as colour dots; click any dot to recolour that node live.
-                    Double-click the background to exit. (<code>Yappy.toggleMeshEdit()</code>.)
+                    appears right on the shape as colour dots. <strong>Drag</strong> a dot to reshape the mesh
+                    (warp the colour flow); <strong>click</strong> a dot (without dragging) to recolour it. Boundary
+                    nodes slide along the edge and interior nodes move freely, so the fill always covers the shape.
+                    <em>Reset nodes</em> returns the grid to even spacing; double-click the background to exit.
+                    (<code>Yappy.toggleMeshEdit()</code>, <code>setMeshNodePosition(r,c,x,y)</code>.)
                 </p>
                 <h3>Example</h3>
                 <pre><code>{`const Y = window.Yappy; Y.clear();

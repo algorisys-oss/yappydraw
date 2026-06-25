@@ -14,29 +14,34 @@
     overflow: visible;
 }
 
-/* Each mesh node is a colour-swatch dot; clicking it opens the colour picker. */
+/* Each mesh node is a draggable colour dot (its fill = the node colour).
+   Drag to reshape the mesh; click (no drag) opens the colour picker. */
 .mesh-node {
     position: absolute;
-    width: 16px;
-    height: 16px;
-    margin: -8px 0 0 -8px; /* centre on (left, top) */
-    padding: 0;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px; /* centre on (left, top) */
+    box-sizing: border-box;
     border: 2px solid #fff;
     border-radius: 50%;
     box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.9), 0 1px 3px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
+    cursor: grab;
     pointer-events: auto;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background: transparent;
+    touch-action: none;
 }
 
-.mesh-node::-webkit-color-swatch-wrapper { padding: 0; }
-.mesh-node::-webkit-color-swatch { border: none; border-radius: 50%; }
-.mesh-node::-moz-color-swatch { border: none; border-radius: 50%; }
-
 .mesh-node:hover {
-    transform: scale(1.2);
+    transform: scale(1.25);
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 1), 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.mesh-node:active { cursor: grabbing; }
+
+/* Hidden colour input opened programmatically on a node click. */
+.mesh-color-input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
 }

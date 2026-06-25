@@ -12,7 +12,7 @@ import {
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
-    applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit,
+    applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, clearMeshGradient, toggleMeshEdit,
     createSymbol, placeInstance, redefineSymbol, detachInstance, renameSymbol, deleteSymbol, toggleSymbolsPanel, addArtboard, deleteArtboard, renameArtboard, updateArtboard,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
@@ -1397,6 +1397,10 @@ export const YappyAPI = {
     setMeshSize(rows: number, cols: number, ids?: string[]) { setMeshSize(ids ?? store.selection, rows, cols); },
     /** Set the colour of one mesh node (row, col). */
     setMeshNodeColor(row: number, col: number, color: string, ids?: string[]) { setMeshNodeColor(ids ?? store.selection, row, col, color); },
+    /** Move a mesh node to a normalized (0..1) position — warps the mesh (boundary nodes stay on their edge). */
+    setMeshNodePosition(row: number, col: number, x: number, y: number, ids?: string[]) { setMeshNodePosition(ids ?? store.selection, row, col, x, y); },
+    /** Reset all mesh node positions back to the even grid (un-warp). */
+    resetMeshNodes(ids?: string[]) { resetMeshNodes(ids ?? store.selection); },
     /** Remove the mesh fill (revert to a solid fill). */
     clearMeshGradient(ids?: string[]) { clearMeshGradient(ids ?? store.selection); },
     /** Toggle on-canvas mesh node editing (shows the node grid on the selected mesh shape). */

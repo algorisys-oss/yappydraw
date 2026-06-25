@@ -70,6 +70,10 @@ export interface MeshGradient {
     rows: number;       // node rows (≥ 2)
     cols: number;       // node columns (≥ 2)
     colors: string[];   // row-major node colours, length rows*cols (#rrggbb)
+    /** Optional normalized (0..1) node positions, row-major, length rows*cols.
+     *  Absent → an even grid. Boundary nodes stay on the 0/1 edges so the mesh
+     *  always covers the element; interior nodes may move freely (warped mesh). */
+    points?: { x: number; y: number }[];
 }
 export type StrokeStyle = 'solid' | 'dashed' | 'dotted';
 export type FontFamily = 'hand-drawn' | 'sans-serif' | 'monospace' | 'caveat' | 'poppins' | 'serif' | 'marker' | 'code';

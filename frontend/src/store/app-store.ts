@@ -15,7 +15,7 @@ import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
 import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient } from "../types";
-import { defaultMesh, resizeMesh, meshIndex } from "../utils/mesh-gradient";
+import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos } from "../utils/mesh-gradient";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
 import { defaultWarpGrid, getWarpGrid } from "../utils/envelope-warp";
@@ -2259,6 +2259,33 @@ export const setMeshNodeColor = (ids: string[], row: number, col: number, color:
         const colors = m.colors.slice();
         colors[idx] = color;
         return { meshGradient: { ...m, colors } };
+    });
+    bumpDirtyRevision();
+};
+
+/** Move a mesh node to a normalized (0..1) position (warps the mesh). Boundary
+ *  nodes are constrained to their edge; interior nodes move freely. */
+export const setMeshNodePosition = (ids: string[], row: number, col: number, x: number, y: number, history = true) => {
+    if (ids.length === 0) return;
+    if (history) pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id) && !!e.meshGradient, (e: DrawingElement) => {
+        const m = e.meshGradient as MeshGradient;
+        const pts = meshPoints(m);
+        const idx = meshIndex(m, row, col);
+        if (idx < 0 || idx >= pts.length) return {};
+        pts[idx] = constrainNodePos(m, row, col, x, y);
+        return { meshGradient: { ...m, points: pts } };
+    });
+    bumpDirtyRevision();
+};
+
+/** Reset all mesh node positions back to the even grid (un-warp). */
+export const resetMeshNodes = (ids: string[]) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id) && !!e.meshGradient, (e: DrawingElement) => {
+        const { points, ...rest } = e.meshGradient as MeshGradient;
+        return { meshGradient: { ...rest } };
     });
     bumpDirtyRevision();
 };

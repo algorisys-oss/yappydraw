@@ -1,5 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
 import type { DrawingElement } from "../types";
@@ -458,7 +458,7 @@ const AppearanceEditor: Component<{ el: () => any }> = (props) => {
 /** Gradient-mesh editor — a rows×cols grid of node colour swatches plus size
  *  steppers. Operates on the active element's `meshGradient`. */
 const MeshEditor: Component<{ el: () => any }> = (props) => {
-    const mesh = () => props.el()?.meshGradient as { rows: number; cols: number; colors: string[] } | undefined;
+    const mesh = () => props.el()?.meshGradient as { rows: number; cols: number; colors: string[]; points?: any[] } | undefined;
     const ids = () => [props.el()?.id].filter(Boolean);
     const sw = { width: '100%', height: '20px', padding: '0', border: '1px solid var(--border-color)', 'border-radius': '3px', cursor: 'pointer' } as any;
     const btn = { padding: '1px 7px', cursor: 'pointer', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', 'border-radius': '4px', 'font-size': '11px' } as any;
@@ -497,6 +497,9 @@ const MeshEditor: Component<{ el: () => any }> = (props) => {
                         title="Edit mesh nodes directly on the canvas"
                         onClick={() => toggleMeshEdit()}
                     >{store.meshEditActive ? 'Editing on canvas…' : 'Edit on canvas'}</button>
+                    <Show when={mesh()!.points}>
+                        <button style={btn} title="Reset node positions to the even grid" onClick={() => resetMeshNodes(ids())}>Reset nodes</button>
+                    </Show>
                     <button style={btn} title="Remove the mesh fill" onClick={() => clearMeshGradient(ids())}>Remove mesh</button>
                 </div>
             </div>
