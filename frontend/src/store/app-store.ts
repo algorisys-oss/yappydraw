@@ -85,6 +85,7 @@ interface AppState {
     // Panel Visibility
     showPropertyPanel: boolean;
     showLayerPanel: boolean;
+    showSymbolsPanel: boolean;
     isPropertyPanelMinimized: boolean;
     isLayerPanelMinimized: boolean;
     minimapVisible: boolean;
@@ -264,6 +265,7 @@ const initialState: AppState = {
     isDirty: false,
     showPropertyPanel: false,
     showLayerPanel: false,
+    showSymbolsPanel: false,
     isPropertyPanelMinimized: false,
     isLayerPanelMinimized: false,
     minimapVisible: false,
@@ -2119,6 +2121,34 @@ export const detachInstance = (ids: string[]) => {
     showToast('Instance detached', 'success');
 };
 
+/** Rename a symbol definition. */
+export const renameSymbol = (symbolId: string, name: string) => {
+    const n = name.trim();
+    if (!n) return;
+    pushToHistory();
+    setStore('symbols', s => s.id === symbolId, () => ({ name: n }));
+    bumpDirtyRevision();
+};
+
+/** Delete a symbol definition. By default detaches its instances into editable copies first. */
+export const deleteSymbol = (symbolId: string, detachInstances = true) => {
+    const sym = store.symbols.find(s => s.id === symbolId);
+    if (!sym) return;
+    const instIds = store.elements.filter(e => e.type === 'symbolInstance' && e.symbolId === symbolId).map(e => e.id);
+    if (instIds.length && detachInstances) {
+        detachInstance(instIds);
+        // detachInstance pushes its own history; remove the now-orphaned def afterward.
+        setStore('symbols', list => list.filter(s => s.id !== symbolId));
+    } else {
+        pushToHistory();
+        // Remove the def and any remaining instances of it.
+        setStore('elements', list => list.filter(e => !(e.type === 'symbolInstance' && e.symbolId === symbolId)));
+        setStore('symbols', list => list.filter(s => s.id !== symbolId));
+    }
+    bumpDirtyRevision();
+    showToast(`Deleted ${sym.name}`, 'info');
+};
+
 /** Release Clipping Mask — un-hide the mask shape and drop the clip from its targets. */
 export const releaseClippingMask = () => {
     const sel = [...store.selection];
@@ -2786,6 +2816,10 @@ export const togglePropertyPanel = (visible?: boolean) => {
 
 export const toggleLayerPanel = (visible?: boolean) => {
     setStore('showLayerPanel', (v) => visible ?? !v);
+};
+
+export const toggleSymbolsPanel = (visible?: boolean) => {
+    setStore('showSymbolsPanel', (v) => visible ?? !v);
 };
 
 export const toggleSlideToolbar = (visible?: boolean) => {

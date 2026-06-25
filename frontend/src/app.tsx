@@ -1,6 +1,6 @@
 import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal } from 'solid-js';
 import {
-  undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel,
+  undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel,
   toggleMinimap, toggleRulers, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
   addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode,
@@ -31,6 +31,7 @@ import { parseOutline } from './utils/mindmap-layout';
 import { updateElement } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
+const SymbolsPanel = lazy(() => import('./components/symbols-panel'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
 const StatePanel = lazy(() => import('./components/state-panel').then(m => ({ default: m.StatePanel })));
 const Toast = lazy(() => import('./components/toast'));
@@ -347,6 +348,9 @@ const App: Component = () => {
         } else if (code === 'KeyI' || key === 'i') {
           e.preventDefault();
           setSelectedTool('ink');
+        } else if (code === 'KeyB' || key === 'b') {
+          e.preventDefault();
+          toggleSymbolsPanel();
         } else if (key === '\\' || code === 'Backslash') {
           e.preventDefault();
           const anyVisible = store.showPropertyPanel || store.showLayerPanel;
@@ -1138,6 +1142,7 @@ const App: Component = () => {
           <Show when={!store.zenMode}>
             <PropertyPanel />
             <LayerPanel />
+            <SymbolsPanel />
             <StatusBar />
           </Show>
           <Show when={store.zenMode}>
