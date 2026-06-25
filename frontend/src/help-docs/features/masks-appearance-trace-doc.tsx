@@ -164,9 +164,12 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                     with the file. (Right-click → <strong>Save as Graphic Style</strong>; API
                     <code>createGraphicStyle</code>/<code>applyGraphicStyle</code>.)
                 </p>
-                <p class="tip-box">
-                    Graphic styles vs. the <strong>eyedropper</strong>: the eyedropper copies a look once from a
-                    clicked object; a graphic style is a reusable, named, document-saved look you can re-apply anytime.
+                <h3>Eyedropper</h3>
+                <p>
+                    Select the object(s) you want to restyle, then right-click → <strong>Eyedropper — pick style
+                    from…</strong> and click any other object: its full look (fill, stroke, gradient/mesh, appearance,
+                    shadow) is copied onto your selection. <strong>Esc</strong> cancels. It's a quick one-shot copy —
+                    for a look you'll reuse repeatedly, save a <strong>graphic style</strong> instead.
                 </p>
             </section>
 

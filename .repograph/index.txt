@@ -254,7 +254,7 @@ frontend/src/help-docs/features/artboards-doc.tsx | typescript | 90 | ArtboardsD
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 306 | LogoToolkitDoc:9 the:115
-frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 265 | MasksAppearanceTraceDoc:8 tools:14
+frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 268 | MasksAppearanceTraceDoc:8 tools:14
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 525 | YslTutorialDoc:8
 frontend/src/help-docs/help-page.css | - | 408 |

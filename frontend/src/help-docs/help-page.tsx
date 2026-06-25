@@ -122,7 +122,7 @@ const shapeDocuments: ShapeDoc[] = [
         name: 'Masks, Appearance & Trace',
         icon: '✂',
         category: 'Design',
-        description: 'Clipping/opacity masks, appearance stack (multiple fills/strokes), gradient mesh, and image trace',
+        description: 'Clipping/opacity masks, appearance stack, gradient mesh, graphic styles, eyedropper, and image trace',
         content: MasksAppearanceTraceDoc
     },
     {
