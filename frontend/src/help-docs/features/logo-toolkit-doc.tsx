@@ -27,12 +27,20 @@ export const LogoToolkitDoc: Component = () => {
                 <p>
                     The fastest way to build a custom silhouette from simple shapes. Overlap a few primitives
                     (circles, rectangles, the pen tool…), select them all (≥2), then right-click → <strong>Shape
-                    Builder</strong>. <strong>Drag a stroke across</strong> the shapes you want to fuse — they highlight
+                    Builder</strong>. <strong>Drag a stroke across</strong> the regions you want to fuse — they highlight
                     and, on release, <strong>merge into one path</strong>. Hold <strong>Alt</strong> while dragging to
-                    <strong> delete</strong> the shapes you cross instead. <strong>Esc</strong> exits.
+                    <strong> delete</strong> the regions you cross instead. <strong>Esc</strong> exits.
+                </p>
+                <p>
+                    It works at the <strong>face level</strong>, exactly like Illustrator: the selection is broken into
+                    its <em>atomic regions</em>. Two overlapping circles become <em>three</em> faces — the left crescent,
+                    the central lens, and the right crescent — and you can act on each independently. Paint across the
+                    lens with <strong>Alt</strong> to <strong>punch it out</strong> (carve a notch), or drag across one
+                    crescent + the lens to fuse just those. Every region you <em>don't</em> touch is kept as its own
+                    path. When the shapes don't overlap it falls back to merging whole shapes.
                 </p>
                 <p class="tip-box">
-                    It's built on the Pathfinder engine, so the merge is a true boolean union producing an editable
+                    It's built on the Pathfinder engine, so each result is a true boolean region producing an editable
                     vector path. For precise set operations on exactly two shapes, the right-click
                     <strong> Pathfinder</strong> (union / subtract / intersect / exclude) is also there.
                     (<code>Yappy.toggleShapeBuilder()</code>.)

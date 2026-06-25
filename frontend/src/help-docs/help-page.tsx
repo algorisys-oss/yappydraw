@@ -35,6 +35,7 @@ const EmbeddingDoc = lazy(() => import('./features/embedding-doc'));
 const YslTutorialDoc = lazy(() => import('./features/ysl-tutorial-doc'));
 const BulkEditingDoc = lazy(() => import('./features/bulk-editing-doc'));
 const LogoToolkitDoc = lazy(() => import('./features/logo-toolkit-doc'));
+const IllustratorToolsDoc = lazy(() => import('./features/illustrator-tools-doc'));
 const MasksAppearanceTraceDoc = lazy(() => import('./features/masks-appearance-trace-doc'));
 const SymbolsDoc = lazy(() => import('./features/symbols-doc'));
 const ArtboardsDoc = lazy(() => import('./features/artboards-doc'));
@@ -117,6 +118,14 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Design',
         description: 'Repeat & symmetry (radial / grid / mirror / transform-again) and Text → Outlines for logo construction',
         content: LogoToolkitDoc
+    },
+    {
+        id: 'illustrator-tools',
+        name: 'Illustrator-class Tools',
+        icon: '🪄',
+        category: 'Design',
+        description: 'Magic Wand, Distort & Transform (Liquify), Knife & Scissors, generative shapes (spiral/arc/grids), Vertical Type, and the Symbol Sprayer — with API examples',
+        content: IllustratorToolsDoc
     },
     {
         id: 'masks-appearance-trace',

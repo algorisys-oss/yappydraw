@@ -54,6 +54,24 @@ export class TextRenderer extends ShapeRenderer {
         const lineHeight = fontSize * 1.2;
         const padding = 4; // Small internal padding
 
+        // Vertical Type — stack characters top→bottom; each \n-paragraph is a column (left→right).
+        if (el.verticalText) {
+            const vColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
+            renderer.fillStyle = vColor;
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'hanging';
+            const colWidth = fontSize * 1.4;
+            const cols = (el.text || '').split('\n');
+            cols.forEach((col, ci) => {
+                const x = el.x + padding + colWidth / 2 + ci * colWidth;
+                [...col].forEach((ch, ri) => {
+                    renderer.fillText(ch, x, el.y + padding + ri * lineHeight);
+                });
+            });
+            renderer.restore();
+            return;
+        }
+
         // Word wrap text within element width
         const availableWidth = Math.max(el.width - padding * 2, 20);
         const paragraphs = (el.text || '').split('\n');

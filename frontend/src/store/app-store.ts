@@ -6,7 +6,8 @@ import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-type
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
-import { runBooleanOp, polyToPathSubpaths, type BooleanOp, type Poly } from "../utils/path-boolean";
+import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
+import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { shapeToPath } from "../utils/shape-to-path";
 import { normalizePoints } from "../utils/render-element";
 import { textElementToOutline } from "../utils/text-to-outlines";
@@ -99,6 +100,11 @@ interface AppState {
     measureActive: boolean;
     /** Shape Builder mode: drag across selected shapes to merge / Alt-drag to delete (transient). */
     shapeBuilderActive: boolean;
+    /** Knife/Scissors cut mode: drag a line to slice shapes, click a path to split it (transient). */
+    cutToolActive: boolean;
+    /** Symbol Sprayer mode + the symbol it sprays (transient). */
+    sprayerActive: boolean;
+    sprayerSymbolId: string | null;
     /** Undo-history panel visibility (transient, not persisted). */
     showHistoryPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
@@ -300,6 +306,9 @@ const initialState: AppState = {
     showRecolorPanel: false,
     measureActive: false,
     shapeBuilderActive: false,
+    cutToolActive: false,
+    sprayerActive: false,
+    sprayerSymbolId: null,
     showHistoryPanel: false,
     meshEditActive: false,
     activeArtboardId: null,
@@ -3560,6 +3569,126 @@ export const toggleMeasure = (active?: boolean) => setStore('measureActive', v =
 
 export const toggleShapeBuilder = (active?: boolean) => setStore('shapeBuilderActive', v => active ?? !v);
 
+export const toggleCutTool = (active?: boolean) => setStore('cutToolActive', v => active ?? !v);
+
+/** Turn on the Symbol Sprayer for `symbolId` (defaults to the first symbol). Pass nothing to toggle off. */
+export const toggleSymbolSprayer = (symbolId?: string) => {
+    if (symbolId === undefined) { setStore('sprayerActive', false); setStore('sprayerSymbolId', null); return; }
+    const id = symbolId || store.symbols[0]?.id || null;
+    setStore('sprayerSymbolId', id);
+    setStore('sprayerActive', !!id);
+    if (!id) showToast('Sprayer: no symbol to spray', 'info');
+};
+
+/**
+ * Symbol Sprayer — batch-place instances of `symbolId` at the given world points (with
+ * per-instance size + rotation jitter), as one history step. Used by the sprayer overlay
+ * which samples points along the drag spaced by the brush radius.
+ */
+export const spraySymbolInstances = (symbolId: string, pts: { x: number; y: number }[], opts?: { scaleJitter?: number; rotateJitter?: number }): string[] => {
+    const sym = store.symbols.find(s => s.id === symbolId);
+    if (!sym || !pts.length) return [];
+    const sj = opts?.scaleJitter ?? 0.35, rj = opts?.rotateJitter ?? 0;
+    const created: DrawingElement[] = pts.map(p => {
+        const scale = 1 + (Math.random() * 2 - 1) * sj;
+        const w = Math.max(2, sym.width * scale), h = Math.max(2, sym.height * scale);
+        return {
+            ...store.defaultElementStyles,
+            id: generateId('symi' as any), type: 'symbolInstance', symbolId,
+            x: p.x - w / 2, y: p.y - h / 2, width: w, height: h,
+            angle: rj ? (Math.random() * 2 - 1) * rj : 0,
+            seed: 1, roundness: null, locked: false, link: null, layerId: store.activeLayerId,
+        } as DrawingElement;
+    });
+    pushToHistory();
+    setStore('elements', list => [...list, ...created]);
+    setStore('selection', created.map(c => c.id));
+    bumpDirtyRevision();
+    showToast(`Sprayed ${created.length}`, 'success');
+    return created.map(c => c.id);
+};
+
+/**
+ * Knife — slice the target shapes along the line p0→p1 into separate pieces. Targets
+ * default to the selection, or all shapes the line crosses when nothing is selected.
+ * Each shape that the line genuinely divides is replaced by its two (or more) pieces.
+ */
+export const knifeCut = (p0: { x: number; y: number }, p1: { x: number; y: number }, ids?: string[]): string[] => {
+    const pa: [number, number] = [p0.x, p0.y], pb: [number, number] = [p1.x, p1.y];
+    const targets = (ids && ids.length ? store.elements.filter(e => ids.includes(e.id))
+        : store.elements).filter(e => !e.locked);
+    const created: DrawingElement[] = [];
+    const consumed: string[] = [];
+    for (const el of targets) {
+        const mp = elementToMultiPolygon(el);
+        if (!mp.length) continue;
+        const [pos, neg] = splitMultiPolyByLine(mp, pa, pb);
+        if (!pos.length || !neg.length) continue; // line didn't divide this shape
+        consumed.push(el.id);
+        const style: Partial<DrawingElement> = {
+            strokeColor: el.strokeColor, backgroundColor: el.backgroundColor, fillStyle: el.fillStyle,
+            strokeWidth: el.strokeWidth, strokeStyle: el.strokeStyle, renderStyle: el.renderStyle,
+            opacity: el.opacity, roughness: el.roughness, layerId: el.layerId,
+        };
+        for (const poly of [...pos, ...neg]) {
+            const path = buildPathFromPoly(poly, style);
+            if (path) created.push(path);
+        }
+    }
+    if (!created.length) { showToast('Knife: line did not cross a shape', 'info'); return []; }
+    pushToHistory();
+    setStore('elements', list => [...list.filter(e => !consumed.includes(e.id)), ...created]);
+    setStore('selection', created.map(c => c.id));
+    showToast(`Knife: ${created.length} pieces`, 'success');
+    return created.map(c => c.id);
+};
+
+/**
+ * Scissors — split a path at the anchor nearest `point`. A closed path opens there (one
+ * open path); an open path splits into two. Non-path shapes are converted first.
+ */
+export const splitPathAt = (id: string, point: { x: number; y: number }): string[] => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el) return [];
+    let anchors: { x: number; y: number; [k: string]: any }[] | undefined;
+    let closed = false;
+    if (el.type === 'path' && el.pathAnchors?.length) { anchors = el.pathAnchors as any; closed = !!el.pathClosed; }
+    else { const r = shapeToPath(el); if (!r) { showToast('Scissors: cannot split this shape', 'info'); return []; } anchors = r.anchors as any; closed = r.closed; }
+    if (!anchors || anchors.length < 3) { showToast('Scissors: path too short', 'info'); return []; }
+    // anchors are element-local (origin at el.x,el.y); compare in local space
+    const lx = point.x - el.x, ly = point.y - el.y;
+    let best = 0, bestD = Infinity;
+    anchors.forEach((a, i) => { const d = (a.x - lx) ** 2 + (a.y - ly) ** 2; if (d < bestD) { bestD = d; best = i; } });
+
+    const mk = (subAnchors: any[]): DrawingElement | null => {
+        if (subAnchors.length < 2) return null;
+        const xs = subAnchors.map(a => a.x), ys = subAnchors.map(a => a.y);
+        const minX = Math.min(...xs), minY = Math.min(...ys);
+        return {
+            ...el, id: generateId('path'), type: 'path',
+            x: el.x + minX, y: el.y + minY,
+            width: Math.max(1, Math.max(...xs) - minX), height: Math.max(1, Math.max(...ys) - minY),
+            pathAnchors: subAnchors.map(a => ({ ...a, x: a.x - minX, y: a.y - minY })),
+            pathClosed: false, pathSubpaths: undefined, points: undefined, controlPoints: undefined,
+        } as DrawingElement;
+    };
+
+    const created: DrawingElement[] = [];
+    if (closed) {
+        const rotated = [...anchors.slice(best), ...anchors.slice(0, best), anchors[best]];
+        const p = mk(rotated); if (p) created.push(p);
+    } else {
+        const a = mk(anchors.slice(0, best + 1)); const b = mk(anchors.slice(best));
+        if (a) created.push(a); if (b) created.push(b);
+    }
+    if (!created.length) { showToast('Scissors: nothing to split', 'info'); return []; }
+    pushToHistory();
+    setStore('elements', list => [...list.filter(e => e.id !== id), ...created]);
+    setStore('selection', created.map(c => c.id));
+    showToast('Scissors: split', 'success');
+    return created.map(c => c.id);
+};
+
 /** Distinct solid fill/stroke colours used across the given elements, each with
  *  a usage count (most-used first) — the palette for Recolor Artwork. */
 export const getSelectionColors = (ids?: string[]): { color: string; count: number }[] => {
@@ -4281,6 +4410,121 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
     setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), ...created]);
     setStore('selection', created.map(c => c.id));
     showToast(`Pathfinder: ${op}`, 'success');
+    return created.map(c => c.id);
+};
+
+/**
+ * Decompose the selected shapes into atomic faces (the maximal regions bounded by a
+ * unique subset of the shapes) for the face-level Shape Builder. Exposed so the overlay
+ * can hit-test and highlight individual faces as the user drags. Returns [] when the
+ * selection is too small/large to decompose (caller falls back to whole-shape union).
+ */
+export const getShapeFaces = (ids: string[]): ShapeFace[] => {
+    const els = store.elements.filter(e => ids.includes(e.id));
+    if (els.length < 2) return [];
+    els.sort((a, b) => store.elements.indexOf(a) - store.elements.indexOf(b));
+    return computeShapeFaces(els);
+};
+
+/**
+ * Commit a face-level Shape Builder gesture. `touchedKeys` are the face keys the user
+ * painted over. mode 'merge' fuses the touched faces into one path and keeps every other
+ * face as its own path (Illustrator decomposes the artwork into faces on build); mode
+ * 'delete' drops the touched faces and keeps the rest — this is how you carve a notch or
+ * punch the overlap lens out. The original shapes are replaced by the resulting faces.
+ */
+export const commitShapeBuilderFaces = (ids: string[], touchedKeys: string[], mode: 'merge' | 'delete'): string[] => {
+    const els = store.elements.filter(e => ids.includes(e.id));
+    if (els.length < 2) return [];
+    els.sort((a, b) => store.elements.indexOf(a) - store.elements.indexOf(b));
+    const faces = computeShapeFaces(els);
+    if (!faces.length || !touchedKeys.length) return [];
+    const touchedSet = new Set(touchedKeys);
+    const touched = faces.filter(f => touchedSet.has(f.key));
+    const untouched = faces.filter(f => !touchedSet.has(f.key));
+    if (!touched.length) return [];
+
+    const base = els[0];
+    const style: Partial<DrawingElement> = {
+        strokeColor: base.strokeColor, backgroundColor: base.backgroundColor,
+        fillStyle: base.fillStyle, strokeWidth: base.strokeWidth, strokeStyle: base.strokeStyle,
+        renderStyle: base.renderStyle, opacity: base.opacity, roughness: base.roughness, layerId: base.layerId,
+    };
+    const created: DrawingElement[] = [];
+    const polysToPaths = (mp: { length: number }[], st: Partial<DrawingElement>) => {
+        for (const poly of mp as Poly[]) {
+            const p = buildPathFromPoly(poly, st);
+            if (p) created.push(p);
+        }
+    };
+    if (mode === 'merge') {
+        polysToPaths(unionFaces(touched), style);            // fused region as one path (per disjoint piece)
+        for (const f of untouched) polysToPaths(f.region, style); // remaining faces stay separate
+    } else {
+        for (const f of untouched) polysToPaths(f.region, style); // drop the touched faces (carve)
+    }
+    if (!created.length) {
+        // Everything was deleted (e.g. merge-delete consumed all faces) — just remove originals.
+        pushToHistory();
+        setStore('elements', list => list.filter(e => !ids.includes(e.id)));
+        setStore('selection', []);
+        showToast('Shape Builder: removed', 'success');
+        return [];
+    }
+    pushToHistory();
+    setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), ...created]);
+    setStore('selection', created.map(c => c.id));
+    showToast(mode === 'merge' ? 'Shape Builder: merged' : 'Shape Builder: deleted', 'success');
+    return created.map(c => c.id);
+};
+
+/**
+ * Magic Wand — select every (unlocked, visible) element sharing the reference element's
+ * fill colour, or stroke, or both. Reference defaults to the first selected element.
+ */
+export const selectSimilar = (refId?: string, match: 'fill' | 'stroke' | 'both' = 'fill'): string[] => {
+    const ref = store.elements.find(e => e.id === (refId ?? store.selection[0]));
+    if (!ref) { showToast('Magic Wand: select an element first', 'info'); return []; }
+    const fillEq = (e: DrawingElement) => (e.backgroundColor || '') === (ref.backgroundColor || '');
+    const strokeEq = (e: DrawingElement) => (e.strokeColor || '') === (ref.strokeColor || '');
+    const pred = match === 'fill' ? fillEq : match === 'stroke' ? strokeEq : (e: DrawingElement) => fillEq(e) && strokeEq(e);
+    const hidden = new Set(store.layers.filter(l => !l.visible).map(l => l.id));
+    const ids = store.elements.filter(e => !e.locked && !hidden.has(e.layerId!) && pred(e)).map(e => e.id);
+    setStore('selection', ids);
+    showToast(`Magic Wand: ${ids.length} similar`, 'success');
+    return ids;
+};
+
+/**
+ * Distort & Transform — apply Pucker/Bloat, Twirl, Zig-Zag (Scallop), Crystallize, or
+ * Roughen (Wrinkle) to the selected shapes' outlines, replacing each with a distorted
+ * `path` (Illustrator's Effect → Distort & Transform; also covers the Liquify intent as
+ * deterministic filters). `amount` is a 0..1 strength relative to each shape's size.
+ */
+export const applyDistort = (ids: string[], kind: DistortKind, amount = 0.25): string[] => {
+    const els = store.elements.filter(e => ids.includes(e.id));
+    if (!els.length) { showToast('Distort: select a shape', 'info'); return []; }
+    const created: DrawingElement[] = [];
+    const consumed: string[] = [];
+    for (const el of els) {
+        const mp = elementToMultiPolygon(el);
+        if (!mp.length) continue;
+        consumed.push(el.id);
+        const style: Partial<DrawingElement> = {
+            strokeColor: el.strokeColor, backgroundColor: el.backgroundColor, fillStyle: el.fillStyle,
+            strokeWidth: el.strokeWidth, strokeStyle: el.strokeStyle, renderStyle: el.renderStyle,
+            opacity: el.opacity, roughness: el.roughness, layerId: el.layerId,
+        };
+        for (const poly of mp) {
+            const path = buildPathFromPoly(distortPoly(poly, kind, amount), style);
+            if (path) created.push(path);
+        }
+    }
+    if (!created.length) { showToast('Distort: nothing to distort', 'info'); return []; }
+    pushToHistory();
+    setStore('elements', list => [...list.filter(e => !consumed.includes(e.id)), ...created]);
+    setStore('selection', created.map(c => c.id));
+    showToast(`Distort: ${kind}`, 'success');
     return created.map(c => c.id);
 };
 

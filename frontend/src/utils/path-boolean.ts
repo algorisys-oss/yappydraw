@@ -58,7 +58,7 @@ function geometryToRings(geo: any, cx: number, cy: number): Ring[] {
 }
 
 /** A single element as a MultiPolygon (each ring a disjoint polygon). */
-function elementToMultiPolygon(el: DrawingElement): MultiPoly {
+export function elementToMultiPolygon(el: DrawingElement): MultiPoly {
     const geo = getShapeGeometry(el);
     const cx = el.x + el.width / 2;
     const cy = el.y + el.height / 2;
@@ -129,4 +129,112 @@ export function runBooleanOp(elements: DrawingElement[], op: BooleanOp): Poly[] 
     }
     // Each result polygon keeps its outer ring + any holes (even-odd subpaths downstream).
     return (result || []).filter(poly => poly && poly.length > 0 && poly[0] && poly[0].length >= 4);
+}
+
+// ── Face-level Shape Builder ─────────────────────────────────────────────────
+// Decompose a set of (overlapping) shapes into atomic "faces" — the maximal
+// regions each bounded by a unique subset of the input shapes. This is what
+// Illustrator's Shape Builder operates on: you paint over individual faces (e.g.
+// just the lens where two circles overlap) to merge or delete them, rather than
+// whole shapes.
+
+/** A maximal region covered by exactly the shapes in `subset` (indices into the input). */
+export interface ShapeFace {
+    key: string;          // stable id = sorted subset, e.g. "0|2"
+    subset: number[];     // indices of input elements covering this face
+    region: MultiPoly;    // world-space geometry (outer ring + holes per poly)
+}
+
+function multiPolyArea(mp: MultiPoly): number {
+    let area = 0;
+    for (const poly of mp) {
+        for (const ring of poly) {
+            let a = 0;
+            for (let i = 0, n = ring.length - 1; i < n; i++) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+            area += Math.abs(a) / 2;
+        }
+    }
+    return area;
+}
+
+/** Point-in-region test honouring holes: inside an odd number of rings of any poly. */
+export function pointInMultiPoly(mp: MultiPoly, x: number, y: number): boolean {
+    for (const poly of mp) {
+        let inside = false;
+        for (const ring of poly) {
+            for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+                if (((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi || 1e-12) + xi)) inside = !inside;
+            }
+        }
+        if (inside) return true;
+    }
+    return false;
+}
+
+/**
+ * Compute the atomic faces of `elements`. For every non-empty subset S of the
+ * inputs, the face is `(∩ shapes in S) − (∪ shapes not in S)`; empty results are
+ * dropped. Bounded to `maxN` shapes (2^N subsets) — callers should fall back to
+ * whole-shape union beyond that. Faces are returned largest-first so a stroke
+ * point that lands on overlapping faces (it shouldn't, they're disjoint) is stable.
+ */
+export function computeShapeFaces(elements: DrawingElement[], maxN = 8): ShapeFace[] {
+    const mps = elements.map(elementToMultiPolygon);
+    const n = mps.length;
+    if (n < 2 || n > maxN) return [];
+    const faces: ShapeFace[] = [];
+    for (let mask = 1; mask < (1 << n); mask++) {
+        const subset: number[] = [];
+        for (let i = 0; i < n; i++) if (mask & (1 << i)) subset.push(i);
+        const inside = subset.map(i => mps[i]).filter(mp => mp.length);
+        if (inside.length !== subset.length) continue; // some shape had no geometry
+        let region: MultiPoly;
+        try {
+            region = inside.length === 1 ? inside[0]
+                : polygonClipping.intersection(inside[0] as any, ...inside.slice(1) as any) as MultiPoly;
+            if (!region || !region.length) continue;
+            const outside = mps.filter((_, i) => !subset.includes(i)).filter(mp => mp.length);
+            if (outside.length) {
+                region = polygonClipping.difference(region as any, ...outside as any) as MultiPoly;
+            }
+        } catch { continue; }
+        region = (region || []).filter(p => p && p[0] && p[0].length >= 4);
+        if (!region.length || multiPolyArea(region) < 0.5) continue;
+        faces.push({ key: subset.join('|'), subset, region });
+    }
+    faces.sort((a, b) => multiPolyArea(b.region) - multiPolyArea(a.region));
+    return faces;
+}
+
+/**
+ * Knife — split a region into the two pieces lying on either side of the infinite line
+ * through p0→p1. Builds a large half-plane quad per side and intersects. Returns
+ * [posSide, negSide]; a side is [] when the line misses the region on that side.
+ */
+export function splitMultiPolyByLine(mp: MultiPoly, p0: [number, number], p1: [number, number]): [MultiPoly, MultiPoly] {
+    const dx = p1[0] - p0[0], dy = p1[1] - p0[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len, uy = dy / len;   // along line
+    const nx = -uy, ny = ux;              // normal
+    const L = 1e6;
+    const A: [number, number] = [p0[0] - ux * L, p0[1] - uy * L];
+    const B: [number, number] = [p1[0] + ux * L, p1[1] + uy * L];
+    const posQuad: Poly = [[A, B, [B[0] + nx * L, B[1] + ny * L], [A[0] + nx * L, A[1] + ny * L], A]];
+    const negQuad: Poly = [[A, B, [B[0] - nx * L, B[1] - ny * L], [A[0] - nx * L, A[1] - ny * L], A]];
+    let pos: MultiPoly = [], neg: MultiPoly = [];
+    try { pos = polygonClipping.intersection(mp as any, [posQuad] as any) as MultiPoly; } catch { /* noop */ }
+    try { neg = polygonClipping.intersection(mp as any, [negQuad] as any) as MultiPoly; } catch { /* noop */ }
+    const clean = (m: MultiPoly) => (m || []).filter(p => p && p[0] && p[0].length >= 4);
+    return [clean(pos), clean(neg)];
+}
+
+/** Union several faces' regions into one MultiPoly (empty → []). */
+export function unionFaces(faces: ShapeFace[]): MultiPoly {
+    const regions = faces.map(f => f.region).filter(r => r.length);
+    if (!regions.length) return [];
+    if (regions.length === 1) return regions[0];
+    try {
+        return polygonClipping.union(regions[0] as any, ...regions.slice(1) as any) as MultiPoly;
+    } catch { return regions[0]; }
 }

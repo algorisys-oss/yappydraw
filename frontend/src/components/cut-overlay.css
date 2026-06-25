@@ -1,0 +1,38 @@
+.cut-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    cursor: crosshair;
+    pointer-events: auto;
+    touch-action: none;
+}
+
+.cut-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.cut-line {
+    stroke: #ef4444;
+    stroke-width: 1.5;
+    stroke-dasharray: 6 4;
+}
+
+.cut-hint {
+    position: absolute;
+    top: 64px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--text-primary, #111);
+    background: var(--bg-panel, #fff);
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+}

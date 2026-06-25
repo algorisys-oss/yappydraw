@@ -14,13 +14,13 @@ import {
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
-    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, addArtboard, deleteArtboard, renameArtboard, updateArtboard,
+    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
@@ -567,6 +567,63 @@ export const YappyAPI = {
         if (el.pathSubpaths && el.pathSubpaths.length) return { subpaths: el.pathSubpaths };
         if (el.pathAnchors) return { anchors: el.pathAnchors, closed: !!el.pathClosed };
         return null;
+    },
+
+    // --- Generative shapes (Illustrator: Spiral / Arc / Rectangular & Polar Grid) ---
+
+    /** Archimedean spiral as an open path. `decay` (0..1) tightens each turn toward the centre. */
+    createSpiral(cx: number, cy: number, radius: number, turns = 3, decay = 0, options?: ElementOptions): string | null {
+        const total = Math.max(0.5, turns) * Math.PI * 2;
+        const steps = Math.max(24, Math.round(turns * 48));
+        const k = Math.min(0.95, Math.max(0, decay));
+        const anchors: PathAnchor[] = [];
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;            // 0..1
+            const ang = t * total;
+            const r = radius * (k > 0 ? Math.pow(1 - k, t * turns) : t); // decay shrinks outer→inner
+            anchors.push({ x: cx + Math.cos(ang) * r, y: cy + Math.sin(ang) * r, kind: 'smooth' });
+        }
+        return this.createPath(anchors, { ...options, closed: false, backgroundColor: 'transparent' });
+    },
+
+    /** Circular arc as an open path (angles in degrees, clockwise from +x). */
+    createArc(cx: number, cy: number, radius: number, startDeg = 0, endDeg = 270, options?: ElementOptions): string | null {
+        const a0 = (startDeg * Math.PI) / 180, a1 = (endDeg * Math.PI) / 180;
+        const steps = Math.max(8, Math.round(Math.abs(endDeg - startDeg) / 4));
+        const anchors: PathAnchor[] = [];
+        for (let i = 0; i <= steps; i++) {
+            const ang = a0 + (a1 - a0) * (i / steps);
+            anchors.push({ x: cx + Math.cos(ang) * radius, y: cy + Math.sin(ang) * radius, kind: 'smooth' });
+        }
+        return this.createPath(anchors, { ...options, closed: false, backgroundColor: 'transparent' });
+    },
+
+    /** Rectangular grid (rows × cols cells) as a grouped set of line segments. */
+    createRectGrid(x: number, y: number, width: number, height: number, rows = 4, cols = 4, options?: ElementOptions): string | null {
+        const ids: string[] = [];
+        for (let c = 0; c <= cols; c++) { const gx = x + (width * c) / cols; const id = this.createLine(gx, y, gx, y + height, options); if (id) ids.push(id); }
+        for (let r = 0; r <= rows; r++) { const gy = y + (height * r) / rows; const id = this.createLine(x, gy, x + width, gy, options); if (id) ids.push(id); }
+        if (!ids.length) return null;
+        this.setSelected(ids); groupSelected();
+        return store.selection[0] ?? ids[0];
+    },
+
+    /** Polar grid: `rings` concentric circles + `spokes` radial lines, grouped. */
+    createPolarGrid(cx: number, cy: number, radius: number, rings = 3, spokes = 8, options?: ElementOptions): string | null {
+        const ids: string[] = [];
+        for (let r = 1; r <= rings; r++) {
+            const rr = (radius * r) / rings;
+            const circ = this.createArc(cx, cy, rr, 0, 360, options);
+            if (circ) ids.push(circ);
+        }
+        for (let s = 0; s < spokes; s++) {
+            const ang = (s / spokes) * Math.PI * 2;
+            const id = this.createLine(cx, cy, cx + Math.cos(ang) * radius, cy + Math.sin(ang) * radius, options);
+            if (id) ids.push(id);
+        }
+        if (!ids.length) return null;
+        this.setSelected(ids); groupSelected();
+        return store.selection[0] ?? ids[0];
     },
 
     // --- Specialized Elements ---
@@ -1418,6 +1475,10 @@ export const YappyAPI = {
     createSymbol(name?: string, ids?: string[]) { return createSymbol(ids ?? store.selection, name); },
     /** Place a new instance of a symbol on the canvas. */
     placeInstance(symbolId: string, x?: number, y?: number) { return placeInstance(symbolId, x, y); },
+    /** Toggle the Symbol Sprayer for a symbol (defaults to first). Pass nothing to turn off. */
+    toggleSymbolSprayer(symbolId?: string) { toggleSymbolSprayer(symbolId); },
+    /** Batch-spray instances of a symbol at world points (size jitter by default). */
+    spraySymbols(symbolId: string, points: { x: number; y: number }[], opts?: { scaleJitter?: number; rotateJitter?: number }) { return spraySymbolInstances(symbolId, points, opts); },
     /** Redefine a symbol from a set of elements — updates every instance live. */
     redefineSymbol(symbolId: string, fromIds: string[]) { redefineSymbol(symbolId, fromIds); },
     /** Detach (break link): replace selected instances with editable copies. */
@@ -1779,6 +1840,21 @@ export const YappyAPI = {
     toggleMeasure(active?: boolean) { toggleMeasure(active); },
     /** Toggle the Shape Builder (drag across ≥2 selected shapes to merge / Alt-drag to delete). */
     toggleShapeBuilder(active?: boolean) { toggleShapeBuilder(active); },
+    /** Magic Wand — select every element sharing the reference's fill ('fill'|'stroke'|'both'). */
+    selectSimilar(refId?: string, match: 'fill' | 'stroke' | 'both' = 'fill') { return selectSimilar(refId, match); },
+    /** Distort & Transform — 'pucker'|'bloat'|'twirl'|'zigzag'|'crystallize'|'roughen' on the selection (amount 0..1). */
+    distort(kind: 'pucker' | 'bloat' | 'twirl' | 'zigzag' | 'crystallize' | 'roughen', amount = 0.25, ids?: string[]) { return applyDistort(ids ?? [...store.selection], kind, amount); },
+    /** Toggle the Knife/Scissors cut tool (drag a line to slice, click a path to split). */
+    toggleCutTool(active?: boolean) { toggleCutTool(active); },
+    /** Knife — slice shapes along the line p0→p1 into pieces (targets default to selection / all crossed). */
+    knife(p0: { x: number; y: number }, p1: { x: number; y: number }, ids?: string[]) { return knifeCut(p0, p1, ids); },
+    /** Scissors — split a path at the anchor nearest `point`. */
+    splitPath(id: string, point: { x: number; y: number }) { return splitPathAt(id, point); },
+    /** Vertical Type — toggle stacked (top→bottom) text orientation on a text element. */
+    setTextVertical(id: string, on?: boolean) {
+        const el = this.getElement(id); if (!el) return;
+        updateElement(id, { verticalText: on ?? !el.verticalText } as any);
+    },
     /** Eyedropper: arm picking a style onto targets (default: selection); next canvas click on an object copies its style. */
     startEyedropper(targetIds?: string[]) { startEyedropper(targetIds); },
     /** Directly apply a source object's style to the armed targets. */

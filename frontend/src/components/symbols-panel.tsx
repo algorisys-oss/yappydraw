@@ -1,13 +1,13 @@
 import { type Component, For, Show, createSignal, onMount, createEffect } from 'solid-js';
 import {
     store, toggleSymbolsPanel, placeInstance, renameSymbol, deleteSymbol,
-    redefineSymbol, createSymbol, selectInstancesOf,
+    redefineSymbol, createSymbol, selectInstancesOf, toggleSymbolSprayer,
 } from '../store/app-store';
 import { renderElement } from '../utils/render-element';
 import { screenToWorld } from '../utils/viewport-transforms';
 import rough from 'roughjs';
 import type { SymbolDef } from '../types';
-import { X, Plus, Trash2, RefreshCw, Component as ComponentIcon } from 'lucide-solid';
+import { X, Plus, Trash2, RefreshCw, Component as ComponentIcon, SprayCan } from 'lucide-solid';
 import { draggablePanel } from '../utils/draggable-panel';
 import './symbols-panel.css';
 
@@ -153,6 +153,9 @@ const SymbolsPanel: Component = () => {
                                         <div class="sp-actions">
                                             <button class="sp-act" title="Place instance" onClick={() => place(sym.id)}>
                                                 <Plus size={13} />
+                                            </button>
+                                            <button class="sp-act" title="Spray instances (drag on canvas)" onClick={() => toggleSymbolSprayer(sym.id)}>
+                                                <SprayCan size={13} />
                                             </button>
                                             <button
                                                 class="sp-act"

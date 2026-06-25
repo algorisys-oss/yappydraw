@@ -264,6 +264,8 @@ export interface DrawingElement {
     fontStyle?: boolean | string;
     textAlign?: TextAlign;
     verticalAlign?: VerticalAlign;
+    /** Vertical Type: stack characters top→bottom, paragraphs as left→right columns. */
+    verticalText?: boolean;
     containerId?: string | null;
     textColor?: string;
     textHighlightEnabled?: boolean;

@@ -12,6 +12,9 @@ import {
     blendShapes,
     toggleRecolorPanel,
     toggleShapeBuilder,
+    toggleCutTool,
+    selectSimilar,
+    applyDistort,
     addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
@@ -33,6 +36,7 @@ import {
 import { shiftLaneIndicesOnRemove, hitTestPoolLane } from './pool-containment';
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from './transform-pivot';
 import { openRepeatDialog } from '../components/repeat-dialog';
+import { YappyAPI } from '../api';
 import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng, exportArtboard } from './export';
 import { shapeToPath } from './shape-to-path';
 import {
@@ -1172,6 +1176,17 @@ export function getContextMenuItems(
                 { label: 'Eyedropper — pick style from…', icon: '💧', onClick: () => startEyedropper() },
                 { label: 'Save as Graphic Style', icon: '🎨', onClick: () => createGraphicStyle([...store.selection]) },
                 { label: 'Recolor Artwork…', icon: '🌈', onClick: () => toggleRecolorPanel(true) },
+                { label: 'Select Similar (Magic Wand)', icon: '🪄', onClick: () => selectSimilar() },
+                {
+                    label: 'Distort & Transform', icon: '〰️', submenu: [
+                        { label: 'Pucker', onClick: () => applyDistort([...store.selection], 'pucker', 0.25) },
+                        { label: 'Bloat', onClick: () => applyDistort([...store.selection], 'bloat', 0.25) },
+                        { label: 'Twirl', onClick: () => applyDistort([...store.selection], 'twirl', 0.25) },
+                        { label: 'Zig-Zag', onClick: () => applyDistort([...store.selection], 'zigzag', 0.12) },
+                        { label: 'Crystallize', onClick: () => applyDistort([...store.selection], 'crystallize', 0.18) },
+                        { label: 'Roughen', onClick: () => applyDistort([...store.selection], 'roughen', 0.1) },
+                    ],
+                },
             );
         }
         if (selectionCount === 2) {
@@ -1187,6 +1202,15 @@ export function getContextMenuItems(
         }
         if (selectionCount >= 2) {
             items.push({ label: 'Shape Builder', icon: '⬓', onClick: () => toggleShapeBuilder(true) });
+        }
+        if (selectionCount >= 1) {
+            items.push({ label: 'Knife / Scissors', icon: '✂️', onClick: () => toggleCutTool(true) });
+        }
+        if (selectionCount === 1) {
+            const tEl = store.elements.find(e => e.id === store.selection[0]);
+            if (tEl && (tEl.type === 'text' || tEl.type === 'richtext')) {
+                items.push({ label: 'Vertical Type', icon: '↕', checked: !!tEl.verticalText, onClick: () => YappyAPI.setTextVertical(tEl.id) });
+            }
         }
         if (selectionCount === 1) {
             items.push(
@@ -1290,6 +1314,17 @@ export function getContextMenuItems(
             { separator: true },
             { label: 'Select all', shortcut: 'Ctrl+A', onClick: () => setStore('selection', store.elements.map(e => e.id)) },
             { label: 'Select by Type', submenu: buildSelectByTypeMenu() },
+            {
+                label: 'Insert', icon: '➕', submenu: (() => {
+                    const cx = worldX ?? 0, cy = worldY ?? 0;
+                    return [
+                        { label: 'Spiral', onClick: () => YappyAPI.createSpiral(cx, cy, 100, 3, 0.1) },
+                        { label: 'Arc', onClick: () => YappyAPI.createArc(cx, cy, 100, 0, 270) },
+                        { label: 'Rectangular Grid', onClick: () => YappyAPI.createRectGrid(cx - 100, cy - 80, 200, 160, 4, 4) },
+                        { label: 'Polar Grid', onClick: () => YappyAPI.createPolarGrid(cx, cy, 100, 3, 8) },
+                    ];
+                })(),
+            },
             { label: 'Zoom to Fit', shortcut: 'Ctrl+1', onClick: store.docType === 'slides' ? zoomToFitSlide : zoomToFit },
             { separator: true },
             { label: 'Show Grid', checked: store.gridSettings.enabled, onClick: toggleGrid },
