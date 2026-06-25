@@ -241,7 +241,7 @@ frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | Animatio
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 306 | LogoToolkitDoc:9 the:115
-frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 204 | MasksAppearanceTraceDoc:8 tools:14
+frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 205 | MasksAppearanceTraceDoc:8 tools:14
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 525 | YslTutorialDoc:8
 frontend/src/help-docs/help-page.css | - | 408 |
 frontend/src/help-docs/help-page.tsx | typescript | 304 | Component:6 ShapeDoc:11 getShapeFromHash:198 HelpPage:204 handleHashChange:210 navigateToShape:221 filteredShapes:226 currentDoc:236 handleBackToApp:238
@@ -314,7 +314,7 @@ frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 Folder
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 4143 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 Theme:29 ResolvedTheme:30 AppState:57 HistorySnapshot:331 AlignmentType:2920 DistributionType:2920 SelBBox:3003 LastTransform:3253 buildPathFromPoly:3745 WorldSub:3828 rdpAnchors:3831 normalizeWorldSubs:3859 makePathFromWorldSubs:3874 elementToWorldSubs:3893 startInkCleanupIfNeeded:4082
+frontend/src/store/app-store.ts | typescript | 4160 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 Theme:29 ResolvedTheme:30 AppState:57 HistorySnapshot:331 AlignmentType:2935 DistributionType:2935 SelBBox:3018 LastTransform:3268 buildPathFromPoly:3760 WorldSub:3843 rdpAnchors:3846 normalizeWorldSubs:3874 makePathFromWorldSubs:3889 elementToWorldSubs:3910 startInkCleanupIfNeeded:4099
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -364,7 +364,7 @@ frontend/src/utils/clip-mask.ts | typescript | 58 | ShapeGeometry:11 geometryToP
 frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:28
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 371 | Command:16
-frontend/src/utils/context-menu-builder.ts | typescript | 1451 | MergedCellRegion:44 buildSelectByTypeMenu:60 buildSelectBySamePropertyMenu:139 getContextMenuItems:169 buildFormatMenuItems:1282 buildBorderMenuItems:1377
+frontend/src/utils/context-menu-builder.ts | typescript | 1452 | MergedCellRegion:44 buildSelectByTypeMenu:60 buildSelectBySamePropertyMenu:139 getContextMenuItems:169 buildFormatMenuItems:1283 buildBorderMenuItems:1378
 frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperationParams:23 getOperationsForType:79 parseValues:87 bstInsert:99 bstRemove:138 nodeAt:154 bstDeleteAt:159 moveSubtreeUp:192 collectRelative:211 clearSubtree:219 relToAbs:227 simpleHash:247 hashTablePut:259 hashTableRemove:270 animateDsOperation:287 executeDsOperation:350 abortDsAlgorithm:544 isDsAlgorithmRunning:551 setDsAnimationSpeed:555 getDsAnimationSpeed:559 clearDsHighlights:563 animateDsStep:580 compareValues:604 bubbleSort:613 selectionSort:662 insertionSort:714 linearSearch:765 binarySearch:796 bfsTraversal:853 dfsInorderTraversal:882 dfsPreorderTraversal:912 executeDsSortSearch:944
 frontend/src/utils/element-transforms.ts | typescript | 362 | changeElementType:4 isConnectorType:11 getTransformOptions:99 getShapeIcon:153 getShapeTooltip:343 getCurveTypeOptions:347 getCurveTypeIcon:351 getCurveTypeTooltip:360
 frontend/src/utils/envelope-warp.ts | typescript | 252 | Pt:20 WarpGrid:21 getWarpGrid:26 defaultWarpGrid:40 catmull:59 subdivideGrid:66 getEffectiveGrid:98 defaultWarpCorners:105 bilinear:112 invBilinear:120 pointInQuad:142 meshWarpPoint:154 geoToSubpolylines:188 warpGeometry:237
@@ -382,7 +382,7 @@ frontend/src/utils/image-cache.ts | typescript | 33 | setImageLoadCallback:6 get
 frontend/src/utils/image-crop-utils.ts | typescript | 330 | CropHandle:10 cropToSourcePixels:15 sourceToCropLocal:33 initCropRect:51 finalizeCropRect:65 renderCropOverlay:86 getCropHandlePositions:182 hitTestCropHandle:206 applyCropDrag:240 getCropHandleCursor:321
 frontend/src/utils/image-filter-utils.ts | typescript | 34 | buildFilterString:7 hasActiveFilters:32
 frontend/src/utils/image-pixel-effects.ts | typescript | 520 | PixelEffectType:6 PixelEffectConfig:23 generatePixelMask:62 applySequentialLTR:140 applySequentialRTL:154 applySequentialTTB:168 applySequentialBTT:182 seededRandom:197 applyRandomPixels:202 applyWaveCenter:217 applyWaveCorner:245 applyScanLines:262 applyBlockReveal:286 applySpiral:318 applyGlitch:342
-frontend/src/utils/image-trace.ts | typescript | 145 | Pt:8 toBinary:12 edgePt:35 marchingSquares:46 rdp:102 traceImageData:124
+frontend/src/utils/image-trace.ts | typescript | 226 | Pt:8 toBinary:12 edgePt:35 marchingSquares:46 rdp:102 quantizeColors:123 loopsToSubpaths:163 traceImageDataColor:179 traceImageData:205
 frontend/src/utils/image-warp.ts | typescript | 125 | WarpGrid:9 Pt:11 affineFromTriangles:15 inflate:34 srcRect:43 tessellate:53 drawWarpedImage:74 warpedImageBounds:101 rasterizeWarpedImage:112
 frontend/src/utils/markdown-to-slides.ts | typescript | 237 | ParsedSlide:29 isMarkdownSlideContent:41 parseMarkdownToSlides:53 stripInlineMarkdown:228
 frontend/src/utils/math/morph-utils.ts | typescript | 202 | Point:7 MorphUtils:9{resamplePolygon:14}
@@ -502,7 +502,7 @@ tests/free-transform-warp.spec.ts | typescript | 308 | clickWorld:25
 tests/generate-samples.spec.ts | typescript | 122 | saveState:13
 tests/global.d.ts | typescript | 241 | Window:2
 tests/hotkeys.spec.ts | typescript | 199 |
-tests/image-trace.spec.ts | typescript | 39 |
+tests/image-trace.spec.ts | typescript | 63 |
 tests/isometric-cube.spec.ts | typescript | 34 |
 tests/isometric-flex.spec.ts | typescript | 35 |
 tests/layer-background.spec.ts | typescript | 50 |

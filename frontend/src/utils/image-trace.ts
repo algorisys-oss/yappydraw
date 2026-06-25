@@ -117,6 +117,87 @@ function rdp(points: Pt[], eps: number): Pt[] {
     return [a, b];
 }
 
+// ── Colour trace (k-means quantize → one filled layer per colour) ─────────────
+
+/** k-means colour quantization. Returns centroids + a per-pixel label (-1 = transparent). */
+function quantizeColors(data: Uint8ClampedArray, w: number, h: number, k: number): { centroids: number[][]; labels: Int32Array } {
+    const N = w * h;
+    const step = Math.max(1, Math.floor(N / 4000)); // ~4000 samples for speed
+    const samples: number[][] = [];
+    for (let p = 0; p < N; p += step) { if (data[p * 4 + 3] < 128) continue; samples.push([data[p * 4], data[p * 4 + 1], data[p * 4 + 2]]); }
+    if (samples.length === 0) return { centroids: [], labels: new Int32Array(N).fill(-1) };
+    k = Math.min(k, samples.length);
+    // Deterministic farthest-point (k-means++-style) seeding: spreads centroids across
+    // distinct colours so a dominant background doesn't swallow every cluster. No RNG.
+    const cents: number[][] = [[...samples[0]]];
+    while (cents.length < k) {
+        let bestIdx = 0, bestD = -1;
+        for (let i = 0; i < samples.length; i++) {
+            let md = Infinity;
+            for (const c of cents) { const dr = samples[i][0] - c[0], dg = samples[i][1] - c[1], db = samples[i][2] - c[2]; md = Math.min(md, dr * dr + dg * dg + db * db); }
+            if (md > bestD) { bestD = md; bestIdx = i; }
+        }
+        if (bestD <= 0) break; // no more distinct colours
+        cents.push([...samples[bestIdx]]);
+    }
+    for (let it = 0; it < 8; it++) {
+        const sums = Array.from({ length: k }, () => [0, 0, 0, 0]);
+        for (const s of samples) {
+            let best = 0, bd = Infinity;
+            for (let c = 0; c < k; c++) { const dr = s[0] - cents[c][0], dg = s[1] - cents[c][1], db = s[2] - cents[c][2]; const d = dr * dr + dg * dg + db * db; if (d < bd) { bd = d; best = c; } }
+            sums[best][0] += s[0]; sums[best][1] += s[1]; sums[best][2] += s[2]; sums[best][3]++;
+        }
+        for (let c = 0; c < k; c++) if (sums[c][3] > 0) cents[c] = [sums[c][0] / sums[c][3], sums[c][1] / sums[c][3], sums[c][2] / sums[c][3]];
+    }
+    const labels = new Int32Array(N).fill(-1);
+    for (let p = 0; p < N; p++) {
+        if (data[p * 4 + 3] < 128) continue;
+        const r = data[p * 4], g = data[p * 4 + 1], b = data[p * 4 + 2];
+        let best = 0, bd = Infinity;
+        for (let c = 0; c < k; c++) { const dr = r - cents[c][0], dg = g - cents[c][1], db = b - cents[c][2]; const d = dr * dr + dg * dg + db * db; if (d < bd) { bd = d; best = c; } }
+        labels[p] = best;
+    }
+    return { centroids: cents, labels };
+}
+
+function loopsToSubpaths(loops: Pt[][], w: number, h: number, eps: number, minArea: number) {
+    const subs: { points: Pt[]; closed: boolean }[] = [];
+    for (const loop of loops) {
+        const simp = rdp(loop, eps);
+        if (simp.length < 3) continue;
+        let area = 0;
+        for (let i = 0; i < simp.length; i++) { const p = simp[i], q = simp[(i + 1) % simp.length]; area += p.x * q.y - q.x * p.y; }
+        if (Math.abs(area) / 2 < minArea) continue;
+        subs.push({ points: simp.map(p => ({ x: (p.x - 1) / w, y: (p.y - 1) / h })), closed: true });
+    }
+    return subs;
+}
+
+const hex = (rgb: number[]) => '#' + rgb.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+
+/** Colour trace: one filled layer per quantized colour, sorted background-first (largest area). */
+export function traceImageDataColor(
+    data: Uint8ClampedArray, w: number, h: number,
+    opts: { colors?: number; simplify?: number; minArea?: number } = {}
+): { color: string; subpaths: { points: Pt[]; closed: boolean }[] }[] {
+    const k = opts.colors ?? 6;
+    const eps = opts.simplify ?? 1.0;
+    const minArea = opts.minArea ?? 12;
+    const { centroids, labels } = quantizeColors(data, w, h, k);
+    const layers: { color: string; subpaths: { points: Pt[]; closed: boolean }[]; area: number }[] = [];
+    for (let c = 0; c < centroids.length; c++) {
+        const bin = new Uint8Array(w * h);
+        let cnt = 0;
+        for (let p = 0; p < w * h; p++) if (labels[p] === c) { bin[p] = 1; cnt++; }
+        if (cnt < minArea) continue;
+        const subs = loopsToSubpaths(marchingSquares(bin, w, h), w, h, eps, minArea);
+        if (!subs.length) continue;
+        layers.push({ color: hex(centroids[c]), subpaths: subs, area: cnt });
+    }
+    layers.sort((a, b) => b.area - a.area); // background-first stacking
+    return layers.map(({ color, subpaths }) => ({ color, subpaths }));
+}
+
 /**
  * Trace RGBA image data into normalized vector subpaths (coords in [0,1]² of the image),
  * suitable for placing into a `path` element scaled to the source bounds.

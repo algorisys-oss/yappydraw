@@ -1080,10 +1080,11 @@ export function getContextMenuItems(
         if (store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'image')) {
             items.push({
                 label: 'Image Trace', icon: '🖉', submenu: [
-                    { label: 'Trace (default)', onClick: () => traceImage([...store.selection]) },
-                    { label: 'Trace — high detail', onClick: () => traceImage([...store.selection], { simplify: 0.4 }) },
-                    { label: 'Trace — low threshold', onClick: () => traceImage([...store.selection], { threshold: 90 }) },
-                    { label: 'Trace — high threshold', onClick: () => traceImage([...store.selection], { threshold: 170 }) },
+                    { label: 'Trace B&W (default)', onClick: () => traceImage([...store.selection]) },
+                    { label: 'Trace B&W — high detail', onClick: () => traceImage([...store.selection], { simplify: 0.4 }) },
+                    { label: 'Trace Colour — 6', onClick: () => traceImage([...store.selection], { colors: 6 }) },
+                    { label: 'Trace Colour — 12', onClick: () => traceImage([...store.selection], { colors: 12 }) },
+                    { label: 'Trace Colour — 16 (detail)', onClick: () => traceImage([...store.selection], { colors: 16, simplify: 0.5 }) },
                 ],
             });
         }

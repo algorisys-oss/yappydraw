@@ -13,7 +13,7 @@ import { textElementToOutline } from "../utils/text-to-outlines";
 import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
-import { traceImageData } from "../utils/image-trace";
+import { traceImageData, traceImageDataColor } from "../utils/image-trace";
 import type { PathAnchor, PathSubpath, PaintFill, PaintStroke } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
@@ -2046,10 +2046,11 @@ export const clearAppearance = (ids: string[]) => setAppearance(ids, undefined);
  * via marching squares; holes via even-odd). The new path is placed over the image filled
  * black; delete the image to keep just the vector. Returns the new path ids.
  */
-export const traceImage = (ids: string[], options: { threshold?: number; simplify?: number } = {}): string[] => {
+export const traceImage = (ids: string[], options: { threshold?: number; simplify?: number; colors?: number } = {}): string[] => {
     const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'image' && e.dataURL);
     if (targets.length === 0) { showToast('Trace: select an image', 'info'); return []; }
     const newPaths: DrawingElement[] = [];
+    const batch = new Set<string>(); // unique ids across all paths created here (not yet in store)
     for (const el of targets) {
         const img = getImage(el.dataURL!);
         if (!img || !img.width) { showToast('Trace: image still loading', 'info'); continue; }
@@ -2063,17 +2064,31 @@ export const traceImage = (ids: string[], options: { threshold?: number; simplif
         if (!cctx) continue;
         cctx.drawImage(img, 0, 0, tw, th);
         const data = cctx.getImageData(0, 0, tw, th).data;
-        const subs = traceImageData(data, tw, th, { threshold: options.threshold ?? 128, simplify: options.simplify ?? 1.0 });
-        if (subs.length === 0) { showToast('Trace: nothing found (adjust threshold)', 'info'); continue; }
-        const worldSubs: WorldSub[] = subs.map(sp => ({
-            closed: true,
-            anchors: sp.points.map(p => ({ x: el.x + p.x * el.width, y: el.y + p.y * el.height, kind: 'corner' as const })),
-        }));
-        const path = makePathFromWorldSubs(worldSubs, {
-            backgroundColor: '#000000', strokeColor: 'transparent', strokeWidth: 0,
-            fillStyle: 'solid', renderStyle: 'architectural',
-        });
-        if (path) newPaths.push(path);
+        const toWorldSubs = (subs: { points: { x: number; y: number }[]; closed: boolean }[]): WorldSub[] =>
+            subs.map(sp => ({ closed: true, anchors: sp.points.map(p => ({ x: el.x + p.x * el.width, y: el.y + p.y * el.height, kind: 'corner' as const })) }));
+
+        if (options.colors && options.colors >= 2) {
+            // Colour trace → one filled path per quantized colour, grouped & stacked.
+            const layers = traceImageDataColor(data, tw, th, { colors: options.colors, simplify: options.simplify ?? 1.0 });
+            if (layers.length === 0) { showToast('Trace: nothing found', 'info'); continue; }
+            const groupId = generateId('trace');
+            for (const layer of layers) {
+                const path = makePathFromWorldSubs(toWorldSubs(layer.subpaths), {
+                    backgroundColor: layer.color, strokeColor: 'transparent', strokeWidth: 0,
+                    fillStyle: 'solid', renderStyle: 'architectural',
+                }, batch);
+                if (path) { path.groupIds = [groupId]; newPaths.push(path); }
+            }
+        } else {
+            // Monochrome threshold trace → a single even-odd path.
+            const subs = traceImageData(data, tw, th, { threshold: options.threshold ?? 128, simplify: options.simplify ?? 1.0 });
+            if (subs.length === 0) { showToast('Trace: nothing found (adjust threshold)', 'info'); continue; }
+            const path = makePathFromWorldSubs(toWorldSubs(subs), {
+                backgroundColor: '#000000', strokeColor: 'transparent', strokeWidth: 0,
+                fillStyle: 'solid', renderStyle: 'architectural',
+            }, batch);
+            if (path) newPaths.push(path);
+        }
     }
     if (newPaths.length === 0) return [];
     pushToHistory();
@@ -2081,7 +2096,7 @@ export const traceImage = (ids: string[], options: { threshold?: number; simplif
     const ids2 = newPaths.map(p => p.id);
     setStore('selection', ids2);
     bumpDirtyRevision();
-    showToast(`Traced ${ids2.length} image${ids2.length > 1 ? 's' : ''}`, 'success');
+    showToast(`Traced ${ids2.length} layer${ids2.length > 1 ? 's' : ''}`, 'success');
     return ids2;
 };
 
@@ -3871,13 +3886,15 @@ function normalizeWorldSubs(subs: WorldSub[]): { subpaths: PathSubpath[]; x: num
 }
 
 /** Build a `path` element from normalized world subpaths (single → editable pathAnchors). */
-function makePathFromWorldSubs(subs: WorldSub[], style: Partial<DrawingElement>): DrawingElement | null {
+function makePathFromWorldSubs(subs: WorldSub[], style: Partial<DrawingElement>, batchIds?: Set<string>): DrawingElement | null {
     const norm = normalizeWorldSubs(subs);
     if (!norm) return null;
     const single = norm.subpaths.length === 1;
+    const id = generateId('path', batchIds);
+    batchIds?.add(id);
     return {
         ...store.defaultElementStyles,
-        id: generateId('path'),
+        id,
         type: 'path',
         x: norm.x, y: norm.y, width: norm.width, height: norm.height,
         pathAnchors: single ? norm.subpaths[0].anchors : undefined,

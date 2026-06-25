@@ -165,9 +165,10 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                     holes via the even-odd fill rule.
                 </p>
                 <p>
-                    Right-click an image → <strong>Image Trace</strong> → <em>Trace (default)</em>,
-                    <em> high detail</em>, or a <em>threshold</em> variant. The new black path is placed over the
-                    image; <strong>delete the image</strong> to keep just the vector (or recolor the path to compare).
+                    Right-click an image → <strong>Image Trace</strong>. <strong>B&amp;W</strong> traces a single
+                    silhouette path (with holes); <strong>Colour — 6 / 12 / 16</strong> quantizes the image into that
+                    many colours and traces <em>one filled path per colour</em> (stacked, grouped). The new paths are
+                    placed over the image; <strong>delete the image</strong> to keep just the vectors.
                 </p>
 
                 <h3>Example</h3>
