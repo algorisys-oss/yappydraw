@@ -109,6 +109,7 @@ export interface SlideDocument {
     globalSettings?: GlobalSettings;
     gridSettings?: GridSettings;
     states?: DisplayState[];
+    symbols?: import('../types').SymbolDef[];
 }
 
 /**

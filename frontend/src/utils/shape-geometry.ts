@@ -83,6 +83,7 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
 
         case 'rectangle':
         case 'image':
+        case 'symbolInstance':
         case 'text':
 
         case 'umlClass':

@@ -14,7 +14,7 @@ import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
-import type { PathAnchor, PathSubpath, PaintFill, PaintStroke } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
 import { defaultWarpGrid, getWarpGrid } from "../utils/envelope-warp";
@@ -117,6 +117,8 @@ interface AppState {
     states: DisplayState[];
     activeStateId?: string;
     showStatePanel: boolean;
+    // Reusable symbols (definitions referenced by 'symbolInstance' elements)
+    symbols: SymbolDef[];
     showSlideNavigator: boolean;
     showSlideToolbar: boolean;
     showMainToolbar: boolean;
@@ -295,6 +297,7 @@ const initialState: AppState = {
     selectedDsType: 'dsArray',
     activeDsOpsElementId: null,
     states: [],
+    symbols: [],
     showStatePanel: false,
     showSlideNavigator: true,
     showSlideToolbar: true,
@@ -333,6 +336,7 @@ interface HistorySnapshot {
     layers: Layer[];
     slides: Slide[];
     states: DisplayState[];
+    symbols: SymbolDef[];
     gridSettings: GridSettings;
     canvasBackgroundColor: string;
     docType: 'infinite' | 'slides';
@@ -365,6 +369,7 @@ const captureSnapshot = (): HistorySnapshot => ({
     layers: store.layers.map(l => ({ ...l })),
     slides: store.slides.map(s => ({ ...s })),
     states: store.states.map(s => ({ ...s })),
+    symbols: store.symbols.map(s => ({ ...s, elements: s.elements.map(e => ({ ...e })) })),
     gridSettings: { ...store.gridSettings },
     canvasBackgroundColor: store.canvasBackgroundColor,
     docType: store.docType,
@@ -375,6 +380,7 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("layers", snapshot.layers);
     setStore("slides", snapshot.slides);
     setStore("states", snapshot.states);
+    setStore("symbols", snapshot.symbols || []);
     setStore("gridSettings", snapshot.gridSettings);
     setStore("canvasBackgroundColor", snapshot.canvasBackgroundColor);
     setStore("docType", snapshot.docType);
@@ -1683,6 +1689,7 @@ export const loadDocument = (doc: any) => {
         setStore("slides", JSON.parse(JSON.stringify(slides)));
         setStore("layers", JSON.parse(JSON.stringify(layers)));
         setStore("states", JSON.parse(JSON.stringify(states)));
+        setStore("symbols", JSON.parse(JSON.stringify(doc.symbols || [])));
         setStore("gridSettings", JSON.parse(JSON.stringify(gridSettings)));
 
         // Migrate old showMindmapToolbar -> showQuickToolbar
@@ -1983,6 +1990,99 @@ export const makeClippingMask = (maskType: 'clip' | 'opacity' = 'clip') => {
 
 /** Make an opacity (luminance) mask — the top object's brightness becomes the others' alpha. */
 export const makeOpacityMask = () => makeClippingMask('opacity');
+
+// ── Symbols / instances ──────────────────────────────────────────────────────
+
+/**
+ * Create a Symbol from the selection: snapshot the selected elements (normalized to a 0,0
+ * origin), store it as a reusable definition, and replace the selection with one instance.
+ * Editing the symbol (redefineSymbol) updates every instance live.
+ */
+export const createSymbol = (ids: string[], name?: string): string | null => {
+    const els = store.elements.filter(e => ids.includes(e.id));
+    if (els.length === 0) { showToast('Symbol: select objects', 'info'); return null; }
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const e of els) { minX = Math.min(minX, e.x); minY = Math.min(minY, e.y); maxX = Math.max(maxX, e.x + e.width); maxY = Math.max(maxY, e.y + e.height); }
+    const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
+    // Normalize element copies to a 0,0 origin (strip group/mask refs).
+    const norm = els.map(e => { const { groupIds, clipMaskId, isClipMask, ...rest } = e as any; return { ...rest, x: e.x - minX, y: e.y - minY } as DrawingElement; });
+    const symId = generateId('sym' as any);
+    const sym: SymbolDef = { id: symId, name: name || `Symbol ${store.symbols.length + 1}`, width: w, height: h, elements: norm };
+    const inst: DrawingElement = {
+        ...store.defaultElementStyles,
+        id: generateId('symi' as any), type: 'symbolInstance', symbolId: symId,
+        x: minX, y: minY, width: w, height: h, angle: 0, seed: 1, roundness: null,
+        locked: false, link: null, layerId: store.activeLayerId,
+    } as DrawingElement;
+    pushToHistory();
+    setStore('symbols', list => [...list, sym]);
+    setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), inst]);
+    setStore('selection', [inst.id]);
+    bumpDirtyRevision();
+    showToast(`Created ${sym.name}`, 'success');
+    return symId;
+};
+
+/** Place a new instance of a symbol at (x, y). */
+export const placeInstance = (symbolId: string, x?: number, y?: number): string | null => {
+    const sym = store.symbols.find(s => s.id === symbolId);
+    if (!sym) return null;
+    const inst: DrawingElement = {
+        ...store.defaultElementStyles,
+        id: generateId('symi' as any), type: 'symbolInstance', symbolId,
+        x: x ?? 60, y: y ?? 60, width: sym.width, height: sym.height, angle: 0, seed: 1,
+        roundness: null, locked: false, link: null, layerId: store.activeLayerId,
+    } as DrawingElement;
+    pushToHistory();
+    setStore('elements', list => [...list, inst]);
+    setStore('selection', [inst.id]);
+    bumpDirtyRevision();
+    return inst.id;
+};
+
+/** Redefine a symbol's contents from a set of elements (normalized) — updates all instances. */
+export const redefineSymbol = (symbolId: string, fromIds: string[]) => {
+    const sym = store.symbols.find(s => s.id === symbolId);
+    const els = store.elements.filter(e => fromIds.includes(e.id));
+    if (!sym || els.length === 0) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const e of els) { minX = Math.min(minX, e.x); minY = Math.min(minY, e.y); maxX = Math.max(maxX, e.x + e.width); maxY = Math.max(maxY, e.y + e.height); }
+    const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
+    const norm = els.map(e => ({ ...e, x: e.x - minX, y: e.y - minY }));
+    pushToHistory();
+    setStore('symbols', s => s.id === symbolId, () => ({ width: w, height: h, elements: norm }));
+    bumpDirtyRevision();
+    showToast('Symbol redefined — instances updated', 'success');
+};
+
+/** Detach (break link) — replace selected instances with editable copies of the symbol. */
+export const detachInstance = (ids: string[]) => {
+    const insts = store.elements.filter(e => ids.includes(e.id) && e.type === 'symbolInstance' && e.symbolId);
+    if (insts.length === 0) { showToast('Detach: select an instance', 'info'); return; }
+    pushToHistory();
+    const additions: DrawingElement[] = [];
+    const remove = new Set<string>();
+    const batch = new Set<string>();
+    for (const inst of insts) {
+        const sym = store.symbols.find(s => s.id === inst.symbolId);
+        if (!sym) continue;
+        remove.add(inst.id);
+        const sx = sym.width ? inst.width / sym.width : 1, sy = sym.height ? inst.height / sym.height : 1;
+        const gid = generateId('grp' as any);
+        for (const child of sym.elements) {
+            const id = generateId(child.type as any, batch); batch.add(id);
+            const copy: any = { ...child, id, x: inst.x + child.x * sx, y: inst.y + child.y * sy, width: child.width * sx, height: child.height * sy, groupIds: [gid] };
+            if (child.points) copy.points = scalePoints(child.points, sx, sy);
+            if (child.pathAnchors) copy.pathAnchors = scalePathAnchors(child.pathAnchors as any, sx, sy);
+            if (child.pathSubpaths) copy.pathSubpaths = scalePathSubpaths(child.pathSubpaths as any, sx, sy);
+            additions.push(copy);
+        }
+    }
+    setStore('elements', list => [...list.filter(e => !remove.has(e.id)), ...additions]);
+    setStore('selection', additions.map(a => a.id));
+    bumpDirtyRevision();
+    showToast('Instance detached', 'success');
+};
 
 /** Release Clipping Mask — un-hide the mask shape and drop the clip from its targets. */
 export const releaseClippingMask = () => {

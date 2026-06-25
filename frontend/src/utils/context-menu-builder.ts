@@ -8,7 +8,7 @@ import type { DrawingElement, TableCellSelection } from '../types';
 import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
-    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask,
+    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance,
     addAppearanceFill, addAppearanceStroke, clearAppearance, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
@@ -1066,6 +1066,13 @@ export function getContextMenuItems(
 
         if (isAnyGrouped) {
             items.push({ label: 'Ungroup', shortcut: 'Ctrl+Shift+G', onClick: ungroupSelected });
+        }
+
+        // Symbols / instances
+        if (selectionCount >= 1) {
+            const anyInstance = store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'symbolInstance');
+            items.push({ label: 'Create Symbol', icon: '◈', onClick: () => createSymbol([...store.selection]) });
+            if (anyInstance) items.push({ label: 'Detach Instance', icon: '⛓', onClick: () => detachInstance([...store.selection]) });
         }
 
         const isAnyClipped = store.selection.some(id => {

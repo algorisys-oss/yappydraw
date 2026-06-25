@@ -12,6 +12,7 @@ import {
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
+    createSymbol, placeInstance, redefineSymbol, detachInstance,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1393,6 +1394,17 @@ export const YappyAPI = {
         return traceImage(ids ?? store.selection, options);
     },
 
+    /** Symbols: turn the selection into a reusable symbol (+ one instance). Returns symbol id. */
+    createSymbol(name?: string, ids?: string[]) { return createSymbol(ids ?? store.selection, name); },
+    /** Place a new instance of a symbol on the canvas. */
+    placeInstance(symbolId: string, x?: number, y?: number) { return placeInstance(symbolId, x, y); },
+    /** Redefine a symbol from a set of elements — updates every instance live. */
+    redefineSymbol(symbolId: string, fromIds: string[]) { redefineSymbol(symbolId, fromIds); },
+    /** Detach (break link): replace selected instances with editable copies. */
+    detachInstance(ids?: string[]) { detachInstance(ids ?? store.selection); },
+    /** List the document's symbol definitions. */
+    listSymbols() { return store.symbols.map(s => ({ id: s.id, name: s.name, width: s.width, height: s.height })); },
+
     /** Make a clipping mask: the top selected object clips the others to its outline. */
     makeClippingMask() { makeClippingMask(); },
     /** Make an opacity mask: the top object's luminance becomes the others' alpha (soft fade). */
@@ -2021,6 +2033,7 @@ export const YappyAPI = {
                 globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
                 gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
                 states: JSON.parse(JSON.stringify(store.states)),
+                symbols: JSON.parse(JSON.stringify(store.symbols)),
             };
             return cloudStorageManager.save(doc, options);
         },

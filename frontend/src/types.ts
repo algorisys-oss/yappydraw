@@ -18,7 +18,10 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
     | 'bpmnDataObject' | 'bpmnAnnotation' | 'bpmnPool'
     | 'bpmnEventGateway' | 'bpmnDataStore' | 'bpmnGroup'
     | 'path'
-    | 'video';
+    | 'video' | 'symbolInstance';
+
+/** A reusable symbol definition: a normalized (origin-0) snapshot of elements. */
+export interface SymbolDef { id: string; name: string; width: number; height: number; elements: DrawingElement[]; }
 
 export type ToolType = ElementType | 'lasso' | 'crop';
 
@@ -321,6 +324,7 @@ export interface DrawingElement {
     isClipMask?: boolean;
     clipMaskId?: string | null;
     maskType?: 'clip' | 'opacity';
+    symbolId?: string; // for type 'symbolInstance' — id of the SymbolDef it instances
     // Appearance stack — extra fills/strokes drawn OVER the base shape, bottom-to-top.
     // Absent = just the base backgroundColor/strokeColor (fully back-compatible).
     appearance?: { fills?: PaintFill[]; strokes?: PaintStroke[] };

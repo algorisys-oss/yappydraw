@@ -172,6 +172,7 @@ function performAutoSave(): void {
             globalSettings: JSON.parse(JSON.stringify(store.globalSettings ?? {})),
             gridSettings: JSON.parse(JSON.stringify(store.gridSettings ?? {})),
             states: JSON.parse(JSON.stringify(store.states ?? [])),
+            symbols: JSON.parse(JSON.stringify(store.symbols ?? [])),
         };
 
         const json = JSON.stringify(slideDoc);

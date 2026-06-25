@@ -4,6 +4,7 @@ import { CircleRenderer } from "./renderers/circle-renderer";
 import { DiamondRenderer } from "./renderers/diamond-renderer";
 import { TextRenderer } from "./renderers/text-renderer";
 import { ImageRenderer } from "./renderers/image-renderer";
+import { SymbolInstanceRenderer } from "./renderers/symbol-instance-renderer";
 import { VideoRenderer } from "./renderers/video-renderer";
 import { StickyNoteRenderer } from "./renderers/sticky-note-renderer";
 import { PolygonRenderer } from "./renderers/polygon-renderer";
@@ -39,6 +40,7 @@ export function registerShapes() {
     shapeRegistry.register('text', new TextRenderer());
     shapeRegistry.register('richtext', new TextRenderer());
     shapeRegistry.register('image', new ImageRenderer());
+    shapeRegistry.register('symbolInstance', new SymbolInstanceRenderer());
     shapeRegistry.register('video', new VideoRenderer());
     shapeRegistry.register('stickyNote', new StickyNoteRenderer());
 
