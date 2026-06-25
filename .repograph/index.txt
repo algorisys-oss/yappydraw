@@ -369,7 +369,7 @@ frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperat
 frontend/src/utils/element-transforms.ts | typescript | 362 | changeElementType:4 isConnectorType:11 getTransformOptions:99 getShapeIcon:153 getShapeTooltip:343 getCurveTypeOptions:347 getCurveTypeIcon:351 getCurveTypeTooltip:360
 frontend/src/utils/envelope-warp.ts | typescript | 252 | Pt:20 WarpGrid:21 getWarpGrid:26 defaultWarpGrid:40 catmull:59 subdivideGrid:66 getEffectiveGrid:98 defaultWarpCorners:105 bilinear:112 invBilinear:120 pointInQuad:142 meshWarpPoint:154 geoToSubpolylines:188 warpGeometry:237
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
-frontend/src/utils/export.ts | typescript | 914 | ShapeGeometry:9 geometryToDs:19
+frontend/src/utils/export.ts | typescript | 974 | ShapeGeometry:9 buildAppearanceSvgGroup:16 geometryToDs:66
 frontend/src/utils/geometry-scale.ts | typescript | 69 | scalePoints:13 scalePathAnchors:33 scalePathSubpaths:47 scaleEraseStrokes:53
 frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
 frontend/src/utils/geometry.ts | typescript | 433 | isPointInPolygon:5 distanceToSegment:19 cubicBezier:59 cubicBezierAngle:64 getBezierPoints:98 isPointOnBezier:111 isPointOnPolyline:117 isPointInEllipse:128 isPointNearEllipseStroke:142 rotatePoint:177 with:356
@@ -484,7 +484,7 @@ scripts/repograph-refresh.sh | shell | 25 |
 scripts/test_relative_path.ts | typescript | 58 |
 tests/alignment.spec.ts | typescript | 79 |
 tests/api.spec.ts | typescript | 155 |
-tests/appearance-stack.spec.ts | typescript | 51 |
+tests/appearance-stack.spec.ts | typescript | 68 |
 tests/bpmn.spec.ts | typescript | 327 | markers:152
 tests/clipping-mask.spec.ts | typescript | 45 |
 tests/code-block.spec.ts | typescript | 163 | hello:35 App:128

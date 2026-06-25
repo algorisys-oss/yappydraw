@@ -10,6 +10,53 @@ import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
 import { getImage } from "./image-cache";
 import { rasterizeWarpedImage } from "./image-warp";
 
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+/** Build an SVG <g> of the element's appearance-stack extras (centred frame), or null. */
+function buildAppearanceSvgGroup(el: any, rc: any, options: any): SVGGElement | null {
+    const ap = el.appearance;
+    if (!ap) return null;
+    const fills = (ap.fills || []).filter((f: any) => f.visible !== false && f.color && f.color !== 'transparent');
+    const strokes = (ap.strokes || []).filter((s: any) => s.visible !== false && s.color && s.color !== 'transparent' && s.width > 0);
+    if (!fills.length && !strokes.length) return null;
+    const geo = getShapeGeometry(el);
+    const { ds, evenOdd } = geo ? geometryToDs(geo) : { ds: [] as string[], evenOdd: false };
+    if (!ds.length) return null;
+    const sketch = (el.renderStyle ?? 'sketch') === 'sketch';
+    const g = document.createElementNS(SVGNS, 'g');
+    g.setAttribute('transform', `translate(${el.x + el.width / 2}, ${el.y + el.height / 2})`);
+    const dashArr = (d?: string) => d === 'dashed' ? '10 10' : d === 'dotted' ? '2 8' : undefined;
+    for (const f of fills) {
+        for (const d of ds) {
+            if (sketch) {
+                g.appendChild(rc.path(d, { ...options, fill: f.color, fillStyle: 'solid', stroke: 'none' }));
+            } else {
+                const p = document.createElementNS(SVGNS, 'path');
+                p.setAttribute('d', d); p.setAttribute('fill', f.color); p.setAttribute('stroke', 'none');
+                if (evenOdd) p.setAttribute('fill-rule', 'evenodd');
+                if (f.opacity != null) p.setAttribute('fill-opacity', `${f.opacity}`);
+                g.appendChild(p);
+            }
+        }
+    }
+    for (const s of strokes) {
+        const da = dashArr(s.dash);
+        for (const d of ds) {
+            if (sketch) {
+                g.appendChild(rc.path(d, { ...options, stroke: s.color, strokeWidth: s.width, fill: 'none', strokeLineDash: da ? (s.dash === 'dotted' ? [2, 8] : [10, 10]) : undefined }));
+            } else {
+                const p = document.createElementNS(SVGNS, 'path');
+                p.setAttribute('d', d); p.setAttribute('fill', 'none'); p.setAttribute('stroke', s.color);
+                p.setAttribute('stroke-width', `${s.width}`); p.setAttribute('stroke-linecap', 'round'); p.setAttribute('stroke-linejoin', 'round');
+                if (da) p.setAttribute('stroke-dasharray', da);
+                if (s.opacity != null) p.setAttribute('stroke-opacity', `${s.opacity}`);
+                g.appendChild(p);
+            }
+        }
+    }
+    return g;
+}
+
 /**
  * Convert a shape's geometry (centred frame: origin at the element centre) into one or
  * more SVG path `d` strings. Used to export shapes as true vector `<path>`s instead of
@@ -628,6 +675,19 @@ export const exportToSvg = (onlySelected: boolean) => {
                 });
             }
             node = wrapper;
+        }
+
+        // Appearance stack → extra fills/strokes over the base, as real SVG. Canvas-fallback
+        // shapes already have them baked into the raster, so skip those. Wrapping the base +
+        // an extras <g> lets the finalizer's rotate/flip apply to both together.
+        if (node && !isCanvasFallback && el.appearance) {
+            const apG = buildAppearanceSvgGroup(el, rc, options);
+            if (apG) {
+                const wrap = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                wrap.appendChild(node);
+                wrap.appendChild(apG);
+                node = wrap;
+            }
         }
 
         if (node) {
