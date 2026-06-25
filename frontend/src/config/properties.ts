@@ -1310,6 +1310,22 @@ export const properties: PropertyConfig[] = [
         defaultValue: 0
     },
     {
+        key: 'shearX',
+        label: 'Shear X',
+        type: 'number',
+        group: 'dimensions',
+        applicableTo: 'all',
+        defaultValue: 0
+    },
+    {
+        key: 'shearY',
+        label: 'Shear Y',
+        type: 'number',
+        group: 'dimensions',
+        applicableTo: 'all',
+        defaultValue: 0
+    },
+    {
         key: 'locked',
         label: 'Locked',
         type: 'toggle',

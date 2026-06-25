@@ -77,6 +77,20 @@ export function wasmHitTestElement(
     py = p.y;
   }
 
+  // Undo shear in the bridge (not the WASM binary) so WASM hit-tests an un-sheared
+  // point, matching the JS path in hit-testing.ts — keeps the .wasm layout unchanged.
+  const shearX = el.shearX || 0;
+  const shearY = el.shearY || 0;
+  if (shearX !== 0 || shearY !== 0) {
+    const det = 1 - shearX * shearY;
+    if (det !== 0) {
+      const dx = px - cx;
+      const dy = py - cy;
+      px = cx + (dx - shearX * dy) / det;
+      py = cy + (dy - shearY * dx) / det;
+    }
+  }
+
   const result: number = (w as any).hitTestSingle(
     px, py,
     el.x, el.y, el.width, el.height,

@@ -310,6 +310,11 @@ export interface DrawingElement {
     autoResize?: boolean; // Auto-resize based on text
     flipX?: boolean; // Mirror horizontally
     flipY?: boolean; // Mirror vertically
+    // General Free-Transform shear factors (NOT the perspectiveBlock-specific skewX/skewY
+    // below, which warp that shape's 3D back face). Applied about the element centre as the
+    // matrix [[1, shearX],[shearY, 1]] — shearX shifts x by shearX·y, shearY shifts y by shearY·x.
+    shearX?: number; // Horizontal shear factor (default: 0)
+    shearY?: number; // Vertical shear factor (default: 0)
     renderScale?: number; // Canvas-level scale for zoom animations (default: 1)
     parentId?: string | null;
     isCollapsed?: boolean;

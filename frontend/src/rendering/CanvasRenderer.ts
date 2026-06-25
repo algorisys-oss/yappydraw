@@ -22,6 +22,7 @@ export class CanvasRenderer implements IRenderer {
     translate(x: number, y: number): void { this.ctx.translate(x, y); }
     rotate(angle: number): void { this.ctx.rotate(angle); }
     scale(x: number, y: number): void { this.ctx.scale(x, y); }
+    transform(a: number, b: number, c: number, d: number, e: number, f: number): void { this.ctx.transform(a, b, c, d, e, f); }
 
     // ── Path Building ──
     beginPath(): void { this.ctx.beginPath(); }

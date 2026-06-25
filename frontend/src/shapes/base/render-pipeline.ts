@@ -104,10 +104,14 @@ export class RenderPipeline {
         const cy = finalY + el.height / 2;
 
         const rs = el.renderScale;
-        if (finalAngle || el.flipX || el.flipY || (rs !== undefined && rs !== 1)) {
+        const shearX = el.shearX || 0;
+        const shearY = el.shearY || 0;
+        if (finalAngle || el.flipX || el.flipY || shearX || shearY || (rs !== undefined && rs !== 1)) {
             renderer.translate(cx, cy);
             if (finalAngle) renderer.rotate(finalAngle);
             if (el.flipX || el.flipY) renderer.scale(el.flipX ? -1 : 1, el.flipY ? -1 : 1);
+            // Shear about the centre: [[1, shearX],[shearY, 1]] → ctx.transform(1, shearY, shearX, 1, 0, 0).
+            if (shearX || shearY) renderer.transform(1, shearY, shearX, 1, 0, 0);
             if (rs !== undefined && rs !== 1) renderer.scale(rs, rs);
             renderer.translate(-cx, -cy);
         }

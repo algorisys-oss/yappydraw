@@ -28,6 +28,22 @@ function unrotatePoint(x: number, y: number, cx: number, cy: number, angle: numb
 }
 
 /**
+ * Inverse of the shear transform [[1, shearX],[shearY, 1]] about a centre. Maps a world
+ * point back into the un-sheared local frame so axis-aligned shape tests still apply.
+ */
+function unshearPoint(p: { x: number; y: number }, cx: number, cy: number, shearX: number, shearY: number) {
+    if (!shearX && !shearY) return p;
+    const det = 1 - shearX * shearY;
+    if (det === 0) return p;
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    return {
+        x: cx + (dx - shearX * dy) / det,
+        y: cy + (dy - shearY * dx) / det,
+    };
+}
+
+/**
  * Tests whether a point (x, y) in world coordinates hits the given element.
  *
  * Uses a two-phase approach:
@@ -79,10 +95,11 @@ function hitTestGeometry(
         return wasmHitTestElement(el, x, y, threshold);
     }
 
-    // Transform point to local non-rotated space
+    // Transform point to local non-rotated space, then undo shear so the axis-aligned
+    // broad/narrow phases below see the un-sheared shape. Inverse of [[1,shearX],[shearY,1]].
     const cx = el.x + el.width / 2;
     const cy = el.y + el.height / 2;
-    const p = unrotatePoint(x, y, cx, cy, el.angle || 0);
+    const p = unshearPoint(unrotatePoint(x, y, cx, cy, el.angle || 0), cx, cy, el.shearX || 0, el.shearY || 0);
 
     // Check if inside bounding box (broad phase)
     // Normalize bounds to handle negative width/height
@@ -348,6 +365,16 @@ function isPointInEraseHole(el: DrawingElement, x: number, y: number): boolean {
     // Undo flip (reflection about center).
     if (el.flipX) lx = 2 * cx - lx;
     if (el.flipY) ly = 2 * cy - ly;
+    // Undo shear (about center) — inverse of [[1,shearX],[shearY,1]].
+    const shX = el.shearX || 0, shY = el.shearY || 0;
+    if (shX || shY) {
+        const det = 1 - shX * shY;
+        if (det !== 0) {
+            const dx = lx - cx, dy = ly - cy;
+            lx = cx + (dx - shX * dy) / det;
+            ly = cy + (dy - shY * dx) / det;
+        }
+    }
     // Undo renderScale (about center).
     const rs = el.renderScale;
     if (rs !== undefined && rs !== 1 && rs !== 0) {

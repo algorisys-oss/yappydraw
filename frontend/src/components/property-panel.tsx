@@ -647,7 +647,7 @@ const PropertyPanel: Component = () => {
 
             // Filter out properties that don't make sense for defaults (like locked, link, angle, width/height?)
             if (target.type === 'defaults') {
-                if (['locked', 'link', 'tag', 'angle', 'x', 'y', 'width', 'height', 'containerText', 'text', 'shadowOffsetX', 'shadowOffsetY'].includes(p.key)) return false;
+                if (['locked', 'link', 'tag', 'angle', 'x', 'y', 'width', 'height', 'shearX', 'shearY', 'containerText', 'text', 'shadowOffsetX', 'shadowOffsetY'].includes(p.key)) return false;
             }
 
             // In slides mode, hide canvasBackgroundColor from canvas settings —

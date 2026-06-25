@@ -23,6 +23,7 @@ import {
     saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
+import { exportToSvg } from "./utils/export";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
@@ -1340,6 +1341,11 @@ export const YappyAPI = {
      */
     flipSelection(direction: 'horizontal' | 'vertical', axisValue?: number) {
         flipSelected(direction, axisValue);
+    },
+
+    /** Serialize the drawing (or selection) to an SVG string. Also triggers a download. */
+    exportSVG(onlySelected = false): string | undefined {
+        return exportToSvg(onlySelected);
     },
 
     setView(scale: number, panX: number, panY: number, rotation?: number) {

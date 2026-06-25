@@ -20,6 +20,10 @@ export interface PointerState {
     initialElementWidth: number;
     initialElementHeight: number;
     initialElementFontSize: number;
+    // Free Transform shear (Ctrl/Cmd + drag side handle). Captured at drag start.
+    shearing: boolean;
+    shearInitialX: number;
+    shearInitialY: number;
     lastSnappingTime: number;
     laserTrailData: Array<{ x: number; y: number; timestamp: number }>;
     laserRafPending: boolean;
@@ -119,6 +123,9 @@ export function createPointerState(): PointerState {
         initialElementWidth: 0,
         initialElementHeight: 0,
         initialElementFontSize: 20,
+        shearing: false,
+        shearInitialX: 0,
+        shearInitialY: 0,
         lastSnappingTime: 0,
         laserTrailData: [],
         laserRafPending: false,

@@ -174,6 +174,14 @@ export const LogoToolkitDoc: Component = () => {
                     a precise mirror-about-a-point, distinct from <em>Flip Horizontal/Vertical</em> which mirror
                     about the shape's own centre.
                 </p>
+                <p>
+                    <strong>Shear (slant).</strong> Hold <span class="kbd">Ctrl</span> (or <span class="kbd">Cmd</span>)
+                    and drag a <strong>side</strong> handle to slant the shape — drag the top/bottom handle sideways
+                    for horizontal shear, the left/right handle up/down for vertical shear. For exact values, type
+                    into the <strong>Shear X / Shear Y</strong> fields in the Dimensions panel. Shear renders in both
+                    Sketch and Architectural styles and exports to SVG as a true matrix transform — great for
+                    italic/oblique wordmarks and isometric-looking marks.
+                </p>
             </section>
 
             {/* Recipes */}

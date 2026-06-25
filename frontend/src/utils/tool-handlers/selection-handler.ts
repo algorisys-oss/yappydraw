@@ -214,6 +214,17 @@ export function selectionOnDown(
         pState.startX = x;
         pState.startY = y;
 
+        // Free Transform: Ctrl/Cmd + drag a SIDE handle shears the element about its
+        // centre (Illustrator parity) instead of resizing. Single element only.
+        pState.shearing = false;
+        if (hitHandle.id !== 'multi' && (e.ctrlKey || e.metaKey) &&
+            (hitHandle.handle === 'tm' || hitHandle.handle === 'bm' || hitHandle.handle === 'lm' || hitHandle.handle === 'rm')) {
+            const sel = store.elements.find(el => el.id === hitHandle.id);
+            pState.shearing = true;
+            pState.shearInitialX = sel?.shearX || 0;
+            pState.shearInitialY = sel?.shearY || 0;
+        }
+
         if (hitHandle.id === 'multi') {
             const box = getSelectionBoundingBox(store.elements, store.selection);
             if (box) {
@@ -1283,6 +1294,32 @@ function handleResize(
         } else {
             updateElement(id, { angle: newAngle });
         }
+        return;
+    }
+
+    // Free Transform shear — Ctrl/Cmd + drag a side handle. Drag the top/bottom handle
+    // horizontally to shear X, the left/right handle vertically to shear Y. The drag delta
+    // is projected into the element's local frame (rotation-aware) and converted to a shear
+    // factor: moving an edge at local distance ±h/2 (or ±w/2) by `d` ⇒ factor 2·d/h.
+    if (pState.shearing) {
+        const a = el.angle || 0;
+        let ddx = x - pState.startX;
+        let ddy = y - pState.startY;
+        if (a) {
+            const c = Math.cos(a), s = Math.sin(a);
+            const lx = ddx * c + ddy * s, ly = -ddx * s + ddy * c;
+            ddx = lx; ddy = ly;
+        }
+        const h = pState.initialElementHeight || 1;
+        const w = pState.initialElementWidth || 1;
+        const updates: Record<string, number> = {};
+        switch (pState.draggingHandle) {
+            case 'tm': updates.shearX = pState.shearInitialX - 2 * ddx / h; break;
+            case 'bm': updates.shearX = pState.shearInitialX + 2 * ddx / h; break;
+            case 'lm': updates.shearY = pState.shearInitialY - 2 * ddy / w; break;
+            case 'rm': updates.shearY = pState.shearInitialY + 2 * ddy / w; break;
+        }
+        updateElement(id, updates, false);
         return;
     }
 

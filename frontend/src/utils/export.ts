@@ -630,6 +630,13 @@ export const exportToSvg = (onlySelected: boolean) => {
                     const tcy = el.y + el.height / 2;
                     transforms.push(`translate(${tcx}, ${tcy}) scale(${el.flipX ? -1 : 1}, ${el.flipY ? -1 : 1}) translate(${-tcx}, ${-tcy})`);
                 }
+                if (el.shearX || el.shearY) {
+                    const tcx = el.x + el.width / 2;
+                    const tcy = el.y + el.height / 2;
+                    // matrix(1, shearY, shearX, 1, 0, 0) == the canvas transform(1, shearY, shearX, 1, 0, 0)
+                    // used in render-pipeline, so SVG matches the canvas exactly (skewX/skewY pairs would not).
+                    transforms.push(`translate(${tcx}, ${tcy}) matrix(1, ${el.shearY || 0}, ${el.shearX || 0}, 1, 0, 0) translate(${-tcx}, ${-tcy})`);
+                }
                 if (transforms.length > 0) {
                     node.setAttribute('transform', transforms.join(' '));
                 }
@@ -646,6 +653,7 @@ export const exportToSvg = (onlySelected: boolean) => {
     link.download = 'yappy_drawing.svg';
     link.href = url;
     link.click();
+    return str;
 };
 
 export const exportToPdf = async (scale: number, background: boolean, onlySelected: boolean) => {

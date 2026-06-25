@@ -34,6 +34,8 @@ export interface IRenderer {
     translate(x: number, y: number): void;
     rotate(angle: number): void;
     scale(x: number, y: number): void;
+    /** Multiply the current matrix by [[a,c,e],[b,d,f]] (canvas `transform` semantics). */
+    transform(a: number, b: number, c: number, d: number, e: number, f: number): void;
 
     // ── Path Building ──
     beginPath(): void;
