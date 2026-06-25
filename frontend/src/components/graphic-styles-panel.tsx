@@ -7,6 +7,7 @@ import { renderElement } from '../utils/render-element';
 import rough from 'roughjs';
 import type { GraphicStyle, DrawingElement } from '../types';
 import { Plus, Trash2, RefreshCw, Palette, X } from 'lucide-solid';
+import { draggablePanel } from '../utils/draggable-panel';
 import './graphic-styles-panel.css';
 
 const THUMB = 52;
@@ -49,7 +50,7 @@ const GraphicStylesPanel: Component = () => {
 
     return (
         <Show when={store.showGraphicStylesPanel}>
-            <div class="gstyles-panel">
+            <div class="gstyles-panel" ref={draggablePanel(".gstyles-panel-header")}>
                 <div class="gstyles-panel-header">
                     <div class="gs-title"><Palette size={15} /><h3>Graphic Styles</h3></div>
                     <div class="gs-header-actions">

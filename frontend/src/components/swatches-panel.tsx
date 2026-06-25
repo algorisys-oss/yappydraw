@@ -5,6 +5,7 @@ import {
 } from '../store/app-store';
 import type { Swatch } from '../types';
 import { Plus, X, Trash2, Square } from 'lucide-solid';
+import { draggablePanel } from '../utils/draggable-panel';
 import './swatches-panel.css';
 
 /** Document-level colour swatches with live links. Click a chip to fill the
@@ -17,7 +18,7 @@ const SwatchesPanel: Component = () => {
 
     return (
         <Show when={store.showSwatchesPanel}>
-            <div class="swatches-panel">
+            <div class="swatches-panel" ref={draggablePanel('.swatches-panel-header')}>
                 <div class="swatches-panel-header">
                     <div class="sw-title"><Square size={14} /><h3>Swatches</h3></div>
                     <div class="sw-header-actions">

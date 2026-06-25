@@ -8,6 +8,7 @@ import { screenToWorld } from '../utils/viewport-transforms';
 import rough from 'roughjs';
 import type { SymbolDef } from '../types';
 import { X, Plus, Trash2, RefreshCw, Component as ComponentIcon } from 'lucide-solid';
+import { draggablePanel } from '../utils/draggable-panel';
 import './symbols-panel.css';
 
 const THUMB = 56; // px
@@ -88,7 +89,7 @@ const SymbolsPanel: Component = () => {
 
     return (
         <Show when={store.showSymbolsPanel}>
-            <div class="symbols-panel">
+            <div class="symbols-panel" ref={draggablePanel(".symbols-panel-header")}>
                 <div class="symbols-panel-header">
                     <div class="sp-title"><ComponentIcon size={15} /><h3>Symbols</h3></div>
                     <div class="sp-header-actions">

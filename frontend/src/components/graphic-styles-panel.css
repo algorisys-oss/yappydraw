@@ -33,6 +33,7 @@
     width: 24px; height: 24px; border: none; background: transparent;
     color: var(--text-secondary); border-radius: 4px; cursor: pointer;
 }
+.gs-icon-btn svg { flex: 0 0 auto; width: 15px; height: 15px; }
 .gs-icon-btn:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
 .gs-icon-btn:disabled { opacity: 0.4; cursor: default; }
 

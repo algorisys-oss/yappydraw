@@ -1,6 +1,7 @@
 import { type Component, For, Show, createMemo } from 'solid-js';
 import { store, toggleHistoryPanel, getHistoryEntries, jumpToHistory } from '../store/app-store';
 import { History, X } from 'lucide-solid';
+import { draggablePanel } from '../utils/draggable-panel';
 import './history-panel.css';
 
 /**
@@ -18,7 +19,7 @@ const HistoryPanel: Component = () => {
 
     return (
         <Show when={store.showHistoryPanel}>
-            <div class="history-panel">
+            <div class="history-panel" ref={draggablePanel(".history-panel-header")}>
                 <div class="history-panel-header">
                     <div class="hp-title"><History size={15} /><h3>History</h3></div>
                     <button class="hp-close" title="Close" onClick={() => toggleHistoryPanel(false)}><X size={15} /></button>

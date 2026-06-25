@@ -114,12 +114,12 @@ frontend/src/components/export-dialog.css | - | 147 |
 frontend/src/components/export-dialog.tsx | typescript | 144 | Component:1 ExportDialogProps:8 ExportDialog:13 handleKeyDown:31 handleExport:42
 frontend/src/components/file-open-dialog.css | - | 108 |
 frontend/src/components/file-open-dialog.tsx | typescript | 182 | Component:1 FileOpenDialogProps:7 FileOpenDialog:13 fetchFiles:21 handleDelete:40 handleKeyDown:55 handleMouseMove:91
-frontend/src/components/graphic-styles-panel.css | - | 82 |
-frontend/src/components/graphic-styles-panel.tsx | typescript | 96 | Component:1 draw:17 GraphicStylesPanel:43 startRename:47 commitRename:48
+frontend/src/components/graphic-styles-panel.css | - | 83 |
+frontend/src/components/graphic-styles-panel.tsx | typescript | 97 | Component:1 draw:18 GraphicStylesPanel:44 startRename:48 commitRename:49
 frontend/src/components/help-dialog.css | - | 184 |
 frontend/src/components/help-dialog.tsx | typescript | 279 | ShortcutEntry:5 ShortcutCategory:10 parseKeys:152 Props:171 HelpDialog:176 handleKeyDown:179
 frontend/src/components/history-panel.css | - | 68 |
-frontend/src/components/history-panel.tsx | typescript | 46 | Component:1 HistoryPanel:12
+frontend/src/components/history-panel.tsx | typescript | 47 | Component:1 HistoryPanel:13
 frontend/src/components/infra-tool-group.tsx | typescript | 137 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:76 activeTool:83 isActive:84 getDropdownPosition:86
 frontend/src/components/layer-context-menu.tsx | typescript | 99 | Component:1 MenuItem:3 Props:5 LayerContextMenu:13 layer:14
 frontend/src/components/layer-panel.css | - | 457 |
@@ -169,12 +169,12 @@ frontend/src/components/state-panel.tsx | typescript | 160 | Component:1 StatePa
 frontend/src/components/status-bar.css | - | 191 |
 frontend/src/components/status-bar.tsx | typescript | 300 | Component:1 Hint:10 isMindmapNode:21 getContextHints:28 StatusBar:108 handleZoomIn:109 handleZoomOut:114 zoomToCenter:119 resetZoom:128 rotationDeg:133 toolLabel:135
 frontend/src/components/status-tool-group.tsx | typescript | 162 | Component:1 StatusToolGroup:47 handler:54 getActiveTool:64 handleToolClick:73 as:81 as:87 handleRightClick:95 toggleMenu:101 activeTool:108 isActive:109 getDropdownPosition:111
-frontend/src/components/swatches-panel.css | - | 71 |
-frontend/src/components/swatches-panel.tsx | typescript | 64 | Component:1 SwatchesPanel:12 startRename:15 commitRename:16
+frontend/src/components/swatches-panel.css | - | 72 |
+frontend/src/components/swatches-panel.tsx | typescript | 65 | Component:1 SwatchesPanel:13 startRename:16 commitRename:17
 frontend/src/components/symbol-edit-banner.css | - | 53 |
 frontend/src/components/symbol-edit-banner.tsx | typescript | 39 | SymbolEditBanner:11 onKey:13
 frontend/src/components/symbols-panel.css | - | 218 |
-frontend/src/components/symbols-panel.tsx | typescript | 179 | Component:1 instanceCount:16 draw:23 SymbolsPanel:59 place:63 startRename:70 commitRename:71 redefine:76 remove:81
+frontend/src/components/symbols-panel.tsx | typescript | 180 | Component:1 instanceCount:17 draw:24 SymbolsPanel:60 place:64 startRename:71 commitRename:72 redefine:77 remove:82
 frontend/src/components/symmetry-overlay.tsx | typescript | 63 | SymmetryOverlay:9 worldToScreenX:12 worldToScreenY:13 screenToWorldX:14 screenToWorldY:15 onMove:17 onUp:22 screen:36
 frontend/src/components/technical-tool-group.tsx | typescript | 141 | Component:1 TechnicalToolGroup:26 handler:33 getActiveTool:43 handleToolClick:52 as:60 as:66 handleRightClick:74 toggleMenu:80 activeTool:87 isActive:88 getDropdownPosition:90
 frontend/src/components/template-browser.css | - | 364 |
@@ -384,6 +384,7 @@ frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 371 | Command:16
 frontend/src/utils/context-menu-builder.ts | typescript | 1508 | MergedCellRegion:45 buildSelectByTypeMenu:61 buildSelectBySamePropertyMenu:140 getContextMenuItems:170 buildFormatMenuItems:1339 buildBorderMenuItems:1434
+frontend/src/utils/draggable-panel.ts | typescript | 42 | makeDraggable:8 draggablePanel:36
 frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperationParams:23 getOperationsForType:79 parseValues:87 bstInsert:99 bstRemove:138 nodeAt:154 bstDeleteAt:159 moveSubtreeUp:192 collectRelative:211 clearSubtree:219 relToAbs:227 simpleHash:247 hashTablePut:259 hashTableRemove:270 animateDsOperation:287 executeDsOperation:350 abortDsAlgorithm:544 isDsAlgorithmRunning:551 setDsAnimationSpeed:555 getDsAnimationSpeed:559 clearDsHighlights:563 animateDsStep:580 compareValues:604 bubbleSort:613 selectionSort:662 insertionSort:714 linearSearch:765 binarySearch:796 bfsTraversal:853 dfsInorderTraversal:882 dfsPreorderTraversal:912 executeDsSortSearch:944
 frontend/src/utils/element-transforms.ts | typescript | 362 | changeElementType:4 isConnectorType:11 getTransformOptions:99 getShapeIcon:153 getShapeTooltip:343 getCurveTypeOptions:347 getCurveTypeIcon:351 getCurveTypeTooltip:360
 frontend/src/utils/envelope-warp.ts | typescript | 252 | Pt:20 WarpGrid:21 getWarpGrid:26 defaultWarpGrid:40 catmull:59 subdivideGrid:66 getEffectiveGrid:98 defaultWarpCorners:105 bilinear:112 invBilinear:120 pointInQuad:142 meshWarpPoint:154 geoToSubpolylines:188 warpGeometry:237
@@ -542,6 +543,7 @@ tests/layers.spec.ts | typescript | 260 |
 tests/mesh-drag.spec.ts | typescript | 57 | S:13 w2s:33
 tests/mesh-overlay.spec.ts | typescript | 53 | w2s:27 near:31
 tests/mesh-smooth.spec.ts | typescript | 40 | S:9 sample:22
+tests/panel-drag.spec.ts | typescript | 35 |
 tests/pen-features.spec.ts | typescript | 146 |
 tests/productivity-features.spec.ts | typescript | 116 |
 tests/quick-toolbar-fontsize.spec.ts | typescript | 35 |
