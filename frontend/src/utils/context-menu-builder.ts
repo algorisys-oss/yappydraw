@@ -9,7 +9,7 @@ import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, releaseClippingMask,
-    addAppearanceFill, addAppearanceStroke, clearAppearance,
+    addAppearanceFill, addAppearanceStroke, clearAppearance, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
@@ -1073,6 +1073,18 @@ export function getContextMenuItems(
         });
         if (isAnyClipped) {
             items.push({ label: 'Release Clipping Mask', shortcut: 'Ctrl+Alt+7', icon: '✂', onClick: releaseClippingMask });
+        }
+
+        // Image Trace — vectorize a selected bitmap into a path.
+        if (store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'image')) {
+            items.push({
+                label: 'Image Trace', icon: '🖉', submenu: [
+                    { label: 'Trace (default)', onClick: () => traceImage([...store.selection]) },
+                    { label: 'Trace — high detail', onClick: () => traceImage([...store.selection], { simplify: 0.4 }) },
+                    { label: 'Trace — low threshold', onClick: () => traceImage([...store.selection], { threshold: 90 }) },
+                    { label: 'Trace — high threshold', onClick: () => traceImage([...store.selection], { threshold: 170 }) },
+                ],
+            });
         }
 
         // Appearance stack — extra fills/strokes over the base shape.

@@ -11,7 +11,7 @@ import {
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, releaseClippingMask,
-    addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance,
+    addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1387,6 +1387,11 @@ export const YappyAPI = {
     setAppearance(appearance: any, ids?: string[]) { setAppearance(ids ?? store.selection, appearance); },
     /** Remove the appearance stack (back to base fill/stroke). */
     clearAppearance(ids?: string[]) { clearAppearance(ids ?? store.selection); },
+
+    /** Image Trace: vectorize selected image(s) into editable path elements (threshold trace). */
+    traceImage(options?: { threshold?: number; simplify?: number }, ids?: string[]): string[] {
+        return traceImage(ids ?? store.selection, options);
+    },
 
     /** Make a clipping mask: the top selected object clips the others to its outline. */
     makeClippingMask() { makeClippingMask(); },

@@ -13,6 +13,7 @@ import { textElementToOutline } from "../utils/text-to-outlines";
 import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
+import { traceImageData } from "../utils/image-trace";
 import type { PathAnchor, PathSubpath, PaintFill, PaintStroke } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
@@ -2036,6 +2037,50 @@ export const setAppearance = (ids: string[], appearance: { fills?: PaintFill[]; 
 
 /** Remove the appearance stack, leaving only the base fill/stroke. */
 export const clearAppearance = (ids: string[]) => setAppearance(ids, undefined);
+
+/**
+ * Image Trace — vectorize a selected image into an editable `path` element (threshold trace
+ * via marching squares; holes via even-odd). The new path is placed over the image filled
+ * black; delete the image to keep just the vector. Returns the new path ids.
+ */
+export const traceImage = (ids: string[], options: { threshold?: number; simplify?: number } = {}): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'image' && e.dataURL);
+    if (targets.length === 0) { showToast('Trace: select an image', 'info'); return []; }
+    const newPaths: DrawingElement[] = [];
+    for (const el of targets) {
+        const img = getImage(el.dataURL!);
+        if (!img || !img.width) { showToast('Trace: image still loading', 'info'); continue; }
+        const maxDim = 256;
+        const k = Math.min(1, maxDim / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+        const tw = Math.max(1, Math.round((img.naturalWidth || img.width) * k));
+        const th = Math.max(1, Math.round((img.naturalHeight || img.height) * k));
+        const canvas = document.createElement('canvas');
+        canvas.width = tw; canvas.height = th;
+        const cctx = canvas.getContext('2d');
+        if (!cctx) continue;
+        cctx.drawImage(img, 0, 0, tw, th);
+        const data = cctx.getImageData(0, 0, tw, th).data;
+        const subs = traceImageData(data, tw, th, { threshold: options.threshold ?? 128, simplify: options.simplify ?? 1.0 });
+        if (subs.length === 0) { showToast('Trace: nothing found (adjust threshold)', 'info'); continue; }
+        const worldSubs: WorldSub[] = subs.map(sp => ({
+            closed: true,
+            anchors: sp.points.map(p => ({ x: el.x + p.x * el.width, y: el.y + p.y * el.height, kind: 'corner' as const })),
+        }));
+        const path = makePathFromWorldSubs(worldSubs, {
+            backgroundColor: '#000000', strokeColor: 'transparent', strokeWidth: 0,
+            fillStyle: 'solid', renderStyle: 'architectural',
+        });
+        if (path) newPaths.push(path);
+    }
+    if (newPaths.length === 0) return [];
+    pushToHistory();
+    setStore('elements', list => [...list, ...newPaths]);
+    const ids2 = newPaths.map(p => p.id);
+    setStore('selection', ids2);
+    bumpDirtyRevision();
+    showToast(`Traced ${ids2.length} image${ids2.length > 1 ? 's' : ''}`, 'success');
+    return ids2;
+};
 
 export const moveElementZIndex = (id: string, direction: 'front' | 'back' | 'forward' | 'backward') => {
     const idx = store.elements.findIndex(e => e.id === id);
