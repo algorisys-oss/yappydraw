@@ -14,7 +14,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp,
     zoomToFit, zoomToFitSlide, updateGlobalSettings,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
@@ -356,6 +356,7 @@ export function getContextMenuItems(
             if (anyWarped) {
                 const anySmooth = store.selection.some(id => store.elements.find(x => x.id === id)?.warp?.smooth);
                 pathOps.push({ label: anySmooth ? 'Mesh: Sharp (bilinear)' : 'Mesh: Smooth (bicubic)', icon: '∿', onClick: () => toggleMeshSmooth([...store.selection]) });
+                pathOps.push({ label: 'Apply / Bake Warp', icon: '⤓', onClick: () => bakeWarp([...store.selection]) });
             }
             items.push({ label: 'Path', icon: '✐', submenu: pathOps }, { separator: true });
         }

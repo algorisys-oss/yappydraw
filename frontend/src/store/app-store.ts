@@ -10,7 +10,9 @@ import { runBooleanOp, polyToPathSubpaths, type BooleanOp, type Poly } from "../
 import { shapeToPath } from "../utils/shape-to-path";
 import { normalizePoints } from "../utils/render-element";
 import { textElementToOutline } from "../utils/text-to-outlines";
-import { getPathSubpaths } from "../utils/math/path-utils";
+import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
+import { getShapeGeometry } from "../utils/shape-geometry";
+import { rasterizeWarpedImage } from "../utils/image-warp";
 import type { PathAnchor, PathSubpath } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
@@ -3472,6 +3474,63 @@ export const toggleMeshSmooth = (ids: string[]): string[] => {
     bumpDirtyRevision();
     showToast(want ? 'Mesh smoothing on' : 'Mesh smoothing off', 'success');
     return targets.map(t => t.id);
+};
+
+/**
+ * Bake / Apply Warp — commit the envelope/mesh distortion into the geometry and drop the
+ * cage (Illustrator "Expand"), the destructive counterpart to Remove (which reverts).
+ * Paths: the warped outline is resampled into the path's anchors. Images: the warped bitmap
+ * is rasterized into a new image placed at the warped bbox.
+ */
+export const bakeWarp = (ids: string[]): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.warp);
+    if (targets.length === 0) { showToast('Bake: select a warped shape', 'info'); return []; }
+    pushToHistory();
+    const out: string[] = [];
+    setStore('elements', list => list.map(el => {
+        if (!ids.includes(el.id) || !el.warp) return el;
+
+        if (el.type === 'image' && el.dataURL) {
+            const img = getImage(el.dataURL);
+            const r = img ? rasterizeWarpedImage(el, img) : null;
+            if (!r) return el;
+            out.push(el.id);
+            const { warp, crop, ...rest } = el as any; // crop is baked into the raster
+            return { ...rest, dataURL: r.dataURL, x: r.x, y: r.y, width: r.width, height: r.height } as DrawingElement;
+        }
+
+        // Vector: turn the warped outline (a sampled path `d`, centred frame) into anchors.
+        const geo = getShapeGeometry(el); // already warped via getShapeGeometry's warp branch
+        if (!geo || geo.type !== 'path') return el;
+        const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+        const cmds = PathUtils.parsePath(geo.path);
+        const worldSubs: WorldSub[] = [];
+        let cur: PathAnchor[] = []; let closed = false;
+        const flush = () => { if (cur.length >= 2) worldSubs.push({ anchors: cur, closed }); cur = []; closed = false; };
+        for (const c of cmds) {
+            const p = c.points && c.points[c.points.length - 1];
+            if (c.type === 'M' && p) { flush(); cur.push({ x: cx + p.x, y: cy + p.y, kind: 'corner' }); }
+            else if (c.type === 'L' && p) { cur.push({ x: cx + p.x, y: cy + p.y, kind: 'corner' }); }
+            else if (c.type === 'Z') { closed = true; }
+        }
+        flush();
+        const norm = worldSubs.length ? normalizeWorldSubs(worldSubs) : null;
+        if (!norm) return el;
+        out.push(el.id);
+        const single = norm.subpaths.length === 1;
+        const { warp, ...rest } = el as any;
+        return {
+            ...rest, type: 'path',
+            x: norm.x, y: norm.y, width: norm.width, height: norm.height,
+            pathAnchors: single ? norm.subpaths[0].anchors : undefined,
+            pathClosed: single ? norm.subpaths[0].closed : undefined,
+            pathSubpaths: single ? undefined : norm.subpaths,
+            points: undefined, controlPoints: undefined,
+        } as DrawingElement;
+    }));
+    bumpDirtyRevision();
+    showToast(out.length ? 'Warp baked' : 'Bake: unsupported shape', out.length ? 'success' : 'info');
+    return out;
 };
 
 const applyWarpGrid = (ids: string[], rows: number, cols: number, mode: 'toggle' | 'set'): string[] => {

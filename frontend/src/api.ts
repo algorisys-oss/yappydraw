@@ -10,7 +10,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1368,6 +1368,15 @@ export const YappyAPI = {
     /** Free Transform: toggle bicubic (Catmull-Rom) smoothing on a warped element's mesh. */
     toggleMeshSmooth(ids?: string[]): string[] {
         return toggleMeshSmooth(ids ?? store.selection);
+    },
+
+    /**
+     * Free Transform: bake the warp into geometry and drop the cage (Illustrator "Expand").
+     * Paths resample their warped outline into anchors; images rasterize to a new bitmap.
+     * The destructive counterpart to toggleEnvelopeWarp's Remove (which reverts).
+     */
+    bakeWarp(ids?: string[]): string[] {
+        return bakeWarp(ids ?? store.selection);
     },
 
     setView(scale: number, panX: number, panY: number, rotation?: number) {

@@ -190,6 +190,13 @@ export const LogoToolkitDoc: Component = () => {
                     warp too — the bitmap is texture-mapped through the mesh (great for mockups on curved surfaces).
                 </p>
                 <p>
+                    <strong>Remove vs. Apply.</strong> The warp is non-destructive: <em>Remove Envelope Distort</em>
+                    drops the cage and reverts to the original shape. To keep the distortion instead, use
+                    <em>Apply / Bake Warp</em> — it commits the warp (a path's outline becomes new anchors; an image
+                    rasterizes to a new bitmap) and removes the cage. Warped images also export to SVG now (baked to a
+                    bitmap, since SVG can't express a freeform image warp).
+                </p>
+                <p>
                     <strong>Shear (slant).</strong> Hold <span class="kbd">Ctrl</span> (or <span class="kbd">Cmd</span>)
                     and drag a <strong>side</strong> handle to slant the shape — drag the top/bottom handle sideways
                     for horizontal shear, the left/right handle up/down for vertical shear. For exact values, type

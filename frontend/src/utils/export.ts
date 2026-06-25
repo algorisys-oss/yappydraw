@@ -7,6 +7,8 @@ import { resolveFontFamily, wrapText, getMeasurementRenderer } from "./text-util
 import { buildFilterString } from "./image-filter-utils";
 import { layoutRichText } from "./rich-text-utils";
 import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
+import { getImage } from "./image-cache";
+import { rasterizeWarpedImage } from "./image-warp";
 
 /**
  * Convert a shape's geometry (centred frame: origin at the element centre) into one or
@@ -406,6 +408,20 @@ export const exportToSvg = (onlySelected: boolean) => {
                 // Or better: use roughjs linearPath or curve
                 const absPoints = points.map(p => [el.x + p.x, el.y + p.y] as [number, number]);
                 node = rc.curve(absPoints, options);
+            }
+        } else if (el.type === 'image' && el.dataURL && el.warp) {
+            // Warped image: bake the mesh into a raster and embed that bitmap at the warped
+            // bbox (SVG can't express a non-affine image warp directly).
+            const img = getImage(el.dataURL);
+            const r = img ? rasterizeWarpedImage(el, img) : null;
+            if (r) {
+                const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                image.setAttribute('href', r.dataURL);
+                image.setAttribute('x', `${r.x}`);
+                image.setAttribute('y', `${r.y}`);
+                image.setAttribute('width', `${r.width}`);
+                image.setAttribute('height', `${r.height}`);
+                node = image;
             }
         } else if (el.type === 'image' && el.dataURL && !el.crop) {
             const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
