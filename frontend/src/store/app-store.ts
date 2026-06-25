@@ -3418,17 +3418,22 @@ export const createSwatch = (color?: string, name?: string): string | null => {
     return id;
 };
 
-/** Apply a swatch to the given elements' fill or stroke, linking them to it. */
+/** Apply a swatch to the given elements' fill or stroke (linking them to it),
+ *  and set it as the active brush/default colour for new shapes. */
 export const applySwatch = (swatchId: string, target: 'fill' | 'stroke' = 'fill', ids?: string[]) => {
     const sw = store.swatches.find(s => s.id === swatchId);
+    if (!sw) return;
     const targets = ids ?? store.selection;
-    if (!sw || targets.length === 0) return;
-    pushToHistory();
-    setStore('elements', (e: DrawingElement) => targets.includes(e.id), () => (
-        target === 'fill'
-            ? { backgroundColor: sw.color, fillSwatchId: sw.id }
-            : { strokeColor: sw.color, strokeSwatchId: sw.id }
-    ));
+    if (targets.length > 0) {
+        pushToHistory();
+        setStore('elements', (e: DrawingElement) => targets.includes(e.id), () => (
+            target === 'fill'
+                ? { backgroundColor: sw.color, fillSwatchId: sw.id }
+                : { strokeColor: sw.color, strokeSwatchId: sw.id }
+        ));
+    }
+    // Set the active/default colour so the next shape drawn uses it.
+    updateDefaultStyles(target === 'fill' ? { backgroundColor: sw.color } : { strokeColor: sw.color });
     bumpDirtyRevision();
 };
 

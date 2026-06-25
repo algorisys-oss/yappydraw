@@ -87,6 +87,8 @@ export const generateId = (type: string, batchIds?: Set<string>): string => {
     if (store.states) scanMax(store.states);
     if (store.artboards) scanMax(store.artboards);
     if (store.symbols) scanMax(store.symbols);
+    if (store.swatches) scanMax(store.swatches);
+    if (store.graphicStyles) scanMax(store.graphicStyles);
 
     // Also scan batch IDs for same-batch uniqueness
     if (batchIds) {

@@ -256,7 +256,7 @@ frontend/src/help-docs/features/artboards-doc.tsx | typescript | 90 | ArtboardsD
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 306 | LogoToolkitDoc:9 the:115
-frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 278 | MasksAppearanceTraceDoc:8 tools:14
+frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 279 | MasksAppearanceTraceDoc:8 tools:14
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 118 | WorkspaceDoc:9 and:32
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 525 | YslTutorialDoc:8
@@ -333,7 +333,7 @@ frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 Folder
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 4768 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 Theme:31 ResolvedTheme:32 AppState:59 HistorySnapshot:370 AlignmentType:3332 DistributionType:3332 SelBBox:3626 LastTransform:3876 buildPathFromPoly:4368 WorldSub:4451 rdpAnchors:4454 normalizeWorldSubs:4482 makePathFromWorldSubs:4497 elementToWorldSubs:4518 startInkCleanupIfNeeded:4707
+frontend/src/store/app-store.ts | typescript | 4773 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 Theme:31 ResolvedTheme:32 AppState:59 HistorySnapshot:370 AlignmentType:3332 DistributionType:3332 SelBBox:3631 LastTransform:3881 buildPathFromPoly:4373 WorldSub:4456 rdpAnchors:4459 normalizeWorldSubs:4487 makePathFromWorldSubs:4502 elementToWorldSubs:4523 startInkCleanupIfNeeded:4712
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -397,7 +397,7 @@ frontend/src/utils/group-utils.ts | typescript | 81 | getGroupBoundingBox:6 isPo
 frontend/src/utils/handle-detection.ts | typescript | 459 | unrotatePoint:18 getSelectionBoundingBox:25 getHandleAtPosition:53
 frontend/src/utils/hierarchy.ts | typescript | 68 | getDescendants:44 isDescendantOf:65
 frontend/src/utils/hit-testing.ts | typescript | 419 | unrotatePoint:27 unshearPoint:35 hitTestElement:61 hitTestGeometry:88 hitTestPathElement:341 isPointInEraseHole:371
-frontend/src/utils/id-generator.ts | typescript | 107 | generateId:54 scanMax:71
+frontend/src/utils/id-generator.ts | typescript | 109 | generateId:54 scanMax:71
 frontend/src/utils/image-cache.ts | typescript | 33 | setImageLoadCallback:6 getImage:10
 frontend/src/utils/image-crop-utils.ts | typescript | 330 | CropHandle:10 cropToSourcePixels:15 sourceToCropLocal:33 initCropRect:51 finalizeCropRect:65 renderCropOverlay:86 getCropHandlePositions:182 hitTestCropHandle:206 applyCropDrag:240 getCropHandleCursor:321
 frontend/src/utils/image-filter-utils.ts | typescript | 34 | buildFilterString:7 hasActiveFilters:32
@@ -555,6 +555,7 @@ tests/solid-block.spec.ts | typescript | 38 |
 tests/spacing-guides.spec.ts | typescript | 81 |
 tests/svg-vector-fallback.spec.ts | typescript | 27 |
 tests/svg-vector.spec.ts | typescript | 34 |
+tests/swatch-id.spec.ts | typescript | 44 | S:32
 tests/swatches.spec.ts | typescript | 53 | S:10
 tests/symbol-edit.spec.ts | typescript | 71 | S:13
 tests/symbols-panel.spec.ts | typescript | 66 | S:14
