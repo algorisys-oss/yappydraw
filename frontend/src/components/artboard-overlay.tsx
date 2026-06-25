@@ -94,14 +94,29 @@ export const ArtboardOverlay = () => {
                         const isActive = () => activeId() === ab.id;
                         return (
                             <>
-                                {/* Name chip — drag to move, click to select */}
+                                {/* Name chip — drag the name to move; click to select; × deletes.
+                                    The × lives in the chip (a handle-free zone) so it can never
+                                    overlap a resize handle. */}
                                 <div
                                     class={`ab-chip ${isActive() ? 'active' : ''}`}
-                                    style={{ left: `${r().left}px`, top: `${r().top - 22}px` }}
-                                    title="Drag to move artboard · click to select"
-                                    onPointerDown={(e) => startDrag(ab.id, 'move', e)}
-                                    onClick={(e) => { e.stopPropagation(); setActiveId(ab.id); }}
-                                >{ab.name}  {Math.round(ab.width)}×{Math.round(ab.height)}</div>
+                                    style={{ left: `${r().left}px`, top: `${r().top - 24}px` }}
+                                >
+                                    <span
+                                        class="ab-chip-name"
+                                        title="Drag to move artboard · click to select"
+                                        onPointerDown={(e) => startDrag(ab.id, 'move', e)}
+                                        onClick={(e) => { e.stopPropagation(); setActiveId(ab.id); }}
+                                    >{ab.name}  {Math.round(ab.width)}×{Math.round(ab.height)}</span>
+                                    <Show when={isActive()}>
+                                        <button
+                                            class="ab-chip-del"
+                                            title="Delete artboard (Del)"
+                                            // Act on pointerdown: a canvas redraw between down/up can
+                                            // recreate this node and swallow the synthesized click.
+                                            onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); deleteArtboard(ab.id); }}
+                                        >✕</button>
+                                    </Show>
+                                </div>
 
                                 <Show when={isActive()}>
                                     {/* Selection frame (visual only; interior stays drawable) */}
@@ -109,15 +124,6 @@ export const ArtboardOverlay = () => {
                                         class="ab-frame"
                                         style={{ left: `${r().left}px`, top: `${r().top}px`, width: `${r().w}px`, height: `${r().h}px` }}
                                     />
-                                    {/* Delete button at the frame's top-right */}
-                                    <button
-                                        class="ab-delete"
-                                        style={{ left: `${r().left + r().w}px`, top: `${r().top - 26}px` }}
-                                        title="Delete artboard (Del)"
-                                        // Act on pointerdown: a canvas redraw between down/up can recreate
-                                        // this node and swallow the click, so we don't rely on click.
-                                        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); deleteArtboard(ab.id); }}
-                                    >✕</button>
                                     {/* 8 resize handles */}
                                     <For each={HANDLES}>
                                         {(k) => {
