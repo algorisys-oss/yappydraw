@@ -2,6 +2,7 @@ import { type Component, For, createSignal, Show } from 'solid-js';
 import { store, addLayer, setActiveLayer, updateLayer, deleteLayer, duplicateLayer, reorderLayers, toggleLayerPanel, minimizeLayerPanel, toggleLayerGroupingMode, createLayerGroup, toggleLayerGroupExpansion } from '../store/app-store';
 import { X, Minus, ChevronUp, Eye, EyeOff, Plus, Maximize2, Folder, FolderOpen, ChevronRight, Layers, Crown, Lock, Unlock } from 'lucide-solid';
 import LayerContextMenu from './layer-context-menu';
+import { draggablePanel } from '../utils/draggable-panel';
 import './layer-panel.css';
 
 const LayerPanel: Component = () => {
@@ -205,7 +206,7 @@ const LayerPanel: Component = () => {
 
     return (
         <Show when={store.showLayerPanel}>
-            <div class={`layer-panel ${store.isLayerPanelMinimized ? 'minimized' : ''}`}>
+            <div class={`layer-panel ${store.isLayerPanelMinimized ? 'minimized' : ''}`} ref={draggablePanel('.layer-panel-header')}>
                 <div class="layer-panel-header" onDblClick={() => minimizeLayerPanel(!store.isLayerPanelMinimized)}>
                     <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
                         <Show when={store.isLayerPanelMinimized}>

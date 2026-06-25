@@ -1,4 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
+import { draggablePanel } from '../utils/draggable-panel';
 import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
@@ -1494,6 +1495,7 @@ const PropertyPanel: Component = () => {
             <div
                 class="property-panel-container"
                 classList={{ minimized: store.isPropertyPanelMinimized }}
+                ref={draggablePanel('.panel-header')}
             >
                 <Show when={activeTarget() || store.isPropertyPanelMinimized} fallback={<div class="property-panel empty"><div class="panel-header"><h3>Properties</h3></div><div class="panel-content">No Selection</div></div>}>
                     <div class="property-panel">

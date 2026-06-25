@@ -24,6 +24,7 @@
 }
 
 .layer-panel-header {
+    cursor: move;
     display: flex;
     justify-content: space-between;
     align-items: center;

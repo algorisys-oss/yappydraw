@@ -122,8 +122,8 @@ frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 47 | Component:1 HistoryPanel:13
 frontend/src/components/infra-tool-group.tsx | typescript | 137 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:76 activeTool:83 isActive:84 getDropdownPosition:86
 frontend/src/components/layer-context-menu.tsx | typescript | 99 | Component:1 MenuItem:3 Props:5 LayerContextMenu:13 layer:14
-frontend/src/components/layer-panel.css | - | 457 |
-frontend/src/components/layer-panel.tsx | typescript | 431 | Component:1 LayerPanel:7 handleLayerClick:16 handleToggleVisibility:20 handleToggleLock:28 handleDeleteLayer:37 handleDuplicateLayer:44 startEditing:49 saveRename:55 cancelEditing:64 handleRenameKeyDown:69 handlePointerDown:79 handlePointerUp:85 handleDragStart:92 handleDragEnd:101 handleDragOver:107 handleDragLeave:113 handleDrop:117 displayLayers:164 visit:173 depth:318
+frontend/src/components/layer-panel.css | - | 458 |
+frontend/src/components/layer-panel.tsx | typescript | 432 | Component:1 LayerPanel:8 handleLayerClick:17 handleToggleVisibility:21 handleToggleLock:29 handleDeleteLayer:38 handleDuplicateLayer:45 startEditing:50 saveRename:56 cancelEditing:65 handleRenameKeyDown:70 handlePointerDown:80 handlePointerUp:86 handleDragStart:93 handleDragEnd:102 handleDragOver:108 handleDragLeave:114 handleDrop:118 displayLayers:165 visit:174 depth:319
 frontend/src/components/load-export-dialog.css | - | 337 |
 frontend/src/components/load-export-dialog.tsx | typescript | 308 | Component:1 LoadExportDialogProps:9 LoadExportDialog:27 handleKeyDown:45 handleLoadJson:61
 frontend/src/components/menu.css | - | 271 |
@@ -139,8 +139,8 @@ frontend/src/components/pen-tool-group.tsx | typescript | 134 | Component:1 PenT
 frontend/src/components/player-app.css | - | 28 |
 frontend/src/components/player-app.tsx | typescript | 112 | Window:15 PlayerApp:20
 frontend/src/components/presentation-controls.tsx | typescript | 226 | Component:1 PresentationControls:6 resetHideTimeout:10 handleNext:37 handlePrev:42
-frontend/src/components/property-panel.css | - | 739 |
-frontend/src/components/property-panel.tsx | typescript | 1808 | Component:1 PropertyConfig:16 isMixed:34 templates:57 handleClickOutside:59 handlePresent:114 calls:203 SlideActions:270 handlePreviewTransition:271 AlignmentControls:287 gapVal:289 hasOptions:327 activePaletteId:332 activePalette:333 paletteSwatches:335 swatches:337 ap:430 fills:431 strokes:432 commit:433 editFill:439 editStroke:440 move:441 mesh:483 ids:484 row:503 col:504 updateStops:562 handleBarMouseDown:567 handleThumbMouseDown:584 onMove:589 onUp:599 PropertyPanel:704 handleChange:869 seeds:889 getPropertyValue:1135 handleDelete:1211 renderControl:1218 colorVal:1221 sliderVal:1236 sliderDisplay:1237 filteredOptions:1266 selectVal:1275 isDisabled:1303 toggleVal:1311 inputVal:1327 textareaVal:1346 appendLine:1348 imgVal:1378 commit:1379 onFile:1381 numVal:1422 toggleGroup:1467 handleContentScroll:1477
+frontend/src/components/property-panel.css | - | 741 |
+frontend/src/components/property-panel.tsx | typescript | 1810 | Component:1 PropertyConfig:17 isMixed:35 templates:58 handleClickOutside:60 handlePresent:115 calls:204 SlideActions:271 handlePreviewTransition:272 AlignmentControls:288 gapVal:290 hasOptions:328 activePaletteId:333 activePalette:334 paletteSwatches:336 swatches:338 ap:431 fills:432 strokes:433 commit:434 editFill:440 editStroke:441 move:442 mesh:484 ids:485 row:504 col:505 updateStops:563 handleBarMouseDown:568 handleThumbMouseDown:585 onMove:590 onUp:600 PropertyPanel:705 handleChange:870 seeds:890 getPropertyValue:1136 handleDelete:1212 renderControl:1219 colorVal:1222 sliderVal:1237 sliderDisplay:1238 filteredOptions:1267 selectVal:1276 isDisabled:1304 toggleVal:1312 inputVal:1328 textareaVal:1347 appendLine:1349 imgVal:1379 commit:1380 onFile:1382 numVal:1423 toggleGroup:1468 handleContentScroll:1478
 frontend/src/components/quick-toolbar.css | - | 503 |
 frontend/src/components/quick-toolbar.tsx | typescript | 744 | Component:7 QuickPropertyDef:15 getIcon:63 handleDocClick:112 isTransparent:129 handleDocClick:177 activeOption:193 isActive:233 toggle:239 handleDocClick:301 activeLabel:317 categories:321 QuickToolbar:374 selectedElement:378 handler:460 handlePropertyChange:474 handlePropertyStart:512 x:519 y:544 value:580 isDisabled:623
 frontend/src/components/recording-overlay.css | - | 100 |
@@ -384,7 +384,7 @@ frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 371 | Command:16
 frontend/src/utils/context-menu-builder.ts | typescript | 1508 | MergedCellRegion:45 buildSelectByTypeMenu:61 buildSelectBySamePropertyMenu:140 getContextMenuItems:170 buildFormatMenuItems:1339 buildBorderMenuItems:1434
-frontend/src/utils/draggable-panel.ts | typescript | 42 | makeDraggable:8 draggablePanel:36
+frontend/src/utils/draggable-panel.ts | typescript | 46 | makeDraggable:11 draggablePanel:41
 frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperationParams:23 getOperationsForType:79 parseValues:87 bstInsert:99 bstRemove:138 nodeAt:154 bstDeleteAt:159 moveSubtreeUp:192 collectRelative:211 clearSubtree:219 relToAbs:227 simpleHash:247 hashTablePut:259 hashTableRemove:270 animateDsOperation:287 executeDsOperation:350 abortDsAlgorithm:544 isDsAlgorithmRunning:551 setDsAnimationSpeed:555 getDsAnimationSpeed:559 clearDsHighlights:563 animateDsStep:580 compareValues:604 bubbleSort:613 selectionSort:662 insertionSort:714 linearSearch:765 binarySearch:796 bfsTraversal:853 dfsInorderTraversal:882 dfsPreorderTraversal:912 executeDsSortSearch:944
 frontend/src/utils/element-transforms.ts | typescript | 362 | changeElementType:4 isConnectorType:11 getTransformOptions:99 getShapeIcon:153 getShapeTooltip:343 getCurveTypeOptions:347 getCurveTypeIcon:351 getCurveTypeTooltip:360
 frontend/src/utils/envelope-warp.ts | typescript | 252 | Pt:20 WarpGrid:21 getWarpGrid:26 defaultWarpGrid:40 catmull:59 subdivideGrid:66 getEffectiveGrid:98 defaultWarpCorners:105 bilinear:112 invBilinear:120 pointInQuad:142 meshWarpPoint:154 geoToSubpolylines:188 warpGeometry:237
@@ -514,6 +514,7 @@ tests/artboard-overlay.spec.ts | typescript | 52 |
 tests/artboards.spec.ts | typescript | 28 |
 tests/blend.spec.ts | typescript | 41 | S:10 hex:37
 tests/bpmn.spec.ts | typescript | 327 | markers:152
+tests/builtin-panel-drag.spec.ts | typescript | 31 | drag:13
 tests/clipping-mask.spec.ts | typescript | 70 |
 tests/code-block.spec.ts | typescript | 163 | hello:35 App:128
 tests/comprehensive-features.spec.ts | typescript | 236 |

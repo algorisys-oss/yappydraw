@@ -34,6 +34,7 @@
 }
 
 .property-panel-container.minimized .panel-header {
+    cursor: move;
     padding: 0;
     border: none;
     height: 100%;
@@ -109,6 +110,7 @@
 }
 
 .panel-header {
+    cursor: move;
     padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
     display: flex;
