@@ -548,7 +548,7 @@ tests/layer-background.spec.ts | typescript | 50 |
 tests/layers.spec.ts | typescript | 260 |
 tests/measure.spec.ts | typescript | 38 |
 tests/mesh-drag.spec.ts | typescript | 57 | S:13 w2s:33
-tests/mesh-overlay.spec.ts | typescript | 53 | w2s:27 near:31
+tests/mesh-overlay.spec.ts | typescript | 55 | w2s:27 near:31
 tests/mesh-smooth.spec.ts | typescript | 40 | S:9 sample:22
 tests/panel-drag.spec.ts | typescript | 35 |
 tests/pen-features.spec.ts | typescript | 146 |

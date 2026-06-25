@@ -1,7 +1,7 @@
 .swatches-panel {
     position: absolute;
-    left: 0;
-    bottom: 80px;
+    left: 56px;
+    bottom: 160px;
     width: 230px;
     max-height: 320px;
     background: var(--bg-panel);

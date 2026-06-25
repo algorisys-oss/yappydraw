@@ -1,7 +1,7 @@
 .gstyles-panel {
     position: absolute;
-    left: 0;
-    bottom: 80px;
+    left: 28px;
+    bottom: 120px;
     width: 248px;
     max-height: 340px;
     background: var(--bg-panel);
