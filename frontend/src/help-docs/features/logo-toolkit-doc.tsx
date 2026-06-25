@@ -206,6 +206,67 @@ export const LogoToolkitDoc: Component = () => {
                 </p>
             </section>
 
+            {/* Hands-on examples */}
+            <section class="doc-section">
+                <h2>Hands-on Examples (console)</h2>
+                <p>
+                    Paste these into the browser DevTools console (the <code>Yappy</code> API) to build a scene,
+                    then tweak it on the canvas. Most transform/warp features are also on the right-click menu.
+                </p>
+
+                <p><strong>Numeric transform &amp; reflect across a pivot:</strong></p>
+                <pre><code>{`const Y = window.Yappy; Y.clear();
+const id = Y.createRectangle(200, 160, 180, 120, { backgroundColor:'#3b82f6', fillStyle:'solid' });
+Y.setSelected([id]);
+Y.setElementTransform(id, { x: 240, y: 180, width: 220, height: 100 }); // exact position/size
+Y.setRotationPivot(240, 240);          // drop a custom rotation pivot (⊕)
+Y.flipSelection('horizontal', 240);    // reflect across x = 240 (the pivot)`}</code></pre>
+
+                <p><strong>Shear (slant) for an oblique wordmark:</strong></p>
+                <pre><code>{`const r = Y.createRectangle(180, 160, 220, 120,
+  { renderStyle:'architectural', backgroundColor:'#f59e0b', fillStyle:'solid' });
+Y.updateElement(r, { shearX: 0.4 });   // horizontal slant; shearY slants vertically
+// (or: Ctrl/Cmd + drag a side handle on the canvas)`}</code></pre>
+
+                <p><strong>Envelope distort (4-corner) — wrap a shape in a draggable cage:</strong></p>
+                <pre><code>{`const p = Y.createPath(
+  [{x:0,y:0},{x:200,y:0},{x:200,y:150},{x:0,y:150}],
+  { x:200, y:170, closed:true, renderStyle:'architectural', backgroundColor:'#22c55e', fillStyle:'solid' });
+Y.setSelected([p]);
+Y.toggleEnvelopeWarp();                 // 2×2 cage; corners are centred-local [-w/2..w/2]
+const g = structuredClone(Y.getElement(p).warp);  // ⚠ clone — warp is a read-only proxy
+g.points[1] = { x: 150, y: -120 };      // pull the top-right corner out
+Y.updateElement(p, { warp: g });        // drag the orange corner handles to fine-tune`}</code></pre>
+
+                <p><strong>Mesh warp (3×3) with bicubic smoothing — a flowing bulge:</strong></p>
+                <pre><code>{`Y.setSelected([p]);
+Y.applyMeshWarp(3, 3);                   // 9 control points
+const m = structuredClone(Y.getElement(p).warp);
+m.points[4] = { x: 40, y: -40 };         // bulge the CENTRE point (a 4-corner cage can't)
+m.smooth = true;                         // Catmull-Rom curves instead of straight cells
+Y.updateElement(p, { warp: m });
+// Apply / Bake Warp to commit it: Y.bakeWarp([p])  (Remove instead reverts)`}</code></pre>
+
+                <p><strong>Warp an image (texture-mapped) then bake to a bitmap:</strong></p>
+                <pre><code>{`const c = document.createElement('canvas'); c.width=c.height=200;
+const x=c.getContext('2d');
+for (let j=0;j<8;j++) for (let i=0;i<8;i++){ x.fillStyle=(i+j)%2?'#1d4ed8':'#fde68a'; x.fillRect(i*25,j*25,25,25); }
+const im = Y.createImage(420, 170, c.toDataURL(), 200, 200, {});
+setTimeout(() => {                       // let the image load first
+  Y.setSelected([im]); Y.applyMeshWarp(3,3);
+  const w = structuredClone(Y.getElement(im).warp);
+  w.points[1] = { x:0, y:-70 }; w.points[4] = { x:25, y:15 }; w.smooth = true;
+  Y.updateElement(im, { warp: w });
+  // Y.bakeWarp([im]);                    // rasterize the distortion into a new bitmap
+}, 400);`}</code></pre>
+                <p class="tip-box">
+                    <strong>Two gotchas when scripting warps:</strong> (1) clone the warp with
+                    <code> structuredClone</code> before editing it — <code>getElement(...).warp</code> is a
+                    read-only reactive proxy and mutating it in place silently no-ops. (2) For images, wait for the
+                    bitmap to load (it’s async) before warping/baking.
+                </p>
+            </section>
+
             {/* Recipes */}
             <section class="doc-section">
                 <h2>Worked Recipes</h2>
