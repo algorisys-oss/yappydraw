@@ -162,6 +162,18 @@ export const LogoToolkitDoc: Component = () => {
                     It's perfect for swinging a motif around a shared hub — place the point at the hub, then
                     rotate-and-duplicate to build a radial mark by hand.
                 </p>
+                <p>
+                    <strong>Numeric position &amp; size.</strong> The Properties panel's <em>Dimensions</em> group
+                    has editable <strong>X / Y / W / H</strong> fields (alongside Angle). Type exact values for
+                    pixel-perfect placement and sizing — and W/H scale a shape's vector geometry (pen points,
+                    path anchors) right along with it, so paths stay crisp.
+                </p>
+                <p>
+                    <strong>Reflect across the rotation point.</strong> With a rotation point set, right-click →
+                    <em>Reflect Across Point →</em> (or <em>↓</em>) mirrors the selection to the other side of it —
+                    a precise mirror-about-a-point, distinct from <em>Flip Horizontal/Vertical</em> which mirror
+                    about the shape's own centre.
+                </p>
             </section>
 
             {/* Recipes */}

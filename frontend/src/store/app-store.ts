@@ -13,6 +13,7 @@ import { textElementToOutline } from "../utils/text-to-outlines";
 import { getPathSubpaths } from "../utils/math/path-utils";
 import type { PathAnchor, PathSubpath } from "../types";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
+import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
 import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
@@ -3073,6 +3074,47 @@ export const mirrorAcrossSymmetry = () => {
     setStore('selection', [...selIds, ...newIds]);
     bumpDirtyRevision();
     showToast('Mirrored across guide', 'success');
+};
+
+/**
+ * Numeric Transform — set an element's position and/or size from the property panel.
+ * `x`/`y` just move it (geometry is origin-relative). `width`/`height` scale the
+ * element AND its relative geometry (pen points, vector path anchors/handles, erase
+ * strokes, text font-size) via the shared {@link scalePoints} helpers, so the W/H
+ * fields stay in sync with the shape exactly like dragging a resize handle does.
+ */
+export const setElementTransform = (
+    id: string,
+    patch: { x?: number; y?: number; width?: number; height?: number }
+) => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el) return;
+    const updates: Partial<DrawingElement> = {};
+    if (patch.x !== undefined && Number.isFinite(patch.x)) updates.x = patch.x;
+    if (patch.y !== undefined && Number.isFinite(patch.y)) updates.y = patch.y;
+
+    const wantsResize =
+        (patch.width !== undefined && Number.isFinite(patch.width)) ||
+        (patch.height !== undefined && Number.isFinite(patch.height));
+    if (wantsResize) {
+        const newW = patch.width !== undefined && Number.isFinite(patch.width) ? Math.max(1, patch.width) : el.width;
+        const newH = patch.height !== undefined && Number.isFinite(patch.height) ? Math.max(1, patch.height) : el.height;
+        const scaleX = el.width === 0 ? 1 : newW / el.width;
+        const scaleY = el.height === 0 ? 1 : newH / el.height;
+        updates.width = newW;
+        updates.height = newH;
+        if (scaleX !== 1 || scaleY !== 1) {
+            if (el.points) { updates.points = scalePoints(el.points, scaleX, scaleY); updates.pointsEncoding = undefined; }
+            if (el.pathAnchors) updates.pathAnchors = scalePathAnchors(el.pathAnchors as any, scaleX, scaleY) as any;
+            if (el.pathSubpaths) updates.pathSubpaths = scalePathSubpaths(el.pathSubpaths as any, scaleX, scaleY) as any;
+            if (el.eraseStrokes) updates.eraseStrokes = scaleEraseStrokes(el.eraseStrokes as any, scaleX, scaleY) as any;
+            if ((el.type === 'text' || el.type === 'richtext') && el.fontSize) updates.fontSize = Math.max(8, el.fontSize * scaleY);
+        }
+    }
+
+    if (Object.keys(updates).length === 0) return;
+    updateElement(id, updates, false);
+    bumpDirtyRevision();
 };
 
 // Last rigid transform applied to a selection, replayed by transformAgain (Ctrl+Shift+D).

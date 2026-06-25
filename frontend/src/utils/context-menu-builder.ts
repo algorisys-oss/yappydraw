@@ -1155,11 +1155,22 @@ export function getContextMenuItems(
                 label: 'Set Rotation Point Here', icon: '⊕',
                 onClick: () => { setTransformPivot(worldX, worldY, store.selection); bumpDirtyRevision(); }
             });
-            if (getCustomPivot(store.selection)) {
-                items.push({
-                    label: 'Reset Rotation Point', icon: '⊗',
-                    onClick: () => { clearTransformPivot(); bumpDirtyRevision(); }
-                });
+            const pv = getCustomPivot(store.selection);
+            if (pv) {
+                items.push(
+                    {
+                        label: 'Reflect Across Point →', icon: '⇆',
+                        onClick: () => flipSelected('horizontal', pv.x)
+                    },
+                    {
+                        label: 'Reflect Across Point ↓', icon: '⇅',
+                        onClick: () => flipSelected('vertical', pv.y)
+                    },
+                    {
+                        label: 'Reset Rotation Point', icon: '⊗',
+                        onClick: () => { clearTransformPivot(); bumpDirtyRevision(); }
+                    }
+                );
             }
         }
 

@@ -344,7 +344,7 @@ export const pasteFromClipboard = async () => {
     }
 };
 
-export const flipSelected = (direction: 'horizontal' | 'vertical') => {
+export const flipSelected = (direction: 'horizontal' | 'vertical', axisValue?: number) => {
     if (store.selection.length === 0) return;
     pushToHistory();
 
@@ -365,7 +365,11 @@ export const flipSelected = (direction: 'horizontal' | 'vertical') => {
             }
         });
     }
-    const center = min + (max - min) / 2;
+    // Reflection axis: an explicit world value (e.g. the rotation pivot) wins; else the
+    // multi-selection bbox centre. When undefined (single element, no axis) the element
+    // flips in place about its own centre and isn't repositioned.
+    const center = axisValue !== undefined ? axisValue : min + (max - min) / 2;
+    const reposition = axisValue !== undefined || isMulti;
 
     store.selection.forEach(id => {
         const el = store.elements.find(e => e.id === id);
@@ -374,8 +378,8 @@ export const flipSelected = (direction: 'horizontal' | 'vertical') => {
         const updates: Record<string, any> = { seed: el.seed + 1 };
 
         if (direction === 'horizontal') {
-            // Reposition for multi-selection
-            if (isMulti) {
+            // Reposition across the reflection axis (multi-selection or explicit axis).
+            if (reposition) {
                 const elCenterX = el.x + el.width / 2;
                 const dist = elCenterX - center;
                 updates.x = center - dist - el.width / 2;
@@ -393,8 +397,8 @@ export const flipSelected = (direction: 'horizontal' | 'vertical') => {
                 updates.flipX = !el.flipX;
             }
         } else {
-            // Reposition for multi-selection
-            if (isMulti) {
+            // Reposition across the reflection axis (multi-selection or explicit axis).
+            if (reposition) {
                 const elCenterY = el.y + el.height / 2;
                 const dist = elCenterY - center;
                 updates.y = center - dist - el.height / 2;

@@ -1,5 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
 import type { DrawingElement } from "../types";
@@ -647,7 +647,7 @@ const PropertyPanel: Component = () => {
 
             // Filter out properties that don't make sense for defaults (like locked, link, angle, width/height?)
             if (target.type === 'defaults') {
-                if (['locked', 'link', 'tag', 'angle', 'containerText', 'text', 'shadowOffsetX', 'shadowOffsetY'].includes(p.key)) return false;
+                if (['locked', 'link', 'tag', 'angle', 'x', 'y', 'width', 'height', 'containerText', 'text', 'shadowOffsetX', 'shadowOffsetY'].includes(p.key)) return false;
             }
 
             // In slides mode, hide canvasBackgroundColor from canvas settings —
@@ -936,6 +936,19 @@ const PropertyPanel: Component = () => {
                 fetchPoster(url, provider).then(poster => {
                     if (poster) getImage(poster);
                 });
+            }
+            return;
+        }
+
+        // Numeric Transform (X/Y/W/H): route through setElementTransform so width/height
+        // scale the element's relative geometry (pen points, path anchors) — a raw
+        // updateElement would resize the bbox while leaving the geometry behind.
+        if ((key === 'x' || key === 'y' || key === 'width' || key === 'height') && Number.isFinite(finalValue)) {
+            const patch = { [key]: Number(finalValue) };
+            if (target.type === 'element') {
+                setElementTransform(targetId || target.data.id!, patch);
+            } else if (target.type === 'multi') {
+                store.selection.forEach(id => setElementTransform(id, patch));
             }
             return;
         }

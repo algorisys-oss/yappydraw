@@ -1265,6 +1265,41 @@ export const properties: PropertyConfig[] = [
         defaultValue: 'straight'
     },
 
+    // Numeric Transform (position & size). Routed through setElementTransform in the
+    // panel so W/H scale relative geometry (pen points, path anchors) like a handle drag.
+    {
+        key: 'x',
+        label: 'X',
+        type: 'number',
+        group: 'dimensions',
+        applicableTo: 'all',
+        defaultValue: 0
+    },
+    {
+        key: 'y',
+        label: 'Y',
+        type: 'number',
+        group: 'dimensions',
+        applicableTo: 'all',
+        defaultValue: 0
+    },
+    {
+        key: 'width',
+        label: 'W',
+        type: 'number',
+        group: 'dimensions',
+        applicableTo: 'all',
+        defaultValue: 0
+    },
+    {
+        key: 'height',
+        label: 'H',
+        type: 'number',
+        group: 'dimensions',
+        applicableTo: 'all',
+        defaultValue: 0
+    },
+
     // Advanced / Common
     {
         key: 'angle',

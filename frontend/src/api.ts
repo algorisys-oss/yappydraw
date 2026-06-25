@@ -20,7 +20,7 @@ import {
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
-    saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision
+    saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
@@ -52,7 +52,7 @@ import {
 } from "./utils/animation/pixel-effect-animator";
 import {
     copyToClipboard, cutToClipboard, pasteFromClipboard,
-    copyStyle, pasteStyle
+    copyStyle, pasteStyle, flipSelected
 } from "./utils/object-context-actions";
 import { generateId } from "./utils/id-generator";
 import { detectVideoProvider, getEmbedURL, getPosterURL } from "./utils/video-utils";
@@ -1323,6 +1323,23 @@ export const YappyAPI = {
     /** The custom rotation pivot for the current selection, or null if at centre. */
     getRotationPivot(): { x: number; y: number } | null {
         return getCustomPivot(store.selection);
+    },
+
+    /**
+     * Free Transform: set an element's position and/or size numerically. width/height
+     * scale the element's relative geometry (pen points, path anchors) like a handle drag.
+     */
+    setElementTransform(id: string, patch: { x?: number; y?: number; width?: number; height?: number }) {
+        setElementTransform(id, patch);
+    },
+
+    /**
+     * Reflect the current selection in place. Without `axisValue` it flips about the
+     * selection's own centre (multi: bbox centre); with one it reflects across that
+     * world coordinate — e.g. the rotation pivot for a mirror-about-point.
+     */
+    flipSelection(direction: 'horizontal' | 'vertical', axisValue?: number) {
+        flipSelected(direction, axisValue);
     },
 
     setView(scale: number, panX: number, panY: number, rotation?: number) {
