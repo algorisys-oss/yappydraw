@@ -2,7 +2,7 @@ import type { DrawingElement } from "../types";
 import { isWasmEnabled } from "../wasm/feature-flags";
 import { wasmGetShapeGeometry } from "../wasm/bridge/shape-paths-bridge";
 import { getPathSubpaths, subpathsToPathData } from "./math/path-utils";
-import { warpGeometry, getWarpGrid } from "./envelope-warp";
+import { warpGeometry, getEffectiveGrid } from "./envelope-warp";
 
 export type ShapeGeometry =
     | { type: 'rect', x: number, y: number, w: number, h: number, r?: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
@@ -44,7 +44,7 @@ export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
     // Envelope / mesh warp deforms the sampled outline (non-affine) → a warped path
     // geometry, so both render styles and SVG export pick it up unchanged.
     if (geo && el.warp) {
-        const grid = getWarpGrid(el.warp);
+        const grid = getEffectiveGrid(el.warp);
         if (grid) return warpGeometry(geo, el.width, el.height, grid) as ShapeGeometry;
     }
     return geo;

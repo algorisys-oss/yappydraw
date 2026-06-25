@@ -19,7 +19,7 @@ import { isElementHiddenByHierarchy } from './hierarchy';
 import { isWasmEnabled } from '../wasm/feature-flags';
 import { wasmHitTestElement } from '../wasm/bridge/hit-testing-bridge';
 import { PathUtils, anchorsToPathData, getPathSubpaths } from './math/path-utils';
-import { getWarpGrid, unmeshWarpPoint } from './envelope-warp';
+import { getEffectiveGrid, unmeshWarpPoint } from './envelope-warp';
 
 /**
  * Inverse-rotate a point around a center by the given angle.
@@ -106,7 +106,7 @@ function hitTestGeometry(
     // Undo the envelope/mesh warp: map the click back into the un-warped shape (whose
     // anchors the narrow phase tests), via the inverse mesh map about the centred frame.
     if (el.warp) {
-        const grid = getWarpGrid(el.warp);
+        const grid = getEffectiveGrid(el.warp);
         if (grid) {
             const uw = unmeshWarpPoint(p.x - cx, p.y - cy, el.width, el.height, grid);
             p = { x: uw.x + cx, y: uw.y + cy };

@@ -318,7 +318,7 @@ export interface DrawingElement {
     // Envelope / mesh warp — non-affine free-distort by an R×C control-point grid (row-major
     // `points`, in the centred-local frame). `corners` [TL,TR,BR,BL] is the legacy 2×2 form,
     // still read for back-compat. Absent = no warp. See utils/envelope-warp.ts.
-    warp?: { corners?: { x: number; y: number }[]; rows?: number; cols?: number; points?: { x: number; y: number }[] };
+    warp?: { corners?: { x: number; y: number }[]; rows?: number; cols?: number; points?: { x: number; y: number }[]; smooth?: boolean };
     renderScale?: number; // Canvas-level scale for zoom animations (default: 1)
     parentId?: string | null;
     isCollapsed?: boolean;

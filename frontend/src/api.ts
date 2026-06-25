@@ -10,7 +10,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1363,6 +1363,11 @@ export const YappyAPI = {
      */
     applyMeshWarp(rows = 3, cols = 3, ids?: string[]): string[] {
         return applyMeshWarp(ids ?? store.selection, rows, cols);
+    },
+
+    /** Free Transform: toggle bicubic (Catmull-Rom) smoothing on a warped element's mesh. */
+    toggleMeshSmooth(ids?: string[]): string[] {
+        return toggleMeshSmooth(ids ?? store.selection);
     },
 
     setView(scale: number, panX: number, panY: number, rotation?: number) {

@@ -3461,6 +3461,19 @@ export const toggleEnvelopeWarp = (ids: string[]): string[] => applyWarpGrid(ids
  */
 export const applyMeshWarp = (ids: string[], rows = 3, cols = 3): string[] => applyWarpGrid(ids, rows, cols, 'set');
 
+/** Toggle bicubic (Catmull-Rom) smoothing on a warped element's mesh. */
+export const toggleMeshSmooth = (ids: string[]): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.warp);
+    if (targets.length === 0) { showToast('Smooth: select a warped shape', 'info'); return []; }
+    pushToHistory();
+    const want = !targets[0].warp?.smooth;
+    setStore('elements', list => list.map(el =>
+        (ids.includes(el.id) && el.warp) ? ({ ...el, warp: { ...el.warp, smooth: want } } as DrawingElement) : el));
+    bumpDirtyRevision();
+    showToast(want ? 'Mesh smoothing on' : 'Mesh smoothing off', 'success');
+    return targets.map(t => t.id);
+};
+
 const applyWarpGrid = (ids: string[], rows: number, cols: number, mode: 'toggle' | 'set'): string[] => {
     const targets = store.elements.filter(e => ids.includes(e.id));
     if (targets.length === 0) { showToast('Warp: select a shape', 'info'); return []; }

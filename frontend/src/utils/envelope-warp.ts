@@ -48,6 +48,59 @@ export function defaultWarpGrid(width: number, height: number, rows = 2, cols = 
     return { rows, cols, points };
 }
 
+// ── Bicubic (Catmull-Rom) smoothing ──────────────────────────────────────
+// Smoothing is implemented by SUBDIVIDING the control grid with a Catmull-Rom spline into
+// a fine grid, then running the same piecewise-bilinear forward/inverse over it. This keeps
+// render (forward) and hit-testing (inverse) consistent for free — no analytic bicubic
+// inverse needed — and degrades gracefully (a 2×2 grid smooths to the same straight cage).
+
+const SMOOTH_SUB = 6; // subdivisions per cell when smoothing
+
+function catmull(p0: number, p1: number, p2: number, p3: number, t: number): number {
+    const t2 = t * t, t3 = t2 * t;
+    return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+}
+const catmullPt = (a: Pt, b: Pt, c: Pt, d: Pt, t: number): Pt => ({ x: catmull(a.x, b.x, c.x, d.x, t), y: catmull(a.y, b.y, c.y, d.y, t) });
+
+/** Subdivide a control grid into a fine grid via tensor-product Catmull-Rom (clamped edges). */
+export function subdivideGrid(g: WarpGrid, sub = SMOOTH_SUB): WarpGrid {
+    const R = g.rows, C = g.cols, P = g.points;
+    const at = (r: number, c: number) => P[r * C + c];
+    // Pass 1: expand columns within each row.
+    const rowExp: Pt[][] = [];
+    for (let r = 0; r < R; r++) {
+        const line: Pt[] = [];
+        for (let c = 0; c < C - 1; c++) {
+            const p0 = at(r, Math.max(0, c - 1)), p1 = at(r, c), p2 = at(r, c + 1), p3 = at(r, Math.min(C - 1, c + 2));
+            for (let s = 0; s < sub; s++) line.push(catmullPt(p0, p1, p2, p3, s / sub));
+        }
+        line.push(at(r, C - 1));
+        rowExp.push(line);
+    }
+    const C2 = rowExp[0].length;
+    // Pass 2: expand rows within each (already column-expanded) line.
+    const out: Pt[] = [];
+    for (let r = 0; r < R - 1; r++) {
+        for (let s = 0; s < sub; s++) {
+            const t = s / sub;
+            for (let c = 0; c < C2; c++) {
+                const p0 = rowExp[Math.max(0, r - 1)][c], p1 = rowExp[r][c], p2 = rowExp[r + 1][c], p3 = rowExp[Math.min(R - 1, r + 2)][c];
+                out.push(catmullPt(p0, p1, p2, p3, t));
+            }
+        }
+    }
+    for (let c = 0; c < C2; c++) out.push(rowExp[R - 1][c]);
+    return { rows: (R - 1) * sub + 1, cols: C2, points: out };
+}
+
+/** The grid actually used for render/hit-test: the raw control grid, or its Catmull-Rom
+ *  subdivision when `warp.smooth` is set. Handles/drag use {@link getWarpGrid} (raw) instead. */
+export function getEffectiveGrid(warp: any): WarpGrid | null {
+    const g = getWarpGrid(warp);
+    if (!g) return null;
+    return warp?.smooth ? subdivideGrid(g) : g;
+}
+
 /** Default 4-corner envelope quad [TL,TR,BR,BL] (legacy helper, still used by the 2×2 command). */
 export function defaultWarpCorners(width: number, height: number): Pt[] {
     const mw = width / 2, mh = height / 2;
