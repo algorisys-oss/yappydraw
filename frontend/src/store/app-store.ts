@@ -1761,6 +1761,7 @@ export const loadDocument = (doc: any) => {
         setStore("artboards", JSON.parse(JSON.stringify(doc.artboards || [])));
         setStore("graphicStyles", JSON.parse(JSON.stringify(doc.graphicStyles || [])));
         setStore("swatches", JSON.parse(JSON.stringify(doc.swatches || [])));
+        repairLibraryIds(); // heal duplicate ids from docs made before the id fix
         setStore("gridSettings", JSON.parse(JSON.stringify(gridSettings)));
 
         // Migrate old showMindmapToolbar -> showQuickToolbar
@@ -3348,7 +3349,11 @@ export const cancelEyedropper = () => setStore('eyedropper', { active: false, ta
 
 // ── Graphic styles (named reusable appearances) ──────────────────────────────
 
-export const toggleGraphicStylesPanel = (visible?: boolean) => setStore('showGraphicStylesPanel', v => visible ?? !v);
+export const toggleGraphicStylesPanel = (visible?: boolean) => {
+    const next = visible ?? !store.showGraphicStylesPanel;
+    if (next) repairLibraryIds();
+    setStore('showGraphicStylesPanel', next);
+};
 
 /** Save the (first) selected element's appearance as a named graphic style. */
 export const createGraphicStyle = (ids?: string[], name?: string): string | null => {
@@ -3400,7 +3405,29 @@ export const deleteGraphicStyle = (styleId: string) => {
 
 // ── Global swatches (document-level named colours with live links) ───────────
 
-export const toggleSwatchesPanel = (visible?: boolean) => setStore('showSwatchesPanel', v => visible ?? !v);
+/** Repair duplicate ids in the swatch / graphic-style libraries (documents made
+ *  before generateId scanned these collections shared ids, which broke per-item
+ *  edits). Reassigns fresh unique ids to any later duplicates. */
+export const repairLibraryIds = () => {
+    const fix = (key: 'swatches' | 'graphicStyles', prefix: string) => {
+        const list = store[key] as { id: string }[];
+        const seen = new Set<string>(); const batch = new Set<string>(); let changed = false;
+        const next = list.map(item => {
+            if (!seen.has(item.id)) { seen.add(item.id); batch.add(item.id); return item; }
+            const nid = generateId(prefix as any, batch); batch.add(nid); changed = true;
+            return { ...item, id: nid };
+        });
+        if (changed) setStore(key as any, next as any);
+    };
+    fix('swatches', 'swatch');
+    fix('graphicStyles', 'gstyle');
+};
+
+export const toggleSwatchesPanel = (visible?: boolean) => {
+    const next = visible ?? !store.showSwatchesPanel;
+    if (next) repairLibraryIds();
+    setStore('showSwatchesPanel', next);
+};
 
 /** Create a swatch (from a colour, or the first selected element's fill). */
 export const createSwatch = (color?: string, name?: string): string | null => {
