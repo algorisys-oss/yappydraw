@@ -132,7 +132,7 @@ frontend/src/components/player-app.css | - | 28 |
 frontend/src/components/player-app.tsx | typescript | 112 | Window:15 PlayerApp:20
 frontend/src/components/presentation-controls.tsx | typescript | 226 | Component:1 PresentationControls:6 resetHideTimeout:10 handleNext:37 handlePrev:42
 frontend/src/components/property-panel.css | - | 739 |
-frontend/src/components/property-panel.tsx | typescript | 1661 | Component:1 PropertyConfig:15 isMixed:33 templates:56 handleClickOutside:58 handlePresent:113 calls:202 SlideActions:269 handlePreviewTransition:270 AlignmentControls:286 hasOptions:305 activePaletteId:310 activePalette:311 paletteSwatches:313 swatches:315 updateStops:432 handleBarMouseDown:437 handleThumbMouseDown:454 onMove:459 onUp:469 PropertyPanel:574 handleChange:739 getPropertyValue:998 handleDelete:1074 renderControl:1081 colorVal:1084 sliderVal:1099 sliderDisplay:1100 filteredOptions:1129 selectVal:1138 isDisabled:1166 toggleVal:1174 inputVal:1190 textareaVal:1209 appendLine:1211 imgVal:1241 commit:1242 onFile:1244 numVal:1285 toggleGroup:1330 handleContentScroll:1340
+frontend/src/components/property-panel.tsx | typescript | 1718 | Component:1 PropertyConfig:15 isMixed:33 templates:56 handleClickOutside:58 handlePresent:113 calls:202 SlideActions:269 handlePreviewTransition:270 AlignmentControls:286 hasOptions:305 activePaletteId:310 activePalette:311 paletteSwatches:313 swatches:315 ap:408 fills:409 strokes:410 commit:411 editFill:417 editStroke:418 move:419 updateStops:484 handleBarMouseDown:489 handleThumbMouseDown:506 onMove:511 onUp:521 PropertyPanel:626 handleChange:791 getPropertyValue:1050 handleDelete:1126 renderControl:1133 colorVal:1136 sliderVal:1151 sliderDisplay:1152 filteredOptions:1181 selectVal:1190 isDisabled:1218 toggleVal:1226 inputVal:1242 textareaVal:1261 appendLine:1263 imgVal:1293 commit:1294 onFile:1296 numVal:1337 toggleGroup:1382 handleContentScroll:1392
 frontend/src/components/quick-toolbar.css | - | 503 |
 frontend/src/components/quick-toolbar.tsx | typescript | 744 | Component:7 QuickPropertyDef:15 getIcon:63 handleDocClick:112 isTransparent:129 handleDocClick:177 activeOption:193 isActive:233 toggle:239 handleDocClick:301 activeLabel:317 categories:321 QuickToolbar:374 selectedElement:378 handler:460 handlePropertyChange:474 handlePropertyStart:512 x:519 y:544 value:580 isDisabled:623
 frontend/src/components/recording-overlay.css | - | 100 |
@@ -484,7 +484,7 @@ scripts/repograph-refresh.sh | shell | 25 |
 scripts/test_relative_path.ts | typescript | 58 |
 tests/alignment.spec.ts | typescript | 79 |
 tests/api.spec.ts | typescript | 155 |
-tests/appearance-stack.spec.ts | typescript | 68 |
+tests/appearance-stack.spec.ts | typescript | 102 | count:83
 tests/bpmn.spec.ts | typescript | 327 | markers:152
 tests/clipping-mask.spec.ts | typescript | 70 |
 tests/code-block.spec.ts | typescript | 163 | hello:35 App:128

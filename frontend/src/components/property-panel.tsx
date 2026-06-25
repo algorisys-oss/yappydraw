@@ -1,5 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
 import type { DrawingElement } from "../types";
@@ -398,6 +398,58 @@ const ColorControl: Component<{ prop: PropertyConfig, value: any, onChange: (val
                         </div>
                     </div>
                 </Show>
+            </div>
+        </div>
+    );
+};
+
+/** Appearance-stack editor: list/add/remove/reorder extra fills & strokes on one element. */
+const AppearanceEditor: Component<{ el: () => any }> = (props) => {
+    const ap = () => props.el()?.appearance || {};
+    const fills = () => ap().fills || [];
+    const strokes = () => ap().strokes || [];
+    const commit = (fillsArr: any[], strokesArr: any[]) => {
+        const ids = [props.el()?.id].filter(Boolean);
+        if (!ids.length) return;
+        const next = (fillsArr.length || strokesArr.length) ? { fills: fillsArr, strokes: strokesArr } : undefined;
+        setAppearance(ids, next);
+    };
+    const editFill = (i: number, patch: any) => { const f = fills().map((x: any) => ({ ...x })); f[i] = { ...f[i], ...patch }; commit(f, strokes()); };
+    const editStroke = (i: number, patch: any) => { const s = strokes().map((x: any) => ({ ...x })); s[i] = { ...s[i], ...patch }; commit(fills(), s); };
+    const move = (arr: any[], i: number, d: number) => { const a = arr.map(x => ({ ...x })); const j = i + d; if (j < 0 || j >= a.length) return a; [a[i], a[j]] = [a[j], a[i]]; return a; };
+    const sw = { width: '22px', height: '22px', padding: '0', border: '1px solid var(--border-color)', 'border-radius': '4px', cursor: 'pointer' } as any;
+    const numS = { width: '46px' } as any;
+    const btn = { padding: '1px 6px', cursor: 'pointer', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', 'border-radius': '4px', 'font-size': '11px' } as any;
+    return (
+        <div class="property-group">
+            <div class="group-title"><span>APPEARANCE</span></div>
+            <For each={fills()}>{(f: any, i) => (
+                <div class="control-row" style={{ gap: '3px', 'align-items': 'center', 'flex-wrap': 'wrap' }}>
+                    <input type="color" style={sw} value={f.color} onInput={e => editFill(i(), { color: e.currentTarget.value })} title="Fill colour" />
+                    <span style={{ 'font-size': '11px', width: '26px' }}>Fill</span>
+                    <input type="number" min="0" max="1" step="0.1" style={numS} value={f.opacity ?? 1} onInput={e => editFill(i(), { opacity: Number(e.currentTarget.value) })} title="Opacity" />
+                    <button style={btn} title="Show/Hide" onClick={() => editFill(i(), { visible: f.visible === false })}>{f.visible === false ? '🚫' : '👁'}</button>
+                    <button style={btn} title="Up" onClick={() => commit(move(fills(), i(), -1), strokes())}>↑</button>
+                    <button style={btn} title="Down" onClick={() => commit(move(fills(), i(), 1), strokes())}>↓</button>
+                    <button style={btn} title="Remove" onClick={() => commit(fills().filter((_: any, k: number) => k !== i()), strokes())}>×</button>
+                </div>
+            )}</For>
+            <For each={strokes()}>{(s: any, i) => (
+                <div class="control-row" style={{ gap: '3px', 'align-items': 'center', 'flex-wrap': 'wrap' }}>
+                    <input type="color" style={sw} value={s.color} onInput={e => editStroke(i(), { color: e.currentTarget.value })} title="Stroke colour" />
+                    <input type="number" min="0" step="1" style={numS} value={s.width} onInput={e => editStroke(i(), { width: Number(e.currentTarget.value) })} title="Width" />
+                    <select style={{ 'font-size': '11px' }} value={s.dash || 'solid'} onChange={e => editStroke(i(), { dash: e.currentTarget.value })} title="Dash">
+                        <option value="solid">—</option><option value="dashed">- -</option><option value="dotted">···</option>
+                    </select>
+                    <button style={btn} title="Show/Hide" onClick={() => editStroke(i(), { visible: s.visible === false })}>{s.visible === false ? '🚫' : '👁'}</button>
+                    <button style={btn} title="Up" onClick={() => commit(fills(), move(strokes(), i(), -1))}>↑</button>
+                    <button style={btn} title="Down" onClick={() => commit(fills(), move(strokes(), i(), 1))}>↓</button>
+                    <button style={btn} title="Remove" onClick={() => commit(fills(), strokes().filter((_: any, k: number) => k !== i()))}>×</button>
+                </div>
+            )}</For>
+            <div class="control-row" style={{ gap: '6px', 'margin-top': '4px' }}>
+                <button style={btn} onClick={() => addAppearanceFill([props.el()?.id].filter(Boolean), { color: props.el()?.backgroundColor && props.el().backgroundColor !== 'transparent' ? props.el().backgroundColor : '#3b82f6', opacity: 0.5 })}>+ Fill</button>
+                <button style={btn} onClick={() => addAppearanceStroke([props.el()?.id].filter(Boolean), { color: props.el()?.strokeColor && props.el().strokeColor !== 'transparent' ? props.el().strokeColor : '#ef4444', width: 4 })}>+ Stroke</button>
             </div>
         </div>
     );
@@ -1576,6 +1628,11 @@ const PropertyPanel: Component = () => {
                                         </div>
                                     )}
                                 </For>
+
+                                {/* Appearance stack — extra fills/strokes (single element) */}
+                                <Show when={isElement() && targetData()}>
+                                    <AppearanceEditor el={() => targetData()} />
+                                </Show>
 
                                 {/* Layers for elements */}
                                 <Show when={isElementOrMulti()}>
