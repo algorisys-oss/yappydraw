@@ -246,13 +246,15 @@ frontend/src/dsl/ysl/parser.ts | typescript | 786 | Token:9 SourceLocation:10 Pa
 frontend/src/examples/examples-page.css | - | 536 |
 frontend/src/examples/examples-page.tsx | typescript | 337 | Component:6 ExampleTemplate:10 getTemplateFromHash:95 ExamplesPage:101 handleHashChange:109 loadPreview:127 navigateToTemplate:156 openInEditor:163 filteredTemplates:168 currentTemplate:178 handleBackToApp:180 as:307
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
+frontend/src/help-docs/features/artboards-doc.tsx | typescript | 90 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 306 | LogoToolkitDoc:9 the:115
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 250 | MasksAppearanceTraceDoc:8 tools:14
+frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 525 | YslTutorialDoc:8
 frontend/src/help-docs/help-page.css | - | 408 |
-frontend/src/help-docs/help-page.tsx | typescript | 304 | Component:6 ShapeDoc:11 getShapeFromHash:198 HelpPage:204 handleHashChange:210 navigateToShape:221 filteredShapes:226 currentDoc:236 handleBackToApp:238
+frontend/src/help-docs/help-page.tsx | typescript | 322 | Component:6 ShapeDoc:11 getShapeFromHash:216 HelpPage:222 handleHashChange:228 navigateToShape:239 filteredShapes:244 currentDoc:254 handleBackToApp:256
 frontend/src/help-docs/shapes/basic-shapes-doc.tsx | typescript | 284 | BasicShapesDoc:8
 frontend/src/help-docs/shapes/bpmn-doc.tsx | typescript | 526 | BpmnDoc:8
 frontend/src/help-docs/shapes/connectors-doc.tsx | typescript | 273 | ConnectorsDoc:8
@@ -516,6 +518,7 @@ tests/free-transform-warp.spec.ts | typescript | 308 | clickWorld:25
 tests/generate-samples.spec.ts | typescript | 122 | saveState:13
 tests/global.d.ts | typescript | 241 | Window:2
 tests/gradient-mesh.spec.ts | typescript | 52 | S:12
+tests/help-docs.spec.ts | typescript | 23 |
 tests/hotkeys.spec.ts | typescript | 199 |
 tests/image-trace.spec.ts | typescript | 89 |
 tests/isometric-cube.spec.ts | typescript | 34 |

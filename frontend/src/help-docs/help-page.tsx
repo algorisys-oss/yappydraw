@@ -36,6 +36,8 @@ const YslTutorialDoc = lazy(() => import('./features/ysl-tutorial-doc'));
 const BulkEditingDoc = lazy(() => import('./features/bulk-editing-doc'));
 const LogoToolkitDoc = lazy(() => import('./features/logo-toolkit-doc'));
 const MasksAppearanceTraceDoc = lazy(() => import('./features/masks-appearance-trace-doc'));
+const SymbolsDoc = lazy(() => import('./features/symbols-doc'));
+const ArtboardsDoc = lazy(() => import('./features/artboards-doc'));
 
 // Registry of all shape documentation - organized by category in logical sequence
 const shapeDocuments: ShapeDoc[] = [
@@ -120,8 +122,24 @@ const shapeDocuments: ShapeDoc[] = [
         name: 'Masks, Appearance & Trace',
         icon: '✂',
         category: 'Design',
-        description: 'Clipping masks, multiple fills/strokes (appearance stack), and image trace (raster → vector)',
+        description: 'Clipping/opacity masks, appearance stack (multiple fills/strokes), gradient mesh, and image trace',
         content: MasksAppearanceTraceDoc
+    },
+    {
+        id: 'symbols',
+        name: 'Symbols & Instances',
+        icon: '◈',
+        category: 'Design',
+        description: 'Reusable masters + linked instances: the Symbols panel, edit-in-place, redefine and detach',
+        content: SymbolsDoc
+    },
+    {
+        id: 'artboards',
+        name: 'Artboards',
+        icon: '▭',
+        category: 'Design',
+        description: 'Named export-region frames: presets, on-canvas move/resize/delete, and per-region PNG export',
+        content: ArtboardsDoc
     },
     {
         id: 'wireframing',
