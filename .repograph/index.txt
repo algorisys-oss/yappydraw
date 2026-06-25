@@ -241,9 +241,10 @@ frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | Animatio
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 245 | LogoToolkitDoc:9 the:115
+frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 189 | MasksAppearanceTraceDoc:8 tools:14
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 525 | YslTutorialDoc:8
 frontend/src/help-docs/help-page.css | - | 408 |
-frontend/src/help-docs/help-page.tsx | typescript | 295 | Component:6 ShapeDoc:11 getShapeFromHash:189 HelpPage:195 handleHashChange:201 navigateToShape:212 filteredShapes:217 currentDoc:227 handleBackToApp:229
+frontend/src/help-docs/help-page.tsx | typescript | 304 | Component:6 ShapeDoc:11 getShapeFromHash:198 HelpPage:204 handleHashChange:210 navigateToShape:221 filteredShapes:226 currentDoc:236 handleBackToApp:238
 frontend/src/help-docs/shapes/basic-shapes-doc.tsx | typescript | 284 | BasicShapesDoc:8
 frontend/src/help-docs/shapes/bpmn-doc.tsx | typescript | 526 | BpmnDoc:8
 frontend/src/help-docs/shapes/connectors-doc.tsx | typescript | 273 | ConnectorsDoc:8
