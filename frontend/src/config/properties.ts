@@ -434,6 +434,7 @@ export const properties: PropertyConfig[] = [
             { label: 'Linear Gradient', value: 'linear' },
             { label: 'Radial Gradient', value: 'radial' },
             { label: 'Conic Gradient', value: 'conic' },
+            { label: 'Gradient Mesh', value: 'mesh' },
             { label: 'Image', value: 'image', excludeFrom: ['dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable', ...IMAGE_FILL_EXCLUDED] }
         ],
         applicableTo: FILLABLE_TARGETS,

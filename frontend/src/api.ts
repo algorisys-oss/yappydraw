@@ -12,6 +12,7 @@ import {
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
+    applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient,
     createSymbol, placeInstance, redefineSymbol, detachInstance, renameSymbol, deleteSymbol, toggleSymbolsPanel, addArtboard, deleteArtboard, renameArtboard, updateArtboard,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
@@ -1388,6 +1389,16 @@ export const YappyAPI = {
     setAppearance(appearance: any, ids?: string[]) { setAppearance(ids ?? store.selection, appearance); },
     /** Remove the appearance stack (back to base fill/stroke). */
     clearAppearance(ids?: string[]) { clearAppearance(ids ?? store.selection); },
+
+    /** Gradient mesh: apply an rows×cols coloured-node mesh fill (seeded from the
+     *  element's fill colour). Renders in both sketch and architectural styles. */
+    applyMeshGradient(rows?: number, cols?: number, ids?: string[]) { applyMeshGradient(ids ?? store.selection, rows ?? 3, cols ?? 3); },
+    /** Resize the mesh node grid, preserving colours where they overlap. */
+    setMeshSize(rows: number, cols: number, ids?: string[]) { setMeshSize(ids ?? store.selection, rows, cols); },
+    /** Set the colour of one mesh node (row, col). */
+    setMeshNodeColor(row: number, col: number, color: string, ids?: string[]) { setMeshNodeColor(ids ?? store.selection, row, col, color); },
+    /** Remove the mesh fill (revert to a solid fill). */
+    clearMeshGradient(ids?: string[]) { clearMeshGradient(ids ?? store.selection); },
 
     /** Image Trace: vectorize selected image(s) into editable path elements (threshold trace). */
     traceImage(options?: { threshold?: number; simplify?: number }, ids?: string[]): string[] {

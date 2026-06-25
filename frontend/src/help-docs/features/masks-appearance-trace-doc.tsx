@@ -155,6 +155,41 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                 </p>
             </section>
 
+            {/* ─── GRADIENT MESH ──────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Gradient Mesh</h2>
+                <p>
+                    Fill a shape with a smooth multi-colour <strong>mesh</strong> — a grid of coloured nodes that
+                    blend bilinearly across the shape. Unlike a linear/radial gradient (one axis), a mesh lets
+                    colour vary in <strong>both</strong> directions, so you can model soft shading, sheens and
+                    multi-point colour blends. The fill is clipped to the shape outline and renders identically in
+                    both <strong>Sketch</strong> and <strong>Architectural</strong> styles.
+                </p>
+                <h3>How to use it</h3>
+                <p>
+                    Select a shape and set <strong>Fill → Gradient Mesh</strong> in the Properties panel (or
+                    right-click → <strong>Appearance</strong> → <em>Gradient Mesh Fill</em>). A
+                    <strong> GRADIENT MESH</strong> editor appears: bump the <em>Rows</em>/<em>Cols</em> steppers to
+                    add nodes, then click any swatch to recolour that node. <em>Remove mesh</em> reverts to a solid
+                    fill.
+                </p>
+                <h3>Example</h3>
+                <pre><code>{`const Y = window.Yappy; Y.clear();
+const id = Y.createCircle(180, 150, 300, 230, { backgroundColor:'#8b5cf6', fillStyle:'solid' });
+Y.applyMeshGradient(3, 3, [id]);              // 3×3 node grid, seeded from the fill colour
+// recolour the four corners + a bright centre
+Y.setMeshNodeColor(0,0,'#ef4444',[id]); Y.setMeshNodeColor(0,2,'#f59e0b',[id]);
+Y.setMeshNodeColor(2,0,'#3b82f6',[id]); Y.setMeshNodeColor(2,2,'#10b981',[id]);
+Y.setMeshNodeColor(1,1,'#ffffff',[id]);
+Y.setMeshSize(4, 4, [id]);                    // grow the grid (colours preserved)`}</code></pre>
+                <p class="tip-box">
+                    Nodes are laid out on an even grid over the shape's bounding box (positions are derived, so only
+                    colours are stored — they survive save/load). <code>applyMeshGradient(rows, cols)</code>,
+                    <code> setMeshSize(rows, cols)</code>, <code>setMeshNodeColor(row, col, color)</code> and
+                    <code> clearMeshGradient()</code> all default to the current selection.
+                </p>
+            </section>
+
             {/* ─── IMAGE TRACE ────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Image Trace</h2>

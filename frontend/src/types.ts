@@ -58,7 +58,19 @@ export interface PathSubpath {
 }
 
 export type AppMode = 'design' | 'presentation' | 'prototype' | 'embed';
-export type FillStyle = 'hachure' | 'solid' | 'cross-hatch' | 'zigzag' | 'dots' | 'dashed' | 'zigzag-line' | 'linear' | 'radial' | 'conic' | 'image';
+export type FillStyle = 'hachure' | 'solid' | 'cross-hatch' | 'zigzag' | 'dots' | 'dashed' | 'zigzag-line' | 'linear' | 'radial' | 'conic' | 'image' | 'mesh';
+
+/**
+ * Gradient mesh fill (active when fillStyle === 'mesh'). An `rows × cols` grid
+ * of coloured nodes (rows/cols are node counts, each ≥ 2); colours interpolate
+ * bilinearly across each cell. Nodes sit on an even grid over the element's
+ * bounding box, so only colours are stored (positions are derived).
+ */
+export interface MeshGradient {
+    rows: number;       // node rows (≥ 2)
+    cols: number;       // node columns (≥ 2)
+    colors: string[];   // row-major node colours, length rows*cols (#rrggbb)
+}
 export type StrokeStyle = 'solid' | 'dashed' | 'dotted';
 export type FontFamily = 'hand-drawn' | 'sans-serif' | 'monospace' | 'caveat' | 'poppins' | 'serif' | 'marker' | 'code';
 export type TextAlign = 'left' | 'center' | 'right';
@@ -455,6 +467,9 @@ export interface DrawingElement {
     backgroundImage?: string;          // Image URL or data URL used as the fill
     backgroundImageFit?: 'cover' | 'contain' | 'fill' | 'tile'; // How the image maps into the shape bounds (default 'cover')
     backgroundOpacity?: number;        // 0-1, opacity of the fill image (default 1)
+
+    // Gradient mesh fill (active when fillStyle === 'mesh') — see MeshGradient
+    meshGradient?: MeshGradient;
 
     // Effects
     blendMode?: BlendMode;

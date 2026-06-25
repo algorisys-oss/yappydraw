@@ -9,6 +9,7 @@ import { getUIShapeDef } from "../../config/ui-shape-defs";
 import { drawTextAlongPath, getOutlinePath, isClosedShapeForText } from "../../utils/text-on-path";
 import { buildFilterString } from "../../utils/image-filter-utils";
 import { getImage } from "../../utils/image-cache";
+import { rasterizeMesh } from "../../utils/mesh-gradient";
 import type { IRenderer } from "../../rendering/IRenderer";
 
 export class RenderPipeline {
@@ -151,7 +152,7 @@ export class RenderPipeline {
 
         // Suppress RoughJS fill if complex fill (gradient/dots/image) is active
         // Also use 'solid' fillStyle for RoughJS since it doesn't understand gradient types
-        const isComplexFill = ['linear', 'radial', 'conic', 'dots', 'image'].includes(el.fillStyle as string);
+        const isComplexFill = ['linear', 'radial', 'conic', 'dots', 'image', 'mesh'].includes(el.fillStyle as string);
         if (isComplexFill) {
             fill = undefined;
         }
@@ -188,14 +189,21 @@ export class RenderPipeline {
             ((el.gradientType as any) !== 'none' && el.gradientType !== undefined);
         const useDots = fillStyle === 'dots';
         const useImage = fillStyle === 'image' && !!el.backgroundImage;
+        const useMesh = fillStyle === 'mesh' && !!el.meshGradient;
 
-        if (!useGradient && !useDots && !useImage) return;
+        if (!useGradient && !useDots && !useImage && !useMesh) return;
 
         renderer.save();
         renderer.translate(cx, cy);
 
         if (useImage) {
             this.applyImageFill(renderer, el);
+            renderer.restore();
+            return;
+        }
+
+        if (useMesh) {
+            this.applyMeshFill(renderer, el);
             renderer.restore();
             return;
         }
@@ -273,6 +281,43 @@ export class RenderPipeline {
         }
 
         renderer.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+        renderer.restore();
+    }
+
+    /**
+     * Paints a gradient-mesh fill clipped to the shape outline (fillStyle ===
+     * 'mesh'). The mesh is bilinearly rasterized to a small offscreen canvas
+     * (capped resolution; canvas smoothing upscales it cleanly) and drawn into
+     * the shape. Identical in both sketch and architectural styles — like image
+     * fills — so render-style parity is automatic; strokes still draw per-mode.
+     * Runs in a space already translated to the shape's center.
+     */
+    private static applyMeshFill(renderer: IRenderer, el: DrawingElement) {
+        const mesh = el.meshGradient;
+        if (!mesh) return;
+        const w = el.width, h = el.height;
+        if (w <= 0 || h <= 0) return;
+
+        // Rasterize at a capped resolution proportional to the element; the
+        // gradient is smooth, so a modest buffer upscales without visible loss.
+        const res = (n: number) => Math.max(2, Math.min(256, Math.round(n)));
+        const buf = rasterizeMesh(mesh, res(w), res(h));
+        if (!buf) return;
+
+        const geometry = getShapeGeometry(el);
+        if (!geometry) return;
+
+        renderer.save();
+        if (geometry.type === 'path') {
+            renderer.clipPath(geometry.path);
+        } else {
+            renderer.beginPath();
+            this.renderGeometry(renderer, geometry);
+            renderer.clip();
+        }
+        const opacity = el.backgroundOpacity ?? 1;
+        if (opacity !== 1) renderer.globalAlpha = renderer.globalAlpha * opacity;
+        renderer.drawImage(buf, -w / 2, -h / 2, w, h);
         renderer.restore();
     }
 

@@ -1,5 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
 import type { DrawingElement } from "../types";
@@ -455,6 +455,50 @@ const AppearanceEditor: Component<{ el: () => any }> = (props) => {
     );
 };
 
+/** Gradient-mesh editor — a rows×cols grid of node colour swatches plus size
+ *  steppers. Operates on the active element's `meshGradient`. */
+const MeshEditor: Component<{ el: () => any }> = (props) => {
+    const mesh = () => props.el()?.meshGradient as { rows: number; cols: number; colors: string[] } | undefined;
+    const ids = () => [props.el()?.id].filter(Boolean);
+    const sw = { width: '100%', height: '20px', padding: '0', border: '1px solid var(--border-color)', 'border-radius': '3px', cursor: 'pointer' } as any;
+    const btn = { padding: '1px 7px', cursor: 'pointer', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', 'border-radius': '4px', 'font-size': '11px' } as any;
+    return (
+        <Show when={mesh()}>
+            <div class="property-group">
+                <div class="group-title"><span>GRADIENT MESH</span></div>
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '6px' }}>
+                    <span style={{ 'font-size': '11px' }}>Rows</span>
+                    <button style={btn} title="Fewer rows" onClick={() => setMeshSize(ids(), mesh()!.rows - 1, mesh()!.cols)}>−</button>
+                    <span style={{ 'font-size': '11px', 'min-width': '14px', 'text-align': 'center' }}>{mesh()!.rows}</span>
+                    <button style={btn} title="More rows" onClick={() => setMeshSize(ids(), mesh()!.rows + 1, mesh()!.cols)}>+</button>
+                    <span style={{ 'font-size': '11px', 'margin-left': '6px' }}>Cols</span>
+                    <button style={btn} title="Fewer cols" onClick={() => setMeshSize(ids(), mesh()!.rows, mesh()!.cols - 1)}>−</button>
+                    <span style={{ 'font-size': '11px', 'min-width': '14px', 'text-align': 'center' }}>{mesh()!.cols}</span>
+                    <button style={btn} title="More cols" onClick={() => setMeshSize(ids(), mesh()!.rows, mesh()!.cols + 1)}>+</button>
+                </div>
+                <div style={{ display: 'grid', 'grid-template-columns': `repeat(${mesh()!.cols}, 1fr)`, gap: '3px' }}>
+                    <For each={mesh()!.colors}>{(color: string, i) => {
+                        const row = () => Math.floor(i() / mesh()!.cols);
+                        const col = () => i() % mesh()!.cols;
+                        return (
+                            <input
+                                type="color"
+                                style={sw}
+                                value={color}
+                                title={`Node (${row()}, ${col()})`}
+                                onInput={e => setMeshNodeColor(ids(), row(), col(), e.currentTarget.value)}
+                            />
+                        );
+                    }}</For>
+                </div>
+                <div class="control-row" style={{ gap: '6px', 'margin-top': '6px' }}>
+                    <button style={btn} title="Remove the mesh fill" onClick={() => clearMeshGradient(ids())}>Remove mesh</button>
+                </div>
+            </div>
+        </Show>
+    );
+};
+
 const GradientEditor: Component<{ target: any, onChange: (key: string, val: any, targetType?: string, targetId?: string, history?: boolean) => void }> = (props) => {
 
     // Helper to get current stops or defaults
@@ -806,6 +850,13 @@ const PropertyPanel: Component = () => {
         let finalValue = value;
         if (key === 'roundness') {
             finalValue = value ? { type: 1 } : null;
+        }
+
+        // Selecting the 'mesh' fill type seeds a default mesh grid (element targets only).
+        if (key === 'fillStyle' && value === 'mesh') {
+            const ids = target.type === 'element' ? [targetId || target.data.id!].filter(Boolean) as string[]
+                : target.type === 'multi' ? [...store.selection] : [];
+            if (ids.length) { applyMeshGradient(ids); return; }
         }
 
         // Gradient preset: apply preset colors and direction
@@ -1632,6 +1683,11 @@ const PropertyPanel: Component = () => {
                                 {/* Appearance stack — extra fills/strokes (single element) */}
                                 <Show when={isElement() && targetData()}>
                                     <AppearanceEditor el={() => targetData()} />
+                                </Show>
+
+                                {/* Gradient-mesh node editor (self-gating: only when a mesh fill is set) */}
+                                <Show when={isElement() && targetData()}>
+                                    <MeshEditor el={() => targetData()} />
                                 </Show>
 
                                 {/* Layers for elements */}

@@ -14,7 +14,8 @@ import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
-import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient } from "../types";
+import { defaultMesh, resizeMesh, meshIndex } from "../utils/mesh-gradient";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
 import { defaultWarpGrid, getWarpGrid } from "../utils/envelope-warp";
@@ -2211,6 +2212,54 @@ export const setAppearance = (ids: string[], appearance: { fills?: PaintFill[]; 
 
 /** Remove the appearance stack, leaving only the base fill/stroke. */
 export const clearAppearance = (ids: string[]) => setAppearance(ids, undefined);
+
+// ── Gradient mesh fill ────────────────────────────────────────────────────────
+
+/** Apply a gradient-mesh fill to the given elements (seeded from each element's
+ *  current fill colour). Sets fillStyle = 'mesh' and a default node grid. */
+export const applyMeshGradient = (ids: string[], rows = 3, cols = 3) => {
+    if (ids.length === 0) { showToast('Mesh: select an object', 'info'); return; }
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), (e: DrawingElement) => ({
+        fillStyle: 'mesh' as const,
+        meshGradient: defaultMesh(rows, cols, (e.backgroundColor && e.backgroundColor !== 'transparent') ? e.backgroundColor : '#3b82f6'),
+    }));
+    bumpDirtyRevision();
+    showToast('Gradient mesh applied', 'success');
+};
+
+/** Change the node-grid size of a mesh fill, preserving colours where possible. */
+export const setMeshSize = (ids: string[], rows: number, cols: number) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id) && !!e.meshGradient, (e: DrawingElement) => ({
+        meshGradient: resizeMesh(e.meshGradient as MeshGradient, rows, cols),
+    }));
+    bumpDirtyRevision();
+};
+
+/** Set the colour of a single mesh node (row, col) on the given elements. */
+export const setMeshNodeColor = (ids: string[], row: number, col: number, color: string) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id) && !!e.meshGradient, (e: DrawingElement) => {
+        const m = e.meshGradient as MeshGradient;
+        const idx = meshIndex(m, row, col);
+        if (idx < 0 || idx >= m.colors.length) return {};
+        const colors = m.colors.slice();
+        colors[idx] = color;
+        return { meshGradient: { ...m, colors } };
+    });
+    bumpDirtyRevision();
+};
+
+/** Remove a mesh fill, reverting to a solid fill. */
+export const clearMeshGradient = (ids: string[]) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ fillStyle: 'solid' as const, meshGradient: undefined }));
+    bumpDirtyRevision();
+};
 
 /**
  * Image Trace — vectorize a selected image into an editable `path` element (threshold trace

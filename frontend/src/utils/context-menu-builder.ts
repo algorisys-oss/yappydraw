@@ -9,7 +9,7 @@ import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance, addArtboard, deleteArtboard,
-    addAppearanceFill, addAppearanceStroke, clearAppearance, traceImage,
+    addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
@@ -1103,11 +1103,13 @@ export function getContextMenuItems(
             const el = store.elements.find(e => e.id === id);
             return el?.appearance && ((el.appearance.fills?.length ?? 0) > 0 || (el.appearance.strokes?.length ?? 0) > 0);
         });
+        const anyMesh = store.selection.some(id => store.elements.find(e => e.id === id)?.meshGradient);
         items.push({
             label: 'Appearance', icon: '◑', submenu: [
                 { label: 'Add Fill', onClick: () => addAppearanceFill([...store.selection]) },
                 { label: 'Add Stroke', onClick: () => addAppearanceStroke([...store.selection]) },
                 ...(anyAppearance ? [{ label: 'Clear Appearance', onClick: () => clearAppearance([...store.selection]) }] : []),
+                { label: anyMesh ? 'Remove Gradient Mesh' : 'Gradient Mesh Fill', icon: '▦', onClick: () => anyMesh ? clearMeshGradient([...store.selection]) : applyMeshGradient([...store.selection]) },
             ],
         });
 
