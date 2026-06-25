@@ -20,6 +20,7 @@ import { SymmetryOverlay } from './components/symmetry-overlay';
 import { MeshOverlay } from './components/mesh-overlay';
 import { ArtboardOverlay } from './components/artboard-overlay';
 import { MeasureOverlay } from './components/measure-overlay';
+import { ShapeBuilderOverlay } from './components/shape-builder-overlay';
 import { SymbolEditBanner } from './components/symbol-edit-banner';
 import Toolbar from './components/toolbar';
 import {
@@ -1192,6 +1193,7 @@ const App: Component = () => {
         <MeshOverlay />
         <ArtboardOverlay />
         <MeasureOverlay />
+        <ShapeBuilderOverlay />
         <SymbolEditBanner />
         <Show when={store.docType === 'slides'}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={

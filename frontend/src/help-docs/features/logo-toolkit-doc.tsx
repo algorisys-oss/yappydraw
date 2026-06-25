@@ -21,6 +21,24 @@ export const LogoToolkitDoc: Component = () => {
                 </p>
             </header>
 
+            {/* Shape Builder */}
+            <section class="doc-section">
+                <h2>Shape Builder</h2>
+                <p>
+                    The fastest way to build a custom silhouette from simple shapes. Overlap a few primitives
+                    (circles, rectangles, the pen tool…), select them all (≥2), then right-click → <strong>Shape
+                    Builder</strong>. <strong>Drag a stroke across</strong> the shapes you want to fuse — they highlight
+                    and, on release, <strong>merge into one path</strong>. Hold <strong>Alt</strong> while dragging to
+                    <strong> delete</strong> the shapes you cross instead. <strong>Esc</strong> exits.
+                </p>
+                <p class="tip-box">
+                    It's built on the Pathfinder engine, so the merge is a true boolean union producing an editable
+                    vector path. For precise set operations on exactly two shapes, the right-click
+                    <strong> Pathfinder</strong> (union / subtract / intersect / exclude) is also there.
+                    (<code>Yappy.toggleShapeBuilder()</code>.)
+                </p>
+            </section>
+
             {/* Repeat & symmetry */}
             <section class="doc-section">
                 <h2>Repeat &amp; Symmetry</h2>

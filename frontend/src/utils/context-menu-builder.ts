@@ -11,6 +11,7 @@ import {
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
     blendShapes,
     toggleRecolorPanel,
+    toggleShapeBuilder,
     addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry,
     bringToFront, sendToBack, moveElementZIndex,
@@ -1183,6 +1184,9 @@ export function getContextMenuItems(
                     { label: '16 steps', onClick: () => blendShapes(two, 16) },
                 ],
             });
+        }
+        if (selectionCount >= 2) {
+            items.push({ label: 'Shape Builder', icon: '⬓', onClick: () => toggleShapeBuilder(true) });
         }
         if (selectionCount === 1) {
             items.push(

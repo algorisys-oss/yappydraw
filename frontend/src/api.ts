@@ -20,7 +20,7 @@ import {
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
@@ -1777,6 +1777,8 @@ export const YappyAPI = {
     adjustSelectionColors(opts: { hue?: number; lightness?: number; saturation?: number }, ids?: string[]) { adjustSelectionColors(opts, ids); },
     /** Toggle the Measure tool (drag on canvas to read distance & angle). */
     toggleMeasure(active?: boolean) { toggleMeasure(active); },
+    /** Toggle the Shape Builder (drag across ≥2 selected shapes to merge / Alt-drag to delete). */
+    toggleShapeBuilder(active?: boolean) { toggleShapeBuilder(active); },
     /** Eyedropper: arm picking a style onto targets (default: selection); next canvas click on an object copies its style. */
     startEyedropper(targetIds?: string[]) { startEyedropper(targetIds); },
     /** Directly apply a source object's style to the armed targets. */

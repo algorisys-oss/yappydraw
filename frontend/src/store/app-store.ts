@@ -97,6 +97,8 @@ interface AppState {
     showRecolorPanel: boolean;
     /** Measure-tool mode: drag on canvas to read distance + angle (transient). */
     measureActive: boolean;
+    /** Shape Builder mode: drag across selected shapes to merge / Alt-drag to delete (transient). */
+    shapeBuilderActive: boolean;
     /** Undo-history panel visibility (transient, not persisted). */
     showHistoryPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
@@ -297,6 +299,7 @@ const initialState: AppState = {
     showSwatchesPanel: false,
     showRecolorPanel: false,
     measureActive: false,
+    shapeBuilderActive: false,
     showHistoryPanel: false,
     meshEditActive: false,
     activeArtboardId: null,
@@ -3554,6 +3557,8 @@ export const blendShapes = (ids?: string[], steps = 4) => {
 export const toggleRecolorPanel = (visible?: boolean) => setStore('showRecolorPanel', v => visible ?? !v);
 
 export const toggleMeasure = (active?: boolean) => setStore('measureActive', v => active ?? !v);
+
+export const toggleShapeBuilder = (active?: boolean) => setStore('shapeBuilderActive', v => active ?? !v);
 
 /** Distinct solid fill/stroke colours used across the given elements, each with
  *  a usage count (most-used first) — the palette for Recolor Artwork. */
