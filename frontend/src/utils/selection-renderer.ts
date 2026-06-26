@@ -40,6 +40,11 @@ export interface ElementOverlayOptions {
 function renderPathAnchors(ctx: CanvasRenderingContext2D, el: DrawingElement, scale: number, showCloseRing: boolean): void {
     const sq = 8 / scale;   // anchor square side
     const hd = 7 / scale;   // handle circle diameter
+    // Anchors are stored un-rotated; draw the whole overlay in the element's rotated frame so
+    // the handles sit on the rotated path (and match the rotation-aware hit-testing).
+    const ang = el.angle || 0;
+    ctx.save();
+    if (ang) { const cx = el.x + el.width / 2, cy = el.y + el.height / 2; ctx.translate(cx, cy); ctx.rotate(ang); ctx.translate(-cx, -cy); }
     let firstAnchor: { x: number; y: number } | null = null;
     for (const sp of getPathSubpaths(el)) for (const a of sp.anchors) {
         const ax = el.x + a.x, ay = el.y + a.y;
@@ -75,6 +80,7 @@ function renderPathAnchors(ctx: CanvasRenderingContext2D, el: DrawingElement, sc
         ctx.arc(firstAnchor.x, firstAnchor.y, sq, 0, Math.PI * 2);
         ctx.stroke();
     }
+    ctx.restore();
 }
 
 /**

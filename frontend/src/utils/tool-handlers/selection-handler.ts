@@ -1726,6 +1726,10 @@ function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerSta
         const s = snapPoint(x, y, store.gridSettings.gridSize);
         tx = s.x; ty = s.y;
     }
+    // Anchors live in the element's UN-rotated local frame, so map the world pointer back
+    // through the element's rotation before computing local coords (else dragging a node on
+    // a rotated path edits the wrong one).
+    if (el.angle) { const ur = rotatePoint(tx, ty, el.x + el.width / 2, el.y + el.height / 2, -el.angle); tx = ur.x; ty = ur.y; }
 
     const a = anchors[i];
     if (kind === 'anchor') {

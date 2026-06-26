@@ -134,20 +134,23 @@ export function getHandleAtPosition(
         if (el && el.type === 'path') {
             const subs = getPathSubpaths(el);
             const r = handleSize / 2 + 2 / scale;
+            // Anchors are stored un-rotated; test the pointer in the element's local frame.
+            const lp = el.angle ? unrotatePoint(x, y, el.x + el.width / 2, el.y + el.height / 2, el.angle) : { x, y };
+            const px = lp.x, py = lp.y;
             for (let su = 0; su < subs.length; su++) {
                 const anchors = subs[su].anchors;
                 for (let i = 0; i < anchors.length; i++) {
                     const a = anchors[i];
                     const ax = el.x + a.x, ay = el.y + a.y;
                     if (a.outX !== undefined && a.outY !== undefined &&
-                        Math.abs(x - (ax + a.outX)) <= r && Math.abs(y - (ay + a.outY)) <= r) {
+                        Math.abs(px - (ax + a.outX)) <= r && Math.abs(py - (ay + a.outY)) <= r) {
                         return { id: el.id, handle: `path-out-${su}-${i}` };
                     }
                     if (a.inX !== undefined && a.inY !== undefined &&
-                        Math.abs(x - (ax + a.inX)) <= r && Math.abs(y - (ay + a.inY)) <= r) {
+                        Math.abs(px - (ax + a.inX)) <= r && Math.abs(py - (ay + a.inY)) <= r) {
                         return { id: el.id, handle: `path-in-${su}-${i}` };
                     }
-                    if (Math.abs(x - ax) <= r && Math.abs(y - ay) <= r) {
+                    if (Math.abs(px - ax) <= r && Math.abs(py - ay) <= r) {
                         return { id: el.id, handle: `path-anchor-${su}-${i}` };
                     }
                 }
