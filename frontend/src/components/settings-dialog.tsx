@@ -158,6 +158,50 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                     </div>
 
                     <div class="settings-section">
+                        <p class="settings-section-title">Time-lapse</p>
+
+                        <div class="settings-row">
+                            <label title="Automatically capture a Procreate-style process recording for every session. Toggle a recording any time with Ctrl+Shift+T.">
+                                Auto-record sessions
+                            </label>
+                            <label class="settings-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={store.globalSettings.timelapseAutoRecord === true}
+                                    onChange={(e) => updateGlobalSettings({ timelapseAutoRecord: e.currentTarget.checked })}
+                                />
+                                <span class="settings-toggle-slider" />
+                            </label>
+                        </div>
+
+                        <div class="settings-row">
+                            <label title="Longest-edge resolution for captured frames. Lower = smaller storage and faster capture.">Capture Resolution</label>
+                            <select
+                                value={String(store.globalSettings.timelapseCaptureWidth ?? 1024)}
+                                onChange={(e) => updateGlobalSettings({ timelapseCaptureWidth: parseInt(e.currentTarget.value, 10) })}
+                            >
+                                <option value="640">640 px</option>
+                                <option value="1024">1024 px</option>
+                                <option value="1440">1440 px</option>
+                                <option value="1920">1920 px</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-row">
+                            <label title="Target length of the exported time-lapse video. Frames are time-compressed to fit.">Export Duration</label>
+                            <select
+                                value={String(store.globalSettings.timelapseTargetDuration ?? 30)}
+                                onChange={(e) => updateGlobalSettings({ timelapseTargetDuration: parseInt(e.currentTarget.value, 10) })}
+                            >
+                                <option value="10">10 s</option>
+                                <option value="15">15 s</option>
+                                <option value="30">30 s</option>
+                                <option value="60">60 s</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
                         <p class="settings-section-title">Text Defaults</p>
 
                         <div class="settings-row">

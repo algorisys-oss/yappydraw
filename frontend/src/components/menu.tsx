@@ -12,8 +12,9 @@ import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
-    Sparkles, Key, Ruler, Component as ComponentIcon, History
+    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay
 } from "lucide-solid";
+import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
 import { isGlobalPlaying, isGlobalPaused, animationEngine } from "../utils/animation/animation-engine";
@@ -732,6 +733,19 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+Shift+E</span>
                                         </div>
+                                    </button>
+                                    <div class="menu-separator"></div>
+                                    <div class="menu-item" onClick={() => { toggleTimelapse(); setIsMenuOpen(false); }}>
+                                        <Film size={16} />
+                                        <span class="label">{store.timelapseRecording ? 'Stop Time-lapse' : 'Record Time-lapse'}</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.timelapseRecording}><Check size={14} class="check-icon" /></Show>
+                                            <span class="shortcut">Ctrl+Shift+T</span>
+                                        </div>
+                                    </div>
+                                    <button class="menu-item" disabled={!store.activeTimelapseId || store.timelapseRecording} onClick={() => { setTimelapsePlayerOpen(true); setIsMenuOpen(false); }}>
+                                        <CirclePlay size={16} />
+                                        <span class="label">Play Time-lapse</span>
                                     </button>
                                     <div class="menu-separator"></div>
                                     <div class="menu-header">Panels</div>

@@ -19,6 +19,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Open Drawing', keys: 'Ctrl+Alt+O' },
             { label: 'Save Drawing', keys: 'Ctrl+Alt+S' },
             { label: 'Export / Share', keys: 'Ctrl+Shift+E' },
+            { label: 'Record Time-lapse (toggle)', keys: 'Ctrl+Shift+T' },
             { label: 'Command Palette', keys: 'Ctrl+K' },
             { label: 'Quick Tool Finder', keys: '/' },
             { label: 'New Sketch', keys: 'Alt+N' },

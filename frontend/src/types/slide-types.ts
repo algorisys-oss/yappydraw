@@ -95,6 +95,9 @@ export interface GlobalSettings {
     mindmapLayoutDirection?: 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial' | 'balanced'; // Default direction for trees with no explicit choice
     toolbarVertical?: boolean;         // Orient the main toolbar vertically (left edge) instead of horizontally (top)
     toolbarWrap?: number;              // Wrap toolbar icons into a grid of this pixel width (0/undefined = single line)
+    timelapseAutoRecord?: boolean;     // Automatically capture a process time-lapse for every session (default off)
+    timelapseCaptureWidth?: number;    // Longest-edge resolution (px) for captured time-lapse frames (default 1024)
+    timelapseTargetDuration?: number;  // Target length (seconds) for the exported time-lapse video (default 30)
 }
 
 /**

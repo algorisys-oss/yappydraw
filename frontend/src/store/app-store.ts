@@ -175,6 +175,10 @@ interface AppState {
     canvasTexture: 'none' | 'dots' | 'grid' | 'graph' | 'paper' | 'notebook';
     isPreviewing: boolean;
     isRecording: boolean;
+    // Time-lapse (process) recording — see docs/timelapse-spec.md
+    timelapseRecording: boolean;
+    activeTimelapseId: string | null;
+    timelapseFrameCount: number;
     selectedTechnicalType: 'dfdProcess' | 'dfdDataStore' | 'isometricCube' | 'cylinder' | 'stateStart' | 'stateEnd' | 'stateSync' | 'activationBar' | 'externalEntity' | 'codeBlock';
     // State Morphing
     states: DisplayState[];
@@ -250,6 +254,9 @@ const initialState: AppState = {
     selection: [],
     flowTick: 0,
     isRecording: false,
+    timelapseRecording: false,
+    activeTimelapseId: null,
+    timelapseFrameCount: 0,
     focusBranchId: null,
     readOnly: false,
     cursorPosition: { x: 0, y: 0 },
@@ -324,6 +331,9 @@ const initialState: AppState = {
         mindmapLayoutDirection: (localStorage.getItem('mindmapLayoutDirection') as GlobalSettings['mindmapLayoutDirection']) || 'horizontal-right',
         toolbarVertical: (localStorage.getItem('toolbarVertical') ?? '0') !== '0',
         toolbarWrap: parseInt(localStorage.getItem('toolbarWrap') ?? '0', 10) || 0,
+        timelapseAutoRecord: (localStorage.getItem('timelapseAutoRecord') ?? '0') !== '0',
+        timelapseCaptureWidth: parseInt(localStorage.getItem('timelapseCaptureWidth') ?? '1024', 10) || 1024,
+        timelapseTargetDuration: parseInt(localStorage.getItem('timelapseTargetDuration') ?? '30', 10) || 30,
     },
     showCanvasProperties: false,
     undoStackLength: 0,
@@ -1207,6 +1217,15 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.toolbarWrap !== undefined) {
         try { localStorage.setItem('toolbarWrap', String(updates.toolbarWrap)); } catch { /* ignore */ }
+    }
+    if (updates.timelapseAutoRecord !== undefined) {
+        try { localStorage.setItem('timelapseAutoRecord', updates.timelapseAutoRecord ? '1' : '0'); } catch { /* ignore */ }
+    }
+    if (updates.timelapseCaptureWidth !== undefined) {
+        try { localStorage.setItem('timelapseCaptureWidth', String(updates.timelapseCaptureWidth)); } catch { /* ignore */ }
+    }
+    if (updates.timelapseTargetDuration !== undefined) {
+        try { localStorage.setItem('timelapseTargetDuration', String(updates.timelapseTargetDuration)); } catch { /* ignore */ }
     }
 };
 

@@ -62,6 +62,8 @@ import {
 import { generateId } from "./utils/id-generator";
 import { detectVideoProvider, getEmbedURL, getPosterURL } from "./utils/video-utils";
 import { forceAutoSave, clearAutoSave } from "./storage/auto-save";
+import { setRequestTimelapse, toggleTimelapse as toggleTimelapseAction, exportTimelapse as exportTimelapseAction, setTimelapsePlayerOpen } from "./utils/timelapse-manager";
+import type { VideoFormat } from "./utils/video-recorder";
 import { cloudStorageManager } from "./storage/cloud";
 import { drawingId } from "./components/menu";
 import { assignToPoolLane, unassignFromPool, shiftLaneIndicesOnRemove, shiftLaneIndicesOnInsert } from "./utils/pool-containment";
@@ -1767,6 +1769,23 @@ export const YappyAPI = {
     // Grid & Snapping
     toggleGrid() { toggleGrid(); },
     toggleSnapToGrid() { toggleSnapToGrid(); },
+
+    // Time-lapse (Procreate-style process recording) — see docs/timelapse-spec.md
+    /** Begin capturing a time-lapse: one frame is stored per committed edit. */
+    startTimelapse() { setRequestTimelapse({ action: 'start' }); },
+    /** Stop the active time-lapse recording. */
+    stopTimelapse() { setRequestTimelapse({ action: 'stop' }); },
+    /** Toggle time-lapse recording on/off (same as Ctrl+Shift+T). */
+    toggleTimelapse() { toggleTimelapseAction(); },
+    /** True while a time-lapse is being captured. */
+    isTimelapseRecording() { return store.timelapseRecording; },
+    /** Number of frames captured in the current/last recording. */
+    timelapseFrameCount() { return store.timelapseFrameCount; },
+    /** Open/close the in-app time-lapse replay player. */
+    openTimelapsePlayer() { setTimelapsePlayerOpen(true); },
+    closeTimelapsePlayer() { setTimelapsePlayerOpen(false); },
+    /** Render the active recording to a video file (auto-downloads). Resolves false if nothing to export. */
+    exportTimelapse(format: VideoFormat = 'webm') { return exportTimelapseAction(format); },
 
     // Pen & Input
     /** Smart shapes: dwell at the end of a pen stroke to snap it to a clean shape. */

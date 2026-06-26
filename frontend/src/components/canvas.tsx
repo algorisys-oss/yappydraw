@@ -54,8 +54,11 @@ import { plainTextToSpans } from "../utils/rich-text-utils";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { effectiveTime } from "../utils/animation/animation-engine";
 import RecordingOverlay from "./recording-overlay";
+import TimelapseOverlay from "./timelapse-overlay";
+import TimelapsePlayer from "./timelapse-player";
 import VideoOverlay from "./video-overlay";
 import { setupRecording } from "../utils/recording-manager";
+import { setupTimelapse } from "../utils/timelapse-manager";
 export { requestRecording, setRequestRecording } from "../utils/recording-manager";
 import ScrollBackButton from "./scroll-back-button";
 import TextEditingOverlay from "./text-editing-overlay";
@@ -153,6 +156,9 @@ const Canvas: Component = () => {
 
     // Recording & thumbnail capture (effects created within this component's reactive scope)
     const { handleStopRecording } = setupRecording(() => canvasRef);
+
+    // Time-lapse (process) recording — captures one frame per committed edit
+    setupTimelapse();
 
 
     // Pointer handler shared mutable state
@@ -2070,6 +2076,12 @@ const Canvas: Component = () => {
             <Show when={store.isRecording}>
                 <RecordingOverlay onStop={handleStopRecording} />
             </Show>
+
+            {/* Time-lapse capture indicator + replay player */}
+            <Show when={store.timelapseRecording}>
+                <TimelapseOverlay />
+            </Show>
+            <TimelapsePlayer />
 
             {/* Video Playback Overlay */}
             <VideoOverlay />

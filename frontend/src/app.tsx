@@ -12,6 +12,7 @@ import {
   transformAgain, recordTransform, convertTextToOutlines, toggleSymmetryGuide
 } from './store/app-store';
 import { showToast } from './components/toast';
+import { toggleTimelapse } from './utils/timelapse-manager';
 import { ColorDropHud } from './components/color-drop-hud';
 import Canvas from './components/canvas';
 import { RulerOverlay } from './components/ruler-overlay';
@@ -194,6 +195,10 @@ const App: Component = () => {
         } else if (key === 'a' && e.shiftKey) {
           e.preventDefault();
           setIsAIPromptOpen(true);
+          return;
+        } else if (key === 't' && e.shiftKey) {
+          e.preventDefault();
+          toggleTimelapse();
           return;
         } else if (key === '=' || key === '+') {
           e.preventDefault();
