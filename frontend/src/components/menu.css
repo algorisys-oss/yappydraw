@@ -9,6 +9,11 @@
     border: 1px solid var(--border-color);
     user-select: none;
     transition: box-shadow 0.2s;
+    /* Establish a stacking context ABOVE the floating toolbar (z 10002) so the menu and its
+       dropdown always sit on top of it — even when the toolbar is vertical/wrapped and overlaps
+       the top-left corner. (A z-index on the dropdown alone is trapped in this container's context.) */
+    position: relative;
+    z-index: 10060;
 }
 
 /* Text-based logo */
@@ -134,7 +139,9 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     padding: 8px 0;
     width: 300px;
-    z-index: 1001;
+    /* Above the floating toolbar (z 10002) so the menu is never hidden behind a
+       vertical/wrapped toolbar that overlaps the top-left corner. */
+    z-index: 10050;
     display: flex;
     flex-direction: column;
     gap: 1px;

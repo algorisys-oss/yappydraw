@@ -31,6 +31,9 @@ import { BlobBrushOverlay } from './components/blob-brush-overlay';
 import { PathEraserOverlay } from './components/path-eraser-overlay';
 import { PuppetWarpOverlay } from './components/puppet-warp-overlay';
 import { PerspectiveGridOverlay } from './components/perspective-grid-overlay';
+import { TouchTypeOverlay } from './components/touch-type-overlay';
+import { SliceToolOverlay } from './components/slice-tool-overlay';
+import { SymbolismOverlay } from './components/symbolism-overlay';
 import { SymbolEditBanner } from './components/symbol-edit-banner';
 import Toolbar from './components/toolbar';
 import {
@@ -1214,6 +1217,9 @@ const App: Component = () => {
         <PathEraserOverlay />
         <PuppetWarpOverlay />
         <PerspectiveGridOverlay />
+        <TouchTypeOverlay />
+        <SliceToolOverlay />
+        <SymbolismOverlay />
         <SymbolEditBanner />
         <Show when={store.docType === 'slides'}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={

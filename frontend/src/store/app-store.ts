@@ -111,6 +111,8 @@ interface AppState {
     livePaintActive: boolean;
     /** Width tool mode: drag on a path to vary its stroke width (transient). */
     widthToolActive: boolean;
+    /** Touch Type mode: select & transform individual glyphs of a text element (transient). */
+    touchTypeActive: boolean;
     /** Curvature tool mode: click points to draw a smooth curve through them (transient). */
     curveToolActive: boolean;
     /** Reshape tool mode: drag a path/segment to bend it while pinning endpoints (transient). */
@@ -123,6 +125,11 @@ interface AppState {
     puppetWarpActive: boolean;
     /** Perspective Grid overlay visibility + settings (transient UI). */
     perspectiveGridActive: boolean;
+    /** Slice tool mode: drag a rectangle to export that region as PNG (transient). */
+    sliceToolActive: boolean;
+    /** Symbolism brush mode + which transform it applies to symbol instances (transient). */
+    symbolismActive: boolean;
+    symbolismMode: 'sizer' | 'spinner' | 'shifter' | 'screener' | 'stainer' | 'styler';
     /** 2-point perspective grid geometry in WORLD coords (horizon + two vanishing points). */
     perspectiveGrid: { horizonY: number; leftVPx: number; rightVPx: number } | null;
     /** Undo-history panel visibility (transient, not persisted). */
@@ -331,6 +338,7 @@ const initialState: AppState = {
     sprayerSymbolId: null,
     livePaintActive: false,
     widthToolActive: false,
+    touchTypeActive: false,
     curveToolActive: false,
     reshapeToolActive: false,
     blobBrushActive: false,
@@ -338,6 +346,9 @@ const initialState: AppState = {
     puppetWarpActive: false,
     perspectiveGridActive: false,
     perspectiveGrid: null,
+    sliceToolActive: false,
+    symbolismActive: false,
+    symbolismMode: 'sizer',
     showHistoryPanel: false,
     meshEditActive: false,
     activeArtboardId: null,
@@ -1070,6 +1081,9 @@ export const setSelectedTool = (tool: ToolType) => {
     if (store.livePaintActive) setStore('livePaintActive', false);
     if (store.widthToolActive) setStore('widthToolActive', false);
     if (store.curveToolActive) setStore('curveToolActive', false);
+    if (store.touchTypeActive) setStore('touchTypeActive', false);
+    if (store.sliceToolActive) setStore('sliceToolActive', false);
+    if (store.symbolismActive) setStore('symbolismActive', false);
     if (store.reshapeToolActive) setStore('reshapeToolActive', false);
     if (store.blobBrushActive) setStore('blobBrushActive', false);
     if (store.pathEraserActive) setStore('pathEraserActive', false);
@@ -1833,6 +1847,17 @@ export const loadDocument = (doc: any) => {
             gs.showQuickToolbar = gs.showMindmapToolbar;
             delete gs.showMindmapToolbar;
         }
+        // App-level UI preferences are persisted in localStorage and must win over whatever
+        // globalSettings the loaded document happens to carry — otherwise opening/auto-restoring
+        // a doc reverts the toolbar orientation/wrap and pen prefs the user just set.
+        try {
+            const lsBool = (k: string, cur: any) => { const v = localStorage.getItem(k); return v === null ? cur : v !== '0'; };
+            gs.toolbarVertical = lsBool('toolbarVertical', gs.toolbarVertical);
+            const tw = localStorage.getItem('toolbarWrap'); if (tw !== null) (gs as any).toolbarWrap = tw === 'true' ? true : tw === 'false' ? false : Number(tw);
+            gs.smartShape = lsBool('smartShape', gs.smartShape);
+            gs.penPressure = lsBool('penPressure', gs.penPressure);
+            const ps = localStorage.getItem('penStabilization'); if (ps !== null) gs.penStabilization = Number(ps);
+        } catch { /* ignore */ }
         setStore("globalSettings", gs);
 
         // Reset canvas background to default before theme applies
@@ -3626,6 +3651,80 @@ export const toggleLivePaint = (active?: boolean) => setStore('livePaintActive',
 
 export const toggleWidthTool = (active?: boolean) => setStore('widthToolActive', v => active ?? !v);
 export const toggleCurveTool = (active?: boolean) => setStore('curveToolActive', v => active ?? !v);
+export const toggleTouchType = (active?: boolean) => setStore('touchTypeActive', v => active ?? !v);
+export const toggleSliceTool = (active?: boolean) => setStore('sliceToolActive', v => active ?? !v);
+export const toggleSymbolism = (active?: boolean) => setStore('symbolismActive', v => active ?? !v);
+export const setSymbolismMode = (m: AppState['symbolismMode']) => setStore('symbolismMode', m);
+
+/**
+ * Symbolism brush — apply the active sub-tool to symbol instances within `radius` of the brush,
+ * scaled by a distance falloff. Sizer scales, Spinner rotates, Shifter nudges along the drag,
+ * Screener fades opacity, Stainer tints, Styler applies the current fill+stroke. Alt reverses.
+ * No per-tick history (the overlay snapshots once on press).
+ */
+export const applySymbolism = (mode: AppState['symbolismMode'], wx: number, wy: number, radius: number, opts?: { dx?: number; dy?: number; alt?: boolean }): number => {
+    const sign = opts?.alt ? -1 : 1;
+    let n = 0;
+    for (const el of store.elements) {
+        if (el.type !== 'symbolInstance' || el.locked) continue;
+        const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+        const d = Math.hypot(cx - wx, cy - wy);
+        if (d > radius) continue;
+        const w = 1 - d / radius; // 1 at the brush centre → 0 at the edge
+        let patch: Partial<DrawingElement> = {};
+        if (mode === 'sizer') { const f = 1 + 0.05 * w * sign; const nw = Math.max(2, el.width * f), nh = Math.max(2, el.height * f); patch = { width: nw, height: nh, x: cx - nw / 2, y: cy - nh / 2 }; }
+        else if (mode === 'spinner') patch = { angle: (el.angle || 0) + 0.1 * w * sign };
+        else if (mode === 'shifter') patch = { x: el.x + (opts?.dx || 0) * w, y: el.y + (opts?.dy || 0) * w };
+        else if (mode === 'screener') patch = { opacity: Math.max(0.05, Math.min(1, (el.opacity ?? 1) - 0.05 * w * sign)) };
+        else if (mode === 'stainer') patch = { backgroundColor: store.defaultElementStyles.backgroundColor };
+        else if (mode === 'styler') patch = { backgroundColor: store.defaultElementStyles.backgroundColor, strokeColor: store.defaultElementStyles.strokeColor };
+        setStore('elements', e => e.id === el.id, patch as any);
+        n++;
+    }
+    if (n) bumpDirtyRevision();
+    return n;
+};
+
+/**
+ * Graph tool data entry — set a chart's values. Bar charts store `barValues`; pie charts map
+ * the values to evenly-labelled `pieSlices`. Re-renders the chart from the new data.
+ */
+export const setChartData = (id: string, values: number[], labels?: string[]) => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el) return;
+    pushToHistory();
+    if (el.type === 'pieChart') {
+        const palette = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#06b6d4', '#ec4899', '#84cc16'];
+        const slices = values.map((v, i) => ({ label: labels?.[i] || `Item ${i + 1}`, value: v, color: palette[i % palette.length] }));
+        setStore('elements', e => e.id === id, { pieSlices: slices } as any);
+    } else {
+        setStore('elements', e => e.id === id, { barValues: values, barLabels: labels } as any);
+    }
+    bumpDirtyRevision();
+    showToast('Chart data updated', 'success');
+};
+
+/** Touch Type — set/merge a per-character transform on a text element (initialising the array). */
+export const setCharTransform = (id: string, idx: number, patch: Partial<{ dx: number; dy: number; scale: number; rot: number }>, record = false) => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || (el.type !== 'text' && el.type !== 'richtext')) return;
+    const len = [...(el.text || '')].length;
+    if (idx < 0 || idx >= len) return;
+    const base = (el.charTransforms && el.charTransforms.length === len)
+        ? el.charTransforms.map(t => ({ ...t }))
+        : Array.from({ length: len }, () => ({ dx: 0, dy: 0, scale: 1, rot: 0 }));
+    base[idx] = { ...base[idx], ...patch };
+    if (record) pushToHistory();
+    setStore('elements', e => e.id === id, { charTransforms: base } as any);
+    bumpDirtyRevision();
+};
+
+/** Reset Touch Type transforms (back to plain text). */
+export const clearCharTransforms = (id: string) => {
+    pushToHistory();
+    setStore('elements', e => e.id === id, { charTransforms: undefined } as any);
+    bumpDirtyRevision();
+};
 export const toggleReshapeTool = (active?: boolean) => setStore('reshapeToolActive', v => active ?? !v);
 export const toggleBlobBrush = (active?: boolean) => setStore('blobBrushActive', v => active ?? !v);
 export const togglePathEraser = (active?: boolean) => setStore('pathEraserActive', v => active ?? !v);
@@ -4131,6 +4230,31 @@ export const releaseLivePaint = (groupId: string) => {
     showToast('Live Paint released', 'success');
 };
 
+/** Live Paint Selection — resolve the face under a world point: its group, key, region, and
+ *  the fill element painting it (null if unpainted). For selecting/recolouring/deleting faces. */
+export const livePaintFaceAt = (point: { x: number; y: number }): { groupId: string; faceKey: string; region: Poly[]; fillId: string | null } | null => {
+    for (const g of new Set(store.elements.filter(e => e.livePaintGroupId && !e.livePaintFillFor).map(e => e.livePaintGroupId!))) {
+        const members = _livePaintMembers(g);
+        const face = computeShapeFaces(members).find(f => pointInMultiPoly(f.region as any, point.x, point.y));
+        if (face) {
+            const fill = store.elements.find(e => e.livePaintFillFor === g && e.livePaintFaceKey === face.key);
+            return { groupId: g, faceKey: face.key, region: face.region as Poly[], fillId: fill?.id ?? null };
+        }
+    }
+    return null;
+};
+
+/** Delete the fill of the Live Paint face under a point (back to the bare outline there). */
+export const deleteLivePaintFaceAt = (point: { x: number; y: number }): boolean => {
+    const r = livePaintFaceAt(point);
+    if (!r || !r.fillId) return false;
+    pushToHistory();
+    setStore('elements', list => list.filter(e => e.id !== r.fillId));
+    bumpDirtyRevision();
+    showToast('Live Paint: face cleared', 'success');
+    return true;
+};
+
 /** Turn on the Symbol Sprayer for `symbolId` (defaults to the first symbol). Pass nothing to toggle off. */
 export const toggleSymbolSprayer = (symbolId?: string) => {
     if (symbolId === undefined) { setStore('sprayerActive', false); setStore('sprayerSymbolId', null); return; }
@@ -4290,10 +4414,10 @@ export const getSelectionColors = (ids?: string[]): { color: string; count: numb
 
 /** Replace every occurrence of `from` (fill, stroke, gradient stop) with `to`
  *  across the selection. */
-export const recolorSelectionColor = (from: string, to: string, ids?: string[]) => {
+export const recolorSelectionColor = (from: string, to: string, ids?: string[], record = true) => {
     const sel = ids ?? store.selection;
     if (sel.length === 0 || from === to) return;
-    pushToHistory();
+    if (record) pushToHistory(); // live drags pass record=false and snapshot once up front
     setStore('elements', (e: DrawingElement) => sel.includes(e.id), (e: DrawingElement) => {
         const patch: Partial<DrawingElement> = {};
         if (e.backgroundColor === from) { patch.backgroundColor = to; patch.fillSwatchId = undefined; }

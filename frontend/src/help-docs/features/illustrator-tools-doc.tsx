@@ -275,6 +275,82 @@ Yappy.clearWidthProfile([s]);      // back to a uniform stroke`}</code></pre>
                 </p>
             </section>
 
+            {/* Advanced tools batch */}
+            <section class="doc-section">
+                <h2>✒️ Curvature &amp; Reshape</h2>
+                <p>
+                    <strong>Curvature</strong> (Command Palette → “Curvature”) lets you click a series of points
+                    and fits a smooth curve <em>through</em> them, updating live — click the first point to close,
+                    Enter/double-click to finish, Backspace to undo a point. <strong>Reshape</strong> grabs the
+                    nearest point on a path and bends it (neighbours follow with a falloff) while the path's
+                    endpoints stay pinned.
+                </p>
+                <pre class="code-block"><code>{`Yappy.createCurvature([{x:80,y:200},{x:200,y:120},{x:320,y:200}]);  // smooth path through points
+Yappy.toggleReshapeTool(true);   // then drag a path to bend it`}</code></pre>
+            </section>
+
+            <section class="doc-section">
+                <h2>🖌 Blob Brush &amp; Path Eraser</h2>
+                <p>
+                    <strong>Blob Brush</strong> paints filled shapes — drag to lay down a stroke and it becomes a
+                    filled path; overlapping strokes of the <em>same colour</em> merge into one organic blob.
+                    <strong> Path Eraser</strong> is the destructive counterpart: drag to carve a swath out of
+                    shapes by boolean difference (splitting or notching real geometry). <span class="kbd">[</span>
+                    <span class="kbd">]</span> resize either brush.
+                </p>
+            </section>
+
+            <section class="doc-section">
+                <h2>📌 Puppet Warp</h2>
+                <p>
+                    Select a shape and turn on <strong>Puppet Warp</strong>: click it to drop pins, then drag a pin
+                    to bend the mesh around it while the other pins anchor their regions. Alt-click a pin to remove
+                    it. It drives the same smooth mesh-warp the Envelope tool uses, so the deformation is fluid.
+                </p>
+                <pre class="code-block"><code>{`const r = Yappy.createRectangle(120,120,200,140,{ backgroundColor:'#c4b5fd' });
+Yappy.togglePuppetWarp(true);
+Yappy.addPuppetPin(r,120,120); Yappy.addPuppetPin(r,320,120);     // anchors
+const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pull`}</code></pre>
+            </section>
+
+            <section class="doc-section">
+                <h2>📐 Perspective Grid</h2>
+                <p>
+                    Turn on the <strong>Perspective Grid</strong> for a 2-point perspective drawing aid — a horizon
+                    with two vanishing points and converging guides. Drag a vanishing point or the horizon to set
+                    up the scene. With a shape selected, the <strong>Left / Floor / Right</strong> buttons project
+                    it onto that plane (foreshortened toward the vanishing points).
+                </p>
+            </section>
+
+            <section class="doc-section">
+                <h2>✦ Lens Flare, Touch Type &amp; Slice</h2>
+                <ul class="doc-list">
+                    <li><strong>Lens Flare</strong> (right-click canvas → Insert → Lens Flare): a glow + rays + halo
+                        rings + ghost reflections, grouped.</li>
+                    <li><strong>Touch Type</strong> (right-click a single-line text → Touch Type): click a glyph and
+                        drag to move it; <span class="kbd">[</span><span class="kbd">]</span> scale and
+                        <span class="kbd">,</span> <span class="kbd">.</span> rotate the selected glyph.</li>
+                    <li><strong>Slice</strong> (Command Palette → Slice): drag a rectangle to export exactly that
+                        region as a PNG (<code>Yappy.exportRegion(x,y,w,h)</code>). Artboards remain for persistent
+                        named export regions.</li>
+                </ul>
+            </section>
+
+            <section class="doc-section">
+                <h2>📊 Graph data · 🫧 Symbolism brush · 🪣 Live Paint Selection</h2>
+                <ul class="doc-list">
+                    <li><strong>Graph tool</strong>: bar &amp; pie charts are data-driven — right-click a chart →
+                        “Edit Chart Data…”, or <code>Yappy.setChartData(id, [10,80,45,95])</code>.</li>
+                    <li><strong>Symbolism brush</strong> (the symbol sub-tools): brush over sprayed symbol instances
+                        to <em>Sizer</em> (scale), <em>Spinner</em> (rotate), <em>Shifter</em> (nudge),
+                        <em> Screener</em> (fade), <em>Stainer</em> (tint) or <em>Styler</em> — pick a mode in the
+                        hint bar, <span class="kbd">[</span><span class="kbd">]</span> resize, Alt reverses.</li>
+                    <li><strong>Live Paint Selection</strong>: in the Live Paint tool the face under the cursor
+                        highlights; click to fill it, or <strong>Alt-click to clear</strong> that face's colour.</li>
+                </ul>
+            </section>
+
             {/* Parity reference */}
             <section class="doc-section">
                 <h2>Where these map in Illustrator</h2>
@@ -293,6 +369,18 @@ Yappy.clearWidthProfile([s]);      // back to a uniform stroke`}</code></pre>
                         <tr><td>Vertical Type</td><td>Right-click text → Vertical Type</td></tr>
                         <tr><td>Symbol Sprayer (Shift+S)</td><td>Symbols panel → spray-can</td></tr>
                         <tr><td>Width Tool (Shift+W)</td><td>Right-click path → Width Tool</td></tr>
+                        <tr><td>Curvature (Shift+~)</td><td>Command Palette → Curvature</td></tr>
+                        <tr><td>Reshape</td><td>Command Palette → Reshape</td></tr>
+                        <tr><td>Blob Brush (Shift+B)</td><td>Command Palette → Blob Brush</td></tr>
+                        <tr><td>Eraser / Path Eraser</td><td>Command Palette → Path Eraser (destructive)</td></tr>
+                        <tr><td>Puppet Warp</td><td>Command Palette → Puppet Warp</td></tr>
+                        <tr><td>Perspective Grid (Shift+P)</td><td>Command Palette → Perspective Grid</td></tr>
+                        <tr><td>Flare</td><td>Insert → Lens Flare</td></tr>
+                        <tr><td>Touch Type (Shift+T)</td><td>Right-click text → Touch Type</td></tr>
+                        <tr><td>Slice (Shift+K)</td><td>Command Palette → Slice</td></tr>
+                        <tr><td>Graph tools (J)</td><td>Chart shapes → Edit Chart Data…</td></tr>
+                        <tr><td>Symbolism sub-tools (Shift+S)</td><td>Command Palette → Symbolism Brush</td></tr>
+                        <tr><td>Live Paint Selection (Shift+L)</td><td>Live Paint → hover/Alt-click faces</td></tr>
                     </tbody>
                 </table>
             </section>

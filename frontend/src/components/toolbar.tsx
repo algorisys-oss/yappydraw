@@ -127,11 +127,14 @@ const Toolbar: Component = () => {
     };
 
     const onMouseUp = () => {
+        if (isDragging()) { try { localStorage.setItem('toolbarPos', JSON.stringify(position())); } catch { /* ignore */ } }
         setIsDragging(false);
         setIsResizing(false);
     };
 
     onMount(() => {
+        // Restore the dragged toolbar position (persists where the user parked it).
+        try { const saved = localStorage.getItem('toolbarPos'); if (saved) { const p = JSON.parse(saved); if (typeof p?.x === 'number' && typeof p?.y === 'number') setPosition(p); } } catch { /* ignore */ }
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
 

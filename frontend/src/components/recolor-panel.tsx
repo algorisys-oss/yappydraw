@@ -1,21 +1,42 @@
-import { type Component, For, Show, createMemo } from 'solid-js';
+import { type Component, Index, Show, createMemo, createSignal } from 'solid-js';
 import {
-    store, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors,
+    store, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, pushToHistory,
 } from '../store/app-store';
 import { Palette, X, RotateCcw } from 'lucide-solid';
 import { draggablePanel } from '../utils/draggable-panel';
 import './recolor-panel.css';
 
 /**
- * Recolor Artwork — shows the selection's colour palette. Edit any swatch to
- * remap that colour across every selected object; the global controls shift the
- * whole palette's hue / lightness / saturation at once.
+ * Recolor Artwork — shows the selection's colour palette. Edit any swatch to remap that colour
+ * across every selected object; the global controls shift the whole palette at once. Swatch
+ * edits apply LIVE while you drag the colour picker (not just on commit): the swatch list is
+ * frozen during a drag and each tick remaps the swatch's current colour → the new one, with a
+ * single history entry snapshotted up front.
  */
 const RecolorPanel: Component = () => {
-    const colors = createMemo(() => {
+    const liveColors = createMemo(() => {
         store.dirtyRevision; // re-run when colours change
         return store.selection.length ? getSelectionColors() : [];
     });
+    // While dragging a picker, freeze the displayed list + track each swatch's current colour.
+    const [edit, setEdit] = createSignal<{ list: { color: string; count: number }[]; live: string[] } | null>(null);
+    const swatches = () => edit()?.list ?? liveColors();
+
+    const beginEdit = () => {
+        if (edit()) return;
+        pushToHistory();                       // one undo step for the whole drag
+        const list = getSelectionColors();
+        setEdit({ list, live: list.map(c => c.color) });
+    };
+    const pickLive = (i: number, next: string) => {
+        const e = edit();
+        const from = e ? e.live[i] : swatches()[i]?.color;
+        if (!from) return;
+        recolorSelectionColor(from, next, undefined, false); // live, no per-tick history
+        if (e) setEdit({ ...e, live: e.live.map((c, j) => (j === i ? next : c)) });
+    };
+    const endEdit = () => setEdit(null);
+    const valHex = (c: string) => (/^#[0-9a-fA-F]{6}$/.test(c) ? c : '#000000');
 
     return (
         <Show when={store.showRecolorPanel}>
@@ -26,18 +47,24 @@ const RecolorPanel: Component = () => {
                 </div>
                 <div class="recolor-panel-body">
                     <Show when={store.selection.length > 0} fallback={<div class="rc-empty">Select objects to see and remap their colours.</div>}>
-                        <div class="rc-section-label">Palette ({colors().length})</div>
+                        <div class="rc-section-label">Palette ({swatches().length})</div>
                         <div class="rc-grid">
-                            <For each={colors()}>
-                                {(c) => (
-                                    <label class="rc-chip" title={`${c.color} — used ${c.count}×. Click to remap across the selection.`}>
-                                        <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(c.color) ? c.color : '#000000'}
-                                            onChange={(e) => recolorSelectionColor(c.color, e.currentTarget.value)} />
-                                        <span class="rc-chip-fill" style={{ background: c.color }} />
-                                        <span class="rc-count">{c.count}</span>
+                            <Index each={swatches()}>
+                                {(c, i) => (
+                                    <label class="rc-chip" title={`${c().color} — used ${c().count}×. Drag to remap live across the selection.`}>
+                                        <input
+                                            type="color"
+                                            value={valHex(edit()?.live[i] ?? c().color)}
+                                            onPointerDown={beginEdit}
+                                            onInput={(e) => pickLive(i, e.currentTarget.value)}
+                                            onChange={(e) => { pickLive(i, e.currentTarget.value); endEdit(); }}
+                                            onBlur={endEdit}
+                                        />
+                                        <span class="rc-chip-fill" style={{ background: edit()?.live[i] ?? c().color }} />
+                                        <span class="rc-count">{c().count}</span>
                                     </label>
                                 )}
-                            </For>
+                            </Index>
                         </div>
 
                         <div class="rc-section-label">Adjust all</div>

@@ -20,14 +20,14 @@ import {
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
     saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
-import { exportToSvg, exportArtboard } from "./utils/export";
+import { exportToSvg, exportArtboard, exportRegion } from "./utils/export";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
@@ -626,6 +626,44 @@ export const YappyAPI = {
             const ang = (s / spokes) * Math.PI * 2;
             const id = this.createLine(cx, cy, cx + Math.cos(ang) * radius, cy + Math.sin(ang) * radius, options);
             if (id) ids.push(id);
+        }
+        if (!ids.length) return null;
+        this.setSelected(ids); groupSelected();
+        return store.selection[0] ?? ids[0];
+    },
+
+    /**
+     * Lens Flare — a bright centre glow, radiating rays, concentric halo rings, and a few
+     * "ghost" circles along an axis, grouped. `rays` spokes, `ghosts` lens reflections.
+     */
+    createFlare(cx: number, cy: number, radius: number, rays = 12, ghosts = 4, options?: ElementOptions): string | null {
+        const ids: string[] = [];
+        const warm = options?.strokeColor || '#fde68a';
+        const core = options?.backgroundColor || '#fffbeb';
+        // central glow
+        const g0 = this.createCircle(cx - radius * 0.28, cy - radius * 0.28, radius * 0.56, radius * 0.56, { ...options, backgroundColor: core, strokeColor: warm, opacity: 0.9 });
+        if (g0) ids.push(g0);
+        // radiating rays
+        for (let i = 0; i < rays; i++) {
+            const ang = (i / rays) * Math.PI * 2;
+            const len = radius * (i % 2 === 0 ? 1 : 0.6);
+            const id = this.createLine(cx, cy, cx + Math.cos(ang) * len, cy + Math.sin(ang) * len, { ...options, strokeColor: warm, opacity: 0.5 });
+            if (id) ids.push(id);
+        }
+        // halo rings
+        for (let k = 1; k <= 2; k++) {
+            const rr = radius * (0.5 + k * 0.32);
+            const ring = this.createArc(cx, cy, rr, 0, 360, { ...options, strokeColor: warm, backgroundColor: 'transparent', opacity: 0.35 });
+            if (ring) ids.push(ring);
+        }
+        // ghost reflections along the 45° axis
+        for (let j = 1; j <= ghosts; j++) {
+            const t = j / (ghosts + 1);
+            const gx = cx + Math.cos(Math.PI / 4) * radius * 2 * (t - 0.3);
+            const gy = cy + Math.sin(Math.PI / 4) * radius * 2 * (t - 0.3);
+            const gr = radius * (0.12 + 0.16 * (j % 2));
+            const gc = this.createCircle(gx - gr, gy - gr, gr * 2, gr * 2, { ...options, backgroundColor: 'transparent', strokeColor: warm, opacity: 0.4 });
+            if (gc) ids.push(gc);
         }
         if (!ids.length) return null;
         this.setSelected(ids); groupSelected();
@@ -1864,6 +1902,10 @@ export const YappyAPI = {
     livePaintFill(point: { x: number; y: number }, color?: string) { return livePaintFillAt(point, color); },
     /** Release a Live Paint group — region fills become plain shapes. */
     releaseLivePaint(groupId: string) { releaseLivePaint(groupId); },
+    /** Live Paint Selection — the face under a world point (group, key, fillId). */
+    livePaintFaceAt(point: { x: number; y: number }) { return livePaintFaceAt(point); },
+    /** Clear the Live Paint face under a world point. */
+    clearLivePaintFace(point: { x: number; y: number }) { return deleteLivePaintFaceAt(point); },
     /** Toggle the Width tool (drag across a path to vary its stroke width). */
     toggleWidthTool(active?: boolean) { toggleWidthTool(active); },
     /** Width tool — set a stroke-width point at parameter t (0..1) along an open path. */
@@ -1873,6 +1915,23 @@ export const YappyAPI = {
     /** Vertical Type — toggle stacked text orientation and resize the box to fit (top→bottom,
      *  columns right→left). */
     setTextVertical(id: string, on?: boolean) { return setTextVertical(id, on); },
+    /** Touch Type — select & transform individual glyphs of a single-line text element. */
+    toggleTouchType(active?: boolean) { toggleTouchType(active); },
+    /** Set a per-glyph transform (dx, dy, scale, rot) on a text element. */
+    setCharTransform(id: string, idx: number, patch: { dx?: number; dy?: number; scale?: number; rot?: number }) { setCharTransform(id, idx, patch, true); },
+    /** Reset Touch Type transforms back to plain text. */
+    clearCharTransforms(id: string) { clearCharTransforms(id); },
+    /** Graph tool — set a chart's data values (bar/pie). */
+    setChartData(id: string, values: number[], labels?: string[]) { setChartData(id, values, labels); },
+    /** Symbolism brush — Illustrator symbol sub-tools over symbol instances. */
+    toggleSymbolism(active?: boolean) { toggleSymbolism(active); },
+    setSymbolismMode(mode: 'sizer'|'spinner'|'shifter'|'screener'|'stainer'|'styler') { setSymbolismMode(mode); },
+    /** Apply a symbolism brush dab at a world point (radius, {dx,dy,alt}) to nearby instances. */
+    symbolismBrush(mode: 'sizer'|'spinner'|'shifter'|'screener'|'stainer'|'styler', x: number, y: number, radius = 60, opts?: { dx?: number; dy?: number; alt?: boolean }) { return applySymbolism(mode, x, y, radius, opts); },
+    /** Slice tool — drag a region to export it as PNG (or call exportRegion directly). */
+    toggleSliceTool(active?: boolean) { toggleSliceTool(active); },
+    /** Export an arbitrary world rectangle to PNG. */
+    exportRegion(x: number, y: number, w: number, h: number, name = 'slice', scale = 2) { return exportRegion(x, y, w, h, name, scale, true); },
     /** Curvature tool — click points to fit a smooth curve through them. */
     toggleCurveTool(active?: boolean) { toggleCurveTool(active); },
     /** Create a smooth path through world points (Catmull-Rom → Bézier). */

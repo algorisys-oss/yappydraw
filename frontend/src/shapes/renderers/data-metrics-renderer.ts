@@ -48,11 +48,12 @@ export class DataMetricsRenderer extends ShapeRenderer {
 
         switch (el.type) {
             case 'barChart': {
-                // 4 vertical bars of different heights
-                const barCount = 4;
+                // Data-driven bars (Graph tool) — normalised to the tallest; else a decorative default.
+                const vals = (el as any).barValues as number[] | undefined;
+                const heights = (vals && vals.length) ? (() => { const m = Math.max(...vals, 1e-6); return vals.map(v => Math.max(0, v) / m); })() : [0.5, 0.8, 0.35, 0.65];
+                const barCount = heights.length;
                 const gap = w * 0.08;
                 const barW = (w - gap * (barCount + 1)) / barCount;
-                const heights = [0.5, 0.8, 0.35, 0.65];
                 const baseY = y + h;
 
                 if (options.fill && options.fill !== 'transparent' && options.fill !== 'none') {
@@ -338,10 +339,11 @@ export class DataMetricsRenderer extends ShapeRenderer {
 
         switch (el.type) {
             case 'barChart': {
-                const barCount = 4;
+                const vals = (el as any).barValues as number[] | undefined;
+                const heights = (vals && vals.length) ? (() => { const m = Math.max(...vals, 1e-6); return vals.map(v => Math.max(0, v) / m); })() : [0.5, 0.8, 0.35, 0.65];
+                const barCount = heights.length;
                 const gap = w * 0.08;
                 const barW = (w - gap * (barCount + 1)) / barCount;
-                const heights = [0.5, 0.8, 0.35, 0.65];
                 const baseY = y + h;
                 for (let i = 0; i < barCount; i++) {
                     const bx = x + gap + i * (barW + gap);

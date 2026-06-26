@@ -153,6 +153,28 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     link.click();
 };
 
+/** Export an arbitrary world-space rectangle to PNG (Slice tool). Elements are clipped to it. */
+export const exportRegion = (x: number, y: number, w: number, h: number, name = 'slice', scale = 2, download = true): string | undefined => {
+    if (w < 1 || h < 1) return undefined;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return undefined;
+    ctx.scale(scale, scale);
+    ctx.translate(-x, -y);
+    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    const rc = rough.canvas(canvas);
+    for (const el of store.elements) {
+        if (el.isClipMask) continue;
+        if (el.x + el.width < x || el.x > x + w || el.y + el.height < y || el.y > y + h) continue;
+        try { renderElement(rc, ctx, el); } catch { /* skip */ }
+    }
+    const url = canvas.toDataURL('image/png');
+    if (download) { const link = document.createElement('a'); link.download = `${name}.png`; link.href = url; link.click(); }
+    return url;
+};
+
 /** Export a single artboard region to PNG (elements clipped to its bounds). */
 export const exportArtboard = (artboardId: string, scale = 1, download = true): string | undefined => {
     const ab = store.artboards.find(a => a.id === artboardId);

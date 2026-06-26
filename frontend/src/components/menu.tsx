@@ -660,7 +660,7 @@ const Menu: Component = () => {
                             position: 'fixed',
                             top: '12px',
                             left: '12px',
-                            "z-index": 10001,
+                            "z-index": 10060,
                             transform: `translate(${leftPos().x}px, ${leftPos().y}px)`
                         }}
                     >
@@ -1059,7 +1059,7 @@ const Menu: Component = () => {
                                 position: 'fixed',
                                 bottom: 'calc(60px + env(safe-area-inset-bottom, 0px))',
                                 right: '12px',
-                                "z-index": 10001,
+                                "z-index": 10060,
                                 display: 'flex',
                                 gap: '4px'
                             }}

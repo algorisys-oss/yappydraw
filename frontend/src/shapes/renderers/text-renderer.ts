@@ -78,6 +78,31 @@ export class TextRenderer extends ShapeRenderer {
             return;
         }
 
+        // Touch Type — per-character transforms (single-line text). Render each glyph at its
+        // measured advance, then apply its move/scale/rotate around the glyph centre.
+        if (el.charTransforms && el.charTransforms.length && !(el.text || '').includes('\n')) {
+            const chars = [...(el.text || '')];
+            renderer.fillStyle = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            let adv = el.x + padding;
+            const baseY = el.y + el.height / 2;
+            chars.forEach((ch, i) => {
+                const w = renderer.measureText(ch).width;
+                const t = el.charTransforms![i] || { dx: 0, dy: 0, scale: 1, rot: 0 };
+                const cx2 = adv + w / 2;
+                renderer.save();
+                renderer.translate(cx2 + t.dx, baseY + t.dy);
+                if (t.rot) renderer.rotate(t.rot);
+                if (t.scale && t.scale !== 1) renderer.scale(t.scale, t.scale);
+                renderer.fillText(ch, 0, 0);
+                renderer.restore();
+                adv += w;
+            });
+            renderer.restore();
+            return;
+        }
+
         // Word wrap text within element width
         const availableWidth = Math.max(el.width - padding * 2, 20);
         const paragraphs = (el.text || '').split('\n');

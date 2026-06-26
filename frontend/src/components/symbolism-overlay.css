@@ -1,0 +1,25 @@
+.sy-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    cursor: crosshair;
+    pointer-events: auto;
+    touch-action: none;
+}
+.sy-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.sy-cursor { fill: rgba(139, 92, 246, 0.08); stroke: #8b5cf6; stroke-width: 1.5; stroke-dasharray: 4 3; }
+.sy-hint {
+    position: absolute; top: 64px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 8px; font-size: 11px; white-space: nowrap;
+    background: var(--bg-panel, #fff);
+    border: 1px solid var(--border-color, #ddd); border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15); pointer-events: none;
+}
+.sy-mode {
+    pointer-events: auto; cursor: pointer; font-size: 11px; font-weight: 600;
+    color: var(--text-primary, #111); background: var(--bg-subtle, #f3f4f6);
+    border: 1px solid var(--border-color, #ddd); border-radius: 6px; padding: 2px 7px;
+}
+.sy-mode-on { color: #8b5cf6; border-color: #8b5cf6; background: rgba(139, 92, 246, 0.1); }
+.sy-done { pointer-events: auto; cursor: pointer; font-size: 11px; font-weight: 600; color: #ef4444; background: transparent; border: 1px solid #ef4444; border-radius: 6px; padding: 2px 8px; margin-left: 4px; }

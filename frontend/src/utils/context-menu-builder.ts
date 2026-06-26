@@ -1211,6 +1211,20 @@ export function getContextMenuItems(
         if (selectionCount >= 1) {
             items.push({ label: 'Knife / Scissors', icon: '✂️', onClick: () => toggleCutTool(true) });
         }
+        if (selectionCount === 1) {
+            const chartEl = store.elements.find(e => e.id === store.selection[0]);
+            if (chartEl && (chartEl.type === 'barChart' || chartEl.type === 'pieChart')) {
+                items.push({
+                    label: 'Edit Chart Data…', icon: '📊', onClick: () => {
+                        const cur = (chartEl.barValues || (chartEl.pieSlices || []).map(s => s.value) || [40, 70, 30, 55]).join(', ');
+                        const input = window.prompt('Chart values (comma-separated):', cur);
+                        if (input == null) return;
+                        const vals = input.split(',').map(s => parseFloat(s.trim())).filter(v => !isNaN(v));
+                        if (vals.length) YappyAPI.setChartData(chartEl.id, vals);
+                    },
+                });
+            }
+        }
         if (selectionCount >= 1) {
             const wPaths = store.selection.map(id => store.elements.find(e => e.id === id)).filter(e => e && e.type === 'path' && !e.pathClosed);
             const hasWidth = wPaths.some(e => e!.widthProfile?.length);
@@ -1223,6 +1237,7 @@ export function getContextMenuItems(
             const tEl = store.elements.find(e => e.id === store.selection[0]);
             if (tEl && (tEl.type === 'text' || tEl.type === 'richtext')) {
                 items.push({ label: 'Vertical Type', icon: '↕', checked: !!tEl.verticalText, onClick: () => YappyAPI.setTextVertical(tEl.id) });
+                if (!(tEl.text || '').includes('\n')) items.push({ label: 'Touch Type (per-letter)', icon: '🅰', onClick: () => YappyAPI.toggleTouchType(true) });
             }
         }
         if (selectionCount === 1) {
@@ -1335,6 +1350,7 @@ export function getContextMenuItems(
                         { label: 'Arc', onClick: () => YappyAPI.createArc(cx, cy, 100, 0, 270) },
                         { label: 'Rectangular Grid', onClick: () => YappyAPI.createRectGrid(cx - 100, cy - 80, 200, 160, 4, 4) },
                         { label: 'Polar Grid', onClick: () => YappyAPI.createPolarGrid(cx, cy, 100, 3, 8) },
+                        { label: 'Lens Flare', onClick: () => YappyAPI.createFlare(cx, cy, 90, 12, 4) },
                     ];
                 })(),
             },

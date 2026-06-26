@@ -9,7 +9,7 @@ import {
     updateGlobalSettings, togglePenStabilization,
     toggleShapeBuilder, toggleLivePaint, makeLivePaint, releaseLivePaint, selectSimilar, applyDistort,
     toggleCutTool, toggleWidthTool, clearWidthProfile, toggleSymbolSprayer, setTextVertical,
-    toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid
+    toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid, toggleSliceTool, toggleTouchType, toggleSymbolism
 } from "../store/app-store";
 import { flipSelected, lockSelected } from "./object-context-actions";
 import { openRepeatDialog } from "../components/repeat-dialog";
@@ -270,6 +270,9 @@ export const getCommands = (): Command[] => {
         { id: 'tool-path-eraser', label: 'Path Eraser', category: 'Tools', action: () => togglePathEraser(true) },
         { id: 'tool-puppet-warp', label: 'Puppet Warp', category: 'Tools', action: () => togglePuppetWarp(true) },
         { id: 'tool-perspective-grid', label: 'Perspective Grid', category: 'Tools', action: () => togglePerspectiveGrid(true) },
+        { id: 'tool-slice', label: 'Slice (export region)', category: 'Tools', action: () => toggleSliceTool(true) },
+        { id: 'tool-symbolism', label: 'Symbolism Brush (symbol sub-tools)', category: 'Tools', action: () => toggleSymbolism(true) },
+        { id: 'tool-touch-type', label: 'Touch Type (per-letter)', category: 'Tools', action: () => toggleTouchType(true) },
         { id: 'action-vertical-type', label: 'Vertical Type (toggle)', category: 'Actions', action: () => { const id = store.selection[0]; if (id) setTextVertical(id); } },
         { id: 'action-distort-pucker', label: 'Distort: Pucker', category: 'Actions', action: () => applyDistort([...store.selection], 'pucker', 0.25) },
         { id: 'action-distort-bloat', label: 'Distort: Bloat', category: 'Actions', action: () => applyDistort([...store.selection], 'bloat', 0.25) },

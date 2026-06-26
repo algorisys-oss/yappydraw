@@ -266,6 +266,8 @@ export interface DrawingElement {
     verticalAlign?: VerticalAlign;
     /** Vertical Type: stack characters top→bottom, paragraphs as left→right columns. */
     verticalText?: boolean;
+    /** Touch Type: per-character transforms (single-line text). dx/dy in px, scale (1=none), rot in radians. */
+    charTransforms?: { dx: number; dy: number; scale: number; rot: number }[];
     /** Width tool: per-point stroke widths along an open path (t in 0..1). */
     widthProfile?: { t: number; width: number }[];
     /** Live Paint: this element is a source outline of the named live-paint group. */
@@ -454,6 +456,9 @@ export interface DrawingElement {
     dsSortedBoundaryEnd?: number;  // Items with index >= this are sorted (green tint, from right)
     // Pie Chart data (from Mermaid pie DSL)
     pieSlices?: Array<{ label: string; value: number; color?: string }>;
+    // Bar Chart data (interactive Graph tool) — values normalised to the tallest bar.
+    barValues?: number[];
+    barLabels?: string[];
     // Gantt Chart data (from Mermaid gantt DSL)
     ganttTasks?: Array<{ id: string; label: string; section: string; startDate: string; endDate: string; duration: number; isCritical?: boolean; status?: 'done' | 'active' | 'default'; color?: string }>;
     // Journey Diagram data (from Mermaid journey DSL)
