@@ -39,6 +39,11 @@ export const LogoToolkitDoc: Component = () => {
                     crescent + the lens to fuse just those. Every region you <em>don't</em> touch is kept as its own
                     path. When the shapes don't overlap it falls back to merging whole shapes.
                 </p>
+                <p>
+                    On a <strong>tablet</strong> (no Alt key), use the on-screen <strong>Merge / Delete</strong>
+                    toggle in the hint bar to switch modes, then drag; tap <strong>Done</strong> to exit. Results
+                    keep their original stacking order, and rotated shapes are handled correctly.
+                </p>
                 <p class="tip-box">
                     It's built on the Pathfinder engine, so each result is a true boolean region producing an editable
                     vector path. For precise set operations on exactly two shapes, the right-click

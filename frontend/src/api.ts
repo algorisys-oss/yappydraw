@@ -578,24 +578,30 @@ export const YappyAPI = {
         const k = Math.min(0.95, Math.max(0, decay));
         const anchors: PathAnchor[] = [];
         for (let i = 0; i <= steps; i++) {
-            const t = i / steps;            // 0..1
+            const t = i / steps;            // 0 at the centre → 1 at the outer edge
             const ang = t * total;
-            const r = radius * (k > 0 ? Math.pow(1 - k, t * turns) : t); // decay shrinks outer→inner
+            // r grows 0 → radius. decay>0 raises the exponent so growth is slower early,
+            // tightening the inner turns toward the centre (k=0 → plain Archimedean).
+            const r = radius * Math.pow(t, 1 + k * 3);
             anchors.push({ x: cx + Math.cos(ang) * r, y: cy + Math.sin(ang) * r, kind: 'smooth' });
         }
         return this.createPath(anchors, { ...options, closed: false, backgroundColor: 'transparent' });
     },
 
-    /** Circular arc as an open path (angles in degrees, clockwise from +x). */
+    /** Circular arc as an open path (angles in degrees, clockwise from +x). A full 360°
+     *  sweep produces a closed circle (no seam). */
     createArc(cx: number, cy: number, radius: number, startDeg = 0, endDeg = 270, options?: ElementOptions): string | null {
+        const full = Math.abs(endDeg - startDeg) >= 360;
         const a0 = (startDeg * Math.PI) / 180, a1 = (endDeg * Math.PI) / 180;
         const steps = Math.max(8, Math.round(Math.abs(endDeg - startDeg) / 4));
         const anchors: PathAnchor[] = [];
-        for (let i = 0; i <= steps; i++) {
+        // For a full circle, don't duplicate the closing vertex — let pathClosed seal it.
+        const last = full ? steps - 1 : steps;
+        for (let i = 0; i <= last; i++) {
             const ang = a0 + (a1 - a0) * (i / steps);
             anchors.push({ x: cx + Math.cos(ang) * radius, y: cy + Math.sin(ang) * radius, kind: 'smooth' });
         }
-        return this.createPath(anchors, { ...options, closed: false, backgroundColor: 'transparent' });
+        return this.createPath(anchors, { ...options, closed: full, backgroundColor: 'transparent' });
     },
 
     /** Rectangular grid (rows × cols cells) as a grouped set of line segments. */

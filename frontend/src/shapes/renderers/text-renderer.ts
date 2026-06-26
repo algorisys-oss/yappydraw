@@ -54,7 +54,8 @@ export class TextRenderer extends ShapeRenderer {
         const lineHeight = fontSize * 1.2;
         const padding = 4; // Small internal padding
 
-        // Vertical Type — stack characters top→bottom; each \n-paragraph is a column (left→right).
+        // Vertical Type — stack characters top→bottom; each \n-paragraph is a column. Columns
+        // advance RIGHT→LEFT (the CJK / Illustrator vertical-text convention).
         if (el.verticalText) {
             const vColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
             renderer.fillStyle = vColor;
@@ -62,8 +63,10 @@ export class TextRenderer extends ShapeRenderer {
             renderer.textBaseline = 'hanging';
             const colWidth = fontSize * 1.4;
             const cols = (el.text || '').split('\n');
+            const totalW = Math.max(colWidth, cols.length * colWidth);
             cols.forEach((col, ci) => {
-                const x = el.x + padding + colWidth / 2 + ci * colWidth;
+                // first column on the right, subsequent columns to the left
+                const x = el.x + padding + totalW - colWidth / 2 - ci * colWidth;
                 [...col].forEach((ch, ri) => {
                     renderer.fillText(ch, x, el.y + padding + ri * lineHeight);
                 });

@@ -48,6 +48,7 @@ export const SymbolSprayerOverlay = () => {
     onMount(() => {
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', () => { dragging = false; setPts([]); });
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && store.sprayerActive) { e.preventDefault(); toggleSymbolSprayer(undefined); } };
         window.addEventListener('keydown', onKey);
         onCleanup(() => {

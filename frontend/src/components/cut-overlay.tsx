@@ -44,11 +44,14 @@ export const CutOverlay = () => {
             }
         }
         setA(null); setB(null);
+        // Illustrator behaviour: the tool stays active after a cut (make several in a row).
+        // Exit by picking another tool, clicking Done, or pressing Esc.
     };
 
     onMount(() => {
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', () => { dragging = false; setA(null); setB(null); });
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && store.cutToolActive) { e.preventDefault(); toggleCutTool(false); } };
         window.addEventListener('keydown', onKey);
         onCleanup(() => {

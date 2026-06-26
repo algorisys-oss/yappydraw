@@ -58,6 +58,7 @@ export const WidthToolOverlay = () => {
     onMount(() => {
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', () => { dragging = false; setAnchor(null); setCursor(null); });
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && store.widthToolActive) { e.preventDefault(); toggleWidthTool(false); } };
         window.addEventListener('keydown', onKey);
         onCleanup(() => {

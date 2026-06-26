@@ -28,6 +28,28 @@ export const IllustratorToolsDoc: Component = () => {
                 </p>
             </header>
 
+            {/* Tablet & touch */}
+            <section class="doc-section">
+                <h2>📱 On a tablet (iPad / touch)</h2>
+                <p>
+                    All of these tools are built on pointer events, so they work with a finger or stylus. A few
+                    touch-specific notes:
+                </p>
+                <ul class="doc-list">
+                    <li><strong>Open the toolset</strong> with the <strong>⌘ Command</strong> button in the
+                        toolbar (top-left). The right-click menu and <span class="kbd">Ctrl</span>+<span class="kbd">K</span>
+                        aren't available without a mouse/keyboard, so this button is your gateway to every tool —
+                        tap it, then tap the tool you want.</li>
+                    <li><strong>Shape Builder</strong> has an on-screen <strong>Merge / Delete</strong> toggle
+                        (no <span class="kbd">Alt</span> key needed) — tap it to switch modes, then drag across
+                        regions. Tap <strong>Done</strong> to exit.</li>
+                    <li><strong>Every tool overlay</strong> (Knife, Width, Live Paint, Sprayer…) has a
+                        <strong> Done</strong> button or exits when you tap another tool — you're never stuck.</li>
+                    <li>While a tool is active it captures the canvas, so pinch-zoom/pan pauses; tap
+                        <strong> Done</strong> or another tool to get gestures back.</li>
+                </ul>
+            </section>
+
             {/* Magic Wand */}
             <section class="doc-section">
                 <h2>🪄 Magic Wand — Select Similar</h2>

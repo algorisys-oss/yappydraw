@@ -29,8 +29,13 @@ function ringFromPoints(pts: { x: number; y: number }[]): Ring {
 }
 
 /** Flatten one shape's geometry into world-space rings (one polygon per ring). */
-function geometryToRings(geo: any, cx: number, cy: number): Ring[] {
-    const W = (x: number, y: number): [number, number] => [cx + x, cy + y];
+function geometryToRings(geo: any, cx: number, cy: number, angle = 0): Ring[] {
+    // getShapeGeometry returns the shape's *unrotated, center-local* geometry. Apply the
+    // element's rotation about its centre so polygon ops (Pathfinder, Shape Builder, Knife,
+    // Distort, Live Paint) match what the user actually sees for rotated shapes.
+    const cos = Math.cos(angle), sin = Math.sin(angle);
+    const W = (x: number, y: number): [number, number] => [cx + x * cos - y * sin, cy + x * sin + y * cos];
+    const WP = (p: { x: number; y: number }) => ({ x: cx + p.x * cos - p.y * sin, y: cy + p.x * sin + p.y * cos });
     if (!geo) return [];
     if (geo.type === 'rect') {
         const { x, y, w, h } = geo;
@@ -42,27 +47,27 @@ function geometryToRings(geo: any, cx: number, cy: number): Ring[] {
         return [r];
     }
     if (geo.type === 'points') {
-        return [ringFromPoints(geo.points.map((p: any) => ({ x: cx + p.x, y: cy + p.y })))];
+        return [ringFromPoints(geo.points.map((p: any) => WP(p)))];
     }
     if (geo.type === 'path') {
         const cmds = PathUtils.parsePath(geo.path);
         if (!cmds.length) return [];
         const N = 96; const pts: { x: number; y: number }[] = [];
-        for (let i = 0; i <= N; i++) { const p = PathUtils.getPointOnPath(cmds, i / N); pts.push({ x: cx + p.x, y: cy + p.y }); }
+        for (let i = 0; i <= N; i++) { const p = PathUtils.getPointOnPath(cmds, i / N); pts.push(WP(p)); }
         return [ringFromPoints(pts)];
     }
     if (geo.type === 'multi') {
-        return geo.shapes.flatMap((s: any) => geometryToRings(s, cx, cy));
+        return geo.shapes.flatMap((s: any) => geometryToRings(s, cx, cy, angle));
     }
     return [];
 }
 
-/** A single element as a MultiPolygon (each ring a disjoint polygon). */
+/** A single element as a MultiPolygon (each ring a disjoint polygon), rotation included. */
 export function elementToMultiPolygon(el: DrawingElement): MultiPoly {
     const geo = getShapeGeometry(el);
     const cx = el.x + el.width / 2;
     const cy = el.y + el.height / 2;
-    return geometryToRings(geo, cx, cy).filter(r => r.length >= 4).map(r => [r]);
+    return geometryToRings(geo, cx, cy, el.angle || 0).filter(r => r.length >= 4).map(r => [r]);
 }
 
 /** Outer-ring of a result polygon → corner anchors (relative to its own bbox). */

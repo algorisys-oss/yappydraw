@@ -132,7 +132,7 @@ const renderElementCore = (
     // constant stroke. Works in both draw styles (it's a fill). Open paths only.
     if (el.type === 'path' && el.widthProfile && el.widthProfile.length && !el.pathClosed) {
         const renderer = sharedRenderer || new CanvasRenderer(ctx);
-        renderVariableWidthStroke(renderer, el, isDarkMode, layerOpacity);
+        renderVariableWidthStroke(rc, renderer, el, isDarkMode, layerOpacity);
         if (el.appearance) RenderPipeline.renderAppearance(rc, renderer, el, layerOpacity);
         return;
     }
@@ -154,22 +154,35 @@ const renderElementCore = (
     console.warn(`No renderer registered for element type: ${el.type}`);
 };
 
-/** Render a variable-width path as a filled ribbon (Width tool). Both draw styles. */
-const renderVariableWidthStroke = (renderer: IRenderer, el: DrawingElement, isDarkMode: boolean, layerOpacity: number) => {
+/**
+ * Render a variable-width path as a filled ribbon (Width tool). Architectural = clean
+ * canvas fill; sketch = rough.js polygon so it gets the same hand-drawn look as every other
+ * sketch shape (render-style parity). Open paths only.
+ */
+const renderVariableWidthStroke = (rc: RoughCanvas, renderer: IRenderer, el: DrawingElement, isDarkMode: boolean, layerOpacity: number) => {
     const ribbon = buildWidthRibbon(el);
     if (!ribbon || ribbon.length < 4) return;
     RenderPipeline.applyTransformations(renderer, el, layerOpacity);
     const color = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
-    renderer.beginPath();
-    renderer.moveTo(ribbon[0].x, ribbon[0].y);
-    for (let i = 1; i < ribbon.length; i++) renderer.lineTo(ribbon[i].x, ribbon[i].y);
-    renderer.closePath();
-    renderer.fillStyle = color;
-    renderer.fill();
-    // A hairline edge of the same colour keeps thin segments crisp.
-    renderer.strokeStyle = color;
-    renderer.lineWidth = 0.75;
-    renderer.stroke();
+
+    if (el.renderStyle === 'sketch') {
+        // rough.js shares the same ctx (and thus the transform applied above).
+        rc.polygon(ribbon.map(p => [p.x, p.y] as [number, number]), {
+            fill: color, fillStyle: 'solid', stroke: color, strokeWidth: 1,
+            roughness: el.roughness ?? 1, seed: el.seed || 1,
+        });
+    } else {
+        renderer.beginPath();
+        renderer.moveTo(ribbon[0].x, ribbon[0].y);
+        for (let i = 1; i < ribbon.length; i++) renderer.lineTo(ribbon[i].x, ribbon[i].y);
+        renderer.closePath();
+        renderer.fillStyle = color;
+        renderer.fill();
+        // A hairline edge of the same colour keeps thin segments crisp.
+        renderer.strokeStyle = color;
+        renderer.lineWidth = 0.75;
+        renderer.stroke();
+    }
     RenderPipeline.restoreTransformations(renderer);
 };
 

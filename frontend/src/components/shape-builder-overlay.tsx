@@ -19,6 +19,8 @@ export const ShapeBuilderOverlay = () => {
     const [stroke, setStroke] = createSignal<{ x: number; y: number }[]>([]); // world coords
     const [touched, setTouched] = createSignal<string[]>([]);                 // face keys, or element ids in fallback
     const [alt, setAlt] = createSignal(false);
+    const [delMode, setDelMode] = createSignal(false); // touch-accessible Merge/Delete toggle (no Alt key on tablets)
+    const del = () => alt() || delMode();              // effective "delete" mode
     let dragging = false;
     let faces: ShapeFace[] = [];      // decomposed faces for the current drag (empty → fallback)
     let faceLevel = false;
@@ -69,8 +71,8 @@ export const ShapeBuilderOverlay = () => {
         const keys = touched();
         if (keys.length) {
             if (faceLevel) {
-                commitShapeBuilderFaces(store.selection, keys, alt() ? 'delete' : 'merge');
-            } else if (alt()) {
+                commitShapeBuilderFaces(store.selection, keys, del() ? 'delete' : 'merge');
+            } else if (del()) {
                 deleteElements(keys);
             } else if (keys.length >= 2) {
                 applyPathfinder(keys, 'union');
@@ -79,15 +81,19 @@ export const ShapeBuilderOverlay = () => {
         faces = []; faceLevel = false;
         setStroke([]); setTouched([]);
     };
+    // Touch interruption (palm rejection, system gesture) — abort the drag cleanly.
+    const onCancel = () => { dragging = false; faces = []; faceLevel = false; setStroke([]); setTouched([]); };
 
     onMount(() => {
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onCancel);
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && store.shapeBuilderActive) { e.preventDefault(); toggleShapeBuilder(false); } };
         window.addEventListener('keydown', onKey);
         onCleanup(() => {
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('pointercancel', onCancel);
             window.removeEventListener('keydown', onKey);
         });
     });
@@ -131,16 +137,26 @@ export const ShapeBuilderOverlay = () => {
             <div class="sb-overlay" onPointerDown={onDown}>
                 <svg class="sb-svg">
                     <Show when={touchedPath()}>
-                        <path d={touchedPath()} class={alt() ? 'sb-hit sb-del' : 'sb-hit'} fill-rule="evenodd" />
+                        <path d={touchedPath()} class={del() ? 'sb-hit sb-del' : 'sb-hit'} fill-rule="evenodd" />
                     </Show>
                     <For each={touchedBoxes()}>
-                        {(b) => <rect x={b.x} y={b.y} width={b.w} height={b.h} class={alt() ? 'sb-hit sb-del' : 'sb-hit'} />}
+                        {(b) => <rect x={b.x} y={b.y} width={b.w} height={b.h} class={del() ? 'sb-hit sb-del' : 'sb-hit'} />}
                     </For>
                     <Show when={stroke().length > 1}>
-                        <polyline points={strokeScreen()} class={alt() ? 'sb-stroke sb-stroke-del' : 'sb-stroke'} />
+                        <polyline points={strokeScreen()} class={del() ? 'sb-stroke sb-stroke-del' : 'sb-stroke'} />
                     </Show>
                 </svg>
-                <div class="sb-hint">{alt() ? 'Delete — drag across regions to remove' : 'Shape Builder — drag across regions to merge · hold Alt to delete · Esc to exit'}</div>
+                <div class="sb-hint">
+                    <button
+                        class={`sb-mode ${delMode() ? 'sb-mode-del' : ''}`}
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); setDelMode(v => !v); }}
+                    >{delMode() ? '🗑 Delete' : '⬓ Merge'}</button>
+                    <span>{del() ? 'drag across regions to remove' : 'drag across regions to merge · Alt = delete'}</span>
+                    <button
+                        class="sb-mode sb-done"
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); toggleShapeBuilder(false); }}
+                    >Done ✕</button>
+                </div>
             </div>
         </Show>
     );

@@ -3604,17 +3604,23 @@ export const toggleWidthTool = (active?: boolean) => setStore('widthToolActive',
  * shape is converted to a path first. Width 0 removes nearby points (eraser-ish).
  */
 export const setWidthPoint = (id: string, t: number, width: number): boolean => {
-    let target = store.elements.find(e => e.id === id);
+    const target = store.elements.find(e => e.id === id);
     if (!target) return false;
-    if (target.type !== 'path') { const r = shapeToPath(target); if (!r) { showToast('Width tool: needs a path', 'info'); return false; }
-        pushToHistory();
-        setStore('elements', e => e.id === id, { type: 'path', pathAnchors: r.anchors, pathClosed: r.closed, points: undefined, controlPoints: undefined } as any);
-        target = store.elements.find(e => e.id === id)!;
-    } else pushToHistory();
-    if (target.pathClosed) { showToast('Width tool: open paths only', 'info'); return false; }
-    const profile = [...((target.widthProfile as { t: number; width: number }[]) || [])].filter(p => Math.abs(p.t - t) > 0.04);
+    // Validate convertibility + open-ness FIRST so we never push a phantom/partial undo step.
+    let conv: ReturnType<typeof shapeToPath> = null;
+    if (target.type !== 'path') {
+        conv = shapeToPath(target);
+        if (!conv) { showToast('Width tool: needs a path', 'info'); return false; }
+        if (conv.closed) { showToast('Width tool: open paths only', 'info'); return false; }
+    } else if (target.pathClosed) { showToast('Width tool: open paths only', 'info'); return false; }
+
+    const existing = (target.widthProfile as { t: number; width: number }[]) || [];
+    const profile = [...existing].filter(p => Math.abs(p.t - t) > 0.04);
     if (width > 0.5) profile.push({ t: Math.max(0, Math.min(1, t)), width });
     profile.sort((a, b) => a.t - b.t);
+
+    pushToHistory(); // single, guaranteed-real mutation from here
+    if (conv) setStore('elements', e => e.id === id, { type: 'path', pathAnchors: conv!.anchors, pathClosed: conv!.closed, points: undefined, controlPoints: undefined } as any);
     setStore('elements', e => e.id === id, { widthProfile: profile.length ? profile : undefined } as any);
     bumpDirtyRevision();
     return true;
@@ -3632,8 +3638,15 @@ export const clearWidthProfile = (ids: string[]) => {
 const _livePaintSig = new Map<string, string>();
 
 const _livePaintMembers = (groupId: string) => store.elements.filter(e => e.livePaintGroupId === groupId);
+// Cheap per-member geometry token: bbox + angle catches move/scale/rotate; the anchor/point
+// count + coordinate checksum catches in-place node edits and warp changes that keep the bbox.
+const _geomToken = (m: DrawingElement): string => {
+    const pts = (m.pathAnchors as any[]) || (m.points as any[]) || [];
+    let sum = 0; for (const p of pts) sum += (p.x || 0) + (p.y || 0) + (p.inX || 0) + (p.outX || 0);
+    return `${pts.length}:${Math.round(sum)}:${m.warp ? (m.warp.points?.length ?? 0) : 0}:${m.polygonSides || ''}:${m.starPoints || ''}`;
+};
 const _memberSig = (members: DrawingElement[]) => members
-    .map(m => `${m.id}:${Math.round(m.x)},${Math.round(m.y)},${Math.round(m.width)},${Math.round(m.height)},${Math.round((m.angle || 0) * 100)}`)
+    .map(m => `${m.id}:${Math.round(m.x)},${Math.round(m.y)},${Math.round(m.width)},${Math.round(m.height)},${Math.round((m.angle || 0) * 100)}:${_geomToken(m)}`)
     .sort().join('|');
 
 const _buildLivePaintFill = (poly: Poly, groupId: string, faceKey: string, color: string): DrawingElement | null => {
@@ -3678,6 +3691,7 @@ export const livePaintFillAt = (point: { x: number; y: number }, color?: string)
     if (!groupId) {
         let candidates = store.selection.map(id => store.elements.find(e => e.id === id)).filter((e): e is DrawingElement => !!e && !e.livePaintFillFor);
         if (candidates.length < 2) candidates = store.elements.filter(e => !e.livePaintFillFor && !e.livePaintGroupId);
+        if (candidates.length > 8) { showToast('Live Paint: limited to 8 source shapes per group', 'info'); return null; }
         if (candidates.length >= 2 && faceAt(candidates)) {
             groupId = makeLivePaint(candidates.map(e => e.id));
             if (groupId) face = faceAt(_livePaintMembers(groupId));
@@ -3709,14 +3723,27 @@ export const livePaintFillAt = (point: { x: number; y: number }, color?: string)
  * nothing moved (per-group signature guard). Called by the Live Paint engine effect.
  */
 export const regenerateAllLivePaint = () => {
+    // Collect group ids from BOTH source members and fills, so a group whose members were
+    // all deleted (leaving orphan fills) is still detected and cleaned up.
     const groupIds = new Set<string>();
-    for (const e of store.elements) if (e.livePaintGroupId && !e.livePaintFillFor) groupIds.add(e.livePaintGroupId);
+    for (const e of store.elements) {
+        if (e.livePaintGroupId && !e.livePaintFillFor) groupIds.add(e.livePaintGroupId);
+        if (e.livePaintFillFor) groupIds.add(e.livePaintFillFor);
+    }
     if (!groupIds.size) { _livePaintSig.clear(); return; }
 
     let changed = false;
     for (const groupId of groupIds) {
         const members = _livePaintMembers(groupId);
-        if (members.length < 2) continue;
+        if (members.length < 2) {
+            // Group dissolved (deleted down to <2 shapes) → drop any orphan region fills.
+            if (store.elements.some(e => e.livePaintFillFor === groupId)) {
+                setStore('elements', list => list.filter(e => e.livePaintFillFor !== groupId));
+                changed = true;
+            }
+            _livePaintSig.delete(groupId);
+            continue;
+        }
         const sig = _memberSig(members);
         if (_livePaintSig.get(groupId) === sig) continue; // unchanged → skip
         changed = true;
@@ -3799,6 +3826,25 @@ export const spraySymbolInstances = (symbolId: string, pts: { x: number; y: numb
  * default to the selection, or all shapes the line crosses when nothing is selected.
  * Each shape that the line genuinely divides is replaced by its two (or more) pieces.
  */
+/**
+ * Replace `consumedIds` with `created`, inserting the results at the z-position of the FIRST
+ * consumed element — Illustrator preserves stacking order through Pathfinder / Knife / Distort
+ * / Shape Builder, rather than promoting results to the top of the stack.
+ */
+const replaceElementsPreservingOrder = (consumedIds: string[], created: DrawingElement[]) => {
+    const consumed = new Set(consumedIds);
+    setStore('elements', list => {
+        let insertAt = 0, seenFirst = false;
+        const others: DrawingElement[] = [];
+        for (const e of list) {
+            if (consumed.has(e.id)) { if (!seenFirst) { seenFirst = true; insertAt = others.length; } continue; }
+            others.push(e);
+        }
+        if (!seenFirst) insertAt = others.length;
+        return [...others.slice(0, insertAt), ...created, ...others.slice(insertAt)];
+    });
+};
+
 export const knifeCut = (p0: { x: number; y: number }, p1: { x: number; y: number }, ids?: string[]): string[] => {
     const pa: [number, number] = [p0.x, p0.y], pb: [number, number] = [p1.x, p1.y];
     const targets = (ids && ids.length ? store.elements.filter(e => ids.includes(e.id))
@@ -3823,7 +3869,7 @@ export const knifeCut = (p0: { x: number; y: number }, p1: { x: number; y: numbe
     }
     if (!created.length) { showToast('Knife: line did not cross a shape', 'info'); return []; }
     pushToHistory();
-    setStore('elements', list => [...list.filter(e => !consumed.includes(e.id)), ...created]);
+    replaceElementsPreservingOrder(consumed, created);
     setStore('selection', created.map(c => c.id));
     showToast(`Knife: ${created.length} pieces`, 'success');
     return created.map(c => c.id);
@@ -3856,6 +3902,9 @@ export const splitPathAt = (id: string, point: { x: number; y: number }): string
             width: Math.max(1, Math.max(...xs) - minX), height: Math.max(1, Math.max(...ys) - minY),
             pathAnchors: subAnchors.map(a => ({ ...a, x: a.x - minX, y: a.y - minY })),
             pathClosed: false, pathSubpaths: undefined, points: undefined, controlPoints: undefined,
+            // The pieces are a different length/identity, so width-profile t's and live-paint
+            // links no longer apply — drop them rather than mis-applying.
+            widthProfile: undefined, livePaintGroupId: undefined, livePaintFillFor: undefined, livePaintFaceKey: undefined,
         } as DrawingElement;
     };
 
@@ -3869,7 +3918,7 @@ export const splitPathAt = (id: string, point: { x: number; y: number }): string
     }
     if (!created.length) { showToast('Scissors: nothing to split', 'info'); return []; }
     pushToHistory();
-    setStore('elements', list => [...list.filter(e => e.id !== id), ...created]);
+    replaceElementsPreservingOrder([id], created);
     setStore('selection', created.map(c => c.id));
     showToast('Scissors: split', 'success');
     return created.map(c => c.id);
@@ -4593,7 +4642,7 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
     if (created.length === 0) return [];
 
     pushToHistory();
-    setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), ...created]);
+    replaceElementsPreservingOrder(ids, created);
     setStore('selection', created.map(c => c.id));
     showToast(`Pathfinder: ${op}`, 'success');
     return created.map(c => c.id);
@@ -4608,6 +4657,7 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
 export const getShapeFaces = (ids: string[]): ShapeFace[] => {
     const els = store.elements.filter(e => ids.includes(e.id));
     if (els.length < 2) return [];
+    if (els.length > 8) showToast('Shape Builder: face mode is limited to 8 shapes — merging whole shapes', 'info');
     els.sort((a, b) => store.elements.indexOf(a) - store.elements.indexOf(b));
     return computeShapeFaces(els);
 };
@@ -4658,7 +4708,7 @@ export const commitShapeBuilderFaces = (ids: string[], touchedKeys: string[], mo
         return [];
     }
     pushToHistory();
-    setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), ...created]);
+    replaceElementsPreservingOrder(ids, created);
     setStore('selection', created.map(c => c.id));
     showToast(mode === 'merge' ? 'Shape Builder: merged' : 'Shape Builder: deleted', 'success');
     return created.map(c => c.id);
@@ -4708,7 +4758,7 @@ export const applyDistort = (ids: string[], kind: DistortKind, amount = 0.25): s
     }
     if (!created.length) { showToast('Distort: nothing to distort', 'info'); return []; }
     pushToHistory();
-    setStore('elements', list => [...list.filter(e => !consumed.includes(e.id)), ...created]);
+    replaceElementsPreservingOrder(consumed, created);
     setStore('selection', created.map(c => c.id));
     showToast(`Distort: ${kind}`, 'success');
     return created.map(c => c.id);
