@@ -259,6 +259,7 @@ export function selectionOnDown(
                             y: el.y,
                             width: el.width,
                             height: el.height,
+                            angle: el.angle || 0,
                             fontSize: el.fontSize,
                             points: el.points ? [...el.points] : undefined,
                             pathAnchors: el.pathAnchors ? el.pathAnchors.map(a => ({ ...a })) : undefined,
@@ -1273,6 +1274,24 @@ function handleResize(
     // Move the rotation pivot. Pure UI state — no element mutation, no history.
     if (pState.draggingHandle === 'pivot') {
         setTransformPivot(x, y, store.selection);
+        bumpDirtyRevision();
+        return;
+    }
+
+    // Multi-selection / group rotate — spin every selected element around the group centre.
+    // Uses the initial positions captured on pointer-down (so it's drift-free / absolute).
+    if (pState.draggingHandle === 'rotate' && store.selection.length > 1) {
+        const pivot = { x: pState.initialElementX + pState.initialElementWidth / 2, y: pState.initialElementY + pState.initialElementHeight / 2 };
+        const startA = Math.atan2(pState.startY - pivot.y, pState.startX - pivot.x);
+        const delta = Math.atan2(y - pivot.y, x - pivot.x) - startA;
+        const cosd = Math.cos(delta), sind = Math.sin(delta);
+        pState.initialPositions.forEach((init: any, elId: string) => {
+            const cx = init.x + init.width / 2, cy = init.y + init.height / 2;
+            const rx = cx - pivot.x, ry = cy - pivot.y;
+            const ncx = pivot.x + rx * cosd - ry * sind;
+            const ncy = pivot.y + rx * sind + ry * cosd;
+            updateElement(elId, { x: ncx - init.width / 2, y: ncy - init.height / 2, angle: (init.angle || 0) + delta }, false);
+        });
         bumpDirtyRevision();
         return;
     }

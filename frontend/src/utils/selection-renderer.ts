@@ -715,6 +715,13 @@ export function renderMultiSelectionBox(
         ctx.fillRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
         ctx.strokeRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
     });
+
+    // Rotate handle — a stem + circle above the top-centre (so a multi-selection can be rotated).
+    const rotX = box.x + box.width / 2, rotY = box.y - padding - 20 / scale;
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 1 / scale;
+    ctx.beginPath(); ctx.moveTo(rotX, box.y - padding); ctx.lineTo(rotX, rotY); ctx.stroke();
+    ctx.beginPath(); ctx.arc(rotX, rotY, handleSize / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.restore();
 }
 

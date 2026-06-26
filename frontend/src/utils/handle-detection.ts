@@ -80,6 +80,11 @@ export function getHandleAtPosition(
                     return { id: 'multi', handle: h.type };
                 }
             }
+            // Rotate handle (above the box top-centre) — lets a multi-selection / group rotate.
+            const rotX = box.x + box.width / 2, rotY = box.y - padding - 20 / scale;
+            if (Math.abs(x - rotX) <= handleSize && Math.abs(y - rotY) <= handleSize) {
+                return { id: 'multi', handle: 'rotate' };
+            }
         }
     }
 
