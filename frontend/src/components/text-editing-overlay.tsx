@@ -8,6 +8,7 @@
 import { type Component, createEffect, Show } from "solid-js";
 import { Maximize2 } from "lucide-solid";
 import { store, setSelectedTool, updateElement } from "../store/app-store";
+import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { measureContainerText, measureWrappedTextHeight, resolveFontFamily } from "../utils/text-utils";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
@@ -476,7 +477,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                 height: useTopLeftAnchor ? '100%' : undefined,
                                 'box-sizing': 'border-box',
                                 font: `${fontStyle} ${fontWeight} ${fontSizeVal * scale}px ${fontFamily}`,
-                                color: el.textColor || el.strokeColor,
+                                color: RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus'),
                                 background: 'transparent',
                                 border: 'none',
                                 outline: 'none',
@@ -488,11 +489,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                 overflow: 'hidden',
                                 'text-align': textAlign as any,
                                 'line-height': `${lineHeightPx}px`,
-                                // Mirror the dark/focus canvas invert filter (canvas.tsx) so the
-                                // text being edited shows the same color as the committed result.
-                                filter: (store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus')
-                                    ? 'invert(93%) hue-rotate(180deg)'
-                                    : 'none',
+                                filter: 'none',   // dark adjust now applied to `color` above
                             }}
                         />
                     </div>

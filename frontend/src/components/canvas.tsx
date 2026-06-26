@@ -283,7 +283,7 @@ const Canvas: Component = () => {
         (window as any).yappyGlobalTime = currentTime;
 
         const { scale, panX, panY } = store.viewState;
-        const isDarkMode = store.theme !== 'light';
+        const isDarkMode = store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus';
         if (!rcInstance) rcInstance = rough.canvas(canvasRef);
         const rc = rcInstance;
         const shouldAnimate = store.appMode === 'presentation' || store.isPreviewing;
@@ -299,8 +299,8 @@ const Canvas: Component = () => {
         decayLaserTrail(pState.laserTrailData, LASER_DECAY_MS);
 
         // 3. Render backgrounds & grids
-        renderWorkspaceBackground(ctx, canvasRef, store.theme, store.docType, store.canvasBackgroundColor);
-        renderSlideBoundaries(ctx, rc, store.slides, store.docType, store.activeSlideIndex, scale, panX, panY, store.theme);
+        renderWorkspaceBackground(ctx, canvasRef, store.resolvedTheme, store.docType, store.canvasBackgroundColor);
+        renderSlideBoundaries(ctx, rc, store.slides, store.docType, store.activeSlideIndex, scale, panX, panY, store.resolvedTheme);
         renderCanvasTexture(ctx, canvasRef, store.canvasTexture, scale, panX, panY, isDarkMode);
 
         // 4. Enter world-space for elements
@@ -1945,13 +1945,10 @@ const Canvas: Component = () => {
                         "user-select": "none",
                         "-webkit-user-select": "none",
                         "-webkit-touch-callout": "none",
-                        // Excalidraw-style dark mode: invert canonical (light-mode) colors
-                        // for dark/focus presentation without mutating stored values.
-                        // TODO: pre-invert images for dark-mode CSS filter so embedded
-                        // raster images render true-color instead of inverted.
-                        filter: (store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus')
-                            ? 'invert(93%) hue-rotate(180deg)'
-                            : 'none',
+                        // Dark mode is now done per-colour at render time (RenderPipeline.adjustColor,
+                        // see docs/design/dark-mode.md) so saturated colours stay true — no global
+                        // canvas invert filter. Images therefore render true-colour too.
+                        filter: 'none',
                     }}
                 />
             </div>

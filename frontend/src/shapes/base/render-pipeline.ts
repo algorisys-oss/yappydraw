@@ -12,11 +12,72 @@ import { getImage } from "../../utils/image-cache";
 import { rasterizeMesh } from "../../utils/mesh-gradient";
 import type { IRenderer } from "../../rendering/IRenderer";
 
+// ── colour helpers (for dark-mode adjustColor) ─────────────────────────────
+/** Parse #rgb / #rrggbb / #rrggbbaa / rgb()/rgba() → {r,g,b,a}; null if unrecognised. */
+function parseColorRgba(c: string): { r: number; g: number; b: number; a: number } | null {
+    const s = c.trim().toLowerCase();
+    if (s === 'transparent' || s === 'none') return null;
+    if (s[0] === '#') {
+        let hex = s.slice(1);
+        if (hex.length === 3) hex = hex.split('').map(ch => ch + ch).join('');
+        if (hex.length === 6 || hex.length === 8) {
+            const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+            const a = hex.length === 8 ? parseInt(hex.slice(6, 8), 16) / 255 : 1;
+            if ([r, g, b].every(n => !isNaN(n))) return { r, g, b, a };
+        }
+        return null;
+    }
+    const m = s.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/);
+    if (m) return { r: +m[1], g: +m[2], b: +m[3], a: m[4] !== undefined ? +m[4] : 1 };
+    return null;
+}
+/** HSL (h,s,l in 0..1) → {r,g,b} 0..255. */
+function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
+    if (s <= 0) { const v = Math.round(l * 255); return { r: v, g: v, b: v }; }
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    const hue = (t: number) => { if (t < 0) t += 1; if (t > 1) t -= 1; if (t < 1 / 6) return p + (q - p) * 6 * t; if (t < 1 / 2) return q; if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6; return p; };
+    return { r: Math.round(hue(h + 1 / 3) * 255), g: Math.round(hue(h) * 255), b: Math.round(hue(h - 1 / 3) * 255) };
+}
+
+// Per-colour dark-mode adjustment cache (keyed by the input colour string).
+const _darkAdjustCache = new Map<string, string>();
+
 export class RenderPipeline {
-    static adjustColor(color: string, _isDarkMode: boolean) {
-        // Theme only affects UI chrome, not canvas content.
-        // Shape colors are always rendered as stored — WYSIWYG.
-        return color;
+    /**
+     * Dark-mode colour mapping. See docs/design/dark-mode.md.
+     *
+     * Goal: a near-black drawing should read as light on the dark canvas (and vice-versa),
+     * while SATURATED colours (yellow, red, blue, …) stay true. We do this per-colour at
+     * render time (NOT a global CSS canvas filter, which mangles saturated colours):
+     * invert the LIGHTNESS, weighted by how grey the colour is —
+     *   newL = L + (1 - 2L) · (1 - S)
+     * so S≈0 (grey/black/white) → full lightness swap; S≈1 (vivid) → unchanged.
+     * Hue & saturation are preserved. `transparent`/unparseable colours pass through.
+     */
+    static adjustColor(color: string, isDarkMode: boolean): string {
+        if (!isDarkMode || !color) return color;
+        const cached = _darkAdjustCache.get(color);
+        if (cached !== undefined) return cached;
+        const rgb = parseColorRgba(color);
+        if (!rgb) { _darkAdjustCache.set(color, color); return color; }
+        const { r, g, b, a } = rgb;
+        const rn = r / 255, gn = g / 255, bn = b / 255;
+        const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn), d = max - min;
+        const l = (max + min) / 2;
+        let h = 0, s = 0;
+        if (d > 1e-6) {
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            if (max === rn) h = (gn - bn) / d + (gn < bn ? 6 : 0);
+            else if (max === gn) h = (bn - rn) / d + 2;
+            else h = (rn - gn) / d + 4;
+            h /= 6;
+        }
+        const newL = Math.min(1, Math.max(0, l + (1 - 2 * l) * (1 - s)));   // swap lightness, weighted by greyness
+        const o = hslToRgb(h, s, newL);
+        const out = a < 1 ? `rgba(${o.r},${o.g},${o.b},${a})` : `rgb(${o.r},${o.g},${o.b})`;
+        _darkAdjustCache.set(color, out);
+        return out;
     }
 
     static shadeColor(color: string, percent: number) {

@@ -12,6 +12,7 @@ import { isElementHiddenByHierarchy } from './hierarchy';
 import { renderElement } from './render-element';
 import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
+import { RenderPipeline } from '../shapes/base/render-pipeline';
 import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight } from './selection-renderer';
 import { renderSnappingGuides, renderSpacingGuides } from './snap-renderer';
 import rough from 'roughjs';
@@ -232,14 +233,12 @@ export function renderWorkspaceBackground(
     docType?: string,
     canvasBackgroundColor?: string
 ): void {
-    // Stored colors are theme-canonical (light-mode); dark/focus presentation
-    // is handled by a CSS invert filter on the host <canvas> element, so this
-    // function paints in canonical (light-mode) colors regardless of theme.
-    if (docType === 'infinite') {
-        ctx.fillStyle = canvasBackgroundColor || '#ffffff';
-    } else {
-        ctx.fillStyle = '#e2e8f0';
-    }
+    // Stored colours are theme-canonical (light-mode). Dark/focus presentation is now a
+    // per-colour adjustment at render time (RenderPipeline.adjustColor — see
+    // docs/design/dark-mode.md); white canvas → dark, saturated bg colours stay true.
+    const isDark = _theme === 'dark' || _theme === 'focus';
+    const base = docType === 'infinite' ? (canvasBackgroundColor || '#ffffff') : '#e2e8f0';
+    ctx.fillStyle = RenderPipeline.adjustColor(base, isDark);
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
@@ -435,6 +434,7 @@ export function renderCanvasTexture(
     _isDarkMode: boolean
 ): void {
     if (texture === 'none') return;
+    const dk = (c: string) => RenderPipeline.adjustColor(c, _isDarkMode);   // black grid → light on dark
 
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -444,7 +444,7 @@ export function renderCanvasTexture(
         // Screen-space repetition so it works in both infinite and slides mode —
         // no vertical margin line, since it would have no meaningful anchor on an infinite canvas.
         const spacing = 32;
-        const lineColor = 'rgba(30, 90, 180, 0.18)'; // faint blue rule
+        const lineColor = dk('rgba(30, 90, 180, 0.18)'); // faint blue rule
         const gridStartY = (panY % (spacing * scale));
 
         ctx.strokeStyle = lineColor;
@@ -459,9 +459,9 @@ export function renderCanvasTexture(
         const spacing = texture === 'graph' ? 40 : 20;
         const subSpacing = spacing / 4;
         // Canvas textures use fixed subtle colors so content isn't affected by UI theme
-        const dotColor = 'rgba(0,0,0,0.08)';
-        const lineColor = 'rgba(0,0,0,0.05)';
-        const majorLineColor = 'rgba(0,0,0,0.1)';
+        const dotColor = dk('rgba(0,0,0,0.08)');
+        const lineColor = dk('rgba(0,0,0,0.05)');
+        const majorLineColor = dk('rgba(0,0,0,0.1)');
 
         const gridStartX = (panX % (spacing * scale));
         const gridStartY = (panY % (spacing * scale));
@@ -530,14 +530,15 @@ export function renderGrid(
 
     const gridSize = gridSettings.gridSize;
     const gridColor = gridSettings.gridColor;
+    const dk = (c: string) => RenderPipeline.adjustColor(c, _isDarkMode);   // light grid → dark on dark
 
     const gridOpacity = gridSettings.gridOpacity;
     const gridStyle = gridSettings.style || 'lines';
 
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.strokeStyle = gridColor;
-    ctx.fillStyle = gridColor;
+    ctx.strokeStyle = dk(gridColor);
+    ctx.fillStyle = dk(gridColor);
     ctx.globalAlpha = gridOpacity;
     ctx.lineWidth = 1;
 
@@ -562,7 +563,7 @@ export function renderGrid(
     } else {
         const dotSize = 3;
         if (gridStyle === 'dots' && (gridColor === '#e0e0e0' || gridColor === '#fafafa')) {
-            ctx.fillStyle = '#b0b0b0';
+            ctx.fillStyle = dk('#b0b0b0');
         }
         for (let x = gridStartX; x <= endX; x += gridSize) {
             for (let y = gridStartY; y <= endY; y += gridSize) {

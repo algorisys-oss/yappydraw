@@ -7,6 +7,7 @@
 import { type Component, createEffect, createSignal, onCleanup, Show } from "solid-js";
 import { Maximize2, List, ListOrdered } from "lucide-solid";
 import { store, setSelectedTool } from "../store/app-store";
+import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { resolveFontFamily } from "../utils/text-utils";
 import { spansToHtml, htmlToSpans, spansToPlainText } from "../utils/rich-text-utils";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
@@ -330,14 +331,12 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                 width: `${Math.max(50, textareaWidth)}px`,
                                 'min-height': `${textareaHeight}px`,
                                 font: `${fontSizeVal * scale}px ${fontFamily}`,
-                                color: el.textColor || el.strokeColor,
+                                // Match the committed colour (per-colour dark adjust, see
+                                // docs/design/dark-mode.md) so editing text reads the same.
+                                color: RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus'),
                                 'text-align': textAlign,
                                 'line-height': `${fontSizeVal * scale * 1.2}px`,
-                                // Mirror the dark/focus canvas invert filter (canvas.tsx) so the
-                                // text being edited shows the same color as the committed result.
-                                filter: (store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus')
-                                    ? 'invert(93%) hue-rotate(180deg)'
-                                    : 'none',
+                                filter: 'none',
                             }}
                             onBlur={handleBlur}
                             onInput={() => { updateActiveFormats(); syncSpans(); }}
