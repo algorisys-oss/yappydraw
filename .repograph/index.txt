@@ -558,6 +558,7 @@ tests/code-block.spec.ts | typescript | 163 | hello:35 App:128
 tests/comprehensive-features.spec.ts | typescript | 236 |
 tests/curvature.spec.ts | typescript | 35 |
 tests/data-structures.spec.ts | typescript | 188 |
+tests/default-style.spec.ts | typescript | 17 |
 tests/dsl.spec.ts | typescript | 899 |
 tests/element-management.spec.ts | typescript | 419 |
 tests/export_shortcut.spec.ts | typescript | 33 |
