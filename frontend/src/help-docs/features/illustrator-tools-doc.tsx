@@ -175,8 +175,11 @@ Yappy.createPolarGrid(300, 300, 140, 4, 12);`}</code></pre>
                 <p>
                     Select a text object, then right-click → <strong>Vertical Type</strong> to stack its
                     characters top-to-bottom. Each line you type (each <code>\n</code>) becomes its own
-                    column, laid out left-to-right — the classic vertical-signage / CJK orientation. Toggle
-                    it off the same way.
+                    column, and columns advance <strong>right→left</strong> — the classic vertical-signage /
+                    CJK orientation. The text box <strong>resizes to fit</strong> the columns, so the selection
+                    bounds and hit-area match exactly; editing the text re-flows and re-sizes it, and
+                    <strong> Vertical Align</strong> (top / middle / bottom) positions the columns. Toggle it
+                    off to re-flow back to a normal horizontal box.
                 </p>
                 <pre class="code-block"><code>{`const t = Yappy.createText(160, 120, 'SALE\\nNOW', { fontSize: 40 });
 Yappy.setTextVertical(t, true);   // stack vertically

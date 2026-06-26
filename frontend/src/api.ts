@@ -20,7 +20,7 @@ import {
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, toggleWidthTool, setWidthPoint, clearWidthProfile,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
@@ -1870,11 +1870,9 @@ export const YappyAPI = {
     setWidthPoint(id: string, t: number, width: number) { return setWidthPoint(id, t, width); },
     /** Reset a path's variable width back to a uniform stroke. */
     clearWidthProfile(ids?: string[]) { clearWidthProfile(ids ?? [...store.selection]); },
-    /** Vertical Type — toggle stacked (top→bottom) text orientation on a text element. */
-    setTextVertical(id: string, on?: boolean) {
-        const el = this.getElement(id); if (!el) return;
-        updateElement(id, { verticalText: on ?? !el.verticalText } as any);
-    },
+    /** Vertical Type — toggle stacked text orientation and resize the box to fit (top→bottom,
+     *  columns right→left). */
+    setTextVertical(id: string, on?: boolean) { return setTextVertical(id, on); },
     /** Eyedropper: arm picking a style onto targets (default: selection); next canvas click on an object copies its style. */
     startEyedropper(targetIds?: string[]) { startEyedropper(targetIds); },
     /** Directly apply a source object's style to the armed targets. */

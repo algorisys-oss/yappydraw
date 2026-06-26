@@ -8,7 +8,7 @@ import {
     setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode,
     updateGlobalSettings, togglePenStabilization,
     toggleShapeBuilder, toggleLivePaint, makeLivePaint, releaseLivePaint, selectSimilar, applyDistort,
-    toggleCutTool, toggleWidthTool, clearWidthProfile, toggleSymbolSprayer, updateElement
+    toggleCutTool, toggleWidthTool, clearWidthProfile, toggleSymbolSprayer, setTextVertical
 } from "../store/app-store";
 import { flipSelected, lockSelected } from "./object-context-actions";
 import { openRepeatDialog } from "../components/repeat-dialog";
@@ -263,7 +263,7 @@ export const getCommands = (): Command[] => {
         { id: 'tool-width', label: 'Width Tool (variable stroke)', category: 'Tools', action: () => toggleWidthTool(true) },
         { id: 'action-width-reset', label: 'Reset Width Profile', category: 'Actions', action: () => clearWidthProfile([...store.selection]) },
         { id: 'tool-symbol-sprayer', label: 'Symbol Sprayer', category: 'Tools', action: () => toggleSymbolSprayer() },
-        { id: 'action-vertical-type', label: 'Vertical Type (toggle)', category: 'Actions', action: () => { const id = store.selection[0]; if (id) updateElement(id, { verticalText: !store.elements.find(e => e.id === id)?.verticalText } as any); } },
+        { id: 'action-vertical-type', label: 'Vertical Type (toggle)', category: 'Actions', action: () => { const id = store.selection[0]; if (id) setTextVertical(id); } },
         { id: 'action-distort-pucker', label: 'Distort: Pucker', category: 'Actions', action: () => applyDistort([...store.selection], 'pucker', 0.25) },
         { id: 'action-distort-bloat', label: 'Distort: Bloat', category: 'Actions', action: () => applyDistort([...store.selection], 'bloat', 0.25) },
         { id: 'action-distort-twirl', label: 'Distort: Twirl', category: 'Actions', action: () => applyDistort([...store.selection], 'twirl', 0.25) },

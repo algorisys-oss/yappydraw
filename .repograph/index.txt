@@ -74,7 +74,7 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 2516 | Theme:3 ElementOptions:79 ElementType:462 as:462 Window:2508
+frontend/src/api.ts | typescript | 2514 | Theme:3 ElementOptions:79 ElementType:462 as:462 Window:2506
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1326 | Component:1 App:73 moves:88 onPenMove:89 hidePen:93 handleKeyDown:118 handleFullscreenChange:697 handleBeforeUnload:703 handlePaste:707 handleGlobalDragEnter:809 handleGlobalDragOver:824 showDropFallbackPrompt:843 cleanup:873 outsideClick:901 isImageFile:913 first:914 must:927 extractDropData:929 processExtractedDrop:984 handleGlobalDrop:1080 handleDocumentDrop:1126
 frontend/src/assets/player-assets.ts | typescript | 3 | hh:2
@@ -269,7 +269,7 @@ frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | Animatio
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 90 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
-frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 300 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:24
+frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 303 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:24
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 289 | MasksAppearanceTraceDoc:8 tools:14
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
@@ -326,7 +326,7 @@ frontend/src/shapes/renderers/status-renderer.ts | typescript | 285 | StatusRend
 frontend/src/shapes/renderers/sticky-note-renderer.ts | typescript | 83 | StickyNoteRenderer:6{renderArchitectural:7 renderSketch:35 getPoints:46 definePath:67}
 frontend/src/shapes/renderers/symbol-instance-renderer.ts | typescript | 52 | SymbolInstanceRenderer:14{renderArchitectural:15 renderSketch:16 draw:18 definePath:51}
 frontend/src/shapes/renderers/table-renderer.ts | typescript | 1649 | MergedCellRegion:12 TableRenderer:20{renderArchitectural:21 renderSketch:26 renderTable:32}
-frontend/src/shapes/renderers/text-renderer.ts | typescript | 284 | TextRenderer:9{renderArchitectural:10 renderSketch:14 renderCommon:18 renderRichTextElement:179 definePath:281}
+frontend/src/shapes/renderers/text-renderer.ts | typescript | 287 | TextRenderer:9{renderArchitectural:10 renderSketch:14 renderCommon:18 renderRichTextElement:182 definePath:284}
 frontend/src/shapes/renderers/ui-component-renderer.ts | typescript | 80 | UIRenderHelpers:10 UIShapeBounds:10 UIComponentRenderer:12{buildBounds:14 buildHelpers:21 getRoundedRectPath:38 renderArchitectural:47 renderSketch:60 definePath:72}
 frontend/src/shapes/renderers/uml-class-renderer.ts | typescript | 228 | UmlClassLayout:7 UmlClassRenderer:9{renderArchitectural:10 renderSketch:30 definePath:43 drawDividers:47 if:59}
 frontend/src/shapes/renderers/uml-enum-renderer.ts | typescript | 187 | Uml2SectionLayout:7 UmlEnumRenderer:9{renderArchitectural:10 renderSketch:30 definePath:46 drawDivider:50 renderTexts:61 renderSectionText:117 renderScrollArrows:147}
@@ -348,7 +348,7 @@ frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 Folder
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 5359 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:33 ResolvedTheme:34 AppState:61 HistorySnapshot:395 AlignmentType:3368 DistributionType:3368 SelBBox:4101 LastTransform:4351 buildPathFromPoly:4959 WorldSub:5042 rdpAnchors:5045 normalizeWorldSubs:5073 makePathFromWorldSubs:5088 elementToWorldSubs:5109 startInkCleanupIfNeeded:5298
+frontend/src/store/app-store.ts | typescript | 5380 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:34 ResolvedTheme:35 AppState:62 HistorySnapshot:396 AlignmentType:3369 DistributionType:3369 SelBBox:4122 LastTransform:4372 buildPathFromPoly:4980 WorldSub:5063 rdpAnchors:5066 normalizeWorldSubs:5094 makePathFromWorldSubs:5109 elementToWorldSubs:5130 startInkCleanupIfNeeded:5319
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -455,7 +455,7 @@ frontend/src/utils/svg-paint.ts | typescript | 97 | splitAlpha:15 svgFillPaint:3
 frontend/src/utils/table-utils.ts | typescript | 1207 | CellRect:8 defaultTableData:22 resizeTableData:29 defaultColWidths:48 defaultRowHeights:55 computeCellRects:62 hitTestTableCell:112 hitTestColEdge:130 hitTestRowEdge:161 reorderColumns:190 insertTableRow:209 deleteTableRow:226 insertTableColumn:242 deleteTableColumn:262 deleteTableColumns:282 getFullColumnSelection:303 sortTableData:317 wrapText:343 measureColumnOptimalWidth:419 parseClipboardTableData:458 unmergeCells:643 normalizeCellSelection:659 isMultiCellSelection:673 adjustMergedCellsOnRowInsert:684 adjustMergedCellsOnRowDelete:701 adjustMergedCellsOnColInsert:724 adjustMergedCellsOnColDelete:741 getCellFormat:773 setCellFormat:785 setCellFormatRange:814 formatCellValue:838 formatNumber:865 formatCurrency:883 formatPercentage:894 formatDate:903 parseFormattedValue:960 getCellBorders:993 setCellBorders:1005 setBorderForRange:1035 getBorderWidth:1110 getNextCell:1150 isPrintableKey:1205
 frontend/src/utils/text-on-path.ts | typescript | 251 | PathPoint:18 TextPathOptions:20 ArcTable:33 buildArcTable:35 locateAtDistance:45 drawTextAlongPath:70 isClosedShapeForText:137 ellipseOutline:141 regularPolygonOutline:150 getOutlinePath:160 sampleBezier:186 getElementTextPath:203
 frontend/src/utils/text-to-outlines.ts | typescript | 160 | OutlineResult:94
-frontend/src/utils/text-utils.ts | typescript | 281 | TextMetrics:5
+frontend/src/utils/text-utils.ts | typescript | 324 | TextMetrics:5 VerticalTextLayout:164
 frontend/src/utils/tool-handlers/canvas-event-handlers.ts | typescript | 281 | CanvasEventContext:19 handleDragOver:27 handleDrop:36 applyAssetAtClientPoint:63 any:120 as:120 WheelContext:156 handleUmlSectionScroll:163 handleWheel:234
 frontend/src/utils/tool-handlers/draw-handler.ts | typescript | 612 | drawOnDown:74 drawOnMove:310 drawOnUp:398 normalizeOrganicBranch:587
 frontend/src/utils/tool-handlers/minor-handlers.ts | typescript | 1009 | triggerOpenBoxReveal:25 presentationOnDown:153 presentationOnMove:234 presentationOnUp:266 panOnDown:297 panOnMove:305 panOnUp:319 laserOnDown:329 laserOnMove:339 laserOnUp:365 textOnDown:385 textOnMove:412 textOnUp:433 richTextOnDown:487 richTextOnMove:515 richTextOnUp:536 inkOnDown:594 appendEraseStroke:642 splitFreehandStroke:676 getEraserRadius:753 eraseAtPoint:759 eraserOnDown:795 eraserOnMove:808 eraserOnUp:816 connectorHandleOnDown:823 connectorHandleOnUp:904 handleAutoScroll:984
@@ -463,7 +463,7 @@ frontend/src/utils/tool-handlers/pen-handler.ts | typescript | 55 | penOnMove:14
 frontend/src/utils/tool-handlers/pen-path-handler.ts | typescript | 190 | snap:23 writePenElement:33 resetPen:65 penOnDown:76 penOnMove:130 penOnUp:152 penFinalize:161 penUndo:178
 frontend/src/utils/tool-handlers/polyline-handler.ts | typescript | 208 | polylineOnDown:17 polylineOnMove:93 polylineOnUp:148 polylineFinalize:154 polylineUndo:190
 frontend/src/utils/tool-handlers/selection-handler.ts | typescript | 2574 | getMeasureRenderer:38 captureInitialPositions:48 scaleEraseStrokes:76 scalePathAnchors:99 scalePathSubpaths:112 cloneSubpaths:117 initMoveState:121 selectionOnDown:155 selectionOnMove:839 handleResize:1249 handleControlPointDrag:1466 handlePerspectiveBlockControl:1556 handlePolypointDrag:1625 EditSub:1648 editableSubpaths:1651 writeEditableSubpaths:1667 handlePathNodeDrag:1692 convertPathAnchor:1735 deletePathAnchor:1764 findClosestPathSegment:1781 insertPathAnchorAt:1814 handleSegmentDrag:1857 applyResize:1891 handle3DViewAngle:2083 handleMove:2129 selectionOnUp:2276
-frontend/src/utils/tool-handlers/text-editing-handler.ts | typescript | 488 | TableEditingCell:20 EditingPropertyType:29 TextEditingContext:31 commitText:52 commitRichText:174 handleDoubleClick:224
+frontend/src/utils/tool-handlers/text-editing-handler.ts | typescript | 494 | TableEditingCell:20 EditingPropertyType:29 TextEditingContext:31 commitText:52 commitRichText:180 handleDoubleClick:230
 frontend/src/utils/transform-pivot.ts | typescript | 48 | selectionKey:23 setTransformPivot:28 clearTransformPivot:33 getCustomPivot:38 getElementPivot:46
 frontend/src/utils/uml-layout-utils.ts | typescript | 117 | UmlClassLayout:9 calculateUmlClassLayout:21 Uml2SectionLayout:76 calculateUml2SectionLayout:83
 frontend/src/utils/variable-width.ts | typescript | 89 | WidthPoint:11 Pt:12 widthAt:15 centerlineCommands:31 sampleCenterline:39 buildWidthRibbon:62
@@ -597,6 +597,6 @@ tests/text-outlines.spec.ts | typescript | 53 |
 tests/types/motion-types.spec.ts | typescript | 90 |
 tests/ui-panels.spec.ts | typescript | 248 |
 tests/uml-tools.spec.ts | typescript | 169 |
-tests/vertical-type.spec.ts | typescript | 17 | toggles:4
+tests/vertical-type.spec.ts | typescript | 25 | resizes:4 snap:10
 tests/width-tool.spec.ts | typescript | 26 |
 tests/z-order-alignment.spec.ts | typescript | 230 |

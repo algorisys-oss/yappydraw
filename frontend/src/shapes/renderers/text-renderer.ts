@@ -3,7 +3,7 @@ import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import type { DrawingElement } from "../../types";
-import { resolveFontFamily, wrapText } from "../../utils/text-utils";
+import { resolveFontFamily, wrapText, measureVerticalText } from "../../utils/text-utils";
 import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils";
 
 export class TextRenderer extends ShapeRenderer {
@@ -54,21 +54,24 @@ export class TextRenderer extends ShapeRenderer {
         const lineHeight = fontSize * 1.2;
         const padding = 4; // Small internal padding
 
-        // Vertical Type — stack characters top→bottom; each \n-paragraph is a column. Columns
-        // advance RIGHT→LEFT (the CJK / Illustrator vertical-text convention).
+        // Vertical Type — stack glyphs top→bottom; each \n-paragraph is a column, columns
+        // advance RIGHT→LEFT (CJK / Illustrator convention). Layout + element size come from
+        // measureVerticalText so the rendered text, selection box and hit-testing all agree.
         if (el.verticalText) {
-            const vColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
-            renderer.fillStyle = vColor;
+            const v = measureVerticalText(el);
+            renderer.fillStyle = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
             renderer.textAlign = 'center';
-            renderer.textBaseline = 'hanging';
-            const colWidth = fontSize * 1.4;
-            const cols = (el.text || '').split('\n');
-            const totalW = Math.max(colWidth, cols.length * colWidth);
-            cols.forEach((col, ci) => {
-                // first column on the right, subsequent columns to the left
-                const x = el.x + padding + totalW - colWidth / 2 - ci * colWidth;
-                [...col].forEach((ch, ri) => {
-                    renderer.fillText(ch, x, el.y + padding + ri * lineHeight);
+            renderer.textBaseline = 'middle';
+            // Vertically align the column block within the element box.
+            const blockH = v.height - v.padding * 2;
+            const va = el.verticalAlign || 'top';
+            let top = v.padding;
+            if (va === 'middle') top = Math.max(v.padding, (el.height - blockH) / 2);
+            else if (va === 'bottom') top = Math.max(v.padding, el.height - blockH - v.padding);
+            v.columns.forEach((col, ci) => {
+                const x = el.x + el.width - v.padding - v.colWidth * (ci + 0.5); // right→left
+                col.forEach((ch, ri) => {
+                    renderer.fillText(ch, x, el.y + top + v.vAdvance * (ri + 0.5));
                 });
             });
             renderer.restore();

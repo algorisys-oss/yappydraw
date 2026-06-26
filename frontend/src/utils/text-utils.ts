@@ -161,6 +161,49 @@ export const measureContainerText = (
     return result;
 };
 
+export interface VerticalTextLayout {
+    width: number;          // element width that exactly fits the columns
+    height: number;         // element height that exactly fits the tallest column
+    colWidth: number;       // width of one column (uniform)
+    vAdvance: number;       // vertical advance per glyph
+    columns: string[][];    // glyph runs, one array per \n-paragraph
+    padding: number;
+}
+
+/**
+ * Lay out vertical type: each \n-paragraph is a column of stacked glyphs, columns advance
+ * right→left (CJK / Illustrator convention). Column width is uniform (the widest glyph in
+ * the whole run + a gap) so columns line up; glyphs are centred within their column. Returns
+ * both the geometry to render and the element size that exactly fits it.
+ */
+export const measureVerticalText = (el: Partial<DrawingElement>): VerticalTextLayout => {
+    const ctx = getMeasurementContext();
+    ctx.font = getFontString(el);
+    const fontSize = el.fontSize || 28;
+    const padding = 6;
+    const columns = (el.text || '').split('\n').map(line => [...line]); // spread → surrogate-safe
+    let maxGlyph = fontSize * 0.5;
+    for (const col of columns) for (const ch of col) {
+        const w = ctx.measureText(ch).width;
+        if (w > maxGlyph) maxGlyph = w;
+    }
+    const colWidth = maxGlyph + fontSize * 0.3;     // glyph box + side gap
+    const vAdvance = fontSize * 1.15;               // glyph box + leading
+    const maxLen = Math.max(1, ...columns.map(c => c.length));
+    const width = Math.max(1, columns.length) * colWidth + padding * 2;
+    const height = maxLen * vAdvance + padding * 2;
+    return { width, height, colWidth, vAdvance, columns, padding };
+};
+
+/** Width of the widest \n-line of `text` (used to size a text box when leaving vertical mode). */
+export const measureMaxLineWidth = (el: Partial<DrawingElement>): number => {
+    const ctx = getMeasurementContext();
+    ctx.font = getFontString(el);
+    let max = 0;
+    for (const line of (el.text || '').split('\n')) max = Math.max(max, ctx.measureText(line).width);
+    return max;
+};
+
 /**
  * Measure the height of wrapped text within a given width.
  * Used for text elements to auto-adjust height based on content.

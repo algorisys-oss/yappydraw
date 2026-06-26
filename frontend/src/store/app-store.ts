@@ -8,6 +8,7 @@ import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
 import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, type DistortKind } from "../utils/path-distort";
+import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
 import { shapeToPath } from "../utils/shape-to-path";
 import { normalizePoints } from "../utils/render-element";
 import { textElementToOutline } from "../utils/text-to-outlines";
@@ -3634,7 +3635,27 @@ export const clearWidthProfile = (ids: string[]) => {
     showToast('Width reset', 'success');
 };
 
-/** Per-group signature of member geometry, so the live engine only recomputes on real changes. */
+/**
+ * Vertical Type — toggle stacked text orientation on a text element AND resize the element's
+ * box to fit, so the selection bounds, hit-testing and rendering all agree. Turning it on
+ * sizes to the measured columns; turning it off re-flows to a normal horizontal box.
+ */
+export const setTextVertical = (id: string, on?: boolean): boolean => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || (el.type !== 'text' && el.type !== 'richtext')) { showToast('Vertical Type: select a text object', 'info'); return false; }
+    const next = on ?? !el.verticalText;
+    pushToHistory();
+    if (next) {
+        const v = measureVerticalText(el);
+        setStore('elements', e => e.id === id, { verticalText: true, width: Math.round(v.width), height: Math.round(v.height) } as any);
+    } else {
+        const w = Math.max(40, Math.round(measureMaxLineWidth(el) + 12));
+        const h = Math.max((el.fontSize || 28) * 1.2, measureWrappedTextHeight(el.text || '', w, el.fontSize || 28, el.fontFamily));
+        setStore('elements', e => e.id === id, { verticalText: false, width: w, height: Math.round(h) } as any);
+    }
+    bumpDirtyRevision();
+    return true;
+};
 const _livePaintSig = new Map<string, string>();
 
 const _livePaintMembers = (groupId: string) => store.elements.filter(e => e.livePaintGroupId === groupId);
