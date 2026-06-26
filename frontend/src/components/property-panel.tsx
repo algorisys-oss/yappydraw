@@ -1091,11 +1091,16 @@ const PropertyPanel: Component = () => {
             return;
         }
 
+        // Picking a solid background colour should also switch the element back to a solid
+        // fill — otherwise a non-solid fillStyle (gradient/hachure) ignores the new colour and
+        // the swatch appears to do nothing / show an odd colour.
+        const patch: any = { [key]: finalValue };
+        if (key === 'backgroundColor' && finalValue && finalValue !== 'transparent') patch.fillStyle = 'solid';
         if (target.type === 'element') {
-            updateElement(targetId || target.data.id!, { [key]: finalValue }, history);
+            updateElement(targetId || target.data.id!, patch, history);
         } else if (target.type === 'multi') {
             store.selection.forEach(id => {
-                updateElement(id, { [key]: finalValue }, history);
+                updateElement(id, patch, history);
             });
         } else if (target.type === 'canvas') {
             if (key === 'theme') setTheme(value as 'light' | 'dark' | 'focus' | 'system');
