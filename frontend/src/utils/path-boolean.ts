@@ -12,6 +12,7 @@ import polygonClipping from 'polygon-clipping';
 import type { DrawingElement, PathAnchor, PathSubpath } from '../types';
 import { getShapeGeometry } from './shape-geometry';
 import { PathUtils } from './math/path-utils';
+import { catmullRomAnchors } from './curve-fit';
 
 export type BooleanOp = 'union' | 'subtract' | 'intersect' | 'exclude';
 
@@ -109,6 +110,36 @@ export function polyToPathSubpaths(poly: Poly): { subpaths: PathSubpath[]; minX:
     }
     const subpaths: PathSubpath[] = rings.map(r => ({
         anchors: r.map(([x, y]) => ({ x: x - minX, y: y - minY, kind: 'corner' as const })),
+        closed: true,
+    }));
+    return { subpaths, minX, minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };
+}
+
+/**
+ * Like {@link polyToPathSubpaths}, but each ring becomes SMOOTH Bézier anchors (a curved
+ * edge) rather than straight corner anchors — used by the Blob Brush so its outline reads as
+ * smooth, not faceted. Each ring is RDP-simplified by `simplifyEps` (drops union/scallop
+ * noise) then a closed Catmull-Rom spline is fitted through the survivors. Bézier handles are
+ * included in the bbox so they aren't clipped.
+ */
+export function polyToSmoothSubpaths(poly: Poly, simplifyEps = 0): { subpaths: PathSubpath[]; minX: number; minY: number; width: number; height: number } | null {
+    const ringAnchors: PathAnchor[][] = [];
+    for (const ring of poly) {
+        const cleaned = cleanRing(simplifyEps > 0 ? simplifyRing(ring, simplifyEps) : ring);
+        if (!cleaned) continue;
+        const anchors = catmullRomAnchors(cleaned.map(([x, y]) => ({ x, y })), true);
+        if (anchors.length >= 3) ringAnchors.push(anchors);
+    }
+    if (ringAnchors.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const anchors of ringAnchors) for (const a of anchors) {
+        const xs = [a.x, a.x + (a.outX ?? 0), a.x + (a.inX ?? 0)];
+        const ys = [a.y, a.y + (a.outY ?? 0), a.y + (a.inY ?? 0)];
+        minX = Math.min(minX, ...xs); maxX = Math.max(maxX, ...xs);
+        minY = Math.min(minY, ...ys); maxY = Math.max(maxY, ...ys);
+    }
+    const subpaths: PathSubpath[] = ringAnchors.map(anchors => ({
+        anchors: anchors.map(a => ({ ...a, x: a.x - minX, y: a.y - minY })),
         closed: true,
     }));
     return { subpaths, minX, minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };

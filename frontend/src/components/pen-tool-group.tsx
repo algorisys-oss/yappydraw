@@ -2,7 +2,7 @@ import { type Component, createSignal, Show, For, createEffect, onCleanup } from
 import { Portal } from "solid-js/web";
 import { store, setSelectedTool, setSelectedPenType, setStore } from "../store/app-store";
 import type { ElementType } from "../types";
-import { Pen, Brush, ChevronDown } from "lucide-solid";
+import { PenLine, Brush, ChevronDown } from "lucide-solid";
 import "./pen-tool-group.css";
 
 export type PenType = 'fineliner' | 'inkbrush' | 'marker';
@@ -27,7 +27,7 @@ const CustomMarkerIcon: Component<{ size?: number }> = (props) => (
 );
 
 const penTools: { type: PenType; icon: Component<{ size?: number }>; label: string }[] = [
-    { type: 'fineliner', icon: Pen, label: 'Fine Liner (P or 7)' },
+    { type: 'fineliner', icon: PenLine, label: 'Fine Liner (7)' },
     { type: 'inkbrush', icon: Brush, label: 'Ink Brush' },
     { type: 'marker', icon: CustomMarkerIcon, label: 'Marker' }, // Updated to use custom marker icon
 ];
@@ -95,7 +95,7 @@ const PenToolGroup: Component = () => {
                 on:click={toggleMenu}
                 onContextMenu={handleRightClick}
                 onDblClick={handleRightClick}
-                title={`${getCurrentPenTool().label} (P or 7 - Click for more)`}
+                title={`${getCurrentPenTool().label} (7 - Click for more)`}
             >
                 <div class="tool-icon-wrapper">
                     {(() => {

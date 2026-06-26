@@ -710,7 +710,7 @@ export const YappyAPI = {
             opacity: options?.opacity ?? 100,
             roughness: 0,
             angle: options?.angle ?? 0,
-            renderStyle: 'sketch',
+            renderStyle: defaults.renderStyle ?? 'architectural',
             seed: Math.floor(Math.random() * 2 ** 31),
             roundness: null,
             fontFamily: options?.fontFamily ?? defaults.fontFamily ?? "hand-drawn",

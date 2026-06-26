@@ -364,6 +364,7 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                         <tr><th>Illustrator tool</th><th>In Yappy</th></tr>
                     </thead>
                     <tbody>
+                        <tr><td>Pen / Vector Path (P)</td><td>Toolbar pen-nib (P) — click anchors, drag for Bézier handles; anchors &amp; handles show live, click first anchor to close</td></tr>
                         <tr><td>Shape Builder (Shift+M)</td><td>Right-click → Shape Builder (face-level)</td></tr>
                         <tr><td>Magic Wand (Y)</td><td>Right-click → Select Similar</td></tr>
                         <tr><td>Live Paint Bucket (K)</td><td>Right-click → Live Paint Bucket (click regions)</td></tr>

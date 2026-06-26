@@ -36,7 +36,7 @@ const navTools: { type: ToolType; icon: Component<{ size?: number; color?: strin
 
 // Lasso & Crop tools (rendered after connector/line toolgroup)
 const selectUtilTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string }[] = [
-    { type: 'path', icon: PenTool, label: 'Pen / Vector Path — click to add points, drag to curve' },
+    { type: 'path', icon: PenTool, label: 'Pen / Vector Path (P) — click to add points, drag to curve', hotkey: 'P' },
     { type: 'lasso', icon: Lasso, label: 'Lasso Select (Shift+L)' },
     { type: 'crop', icon: Crop, label: 'Crop Image (Shift+C)' },
 ];
@@ -53,13 +53,13 @@ const utilityTools: { type: ToolType; icon: Component<{ size?: number; color?: s
 // Brainstorm mode: minimal flat toolbar for quick ideation
 const brainstormTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string; setSubType?: () => void }[] = [
     { type: 'selection', icon: MousePointer2, label: 'Selection (V)', hotkey: '1' },
-    { type: 'fineliner', icon: Pen, label: 'Pen (P)', hotkey: '7' },
+    { type: 'fineliner', icon: Pen, label: 'Brush / Fine Liner (7)', hotkey: '7' },
     { type: 'line', icon: Minus, label: 'Line' },
     { type: 'arrow', icon: MoveUpRight, label: 'Arrow (5)', hotkey: '5' },
     { type: 'rectangle', icon: Square, label: 'Rectangle (2)', hotkey: '2' },
     { type: 'diamond', icon: Diamond, label: 'Diamond (3)', hotkey: '3' },
     { type: 'circle', icon: Circle, label: 'Ellipse (4)', hotkey: '4' },
-    { type: 'path', icon: PenTool, label: 'Pen / Vector Path — click to add points, drag to curve' },
+    { type: 'path', icon: PenTool, label: 'Pen / Vector Path (P) — click to add points, drag to curve', hotkey: 'P' },
     { type: 'text', icon: Type, label: 'Text (8)', hotkey: '8' },
     { type: 'image', icon: ImageIcon, label: 'Image (9)', hotkey: '9' },
     { type: 'eraser', icon: Eraser, label: 'Eraser (0)', hotkey: '0' },

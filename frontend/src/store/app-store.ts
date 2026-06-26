@@ -6,7 +6,7 @@ import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-type
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
-import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, smoothPoly, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
+import { runBooleanOp, polyToPathSubpaths, polyToSmoothSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
 import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
@@ -3963,14 +3963,16 @@ export const commitBlobStroke = (worldPts: { x: number; y: number }[], radius: n
         for (let k = 1; k <= n; k++) pts.push({ x: a.x + ((b.x - a.x) * k) / n, y: a.y + ((b.y - a.y) * k) / n });
     }
     if (pts.length === 1) pts.push({ x: pts[0].x + 0.1, y: pts[0].y });
-    const disks: Poly[] = pts.map(p => [diskRing(p.x, p.y, radius, 24)]);
-    const raw = unionPolys(disks);
-    if (!raw.length) return null;
-    const blob = raw.map(poly => smoothPoly(poly, 2, radius * 0.08)); // simplify noise → Chaikin-smooth
+    const disks: Poly[] = pts.map(p => [diskRing(p.x, p.y, radius, 32)]);
+    const blob = unionPolys(disks);
+    if (!blob.length) return null;
+    // Smooth the union outline as actual Bézier curves (not a faceted polygon): RDP-simplify
+    // away the scallop/union noise, then fit a closed Catmull-Rom spline through the survivors.
+    const smoothEps = radius * 0.1;
 
     const style: Partial<DrawingElement> = { backgroundColor: color, fillStyle: 'solid', strokeColor: color, strokeWidth: 0, renderStyle: store.defaultElementStyles.renderStyle };
     const created: DrawingElement[] = [];
-    for (const poly of blob) { const p = buildPathFromPoly(poly, style); if (p) created.push(p); }
+    for (const poly of blob) { const p = buildPathFromPoly(poly, style, smoothEps); if (p) created.push(p); }
     if (!created.length) return null;
 
     // Merge only with same-colour paths the new blob GENUINELY touches — a bbox prefilter then a
@@ -3987,7 +3989,7 @@ export const commitBlobStroke = (worldPts: { x: number; y: number }[], radius: n
         const ids = [...overlap.map(e => e.id), ...created.map(e => e.id)];
         const merged = runBooleanOp(store.elements.filter(e => ids.includes(e.id)), 'union');
         if (merged.length) {
-            const mergedEls = merged.map(poly => buildPathFromPoly(poly, style)).filter(Boolean) as DrawingElement[];
+            const mergedEls = merged.map(poly => buildPathFromPoly(poly, style, smoothEps)).filter(Boolean) as DrawingElement[];
             setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), ...mergedEls]);
             setStore('selection', mergedEls.map(e => e.id));
             bumpDirtyRevision();
@@ -5451,8 +5453,9 @@ export const convertTextToOutlines = async (ids: string[]): Promise<string[]> =>
  * a multi-subpath `pathSubpaths` path (even-odd fill). World coords are normalized to the
  * polygon's bbox.
  */
-function buildPathFromPoly(poly: Poly, style: Partial<DrawingElement>): DrawingElement | null {
-    const norm = polyToPathSubpaths(poly);
+function buildPathFromPoly(poly: Poly, style: Partial<DrawingElement>, smoothEps?: number): DrawingElement | null {
+    // smoothEps > 0 → curved (Bézier) edge via Catmull-Rom (Blob Brush); else straight corners.
+    const norm = (smoothEps && smoothEps > 0) ? polyToSmoothSubpaths(poly, smoothEps) : polyToPathSubpaths(poly);
     if (!norm) return null;
     const single = norm.subpaths.length === 1;
     return {

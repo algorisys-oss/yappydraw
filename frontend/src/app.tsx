@@ -691,7 +691,8 @@ const App: Component = () => {
           else if (key === 'o' || key === '4') setSelectedTool('circle');
           else if (key === 'a' || key === '5') setSelectedTool('arrow');
           else if (key === 'l' || key === '6') setSelectedTool('line');
-          else if (key === 'p' || key === '7') setSelectedTool('fineliner');
+          else if (key === 'p') setSelectedTool('path');       // Illustrator: P = vector Pen
+          else if (key === '7') setSelectedTool('fineliner');  // freehand brush keeps its number
           else if (key === 't' || key === '8') setSelectedTool(store.selectedTextType);
           else if (key === '9' || key === 'i') {
             (window as any).triggerImageUpload?.();

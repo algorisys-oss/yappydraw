@@ -76,7 +76,7 @@ frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/api.ts | typescript | 2622 | Theme:3 ElementOptions:79 ElementType:462 as:462 Window:2614
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1348 | Component:1 App:84 moves:99 onPenMove:100 hidePen:104 handleKeyDown:129 handleFullscreenChange:708 handleBeforeUnload:714 handlePaste:718 handleGlobalDragEnter:820 handleGlobalDragOver:835 showDropFallbackPrompt:854 cleanup:884 outsideClick:912 isImageFile:924 first:925 must:938 extractDropData:940 processExtractedDrop:995 handleGlobalDrop:1091 handleDocumentDrop:1137
+frontend/src/app.tsx | typescript | 1349 | Component:1 App:84 moves:99 onPenMove:100 hidePen:104 handleKeyDown:129 handleFullscreenChange:709 handleBeforeUnload:715 handlePaste:719 handleGlobalDragEnter:821 handleGlobalDragOver:836 showDropFallbackPrompt:855 cleanup:885 outsideClick:913 isImageFile:925 first:926 must:939 extractDropData:941 processExtractedDrop:996 handleGlobalDrop:1092 handleDocumentDrop:1138
 frontend/src/assets/player-assets.ts | typescript | 3 | hh:2
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/components/advanced-p3-picker.tsx | typescript | 188 | Component:1 OKLCH:2 Props:4 AdvancedP3Picker:9 handleCanvasMouseDown:75 update:77 onMouseMove:90 onMouseUp:91 handleHueMouseDown:99 update:101 onMouseMove:111 onMouseUp:112
@@ -291,7 +291,7 @@ frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | Animatio
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 90 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
-frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 396 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
+frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 397 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 289 | MasksAppearanceTraceDoc:8 tools:14
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
@@ -370,7 +370,7 @@ frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 Folder
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 5854 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:35 ResolvedTheme:36 AppState:63 HistorySnapshot:435 AlignmentType:3413 DistributionType:3413 SelBBox:4596 LastTransform:4846 buildPathFromPoly:5454 WorldSub:5537 rdpAnchors:5540 normalizeWorldSubs:5568 makePathFromWorldSubs:5583 elementToWorldSubs:5604 startInkCleanupIfNeeded:5793
+frontend/src/store/app-store.ts | typescript | 5857 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:35 ResolvedTheme:36 AppState:63 HistorySnapshot:435 AlignmentType:3413 DistributionType:3413 SelBBox:4598 LastTransform:4848 buildPathFromPoly:5456 WorldSub:5540 rdpAnchors:5543 normalizeWorldSubs:5571 makePathFromWorldSubs:5586 elementToWorldSubs:5607 startInkCleanupIfNeeded:5796
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -451,7 +451,7 @@ frontend/src/utils/migration.ts | typescript | 290 | normalizeElement:10 as:14 m
 frontend/src/utils/mindmap-layout.ts | typescript | 416 | MindmapNode:3 LayoutDirection:16 OutlineNode:19 parseOutline:32 MindmapLayoutEngine:96{constructor:100} getBranchInfo:373
 frontend/src/utils/object-context-actions.ts | typescript | 486 | copyToClipboard:9 cutToClipboard:27 getViewportCenter:33 pasteImageFromBlob:39 done:43 pasteAsTextElement:120 pasteYappyElements:233 tryPasteYappyJson:295 pasteFromClipboard:310 flipSelected:347 lockSelected:422 getStyleSnapshot:432 copyStyle:474 pasteStyle:480
 frontend/src/utils/object-snapping.ts | typescript | 131 | SnappingGuide:6 SnappedResult:12
-frontend/src/utils/path-boolean.ts | typescript | 338 | BooleanOp:16 Ring:18 Poly:19 MultiPoly:20 ringFromPoints:22 geometryToRings:32 elementToMultiPolygon:66 ringToPathAnchors:74 cleanRing:89 polyToPathSubpaths:103 runBooleanOp:121 ShapeFace:147 multiPolyArea:153 pointInMultiPoly:166 computeShapeFaces:187 splitMultiPolyByLine:220 chaikinRing:239 simplifyRing:260 smoothPoly:288 diskRing:293 polysIntersect:300 unionPolys:309 subtractPolys:321 unionFaces:331
+frontend/src/utils/path-boolean.ts | typescript | 369 | BooleanOp:17 Ring:19 Poly:20 MultiPoly:21 ringFromPoints:23 geometryToRings:33 elementToMultiPolygon:67 ringToPathAnchors:75 cleanRing:90 polyToPathSubpaths:104 polyToSmoothSubpaths:125 runBooleanOp:152 ShapeFace:178 multiPolyArea:184 pointInMultiPoly:197 computeShapeFaces:218 splitMultiPolyByLine:251 chaikinRing:270 simplifyRing:291 smoothPoly:319 diskRing:324 polysIntersect:331 unionPolys:340 subtractPolys:352 unionFaces:362
 frontend/src/utils/path-distort.ts | typescript | 104 | Pt:10 DistortKind:11 distortRing:47 distortPoly:99
 frontend/src/utils/path-offset.ts | typescript | 108 | Pt:20 Ring:21 Poly:22 samplePathPolyline:25 circleRing:55 computeOutlineStroke:63 computeOffsetPath:84
 frontend/src/utils/performance-monitor.ts | typescript | 49 | PerformanceMonitor:1{constructor:8 measureFrame:13 setEnabled:43}
