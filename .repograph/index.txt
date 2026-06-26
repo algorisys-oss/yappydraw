@@ -220,8 +220,8 @@ frontend/src/components/touch-type-overlay.tsx | typescript | 97 | TouchTypeOver
 frontend/src/components/uml-tool-group.tsx | typescript | 145 | Component:1 UmlToolGroup:30 handler:37 getActiveUmlTool:47 handleToolClick:56 as:64 as:70 handleRightClick:78 toggleMenu:84 activeTool:91 isActive:92 getDropdownPosition:94
 frontend/src/components/unsaved-changes-dialog.css | - | 111 |
 frontend/src/components/unsaved-changes-dialog.tsx | typescript | 53 | Component:1 UnsavedChangesDialogProps:5 UnsavedChangesDialog:12 handleKeyDown:13
-frontend/src/components/vector-tools-panel.css | - | 49 |
-frontend/src/components/vector-tools-panel.tsx | typescript | 95 | Component:1 tools:17 Tool:21 VectorToolsPanel:23
+frontend/src/components/vector-tools-panel.css | - | 64 |
+frontend/src/components/vector-tools-panel.tsx | typescript | 144 | Component:1 Tool:24 VectorToolsPanel:26 center:30 selText:37
 frontend/src/components/video-overlay.css | - | 70 |
 frontend/src/components/video-overlay.tsx | typescript | 204 | Component:1 onDragStart:69 onDragMove:83 onDragEnd:91 toggleLock:98 close:104 VideoOverlay:177 handleKeyDown:179
 frontend/src/components/video-url-dialog.css | - | 183 |

@@ -3,9 +3,12 @@
     top: 90px;
     right: 16px;
     z-index: 9000;
-    width: 168px;
-    background: var(--bg-panel, #fff);
-    border: 1px solid var(--border-color, #ddd);
+    width: 196px;
+    max-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
     user-select: none;
@@ -20,6 +23,7 @@
     cursor: grab;
     border-bottom: 1px solid var(--border-color);
     background: var(--bg-secondary);
+    flex: 0 0 auto;
 }
 .vt-header:active { cursor: grabbing; }
 .vt-title { font-size: 12px; font-weight: 700; color: var(--text-primary); }
@@ -30,20 +34,31 @@
 }
 .vt-close:hover { background: var(--bg-secondary); color: var(--text-primary); }
 
-.vt-body { padding: 8px; display: flex; flex-direction: column; gap: 9px; }
-.vt-group-name { font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px; }
-.vt-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.vt-body { padding: 8px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.vt-group { display: flex; flex-direction: column; gap: 2px; }
+.vt-group-name { font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); margin: 2px 0 3px 2px; }
 
-.vt-btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 100%; aspect-ratio: 1; padding: 0;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 7px; cursor: pointer;
-    color: var(--text-primary);            /* themed icon colour: dark on light, light on dark */
-    transition: background 0.12s, border-color 0.12s, color 0.12s;
+.vt-row {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; padding: 6px 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px; cursor: pointer; text-align: left;
+    color: var(--text-primary);
+    font-size: 12px; font-weight: 500;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
-.vt-btn svg { flex: 0 0 auto; }
-.vt-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+.vt-row svg { flex: 0 0 auto; }
+.vt-row span { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-row:hover { background: var(--bg-secondary); }
 .vt-on { background: var(--primary-color); border-color: var(--primary-color); color: #fff; }
-.vt-on:hover { color: #fff; filter: brightness(0.94); }
+.vt-on:hover { background: var(--primary-color); filter: brightness(0.94); }
+.vt-row-caret { opacity: 0.6; }
+
+.vt-flyout { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px 0 4px 22px; }
+.vt-sub {
+    padding: 4px 6px; font-size: 11px; font-weight: 600;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 5px; cursor: pointer; color: var(--text-primary);
+}
+.vt-sub:hover { border-color: var(--primary-color); color: var(--primary-color); }
