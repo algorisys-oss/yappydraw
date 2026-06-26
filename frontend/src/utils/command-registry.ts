@@ -6,7 +6,9 @@ import {
     toggleSymmetryGuide, setSymmetryAxis, mirrorAcrossSymmetry,
     moveElementZIndex, undo, redo, deleteElements, toggleTheme,
     setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode,
-    updateGlobalSettings, togglePenStabilization
+    updateGlobalSettings, togglePenStabilization,
+    toggleShapeBuilder, toggleLivePaint, makeLivePaint, releaseLivePaint, selectSimilar, applyDistort,
+    toggleCutTool, toggleWidthTool, clearWidthProfile, toggleSymbolSprayer, updateElement
 } from "../store/app-store";
 import { flipSelected, lockSelected } from "./object-context-actions";
 import { openRepeatDialog } from "../components/repeat-dialog";
@@ -251,6 +253,23 @@ export const getCommands = (): Command[] => {
         { id: 'action-flip-h', label: 'Flip Horizontal', category: 'Actions', action: () => flipSelected('horizontal'), shortcut: 'Shift+H' },
         { id: 'action-flip-v', label: 'Flip Vertical', category: 'Actions', action: () => flipSelected('vertical'), shortcut: 'Shift+V' },
         { id: 'action-outlines', label: 'Create Outlines (text → vector)', category: 'Actions', action: () => { void convertTextToOutlines(store.selection); }, shortcut: 'Ctrl+Shift+O' },
+
+        // Illustrator-class tools (also on the right-click menu / panels)
+        { id: 'tool-live-paint', label: 'Live Paint Bucket (fill regions)', category: 'Tools', action: () => { makeLivePaint([...store.selection]); toggleLivePaint(true); } },
+        { id: 'action-live-paint-release', label: 'Live Paint: Release', category: 'Actions', action: () => { const g = store.elements.find(e => e.livePaintGroupId)?.livePaintGroupId; if (g) releaseLivePaint(g); } },
+        { id: 'tool-shape-builder', label: 'Shape Builder (merge / carve regions)', category: 'Tools', action: () => toggleShapeBuilder(true) },
+        { id: 'tool-magic-wand', label: 'Magic Wand (Select Similar)', category: 'Tools', action: () => selectSimilar() },
+        { id: 'tool-knife', label: 'Knife / Scissors (cut)', category: 'Tools', action: () => toggleCutTool(true) },
+        { id: 'tool-width', label: 'Width Tool (variable stroke)', category: 'Tools', action: () => toggleWidthTool(true) },
+        { id: 'action-width-reset', label: 'Reset Width Profile', category: 'Actions', action: () => clearWidthProfile([...store.selection]) },
+        { id: 'tool-symbol-sprayer', label: 'Symbol Sprayer', category: 'Tools', action: () => toggleSymbolSprayer() },
+        { id: 'action-vertical-type', label: 'Vertical Type (toggle)', category: 'Actions', action: () => { const id = store.selection[0]; if (id) updateElement(id, { verticalText: !store.elements.find(e => e.id === id)?.verticalText } as any); } },
+        { id: 'action-distort-pucker', label: 'Distort: Pucker', category: 'Actions', action: () => applyDistort([...store.selection], 'pucker', 0.25) },
+        { id: 'action-distort-bloat', label: 'Distort: Bloat', category: 'Actions', action: () => applyDistort([...store.selection], 'bloat', 0.25) },
+        { id: 'action-distort-twirl', label: 'Distort: Twirl', category: 'Actions', action: () => applyDistort([...store.selection], 'twirl', 0.25) },
+        { id: 'action-distort-zigzag', label: 'Distort: Zig-Zag', category: 'Actions', action: () => applyDistort([...store.selection], 'zigzag', 0.12) },
+        { id: 'action-distort-crystallize', label: 'Distort: Crystallize', category: 'Actions', action: () => applyDistort([...store.selection], 'crystallize', 0.18) },
+        { id: 'action-distort-roughen', label: 'Distort: Roughen', category: 'Actions', action: () => applyDistort([...store.selection], 'roughen', 0.1) },
         { id: 'action-mirror-h', label: 'Mirror Copy (horizontal)', category: 'Actions', action: () => mirrorCopy('horizontal') },
         { id: 'action-mirror-v', label: 'Mirror Copy (vertical)', category: 'Actions', action: () => mirrorCopy('vertical') },
         { id: 'action-repeat', label: 'Repeat (Radial / Grid)…', category: 'Actions', action: () => openRepeatDialog() },

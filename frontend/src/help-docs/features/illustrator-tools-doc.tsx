@@ -19,6 +19,13 @@ export const IllustratorToolsDoc: Component = () => {
                     tool has a right-click / panel entry <em>and</em> a scripting API on the global
                     <code> Yappy</code> object — paste the examples into the browser console to try them.
                 </p>
+                <p class="tip-box">
+                    <strong>Can't find a tool?</strong> They're all in the <strong>Command Palette</strong> — press
+                    <span class="kbd">Ctrl</span>/<span class="kbd">Cmd</span>+<span class="kbd">K</span> and type a
+                    name (“Live Paint”, “Width”, “Magic Wand”, “Shape Builder”…). This is the most reliable entry
+                    point: the right-click menu only appears when you click directly on a filled shape, so for
+                    unfilled outlines (common with Live Paint) use the palette.
+                </p>
             </header>
 
             {/* Magic Wand */}
