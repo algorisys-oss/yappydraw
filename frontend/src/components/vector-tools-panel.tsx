@@ -1,10 +1,10 @@
-import { type Component, For, Show, createSignal } from 'solid-js';
+import { type Component, For, Show, createSignal, onCleanup } from 'solid-js';
 import {
     store, toggleVectorToolsPanel,
     toggleShapeBuilder, toggleLivePaint, toggleCutTool, toggleWidthTool, toggleCurveTool,
     toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid,
     toggleSymbolSprayer, toggleSymbolism, toggleSliceTool, selectSimilar,
-    setTextVertical, toggleTouchType, applyDistort, updateElement,
+    setTextVertical, toggleTouchType, toggleTypeOnPath, applyDistort, exitAllToolModes,
 } from '../store/app-store';
 import { YappyAPI } from '../api';
 import {
@@ -35,47 +35,50 @@ const VectorToolsPanel: Component = () => {
         };
     };
     const selText = () => { const e = store.elements.find(el => el.id === store.selection[0]); return e && (e.type === 'text' || e.type === 'richtext') ? e : null; };
+    // Exclusive mode activation: clicking a mode-tool turns OFF every other overlay (no stacking),
+    // and toggles the clicked one. (`turnOn` may be special-cased, e.g. the Symbol Sprayer.)
+    const modeRun = (isOn: () => boolean, turnOn: () => void) => () => { const was = isOn(); exitAllToolModes(); if (!was) turnOn(); };
 
     const groups: { name: string; tools: Tool[] }[] = [
         {
             name: 'Build', tools: [
-                { label: 'Shape Builder', icon: Combine, active: () => store.shapeBuilderActive, run: () => toggleShapeBuilder() },
-                { label: 'Live Paint', icon: PaintBucket, active: () => store.livePaintActive, run: () => toggleLivePaint() },
+                { label: 'Shape Builder', icon: Combine, active: () => store.shapeBuilderActive, run: modeRun(() => store.shapeBuilderActive, () => toggleShapeBuilder(true)) },
+                { label: 'Live Paint', icon: PaintBucket, active: () => store.livePaintActive, run: modeRun(() => store.livePaintActive, () => toggleLivePaint(true)) },
                 { label: 'Magic Wand', icon: Wand2, run: () => selectSimilar() },
             ],
         },
         {
             name: 'Path', tools: [
-                { label: 'Curvature', icon: Spline, active: () => store.curveToolActive, run: () => toggleCurveTool() },
-                { label: 'Reshape', icon: Waypoints, active: () => store.reshapeToolActive, run: () => toggleReshapeTool() },
-                { label: 'Knife / Scissors', icon: Scissors, active: () => store.cutToolActive, run: () => toggleCutTool() },
-                { label: 'Width', icon: PenLine, active: () => store.widthToolActive, run: () => toggleWidthTool() },
+                { label: 'Curvature', icon: Spline, active: () => store.curveToolActive, run: modeRun(() => store.curveToolActive, () => toggleCurveTool(true)) },
+                { label: 'Reshape', icon: Waypoints, active: () => store.reshapeToolActive, run: modeRun(() => store.reshapeToolActive, () => toggleReshapeTool(true)) },
+                { label: 'Knife / Scissors', icon: Scissors, active: () => store.cutToolActive, run: modeRun(() => store.cutToolActive, () => toggleCutTool(true)) },
+                { label: 'Width', icon: PenLine, active: () => store.widthToolActive, run: modeRun(() => store.widthToolActive, () => toggleWidthTool(true)) },
             ],
         },
         {
             name: 'Paint', tools: [
-                { label: 'Blob Brush', icon: Brush, active: () => store.blobBrushActive, run: () => toggleBlobBrush() },
-                { label: 'Path Eraser', icon: Eraser, active: () => store.pathEraserActive, run: () => togglePathEraser() },
+                { label: 'Blob Brush', icon: Brush, active: () => store.blobBrushActive, run: modeRun(() => store.blobBrushActive, () => toggleBlobBrush(true)) },
+                { label: 'Path Eraser', icon: Eraser, active: () => store.pathEraserActive, run: modeRun(() => store.pathEraserActive, () => togglePathEraser(true)) },
             ],
         },
         {
             name: 'Warp', tools: [
-                { label: 'Puppet Warp', icon: Frame, active: () => store.puppetWarpActive, run: () => togglePuppetWarp() },
+                { label: 'Puppet Warp', icon: Frame, active: () => store.puppetWarpActive, run: modeRun(() => store.puppetWarpActive, () => togglePuppetWarp(true)) },
                 { label: 'Perspective Grid', icon: Grid3x3, active: () => store.perspectiveGridActive, run: () => togglePerspectiveGrid() },
             ],
         },
         {
             name: 'Symbol', tools: [
-                { label: 'Symbol Sprayer', icon: SprayCan, active: () => store.sprayerActive, run: () => toggleSymbolSprayer() },
-                { label: 'Symbolism Brush', icon: Sparkles, active: () => store.symbolismActive, run: () => toggleSymbolism() },
-                { label: 'Slice (export region)', icon: Crop, active: () => store.sliceToolActive, run: () => toggleSliceTool() },
+                { label: 'Symbol Sprayer', icon: SprayCan, active: () => store.sprayerActive, run: modeRun(() => store.sprayerActive, () => toggleSymbolSprayer(store.symbols[0]?.id)) },
+                { label: 'Symbolism Brush', icon: Sparkles, active: () => store.symbolismActive, run: modeRun(() => store.symbolismActive, () => toggleSymbolism(true)) },
+                { label: 'Slice (export region)', icon: Crop, active: () => store.sliceToolActive, run: modeRun(() => store.sliceToolActive, () => toggleSliceTool(true)) },
             ],
         },
         {
             name: 'Text', tools: [
                 { label: 'Vertical Type', icon: AlignVerticalJustifyCenter, active: () => !!selText()?.verticalText, run: () => { const t = selText(); if (t) setTextVertical(t.id); } },
-                { label: 'Touch Type', icon: TextCursor, active: () => store.touchTypeActive, run: () => toggleTouchType() },
-                { label: 'Type on Path', icon: Type, active: () => !!selText()?.curvedText, run: () => { const t = selText(); if (t) updateElement(t.id, { curvedText: !t.curvedText } as any); } },
+                { label: 'Touch Type', icon: TextCursor, active: () => store.touchTypeActive, run: modeRun(() => store.touchTypeActive, () => toggleTouchType(true)) },
+                { label: 'Type on Path', icon: Type, active: () => store.typeOnPathActive, run: modeRun(() => store.typeOnPathActive, () => toggleTypeOnPath(true)) },
             ],
         },
         {
@@ -95,9 +98,25 @@ const VectorToolsPanel: Component = () => {
         { label: 'Crystallize', kind: 'crystallize', amt: 0.18 }, { label: 'Roughen', kind: 'roughen', amt: 0.1 },
     ];
 
+    // Wire dragging (header) + persist the resized dimensions (native CSS resize grip writes
+    // inline width/height; we save them and restore on next open).
+    const setupPanel = (el: HTMLDivElement) => {
+        draggablePanel('.vt-header')(el);
+        try {
+            const saved = JSON.parse(localStorage.getItem('vectorToolsSize') || 'null');
+            if (saved?.w) el.style.width = saved.w + 'px';
+            if (saved?.h) el.style.height = saved.h + 'px';
+        } catch { /* ignore */ }
+        const ro = new ResizeObserver(() => {
+            try { localStorage.setItem('vectorToolsSize', JSON.stringify({ w: Math.round(el.offsetWidth), h: Math.round(el.offsetHeight) })); } catch { /* ignore */ }
+        });
+        ro.observe(el);
+        onCleanup(() => ro.disconnect());
+    };
+
     return (
         <Show when={store.showVectorToolsPanel}>
-            <div class="vt-panel" ref={draggablePanel('.vt-header')}>
+            <div class="vt-panel" ref={(el) => setupPanel(el)}>
                 <div class="vt-header">
                     <span class="vt-title">Vector Tools</span>
                     <button class="vt-close" title="Close" onClick={() => toggleVectorToolsPanel(false)}><X size={14} /></button>
@@ -109,7 +128,7 @@ const VectorToolsPanel: Component = () => {
                                 <div class="vt-group-name">{g.name}</div>
                                 <For each={g.tools}>
                                     {(t) => (
-                                        <button class={`vt-row ${t.active?.() ? 'vt-on' : ''}`} onClick={() => t.run()}>
+                                        <button class={`vt-row ${t.active?.() ? 'vt-on' : ''}`} title={t.label} onClick={() => t.run()}>
                                             <t.icon size={15} /><span>{t.label}</span>
                                         </button>
                                     )}

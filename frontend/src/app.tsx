@@ -34,6 +34,7 @@ import { PerspectiveGridOverlay } from './components/perspective-grid-overlay';
 import { TouchTypeOverlay } from './components/touch-type-overlay';
 import { SliceToolOverlay } from './components/slice-tool-overlay';
 import { SymbolismOverlay } from './components/symbolism-overlay';
+import { TypeOnPathOverlay } from './components/type-on-path-overlay';
 import { SymbolEditBanner } from './components/symbol-edit-banner';
 import Toolbar from './components/toolbar';
 import {
@@ -1222,6 +1223,7 @@ const App: Component = () => {
         <TouchTypeOverlay />
         <SliceToolOverlay />
         <SymbolismOverlay />
+        <TypeOnPathOverlay />
         <SymbolEditBanner />
         <Show when={store.docType === 'slides'}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={

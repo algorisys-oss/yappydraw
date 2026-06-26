@@ -241,6 +241,15 @@ export function diskRing(cx: number, cy: number, r: number, seg = 16): Ring {
     return ring;
 }
 
+/** Do two MultiPolygons actually overlap (not just bbox)? Used to limit Blob-Brush merging. */
+export function polysIntersect(a: Poly[], b: Poly[]): boolean {
+    if (!a.length || !b.length) return false;
+    try {
+        const out = polygonClipping.intersection(a as any, b as any) as MultiPoly;
+        return !!(out && out.length && out[0] && out[0][0] && out[0][0].length >= 4);
+    } catch { return false; }
+}
+
 /** Union a list of single-polygons into a MultiPoly (used by the Blob Brush: union of disks). */
 export function unionPolys(polys: Poly[]): Poly[] {
     const valid = polys.filter(p => p && p[0] && p[0].length >= 4);

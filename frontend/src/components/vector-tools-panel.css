@@ -3,8 +3,12 @@
     top: 90px;
     right: 16px;
     z-index: 9000;
-    width: 196px;
-    max-height: calc(100vh - 120px);
+    width: 200px;
+    height: 460px;
+    min-width: 150px;
+    max-width: 380px;
+    min-height: 180px;
+    max-height: calc(100vh - 80px);
     display: flex;
     flex-direction: column;
     background: var(--bg-panel);
@@ -13,6 +17,7 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
     user-select: none;
     overflow: hidden;
+    resize: both;          /* drag the bottom-right grip to resize */
 }
 
 .vt-header {
@@ -49,7 +54,7 @@
     transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 .vt-row svg { flex: 0 0 auto; }
-.vt-row span { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-row span { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-row:hover { background: var(--bg-secondary); }
 .vt-on { background: var(--primary-color); border-color: var(--primary-color); color: #fff; }
 .vt-on:hover { background: var(--primary-color); filter: brightness(0.94); }

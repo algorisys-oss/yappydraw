@@ -74,9 +74,9 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 2601 | Theme:3 ElementOptions:79 ElementType:462 as:462 Window:2593
+frontend/src/api.ts | typescript | 2607 | Theme:3 ElementOptions:79 ElementType:462 as:462 Window:2599
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1346 | Component:1 App:83 moves:98 onPenMove:99 hidePen:103 handleKeyDown:128 handleFullscreenChange:707 handleBeforeUnload:713 handlePaste:717 handleGlobalDragEnter:819 handleGlobalDragOver:834 showDropFallbackPrompt:853 cleanup:883 outsideClick:911 isImageFile:923 first:924 must:937 extractDropData:939 processExtractedDrop:994 handleGlobalDrop:1090 handleDocumentDrop:1136
+frontend/src/app.tsx | typescript | 1348 | Component:1 App:84 moves:99 onPenMove:100 hidePen:104 handleKeyDown:129 handleFullscreenChange:708 handleBeforeUnload:714 handlePaste:718 handleGlobalDragEnter:820 handleGlobalDragOver:835 showDropFallbackPrompt:854 cleanup:884 outsideClick:912 isImageFile:924 first:925 must:938 extractDropData:940 processExtractedDrop:995 handleGlobalDrop:1091 handleDocumentDrop:1137
 frontend/src/assets/player-assets.ts | typescript | 3 | hh:2
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/components/advanced-p3-picker.tsx | typescript | 188 | Component:1 OKLCH:2 Props:4 AdvancedP3Picker:9 handleCanvasMouseDown:75 update:77 onMouseMove:90 onMouseUp:91 handleHueMouseDown:99 update:101 onMouseMove:111 onMouseUp:112
@@ -217,11 +217,13 @@ frontend/src/components/toolbar.css | - | 231 |
 frontend/src/components/toolbar.tsx | typescript | 528 | Component:1 VideoProvider:27 Toolbar:70 wrapWidth:83 onResizeDown:85 toggleBrainstormMode:96 onMouseDown:102 onMouseMove:115 onMouseUp:129 handleResize:141 handleToolClick:155 handleVideoInsert:165 handleRightClick:213 handleImageUpload:219
 frontend/src/components/touch-type-overlay.css | - | 23 |
 frontend/src/components/touch-type-overlay.tsx | typescript | 97 | TouchTypeOverlay:13 target:17 active:21 toWorld:22 glyphBoxes:25 onDown:41 onMove:53 onUp:59 onKey:64 selBox:79
+frontend/src/components/type-on-path-overlay.css | - | 23 |
+frontend/src/components/type-on-path-overlay.tsx | typescript | 72 | text:13 TypeOnPathOverlay:16 active:18 toWorld:19 pick:21 onMove:33 onDown:34 onKey:46 box:52
 frontend/src/components/uml-tool-group.tsx | typescript | 145 | Component:1 UmlToolGroup:30 handler:37 getActiveUmlTool:47 handleToolClick:56 as:64 as:70 handleRightClick:78 toggleMenu:84 activeTool:91 isActive:92 getDropdownPosition:94
 frontend/src/components/unsaved-changes-dialog.css | - | 111 |
 frontend/src/components/unsaved-changes-dialog.tsx | typescript | 53 | Component:1 UnsavedChangesDialogProps:5 UnsavedChangesDialog:12 handleKeyDown:13
-frontend/src/components/vector-tools-panel.css | - | 64 |
-frontend/src/components/vector-tools-panel.tsx | typescript | 144 | Component:1 Tool:24 VectorToolsPanel:26 center:30 selText:37
+frontend/src/components/vector-tools-panel.css | - | 69 |
+frontend/src/components/vector-tools-panel.tsx | typescript | 163 | Component:1 Tool:24 VectorToolsPanel:26 center:30 selText:37 modeRun:40 setupPanel:103
 frontend/src/components/video-overlay.css | - | 70 |
 frontend/src/components/video-overlay.tsx | typescript | 204 | Component:1 onDragStart:69 onDragMove:83 onDragEnd:91 toggleLock:98 close:104 VideoOverlay:177 handleKeyDown:179
 frontend/src/components/video-url-dialog.css | - | 183 |
@@ -368,7 +370,7 @@ frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 Folder
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 5838 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:35 ResolvedTheme:36 AppState:63 HistorySnapshot:432 AlignmentType:3424 DistributionType:3424 SelBBox:4580 LastTransform:4830 buildPathFromPoly:5438 WorldSub:5521 rdpAnchors:5524 normalizeWorldSubs:5552 makePathFromWorldSubs:5567 elementToWorldSubs:5588 startInkCleanupIfNeeded:5777
+frontend/src/store/app-store.ts | typescript | 5851 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:35 ResolvedTheme:36 AppState:63 HistorySnapshot:435 AlignmentType:3413 DistributionType:3413 SelBBox:4593 LastTransform:4843 buildPathFromPoly:5451 WorldSub:5534 rdpAnchors:5537 normalizeWorldSubs:5565 makePathFromWorldSubs:5580 elementToWorldSubs:5601 startInkCleanupIfNeeded:5790
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -449,7 +451,7 @@ frontend/src/utils/migration.ts | typescript | 290 | normalizeElement:10 as:14 m
 frontend/src/utils/mindmap-layout.ts | typescript | 416 | MindmapNode:3 LayoutDirection:16 OutlineNode:19 parseOutline:32 MindmapLayoutEngine:96{constructor:100} getBranchInfo:373
 frontend/src/utils/object-context-actions.ts | typescript | 486 | copyToClipboard:9 cutToClipboard:27 getViewportCenter:33 pasteImageFromBlob:39 done:43 pasteAsTextElement:120 pasteYappyElements:233 tryPasteYappyJson:295 pasteFromClipboard:310 flipSelected:347 lockSelected:422 getStyleSnapshot:432 copyStyle:474 pasteStyle:480
 frontend/src/utils/object-snapping.ts | typescript | 131 | SnappingGuide:6 SnappedResult:12
-frontend/src/utils/path-boolean.ts | typescript | 274 | BooleanOp:16 Ring:18 Poly:19 MultiPoly:20 ringFromPoints:22 geometryToRings:32 elementToMultiPolygon:66 ringToPathAnchors:74 cleanRing:89 polyToPathSubpaths:103 runBooleanOp:121 ShapeFace:147 multiPolyArea:153 pointInMultiPoly:166 computeShapeFaces:187 splitMultiPolyByLine:220 diskRing:238 unionPolys:245 subtractPolys:257 unionFaces:267
+frontend/src/utils/path-boolean.ts | typescript | 283 | BooleanOp:16 Ring:18 Poly:19 MultiPoly:20 ringFromPoints:22 geometryToRings:32 elementToMultiPolygon:66 ringToPathAnchors:74 cleanRing:89 polyToPathSubpaths:103 runBooleanOp:121 ShapeFace:147 multiPolyArea:153 pointInMultiPoly:166 computeShapeFaces:187 splitMultiPolyByLine:220 diskRing:238 polysIntersect:245 unionPolys:254 subtractPolys:266 unionFaces:276
 frontend/src/utils/path-distort.ts | typescript | 104 | Pt:10 DistortKind:11 distortRing:47 distortPoly:99
 frontend/src/utils/path-offset.ts | typescript | 108 | Pt:20 Ring:21 Poly:22 samplePathPolyline:25 circleRing:55 computeOutlineStroke:63 computeOffsetPath:84
 frontend/src/utils/performance-monitor.ts | typescript | 49 | PerformanceMonitor:1{constructor:8 measureFrame:13 setEnabled:43}
@@ -634,6 +636,7 @@ tests/touch-type.spec.ts | typescript | 16 |
 tests/types/motion-types.spec.ts | typescript | 90 |
 tests/ui-panels.spec.ts | typescript | 248 |
 tests/uml-tools.spec.ts | typescript | 169 |
+tests/vector-tools-panel.spec.ts | typescript | 72 | count:41
 tests/vertical-type.spec.ts | typescript | 25 | resizes:4 snap:10
 tests/width-tool.spec.ts | typescript | 26 |
 tests/z-order-alignment.spec.ts | typescript | 230 |

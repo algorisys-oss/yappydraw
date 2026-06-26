@@ -6,7 +6,7 @@ import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-type
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
-import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
+import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
 import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
@@ -115,6 +115,8 @@ interface AppState {
     widthToolActive: boolean;
     /** Touch Type mode: select & transform individual glyphs of a text element (transient). */
     touchTypeActive: boolean;
+    /** Type on Path mode: click a line/curve to flow text along it (transient). */
+    typeOnPathActive: boolean;
     /** Curvature tool mode: click points to draw a smooth curve through them (transient). */
     curveToolActive: boolean;
     /** Reshape tool mode: drag a path/segment to bend it while pinning endpoints (transient). */
@@ -342,6 +344,7 @@ const initialState: AppState = {
     livePaintActive: false,
     widthToolActive: false,
     touchTypeActive: false,
+    typeOnPathActive: false,
     curveToolActive: false,
     reshapeToolActive: false,
     blobBrushActive: false,
@@ -1076,23 +1079,9 @@ export const setCursorPosition = (pos: { x: number; y: number }) => {
 };
 
 export const setSelectedTool = (tool: ToolType) => {
-    // 0. Picking any tool exits the transient overlay modes (Knife/Scissors, Shape Builder,
-    //    Live Paint, Width, Symbol Sprayer, Measure) — otherwise their full-screen overlay
-    //    keeps intercepting the canvas and the user feels stuck.
-    if (store.cutToolActive) setStore('cutToolActive', false);
-    if (store.shapeBuilderActive) setStore('shapeBuilderActive', false);
-    if (store.livePaintActive) setStore('livePaintActive', false);
-    if (store.widthToolActive) setStore('widthToolActive', false);
-    if (store.curveToolActive) setStore('curveToolActive', false);
-    if (store.touchTypeActive) setStore('touchTypeActive', false);
-    if (store.sliceToolActive) setStore('sliceToolActive', false);
-    if (store.symbolismActive) setStore('symbolismActive', false);
-    if (store.reshapeToolActive) setStore('reshapeToolActive', false);
-    if (store.blobBrushActive) setStore('blobBrushActive', false);
-    if (store.pathEraserActive) setStore('pathEraserActive', false);
-    if (store.puppetWarpActive) setStore('puppetWarpActive', false);
-    if (store.sprayerActive) { setStore('sprayerActive', false); setStore('sprayerSymbolId', null); }
-    if (store.measureActive) setStore('measureActive', false);
+    // 0. Picking any tool exits the transient (blocking) overlay modes — otherwise their
+    //    full-screen overlay keeps intercepting the canvas and the user feels stuck.
+    exitAllToolModes();
 
     // 1. Save current tool's styles
     const currentTool = store.selectedTool;
@@ -3660,6 +3649,27 @@ export const toggleLivePaint = (active?: boolean) => setStore('livePaintActive',
 export const toggleWidthTool = (active?: boolean) => setStore('widthToolActive', v => active ?? !v);
 export const toggleCurveTool = (active?: boolean) => setStore('curveToolActive', v => active ?? !v);
 export const toggleTouchType = (active?: boolean) => setStore('touchTypeActive', v => active ?? !v);
+export const toggleTypeOnPath = (active?: boolean) => setStore('typeOnPathActive', v => active ?? !v);
+
+/** Turn off every blocking tool-mode overlay (used for exclusive tool activation). Leaves the
+ *  non-blocking Perspective Grid aid alone. */
+export const exitAllToolModes = () => {
+    const flags = ['cutToolActive', 'shapeBuilderActive', 'livePaintActive', 'widthToolActive', 'curveToolActive',
+        'touchTypeActive', 'typeOnPathActive', 'sliceToolActive', 'symbolismActive', 'reshapeToolActive',
+        'blobBrushActive', 'pathEraserActive', 'puppetWarpActive', 'measureActive'] as const;
+    for (const f of flags) if ((store as any)[f]) setStore(f as any, false);
+    if (store.sprayerActive) { setStore('sprayerActive', false); setStore('sprayerSymbolId', null); }
+};
+
+/** Type on Path — flow `text` along a line/curve/freehand element (sets curvedText + containerText). */
+export const attachTextToPath = (id: string, text: string) => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el) return;
+    pushToHistory();
+    setStore('elements', e => e.id === id, { containerText: text, curvedText: true, isEditing: false } as any);
+    bumpDirtyRevision();
+    showToast('Text attached to path', 'success');
+};
 export const toggleSliceTool = (active?: boolean) => setStore('sliceToolActive', v => active ?? !v);
 export const toggleSymbolism = (active?: boolean) => setStore('symbolismActive', v => active ?? !v);
 export const setSymbolismMode = (m: AppState['symbolismMode']) => setStore('symbolismMode', m);
@@ -3960,10 +3970,13 @@ export const commitBlobStroke = (worldPts: { x: number; y: number }[], radius: n
     for (const poly of blob) { const p = buildPathFromPoly(poly, style); if (p) created.push(p); }
     if (!created.length) return null;
 
-    // Find existing same-colour paths the blob overlaps, to merge into one (bbox prefilter).
+    // Merge only with same-colour paths the new blob GENUINELY touches — a bbox prefilter then a
+    // real geometric-intersection test, so a fresh stroke never sweeps in (and re-selects) blobs
+    // it merely bbox-overlaps but doesn't actually touch.
     const bbox = { x0: Math.min(...created.map(e => e.x)), y0: Math.min(...created.map(e => e.y)), x1: Math.max(...created.map(e => e.x + e.width)), y1: Math.max(...created.map(e => e.y + e.height)) };
     const overlap = store.elements.filter(e => e.type === 'path' && (e.backgroundColor || '') === color && !e.livePaintFillFor &&
-        e.x < bbox.x1 && e.x + e.width > bbox.x0 && e.y < bbox.y1 && e.y + e.height > bbox.y0);
+        e.x < bbox.x1 && e.x + e.width > bbox.x0 && e.y < bbox.y1 && e.y + e.height > bbox.y0 &&
+        polysIntersect(blob, elementToMultiPolygon(e)));
 
     pushToHistory();
     setStore('elements', list => [...list, ...created]);
