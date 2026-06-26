@@ -332,7 +332,10 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                         rings + ghost reflections, grouped.</li>
                     <li><strong>Touch Type</strong> (right-click a single-line text → Touch Type): click a glyph and
                         drag to move it; <span class="kbd">[</span><span class="kbd">]</span> scale and
-                        <span class="kbd">,</span> <span class="kbd">.</span> rotate the selected glyph.</li>
+                        <span class="kbd">,</span> <span class="kbd">.</span> rotate the selected glyph. On tablets,
+                        use the floating <strong>A−/A+/↺/↻</strong> buttons or <strong>pinch&nbsp;to&nbsp;scale</strong>
+                        and <strong>two-finger&nbsp;twist&nbsp;to&nbsp;rotate</strong>. The <strong>colour swatch</strong>
+                        recolours just that one glyph.</li>
                     <li><strong>Slice</strong> (Command Palette → Slice): drag a rectangle to export exactly that
                         region as a PNG (<code>Yappy.exportRegion(x,y,w,h)</code>). Artboards remain for persistent
                         named export regions.</li>

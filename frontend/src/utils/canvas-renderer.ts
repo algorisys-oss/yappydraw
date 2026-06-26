@@ -792,7 +792,8 @@ export function renderLayersAndElements(
                 elements,
                 selectedTool,
                 hoveredConnector,
-                appMode
+                appMode,
+                penBuildingId: selectedTool === 'path' ? currentDrawingId : null
             });
         });
     });

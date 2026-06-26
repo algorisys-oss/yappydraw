@@ -21,3 +21,24 @@
     color: #3b82f6; background: transparent; border: 1px solid #3b82f6; border-radius: 6px; padding: 2px 8px;
 }
 .tt-done:hover { background: rgba(59, 130, 246, 0.1); }
+
+/* Floating per-glyph scale/rotate controls (tablet-friendly, keyboard-free). */
+.tt-controls {
+    position: absolute; transform: translateX(-50%);
+    display: flex; gap: 4px; padding: 4px;
+    background: var(--bg-panel, #fff); border: 1px solid var(--border-color, #ddd);
+    border-radius: 9px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    pointer-events: auto; touch-action: none;
+}
+.tt-controls button {
+    pointer-events: auto; cursor: pointer; min-width: 30px; height: 30px;
+    font-size: 14px; font-weight: 600; line-height: 1;
+    color: var(--text-primary, #111); background: var(--bg-secondary, #f3f4f6);
+    border: 1px solid var(--border-color, #ddd); border-radius: 6px;
+}
+.tt-controls button:hover { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+.tt-controls button:active { transform: scale(0.94); }
+.tt-controls .tt-color {
+    pointer-events: auto; cursor: pointer; width: 30px; height: 30px; padding: 2px;
+    background: var(--bg-secondary, #f3f4f6); border: 1px solid var(--border-color, #ddd); border-radius: 6px;
+}

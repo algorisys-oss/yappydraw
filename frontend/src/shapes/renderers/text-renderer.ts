@@ -82,7 +82,7 @@ export class TextRenderer extends ShapeRenderer {
         // measured advance, then apply its move/scale/rotate around the glyph centre.
         if (el.charTransforms && el.charTransforms.length && !(el.text || '').includes('\n')) {
             const chars = [...(el.text || '')];
-            renderer.fillStyle = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
+            const baseColor = el.textColor || el.strokeColor || '#000000';
             renderer.textAlign = 'center';
             renderer.textBaseline = 'middle';
             let adv = el.x + padding;
@@ -92,6 +92,8 @@ export class TextRenderer extends ShapeRenderer {
                 const t = el.charTransforms![i] || { dx: 0, dy: 0, scale: 1, rot: 0 };
                 const cx2 = adv + w / 2;
                 renderer.save();
+                // Per-glyph colour override (Touch Type), else the element's text colour.
+                renderer.fillStyle = RenderPipeline.adjustColor(t.color || baseColor, isDarkMode);
                 renderer.translate(cx2 + t.dx, baseY + t.dy);
                 if (t.rot) renderer.rotate(t.rot);
                 if (t.scale && t.scale !== 1) renderer.scale(t.scale, t.scale);

@@ -13,6 +13,19 @@ import './touch-type-overlay.css';
 export const TouchTypeOverlay = () => {
     const [sel, setSel] = createSignal<number>(-1);
     let drag: { idx: number; startW: { x: number; y: number }; base: { dx: number; dy: number } } | null = null;
+    // Active touch points (by pointerId) + the live pinch/rotate gesture, if any.
+    const pointers = new Map<number, { x: number; y: number }>();
+    let gesture: { idx: number; startDist: number; startAng: number; baseScale: number; baseRot: number } | null = null;
+
+    const curT = (i: number) => target()?.charTransforms?.[i] || { dx: 0, dy: 0, scale: 1, rot: 0 };
+    // Shared scale / rotate mutators (used by keyboard, on-screen buttons, and gestures).
+    const bumpScale = (d: number) => { const el = target(); const i = sel(); if (!el || i < 0) return; const t = curT(i); setCharTransform(el.id, i, { scale: Math.min(5, Math.max(0.2, (t.scale || 1) + d)) }, true); };
+    const bumpRot = (d: number) => { const el = target(); const i = sel(); if (!el || i < 0) return; const t = curT(i); setCharTransform(el.id, i, { rot: (t.rot || 0) + d }, true); };
+    const stop = (e: Event) => { e.stopPropagation(); e.preventDefault(); };
+    // Per-glyph colour: current value (falls back to the element's text colour) + live apply.
+    const glyphColor = () => { const el = target(); const i = sel(); return (i >= 0 && el?.charTransforms?.[i]?.color) || el?.textColor || el?.strokeColor || '#000000'; };
+    const setColorLive = (c: string) => { const el = target(); const i = sel(); if (!el || i < 0) return; setCharTransform(el.id, i, { color: c }, false); };
+    const snapColor = () => { const el = target(); const i = sel(); if (el && i >= 0) setCharTransform(el.id, i, {}, true); }; // history snapshot before a colour drag
 
     const target = (): DrawingElement | undefined => {
         const el = store.elements.find(e => e.id === store.selection[0]);
@@ -38,11 +51,36 @@ export const TouchTypeOverlay = () => {
         return out;
     };
 
+    const twoPts = () => { const v = [...pointers.values()]; return v.length >= 2 ? [v[0], v[1]] as const : null; };
+    // Begin a pinch/rotate: anchor on the selected glyph (or the one nearest the pinch centre).
+    const startGesture = () => {
+        const p = twoPts(); const el = target(); if (!p || !el) return;
+        let i = sel();
+        if (i < 0) {
+            const wc = screenToWorld((p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2, store.viewState as any);
+            let pd = Infinity;
+            for (const b of glyphBoxes()) { const d = Math.hypot(b.cx - wc.x, b.cy - wc.y); if (d < pd) { pd = d; i = b.i; } }
+            if (i >= 0) setSel(i);
+        }
+        if (i < 0) return;
+        const t = curT(i);
+        setCharTransform(el.id, i, {}, true); // one history snapshot for the whole gesture
+        gesture = {
+            idx: i,
+            startDist: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1,
+            startAng: Math.atan2(p[1].y - p[0].y, p[1].x - p[0].x),
+            baseScale: t.scale || 1,
+            baseRot: t.rot || 0,
+        };
+    };
+
     const onDown = (e: PointerEvent) => {
         if (!active()) return;
+        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (pointers.size >= 2) { drag = null; startGesture(); e.preventDefault(); return; } // two-finger pinch/rotate
         const el = target()!; const w = toWorld(e);
         let pick = -1, pd = Infinity;
-        for (const b of glyphBoxes()) { const d = Math.hypot(b.cx - w.x, b.cy - w.y); if (d < Math.max(b.w, 14) / (1) && d < pd) { pd = d; pick = b.i; } }
+        for (const b of glyphBoxes()) { const d = Math.hypot(b.cx - w.x, b.cy - w.y); if (d < Math.max(b.w, 14) && d < pd) { pd = d; pick = b.i; } }
         if (pick < 0) return;
         e.preventDefault();
         setSel(pick);
@@ -51,29 +89,41 @@ export const TouchTypeOverlay = () => {
         drag = { idx: pick, startW: w, base: { dx: t.dx || 0, dy: t.dy || 0 } };
     };
     const onMove = (e: PointerEvent) => {
+        if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (gesture) {
+            const p = twoPts(); const el = target(); if (!p || !el) return;
+            const dist = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1;
+            const ang = Math.atan2(p[1].y - p[0].y, p[1].x - p[0].x);
+            const scale = Math.min(5, Math.max(0.2, gesture.baseScale * (dist / gesture.startDist)));
+            setCharTransform(el.id, gesture.idx, { scale, rot: gesture.baseRot + (ang - gesture.startAng) }, false);
+            return;
+        }
         if (!drag) return;
         const el = target(); if (!el) return;
         const w = toWorld(e);
         setCharTransform(el.id, drag.idx, { dx: drag.base.dx + (w.x - drag.startW.x), dy: drag.base.dy + (w.y - drag.startW.y) });
     };
-    const onUp = () => { drag = null; };
+    const onUp = (e: PointerEvent) => {
+        pointers.delete(e.pointerId);
+        if (pointers.size < 2) gesture = null;
+        if (pointers.size === 0) drag = null;
+    };
 
     onMount(() => {
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
         const onKey = (e: KeyboardEvent) => {
             if (!store.touchTypeActive) return;
-            const el = target(); const i = sel();
             if (e.key === 'Escape') { e.preventDefault(); toggleTouchType(false); return; }
-            if (!el || i < 0) return;
-            const t = el.charTransforms?.[i] || { dx: 0, dy: 0, scale: 1, rot: 0 };
-            if (e.key === ']') { e.preventDefault(); setCharTransform(el.id, i, { scale: Math.min(5, (t.scale || 1) + 0.1) }, true); }
-            else if (e.key === '[') { e.preventDefault(); setCharTransform(el.id, i, { scale: Math.max(0.2, (t.scale || 1) - 0.1) }, true); }
-            else if (e.key === '.') { e.preventDefault(); setCharTransform(el.id, i, { rot: (t.rot || 0) + 0.1 }, true); }
-            else if (e.key === ',') { e.preventDefault(); setCharTransform(el.id, i, { rot: (t.rot || 0) - 0.1 }, true); }
+            if (!target() || sel() < 0) return;
+            if (e.key === ']') { e.preventDefault(); bumpScale(0.1); }
+            else if (e.key === '[') { e.preventDefault(); bumpScale(-0.1); }
+            else if (e.key === '.') { e.preventDefault(); bumpRot(0.1); }
+            else if (e.key === ',') { e.preventDefault(); bumpRot(-0.1); }
         };
         window.addEventListener('keydown', onKey);
-        onCleanup(() => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('keydown', onKey); });
+        onCleanup(() => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onUp); window.removeEventListener('keydown', onKey); });
     });
 
     const selBox = () => {
@@ -87,8 +137,23 @@ export const TouchTypeOverlay = () => {
                 <svg class="tt-svg">
                     <Show when={selBox()}>{(s) => <circle cx={s().x} cy={s().y} r={14} class="tt-sel" />}</Show>
                 </svg>
+                {/* On-screen scale / rotate controls — keyboard-free, for tablets. Appear by the
+                    selected glyph; pinch + two-finger twist also scale/rotate it. */}
+                <Show when={sel() >= 0 && selBox()}>
+                    {(s) => (
+                        <div class="tt-controls" style={{ left: `${s().x}px`, top: `${s().y - 52}px` }}>
+                            <button title="Smaller" onPointerDown={(e) => { stop(e); bumpScale(-0.1); }}>A−</button>
+                            <button title="Larger" onPointerDown={(e) => { stop(e); bumpScale(0.1); }}>A+</button>
+                            <button title="Rotate left" onPointerDown={(e) => { stop(e); bumpRot(-0.1); }}>↺</button>
+                            <button title="Rotate right" onPointerDown={(e) => { stop(e); bumpRot(0.1); }}>↻</button>
+                            <input class="tt-color" type="color" title="Glyph colour" value={glyphColor()}
+                                onPointerDown={(e) => { e.stopPropagation(); snapColor(); }}
+                                onInput={(e) => setColorLive(e.currentTarget.value)} />
+                        </div>
+                    )}
+                </Show>
                 <div class="tt-hint">
-                    Touch Type — click a letter &amp; drag to move · [ ] scale · , . rotate
+                    Touch Type — tap a letter &amp; drag to move · pinch/twist or buttons to scale &amp; rotate · [ ] , .
                     <button class="tt-done" onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); toggleTouchType(false); }}>Done ✕</button>
                 </div>
             </div>

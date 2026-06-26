@@ -266,8 +266,9 @@ export interface DrawingElement {
     verticalAlign?: VerticalAlign;
     /** Vertical Type: stack characters top→bottom, paragraphs as left→right columns. */
     verticalText?: boolean;
-    /** Touch Type: per-character transforms (single-line text). dx/dy in px, scale (1=none), rot in radians. */
-    charTransforms?: { dx: number; dy: number; scale: number; rot: number }[];
+    /** Touch Type: per-character transforms (single-line text). dx/dy in px, scale (1=none), rot in radians.
+     *  Optional `color` overrides the element's text colour for that one glyph. */
+    charTransforms?: { dx: number; dy: number; scale: number; rot: number; color?: string }[];
     /** Width tool: per-point stroke widths along an open path (t in 0..1). */
     widthProfile?: { t: number; width: number }[];
     /** Live Paint: this element is a source outline of the named live-paint group. */

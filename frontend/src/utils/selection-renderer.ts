@@ -26,6 +26,9 @@ export interface ElementOverlayOptions {
     selectedTool: string;
     hoveredConnector: { elementId: string; handle: string } | null;
     appMode?: string;
+    /** Id of the path currently being built by the pen tool — its anchors/handles are
+     *  drawn live (like Illustrator) even though it isn't selected yet. */
+    penBuildingId?: string | null;
 }
 
 /**
@@ -526,12 +529,17 @@ export function renderElementOverlays(
         }
 
         // --- Editable vector path: anchors (squares) + Bézier handles (circles) ---
-        // Draws every subpath (compound paths / holes show all their nodes).
-        if (el.type === 'path' && selectedTool === 'selection') {
+        // Draws every subpath (compound paths / holes show all their nodes). Also drawn
+        // live while the pen tool is building this path (penBuildingId), so anchors and
+        // handles are visible mid-draw like Illustrator — not just after selection.
+        const isPenBuildingThis = !!opts.penBuildingId && el.id === opts.penBuildingId;
+        if (el.type === 'path' && (selectedTool === 'selection' || isPenBuildingThis)) {
             const sq = 8 / scale;   // anchor square side
             const hd = 7 / scale;   // handle circle diameter
+            let firstAnchor: { x: number; y: number } | null = null;
             for (const sp of getPathSubpaths(el)) for (const a of sp.anchors) {
                 const ax = el.x + a.x, ay = el.y + a.y;
+                if (!firstAnchor) firstAnchor = { x: ax, y: ay };
                 // Handle lines + circles.
                 const drawHandle = (hx?: number, hy?: number) => {
                     if (hx === undefined || hy === undefined) return;
@@ -554,6 +562,16 @@ export function renderElementOverlays(
                 ctx.beginPath();
                 ctx.rect(ax - sq / 2, ay - sq / 2, sq, sq);
                 ctx.fill();
+                ctx.stroke();
+            }
+            // While building, ring the first anchor so the user sees where to click to
+            // close the path (matches the pen handler's close threshold).
+            if (isPenBuildingThis && firstAnchor) {
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 1.5 / scale;
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.arc(firstAnchor.x, firstAnchor.y, sq, 0, Math.PI * 2);
                 ctx.stroke();
             }
         }

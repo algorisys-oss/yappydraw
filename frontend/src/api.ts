@@ -1938,8 +1938,8 @@ export const YappyAPI = {
     attachTextToPath(id: string, text: string) { attachTextToPath(id, text); },
     /** Exit all blocking tool-mode overlays. */
     exitAllToolModes() { exitAllToolModes(); },
-    /** Set a per-glyph transform (dx, dy, scale, rot) on a text element. */
-    setCharTransform(id: string, idx: number, patch: { dx?: number; dy?: number; scale?: number; rot?: number }) { setCharTransform(id, idx, patch, true); },
+    /** Set a per-glyph transform (dx, dy, scale, rot) and/or colour on a text element. */
+    setCharTransform(id: string, idx: number, patch: { dx?: number; dy?: number; scale?: number; rot?: number; color?: string }) { setCharTransform(id, idx, patch, true); },
     /** Reset Touch Type transforms back to plain text. */
     clearCharTransforms(id: string) { clearCharTransforms(id); },
     /** Graph tool — set a chart's data values (bar/pie). */
