@@ -25,6 +25,9 @@ import { CutOverlay } from './components/cut-overlay';
 import { SymbolSprayerOverlay } from './components/symbol-sprayer-overlay';
 import { LivePaintOverlay } from './components/live-paint-overlay';
 import { WidthToolOverlay } from './components/width-tool-overlay';
+import { CurveToolOverlay } from './components/curve-tool-overlay';
+import { ReshapeToolOverlay } from './components/reshape-tool-overlay';
+import { BlobBrushOverlay } from './components/blob-brush-overlay';
 import { SymbolEditBanner } from './components/symbol-edit-banner';
 import Toolbar from './components/toolbar';
 import {
@@ -1202,6 +1205,9 @@ const App: Component = () => {
         <SymbolSprayerOverlay />
         <LivePaintOverlay />
         <WidthToolOverlay />
+        <CurveToolOverlay />
+        <ReshapeToolOverlay />
+        <BlobBrushOverlay />
         <SymbolEditBanner />
         <Show when={store.docType === 'slides'}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={

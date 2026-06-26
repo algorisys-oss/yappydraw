@@ -6,8 +6,9 @@ import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-type
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
-import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
+import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, type DistortKind } from "../utils/path-distort";
+import { catmullRomAnchors } from "../utils/curve-fit";
 import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
 import { shapeToPath } from "../utils/shape-to-path";
 import { normalizePoints } from "../utils/render-element";
@@ -110,6 +111,18 @@ interface AppState {
     livePaintActive: boolean;
     /** Width tool mode: drag on a path to vary its stroke width (transient). */
     widthToolActive: boolean;
+    /** Curvature tool mode: click points to draw a smooth curve through them (transient). */
+    curveToolActive: boolean;
+    /** Reshape tool mode: drag a path/segment to bend it while pinning endpoints (transient). */
+    reshapeToolActive: boolean;
+    /** Blob brush mode: paint filled strokes that union into one shape (transient). */
+    blobBrushActive: boolean;
+    /** Path eraser mode: drag along a path to erase a span of it (transient). */
+    pathEraserActive: boolean;
+    /** Puppet Warp mode: drop pins, drag one to deform with the others anchored (transient). */
+    puppetWarpActive: boolean;
+    /** Perspective Grid overlay visibility + settings (transient UI). */
+    perspectiveGridActive: boolean;
     /** Undo-history panel visibility (transient, not persisted). */
     showHistoryPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
@@ -316,6 +329,12 @@ const initialState: AppState = {
     sprayerSymbolId: null,
     livePaintActive: false,
     widthToolActive: false,
+    curveToolActive: false,
+    reshapeToolActive: false,
+    blobBrushActive: false,
+    pathEraserActive: false,
+    puppetWarpActive: false,
+    perspectiveGridActive: false,
     showHistoryPanel: false,
     meshEditActive: false,
     activeArtboardId: null,
@@ -1047,6 +1066,11 @@ export const setSelectedTool = (tool: ToolType) => {
     if (store.shapeBuilderActive) setStore('shapeBuilderActive', false);
     if (store.livePaintActive) setStore('livePaintActive', false);
     if (store.widthToolActive) setStore('widthToolActive', false);
+    if (store.curveToolActive) setStore('curveToolActive', false);
+    if (store.reshapeToolActive) setStore('reshapeToolActive', false);
+    if (store.blobBrushActive) setStore('blobBrushActive', false);
+    if (store.pathEraserActive) setStore('pathEraserActive', false);
+    if (store.puppetWarpActive) setStore('puppetWarpActive', false);
     if (store.sprayerActive) { setStore('sprayerActive', false); setStore('sprayerSymbolId', null); }
     if (store.measureActive) setStore('measureActive', false);
 
@@ -3598,6 +3622,123 @@ export const toggleCutTool = (active?: boolean) => setStore('cutToolActive', v =
 export const toggleLivePaint = (active?: boolean) => setStore('livePaintActive', v => active ?? !v);
 
 export const toggleWidthTool = (active?: boolean) => setStore('widthToolActive', v => active ?? !v);
+export const toggleCurveTool = (active?: boolean) => setStore('curveToolActive', v => active ?? !v);
+export const toggleReshapeTool = (active?: boolean) => setStore('reshapeToolActive', v => active ?? !v);
+export const toggleBlobBrush = (active?: boolean) => setStore('blobBrushActive', v => active ?? !v);
+export const togglePathEraser = (active?: boolean) => setStore('pathEraserActive', v => active ?? !v);
+export const togglePuppetWarp = (active?: boolean) => setStore('puppetWarpActive', v => active ?? !v);
+export const togglePerspectiveGrid = (active?: boolean) => setStore('perspectiveGridActive', v => active ?? !v);
+
+/** Build a `path` element from world-space anchors (with handles), normalized to its bbox. */
+const buildPathFromAnchors = (worldAnchors: PathAnchor[], closed: boolean, style?: Partial<DrawingElement>): DrawingElement | null => {
+    if (worldAnchors.length < 2) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const a of worldAnchors) {
+        const xs = [a.x, a.x + (a.outX ?? 0), a.x + (a.inX ?? 0)];
+        const ys = [a.y, a.y + (a.outY ?? 0), a.y + (a.inY ?? 0)];
+        minX = Math.min(minX, ...xs); maxX = Math.max(maxX, ...xs);
+        minY = Math.min(minY, ...ys); maxY = Math.max(maxY, ...ys);
+    }
+    return {
+        ...store.defaultElementStyles,
+        id: generateId('path'), type: 'path',
+        x: minX, y: minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY),
+        pathAnchors: worldAnchors.map(a => ({ ...a, x: a.x - minX, y: a.y - minY })),
+        pathClosed: closed, angle: 0, seed: Math.floor(Math.random() * 2 ** 31),
+        roundness: null, locked: false, link: null, layerId: store.activeLayerId,
+        backgroundColor: closed ? store.defaultElementStyles.backgroundColor : 'transparent',
+        ...style,
+    } as DrawingElement;
+};
+
+/**
+ * Curvature tool — commit a smooth path through the clicked world points. The curve passes
+ * through every point (Catmull-Rom → Bézier), matching Illustrator's Curvature tool.
+ */
+/** Recompute a path element's bbox (x/y/width/height) from its anchors + handles and
+ *  re-offset the anchors so they stay relative to the new origin. Used after reshape/edit. */
+export const normalizePathElement = (id: string) => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || el.type !== 'path' || !el.pathAnchors?.length) return;
+    const a = el.pathAnchors;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const an of a) {
+        const xs = [an.x, an.x + (an.outX ?? 0), an.x + (an.inX ?? 0)];
+        const ys = [an.y, an.y + (an.outY ?? 0), an.y + (an.inY ?? 0)];
+        minX = Math.min(minX, ...xs); maxX = Math.max(maxX, ...xs);
+        minY = Math.min(minY, ...ys); maxY = Math.max(maxY, ...ys);
+    }
+    setStore('elements', e => e.id === id, {
+        x: el.x + minX, y: el.y + minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY),
+        pathAnchors: a.map(an => ({ ...an, x: an.x - minX, y: an.y - minY })),
+    } as any);
+    bumpDirtyRevision();
+};
+
+export const commitCurvature = (worldPts: { x: number; y: number }[], closed = false): string | null => {
+    if (worldPts.length < 2) return null;
+    const el = buildPathFromAnchors(catmullRomAnchors(worldPts, closed), closed);
+    if (!el) return null;
+    pushToHistory();
+    setStore('elements', list => [...list, el]);
+    setStore('selection', [el.id]);
+    bumpDirtyRevision();
+    return el.id;
+};
+
+/**
+ * Blob Brush — turn a brushed stroke into a filled shape (union of disks along the path), and
+ * merge it with any overlapping existing shape of the same fill colour (Illustrator's Blob
+ * Brush behaviour). `radius` is the half-thickness in world units.
+ */
+export const commitBlobStroke = (worldPts: { x: number; y: number }[], radius: number): string | null => {
+    if (!worldPts.length) return null;
+    const color = (store.defaultElementStyles.backgroundColor && store.defaultElementStyles.backgroundColor !== 'transparent')
+        ? store.defaultElementStyles.backgroundColor : (store.defaultElementStyles.strokeColor || '#111111');
+    // Resample so consecutive disks overlap (spacing < radius) — densify sparse drags AND
+    // thin out dense ones. Cap the point count so the union stays fast on long strokes.
+    let step = radius * 0.5;
+    let total = 0; for (let i = 1; i < worldPts.length; i++) total += Math.hypot(worldPts[i].x - worldPts[i - 1].x, worldPts[i].y - worldPts[i - 1].y);
+    if (total / step > 400) step = total / 400;
+    const pts: { x: number; y: number }[] = [worldPts[0]];
+    for (let i = 1; i < worldPts.length; i++) {
+        const a = worldPts[i - 1], b = worldPts[i];
+        const d = Math.hypot(b.x - a.x, b.y - a.y);
+        const n = Math.max(1, Math.ceil(d / step));
+        for (let k = 1; k <= n; k++) pts.push({ x: a.x + ((b.x - a.x) * k) / n, y: a.y + ((b.y - a.y) * k) / n });
+    }
+    if (pts.length === 1) pts.push({ x: pts[0].x + 0.1, y: pts[0].y });
+    const disks: Poly[] = pts.map(p => [diskRing(p.x, p.y, radius, 14)]);
+    const blob = unionPolys(disks);
+    if (!blob.length) return null;
+
+    const style: Partial<DrawingElement> = { backgroundColor: color, fillStyle: 'solid', strokeColor: color, strokeWidth: 0, renderStyle: store.defaultElementStyles.renderStyle };
+    const created: DrawingElement[] = [];
+    for (const poly of blob) { const p = buildPathFromPoly(poly, style); if (p) created.push(p); }
+    if (!created.length) return null;
+
+    // Find existing same-colour paths the blob overlaps, to merge into one (bbox prefilter).
+    const bbox = { x0: Math.min(...created.map(e => e.x)), y0: Math.min(...created.map(e => e.y)), x1: Math.max(...created.map(e => e.x + e.width)), y1: Math.max(...created.map(e => e.y + e.height)) };
+    const overlap = store.elements.filter(e => e.type === 'path' && (e.backgroundColor || '') === color && !e.livePaintFillFor &&
+        e.x < bbox.x1 && e.x + e.width > bbox.x0 && e.y < bbox.y1 && e.y + e.height > bbox.y0);
+
+    pushToHistory();
+    setStore('elements', list => [...list, ...created]);
+    if (overlap.length) {
+        const ids = [...overlap.map(e => e.id), ...created.map(e => e.id)];
+        const merged = runBooleanOp(store.elements.filter(e => ids.includes(e.id)), 'union');
+        if (merged.length) {
+            const mergedEls = merged.map(poly => buildPathFromPoly(poly, style)).filter(Boolean) as DrawingElement[];
+            setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), ...mergedEls]);
+            setStore('selection', mergedEls.map(e => e.id));
+            bumpDirtyRevision();
+            return mergedEls[0]?.id ?? null;
+        }
+    }
+    setStore('selection', created.map(e => e.id));
+    bumpDirtyRevision();
+    return created[0].id;
+};
 
 /**
  * Width tool — set a stroke-width point at parameter `t` (0..1) along an open path. Width

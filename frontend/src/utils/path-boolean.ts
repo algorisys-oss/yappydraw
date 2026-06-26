@@ -234,6 +234,25 @@ export function splitMultiPolyByLine(mp: MultiPoly, p0: [number, number], p1: [n
     return [clean(pos), clean(neg)];
 }
 
+/** A regular-polygon disk ring (closed) approximating a circle. */
+export function diskRing(cx: number, cy: number, r: number, seg = 16): Ring {
+    const ring: Ring = [];
+    for (let i = 0; i <= seg; i++) { const a = (i / seg) * Math.PI * 2; ring.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
+    return ring;
+}
+
+/** Union a list of single-polygons into a MultiPoly (used by the Blob Brush: union of disks). */
+export function unionPolys(polys: Poly[]): Poly[] {
+    const valid = polys.filter(p => p && p[0] && p[0].length >= 4);
+    if (!valid.length) return [];
+    if (valid.length === 1) return [valid[0]];
+    try {
+        const mps = valid.map(p => [p] as any);
+        const out = polygonClipping.union(mps[0], ...mps.slice(1)) as MultiPoly;
+        return (out || []).filter(p => p && p[0] && p[0].length >= 4);
+    } catch { return [valid[0]]; }
+}
+
 /** Union several faces' regions into one MultiPoly (empty → []). */
 export function unionFaces(faces: ShapeFace[]): MultiPoly {
     const regions = faces.map(f => f.region).filter(r => r.length);

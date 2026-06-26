@@ -1,0 +1,25 @@
+.cv-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    cursor: crosshair;
+    pointer-events: auto;
+    touch-action: none;
+}
+.cv-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.cv-path { fill: none; stroke: #6366f1; stroke-width: 2; stroke-dasharray: 5 3; }
+.cv-dot { fill: #6366f1; }
+.cv-dot-first { fill: #fff; stroke: #6366f1; stroke-width: 2; }
+.cv-hint {
+    position: absolute; top: 64px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 10px;
+    padding: 5px 8px 5px 12px; font-size: 12px; white-space: nowrap;
+    color: var(--text-primary, #111); background: var(--bg-panel, #fff);
+    border: 1px solid var(--border-color, #ddd); border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15); pointer-events: none;
+}
+.cv-done {
+    pointer-events: auto; cursor: pointer; font-size: 11px; font-weight: 600;
+    color: #6366f1; background: transparent; border: 1px solid #6366f1; border-radius: 6px; padding: 2px 8px;
+}
+.cv-done:hover { background: rgba(99, 102, 241, 0.1); }

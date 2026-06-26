@@ -8,7 +8,8 @@ import {
     setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode,
     updateGlobalSettings, togglePenStabilization,
     toggleShapeBuilder, toggleLivePaint, makeLivePaint, releaseLivePaint, selectSimilar, applyDistort,
-    toggleCutTool, toggleWidthTool, clearWidthProfile, toggleSymbolSprayer, setTextVertical
+    toggleCutTool, toggleWidthTool, clearWidthProfile, toggleSymbolSprayer, setTextVertical,
+    toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid
 } from "../store/app-store";
 import { flipSelected, lockSelected } from "./object-context-actions";
 import { openRepeatDialog } from "../components/repeat-dialog";
@@ -263,6 +264,12 @@ export const getCommands = (): Command[] => {
         { id: 'tool-width', label: 'Width Tool (variable stroke)', category: 'Tools', action: () => toggleWidthTool(true) },
         { id: 'action-width-reset', label: 'Reset Width Profile', category: 'Actions', action: () => clearWidthProfile([...store.selection]) },
         { id: 'tool-symbol-sprayer', label: 'Symbol Sprayer', category: 'Tools', action: () => toggleSymbolSprayer() },
+        { id: 'tool-curvature', label: 'Curvature Tool (smooth curve)', category: 'Tools', action: () => toggleCurveTool(true) },
+        { id: 'tool-reshape', label: 'Reshape Tool (bend a path)', category: 'Tools', action: () => toggleReshapeTool(true) },
+        { id: 'tool-blob-brush', label: 'Blob Brush', category: 'Tools', action: () => toggleBlobBrush(true) },
+        { id: 'tool-path-eraser', label: 'Path Eraser', category: 'Tools', action: () => togglePathEraser(true) },
+        { id: 'tool-puppet-warp', label: 'Puppet Warp', category: 'Tools', action: () => togglePuppetWarp(true) },
+        { id: 'tool-perspective-grid', label: 'Perspective Grid', category: 'Tools', action: () => togglePerspectiveGrid(true) },
         { id: 'action-vertical-type', label: 'Vertical Type (toggle)', category: 'Actions', action: () => { const id = store.selection[0]; if (id) setTextVertical(id); } },
         { id: 'action-distort-pucker', label: 'Distort: Pucker', category: 'Actions', action: () => applyDistort([...store.selection], 'pucker', 0.25) },
         { id: 'action-distort-bloat', label: 'Distort: Bloat', category: 'Actions', action: () => applyDistort([...store.selection], 'bloat', 0.25) },

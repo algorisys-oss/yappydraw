@@ -20,7 +20,7 @@ import {
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
@@ -1873,6 +1873,22 @@ export const YappyAPI = {
     /** Vertical Type — toggle stacked text orientation and resize the box to fit (top→bottom,
      *  columns right→left). */
     setTextVertical(id: string, on?: boolean) { return setTextVertical(id, on); },
+    /** Curvature tool — click points to fit a smooth curve through them. */
+    toggleCurveTool(active?: boolean) { toggleCurveTool(active); },
+    /** Create a smooth path through world points (Catmull-Rom → Bézier). */
+    createCurvature(points: { x: number; y: number }[], closed = false) { return commitCurvature(points, closed); },
+    /** Reshape tool — drag a path to bend it while pinning the endpoints. */
+    toggleReshapeTool(active?: boolean) { toggleReshapeTool(active); },
+    /** Blob brush — paint filled strokes that union into one shape. */
+    toggleBlobBrush(active?: boolean) { toggleBlobBrush(active); },
+    /** Commit a blob stroke from world points (radius = half-thickness); merges same-colour overlaps. */
+    blobStroke(points: { x: number; y: number }[], radius = 14) { return commitBlobStroke(points, radius); },
+    /** Path eraser — drag along a path to erase a span of it. */
+    togglePathEraser(active?: boolean) { togglePathEraser(active); },
+    /** Puppet Warp — drop pins, drag one to deform with the others anchored. */
+    togglePuppetWarp(active?: boolean) { togglePuppetWarp(active); },
+    /** Perspective Grid overlay. */
+    togglePerspectiveGrid(active?: boolean) { togglePerspectiveGrid(active); },
     /** Eyedropper: arm picking a style onto targets (default: selection); next canvas click on an object copies its style. */
     startEyedropper(targetIds?: string[]) { startEyedropper(targetIds); },
     /** Directly apply a source object's style to the armed targets. */
