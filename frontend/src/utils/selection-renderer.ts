@@ -202,7 +202,8 @@ export function renderElementOverlays(
 
                 // Envelope / mesh warp lattice + control-point handles (orange, distinct
                 // from the blue bbox handles). Points are centred-local; lift to world.
-                const warpGrid = getWarpGrid(el.warp);
+                // Puppet Warp drives the grid from pins, so hide the raw lattice handles there.
+                const warpGrid = el.puppetPins ? null : getWarpGrid(el.warp);
                 if (warpGrid) {
                     const { rows, cols, points } = warpGrid;
                     const W = points.map(c => {

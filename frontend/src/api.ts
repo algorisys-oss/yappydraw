@@ -20,7 +20,7 @@ import {
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
@@ -1885,10 +1885,22 @@ export const YappyAPI = {
     blobStroke(points: { x: number; y: number }[], radius = 14) { return commitBlobStroke(points, radius); },
     /** Path eraser — drag along a path to erase a span of it. */
     togglePathEraser(active?: boolean) { togglePathEraser(active); },
+    /** Carve an eraser swath (world points, radius) out of overlapping shapes (destructive). */
+    pathErase(points: { x: number; y: number }[], radius = 16) { return commitPathErase(points, radius); },
     /** Puppet Warp — drop pins, drag one to deform with the others anchored. */
     togglePuppetWarp(active?: boolean) { togglePuppetWarp(active); },
-    /** Perspective Grid overlay. */
+    /** Add a puppet pin at a world point (returns its index). */
+    addPuppetPin(id: string, x: number, y: number) { return addPuppetPin(id, x, y); },
+    /** Move puppet pin `idx` to a world point and re-deform the mesh. */
+    movePuppetPin(id: string, idx: number, x: number, y: number) { movePuppetPin(id, idx, x, y, true); },
+    /** Remove a puppet pin (omit idx to clear all pins + the warp). */
+    removePuppetPin(id: string, idx?: number) { removePuppetPin(id, idx); },
+    /** Perspective Grid overlay (2-point). */
     togglePerspectiveGrid(active?: boolean) { togglePerspectiveGrid(active); },
+    /** Set perspective grid geometry (world coords: horizonY, leftVPx, rightVPx). */
+    setPerspectiveGrid(g: { horizonY?: number; leftVPx?: number; rightVPx?: number }) { setPerspectiveGrid(g); },
+    /** Project selected shapes onto a perspective plane ('left'|'right'|'floor'). */
+    projectToPlane(plane: 'left' | 'right' | 'floor', ids?: string[]) { return projectToPlane(ids ?? [...store.selection], plane); },
     /** Eyedropper: arm picking a style onto targets (default: selection); next canvas click on an object copies its style. */
     startEyedropper(targetIds?: string[]) { startEyedropper(targetIds); },
     /** Directly apply a source object's style to the armed targets. */

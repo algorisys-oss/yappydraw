@@ -253,6 +253,16 @@ export function unionPolys(polys: Poly[]): Poly[] {
     } catch { return [valid[0]]; }
 }
 
+/** Subtract `cutters` from a target MultiPoly (Path Eraser carving a swath out of a shape). */
+export function subtractPolys(target: Poly[], cutters: Poly[]): Poly[] {
+    if (!target.length) return [];
+    if (!cutters.length) return target;
+    try {
+        const out = polygonClipping.difference(target as any, ...cutters.map(c => [c]) as any) as MultiPoly;
+        return (out || []).filter(p => p && p[0] && p[0].length >= 4);
+    } catch { return target; }
+}
+
 /** Union several faces' regions into one MultiPoly (empty → []). */
 export function unionFaces(faces: ShapeFace[]): MultiPoly {
     const regions = faces.map(f => f.region).filter(r => r.length);

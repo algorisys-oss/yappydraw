@@ -6,7 +6,7 @@ import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-type
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
-import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
+import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
 import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
@@ -123,6 +123,8 @@ interface AppState {
     puppetWarpActive: boolean;
     /** Perspective Grid overlay visibility + settings (transient UI). */
     perspectiveGridActive: boolean;
+    /** 2-point perspective grid geometry in WORLD coords (horizon + two vanishing points). */
+    perspectiveGrid: { horizonY: number; leftVPx: number; rightVPx: number } | null;
     /** Undo-history panel visibility (transient, not persisted). */
     showHistoryPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
@@ -335,6 +337,7 @@ const initialState: AppState = {
     pathEraserActive: false,
     puppetWarpActive: false,
     perspectiveGridActive: false,
+    perspectiveGrid: null,
     showHistoryPanel: false,
     meshEditActive: false,
     activeArtboardId: null,
@@ -3627,7 +3630,140 @@ export const toggleReshapeTool = (active?: boolean) => setStore('reshapeToolActi
 export const toggleBlobBrush = (active?: boolean) => setStore('blobBrushActive', v => active ?? !v);
 export const togglePathEraser = (active?: boolean) => setStore('pathEraserActive', v => active ?? !v);
 export const togglePuppetWarp = (active?: boolean) => setStore('puppetWarpActive', v => active ?? !v);
-export const togglePerspectiveGrid = (active?: boolean) => setStore('perspectiveGridActive', v => active ?? !v);
+export const togglePerspectiveGrid = (active?: boolean) => {
+    const next = active ?? !store.perspectiveGridActive;
+    setStore('perspectiveGridActive', next);
+    // Seed a sensible 2-point grid centred on the current viewport the first time it's shown.
+    if (next && !store.perspectiveGrid) {
+        const vs = store.viewState;
+        const cx = (window.innerWidth / 2 - (vs.panX || 0)) / (vs.scale || 1);
+        const cy = (window.innerHeight / 2 - (vs.panY || 0)) / (vs.scale || 1);
+        const span = 600 / (vs.scale || 1);
+        setStore('perspectiveGrid', { horizonY: cy - span * 0.15, leftVPx: cx - span, rightVPx: cx + span });
+    }
+};
+export const setPerspectiveGrid = (g: Partial<{ horizonY: number; leftVPx: number; rightVPx: number }>) =>
+    setStore('perspectiveGrid', (cur) => ({ ...(cur || { horizonY: 0, leftVPx: -600, rightVPx: 600 }), ...g }));
+
+/**
+ * Project the selected shapes onto a perspective plane of the 2-point grid by warping each
+ * shape's bounding box into a foreshortened quad converging toward the grid's vanishing
+ * point(s) — a 4-corner envelope so the existing warp render path draws the perspective.
+ * plane: 'left' | 'right' wall, or 'floor' (both VPs).
+ */
+export const projectToPlane = (ids: string[], plane: 'left' | 'right' | 'floor'): string[] => {
+    const g = store.perspectiveGrid;
+    if (!g) { showToast('Turn on the Perspective Grid first', 'info'); return []; }
+    const els = store.elements.filter(e => ids.includes(e.id));
+    if (!els.length) return [];
+    const out: string[] = [];
+    pushToHistory();
+    for (const el of els) {
+        const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+        // bbox corners in centred-local coords
+        const hw = el.width / 2, hh = el.height / 2;
+        const corners = [{ x: -hw, y: -hh }, { x: hw, y: -hh }, { x: hw, y: hh }, { x: -hw, y: hh }]; // TL,TR,BR,BL
+        // Foreshorten a world point toward a vanishing point by factor f (0=no move, 1=at VP).
+        const toward = (px: number, py: number, vpx: number, f: number) => ({ x: px + (vpx - px) * f, y: py + (g.horizonY - py) * f });
+        const warped = corners.map((c) => {
+            const wx = cx + c.x, wy = cy + c.y;
+            let p = { x: wx, y: wy };
+            // depth across the shape: the right/upper side recedes more (simple linear factor)
+            const depthX = (c.x + hw) / (2 * hw); // 0..1 left→right
+            const depthY = (c.y + hh) / (2 * hh); // 0..1 top→bottom
+            if (plane === 'right') p = toward(wx, wy, g.rightVPx, 0.18 * depthX);
+            else if (plane === 'left') p = toward(wx, wy, g.leftVPx, 0.18 * (1 - depthX));
+            else { // floor: converge both ways with depth toward the horizon (top recedes)
+                const f = 0.16 * (1 - depthY);
+                const m = toward(wx, wy, g.rightVPx, f);
+                p = toward(m.x, m.y, g.leftVPx, f);
+            }
+            return { x: p.x - cx, y: p.y - cy }; // back to centred-local for warp corners
+        });
+        setStore('elements', e => e.id === el.id, { warp: { corners: warped } } as any);
+        out.push(el.id);
+    }
+    bumpDirtyRevision();
+    showToast(`Projected to ${plane} plane`, 'success');
+    return out;
+};
+
+// ── Puppet Warp ──────────────────────────────────────────────────────────────
+// Pins (centred-local) drive the existing warp grid: each grid control point is displaced by
+// a Shepard (inverse-distance²) weighted blend of the pins' displacements, so dragging one pin
+// bends the mesh near it while the other (unmoved) pins anchor their regions. The deformed grid
+// is written to el.warp.points and the normal warp render path draws it.
+const PUPPET_RC = 7; // grid resolution
+
+const puppetRestGrid = (el: DrawingElement) => defaultWarpGrid(el.width, el.height, PUPPET_RC, PUPPET_RC).points;
+
+const recomputePuppetGrid = (el: DrawingElement): { x: number; y: number }[] => {
+    const rest = puppetRestGrid(el);
+    const pins = el.puppetPins || [];
+    if (!pins.length) return rest;
+    return rest.map(g => {
+        let nx = 0, ny = 0, den = 0;
+        for (const p of pins) {
+            const dx = g.x - p.baseX, dy = g.y - p.baseY;
+            const w = 1 / (dx * dx + dy * dy + 1); // +1 epsilon avoids singularity at the pin
+            nx += w * (p.x - p.baseX); ny += w * (p.y - p.baseY); den += w;
+        }
+        return den > 0 ? { x: g.x + nx / den, y: g.y + ny / den } : { x: g.x, y: g.y };
+    });
+};
+
+/** Add a Puppet Warp pin at a world point (initialising the warp grid on first pin). */
+export const addPuppetPin = (id: string, worldX: number, worldY: number): number => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el) return -1;
+    const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+    // un-rotate the click into the element's centred-local frame
+    const ang = -(el.angle || 0), cos = Math.cos(ang), sin = Math.sin(ang);
+    const rx = worldX - cx, ry = worldY - cy;
+    const lx = rx * cos - ry * sin, ly = rx * sin + ry * cos;
+    const pins = [...(el.puppetPins || []), { baseX: lx, baseY: ly, x: lx, y: ly }];
+    pushToHistory();
+    setStore('elements', e => e.id === id, (e) => ({
+        puppetPins: pins,
+        warp: { ...(e.warp || {}), rows: PUPPET_RC, cols: PUPPET_RC, smooth: true, points: recomputePuppetGrid({ ...e, puppetPins: pins } as DrawingElement) },
+    } as any));
+    bumpDirtyRevision();
+    return pins.length - 1;
+};
+
+/** Move the puppet pin `idx` to a world point and re-deform the mesh (RBF over the pins). */
+export const movePuppetPin = (id: string, idx: number, worldX: number, worldY: number, record = false) => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || !el.puppetPins || idx < 0 || idx >= el.puppetPins.length) return;
+    const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+    const ang = -(el.angle || 0), cos = Math.cos(ang), sin = Math.sin(ang);
+    const rx = worldX - cx, ry = worldY - cy;
+    const lx = rx * cos - ry * sin, ly = rx * sin + ry * cos;
+    const pins = el.puppetPins.map((p, i) => i === idx ? { ...p, x: lx, y: ly } : p);
+    if (record) pushToHistory();
+    setStore('elements', e => e.id === id, (e) => ({
+        puppetPins: pins,
+        warp: { ...(e.warp || {}), rows: PUPPET_RC, cols: PUPPET_RC, smooth: true, points: recomputePuppetGrid({ ...e, puppetPins: pins } as DrawingElement) },
+    } as any));
+    bumpDirtyRevision();
+};
+
+/** Remove a puppet pin (and re-deform), or clear all pins + the warp when idx is omitted. */
+export const removePuppetPin = (id: string, idx?: number) => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el) return;
+    pushToHistory();
+    if (idx === undefined) {
+        setStore('elements', e => e.id === id, { puppetPins: undefined, warp: undefined } as any);
+    } else {
+        const pins = (el.puppetPins || []).filter((_, i) => i !== idx);
+        setStore('elements', e => e.id === id, (e) => ({
+            puppetPins: pins.length ? pins : undefined,
+            warp: pins.length ? { ...(e.warp || {}), rows: PUPPET_RC, cols: PUPPET_RC, smooth: true, points: recomputePuppetGrid({ ...e, puppetPins: pins } as DrawingElement) } : undefined,
+        } as any));
+    }
+    bumpDirtyRevision();
+};
 
 /** Build a `path` element from world-space anchors (with handles), normalized to its bbox. */
 const buildPathFromAnchors = (worldAnchors: PathAnchor[], closed: boolean, style?: Partial<DrawingElement>): DrawingElement | null => {
@@ -3738,6 +3874,55 @@ export const commitBlobStroke = (worldPts: { x: number; y: number }[], radius: n
     setStore('selection', created.map(e => e.id));
     bumpDirtyRevision();
     return created[0].id;
+};
+
+/**
+ * Path Eraser — destructively carve a swath (union of disks along the drag) out of every shape
+ * it overlaps, via boolean difference (Illustrator's Eraser on filled art). Shapes fully erased
+ * are removed; the rest are replaced by the carved geometry, preserving z-order. `radius` is the
+ * eraser half-width in world units.
+ */
+export const commitPathErase = (worldPts: { x: number; y: number }[], radius: number): string[] => {
+    if (!worldPts.length) return [];
+    let step = radius * 0.5;
+    let total = 0; for (let i = 1; i < worldPts.length; i++) total += Math.hypot(worldPts[i].x - worldPts[i - 1].x, worldPts[i].y - worldPts[i - 1].y);
+    if (total / step > 400) step = total / 400;
+    const pts: { x: number; y: number }[] = [worldPts[0]];
+    for (let i = 1; i < worldPts.length; i++) {
+        const a = worldPts[i - 1], b = worldPts[i];
+        const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / step));
+        for (let k = 1; k <= n; k++) pts.push({ x: a.x + ((b.x - a.x) * k) / n, y: a.y + ((b.y - a.y) * k) / n });
+    }
+    if (pts.length === 1) pts.push({ x: pts[0].x + 0.1, y: pts[0].y });
+    const swath = unionPolys(pts.map(p => [diskRing(p.x, p.y, radius, 14)]));
+    if (!swath.length) return [];
+    let sx0 = Infinity, sy0 = Infinity, sx1 = -Infinity, sy1 = -Infinity;
+    for (const poly of swath) for (const [x, y] of poly[0]) { sx0 = Math.min(sx0, x); sy0 = Math.min(sy0, y); sx1 = Math.max(sx1, x); sy1 = Math.max(sy1, y); }
+
+    const targets = store.elements.filter(e => !e.locked && !e.livePaintFillFor &&
+        e.x < sx1 && e.x + e.width > sx0 && e.y < sy1 && e.y + e.height > sy0);
+    const consumed: string[] = [];
+    const created: DrawingElement[] = [];
+    for (const el of targets) {
+        const mp = elementToMultiPolygon(el);
+        if (!mp.length) continue;
+        const result = subtractPolys(mp, swath);
+        // unchanged (swath missed the actual geometry) → leave it alone
+        if (result.length === mp.length && result.length === 1 && result[0][0].length === mp[0][0].length) continue;
+        consumed.push(el.id);
+        const style: Partial<DrawingElement> = {
+            strokeColor: el.strokeColor, backgroundColor: el.backgroundColor, fillStyle: el.fillStyle,
+            strokeWidth: el.strokeWidth, strokeStyle: el.strokeStyle, renderStyle: el.renderStyle,
+            opacity: el.opacity, roughness: el.roughness, layerId: el.layerId,
+        };
+        for (const poly of result) { const p = buildPathFromPoly(poly, style); if (p) created.push(p); }
+    }
+    if (!consumed.length) return [];
+    pushToHistory();
+    replaceElementsPreservingOrder(consumed, created);
+    setStore('selection', created.map(e => e.id));
+    bumpDirtyRevision();
+    return created.map(e => e.id);
 };
 
 /**

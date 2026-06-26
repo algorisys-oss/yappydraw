@@ -377,6 +377,9 @@ export interface DrawingElement {
     // `points`, in the centred-local frame). `corners` [TL,TR,BR,BL] is the legacy 2×2 form,
     // still read for back-compat. Absent = no warp. See utils/envelope-warp.ts.
     warp?: { corners?: { x: number; y: number }[]; rows?: number; cols?: number; points?: { x: number; y: number }[]; smooth?: boolean };
+    /** Puppet Warp pins (centred-local coords): `base` = rest position, current = {x,y}. The
+     *  warp grid is recomputed from pin displacements via RBF interpolation. */
+    puppetPins?: { baseX: number; baseY: number; x: number; y: number }[];
     renderScale?: number; // Canvas-level scale for zoom animations (default: 1)
     parentId?: string | null;
     isCollapsed?: boolean;
