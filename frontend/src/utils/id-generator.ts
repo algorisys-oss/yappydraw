@@ -93,6 +93,12 @@ export const generateId = (type: string, batchIds?: Set<string>): string => {
     // invisible to the element scan — without this a new group after reload re-uses the same
     // id and cross-wires two groups. Scan the tags too.
     scanMax(store.elements.filter(e => (e as any).livePaintGroupId).map(e => ({ id: (e as any).livePaintGroupId })));
+    // Group / clip / trace ids live in element.groupIds[] (not as an element `.id`), so the
+    // element scan above can't see them. Without this every new group re-uses grup-1 and
+    // cross-wires separate groups — e.g. two flares select together. Scan the tags too.
+    const groupIdTags: { id: string }[] = [];
+    store.elements.forEach(e => (e.groupIds || []).forEach(g => groupIdTags.push({ id: g })));
+    scanMax(groupIdTags);
 
     // Also scan batch IDs for same-batch uniqueness
     if (batchIds) {

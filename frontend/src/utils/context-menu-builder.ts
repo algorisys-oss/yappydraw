@@ -1350,7 +1350,7 @@ export function getContextMenuItems(
                         { label: 'Arc', onClick: () => YappyAPI.createArc(cx, cy, 100, 0, 270) },
                         { label: 'Rectangular Grid', onClick: () => YappyAPI.createRectGrid(cx - 100, cy - 80, 200, 160, 4, 4) },
                         { label: 'Polar Grid', onClick: () => YappyAPI.createPolarGrid(cx, cy, 100, 3, 8) },
-                        { label: 'Lens Flare', onClick: () => YappyAPI.createFlare(cx, cy, 90, 12, 4) },
+                        { label: 'Lens Flare', onClick: () => { const ds = store.defaultElementStyles; YappyAPI.createFlare(cx, cy, 90, 12, 4, { strokeColor: ds.strokeColor || undefined, backgroundColor: (ds.backgroundColor && ds.backgroundColor !== 'transparent') ? ds.backgroundColor : undefined }); } },
                     ];
                 })(),
             },

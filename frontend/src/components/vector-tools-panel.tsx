@@ -87,7 +87,7 @@ const VectorToolsPanel: Component = () => {
                 { label: 'Arc', icon: Spline, run: () => { const c = center(); YappyAPI.createArc(c.x, c.y, 100, 0, 270); } },
                 { label: 'Rectangular Grid', icon: Grid2x2, run: () => { const c = center(); YappyAPI.createRectGrid(c.x - 100, c.y - 80, 200, 160, 4, 4); } },
                 { label: 'Polar Grid', icon: Target, run: () => { const c = center(); YappyAPI.createPolarGrid(c.x, c.y, 100, 3, 8); } },
-                { label: 'Lens Flare', icon: Sun, run: () => { const c = center(); YappyAPI.createFlare(c.x, c.y, 90, 12, 4); } },
+                { label: 'Lens Flare', icon: Sun, run: () => { const c = center(); const ds = store.defaultElementStyles; YappyAPI.createFlare(c.x, c.y, 90, 12, 4, { strokeColor: ds.strokeColor || undefined, backgroundColor: (ds.backgroundColor && ds.backgroundColor !== 'transparent') ? ds.backgroundColor : undefined }); } },
             ],
         },
     ];

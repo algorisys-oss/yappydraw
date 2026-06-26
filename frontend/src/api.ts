@@ -647,12 +647,29 @@ export const YappyAPI = {
         circ(cx, cy, radius * 2.0, { backgroundColor: glow, strokeColor: 'transparent', opacity: 22 });
         circ(cx, cy, radius * 1.15, { backgroundColor: glow, strokeColor: 'transparent', opacity: 40 });
         circ(cx, cy, radius * 0.5, { backgroundColor: '#fffbeb', strokeColor: warm, strokeWidth: 1, opacity: 95 });
-        // radiating rays (alternating long/short)
+        // radiating rays — tapered light streaks (not hard lines). Each ray is a thin
+        // triangle that emerges from the glow and narrows to a point at the tip; a wider,
+        // fainter spike sits behind a narrow warm-white core so it reads as light on both
+        // light and dark canvases.
+        const spike = (ang: number, len: number, halfW: number, color: string, o: number) => {
+            const dx = Math.cos(ang), dy = Math.sin(ang);   // ray direction
+            const px = -dy, py = dx;                        // perpendicular
+            const r0 = radius * 0.16;                       // base sits just outside the core
+            const bx = cx + dx * r0, by = cy + dy * r0;     // base centre
+            const tx = cx + dx * len, ty = cy + dy * len;   // apex (tip)
+            const anchors: PathAnchor[] = [
+                { x: bx + px * halfW, y: by + py * halfW, kind: 'corner' },
+                { x: tx, y: ty, kind: 'corner' },
+                { x: bx - px * halfW, y: by - py * halfW, kind: 'corner' },
+            ];
+            const id = this.createPath(anchors, { ...options, closed: true, fillStyle: 'solid', backgroundColor: color, strokeColor: 'transparent', strokeWidth: 0, opacity: o });
+            if (id) ids.push(id);
+        };
         for (let i = 0; i < rays; i++) {
             const ang = (i / rays) * Math.PI * 2;
-            const len = radius * (i % 2 === 0 ? 1.25 : 0.7);
-            const id = this.createLine(cx, cy, cx + Math.cos(ang) * len, cy + Math.sin(ang) * len, { ...options, strokeColor: warm, strokeWidth: 1.5, opacity: 70 });
-            if (id) ids.push(id);
+            const len = radius * (i % 2 === 0 ? 1.3 : 0.72);
+            spike(ang, len, radius * 0.07, warm, 34);        // soft amber halo (wide, faint)
+            spike(ang, len * 0.94, radius * 0.022, '#fffbeb', 82); // hot warm-white core (narrow, bright)
         }
         // halo rings
         for (let k = 1; k <= 2; k++) circ(cx, cy, radius * (0.9 + k * 0.6), { backgroundColor: 'transparent', strokeColor: warm, strokeWidth: 1.5, opacity: 50 });

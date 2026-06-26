@@ -74,7 +74,7 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 2605 | Theme:3 ElementOptions:79 ElementType:462 as:462 Window:2597
+frontend/src/api.ts | typescript | 2622 | Theme:3 ElementOptions:79 ElementType:462 as:462 Window:2614
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1348 | Component:1 App:84 moves:99 onPenMove:100 hidePen:104 handleKeyDown:129 handleFullscreenChange:708 handleBeforeUnload:714 handlePaste:718 handleGlobalDragEnter:820 handleGlobalDragOver:835 showDropFallbackPrompt:854 cleanup:884 outsideClick:912 isImageFile:924 first:925 must:938 extractDropData:940 processExtractedDrop:995 handleGlobalDrop:1091 handleDocumentDrop:1137
 frontend/src/assets/player-assets.ts | typescript | 3 | hh:2
@@ -436,7 +436,7 @@ frontend/src/utils/group-utils.ts | typescript | 81 | getGroupBoundingBox:6 isPo
 frontend/src/utils/handle-detection.ts | typescript | 459 | unrotatePoint:18 getSelectionBoundingBox:25 getHandleAtPosition:53
 frontend/src/utils/hierarchy.ts | typescript | 68 | getDescendants:44 isDescendantOf:65
 frontend/src/utils/hit-testing.ts | typescript | 422 | unrotatePoint:27 unshearPoint:35 hitTestElement:61 hitTestGeometry:91 hitTestPathElement:344 isPointInEraseHole:374
-frontend/src/utils/id-generator.ts | typescript | 113 | generateId:54 scanMax:71
+frontend/src/utils/id-generator.ts | typescript | 119 | generateId:54 scanMax:71
 frontend/src/utils/image-cache.ts | typescript | 33 | setImageLoadCallback:6 getImage:10
 frontend/src/utils/image-crop-utils.ts | typescript | 330 | CropHandle:10 cropToSourcePixels:15 sourceToCropLocal:33 initCropRect:51 finalizeCropRect:65 renderCropOverlay:86 getCropHandlePositions:182 hitTestCropHandle:206 applyCropDrag:240 getCropHandleCursor:321
 frontend/src/utils/image-filter-utils.ts | typescript | 34 | buildFilterString:7 hasActiveFilters:32
