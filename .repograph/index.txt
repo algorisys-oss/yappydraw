@@ -223,7 +223,7 @@ frontend/src/components/uml-tool-group.tsx | typescript | 145 | Component:1 UmlT
 frontend/src/components/unsaved-changes-dialog.css | - | 111 |
 frontend/src/components/unsaved-changes-dialog.tsx | typescript | 53 | Component:1 UnsavedChangesDialogProps:5 UnsavedChangesDialog:12 handleKeyDown:13
 frontend/src/components/vector-tools-panel.css | - | 70 |
-frontend/src/components/vector-tools-panel.tsx | typescript | 163 | Component:1 Tool:24 VectorToolsPanel:26 center:30 selText:37 modeRun:40 setupPanel:103
+frontend/src/components/vector-tools-panel.tsx | typescript | 165 | Component:1 Tool:24 VectorToolsPanel:26 center:30 selTexts:39 modeRun:42 setupPanel:105
 frontend/src/components/video-overlay.css | - | 70 |
 frontend/src/components/video-overlay.tsx | typescript | 204 | Component:1 onDragStart:69 onDragMove:83 onDragEnd:91 toggleLock:98 close:104 VideoOverlay:177 handleKeyDown:179
 frontend/src/components/video-url-dialog.css | - | 183 |
@@ -546,6 +546,8 @@ scripts/publish-oss.sh | shell | 193 | info:40 warn:41 error:42
 scripts/repograph-refresh.sh | shell | 25 |
 scripts/test_relative_path.ts | typescript | 58 |
 tests/_mesh.spec.ts | typescript | 48 | w2s:33 key:42
+tests/algorisys-logo.spec.ts | typescript | 188 | the:6 sleep:44 setCur:56 ease:57 moveToClient:58 moveTo:59 clickFx:60 findBtn:61 cue:68 ensureTool:77 panel:85 sleepC:86 estW:89 text:90 pathC:91 line:92
+tests/algorisys-poster.spec.ts | typescript | 289 | to:6 sleep:49 setCur:68 ease:70 moveToClient:71 moveTo:75 clickFx:76 findBtn:85 cue:92 ensureTool:105 place:112 think:115 estW:119 tctr:120 tleft:122 line:124 typeText:127 swoosh:137 at:138 drawHRMS:231 drawPay:232 drawSkill:233
 tests/align-distribute.spec.ts | typescript | 63 | S:10 getX:11
 tests/alignment.spec.ts | typescript | 79 |
 tests/api.spec.ts | typescript | 155 |
@@ -597,11 +599,15 @@ tests/measure.spec.ts | typescript | 38 |
 tests/mesh-drag.spec.ts | typescript | 57 | S:13 w2s:33
 tests/mesh-overlay.spec.ts | typescript | 55 | w2s:27 near:31
 tests/mesh-smooth.spec.ts | typescript | 40 | S:9 sample:22
+tests/mono-logo.spec.ts | typescript | 256 | two:5 sleep:66 setCur:79 ease:80 moveToClient:81 moveTo:82 clickFx:83 findBtn:84 cue:94 ensureTool:103 estW:104 realW:107 centre:108 panel:111 line:112 the:126 mk:132 tline:218
 tests/panel-drag.spec.ts | typescript | 35 |
 tests/path-eraser.spec.ts | typescript | 18 |
 tests/pen-features.spec.ts | typescript | 146 |
 tests/perspective-grid.spec.ts | typescript | 24 |
 tests/productivity-features.spec.ts | typescript | 116 |
+tests/propeak-1.spec.ts | typescript | 281 | sleep:51 setCur:68 ease:70 moveToClient:71 moveTo:75 clickFx:76 findBtn:85 cue:92 ensureTool:105 place:112 think:115 estW:119 tctr:120 line:124 typeAt:126 swoosh:133 at:134 refURL:155
+tests/propeak-2.spec.ts | typescript | 233 | two:6 sleep:49 setCur:66 ease:68 moveToClient:69 moveTo:73 clickFx:74 findBtn:83 cue:93 ensureTool:105 place:112 think:115 estW:116 tctr:117 centre:121 pR:137
+tests/propeak-variations.spec.ts | typescript | 196 | sleep:46 setCur:52 ease:53 moveToClient:54 moveTo:55 clickFx:56 cue:61 estW:72 text:73 pathC:74
 tests/puppet-warp.spec.ts | typescript | 29 |
 tests/quick-toolbar-fontsize.spec.ts | typescript | 35 |
 tests/recolor-live.spec.ts | typescript | 18 |

@@ -34,7 +34,9 @@ const VectorToolsPanel: Component = () => {
             y: (window.innerHeight / 2 - (vs.panY || 0)) / (vs.scale || 1),
         };
     };
-    const selText = () => { const e = store.elements.find(el => el.id === store.selection[0]); return e && (e.type === 'text' || e.type === 'richtext') ? e : null; };
+    // All selected text/richtext elements (so panel text actions apply to the whole selection,
+    // not just the first-selected one).
+    const selTexts = () => store.elements.filter(el => store.selection.includes(el.id) && (el.type === 'text' || el.type === 'richtext'));
     // Exclusive mode activation: clicking a mode-tool turns OFF every other overlay (no stacking),
     // and toggles the clicked one. (`turnOn` may be special-cased, e.g. the Symbol Sprayer.)
     const modeRun = (isOn: () => boolean, turnOn: () => void) => () => { const was = isOn(); exitAllToolModes(); if (!was) turnOn(); };
@@ -76,7 +78,7 @@ const VectorToolsPanel: Component = () => {
         },
         {
             name: 'Text', tools: [
-                { label: 'Vertical Type', icon: AlignVerticalJustifyCenter, active: () => !!selText()?.verticalText, run: () => { const t = selText(); if (t) setTextVertical(t.id); } },
+                { label: 'Vertical Type', icon: AlignVerticalJustifyCenter, active: () => { const ts = selTexts(); return ts.length > 0 && ts.every(t => !!t.verticalText); }, run: () => { const ts = selTexts(); if (!ts.length) return; const makeVertical = ts.some(t => !t.verticalText); ts.forEach(t => setTextVertical(t.id, makeVertical)); } },
                 { label: 'Touch Type', icon: TextCursor, active: () => store.touchTypeActive, run: modeRun(() => store.touchTypeActive, () => toggleTouchType(true)) },
                 { label: 'Type on Path', icon: Type, active: () => store.typeOnPathActive, run: modeRun(() => store.typeOnPathActive, () => toggleTypeOnPath(true)) },
             ],
