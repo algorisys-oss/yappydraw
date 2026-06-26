@@ -10,7 +10,7 @@ import {
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
-    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
+    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
@@ -1802,6 +1802,8 @@ export const YappyAPI = {
     mindmapFromOutline(parentId: string, outline: string) { return pasteMindmapOutline(parentId, parseOutline(outline)); },
     /** Pathfinder boolean over ≥2 element ids: 'union' | 'subtract' | 'intersect' | 'exclude'. Returns new path ids. */
     pathfinder(ids: string[], op: 'union' | 'subtract' | 'intersect' | 'exclude') { return applyPathfinder(ids, op); },
+    /** Pathfinder region ops over ≥2 element ids: 'divide' | 'trim' | 'merge' | 'crop' | 'outline'. Returns new path ids. */
+    pathfinderRegion(ids: string[], op: 'divide' | 'trim' | 'merge' | 'crop' | 'outline') { return applyPathfinderRegion(ids, op); },
     /** Convert shapes to editable vector paths (in place). Returns the converted ids. */
     convertToPath(ids: string[]) { return convertToPath(ids); },
     /** Text → Outlines: replace text elements with editable vector glyph paths (async). Returns a promise of new path ids. */

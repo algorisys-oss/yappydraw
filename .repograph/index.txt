@@ -74,7 +74,7 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 2622 | Theme:3 ElementOptions:79 ElementType:462 as:462 Window:2614
+frontend/src/api.ts | typescript | 2624 | Theme:3 ElementOptions:79 ElementType:462 as:462 Window:2616
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1349 | Component:1 App:84 moves:99 onPenMove:100 hidePen:104 handleKeyDown:129 handleFullscreenChange:709 handleBeforeUnload:715 handlePaste:719 handleGlobalDragEnter:821 handleGlobalDragOver:836 showDropFallbackPrompt:855 cleanup:885 outsideClick:913 isImageFile:925 first:926 must:939 extractDropData:941 processExtractedDrop:996 handleGlobalDrop:1092 handleDocumentDrop:1138
 frontend/src/assets/player-assets.ts | typescript | 3 | hh:2
@@ -142,7 +142,7 @@ frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
 frontend/src/components/mindmap-tool-group.tsx | typescript | 135 | Component:1 MindmapToolGroup:16 handler:23 getActiveMindmapTool:34 handleToolClick:48 as:56 as:61 handleRightClick:68 toggleMenu:74 as:76 activeTool:81 isActive:82 getDropdownPosition:84
 frontend/src/components/minimap.tsx | typescript | 282 | MinimapProps:8 Minimap:13 getContentBounds:23 getMinimapScale:56 renderMinimap:63 handleClick:123 handlePointerDown:147 handlePointerMove:173 handlePointerUp:194 track:209
-frontend/src/components/p3-color-picker.tsx | typescript | 256 | Component:1 setPalettePinned:14 ColorPalettePicker:19 activePalette:24 applyAsset:26 onSwatchPointerDown:73 onSwatchPointerMove:78 onSwatchPointerUp:90 handleDragStart:101
+frontend/src/components/p3-color-picker.tsx | typescript | 264 | Component:1 setPalettePinned:14 ColorPalettePicker:19 activePalette:24 applyAsset:26 onSwatchPointerDown:81 onSwatchPointerMove:86 onSwatchPointerUp:98 handleDragStart:109
 frontend/src/components/path-editor-overlay.tsx | typescript | 303 | Component:8 onMove:120 onUp:156
 frontend/src/components/path-eraser-overlay.css | - | 24 |
 frontend/src/components/path-eraser-overlay.tsx | typescript | 62 | PathEraserOverlay:11 active:17 toWorld:18 onDown:20 onMove:25 onUp:26 onKey:32 scale:42 strokeScreen:43 cur:44
@@ -370,7 +370,7 @@ frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 Folder
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 5857 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:35 ResolvedTheme:36 AppState:63 HistorySnapshot:435 AlignmentType:3413 DistributionType:3413 SelBBox:4598 LastTransform:4848 buildPathFromPoly:5456 WorldSub:5540 rdpAnchors:5543 normalizeWorldSubs:5571 makePathFromWorldSubs:5586 elementToWorldSubs:5607 startInkCleanupIfNeeded:5796
+frontend/src/store/app-store.ts | typescript | 5918 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:35 ResolvedTheme:36 AppState:63 HistorySnapshot:435 AlignmentType:3413 DistributionType:3413 SelBBox:4598 LastTransform:4848 RegionPathfinderOp:5148 buildPathFromPoly:5517 WorldSub:5601 rdpAnchors:5604 normalizeWorldSubs:5632 makePathFromWorldSubs:5647 elementToWorldSubs:5668 startInkCleanupIfNeeded:5857
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -421,7 +421,7 @@ frontend/src/utils/color-adjust.ts | typescript | 69 | hexToHsl:12 hslToHex:29 s
 frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:28
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 401 | Command:19
-frontend/src/utils/context-menu-builder.ts | typescript | 1578 | MergedCellRegion:55 buildSelectByTypeMenu:71 buildSelectBySamePropertyMenu:150 getContextMenuItems:180 buildFormatMenuItems:1409 buildBorderMenuItems:1504
+frontend/src/utils/context-menu-builder.ts | typescript | 1583 | MergedCellRegion:55 buildSelectByTypeMenu:71 buildSelectBySamePropertyMenu:150 getContextMenuItems:180 buildFormatMenuItems:1414 buildBorderMenuItems:1509
 frontend/src/utils/curve-fit.ts | typescript | 38 | Pt:10 catmullRomAnchors:13
 frontend/src/utils/draggable-panel.ts | typescript | 46 | makeDraggable:11 draggablePanel:41
 frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperationParams:23 getOperationsForType:79 parseValues:87 bstInsert:99 bstRemove:138 nodeAt:154 bstDeleteAt:159 moveSubtreeUp:192 collectRelative:211 clearSubtree:219 relToAbs:227 simpleHash:247 hashTablePut:259 hashTableRemove:270 animateDsOperation:287 executeDsOperation:350 abortDsAlgorithm:544 isDsAlgorithmRunning:551 setDsAnimationSpeed:555 getDsAnimationSpeed:559 clearDsHighlights:563 animateDsStep:580 compareValues:604 bubbleSort:613 selectionSort:662 insertionSort:714 linearSearch:765 binarySearch:796 bfsTraversal:853 dfsInorderTraversal:882 dfsPreorderTraversal:912 executeDsSortSearch:944

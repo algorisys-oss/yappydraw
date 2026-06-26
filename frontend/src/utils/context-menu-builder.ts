@@ -25,7 +25,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp,
     zoomToFit, zoomToFitSlide, updateGlobalSettings,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
@@ -1066,6 +1066,11 @@ export function getContextMenuItems(
                     { label: 'Subtract (minus front)', icon: '◐', onClick: () => applyPathfinder([...store.selection], 'subtract') },
                     { label: 'Intersect', icon: '◑', onClick: () => applyPathfinder([...store.selection], 'intersect') },
                     { label: 'Exclude', icon: '◓', onClick: () => applyPathfinder([...store.selection], 'exclude') },
+                    { label: 'Divide', icon: '▦', onClick: () => applyPathfinderRegion([...store.selection], 'divide') },
+                    { label: 'Trim', icon: '◰', onClick: () => applyPathfinderRegion([...store.selection], 'trim') },
+                    { label: 'Merge', icon: '◧', onClick: () => applyPathfinderRegion([...store.selection], 'merge') },
+                    { label: 'Crop', icon: '⊡', onClick: () => applyPathfinderRegion([...store.selection], 'crop') },
+                    { label: 'Outline', icon: '◌', onClick: () => applyPathfinderRegion([...store.selection], 'outline') },
                 ],
             });
         }

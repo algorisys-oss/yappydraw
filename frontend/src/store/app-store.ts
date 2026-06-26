@@ -5145,6 +5145,67 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
     return created.map(c => c.id);
 };
 
+export type RegionPathfinderOp = 'divide' | 'trim' | 'merge' | 'crop' | 'outline';
+
+/**
+ * Illustrator "Pathfinders" (region ops) over ≥2 selected shapes, built on the atomic-face
+ * engine (`computeShapeFaces`). Back→front z-order; each face is coloured by the frontmost
+ * shape covering it.
+ *   • divide  — every overlap region becomes its own path
+ *   • trim    — hidden (covered) parts removed; one path per shape, same colours NOT merged
+ *   • merge   — like trim, but adjacent same-fill shapes fuse into one path
+ *   • crop    — keep only what lies inside the FRONTMOST shape; that shape is discarded
+ *   • outline — region boundaries become strokes (no fill)
+ */
+export const applyPathfinderRegion = (ids: string[], op: RegionPathfinderOp): string[] => {
+    const els = store.elements.filter(e => ids.includes(e.id));
+    if (els.length < 2) { showToast('Pathfinder: select 2+ shapes', 'info'); return []; }
+    if (els.length > 8) { showToast('Pathfinder: region ops support up to 8 shapes', 'info'); return []; }
+    els.sort((a, b) => store.elements.indexOf(a) - store.elements.indexOf(b));   // back → front
+    const faces = computeShapeFaces(els);
+    if (!faces.length) { showToast('Pathfinder: empty result', 'info'); return []; }
+
+    const top = (subset: number[]) => Math.max(...subset);
+    const styleOf = (i: number): Partial<DrawingElement> => {
+        const b = els[i];
+        return { strokeColor: b.strokeColor, backgroundColor: b.backgroundColor, fillStyle: b.fillStyle, strokeWidth: b.strokeWidth, strokeStyle: b.strokeStyle, renderStyle: b.renderStyle, opacity: b.opacity, roughness: b.roughness, layerId: b.layerId };
+    };
+    const created: DrawingElement[] = [];
+    const emit = (region: any, styleIdx: number, overrides?: Partial<DrawingElement>) => {
+        for (const poly of region) { const p = buildPathFromPoly(poly, { ...styleOf(styleIdx), ...overrides }); if (p) created.push(p); }
+    };
+
+    if (op === 'divide') {
+        for (const f of faces) emit(f.region, top(f.subset));
+    } else if (op === 'outline') {
+        for (const f of faces) { const ti = top(f.subset); const col = (els[ti].backgroundColor && els[ti].backgroundColor !== 'transparent') ? els[ti].backgroundColor : els[ti].strokeColor; emit(f.region, ti, { backgroundColor: 'transparent', fillStyle: 'solid', strokeColor: col || '#000000', strokeWidth: Math.max(2, els[ti].strokeWidth || 2) }); }
+    } else if (op === 'crop') {
+        const cropIdx = els.length - 1;                              // frontmost = crop mask
+        for (const f of faces) {
+            if (!f.subset.includes(cropIdx)) continue;               // outside the crop → drop
+            const under = f.subset.filter(i => i !== cropIdx);
+            if (!under.length) continue;                             // only the crop shape → drop
+            emit(f.region, Math.max(...under));                      // colour by topmost underlying shape
+        }
+    } else { // trim | merge
+        const groups = new Map<string, { idx: number; faces: ShapeFace[] }>();
+        for (const f of faces) {
+            const ti = top(f.subset);
+            const key = op === 'merge' ? `${els[ti].backgroundColor || ''}|${els[ti].fillStyle || ''}` : String(ti);
+            const g = groups.get(key) || { idx: ti, faces: [] };
+            g.idx = ti; g.faces.push(f); groups.set(key, g);
+        }
+        for (const g of groups.values()) { const region = unionFaces(g.faces); for (const poly of region) { const p = buildPathFromPoly(poly, styleOf(g.idx)); if (p) created.push(p); } }
+    }
+
+    if (!created.length) { showToast('Pathfinder: empty result', 'info'); return []; }
+    pushToHistory();
+    replaceElementsPreservingOrder(ids, created);
+    setStore('selection', created.map(c => c.id));
+    showToast(`Pathfinder: ${op}`, 'success');
+    return created.map(c => c.id);
+};
+
 /**
  * Decompose the selected shapes into atomic faces (the maximal regions bounded by a
  * unique subset of the shapes) for the face-level Shape Builder. Exposed so the overlay

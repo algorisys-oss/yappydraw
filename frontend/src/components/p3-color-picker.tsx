@@ -34,7 +34,15 @@ export const ColorPalettePicker: Component = () => {
             updateDefaultStyles({ strokeColor: data });
             if (store.selection.length > 0) {
                 pushToHistory();
-                store.selection.forEach(id => updateElement(id, { strokeColor: data }));
+                store.selection.forEach(id => {
+                    const el = store.elements.find(e => e.id === id);
+                    // For text the visible colour is `textColor || strokeColor`, so also set
+                    // textColor — otherwise a baked-in textColor (from defaults) overrides it
+                    // and the font colour never changes.
+                    const patch = (el && (el.type === 'text' || el.type === 'richtext'))
+                        ? { strokeColor: data, textColor: data } : { strokeColor: data };
+                    updateElement(id, patch);
+                });
             }
             return;
         }
