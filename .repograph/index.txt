@@ -103,8 +103,8 @@ frontend/src/components/connector-tool-group.css | - | 20 |
 frontend/src/components/connector-tool-group.tsx | typescript | 136 | Component:1 ConnectorType:8 ConnectorToolGroup:18 handler:25 getCurrentTool:35 isConnectorToolActive:39 handleSelectConnector:47 handleRightClick:69 toggleMenu:75 getDropdownPosition:82
 frontend/src/components/context-menu.css | - | 74 |
 frontend/src/components/context-menu.tsx | typescript | 193 | Component:1 MenuItem:4 ContextMenuProps:18 ContextMenu:27 handleClickOutside:58 handleKeyDown:65 handleItemClick:84 handleMouseEnter:96 handleMouseLeave:105
-frontend/src/components/cut-overlay.css | - | 38 |
-frontend/src/components/cut-overlay.tsx | typescript | 80 | CutOverlay:14 active:20 toWorld:21 onDown:23 onMove:29 onUp:30 onKey:52 lineScreen:61
+frontend/src/components/cut-overlay.css | - | 55 |
+frontend/src/components/cut-overlay.tsx | typescript | 83 | CutOverlay:14 active:20 toWorld:21 onDown:23 onMove:29 onUp:30 onKey:52 lineScreen:61
 frontend/src/components/data-metrics-tool-group.tsx | typescript | 195 | Component:1 DataMetricsToolGroup:80 handler:87 getActiveTool:97 handleToolClick:106 as:114 as:120 handleRightClick:128 toggleMenu:134 activeTool:141 isActive:142 getDropdownPosition:144
 frontend/src/components/ds-ops-panel.tsx | typescript | 397 | Component:8 DsOperation:15 DsOpsPanel:19 resetAutoHide:47 handleOperation:79 handleStop:120 handleSpeedChange:125 handleInputKeyDown:131 stopPropagation:153
 frontend/src/components/ds-tool-group.tsx | typescript | 134 | Component:1 DsToolGroup:19 handler:26 getActiveTool:36 handleToolClick:45 as:53 as:59 handleRightClick:67 toggleMenu:73 activeTool:80 isActive:81 getDropdownPosition:83
@@ -348,7 +348,7 @@ frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 Folder
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 5299 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:33 ResolvedTheme:34 AppState:61 HistorySnapshot:395 AlignmentType:3358 DistributionType:3358 SelBBox:4042 LastTransform:4292 buildPathFromPoly:4899 WorldSub:4982 rdpAnchors:4985 normalizeWorldSubs:5013 makePathFromWorldSubs:5028 elementToWorldSubs:5049 startInkCleanupIfNeeded:5238
+frontend/src/store/app-store.ts | typescript | 5309 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:33 ResolvedTheme:34 AppState:61 HistorySnapshot:395 AlignmentType:3368 DistributionType:3368 SelBBox:4052 LastTransform:4302 buildPathFromPoly:4909 WorldSub:4992 rdpAnchors:4995 normalizeWorldSubs:5023 makePathFromWorldSubs:5038 elementToWorldSubs:5059 startInkCleanupIfNeeded:5248
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -558,6 +558,7 @@ tests/hotkeys.spec.ts | typescript | 199 |
 tests/image-trace.spec.ts | typescript | 89 |
 tests/isometric-cube.spec.ts | typescript | 34 |
 tests/isometric-flex.spec.ts | typescript | 35 |
+tests/knife-exit.spec.ts | typescript | 36 | active:3
 tests/knife-scissors.spec.ts | typescript | 36 |
 tests/layer-background.spec.ts | typescript | 50 |
 tests/layers.spec.ts | typescript | 260 |

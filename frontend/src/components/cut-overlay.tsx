@@ -73,7 +73,10 @@ export const CutOverlay = () => {
                         {(l) => <line x1={l().x1} y1={l().y1} x2={l().x2} y2={l().y2} class="cut-line" />}
                     </Show>
                 </svg>
-                <div class="cut-hint">Knife / Scissors — drag a line to slice · click a path to split · Esc to exit</div>
+                <div class="cut-hint">
+                    Knife / Scissors — drag a line to slice · click a path to split
+                    <button class="cut-done" onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); toggleCutTool(false); }}>Done ✕</button>
+                </div>
             </div>
         </Show>
     );

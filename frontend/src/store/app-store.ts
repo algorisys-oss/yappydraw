@@ -1039,6 +1039,16 @@ export const setCursorPosition = (pos: { x: number; y: number }) => {
 };
 
 export const setSelectedTool = (tool: ToolType) => {
+    // 0. Picking any tool exits the transient overlay modes (Knife/Scissors, Shape Builder,
+    //    Live Paint, Width, Symbol Sprayer, Measure) — otherwise their full-screen overlay
+    //    keeps intercepting the canvas and the user feels stuck.
+    if (store.cutToolActive) setStore('cutToolActive', false);
+    if (store.shapeBuilderActive) setStore('shapeBuilderActive', false);
+    if (store.livePaintActive) setStore('livePaintActive', false);
+    if (store.widthToolActive) setStore('widthToolActive', false);
+    if (store.sprayerActive) { setStore('sprayerActive', false); setStore('sprayerSymbolId', null); }
+    if (store.measureActive) setStore('measureActive', false);
+
     // 1. Save current tool's styles
     const currentTool = store.selectedTool;
     if (currentTool !== 'selection' && currentTool !== 'lasso') {
