@@ -637,33 +637,31 @@ export const YappyAPI = {
      * "ghost" circles along an axis, grouped. `rays` spokes, `ghosts` lens reflections.
      */
     createFlare(cx: number, cy: number, radius: number, rays = 12, ghosts = 4, options?: ElementOptions): string | null {
+        // NOTE: element opacity is on a 0–100 scale (not 0–1).
         const ids: string[] = [];
-        const warm = options?.strokeColor || '#fde68a';
-        const core = options?.backgroundColor || '#fffbeb';
-        // central glow
-        const g0 = this.createCircle(cx - radius * 0.28, cy - radius * 0.28, radius * 0.56, radius * 0.56, { ...options, backgroundColor: core, strokeColor: warm, opacity: 0.9 });
-        if (g0) ids.push(g0);
-        // radiating rays
+        const warm = options?.strokeColor || '#f59e0b';   // amber — visible on light & dark
+        const glow = options?.backgroundColor || '#fde68a';
+        const circ = (x: number, y: number, d: number, o: Partial<ElementOptions>) => { const id = this.createCircle(x - d / 2, y - d / 2, d, d, { ...options, ...o } as ElementOptions); if (id) ids.push(id); };
+
+        // soft outer glow → bright core (concentric, increasing opacity)
+        circ(cx, cy, radius * 2.0, { backgroundColor: glow, strokeColor: 'transparent', opacity: 22 });
+        circ(cx, cy, radius * 1.15, { backgroundColor: glow, strokeColor: 'transparent', opacity: 40 });
+        circ(cx, cy, radius * 0.5, { backgroundColor: '#fffbeb', strokeColor: warm, strokeWidth: 1, opacity: 95 });
+        // radiating rays (alternating long/short)
         for (let i = 0; i < rays; i++) {
             const ang = (i / rays) * Math.PI * 2;
-            const len = radius * (i % 2 === 0 ? 1 : 0.6);
-            const id = this.createLine(cx, cy, cx + Math.cos(ang) * len, cy + Math.sin(ang) * len, { ...options, strokeColor: warm, opacity: 0.5 });
+            const len = radius * (i % 2 === 0 ? 1.25 : 0.7);
+            const id = this.createLine(cx, cy, cx + Math.cos(ang) * len, cy + Math.sin(ang) * len, { ...options, strokeColor: warm, strokeWidth: 1.5, opacity: 70 });
             if (id) ids.push(id);
         }
         // halo rings
-        for (let k = 1; k <= 2; k++) {
-            const rr = radius * (0.5 + k * 0.32);
-            const ring = this.createArc(cx, cy, rr, 0, 360, { ...options, strokeColor: warm, backgroundColor: 'transparent', opacity: 0.35 });
-            if (ring) ids.push(ring);
-        }
+        for (let k = 1; k <= 2; k++) circ(cx, cy, radius * (0.9 + k * 0.6), { backgroundColor: 'transparent', strokeColor: warm, strokeWidth: 1.5, opacity: 50 });
         // ghost reflections along the 45° axis
         for (let j = 1; j <= ghosts; j++) {
             const t = j / (ghosts + 1);
             const gx = cx + Math.cos(Math.PI / 4) * radius * 2 * (t - 0.3);
             const gy = cy + Math.sin(Math.PI / 4) * radius * 2 * (t - 0.3);
-            const gr = radius * (0.12 + 0.16 * (j % 2));
-            const gc = this.createCircle(gx - gr, gy - gr, gr * 2, gr * 2, { ...options, backgroundColor: 'transparent', strokeColor: warm, opacity: 0.4 });
-            if (gc) ids.push(gc);
+            circ(gx, gy, radius * (0.24 + 0.32 * (j % 2)), { backgroundColor: glow, strokeColor: warm, strokeWidth: 1, opacity: 45 });
         }
         if (!ids.length) return null;
         this.setSelected(ids); groupSelected();

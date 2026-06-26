@@ -6,7 +6,7 @@ import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-type
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
-import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
+import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, smoothPoly, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
 import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
@@ -3950,9 +3950,11 @@ export const commitBlobStroke = (worldPts: { x: number; y: number }[], radius: n
         ? store.defaultElementStyles.backgroundColor : (store.defaultElementStyles.strokeColor || '#111111');
     // Resample so consecutive disks overlap (spacing < radius) — densify sparse drags AND
     // thin out dense ones. Cap the point count so the union stays fast on long strokes.
-    let step = radius * 0.5;
+    // Tight spacing + many-sided disks so the union outline barely scallops, then Chaikin-smooth
+    // the result → smooth blob edges (vs the bumpy union of a few coarse disks).
+    let step = radius * 0.3;
     let total = 0; for (let i = 1; i < worldPts.length; i++) total += Math.hypot(worldPts[i].x - worldPts[i - 1].x, worldPts[i].y - worldPts[i - 1].y);
-    if (total / step > 400) step = total / 400;
+    if (total / step > 600) step = total / 600;
     const pts: { x: number; y: number }[] = [worldPts[0]];
     for (let i = 1; i < worldPts.length; i++) {
         const a = worldPts[i - 1], b = worldPts[i];
@@ -3961,9 +3963,10 @@ export const commitBlobStroke = (worldPts: { x: number; y: number }[], radius: n
         for (let k = 1; k <= n; k++) pts.push({ x: a.x + ((b.x - a.x) * k) / n, y: a.y + ((b.y - a.y) * k) / n });
     }
     if (pts.length === 1) pts.push({ x: pts[0].x + 0.1, y: pts[0].y });
-    const disks: Poly[] = pts.map(p => [diskRing(p.x, p.y, radius, 14)]);
-    const blob = unionPolys(disks);
-    if (!blob.length) return null;
+    const disks: Poly[] = pts.map(p => [diskRing(p.x, p.y, radius, 24)]);
+    const raw = unionPolys(disks);
+    if (!raw.length) return null;
+    const blob = raw.map(poly => smoothPoly(poly, 2, radius * 0.08)); // simplify noise → Chaikin-smooth
 
     const style: Partial<DrawingElement> = { backgroundColor: color, fillStyle: 'solid', strokeColor: color, strokeWidth: 0, renderStyle: store.defaultElementStyles.renderStyle };
     const created: DrawingElement[] = [];

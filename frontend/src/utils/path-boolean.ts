@@ -234,6 +234,61 @@ export function splitMultiPolyByLine(mp: MultiPoly, p0: [number, number], p1: [n
     return [clean(pos), clean(neg)];
 }
 
+/** Chaikin corner-cutting on a closed ring — rounds off the scalloped union-of-disks outline
+ *  into a smooth blob edge. Each iteration replaces every corner with two points at 1/4 & 3/4. */
+export function chaikinRing(ring: Ring, iterations = 2): Ring {
+    let pts: Ring = ring;
+    for (let it = 0; it < iterations; it++) {
+        const n = pts.length;
+        if (n < 4) break;
+        const closed = pts[0][0] === pts[n - 1][0] && pts[0][1] === pts[n - 1][1];
+        const src = closed ? pts.slice(0, n - 1) : pts;
+        const m = src.length;
+        const out: Ring = [];
+        for (let i = 0; i < m; i++) {
+            const a = src[i], b = src[(i + 1) % m];
+            out.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]]);
+            out.push([0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]);
+        }
+        out.push([out[0][0], out[0][1]]); // close
+        pts = out;
+    }
+    return pts;
+}
+
+/** Ramer-Douglas-Peucker simplify of a closed ring (drops near-collinear / noise vertices). */
+export function simplifyRing(ring: Ring, eps: number): Ring {
+    if (ring.length < 5 || eps <= 0) return ring;
+    const closed = ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1];
+    const src = closed ? ring.slice(0, ring.length - 1) : ring;
+    const n = src.length;
+    if (n < 4) return ring;
+    const keep = new Array(n).fill(false);
+    keep[0] = true; keep[n - 1] = true;
+    const seg = (lo: number, hi: number) => {
+        let maxD = -1, idx = -1;
+        const a = src[lo], b = src[hi];
+        const dx = b[0] - a[0], dy = b[1] - a[1];
+        const len2 = dx * dx + dy * dy || 1;
+        for (let i = lo + 1; i < hi; i++) {
+            const t = ((src[i][0] - a[0]) * dx + (src[i][1] - a[1]) * dy) / len2;
+            const px = a[0] + t * dx, py = a[1] + t * dy;
+            const d = Math.hypot(src[i][0] - px, src[i][1] - py);
+            if (d > maxD) { maxD = d; idx = i; }
+        }
+        if (maxD > eps && idx > lo) { keep[idx] = true; seg(lo, idx); seg(idx, hi); }
+    };
+    seg(0, n - 1);
+    const out: Ring = []; for (let i = 0; i < n; i++) if (keep[i]) out.push(src[i]);
+    out.push([out[0][0], out[0][1]]); // close
+    return out;
+}
+
+/** Simplify (optional) then Chaikin-smooth every ring of a polygon (outer + holes). */
+export function smoothPoly(poly: Poly, iterations = 2, simplifyEps = 0): Poly {
+    return poly.map(ring => chaikinRing(simplifyEps > 0 ? simplifyRing(ring, simplifyEps) : ring, iterations));
+}
+
 /** A regular-polygon disk ring (closed) approximating a circle. */
 export function diskRing(cx: number, cy: number, r: number, seg = 16): Ring {
     const ring: Ring = [];
