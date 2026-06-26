@@ -32,6 +32,52 @@ export interface ElementOverlayOptions {
 }
 
 /**
+ * Editable vector path: draw anchor squares (hollow=corner, filled=smooth) + Bézier handles
+ * (whiskers + circles) for every subpath. Shared by the selected-path overlay AND the live
+ * pen-building overlay. When `showCloseRing` is set, rings the first anchor to mark where a
+ * click closes the path.
+ */
+function renderPathAnchors(ctx: CanvasRenderingContext2D, el: DrawingElement, scale: number, showCloseRing: boolean): void {
+    const sq = 8 / scale;   // anchor square side
+    const hd = 7 / scale;   // handle circle diameter
+    let firstAnchor: { x: number; y: number } | null = null;
+    for (const sp of getPathSubpaths(el)) for (const a of sp.anchors) {
+        const ax = el.x + a.x, ay = el.y + a.y;
+        if (!firstAnchor) firstAnchor = { x: ax, y: ay };
+        const drawHandle = (hx?: number, hy?: number) => {
+            if (hx === undefined || hy === undefined) return;
+            const px = ax + hx, py = ay + hy;
+            ctx.strokeStyle = 'rgba(59,130,246,0.6)';
+            ctx.lineWidth = 1 / scale;
+            ctx.setLineDash([]);
+            ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(px, py); ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 1.5 / scale;
+            ctx.beginPath(); ctx.arc(px, py, hd / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        };
+        drawHandle(a.outX, a.outY);
+        drawHandle(a.inX, a.inY);
+        // Anchor square: filled blue for smooth, hollow for corner.
+        ctx.fillStyle = a.kind === 'smooth' ? '#3b82f6' : '#ffffff';
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 1.5 / scale;
+        ctx.beginPath();
+        ctx.rect(ax - sq / 2, ay - sq / 2, sq, sq);
+        ctx.fill();
+        ctx.stroke();
+    }
+    if (showCloseRing && firstAnchor) {
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 1.5 / scale;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(firstAnchor.x, firstAnchor.y, sq, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+}
+
+/**
  * Render all per-element selection overlays: bounding box, handles, mindmap toggle,
  * collapsed node glow, custom control handles, bezier control points, connector handles.
  */
@@ -488,6 +534,12 @@ export function renderElementOverlays(
         ctx.stroke();
     }
 
+    // Pen tool: a path being built isn't selected yet, so the selection-gated block above
+    // skips it. Draw its anchors/handles live here (Illustrator-style), with a close-ring.
+    if (el.type === 'path' && !isSelected && !!opts.penBuildingId && el.id === opts.penBuildingId) {
+        renderPathAnchors(ctx, el, scale, true);
+    }
+
     // --- Bezier/Elbow Control Points ---
     if (isSelected) {
         if ((el.type === 'line' || el.type === 'arrow' || el.type === 'bezier' || el.type === 'organicBranch') && el.controlPoints && selectedTool === 'selection') {
@@ -528,52 +580,9 @@ export function renderElementOverlays(
             }
         }
 
-        // --- Editable vector path: anchors (squares) + Bézier handles (circles) ---
-        // Draws every subpath (compound paths / holes show all their nodes). Also drawn
-        // live while the pen tool is building this path (penBuildingId), so anchors and
-        // handles are visible mid-draw like Illustrator — not just after selection.
-        const isPenBuildingThis = !!opts.penBuildingId && el.id === opts.penBuildingId;
-        if (el.type === 'path' && (selectedTool === 'selection' || isPenBuildingThis)) {
-            const sq = 8 / scale;   // anchor square side
-            const hd = 7 / scale;   // handle circle diameter
-            let firstAnchor: { x: number; y: number } | null = null;
-            for (const sp of getPathSubpaths(el)) for (const a of sp.anchors) {
-                const ax = el.x + a.x, ay = el.y + a.y;
-                if (!firstAnchor) firstAnchor = { x: ax, y: ay };
-                // Handle lines + circles.
-                const drawHandle = (hx?: number, hy?: number) => {
-                    if (hx === undefined || hy === undefined) return;
-                    const px = ax + hx, py = ay + hy;
-                    ctx.strokeStyle = 'rgba(59,130,246,0.6)';
-                    ctx.lineWidth = 1 / scale;
-                    ctx.setLineDash([]);
-                    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(px, py); ctx.stroke();
-                    ctx.fillStyle = '#ffffff';
-                    ctx.strokeStyle = '#3b82f6';
-                    ctx.lineWidth = 1.5 / scale;
-                    ctx.beginPath(); ctx.arc(px, py, hd / 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-                };
-                drawHandle(a.outX, a.outY);
-                drawHandle(a.inX, a.inY);
-                // Anchor square: filled blue for smooth, hollow for corner.
-                ctx.fillStyle = a.kind === 'smooth' ? '#3b82f6' : '#ffffff';
-                ctx.strokeStyle = '#3b82f6';
-                ctx.lineWidth = 1.5 / scale;
-                ctx.beginPath();
-                ctx.rect(ax - sq / 2, ay - sq / 2, sq, sq);
-                ctx.fill();
-                ctx.stroke();
-            }
-            // While building, ring the first anchor so the user sees where to click to
-            // close the path (matches the pen handler's close threshold).
-            if (isPenBuildingThis && firstAnchor) {
-                ctx.strokeStyle = '#3b82f6';
-                ctx.lineWidth = 1.5 / scale;
-                ctx.setLineDash([]);
-                ctx.beginPath();
-                ctx.arc(firstAnchor.x, firstAnchor.y, sq, 0, Math.PI * 2);
-                ctx.stroke();
-            }
+        // --- Editable vector path: anchors + Bézier handles (selected paths) ---
+        if (el.type === 'path' && selectedTool === 'selection') {
+            renderPathAnchors(ctx, el, scale, false);
         }
 
         // --- Connector Handles ---
