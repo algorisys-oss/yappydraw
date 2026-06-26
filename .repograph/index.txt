@@ -297,8 +297,8 @@ frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 28
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 129 | WorkspaceDoc:9 and:32
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 525 | YslTutorialDoc:8
-frontend/src/help-docs/help-page.css | - | 408 |
-frontend/src/help-docs/help-page.tsx | typescript | 340 | Component:6 ShapeDoc:11 Tools:124 getShapeFromHash:234 HelpPage:240 handleHashChange:246 navigateToShape:257 filteredShapes:262 currentDoc:272 handleBackToApp:274
+frontend/src/help-docs/help-page.css | - | 411 |
+frontend/src/help-docs/help-page.tsx | typescript | 343 | Component:6 ShapeDoc:11 Tools:125 vertical:129 getShapeFromHash:236 HelpPage:242 handleHashChange:248 navigateToShape:259 filteredShapes:264 currentDoc:275 handleBackToApp:277
 frontend/src/help-docs/shapes/basic-shapes-doc.tsx | typescript | 284 | BasicShapesDoc:8
 frontend/src/help-docs/shapes/bpmn-doc.tsx | typescript | 526 | BpmnDoc:8
 frontend/src/help-docs/shapes/connectors-doc.tsx | typescript | 273 | ConnectorsDoc:8
