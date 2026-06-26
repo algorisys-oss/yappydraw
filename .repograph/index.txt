@@ -128,7 +128,7 @@ frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 47 | Component:1 HistoryPanel:13
 frontend/src/components/infra-tool-group.tsx | typescript | 137 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:76 activeTool:83 isActive:84 getDropdownPosition:86
 frontend/src/components/layer-context-menu.tsx | typescript | 99 | Component:1 MenuItem:3 Props:5 LayerContextMenu:13 layer:14
-frontend/src/components/layer-panel.css | - | 458 |
+frontend/src/components/layer-panel.css | - | 508 |
 frontend/src/components/layer-panel.tsx | typescript | 432 | Component:1 LayerPanel:8 handleLayerClick:17 handleToggleVisibility:21 handleToggleLock:29 handleDeleteLayer:38 handleDuplicateLayer:45 startEditing:50 saveRename:56 cancelEditing:65 handleRenameKeyDown:70 handlePointerDown:80 handlePointerUp:86 handleDragStart:93 handleDragEnd:102 handleDragOver:108 handleDragLeave:114 handleDrop:118 displayLayers:165 visit:174 depth:319
 frontend/src/components/live-paint-overlay.css | - | 27 |
 frontend/src/components/live-paint-overlay.tsx | typescript | 66 | LivePaintOverlay:14 active:25 toWorld:26 onDown:28 onMove:35 onKey:51

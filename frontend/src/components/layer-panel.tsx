@@ -1,6 +1,6 @@
 import { type Component, For, createSignal, Show } from 'solid-js';
 import { store, addLayer, setActiveLayer, updateLayer, deleteLayer, duplicateLayer, reorderLayers, toggleLayerPanel, minimizeLayerPanel, toggleLayerGroupingMode, createLayerGroup, toggleLayerGroupExpansion } from '../store/app-store';
-import { X, Minus, ChevronUp, Eye, EyeOff, Plus, Maximize2, Folder, FolderOpen, ChevronRight, Layers, Crown, Lock, Unlock } from 'lucide-solid';
+import { X, Minus, ChevronUp, Eye, EyeOff, Plus, Maximize2, Folder, FolderOpen, ChevronRight, Layers, Crown, Lock, Unlock, Copy, Trash2 } from 'lucide-solid';
 import LayerContextMenu from './layer-context-menu';
 import { draggablePanel } from '../utils/draggable-panel';
 import './layer-panel.css';
@@ -384,11 +384,11 @@ const LayerPanel: Component = () => {
                                             </div>
                                         </div>
                                         <div class="layer-actions">
-                                            <button class="icon-button" onClick={(e) => handleDuplicateLayer(layer.id, e)} title="Duplicate">
-                                                ⎘
+                                            <button class="layer-action-btn" onClick={(e) => handleDuplicateLayer(layer.id, e)} title="Duplicate">
+                                                <Copy size={13} />
                                             </button>
-                                            <button class="icon-button" onClick={(e) => handleDeleteLayer(layer.id, e)} title="Delete" disabled={store.layers.length <= 1}>
-                                                ×
+                                            <button class="layer-action-btn layer-action-delete" onClick={(e) => handleDeleteLayer(layer.id, e)} title="Delete" disabled={store.layers.length <= 1}>
+                                                <Trash2 size={13} />
                                             </button>
                                         </div>
                                     </div>
