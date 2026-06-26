@@ -5,6 +5,7 @@ import { shapeRegistry } from "../shapes/shape-registry";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { renderWithEraseMask } from "../shapes/base/erase-mask";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
+import { buildWidthRibbon } from "./variable-width";
 
 // Helper to normalize points (supports both old Point[] and new packed number[])
 export const normalizePoints = (points: any[] | number[] | undefined): { x: number; y: number }[] => {
@@ -127,6 +128,15 @@ const renderElementCore = (
     layerOpacity: number = 1,
     sharedRenderer?: IRenderer
 ) => {
+    // Variable-width stroke (Width tool): render the path as a filled ribbon instead of a
+    // constant stroke. Works in both draw styles (it's a fill). Open paths only.
+    if (el.type === 'path' && el.widthProfile && el.widthProfile.length && !el.pathClosed) {
+        const renderer = sharedRenderer || new CanvasRenderer(ctx);
+        renderVariableWidthStroke(renderer, el, isDarkMode, layerOpacity);
+        if (el.appearance) RenderPipeline.renderAppearance(rc, renderer, el, layerOpacity);
+        return;
+    }
+
     const shapeRenderer = shapeRegistry.getRenderer(el.type);
     if (shapeRenderer) {
         try {
@@ -142,6 +152,25 @@ const renderElementCore = (
 
     // Fallback or warning for unknown types
     console.warn(`No renderer registered for element type: ${el.type}`);
+};
+
+/** Render a variable-width path as a filled ribbon (Width tool). Both draw styles. */
+const renderVariableWidthStroke = (renderer: IRenderer, el: DrawingElement, isDarkMode: boolean, layerOpacity: number) => {
+    const ribbon = buildWidthRibbon(el);
+    if (!ribbon || ribbon.length < 4) return;
+    RenderPipeline.applyTransformations(renderer, el, layerOpacity);
+    const color = RenderPipeline.adjustColor(el.strokeColor || '#000000', isDarkMode);
+    renderer.beginPath();
+    renderer.moveTo(ribbon[0].x, ribbon[0].y);
+    for (let i = 1; i < ribbon.length; i++) renderer.lineTo(ribbon[i].x, ribbon[i].y);
+    renderer.closePath();
+    renderer.fillStyle = color;
+    renderer.fill();
+    // A hairline edge of the same colour keeps thin segments crisp.
+    renderer.strokeStyle = color;
+    renderer.lineWidth = 0.75;
+    renderer.stroke();
+    RenderPipeline.restoreTransformations(renderer);
 };
 
 /**

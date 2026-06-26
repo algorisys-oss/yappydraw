@@ -13,6 +13,10 @@ import {
     toggleRecolorPanel,
     toggleShapeBuilder,
     toggleCutTool,
+    toggleLivePaint,
+    makeLivePaint,
+    toggleWidthTool,
+    clearWidthProfile,
     selectSimilar,
     applyDistort,
     addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
@@ -1202,9 +1206,18 @@ export function getContextMenuItems(
         }
         if (selectionCount >= 2) {
             items.push({ label: 'Shape Builder', icon: '⬓', onClick: () => toggleShapeBuilder(true) });
+            items.push({ label: 'Live Paint Bucket', icon: '🪣', onClick: () => { makeLivePaint([...store.selection]); toggleLivePaint(true); } });
         }
         if (selectionCount >= 1) {
             items.push({ label: 'Knife / Scissors', icon: '✂️', onClick: () => toggleCutTool(true) });
+        }
+        if (selectionCount >= 1) {
+            const wPaths = store.selection.map(id => store.elements.find(e => e.id === id)).filter(e => e && e.type === 'path' && !e.pathClosed);
+            const hasWidth = wPaths.some(e => e!.widthProfile?.length);
+            if (wPaths.length) {
+                items.push({ label: 'Width Tool', icon: '🖊', onClick: () => toggleWidthTool(true) });
+                if (hasWidth) items.push({ label: 'Reset Width', icon: '↺', onClick: () => clearWidthProfile([...store.selection]) });
+            }
         }
         if (selectionCount === 1) {
             const tEl = store.elements.find(e => e.id === store.selection[0]);

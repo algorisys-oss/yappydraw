@@ -66,6 +66,9 @@ export function hitTestElement(
     elements: DrawingElement[],
     elementMap?: Map<string, DrawingElement>
 ): boolean {
+    // Live Paint region fills are inert — they never intercept clicks; you interact
+    // with the source outlines (and the bucket queries them explicitly).
+    if (el.livePaintFillFor) return false;
     if (isElementHiddenByHierarchy(el, elements, elementMap)) return false;
     if (!hitTestGeometry(el, x, y, threshold)) return false;
 

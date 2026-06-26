@@ -266,6 +266,14 @@ export interface DrawingElement {
     verticalAlign?: VerticalAlign;
     /** Vertical Type: stack characters top→bottom, paragraphs as left→right columns. */
     verticalText?: boolean;
+    /** Width tool: per-point stroke widths along an open path (t in 0..1). */
+    widthProfile?: { t: number; width: number }[];
+    /** Live Paint: this element is a source outline of the named live-paint group. */
+    livePaintGroupId?: string;
+    /** Live Paint: this element is a generated region fill for the named group… */
+    livePaintFillFor?: string;
+    /** …filling the atomic face with this key (subset bitmask). */
+    livePaintFaceKey?: string;
     containerId?: string | null;
     textColor?: string;
     textHighlightEnabled?: boolean;

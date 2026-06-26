@@ -6,7 +6,7 @@ import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-type
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
-import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
+import { runBooleanOp, polyToPathSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { shapeToPath } from "../utils/shape-to-path";
 import { normalizePoints } from "../utils/render-element";
@@ -105,6 +105,10 @@ interface AppState {
     /** Symbol Sprayer mode + the symbol it sprays (transient). */
     sprayerActive: boolean;
     sprayerSymbolId: string | null;
+    /** Live Paint Bucket mode: click an enclosed region to fill it (transient). */
+    livePaintActive: boolean;
+    /** Width tool mode: drag on a path to vary its stroke width (transient). */
+    widthToolActive: boolean;
     /** Undo-history panel visibility (transient, not persisted). */
     showHistoryPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
@@ -309,6 +313,8 @@ const initialState: AppState = {
     cutToolActive: false,
     sprayerActive: false,
     sprayerSymbolId: null,
+    livePaintActive: false,
+    widthToolActive: false,
     showHistoryPanel: false,
     meshEditActive: false,
     activeArtboardId: null,
@@ -3570,6 +3576,176 @@ export const toggleMeasure = (active?: boolean) => setStore('measureActive', v =
 export const toggleShapeBuilder = (active?: boolean) => setStore('shapeBuilderActive', v => active ?? !v);
 
 export const toggleCutTool = (active?: boolean) => setStore('cutToolActive', v => active ?? !v);
+
+// ── Live Paint ───────────────────────────────────────────────────────────────
+// A Live Paint group is a set of source outline shapes (tagged livePaintGroupId).
+// Clicking the bucket in an enclosed region creates a locked region-fill path
+// (livePaintFillFor + livePaintFaceKey) beneath the outlines. The fills are kept
+// in sync with the outlines by `regenerateAllLivePaint()` (run from the Live Paint
+// engine effect whenever geometry changes) — so dragging a source updates the fills.
+
+export const toggleLivePaint = (active?: boolean) => setStore('livePaintActive', v => active ?? !v);
+
+export const toggleWidthTool = (active?: boolean) => setStore('widthToolActive', v => active ?? !v);
+
+/**
+ * Width tool — set a stroke-width point at parameter `t` (0..1) along an open path. Width
+ * points within 0.04 of an existing one are merged (so a drag refines in place). A non-path
+ * shape is converted to a path first. Width 0 removes nearby points (eraser-ish).
+ */
+export const setWidthPoint = (id: string, t: number, width: number): boolean => {
+    let target = store.elements.find(e => e.id === id);
+    if (!target) return false;
+    if (target.type !== 'path') { const r = shapeToPath(target); if (!r) { showToast('Width tool: needs a path', 'info'); return false; }
+        pushToHistory();
+        setStore('elements', e => e.id === id, { type: 'path', pathAnchors: r.anchors, pathClosed: r.closed, points: undefined, controlPoints: undefined } as any);
+        target = store.elements.find(e => e.id === id)!;
+    } else pushToHistory();
+    if (target.pathClosed) { showToast('Width tool: open paths only', 'info'); return false; }
+    const profile = [...((target.widthProfile as { t: number; width: number }[]) || [])].filter(p => Math.abs(p.t - t) > 0.04);
+    if (width > 0.5) profile.push({ t: Math.max(0, Math.min(1, t)), width });
+    profile.sort((a, b) => a.t - b.t);
+    setStore('elements', e => e.id === id, { widthProfile: profile.length ? profile : undefined } as any);
+    bumpDirtyRevision();
+    return true;
+};
+
+/** Reset variable width — drop the width profile, back to a uniform stroke. */
+export const clearWidthProfile = (ids: string[]) => {
+    pushToHistory();
+    setStore('elements', e => ids.includes(e.id), { widthProfile: undefined } as any);
+    bumpDirtyRevision();
+    showToast('Width reset', 'success');
+};
+
+/** Per-group signature of member geometry, so the live engine only recomputes on real changes. */
+const _livePaintSig = new Map<string, string>();
+
+const _livePaintMembers = (groupId: string) => store.elements.filter(e => e.livePaintGroupId === groupId);
+const _memberSig = (members: DrawingElement[]) => members
+    .map(m => `${m.id}:${Math.round(m.x)},${Math.round(m.y)},${Math.round(m.width)},${Math.round(m.height)},${Math.round((m.angle || 0) * 100)}`)
+    .sort().join('|');
+
+const _buildLivePaintFill = (poly: Poly, groupId: string, faceKey: string, color: string): DrawingElement | null => {
+    const fill = buildPathFromPoly(poly, {
+        backgroundColor: color, fillStyle: 'solid', strokeColor: 'transparent', strokeWidth: 0,
+        renderStyle: 'architectural', layerId: _livePaintMembers(groupId)[0]?.layerId ?? store.activeLayerId,
+    });
+    if (!fill) return null;
+    return { ...fill, locked: true, livePaintFillFor: groupId, livePaintFaceKey: faceKey } as DrawingElement;
+};
+
+/** Turn the selected (≥2) shapes into a Live Paint group. Returns the group id. */
+export const makeLivePaint = (ids: string[]): string | null => {
+    const members = store.elements.filter(e => ids.includes(e.id) && !e.livePaintFillFor);
+    if (members.length < 2) { showToast('Live Paint: select 2+ shapes', 'info'); return null; }
+    const existing = members.find(m => m.livePaintGroupId)?.livePaintGroupId;
+    const groupId = existing || generateId('lpg' as any);
+    pushToHistory();
+    setStore('elements', e => ids.includes(e.id) && !e.livePaintFillFor, { livePaintGroupId: groupId } as any);
+    showToast('Live Paint group created — click regions to fill', 'success');
+    return groupId;
+};
+
+/**
+ * Live Paint Bucket — fill the enclosed region at `point` with `color` (defaults to the
+ * active fill). If the clicked shapes aren't a Live Paint group yet, the current selection
+ * (or the shapes under the point) is converted to one first.
+ */
+export const livePaintFillAt = (point: { x: number; y: number }, color?: string): string | null => {
+    const fillColor = color || store.defaultElementStyles.backgroundColor || '#cccccc';
+    const faceAt = (members: DrawingElement[]) => computeShapeFaces(members).find(f => pointInMultiPoly(f.region as any, point.x, point.y));
+
+    // Resolve by FACE containment (not hit-test — Live Paint shapes are often unfilled
+    // outlines whose interior wouldn't register a hit). Prefer an existing group whose
+    // face contains the point; else build one from the selection / shapes under the point.
+    let groupId: string | null = null;
+    let face = undefined as ReturnType<typeof faceAt>;
+    for (const g of new Set(store.elements.filter(e => e.livePaintGroupId && !e.livePaintFillFor).map(e => e.livePaintGroupId!))) {
+        const f = faceAt(_livePaintMembers(g));
+        if (f) { groupId = g; face = f; break; }
+    }
+    if (!groupId) {
+        let candidates = store.selection.map(id => store.elements.find(e => e.id === id)).filter((e): e is DrawingElement => !!e && !e.livePaintFillFor);
+        if (candidates.length < 2) candidates = store.elements.filter(e => !e.livePaintFillFor && !e.livePaintGroupId);
+        if (candidates.length >= 2 && faceAt(candidates)) {
+            groupId = makeLivePaint(candidates.map(e => e.id));
+            if (groupId) face = faceAt(_livePaintMembers(groupId));
+        }
+    }
+    if (!groupId) { showToast('Live Paint: select 2+ overlapping shapes first', 'info'); return null; }
+    if (!face) { showToast('Live Paint: no enclosed region here', 'info'); return null; }
+
+    pushToHistory();
+    // Update an existing fill for this face, or insert new fills (one per disjoint piece) below members.
+    const hasExisting = store.elements.some(e => e.livePaintFillFor === groupId && e.livePaintFaceKey === face.key);
+    if (hasExisting) {
+        setStore('elements', e => e.livePaintFillFor === groupId && e.livePaintFaceKey === face.key, { backgroundColor: fillColor, fillSwatchId: undefined } as any);
+    } else {
+        const newFills = (face.region as Poly[]).map(poly => _buildLivePaintFill(poly, groupId!, face.key, fillColor)).filter(Boolean) as DrawingElement[];
+        setStore('elements', list => {
+            const firstMemberIdx = list.findIndex(e => e.livePaintGroupId === groupId);
+            const at = firstMemberIdx < 0 ? list.length : firstMemberIdx;
+            return [...list.slice(0, at), ...newFills, ...list.slice(at)];
+        });
+    }
+    _livePaintSig.set(groupId, _memberSig(_livePaintMembers(groupId))); // fills now match current geometry
+    bumpDirtyRevision();
+    return groupId;
+};
+
+/**
+ * Recompute every Live Paint group's fills from the current outline geometry. Cheap when
+ * nothing moved (per-group signature guard). Called by the Live Paint engine effect.
+ */
+export const regenerateAllLivePaint = () => {
+    const groupIds = new Set<string>();
+    for (const e of store.elements) if (e.livePaintGroupId && !e.livePaintFillFor) groupIds.add(e.livePaintGroupId);
+    if (!groupIds.size) { _livePaintSig.clear(); return; }
+
+    let changed = false;
+    for (const groupId of groupIds) {
+        const members = _livePaintMembers(groupId);
+        if (members.length < 2) continue;
+        const sig = _memberSig(members);
+        if (_livePaintSig.get(groupId) === sig) continue; // unchanged → skip
+        changed = true;
+
+        // colour map from existing fills (base face key → colour), then rebuild geometry.
+        const colorByFace = new Map<string, string>();
+        for (const e of store.elements) {
+            if (e.livePaintFillFor === groupId && e.livePaintFaceKey) colorByFace.set(e.livePaintFaceKey, e.backgroundColor || '#cccccc');
+        }
+        const faces = computeShapeFaces(members);
+        const faceByKey = new Map(faces.map(f => [f.key, f]));
+        const rebuilt: DrawingElement[] = [];
+        for (const [key, color] of colorByFace) {
+            const face = faceByKey.get(key);
+            if (!face) continue; // region no longer exists (topology changed) → drop its fill
+            for (const poly of face.region as Poly[]) {
+                const fill = _buildLivePaintFill(poly, groupId, key, color);
+                if (fill) rebuilt.push(fill);
+            }
+        }
+        setStore('elements', list => {
+            const others = list.filter(e => e.livePaintFillFor !== groupId);
+            const firstMemberIdx = others.findIndex(e => e.livePaintGroupId === groupId);
+            const at = firstMemberIdx < 0 ? others.length : firstMemberIdx;
+            return [...others.slice(0, at), ...rebuilt, ...others.slice(at)];
+        });
+        _livePaintSig.set(groupId, sig);
+    }
+    if (changed) bumpDirtyRevision();
+};
+
+/** Release a Live Paint group: keep the region fills as plain shapes, drop the live link. */
+export const releaseLivePaint = (groupId: string) => {
+    pushToHistory();
+    setStore('elements', e => e.livePaintGroupId === groupId || e.livePaintFillFor === groupId,
+        { livePaintGroupId: undefined, livePaintFillFor: undefined, livePaintFaceKey: undefined, locked: false } as any);
+    _livePaintSig.delete(groupId);
+    showToast('Live Paint released', 'success');
+};
 
 /** Turn on the Symbol Sprayer for `symbolId` (defaults to the first symbol). Pass nothing to toggle off. */
 export const toggleSymbolSprayer = (symbolId?: string) => {

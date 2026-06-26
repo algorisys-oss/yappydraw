@@ -20,7 +20,7 @@ import {
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, toggleWidthTool, setWidthPoint, clearWidthProfile,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
@@ -1850,6 +1850,20 @@ export const YappyAPI = {
     knife(p0: { x: number; y: number }, p1: { x: number; y: number }, ids?: string[]) { return knifeCut(p0, p1, ids); },
     /** Scissors — split a path at the anchor nearest `point`. */
     splitPath(id: string, point: { x: number; y: number }) { return splitPathAt(id, point); },
+    /** Toggle the Live Paint Bucket (click enclosed regions to fill them). */
+    toggleLivePaint(active?: boolean) { toggleLivePaint(active); },
+    /** Make a Live Paint group from shapes (default: selection) so regions can be bucket-filled. */
+    makeLivePaint(ids?: string[]) { return makeLivePaint(ids ?? [...store.selection]); },
+    /** Fill the enclosed Live Paint region at a world point with a colour (default: active fill). */
+    livePaintFill(point: { x: number; y: number }, color?: string) { return livePaintFillAt(point, color); },
+    /** Release a Live Paint group — region fills become plain shapes. */
+    releaseLivePaint(groupId: string) { releaseLivePaint(groupId); },
+    /** Toggle the Width tool (drag across a path to vary its stroke width). */
+    toggleWidthTool(active?: boolean) { toggleWidthTool(active); },
+    /** Width tool — set a stroke-width point at parameter t (0..1) along an open path. */
+    setWidthPoint(id: string, t: number, width: number) { return setWidthPoint(id, t, width); },
+    /** Reset a path's variable width back to a uniform stroke. */
+    clearWidthProfile(ids?: string[]) { clearWidthProfile(ids ?? [...store.selection]); },
     /** Vertical Type — toggle stacked (top→bottom) text orientation on a text element. */
     setTextVertical(id: string, on?: boolean) {
         const el = this.getElement(id); if (!el) return;

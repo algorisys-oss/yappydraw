@@ -179,6 +179,70 @@ Yappy.spraySymbols(sym, [
 ], { scaleJitter: 0.3 });`}</code></pre>
             </section>
 
+            {/* Live Paint */}
+            <section class="doc-section">
+                <h2>🪣 Live Paint Bucket</h2>
+                <p>
+                    Draw overlapping shapes (even unfilled outlines), select them all (≥2), then right-click →
+                    <strong> Live Paint Bucket</strong>. The shapes become a <strong>Live Paint group</strong>
+                    and the cursor turns into a bucket — <strong>click any enclosed region</strong> to flood it
+                    with the active fill colour, just like colouring a line drawing. Two overlapping circles give
+                    three paintable regions (two crescents + the central lens); three give seven.
+                </p>
+                <p>
+                    The fills are <strong>live</strong>: drag, scale, or rotate any source outline and every
+                    region recolours and reshapes to follow — the colour stays pinned to “the lens”, “that
+                    crescent”, and so on. The region fills sit beneath the outlines and are inert (you always
+                    grab the source shapes), so you can keep tweaking the artwork and the colouring keeps up.
+                </p>
+                <pre class="code-block"><code>{`// outline art → live paint group → flood regions
+const a = Yappy.createCircle(120, 160, 140, 140, { backgroundColor: 'transparent', strokeColor: '#111' });
+const b = Yappy.createCircle(210, 160, 140, 140, { backgroundColor: 'transparent', strokeColor: '#111' });
+Yappy.makeLivePaint([a, b]);
+Yappy.livePaintFill({ x: 215, y: 230 }, '#22c55e');  // the overlap lens
+Yappy.livePaintFill({ x: 160, y: 230 }, '#3b82f6');  // left crescent
+
+// move a source — the fills follow automatically
+Yappy.updateElement(b, { x: 230 });
+
+// bake it back to plain shapes when you're happy
+Yappy.releaseLivePaint(/* groupId */);`}</code></pre>
+                <p class="tip-box">
+                    Live Paint shares the same atomic-region engine as the <strong>Shape Builder</strong> — Shape
+                    Builder <em>merges/deletes</em> regions into new geometry, Live Paint <em>colours</em> them
+                    while keeping the originals editable. Bounded to 8 source shapes per group.
+                </p>
+            </section>
+
+            {/* Width tool */}
+            <section class="doc-section">
+                <h2>🖊 Width Tool — variable-width strokes</h2>
+                <p>
+                    Select an open path, then right-click → <strong>Width Tool</strong>. Press on the path and
+                    <strong> drag away from it</strong> — the drag distance becomes the stroke width at that
+                    point, so the line swells and tapers like a calligraphic nib or a brush stroke. Add as many
+                    width points as you like; the thickness interpolates smoothly between them. Press
+                    <span class="kbd">Esc</span> to exit, and right-click → <strong>Reset Width</strong> to go
+                    back to a uniform stroke.
+                </p>
+                <pre class="code-block"><code>{`// a calligraphic stroke: thin → thick → thin
+const s = Yappy.createPath([
+  { x: 80, y: 240, kind: 'smooth' },
+  { x: 240, y: 120, kind: 'smooth' },
+  { x: 400, y: 240, kind: 'smooth' },
+], { strokeColor: '#0f172a', strokeWidth: 3 });
+Yappy.setWidthPoint(s, 0.0, 2);    // t (0..1 along the path), width
+Yappy.setWidthPoint(s, 0.5, 44);
+Yappy.setWidthPoint(s, 1.0, 2);
+
+Yappy.clearWidthProfile([s]);      // back to a uniform stroke`}</code></pre>
+                <p class="tip-box">
+                    The variable stroke renders as a filled ribbon, so it exports as true vector and prints
+                    crisply. Width applies to <strong>open paths</strong> (the calligraphy use-case); closed
+                    shapes keep their uniform stroke.
+                </p>
+            </section>
+
             {/* Parity reference */}
             <section class="doc-section">
                 <h2>Where these map in Illustrator</h2>
@@ -189,12 +253,14 @@ Yappy.spraySymbols(sym, [
                     <tbody>
                         <tr><td>Shape Builder (Shift+M)</td><td>Right-click → Shape Builder (face-level)</td></tr>
                         <tr><td>Magic Wand (Y)</td><td>Right-click → Select Similar</td></tr>
+                        <tr><td>Live Paint Bucket (K)</td><td>Right-click → Live Paint Bucket (click regions)</td></tr>
                         <tr><td>Effect → Distort &amp; Transform / Liquify</td><td>Right-click → Distort &amp; Transform</td></tr>
                         <tr><td>Knife</td><td>Cut tool — drag a line</td></tr>
                         <tr><td>Scissors (C)</td><td>Cut tool — click a path</td></tr>
                         <tr><td>Spiral / Arc / Rectangular &amp; Polar Grid</td><td>Right-click empty canvas → Insert</td></tr>
                         <tr><td>Vertical Type</td><td>Right-click text → Vertical Type</td></tr>
                         <tr><td>Symbol Sprayer (Shift+S)</td><td>Symbols panel → spray-can</td></tr>
+                        <tr><td>Width Tool (Shift+W)</td><td>Right-click path → Width Tool</td></tr>
                     </tbody>
                 </table>
             </section>
