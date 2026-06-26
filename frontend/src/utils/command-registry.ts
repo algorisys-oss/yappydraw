@@ -1,6 +1,6 @@
 import {
     store, setStore, setSelectedTool, toggleGrid, toggleSnapToGrid, toggleZenMode,
-    togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection,
+    togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection, toggleVectorToolsPanel,
     groupSelected, ungroupSelected, bringToFront, sendToBack,
     mirrorCopy, transformAgain, convertTextToOutlines,
     toggleSymmetryGuide, setSymmetryAxis, mirrorAcrossSymmetry,
@@ -272,6 +272,7 @@ export const getCommands = (): Command[] => {
         { id: 'tool-perspective-grid', label: 'Perspective Grid', category: 'Tools', action: () => togglePerspectiveGrid(true) },
         { id: 'tool-slice', label: 'Slice (export region)', category: 'Tools', action: () => toggleSliceTool(true) },
         { id: 'tool-symbolism', label: 'Symbolism Brush (symbol sub-tools)', category: 'Tools', action: () => toggleSymbolism(true) },
+        { id: 'panel-vector-tools', label: 'Vector Tools palette (toggle)', category: 'View', action: () => toggleVectorToolsPanel() },
         { id: 'tool-touch-type', label: 'Touch Type (per-letter)', category: 'Tools', action: () => toggleTouchType(true) },
         { id: 'action-vertical-type', label: 'Vertical Type (toggle)', category: 'Actions', action: () => { const id = store.selection[0]; if (id) setTextVertical(id); } },
         { id: 'action-distort-pucker', label: 'Distort: Pucker', category: 'Actions', action: () => applyDistort([...store.selection], 'pucker', 0.25) },

@@ -98,6 +98,8 @@ interface AppState {
     showSwatchesPanel: boolean;
     /** Recolor Artwork panel visibility (transient, not persisted). */
     showRecolorPanel: boolean;
+    /** Vector Tools palette visibility (persisted in localStorage). */
+    showVectorToolsPanel: boolean;
     /** Measure-tool mode: drag on canvas to read distance + angle (transient). */
     measureActive: boolean;
     /** Shape Builder mode: drag across selected shapes to merge / Alt-drag to delete (transient). */
@@ -331,6 +333,7 @@ const initialState: AppState = {
     showGraphicStylesPanel: false,
     showSwatchesPanel: false,
     showRecolorPanel: false,
+    showVectorToolsPanel: (() => { try { return localStorage.getItem('showVectorToolsPanel') === '1'; } catch { return false; } })(),
     measureActive: false,
     shapeBuilderActive: false,
     cutToolActive: false,
@@ -3633,6 +3636,11 @@ export const blendShapes = (ids?: string[], steps = 4) => {
 // ── Recolor artwork ──────────────────────────────────────────────────────────
 
 export const toggleRecolorPanel = (visible?: boolean) => setStore('showRecolorPanel', v => visible ?? !v);
+export const toggleVectorToolsPanel = (visible?: boolean) => {
+    const next = visible ?? !store.showVectorToolsPanel;
+    setStore('showVectorToolsPanel', next);
+    try { localStorage.setItem('showVectorToolsPanel', next ? '1' : '0'); } catch { /* ignore */ }
+};
 
 export const toggleMeasure = (active?: boolean) => setStore('measureActive', v => active ?? !v);
 

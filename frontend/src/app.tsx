@@ -53,6 +53,7 @@ const SymbolsPanel = lazy(() => import('./components/symbols-panel'));
 const GraphicStylesPanel = lazy(() => import('./components/graphic-styles-panel'));
 const SwatchesPanel = lazy(() => import('./components/swatches-panel'));
 const RecolorPanel = lazy(() => import('./components/recolor-panel'));
+const VectorToolsPanel = lazy(() => import('./components/vector-tools-panel'));
 const HistoryPanel = lazy(() => import('./components/history-panel'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
 const StatePanel = lazy(() => import('./components/state-panel').then(m => ({ default: m.StatePanel })));
@@ -1183,6 +1184,7 @@ const App: Component = () => {
             <GraphicStylesPanel />
             <SwatchesPanel />
             <RecolorPanel />
+            <VectorToolsPanel />
             <HistoryPanel />
             <StatusBar />
           </Show>

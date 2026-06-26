@@ -1,0 +1,49 @@
+.vt-panel {
+    position: fixed;
+    top: 90px;
+    right: 16px;
+    z-index: 9000;
+    width: 168px;
+    background: var(--bg-panel, #fff);
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+    user-select: none;
+    overflow: hidden;
+}
+
+.vt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    cursor: grab;
+    border-bottom: 1px solid var(--border-color, #eee);
+    background: var(--bg-subtle, #f8f9fb);
+}
+.vt-header:active { cursor: grabbing; }
+.vt-title { font-size: 12px; font-weight: 700; color: var(--text-primary, #111); }
+.vt-close {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border: none; background: transparent; cursor: pointer;
+    color: var(--text-secondary, #666); border-radius: 5px;
+}
+.vt-close:hover { background: var(--bg-hover, #eee); }
+
+.vt-body { padding: 8px; display: flex; flex-direction: column; gap: 9px; }
+.vt-group-name { font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary, #999); margin-bottom: 4px; }
+.vt-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+
+.vt-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 100%; aspect-ratio: 1; padding: 0;
+    background: var(--bg-subtle, #f3f4f6);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 7px; cursor: pointer;
+    color: var(--text-primary, #111);
+    transition: background 0.12s, border-color 0.12s;
+}
+.vt-btn svg { flex: 0 0 auto; }
+.vt-btn:hover { background: var(--bg-hover, #e9ebef); }
+.vt-on { background: #6366f1; border-color: #6366f1; color: #fff; }
+.vt-on:hover { background: #5457e6; }

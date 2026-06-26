@@ -20,10 +20,12 @@ export const IllustratorToolsDoc: Component = () => {
                     <code> Yappy</code> object — paste the examples into the browser console to try them.
                 </p>
                 <p class="tip-box">
-                    <strong>Can't find a tool?</strong> They're all in the <strong>Command Palette</strong> — press
-                    <span class="kbd">Ctrl</span>/<span class="kbd">Cmd</span>+<span class="kbd">K</span> and type a
-                    name (“Live Paint”, “Width”, “Magic Wand”, “Shape Builder”…). This is the most reliable entry
-                    point: the right-click menu only appears when you click directly on a filled shape, so for
+                    <strong>Where are these tools?</strong> Open the <strong>Vector Tools palette</strong> — click the
+                    <strong> ⊞ grid button</strong> in the toolbar (next to the <span class="kbd">⌘</span> button) for a
+                    one-tap floating palette grouped by Build / Path / Paint / Warp / Symbol; the active tool
+                    highlights. Everything is also in the <strong>Command Palette</strong>
+                    (<span class="kbd">Ctrl</span>/<span class="kbd">Cmd</span>+<span class="kbd">K</span> → type a name).
+                    The right-click menu works too, but only when you click directly on a filled shape — so for
                     unfilled outlines (common with Live Paint) use the palette.
                 </p>
             </header>

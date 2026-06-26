@@ -1,8 +1,8 @@
 import { type Component, For, Show, createSignal, onMount, onCleanup } from "solid-js";
-import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleCommandPalette } from "../store/app-store";
+import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import type { ToolType } from "../types";
-import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw, Command } from "lucide-solid";
+import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw, Command, LayoutGrid } from "lucide-solid";
 
 const BRUSH_TOOLS: ToolType[] = ['fineliner', 'inkbrush', 'marker'];
 import PenToolGroup from "./pen-tool-group";
@@ -343,6 +343,17 @@ const Toolbar: Component = () => {
                 aria-label="Open command palette"
             >
                 <Command size={16} />
+            </button>
+
+            {/* Vector Tools palette — one-tap access to Shape Builder, Live Paint, Puppet Warp,
+                Perspective Grid, Blob Brush, Curvature, Reshape, Symbolism, etc. */}
+            <button
+                class={`toolbar-btn ${store.showVectorToolsPanel ? 'active' : ''}`}
+                onClick={() => toggleVectorToolsPanel()}
+                title="Vector Tools palette"
+                aria-label="Toggle vector tools palette"
+            >
+                <LayoutGrid size={16} />
             </button>
 
             {/* Brainstorm / Full toggle */}
