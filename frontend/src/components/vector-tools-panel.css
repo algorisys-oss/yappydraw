@@ -34,10 +34,11 @@
 .vt-title { font-size: 12px; font-weight: 700; color: var(--text-primary); }
 .vt-close {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 20px; height: 20px; border: none; background: transparent; cursor: pointer;
-    color: var(--text-secondary); border-radius: 5px;
+    width: 22px; height: 22px; padding: 0; flex: 0 0 auto;
+    border: 1px solid var(--border-color); background: var(--bg-panel); cursor: pointer;
+    color: var(--text-primary); border-radius: 5px;
 }
-.vt-close:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.vt-close:hover { background: #ef4444; border-color: #ef4444; color: #fff; }
 
 .vt-body { padding: 8px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
 .vt-group { display: flex; flex-direction: column; gap: 2px; }

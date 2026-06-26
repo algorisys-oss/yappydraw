@@ -119,7 +119,7 @@ const VectorToolsPanel: Component = () => {
             <div class="vt-panel" ref={(el) => setupPanel(el)}>
                 <div class="vt-header">
                     <span class="vt-title">Vector Tools</span>
-                    <button class="vt-close" title="Close" onClick={() => toggleVectorToolsPanel(false)}><X size={14} /></button>
+                    <button class="vt-close" title="Close" onClick={() => toggleVectorToolsPanel(false)}><X size={16} /></button>
                 </div>
                 <div class="vt-body">
                     <For each={groups}>

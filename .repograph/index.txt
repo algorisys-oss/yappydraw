@@ -214,7 +214,7 @@ frontend/src/components/text-tool-group.tsx | typescript | 133 | Component:1 Tex
 frontend/src/components/toast.css | - | 109 |
 frontend/src/components/toast.tsx | typescript | 55 | ToastType:5 showToast:15 hideToast:31 Toast:36
 frontend/src/components/toolbar.css | - | 231 |
-frontend/src/components/toolbar.tsx | typescript | 528 | Component:1 VideoProvider:27 Toolbar:70 wrapWidth:83 onResizeDown:85 toggleBrainstormMode:96 onMouseDown:102 onMouseMove:115 onMouseUp:129 handleResize:141 handleToolClick:155 handleVideoInsert:165 handleRightClick:213 handleImageUpload:219
+frontend/src/components/toolbar.tsx | typescript | 554 | Component:1 VideoProvider:27 Toolbar:70 clampIntoView:77 wrapWidth:106 onResizeDown:108 toggleBrainstormMode:119 onMouseDown:125 onMouseMove:138 onMouseUp:152 handleResize:166 handleToolClick:180 handleVideoInsert:190 handleRightClick:238 handleImageUpload:244
 frontend/src/components/touch-type-overlay.css | - | 23 |
 frontend/src/components/touch-type-overlay.tsx | typescript | 97 | TouchTypeOverlay:13 target:17 active:21 toWorld:22 glyphBoxes:25 onDown:41 onMove:53 onUp:59 onKey:64 selBox:79
 frontend/src/components/type-on-path-overlay.css | - | 23 |
@@ -222,7 +222,7 @@ frontend/src/components/type-on-path-overlay.tsx | typescript | 72 | text:13 Typ
 frontend/src/components/uml-tool-group.tsx | typescript | 145 | Component:1 UmlToolGroup:30 handler:37 getActiveUmlTool:47 handleToolClick:56 as:64 as:70 handleRightClick:78 toggleMenu:84 activeTool:91 isActive:92 getDropdownPosition:94
 frontend/src/components/unsaved-changes-dialog.css | - | 111 |
 frontend/src/components/unsaved-changes-dialog.tsx | typescript | 53 | Component:1 UnsavedChangesDialogProps:5 UnsavedChangesDialog:12 handleKeyDown:13
-frontend/src/components/vector-tools-panel.css | - | 69 |
+frontend/src/components/vector-tools-panel.css | - | 70 |
 frontend/src/components/vector-tools-panel.tsx | typescript | 163 | Component:1 Tool:24 VectorToolsPanel:26 center:30 selText:37 modeRun:40 setupPanel:103
 frontend/src/components/video-overlay.css | - | 70 |
 frontend/src/components/video-overlay.tsx | typescript | 204 | Component:1 onDragStart:69 onDragMove:83 onDragEnd:91 toggleLock:98 close:104 VideoOverlay:177 handleKeyDown:179

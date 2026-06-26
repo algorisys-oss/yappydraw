@@ -69,6 +69,29 @@ const BRAINSTORM_KEY = 'yappy-brainstorm-mode';
 
 const Toolbar: Component = () => {
     let fileInputRef: HTMLInputElement | null = null;
+    let containerRef: HTMLDivElement | undefined;
+
+    // Keep the toolbar on-screen: `position` is a delta from the CSS-anchored spot, so a
+    // toolbar parked near an edge (or a window since shrunk) can render fully off-screen
+    // with no way to grab it back. Nudge the delta so at least a sliver stays visible.
+    const clampIntoView = () => {
+        const el = containerRef;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        if (!r.width && !r.height) return; // not laid out yet
+        const M = 32; // keep at least this many px on-screen on every edge
+        let dx = 0, dy = 0;
+        if (r.right < M) dx = M - r.right;
+        else if (r.left > window.innerWidth - M) dx = (window.innerWidth - M) - r.left;
+        if (r.bottom < M) dy = M - r.bottom;
+        else if (r.top > window.innerHeight - M) dy = (window.innerHeight - M) - r.top;
+        if (dx || dy) {
+            const p = position();
+            const next = { x: p.x + dx, y: p.y + dy };
+            setPosition(next);
+            try { localStorage.setItem('toolbarPos', JSON.stringify(next)); } catch { /* ignore */ }
+        }
+    };
     const [showVideoDialog, setShowVideoDialog] = createSignal(false);
     const [position, setPosition] = createSignal({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = createSignal(false);
@@ -135,10 +158,12 @@ const Toolbar: Component = () => {
     onMount(() => {
         // Restore the dragged toolbar position (persists where the user parked it).
         try { const saved = localStorage.getItem('toolbarPos'); if (saved) { const p = JSON.parse(saved); if (typeof p?.x === 'number' && typeof p?.y === 'number') setPosition(p); } } catch { /* ignore */ }
+        // After layout, pull the toolbar back on-screen if the restored position is off-view.
+        requestAnimationFrame(clampIntoView);
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
 
-        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        const handleResize = () => { setIsMobile(window.innerWidth <= 768); clampIntoView(); };
         window.addEventListener('resize', handleResize);
 
         // Expose global trigger for keyboard shortcut
@@ -301,6 +326,7 @@ const Toolbar: Component = () => {
 
     return (
         <div
+            ref={el => containerRef = el}
             class="toolbar-container"
             classList={{ dragging: isDragging(), resizing: isResizing(), vertical: !isMobile() && !!store.globalSettings.toolbarVertical, wrap: !isMobile() && wrapWidth() > 0 }}
             onContextMenu={(e) => e.preventDefault()}
