@@ -375,7 +375,7 @@ frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStora
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 5937 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:35 ResolvedTheme:36 AppState:63 HistorySnapshot:445 AlignmentType:3432 DistributionType:3432 SelBBox:4617 LastTransform:4867 RegionPathfinderOp:5167 buildPathFromPoly:5536 WorldSub:5620 rdpAnchors:5623 normalizeWorldSubs:5651 makePathFromWorldSubs:5666 elementToWorldSubs:5687 startInkCleanupIfNeeded:5876
+frontend/src/store/app-store.ts | typescript | 5940 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:35 ResolvedTheme:36 AppState:63 HistorySnapshot:445 AlignmentType:3432 DistributionType:3432 SelBBox:4617 LastTransform:4867 RegionPathfinderOp:5170 buildPathFromPoly:5539 WorldSub:5623 rdpAnchors:5626 normalizeWorldSubs:5654 makePathFromWorldSubs:5669 elementToWorldSubs:5690 startInkCleanupIfNeeded:5879
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |

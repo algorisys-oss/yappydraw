@@ -5139,7 +5139,10 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
     const polys = runBooleanOp(els, op);
     if (polys.length === 0) { showToast('Pathfinder: empty result', 'info'); return []; }
 
-    const base = els[0];
+    // Illustrator convention: the result inherits the FRONTMOST object's appearance
+    // for union/intersect/exclude. For "minus front" (subtract) the backmost shape is the
+    // one that survives, so it keeps its own appearance.
+    const base = op === 'subtract' ? els[0] : els[els.length - 1];
     const created: DrawingElement[] = [];
     for (const poly of polys) {
         const path = buildPathFromPoly(poly, {
