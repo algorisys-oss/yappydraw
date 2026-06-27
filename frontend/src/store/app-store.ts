@@ -4733,6 +4733,34 @@ export const shuffleSelectionColors = (ids?: string[]): number => {
     return n;
 };
 
+/**
+ * Map the selection's distinct colours onto a target palette (cycling through it),
+ * e.g. a harmony, a swatch group, or a palette extracted from an image. Atomic
+ * remap keyed on original values. Returns the number of colours remapped.
+ */
+export const applyPaletteToSelection = (palette: string[], ids?: string[]): number => {
+    const sel = ids ?? store.selection;
+    const colors = getSelectionColors(sel).map(c => c.color);
+    const pal = (palette || []).filter(isSolidColor);
+    if (colors.length === 0 || pal.length === 0) { showToast('Need a selection and a palette', 'info'); return 0; }
+    const map = new Map<string, string>();
+    colors.forEach((c, i) => map.set(c, pal[i % pal.length]));
+    const tx = (c?: string) => (c && map.has(c) ? map.get(c)! : c);
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => sel.includes(e.id), (e: DrawingElement) => {
+        const patch: Partial<DrawingElement> = {};
+        if (e.backgroundColor && map.has(e.backgroundColor)) { patch.backgroundColor = tx(e.backgroundColor); patch.fillSwatchId = undefined; }
+        if (e.strokeColor && map.has(e.strokeColor)) { patch.strokeColor = tx(e.strokeColor); patch.strokeSwatchId = undefined; }
+        if (e.gradientStops?.some(s => map.has(s.color))) {
+            patch.gradientStops = e.gradientStops.map(s => map.has(s.color) ? { ...s, color: tx(s.color)! } : s);
+        }
+        return patch;
+    });
+    bumpDirtyRevision();
+    showToast(`Recoloured with ${pal.length}-colour palette`, 'success');
+    return map.size;
+};
+
 /** Apply the source object's style to the armed targets, then disarm. */
 export const applyEyedropperFrom = (sourceId: string, colorOnly = false) => {
     const ed = store.eyedropper;

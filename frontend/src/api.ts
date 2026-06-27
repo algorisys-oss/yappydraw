@@ -14,7 +14,7 @@ import {
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
-    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors,
+    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -28,6 +28,7 @@ import {
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { exportToSvg, exportArtboard, exportRegion } from "./utils/export";
+import { generateTints, generateHarmony, extractImagePalette, type HarmonyType } from "./utils/color-harmony";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
@@ -1953,6 +1954,29 @@ export const YappyAPI = {
     getSelectionColors(ids?: string[]) { return getSelectionColors(ids); },
     /** Recolor: randomly re-order the selection's distinct colours (a derangement). */
     shuffleSelectionColors(ids?: string[]) { return shuffleSelectionColors(ids); },
+
+    // ── Colour Guide: tints, harmonies, palette-from-image ──────────────────
+    /** A light→dark ramp of tints & shades around a base colour. */
+    generateTints(hex: string, steps = 4) { return generateTints(hex, steps); },
+    /** A harmony palette (complementary/analogous/triadic/split-complementary/tetradic/monochromatic). */
+    generateHarmony(hex: string, type: HarmonyType = 'complementary') { return generateHarmony(hex, type); },
+    /** Extract dominant colours from an image (URL/dataURL, or an element id with a background image). */
+    async extractImagePalette(source: string, count = 6): Promise<string[]> {
+        const el = store.elements.find(e => e.id === source);
+        const src = el?.backgroundImage || source;
+        return extractImagePalette(src, count);
+    },
+    /** Recolour the selection's distinct colours onto a target palette (cycling). */
+    applyPaletteToSelection(palette: string[], ids?: string[]) { return applyPaletteToSelection(palette, ids); },
+    /** Apply a harmony built from `baseHex` to the selection in one call. */
+    applyHarmonyToSelection(baseHex: string, type: HarmonyType = 'complementary', ids?: string[]) {
+        return applyPaletteToSelection(generateHarmony(baseHex, type), ids);
+    },
+    /** Colour theme picker: pull a palette from an image and recolour the selection with it. */
+    async recolorFromImage(source: string, count = 6, ids?: string[]): Promise<number> {
+        const palette = await this.extractImagePalette(source, count);
+        return applyPaletteToSelection(palette, ids);
+    },
     recolorSelectionColor(from: string, to: string, ids?: string[]) { recolorSelectionColor(from, to, ids); },
     adjustSelectionColors(opts: { hue?: number; lightness?: number; saturation?: number }, ids?: string[]) { adjustSelectionColors(opts, ids); },
     /** Toggle the Measure tool (drag on canvas to read distance & angle). */
