@@ -14,7 +14,7 @@ import {
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
-    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection,
+    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -28,7 +28,7 @@ import {
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { exportToSvg, exportArtboard, exportRegion } from "./utils/export";
-import { generateTints, generateHarmony, extractImagePalette, type HarmonyType } from "./utils/color-harmony";
+import { generateTints, generateHarmony, extractImagePalette, parseHex, type HarmonyType } from "./utils/color-harmony";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
@@ -1882,6 +1882,93 @@ export const YappyAPI = {
     simplifyPath(ids: string[]) { return simplifyPath(ids); },
     /** Smooth a path's janky curves (Laplacian; keeps anchor count). strength 0..1. */
     smoothPath(ids?: string[], strength = 0.5, iterations = 2) { return smoothPath(ids ?? [...store.selection], strength, iterations); },
+
+    // ── Illustrator effects (tier 1) ────────────────────────────────────────
+    /** Convert objects to a rectangle / rounded rect / ellipse sized to their bbox. */
+    convertToShape(shape: 'rectangle' | 'rounded' | 'ellipse', radius = 20, ids?: string[]) { return convertToShape(ids ?? [...store.selection], shape, radius); },
+    /** Split a rectangle into an rows×cols grid of cells (Object › Path › Split Into Grid). */
+    splitIntoGrid(rows = 4, cols = 4, gap = 0, id?: string) { return splitIntoGrid(id ?? store.selection[0], rows, cols, gap); },
+    /** Convert the selected shapes to ruler guides at their bounding edges (Cmd+5). */
+    convertToGuides(ids?: string[]) { return convertToGuides(ids); },
+    /** Toggle printer crop marks at the selection's corners. */
+    toggleObjectCropMarks(on?: boolean, ids?: string[]) { toggleObjectCropMarks(ids, on); },
+    /** Feather (soft-blur the edges) of the selection. radius in px; 0 turns it off. */
+    setFeather(radius: number, ids?: string[]) {
+        const targets = ids ?? [...store.selection];
+        if (!targets.length) return;
+        pushToHistory();
+        targets.forEach(id => updateElement(id, { featherRadius: Math.max(0, radius) }));
+    },
+    /** Outer glow — a coloured halo around the selection. Pass enabled:false to remove. */
+    setGlow(opts: { color?: string; blur?: number; enabled?: boolean } = {}, ids?: string[]) {
+        const targets = ids ?? [...store.selection];
+        if (!targets.length) return;
+        pushToHistory();
+        targets.forEach(id => updateElement(id, {
+            glowEnabled: opts.enabled !== false,
+            glowColor: opts.color ?? '#ffd400',
+            glowBlur: opts.blur ?? 12,
+        }));
+    },
+    /**
+     * Scribble (Illustrator effect): replace each selected shape's fill with a
+     * back-and-forth scribble path in the fill colour. spacing = line gap (px),
+     * angle = scribble direction (deg). Bbox-based (not clipped to the outline).
+     */
+    scribble(opts: { spacing?: number; angle?: number; strokeWidth?: number } = {}, ids?: string[]): string[] {
+        const targets = ids ?? [...store.selection];
+        const spacing = Math.max(2, opts.spacing ?? 8);
+        const strokeWidth = opts.strokeWidth ?? 2;
+        const a = (opts.angle ?? 0) * Math.PI / 180;
+        const created: string[] = [];
+        for (const id of targets) {
+            const el = store.elements.find(e => e.id === id);
+            if (!el) continue;
+            const color = (el.backgroundColor && el.backgroundColor !== 'transparent') ? el.backgroundColor : (el.strokeColor || '#000000');
+            const rows = Math.max(2, Math.floor(Math.abs(el.height) / spacing));
+            const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+            const raw: { x: number; y: number }[] = [];
+            for (let r = 0; r <= rows; r++) {
+                const y = el.y + (r / rows) * el.height;
+                const ltr = r % 2 === 0;
+                raw.push({ x: ltr ? el.x : el.x + el.width, y });
+                raw.push({ x: ltr ? el.x + el.width : el.x, y });
+            }
+            const anchors = raw.map(p => {
+                const dx = p.x - cx, dy = p.y - cy;
+                return { x: cx + dx * Math.cos(a) - dy * Math.sin(a), y: cy + dx * Math.sin(a) + dy * Math.cos(a), kind: 'corner' as const };
+            });
+            const nid = this.createPath(anchors, { closed: false, strokeColor: color, strokeWidth, backgroundColor: 'transparent' });
+            if (nid) { created.push(nid); updateElement(id, { backgroundColor: 'transparent' }); }
+        }
+        if (created.length) this.select(created);
+        return created;
+    },
+    /**
+     * Create Swatch Info: generate a labelled swatch sheet (colour chip + name +
+     * hex + RGB) from the document swatches, or the selection's colours if there
+     * are none. Returns the created element ids.
+     */
+    createSwatchInfoSheet(opts: { x?: number; y?: number; columns?: number } = {}): string[] {
+        const source = store.swatches.length
+            ? store.swatches.map(s => ({ name: s.name, color: s.color }))
+            : getSelectionColors().map(c => ({ name: c.color, color: c.color }));
+        if (source.length === 0) return [];
+        const x0 = opts.x ?? 100, y0 = opts.y ?? 100, cols = Math.max(1, opts.columns ?? 4);
+        const cellW = 170, chipH = 60, cellH = 110, pad = 14;
+        const created: string[] = [];
+        source.forEach((sw, i) => {
+            const cx = x0 + (i % cols) * (cellW + pad);
+            const cy = y0 + Math.floor(i / cols) * (cellH + pad);
+            const chip = this.createRectangle(cx, cy, cellW, chipH, { backgroundColor: sw.color, strokeColor: '#999999', strokeWidth: 1 });
+            const { r, g, b } = parseHex(sw.color);
+            const label = `${sw.name}\n${sw.color.toUpperCase()}  ·  R${r} G${g} B${b}`;
+            const txt = this.createText(cx, cy + chipH + 6, label, { fontSize: 12, textColor: '#222222', fontFamily: 'sans-serif' });
+            if (chip) created.push(chip);
+            if (txt) created.push(txt);
+        });
+        return created;
+    },
     /** Make Compound Path: combine selected shapes/paths into one even-odd path (holes). Returns new id. */
     makeCompoundPath(ids: string[]) { return makeCompoundPath(ids); },
     /** Release Compound Path: split a compound path's subpaths into separate paths. Returns new ids. */

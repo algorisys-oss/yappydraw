@@ -83,6 +83,26 @@ Y.exportArtboard(id, 2);   // download a 2× PNG of that frame`}</code></pre>
                     <code> listArtboards()</code>, <code>exportArtboard(id, scale)</code>.
                 </p>
             </section>
+
+            {/* ─── REARRANGE / DUPLICATE / FIT ────────────────────────── */}
+            <section class="doc-section">
+                <h2>Rearrange, duplicate &amp; fit</h2>
+                <p>
+                    <strong>Rearrange All</strong> lays every artboard out in a tidy grid (auto columns, or pass a
+                    count + gap). <strong>Duplicate</strong> copies a frame <em>and the artwork on it</em> to the right.
+                    <strong> Fit to Artwork</strong> shrink-wraps a frame to the content sitting on it — perfect for a
+                    logo lock-up with even clear space. <strong>Paste on All Artboards</strong> drops the selection onto
+                    every other artboard at the same relative position (great for a watermark or logo).
+                </p>
+                <pre><code>{`Y.rearrangeArtboards(3, 40);   // 3 columns, 40px gap (omit args = auto grid)
+Y.duplicateArtboard(id);       // frame + its artwork, placed to the right
+Y.fitArtboardToArtwork(id, 20);// resize to content + 20px padding
+Y.pasteOnAllArtboards();       // copy the selection onto every artboard`}</code></pre>
+                <p class="tip-box">
+                    Print: set a <strong>bleed</strong> in Settings → Print Bleed (<code>Y.setBleed(20)</code>) to draw
+                    a bleed boundary + crop marks around each artboard.
+                </p>
+            </section>
         </div>
     );
 };

@@ -876,6 +876,29 @@ export function renderLayersAndElements(
 
     if (trimming) ctx.restore();
 
+    // Per-object crop marks (Illustrator's Crop Marks effect) — L-shaped marks at
+    // each opted-in element's bbox corners. Drawn after content so they're on top.
+    const cropTargets = elements.filter(e => (e as any).objectCropMarks);
+    if (cropTargets.length) {
+        ctx.save();
+        ctx.strokeStyle = isDarkMode ? '#ddd' : '#222';
+        ctx.lineWidth = 1 / scale;
+        const gap = 4 / scale, len = 12 / scale;
+        ctx.beginPath();
+        for (const e of cropTargets) {
+            const corners: Array<[number, number, number, number]> = [
+                [e.x, e.y, -1, -1], [e.x + e.width, e.y, 1, -1],
+                [e.x, e.y + e.height, -1, 1], [e.x + e.width, e.y + e.height, 1, 1],
+            ];
+            for (const [cx, cy, sx, sy] of corners) {
+                ctx.moveTo(cx + sx * gap, cy); ctx.lineTo(cx + sx * (gap + len), cy);
+                ctx.moveTo(cx, cy + sy * gap); ctx.lineTo(cx, cy + sy * (gap + len));
+            }
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+
     return totalRendered;
 }
 

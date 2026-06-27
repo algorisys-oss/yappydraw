@@ -140,23 +140,30 @@ export class RenderPipeline {
                 : el.blendMode;
         }
 
-        // Apply Drop Shadow
+        // Apply Drop Shadow, or — if no shadow — Outer Glow (a coloured halo, i.e.
+        // a shadow with 0 offset). Canvas only has one shadow slot, so shadow wins.
         if (el.shadowEnabled) {
             renderer.shadowColor = el.shadowColor || 'rgba(0,0,0,0.3)';
             renderer.shadowBlur = el.shadowBlur || 10;
             renderer.shadowOffsetX = el.shadowOffsetX || 5;
             renderer.shadowOffsetY = el.shadowOffsetY || 5;
+        } else if (el.glowEnabled) {
+            renderer.shadowColor = el.glowColor || '#ffd400';
+            renderer.shadowBlur = el.glowBlur ?? 12;
+            renderer.shadowOffsetX = 0;
+            renderer.shadowOffsetY = 0;
         } else {
             renderer.shadowColor = 'transparent';
         }
 
-        // Apply CSS Filter (for images/videos with filter properties)
+        // Apply CSS Filter — image/video adjustments and/or Feather (edge blur).
+        const filterParts: string[] = [];
         if (el.type === 'image' || el.type === 'video') {
             const filterStr = buildFilterString(el);
-            if (filterStr !== 'none') {
-                renderer.filter = filterStr;
-            }
+            if (filterStr !== 'none') filterParts.push(filterStr);
         }
+        if (el.featherRadius && el.featherRadius > 0) filterParts.push(`blur(${el.featherRadius}px)`);
+        if (filterParts.length) renderer.filter = filterParts.join(' ');
 
         const angle = el.angle || 0;
         let finalAngle = angle;

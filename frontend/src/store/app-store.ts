@@ -2292,6 +2292,100 @@ export const fitArtboardToArtwork = (id?: string, pad = 20): boolean => {
     return true;
 };
 
+/**
+ * Convert to Shape (Illustrator effect): replace each selected element with a
+ * rectangle, rounded rectangle, or ellipse sized to its bounding box, keeping the
+ * element's style. Destructive (geometry is baked).
+ */
+export const convertToShape = (ids: string[], shape: 'rectangle' | 'rounded' | 'ellipse', radius = 20): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id));
+    if (targets.length === 0) { showToast('Convert to Shape: select an object', 'info'); return []; }
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({
+        type: shape === 'ellipse' ? 'circle' : 'rectangle',
+        roundness: shape === 'rounded' ? radius : null,
+        borderRadius: shape === 'rounded' ? radius : undefined,
+        // Drop any path/point geometry so the element renders as the new primitive.
+        pathAnchors: undefined, pathSubpaths: undefined, pathClosed: undefined, points: undefined,
+        starPoints: undefined, polygonSides: undefined, burstPoints: undefined,
+    } as Partial<DrawingElement>));
+    bumpDirtyRevision();
+    showToast(`Converted to ${shape}`, 'success');
+    return targets.map(t => t.id);
+};
+
+/**
+ * Split Into Grid (Object › Path › Split Into Grid): replace a rectangle with an
+ * rows×cols grid of smaller rectangles. Returns the new cell ids.
+ */
+export const splitIntoGrid = (id: string, rows = 4, cols = 4, gap = 0): string[] => {
+    const src = store.elements.find(e => e.id === id) ?? store.elements.find(e => store.selection.includes(e.id));
+    if (!src) { showToast('Split Into Grid: select a shape', 'info'); return []; }
+    const r = Math.max(1, Math.floor(rows)), c = Math.max(1, Math.floor(cols));
+    const cellW = (src.width - gap * (c - 1)) / c;
+    const cellH = (src.height - gap * (r - 1)) / r;
+    if (cellW <= 0 || cellH <= 0) { showToast('Grid too fine for this shape', 'error'); return []; }
+    const batchIds = new Set<string>(store.elements.map(e => e.id));
+    const cells: DrawingElement[] = [];
+    for (let ri = 0; ri < r; ri++) for (let ci = 0; ci < c; ci++) {
+        const nid = generateId(src.type, batchIds); batchIds.add(nid);
+        cells.push({
+            ...JSON.parse(JSON.stringify(src)),
+            id: nid, type: 'rectangle',
+            x: src.x + ci * (cellW + gap), y: src.y + ri * (cellH + gap),
+            width: cellW, height: cellH,
+            pathAnchors: undefined, pathSubpaths: undefined, pathClosed: undefined, points: undefined,
+        } as DrawingElement);
+    }
+    pushToHistory();
+    setStore('elements', list => [...list.filter(e => e.id !== src.id), ...cells]);
+    setStore('selection', cells.map(c => c.id));
+    bumpDirtyRevision();
+    showToast(`Split into ${r}×${c} grid`, 'success');
+    return cells.map(c => c.id);
+};
+
+/**
+ * Convert the selected shapes to ruler guides (Illustrator's Cmd+5): drops a
+ * horizontal + vertical guide at each element's bounding edges, then removes the
+ * shapes. Returns the new guide ids.
+ */
+export const convertToGuides = (ids?: string[]): string[] => {
+    const sel = ids ?? [...store.selection];
+    const targets = store.elements.filter(e => sel.includes(e.id));
+    if (targets.length === 0) { showToast('Convert to Guides: select shapes', 'info'); return []; }
+    pushToHistory();
+    const guideIds: string[] = [];
+    const seenV = new Set<number>(), seenH = new Set<number>();
+    for (const e of targets) {
+        for (const x of [Math.round(e.x), Math.round(e.x + e.width)]) {
+            if (seenV.has(x)) continue; seenV.add(x);
+            const id = generateId('guide'); guideIds.push(id);
+            setStore('guides', g => [...g, { id, axis: 'v' as const, pos: x }]);
+        }
+        for (const y of [Math.round(e.y), Math.round(e.y + e.height)]) {
+            if (seenH.has(y)) continue; seenH.add(y);
+            const id = generateId('guide'); guideIds.push(id);
+            setStore('guides', g => [...g, { id, axis: 'h' as const, pos: y }]);
+        }
+    }
+    deleteElements(targets.map(t => t.id));
+    showToast(`Converted to ${guideIds.length} guides`, 'success');
+    return guideIds;
+};
+
+/** Toggle printer crop marks at each selected element's corners (Crop Marks effect). */
+export const toggleObjectCropMarks = (ids?: string[], on?: boolean) => {
+    const sel = ids ?? [...store.selection];
+    if (sel.length === 0) return;
+    const cur = store.elements.find(e => sel.includes(e.id))?.objectCropMarks;
+    const next = on ?? !cur;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => sel.includes(e.id), () => ({ objectCropMarks: next }));
+    bumpDirtyRevision();
+    showToast(next ? 'Crop marks on' : 'Crop marks off', 'info');
+};
+
 /** Outline (wireframe) view — render path outlines only, no fills (View > Outline). */
 export const toggleOutlineView = (on?: boolean) => {
     const next = on ?? !store.outlineView;

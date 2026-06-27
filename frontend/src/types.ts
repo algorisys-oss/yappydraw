@@ -488,6 +488,12 @@ export interface DrawingElement {
     shadowBlur?: number;
     shadowOffsetX?: number;
     shadowOffsetY?: number;
+    // Effects — Feather (soft blurred edges) and Outer Glow (coloured halo, 0 offset)
+    featherRadius?: number;            // px; >0 blurs the element's edges
+    glowEnabled?: boolean;
+    glowColor?: string;
+    glowBlur?: number;                 // halo radius (px)
+    objectCropMarks?: boolean;         // draw printer crop marks at this element's corners
     // Gradient Properties
     gradientStart?: string; // Deprecated in favor of gradientStops
     gradientEnd?: string;   // Deprecated in favor of gradientStops

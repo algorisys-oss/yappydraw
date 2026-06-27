@@ -2,6 +2,7 @@ import {
     store, setStore, setSelectedTool, toggleGrid, toggleSnapToGrid, toggleZenMode, toggleOutlineView, toggleTrimView,
     swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards,
     duplicateArtboard, fitArtboardToArtwork, shuffleSelectionColors,
+    convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection, toggleVectorToolsPanel,
     groupSelected, ungroupSelected, bringToFront, sendToBack,
     mirrorCopy, transformAgain, convertTextToOutlines,
@@ -262,6 +263,13 @@ export const getCommands = (): Command[] => {
         { id: 'action-duplicate-artboard', label: 'Duplicate Artboard (with artwork)', category: 'Actions', action: () => duplicateArtboard() },
         { id: 'action-fit-artboard', label: 'Fit Artboard to Artwork', category: 'Actions', action: () => fitArtboardToArtwork() },
         { id: 'action-shuffle-colors', label: 'Recolor: Shuffle Colour Order', category: 'Actions', action: () => shuffleSelectionColors() },
+        // Illustrator effects (tier 1)
+        { id: 'fx-convert-rect', label: 'Convert to Shape: Rectangle', category: 'Actions', action: () => convertToShape([...store.selection], 'rectangle') },
+        { id: 'fx-convert-rounded', label: 'Convert to Shape: Rounded Rectangle', category: 'Actions', action: () => convertToShape([...store.selection], 'rounded') },
+        { id: 'fx-convert-ellipse', label: 'Convert to Shape: Ellipse', category: 'Actions', action: () => convertToShape([...store.selection], 'ellipse') },
+        { id: 'fx-split-grid', label: 'Split Into Grid (4×4)', category: 'Actions', action: () => splitIntoGrid(store.selection[0], 4, 4, 0) },
+        { id: 'fx-to-guides', label: 'Convert Shapes to Guides', category: 'Actions', action: () => convertToGuides() },
+        { id: 'fx-crop-marks', label: 'Toggle Crop Marks (on object)', category: 'Actions', action: () => toggleObjectCropMarks() },
         { id: 'action-del-unused-swatches', label: 'Delete Unused Swatches', category: 'Actions', action: () => deleteUnusedSwatches() },
 
         // Illustrator-class tools (also on the right-click menu / panels)

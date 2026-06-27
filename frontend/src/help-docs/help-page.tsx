@@ -37,6 +37,7 @@ const YslTutorialDoc = lazy(() => import('./features/ysl-tutorial-doc'));
 const BulkEditingDoc = lazy(() => import('./features/bulk-editing-doc'));
 const LogoToolkitDoc = lazy(() => import('./features/logo-toolkit-doc'));
 const IllustratorToolsDoc = lazy(() => import('./features/illustrator-tools-doc'));
+const EffectsDoc = lazy(() => import('./features/effects-doc'));
 const MasksAppearanceTraceDoc = lazy(() => import('./features/masks-appearance-trace-doc'));
 const SymbolsDoc = lazy(() => import('./features/symbols-doc'));
 const ArtboardsDoc = lazy(() => import('./features/artboards-doc'));
@@ -128,6 +129,15 @@ const shapeDocuments: ShapeDoc[] = [
         description: 'Magic Wand, Distort & Transform (Liquify), Knife & Scissors, generative shapes (spiral/arc/grids), Vertical Type, and the Symbol Sprayer — with API examples',
         keywords: 'lens flare spiral arc rectangular grid polar grid magic wand select similar distort transform pucker bloat twirl zigzag crystallize roughen liquify knife scissors curvature reshape blob brush path eraser puppet warp perspective grid touch type vertical type slice graph chart symbolism sprayer width tool live paint shape builder pathfinder offset stroke outline type on path vector tools palette',
         content: IllustratorToolsDoc
+    },
+    {
+        id: 'effects',
+        name: 'Effects & Colour Tools',
+        icon: '✨',
+        category: 'Design',
+        description: 'Convert to Shape, Split Into Grid, Convert to Guides, Feather, Outer Glow, Scribble, Smooth, crop marks & bleed, plus the Colour Guide (tints / harmonies / palette-from-image), swatch groups and the swatch info sheet — with API examples',
+        keywords: 'effects convert to shape split into grid convert to guides feather outer glow inner glow scribble smooth path crop marks bleed registration colour guide color guide tints shades harmony complementary analogous triadic split complementary tetradic monochromatic palette from image colour theme picker recolor shuffle swatch groups swatch info sheet print',
+        content: EffectsDoc
     },
     {
         id: 'masks-appearance-trace',
