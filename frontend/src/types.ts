@@ -32,7 +32,7 @@ export interface GraphicStyle { id: string; name: string; style: Partial<Drawing
 
 /** A document-level named colour. Objects that link to it (via fillSwatchId /
  *  strokeSwatchId) update automatically when the swatch's colour changes. */
-export interface Swatch { id: string; name: string; color: string; }
+export interface Swatch { id: string; name: string; color: string; group?: string; }
 
 export type ToolType = ElementType | 'lasso' | 'crop';
 

@@ -608,6 +608,41 @@ function toOutlineElement(el: DrawingElement, isDarkMode: boolean, scale: number
     } as DrawingElement;
 }
 
+/**
+ * Draw a print bleed boundary (dashed) and crop/registration marks at an
+ * artboard's trim corners (Illustrator's bleed + crop marks).
+ */
+function drawBleedAndCropMarks(ctx: CanvasRenderingContext2D, ab: { x: number; y: number; width: number; height: number }, bleed: number, scale: number, isDarkMode: boolean) {
+    const lw = 1 / scale;
+    const markLen = 12 / scale;       // crop-mark length (screen-constant)
+    const off = bleed;                // marks sit at the bleed edge, gapped from trim
+    ctx.save();
+    // Bleed boundary
+    ctx.strokeStyle = isDarkMode ? '#7a4' : '#3a7';
+    ctx.lineWidth = lw;
+    ctx.setLineDash([6 / scale, 4 / scale]);
+    ctx.strokeRect(ab.x - bleed, ab.y - bleed, ab.width + bleed * 2, ab.height + bleed * 2);
+    ctx.setLineDash([]);
+    // Crop marks at the four trim corners (L-shaped, outside the trim edge).
+    ctx.strokeStyle = isDarkMode ? '#ddd' : '#222';
+    ctx.lineWidth = lw;
+    const corners: Array<[number, number, number, number]> = [
+        [ab.x, ab.y, -1, -1],
+        [ab.x + ab.width, ab.y, 1, -1],
+        [ab.x, ab.y + ab.height, -1, 1],
+        [ab.x + ab.width, ab.y + ab.height, 1, 1],
+    ];
+    ctx.beginPath();
+    for (const [cx, cy, sx, sy] of corners) {
+        // horizontal arm
+        ctx.moveTo(cx + sx * off, cy); ctx.lineTo(cx + sx * (off + markLen), cy);
+        // vertical arm
+        ctx.moveTo(cx, cy + sy * off); ctx.lineTo(cx, cy + sy * (off + markLen));
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
 export function renderLayersAndElements(
     ctx: CanvasRenderingContext2D,
     rc: any,
@@ -627,6 +662,7 @@ export function renderLayersAndElements(
 
     // Artboards: named export-region frames drawn behind all content.
     if (store.artboards && store.artboards.length && store.docType !== 'slides') {
+        const bleed = Math.max(0, store.globalSettings.bleed || 0);
         ctx.save();
         for (const ab of store.artboards) {
             if (ab.background && ab.background !== 'none' && ab.background !== 'transparent') {
@@ -636,6 +672,8 @@ export function renderLayersAndElements(
             ctx.strokeStyle = isDarkMode ? '#555' : '#bbb';
             ctx.lineWidth = 1 / scale;
             ctx.strokeRect(ab.x, ab.y, ab.width, ab.height);
+            // Print bleed + crop marks (registration marks at the trim corners).
+            if (bleed > 0) drawBleedAndCropMarks(ctx, ab, bleed, scale, isDarkMode);
             // The artboard name + size is shown by the interactive ArtboardOverlay
             // chip (drag-to-move / click-to-select); no static label drawn here.
         }

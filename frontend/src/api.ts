@@ -6,7 +6,7 @@ import {
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
     toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
-    toggleSwatchesPanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
+    toggleSwatchesPanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
@@ -1590,7 +1590,13 @@ export const YappyAPI = {
     /** Show/hide the Swatches panel. */
     toggleSwatchesPanel(visible?: boolean) { toggleSwatchesPanel(visible); },
     /** Create a global colour swatch (from a colour, or the selection's fill). Returns its id. */
-    createSwatch(color?: string, name?: string) { return createSwatch(color, name); },
+    createSwatch(color?: string, name?: string, group?: string) { return createSwatch(color, name, group); },
+    /** Assign swatches to a named group (null to ungroup). */
+    setSwatchGroup(swatchIds: string[], group: string | null) { setSwatchGroup(swatchIds, group); },
+    /** Swatches keyed by group name (ungrouped under ''). */
+    listSwatchGroups() { return listSwatchGroups(); },
+    /** Add the selection's distinct colours as swatches in a named group. */
+    createSwatchGroupFromSelection(group: string, ids?: string[]) { return createSwatchGroupFromSelection(group, ids); },
     /** Apply a swatch to the selection's fill or stroke, linking them to it. */
     applySwatch(swatchId: string, target: 'fill' | 'stroke' = 'fill', ids?: string[]) { applySwatch(swatchId, target, ids); },
     /** Recolour a swatch — every linked object updates with it. */
@@ -1600,7 +1606,10 @@ export const YappyAPI = {
     /** Delete a swatch (links on objects are dropped). */
     deleteSwatch(swatchId: string) { deleteSwatch(swatchId); },
     /** List global swatches. */
-    listSwatches() { return store.swatches.map(s => ({ id: s.id, name: s.name, color: s.color })); },
+    listSwatches() { return store.swatches.map(s => ({ id: s.id, name: s.name, color: s.color, group: s.group })); },
+    /** Set the print bleed margin (px) around artboards; >0 shows crop marks. */
+    setBleed(px: number) { setBleed(px); },
+    getBleed() { return store.globalSettings.bleed ?? 0; },
     /** Jump to a history timeline index (see the History panel). */
     jumpToHistory(index: number) { jumpToHistory(index); },
 

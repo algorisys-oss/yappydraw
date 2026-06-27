@@ -337,6 +337,7 @@ const initialState: AppState = {
         timelapseCaptureWidth: parseInt(localStorage.getItem('timelapseCaptureWidth') ?? '1024', 10) || 1024,
         timelapseTargetDuration: parseInt(localStorage.getItem('timelapseTargetDuration') ?? '30', 10) || 30,
         historyDepth: parseInt(localStorage.getItem('historyDepth') ?? '50', 10) || 50,
+        bleed: parseFloat(localStorage.getItem('bleed') ?? '0') || 0,
     },
     showCanvasProperties: false,
     outlineView: false,
@@ -1236,7 +1237,13 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     if (updates.historyDepth !== undefined) {
         try { localStorage.setItem('historyDepth', String(updates.historyDepth)); } catch { /* ignore */ }
     }
+    if (updates.bleed !== undefined) {
+        try { localStorage.setItem('bleed', String(updates.bleed)); } catch { /* ignore */ }
+    }
 };
+
+/** Set the print bleed margin (px) drawn around artboards; >0 also shows crop marks. */
+export const setBleed = (px: number) => { updateGlobalSettings({ bleed: Math.max(0, px) }); bumpDirtyRevision(); };
 
 // Remembered strength so the quick toggle can restore the user's last setting
 // when flipping stabilization back on. Seeded from the persisted value.
@@ -3729,14 +3736,14 @@ export const toggleSwatchesPanel = (visible?: boolean) => {
 };
 
 /** Create a swatch (from a colour, or the first selected element's fill). */
-export const createSwatch = (color?: string, name?: string): string | null => {
+export const createSwatch = (color?: string, name?: string, group?: string): string | null => {
     let c = color;
     if (!c) {
         const el = store.elements.find(e => e.id === store.selection[0]);
         c = el && el.backgroundColor && el.backgroundColor !== 'transparent' ? el.backgroundColor : '#3b82f6';
     }
     const id = generateId('swatch' as any);
-    const sw: Swatch = { id, name: name || c!, color: c! };
+    const sw: Swatch = { id, name: name || c!, color: c!, group };
     pushToHistory();
     setStore('swatches', list => [...list, sw]);
     bumpDirtyRevision();
@@ -3790,6 +3797,40 @@ export const deleteSwatch = (swatchId: string) => {
     setStore('elements', (e: DrawingElement) => e.fillSwatchId === swatchId, () => ({ fillSwatchId: undefined }));
     setStore('elements', (e: DrawingElement) => e.strokeSwatchId === swatchId, () => ({ strokeSwatchId: undefined }));
     bumpDirtyRevision();
+};
+
+/** Assign swatches to a named group (Illustrator swatch groups). Pass null to ungroup. */
+export const setSwatchGroup = (swatchIds: string[], group: string | null) => {
+    if (swatchIds.length === 0) return;
+    pushToHistory();
+    setStore('swatches', (s: Swatch) => swatchIds.includes(s.id), () => ({ group: group ?? undefined }));
+    bumpDirtyRevision();
+    showToast(group ? `Grouped into “${group}”` : 'Ungrouped swatches', 'success');
+};
+
+/** Swatches keyed by group name (ungrouped under ''). */
+export const listSwatchGroups = (): Record<string, Swatch[]> => {
+    const out: Record<string, Swatch[]> = {};
+    for (const s of store.swatches) (out[s.group ?? ''] ??= []).push({ ...s });
+    return out;
+};
+
+/**
+ * Create one swatch per distinct colour in the current selection, all assigned to
+ * `group` (the "add selected colours to a swatch group" workflow). Returns new ids.
+ */
+export const createSwatchGroupFromSelection = (group: string, ids?: string[]): string[] => {
+    const colors = getSelectionColors(ids ?? store.selection).map(c => c.color);
+    if (colors.length === 0) { showToast('No colours in selection', 'info'); return []; }
+    const existing = new Set(store.swatches.map(s => s.color));
+    const fresh = colors.filter(c => !existing.has(c));
+    if (fresh.length === 0) { showToast('All colours already in swatches', 'info'); return []; }
+    pushToHistory();
+    const made: Swatch[] = fresh.map(c => ({ id: generateId('swatch' as any), name: c, color: c, group }));
+    setStore('swatches', list => [...list, ...made]);
+    bumpDirtyRevision();
+    showToast(`Added ${made.length} colour${made.length === 1 ? '' : 's'} to “${group}”`, 'success');
+    return made.map(s => s.id);
 };
 
 // ── Blend (interpolated steps between two objects) ───────────────────────────

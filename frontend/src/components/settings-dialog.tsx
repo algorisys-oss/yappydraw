@@ -140,6 +140,24 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                 <span style={{ color: 'var(--text-secondary, #888)', 'font-size': '12px' }}>steps</span>
                             </div>
                         </div>
+
+                        <div class="settings-row">
+                            <label title="Print bleed margin (px) drawn around each artboard. Set >0 to also show crop / registration marks. 0 = off.">
+                                Print Bleed
+                            </label>
+                            <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="200"
+                                    step="1"
+                                    style={{ width: '80px' }}
+                                    value={store.globalSettings.bleed ?? 0}
+                                    onChange={(e) => updateGlobalSettings({ bleed: Math.max(0, e.currentTarget.valueAsNumber || 0) })}
+                                />
+                                <span style={{ color: 'var(--text-secondary, #888)', 'font-size': '12px' }}>px (+ crop marks)</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="settings-section">

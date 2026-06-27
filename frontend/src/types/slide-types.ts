@@ -99,6 +99,7 @@ export interface GlobalSettings {
     timelapseCaptureWidth?: number;    // Longest-edge resolution (px) for captured time-lapse frames (default 1024)
     timelapseTargetDuration?: number;  // Target length (seconds) for the exported time-lapse video (default 30)
     historyDepth?: number;             // Max undo states retained (default 50)
+    bleed?: number;                    // Print bleed margin (px) drawn around artboards; >0 also shows crop marks
 }
 
 /**
