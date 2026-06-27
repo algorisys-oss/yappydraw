@@ -3991,7 +3991,8 @@ export const commitBlobStroke = (worldPts: { x: number; y: number }[], radius: n
 
     const style: Partial<DrawingElement> = { backgroundColor: color, fillStyle: 'solid', strokeColor: color, strokeWidth: 0, renderStyle: store.defaultElementStyles.renderStyle };
     const created: DrawingElement[] = [];
-    for (const poly of blob) { const p = buildPathFromPoly(poly, style, smoothEps); if (p) created.push(p); }
+    const batchIds = new Set<string>();
+    for (const poly of blob) { const p = buildPathFromPoly(poly, style, smoothEps, batchIds); if (p) created.push(p); }
     if (!created.length) return null;
 
     // Merge only with same-colour paths the new blob GENUINELY touches — a bbox prefilter then a
@@ -4008,7 +4009,8 @@ export const commitBlobStroke = (worldPts: { x: number; y: number }[], radius: n
         const ids = [...overlap.map(e => e.id), ...created.map(e => e.id)];
         const merged = runBooleanOp(store.elements.filter(e => ids.includes(e.id)), 'union');
         if (merged.length) {
-            const mergedEls = merged.map(poly => buildPathFromPoly(poly, style, smoothEps)).filter(Boolean) as DrawingElement[];
+            const mergeBatch = new Set<string>();
+            const mergedEls = merged.map(poly => buildPathFromPoly(poly, style, smoothEps, mergeBatch)).filter(Boolean) as DrawingElement[];
             setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), ...mergedEls]);
             setStore('selection', mergedEls.map(e => e.id));
             bumpDirtyRevision();
@@ -4047,6 +4049,7 @@ export const commitPathErase = (worldPts: { x: number; y: number }[], radius: nu
         e.x < sx1 && e.x + e.width > sx0 && e.y < sy1 && e.y + e.height > sy0);
     const consumed: string[] = [];
     const created: DrawingElement[] = [];
+    const batchIds = new Set<string>();
     for (const el of targets) {
         const mp = elementToMultiPolygon(el);
         if (!mp.length) continue;
@@ -4059,7 +4062,7 @@ export const commitPathErase = (worldPts: { x: number; y: number }[], radius: nu
             strokeWidth: el.strokeWidth, strokeStyle: el.strokeStyle, renderStyle: el.renderStyle,
             opacity: el.opacity, roughness: el.roughness, layerId: el.layerId,
         };
-        for (const poly of result) { const p = buildPathFromPoly(poly, style); if (p) created.push(p); }
+        for (const poly of result) { const p = buildPathFromPoly(poly, style, undefined, batchIds); if (p) created.push(p); }
     }
     if (!consumed.length) return [];
     pushToHistory();
@@ -4140,11 +4143,11 @@ const _memberSig = (members: DrawingElement[]) => members
     .map(m => `${m.id}:${Math.round(m.x)},${Math.round(m.y)},${Math.round(m.width)},${Math.round(m.height)},${Math.round((m.angle || 0) * 100)}:${_geomToken(m)}`)
     .sort().join('|');
 
-const _buildLivePaintFill = (poly: Poly, groupId: string, faceKey: string, color: string): DrawingElement | null => {
+const _buildLivePaintFill = (poly: Poly, groupId: string, faceKey: string, color: string, batchIds?: Set<string>): DrawingElement | null => {
     const fill = buildPathFromPoly(poly, {
         backgroundColor: color, fillStyle: 'solid', strokeColor: 'transparent', strokeWidth: 0,
         renderStyle: 'architectural', layerId: _livePaintMembers(groupId)[0]?.layerId ?? store.activeLayerId,
-    });
+    }, undefined, batchIds);
     if (!fill) return null;
     return { ...fill, locked: true, livePaintFillFor: groupId, livePaintFaceKey: faceKey } as DrawingElement;
 };
@@ -4197,7 +4200,8 @@ export const livePaintFillAt = (point: { x: number; y: number }, color?: string)
     if (hasExisting) {
         setStore('elements', e => e.livePaintFillFor === groupId && e.livePaintFaceKey === face.key, { backgroundColor: fillColor, fillSwatchId: undefined } as any);
     } else {
-        const newFills = (face.region as Poly[]).map(poly => _buildLivePaintFill(poly, groupId!, face.key, fillColor)).filter(Boolean) as DrawingElement[];
+        const fillBatch = new Set<string>();
+        const newFills = (face.region as Poly[]).map(poly => _buildLivePaintFill(poly, groupId!, face.key, fillColor, fillBatch)).filter(Boolean) as DrawingElement[];
         setStore('elements', list => {
             const firstMemberIdx = list.findIndex(e => e.livePaintGroupId === groupId);
             const at = firstMemberIdx < 0 ? list.length : firstMemberIdx;
@@ -4247,11 +4251,12 @@ export const regenerateAllLivePaint = () => {
         const faces = computeShapeFaces(members);
         const faceByKey = new Map(faces.map(f => [f.key, f]));
         const rebuilt: DrawingElement[] = [];
+        const rebuildBatch = new Set<string>();
         for (const [key, color] of colorByFace) {
             const face = faceByKey.get(key);
             if (!face) continue; // region no longer exists (topology changed) → drop its fill
             for (const poly of face.region as Poly[]) {
-                const fill = _buildLivePaintFill(poly, groupId, key, color);
+                const fill = _buildLivePaintFill(poly, groupId, key, color, rebuildBatch);
                 if (fill) rebuilt.push(fill);
             }
         }
@@ -4367,6 +4372,7 @@ export const knifeCut = (p0: { x: number; y: number }, p1: { x: number; y: numbe
         : store.elements).filter(e => !e.locked);
     const created: DrawingElement[] = [];
     const consumed: string[] = [];
+    const batchIds = new Set<string>();
     for (const el of targets) {
         const mp = elementToMultiPolygon(el);
         if (!mp.length) continue;
@@ -4379,7 +4385,7 @@ export const knifeCut = (p0: { x: number; y: number }, p1: { x: number; y: numbe
             opacity: el.opacity, roughness: el.roughness, layerId: el.layerId,
         };
         for (const poly of [...pos, ...neg]) {
-            const path = buildPathFromPoly(poly, style);
+            const path = buildPathFromPoly(poly, style, undefined, batchIds);
             if (path) created.push(path);
         }
     }
@@ -5144,6 +5150,7 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
     // one that survives, so it keeps its own appearance.
     const base = op === 'subtract' ? els[0] : els[els.length - 1];
     const created: DrawingElement[] = [];
+    const batchIds = new Set<string>();
     for (const poly of polys) {
         const path = buildPathFromPoly(poly, {
             strokeColor: base.strokeColor,
@@ -5155,7 +5162,7 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
             opacity: base.opacity,
             roughness: base.roughness,
             layerId: base.layerId,
-        });
+        }, undefined, batchIds);
         if (path) created.push(path);
     }
     if (created.length === 0) return [];
@@ -5193,8 +5200,9 @@ export const applyPathfinderRegion = (ids: string[], op: RegionPathfinderOp): st
         return { strokeColor: b.strokeColor, backgroundColor: b.backgroundColor, fillStyle: b.fillStyle, strokeWidth: b.strokeWidth, strokeStyle: b.strokeStyle, renderStyle: b.renderStyle, opacity: b.opacity, roughness: b.roughness, layerId: b.layerId };
     };
     const created: DrawingElement[] = [];
+    const batchIds = new Set<string>();
     const emit = (region: any, styleIdx: number, overrides?: Partial<DrawingElement>) => {
-        for (const poly of region) { const p = buildPathFromPoly(poly, { ...styleOf(styleIdx), ...overrides }); if (p) created.push(p); }
+        for (const poly of region) { const p = buildPathFromPoly(poly, { ...styleOf(styleIdx), ...overrides }, undefined, batchIds); if (p) created.push(p); }
     };
 
     if (op === 'divide') {
@@ -5217,7 +5225,7 @@ export const applyPathfinderRegion = (ids: string[], op: RegionPathfinderOp): st
             const g = groups.get(key) || { idx: ti, faces: [] };
             g.idx = ti; g.faces.push(f); groups.set(key, g);
         }
-        for (const g of groups.values()) { const region = unionFaces(g.faces); for (const poly of region) { const p = buildPathFromPoly(poly, styleOf(g.idx)); if (p) created.push(p); } }
+        for (const g of groups.values()) { const region = unionFaces(g.faces); for (const poly of region) { const p = buildPathFromPoly(poly, styleOf(g.idx), undefined, batchIds); if (p) created.push(p); } }
     }
 
     if (!created.length) { showToast('Pathfinder: empty result', 'info'); return []; }
@@ -5267,9 +5275,10 @@ export const commitShapeBuilderFaces = (ids: string[], touchedKeys: string[], mo
         renderStyle: base.renderStyle, opacity: base.opacity, roughness: base.roughness, layerId: base.layerId,
     };
     const created: DrawingElement[] = [];
+    const batchIds = new Set<string>();
     const polysToPaths = (mp: { length: number }[], st: Partial<DrawingElement>) => {
         for (const poly of mp as Poly[]) {
-            const p = buildPathFromPoly(poly, st);
+            const p = buildPathFromPoly(poly, st, undefined, batchIds);
             if (p) created.push(p);
         }
     };
@@ -5322,6 +5331,7 @@ export const applyDistort = (ids: string[], kind: DistortKind, amount = 0.25): s
     if (!els.length) { showToast('Distort: select a shape', 'info'); return []; }
     const created: DrawingElement[] = [];
     const consumed: string[] = [];
+    const batchIds = new Set<string>();
     for (const el of els) {
         const mp = elementToMultiPolygon(el);
         if (!mp.length) continue;
@@ -5332,7 +5342,7 @@ export const applyDistort = (ids: string[], kind: DistortKind, amount = 0.25): s
             opacity: el.opacity, roughness: el.roughness, layerId: el.layerId,
         };
         for (const poly of mp) {
-            const path = buildPathFromPoly(distortPoly(poly, kind, amount), style);
+            const path = buildPathFromPoly(distortPoly(poly, kind, amount), style, undefined, batchIds);
             if (path) created.push(path);
         }
     }
@@ -5536,14 +5546,17 @@ export const convertTextToOutlines = async (ids: string[]): Promise<string[]> =>
  * a multi-subpath `pathSubpaths` path (even-odd fill). World coords are normalized to the
  * polygon's bbox.
  */
-function buildPathFromPoly(poly: Poly, style: Partial<DrawingElement>, smoothEps?: number): DrawingElement | null {
+function buildPathFromPoly(poly: Poly, style: Partial<DrawingElement>, smoothEps?: number, batchIds?: Set<string>): DrawingElement | null {
     // smoothEps > 0 → curved (Bézier) edge via Catmull-Rom (Blob Brush); else straight corners.
     const norm = (smoothEps && smoothEps > 0) ? polyToSmoothSubpaths(poly, smoothEps) : polyToPathSubpaths(poly);
     if (!norm) return null;
     const single = norm.subpaths.length === 1;
     return {
         ...store.defaultElementStyles,
-        id: generateId('path'),
+        // `batchIds` keeps ids unique across a synchronous create-loop: generateId scans the store
+        // (max+1), but loop-built paths aren't in the store yet, so without this every piece collides
+        // on the same id (e.g. path-1) and only the first one ends up rendering/selectable.
+        id: generateId('path', batchIds),
         type: 'path',
         x: norm.minX, y: norm.minY, width: norm.width, height: norm.height,
         // Single ring → editable pathAnchors; holes → pathSubpaths (even-odd).
@@ -5569,6 +5582,7 @@ export const outlineStroke = (ids: string[]): string[] => {
     const targets = store.elements.filter(e => ids.includes(e.id));
     const created: DrawingElement[] = [];
     const replaceIds = new Set<string>();
+    const batchIds = new Set<string>();
     for (const el of targets) {
         const polys = computeOutlineStroke(el);
         if (polys.length === 0) continue;
@@ -5578,7 +5592,7 @@ export const outlineStroke = (ids: string[]): string[] => {
                 backgroundColor: el.strokeColor, fillStyle: 'solid',
                 strokeColor: 'transparent', strokeWidth: 0,
                 renderStyle: el.renderStyle, opacity: el.opacity, layerId: el.layerId,
-            });
+            }, undefined, batchIds);
             if (path) created.push(path);
         }
     }
@@ -5597,6 +5611,7 @@ export const outlineStroke = (ids: string[]): string[] => {
 export const offsetPath = (ids: string[], distance: number): string[] => {
     const targets = store.elements.filter(e => ids.includes(e.id));
     const created: DrawingElement[] = [];
+    const batchIds = new Set<string>();
     for (const el of targets) {
         const polys = computeOffsetPath(el, distance);
         for (const poly of polys) {
@@ -5604,7 +5619,7 @@ export const offsetPath = (ids: string[], distance: number): string[] => {
                 backgroundColor: el.backgroundColor, fillStyle: el.fillStyle,
                 strokeColor: el.strokeColor, strokeWidth: el.strokeWidth, strokeStyle: el.strokeStyle,
                 renderStyle: el.renderStyle, opacity: el.opacity, layerId: el.layerId,
-            });
+            }, undefined, batchIds);
             if (path) created.push(path);
         }
     }
