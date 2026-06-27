@@ -2231,6 +2231,60 @@ export const rearrangeArtboards = (columns = 0, gap = 40) => {
     showToast(`Arranged ${list.length} artboard${list.length === 1 ? '' : 's'} in ${cols} column${cols === 1 ? '' : 's'}`, 'success');
 };
 
+/**
+ * Duplicate an artboard and the artwork sitting on it, placed to the right
+ * (Illustrator's Alt-drag with the artboard tool). Returns the new artboard id.
+ */
+export const duplicateArtboard = (id?: string, gap = 40): string | null => {
+    const src = store.artboards.find(a => a.id === (id ?? store.activeArtboardId ?? store.artboards[0]?.id));
+    if (!src) { showToast('No artboard to duplicate', 'error'); return null; }
+    const dx = src.width + gap, dy = 0;
+    const newAb: Artboard = { ...src, id: generateId('ab' as any), name: `${src.name} copy`, x: src.x + dx, y: src.y + dy };
+    // Clone the elements whose centre lies within the source artboard.
+    const inside = store.elements.filter(e => {
+        const cx = e.x + e.width / 2, cy = e.y + e.height / 2;
+        return cx >= src.x && cx <= src.x + src.width && cy >= src.y && cy <= src.y + src.height;
+    });
+    const batchIds = new Set<string>(store.elements.map(e => e.id));
+    const clones = inside.map(e => {
+        const nid = generateId(e.type, batchIds); batchIds.add(nid);
+        return { ...JSON.parse(JSON.stringify(e)), id: nid, x: e.x + dx, y: e.y + dy } as DrawingElement;
+    });
+    pushToHistory();
+    setStore('artboards', list => [...list, newAb]);
+    if (clones.length) setStore('elements', list => [...list, ...clones]);
+    setStore('activeArtboardId', newAb.id);
+    bumpDirtyRevision();
+    showToast(`Duplicated artboard (+${clones.length} object${clones.length === 1 ? '' : 's'})`, 'success');
+    return newAb.id;
+};
+
+/**
+ * Fit an artboard to its artwork bounds (Illustrator's "Fit to Artwork Bounds"
+ * preset). Resizes the artboard to the bbox of the elements on it, plus padding.
+ */
+export const fitArtboardToArtwork = (id?: string, pad = 20): boolean => {
+    const ab = store.artboards.find(a => a.id === (id ?? store.activeArtboardId ?? store.artboards[0]?.id));
+    if (!ab) { showToast('No artboard selected', 'error'); return false; }
+    const inside = store.elements.filter(e => {
+        const cx = e.x + e.width / 2, cy = e.y + e.height / 2;
+        return cx >= ab.x && cx <= ab.x + ab.width && cy >= ab.y && cy <= ab.y + ab.height;
+    });
+    if (inside.length === 0) { showToast('Artboard has no artwork to fit', 'info'); return false; }
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const e of inside) {
+        minX = Math.min(minX, e.x, e.x + e.width); minY = Math.min(minY, e.y, e.y + e.height);
+        maxX = Math.max(maxX, e.x, e.x + e.width); maxY = Math.max(maxY, e.y, e.y + e.height);
+    }
+    pushToHistory();
+    setStore('artboards', (a: Artboard) => a.id === ab.id, () => ({
+        x: minX - pad, y: minY - pad, width: (maxX - minX) + pad * 2, height: (maxY - minY) + pad * 2,
+    }));
+    bumpDirtyRevision();
+    showToast('Artboard fit to artwork', 'success');
+    return true;
+};
+
 /** Outline (wireframe) view — render path outlines only, no fills (View > Outline). */
 export const toggleOutlineView = (on?: boolean) => {
     const next = on ?? !store.outlineView;
@@ -4649,6 +4703,36 @@ export const adjustSelectionColors = (opts: { hue?: number; lightness?: number; 
     bumpDirtyRevision();
 };
 
+/**
+ * Recolor: "change colour order randomly" — re-assign the selection's distinct
+ * colours to each other (a guaranteed derangement: every colour moves), preserving
+ * the palette but reshuffling which shape gets which. Returns the colour count.
+ */
+export const shuffleSelectionColors = (ids?: string[]): number => {
+    const sel = ids ?? store.selection;
+    const colors = getSelectionColors(sel).map(c => c.color);
+    const n = colors.length;
+    if (n < 2) { showToast('Need ≥2 colours to shuffle', 'info'); return n; }
+    // Random rotation by k∈[1,n-1] — never identity, so the order always changes.
+    const k = 1 + Math.floor(Math.random() * (n - 1));
+    const map = new Map<string, string>();
+    colors.forEach((c, i) => map.set(c, colors[(i + k) % n]));
+    pushToHistory();
+    const tx = (c?: string) => (c && map.has(c) ? map.get(c)! : c);
+    setStore('elements', (e: DrawingElement) => sel.includes(e.id), (e: DrawingElement) => {
+        const patch: Partial<DrawingElement> = {};
+        if (e.backgroundColor && map.has(e.backgroundColor)) { patch.backgroundColor = tx(e.backgroundColor); patch.fillSwatchId = undefined; }
+        if (e.strokeColor && map.has(e.strokeColor)) { patch.strokeColor = tx(e.strokeColor); patch.strokeSwatchId = undefined; }
+        if (e.gradientStops?.some(s => map.has(s.color))) {
+            patch.gradientStops = e.gradientStops.map(s => map.has(s.color) ? { ...s, color: tx(s.color)! } : s);
+        }
+        return patch;
+    });
+    bumpDirtyRevision();
+    showToast('Shuffled colours', 'success');
+    return n;
+};
+
 /** Apply the source object's style to the armed targets, then disarm. */
 export const applyEyedropperFrom = (sourceId: string, colorOnly = false) => {
     const ed = store.eyedropper;
@@ -5457,12 +5541,26 @@ export const commitShapeBuilderFaces = (ids: string[], touchedKeys: string[], mo
  * Magic Wand — select every (unlocked, visible) element sharing the reference element's
  * fill colour, or stroke, or both. Reference defaults to the first selected element.
  */
-export const selectSimilar = (refId?: string, match: 'fill' | 'stroke' | 'both' = 'fill'): string[] => {
+export type SelectSimilarMatch =
+    'fill' | 'stroke' | 'both' | 'fontFamily' | 'fontSize' | 'opacity' | 'strokeWidth' | 'type';
+
+export const selectSimilar = (refId?: string, match: SelectSimilarMatch = 'fill'): string[] => {
     const ref = store.elements.find(e => e.id === (refId ?? store.selection[0]));
     if (!ref) { showToast('Magic Wand: select an element first', 'info'); return []; }
     const fillEq = (e: DrawingElement) => (e.backgroundColor || '') === (ref.backgroundColor || '');
     const strokeEq = (e: DrawingElement) => (e.strokeColor || '') === (ref.strokeColor || '');
-    const pred = match === 'fill' ? fillEq : match === 'stroke' ? strokeEq : (e: DrawingElement) => fillEq(e) && strokeEq(e);
+    const preds: Record<SelectSimilarMatch, (e: DrawingElement) => boolean> = {
+        fill: fillEq,
+        stroke: strokeEq,
+        both: (e) => fillEq(e) && strokeEq(e),
+        // "Select > Same": match a single attribute (Illustrator's submenu).
+        fontFamily: (e) => (e.fontFamily || '') === (ref.fontFamily || ''),
+        fontSize: (e) => (e.fontSize ?? -1) === (ref.fontSize ?? -1),
+        opacity: (e) => (e.opacity ?? 100) === (ref.opacity ?? 100),
+        strokeWidth: (e) => (e.strokeWidth ?? 0) === (ref.strokeWidth ?? 0),
+        type: (e) => e.type === ref.type,
+    };
+    const pred = preds[match] ?? fillEq;
     const hidden = new Set(store.layers.filter(l => !l.visible).map(l => l.id));
     const ids = store.elements.filter(e => !e.locked && !hidden.has(e.layerId!) && pred(e)).map(e => e.id);
     setStore('selection', ids);

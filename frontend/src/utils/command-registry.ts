@@ -1,6 +1,7 @@
 import {
     store, setStore, setSelectedTool, toggleGrid, toggleSnapToGrid, toggleZenMode, toggleOutlineView, toggleTrimView,
     swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards,
+    duplicateArtboard, fitArtboardToArtwork, shuffleSelectionColors,
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection, toggleVectorToolsPanel,
     groupSelected, ungroupSelected, bringToFront, sendToBack,
     mirrorCopy, transformAgain, convertTextToOutlines,
@@ -258,6 +259,9 @@ export const getCommands = (): Command[] => {
         { id: 'action-swap-fill-stroke', label: 'Swap Fill / Stroke', category: 'Actions', action: () => swapFillStroke(), shortcut: 'Shift+X' },
         { id: 'action-clean-up', label: 'Clean Up (stray points, empty text, unpainted)', category: 'Actions', action: () => cleanUpElements() },
         { id: 'action-paste-all-artboards', label: 'Paste on All Artboards', category: 'Actions', action: () => pasteOnAllArtboards() },
+        { id: 'action-duplicate-artboard', label: 'Duplicate Artboard (with artwork)', category: 'Actions', action: () => duplicateArtboard() },
+        { id: 'action-fit-artboard', label: 'Fit Artboard to Artwork', category: 'Actions', action: () => fitArtboardToArtwork() },
+        { id: 'action-shuffle-colors', label: 'Recolor: Shuffle Colour Order', category: 'Actions', action: () => shuffleSelectionColors() },
         { id: 'action-del-unused-swatches', label: 'Delete Unused Swatches', category: 'Actions', action: () => deleteUnusedSwatches() },
 
         // Illustrator-class tools (also on the right-click menu / panels)
@@ -265,6 +269,13 @@ export const getCommands = (): Command[] => {
         { id: 'action-live-paint-release', label: 'Live Paint: Release', category: 'Actions', action: () => { const g = store.elements.find(e => e.livePaintGroupId)?.livePaintGroupId; if (g) releaseLivePaint(g); } },
         { id: 'tool-shape-builder', label: 'Shape Builder (merge / carve regions)', category: 'Tools', action: () => toggleShapeBuilder(true) },
         { id: 'tool-magic-wand', label: 'Magic Wand (Select Similar)', category: 'Tools', action: () => selectSimilar() },
+        { id: 'select-same-fill', label: 'Select › Same Fill Colour', category: 'Tools', action: () => selectSimilar(undefined, 'fill') },
+        { id: 'select-same-stroke', label: 'Select › Same Stroke Colour', category: 'Tools', action: () => selectSimilar(undefined, 'stroke') },
+        { id: 'select-same-font', label: 'Select › Same Font Family', category: 'Tools', action: () => selectSimilar(undefined, 'fontFamily') },
+        { id: 'select-same-fontsize', label: 'Select › Same Font Size', category: 'Tools', action: () => selectSimilar(undefined, 'fontSize') },
+        { id: 'select-same-opacity', label: 'Select › Same Opacity', category: 'Tools', action: () => selectSimilar(undefined, 'opacity') },
+        { id: 'select-same-strokeweight', label: 'Select › Same Stroke Weight', category: 'Tools', action: () => selectSimilar(undefined, 'strokeWidth') },
+        { id: 'select-same-type', label: 'Select › Same Kind (shape type)', category: 'Tools', action: () => selectSimilar(undefined, 'type') },
         { id: 'tool-knife', label: 'Knife / Scissors (cut)', category: 'Tools', action: () => toggleCutTool(true) },
         { id: 'tool-width', label: 'Width Tool (variable stroke)', category: 'Tools', action: () => toggleWidthTool(true) },
         { id: 'action-width-reset', label: 'Reset Width Profile', category: 'Actions', action: () => clearWidthProfile([...store.selection]) },

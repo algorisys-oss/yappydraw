@@ -14,7 +14,7 @@ import {
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
-    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards,
+    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1610,6 +1610,10 @@ export const YappyAPI = {
     updateArtboard(id: string, patch: any) { updateArtboard(id, patch); },
     /** Rearrange All Artboards into a grid (auto columns ≈ √n when omitted). */
     rearrangeArtboards(columns = 0, gap = 40) { rearrangeArtboards(columns, gap); },
+    /** Duplicate an artboard and the artwork on it (to the right). Returns the new id. */
+    duplicateArtboard(id?: string, gap = 40) { return duplicateArtboard(id, gap); },
+    /** Resize an artboard to fit the artwork on it, plus padding. */
+    fitArtboardToArtwork(id?: string, pad = 20) { return fitArtboardToArtwork(id, pad); },
     /** Toggle Outline (wireframe) view — path outlines only, no fills. */
     toggleOutlineView(on?: boolean) { toggleOutlineView(on); },
     isOutlineView() { return store.outlineView; },
@@ -1947,6 +1951,8 @@ export const YappyAPI = {
     /** Recolor Artwork: open the panel / remap a colour / shift the palette's HSL across the selection. */
     toggleRecolorPanel(visible?: boolean) { toggleRecolorPanel(visible); },
     getSelectionColors(ids?: string[]) { return getSelectionColors(ids); },
+    /** Recolor: randomly re-order the selection's distinct colours (a derangement). */
+    shuffleSelectionColors(ids?: string[]) { return shuffleSelectionColors(ids); },
     recolorSelectionColor(from: string, to: string, ids?: string[]) { recolorSelectionColor(from, to, ids); },
     adjustSelectionColors(opts: { hue?: number; lightness?: number; saturation?: number }, ids?: string[]) { adjustSelectionColors(opts, ids); },
     /** Toggle the Measure tool (drag on canvas to read distance & angle). */
@@ -1954,7 +1960,8 @@ export const YappyAPI = {
     /** Toggle the Shape Builder (drag across ≥2 selected shapes to merge / Alt-drag to delete). */
     toggleShapeBuilder(active?: boolean) { toggleShapeBuilder(active); },
     /** Magic Wand — select every element sharing the reference's fill ('fill'|'stroke'|'both'). */
-    selectSimilar(refId?: string, match: 'fill' | 'stroke' | 'both' = 'fill') { return selectSimilar(refId, match); },
+    /** Select › Same: match by fill/stroke/both, or fontFamily/fontSize/opacity/strokeWidth/type. */
+    selectSimilar(refId?: string, match: 'fill' | 'stroke' | 'both' | 'fontFamily' | 'fontSize' | 'opacity' | 'strokeWidth' | 'type' = 'fill') { return selectSimilar(refId, match); },
     /** Distort & Transform — 'pucker'|'bloat'|'twirl'|'zigzag'|'crystallize'|'roughen' on the selection (amount 0..1). */
     distort(kind: 'pucker' | 'bloat' | 'twirl' | 'zigzag' | 'crystallize' | 'roughen', amount = 0.25, ids?: string[]) { return applyDistort(ids ?? [...store.selection], kind, amount); },
     /** Toggle the Knife/Scissors cut tool (drag a line to slice, click a path to split). */
