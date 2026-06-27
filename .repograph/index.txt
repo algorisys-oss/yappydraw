@@ -642,6 +642,7 @@ tests/symmetry-guide.spec.ts | typescript | 41 |
 tests/table-advanced.spec.ts | typescript | 239 |
 tests/table.spec.ts | typescript | 310 |
 tests/text-outlines.spec.ts | typescript | 53 |
+tests/timelapse-top-cut.spec.ts | typescript | 58 |
 tests/toolbar-persist.spec.ts | typescript | 16 |
 tests/toolbar-pos.spec.ts | typescript | 12 |
 tests/touch-type.spec.ts | typescript | 16 |
