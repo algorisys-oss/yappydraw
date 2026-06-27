@@ -1428,8 +1428,11 @@ export const setActiveSlide = async (index: number, skipAnimation?: boolean) => 
         return;
     }
 
-    // Save current viewport state to the slide we are leaving (only in design mode)
-    if (store.appMode === 'design' && store.activeSlideIndex !== -1) {
+    // Save current viewport state to the slide we are leaving (only in design mode).
+    // Bounds-check the index: after a deleteSlide the old activeSlideIndex can be
+    // out of range, and writing setStore("slides", staleIndex, …) would re-extend
+    // the array (re-adding the slot we just removed).
+    if (store.appMode === 'design' && store.activeSlideIndex >= 0 && store.activeSlideIndex < store.slides.length) {
         setStore("slides", store.activeSlideIndex, {
             lastViewState: { ...store.viewState }
         });

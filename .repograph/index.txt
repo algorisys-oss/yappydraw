@@ -74,7 +74,7 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 2831 | Theme:3 HarmonyType:31 ElementOptions:82 ElementType:465 as:465 Window:2823
+frontend/src/api.ts | typescript | 2837 | Theme:3 HarmonyType:31 ElementOptions:82 ElementType:465 as:465 Window:2829
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1408 | Component:1 App:85 moves:100 onPenMove:101 hidePen:105 handleKeyUp:135 handleKeyDown:145 as:651 handleFullscreenChange:766 handleBeforeUnload:772 handlePaste:776 handleGlobalDragEnter:878 handleGlobalDragOver:893 showDropFallbackPrompt:912 cleanup:942 outsideClick:970 isImageFile:982 first:983 must:996 extractDropData:998 processExtractedDrop:1053 handleGlobalDrop:1149 handleDocumentDrop:1195
 frontend/src/assets/player-assets.ts | typescript | 3 | hh:2
@@ -276,7 +276,7 @@ frontend/src/dsl/layout/layout-manager.ts | typescript | 121 | flattenNodes:16 c
 frontend/src/dsl/layout/strategies/sequence-layout.ts | typescript | 74 | computeSequenceLayout:32
 frontend/src/dsl/layout/strategies/tree-layout.ts | typescript | 330 | TreeNode:14 TreeDirection:25 computeTreeLayout:31 buildTree:141 buildAdjacencyFromChildren:172 calculateSubtreeWidths:192 assignVerticalPositions:203 calculateSubtreeHeights:230 assignHorizontalPositions:241 layoutRadial:268 assignRadialPositions:273 getDirection:301 collectPositions:313 getTreeBounds:321
 frontend/src/dsl/layout/types.ts | typescript | 19 | NodePosition:5 LayoutPositionMap:12 LayoutConfig:14
-frontend/src/dsl/parser/index.ts | typescript | 64 | parseDSL:26
+frontend/src/dsl/parser/index.ts | typescript | 66 | parseDSL:26
 frontend/src/dsl/parser/json-parser.ts | typescript | 62 | parseJsonDSL:12
 frontend/src/dsl/parser/schema-validator.ts | typescript | 138 | validateDiagram:17 validateNodeChildren:122
 frontend/src/dsl/parser/text-parser.ts | typescript | 415 | parseTextDSL:55 parseFrontmatterLine:249 parseInlineStyle:291 splitRespectingQuotes:329 splitInlineProps:362 generateEdgesFromChildren:392
@@ -377,7 +377,7 @@ frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStora
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 6415 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:35 ResolvedTheme:36 AppState:63 HistorySnapshot:451 AlignmentType:3733 DistributionType:3733 SelBBox:5020 LastTransform:5270 RegionPathfinderOp:5574 SelectSimilarMatch:5707 buildPathFromPoly:5960 WorldSub:6049 rdpAnchors:6052 normalizeWorldSubs:6080 makePathFromWorldSubs:6095 elementToWorldSubs:6116 startInkCleanupIfNeeded:6354
+frontend/src/store/app-store.ts | typescript | 6418 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:35 ResolvedTheme:36 AppState:63 HistorySnapshot:451 AlignmentType:3736 DistributionType:3736 SelBBox:5023 LastTransform:5273 RegionPathfinderOp:5577 SelectSimilarMatch:5710 buildPathFromPoly:5963 WorldSub:6052 rdpAnchors:6055 normalizeWorldSubs:6083 makePathFromWorldSubs:6098 elementToWorldSubs:6119 startInkCleanupIfNeeded:6357
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -577,7 +577,7 @@ tests/curvature.spec.ts | typescript | 35 |
 tests/data-structures.spec.ts | typescript | 188 |
 tests/default-style.spec.ts | typescript | 17 |
 tests/docType-redraw.spec.ts | typescript | 36 | countMagenta:9
-tests/dsl.spec.ts | typescript | 899 |
+tests/dsl.spec.ts | typescript | 904 |
 tests/element-management.spec.ts | typescript | 419 |
 tests/export_shortcut.spec.ts | typescript | 33 |
 tests/eyedropper.spec.ts | typescript | 37 |
@@ -603,7 +603,7 @@ tests/isometric-cube.spec.ts | typescript | 34 |
 tests/isometric-flex.spec.ts | typescript | 35 |
 tests/knife-exit.spec.ts | typescript | 36 | active:3
 tests/knife-scissors.spec.ts | typescript | 36 |
-tests/layer-background.spec.ts | typescript | 50 |
+tests/layer-background.spec.ts | typescript | 40 |
 tests/layers.spec.ts | typescript | 260 |
 tests/live-paint-select.spec.ts | typescript | 22 |
 tests/live-paint.spec.ts | typescript | 45 | lpFills:4
@@ -619,7 +619,7 @@ tests/panel-drag.spec.ts | typescript | 35 |
 tests/path-eraser.spec.ts | typescript | 18 |
 tests/pen-features.spec.ts | typescript | 146 |
 tests/perspective-grid.spec.ts | typescript | 24 |
-tests/productivity-features.spec.ts | typescript | 116 |
+tests/productivity-features.spec.ts | typescript | 115 |
 tests/propeak-1.spec.ts | typescript | 281 | sleep:51 setCur:68 ease:70 moveToClient:71 moveTo:75 clickFx:76 findBtn:85 cue:92 ensureTool:105 place:112 think:115 estW:119 tctr:120 line:124 typeAt:126 swoosh:133 at:134 refURL:155
 tests/propeak-2.spec.ts | typescript | 233 | two:6 sleep:49 setCur:66 ease:68 moveToClient:69 moveTo:73 clickFx:74 findBtn:83 cue:93 ensureTool:105 place:112 think:115 estW:116 tctr:117 centre:121 pR:137
 tests/propeak-variations.spec.ts | typescript | 196 | sleep:46 setCur:52 ease:53 moveToClient:54 moveTo:55 clickFx:56 cue:61 estW:72 text:73 pathC:74

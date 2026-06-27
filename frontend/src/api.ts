@@ -2572,6 +2572,12 @@ export const YappyAPI = {
             if (parsed.warnings.length > 0) console.warn('[YappyDSL] Warnings:', parsed.warnings);
             return null;
         }
+        // Nothing meaningful parsed (e.g. garbage the lenient text parser reduced to
+        // an empty diagram) → treat as a failed import, not an empty result.
+        if (!parsed.diagram.nodes || parsed.diagram.nodes.length === 0) {
+            console.error('[YappyDSL] No nodes parsed from input.');
+            return null;
+        }
         if (parsed.warnings.length > 0) {
             console.warn('[YappyDSL] Warnings:', parsed.warnings);
         }

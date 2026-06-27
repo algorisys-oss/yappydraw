@@ -34,8 +34,10 @@ export function parseDSL(input: string): ParseResult {
         };
     }
 
-    // Auto-detect: JSON starts with {
-    if (trimmed.startsWith('{')) {
+    // Auto-detect JSON: an object `{…}` or an array `[…]`. Arrays go to the JSON
+    // parser too, so non-object JSON is rejected with a clear error instead of
+    // silently falling through to the lenient text parser.
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
         return parseJsonDSL(trimmed);
     }
 
