@@ -6058,6 +6058,55 @@ export const simplifyPath = (ids: string[]): string[] => {
 };
 
 /**
+ * Smooth a path's janky curves via Laplacian smoothing — each interior anchor
+ * moves toward the midpoint of its neighbours by `strength`, for `iterations`
+ * passes (Illustrator's Smooth tool, applied as a one-shot op). Distinct from
+ * Simplify, which *reduces* anchors; Smooth keeps the count and rounds corners.
+ */
+const smoothAnchors = (anchors: PathAnchor[], closed: boolean, strength: number, iterations: number): PathAnchor[] => {
+    const n = anchors.length;
+    if (n < 3) return anchors.map(a => ({ ...a }));
+    let pts = anchors.map(a => ({ ...a }));
+    for (let it = 0; it < iterations; it++) {
+        const src = pts.map(a => ({ ...a }));
+        for (let i = 0; i < n; i++) {
+            if (!closed && (i === 0 || i === n - 1)) continue;   // pin open endpoints
+            const prev = src[(i - 1 + n) % n], next = src[(i + 1) % n];
+            const dx = ((prev.x + next.x) / 2 - src[i].x) * strength;
+            const dy = ((prev.y + next.y) / 2 - src[i].y) * strength;
+            pts[i].x = src[i].x + dx; pts[i].y = src[i].y + dy;
+            // Carry bezier handles with the anchor so tangents are preserved.
+            if (pts[i].inX !== undefined) pts[i].inX! += dx;
+            if (pts[i].inY !== undefined) pts[i].inY! += dy;
+            if (pts[i].outX !== undefined) pts[i].outX! += dx;
+            if (pts[i].outY !== undefined) pts[i].outY! += dy;
+        }
+    }
+    return pts;
+};
+
+export const smoothPath = (ids: string[], strength = 0.5, iterations = 2): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
+    if (targets.length === 0) { showToast('Smooth: select a path', 'info'); return []; }
+    const s = Math.max(0, Math.min(1, strength));
+    const its = Math.max(1, Math.min(20, Math.round(iterations)));
+    pushToHistory();
+    setStore('elements', list => list.map(el => {
+        if (!targets.find(t => t.id === el.id)) return el;
+        const subs = getPathSubpaths(el).map(sp => ({ closed: sp.closed, anchors: smoothAnchors(sp.anchors, sp.closed, s, its) }));
+        const single = subs.length === 1;
+        return {
+            ...el,
+            pathAnchors: single ? subs[0].anchors : undefined,
+            pathClosed: single ? subs[0].closed : undefined,
+            pathSubpaths: single ? undefined : subs,
+        } as DrawingElement;
+    }));
+    showToast('Smoothed path', 'success');
+    return targets.map(t => t.id);
+};
+
+/**
  * Join: connect the selected OPEN paths into a single path by chaining nearest endpoints
  * (each path's anchor list is appended, reversed if that end is closer). If the two free
  * ends meet, the result is closed. Closed paths are ignored.

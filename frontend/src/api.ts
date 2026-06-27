@@ -10,7 +10,7 @@ import {
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
-    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths,
+    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
@@ -1880,6 +1880,8 @@ export const YappyAPI = {
     offsetPath(ids: string[], distance: number) { return offsetPath(ids, distance); },
     /** Simplify: reduce a path's anchor count (Ramer–Douglas–Peucker). Returns affected ids. */
     simplifyPath(ids: string[]) { return simplifyPath(ids); },
+    /** Smooth a path's janky curves (Laplacian; keeps anchor count). strength 0..1. */
+    smoothPath(ids?: string[], strength = 0.5, iterations = 2) { return smoothPath(ids ?? [...store.selection], strength, iterations); },
     /** Make Compound Path: combine selected shapes/paths into one even-odd path (holes). Returns new id. */
     makeCompoundPath(ids: string[]) { return makeCompoundPath(ids); },
     /** Release Compound Path: split a compound path's subpaths into separate paths. Returns new ids. */

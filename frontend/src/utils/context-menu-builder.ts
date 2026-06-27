@@ -25,7 +25,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp,
     zoomToFit, zoomToFitSlide, updateGlobalSettings,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
@@ -349,6 +349,7 @@ export function getContextMenuItems(
             // Simplify on a selected path; compound-path ops on multi-select / compound paths.
             const selPaths = store.selection.map(id => store.elements.find(x => x.id === id)).filter((e): e is DrawingElement => !!e && e.type === 'path');
             if (selPaths.length >= 1) pathOps.push({ label: 'Simplify', icon: '⌇', onClick: () => simplifyPath([...store.selection]) });
+            if (selPaths.length >= 1) pathOps.push({ label: 'Smooth', icon: '∿', onClick: () => smoothPath([...store.selection]) });
             // Join: 2+ selected paths that have at least one open subpath between them.
             const openPathCount = selPaths.filter(e => e.pathSubpaths ? e.pathSubpaths.some(sp => !sp.closed) : !e.pathClosed).length;
             if (openPathCount >= 2) pathOps.push({ label: 'Join Paths', icon: '⌒', onClick: () => joinPaths([...store.selection]) });

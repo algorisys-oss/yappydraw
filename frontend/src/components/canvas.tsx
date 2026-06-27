@@ -444,6 +444,15 @@ const Canvas: Component = () => {
         store.layers.forEach(l => {
             l.visible; l.order; l.opacity; l.backgroundColor;
         });
+        // Track artboard frames + the doc type and view modes that change how the
+        // scene renders. These were previously only redrawn via bumpDirtyRevision,
+        // so e.g. setDocType (which doesn't bump) left a stale canvas.
+        store.docType;
+        store.artboards.length;
+        store.artboards.forEach(a => { a.x; a.y; a.width; a.height; a.background; });
+        store.outlineView;
+        store.trimView;
+        store.globalSettings.bleed;
         // Track grid settings changes
         store.gridSettings.enabled;
         store.gridSettings.gridSize;
