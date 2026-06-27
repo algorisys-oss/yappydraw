@@ -14,7 +14,7 @@ import {
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
-    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard,
+    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
@@ -1431,6 +1431,19 @@ export const YappyAPI = {
         setStore("selection", []);
     },
 
+    /** Replace the current selection with the given element id(s). */
+    select(ids: string | string[]) {
+        const list = (Array.isArray(ids) ? ids : [ids]).filter(id => store.elements.some(e => e.id === id));
+        setStore("selection", list);
+        return list;
+    },
+
+    /** The currently active tool id (e.g. 'selection', 'pan', 'rectangle'). */
+    getSelectedTool() { return store.selectedTool; },
+
+    /** Current viewport transform: { scale, panX, panY }. */
+    getViewState() { return { scale: store.viewState.scale, panX: store.viewState.panX, panY: store.viewState.panY }; },
+
     /** Free Transform: place the rotation pivot for the current selection at a world point. */
     setRotationPivot(x: number, y: number) {
         setTransformPivot(x, y, store.selection);
@@ -1595,6 +1608,22 @@ export const YappyAPI = {
     deleteArtboard(id: string) { deleteArtboard(id); },
     renameArtboard(id: string, name: string) { renameArtboard(id, name); },
     updateArtboard(id: string, patch: any) { updateArtboard(id, patch); },
+    /** Rearrange All Artboards into a grid (auto columns ≈ √n when omitted). */
+    rearrangeArtboards(columns = 0, gap = 40) { rearrangeArtboards(columns, gap); },
+    /** Toggle Outline (wireframe) view — path outlines only, no fills. */
+    toggleOutlineView(on?: boolean) { toggleOutlineView(on); },
+    isOutlineView() { return store.outlineView; },
+    /** Toggle Trim View — temporarily hide everything outside the artboards. */
+    toggleTrimView(on?: boolean) { toggleTrimView(on); },
+    isTrimView() { return store.trimView; },
+    /** Swap fill ⇄ stroke colours on the selection (Illustrator Shift+X). */
+    swapFillStroke(ids?: string[]) { swapFillStroke(ids); },
+    /** Object > Path > Clean Up: delete stray points, empty text & unpainted objects. */
+    cleanUp() { return cleanUpElements(); },
+    /** Delete swatches not used by any element. */
+    deleteUnusedSwatches() { return deleteUnusedSwatches(); },
+    /** Paste the selection onto every other artboard at the same relative position. */
+    pasteOnAllArtboards() { return pasteOnAllArtboards(); },
     listArtboards() { return store.artboards.map(a => ({ ...a })); },
     /** Export an artboard region to PNG (downloads + returns the data URL). */
     exportArtboard(id: string, scale = 1) { return exportArtboard(id, scale, true); },
@@ -1797,6 +1826,10 @@ export const YappyAPI = {
     /** Pulled-string "lazy brush" stabilization strength for freehand inking (0..1; 0 = off). */
     setPenStabilization(strength: number) { updateGlobalSettings({ penStabilization: Math.min(1, Math.max(0, strength)) }); },
     getPenStabilization() { return store.globalSettings.penStabilization ?? 0; },
+
+    /** Max number of undo states retained (default 50). Persisted across sessions. */
+    setHistoryDepth(depth: number) { updateGlobalSettings({ historyDepth: Math.max(1, Math.round(depth)) }); },
+    getHistoryDepth() { return store.globalSettings.historyDepth ?? 50; },
     /** Flip stabilization on/off, remembering the last non-zero strength (Shift+S). */
     togglePenStabilization() { togglePenStabilization(); },
 
@@ -2005,7 +2038,33 @@ export const YappyAPI = {
     /** Eyedropper: arm picking a style onto targets (default: selection); next canvas click on an object copies its style. */
     startEyedropper(targetIds?: string[]) { startEyedropper(targetIds); },
     /** Directly apply a source object's style to the armed targets. */
-    applyEyedropperFrom(sourceId: string) { applyEyedropperFrom(sourceId); },
+    /** Apply a sampled source's style to the eyedropper targets. colorOnly (Shift-click) samples just the fill colour. */
+    applyEyedropperFrom(sourceId: string, colorOnly = false) { applyEyedropperFrom(sourceId, colorOnly); },
+
+    /**
+     * Paint the stroke with a gradient (Illustrator "gradient on stroke").
+     * Pass `colors: [a, b]` for a quick 2-stop gradient or full `stops`.
+     * Architectural/SVG render the true gradient; sketch strokes stay solid.
+     */
+    setStrokeGradient(
+        opts: { type?: 'linear' | 'radial'; angle?: number; stops?: GradientStop[]; colors?: [string, string] } = {},
+        ids?: string[],
+    ) {
+        const targets = ids ?? [...store.selection];
+        if (targets.length === 0) return;
+        const stops = opts.stops ?? (opts.colors
+            ? [{ offset: 0, color: opts.colors[0] }, { offset: 1, color: opts.colors[1] }]
+            : [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }]);
+        pushToHistory();
+        targets.forEach(id => updateElement(id, { strokeGradient: { type: opts.type ?? 'linear', angle: opts.angle ?? 0, stops } }));
+    },
+    /** Remove the stroke gradient, reverting to the solid strokeColor. */
+    clearStrokeGradient(ids?: string[]) {
+        const targets = ids ?? [...store.selection];
+        if (targets.length === 0) return;
+        pushToHistory();
+        targets.forEach(id => updateElement(id, { strokeGradient: undefined }));
+    },
     /** Cancel an armed eyedropper. */
     cancelEyedropper() { cancelEyedropper(); },
 

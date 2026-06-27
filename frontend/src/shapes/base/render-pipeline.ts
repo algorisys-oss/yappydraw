@@ -190,7 +190,12 @@ export class RenderPipeline {
      * Applies stroke properties (color, width, dash) to the context.
      */
     static applyStrokeStyle(renderer: IRenderer, el: DrawingElement, isDarkMode: boolean) {
-        renderer.strokeStyle = this.adjustColor(el.strokeColor, isDarkMode);
+        const sg = el.strokeGradient;
+        if (sg && sg.stops && sg.stops.length >= 2) {
+            renderer.strokeStyle = this.buildStrokeGradient(renderer, el, sg) ?? this.adjustColor(el.strokeColor, isDarkMode);
+        } else {
+            renderer.strokeStyle = this.adjustColor(el.strokeColor, isDarkMode);
+        }
         renderer.lineWidth = el.strokeWidth;
         renderer.lineCap = 'round';
         renderer.lineJoin = (el.strokeLineJoin as CanvasLineJoin) || 'round';
@@ -202,6 +207,36 @@ export class RenderPipeline {
         } else {
             renderer.setLineDash([]);
         }
+    }
+
+    /**
+     * Builds a CanvasGradient/SvgGradient for a stroke gradient, in the element's
+     * centred local space (same convention as applyGradient for fills).
+     */
+    private static buildStrokeGradient(renderer: IRenderer, el: DrawingElement, sg: NonNullable<DrawingElement['strokeGradient']>) {
+        // Built in WORLD coordinates because the architectural shape renderers
+        // stroke at absolute element positions (e.g. el.x + el.width/2), not in a
+        // centred/translated space.
+        const cx = el.x + el.width / 2;
+        const cy = el.y + el.height / 2;
+        const mw = Math.abs(el.width) / 2;
+        const mh = Math.abs(el.height) / 2;
+        let grad;
+        if (sg.type === 'radial') {
+            const radius = Math.max(Math.abs(el.width), Math.abs(el.height)) / 2;
+            grad = renderer.createRadialGradient(cx, cy, 0, cx, cy, radius);
+        } else {
+            const angleRad = (sg.angle ?? 0) * (Math.PI / 180);
+            const r = Math.sqrt(mw ** 2 + mh ** 2);
+            grad = renderer.createLinearGradient(
+                cx - Math.cos(angleRad) * r, cy - Math.sin(angleRad) * r,
+                cx + Math.cos(angleRad) * r, cy + Math.sin(angleRad) * r,
+            );
+        }
+        [...sg.stops]
+            .sort((a, b) => a.offset - b.offset)
+            .forEach(s => grad.addColorStop(Math.max(0, Math.min(1, s.offset)), s.color));
+        return grad;
     }
 
     /**

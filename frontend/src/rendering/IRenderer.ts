@@ -67,7 +67,7 @@ export interface IRenderer {
 
     // ── Styling Properties ──
     fillStyle: FillStyle;
-    strokeStyle: string;
+    strokeStyle: FillStyle;   // string | gradient | pattern (stroke gradients)
     lineWidth: number;
     lineCap: CanvasLineCap;
     lineJoin: CanvasLineJoin;

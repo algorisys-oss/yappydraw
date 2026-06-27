@@ -84,6 +84,8 @@ interface AppState {
     resolvedTheme: ResolvedTheme;
     globalSettings: GlobalSettings;
     showCanvasProperties: boolean;
+    outlineView: boolean;
+    trimView: boolean;
     undoStackLength: number;
     redoStackLength: number;
     isDirty: boolean; // True when document has unsaved changes
@@ -334,8 +336,11 @@ const initialState: AppState = {
         timelapseAutoRecord: (localStorage.getItem('timelapseAutoRecord') ?? '0') !== '0',
         timelapseCaptureWidth: parseInt(localStorage.getItem('timelapseCaptureWidth') ?? '1024', 10) || 1024,
         timelapseTargetDuration: parseInt(localStorage.getItem('timelapseTargetDuration') ?? '30', 10) || 30,
+        historyDepth: parseInt(localStorage.getItem('historyDepth') ?? '50', 10) || 50,
     },
     showCanvasProperties: false,
+    outlineView: false,
+    trimView: false,
     undoStackLength: 0,
     redoStackLength: 0,
     isDirty: false,
@@ -509,7 +514,8 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
 
 export const pushToHistory = () => {
     undoStack.push(captureSnapshot());
-    if (undoStack.length > 50) undoStack.shift();
+    const maxDepth = Math.max(1, store.globalSettings.historyDepth ?? 50);
+    while (undoStack.length > maxDepth) undoStack.shift();
     redoStack.length = 0;
 
     setStore("undoStackLength", undoStack.length);
@@ -1226,6 +1232,9 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.timelapseTargetDuration !== undefined) {
         try { localStorage.setItem('timelapseTargetDuration', String(updates.timelapseTargetDuration)); } catch { /* ignore */ }
+    }
+    if (updates.historyDepth !== undefined) {
+        try { localStorage.setItem('historyDepth', String(updates.historyDepth)); } catch { /* ignore */ }
     }
 };
 
@@ -2194,6 +2203,143 @@ export const updateArtboard = (id: string, patch: Partial<Artboard>) => { pushTo
 /** Live (no-history) artboard rect update — for drag/resize gestures. Call
  *  pushToHistory() once at the start of the gesture, then this on each move. */
 export const updateArtboardLive = (id: string, patch: Partial<Artboard>) => { setStore('artboards', (a: Artboard) => a.id === id, () => patch); bumpDirtyRevision(); };
+
+/**
+ * Rearrange All Artboards (Illustrator's grid layout). Lays every artboard out
+ * left-to-right, top-to-bottom in `columns` columns (auto ≈ √n when omitted),
+ * separated by `gap`. Each row's height is the tallest artboard in it. Artboards
+ * are export-region markers, so this only moves the frames, not the artwork.
+ */
+export const rearrangeArtboards = (columns = 0, gap = 40) => {
+    const list = store.artboards;
+    if (list.length === 0) return;
+    const cols = Math.max(1, columns > 0 ? Math.floor(columns) : Math.ceil(Math.sqrt(list.length)));
+    pushToHistory();
+    let rowY = 0;
+    for (let start = 0; start < list.length; start += cols) {
+        const row = list.slice(start, start + cols);
+        let colX = 0, rowH = 0;
+        for (const ab of row) {
+            const id = ab.id, x = colX, y = rowY;
+            setStore('artboards', (a: Artboard) => a.id === id, () => ({ x, y }));
+            colX += ab.width + gap;
+            rowH = Math.max(rowH, ab.height);
+        }
+        rowY += rowH + gap;
+    }
+    bumpDirtyRevision();
+    showToast(`Arranged ${list.length} artboard${list.length === 1 ? '' : 's'} in ${cols} column${cols === 1 ? '' : 's'}`, 'success');
+};
+
+/** Outline (wireframe) view — render path outlines only, no fills (View > Outline). */
+export const toggleOutlineView = (on?: boolean) => {
+    const next = on ?? !store.outlineView;
+    setStore('outlineView', next);
+    bumpDirtyRevision();
+    showToast(next ? 'Outline view on' : 'Outline view off', 'info');
+};
+
+/** Trim View — temporarily hide everything outside the artboards (View > Trim View). */
+export const toggleTrimView = (on?: boolean) => {
+    const next = on ?? !store.trimView;
+    if (next && (!store.artboards || store.artboards.length === 0)) {
+        showToast('Trim View needs at least one artboard', 'error');
+        return;
+    }
+    setStore('trimView', next);
+    bumpDirtyRevision();
+    showToast(next ? 'Trim view on' : 'Trim view off', 'info');
+};
+
+/** Swap each selected element's fill and stroke colours (Illustrator Shift+X). */
+export const swapFillStroke = (ids?: string[]) => {
+    const targets = ids ?? [...store.selection];
+    if (targets.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => targets.includes(e.id), (e) => ({
+        backgroundColor: e.strokeColor,
+        strokeColor: e.backgroundColor,
+    }));
+    bumpDirtyRevision();
+};
+
+/**
+ * Object > Path > Clean Up — delete stray points, empty text frames and
+ * unpainted objects (no fill AND no stroke). Returns the number removed.
+ */
+export const cleanUpElements = (): number => {
+    const isUnpainted = (e: DrawingElement) => {
+        const noFill = !e.backgroundColor || e.backgroundColor === 'transparent' || e.backgroundColor === 'none';
+        const noStroke = !e.strokeColor || e.strokeColor === 'transparent' || e.strokeColor === 'none' || (e.strokeWidth ?? 0) <= 0;
+        const noImage = !e.backgroundImage;
+        const noText = !(e.containerText && e.containerText.trim()) && !(e.text && String(e.text).trim());
+        return noFill && noStroke && noImage && noText;
+    };
+    const isEmptyText = (e: DrawingElement) =>
+        e.type === 'text' && !(e.containerText && e.containerText.trim()) && !(e.text && String(e.text).trim());
+    const isStray = (e: DrawingElement) =>
+        (Math.abs(e.width) < 0.5 && Math.abs(e.height) < 0.5) ||
+        ((e.type === 'path' || e.type === 'polyline') && (!e.points || e.points.length < 4));
+
+    const doomed = store.elements.filter(e =>
+        !e.locked && (isEmptyText(e) || isStray(e) || isUnpainted(e)),
+    ).map(e => e.id);
+    if (doomed.length === 0) { showToast('Nothing to clean up', 'info'); return 0; }
+    deleteElements(doomed);
+    showToast(`Cleaned up ${doomed.length} stray object${doomed.length === 1 ? '' : 's'}`, 'success');
+    return doomed.length;
+};
+
+/** Delete swatches not referenced by any element. Returns the number removed. */
+export const deleteUnusedSwatches = (): number => {
+    const used = new Set<string>();
+    for (const e of store.elements) {
+        if (e.fillSwatchId) used.add(e.fillSwatchId);
+        if (e.strokeSwatchId) used.add(e.strokeSwatchId);
+    }
+    const unused = store.swatches.filter(s => !used.has(s.id));
+    if (unused.length === 0) { showToast('No unused swatches', 'info'); return 0; }
+    pushToHistory();
+    setStore('swatches', list => list.filter(s => used.has(s.id)));
+    showToast(`Removed ${unused.length} unused swatch${unused.length === 1 ? '' : 'es'}`, 'success');
+    return unused.length;
+};
+
+/**
+ * Paste the current selection onto every other artboard at the same position
+ * relative to the artboard the selection currently sits on (Edit > Paste on All
+ * Artboards). Returns the number of copies created.
+ */
+export const pasteOnAllArtboards = (): number => {
+    const sel = store.elements.filter(e => store.selection.includes(e.id));
+    if (sel.length === 0 || store.artboards.length < 2) {
+        showToast('Need a selection and ≥2 artboards', 'error');
+        return 0;
+    }
+    // Selection centre → the artboard it belongs to (else the first artboard).
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const e of sel) { minX = Math.min(minX, e.x); minY = Math.min(minY, e.y); maxX = Math.max(maxX, e.x + e.width); maxY = Math.max(maxY, e.y + e.height); }
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const home = store.artboards.find(a => cx >= a.x && cx <= a.x + a.width && cy >= a.y && cy <= a.y + a.height) ?? store.artboards[0];
+
+    const batchIds = new Set<string>(store.elements.map(e => e.id));
+    const newEls: DrawingElement[] = [];
+    for (const ab of store.artboards) {
+        if (ab.id === home.id) continue;
+        const dx = ab.x - home.x, dy = ab.y - home.y;
+        for (const e of sel) {
+            const id = generateId(e.type, batchIds);
+            batchIds.add(id);
+            newEls.push({ ...JSON.parse(JSON.stringify(e)), id, x: e.x + dx, y: e.y + dy });
+        }
+    }
+    if (newEls.length === 0) { showToast('Nothing to paste', 'info'); return 0; }
+    pushToHistory();
+    setStore('elements', list => [...list, ...newEls]);
+    bumpDirtyRevision();
+    showToast(`Pasted onto ${store.artboards.length - 1} artboard${store.artboards.length - 1 === 1 ? '' : 's'}`, 'success');
+    return newEls.length;
+};
 
 // ── Symbols / instances ──────────────────────────────────────────────────────
 
@@ -4504,17 +4650,21 @@ export const adjustSelectionColors = (opts: { hue?: number; lightness?: number; 
 };
 
 /** Apply the source object's style to the armed targets, then disarm. */
-export const applyEyedropperFrom = (sourceId: string) => {
+export const applyEyedropperFrom = (sourceId: string, colorOnly = false) => {
     const ed = store.eyedropper;
     if (!ed.active) return;
     const src = store.elements.find(e => e.id === sourceId);
     const targets = ed.targets.filter(id => id !== sourceId && store.elements.some(e => e.id === id));
     if (src && targets.length) {
-        const style = getStyleSnapshot(src);
+        // Shift-click (colorOnly) samples just the fill colour as a solid fill,
+        // Illustrator-style; a plain click copies the entire appearance.
+        const style = colorOnly
+            ? { backgroundColor: src.backgroundColor, fillStyle: 'solid' as const }
+            : getStyleSnapshot(src);
         pushToHistory();
         setStore('elements', (e: DrawingElement) => targets.includes(e.id), () => ({ ...style }));
         bumpDirtyRevision();
-        showToast('Style applied', 'success');
+        showToast(colorOnly ? 'Colour applied' : 'Style applied', 'success');
     }
     cancelEyedropper();
 };

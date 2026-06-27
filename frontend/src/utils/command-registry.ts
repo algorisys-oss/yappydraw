@@ -1,5 +1,6 @@
 import {
-    store, setStore, setSelectedTool, toggleGrid, toggleSnapToGrid, toggleZenMode,
+    store, setStore, setSelectedTool, toggleGrid, toggleSnapToGrid, toggleZenMode, toggleOutlineView, toggleTrimView,
+    swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards,
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection, toggleVectorToolsPanel,
     groupSelected, ungroupSelected, bringToFront, sendToBack,
     mirrorCopy, transformAgain, convertTextToOutlines,
@@ -254,6 +255,10 @@ export const getCommands = (): Command[] => {
         { id: 'action-flip-h', label: 'Flip Horizontal', category: 'Actions', action: () => flipSelected('horizontal'), shortcut: 'Shift+H' },
         { id: 'action-flip-v', label: 'Flip Vertical', category: 'Actions', action: () => flipSelected('vertical'), shortcut: 'Shift+V' },
         { id: 'action-outlines', label: 'Create Outlines (text → vector)', category: 'Actions', action: () => { void convertTextToOutlines(store.selection); }, shortcut: 'Ctrl+Shift+O' },
+        { id: 'action-swap-fill-stroke', label: 'Swap Fill / Stroke', category: 'Actions', action: () => swapFillStroke(), shortcut: 'Shift+X' },
+        { id: 'action-clean-up', label: 'Clean Up (stray points, empty text, unpainted)', category: 'Actions', action: () => cleanUpElements() },
+        { id: 'action-paste-all-artboards', label: 'Paste on All Artboards', category: 'Actions', action: () => pasteOnAllArtboards() },
+        { id: 'action-del-unused-swatches', label: 'Delete Unused Swatches', category: 'Actions', action: () => deleteUnusedSwatches() },
 
         // Illustrator-class tools (also on the right-click menu / panels)
         { id: 'tool-live-paint', label: 'Live Paint Bucket (fill regions)', category: 'Tools', action: () => { makeLivePaint([...store.selection]); toggleLivePaint(true); } },
@@ -303,6 +308,8 @@ export const getCommands = (): Command[] => {
         { id: 'view-grid', label: 'Toggle Grid', category: 'View', action: () => toggleGrid(), shortcut: 'Shift+\'' },
         { id: 'view-snap', label: 'Toggle Snap to Grid', category: 'View', action: () => toggleSnapToGrid(), shortcut: 'Shift+;' },
         { id: 'view-zen', label: 'Toggle Zen Mode', category: 'View', action: () => toggleZenMode(), shortcut: 'Alt+Z' },
+        { id: 'view-outline', label: 'Toggle Outline (Wireframe) View', category: 'View', action: () => toggleOutlineView() },
+        { id: 'view-trim', label: 'Toggle Trim View (hide outside artboards)', category: 'View', action: () => toggleTrimView() },
         { id: 'view-smart-shape', label: 'Toggle Smart Shapes (hold to correct)', category: 'View', action: () => updateGlobalSettings({ smartShape: store.globalSettings.smartShape === false }), shortcut: 'Shift+Q' },
         { id: 'view-pen-pressure', label: 'Toggle Pen Pressure Sensitivity', category: 'View', action: () => updateGlobalSettings({ penPressure: store.globalSettings.penPressure === false }) },
         { id: 'view-pen-stabilization', label: 'Toggle Stroke Stabilization (lazy brush)', category: 'View', action: () => togglePenStabilization(), shortcut: 'Shift+S' },

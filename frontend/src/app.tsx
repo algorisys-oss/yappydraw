@@ -48,7 +48,7 @@ import { parseClipboardTableData, defaultColWidths, defaultRowHeights, getNextCe
 import { generateId } from './utils/id-generator';
 import { screenToWorld } from './utils/viewport-transforms';
 import { parseOutline } from './utils/mindmap-layout';
-import { updateElement, deleteArtboard } from './store/app-store';
+import { updateElement, deleteArtboard, swapFillStroke } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
 const SymbolsPanel = lazy(() => import('./components/symbols-panel'));
@@ -126,6 +126,21 @@ const App: Component = () => {
 
     // Cloud storage: register providers and restore config
     initCloudStorage();
+
+    // Spacebar-hold pan state (see the ' ' branch in handleKeyDown / handleKeyUp).
+    let spacePanning = false;
+    let spacePanPrevTool = '';
+    let spacePanDownAt = 0;
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === ' ' && spacePanning) {
+        spacePanning = false;
+        if (store.selectedTool === 'pan') setSelectedTool(spacePanPrevTool as any);
+        // A quick tap (no real hold) with a selection keeps the old mindmap-collapse.
+        const held = performance.now() - spacePanDownAt;
+        if (held < 220 && store.selection.length > 0) toggleCollapseSelection();
+      }
+    };
 
     const handleKeyDown = async (e: KeyboardEvent) => {
       // 0. Ignore shortcuts if any Modal Dialog is open
@@ -433,6 +448,16 @@ const App: Component = () => {
         } else if (key === 'm') {
           e.preventDefault();
           addSlide();
+        } else if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key) && store.selection.length > 0) {
+          // Ctrl/Cmd + Arrow = fine nudge (0.1px), Illustrator's small-increment.
+          e.preventDefault();
+          const amt = 0.1;
+          let dx = 0, dy = 0;
+          if (key === 'arrowup') dy = -amt;
+          else if (key === 'arrowdown') dy = amt;
+          else if (key === 'arrowleft') dx = -amt;
+          else dx = amt;
+          moveSelectedElements(dx, dy, true);
         } else if (key === 'c' || code === 'KeyC') {
           e.preventDefault();
           if (e.altKey) copyStyle(); else await copyToClipboard();
@@ -615,14 +640,32 @@ const App: Component = () => {
                 }
               }
             } else {
-              // Default nudge behavior (non-mindmap or Alt+Arrow)
-              const nudgeAmount = e.shiftKey ? 10 : 1;
-              let dx = 0, dy = 0;
-              if (key === 'arrowup') dy = -nudgeAmount;
-              else if (key === 'arrowdown') dy = nudgeAmount;
-              else if (key === 'arrowleft') dx = -nudgeAmount;
-              else if (key === 'arrowright') dx = nudgeAmount;
-              moveSelectedElements(dx, dy, true);
+              // Up/Down on a single star / polygon / burst tweaks its point/side
+              // count (Illustrator's "arrow keys change the number of points");
+              // Left/Right still nudge. Other elements: arrows nudge as usual.
+              const only = store.selection.length === 1
+                ? store.elements.find(el => el.id === store.selection[0]) : null;
+              const pointSpec = only && (key === 'arrowup' || key === 'arrowdown')
+                ? ({ star: { f: 'starPoints', def: 5, min: 3, max: 12 },
+                     polygon: { f: 'polygonSides', def: 6, min: 3, max: 20 },
+                     burst: { f: 'burstPoints', def: 16, min: 8, max: 32 } } as const)[only.type as 'star' | 'polygon' | 'burst']
+                : undefined;
+              if (only && pointSpec) {
+                e.preventDefault();
+                const cur = (only as any)[pointSpec.f] ?? pointSpec.def;
+                const next = Math.max(pointSpec.min, Math.min(pointSpec.max, cur + (key === 'arrowup' ? 1 : -1)));
+                if (next !== cur) { pushToHistory(); updateElement(only.id, { [pointSpec.f]: next }); }
+              } else {
+                // Default nudge behavior. Shift = coarse (10px); otherwise 1px.
+                // (Ctrl/Cmd fine-nudge is handled in the Ctrl/Meta block.)
+                const nudgeAmount = e.shiftKey ? 10 : 1;
+                let dx = 0, dy = 0;
+                if (key === 'arrowup') dy = -nudgeAmount;
+                else if (key === 'arrowdown') dy = nudgeAmount;
+                else if (key === 'arrowleft') dx = -nudgeAmount;
+                else if (key === 'arrowright') dx = nudgeAmount;
+                moveSelectedElements(dx, dy, true);
+              }
             }
           }
         } else if (key === 'f2') {
@@ -653,10 +696,19 @@ const App: Component = () => {
             }
           }
         } else if (key === ' ') {
-          if (store.selection.length > 0) {
+          // Space-hold = temporary Hand/pan tool (Illustrator convention), reusing
+          // the existing 'pan' tool so all pan/cursor logic is shared. A quick tap
+          // with a selection still toggles mindmap collapse (handled on keyup).
+          if (!e.repeat) {
             e.preventDefault();
-            toggleCollapseSelection();
+            spacePanPrevTool = store.selectedTool;
+            spacePanDownAt = performance.now();
+            spacePanning = true;
+            if (store.selectedTool !== 'pan') setSelectedTool('pan');
           }
+        } else if (e.shiftKey && key === 'x') {
+          // Swap fill ⇄ stroke on the selection (Illustrator Shift+X).
+          if (store.selection.length > 0) { e.preventDefault(); swapFillStroke(); }
         } else if (e.shiftKey && key === 'n') {
           e.preventDefault();
           addLayer();
@@ -1153,6 +1205,7 @@ const App: Component = () => {
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('keyup', handleKeyUp, true);
     window.addEventListener('beforeunload', handleBeforeUnload);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('paste', handlePaste);
@@ -1165,6 +1218,7 @@ const App: Component = () => {
     document.addEventListener('drop', handleDocumentDrop);
     onCleanup(() => {
       window.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('keyup', handleKeyUp, true);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('paste', handlePaste);

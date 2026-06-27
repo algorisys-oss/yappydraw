@@ -22,6 +22,7 @@ import { getOpenBoxPreset } from "../config/openbox-presets";
 import { detectVideoProvider, getEmbedURL, getPosterURL, fetchPoster } from "../utils/video-utils";
 import { getImage } from "../utils/image-cache";
 import { showToast } from "./toast";
+import MathNumberInput from "./math-number-input";
 import { playSequence } from "../utils/animation/orchestrator";
 import { AnimationPanel } from "./animation-panel";
 import { resizeTableData, defaultColWidths, defaultRowHeights, defaultTableData } from "../utils/table-utils";
@@ -474,6 +475,33 @@ const AppearanceEditor: Component<{ el: () => any }> = (props) => {
                 <button style={btn} onClick={() => addAppearanceFill([props.el()?.id].filter(Boolean), { color: props.el()?.backgroundColor && props.el().backgroundColor !== 'transparent' ? props.el().backgroundColor : '#3b82f6', opacity: 0.5 })}>+ Fill</button>
                 <button style={btn} onClick={() => addAppearanceStroke([props.el()?.id].filter(Boolean), { color: props.el()?.strokeColor && props.el().strokeColor !== 'transparent' ? props.el().strokeColor : '#ef4444', width: 4 })}>+ Stroke</button>
             </div>
+            {(() => {
+                // Stroke gradient (Illustrator "gradient on stroke"). Architectural/SVG
+                // render the true gradient; sketch strokes stay solid.
+                const sg = () => props.el()?.strokeGradient as { type?: string; angle?: number; stops?: any[] } | undefined;
+                const stops = () => sg()?.stops || [];
+                const setSG = (next: any) => { const id = props.el()?.id; if (!id) return; pushToHistory(); updateElement(id, { strokeGradient: next }); };
+                const editStop = (i: number, color: string) => { const s = stops().map((x: any) => ({ ...x })); s[i] = { ...s[i], color }; setSG({ ...sg(), stops: s }); };
+                return (
+                    <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'flex-wrap': 'wrap', 'margin-top': '4px' }}>
+                        <label style={{ 'font-size': '11px', display: 'flex', gap: '4px', 'align-items': 'center' }} title="Paint the stroke with a gradient">
+                            <input type="checkbox" checked={!!sg()} onChange={(e) => {
+                                const base = props.el()?.strokeColor && props.el().strokeColor !== 'transparent' ? props.el().strokeColor : '#000000';
+                                setSG(e.currentTarget.checked ? { type: 'linear', angle: 0, stops: [{ offset: 0, color: base }, { offset: 1, color: '#ffffff' }] } : undefined);
+                            }} />
+                            Gradient stroke
+                        </label>
+                        <Show when={sg()}>
+                            <input type="color" style={sw} value={stops()[0]?.color || '#000000'} onInput={e => editStop(0, e.currentTarget.value)} title="Start colour" />
+                            <input type="color" style={sw} value={stops()[stops().length - 1]?.color || '#ffffff'} onInput={e => editStop(stops().length - 1, e.currentTarget.value)} title="End colour" />
+                            <input type="number" style={numS} value={sg()?.angle ?? 0} step="15" onInput={e => setSG({ ...sg(), angle: Number(e.currentTarget.value) })} title="Angle°" />
+                            <select style={{ 'font-size': '11px' }} value={sg()?.type || 'linear'} onChange={e => setSG({ ...sg(), type: e.currentTarget.value })} title="Gradient type">
+                                <option value="linear">Linear</option><option value="radial">Radial</option>
+                            </select>
+                        </Show>
+                    </div>
+                );
+            })()}
         </div>
     );
 };
@@ -1429,12 +1457,13 @@ const PropertyPanel: Component = () => {
                 return (
                     <div class="control-row">
                         <label>{prop.label}</label>
-                        <input
-                            type="number"
-                            value={isMixed(numVal()) ? '' : (numVal() ?? 0)}
-                            placeholder={isMixed(numVal()) ? '—' : undefined}
-                            onFocus={() => pushToHistory()}
-                            onInput={(e) => handleChange(prop.key, Number(e.currentTarget.value), activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined, false)}
+                        <MathNumberInput
+                            value={isMixed(numVal()) ? undefined : (numVal() ?? 0)}
+                            min={prop.min}
+                            max={prop.max}
+                            step={prop.step}
+                            onEditStart={() => pushToHistory()}
+                            onCommit={(n) => handleChange(prop.key, n, activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined, false)}
                         />
                     </div>
                 );

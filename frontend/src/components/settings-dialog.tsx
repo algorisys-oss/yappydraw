@@ -122,6 +122,24 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                 </span>
                             </div>
                         </div>
+
+                        <div class="settings-row">
+                            <label title="Maximum number of undo steps kept in history. Higher = more peace of mind, more memory. Default 50.">
+                                Undo History Depth
+                            </label>
+                            <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
+                                <input
+                                    type="number"
+                                    min="10"
+                                    max="500"
+                                    step="10"
+                                    style={{ width: '80px' }}
+                                    value={store.globalSettings.historyDepth ?? 50}
+                                    onChange={(e) => updateGlobalSettings({ historyDepth: Math.max(1, Math.round(e.currentTarget.valueAsNumber || 50)) })}
+                                />
+                                <span style={{ color: 'var(--text-secondary, #888)', 'font-size': '12px' }}>steps</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="settings-section">

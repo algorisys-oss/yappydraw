@@ -78,7 +78,7 @@ export class CanvasRenderer implements IRenderer {
     set fillStyle(value: FillStyle) { this.ctx.fillStyle = value as any; }
 
     get strokeStyle(): string { return this.ctx.strokeStyle as string; }
-    set strokeStyle(value: string) { this.ctx.strokeStyle = value; }
+    set strokeStyle(value: FillStyle) { this.ctx.strokeStyle = value as any; }
 
     get lineWidth(): number { return this.ctx.lineWidth; }
     set lineWidth(value: number) { this.ctx.lineWidth = value; }

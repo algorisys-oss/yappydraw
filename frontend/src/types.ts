@@ -496,6 +496,14 @@ export interface DrawingElement {
     gradientType?: GradientType;
     gradientPreset?: string; // Predefined gradient preset ID
     gradientHandlePositions?: { start: Point; end: Point };
+    // Stroke gradient (Illustrator "gradient on stroke"). When present, the
+    // architectural/SVG stroke is painted with this gradient; sketch strokes stay
+    // solid (rough.js can't gradient a hand-drawn stroke) and fall back to strokeColor.
+    strokeGradient?: {
+        type?: 'linear' | 'radial';
+        angle?: number;                // degrees, linear only (default 0 = left→right)
+        stops: GradientStop[];         // need ≥2 to render a gradient
+    };
 
     // Image Fill (active when fillStyle === 'image') — paints an image clipped to the shape outline
     backgroundImage?: string;          // Image URL or data URL used as the fill

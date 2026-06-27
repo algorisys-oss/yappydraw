@@ -584,6 +584,30 @@ export function renderGrid(
 
 // ─── Layers & Elements ──────────────────────────────────────────────
 
+/**
+ * Outline (wireframe) view: clone an element stripped of fills, gradients,
+ * shadows, appearance stack and image, drawn as a clean ~1px architectural
+ * stroke. Text keeps its normal render (Illustrator shows type in outline mode).
+ */
+function toOutlineElement(el: DrawingElement, isDarkMode: boolean, scale: number): DrawingElement {
+    if (el.type === 'text') return el;
+    return {
+        ...el,
+        renderStyle: 'architectural',
+        backgroundColor: 'transparent',
+        fillStyle: 'solid',
+        strokeColor: isDarkMode ? '#cfcfcf' : '#222222',
+        strokeWidth: Math.max(0.5, 1 / Math.max(0.01, scale)),
+        strokeStyle: 'solid',
+        strokeGradient: undefined,
+        shadowEnabled: false,
+        appearance: undefined,
+        backgroundImage: undefined,
+        drawInnerBorder: false,
+        opacity: 100,
+    } as DrawingElement;
+}
+
 export function renderLayersAndElements(
     ctx: CanvasRenderingContext2D,
     rc: any,
@@ -625,6 +649,16 @@ export function renderLayersAndElements(
         let bucket = elementsByLayer.get(el.layerId);
         if (!bucket) { bucket = []; elementsByLayer.set(el.layerId, bucket); }
         bucket.push(el);
+    }
+
+    // Trim View: clip all element rendering to the union of the artboard rects,
+    // hiding any overflow (Illustrator's View > Trim View).
+    const trimming = store.trimView && store.artboards.length > 0 && store.docType !== 'slides';
+    if (trimming) {
+        ctx.save();
+        ctx.beginPath();
+        for (const ab of store.artboards) ctx.rect(ab.x, ab.y, ab.width, ab.height);
+        ctx.clip();
     }
 
     sortedLayers.forEach(layer => {
@@ -772,8 +806,11 @@ export function renderLayersAndElements(
                     const clipPath = buildClipPath2D(mask);
                     if (clipPath) { ctx.save(); ctx.clip(clipPath, maskFillRule(mask)); clipped = true; }
                 }
+                // Outline (wireframe) view: strip fills/effects to clean thin strokes.
+                if (store.outlineView) renderedEl = toOutlineElement(renderedEl, isDarkMode, scale);
                 // Masked elements skip the element cache so the mask tracks live edits.
-                const shouldCache = !animState && !isFocusDimmed && !mask;
+                // Outline view also bypasses the cache (its hash doesn't track the mode).
+                const shouldCache = !animState && !isFocusDimmed && !mask && !store.outlineView;
                 if (opacityMask) {
                     renderOpacityMasked(ctx, renderedEl, mask!, isDarkMode, layerOpacity);
                 } else {
@@ -798,6 +835,8 @@ export function renderLayersAndElements(
             });
         });
     });
+
+    if (trimming) ctx.restore();
 
     return totalRendered;
 }

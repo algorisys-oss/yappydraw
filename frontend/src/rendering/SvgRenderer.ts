@@ -52,7 +52,7 @@ export class SvgRenderer implements IRenderer {
 
     // styling state
     fillStyleVal: FillStyle = '#000000';
-    strokeStyleVal = '#000000';
+    strokeStyleVal: FillStyle = '#000000';
     lineWidth = 1;
     lineCap: CanvasLineCap = 'butt';
     lineJoin: CanvasLineJoin = 'miter';
@@ -157,7 +157,7 @@ export class SvgRenderer implements IRenderer {
     }
 
     private applyStroke(node: SVGElement): void {
-        node.setAttribute('stroke', this.strokeStyleVal);
+        node.setAttribute('stroke', this.paint(this.strokeStyleVal));
         node.setAttribute('stroke-width', `${r3(this.lineWidth)}`);
         node.setAttribute('stroke-linecap', this.lineCap === 'butt' ? 'butt' : this.lineCap);
         node.setAttribute('stroke-linejoin', this.lineJoin);
@@ -258,8 +258,8 @@ export class SvgRenderer implements IRenderer {
     // ── Styling accessors ──
     get fillStyle(): FillStyle { return this.fillStyleVal; }
     set fillStyle(v: FillStyle) { this.fillStyleVal = v; }
-    get strokeStyle(): string { return this.strokeStyleVal; }
-    set strokeStyle(v: string) { this.strokeStyleVal = v; }
+    get strokeStyle(): FillStyle { return this.strokeStyleVal; }
+    set strokeStyle(v: FillStyle) { this.strokeStyleVal = v; }
     setLineDash(s: number[]): void { this.dash = s || []; }
     get font(): string { return this.fontVal; }
     set font(v: string) { this.fontVal = v; }

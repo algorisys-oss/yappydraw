@@ -1265,7 +1265,7 @@ const Canvas: Component = () => {
                 const el = store.elements[i];
                 if (hitTestElement(el, wx, wy, threshold, store.elements, emap)) { hit = el; break; }
             }
-            if (hit) applyEyedropperFrom(hit.id); else cancelEyedropper();
+            if (hit) applyEyedropperFrom(hit.id, e.shiftKey); else cancelEyedropper();
             requestAnimationFrame(draw);
             return;
         }
