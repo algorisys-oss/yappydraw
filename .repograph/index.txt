@@ -192,7 +192,7 @@ frontend/src/components/slide-transition-picker.tsx | typescript | 123 | SlideTr
 frontend/src/components/state-panel.css | - | 178 |
 frontend/src/components/state-panel.tsx | typescript | 160 | Component:1 StatePanel:6 handleAdd:13 handleReset:22 handlePlayAll:28 handleStopPlayback:46 onMouseDown:50 onMouseMove:62 onMouseUp:70
 frontend/src/components/status-bar.css | - | 191 |
-frontend/src/components/status-bar.tsx | typescript | 300 | Component:1 Hint:10 isMindmapNode:21 getContextHints:28 StatusBar:108 handleZoomIn:109 handleZoomOut:114 zoomToCenter:119 resetZoom:128 rotationDeg:133 toolLabel:135
+frontend/src/components/status-bar.tsx | typescript | 311 | Component:1 Hint:12 isMindmapNode:23 getContextHints:30 StatusBar:110 handleZoomIn:111 handleZoomOut:116 zoomToCenter:121 resetZoom:130 rotationDeg:135 toolLabel:137
 frontend/src/components/status-tool-group.tsx | typescript | 162 | Component:1 StatusToolGroup:47 handler:54 getActiveTool:64 handleToolClick:73 as:81 as:87 handleRightClick:95 toggleMenu:101 activeTool:108 isActive:109 getDropdownPosition:111
 frontend/src/components/swatches-panel.css | - | 72 |
 frontend/src/components/swatches-panel.tsx | typescript | 65 | Component:1 SwatchesPanel:13 startRename:16 commitRename:17
@@ -443,6 +443,7 @@ frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
 frontend/src/utils/geometry.ts | typescript | 433 | isPointInPolygon:5 distanceToSegment:19 cubicBezier:59 cubicBezierAngle:64 getBezierPoints:98 isPointOnBezier:111 isPointOnPolyline:117 isPointInEllipse:128 isPointNearEllipseStroke:142 rotatePoint:177 with:356
 frontend/src/utils/group-utils.ts | typescript | 81 | getGroupBoundingBox:6 isPointInGroupBounds:42 getGroupsSortedByPriority:56
 frontend/src/utils/handle-detection.ts | typescript | 522 | unrotatePoint:18 getSelectionBoundingBox:25 getDeleteHandlePosition:58 getHandleAtPosition:98
+frontend/src/utils/hard-refresh.ts | typescript | 42 | hardRefresh:14
 frontend/src/utils/hierarchy.ts | typescript | 68 | getDescendants:44 isDescendantOf:65
 frontend/src/utils/hit-testing.ts | typescript | 422 | unrotatePoint:27 unshearPoint:35 hitTestElement:61 hitTestGeometry:91 hitTestPathElement:344 isPointInEraseHole:374
 frontend/src/utils/id-generator.ts | typescript | 119 | generateId:54 scanMax:71

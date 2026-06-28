@@ -4,6 +4,8 @@ import { drawingId } from "./menu";
 import { Plus, Minus, Undo2, Redo2, Play } from "lucide-solid";
 import { screenToWorld } from "../utils/viewport-transforms";
 import pkg from '../../../package.json';
+import { showToast } from "./toast";
+import { hardRefresh } from "../utils/hard-refresh";
 import "./status-bar.css";
 
 /** Contextual modifier hint: key combo + action description */
@@ -270,9 +272,18 @@ const StatusBar: Component = () => {
                 </button>
             </div>
 
-            {/* Version */}
-            <div class="status-section" style={{ opacity: 0.5 }}>
-                v{pkg.version}
+            {/* Version — tap to hard-refresh (clears caches + reloads the latest
+                build). The "hard reload" iPad/iOS Safari doesn't otherwise offer. */}
+            <div class="status-section">
+                <button
+                    class="status-btn version-btn"
+                    style={{ opacity: 0.5, "font-size": "inherit", "font-family": "inherit", width: "auto", padding: "0 4px" }}
+                    title="Tap to reload the latest version (clears cache)"
+                    aria-label="Reload latest version"
+                    onClick={async () => { showToast('Refreshing to latest version…', 'info', 1500); await hardRefresh(); }}
+                >
+                    v{pkg.version}
+                </button>
             </div>
 
             {/* Legal */}
