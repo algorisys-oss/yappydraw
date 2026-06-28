@@ -96,7 +96,11 @@ const Toolbar: Component = () => {
     const [position, setPosition] = createSignal({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = createSignal(false);
     const [dragStart, setDragStart] = createSignal({ x: 0, y: 0 });
-    const [isMobile, setIsMobile] = createSignal(window.innerWidth <= 768);
+    // Below this width the toolbar force-docks to the bottom (phones). Tablets
+    // (>= this) get the movable / orientable / resizable floating toolbar. Must
+    // match the @media breakpoint in toolbar.css.
+    const PHONE_MAX_WIDTH = 600;
+    const [isMobile, setIsMobile] = createSignal(window.innerWidth <= PHONE_MAX_WIDTH);
     const [brainstormMode, setBrainstormMode] = createSignal(localStorage.getItem(BRAINSTORM_KEY) !== 'false');
     const [isResizing, setIsResizing] = createSignal(false);
     const [resizeStart, setResizeStart] = createSignal({ x: 0, y: 0, w: 0 });
@@ -105,7 +109,10 @@ const Toolbar: Component = () => {
     // so the user can drag it to e.g. 2-per-row. 0 = off (single line).
     const wrapWidth = () => store.globalSettings.toolbarWrap ?? 0;
 
-    const onResizeDown = (e: MouseEvent) => {
+    // Pointer events (not mouse) so the toolbar can be dragged/resized with a
+    // finger or stylus on a tablet — synthesized mouse events are unreliable for
+    // touch drags.
+    const onResizeDown = (e: PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
         const el = (e.currentTarget as HTMLElement).closest('.toolbar-container') as HTMLElement | null;
@@ -122,8 +129,8 @@ const Toolbar: Component = () => {
         localStorage.setItem(BRAINSTORM_KEY, String(next));
     };
 
-    const onMouseDown = (e: MouseEvent) => {
-        // Drag if clicked on the container's padding or gaps, or the handle itself
+    const onPointerDown = (e: PointerEvent) => {
+        // Drag if pressed on the container's padding or gaps, or the handle itself
         const target = e.target as HTMLElement;
         if (target.classList.contains('toolbar-container') || target.closest('.drag-handle')) {
             setIsDragging(true);
@@ -135,7 +142,7 @@ const Toolbar: Component = () => {
         }
     };
 
-    const onMouseMove = (e: MouseEvent) => {
+    const onPointerMove = (e: PointerEvent) => {
         if (isResizing()) {
             const s = resizeStart();
             const next = Math.round(Math.max(96, Math.min(900, s.w + (e.clientX - s.x))));
@@ -149,7 +156,7 @@ const Toolbar: Component = () => {
         });
     };
 
-    const onMouseUp = () => {
+    const onPointerUp = () => {
         if (isDragging()) { try { localStorage.setItem('toolbarPos', JSON.stringify(position())); } catch { /* ignore */ } }
         setIsDragging(false);
         setIsResizing(false);
@@ -160,18 +167,20 @@ const Toolbar: Component = () => {
         try { const saved = localStorage.getItem('toolbarPos'); if (saved) { const p = JSON.parse(saved); if (typeof p?.x === 'number' && typeof p?.y === 'number') setPosition(p); } } catch { /* ignore */ }
         // After layout, pull the toolbar back on-screen if the restored position is off-view.
         requestAnimationFrame(clampIntoView);
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
 
-        const handleResize = () => { setIsMobile(window.innerWidth <= 768); clampIntoView(); };
+        const handleResize = () => { setIsMobile(window.innerWidth <= PHONE_MAX_WIDTH); clampIntoView(); };
         window.addEventListener('resize', handleResize);
 
         // Expose global trigger for keyboard shortcut
         (window as any).triggerVideoDialog = () => setShowVideoDialog(true);
 
         onCleanup(() => {
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onMouseUp);
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
             window.removeEventListener('resize', handleResize);
             delete (window as any).triggerVideoDialog;
         });
@@ -330,7 +339,7 @@ const Toolbar: Component = () => {
             class="toolbar-container"
             classList={{ dragging: isDragging(), resizing: isResizing(), vertical: !isMobile() && !!store.globalSettings.toolbarVertical, wrap: !isMobile() && wrapWidth() > 0 }}
             onContextMenu={(e) => e.preventDefault()}
-            onMouseDown={isMobile() ? undefined : onMouseDown}
+            onPointerDown={isMobile() ? undefined : onPointerDown}
             style={isMobile() ? {} : {
                 // Centre on the anchored axis: X for the top (horizontal) bar, Y for the left
                 // (vertical) bar. In wrap mode the bar grows downward, so drop the vertical
@@ -543,7 +552,7 @@ const Toolbar: Component = () => {
                 <div
                     class="toolbar-resize-handle"
                     title="Drag to resize (icons per row) · double-click to reset"
-                    onMouseDown={onResizeDown}
+                    onPointerDown={onResizeDown}
                     onDblClick={() => updateGlobalSettings({ toolbarWrap: 0 })}
                 />
             </Show>

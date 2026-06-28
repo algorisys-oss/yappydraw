@@ -120,8 +120,31 @@
     background-size: 4px 4px;
 }
 
-/* Mobile: move toolbar to bottom, full width */
-@media (max-width: 768px) {
+/* Touch devices (coarse pointer): the drag + resize grips can't rely on :hover,
+   so keep them always visible and enlarge the hit targets for fingers. Also stop
+   the page from scrolling while a grip is being dragged. Applies on tablets,
+   which (>600px) get the floating movable toolbar. */
+@media (pointer: coarse) {
+    .drag-handle {
+        opacity: 0.85;
+        width: 22px;
+        touch-action: none;
+    }
+    .toolbar-container.vertical .drag-handle {
+        width: 44px;
+        height: 22px;
+    }
+    .toolbar-resize-handle {
+        opacity: 0.85;
+        width: 22px;
+        height: 22px;
+        touch-action: none;
+    }
+}
+
+/* Phones: move toolbar to bottom, full width. Must match PHONE_MAX_WIDTH in
+   toolbar.tsx — tablets (>600px) keep the floating movable toolbar. */
+@media (max-width: 600px) {
     .toolbar-container {
         top: auto;
         bottom: 36px;

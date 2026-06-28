@@ -218,8 +218,8 @@ frontend/src/components/timelapse-player.css | - | 165 |
 frontend/src/components/timelapse-player.tsx | typescript | 173 | Component:1 TimelapsePlayer:18 reset:28 load:37 close:87 togglePlay:89 doExport:95
 frontend/src/components/toast.css | - | 109 |
 frontend/src/components/toast.tsx | typescript | 55 | ToastType:5 showToast:15 hideToast:31 Toast:36
-frontend/src/components/toolbar.css | - | 231 |
-frontend/src/components/toolbar.tsx | typescript | 554 | Component:1 VideoProvider:27 Toolbar:70 clampIntoView:77 wrapWidth:106 onResizeDown:108 toggleBrainstormMode:119 onMouseDown:125 onMouseMove:138 onMouseUp:152 handleResize:166 handleToolClick:180 handleVideoInsert:190 handleRightClick:238 handleImageUpload:244
+frontend/src/components/toolbar.css | - | 254 |
+frontend/src/components/toolbar.tsx | typescript | 563 | Component:1 VideoProvider:27 Toolbar:70 clampIntoView:77 wrapWidth:110 onResizeDown:115 toggleBrainstormMode:126 onPointerDown:132 onPointerMove:145 onPointerUp:159 handleResize:174 handleToolClick:189 handleVideoInsert:199 handleRightClick:247 handleImageUpload:253
 frontend/src/components/touch-type-overlay.css | - | 44 |
 frontend/src/components/touch-type-overlay.tsx | typescript | 162 | TouchTypeOverlay:13 curT:20 bumpScale:22 bumpRot:23 stop:24 glyphColor:26 setColorLive:27 snapColor:28 target:30 active:34 toWorld:35 glyphBoxes:38 twoPts:54 startGesture:56 onDown:77 onMove:91 onUp:106 onKey:116 selBox:129
 frontend/src/components/type-on-path-overlay.css | - | 23 |
