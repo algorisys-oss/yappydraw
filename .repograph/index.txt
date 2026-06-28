@@ -123,13 +123,13 @@ frontend/src/components/file-open-dialog.tsx | typescript | 182 | Component:1 Fi
 frontend/src/components/graphic-styles-panel.css | - | 83 |
 frontend/src/components/graphic-styles-panel.tsx | typescript | 97 | Component:1 draw:18 GraphicStylesPanel:44 startRename:48 commitRename:49
 frontend/src/components/help-dialog.css | - | 184 |
-frontend/src/components/help-dialog.tsx | typescript | 291 | ShortcutEntry:5 ShortcutCategory:10 parseKeys:164 Props:183 HelpDialog:188 handleKeyDown:191
+frontend/src/components/help-dialog.tsx | typescript | 294 | ShortcutEntry:5 ShortcutCategory:10 parseKeys:167 Props:186 HelpDialog:191 handleKeyDown:194
 frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 47 | Component:1 HistoryPanel:13
 frontend/src/components/infra-tool-group.tsx | typescript | 137 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:76 activeTool:83 isActive:84 getDropdownPosition:86
 frontend/src/components/layer-context-menu.tsx | typescript | 99 | Component:1 MenuItem:3 Props:5 LayerContextMenu:13 layer:14
-frontend/src/components/layer-panel.css | - | 508 |
-frontend/src/components/layer-panel.tsx | typescript | 432 | Component:1 LayerPanel:8 handleLayerClick:17 handleToggleVisibility:21 handleToggleLock:29 handleDeleteLayer:38 handleDuplicateLayer:45 startEditing:50 saveRename:56 cancelEditing:65 handleRenameKeyDown:70 handlePointerDown:80 handlePointerUp:86 handleDragStart:93 handleDragEnd:102 handleDragOver:108 handleDragLeave:114 handleDrop:118 displayLayers:165 visit:174 depth:319
+frontend/src/components/layer-panel.css | - | 593 |
+frontend/src/components/layer-panel.tsx | typescript | 569 | Component:1 LayerPanel:8 toggleSelected:30 clearSelection:35 onSwipeMove:37 onSwipeUp:57 endSwipeTracking:69 startSwipe:77 swipeOffset:90 groupSelectedLayers:97 deleteSelectedLayers:106 handleLayerClick:115 handleToggleVisibility:119 handleToggleLock:127 handleDeleteLayer:136 handleDuplicateLayer:143 startEditing:148 saveRename:154 cancelEditing:163 handleRenameKeyDown:168 handlePointerDown:178 handlePointerUp:184 handleDragStart:191 handleDragEnd:200 handleDragOver:207 handleDragLeave:213 handleDrop:217 displayLayers:264 visit:273 depth:434
 frontend/src/components/live-paint-overlay.css | - | 27 |
 frontend/src/components/live-paint-overlay.tsx | typescript | 66 | LivePaintOverlay:14 active:25 toWorld:26 onDown:28 onMove:35 onKey:51
 frontend/src/components/load-export-dialog.css | - | 337 |

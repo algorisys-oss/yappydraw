@@ -13,6 +13,104 @@ const LayerPanel: Component = () => {
     const [contextMenu, setContextMenu] = createSignal<{ x: number; y: number; layerId: string } | null>(null);
     let longPressTimer: number | null = null;
 
+    // ─── Procreate-style iPad swipe gestures on layer rows ──────────────
+    //   swipe LEFT  → reveal an action tray (Lock / Duplicate / Delete)
+    //   swipe RIGHT → toggle the row into a multi-select set (Group / Delete bar)
+    // Touch/pen only — mouse keeps native drag-reorder + the always-visible
+    // action buttons. Mirrors happypaint/layer-panel.tsx.
+    const SWIPE_THRESHOLD = 48; // px to commit a swipe
+    const AXIS_SLOP = 10;       // px before locking horizontal vs vertical
+    const TRAY_W = 132;         // revealed action-tray width (px)
+    const [revealedId, setRevealedId] = createSignal<string | null>(null);
+    const [selectedIds, setSelectedIds] = createSignal<Set<string>>(new Set());
+    const [swipe, setSwipe] = createSignal<{ id: string; dx: number } | null>(null);
+    let swipeStart: { id: string; x: number; y: number; axis: 'h' | 'v' | null } | null = null;
+    let lastSwipeEndAt = 0; // suppress a click for a short window after a swipe
+
+    const toggleSelected = (id: string) => setSelectedIds(prev => {
+        const next = new Set<string>(prev);
+        next.has(id) ? next.delete(id) : next.add(id);
+        return next;
+    });
+    const clearSelection = () => setSelectedIds(new Set<string>());
+
+    const onSwipeMove = (e: PointerEvent) => {
+        if (!swipeStart) return;
+        const dx = e.clientX - swipeStart.x;
+        const dy = e.clientY - swipeStart.y;
+        if (swipeStart.axis === null) {
+            if (Math.abs(dx) > AXIS_SLOP && Math.abs(dx) > Math.abs(dy)) {
+                swipeStart.axis = 'h';
+                handlePointerUp(); // a horizontal swipe isn't a long-press rename
+            } else if (Math.abs(dy) > AXIS_SLOP) {
+                endSwipeTracking(); // vertical — let the list scroll
+                return;
+            } else return;
+        }
+        if (swipeStart.axis === 'h') {
+            e.preventDefault();
+            const clamped = Math.max(-(TRAY_W + 24), Math.min(TRAY_W + 24, dx));
+            setSwipe({ id: swipeStart.id, dx: clamped });
+        }
+    };
+
+    const onSwipeUp = () => {
+        if (swipeStart?.axis === 'h') {
+            const dx = swipe()?.dx ?? 0;
+            const id = swipeStart.id;
+            lastSwipeEndAt = Date.now(); // the trailing click must not re-activate the layer
+            if (dx <= -SWIPE_THRESHOLD) setRevealedId(id);
+            else if (dx >= SWIPE_THRESHOLD) { toggleSelected(id); setRevealedId(r => (r === id ? null : r)); }
+            else if (revealedId() === id && dx > 8) setRevealedId(null);
+        }
+        endSwipeTracking();
+    };
+
+    const endSwipeTracking = () => {
+        swipeStart = null;
+        setSwipe(null);
+        window.removeEventListener('pointermove', onSwipeMove);
+        window.removeEventListener('pointerup', onSwipeUp);
+        window.removeEventListener('pointercancel', onSwipeUp);
+    };
+
+    const startSwipe = (id: string, e: PointerEvent) => {
+        // Works for mouse too. Native drag-reorder is confined to the grip handle
+        // (.drag-handle is draggable, the row body is not), so a horizontal drag on
+        // the row body reaches this swipe handler instead of starting an HTML5 drag.
+        if ((e.target as HTMLElement).closest('button, input, .drag-handle, .expander')) return;
+        swipeStart = { id, x: e.clientX, y: e.clientY, axis: null };
+        window.addEventListener('pointermove', onSwipeMove, { passive: false });
+        window.addEventListener('pointerup', onSwipeUp);
+        window.addEventListener('pointercancel', onSwipeUp);
+    };
+
+    // Live horizontal offset for a row: the in-flight swipe, else the parked
+    // revealed-tray position, else 0.
+    const swipeOffset = (id: string): number => {
+        const s = swipe();
+        if (s && s.id === id) return s.dx;
+        if (revealedId() === id) return -TRAY_W;
+        return 0;
+    };
+
+    const groupSelectedLayers = () => {
+        const ids = [...selectedIds()];
+        if (ids.length === 0) return;
+        if (!store.layerGroupingModeEnabled) toggleLayerGroupingMode();
+        const gid = createLayerGroup();
+        ids.forEach(id => updateLayer(id, { parentId: gid }));
+        clearSelection();
+    };
+
+    const deleteSelectedLayers = () => {
+        for (const id of [...selectedIds()]) {
+            if (store.layers.length <= 1) break; // always keep one layer
+            deleteLayer(id);
+        }
+        clearSelection();
+    };
+
 
     const handleLayerClick = (id: string) => {
         setActiveLayer(id);
@@ -94,13 +192,14 @@ const LayerPanel: Component = () => {
         setDraggedId(id);
         e.dataTransfer!.effectAllowed = 'move';
         e.dataTransfer!.setData('text/plain', id);
-        setTimeout(() => {
-            (e.target as HTMLElement).style.opacity = '0.5';
-        }, 0);
+        // Native drag now starts from the grip handle; dim the whole row, not the grip.
+        const row = (e.currentTarget as HTMLElement).closest('.layer-row') as HTMLElement | null;
+        setTimeout(() => { if (row) row.style.opacity = '0.5'; }, 0);
     };
 
     const handleDragEnd = (e: DragEvent) => {
-        (e.target as HTMLElement).style.opacity = '1';
+        const row = (e.currentTarget as HTMLElement).closest('.layer-row') as HTMLElement | null;
+        if (row) row.style.opacity = '1';
         setDraggedId(null);
         setDragOverId(null);
     };
@@ -313,22 +412,53 @@ const LayerPanel: Component = () => {
                             </div>
                         </div>
                     </div>
+                    <Show when={selectedIds().size > 0}>
+                        <div class="layer-multiselect-bar">
+                            <span class="ms-count">{selectedIds().size} selected</span>
+                            <div class="ms-actions">
+                                <button class="ms-btn ms-group" onClick={groupSelectedLayers} title="Group selected layers">
+                                    <Folder size={14} /> Group
+                                </button>
+                                <button class="ms-btn ms-delete" onClick={deleteSelectedLayers} title="Delete selected layers" disabled={store.layers.length <= 1}>
+                                    <Trash2 size={14} /> Delete
+                                </button>
+                                <button class="ms-btn ms-cancel" onClick={clearSelection} title="Clear selection">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    </Show>
                     <div class="layer-list">
                         <For each={displayLayers().items}>
                             {(layer) => {
                                 const depth = () => displayLayers().depths.get(layer.id) || 0;
                                 return (
+                                    <div class="layer-row" classList={{ selected: selectedIds().has(layer.id) }}>
+                                        {/* Swipe-left action tray (revealed behind the row on touch) */}
+                                        <div class="layer-swipe-tray">
+                                            <button class="tray-btn tray-lock" title={layer.locked ? 'Unlock' : 'Lock'}
+                                                onClick={(e) => { handleToggleLock(layer.id, e as unknown as MouseEvent); setRevealedId(null); }}>
+                                                {layer.locked ? <Unlock size={15} /> : <Lock size={15} />}
+                                            </button>
+                                            <button class="tray-btn tray-dup" title="Duplicate"
+                                                onClick={(e) => { handleDuplicateLayer(layer.id, e as unknown as MouseEvent); setRevealedId(null); }}>
+                                                <Copy size={15} />
+                                            </button>
+                                            <button class="tray-btn tray-del" title="Delete" disabled={store.layers.length <= 1}
+                                                onClick={(e) => { handleDeleteLayer(layer.id, e as unknown as MouseEvent); setRevealedId(null); }}>
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </div>
                                     <div
                                         class={`layer-item ${layer.id === store.activeLayerId ? 'active' : ''} ${dragOverId() === layer.id ? 'drag-over' : ''} ${layer.visible === false ? 'hidden' : ''} ${layer.locked ? 'locked' : ''} ${layer.isGroup ? 'group' : ''} ${depth() > 0 ? 'nested' : ''}`}
-                                        style={{ 'padding-left': store.layerGroupingModeEnabled ? `${depth() * 24}px` : '0' }}
-                                        onClick={() => handleLayerClick(layer.id)}
+                                        classList={{ swiping: !!swipe() && swipe()!.id === layer.id }}
+                                        style={{ 'padding-left': store.layerGroupingModeEnabled ? `${depth() * 24}px` : '0', transform: `translateX(${swipeOffset(layer.id)}px)` }}
+                                        onPointerDown={(e) => startSwipe(layer.id, e)}
+                                        onClick={() => { if (Date.now() - lastSwipeEndAt < 400) return; if (revealedId()) { setRevealedId(null); return; } handleLayerClick(layer.id); }}
                                         onContextMenu={(e) => {
                                             e.preventDefault();
                                             setContextMenu({ x: e.clientX, y: e.clientY, layerId: layer.id });
                                         }}
-                                        draggable={true}
-                                        onDragStart={(e) => handleDragStart(layer.id, e)}
-                                        onDragEnd={handleDragEnd}
                                         onDragOver={(e) => handleDragOver(layer.id, e)}
                                         onDragLeave={handleDragLeave}
                                         onDrop={(e) => handleDrop(layer.id, e)}
@@ -344,7 +474,13 @@ const LayerPanel: Component = () => {
                                                 <ChevronRight size={14} />
                                             </div>
                                         </Show>
-                                        <span class="drag-handle" title="Drag to reorder">⋮⋮</span>
+                                        <span
+                                            class="drag-handle"
+                                            title="Drag to reorder"
+                                            draggable={true}
+                                            onDragStart={(e) => handleDragStart(layer.id, e)}
+                                            onDragEnd={handleDragEnd}
+                                        >⋮⋮</span>
                                         <div class="layer-visibility" onClick={(e) => handleToggleVisibility(layer.id, e)}>
                                             {layer.visible !== false ? <Eye size={14} /> : <EyeOff size={14} />}
                                         </div>
@@ -391,6 +527,7 @@ const LayerPanel: Component = () => {
                                                 <Trash2 size={13} />
                                             </button>
                                         </div>
+                                    </div>
                                     </div>
                                 );
                             }}

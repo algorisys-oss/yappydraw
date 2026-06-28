@@ -506,3 +506,88 @@
         /* Better touch target */
     }
 }
+/* ─── Procreate-style swipe gestures on layer rows (touch/pen) ───────────
+   swipe-left reveals an action tray; swipe-right toggles multi-select. */
+.layer-row {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2px;        /* spacing moved off .layer-item so the tray aligns */
+    border-radius: 4px;
+}
+.layer-row > .layer-item {
+    margin-bottom: 0;
+    position: relative;
+    z-index: 1;                /* slides over the tray */
+    will-change: transform;
+}
+.layer-row > .layer-item.swiping {
+    transition: none;          /* follow the finger 1:1 while swiping */
+}
+.layer-row.selected {
+    box-shadow: inset 3px 0 0 #3b82f6;
+}
+
+.layer-swipe-tray {
+    position: absolute;
+    inset: 0 0 0 auto;         /* pinned to the right edge, full height */
+    display: flex;
+    align-items: stretch;
+    z-index: 0;
+}
+.layer-swipe-tray .tray-btn {
+    width: 44px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    cursor: pointer;
+}
+.layer-swipe-tray .tray-btn:disabled { opacity: 0.45; cursor: default; }
+.layer-swipe-tray .tray-lock { background: #475569; }
+.layer-swipe-tray .tray-dup  { background: #2563eb; }
+.layer-swipe-tray .tray-del  { background: #dc2626; }
+
+/* Multi-select action bar (appears when rows are swipe-right selected) */
+.layer-multiselect-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 8px;
+    margin: 4px 0;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+}
+.layer-multiselect-bar .ms-count {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #94a3b8);
+}
+.layer-multiselect-bar .ms-actions { display: flex; gap: 6px; }
+.layer-multiselect-bar .ms-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #fff;
+}
+.layer-multiselect-bar .ms-btn:disabled { opacity: 0.5; cursor: default; }
+.layer-multiselect-bar .ms-group  { background: #2563eb; }
+.layer-multiselect-bar .ms-delete { background: #dc2626; }
+.layer-multiselect-bar .ms-cancel { background: var(--btn-hover); color: var(--text-secondary, #94a3b8); }
+
+/* Touch: always show the row action buttons too (they're hover-revealed on
+   desktop), so non-swipe users still have a tap target. */
+@media (pointer: coarse) {
+    .layer-item .layer-action-btn { opacity: 0.9; }
+}
+
+/* Row body swipes (mouse/touch); don't let a horizontal drag select the name. */
+.layer-row > .layer-item { user-select: none; -webkit-user-select: none; }
+.layer-row > .layer-item input { user-select: text; -webkit-user-select: text; }
+.layer-row > .layer-item .drag-handle { cursor: grab; }
