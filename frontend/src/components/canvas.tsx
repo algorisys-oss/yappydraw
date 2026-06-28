@@ -196,6 +196,7 @@ const Canvas: Component = () => {
     const [spacingGuides, setSpacingGuides] = createSignal<SpacingGuide[]>([]);
     const [reparentDropTarget, setReparentDropTarget] = createSignal<string | null>(null);
     const [poolLaneDropTarget, setPoolLaneDropTarget] = createSignal<{ poolId: string; laneIndex: number } | null>(null);
+    const [tableColumnDrop, setTableColumnDrop] = createSignal<{ elementId: string; sourceCol: number; targetCol: number } | null>(null);
 
     // Crop mode drag state (mutable, not reactive — same pattern as pState)
     let cropDragHandle: CropHandle = null;
@@ -378,6 +379,7 @@ const Canvas: Component = () => {
             isDarkMode, appMode: store.appMode,
             reparentDropTarget: reparentDropTarget(),
             poolLaneDropTarget: poolLaneDropTarget(),
+            tableColumnDrop: tableColumnDrop(),
         });
 
         renderConnectionAnchors(ctx, {
@@ -607,6 +609,7 @@ const Canvas: Component = () => {
         spacingGuides, setSpacingGuides,
         reparentDropTarget, setReparentDropTarget,
         poolLaneDropTarget, setPoolLaneDropTarget,
+        tableColumnDrop, setTableColumnDrop,
         get textInputRef() { return textInputRef; }
     };
 

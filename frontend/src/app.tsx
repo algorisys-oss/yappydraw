@@ -48,7 +48,7 @@ import { parseClipboardTableData, defaultColWidths, defaultRowHeights, getNextCe
 import { generateId } from './utils/id-generator';
 import { screenToWorld } from './utils/viewport-transforms';
 import { parseOutline } from './utils/mindmap-layout';
-import { updateElement, deleteArtboard, swapFillStroke } from './store/app-store';
+import { updateElement, deleteArtboard, swapFillStroke, selectAll } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
 const SymbolsPanel = lazy(() => import('./components/symbols-panel'));
@@ -358,7 +358,7 @@ const App: Component = () => {
           return;
         } else if (key === 'a') {
           e.preventDefault();
-          setStore('selection', store.elements.map(el => el.id));
+          selectAll();
           return;
         }
       }

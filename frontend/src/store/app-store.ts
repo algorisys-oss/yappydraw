@@ -891,6 +891,14 @@ export const setShowCanvasProperties = (visible: boolean) => {
     }
 };
 
+/**
+ * Select every element on the canvas. Shared by the Ctrl/Cmd+A shortcut and the
+ * context menu (the latter gives keyboard-less tablets a "Select all" path).
+ */
+export const selectAll = () => {
+    setStore('selection', store.elements.map(el => el.id));
+};
+
 export const deleteElements = (ids: string[]) => {
     if (ids.length === 0) return;
     pushToHistory(); // Save state before deletion

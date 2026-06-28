@@ -152,6 +152,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Zoom to Fit', keys: 'Quick pinch-in flick' },
             { label: 'Delete Selection (no keyboard)', keys: 'Tap the ✕ button by the selection' },
             { label: 'Context Menu (Delete / Duplicate…)', keys: 'Touch & hold (long-press)' },
+            { label: 'Select All (no keyboard)', keys: 'Long-press empty canvas → Select all' },
             { label: 'Proportional Resize (stylus)', keys: 'Add a finger while dragging a handle' },
             { label: 'Set Shape Fill (ColorDrop)', keys: 'Drag palette swatch onto shape' },
             { label: 'Smart Shapes (hold pen to correct)', keys: 'Draw + hold' },

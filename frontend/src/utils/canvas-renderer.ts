@@ -128,6 +128,7 @@ export interface SelectionOverlayParams {
     appMode?: string;
     reparentDropTarget?: string | null;
     poolLaneDropTarget?: { poolId: string; laneIndex: number } | null;
+    tableColumnDrop?: { elementId: string; sourceCol: number; targetCol: number } | null;
 }
 
 export interface ConnectionAnchorParams {
@@ -960,6 +961,13 @@ export function renderSelectionOverlays(
         }
     }
 
+    // Table column drag-reorder: live drop indicator (insertion line + target
+    // highlight) so the reorder isn't a blind drag.
+    if (params.tableColumnDrop && params.tableColumnDrop.sourceCol !== params.tableColumnDrop.targetCol) {
+        const tEl = elements.find(e => e.id === params.tableColumnDrop!.elementId && e.type === 'table');
+        if (tEl) renderTableColumnDropIndicator(ctx, tEl, params.tableColumnDrop.sourceCol, params.tableColumnDrop.targetCol, scale);
+    }
+
     // Snapping & spacing guides
     renderSnappingGuides(ctx, snappingGuides, scale);
     renderSpacingGuides(ctx, spacingGuides, scale);
@@ -974,6 +982,56 @@ export function renderSelectionOverlays(
 
     // Mindmap collapse/expand toggles — rendered last so they're always on top
     renderMindmapToggles(ctx, elements, selection, scale, params.isDarkMode ?? false, params.appMode);
+}
+
+/**
+ * Live feedback while drag-reordering a table column: fade the grabbed (source)
+ * column, highlight the column under the pointer (target), and draw a thick
+ * insertion line on the side the column will land — right of target when moving
+ * right, left when moving left, matching the splice-reorder on drop.
+ */
+function renderTableColumnDropIndicator(
+    ctx: CanvasRenderingContext2D,
+    el: DrawingElement,
+    sourceCol: number,
+    targetCol: number,
+    scale: number
+): void {
+    const cols = el.tableCols ?? 3;
+    const rows = el.tableRows ?? 3;
+    const hasHeader = el.tableHeaders !== false;
+    const totalVisualRows = hasHeader ? rows + 1 : rows;
+    const colWidths = el.tableColWidths ?? defaultColWidths(cols);
+    const rowHeights = el.tableRowHeights ?? defaultRowHeights(totalVisualRows);
+    const cellRects = computeCellRects(el.x, el.y, el.width, el.height, colWidths, rowHeights, el.tableColOrder, hasHeader);
+    const colBounds = (dataCol: number): { left: number; right: number } | null => {
+        let minX = Infinity, maxX = -Infinity;
+        for (const c of cellRects) {
+            if (c.dataCol === dataCol) { minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x + c.w); }
+        }
+        return minX === Infinity ? null : { left: minX, right: maxX };
+    };
+    const top = el.y, bottom = el.y + el.height;
+    const src = colBounds(sourceCol);
+    const tgt = colBounds(targetCol);
+    ctx.save();
+    if (src) {
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.10)'; // grabbed column, faded
+        ctx.fillRect(src.left, top, src.right - src.left, bottom - top);
+    }
+    if (tgt) {
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.18)'; // target column
+        ctx.fillRect(tgt.left, top, tgt.right - tgt.left, bottom - top);
+        const lineX = sourceCol < targetCol ? tgt.right : tgt.left;
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 3 / scale;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(lineX, top);
+        ctx.lineTo(lineX, bottom);
+        ctx.stroke();
+    }
+    ctx.restore();
 }
 
 function renderTableCellSelection(

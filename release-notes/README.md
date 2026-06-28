@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.5.4](0.5.4.md) — Table reorder feedback & touch select-all
 - [0.5.3](0.5.3.md) — Tablet select+delete & richer touch gestures
 - [0.5.2](0.5.2.md) — DSL parser strictness + full test-suite cleanup
 - [0.5.1](0.5.1.md) — deleteSlide fix

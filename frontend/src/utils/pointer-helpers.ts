@@ -49,5 +49,8 @@ export interface PointerSignals {
     setReparentDropTarget: (v: string | null) => void;
     poolLaneDropTarget: () => { poolId: string; laneIndex: number } | null;
     setPoolLaneDropTarget: (v: { poolId: string; laneIndex: number } | null) => void;
+    // Live drop feedback while drag-reordering a table column.
+    tableColumnDrop: () => { elementId: string; sourceCol: number; targetCol: number } | null;
+    setTableColumnDrop: (v: { elementId: string; sourceCol: number; targetCol: number } | null) => void;
     textInputRef?: HTMLTextAreaElement;
 }

@@ -7,7 +7,7 @@
 import type { DrawingElement, TableCellSelection } from '../types';
 import type { MenuItem } from '../components/context-menu';
 import {
-    store, setStore, pushToHistory, updateElement,
+    store, setStore, pushToHistory, updateElement, selectAll,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
     blendShapes,
     toggleRecolorPanel,
@@ -326,6 +326,7 @@ export function getContextMenuItems(
             { label: 'Paste', shortcut: 'Ctrl+V', onClick: pasteFromClipboard },
             { label: 'Cut', shortcut: 'Ctrl+X', onClick: cutToClipboard },
             { label: 'Duplicate', shortcut: 'Ctrl+D', onClick: () => store.selection.forEach(id => duplicateElement(id)) },
+            { label: 'Select all', shortcut: 'Ctrl+A', onClick: selectAll },
             { separator: true }
         );
 
@@ -1346,7 +1347,7 @@ export function getContextMenuItems(
         items.push(
             { label: 'Paste', shortcut: 'Ctrl+V', onClick: pasteFromClipboard },
             { separator: true },
-            { label: 'Select all', shortcut: 'Ctrl+A', onClick: () => setStore('selection', store.elements.map(e => e.id)) },
+            { label: 'Select all', shortcut: 'Ctrl+A', onClick: selectAll },
             { label: 'Select by Type', submenu: buildSelectByTypeMenu() },
             {
                 label: 'Insert', icon: '➕', submenu: (() => {

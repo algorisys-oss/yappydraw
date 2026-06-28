@@ -1016,10 +1016,24 @@ export function selectionOnMove(
 
     // Table column drag-and-drop reorder
     if (pState.isDragging && pState.tableDragCol >= 0 && pState.tableDragElementId) {
-        // If dragging significantly horizontally, it's a column reorder — cursor feedback
+        // If dragging significantly horizontally, it's a column reorder — cursor
+        // feedback + a live drop indicator so the reorder isn't a blind drag.
         const dragDist = Math.abs(x - pState.startX);
         if (dragDist > 5 / store.viewState.scale) {
             helpers.setCursor('grabbing');
+            const el = store.elements.find(e => e.id === pState.tableDragElementId);
+            if (el && el.type === 'table') {
+                const cols = el.tableCols ?? 3;
+                const rows = el.tableRows ?? 3;
+                const hasHeader = el.tableHeaders !== false;
+                const totalVisualRows = hasHeader ? rows + 1 : rows;
+                const colWidths = el.tableColWidths ?? defaultColWidths(cols);
+                const rowHeights = el.tableRowHeights ?? defaultRowHeights(totalVisualRows);
+                const cellRects = computeCellRects(el.x, el.y, el.width, el.height, colWidths, rowHeights, el.tableColOrder, hasHeader);
+                const dropCell = hitTestTableCell(x, y, cellRects);
+                signals.setTableColumnDrop(dropCell ? { elementId: el.id, sourceCol: pState.tableDragCol, targetCol: dropCell.dataCol } : null);
+                requestAnimationFrame(helpers.draw);
+            }
         }
         return;
     }
@@ -2547,6 +2561,7 @@ export function selectionOnUp(
         }
         pState.tableDragCol = -1;
         pState.tableDragElementId = null;
+        signals.setTableColumnDrop(null);
     }
 
     // Table resize cleanup

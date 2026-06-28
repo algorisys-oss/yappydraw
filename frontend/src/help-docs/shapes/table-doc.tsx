@@ -318,7 +318,8 @@ Yappy.importTableFromCSV(tableId, csvString);`}
                 <p>Drag and drop columns to reorder them:</p>
                 <ol>
                     <li>Click and hold on a column header</li>
-                    <li>Drag to the desired position</li>
+                    <li>Drag sideways — the target column highlights and a blue
+                        insertion line shows exactly where the column will land</li>
                     <li>Release to drop the column in its new position</li>
                 </ol>
 
