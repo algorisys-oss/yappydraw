@@ -54,8 +54,10 @@ const ContextMenu: Component<ContextMenuProps> = (props) => {
                 setPosition({ x: adjustedX, y: adjustedY });
             }
 
-            // Close on click outside
-            const handleClickOutside = (e: MouseEvent) => {
+            // Close on click outside. Listen for pointerdown as well as mousedown so
+            // a tap dismisses the menu on touch/pen devices (mousedown isn't reliably
+            // synthesized from touch), giving keyboard-less tablets a way to close it.
+            const handleClickOutside = (e: Event) => {
                 // Check if click is inside any context menu (including submenus)
                 if ((e.target as Element).closest('.context-menu')) return;
                 props.onClose();
@@ -69,10 +71,12 @@ const ContextMenu: Component<ContextMenuProps> = (props) => {
             };
 
             document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('pointerdown', handleClickOutside);
             document.addEventListener('keydown', handleKeyDown);
 
             onCleanup(() => {
                 document.removeEventListener('mousedown', handleClickOutside);
+                document.removeEventListener('pointerdown', handleClickOutside);
                 document.removeEventListener('keydown', handleKeyDown);
                 if (hoverTimeout) {
                     clearTimeout(hoverTimeout);

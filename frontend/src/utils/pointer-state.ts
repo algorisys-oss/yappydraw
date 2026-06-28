@@ -47,6 +47,11 @@ export interface PointerState {
     // Last pointerType seen on pointerdown — used to filter contextmenu so iOS
     // long-press from palm/finger doesn't open the canvas/property context menu.
     lastPointerType: 'mouse' | 'pen' | 'touch' | null;
+    // Procreate-style "second finger" modifier: while a pen/stylus owns a
+    // selection drag/resize, a finger contact sets this to act like Shift
+    // (proportional resize). Set/cleared by the canvas touch handlers; read by
+    // the selection handler's constrain logic.
+    secondaryContact: boolean;
     isPolylineBuilding: boolean;
     polylinePoints: { x: number; y: number }[];
     // Pen tool (editable vector path) build state.
@@ -138,6 +143,7 @@ export function createPointerState(): PointerState {
         lastPenInputAt: 0,
         activePenPointerId: null,
         lastPointerType: null,
+        secondaryContact: false,
         isPenBuilding: false,
         penAnchors: [],
         penActiveIdx: -1,

@@ -12,6 +12,8 @@ interface ShortcutCategory {
     shortcuts: ShortcutEntry[];
 }
 
+// NOTE: when adding a touch/pen affordance, also document it in the
+// "Touch & Pen Gestures" category below so the help dialog stays in sync.
 const SHORTCUT_DATA: ShortcutCategory[] = [
     {
         title: 'File',
@@ -145,8 +147,12 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Keep Undoing', keys: 'Two-finger hold' },
             { label: 'Redo', keys: 'Three-finger tap' },
             { label: 'Copy Selection', keys: 'Three-finger swipe down' },
+            { label: 'Delete Selection', keys: 'Three-finger scrub (back & forth)' },
             { label: 'Toggle Zen Mode', keys: 'Four-finger tap' },
             { label: 'Zoom to Fit', keys: 'Quick pinch-in flick' },
+            { label: 'Delete Selection (no keyboard)', keys: 'Tap the ✕ button by the selection' },
+            { label: 'Context Menu (Delete / Duplicate…)', keys: 'Touch & hold (long-press)' },
+            { label: 'Proportional Resize (stylus)', keys: 'Add a finger while dragging a handle' },
             { label: 'Set Shape Fill (ColorDrop)', keys: 'Drag palette swatch onto shape' },
             { label: 'Smart Shapes (hold pen to correct)', keys: 'Draw + hold' },
         ]

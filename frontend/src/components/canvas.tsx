@@ -3,10 +3,12 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, applyEyedropperFrom, cancelEyedropper } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, applyEyedropperFrom, cancelEyedropper, deleteElements } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { screenToWorld } from "../utils/viewport-transforms";
+import { isPalmTouch } from "../utils/input/palm-rejection";
+import { allFingerTouches, pickFingerTouches, twoFingerMetrics } from "../utils/input/touch-geometry";
 import { recognizeStrokeShape } from "../utils/shape-recognition";
 import type { DrawingElement } from "../types";
 import ContextMenu from "./context-menu";
@@ -206,24 +208,12 @@ const Canvas: Component = () => {
     // palm 50+ px. iPad sometimes reports a quick consecutive Pencil tap as
     // pointerType='touch' with the small Pencil-tip area — this distinguishes
     // a misclassified pen from real palm contact.
-    const isPencilSizedTouch = (e: PointerEvent): boolean => {
-        const w = (e as any).width;
-        const h = (e as any).height;
-        if (w == null || h == null) return false;
-        return w > 0 && w <= 5 && h > 0 && h <= 5;
-    };
-
     // Throttle constants
     const SNAPPING_THROTTLE_MS = 16; // ~60 FPS
     const LASER_THROTTLE_MS = 8; // ~120fps for smooth trail
     const LASER_DECAY_MS = 800;
     const LASER_MAX_POINTS = 100;
     const PEN_UPDATE_THROTTLE_MS = 16; // ~60fps store updates
-    // Palm-rejection recency window: ignore palm-sized touch for this long after
-    // the pen was last seen (covers the gap between fast strokes where iPadOS
-    // hasn't yet re-suppressed the resting palm). Pencil-sized touches are
-    // exempt so a misclassified Pencil tap still draws.
-    const PEN_RECENT_MS = 500;
 
     const flushPenPoints = () => {
         if (!pState.currentId || pState.penPointsBuffer.length === 0) return;
@@ -916,6 +906,40 @@ const Canvas: Component = () => {
     // fingers lift. Otherwise the leftover finger immediately starts a
     // stray stroke at gesture-release.
     let gestureCooldown = false;
+    // When the cooldown was last (re)armed. The cooldown normally clears when all
+    // fingers lift, but a dropped/out-of-order `touchend` (common on iPadOS Safari)
+    // could otherwise strand it `true` forever, killing single-finger select/marquee.
+    // A stale cooldown older than this window self-heals on the next touch.
+    let gestureCooldownAt = 0;
+    const GESTURE_COOLDOWN_MAX_MS = 1500;
+    // True when a touch pointer should be ignored because a 2-finger gesture owns
+    // (or just owned) the canvas. Self-heals a stranded cooldown so marquee/select
+    // can't get permanently stuck.
+    const isTouchBlockedByGesture = (pointerType: string): boolean => {
+        if (pointerType !== 'touch') return false;
+        if (gestureActive) return true;
+        if (gestureCooldown) {
+            if (Date.now() - gestureCooldownAt > GESTURE_COOLDOWN_MAX_MS) { gestureCooldown = false; return false; }
+            return true;
+        }
+        return false;
+    };
+
+    // ─── Long-press → context menu (touch/pen) ───────────────────────────
+    // iPad/Android don't reliably fire a `contextmenu` event on a touch/pen
+    // long-press (and we suppress it anyway to avoid the OS callout), so we
+    // detect the hold ourselves: press-and-hold still for LONG_PRESS_MS on the
+    // selection/lasso tool opens the same canvas context menu a mouse
+    // right-click would. Gives keyboard-less tablets a Delete/Duplicate/Copy
+    // menu. Cancelled the moment the finger travels past LONG_PRESS_SLOP.
+    const LONG_PRESS_MS = 500;
+    const LONG_PRESS_SLOP = 10; // client px
+    let longPressTimer: number | null = null;
+    let longPressOrigin: { x: number; y: number } | null = null;
+    const cancelLongPress = () => {
+        if (longPressTimer !== null) { clearTimeout(longPressTimer); longPressTimer = null; }
+        longPressOrigin = null;
+    };
 
     // ─── Procreate-style multi-finger gesture vocabulary ─────────────────
     // Layered on top of the 2-finger pan/zoom above. We DON'T commit to
@@ -926,10 +950,15 @@ const Canvas: Component = () => {
     //   three-finger tap        → redo
     //   four-finger tap         → toggle zen mode (hide chrome)
     //   three-finger swipe ↓    → copy selection
+    //   three-finger scrub ↔    → delete selection (Procreate "scrub to erase")
     //   quick pinch-in flick    → zoom to fit
+    // Plus a stylus modifier: a finger landing during a pen-driven resize acts
+    // like Shift (proportional) — pState.secondaryContact.
     const TAP_MAX_MS = 350;
     const TAP_SLOP = 14;            // px of finger travel that disqualifies a tap
     const SWIPE_DOWN_DIST = 60;     // px downward for a 3-finger swipe
+    const SCRUB_STEP = 24;          // px of horizontal centroid travel per scrub sample
+    const SCRUB_FLIPS = 2;          // direction reversals to count as a "scrub" (erase)
     const QUICK_PINCH_MS = 320;     // a pinch-in faster than this …
     const QUICK_PINCH_SCALE = 0.6;  // … and below this cumulative scale = fit
     const ROT_DEADZONE_RAD = (5 * Math.PI) / 180; // twist past 5° to start rotating
@@ -943,6 +972,12 @@ const Canvas: Component = () => {
     let gMoved = false;             // travelled past TAP_SLOP → not a tap
     let gCommitted = false;         // committed to pan/zoom transform
     let gSwipeFired = false;        // 3-finger swipe already triggered
+    // 3-finger horizontal scrub (Procreate "scrub to erase") → delete selection.
+    let gScrubInit = false;         // first horizontal sample captured?
+    let gScrubLastCx = 0;           // last horizontal centroid we sampled
+    let gScrubDir = 0;              // -1 left / +1 right / 0 none
+    let gScrubFlips = 0;            // direction reversals so far
+    let gScrubFired = false;        // scrub-delete already triggered this gesture
     let gCumScale = 1;              // cumulative pinch scale while committed
     const gStarts = new Map<number, { x: number; y: number }>(); // touch id → start
     let gUndoRepeatTimer: number | null = null;
@@ -951,17 +986,6 @@ const Canvas: Component = () => {
     const clearUndoRepeat = () => {
         if (gUndoRepeatTimer !== null) { clearTimeout(gUndoRepeatTimer); gUndoRepeatTimer = null; }
         if (gUndoRepeatInterval !== null) { clearInterval(gUndoRepeatInterval); gUndoRepeatInterval = null; }
-    };
-
-    // All current finger contacts (stylus excluded), uncapped — the 2-finger
-    // pickFingerTouches() above stops at 2, but tap/swipe need 3–4.
-    const allFingerTouches = (e: TouchEvent): Touch[] => {
-        const fingers: Touch[] = [];
-        for (let i = 0; i < e.touches.length; i++) {
-            const t = e.touches[i];
-            if ((t as { touchType?: string }).touchType !== 'stylus') fingers.push(t);
-        }
-        return fingers;
     };
 
     const fitView = () => { store.docType === 'slides' ? zoomToFitSlide() : zoomToFit(); };
@@ -980,32 +1004,6 @@ const Canvas: Component = () => {
                 undo();
             }, UNDO_REPEAT_MS);
         }, UNDO_REPEAT_DELAY_MS);
-    };
-
-    // Count contacts that are fingers (not stylus). Used so an Apple Pencil
-    // contact + palm rest doesn't get mistaken for a 2-finger gesture.
-    const pickFingerTouches = (e: TouchEvent): Touch[] => {
-        const fingers: Touch[] = [];
-        for (let i = 0; i < e.touches.length; i++) {
-            const t = e.touches[i];
-            if ((t as any).touchType !== 'stylus') {
-                fingers.push(t);
-                if (fingers.length === 2) break;
-            }
-        }
-        return fingers;
-    };
-
-    const twoFingerMetrics = (e: TouchEvent) => {
-        const f = pickFingerTouches(e);
-        if (f.length < 2) return null;
-        const t0 = f[0];
-        const t1 = f[1];
-        const cx = (t0.clientX + t1.clientX) / 2;
-        const cy = (t0.clientY + t1.clientY) / 2;
-        const dx = t0.clientX - t1.clientX;
-        const dy = t0.clientY - t1.clientY;
-        return { cx, cy, dist: Math.hypot(dx, dy), angle: Math.atan2(dy, dx) };
     };
 
     // Hard-cancel any in-flight pointer/touch interaction so it doesn't
@@ -1044,6 +1042,7 @@ const Canvas: Component = () => {
     const beginGesture = (e: TouchEvent) => {
         const m = twoFingerMetrics(e);
         if (!m) return;
+        cancelLongPress(); // a second finger landed — not a long-press
         cancelInflightForGesture();
         gestureLastDist = m.dist;
         gestureLastCx = m.cx;
@@ -1060,6 +1059,11 @@ const Canvas: Component = () => {
         gMoved = false;
         gCommitted = false;
         gSwipeFired = false;
+        gScrubInit = false;
+        gScrubLastCx = 0;
+        gScrubDir = 0;
+        gScrubFlips = 0;
+        gScrubFired = false;
         gCumScale = 1;
         gStarts.clear();
         for (const t of fingers) gStarts.set(t.identifier, { x: t.clientX, y: t.clientY });
@@ -1138,6 +1142,16 @@ const Canvas: Component = () => {
         // (via beginGesture) discards the stray stroke.
         if (store.appMode === 'embed') return;
         const fingers = allFingerTouches(e);
+        // Procreate "second finger" constrain: a single finger landing while a
+        // stylus owns a selection drag/resize acts like Shift (proportional
+        // resize). The pen keeps the stroke; the finger only flips the modifier.
+        if (fingers.length === 1 && !gestureActive && pState.lastPointerType === 'pen'
+            && (pState.isDragging || pState.isSelecting) && !pState.secondaryContact) {
+            pState.secondaryContact = true;
+            e.preventDefault();
+            requestAnimationFrame(draw);
+            return;
+        }
         if (fingers.length >= 2) {
             e.preventDefault();
             if (!gestureActive) {
@@ -1186,6 +1200,35 @@ const Canvas: Component = () => {
             }
         }
 
+        // Three-finger horizontal scrub → delete the selection (Procreate's
+        // "scrub to erase", retargeted to vector selections so it's undoable and
+        // non-destructive when nothing is selected). Counts horizontal direction
+        // reversals of the finger centroid; SCRUB_FLIPS reversals fire it once.
+        if (count >= 3 && !gScrubFired && !gSwipeFired && !gCommitted) {
+            const cxNow = fingers.reduce((s, t) => s + t.clientX, 0) / fingers.length;
+            if (!gScrubInit) { gScrubInit = true; gScrubLastCx = cxNow; }
+            else {
+                const ddx = cxNow - gScrubLastCx;
+                if (Math.abs(ddx) >= SCRUB_STEP) {
+                    const dir = ddx > 0 ? 1 : -1;
+                    if (gScrubDir !== 0 && dir !== gScrubDir) gScrubFlips++;
+                    gScrubDir = dir;
+                    gScrubLastCx = cxNow;
+                    if (gScrubFlips >= SCRUB_FLIPS) {
+                        gScrubFired = true;
+                        gMoved = true; // disqualify the tap
+                        clearUndoRepeat();
+                        if (store.selection.length > 0) {
+                            const n = store.selection.length;
+                            deleteElements(store.selection);
+                            showToast(`Deleted ${n} item${n > 1 ? 's' : ''}`, 'info', 900);
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+
         // Pan/zoom only with exactly two fingers — 3+ fingers are reserved for
         // discrete commands (Procreate: 2 = navigate, 3+ = actions).
         if (count !== 2) { gFingerCount = count; return; }
@@ -1214,6 +1257,12 @@ const Canvas: Component = () => {
     const handleTouchEndGesture = (e: TouchEvent) => {
         if (!gestureActive) {
             if (e.touches.length === 0) gestureCooldown = false;
+            // The "second finger" constrain finger lifted (stylus may still be
+            // down) — drop the modifier so resize stops constraining.
+            if (pState.secondaryContact && allFingerTouches(e).length === 0) {
+                pState.secondaryContact = false;
+                requestAnimationFrame(draw);
+            }
             return;
         }
         // Drop the lifted touches from our start tracking.
@@ -1248,6 +1297,7 @@ const Canvas: Component = () => {
             // block single-finger drawing until everything lifts.
             e.preventDefault();
             gestureCooldown = true;
+            gestureCooldownAt = Date.now();
         }
     };
 
@@ -1258,8 +1308,10 @@ const Canvas: Component = () => {
         // 2-finger gesture in progress (or cooling down with a finger still
         // resting on the canvas) — don't let synthetic touch-pointers drive
         // the tool. Only touch-derived pointers are blocked; mouse + pen
-        // continue to work (e.g. user palms while pinching with stylus).
-        if ((gestureActive || gestureCooldown) && e.pointerType === 'touch') return;
+        // continue to work (e.g. user palms while pinching with stylus). A
+        // stranded cooldown self-heals so single-finger select/marquee can't
+        // get permanently stuck.
+        if (isTouchBlockedByGesture(e.pointerType)) return;
 
         // Eyedropper armed: the next click copies the clicked object's style to
         // the armed targets (then disarms). Consumes the click.
@@ -1293,9 +1345,7 @@ const Canvas: Component = () => {
             pState.lastPenInputAt = Date.now();
             smartShapeSuppress = false; // a fresh pen-down starts a new stroke
         } else if (e.pointerType === 'touch') {
-            const penActive = pState.activePenPointerId !== null
-                || (Date.now() - pState.lastPenInputAt) < PEN_RECENT_MS;
-            if (penActive && !isPencilSizedTouch(e)) return;
+            if (isPalmTouch(pState, e, Date.now())) return;
         }
         pState.lastPointerType = (e.pointerType as 'mouse' | 'pen' | 'touch') || null;
 
@@ -1373,6 +1423,17 @@ const Canvas: Component = () => {
         }
 
         if (store.selectedTool === 'selection' || store.selectedTool === 'lasso') {
+            cancelLongPress();
+            if (e.pointerType === 'touch' || e.pointerType === 'pen') {
+                const cx = e.clientX, cy = e.clientY;
+                longPressOrigin = { x: cx, y: cy };
+                longPressTimer = window.setTimeout(() => {
+                    longPressTimer = null;
+                    if (gestureActive || gestureCooldown) return;
+                    setContextMenuPos({ x: cx, y: cy });
+                    setContextMenuOpen(true);
+                }, LONG_PRESS_MS);
+            }
             selectionOnDown(e, x, y, pState, pHelpers, pSignals);
             return;
         }
@@ -1403,16 +1464,18 @@ const Canvas: Component = () => {
     };
 
     const handlePointerMove = (e: PointerEvent) => {
+        // Finger travelled — it's a drag/marquee, not a long-press. Stand down.
+        if (longPressOrigin && (Math.abs(e.clientX - longPressOrigin.x) > LONG_PRESS_SLOP || Math.abs(e.clientY - longPressOrigin.y) > LONG_PRESS_SLOP)) {
+            cancelLongPress();
+        }
         if (touchDrivingPenStroke) return;
-        if ((gestureActive || gestureCooldown) && e.pointerType === 'touch') return;
+        if (isTouchBlockedByGesture(e.pointerType)) return;
         // Palm rejection on move: only block palm-sized touch while a pen is
         // currently in contact. Misclassified pencil-tip touches pass through.
         if (e.pointerType === 'pen') {
             pState.lastPenInputAt = Date.now();
         } else if (e.pointerType === 'touch') {
-            const penActive = pState.activePenPointerId !== null
-                || (Date.now() - pState.lastPenInputAt) < PEN_RECENT_MS;
-            if (penActive && !isPencilSizedTouch(e)) return;
+            if (isPalmTouch(pState, e, Date.now())) return;
         }
 
         if (presentationOnMove(e, pState)) return;
@@ -1511,6 +1574,8 @@ const Canvas: Component = () => {
     };
 
     const handlePointerUp = (e: PointerEvent) => {
+        cancelLongPress();
+        pState.secondaryContact = false; // stylus drag ended — drop the constrain modifier
         if (touchDrivingPenStroke) return;
         // Gesture path consumed this — but DO let the touch pointerup
         // through if we're still mid-gesture's cooldown, so the OS-level
@@ -1529,9 +1594,7 @@ const Canvas: Component = () => {
             cancelShapeHold();      // pen lifted — drop any pending dwell
             smartShapeSuppress = false;
         } else if (e.pointerType === 'touch') {
-            const penActive = (pState.activePenPointerId !== null && pState.activePenPointerId !== e.pointerId)
-                || (Date.now() - pState.lastPenInputAt) < PEN_RECENT_MS;
-            if (penActive && !isPencilSizedTouch(e)) {
+            if (isPalmTouch(pState, e, Date.now(), e.pointerId)) {
                 try { (e.currentTarget as Element).releasePointerCapture(e.pointerId); } catch { /* noop */ }
                 return;
             }

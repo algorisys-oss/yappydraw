@@ -13,7 +13,7 @@ import { renderElement } from './render-element';
 import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
 import { RenderPipeline } from '../shapes/base/render-pipeline';
-import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight } from './selection-renderer';
+import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight, drawDeleteHandle } from './selection-renderer';
 import { renderSnappingGuides, renderSpacingGuides } from './snap-renderer';
 import rough from 'roughjs';
 
@@ -72,7 +72,7 @@ function renderOpacityMasked(ctx: CanvasRenderingContext2D, el: DrawingElement, 
     ctx.drawImage(s.a, 0, 0);
     ctx.restore();
 }
-import { getSelectionBoundingBox } from './handle-detection';
+import { getSelectionBoundingBox, getDeleteHandlePosition } from './handle-detection';
 import { getAnchorPoints } from './anchor-points';
 import { projectMasterPosition } from './slide-utils';
 import { getImage } from './image-cache';
@@ -910,10 +910,15 @@ export function renderSelectionOverlays(
 ): void {
     const { elements, selection, scale, selectionBox, suggestedBinding, snappingGuides, spacingGuides, tableCellSelection } = params;
 
-    // Multi-selection bounding box
+    // Multi-selection bounding box + floating quick-delete button (skip the
+    // delete button in read-only modes where the tap can't delete).
     if (selection.length > 1) {
         const box = getSelectionBoundingBox(elements, selection);
         if (box) renderMultiSelectionBox(ctx, box, scale);
+        if (params.appMode !== 'presentation' && params.appMode !== 'embed') {
+            const dp = getDeleteHandlePosition(elements, selection, scale);
+            if (dp) drawDeleteHandle(ctx, dp, scale);
+        }
     }
 
     // Selection drag rectangle

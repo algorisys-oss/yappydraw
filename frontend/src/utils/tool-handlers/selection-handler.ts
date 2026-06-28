@@ -9,7 +9,7 @@ import { batch } from 'solid-js';
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, updateElement, setStore, pushToHistory, isLayerVisible, toggleCollapse, addChildNode, setShowCanvasProperties, bumpDirtyRevision } from '../../store/app-store';
+import { store, updateElement, setStore, pushToHistory, isLayerVisible, toggleCollapse, addChildNode, setShowCanvasProperties, bumpDirtyRevision, deleteElements } from '../../store/app-store';
 import { setTransformPivot, getElementPivot, getCustomPivot } from '../transform-pivot';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition, getSelectionBoundingBox } from '../handle-detection';
@@ -160,8 +160,16 @@ export function selectionOnDown(
     helpers: PointerHelpers,
     signals: PointerSignals
 ): void {
-    const hitHandle = getHandleAtPosition(x, y, store.elements, store.selection, store.viewState.scale);
+    const hitHandle = getHandleAtPosition(x, y, store.elements, store.selection, store.viewState.scale, true);
     if (hitHandle) {
+        // Floating quick-delete button — delete the whole selection in one tap
+        // (touch-friendly; no keyboard needed). deleteElements snapshots history
+        // and clears the selection itself.
+        if (hitHandle.handle === 'delete-action') {
+            deleteElements(store.selection);
+            return;
+        }
+
         // Mindmap toggle logic
         if (hitHandle.handle === 'mindmap-toggle') {
             toggleCollapse(hitHandle.id);
@@ -1408,7 +1416,9 @@ function handleResize(
     // Apply Constraints (Proportional Resizing)
     const isMulti = store.selection.length > 1;
     const firstEl = store.elements.find(e => e.id === store.selection[0]);
-    let isConstrained = e.shiftKey || (store.selection.length === 1 && firstEl?.constrained);
+    // pState.secondaryContact = Procreate "second finger" while dragging with a
+    // stylus → proportional resize, just like holding Shift.
+    let isConstrained = e.shiftKey || pState.secondaryContact || (store.selection.length === 1 && firstEl?.constrained);
 
     // Text/richtext elements don't use aspect ratio lock - they freely resize width and recalculate height
     if (store.selection.length === 1 && (firstEl?.type === 'text' || firstEl?.type === 'richtext')) {

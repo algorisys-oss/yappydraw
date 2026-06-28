@@ -12,8 +12,38 @@ import { getDescendants } from './hierarchy';
 import { getPathSubpaths } from './math/path-utils';
 import { getCustomPivot } from './transform-pivot';
 import { getWarpGrid } from './envelope-warp';
+import { getDeleteHandlePosition } from './handle-detection';
 
 const MINDMAP_CONNECTOR_TYPES = ['line', 'arrow', 'organicBranch', 'bezier', 'polyline'];
+
+/**
+ * Draw the floating quick-delete button (white disc, red ring, red ✕) at a
+ * world-space point. Touch-friendly affordance so a selection can be deleted
+ * with a single tap — no keyboard needed. Position comes from
+ * `getDeleteHandlePosition` so it always matches the hit-test.
+ */
+export function drawDeleteHandle(ctx: CanvasRenderingContext2D, pos: { x: number; y: number }, scale: number): void {
+    const r = 9 / scale;
+    const x = pos.x, y = pos.y;
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 1.5 / scale;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // ✕ glyph
+    const k = r * 0.45;
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 1.75 / scale;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - k, y - k); ctx.lineTo(x + k, y + k);
+    ctx.moveTo(x + k, y - k); ctx.lineTo(x - k, y + k);
+    ctx.stroke();
+    ctx.restore();
+}
 
 export interface ElementOverlayOptions {
     scale: number;
@@ -394,6 +424,15 @@ export function renderElementOverlays(
                     ctx.restore();
                 }
             }
+        }
+
+        // Floating quick-delete button (single selection). Drawn last, in world
+        // space, so it sits on top of the bbox/handles. Multi-selection draws its
+        // own in renderSelectionOverlays. Suppressed in read-only modes where the
+        // tap can't delete (presentation/embed) so it isn't shown but inert.
+        if (selectionLength === 1 && opts.appMode !== 'presentation' && opts.appMode !== 'embed') {
+            const dp = getDeleteHandlePosition(opts.elements, [el.id], scale);
+            if (dp) drawDeleteHandle(ctx, dp, scale);
         }
 
         ctx.restore();

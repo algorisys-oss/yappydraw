@@ -45,20 +45,75 @@ export function getSelectionBoundingBox(
 }
 
 /**
+ * World-space position of the floating "delete" affordance for the current
+ * selection — a touch-friendly quick-delete button sitting just off the
+ * top-right corner of the selection bounding box. Shared by the hit-tester
+ * (below) and the overlay renderers so the drawn button and its tap target
+ * stay in lock-step. Returns `null` when there's no selection.
+ *
+ * For a single rotated element the button rides the element's rotated frame
+ * (consistent with the resize handles); for a multi-selection it sits on the
+ * axis-aligned union box.
+ */
+export function getDeleteHandlePosition(
+    elements: DrawingElement[],
+    selection: string[],
+    scale: number
+): { x: number; y: number } | null {
+    if (selection.length === 0) return null;
+    const padding = 2 / scale;
+    const off = 18 / scale; // diagonal offset out from the TR corner (screen-constant)
+
+    if (selection.length > 1) {
+        const box = getSelectionBoundingBox(elements, selection);
+        if (!box) return null;
+        return { x: box.x + box.width + padding + off, y: box.y - padding - off };
+    }
+
+    const el = elements.find(e => e.id === selection[0]);
+    if (!el) return null;
+    const localX = el.x + el.width + padding + off;
+    const localY = el.y - padding - off;
+    const ang = el.angle || 0;
+    if (ang) {
+        const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+        return rotatePoint(localX, localY, cx, cy, ang);
+    }
+    return { x: localX, y: localY };
+}
+
+/** Tap radius (world units) for the floating delete button. Generous for fingers. */
+export const DELETE_HANDLE_HIT_RADIUS = 15;
+
+/**
  * Find which handle (if any) is at the given world coordinates.
  *
  * Returns `{ id, handle }` describing the element and handle type,
  * or `null` if no handle is hit.
+ *
+ * `includeDeleteHandle` opts in to the floating quick-delete button hit-test;
+ * only the primary selection interaction path passes `true` so the synthetic
+ * `delete-action` handle never leaks into other `getHandleAtPosition` callers.
  */
 export function getHandleAtPosition(
     x: number,
     y: number,
     elements: DrawingElement[],
     selection: string[],
-    scale: number
+    scale: number,
+    includeDeleteHandle = false
 ): { id: string; handle: string } | null {
     const handleSize = 12 / scale; // slightly larger hit area
     const padding = 2 / scale;
+
+    // 0. Highest priority: floating quick-delete button (touch-friendly). Opt-in so
+    //    it can't be returned to cursor/hover or non-selection consumers.
+    if (includeDeleteHandle && selection.length > 0) {
+        const dp = getDeleteHandlePosition(elements, selection, scale);
+        if (dp && Math.hypot(x - dp.x, y - dp.y) <= DELETE_HANDLE_HIT_RADIUS / scale) {
+            return { id: 'delete', handle: 'delete-action' };
+        }
+    }
 
     // 1. Priority: Multi-selection handles
     if (selection.length > 1) {
