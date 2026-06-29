@@ -68,8 +68,9 @@ export interface PathSubpath {
 export type AppMode = 'design' | 'presentation' | 'prototype' | 'embed';
 export type FillStyle = 'hachure' | 'solid' | 'cross-hatch' | 'zigzag' | 'dots' | 'dashed' | 'zigzag-line' | 'linear' | 'radial' | 'conic' | 'image' | 'mesh' | 'pattern';
 
-/** Built-in seamless pattern-fill motifs (active when fillStyle === 'pattern'). */
-export type PatternType = 'stripes' | 'grid' | 'dots' | 'checker' | 'crosshatch';
+/** Pattern-fill motifs (active when fillStyle === 'pattern'). The built-ins are
+ *  procedural; 'custom' tiles a captured raster of selected artwork (see `tile`). */
+export type PatternType = 'stripes' | 'grid' | 'dots' | 'checker' | 'crosshatch' | 'custom';
 
 /**
  * Vector pattern fill (active when fillStyle === 'pattern') — a parameterised,
@@ -85,6 +86,11 @@ export interface PatternFill {
     spacing?: number;       // base motif spacing in px (default 12)
     strokeWidth?: number;   // line thickness / dot radius in px (default 2)
     angle?: number;         // rotation of the whole pattern in degrees (default 0)
+
+    // Custom pattern (type === 'custom') — a tile captured from selected artwork.
+    tile?: string;          // data-URL raster of the source artwork (one tile)
+    tileWidth?: number;     // intrinsic tile width in px (before scale)
+    tileHeight?: number;    // intrinsic tile height in px (before scale)
 }
 
 /**

@@ -266,6 +266,19 @@ Y.setPatternFill({ color:'#1d4ed8', scale:1.4, angle:30 }, [id]);`}</code></pre>
                     current selection. Patterns are stored on the element (<code>patternFill</code>) and survive
                     save/load.
                 </p>
+
+                <h3>Make Pattern from Selection</h3>
+                <p>
+                    Turn your own artwork into a repeating tile: select one or more objects, then right-click →
+                    <strong> Make Pattern from Selection</strong>. The selection is captured into a tile and a new
+                    rectangle appears beside it, filled with that <em>custom</em> pattern so the repeat is visible.
+                    Tune <em>Scale</em> and <em>Angle</em> in the PATTERN editor; the tile thumbnail shows the source.
+                </p>
+                <pre><code>{`const Y = window.Yappy; Y.clear();
+const a = Y.createCircle(60, 60, 70, 70, { backgroundColor:'#2563eb', fillStyle:'solid' });
+const b = Y.createRectangle(95, 95, 70, 70, { backgroundColor:'#ef4444', fillStyle:'solid' });
+Y.setSelected([a, b]);
+Y.createPatternFromSelection([a, b]);   // → a new rectangle tiled with the circle+square motif`}</code></pre>
             </section>
 
             {/* ─── IMAGE TRACE ────────────────────────────────────────── */}

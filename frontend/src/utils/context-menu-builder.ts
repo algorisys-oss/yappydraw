@@ -8,7 +8,7 @@ import type { DrawingElement, TableCellSelection } from '../types';
 import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement, selectAll,
-    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
+    duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
     blendShapes,
     toggleRecolorPanel,
     toggleShapeBuilder,
@@ -1090,6 +1090,7 @@ export function getContextMenuItems(
         if (selectionCount >= 1) {
             const anyInstance = store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'symbolInstance');
             items.push({ label: 'Create Symbol', icon: '◈', onClick: () => createSymbol([...store.selection]) });
+            items.push({ label: 'Make Pattern from Selection', icon: '▦', onClick: () => createPatternFromSelection([...store.selection]) });
             if (anyInstance && store.selection.length === 1) {
                 const instId = store.selection[0];
                 items.push({ label: 'Edit Symbol (in place)', icon: '✎', onClick: () => enterSymbolEdit(instId) });

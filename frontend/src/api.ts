@@ -14,7 +14,7 @@ import {
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
-    applyPatternFill, setPatternFill, clearPatternFill,
+    applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection,
     createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
@@ -1549,6 +1549,9 @@ export const YappyAPI = {
     setPatternFill(patch: Partial<import("./types").PatternFill>, ids?: string[]) { setPatternFill(ids ?? store.selection, patch); },
     /** Remove the pattern fill (revert to a solid fill). */
     clearPatternFill(ids?: string[]) { clearPatternFill(ids ?? store.selection); },
+    /** Make Pattern from Selection: capture the selected artwork into a tile and
+     *  spawn a preview rectangle filled with that custom pattern. Returns its id. */
+    createPatternFromSelection(ids?: string[]) { return createPatternFromSelection(ids ?? store.selection); },
 
     /** Image Trace: vectorize selected image(s) into editable path elements (threshold trace). */
     traceImage(options?: { threshold?: number; simplify?: number }, ids?: string[]): string[] {

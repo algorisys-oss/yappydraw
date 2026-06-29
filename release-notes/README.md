@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.5.11](0.5.11.md) — Make Pattern from Selection
 - [0.5.10](0.5.10.md) — Vector pattern fills
 - [0.5.9](0.5.9.md) — Pen options bar placement hotfix
 - [0.5.8](0.5.8.md) — Clock-Method constrain + keyboard-free anchor editing

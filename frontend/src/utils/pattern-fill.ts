@@ -12,8 +12,10 @@
  */
 
 import type { PatternFill, PatternType } from "../types";
+import { getImage } from "./image-cache";
 
-/** Presets surfaced in the fill UI (order = display order). */
+/** Presets surfaced in the fill UI (order = display order). 'custom' is created
+ *  via "Make Pattern from Selection", not picked here. */
 export const PATTERN_PRESETS: { type: PatternType; label: string }[] = [
     { type: 'stripes', label: 'Stripes' },
     { type: 'grid', label: 'Grid' },
@@ -46,6 +48,24 @@ function resolve(p: PatternFill) {
  * The tile's CSS (element-space) size is `canvas.width / ss`.
  */
 export function makePatternTile(p: PatternFill, ss = 1): HTMLCanvasElement | null {
+    // Custom pattern: draw the captured artwork raster into the tile. Uses the
+    // shared image cache (async load + redraw on completion), exactly like image
+    // fills — returns null until the image is decoded.
+    if (p.type === 'custom') {
+        const img = p.tile ? getImage(p.tile) : null;
+        if (!img || !img.width || !img.height) return null;
+        const scale = clamp(p.scale ?? 1, 0.1, 8);
+        const tw = Math.max(1, Math.round((p.tileWidth || img.width) * scale * ss));
+        const th = Math.max(1, Math.round((p.tileHeight || img.height) * scale * ss));
+        const cv = document.createElement('canvas');
+        cv.width = tw; cv.height = th;
+        const ctx = cv.getContext('2d');
+        if (!ctx) return null;
+        if (p.background && p.background !== 'transparent') { ctx.fillStyle = p.background; ctx.fillRect(0, 0, tw, th); }
+        ctx.drawImage(img, 0, 0, tw, th);
+        return cv;
+    }
+
     const r = resolve(p);
     const s = r.spacing * ss;
     const sw = r.sw * ss;

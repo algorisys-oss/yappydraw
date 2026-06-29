@@ -20,6 +20,7 @@ import { traceImageData, traceImageDataColor, traceImageCenterline } from "../ut
 import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType } from "../types";
 import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos, parseHex, rgbToHex } from "../utils/mesh-gradient";
 import { defaultPatternFill } from "../utils/pattern-fill";
+import { captureElementsToDataURL } from "../utils/pattern-capture";
 import { isSolidColor, shiftHexHue, adjustHexLightness, adjustHexSaturation } from "../utils/color-adjust";
 import { getStyleSnapshot } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
@@ -2787,6 +2788,46 @@ export const applyPatternFill = (ids: string[], type: PatternType = 'stripes') =
     }));
     bumpDirtyRevision();
     showToast('Pattern fill applied', 'success');
+};
+
+/** "Make Pattern from Selection" — capture the selected artwork into a raster tile
+ *  and spawn a preview rectangle (placed to the right) filled with that custom
+ *  pattern, so it tiles visibly. Returns the new rectangle's id. */
+export const createPatternFromSelection = (ids: string[]): string | null => {
+    const els = store.elements.filter(e => ids.includes(e.id));
+    if (els.length === 0) { showToast('Pattern: select objects', 'info'); return null; }
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const e of els) {
+        const x0 = Math.min(e.x, e.x + e.width), x1 = Math.max(e.x, e.x + e.width);
+        const y0 = Math.min(e.y, e.y + e.height), y1 = Math.max(e.y, e.y + e.height);
+        minX = Math.min(minX, x0); minY = Math.min(minY, y0);
+        maxX = Math.max(maxX, x1); maxY = Math.max(maxY, y1);
+    }
+    const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
+
+    const tile = captureElementsToDataURL(els, minX, minY, w, h, store.theme !== 'light');
+    if (!tile) { showToast('Pattern: could not capture selection', 'error'); return null; }
+
+    // Preview rectangle large enough to show a few repeats.
+    const previewW = Math.max(240, Math.round(w * 2));
+    const previewH = Math.max(240, Math.round(h * 2));
+    const rect: DrawingElement = {
+        ...store.defaultElementStyles,
+        id: generateId('rect' as any), type: 'rectangle',
+        x: maxX + 40, y: minY, width: previewW, height: previewH,
+        angle: 0, seed: 1, roundness: null, locked: false, link: null, layerId: store.activeLayerId,
+        strokeColor: '#333333', backgroundColor: '#ffffff',
+        fillStyle: 'pattern',
+        patternFill: { type: 'custom', color: '#000000', background: 'transparent', scale: 1, angle: 0, tile, tileWidth: w, tileHeight: h },
+    } as DrawingElement;
+
+    pushToHistory();
+    setStore('elements', list => [...list, rect]);
+    setStore('selection', [rect.id]);
+    bumpDirtyRevision();
+    showToast('Pattern created from selection', 'success');
+    return rect.id;
 };
 
 /** Merge a partial update into the pattern fill of the given elements. */
