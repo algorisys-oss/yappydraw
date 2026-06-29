@@ -2794,6 +2794,7 @@ export const applyPatternFill = (ids: string[], type: PatternType = 'stripes') =
             || (e.backgroundColor && e.backgroundColor !== 'transparent' ? e.backgroundColor : (e.strokeColor || '#000000')),
             (e.patternFill?.type ?? type),
         ),
+        patternSwatchId: undefined,
     }));
     bumpDirtyRevision();
     showToast('Pattern fill applied', 'success');
@@ -2839,12 +2840,14 @@ export const createPatternFromSelection = (ids: string[]): string | null => {
     return rect.id;
 };
 
-/** Merge a partial update into the pattern fill of the given elements. */
+/** Merge a partial update into the pattern fill of the given elements. A direct
+ *  edit breaks any library-swatch link (the fill no longer follows the swatch). */
 export const setPatternFill = (ids: string[], patch: Partial<PatternFill>, history = true) => {
     if (ids.length === 0) return;
     if (history) pushToHistory();
     setStore('elements', (e: DrawingElement) => ids.includes(e.id) && !!e.patternFill, (e: DrawingElement) => ({
         patternFill: { ...(e.patternFill as PatternFill), ...patch },
+        patternSwatchId: undefined,
     }));
     bumpDirtyRevision();
 };
@@ -2853,7 +2856,7 @@ export const setPatternFill = (ids: string[], patch: Partial<PatternFill>, histo
 export const clearPatternFill = (ids: string[]) => {
     if (ids.length === 0) return;
     pushToHistory();
-    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ fillStyle: 'solid' as const, patternFill: undefined }));
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ fillStyle: 'solid' as const, patternFill: undefined, patternSwatchId: undefined }));
     bumpDirtyRevision();
 };
 
@@ -2902,17 +2905,23 @@ export const applyPatternSwatch = (swatchId: string, ids?: string[]) => {
     const targets = ids ?? store.selection;
     if (!sw || targets.length === 0) { if (!sw) showToast('Pattern not found', 'info'); else showToast('Select a shape first', 'info'); return; }
     pushToHistory();
-    setStore('elements', (e: DrawingElement) => targets.includes(e.id), () => ({ fillStyle: 'pattern' as const, patternFill: { ...sw.fill } }));
+    // Link the element to the swatch (patternSwatchId) so redefining the swatch
+    // updates it live — mirrors fillSwatchId for colour swatches.
+    setStore('elements', (e: DrawingElement) => targets.includes(e.id), () => ({ fillStyle: 'pattern' as const, patternFill: { ...sw.fill }, patternSwatchId: sw.id }));
     bumpDirtyRevision();
     showToast(`Applied ${sw.name}`, 'success');
 };
 
-/** Redefine a library swatch from the (first) selected element's pattern fill. */
+/** Redefine a library swatch from the (first) selected element's pattern fill, and
+ *  push the new pattern to every element linked to that swatch (live update). */
 export const updatePatternSwatch = (swatchId: string, fromId?: string) => {
     const el = store.elements.find(e => e.id === (fromId ?? store.selection.find(id => store.elements.find(x => x.id === id)?.patternFill)));
     if (!el || !el.patternFill) { showToast('Select a shape with a pattern fill', 'info'); return; }
+    const fill = { ...el.patternFill };
     pushToHistory();
-    setStore('patterns', p => p.id === swatchId, () => ({ fill: { ...el.patternFill! } }));
+    setStore('patterns', p => p.id === swatchId, () => ({ fill: { ...fill } }));
+    // Propagate to all linked elements (except the source, which already has it).
+    setStore('elements', (e: DrawingElement) => e.patternSwatchId === swatchId && e.id !== el.id, () => ({ fillStyle: 'pattern' as const, patternFill: { ...fill } }));
     bumpDirtyRevision();
     showToast('Pattern updated', 'success');
 };
@@ -2927,6 +2936,8 @@ export const renamePatternSwatch = (swatchId: string, name: string) => {
 export const deletePatternSwatch = (swatchId: string) => {
     pushToHistory();
     setStore('patterns', list => list.filter(p => p.id !== swatchId));
+    // Drop dangling links; linked elements keep their current pattern fill.
+    setStore('elements', (e: DrawingElement) => e.patternSwatchId === swatchId, () => ({ patternSwatchId: undefined }));
     bumpDirtyRevision();
 };
 

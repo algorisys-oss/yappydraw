@@ -581,7 +581,21 @@ export class RenderPipeline {
         for (const f of fills) {
             renderer.save();
             renderer.globalAlpha = renderer.globalAlpha * (f.opacity ?? 1);
-            if (sketch) {
+            if (f.pattern) {
+                // Pattern appearance fill: rasterize + clip to the shape outline (both
+                // render styles identical, like the base pattern fill).
+                const buf = rasterizePatternBuffer(f.pattern, el.width, el.height);
+                if (buf) {
+                    if (geo.type === 'path') {
+                        renderer.clipPath(geo.path);
+                    } else {
+                        renderer.beginPath();
+                        this.renderGeometry(renderer, geo);
+                        renderer.clip();
+                    }
+                    renderer.drawImage(buf, -el.width / 2, -el.height / 2, el.width, el.height);
+                }
+            } else if (sketch) {
                 for (const d of ds) rc.path(d, { fill: f.color, fillStyle: 'solid', stroke: 'none', roughness: el.roughness ?? 1, seed: el.seed || 1 });
             } else {
                 renderer.fillStyle = f.color;

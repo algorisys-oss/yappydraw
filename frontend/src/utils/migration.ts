@@ -89,6 +89,8 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         ...(el.strokeLineJoin !== undefined && { strokeLineJoin: el.strokeLineJoin }),
         ...(el.fillDensity !== undefined && { fillDensity: el.fillDensity }),
         ...(el.patternFill !== undefined && { patternFill: el.patternFill }),
+        ...(el.patternSwatchId !== undefined && { patternSwatchId: el.patternSwatchId }),
+        ...(el.appearance !== undefined && { appearance: el.appearance }),
 
         // Shadows
         ...(el.shadowEnabled !== undefined && { shadowEnabled: el.shadowEnabled }),

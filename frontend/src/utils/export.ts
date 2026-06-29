@@ -29,12 +29,15 @@ function buildAppearanceSvgGroup(el: any, rc: any, options: any): SVGGElement | 
     g.setAttribute('transform', `translate(${el.x + el.width / 2}, ${el.y + el.height / 2})`);
     const dashArr = (d?: string) => d === 'dashed' ? '10 10' : d === 'dotted' ? '2 8' : undefined;
     for (const f of fills) {
+        // Pattern appearance fills aren't emitted as a tiling <pattern> here yet;
+        // approximate with the pattern's foreground colour so the fill stays visible.
+        const fillColor = f.pattern ? (f.pattern.color || f.color) : f.color;
         for (const d of ds) {
             if (sketch) {
-                g.appendChild(rc.path(d, { ...options, fill: f.color, fillStyle: 'solid', stroke: 'none' }));
+                g.appendChild(rc.path(d, { ...options, fill: fillColor, fillStyle: 'solid', stroke: 'none' }));
             } else {
                 const p = document.createElementNS(SVGNS, 'path');
-                p.setAttribute('d', d); p.setAttribute('fill', f.color); p.setAttribute('stroke', 'none');
+                p.setAttribute('d', d); p.setAttribute('fill', fillColor); p.setAttribute('stroke', 'none');
                 if (evenOdd) p.setAttribute('fill-rule', 'evenodd');
                 if (f.opacity != null) p.setAttribute('fill-opacity', `${f.opacity}`);
                 g.appendChild(p);

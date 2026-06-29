@@ -234,7 +234,7 @@ export type ExitAnimation = 'none' |
     'textDelete';
 
 /** One extra fill in the appearance stack. */
-export interface PaintFill { color: string; opacity?: number; visible?: boolean; }
+export interface PaintFill { color: string; opacity?: number; visible?: boolean; pattern?: PatternFill; }
 /** One extra stroke in the appearance stack. */
 export interface PaintStroke { color: string; width: number; opacity?: number; dash?: 'solid' | 'dashed' | 'dotted'; visible?: boolean; }
 
@@ -555,6 +555,9 @@ export interface DrawingElement {
     // Cleared automatically if the fill/stroke colour is edited directly.
     fillSwatchId?: string;
     strokeSwatchId?: string;
+    // Pattern-swatch link — when set, the pattern fill follows the library swatch
+    // (redefining the swatch updates this element). Cleared on any direct pattern edit.
+    patternSwatchId?: string;
 
     // Effects
     blendMode?: BlendMode;

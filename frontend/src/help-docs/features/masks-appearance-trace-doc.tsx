@@ -153,6 +153,16 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                     <code>width</code> and <code>dash</code> (<code>solid</code>/<code>dashed</code>/<code>dotted</code>).
                     <code>Y.clearAppearance()</code> removes the stack; the base fill/stroke always remain.
                 </p>
+                <h3>Pattern fills in the stack</h3>
+                <p>
+                    A stacked fill can be a <strong>pattern</strong>, not just a solid colour. In the
+                    <strong> APPEARANCE</strong> section of the Properties panel, each fill row has a type dropdown:
+                    pick a built-in motif (Stripes, Grid, Dots, Checker, Crosshatch) or a saved
+                    <strong> ★ library pattern</strong> to paint that fill with a clipped, tiling pattern. Layer a
+                    pattern over a base gradient, or stack two patterns, for richer textures — on a single object.
+                    The fill's colour doubles as the pattern's foreground. (Pattern stack-fills render on canvas in
+                    both styles; SVG export approximates them with the foreground colour.)
+                </p>
 
                 <h3>Graphic Styles</h3>
                 <p>
@@ -301,7 +311,14 @@ Y.createPatternFromSelection([a, b]);   // → a new rectangle tiled with the ci
                     <code> addPatternSwatchFromSelection(name?)</code>, <code>savePatternSwatchFromElement(name?)</code>,
                     <code> applyPatternSwatch(id)</code>, <code>updatePatternSwatch(id)</code>,
                     <code> renamePatternSwatch(id, name)</code>, <code>deletePatternSwatch(id)</code>,
-                    <code> listPatternSwatches()</code>. Applying copies the pattern onto the shape (no live link).
+                    <code> listPatternSwatches()</code>.
+                </p>
+                <p>
+                    <strong>Live link:</strong> applying a swatch <em>links</em> the shape to it. <strong>Redefine</strong>
+                    a swatch (select a shape with the look you want → the swatch's refresh button) and <em>every</em>
+                    linked shape updates at once. Editing a shape's pattern directly in the PATTERN editor breaks
+                    its link (so your tweak isn't overwritten next time the swatch changes); deleting a swatch leaves
+                    linked shapes with their current pattern.
                 </p>
             </section>
 
