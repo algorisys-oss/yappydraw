@@ -59,6 +59,11 @@ export interface PointerState {
     penAnchors: import('../types').PathAnchor[]; // committed anchors, relative to startX/startY
     penActiveIdx: number;                         // index of the anchor being dragged (curving), or -1
     penDragging: boolean;                         // pointer is down on the active anchor
+    // Touch/pen tap-to-toggle: an anchor pressed (no modifier) by finger/stylus.
+    // A pure tap (lift without dragging past slop) toggles smooth↔corner; a real
+    // drag clears this and moves the node. History is deferred until the first
+    // real move so a tap yields one clean undo step. null when not tapping.
+    penTapAnchor: { id: string; sub: number; i: number } | null;
     lassoPoints: { x: number; y: number }[];
 
     // Table interaction state
@@ -145,6 +150,7 @@ export function createPointerState(): PointerState {
         lastPointerType: null,
         secondaryContact: false,
         isPenBuilding: false,
+        penTapAnchor: null,
         penAnchors: [],
         penActiveIdx: -1,
         penDragging: false,

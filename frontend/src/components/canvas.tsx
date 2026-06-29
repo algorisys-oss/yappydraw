@@ -3,7 +3,7 @@ import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, applyEyedropperFrom, cancelEyedropper, deleteElements } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, applyEyedropperFrom, cancelEyedropper, deleteElements, setPenConstrain } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { screenToWorld } from "../utils/viewport-transforms";
@@ -31,7 +31,10 @@ import { drawOnDown, drawOnMove, drawOnUp } from "../utils/tool-handlers/draw-ha
 import { penOnMove } from "../utils/tool-handlers/pen-handler";
 import { polylineOnDown, polylineOnMove, polylineOnUp, polylineFinalize, polylineUndo } from "../utils/tool-handlers/polyline-handler";
 import { penOnDown as penPathDown, penOnMove as penPathMove, penOnUp as penPathUp, penFinalize as penPathFinalize, penUndo as penPathUndo } from "../utils/tool-handlers/pen-path-handler";
-import { selectionOnDown, selectionOnMove, selectionOnUp } from "../utils/tool-handlers/selection-handler";
+import { selectionOnDown, selectionOnMove, selectionOnUp, convertPathAnchor, deletePathAnchor, insertPathAnchorAt, canInsertPathAnchor } from "../utils/tool-handlers/selection-handler";
+import { getHandleAtPosition } from "../utils/handle-detection";
+import { getPathSubpaths } from "../utils/math/path-utils";
+import type { MenuItem } from "./context-menu";
 import { checkBinding as checkBindingUtil, refreshLinePoints as refreshLinePointsUtil, refreshBoundLine as refreshBoundLineUtil } from "../utils/binding-logic";
 import {
     computeViewportBounds, cullElementsForAnimation, decayLaserTrail,
@@ -42,6 +45,7 @@ import {
 import { Minimap } from "./minimap";
 import { getContextMenuItems } from "../utils/context-menu-builder";
 import PathEditorOverlay from "./path-editor-overlay";
+import PenOptionsBar from "./pen-options-bar";
 import { commitText as commitTextHandler, commitRichText as commitRichTextHandler, handleDoubleClick as handleDoubleClickHandler, type TextEditingContext } from "../utils/tool-handlers/text-editing-handler";
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestColEdge, measureColumnOptimalWidth, getNextCell } from "../utils/table-utils";
 import { handleDragOver, handleDrop as handleDropHandler, handleWheel, applyAssetAtClientPoint, type CanvasEventContext, type WheelContext } from "../utils/tool-handlers/canvas-event-handlers";
@@ -269,6 +273,45 @@ const Canvas: Component = () => {
     // Context Menu State
     const [contextMenuOpen, setContextMenuOpen] = createSignal(false);
     const [contextMenuPos, setContextMenuPos] = createSignal({ x: 0, y: 0 });
+    // When a long-press lands on a vector-path anchor/segment, the context menu
+    // shows these path-editing actions instead of the generic element menu —
+    // giving keyboard-less tablets the Alt/Ctrl-click operations (convert /
+    // delete / insert anchor). null → fall back to the generic menu.
+    const [anchorMenuItems, setAnchorMenuItems] = createSignal<MenuItem[] | null>(null);
+
+    /**
+     * Build a path-editing context menu for a long-press at world point (wx, wy),
+     * or null when the press isn't on a selected path's anchor or outline.
+     */
+    const buildAnchorMenu = (wx: number, wy: number): MenuItem[] | null => {
+        if (store.selection.length !== 1) return null;
+        const el = store.elements.find(e => e.id === store.selection[0]);
+        if (!el || el.type !== 'path') return null;
+        const scale = store.viewState.scale;
+        const hit = getHandleAtPosition(wx, wy, store.elements, store.selection, scale);
+        const m = hit?.handle.match(/^path-anchor-(\d+)-(\d+)$/);
+        if (m) {
+            const sub = parseInt(m[1], 10), i = parseInt(m[2], 10);
+            const anchor = getPathSubpaths(el)[sub]?.anchors[i];
+            const isSmooth = anchor?.kind === 'smooth';
+            const items: MenuItem[] = [
+                { label: isSmooth ? 'Make Corner' : 'Make Smooth', icon: isSmooth ? '⌟' : '⌣', onClick: () => { convertPathAnchor(el.id, sub, i); draw(); } },
+                { label: 'Delete Anchor', icon: '🗑', onClick: () => { deletePathAnchor(el.id, sub, i); draw(); } },
+                { separator: true },
+                { label: 'Constrain Handles (90°/45°)', icon: '⊾', checked: store.penConstrain, onClick: () => { setPenConstrain(); } },
+            ];
+            return items;
+        }
+        // Not on an anchor — offer to insert a point if the press is on the outline.
+        if (canInsertPathAnchor(el.id, wx, wy, scale)) {
+            return [
+                { label: 'Insert Point Here', icon: '＋', onClick: () => { insertPathAnchorAt(el.id, wx, wy, scale); draw(); } },
+                { separator: true },
+                { label: 'Constrain Handles (90°/45°)', icon: '⊾', checked: store.penConstrain, onClick: () => { setPenConstrain(); } },
+            ];
+        }
+        return null;
+    };
 
     function draw() {
         if (!canvasRef) return;
@@ -1036,6 +1079,7 @@ const Canvas: Component = () => {
         pState.isSelecting = false;
         pState.currentId = null;
         pState.draggingHandle = null;
+        pState.penTapAnchor = null; // a gesture took over — don't fire tap-to-toggle on lift
         pState.draggingFromConnector = null;
         pState.hoveredConnector = null;
         pState.initialPositions.clear();
@@ -1149,7 +1193,7 @@ const Canvas: Component = () => {
         // stylus owns a selection drag/resize acts like Shift (proportional
         // resize). The pen keeps the stroke; the finger only flips the modifier.
         if (fingers.length === 1 && !gestureActive && pState.lastPointerType === 'pen'
-            && (pState.isDragging || pState.isSelecting) && !pState.secondaryContact) {
+            && (pState.isDragging || pState.isSelecting || pState.isPenBuilding) && !pState.secondaryContact) {
             pState.secondaryContact = true;
             e.preventDefault();
             requestAnimationFrame(draw);
@@ -1433,6 +1477,14 @@ const Canvas: Component = () => {
                 longPressTimer = window.setTimeout(() => {
                     longPressTimer = null;
                     if (gestureActive || gestureCooldown) return;
+                    // A long-press on a selected path's anchor/outline opens the
+                    // path-editing menu (convert/delete/insert) — the keyboard-free
+                    // equivalent of Alt/Ctrl-click. pState.penTapAnchor is cleared so
+                    // the lift doesn't also fire the tap-to-toggle.
+                    const w = getWorldCoordinates(cx, cy);
+                    const anchorMenu = buildAnchorMenu(w.x, w.y);
+                    setAnchorMenuItems(anchorMenu);
+                    if (anchorMenu) pState.penTapAnchor = null;
                     setContextMenuPos({ x: cx, y: cy });
                     setContextMenuOpen(true);
                 }, LONG_PRESS_MS);
@@ -1535,7 +1587,9 @@ const Canvas: Component = () => {
         }
 
         if (pState.isPenBuilding) {
-            penPathMove(x, y, pState, pHelpers, pSignals);
+            // Clock-Method constrain: Shift, the Procreate second-finger contact, or
+            // the on-screen toggle snaps the dragged handle to 45°/90°.
+            penPathMove(x, y, pState, pHelpers, pSignals, e.shiftKey || pState.secondaryContact || store.penConstrain);
             requestAnimationFrame(draw);
             return;
         }
@@ -1641,6 +1695,7 @@ const Canvas: Component = () => {
         if (store.selectedTool === 'selection' || store.selectedTool === 'lasso') {
             const { x: upX, y: upY } = getWorldCoordinates(e.clientX, e.clientY);
             selectionOnUp(e, upX, upY, pState, pHelpers, pSignals);
+            requestAnimationFrame(draw); // reflect tap-to-toggle anchor edits immediately
             return;
         }
 
@@ -2016,6 +2071,9 @@ const Canvas: Component = () => {
                         // touch/pen long-press synthesize button=0.
                         const isMouseRightClick = e.button === 2 && pState.lastPointerType !== 'touch' && pState.lastPointerType !== 'pen';
                         if (!isMouseRightClick) return;
+                        // Right-click a selected path's anchor/outline → path-editing menu.
+                        const w = getWorldCoordinates(e.clientX, e.clientY);
+                        setAnchorMenuItems(buildAnchorMenu(w.x, w.y));
                         setContextMenuPos({ x: e.clientX, y: e.clientY });
                         setContextMenuOpen(true);
                     }}
@@ -2137,13 +2195,16 @@ const Canvas: Component = () => {
                 element={() => store.elements.find(e => e.id === editingId()) || null}
             />
 
+            {/* Pen / path-editing options (Clock-Method constrain toggle) */}
+            <PenOptionsBar />
+
             {/* Context Menu */}
             <Show when={contextMenuOpen()}>
                 <ContextMenu
                     x={contextMenuPos().x}
                     y={contextMenuPos().y}
-                    items={(() => { const w = getWorldCoordinates(contextMenuPos().x, contextMenuPos().y); return getContextMenuItems(draw, w.x, w.y, tableCellSelectionSignal(), () => setTableCellSelection(null)); })()}
-                    onClose={() => setContextMenuOpen(false)}
+                    items={anchorMenuItems() ?? (() => { const w = getWorldCoordinates(contextMenuPos().x, contextMenuPos().y); return getContextMenuItems(draw, w.x, w.y, tableCellSelectionSignal(), () => setTableCellSelection(null)); })()}
+                    onClose={() => { setContextMenuOpen(false); setAnchorMenuItems(null); }}
                 />
             </Show>
 

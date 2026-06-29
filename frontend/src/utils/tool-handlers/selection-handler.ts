@@ -24,6 +24,7 @@ import { calculateAllAnimatedStates } from '../animation-utils';
 import { getGroupsSortedByPriority, isPointInGroupBounds } from '../group-utils';
 import { normalizePoints } from '../render-element';
 import { connectorHandleOnDown } from './minor-handlers';
+import { constrainHandleVec } from './pen-path-handler';
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestColEdge, hitTestRowEdge, hitTestTableCell, sortTableData, reorderColumns } from '../table-utils';
 import { measureWrappedTextHeight } from '../text-utils';
 import { hitTestPoolLane, assignToPoolLane, unassignFromPool } from '../pool-containment';
@@ -193,6 +194,13 @@ export function selectionOnDown(
             deletePathAnchor(hitHandle.id, parseInt(anchorMatch[1], 10), parseInt(anchorMatch[2], 10));
             return;
         }
+        // Touch/pen tap on an anchor (no modifier): arm tap-to-toggle. We still set
+        // up the drag below so a real drag moves the node, but defer the history
+        // push (see handlePathNodeDrag) so a pure tap yields one clean undo step.
+        const tappingAnchor = !!anchorMatch && (e.pointerType === 'touch' || e.pointerType === 'pen');
+        pState.penTapAnchor = tappingAnchor
+            ? { id: hitHandle.id, sub: parseInt(anchorMatch![1], 10), i: parseInt(anchorMatch![2], 10) }
+            : null;
 
         // Check if it's a connector handle
         if (hitHandle.handle.startsWith('connector-')) {
@@ -217,7 +225,7 @@ export function selectionOnDown(
             return;
         }
 
-        pushToHistory();
+        if (!pState.penTapAnchor) pushToHistory(); // deferred for anchor taps
         pState.isDragging = true;
         pState.draggingHandle = hitHandle.handle;
         pState.startX = x;
@@ -1497,7 +1505,9 @@ function handleResize(
     } else if (pState.draggingHandle && pState.draggingHandle.startsWith('control-')) {
         handleControlPointDrag(x, y, id, pState, helpers);
     } else if (pState.draggingHandle && pState.draggingHandle.startsWith('path-')) {
-        handlePathNodeDrag(x, y, id, pState);
+        // Clock-Method constrain: Shift, the Procreate second-finger contact, or the
+        // on-screen pen-constrain toggle snaps handles to 45°/90° while editing.
+        handlePathNodeDrag(x, y, id, pState, e.shiftKey || pState.secondaryContact || store.penConstrain);
     } else {
         // APPLY RESIZE (Single or Group)
         applyResize(id, el, isMulti, newX, newY, newWidth, newHeight, pState, helpers);
@@ -1732,7 +1742,7 @@ function writeEditableSubpaths(id: string, baseX: number, baseY: number, subs: E
     }
 }
 
-function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerState): void {
+function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerState, constrain = false): void {
     const el = store.elements.find(e => e.id === id);
     if (!el) return;
     const m = pState.draggingHandle!.match(/^path-(anchor|in|out)-(\d+)-(\d+)$/);
@@ -1744,6 +1754,15 @@ function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerSta
     if (sub < 0 || sub >= subs.length) return;
     const anchors = subs[sub].anchors;
     if (i < 0 || i >= anchors.length) return;
+
+    // Tap-to-toggle armed: ignore micro-jitter so a finger tap stays a tap. Once
+    // movement passes the slop it's a real drag — commit the deferred history and
+    // disarm so the lift no longer toggles smooth/corner.
+    if (pState.penTapAnchor) {
+        if (Math.hypot(x - pState.startX, y - pState.startY) < 4 / store.viewState.scale) return;
+        pushToHistory();
+        pState.penTapAnchor = null;
+    }
 
     let tx = x, ty = y;
     if (store.gridSettings.snapToGrid) {
@@ -1761,8 +1780,9 @@ function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerSta
         a.x = tx - el.x;
         a.y = ty - el.y;
     } else {
-        const hx = tx - (el.x + a.x);
-        const hy = ty - (el.y + a.y);
+        let hx = tx - (el.x + a.x);
+        let hy = ty - (el.y + a.y);
+        if (constrain) { const c = constrainHandleVec(hx, hy); hx = c.x; hy = c.y; }
         if (kind === 'out') {
             a.outX = hx; a.outY = hy;
             if (a.kind === 'smooth') { a.inX = -hx; a.inY = -hy; }
@@ -1858,6 +1878,16 @@ function findClosestPathSegment(el: DrawingElement, subs: EditSub[], wx: number,
  * Insert an anchor on a path segment at parameter t, preserving the curve via a
  * de Casteljau split (straight segments stay straight as a plain corner anchor).
  */
+/** True when a world point lies close enough to a selected path's outline that
+ *  `insertPathAnchorAt` would succeed — used to gate the touch "Insert point" menu. */
+export function canInsertPathAnchor(id: string, wx: number, wy: number, scale: number): boolean {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || el.type !== 'path') return false;
+    const subs = editableSubpaths(el);
+    if (subs.length === 0) return false;
+    return findClosestPathSegment(el, subs, wx, wy, 12 / scale) !== null;
+}
+
 export function insertPathAnchorAt(id: string, wx: number, wy: number, scale: number): boolean {
     const el = store.elements.find(e => e.id === id);
     if (!el) return false;
@@ -2328,6 +2358,17 @@ export function selectionOnUp(
     helpers: PointerHelpers,
     signals: PointerSignals
 ): void {
+    // Anchor tapped (no drag past slop) by finger/stylus → toggle smooth↔corner.
+    // convertPathAnchor records its own history, so this is one clean undo step.
+    if (pState.penTapAnchor) {
+        const { id, sub, i } = pState.penTapAnchor;
+        pState.penTapAnchor = null;
+        pState.isDragging = false;
+        pState.draggingHandle = null;
+        convertPathAnchor(id, sub, i);
+        return;
+    }
+
     if (pState.isSelecting) {
         if (store.selectedTool === 'lasso') {
             // Lasso selection: point-in-polygon test on element centers

@@ -1,0 +1,63 @@
+.pen-options-bar {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    display: flex;
+    gap: 6px;
+    padding: 5px;
+    border-radius: 10px;
+    background: var(--panel-bg, rgba(32, 32, 36, 0.92));
+    border: 1px solid var(--panel-border, rgba(255, 255, 255, 0.12));
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.pen-opt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    min-height: 34px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-color, #e6e6e6);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.pen-opt-btn:hover {
+    background: var(--hover-bg, rgba(255, 255, 255, 0.08));
+}
+
+.pen-opt-btn.active {
+    background: var(--accent-color, #3b82f6);
+    border-color: var(--accent-color, #3b82f6);
+    color: #fff;
+}
+
+.pen-opt-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.pen-opt-label {
+    line-height: 1;
+}
+
+@media (max-width: 768px) {
+    .pen-opt-label {
+        display: none;
+    }
+    .pen-opt-btn {
+        padding: 8px 12px;
+        min-height: 40px;
+    }
+}

@@ -358,6 +358,35 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
 
             {/* Parity reference */}
             <section class="doc-section">
+                <h2>✒️ Pen / Vector Path — anchors, curves &amp; the Clock Method</h2>
+                <p>
+                    Grab the <strong>Pen</strong> (<span class="kbd">P</span>): <em>click</em> drops a corner
+                    anchor, <em>click-drag</em> drops a smooth anchor and pulls out its Bézier handles, and
+                    clicking the first anchor closes the path. <span class="kbd">Enter</span>/<span class="kbd">Esc</span>
+                    (or double-click) finishes; <span class="kbd">Backspace</span> removes the last anchor.
+                </p>
+                <p>
+                    <strong>Clock Method (90°/45° constrain).</strong> Hold <span class="kbd">Shift</span> while
+                    dragging a handle to snap it to the nearest 45° — straight to 12/3/6/9 o'clock for clean,
+                    editable curves. Don't have a keyboard? Toggle the <strong>90°/45°</strong> button in the
+                    floating Pen bar, or rest a <strong>second finger</strong> on the canvas while you drag with
+                    the stylus (the Procreate-style constrain modifier).
+                </p>
+                <p>
+                    <strong>Editing anchors</strong> (Selection tool, with the path selected):
+                </p>
+                <table class="api-table">
+                    <thead><tr><th>Action</th><th>Desktop</th><th>Tablet / touch</th></tr></thead>
+                    <tbody>
+                        <tr><td>Smooth ↔ Corner</td><td><span class="kbd">Alt</span>-click the anchor</td><td><strong>Tap</strong> the anchor, or long-press → <em>Make Smooth/Corner</em></td></tr>
+                        <tr><td>Delete anchor</td><td><span class="kbd">Ctrl/⌘</span>-click the anchor</td><td>Long-press the anchor → <em>Delete Anchor</em></td></tr>
+                        <tr><td>Insert anchor</td><td><span class="kbd">Alt</span>-click the path outline</td><td>Long-press the outline → <em>Insert Point Here</em></td></tr>
+                        <tr><td>Constrain handles 90°/45°</td><td>Hold <span class="kbd">Shift</span> while dragging</td><td><strong>90°/45°</strong> toggle, or second-finger contact</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="doc-section">
                 <h2>Where these map in Illustrator</h2>
                 <table class="api-table">
                     <thead>

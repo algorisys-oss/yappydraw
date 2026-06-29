@@ -26,6 +26,20 @@ function snap(x: number, y: number): { x: number; y: number } {
 }
 
 /**
+ * "Clock Method" / Shift-constrain: snap a Bézier handle vector to the nearest
+ * 45° increment (so 12/3/6/9 o'clock plus the diagonals), preserving its length.
+ * Illustrator's Shift-while-dragging-handles behaviour; here it's also reachable
+ * keyboard-free via the second-finger contact or the on-screen constrain toggle.
+ */
+export function constrainHandleVec(dx: number, dy: number): { x: number; y: number } {
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) return { x: dx, y: dy };
+    const step = Math.PI / 4; // 45°
+    const ang = Math.round(Math.atan2(dy, dx) / step) * step;
+    return { x: Math.cos(ang) * len, y: Math.sin(ang) * len };
+}
+
+/**
  * Re-normalize `penAnchors` (+ optional preview anchor) into the element's bbox and
  * origin-relative `pathAnchors`. World positions are invariant: world.x of anchor i
  * = startX + penAnchors[i].x, regardless of the bbox shift.
@@ -127,7 +141,7 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
 
 // ─── Pointer Move ────────────────────────────────────────────────────
 
-export function penOnMove(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, signals: PointerSignals): void {
+export function penOnMove(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, signals: PointerSignals, constrain = false): void {
     if (!pState.isPenBuilding || !pState.currentId) return;
     signals.setSuggestedBinding(null);
     const { x: px, y: py } = snap(x, y);
@@ -137,8 +151,9 @@ export function penOnMove(x: number, y: number, pState: PointerState, _helpers: 
     if (pState.penDragging && pState.penActiveIdx >= 0) {
         // Curving the active anchor: out-handle follows the cursor, in-handle mirrors.
         const a = pState.penAnchors[pState.penActiveIdx];
-        const ox = relX - a.x;
-        const oy = relY - a.y;
+        let ox = relX - a.x;
+        let oy = relY - a.y;
+        if (constrain) { const c = constrainHandleVec(ox, oy); ox = c.x; oy = c.y; }
         pState.penAnchors[pState.penActiveIdx] = { ...a, outX: ox, outY: oy, inX: -ox, inY: -oy, kind: 'smooth' };
         writePenElement(pState);
     } else {

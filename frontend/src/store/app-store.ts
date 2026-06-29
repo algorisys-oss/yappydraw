@@ -90,6 +90,11 @@ interface AppState {
     redoStackLength: number;
     isDirty: boolean; // True when document has unsaved changes
     flowTick: number; // For forcing redraws on flow animations
+    /** Pen/vector-path "Clock Method" constrain: when on, Bézier handles snap to
+     *  45°/90° increments during creation and editing. Acts as a keyboard-free
+     *  stand-in for holding Shift (tablet parity). Also triggered live by Shift or
+     *  the Procreate-style second-finger contact. */
+    penConstrain: boolean;
     // Panel Visibility
     showPropertyPanel: boolean;
     showLayerPanel: boolean;
@@ -345,6 +350,7 @@ const initialState: AppState = {
     undoStackLength: 0,
     redoStackLength: 0,
     isDirty: false,
+    penConstrain: false,
     showPropertyPanel: false,
     showLayerPanel: false,
     showSymbolsPanel: false,
@@ -552,6 +558,9 @@ export const redo = () => {
 };
 
 export const toggleHistoryPanel = (visible?: boolean) => setStore('showHistoryPanel', v => visible ?? !v);
+
+/** Toggle (or set) the pen/vector-path Clock-Method handle constrain. */
+export const setPenConstrain = (on?: boolean) => setStore('penConstrain', v => on ?? !v);
 
 /** History timeline for the panel: past states (oldest→newest), the current
  *  state, then redoable future states. Each entry carries its element count. */
