@@ -147,7 +147,7 @@ frontend/src/components/p3-color-picker.tsx | typescript | 264 | Component:1 set
 frontend/src/components/path-editor-overlay.tsx | typescript | 303 | Component:8 onMove:120 onUp:156
 frontend/src/components/path-eraser-overlay.css | - | 24 |
 frontend/src/components/path-eraser-overlay.tsx | typescript | 62 | PathEraserOverlay:11 active:17 toWorld:18 onDown:20 onMove:25 onUp:26 onKey:32 scale:42 strokeScreen:43 cur:44
-frontend/src/components/pen-options-bar.css | - | 63 |
+frontend/src/components/pen-options-bar.css | - | 65 |
 frontend/src/components/pen-options-bar.tsx | typescript | 34 | Component:1 PenOptionsBar:11 selectedPath:12 visible:16
 frontend/src/components/pen-tool-group.css | - | 104 |
 frontend/src/components/pen-tool-group.tsx | typescript | 134 | Component:1 PenType:8 PenToolGroup:35 handler:42 getCurrentPenTool:52 isPenToolActive:56 handleSelectPen:60 handleRightClick:66 toggleMenu:73 getDropdownPosition:80

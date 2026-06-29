@@ -1,9 +1,11 @@
 .pen-options-bar {
     position: fixed;
-    top: 12px;
+    /* Sit just below the default top toolbar (top:12px, ~48px tall) so the two
+       don't stack at top-center and the toolbar doesn't intercept these taps. */
+    top: 68px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 60;
+    z-index: 9000;
     display: flex;
     gap: 6px;
     padding: 5px;
