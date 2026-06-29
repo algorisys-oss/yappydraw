@@ -118,6 +118,7 @@ export interface SlideDocument {
     artboards?: import('../types').Artboard[];
     graphicStyles?: import('../types').GraphicStyle[];
     swatches?: import('../types').Swatch[];
+    patterns?: import('../types').PatternSwatch[];
 }
 
 /**

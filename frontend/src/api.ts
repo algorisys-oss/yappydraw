@@ -15,6 +15,7 @@ import {
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection,
+    addPatternSwatchFromSelection, savePatternSwatchFromElement, applyPatternSwatch, updatePatternSwatch, renamePatternSwatch, deletePatternSwatch,
     createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
@@ -1552,6 +1553,22 @@ export const YappyAPI = {
     /** Make Pattern from Selection: capture the selected artwork into a tile and
      *  spawn a preview rectangle filled with that custom pattern. Returns its id. */
     createPatternFromSelection(ids?: string[]) { return createPatternFromSelection(ids ?? store.selection); },
+
+    // ── Pattern swatch library (document-level reusable patterns) ──
+    /** Capture the selected artwork into a reusable pattern swatch (no preview rect). */
+    addPatternSwatchFromSelection(name?: string, ids?: string[]) { return addPatternSwatchFromSelection(ids ?? store.selection, name); },
+    /** Save the (first) selected shape's pattern fill to the library. */
+    savePatternSwatchFromElement(name?: string, ids?: string[]) { return savePatternSwatchFromElement(ids ?? store.selection, name); },
+    /** Apply a library pattern swatch to the current (or given) selection. */
+    applyPatternSwatch(swatchId: string, ids?: string[]) { applyPatternSwatch(swatchId, ids ?? store.selection); },
+    /** Redefine a library swatch from the selected shape's pattern fill. */
+    updatePatternSwatch(swatchId: string, fromId?: string) { updatePatternSwatch(swatchId, fromId); },
+    /** Rename a library pattern swatch. */
+    renamePatternSwatch(swatchId: string, name: string) { renamePatternSwatch(swatchId, name); },
+    /** Delete a library pattern swatch. */
+    deletePatternSwatch(swatchId: string) { deletePatternSwatch(swatchId); },
+    /** List the document's pattern swatches. */
+    listPatternSwatches() { return store.patterns.map(p => ({ id: p.id, name: p.name, type: p.fill.type })); },
 
     /** Image Trace: vectorize selected image(s) into editable path elements (threshold trace). */
     traceImage(options?: { threshold?: number; simplify?: number }, ids?: string[]): string[] {

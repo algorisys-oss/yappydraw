@@ -279,6 +279,30 @@ const a = Y.createCircle(60, 60, 70, 70, { backgroundColor:'#2563eb', fillStyle:
 const b = Y.createRectangle(95, 95, 70, 70, { backgroundColor:'#ef4444', fillStyle:'solid' });
 Y.setSelected([a, b]);
 Y.createPatternFromSelection([a, b]);   // → a new rectangle tiled with the circle+square motif`}</code></pre>
+
+                <h3>Patterns library (reusable swatches)</h3>
+                <p>
+                    Build a palette of patterns once and reuse them across the document. Open the
+                    <strong> Patterns</strong> panel (menu → Patterns, or <span class="kbd">Alt</span>+
+                    <span class="kbd">P</span>):
+                </p>
+                <table class="api-table">
+                    <thead><tr><th>Action</th><th>How</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Capture artwork</strong></td><td>Select shapes → click the <strong>＋</strong> in the panel header → the selection becomes a reusable pattern tile.</td></tr>
+                        <tr><td><strong>Save a built-in pattern</strong></td><td>Give a shape a Pattern fill, tune it, then click <strong>Save to Library</strong> in the PATTERN editor.</td></tr>
+                        <tr><td><strong>Apply</strong></td><td>Select one or more shapes, then click a swatch (or its apply button) to fill them with that pattern.</td></tr>
+                        <tr><td><strong>Redefine</strong></td><td>Select a shape whose pattern you like, then click a swatch's <strong>refresh</strong> button to overwrite it.</td></tr>
+                        <tr><td><strong>Rename / Delete</strong></td><td>Double-click a swatch name to rename; the trash button removes it.</td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    Pattern swatches are stored with the document (they save/load and undo/redo). API:
+                    <code> addPatternSwatchFromSelection(name?)</code>, <code>savePatternSwatchFromElement(name?)</code>,
+                    <code> applyPatternSwatch(id)</code>, <code>updatePatternSwatch(id)</code>,
+                    <code> renamePatternSwatch(id, name)</code>, <code>deletePatternSwatch(id)</code>,
+                    <code> listPatternSwatches()</code>. Applying copies the pattern onto the shape (no live link).
+                </p>
             </section>
 
             {/* ─── IMAGE TRACE ────────────────────────────────────────── */}

@@ -89,6 +89,7 @@ export const generateId = (type: string, batchIds?: Set<string>): string => {
     if (store.symbols) scanMax(store.symbols);
     if (store.swatches) scanMax(store.swatches);
     if (store.graphicStyles) scanMax(store.graphicStyles);
+    if (store.patterns) scanMax(store.patterns);
     // Live Paint group ids live on a `livePaintGroupId` tag (not an `.id` field), so they're
     // invisible to the element scan — without this a new group after reload re-uses the same
     // id and cross-wires two groups. Scan the tags too.

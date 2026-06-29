@@ -3,7 +3,7 @@ import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
 import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
-    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
+    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore
 } from "../store/app-store";
@@ -12,7 +12,7 @@ import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
-    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay
+    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
@@ -795,6 +795,14 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <Show when={store.showSwatchesPanel}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+W</span>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { togglePatternsPanel(); setIsMenuOpen(false); }}>
+                                        <Grid2x2 size={16} />
+                                        <span class="label">Patterns</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.showPatternsPanel}><Check size={14} class="check-icon" /></Show>
+                                            <span class="shortcut">Alt+P</span>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleMeasure(); setIsMenuOpen(false); }}>

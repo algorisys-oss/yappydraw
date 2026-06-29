@@ -111,6 +111,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Toggle History Panel', keys: 'Alt+H' },
             { label: 'Toggle Graphic Styles', keys: 'Alt+G' },
             { label: 'Toggle Swatches', keys: 'Alt+W' },
+            { label: 'Toggle Patterns', keys: 'Alt+P' },
             { label: 'Toggle Minimap', keys: 'Alt+M' },
             { label: 'Toggle Rulers & Guides', keys: 'Alt+R' },
             { label: 'Toggle Symmetry Guide', keys: 'Alt+Y' },

@@ -17,7 +17,7 @@ import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
-import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType, PatternSwatch } from "../types";
 import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos, parseHex, rgbToHex } from "../utils/mesh-gradient";
 import { defaultPatternFill } from "../utils/pattern-fill";
 import { captureElementsToDataURL } from "../utils/pattern-capture";
@@ -200,6 +200,9 @@ interface AppState {
     graphicStyles: GraphicStyle[];
     // Document-level named colours; objects link via fill/strokeSwatchId
     swatches: Swatch[];
+    // Document-level reusable pattern swatches (named PatternFills)
+    patterns: PatternSwatch[];
+    showPatternsPanel: boolean;
     showSlideNavigator: boolean;
     showSlideToolbar: boolean;
     showMainToolbar: boolean;
@@ -423,6 +426,8 @@ const initialState: AppState = {
     artboards: [],
     graphicStyles: [],
     swatches: [],
+    patterns: [],
+    showPatternsPanel: false,
     showStatePanel: false,
     showSlideNavigator: true,
     showSlideToolbar: true,
@@ -465,6 +470,7 @@ interface HistorySnapshot {
     artboards: Artboard[];
     graphicStyles: GraphicStyle[];
     swatches: Swatch[];
+    patterns: PatternSwatch[];
     gridSettings: GridSettings;
     canvasBackgroundColor: string;
     docType: 'infinite' | 'slides';
@@ -501,6 +507,7 @@ const captureSnapshot = (): HistorySnapshot => ({
     artboards: store.artboards.map(a => ({ ...a })),
     graphicStyles: store.graphicStyles.map(g => ({ ...g, style: { ...g.style } })),
     swatches: store.swatches.map(s => ({ ...s })),
+    patterns: store.patterns.map(p => ({ ...p, fill: { ...p.fill } })),
     gridSettings: { ...store.gridSettings },
     canvasBackgroundColor: store.canvasBackgroundColor,
     docType: store.docType,
@@ -514,6 +521,7 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("symbols", snapshot.symbols || []);
     setStore("artboards", snapshot.artboards || []);
     setStore("graphicStyles", snapshot.graphicStyles || []);
+    setStore("patterns", snapshot.patterns || []);
     setStore("swatches", snapshot.swatches || []);
     setStore("gridSettings", snapshot.gridSettings);
     setStore("canvasBackgroundColor", snapshot.canvasBackgroundColor);
@@ -1887,6 +1895,7 @@ export const loadDocument = (doc: any) => {
         setStore("artboards", JSON.parse(JSON.stringify(doc.artboards || [])));
         setStore("graphicStyles", JSON.parse(JSON.stringify(doc.graphicStyles || [])));
         setStore("swatches", JSON.parse(JSON.stringify(doc.swatches || [])));
+        setStore("patterns", JSON.parse(JSON.stringify(doc.patterns || [])));
         repairLibraryIds(); // heal duplicate ids from docs made before the id fix
         setStore("gridSettings", JSON.parse(JSON.stringify(gridSettings)));
 
@@ -2846,6 +2855,83 @@ export const clearPatternFill = (ids: string[]) => {
     pushToHistory();
     setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ fillStyle: 'solid' as const, patternFill: undefined }));
     bumpDirtyRevision();
+};
+
+// ── Pattern swatch library (document-level reusable PatternFills) ─────────────
+
+/** Save a PatternFill to the document's pattern-swatch library. Returns its id. */
+export const savePatternSwatch = (fill: PatternFill, name?: string): string => {
+    const id = generateId('pat' as any);
+    const sw: PatternSwatch = { id, name: name || `Pattern ${store.patterns.length + 1}`, fill: { ...fill } };
+    pushToHistory();
+    setStore('patterns', list => [...list, sw]);
+    bumpDirtyRevision();
+    showToast(`Saved ${sw.name}`, 'success');
+    return id;
+};
+
+/** Save the (first) selected element's pattern fill to the library. */
+export const savePatternSwatchFromElement = (ids?: string[], name?: string): string | null => {
+    const sel = ids ?? store.selection;
+    const el = store.elements.find(e => sel.includes(e.id) && !!e.patternFill);
+    if (!el || !el.patternFill) { showToast('Pattern: select a shape with a pattern fill', 'info'); return null; }
+    return savePatternSwatch(el.patternFill, name);
+};
+
+/** Capture the selected artwork into a custom tile and save it as a library swatch
+ *  (without spawning a preview rectangle). Returns the swatch id. */
+export const addPatternSwatchFromSelection = (ids?: string[], name?: string): string | null => {
+    const sel = ids ?? store.selection;
+    const els = store.elements.filter(e => sel.includes(e.id));
+    if (els.length === 0) { showToast('Pattern: select objects', 'info'); return null; }
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const e of els) {
+        const x0 = Math.min(e.x, e.x + e.width), x1 = Math.max(e.x, e.x + e.width);
+        const y0 = Math.min(e.y, e.y + e.height), y1 = Math.max(e.y, e.y + e.height);
+        minX = Math.min(minX, x0); minY = Math.min(minY, y0); maxX = Math.max(maxX, x1); maxY = Math.max(maxY, y1);
+    }
+    const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
+    const tile = captureElementsToDataURL(els, minX, minY, w, h, store.theme !== 'light');
+    if (!tile) { showToast('Pattern: could not capture selection', 'error'); return null; }
+    return savePatternSwatch({ type: 'custom', color: '#000000', background: 'transparent', scale: 1, angle: 0, tile, tileWidth: w, tileHeight: h }, name);
+};
+
+/** Apply a library pattern swatch to the given elements (default: selection). */
+export const applyPatternSwatch = (swatchId: string, ids?: string[]) => {
+    const sw = store.patterns.find(p => p.id === swatchId);
+    const targets = ids ?? store.selection;
+    if (!sw || targets.length === 0) { if (!sw) showToast('Pattern not found', 'info'); else showToast('Select a shape first', 'info'); return; }
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => targets.includes(e.id), () => ({ fillStyle: 'pattern' as const, patternFill: { ...sw.fill } }));
+    bumpDirtyRevision();
+    showToast(`Applied ${sw.name}`, 'success');
+};
+
+/** Redefine a library swatch from the (first) selected element's pattern fill. */
+export const updatePatternSwatch = (swatchId: string, fromId?: string) => {
+    const el = store.elements.find(e => e.id === (fromId ?? store.selection.find(id => store.elements.find(x => x.id === id)?.patternFill)));
+    if (!el || !el.patternFill) { showToast('Select a shape with a pattern fill', 'info'); return; }
+    pushToHistory();
+    setStore('patterns', p => p.id === swatchId, () => ({ fill: { ...el.patternFill! } }));
+    bumpDirtyRevision();
+    showToast('Pattern updated', 'success');
+};
+
+export const renamePatternSwatch = (swatchId: string, name: string) => {
+    const n = name.trim();
+    if (!n) return;
+    setStore('patterns', p => p.id === swatchId, () => ({ name: n }));
+    bumpDirtyRevision();
+};
+
+export const deletePatternSwatch = (swatchId: string) => {
+    pushToHistory();
+    setStore('patterns', list => list.filter(p => p.id !== swatchId));
+    bumpDirtyRevision();
+};
+
+export const togglePatternsPanel = (visible?: boolean) => {
+    setStore('showPatternsPanel', visible ?? !store.showPatternsPanel);
 };
 
 /** Change the node-grid size of a mesh fill, preserving colours where possible. */

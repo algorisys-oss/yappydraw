@@ -1,6 +1,6 @@
 import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal } from 'solid-js';
 import {
-  undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel,
+  undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel,
   toggleMinimap, toggleRulers, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
   addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper,
@@ -54,6 +54,7 @@ const LayerPanel = lazy(() => import('./components/layer-panel'));
 const SymbolsPanel = lazy(() => import('./components/symbols-panel'));
 const GraphicStylesPanel = lazy(() => import('./components/graphic-styles-panel'));
 const SwatchesPanel = lazy(() => import('./components/swatches-panel'));
+const PatternsPanel = lazy(() => import('./components/patterns-panel'));
 const RecolorPanel = lazy(() => import('./components/recolor-panel'));
 const VectorToolsPanel = lazy(() => import('./components/vector-tools-panel'));
 const HistoryPanel = lazy(() => import('./components/history-panel'));
@@ -409,6 +410,9 @@ const App: Component = () => {
         } else if (code === 'KeyW' || key === 'w') {
           e.preventDefault();
           toggleSwatchesPanel();
+        } else if (code === 'KeyP' || key === 'p') {
+          e.preventDefault();
+          togglePatternsPanel();
         } else if (key === '\\' || code === 'Backslash') {
           e.preventDefault();
           const anyVisible = store.showPropertyPanel || store.showLayerPanel;
@@ -1244,6 +1248,7 @@ const App: Component = () => {
             <SymbolsPanel />
             <GraphicStylesPanel />
             <SwatchesPanel />
+            <PatternsPanel />
             <RecolorPanel />
             <VectorToolsPanel />
             <HistoryPanel />

@@ -34,6 +34,10 @@ export interface GraphicStyle { id: string; name: string; style: Partial<Drawing
  *  strokeSwatchId) update automatically when the swatch's colour changes. */
 export interface Swatch { id: string; name: string; color: string; group?: string; }
 
+/** A reusable, document-level pattern swatch — a named `PatternFill` that can be
+ *  applied to any shape from the Patterns panel. */
+export interface PatternSwatch { id: string; name: string; fill: PatternFill; }
+
 export type ToolType = ElementType | 'lasso' | 'crop';
 
 /**
