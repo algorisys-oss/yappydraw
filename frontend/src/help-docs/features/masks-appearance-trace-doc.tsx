@@ -160,8 +160,9 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                     pick a built-in motif (Stripes, Grid, Dots, Checker, Crosshatch) or a saved
                     <strong> ★ library pattern</strong> to paint that fill with a clipped, tiling pattern. Layer a
                     pattern over a base gradient, or stack two patterns, for richer textures — on a single object.
-                    The fill's colour doubles as the pattern's foreground. (Pattern stack-fills render on canvas in
-                    both styles; SVG export approximates them with the foreground colour.)
+                    The fill's colour doubles as the pattern's foreground. Pattern stack-fills render on canvas in
+                    both styles and export to SVG as real tiling <code>&lt;pattern&gt;</code>s in Architectural style
+                    (Sketch SVG approximates them with the foreground colour).
                 </p>
 
                 <h3>Graphic Styles</h3>

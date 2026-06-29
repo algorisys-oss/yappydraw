@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.5.14](0.5.14.md) — Appearance pattern fills export as true SVG `<pattern>`
 - [0.5.13](0.5.13.md) — Live-link pattern swatches + pattern stack-fills
 - [0.5.12](0.5.12.md) — Reusable pattern-swatch library
 - [0.5.11](0.5.11.md) — Make Pattern from Selection

@@ -7,7 +7,7 @@ import { resolveFontFamily, wrapText, getMeasurementRenderer } from "./text-util
 import { buildFilterString } from "./image-filter-utils";
 import { layoutRichText } from "./rich-text-utils";
 import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
-import { svgFillPaint } from "./svg-paint";
+import { svgFillPaint, svgPatternDef } from "./svg-paint";
 import { SvgRenderer } from "../rendering/SvgRenderer";
 import { getImage } from "./image-cache";
 import { rasterizeWarpedImage } from "./image-warp";
@@ -15,7 +15,7 @@ import { rasterizeWarpedImage } from "./image-warp";
 const SVGNS = 'http://www.w3.org/2000/svg';
 
 /** Build an SVG <g> of the element's appearance-stack extras (centred frame), or null. */
-function buildAppearanceSvgGroup(el: any, rc: any, options: any): SVGGElement | null {
+function buildAppearanceSvgGroup(el: any, rc: any, options: any, defs: SVGElement): SVGGElement | null {
     const ap = el.appearance;
     if (!ap) return null;
     const fills = (ap.fills || []).filter((f: any) => f.visible !== false && f.color && f.color !== 'transparent');
@@ -28,22 +28,23 @@ function buildAppearanceSvgGroup(el: any, rc: any, options: any): SVGGElement | 
     const g = document.createElementNS(SVGNS, 'g');
     g.setAttribute('transform', `translate(${el.x + el.width / 2}, ${el.y + el.height / 2})`);
     const dashArr = (d?: string) => d === 'dashed' ? '10 10' : d === 'dotted' ? '2 8' : undefined;
-    for (const f of fills) {
-        // Pattern appearance fills aren't emitted as a tiling <pattern> here yet;
-        // approximate with the pattern's foreground colour so the fill stays visible.
+    fills.forEach((f: any, fi: number) => {
+        // Architectural pattern fills export as a real tiling <pattern>; sketch (rough.js)
+        // can't reference a pattern, so it approximates with the foreground colour.
+        const patUrl = f.pattern && !sketch ? svgPatternDef(f.pattern, defs, `${el.id}-ap${fi}`) : null;
         const fillColor = f.pattern ? (f.pattern.color || f.color) : f.color;
         for (const d of ds) {
             if (sketch) {
                 g.appendChild(rc.path(d, { ...options, fill: fillColor, fillStyle: 'solid', stroke: 'none' }));
             } else {
                 const p = document.createElementNS(SVGNS, 'path');
-                p.setAttribute('d', d); p.setAttribute('fill', fillColor); p.setAttribute('stroke', 'none');
+                p.setAttribute('d', d); p.setAttribute('fill', patUrl || fillColor); p.setAttribute('stroke', 'none');
                 if (evenOdd) p.setAttribute('fill-rule', 'evenodd');
                 if (f.opacity != null) p.setAttribute('fill-opacity', `${f.opacity}`);
                 g.appendChild(p);
             }
         }
-    }
+    });
     for (const s of strokes) {
         const da = dashArr(s.dash);
         for (const d of ds) {
@@ -752,7 +753,7 @@ export const exportToSvg = (onlySelected: boolean) => {
         // shapes already have them baked into the raster, so skip those. Wrapping the base +
         // an extras <g> lets the finalizer's rotate/flip apply to both together.
         if (node && !isCanvasFallback && el.appearance) {
-            const apG = buildAppearanceSvgGroup(el, rc, options);
+            const apG = buildAppearanceSvgGroup(el, rc, options, defs);
             if (apG) {
                 const wrap = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                 wrap.appendChild(node);

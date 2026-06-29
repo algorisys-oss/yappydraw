@@ -5,11 +5,40 @@
  * vectors instead of being lost or rasterized.
  */
 
-import type { DrawingElement } from "../types";
+import type { DrawingElement, PatternFill } from "../types";
 import { rasterizeMesh } from "./mesh-gradient";
 import { makePatternTile } from "./pattern-fill";
 
 const SVGNS = 'http://www.w3.org/2000/svg';
+
+/**
+ * Emit a real tiling `<pattern>` (a rasterized motif tile) into `defs` and return
+ * `url(#id)`, or null if the tile can't be built. Shared by base pattern fills and
+ * appearance-stack pattern fills so both export as true vectors.
+ */
+export function svgPatternDef(pf: PatternFill, defs: SVGElement, uid: string): string | null {
+    const ss = 2; // supersample the tile so it stays crisp when the viewer scales it
+    const tile = makePatternTile(pf, ss);
+    if (!tile || tile.width <= 0 || tile.height <= 0) return null;
+    const cssW = tile.width / ss, cssH = tile.height / ss;
+    const id = `yd-pattern-${uid}`;
+    const pat = document.createElementNS(SVGNS, 'pattern');
+    pat.setAttribute('id', id);
+    pat.setAttribute('patternUnits', 'userSpaceOnUse');
+    pat.setAttribute('patternContentUnits', 'userSpaceOnUse');
+    pat.setAttribute('width', `${cssW}`);
+    pat.setAttribute('height', `${cssH}`);
+    const angle = pf.angle || 0;
+    if (angle) pat.setAttribute('patternTransform', `rotate(${angle})`);
+    const img = document.createElementNS(SVGNS, 'image');
+    img.setAttribute('href', tile.toDataURL('image/png'));
+    img.setAttribute('x', '0'); img.setAttribute('y', '0');
+    img.setAttribute('width', `${cssW}`); img.setAttribute('height', `${cssH}`);
+    img.setAttribute('preserveAspectRatio', 'none');
+    pat.appendChild(img);
+    defs.appendChild(pat);
+    return `url(#${id})`;
+}
 
 /** Split a colour into { color, opacity }, pulling alpha out of rgba()/#rrggbbaa
  *  (SVG `stop-color` doesn't reliably accept alpha — `stop-opacity` does). */
@@ -96,28 +125,8 @@ export function svgFillPaint(el: DrawingElement, defs: SVGElement, uid: string):
 
     // ── Pattern fills (real tiling <pattern> of a rasterized motif tile) ─────
     if (fs === 'pattern' && el.patternFill) {
-        const ss = 2; // supersample the tile so it stays crisp when the viewer scales it
-        const tile = makePatternTile(el.patternFill, ss);
-        if (tile && tile.width > 0 && tile.height > 0) {
-            const cssW = tile.width / ss, cssH = tile.height / ss;
-            const id = `yd-pattern-${uid}`;
-            const pat = document.createElementNS(SVGNS, 'pattern');
-            pat.setAttribute('id', id);
-            pat.setAttribute('patternUnits', 'userSpaceOnUse');
-            pat.setAttribute('patternContentUnits', 'userSpaceOnUse');
-            pat.setAttribute('width', `${cssW}`);
-            pat.setAttribute('height', `${cssH}`);
-            const angle = el.patternFill.angle || 0;
-            if (angle) pat.setAttribute('patternTransform', `rotate(${angle})`);
-            const img = document.createElementNS(SVGNS, 'image');
-            img.setAttribute('href', tile.toDataURL('image/png'));
-            img.setAttribute('x', '0'); img.setAttribute('y', '0');
-            img.setAttribute('width', `${cssW}`); img.setAttribute('height', `${cssH}`);
-            img.setAttribute('preserveAspectRatio', 'none');
-            pat.appendChild(img);
-            defs.appendChild(pat);
-            return `url(#${id})`;
-        }
+        const url = svgPatternDef(el.patternFill, defs, uid);
+        if (url) return url;
     }
 
     return (el.backgroundColor && el.backgroundColor !== 'transparent' && el.backgroundColor !== 'none') ? el.backgroundColor : 'none';
