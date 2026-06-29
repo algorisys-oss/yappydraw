@@ -14,6 +14,7 @@ import {
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
+    applyPatternFill, setPatternFill, clearPatternFill,
     createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
@@ -1540,6 +1541,14 @@ export const YappyAPI = {
     clearMeshGradient(ids?: string[]) { clearMeshGradient(ids ?? store.selection); },
     /** Toggle on-canvas mesh node editing (shows the node grid on the selected mesh shape). */
     toggleMeshEdit(active?: boolean) { toggleMeshEdit(active); },
+
+    /** Pattern fill: apply a seamless vector pattern motif (stripes/grid/dots/
+     *  checker/crosshatch), seeded from the element's colour. Both render styles. */
+    applyPatternFill(type?: import("./types").PatternType, ids?: string[]) { applyPatternFill(ids ?? store.selection, type ?? 'stripes'); },
+    /** Update pattern-fill props (type, color, background, scale, spacing, strokeWidth, angle). */
+    setPatternFill(patch: Partial<import("./types").PatternFill>, ids?: string[]) { setPatternFill(ids ?? store.selection, patch); },
+    /** Remove the pattern fill (revert to a solid fill). */
+    clearPatternFill(ids?: string[]) { clearPatternFill(ids ?? store.selection); },
 
     /** Image Trace: vectorize selected image(s) into editable path elements (threshold trace). */
     traceImage(options?: { threshold?: number; simplify?: number }, ids?: string[]): string[] {

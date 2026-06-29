@@ -7,6 +7,7 @@
 
 import type { DrawingElement } from "../types";
 import { rasterizeMesh } from "./mesh-gradient";
+import { makePatternTile } from "./pattern-fill";
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -86,6 +87,32 @@ export function svgFillPaint(el: DrawingElement, defs: SVGElement, uid: string):
             img.setAttribute('href', buf.toDataURL('image/png'));
             img.setAttribute('x', '0'); img.setAttribute('y', '0');
             img.setAttribute('width', `${w}`); img.setAttribute('height', `${h}`);
+            img.setAttribute('preserveAspectRatio', 'none');
+            pat.appendChild(img);
+            defs.appendChild(pat);
+            return `url(#${id})`;
+        }
+    }
+
+    // ── Pattern fills (real tiling <pattern> of a rasterized motif tile) ─────
+    if (fs === 'pattern' && el.patternFill) {
+        const ss = 2; // supersample the tile so it stays crisp when the viewer scales it
+        const tile = makePatternTile(el.patternFill, ss);
+        if (tile && tile.width > 0 && tile.height > 0) {
+            const cssW = tile.width / ss, cssH = tile.height / ss;
+            const id = `yd-pattern-${uid}`;
+            const pat = document.createElementNS(SVGNS, 'pattern');
+            pat.setAttribute('id', id);
+            pat.setAttribute('patternUnits', 'userSpaceOnUse');
+            pat.setAttribute('patternContentUnits', 'userSpaceOnUse');
+            pat.setAttribute('width', `${cssW}`);
+            pat.setAttribute('height', `${cssH}`);
+            const angle = el.patternFill.angle || 0;
+            if (angle) pat.setAttribute('patternTransform', `rotate(${angle})`);
+            const img = document.createElementNS(SVGNS, 'image');
+            img.setAttribute('href', tile.toDataURL('image/png'));
+            img.setAttribute('x', '0'); img.setAttribute('y', '0');
+            img.setAttribute('width', `${cssW}`); img.setAttribute('height', `${cssH}`);
             img.setAttribute('preserveAspectRatio', 'none');
             pat.appendChild(img);
             defs.appendChild(pat);

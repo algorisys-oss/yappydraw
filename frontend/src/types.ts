@@ -66,7 +66,26 @@ export interface PathSubpath {
 }
 
 export type AppMode = 'design' | 'presentation' | 'prototype' | 'embed';
-export type FillStyle = 'hachure' | 'solid' | 'cross-hatch' | 'zigzag' | 'dots' | 'dashed' | 'zigzag-line' | 'linear' | 'radial' | 'conic' | 'image' | 'mesh';
+export type FillStyle = 'hachure' | 'solid' | 'cross-hatch' | 'zigzag' | 'dots' | 'dashed' | 'zigzag-line' | 'linear' | 'radial' | 'conic' | 'image' | 'mesh' | 'pattern';
+
+/** Built-in seamless pattern-fill motifs (active when fillStyle === 'pattern'). */
+export type PatternType = 'stripes' | 'grid' | 'dots' | 'checker' | 'crosshatch';
+
+/**
+ * Vector pattern fill (active when fillStyle === 'pattern') — a parameterised,
+ * seamless repeating motif painted in `color` over an optional `background`.
+ * Rasterized + tiled into a shape-clipped buffer at render time (see
+ * `utils/pattern-fill.ts`); exports as a real SVG `<pattern>` (`utils/svg-paint.ts`).
+ */
+export interface PatternFill {
+    type: PatternType;
+    color: string;          // foreground colour (#rrggbb)
+    background?: string;    // tile background; 'transparent' (default) shows the canvas through
+    scale?: number;         // overall motif zoom, 0.1–8 (default 1)
+    spacing?: number;       // base motif spacing in px (default 12)
+    strokeWidth?: number;   // line thickness / dot radius in px (default 2)
+    angle?: number;         // rotation of the whole pattern in degrees (default 0)
+}
 
 /**
  * Gradient mesh fill (active when fillStyle === 'mesh'). An `rows × cols` grid
@@ -518,6 +537,9 @@ export interface DrawingElement {
 
     // Gradient mesh fill (active when fillStyle === 'mesh') — see MeshGradient
     meshGradient?: MeshGradient;
+
+    // Vector pattern fill (active when fillStyle === 'pattern') — see PatternFill
+    patternFill?: PatternFill;
 
     // Global swatch links — when set, the colour follows the swatch's colour.
     // Cleared automatically if the fill/stroke colour is edited directly.

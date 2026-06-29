@@ -27,6 +27,9 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.5.10](0.5.10.md) — Vector pattern fills
+- [0.5.9](0.5.9.md) — Pen options bar placement hotfix
+- [0.5.8](0.5.8.md) — Clock-Method constrain + keyboard-free anchor editing
 - [0.5.7](0.5.7.md) — Procreate-style layer swipe gestures
 - [0.5.6](0.5.6.md) — Tap-version hard refresh (iOS Safari)
 - [0.5.5](0.5.5.md) — Movable toolbar on tablets

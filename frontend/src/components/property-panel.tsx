@@ -1,6 +1,6 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
 import { draggablePanel } from '../utils/draggable-panel';
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import type { Slide } from "../types/slide-types";
 import type { DrawingElement } from "../types";
@@ -21,6 +21,7 @@ import { getImageFilterPreset } from "../config/image-filter-presets";
 import { getOpenBoxPreset } from "../config/openbox-presets";
 import { detectVideoProvider, getEmbedURL, getPosterURL, fetchPoster } from "../utils/video-utils";
 import { getImage } from "../utils/image-cache";
+import { PATTERN_PRESETS } from "../utils/pattern-fill";
 import { showToast } from "./toast";
 import MathNumberInput from "./math-number-input";
 import { playSequence } from "../utils/animation/orchestrator";
@@ -562,6 +563,80 @@ const MeshEditor: Component<{ el: () => any }> = (props) => {
     );
 };
 
+/** Vector pattern-fill editor — motif preset + colours + scale/spacing/thickness/
+ *  angle sliders. Operates on the active element's `patternFill`. */
+const PatternEditor: Component<{ el: () => any }> = (props) => {
+    const pat = () => props.el()?.patternFill as import("../types").PatternFill | undefined;
+    const ids = () => [props.el()?.id].filter(Boolean) as string[];
+    const sw = { width: '100%', height: '24px', padding: '0', border: '1px solid var(--border-color)', 'border-radius': '3px', cursor: 'pointer' } as any;
+    const btn = { padding: '2px 8px', cursor: 'pointer', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', 'border-radius': '4px', 'font-size': '11px' } as any;
+    const set = (patch: Partial<import("../types").PatternFill>, history = true) => setPatternFill(ids(), patch, history);
+    const transparentBg = () => !pat()?.background || pat()?.background === 'transparent';
+    return (
+        <Show when={pat()}>
+            <div class="property-group">
+                <div class="group-title"><span>PATTERN</span></div>
+
+                {/* Motif preset */}
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '6px' }}>
+                    <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Motif</span>
+                    <select style={{ 'font-size': '11px', flex: '1' }} value={pat()!.type}
+                        onChange={e => set({ type: e.currentTarget.value as any })} title="Pattern motif">
+                        <For each={PATTERN_PRESETS}>{(p) => <option value={p.type}>{p.label}</option>}</For>
+                    </select>
+                </div>
+
+                {/* Colours */}
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '6px' }}>
+                    <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Color</span>
+                    <input type="color" style={sw} value={pat()!.color || '#000000'}
+                        onInput={e => set({ color: e.currentTarget.value }, false)}
+                        onChange={e => set({ color: e.currentTarget.value })} title="Foreground colour" />
+                </div>
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '6px' }}>
+                    <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Back</span>
+                    <input type="color" style={{ ...sw, opacity: transparentBg() ? 0.4 : 1 }}
+                        value={transparentBg() ? '#ffffff' : pat()!.background!}
+                        onInput={e => set({ background: e.currentTarget.value }, false)}
+                        onChange={e => set({ background: e.currentTarget.value })} title="Tile background colour" />
+                    <button style={{ ...btn, ...(transparentBg() ? { background: 'var(--primary-color, #3b82f6)', color: '#fff' } : {}) }}
+                        title="Transparent tile background" onClick={() => set({ background: 'transparent' })}>None</button>
+                </div>
+
+                {/* Sliders */}
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
+                    <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Scale</span>
+                    <input type="range" style={{ flex: '1' }} min="0.25" max="4" step="0.05" value={pat()!.scale ?? 1}
+                        onInput={e => set({ scale: parseFloat(e.currentTarget.value) }, false)}
+                        onChange={e => set({ scale: parseFloat(e.currentTarget.value) })} title="Overall motif zoom" />
+                </div>
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
+                    <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Spacing</span>
+                    <input type="range" style={{ flex: '1' }} min="4" max="48" step="1" value={pat()!.spacing ?? 12}
+                        onInput={e => set({ spacing: parseFloat(e.currentTarget.value) }, false)}
+                        onChange={e => set({ spacing: parseFloat(e.currentTarget.value) })} title="Spacing between motif repeats" />
+                </div>
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
+                    <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Thick</span>
+                    <input type="range" style={{ flex: '1' }} min="0.5" max="12" step="0.5" value={pat()!.strokeWidth ?? 2}
+                        onInput={e => set({ strokeWidth: parseFloat(e.currentTarget.value) }, false)}
+                        onChange={e => set({ strokeWidth: parseFloat(e.currentTarget.value) })} title="Line thickness / dot size" />
+                </div>
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
+                    <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Angle</span>
+                    <input type="range" style={{ flex: '1' }} min="0" max="180" step="1" value={pat()!.angle ?? 0}
+                        onInput={e => set({ angle: parseFloat(e.currentTarget.value) }, false)}
+                        onChange={e => set({ angle: parseFloat(e.currentTarget.value) })} title="Pattern rotation (degrees)" />
+                </div>
+
+                <div class="control-row" style={{ gap: '6px', 'margin-top': '6px' }}>
+                    <button style={btn} title="Remove the pattern fill" onClick={() => clearPatternFill(ids())}>Remove pattern</button>
+                </div>
+            </div>
+        </Show>
+    );
+};
+
 const GradientEditor: Component<{ target: any, onChange: (key: string, val: any, targetType?: string, targetId?: string, history?: boolean) => void }> = (props) => {
 
     // Helper to get current stops or defaults
@@ -920,6 +995,13 @@ const PropertyPanel: Component = () => {
             const ids = target.type === 'element' ? [targetId || target.data.id!].filter(Boolean) as string[]
                 : target.type === 'multi' ? [...store.selection] : [];
             if (ids.length) { applyMeshGradient(ids); return; }
+        }
+
+        // Selecting the 'pattern' fill type seeds a default pattern motif.
+        if (key === 'fillStyle' && value === 'pattern') {
+            const ids = target.type === 'element' ? [targetId || target.data.id!].filter(Boolean) as string[]
+                : target.type === 'multi' ? [...store.selection] : [];
+            if (ids.length) { applyPatternFill(ids); return; }
         }
 
         // Gradient preset: apply preset colors and direction
@@ -1758,6 +1840,11 @@ const PropertyPanel: Component = () => {
                                 {/* Gradient-mesh node editor (self-gating: only when a mesh fill is set) */}
                                 <Show when={isElement() && targetData()}>
                                     <MeshEditor el={() => targetData()} />
+                                </Show>
+
+                                {/* Vector pattern editor (self-gating: only when a pattern fill is set) */}
+                                <Show when={isElement() && targetData()}>
+                                    <PatternEditor el={() => targetData()} />
                                 </Show>
 
                                 {/* Layers for elements */}

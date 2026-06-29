@@ -17,8 +17,9 @@ import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
-import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType } from "../types";
 import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos, parseHex, rgbToHex } from "../utils/mesh-gradient";
+import { defaultPatternFill } from "../utils/pattern-fill";
 import { isSolidColor, shiftHexHue, adjustHexLightness, adjustHexSaturation } from "../utils/color-adjust";
 import { getStyleSnapshot } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
@@ -2769,6 +2770,41 @@ export const applyMeshGradient = (ids: string[], rows = 3, cols = 3) => {
     }));
     bumpDirtyRevision();
     showToast('Gradient mesh applied', 'success');
+};
+
+/** Apply a vector pattern fill to the given elements (seeded from each element's
+ *  current fill/stroke colour). Sets fillStyle = 'pattern' and a default motif. */
+export const applyPatternFill = (ids: string[], type: PatternType = 'stripes') => {
+    if (ids.length === 0) { showToast('Pattern: select an object', 'info'); return; }
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), (e: DrawingElement) => ({
+        fillStyle: 'pattern' as const,
+        patternFill: defaultPatternFill(
+            e.patternFill?.color
+            || (e.backgroundColor && e.backgroundColor !== 'transparent' ? e.backgroundColor : (e.strokeColor || '#000000')),
+            (e.patternFill?.type ?? type),
+        ),
+    }));
+    bumpDirtyRevision();
+    showToast('Pattern fill applied', 'success');
+};
+
+/** Merge a partial update into the pattern fill of the given elements. */
+export const setPatternFill = (ids: string[], patch: Partial<PatternFill>, history = true) => {
+    if (ids.length === 0) return;
+    if (history) pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id) && !!e.patternFill, (e: DrawingElement) => ({
+        patternFill: { ...(e.patternFill as PatternFill), ...patch },
+    }));
+    bumpDirtyRevision();
+};
+
+/** Remove the pattern fill, reverting the element(s) to a solid fill. */
+export const clearPatternFill = (ids: string[]) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ fillStyle: 'solid' as const, patternFill: undefined }));
+    bumpDirtyRevision();
 };
 
 /** Change the node-grid size of a mesh fill, preserving colours where possible. */

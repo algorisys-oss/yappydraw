@@ -237,6 +237,37 @@ Y.setMeshSize(4, 4, [id]);                    // grow the grid (colours preserve
                 </p>
             </section>
 
+            {/* ─── PATTERN FILLS ──────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Pattern Fills</h2>
+                <p>
+                    Fill a shape with a <strong>seamless repeating motif</strong> — stripes, grid, dots,
+                    checker or crosshatch — painted in a foreground colour over an optional background. The
+                    pattern tiles in place and is clipped to the shape outline, rendering identically in both
+                    <strong> Sketch</strong> and <strong>Architectural</strong> styles. SVG export emits a real
+                    <code>&lt;pattern&gt;</code> so it stays vector.
+                </p>
+                <h3>How to use it</h3>
+                <p>
+                    Select a shape and set <strong>Fill → Pattern</strong> in the Properties panel. A
+                    <strong> PATTERN</strong> editor appears: pick the <em>Motif</em>, set the foreground
+                    <em> Color</em> and tile <em>Back</em>ground (or <em>None</em> for transparent), and tune
+                    <em> Scale</em>, <em>Spacing</em>, <em>Thick</em>ness and <em>Angle</em>. <em>Remove pattern</em>
+                    reverts to a solid fill.
+                </p>
+                <h3>Example</h3>
+                <pre><code>{`const Y = window.Yappy; Y.clear();
+const id = Y.createRectangle(160, 140, 280, 200, { strokeColor:'#222', backgroundColor:'#fff' });
+Y.applyPatternFill('crosshatch', [id]);                 // stripes | grid | dots | checker | crosshatch
+Y.setPatternFill({ color:'#1d4ed8', scale:1.4, angle:30 }, [id]);`}</code></pre>
+                <p class="tip-box">
+                    <code>applyPatternFill(type)</code>, <code>setPatternFill(&#123; type, color, background, scale,
+                    spacing, strokeWidth, angle &#125;)</code> and <code>clearPatternFill()</code> all default to the
+                    current selection. Patterns are stored on the element (<code>patternFill</code>) and survive
+                    save/load.
+                </p>
+            </section>
+
             {/* ─── IMAGE TRACE ────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Image Trace</h2>

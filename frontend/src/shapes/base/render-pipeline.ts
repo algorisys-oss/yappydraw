@@ -10,6 +10,7 @@ import { drawTextAlongPath, getOutlinePath, isClosedShapeForText } from "../../u
 import { buildFilterString } from "../../utils/image-filter-utils";
 import { getImage } from "../../utils/image-cache";
 import { rasterizeMesh } from "../../utils/mesh-gradient";
+import { rasterizePatternBuffer } from "../../utils/pattern-fill";
 import type { IRenderer } from "../../rendering/IRenderer";
 
 // ── colour helpers (for dark-mode adjustColor) ─────────────────────────────
@@ -255,7 +256,7 @@ export class RenderPipeline {
 
         // Suppress RoughJS fill if complex fill (gradient/dots/image) is active
         // Also use 'solid' fillStyle for RoughJS since it doesn't understand gradient types
-        const isComplexFill = ['linear', 'radial', 'conic', 'dots', 'image', 'mesh'].includes(el.fillStyle as string);
+        const isComplexFill = ['linear', 'radial', 'conic', 'dots', 'image', 'mesh', 'pattern'].includes(el.fillStyle as string);
         if (isComplexFill) {
             fill = undefined;
         }
@@ -293,8 +294,9 @@ export class RenderPipeline {
         const useDots = fillStyle === 'dots';
         const useImage = fillStyle === 'image' && !!el.backgroundImage;
         const useMesh = fillStyle === 'mesh' && !!el.meshGradient;
+        const usePattern = fillStyle === 'pattern' && !!el.patternFill;
 
-        if (!useGradient && !useDots && !useImage && !useMesh) return;
+        if (!useGradient && !useDots && !useImage && !useMesh && !usePattern) return;
 
         renderer.save();
         renderer.translate(cx, cy);
@@ -307,6 +309,12 @@ export class RenderPipeline {
 
         if (useMesh) {
             this.applyMeshFill(renderer, el);
+            renderer.restore();
+            return;
+        }
+
+        if (usePattern) {
+            this.applyPatternFill(renderer, el);
             renderer.restore();
             return;
         }
@@ -405,6 +413,38 @@ export class RenderPipeline {
         // gradient is smooth, so a modest buffer upscales without visible loss.
         const res = (n: number) => Math.max(2, Math.min(256, Math.round(n)));
         const buf = rasterizeMesh(mesh, res(w), res(h));
+        if (!buf) return;
+
+        const geometry = getShapeGeometry(el);
+        if (!geometry) return;
+
+        renderer.save();
+        if (geometry.type === 'path') {
+            renderer.clipPath(geometry.path);
+        } else {
+            renderer.beginPath();
+            this.renderGeometry(renderer, geometry);
+            renderer.clip();
+        }
+        const opacity = el.backgroundOpacity ?? 1;
+        if (opacity !== 1) renderer.globalAlpha = renderer.globalAlpha * opacity;
+        renderer.drawImage(buf, -w / 2, -h / 2, w, h);
+        renderer.restore();
+    }
+
+    /**
+     * Paints a vector pattern fill clipped to the shape outline (fillStyle ===
+     * 'pattern'). The motif is tiled into an element-sized buffer and drawn into
+     * the shape — same strategy as image/mesh fills, so both render styles and the
+     * SVG exporter get it for free. Runs in a space already translated to centre.
+     */
+    private static applyPatternFill(renderer: IRenderer, el: DrawingElement) {
+        const pf = el.patternFill;
+        if (!pf) return;
+        const w = el.width, h = el.height;
+        if (w <= 0 || h <= 0) return;
+
+        const buf = rasterizePatternBuffer(pf, w, h);
         if (!buf) return;
 
         const geometry = getShapeGeometry(el);
