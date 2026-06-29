@@ -36,10 +36,19 @@ export const VectorPathsDoc: Component = () => {
                         <tr><td><strong>Click</strong></td><td>Add a <em>corner</em> anchor (straight segment)</td></tr>
                         <tr><td><strong>Click + drag</strong></td><td>Add a <em>smooth</em> anchor; the drag sets the Bézier handles (curved segment)</td></tr>
                         <tr><td><strong>Click the first anchor</strong></td><td>Close the path into a filled shape</td></tr>
+                        <tr><td><span class="kbd">Shift</span> + drag (while curving)</td><td><strong>Clock Method</strong> — constrain the Bézier handles to 90°/45° for clean, easily-edited curves</td></tr>
                         <tr><td><span class="kbd">Enter</span> / <span class="kbd">Esc</span> / <strong>double-click</strong></td><td>Finish the path open (not closed)</td></tr>
                         <tr><td><span class="kbd">Backspace</span></td><td>Remove the last anchor while still drawing</td></tr>
                     </tbody>
                 </table>
+                <p class="tip-box">
+                    <strong>The Clock Method (90°/45°).</strong> Holding <span class="kbd">Shift</span> while you drag
+                    a handle snaps it straight to 12/3/6/9 o'clock (or the diagonals) — the trick pro illustrators
+                    use to keep curves smooth and predictable. No keyboard? Switch on the <strong>90°/45°</strong>
+                    button in the floating <strong>Pen options bar</strong>, or rest a <strong>second finger</strong>
+                    on the canvas while dragging with the stylus (the same Procreate-style constrain modifier used
+                    for proportional resize).
+                </p>
                 <p class="tip-box">
                     A path carries the usual <strong>stroke</strong> (color / width / style), <strong>fill</strong>
                     (solid or gradient), and <strong>text</strong> properties — set them in the property panel
@@ -61,11 +70,34 @@ export const VectorPathsDoc: Component = () => {
                     <tbody>
                         <tr><td><strong>Drag an anchor</strong></td><td>Move the point (its handles travel with it)</td></tr>
                         <tr><td><strong>Drag a handle</strong></td><td>Reshape the curve (smooth = mirrored, corner = independent)</td></tr>
+                        <tr><td><span class="kbd">Shift</span> + drag a handle</td><td>Constrain the handle to 90°/45° (Clock Method)</td></tr>
                         <tr><td><span class="kbd">Alt</span> + click an anchor</td><td>Convert <em>corner ↔ smooth</em></td></tr>
                         <tr><td><span class="kbd">Alt</span> + click a segment</td><td>Insert a new anchor on the segment</td></tr>
                         <tr><td><span class="kbd">Ctrl</span>/<span class="kbd">⌘</span> + click an anchor</td><td>Delete that anchor</td></tr>
                     </tbody>
                 </table>
+
+                <h3>On a tablet (no keyboard)</h3>
+                <p>
+                    Every node-editing action above has a touch equivalent, so you never need a modifier key
+                    on an iPad or touch device:
+                </p>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Touch gesture</th><th>Result</th><th>Desktop equivalent</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Tap an anchor</strong></td><td>Toggle <em>smooth ↔ corner</em></td><td><span class="kbd">Alt</span>-click</td></tr>
+                        <tr><td><strong>Long-press an anchor</strong></td><td>Menu: <em>Make Smooth/Corner</em>, <em>Delete Anchor</em></td><td><span class="kbd">Alt</span> / <span class="kbd">Ctrl</span>-click</td></tr>
+                        <tr><td><strong>Long-press the outline</strong></td><td>Menu: <em>Insert Point Here</em></td><td><span class="kbd">Alt</span>-click a segment</td></tr>
+                        <tr><td><strong>90°/45° toggle</strong> or <strong>second finger</strong></td><td>Constrain handles (Clock Method)</td><td>Hold <span class="kbd">Shift</span></td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    Tapping an anchor toggles its type; <em>dragging</em> it moves it — a small movement threshold
+                    keeps the two apart, so a deliberate drag never accidentally flips the point.
+                </p>
+
                 <p class="tip-box">
                     Move, resize, rotate, align, snapping, and undo/redo all work on paths exactly as they do
                     for other shapes.

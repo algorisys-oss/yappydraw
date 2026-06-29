@@ -123,7 +123,7 @@ frontend/src/components/file-open-dialog.tsx | typescript | 182 | Component:1 Fi
 frontend/src/components/graphic-styles-panel.css | - | 83 |
 frontend/src/components/graphic-styles-panel.tsx | typescript | 97 | Component:1 draw:18 GraphicStylesPanel:44 startRename:48 commitRename:49
 frontend/src/components/help-dialog.css | - | 184 |
-frontend/src/components/help-dialog.tsx | typescript | 294 | ShortcutEntry:5 ShortcutCategory:10 parseKeys:167 Props:186 HelpDialog:191 handleKeyDown:194
+frontend/src/components/help-dialog.tsx | typescript | 299 | ShortcutEntry:5 ShortcutCategory:10 parseKeys:172 Props:191 HelpDialog:196 handleKeyDown:199
 frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 47 | Component:1 HistoryPanel:13
 frontend/src/components/infra-tool-group.tsx | typescript | 137 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:76 activeTool:83 isActive:84 getDropdownPosition:86
@@ -318,7 +318,7 @@ frontend/src/help-docs/shapes/mindmap-doc.tsx | typescript | 344 | MindmapDoc:8
 frontend/src/help-docs/shapes/sketchnote-doc.tsx | typescript | 370 | SketchnoteDoc:8
 frontend/src/help-docs/shapes/table-doc.tsx | typescript | 741 | TableDoc:7 with:428 with:437
 frontend/src/help-docs/shapes/uml-doc.tsx | typescript | 301 | UmlDoc:8 diagrams:14 with:34 or:49
-frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 189 | VectorPathsDoc:9
+frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 221 | VectorPathsDoc:9
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 236 | WireframingDoc:8
 frontend/src/index.css | - | 453 |
 frontend/src/index.tsx | typescript | 109 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84
