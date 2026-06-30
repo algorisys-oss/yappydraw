@@ -42,6 +42,15 @@
     pointer-events: auto; cursor: pointer; width: 30px; height: 30px; padding: 2px;
     background: var(--bg-secondary, #f3f4f6); border: 1px solid var(--border-color, #ddd); border-radius: 6px;
 }
+.tt-marquee {
+    position: absolute;
+    pointer-events: none;
+    border: 1px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.12);
+    border-radius: 2px;
+    z-index: 2;
+}
+
 .tt-controls .tt-font {
     pointer-events: auto; cursor: pointer; height: 30px; max-width: 110px; padding: 0 4px;
     font-size: 12px; background: var(--bg-secondary, #f3f4f6);

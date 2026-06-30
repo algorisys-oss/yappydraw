@@ -1246,6 +1246,10 @@ export function getContextMenuItems(
             if (tEl && (tEl.type === 'text' || tEl.type === 'richtext')) {
                 items.push({ label: 'Vertical Type', icon: '↕', checked: !!tEl.verticalText, onClick: () => YappyAPI.setTextVertical(tEl.id) });
                 if (!(tEl.text || '').includes('\n')) items.push({ label: 'Touch Type (per-letter)', icon: '🅰', onClick: () => YappyAPI.toggleTouchType(true) });
+            } else if (tEl && tEl.containerText && !tEl.containerText.includes('\n')
+                && !['line', 'arrow', 'organicBranch', 'bezier'].includes(tEl.type)) {
+                // Shape label → Touch Type per-letter on the containerText.
+                items.push({ label: 'Touch Type (per-letter)', icon: '🅰', onClick: () => YappyAPI.toggleTouchType(true) });
             }
         }
         if (selectionCount === 1) {

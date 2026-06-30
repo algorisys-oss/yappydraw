@@ -228,8 +228,8 @@ frontend/src/components/toast.css | - | 109 |
 frontend/src/components/toast.tsx | typescript | 55 | ToastType:5 showToast:15 hideToast:31 Toast:36
 frontend/src/components/toolbar.css | - | 254 |
 frontend/src/components/toolbar.tsx | typescript | 557 | Component:1 VideoProvider:24 Toolbar:67 clampIntoView:74 wrapWidth:109 onResizeDown:114 toggleBrainstormMode:125 onPointerDown:131 onPointerMove:144 onPointerUp:158 handleResize:177 handleToolClick:192 handleVideoInsert:202 handleRightClick:250 handleImageUpload:256
-frontend/src/components/touch-type-overlay.css | - | 49 |
-frontend/src/components/touch-type-overlay.tsx | typescript | 205 | TouchTypeOverlay:26 curT:33 bumpScale:35 bumpRot:36 stop:37 glyphColor:39 setColorLive:40 snapColor:41 glyphFont:43 setFont:44 onFontFile:46 target:55 active:59 toWorld:60 glyphBoxes:63 twoPts:82 startGesture:84 onDown:105 onMove:119 onUp:134 onKey:144 selBox:157
+frontend/src/components/touch-type-overlay.css | - | 58 |
+frontend/src/components/touch-type-overlay.tsx | typescript | 282 | TouchTypeOverlay:29 target:39 active:48 toWorld:49 selArr:50 curT:51 stop:52 twoPts:53 glyphBoxes:57 hitGlyph:82 applyAll:89 bumpScale:90 bumpRot:91 setColorLive:92 snapColor:93 setFont:94 firstSel:95 glyphColor:96 glyphFont:97 onFontFile:100 startGesture:108 onDown:121 onMove:161 onUp:184 onKey:217 selScreens:234 controlPos:235 marqueeRect:236
 frontend/src/components/type-on-path-overlay.css | - | 23 |
 frontend/src/components/type-on-path-overlay.tsx | typescript | 72 | text:13 TypeOnPathOverlay:16 active:18 toWorld:19 pick:21 onMove:33 onDown:34 onKey:46 box:52
 frontend/src/components/uml-tool-group.tsx | typescript | 145 | Component:1 UmlToolGroup:30 handler:37 getActiveUmlTool:47 handleToolClick:56 as:64 as:70 handleRightClick:78 toggleMenu:84 activeTool:91 isActive:92 getDropdownPosition:94
@@ -305,7 +305,7 @@ frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | Artboards
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 134 | EffectsDoc:10 Tools:127
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
-frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 434 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
+frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 437 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 375 | MasksAppearanceTraceDoc:8 tools:14 dropdown:159
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
@@ -334,7 +334,7 @@ frontend/src/rendering/IRenderer.ts | typescript | 108 | ICanvasGradient:14{addC
 frontend/src/rendering/SvgRenderer.ts | typescript | 285 | Mat:19 SvgGradient:33{constructor:37 addColorStop:38} SvgRenderer:41{letterSpacing:64 constructor:69 save:76 restore:77 translate:80 rotate:81 scale:82 transform:83 matrixAttr:85 beginPath:88 closePath:89 moveTo:90 lineTo:91 quadraticCurveTo:92 bezierCurveTo:93 rect:94 roundRect:98 arc:104 ellipse:124 arcTo:134 paint:137 applyStroke:162 emit:171 pathNode:185 fill:187 stroke:188 fillRect:189 strokeRect:190 clip:192 clipPath:193 clipCurrent:194 fillPath:204 strokePath:205 fillText:208 parseFont:227 measureText:236 drawImage:239 drawImageCropped:253 createLinearGradient:258 createRadialGradient:259 createConicGradient:260 createPattern:261 fillStyle:264 strokeStyle:266 setLineDash:268 font:269 globalCompositeOperation:273 shadowColor:275 shadowBlur:277 shadowOffsetX:279 shadowOffsetY:281 filter:283}
 frontend/src/rendering/index.ts | typescript | 2 |
 frontend/src/shapes/base/erase-mask.ts | typescript | 203 | CoreRender:23 acquirePool:41 readLocalPoints:56 paddedWorldAABB:68 applyEraseStrokes:87 renderWithEraseMask:141
-frontend/src/shapes/base/render-pipeline.ts | typescript | 984 | parseColorRgba:18 hslToRgb:36 RenderPipeline:51{adjustColor:63 shadeColor:88 applyTransformations:137 restoreTransformations:197 applyStrokeStyle:204 buildStrokeGradient:228 buildRenderOptions:257 applyComplexFills:298 applyImageFill:365 applyHatchFill:424 drawHatchLines:455 applyMeshFill:489 applyPatternFill:524 applyGradient:550}
+frontend/src/shapes/base/render-pipeline.ts | typescript | 1037 | parseColorRgba:18 hslToRgb:36 RenderPipeline:51{adjustColor:63 shadeColor:88 applyTransformations:137 restoreTransformations:197 applyStrokeStyle:204 buildStrokeGradient:228 buildRenderOptions:257 applyComplexFills:298 applyImageFill:365 applyHatchFill:424 drawHatchLines:455 applyMeshFill:489 applyPatternFill:524 applyGradient:550}
 frontend/src/shapes/base/shape-renderer.ts | typescript | 277 | ShapeRenderer:6{render:11}
 frontend/src/shapes/base/types.ts | typescript | 13 | RenderContext:5 RenderStyle:13
 frontend/src/shapes/register-shapes.ts | typescript | 148 | registerShapes:35
@@ -362,7 +362,7 @@ frontend/src/shapes/renderers/status-renderer.ts | typescript | 285 | StatusRend
 frontend/src/shapes/renderers/sticky-note-renderer.ts | typescript | 83 | StickyNoteRenderer:6{renderArchitectural:7 renderSketch:35 getPoints:46 definePath:67}
 frontend/src/shapes/renderers/symbol-instance-renderer.ts | typescript | 52 | SymbolInstanceRenderer:14{renderArchitectural:15 renderSketch:16 draw:18 definePath:51}
 frontend/src/shapes/renderers/table-renderer.ts | typescript | 1649 | MergedCellRegion:12 TableRenderer:20{renderArchitectural:21 renderSketch:26 renderTable:32}
-frontend/src/shapes/renderers/text-renderer.ts | typescript | 323 | TextRenderer:9{renderArchitectural:10 renderSketch:14 renderCommon:18 renderRichTextElement:218 definePath:320}
+frontend/src/shapes/renderers/text-renderer.ts | typescript | 300 | TextRenderer:9{renderArchitectural:10 renderSketch:14 renderCommon:18 renderRichTextElement:195 definePath:297}
 frontend/src/shapes/renderers/ui-component-renderer.ts | typescript | 80 | UIRenderHelpers:10 UIShapeBounds:10 UIComponentRenderer:12{buildBounds:14 buildHelpers:21 getRoundedRectPath:38 renderArchitectural:47 renderSketch:60 definePath:72}
 frontend/src/shapes/renderers/uml-class-renderer.ts | typescript | 228 | UmlClassLayout:7 UmlClassRenderer:9{renderArchitectural:10 renderSketch:30 definePath:43 drawDividers:47 if:59}
 frontend/src/shapes/renderers/uml-enum-renderer.ts | typescript | 187 | Uml2SectionLayout:7 UmlEnumRenderer:9{renderArchitectural:10 renderSketch:30 definePath:46 drawDivider:50 renderTexts:61 renderSectionText:117 renderScrollArrows:147}
@@ -385,7 +385,7 @@ frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStora
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 6609 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:37 ResolvedTheme:38 AppState:65 HistorySnapshot:464 AlignmentType:3927 DistributionType:3927 SelBBox:5214 LastTransform:5464 RegionPathfinderOp:5768 SelectSimilarMatch:5901 buildPathFromPoly:6154 WorldSub:6243 rdpAnchors:6246 normalizeWorldSubs:6274 makePathFromWorldSubs:6289 elementToWorldSubs:6310 startInkCleanupIfNeeded:6548
+frontend/src/store/app-store.ts | typescript | 6631 | LayoutDirection:8 OutlineNode:8 BooleanOp:9 Poly:9 ShapeFace:9 DistortKind:10 Theme:37 ResolvedTheme:38 AppState:65 HistorySnapshot:464 AlignmentType:3927 DistributionType:3927 CharPatch:4279 CharPatchArg:4282 SelBBox:5236 LastTransform:5486 RegionPathfinderOp:5790 SelectSimilarMatch:5923 buildPathFromPoly:6176 WorldSub:6265 rdpAnchors:6268 normalizeWorldSubs:6296 makePathFromWorldSubs:6311 elementToWorldSubs:6332 startInkCleanupIfNeeded:6570
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
 frontend/src/templates/data/diagrams/mindmap.ts | typescript | 222 |
@@ -437,7 +437,7 @@ frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:
 frontend/src/utils/color-harmony.ts | typescript | 83 | HarmonyType:10 generateTints:19 generateHarmony:29 loadImage:41 extractImagePalette:56
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 433 | Command:22
-frontend/src/utils/context-menu-builder.ts | typescript | 1586 | MergedCellRegion:55 buildSelectByTypeMenu:71 buildSelectBySamePropertyMenu:150 getContextMenuItems:180 buildFormatMenuItems:1417 buildBorderMenuItems:1512
+frontend/src/utils/context-menu-builder.ts | typescript | 1590 | MergedCellRegion:55 buildSelectByTypeMenu:71 buildSelectBySamePropertyMenu:150 getContextMenuItems:180 buildFormatMenuItems:1421 buildBorderMenuItems:1516
 frontend/src/utils/curve-fit.ts | typescript | 38 | Pt:10 catmullRomAnchors:13
 frontend/src/utils/custom-fonts.ts | typescript | 176 | CustomFont:18 loadGoogleLink:34 activate:47 persist:67 initCustomFonts:77 addCustomFontFromFile:104 addGoogleFont:119 removeCustomFont:132 customFontOptions:139
 frontend/src/utils/draggable-panel.ts | typescript | 46 | makeDraggable:11 draggablePanel:41

@@ -706,6 +706,50 @@ export class RenderPipeline {
         this.restoreTransformations(renderer);
     }
 
+    /**
+     * Render a single line of text with Touch-Type per-glyph transforms
+     * (`el.charTransforms`): each glyph keeps its own move/scale/rotate/colour/font.
+     * Shared by the text-element renderer (left-anchored) and shape labels
+     * (centre-anchored). `anchorX` is the left edge for `'left'`, the centre for
+     * `'center'`; `anchorY` is the glyph baseline (vertically centred).
+     */
+    static renderTouchTypeLine(
+        renderer: IRenderer, el: DrawingElement, text: string,
+        anchorX: number, anchorY: number, align: 'left' | 'center', isDarkMode: boolean,
+    ) {
+        const chars = [...text];
+        const baseFont = getFontString(el);
+        const baseColor = el.textColor || el.strokeColor || '#000000';
+        renderer.textAlign = 'center';
+        renderer.textBaseline = 'middle';
+
+        // Measure each glyph in its own (possibly overridden) font to total the width.
+        const widths: number[] = [];
+        let total = 0;
+        for (let i = 0; i < chars.length; i++) {
+            const t = el.charTransforms?.[i];
+            renderer.font = t?.font ? getFontString({ ...el, fontFamily: t.font }) : baseFont;
+            const w = renderer.measureText(chars[i]).width;
+            widths.push(w); total += w;
+        }
+
+        let adv = align === 'center' ? anchorX - total / 2 : anchorX;
+        for (let i = 0; i < chars.length; i++) {
+            const t = el.charTransforms?.[i] || { dx: 0, dy: 0, scale: 1, rot: 0 };
+            renderer.font = t.font ? getFontString({ ...el, fontFamily: t.font }) : baseFont;
+            const w = widths[i];
+            const gx = adv + w / 2;
+            renderer.save();
+            renderer.fillStyle = this.adjustColor(t.color || baseColor, isDarkMode);
+            renderer.translate(gx + (t.dx || 0), anchorY + (t.dy || 0));
+            if (t.rot) renderer.rotate(t.rot);
+            if (t.scale && t.scale !== 1) renderer.scale(t.scale, t.scale);
+            renderer.fillText(chars[i], 0, 0);
+            renderer.restore();
+            adv += w;
+        }
+    }
+
     static renderText(context: RenderContext, cx: number, cy: number) {
         const { renderer, element: el, isDarkMode } = context;
         if (el.isEditing) return; // Don't render text if we're currently editing it
@@ -718,6 +762,15 @@ export class RenderPipeline {
 
         const textStr = el.containerText || el.text;
         if (!textStr) return;
+
+        // Touch Type on a shape label — per-glyph transforms (single line), centred.
+        if (el.charTransforms && el.charTransforms.length && !textStr.includes('\n') && !el.curvedText) {
+            renderer.save();
+            renderer.font = getFontString(el);
+            this.renderTouchTypeLine(renderer, el, textStr, cx, cy, 'center', isDarkMode);
+            renderer.restore();
+            return;
+        }
 
         // Curved Text: wrap the label around the shape's outline instead of
         // centering it inside. Single branch covers every closed shape since

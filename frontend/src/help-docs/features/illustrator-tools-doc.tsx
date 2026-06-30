@@ -330,14 +330,17 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                 <ul class="doc-list">
                     <li><strong>Lens Flare</strong> (right-click canvas → Insert → Lens Flare): a glow + rays + halo
                         rings + ghost reflections, grouped.</li>
-                    <li><strong>Touch Type</strong> (right-click a single-line text → Touch Type): click a glyph and
-                        drag to move it; <span class="kbd">[</span><span class="kbd">]</span> scale and
-                        <span class="kbd">,</span> <span class="kbd">.</span> rotate the selected glyph. On tablets,
-                        use the floating <strong>A−/A+/↺/↻</strong> buttons or <strong>pinch&nbsp;to&nbsp;scale</strong>
-                        and <strong>two-finger&nbsp;twist&nbsp;to&nbsp;rotate</strong>. The <strong>colour swatch</strong>
-                        recolours just that one glyph, and the <strong>font dropdown</strong> sets a per-glyph font
-                        (mix fonts within one word). <strong>Exit</strong> with <span class="kbd">Esc</span> or the
-                        <strong>Done&nbsp;✕</strong> button in the hint bar (works on desktop and tablet).</li>
+                    <li><strong>Touch Type</strong> — per-letter styling on a single-line text element <em>or</em> a
+                        <strong>shape's label</strong> (right-click → Touch Type, or the command palette). <strong>Select
+                        several letters at once</strong>: <span class="kbd">Shift</span>-click to extend a range, or
+                        <strong>drag a box</strong> across glyphs (<span class="kbd">Ctrl/Cmd</span>+<span class="kbd">A</span>
+                        selects all). Then drag to move, <span class="kbd">[</span><span class="kbd">]</span> scale,
+                        <span class="kbd">,</span> <span class="kbd">.</span> rotate, or use the floating
+                        <strong>A−/A+/↺/↻</strong> buttons, <strong>colour swatch</strong> and <strong>font dropdown</strong>
+                        — all applied to every selected glyph. <span class="kbd">Ctrl/⌘</span>-click adds any individual
+                        letter (discontiguous). On tablets, <strong>pinch&nbsp;to&nbsp;scale</strong> and
+                        <strong>two-finger&nbsp;twist</strong> work too. <strong>Exit</strong> by clicking outside the
+                        element, pressing <span class="kbd">Esc</span>, or <strong>Done&nbsp;✕</strong>.</li>
                     <li><strong>Custom &amp; Google fonts</strong>: in the Font picker (property panel or the Touch Type
                         dropdown) choose <strong>＋ Add font…</strong> to upload a <code>.ttf/.otf/.woff/.woff2</code>,
                         or <strong>🔍 Google Fonts…</strong> to search a curated list of popular Google Fonts and add one

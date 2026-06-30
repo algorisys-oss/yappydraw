@@ -4271,19 +4271,41 @@ export const setChartData = (id: string, values: number[], labels?: string[]) =>
 };
 
 /** Touch Type — set/merge a per-character transform on a text element (initialising the array). */
-export const setCharTransform = (id: string, idx: number, patch: Partial<{ dx: number; dy: number; scale: number; rot: number; color: string; font: string }>, record = false) => {
+/** The Touch-Type-editable text of an element: `text` for text/richtext, else the
+ *  shape's `containerText` label. */
+export const touchTypeText = (el: DrawingElement): string =>
+    (el.type === 'text' || el.type === 'richtext') ? (el.text || '') : (el.containerText || '');
+
+type CharPatch = Partial<{ dx: number; dy: number; scale: number; rot: number; color: string; font: string }>;
+/** Per-glyph patch: either a fixed patch or `(index, current) => patch` for
+ *  relative edits (move/scale/rotate keep each glyph's own base). */
+type CharPatchArg = CharPatch | ((i: number, cur: any) => CharPatch);
+
+const _applyCharTransforms = (id: string, indices: number[], patch: CharPatchArg, record: boolean) => {
     const el = store.elements.find(e => e.id === id);
-    if (!el || (el.type !== 'text' && el.type !== 'richtext')) return;
-    const len = [...(el.text || '')].length;
-    if (idx < 0 || idx >= len) return;
+    if (!el) return;
+    const len = [...touchTypeText(el)].length;
+    const valid = indices.filter(i => i >= 0 && i < len);
+    if (valid.length === 0) return;
     const base = (el.charTransforms && el.charTransforms.length === len)
         ? el.charTransforms.map(t => ({ ...t }))
         : Array.from({ length: len }, () => ({ dx: 0, dy: 0, scale: 1, rot: 0 }));
-    base[idx] = { ...base[idx], ...patch };
+    for (const i of valid) {
+        const p = typeof patch === 'function' ? patch(i, base[i]) : patch;
+        base[i] = { ...base[i], ...p };
+    }
     if (record) pushToHistory();
     setStore('elements', e => e.id === id, { charTransforms: base } as any);
     bumpDirtyRevision();
 };
+
+export const setCharTransform = (id: string, idx: number, patch: CharPatch, record = false) =>
+    _applyCharTransforms(id, [idx], patch, record);
+
+/** Apply a char transform to MANY glyph indices in one history step (multi-select).
+ *  `patch` may be a `(index, current) => patch` function for per-glyph relative edits. */
+export const setCharTransforms = (id: string, indices: number[], patch: CharPatchArg, record = false) =>
+    _applyCharTransforms(id, indices, patch, record);
 
 /** Reset Touch Type transforms (back to plain text). */
 export const clearCharTransforms = (id: string) => {
