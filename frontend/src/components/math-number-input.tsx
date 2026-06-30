@@ -1,5 +1,6 @@
 import { type Component, createSignal, createEffect } from "solid-js";
 import { evaluateNumericExpression } from "../utils/eval-expr";
+import "./math-number-input.css";
 
 /**
  * Numeric field that accepts arithmetic expressions (Illustrator "math in fields"):
@@ -57,36 +58,49 @@ const MathNumberInput: Component<{
         if (Number.isFinite(n)) props.onCommit(clamp(n));
     };
 
-    const step = (dir: 1 | -1, e: KeyboardEvent) => {
+    // Step the value by ±step (×10 with Shift, ×0.1 with Alt/Ctrl). Shared by the
+    // Arrow Up/Down keys and the visible spinner buttons.
+    const bump = (dir: 1 | -1, big = false, fine = false) => {
         const base = props.value ?? 0;
-        const amt = (props.step ?? 1) * (e.shiftKey ? 10 : (e.altKey || e.ctrlKey || e.metaKey) ? 0.1 : 1);
+        const amt = (props.step ?? 1) * (big ? 10 : fine ? 0.1 : 1);
         props.onEditStart?.();
         const next = clamp(round(base + dir * amt));
         props.onCommit(next);
         setText(String(next));
     };
+    const step = (dir: 1 | -1, e: KeyboardEvent) => bump(dir, e.shiftKey, e.altKey || e.ctrlKey || e.metaKey);
 
     return (
-        <input
-            type="text"
-            inputmode="text"
-            autocomplete="off"
-            spellcheck={false}
-            class={props.class}
-            title={props.title}
-            value={text()}
-            placeholder={props.value === undefined ? '—' : undefined}
-            onFocus={() => { setEditing(true); props.onEditStart?.(); }}
-            onInput={(e) => { const v = e.currentTarget.value; setText(v); liveCommit(v); }}
-            onBlur={commit}
-            onKeyDown={(e) => {
-                e.stopPropagation();           // don't let canvas hotkeys steal keys
-                if (e.key === 'Enter' || e.key === 'Tab') { commit(); if (e.key === 'Enter') e.currentTarget.blur(); }
-                else if (e.key === 'Escape') { setEditing(false); setText(display()); e.currentTarget.blur(); }
-                else if (e.key === 'ArrowUp') { e.preventDefault(); step(1, e); }
-                else if (e.key === 'ArrowDown') { e.preventDefault(); step(-1, e); }
-            }}
-        />
+        <span class="mni-wrap">
+            <input
+                type="text"
+                inputmode="text"
+                autocomplete="off"
+                spellcheck={false}
+                class={props.class}
+                title={props.title}
+                value={text()}
+                placeholder={props.value === undefined ? '—' : undefined}
+                onFocus={() => { setEditing(true); props.onEditStart?.(); }}
+                onInput={(e) => { const v = e.currentTarget.value; setText(v); liveCommit(v); }}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                    e.stopPropagation();           // don't let canvas hotkeys steal keys
+                    if (e.key === 'Enter' || e.key === 'Tab') { commit(); if (e.key === 'Enter') e.currentTarget.blur(); }
+                    else if (e.key === 'Escape') { setEditing(false); setText(display()); e.currentTarget.blur(); }
+                    else if (e.key === 'ArrowUp') { e.preventDefault(); step(1, e); }
+                    else if (e.key === 'ArrowDown') { e.preventDefault(); step(-1, e); }
+                }}
+            />
+            {/* Visible spinner. preventDefault keeps focus on the input.
+                Shift = ×10, Alt/Ctrl = ×0.1 (same as the Arrow keys). */}
+            <span class="mni-spin">
+                <button type="button" tabindex={-1} class="mni-btn" title="Increase (↑ · Shift ×10)"
+                    onPointerDown={(e) => { e.preventDefault(); bump(1, e.shiftKey, e.altKey || e.ctrlKey || e.metaKey); }}>▴</button>
+                <button type="button" tabindex={-1} class="mni-btn" title="Decrease (↓ · Shift ×10)"
+                    onPointerDown={(e) => { e.preventDefault(); bump(-1, e.shiftKey, e.altKey || e.ctrlKey || e.metaKey); }}>▾</button>
+            </span>
+        </span>
     );
 };
 

@@ -138,7 +138,8 @@ frontend/src/components/live-paint-overlay.css | - | 27 |
 frontend/src/components/live-paint-overlay.tsx | typescript | 66 | LivePaintOverlay:14 active:25 toWorld:26 onDown:28 onMove:35 onKey:51
 frontend/src/components/load-export-dialog.css | - | 337 |
 frontend/src/components/load-export-dialog.tsx | typescript | 308 | Component:1 LoadExportDialogProps:9 LoadExportDialog:27 handleKeyDown:45 handleLoadJson:61
-frontend/src/components/math-number-input.tsx | typescript | 93 | Component:1 display:31 round:35 clamp:36 commit:42 liveCommit:53 step:60
+frontend/src/components/math-number-input.css | - | 55 |
+frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 display:32 round:36 clamp:37 commit:43 liveCommit:54 bump:63 step:71
 frontend/src/components/measure-overlay.css | - | 46 |
 frontend/src/components/measure-overlay.tsx | typescript | 78 | MeasureOverlay:11 toWorld:16 onDown:18 onMove:25 onUp:30 onKey:35 seg:44
 frontend/src/components/menu.css | - | 278 |
