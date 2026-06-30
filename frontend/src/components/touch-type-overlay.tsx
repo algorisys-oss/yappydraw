@@ -79,9 +79,28 @@ export const TouchTypeOverlay = () => {
         return out;
     };
 
+    // Span-based hit-test: a click anywhere inside a glyph's column (its x-range)
+    // and within the text's vertical band selects it — far more forgiving than the
+    // old distance-to-centre test, which missed when you clicked high/low on a tall
+    // letter (the cause of "sometimes selects, sometimes doesn't"). Falls back to the
+    // nearest glyph centre within a loose radius for clicks just past the ends.
     const hitGlyph = (w: { x: number; y: number }) => {
-        let pick = -1, pd = Infinity;
-        for (const b of glyphBoxes()) { const d = Math.hypot(b.cx - w.x, b.cy - w.y); if (d < Math.max(b.w, 14) && d < pd) { pd = d; pick = b.i; } }
+        const el = target(); if (!el) return -1;
+        const fs = el.fontSize || 28;
+        const halfH = Math.max(fs * 0.75, 14);   // text row band
+        let pick = -1, best = Infinity;
+        for (const b of glyphBoxes()) {
+            const dx = Math.abs(w.x - b.cx), dy = Math.abs(w.y - b.cy);
+            const halfW = Math.max(b.w / 2, 7) + 3;
+            if (dx <= halfW && dy <= halfH && dx < best) { best = dx; pick = b.i; }
+        }
+        if (pick < 0) { // loose fallback near the ends / between widely-moved glyphs
+            let pd = Infinity;
+            for (const b of glyphBoxes()) {
+                const d = Math.hypot(b.cx - w.x, b.cy - w.y);
+                if (d < Math.max(b.w, 18) && d < pd) { pd = d; pick = b.i; }
+            }
+        }
         return pick;
     };
 
@@ -237,7 +256,7 @@ export const TouchTypeOverlay = () => {
 
     return (
         <Show when={active()}>
-            <div class="tt-overlay" onPointerDown={onDown}>
+            <div class="tt-overlay" onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>
                 <svg class="tt-svg">
                     <For each={selScreens()}>{(s) => <circle cx={s.x} cy={s.y} r={13} class="tt-sel" />}</For>
                 </svg>
