@@ -1,0 +1,86 @@
+.gf-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2200;
+    animation: gf-fade 0.15s ease-out;
+}
+@keyframes gf-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.gf-modal {
+    width: min(440px, 92vw);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.gf-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+.gf-header h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.gf-close { border: none; background: transparent; cursor: pointer; color: var(--text-secondary); padding: 2px; }
+.gf-close:hover { color: var(--text-primary); }
+
+.gf-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+.gf-search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+.gf-clear { border: none; background: transparent; cursor: pointer; font-size: 16px; color: var(--text-secondary); }
+
+.gf-list {
+    overflow-y: auto;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.gf-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text-primary);
+}
+.gf-item:hover { background: var(--bg-surface); border-color: var(--border-color); }
+.gf-name { font-size: 13px; font-weight: 500; }
+.gf-sample { font-size: 18px; color: var(--text-secondary); white-space: nowrap; }
+.gf-empty { padding: 16px; text-align: center; color: var(--text-secondary); font-size: 13px; }
+
+.gf-footer {
+    padding: 8px 14px;
+    border-top: 1px solid var(--border-color);
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+}

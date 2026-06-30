@@ -88,7 +88,7 @@ frontend/src/components/ai-slides-dialog.css | - | 350 |
 frontend/src/components/ai-slides-dialog.tsx | typescript | 278 | Component:5 GeneratePresResult:7 AISlidesDialogProps:12 AISlidesDialog:47 canGenerate:57 handleKeyDown:61 handleGenerate:79 openSettings:113 activeProviderLabel:118
 frontend/src/components/animation-panel.tsx | typescript | 1549 | Component:1 StaggerConfig:5 getPresetsForType:67 getKeyframeDefaults:139 AnimationPanel:188 toggleExpanded:207 addPreset:216 addPathAnimation:238 addMorphAnimation:259 addRotateAnimation:279 addAutoSpinAnimation:299 addKeyframeAnimation:319 removeAnimation:340 updateAnimProperty:348 handleReorder:355 handlePlay:362 handleStop:369 handlePlayStagger:376 handleApplyStagger:440 handleClearStagger:468 kfAnim:1334 keyframes:1335 updateKeyframe:1337 addKeyframe:1343 removeKeyframe:1354 isColorProp:1361 propStep:1363 propHint:1371
 frontend/src/components/architecture-tool-group.css | - | 50 |
-frontend/src/components/architecture-tool-group.tsx | typescript | 201 | Component:1 Tool:17 Section:18 ArchitectureToolGroup:86 handler:96 isActive:106 activeTool:107 activate:116 handleToolClick:123 handleRightClick:137 toggleMenu:143 getDropdownPosition:148
+frontend/src/components/architecture-tool-group.tsx | typescript | 228 | Component:1 Tool:19 Section:20 ArchitectureToolGroup:113 handler:123 isActive:133 activeTool:134 activate:143 handleToolClick:150 handleRightClick:164 toggleMenu:170 getDropdownPosition:175
 frontend/src/components/artboard-overlay.css | - | 97 |
 frontend/src/components/artboard-overlay.tsx | typescript | 149 | HandleKey:15 ArtboardOverlay:18 activeId:19 scale:22 w2sx:23 w2sy:24 startDrag:28 onMove:38 onUp:56 onKey:62 onWinDown:66 rect:82 r:93 isActive:94 hx:130 hy:131
 frontend/src/components/blob-brush-overlay.css | - | 24 |
@@ -122,6 +122,8 @@ frontend/src/components/export-dialog.css | - | 147 |
 frontend/src/components/export-dialog.tsx | typescript | 144 | Component:1 ExportDialogProps:8 ExportDialog:13 handleKeyDown:31 handleExport:42
 frontend/src/components/file-open-dialog.css | - | 108 |
 frontend/src/components/file-open-dialog.tsx | typescript | 182 | Component:1 FileOpenDialogProps:7 FileOpenDialog:13 fetchFiles:21 handleDelete:40 handleKeyDown:55 handleMouseMove:91
+frontend/src/components/google-fonts-dialog.css | - | 86 |
+frontend/src/components/google-fonts-dialog.tsx | typescript | 87 | Component:1 GoogleFontsDialogProps:7 GoogleFontsDialog:19 pick:32 previewLink:39
 frontend/src/components/graphic-styles-panel.css | - | 83 |
 frontend/src/components/graphic-styles-panel.tsx | typescript | 97 | Component:1 draw:18 GraphicStylesPanel:44 startRename:48 commitRename:49
 frontend/src/components/help-dialog.css | - | 184 |
@@ -161,7 +163,7 @@ frontend/src/components/player-app.css | - | 28 |
 frontend/src/components/player-app.tsx | typescript | 112 | Window:15 PlayerApp:20
 frontend/src/components/presentation-controls.tsx | typescript | 226 | Component:1 PresentationControls:6 resetHideTimeout:10 handleNext:37 handlePrev:42
 frontend/src/components/property-panel.css | - | 778 |
-frontend/src/components/property-panel.tsx | typescript | 2019 | Component:1 PropertyConfig:18 isMixed:38 templates:61 handleClickOutside:63 handlePresent:118 calls:207 SlideActions:274 handlePreviewTransition:275 AlignmentControls:291 gapVal:293 hasOptions:331 activePaletteId:336 activePalette:337 paletteSwatches:339 swatches:341 ap:434 fills:435 strokes:436 commit:437 editFill:443 editStroke:444 move:445 patValue:455 onPatChange:456 sg:502 stops:503 setSG:504 editStop:505 mesh:533 ids:534 row:553 col:554 pat:589 ids:590 transparentBg:594 isCustom:595 updateStops:702 handleBarMouseDown:707 handleThumbMouseDown:724 onMove:729 onUp:739 PropertyPanel:844 handleChange:1009 seeds:1029 seeds:1036 getPropertyValue:1287 handleDelete:1363 renderControl:1370 colorVal:1373 sliderVal:1388 sliderDisplay:1389 filteredOptions:1419 selectVal:1430 applyVal:1432 isDisabled:1475 toggleVal:1483 inputVal:1499 textareaVal:1518 appendLine:1520 imgVal:1550 commit:1551 onFile:1553 numVal:1594 isSearching:1618 toggleGroup:1649 handleContentScroll:1659
+frontend/src/components/property-panel.tsx | typescript | 2036 | Component:1 PropertyConfig:19 isMixed:39 templates:62 handleClickOutside:64 handlePresent:119 calls:208 SlideActions:275 handlePreviewTransition:276 AlignmentControls:292 gapVal:294 hasOptions:332 activePaletteId:337 activePalette:338 paletteSwatches:340 swatches:342 ap:435 fills:436 strokes:437 commit:438 editFill:444 editStroke:445 move:446 patValue:456 onPatChange:457 sg:503 stops:504 setSG:505 editStop:506 mesh:534 ids:535 row:554 col:555 pat:590 ids:591 transparentBg:595 isCustom:596 updateStops:703 handleBarMouseDown:708 handleThumbMouseDown:725 onMove:730 onUp:740 PropertyPanel:845 handleChange:1010 seeds:1030 seeds:1037 getPropertyValue:1288 handleDelete:1364 renderControl:1371 colorVal:1374 sliderVal:1389 sliderDisplay:1390 filteredOptions:1420 selectVal:1431 applyVal:1433 isDisabled:1478 toggleVal:1486 inputVal:1502 textareaVal:1521 appendLine:1523 imgVal:1553 commit:1554 onFile:1556 numVal:1597 applyFontKey:1621 isSearching:1628 toggleGroup:1659 handleContentScroll:1669
 frontend/src/components/puppet-warp-overlay.css | - | 25 |
 frontend/src/components/puppet-warp-overlay.tsx | typescript | 96 | PuppetWarpOverlay:12 target:16 active:17 toWorld:18 pinWorld:21 hitPin:27 onDown:36 onMove:57 onUp:64 onKey:70 pinDots:75
 frontend/src/components/quick-toolbar.css | - | 503 |
@@ -225,7 +227,7 @@ frontend/src/components/timelapse-player.tsx | typescript | 173 | Component:1 Ti
 frontend/src/components/toast.css | - | 109 |
 frontend/src/components/toast.tsx | typescript | 55 | ToastType:5 showToast:15 hideToast:31 Toast:36
 frontend/src/components/toolbar.css | - | 254 |
-frontend/src/components/toolbar.tsx | typescript | 561 | Component:1 VideoProvider:25 Toolbar:68 clampIntoView:75 wrapWidth:110 onResizeDown:115 toggleBrainstormMode:126 onPointerDown:132 onPointerMove:145 onPointerUp:159 handleResize:178 handleToolClick:193 handleVideoInsert:203 handleRightClick:251 handleImageUpload:257
+frontend/src/components/toolbar.tsx | typescript | 557 | Component:1 VideoProvider:24 Toolbar:67 clampIntoView:74 wrapWidth:109 onResizeDown:114 toggleBrainstormMode:125 onPointerDown:131 onPointerMove:144 onPointerUp:158 handleResize:177 handleToolClick:192 handleVideoInsert:202 handleRightClick:250 handleImageUpload:256
 frontend/src/components/touch-type-overlay.css | - | 49 |
 frontend/src/components/touch-type-overlay.tsx | typescript | 205 | TouchTypeOverlay:26 curT:33 bumpScale:35 bumpRot:36 stop:37 glyphColor:39 setColorLive:40 snapColor:41 glyphFont:43 setFont:44 onFontFile:46 target:55 active:59 toWorld:60 glyphBoxes:63 twoPts:82 startGesture:84 onDown:105 onMove:119 onUp:134 onKey:144 selBox:157
 frontend/src/components/type-on-path-overlay.css | - | 23 |
@@ -303,7 +305,7 @@ frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | Artboards
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 134 | EffectsDoc:10 Tools:127
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
-frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 433 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
+frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 434 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 375 | MasksAppearanceTraceDoc:8 tools:14 dropdown:159
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
@@ -437,7 +439,7 @@ frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:2
 frontend/src/utils/command-registry.ts | typescript | 427 | Command:22
 frontend/src/utils/context-menu-builder.ts | typescript | 1586 | MergedCellRegion:55 buildSelectByTypeMenu:71 buildSelectBySamePropertyMenu:150 getContextMenuItems:180 buildFormatMenuItems:1417 buildBorderMenuItems:1512
 frontend/src/utils/curve-fit.ts | typescript | 38 | Pt:10 catmullRomAnchors:13
-frontend/src/utils/custom-fonts.ts | typescript | 109 | CustomFont:18 activate:33 persist:45 initCustomFonts:55 addCustomFontFromFile:82 removeCustomFont:97 customFontOptions:104
+frontend/src/utils/custom-fonts.ts | typescript | 176 | CustomFont:18 loadGoogleLink:34 activate:47 persist:67 initCustomFonts:77 addCustomFontFromFile:104 addGoogleFont:119 removeCustomFont:132 customFontOptions:139
 frontend/src/utils/draggable-panel.ts | typescript | 46 | makeDraggable:11 draggablePanel:41
 frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperationParams:23 getOperationsForType:79 parseValues:87 bstInsert:99 bstRemove:138 nodeAt:154 bstDeleteAt:159 moveSubtreeUp:192 collectRelative:211 clearSubtree:219 relToAbs:227 simpleHash:247 hashTablePut:259 hashTableRemove:270 animateDsOperation:287 executeDsOperation:350 abortDsAlgorithm:544 isDsAlgorithmRunning:551 setDsAnimationSpeed:555 getDsAnimationSpeed:559 clearDsHighlights:563 animateDsStep:580 compareValues:604 bubbleSort:613 selectionSort:662 insertionSort:714 linearSearch:765 binarySearch:796 bfsTraversal:853 dfsInorderTraversal:882 dfsPreorderTraversal:912 executeDsSortSearch:944
 frontend/src/utils/element-transforms.ts | typescript | 362 | changeElementType:4 isConnectorType:11 getTransformOptions:99 getShapeIcon:153 getShapeTooltip:343 getCurveTypeOptions:347 getCurveTypeIcon:351 getCurveTypeTooltip:360
@@ -499,7 +501,7 @@ frontend/src/utils/svg-paint.ts | typescript | 133 | svgPatternDef:19 splitAlpha
 frontend/src/utils/table-utils.ts | typescript | 1207 | CellRect:8 defaultTableData:22 resizeTableData:29 defaultColWidths:48 defaultRowHeights:55 computeCellRects:62 hitTestTableCell:112 hitTestColEdge:130 hitTestRowEdge:161 reorderColumns:190 insertTableRow:209 deleteTableRow:226 insertTableColumn:242 deleteTableColumn:262 deleteTableColumns:282 getFullColumnSelection:303 sortTableData:317 wrapText:343 measureColumnOptimalWidth:419 parseClipboardTableData:458 unmergeCells:643 normalizeCellSelection:659 isMultiCellSelection:673 adjustMergedCellsOnRowInsert:684 adjustMergedCellsOnRowDelete:701 adjustMergedCellsOnColInsert:724 adjustMergedCellsOnColDelete:741 getCellFormat:773 setCellFormat:785 setCellFormatRange:814 formatCellValue:838 formatNumber:865 formatCurrency:883 formatPercentage:894 formatDate:903 parseFormattedValue:960 getCellBorders:993 setCellBorders:1005 setBorderForRange:1035 getBorderWidth:1110 getNextCell:1150 isPrintableKey:1205
 frontend/src/utils/text-on-path.ts | typescript | 251 | PathPoint:18 TextPathOptions:20 ArcTable:33 buildArcTable:35 locateAtDistance:45 drawTextAlongPath:70 isClosedShapeForText:137 ellipseOutline:141 regularPolygonOutline:150 getOutlinePath:160 sampleBezier:186 getElementTextPath:203
 frontend/src/utils/text-to-outlines.ts | typescript | 160 | OutlineResult:94
-frontend/src/utils/text-utils.ts | typescript | 332 | TextMetrics:5 VerticalTextLayout:172
+frontend/src/utils/text-utils.ts | typescript | 342 | TextMetrics:5 VerticalTextLayout:182
 frontend/src/utils/timelapse-manager.ts | typescript | 297 | TimelapseManifest:28 VideoFormat:30 newRecordingId:48 toBlobAsync:53 exportTimelapse:65 renderFrame:120 setupTimelapse:166
 frontend/src/utils/tool-handlers/canvas-event-handlers.ts | typescript | 281 | CanvasEventContext:19 handleDragOver:27 handleDrop:36 applyAssetAtClientPoint:63 any:120 as:120 WheelContext:156 handleUmlSectionScroll:163 handleWheel:234
 frontend/src/utils/tool-handlers/draw-handler.ts | typescript | 612 | drawOnDown:74 drawOnMove:310 drawOnUp:398 normalizeOrganicBranch:587

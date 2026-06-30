@@ -13,7 +13,6 @@ import ArchitectureToolGroup from "./architecture-tool-group";
 
 import WireframeToolGroup from "./wireframe-tool-group";
 import MindmapToolGroup from "./mindmap-tool-group";
-import UmlToolGroup from "./uml-tool-group";
 
 import StatusToolGroup from "./status-tool-group";
 import DataMetricsToolGroup from "./data-metrics-tool-group";
@@ -482,9 +481,6 @@ const Toolbar: Component = () => {
 
                     {/* Data Structures (Array, Stack, Queue, LinkedList, BinaryTree, HashTable) */}
                     <DsToolGroup />
-
-                    {/* UML Tool Group (Class, Actor, UseCase) */}
-                    <UmlToolGroup />
 
                     {/* BPMN Tool Group (Events, Gateways, Activities, Artifacts) */}
                     <BpmnToolGroup />

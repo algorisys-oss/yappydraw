@@ -6,6 +6,8 @@ import {
     Server, Shield, User, Zap, Router, Globe, Shuffle, Rows, ChevronDown, Database,
     Binary, HardDrive, Package, Box, Cuboid, PackageOpen, Circle, CircleDot, Minus,
     GripVertical, Layers, Code, Network,
+    Layout, Disc, List, FileText, Folder, Component as ComponentIcon,
+    RectangleHorizontal, ArrowDown, Frame, ChevronRight, ChevronLeft, CircleDashed,
 } from "lucide-solid";
 import {
     KubernetesIcon, ContainerIcon, ApiGatewayIcon, CdnIcon, StorageBlobIcon,
@@ -76,6 +78,31 @@ const sections: Section[] = [
             { type: 'stateEnd', icon: CircleDot, label: 'Final State' },
             { type: 'stateSync', icon: Minus, label: 'Sync Bar' },
             { type: 'activationBar', icon: GripVertical, label: 'Activation Bar' },
+        ],
+    },
+    {
+        title: 'UML Structure',
+        tools: [
+            { type: 'umlClass', icon: Layout, label: 'Class' },
+            { type: 'umlInterface', icon: Disc, label: 'Interface' },
+            { type: 'umlEnum', icon: List, label: 'Enum' },
+            { type: 'umlPackage', icon: Folder, label: 'Package' },
+            { type: 'umlComponent', icon: ComponentIcon, label: 'Component' },
+            { type: 'umlNote', icon: FileText, label: 'Note' },
+        ],
+    },
+    {
+        title: 'UML Behavior',
+        tools: [
+            { type: 'umlActor', icon: User, label: 'Actor' },
+            { type: 'umlUseCase', icon: Circle, label: 'Use Case' },
+            { type: 'umlState', icon: RectangleHorizontal, label: 'State' },
+            { type: 'umlLifeline', icon: ArrowDown, label: 'Lifeline' },
+            { type: 'umlFragment', icon: Frame, label: 'Fragment' },
+            { type: 'umlSignalSend', icon: ChevronRight, label: 'Signal Send' },
+            { type: 'umlSignalReceive', icon: ChevronLeft, label: 'Signal Receive' },
+            { type: 'umlProvidedInterface', icon: CircleDot, label: 'Provided Interface' },
+            { type: 'umlRequiredInterface', icon: CircleDashed, label: 'Required Interface' },
         ],
     },
 ];

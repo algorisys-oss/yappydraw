@@ -21,15 +21,25 @@ const fontFamilyMap: Record<string, string> = {
 };
 
 /**
+ * Custom (runtime-registered) font families live on a globalThis-backed map so a
+ * registration is visible to EVERY module instance — even if a bundler/dev-server
+ * ends up loading two copies of this module. Built-ins stay in the local map.
+ */
+const customFamilyMap: Record<string, string> =
+    ((globalThis as any).__yappyCustomFontMap ||= {});
+
+/**
  * Register a font key → CSS family-stack. Used by the custom-font loader so
  * external fonts resolve exactly like the built-ins (see utils/custom-fonts.ts).
  */
 export const registerFontFamily = (key: string, cssFamily: string): void => {
     fontFamilyMap[key] = cssFamily;
+    customFamilyMap[key] = cssFamily;
 };
 
 export const resolveFontFamily = (fontFamily?: string): string => {
-    return fontFamilyMap[fontFamily || 'hand-drawn'] || fontFamilyMap['hand-drawn'];
+    const key = fontFamily || 'hand-drawn';
+    return fontFamilyMap[key] || customFamilyMap[key] || fontFamilyMap['hand-drawn'];
 };
 
 /** Reverse-lookup: map a resolved CSS font-family string back to an internal key */

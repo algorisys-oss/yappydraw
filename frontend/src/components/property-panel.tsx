@@ -3,6 +3,7 @@ import { draggablePanel } from '../utils/draggable-panel';
 import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import { customFontOptions, addCustomFontFromFile } from "../utils/custom-fonts";
+import GoogleFontsDialog from "./google-fonts-dialog";
 import type { Slide } from "../types/slide-types";
 import type { DrawingElement } from "../types";
 import {
@@ -1443,6 +1444,7 @@ const PropertyPanel: Component = () => {
                                 const val = e.currentTarget.value;
                                 if (val === '__mixed__') return;
                                 if (val === '__add_font__') { e.currentTarget.value = String(selectVal() ?? prop.defaultValue ?? ''); fontFileInput?.click(); return; }
+                                if (val === '__google_fonts__') { e.currentTarget.value = String(selectVal() ?? prop.defaultValue ?? ''); setGoogleFontsOpen(true); return; }
                                 applyVal(val);
                             }}
                         >
@@ -1453,6 +1455,7 @@ const PropertyPanel: Component = () => {
                                 {(opt) => <option value={opt.value ?? ''}>{opt.label}</option>}
                             </For>
                             <Show when={isFontPicker}>
+                                <option value="__google_fonts__">🔍 Google Fonts…</option>
                                 <option value="__add_font__">＋ Add font…</option>
                             </Show>
                         </select>
@@ -1613,6 +1616,13 @@ const PropertyPanel: Component = () => {
 
 
     // Group properties
+    // Google Fonts browse dialog (opened from the font picker).
+    const [googleFontsOpen, setGoogleFontsOpen] = createSignal(false);
+    const applyFontKey = (fontKey: string) => {
+        const target = activeTarget();
+        handleChange('fontFamily', fontKey, target?.type, target?.type === 'element' ? target?.data?.id : undefined);
+    };
+
     // Property search: filter the visible controls by label / key / group.
     const [propSearch, setPropSearch] = createSignal('');
     const isSearching = () => propSearch().trim().length > 0;
@@ -1924,6 +1934,13 @@ const PropertyPanel: Component = () => {
                                 <Show when={isElement() && targetData() && !groupedProperties()['background'] && !isSearching()}>
                                     <AppearanceEditor el={() => targetData()} />
                                 </Show>
+
+                                {/* Google Fonts browse dialog (opened from the Font picker) */}
+                                <GoogleFontsDialog
+                                    isOpen={googleFontsOpen()}
+                                    onClose={() => setGoogleFontsOpen(false)}
+                                    onPick={applyFontKey}
+                                />
 
                                 {/* Gradient-mesh node editor (self-gating: only when a mesh fill is set) */}
                                 <Show when={isElement() && targetData()}>
