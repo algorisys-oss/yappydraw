@@ -324,6 +324,68 @@ r => s "Elbow"`}</code></pre>
                 </table>
             </section>
 
+            {/* Sequence Diagrams */}
+            <section class="doc-section">
+                <h2>Sequence Diagrams</h2>
+                <p>
+                    With <code>layout: sequence</code>, participants become lifelines (or actors)
+                    laid out left-to-right, and edges become time-ordered messages flowing top to
+                    bottom. Beyond plain messages you can add activation bars, combined fragments
+                    (loop / alt / opt / par), notes and auto-numbering.
+                </p>
+
+                <h3>Message arrows</h3>
+                <table class="api-table">
+                    <thead><tr><th>Operator</th><th>Meaning</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>-&gt;&gt;</code></td><td>Synchronous call — solid line, filled arrowhead</td></tr>
+                        <tr><td><code>--&gt;&gt;</code></td><td>Reply / return — dashed line, filled arrowhead</td></tr>
+                        <tr><td><code>-&gt;</code> / <code>--&gt;</code></td><td>Open arrow — solid / dashed</td></tr>
+                        <tr><td><code>a -&gt;&gt; a "label"</code></td><td>Self message (loops back on the same lifeline)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Structure keywords</h3>
+                <table class="api-table">
+                    <thead><tr><th>Keyword</th><th>Effect</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>autonumber</code></td><td>Prefix every message with an incrementing number</td></tr>
+                        <tr><td><code>activate id</code> / <code>deactivate id</code></td><td>Start / end an activation bar on a lifeline</td></tr>
+                        <tr><td><code>loop "label"</code> … <code>end</code></td><td>Repeat fragment</td></tr>
+                        <tr><td><code>alt "cond"</code> … <code>else "other"</code> … <code>end</code></td><td>Alternatives with a divider</td></tr>
+                        <tr><td><code>opt "cond"</code> / <code>break "cond"</code> … <code>end</code></td><td>Optional / break fragment</td></tr>
+                        <tr><td><code>par "a"</code> … <code>and "b"</code> … <code>end</code></td><td>Parallel branches</td></tr>
+                        <tr><td><code>note over a,b "text"</code></td><td>Note spanning one or more lifelines (also <code>left</code>/<code>right</code>)</td></tr>
+                    </tbody>
+                </table>
+
+                <pre><code>{`---
+title: Login Flow
+layout: sequence
+hSpacing: 200
+vSpacing: 60
+---
+
+autonumber
+user    [actor]    "User"
+gateway [lifeline] "API Gateway"
+auth    [lifeline] "Auth Service"
+
+user ->> gateway "POST /login"
+activate gateway
+loop "retry up to 3x"
+  gateway ->> auth "Validate"
+  auth -->> gateway "200 OK"
+end
+alt "valid"
+  gateway -->> user "Welcome"
+else "invalid"
+  gateway -->> user "401"
+end
+note over gateway,auth "token cached 15m"
+deactivate gateway`}</code></pre>
+            </section>
+
             {/* Mindmap / Hierarchy */}
             <section class="doc-section">
                 <h2>Indentation Hierarchy (Mind Maps)</h2>

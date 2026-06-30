@@ -1,9 +1,22 @@
-import { Show, createSignal, onMount, onCleanup } from 'solid-js';
+import { Show, For, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, toggleTouchType, setCharTransform } from '../store/app-store';
 import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
 import { getMeasurementContext, getFontString } from '../utils/text-utils';
+import { customFonts, addCustomFontFromFile } from '../utils/custom-fonts';
 import type { DrawingElement } from '../types';
 import './touch-type-overlay.css';
+
+const BUILTIN_FONTS = [
+    { value: 'hand-drawn', label: 'Virgil' },
+    { value: 'caveat', label: 'Caveat' },
+    { value: 'marker', label: 'Marker' },
+    { value: 'sans-serif', label: 'Inter' },
+    { value: 'poppins', label: 'Poppins' },
+    { value: 'serif', label: 'Merriweather' },
+    { value: 'monospace', label: 'Source Code' },
+    { value: 'code', label: 'JetBrains' },
+];
+const ADD_FONT = '__add_font__';
 
 /**
  * Touch Type. Select a single-line text element, then click a glyph and drag to move it; [ ]
@@ -26,6 +39,18 @@ export const TouchTypeOverlay = () => {
     const glyphColor = () => { const el = target(); const i = sel(); return (i >= 0 && el?.charTransforms?.[i]?.color) || el?.textColor || el?.strokeColor || '#000000'; };
     const setColorLive = (c: string) => { const el = target(); const i = sel(); if (!el || i < 0) return; setCharTransform(el.id, i, { color: c }, false); };
     const snapColor = () => { const el = target(); const i = sel(); if (el && i >= 0) setCharTransform(el.id, i, {}, true); }; // history snapshot before a colour drag
+    // Per-glyph font: current value (falls back to the element's font) + setter.
+    const glyphFont = () => { const el = target(); const i = sel(); return (i >= 0 && el?.charTransforms?.[i]?.font) || el?.fontFamily || 'hand-drawn'; };
+    const setFont = (f: string) => { const el = target(); const i = sel(); if (!el || i < 0) return; setCharTransform(el.id, i, { font: f }, true); };
+    let fontFileInput: HTMLInputElement | undefined;
+    const onFontFile = async (e: Event) => {
+        const input = e.currentTarget as HTMLInputElement;
+        const file = input.files?.[0];
+        input.value = '';
+        if (!file) return;
+        const font = await addCustomFontFromFile(file);
+        setFont(font.key);
+    };
 
     const target = (): DrawingElement | undefined => {
         const el = store.elements.find(e => e.id === store.selection[0]);
@@ -37,15 +62,18 @@ export const TouchTypeOverlay = () => {
     // Glyph centres + widths in world coords (mirrors the renderer's per-char layout).
     const glyphBoxes = () => {
         const el = target(); if (!el) return [];
-        const ctx = getMeasurementContext(); ctx.font = getFontString(el);
+        const ctx = getMeasurementContext();
+        const baseFont = getFontString(el);
         const chars = [...(el.text || '')];
         const out: { i: number; cx: number; cy: number; w: number }[] = [];
         let adv = el.x + 4;
         const baseY = el.y + el.height / 2;
         chars.forEach((ch, i) => {
+            const t = el.charTransforms?.[i];
+            // Match the renderer: measure each glyph in its own (possibly overridden) font.
+            ctx.font = t?.font ? getFontString({ ...el, fontFamily: t.font }) : baseFont;
             const w = ctx.measureText(ch).width;
-            const t = el.charTransforms?.[i] || { dx: 0, dy: 0 };
-            out.push({ i, cx: adv + w / 2 + (t.dx || 0), cy: baseY + (t.dy || 0), w });
+            out.push({ i, cx: adv + w / 2 + (t?.dx || 0), cy: baseY + (t?.dy || 0), w });
             adv += w;
         });
         return out;
@@ -149,6 +177,21 @@ export const TouchTypeOverlay = () => {
                             <input class="tt-color" type="color" title="Glyph colour" value={glyphColor()}
                                 onPointerDown={(e) => { e.stopPropagation(); snapColor(); }}
                                 onInput={(e) => setColorLive(e.currentTarget.value)} />
+                            <select class="tt-font" title="Glyph font" value={glyphFont()}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onChange={(e) => {
+                                    const v = e.currentTarget.value;
+                                    if (v === ADD_FONT) { e.currentTarget.value = glyphFont(); fontFileInput?.click(); }
+                                    else setFont(v);
+                                }}>
+                                <For each={BUILTIN_FONTS}>{(f) => <option value={f.value}>{f.label}</option>}</For>
+                                <Show when={customFonts().length > 0}>
+                                    <For each={customFonts()}>{(f) => <option value={f.key}>{f.label}</option>}</For>
+                                </Show>
+                                <option value={ADD_FONT}>＋ Add font…</option>
+                            </select>
+                            <input ref={el => fontFileInput = el} type="file" accept=".ttf,.otf,.woff,.woff2"
+                                style={{ display: 'none' }} onChange={onFontFile} />
                         </div>
                     )}
                 </Show>

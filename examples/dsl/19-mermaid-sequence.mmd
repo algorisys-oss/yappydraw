@@ -1,13 +1,25 @@
 sequenceDiagram
+    autonumber
+    actor U as User
     participant C as Client
     participant A as API Server
     participant D as Database
     participant R as Redis Cache
 
-    C->>A: GET /users/123
+    U->>C: Open page
+    C->>+A: GET /users/123
     A->>R: Check cache
     R-->>A: Cache miss
-    A->>D: SELECT * FROM users WHERE id=123
-    D-->>A: User record
-    A->>R: Set cache
-    A-->>C: 200 OK {user}
+    loop every request
+        A->>+D: SELECT * FROM users WHERE id=123
+        D-->>-A: User record
+    end
+    alt user found
+        A->>R: Set cache
+        A-->>C: 200 OK {user}
+    else not found
+        A-->>C: 404 Not Found
+    end
+    Note over A,D: results cached for 60s
+    A-->>-C: done
+    C-->>U: Render profile

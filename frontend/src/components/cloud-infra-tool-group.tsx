@@ -9,7 +9,7 @@ import "./pen-tool-group.css"; // Reuse the same CSS
 
 // Custom SVG Icons for Cloud & Container Infrastructure shapes
 
-const KubernetesIcon: Component<{ size?: number; color?: string }> = (props) => (
+export const KubernetesIcon: Component<{ size?: number; color?: string }> = (props) => (
     <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10" />
         <circle cx="12" cy="12" r="3.5" />
@@ -24,7 +24,7 @@ const KubernetesIcon: Component<{ size?: number; color?: string }> = (props) => 
     </svg>
 );
 
-const ContainerIcon: Component<{ size?: number; color?: string }> = (props) => (
+export const ContainerIcon: Component<{ size?: number; color?: string }> = (props) => (
     <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2" />
         <line x1="5" y1="8.5" x2="19" y2="8.5" />
@@ -33,7 +33,7 @@ const ContainerIcon: Component<{ size?: number; color?: string }> = (props) => (
     </svg>
 );
 
-const ApiGatewayIcon: Component<{ size?: number; color?: string }> = (props) => (
+export const ApiGatewayIcon: Component<{ size?: number; color?: string }> = (props) => (
     <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2" />
         <line x1="7" y1="12" x2="14" y2="12" />
@@ -41,7 +41,7 @@ const ApiGatewayIcon: Component<{ size?: number; color?: string }> = (props) => 
     </svg>
 );
 
-const CdnIcon: Component<{ size?: number; color?: string }> = (props) => (
+export const CdnIcon: Component<{ size?: number; color?: string }> = (props) => (
     <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10" />
         <ellipse cx="12" cy="12" rx="4" ry="10" />
@@ -49,7 +49,7 @@ const CdnIcon: Component<{ size?: number; color?: string }> = (props) => (
     </svg>
 );
 
-const StorageBlobIcon: Component<{ size?: number; color?: string }> = (props) => (
+export const StorageBlobIcon: Component<{ size?: number; color?: string }> = (props) => (
     <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <ellipse cx="12" cy="5" rx="8" ry="3" />
         <path d="M 4,5 L 4,19" />
@@ -58,7 +58,7 @@ const StorageBlobIcon: Component<{ size?: number; color?: string }> = (props) =>
     </svg>
 );
 
-const EventBusIcon: Component<{ size?: number; color?: string }> = (props) => (
+export const EventBusIcon: Component<{ size?: number; color?: string }> = (props) => (
     <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="2" y="10" width="20" height="4" rx="2" />
         <line x1="7" y1="4" x2="7" y2="10" />
@@ -70,7 +70,7 @@ const EventBusIcon: Component<{ size?: number; color?: string }> = (props) => (
     </svg>
 );
 
-const MicroserviceIcon: Component<{ size?: number; color?: string }> = (props) => (
+export const MicroserviceIcon: Component<{ size?: number; color?: string }> = (props) => (
     <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         {/* Hexagon */}
         <polygon points="12,2 21,7 21,17 12,22 3,17 3,7" />
@@ -85,7 +85,7 @@ const MicroserviceIcon: Component<{ size?: number; color?: string }> = (props) =
     </svg>
 );
 
-const ShieldIcon: Component<{ size?: number; color?: string }> = (props) => (
+export const ShieldIcon: Component<{ size?: number; color?: string }> = (props) => (
     <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M 12,2 L 21,2 L 21,13 Q 21,20 12,22 Q 3,20 3,13 L 3,2 Z" />
         <polyline points="8,12 11,15 16,9" />

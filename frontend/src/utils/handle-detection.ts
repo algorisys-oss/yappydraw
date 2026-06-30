@@ -143,6 +143,31 @@ export function getHandleAtPosition(
         }
     }
 
+    // 1a. Connection handles on grouped / multi-selected members. The renderer draws
+    //     the green "+" circles on every selected shape, so they must be hit-testable
+    //     here too — otherwise a shape in a group shows the handles but you can't drag
+    //     them out to start a connector. (Single-selection handles are covered below.)
+    if (selection.length > 1) {
+        const connectorSize = 14 / scale;
+        const connectorOffset = 32 / scale;
+        for (const id of selection) {
+            const el = elements.find(e => e.id === id);
+            if (!el || el.type === 'line' || el.type === 'arrow') continue;
+            const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+            const handles = [
+                { pos: 'top', hx: cx, hy: el.y - connectorOffset },
+                { pos: 'right', hx: el.x + el.width + connectorOffset, hy: cy },
+                { pos: 'bottom', hx: cx, hy: el.y + el.height + connectorOffset },
+                { pos: 'left', hx: el.x - connectorOffset, hy: cy },
+            ];
+            for (const h of handles) {
+                if (Math.hypot(x - h.hx, y - h.hy) <= connectorSize / 2 + 2 / scale) {
+                    return { id: el.id, handle: `connector-${h.pos}` };
+                }
+            }
+        }
+    }
+
     // 1b. Mindmap add-child handle on the single selected node (mouse parity with Tab).
     //     Checked before element selection so the click isn't swallowed.
     if (selection.length === 1) {

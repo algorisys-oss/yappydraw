@@ -1,0 +1,50 @@
+/* Unified Architecture fly-out: sectioned grid of shape tools. */
+.arch-dropdown {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    max-height: min(70vh, 560px);
+    overflow-y: auto;
+    width: max-content;
+}
+
+.arch-dropdown-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    padding: 2px 2px 4px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.arch-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.arch-section-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    padding: 2px 2px 0;
+}
+
+.arch-section-grid {
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+    gap: 2px;
+}
+
+/* On the narrow vertical toolbar the fly-out can use the same grid; cap columns
+   so it never runs off-screen on small viewports. */
+@media (max-width: 768px) {
+    .arch-section-grid {
+        grid-template-columns: repeat(4, auto);
+    }
+}

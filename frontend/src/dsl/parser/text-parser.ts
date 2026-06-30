@@ -27,9 +27,21 @@
  *       grandchild [rect] "Grandchild"
  */
 
-import type { DSLDiagram, DSLNode, DSLEdge, DSLPool, DSLLane, DSLLayoutConfig, ParseResult, ParseError, DSLNodeStyle } from '../types';
+import type { DSLDiagram, DSLNode, DSLEdge, DSLPool, DSLLane, DSLLayoutConfig, ParseResult, ParseError, DSLNodeStyle, DSLSequenceEvent } from '../types';
+import type { ArrowHead, StrokeStyle } from '../../types';
 
-const EDGE_OPERATORS: Record<string, { type: 'arrow' | 'line'; curveType?: 'straight' | 'bezier' | 'elbow' }> = {
+interface EdgeOpDef {
+    type: 'arrow' | 'line';
+    curveType?: 'straight' | 'bezier' | 'elbow';
+    /** Sequence message styling: filled head + dashed for replies. */
+    endArrowhead?: ArrowHead;
+    strokeStyle?: StrokeStyle;
+}
+
+const EDGE_OPERATORS: Record<string, EdgeOpDef> = {
+    '-->>': { type: 'arrow', endArrowhead: 'triangle', strokeStyle: 'dashed' }, // reply (filled, dashed)
+    '->>': { type: 'arrow', endArrowhead: 'triangle' },                          // sync call (filled)
+    '-->': { type: 'arrow', strokeStyle: 'dashed' },                             // dashed open
     '->': { type: 'arrow' },
     '--': { type: 'line' },
     '~>': { type: 'arrow', curveType: 'bezier' },
@@ -46,8 +58,14 @@ const LANE_LINE = /^\s+lane\s+(\S+)\s*(?:"([^"]*)")?\s*(?:\{(.+)\})?\s*$/;
 // Node: id [shape] "label" { style } @pool/lane
 const NODE_RE = /^(\s*)(\S+)\s*(?:\[([^\]]+)\])?\s*(?:"([^"]*)")?\s*(?:\{([^}]*)\})?\s*(?:@(\S+))?\s*$/;
 
-// Edge: from OP to "label" { style }
-const EDGE_RE = /^(\S+)\s*(->|--|~>|=>)\s*(\S+)\s*(?:"([^"]*)")?\s*(?:\{([^}]*)\})?\s*$/;
+// Edge: from OP to "label" { style }  (longest operators first so `-->>` wins over `->`)
+const EDGE_RE = /^(\S+)\s*(-->>|->>|-->|->|--|~>|=>)\s*(\S+)\s*(?:"([^"]*)")?\s*(?:\{([^}]*)\})?\s*$/;
+
+// Sequence directives (only honoured when layout === 'sequence')
+const SEQ_NOTE_RE = /^note\s+(over|left(?:\s+of)?|right(?:\s+of)?)\s+([^"]+?)\s*"([^"]*)"\s*$/i;
+const SEQ_FRAGMENT_RE = /^(loop|alt|opt|par|critical|break|rect)\b\s*(?:"([^"]*)"|(.*))$/i;
+const SEQ_SECTION_RE = /^(else|and|option)\b\s*(?:"([^"]*)"|(.*))$/i;
+const SEQ_ACTIVATE_RE = /^(activate|deactivate)\s+(\S+)\s*$/i;
 
 /**
  * Parse compact text DSL into a DSLDiagram IR.
@@ -66,6 +84,13 @@ export function parseTextDSL(input: string): ParseResult {
     let inFrontmatter = false;
     let frontmatterSeen = false;
     let currentPool: DSLPool | null = null;
+
+    // Sequence-diagram timeline (only assembled when layout === 'sequence').
+    const seqEvents: DSLSequenceEvent[] = [];
+    let seqAutonumber = false;
+    let seqFragCounter = 0;
+    const seqFragStack: string[] = [];
+    const isSequence = () => (layoutConfig as any).strategy === 'sequence';
 
     // Track indentation for hierarchy
     const indentStack: { indent: number; node: DSLNode }[] = [];
@@ -130,8 +155,68 @@ export function parseTextDSL(input: string): ParseResult {
             continue;
         }
 
-        // Edge declaration (check before node since node regex is more permissive)
-        const edgeMatch = line.match(EDGE_RE);
+        // ─── Sequence directives (only inside a sequence diagram) ──────
+        if (isSequence()) {
+            const trimmed = line.trim();
+
+            if (/^autonumber\b/i.test(trimmed)) { seqAutonumber = true; continue; }
+
+            if (/^end\b/i.test(trimmed)) {
+                const id = seqFragStack.pop();
+                if (id) seqEvents.push({ kind: 'fragment-end', id });
+                continue;
+            }
+
+            const sectionMatch = trimmed.match(SEQ_SECTION_RE);
+            if (sectionMatch && seqFragStack.length > 0) {
+                const label = (sectionMatch[2] ?? sectionMatch[3] ?? '').trim();
+                seqEvents.push({
+                    kind: 'fragment-section',
+                    id: seqFragStack[seqFragStack.length - 1],
+                    label: label || undefined,
+                });
+                continue;
+            }
+
+            const fragMatch = trimmed.match(SEQ_FRAGMENT_RE);
+            if (fragMatch) {
+                const id = `frag${++seqFragCounter}`;
+                seqFragStack.push(id);
+                const label = (fragMatch[2] ?? fragMatch[3] ?? '').trim();
+                seqEvents.push({
+                    kind: 'fragment-start',
+                    id,
+                    operator: fragMatch[1].toLowerCase(),
+                    label: label || undefined,
+                });
+                continue;
+            }
+
+            const actMatch = trimmed.match(SEQ_ACTIVATE_RE);
+            if (actMatch) {
+                seqEvents.push({
+                    kind: actMatch[1].toLowerCase() === 'activate' ? 'activate' : 'deactivate',
+                    participant: actMatch[2],
+                });
+                continue;
+            }
+
+            const noteMatch = trimmed.match(SEQ_NOTE_RE);
+            if (noteMatch) {
+                const placement = noteMatch[1].toLowerCase().startsWith('left') ? 'left'
+                    : noteMatch[1].toLowerCase().startsWith('right') ? 'right' : 'over';
+                const ids = noteMatch[2].split(',').map(s => s.trim()).filter(Boolean);
+                if (ids.length > 0) {
+                    seqEvents.push({ kind: 'note', placement, participants: ids, text: noteMatch[3] });
+                }
+                continue;
+            }
+        }
+
+        // Edge declaration (check before node since node regex is more permissive).
+        // Sequence messages are commonly indented inside fragments, and sequence
+        // layout has no node hierarchy, so match against the trimmed line there.
+        const edgeMatch = (isSequence() ? line.trim() : line).match(EDGE_RE);
         if (edgeMatch) {
             currentPool = null;
             const [, from, op, to, label, styleStr] = edgeMatch;
@@ -142,12 +227,17 @@ export function parseTextDSL(input: string): ParseResult {
                 type: edgeDef.type,
             };
             if (edgeDef.curveType) edge.curveType = edgeDef.curveType;
+            if (edgeDef.endArrowhead) edge.endArrowhead = edgeDef.endArrowhead;
             if (label) edge.label = label;
             if (styleStr) {
                 const parsed = parseInlineStyle(styleStr, lineNum, warnings);
                 if (Object.keys(parsed).length > 0) edge.style = parsed as any;
             }
+            if (edgeDef.strokeStyle) {
+                edge.style = { ...(edge.style as any), strokeStyle: edgeDef.strokeStyle };
+            }
             edges.push(edge);
+            if (isSequence()) seqEvents.push({ kind: 'message', edge });
             continue;
         }
 
@@ -228,6 +318,11 @@ export function parseTextDSL(input: string): ParseResult {
         ...layoutConfig,
     };
 
+    // Close any unbalanced sequence fragments defensively.
+    while (seqFragStack.length > 0) {
+        seqEvents.push({ kind: 'fragment-end', id: seqFragStack.pop()! });
+    }
+
     const diagram: DSLDiagram = {
         version: 1,
         meta: Object.keys(meta).length > 0 ? { ...meta, sourceFormat: 'yappy-dsl' } : undefined,
@@ -235,6 +330,9 @@ export function parseTextDSL(input: string): ParseResult {
         nodes,
         edges,
         pools: pools.length > 0 ? pools : undefined,
+        sequence: layout.strategy === 'sequence' && seqEvents.length > 0
+            ? { autonumber: seqAutonumber, events: seqEvents }
+            : undefined,
     };
 
     if (errors.length > 0) {

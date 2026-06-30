@@ -5,19 +5,32 @@ hSpacing: 200
 vSpacing: 60
 ---
 
-# Participants (lifelines)
-client [lifeline] "Client"
+# Participants — use [actor] for people, [lifeline] for systems
+autonumber
+user    [actor]    "User"
+client  [lifeline] "Client"
 gateway [lifeline] "API Gateway"
-auth [lifeline] "Auth Service"
-backend [lifeline] "Backend"
-db [lifeline] "Database"
+auth    [lifeline] "Auth Service"
+db      [lifeline] "Database"
 
-# Messages (edges become horizontal arrows)
-client -> gateway "POST /login"
-gateway -> auth "Validate Token"
-auth -> gateway "200 OK"
-gateway -> backend "Forward Request"
-backend -> db "SELECT user"
-db -> backend "User Record"
-backend -> gateway "JSON Response"
-gateway -> client "200 OK + Data"
+# Messages: ->> solid call, -->> dashed reply
+user ->> client "Click Login"
+client ->> gateway "POST /login"
+activate gateway
+
+loop "retry up to 3x"
+  gateway ->> auth "Validate Credentials"
+  auth -->> gateway "200 OK"
+end
+
+alt "valid user"
+  gateway ->> db "SELECT user"
+  db -->> gateway "User Record"
+  gateway -->> client "200 OK + token"
+else "invalid"
+  gateway -->> client "401 Unauthorized"
+end
+
+note over gateway,auth "token cached for 15m"
+deactivate gateway
+client -->> user "Show dashboard"

@@ -1,4 +1,5 @@
 import { type Component, Show, createSignal, createEffect } from "solid-js";
+import { Portal } from "solid-js/web";
 import { X, Video, Play } from "lucide-solid";
 import { isValidVideoURL, detectVideoProvider, getPosterURL, fetchVimeoPoster, type VideoProvider } from "../utils/video-utils";
 import "./video-url-dialog.css";
@@ -63,7 +64,11 @@ const VideoUrlDialog: Component<VideoUrlDialogProps> = (props) => {
     };
 
     return (
+        // Render at <body> via a Portal: the toolbar that mounts this dialog uses a
+        // CSS transform to centre itself, which would otherwise make the fixed
+        // overlay resolve against (and get clipped by) the narrow toolbar.
         <Show when={props.isOpen}>
+          <Portal>
             <div
                 class="video-dialog-overlay"
                 onClick={(e) => { if (e.target === e.currentTarget) props.onCancel(); }}
@@ -122,6 +127,7 @@ const VideoUrlDialog: Component<VideoUrlDialogProps> = (props) => {
                     </div>
                 </div>
             </div>
+          </Portal>
         </Show>
     );
 };

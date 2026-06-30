@@ -89,6 +89,7 @@ export interface IRenderer {
 
     // ── Text ──
     font: string;
+    letterSpacing: string;   // CSS length, e.g. "2px"; affects measure + draw
     textAlign: CanvasTextAlign;
     textBaseline: CanvasTextBaseline;
     fillText(text: string, x: number, y: number, maxWidth?: number): void;

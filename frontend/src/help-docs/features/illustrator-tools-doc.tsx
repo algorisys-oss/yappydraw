@@ -335,7 +335,14 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                         <span class="kbd">,</span> <span class="kbd">.</span> rotate the selected glyph. On tablets,
                         use the floating <strong>A−/A+/↺/↻</strong> buttons or <strong>pinch&nbsp;to&nbsp;scale</strong>
                         and <strong>two-finger&nbsp;twist&nbsp;to&nbsp;rotate</strong>. The <strong>colour swatch</strong>
-                        recolours just that one glyph.</li>
+                        recolours just that one glyph, and the <strong>font dropdown</strong> sets a per-glyph font
+                        (mix fonts within one word). <strong>Exit</strong> with <span class="kbd">Esc</span> or the
+                        <strong>Done&nbsp;✕</strong> button in the hint bar (works on desktop and tablet).</li>
+                    <li><strong>Custom fonts</strong>: in the Font picker (property panel or the Touch Type dropdown)
+                        choose <strong>＋ Add font…</strong> to upload a <code>.ttf/.otf/.woff/.woff2</code>. It loads
+                        immediately, persists across reloads, and is then available like any built-in font.</li>
+                    <li><strong>Letter spacing</strong>: a text element's <strong>Letter Spacing</strong> property
+                        (Text group) tightens or loosens tracking, applied through measurement, wrapping and drawing.</li>
                     <li><strong>Slice</strong> (Command Palette → Slice): drag a rectangle to export exactly that
                         region as a PNG (<code>Yappy.exportRegion(x,y,w,h)</code>). Artboards remain for persistent
                         named export regions.</li>

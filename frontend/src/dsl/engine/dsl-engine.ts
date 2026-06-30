@@ -13,8 +13,9 @@ import { getShapeDefaults } from '../shape-defaults';
 import { mergeNodeStyle, mergeEdgeStyle, mapStyleToOptions } from './render-helpers';
 import { computeLayout } from '../layout/layout-manager';
 import {
-    SEQUENCE_HEADER_HEIGHT,
-    SEQUENCE_MESSAGE_TOP_PADDING,
+    getSequenceEvents,
+    computeSequenceTimeline,
+    type SeqFragmentBox,
 } from '../layout/strategies/sequence-layout';
 import { YappyAPI } from '../../api';
 import { store, setStore, pushToHistory, deleteElements } from '../../store/app-store';
@@ -121,11 +122,12 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
     }
 
     // ─── Render edges ────────────────────────────────────
-    if (diagram.edges) {
-        const isSequence = diagram.layout?.strategy === 'sequence';
-        const vSpacing = diagram.layout?.vSpacing ?? 60;
-        let messageIndex = 0;
-
+    const isSequence = diagram.layout?.strategy === 'sequence';
+    if (isSequence) {
+        // Sequence diagrams render an ordered timeline (messages, notes,
+        // combined fragments, activation bars) rather than a flat edge list.
+        elementCount += renderSequenceTimeline(diagram, nodeIdMap, edgeIdMap);
+    } else if (diagram.edges) {
         for (const edge of diagram.edges) {
             const sourceCanvasId = nodeIdMap.get(edge.from);
             const targetCanvasId = nodeIdMap.get(edge.to);
@@ -134,15 +136,12 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
                 continue;
             }
 
-            const edgeElementId = isSequence
-                ? renderSequenceEdge(edge, sourceCanvasId, targetCanvasId, messageIndex, vSpacing, diagram)
-                : renderEdge(edge, sourceCanvasId, targetCanvasId, diagram);
+            const edgeElementId = renderEdge(edge, sourceCanvasId, targetCanvasId, diagram);
             if (edgeElementId) {
                 const edgeKey = edge.id ?? `${edge.from}->${edge.to}`;
                 edgeIdMap.set(edgeKey, edgeElementId);
                 elementCount++;
             }
-            if (isSequence) messageIndex++;
         }
     }
 
@@ -254,83 +253,289 @@ function renderEdge(
     return connectorId;
 }
 
+// ─── Sequence Timeline Rendering ─────────────────────────
+//
+// A sequence diagram renders an ordered vertical timeline. The geometry
+// (Y offsets, fragment extents, activation spans) comes from the shared
+// `computeSequenceTimeline` so it always matches the lifeline heights the
+// layout reserved. We bypass `connect()` for messages deliberately: its
+// intersection routing assumes point-shaped nodes and would land every
+// message on the same horizontal line because all lifelines share a Y.
+
+const SEQ_FRAGMENT_MARGIN = 40;     // Horizontal padding around fragment contents
+const SEQ_ACTIVATION_WIDTH = 10;    // Activation-bar thickness
+const SEQ_ACTIVATION_STAGGER = 6;   // Per-nesting-depth horizontal offset
+const SEQ_LABEL_COLOR = '#475569';  // Muted slate for notes / fragment chrome
+
+interface SeqParticipant {
+    canvasId: string;
+    type: string;
+    cx: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/** Create a small architectural-style text label. */
+function makeSeqLabel(x: number, y: number, text: string, extra?: Record<string, any>): string | null {
+    return YappyAPI.createText(x, y, text, {
+        fontSize: 12,
+        fontFamily: 'sans-serif',
+        textColor: SEQ_LABEL_COLOR,
+        strokeColor: SEQ_LABEL_COLOR,
+        ...extra,
+    });
+}
+
 /**
- * Render a sequence-diagram message as a horizontal arrow at a cascading Y.
- *
- * Standard messages: straight arrow from source lifeline's centerline to
- * target lifeline's centerline at `y = headerBottom + topPadding + i*vSpacing`.
- *
- * Self-messages (source === target): a U-shaped 3-segment arrow that goes
- * right off the lifeline, drops by `vSpacing/2`, and returns — the classic
- * UML "method calls itself" notation.
- *
- * We bypass `connect()` deliberately: its intersection routing assumes nodes
- * are point-shaped and would land every message on the same horizontal line
- * because all lifelines share a Y.
+ * Render the full sequence timeline: actor lifelines, combined fragments,
+ * activation bars, notes and messages (with optional auto-numbering).
+ * Returns the number of canvas elements created.
  */
-function renderSequenceEdge(
+function renderSequenceTimeline(
+    diagram: DSLDiagram,
+    nodeIdMap: Map<string, string>,
+    edgeIdMap: Map<string, string>,
+): number {
+    const vSpacing = diagram.layout?.vSpacing ?? 60;
+    const events = getSequenceEvents(diagram.sequence, diagram.edges ?? []);
+    const timeline = computeSequenceTimeline(events, vSpacing, diagram.sequence?.autonumber);
+    let count = 0;
+
+    // Gather participant geometry from the freshly-created canvas elements.
+    const participants = new Map<string, SeqParticipant>();
+    for (const [dslId, canvasId] of nodeIdMap) {
+        const el = YappyAPI.getElement(canvasId);
+        if (!el) continue;
+        participants.set(dslId, {
+            canvasId,
+            type: el.type,
+            cx: el.x + el.width / 2,
+            x: el.x,
+            y: el.y,
+            width: el.width,
+            height: el.height,
+        });
+    }
+    if (participants.size === 0) return 0;
+
+    const originY = Math.min(...[...participants.values()].map(p => p.y));
+    const lifelineBottom = originY + timeline.totalHeight;
+
+    // 1. Actor lifelines — actors keep their stick-figure head, so draw the
+    //    dashed lifeline beneath them down to the shared bottom (umlLifeline
+    //    shapes draw their own dashed body).
+    for (const p of participants.values()) {
+        if (p.type !== 'umlActor') continue;
+        const top = p.y + p.height;
+        const lineId = YappyAPI.createElement('line', p.cx, top, 0, lifelineBottom - top, {
+            strokeColor: SEQ_LABEL_COLOR,
+            strokeStyle: 'dashed',
+            strokeWidth: 1.5,
+            curveType: 'straight',
+            points: [0, 0, 0, lifelineBottom - top],
+            startArrowhead: null,
+            endArrowhead: null,
+        });
+        if (lineId) count++;
+    }
+
+    // 2. Combined fragments (loop / alt / opt / par …) — drawn first so they
+    //    sit behind messages and activation bars.
+    for (const frag of timeline.fragments) {
+        count += renderSequenceFragment(frag, participants, originY);
+    }
+
+    // 3. Activation bars on lifelines.
+    for (const act of timeline.activations) {
+        const p = participants.get(act.participant);
+        if (!p || act.bottom <= act.top) continue;
+        const barX = p.cx - SEQ_ACTIVATION_WIDTH / 2 + act.depth * SEQ_ACTIVATION_STAGGER;
+        const barId = YappyAPI.createElement(
+            'activationBar',
+            barX,
+            originY + act.top,
+            SEQ_ACTIVATION_WIDTH,
+            act.bottom - act.top,
+            { backgroundColor: '#e2e8f0', strokeColor: SEQ_LABEL_COLOR, strokeWidth: 1, fillStyle: 'solid' },
+        );
+        if (barId) count++;
+    }
+
+    // 4. Notes and 5. Messages, walked in timeline order.
+    let messageNumber = 0;
+    for (const placement of timeline.placements) {
+        const ev = placement.event;
+        if (ev.kind === 'note') {
+            count += renderSequenceNote(ev, placement, participants, originY);
+        } else if (ev.kind === 'message') {
+            if (timeline.autonumber) messageNumber++;
+            const id = renderSequenceMessage(
+                ev.edge, participants, originY + placement.y, vSpacing, diagram,
+                timeline.autonumber ? messageNumber : undefined,
+            );
+            if (id) {
+                edgeIdMap.set(ev.edge.id ?? `${ev.edge.from}->${ev.edge.to}`, id);
+                count++;
+            }
+        }
+    }
+
+    return count;
+}
+
+/** Render one message arrow at an absolute Y. */
+function renderSequenceMessage(
     edge: DSLEdge,
-    sourceCanvasId: string,
-    targetCanvasId: string,
-    messageIndex: number,
+    participants: Map<string, SeqParticipant>,
+    messageY: number,
     vSpacing: number,
     diagram: DSLDiagram,
+    seqNumber?: number,
 ): string | null {
-    const source = YappyAPI.getElement(sourceCanvasId);
-    const target = YappyAPI.getElement(targetCanvasId);
+    const source = participants.get(edge.from);
+    const target = participants.get(edge.to);
     if (!source || !target) return null;
 
     const mergedStyle = mergeEdgeStyle(edge.style, diagram.defaults);
     const styleOpts = mapStyleToOptions(mergedStyle);
+    const arrowOpts: Record<string, any> = { ...styleOpts };
+    if (edge.endArrowhead !== undefined) arrowOpts.endArrowhead = edge.endArrowhead;
+    if (edge.startArrowhead !== undefined) arrowOpts.startArrowhead = edge.startArrowhead;
+    if (edge.type === 'line') arrowOpts.endArrowhead = arrowOpts.endArrowhead ?? null;
 
-    // Cascading Y inside the message area, anchored to the source lifeline's top.
-    const messageY = source.y
-        + SEQUENCE_HEADER_HEIGHT
-        + SEQUENCE_MESSAGE_TOP_PADDING
-        + messageIndex * vSpacing;
-
-    const sourceCx = source.x + source.width / 2;
-    const targetCx = target.x + target.width / 2;
-    const isSelf = sourceCanvasId === targetCanvasId;
+    const label = seqNumber !== undefined
+        ? `${seqNumber}${edge.label ? ` ${edge.label}` : ''}`
+        : edge.label;
 
     let arrowId: string | null;
-
-    if (isSelf) {
-        // U-shape on the right side of the lifeline (out, down, back).
+    if (edge.from === edge.to) {
+        // Self-message: U-shape on the right of the lifeline (out, down, back).
         const loopWidth = 60;
         const loopHeight = Math.max(20, vSpacing * 0.4);
-        arrowId = YappyAPI.createElement(
-            'arrow',
-            sourceCx,
-            messageY,
-            loopWidth,
-            loopHeight,
-            {
-                ...styleOpts,
-                curveType: 'elbow',
-                points: [0, 0, loopWidth, 0, loopWidth, loopHeight, 0, loopHeight],
-            },
-        );
+        arrowId = YappyAPI.createElement('arrow', source.cx, messageY, loopWidth, loopHeight, {
+            ...arrowOpts,
+            curveType: 'elbow',
+            points: [0, 0, loopWidth, 0, loopWidth, loopHeight, 0, loopHeight],
+        });
     } else {
-        const width = targetCx - sourceCx;
-        arrowId = YappyAPI.createElement(
-            'arrow',
-            sourceCx,
-            messageY,
-            width,
-            0,
-            {
-                ...styleOpts,
-                curveType: 'straight',
-                points: [0, 0, width, 0],
-            },
-        );
+        // Normalise to a positive bounding box (x = leftmost) so right-to-left
+        // replies don't get a negative width — which renders a stray arrowhead
+        // at the source. The arrowhead stays at the target (last point).
+        const minX = Math.min(source.cx, target.cx);
+        arrowId = YappyAPI.createElement('arrow', minX, messageY, Math.abs(target.cx - source.cx), 0, {
+            ...arrowOpts,
+            curveType: 'straight',
+            points: [source.cx - minX, 0, target.cx - minX, 0],
+        });
     }
 
-    if (arrowId && edge.label) {
-        YappyAPI.updateElement(arrowId, { containerText: edge.label });
+    if (arrowId && label) {
+        YappyAPI.updateElement(arrowId, { containerText: label });
     }
     return arrowId;
+}
+
+/** Render a note box spanning one or more participants. */
+function renderSequenceNote(
+    ev: { placement: 'over' | 'left' | 'right'; participants: string[]; text: string },
+    placement: { y: number; height?: number },
+    participants: Map<string, SeqParticipant>,
+    originY: number,
+): number {
+    const els = ev.participants.map(id => participants.get(id)).filter((p): p is SeqParticipant => !!p);
+    if (els.length === 0) return 0;
+
+    const h = placement.height ?? 40;
+    const y = originY + placement.y;
+    let x: number;
+    let w: number;
+    const NOTE_W = 120;
+
+    if (ev.placement === 'left') {
+        x = els[0].cx - NOTE_W - 12;
+        w = NOTE_W;
+    } else if (ev.placement === 'right') {
+        x = els[0].cx + 12;
+        w = NOTE_W;
+    } else {
+        // over: span from leftmost to rightmost participant centerline.
+        const minCx = Math.min(...els.map(e => e.cx));
+        const maxCx = Math.max(...els.map(e => e.cx));
+        if (els.length === 1) {
+            x = els[0].cx - NOTE_W / 2;
+            w = NOTE_W;
+        } else {
+            x = minCx - 20;
+            w = (maxCx - minCx) + 40;
+        }
+    }
+
+    const noteId = YappyAPI.createElement('umlNote', x, y, w, h, {
+        backgroundColor: '#fef9c3',
+        strokeColor: '#ca8a04',
+        strokeWidth: 1,
+        fillStyle: 'solid',
+        containerText: ev.text,
+        fontSize: 12,
+        fontFamily: 'sans-serif',
+        textColor: '#713f12',
+        textAlign: 'center',
+    });
+    return noteId ? 1 : 0;
+}
+
+/** Render a combined-fragment box (border, operator tab, guard, dividers). */
+function renderSequenceFragment(
+    frag: SeqFragmentBox,
+    participants: Map<string, SeqParticipant>,
+    originY: number,
+): number {
+    const ids = frag.participants.size > 0 ? [...frag.participants] : [...participants.keys()];
+    const els = ids.map(id => participants.get(id)).filter((p): p is SeqParticipant => !!p);
+    if (els.length === 0) return 0;
+
+    const minCx = Math.min(...els.map(e => e.cx));
+    const maxCx = Math.max(...els.map(e => e.cx));
+    const fx = minCx - SEQ_FRAGMENT_MARGIN;
+    const fw = (maxCx - minCx) + SEQ_FRAGMENT_MARGIN * 2;
+    const fy = originY + frag.top;
+    const fh = Math.max(40, frag.bottom - frag.top);
+    let count = 0;
+
+    const boxId = YappyAPI.createElement('umlFragment', fx, fy, fw, fh, {
+        backgroundColor: 'transparent',
+        strokeColor: SEQ_LABEL_COLOR,
+        strokeWidth: 1,
+    });
+    if (boxId) count++;
+
+    // Operator keyword inside the corner tab.
+    if (makeSeqLabel(fx + 6, fy + 3, frag.operator, { fontSize: 11, fontWeight: true })) count++;
+    // Guard / condition just right of the tab.
+    if (frag.label) {
+        const tabW = Math.min(fw * 0.3, 60);
+        if (makeSeqLabel(fx + tabW + 10, fy + 4, `[${frag.label}]`)) count++;
+    }
+
+    // Section dividers (alt `else`, par `and`).
+    for (const section of frag.sections) {
+        const dy = originY + section.y;
+        const lineId = YappyAPI.createElement('line', fx, dy, fw, 0, {
+            strokeColor: SEQ_LABEL_COLOR,
+            strokeStyle: 'dashed',
+            strokeWidth: 1,
+            curveType: 'straight',
+            points: [0, 0, fw, 0],
+            startArrowhead: null,
+            endArrowhead: null,
+        });
+        if (lineId) count++;
+        if (section.label && makeSeqLabel(fx + 8, dy + 3, `[${section.label}]`)) count++;
+    }
+
+    return count;
 }
 
 // ─── Pool Layout Computation ────────────────────────────

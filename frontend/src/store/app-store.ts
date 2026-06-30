@@ -4271,7 +4271,7 @@ export const setChartData = (id: string, values: number[], labels?: string[]) =>
 };
 
 /** Touch Type — set/merge a per-character transform on a text element (initialising the array). */
-export const setCharTransform = (id: string, idx: number, patch: Partial<{ dx: number; dy: number; scale: number; rot: number; color: string }>, record = false) => {
+export const setCharTransform = (id: string, idx: number, patch: Partial<{ dx: number; dy: number; scale: number; rot: number; color: string; font: string }>, record = false) => {
     const el = store.elements.find(e => e.id === id);
     if (!el || (el.type !== 'text' && el.type !== 'richtext')) return;
     const len = [...(el.text || '')].length;

@@ -972,6 +972,17 @@ export const properties: PropertyConfig[] = [
         defaultValue: 28
     },
     {
+        key: 'letterSpacing',
+        label: 'Letter Spacing',
+        type: 'number',
+        min: -5,
+        max: 40,
+        step: 0.5,
+        group: 'text',
+        applicableTo: ['text', 'richtext'],
+        defaultValue: 0
+    },
+    {
         key: 'fontFamily',
         label: 'Font',
         type: 'select',

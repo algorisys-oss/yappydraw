@@ -20,6 +20,14 @@ const fontFamilyMap: Record<string, string> = {
     'code': 'JetBrains Mono, monospace',
 };
 
+/**
+ * Register a font key → CSS family-stack. Used by the custom-font loader so
+ * external fonts resolve exactly like the built-ins (see utils/custom-fonts.ts).
+ */
+export const registerFontFamily = (key: string, cssFamily: string): void => {
+    fontFamilyMap[key] = cssFamily;
+};
+
 export const resolveFontFamily = (fontFamily?: string): string => {
     return fontFamilyMap[fontFamily || 'hand-drawn'] || fontFamilyMap['hand-drawn'];
 };

@@ -96,6 +96,7 @@ interface ElementOptions {
     roundness?: { type: number } | null;
     fontFamily?: FontFamily;
     fontSize?: number;
+    letterSpacing?: number;
     textAlign?: TextAlign;
     verticalAlign?: VerticalAlign;
     startArrowhead?: ArrowHead;
@@ -305,6 +306,7 @@ export const YappyAPI = {
             roundness: options?.roundness ?? defaults.roundness ?? null,
             fontFamily: options?.fontFamily ?? defaults.fontFamily ?? "hand-drawn",
             fontSize: options?.fontSize ?? defaults.fontSize ?? 28,
+            letterSpacing: options?.letterSpacing,
             textAlign: options?.textAlign ?? defaults.textAlign ?? 'left',
             verticalAlign: options?.verticalAlign ?? 'middle',
             startArrowhead: options?.startArrowhead ?? defaults.startArrowhead ?? null,

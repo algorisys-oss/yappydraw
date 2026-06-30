@@ -52,7 +52,7 @@ export function computeLayout(diagram: DSLDiagram): LayoutPositionMap {
             return computeGridLayout(allNodes, config);
 
         case 'sequence':
-            return computeSequenceLayout(allNodes, edges, config);
+            return computeSequenceLayout(allNodes, edges, config, diagram.sequence);
 
         case 'manual':
         default:

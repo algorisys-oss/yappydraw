@@ -116,7 +116,10 @@ export interface MeshGradient {
     smooth?: boolean;
 }
 export type StrokeStyle = 'solid' | 'dashed' | 'dotted';
-export type FontFamily = 'hand-drawn' | 'sans-serif' | 'monospace' | 'caveat' | 'poppins' | 'serif' | 'marker' | 'code';
+// Built-in font keys, plus any custom-font key (e.g. "custom-1") added at runtime.
+// The `(string & {})` keeps literal autocomplete for the built-ins while allowing
+// arbitrary custom-font keys (see utils/custom-fonts.ts).
+export type FontFamily = 'hand-drawn' | 'sans-serif' | 'monospace' | 'caveat' | 'poppins' | 'serif' | 'marker' | 'code' | (string & {});
 export type TextAlign = 'left' | 'center' | 'right';
 export type VerticalAlign = 'top' | 'middle' | 'bottom';
 export type ArrowHead = 'arrow' | 'triangle' | 'dot' | 'circle' | 'bar' | 'diamond' | 'diamondFilled' | 'crowsfoot' | null;
@@ -293,11 +296,13 @@ export interface DrawingElement {
     fontStyle?: boolean | string;
     textAlign?: TextAlign;
     verticalAlign?: VerticalAlign;
+    /** Extra spacing between characters, in px (tracking). Can be negative to tighten. */
+    letterSpacing?: number;
     /** Vertical Type: stack characters top→bottom, paragraphs as left→right columns. */
     verticalText?: boolean;
     /** Touch Type: per-character transforms (single-line text). dx/dy in px, scale (1=none), rot in radians.
      *  Optional `color` overrides the element's text colour for that one glyph. */
-    charTransforms?: { dx: number; dy: number; scale: number; rot: number; color?: string }[];
+    charTransforms?: { dx: number; dy: number; scale: number; rot: number; color?: string; font?: string }[];
     /** Width tool: per-point stroke widths along an open path (t in 0..1). */
     widthProfile?: { t: number; width: number }[];
     /** Live Paint: this element is a source outline of the named live-paint group. */

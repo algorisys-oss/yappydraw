@@ -8,9 +8,12 @@ import { evaluateNumericExpression } from "../utils/eval-expr";
  * (±step, ×10 with Shift, ×0.1 with Alt/Ctrl) so the spinner UX survives the switch
  * from <input type=number> to text.
  *
- * It's a controlled-on-blur input: keystrokes only touch local text, and the parsed
- * number is committed on Enter/Tab/blur — so a half-typed expression never fires a
- * bogus update. Invalid input reverts to the last good value.
+ * Live preview: while the typed text is a *complete plain number* (e.g. `42`,
+ * `3.5`, `-8`) we commit on every keystroke so the canvas updates in real time.
+ * Only genuine expressions (`200-50%`, `*2`, `(4+1)*8`) defer to Enter/Tab/blur —
+ * a half-typed expression never fires a bogus update. History is checkpointed once
+ * on focus (`onEditStart`), so the live commits don't flood undo. Invalid input
+ * reverts to the last good value.
  */
 const MathNumberInput: Component<{
     value: number | undefined;          // undefined ⇒ "mixed"
@@ -44,6 +47,16 @@ const MathNumberInput: Component<{
         setText(display());
     };
 
+    // A "complete" plain number (optional sign, decimals) — NOT a partial expression
+    // like `200-`, `*2`, `2+`. For these we can safely preview on every keystroke.
+    const PLAIN_NUMBER = /^[+-]?(\d+\.?\d*|\.\d+)$/;
+    const liveCommit = (raw: string) => {
+        const t = raw.trim();
+        if (!PLAIN_NUMBER.test(t)) return;   // expressions wait for Enter/Tab/blur
+        const n = Number(t);
+        if (Number.isFinite(n)) props.onCommit(clamp(n));
+    };
+
     const step = (dir: 1 | -1, e: KeyboardEvent) => {
         const base = props.value ?? 0;
         const amt = (props.step ?? 1) * (e.shiftKey ? 10 : (e.altKey || e.ctrlKey || e.metaKey) ? 0.1 : 1);
@@ -64,7 +77,7 @@ const MathNumberInput: Component<{
             value={text()}
             placeholder={props.value === undefined ? '—' : undefined}
             onFocus={() => { setEditing(true); props.onEditStart?.(); }}
-            onInput={(e) => setText(e.currentTarget.value)}
+            onInput={(e) => { const v = e.currentTarget.value; setText(v); liveCommit(v); }}
             onBlur={commit}
             onKeyDown={(e) => {
                 e.stopPropagation();           // don't let canvas hotkeys steal keys

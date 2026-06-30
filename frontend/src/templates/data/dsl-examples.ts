@@ -120,7 +120,7 @@ export const yslSequenceTemplate: Template = {
         id: 'dsl-ysl-sequence',
         name: 'Sequence Diagram (YSL)',
         category: 'dsl-examples',
-        description: 'API request/response sequence with lifelines',
+        description: 'API login flow — actors, loops, alternatives, notes & activations',
         tags: ['ysl', 'sequence', 'api', 'dsl'],
         order: 4,
     },
@@ -132,20 +132,33 @@ hSpacing: 200
 vSpacing: 60
 ---
 
-client [lifeline] "Client"
+autonumber
+user    [actor]    "User"
+client  [lifeline] "Client"
 gateway [lifeline] "API Gateway"
-auth [lifeline] "Auth Service"
-backend [lifeline] "Backend"
-db [lifeline] "Database"
+auth    [lifeline] "Auth Service"
+db      [lifeline] "Database"
 
-client -> gateway "POST /login"
-gateway -> auth "Validate Token"
-auth -> gateway "200 OK"
-gateway -> backend "Forward Request"
-backend -> db "SELECT user"
-db -> backend "User Record"
-backend -> gateway "JSON Response"
-gateway -> client "200 OK + Data"`,
+user ->> client "Click Login"
+client ->> gateway "POST /login"
+activate gateway
+
+loop "retry up to 3x"
+  gateway ->> auth "Validate Credentials"
+  auth -->> gateway "200 OK"
+end
+
+alt "valid user"
+  gateway ->> db "SELECT user"
+  db -->> gateway "User Record"
+  gateway -->> client "200 OK + token"
+else "invalid"
+  gateway -->> client "401 Unauthorized"
+end
+
+note over gateway,auth "token cached for 15m"
+deactivate gateway
+client -->> user "Show dashboard"`,
 };
 
 export const yslDecisionTreeTemplate: Template = {
@@ -239,24 +252,35 @@ export const mermaidSequenceTemplate: Template = {
         id: 'dsl-mermaid-sequence',
         name: 'Sequence Diagram (Mermaid)',
         category: 'dsl-examples',
-        description: 'API call sequence with caching in Mermaid syntax',
+        description: 'API call sequence with caching, loops, alternatives & notes',
         tags: ['mermaid', 'sequence'],
         order: 11,
     },
     data: { elements: [], layers: [] },
     dslContent: `sequenceDiagram
+    autonumber
+    actor U as User
     participant C as Client
     participant A as API Server
     participant D as Database
     participant R as Redis Cache
 
-    C->>A: GET /users/123
+    U->>C: Open page
+    C->>+A: GET /users/123
     A->>R: Check cache
     R-->>A: Cache miss
-    A->>D: SELECT * FROM users WHERE id=123
-    D-->>A: User record
-    A->>R: Set cache
-    A-->>C: 200 OK {user}`,
+    loop every request
+        A->>+D: SELECT * FROM users WHERE id=123
+        D-->>-A: User record
+    end
+    alt user found
+        A->>R: Set cache
+        A-->>C: 200 OK {user}
+    else not found
+        A-->>C: 404 Not Found
+    end
+    Note over A,D: results cached for 60s
+    A-->>-C: done`,
 };
 
 export const mermaidClassTemplate: Template = {

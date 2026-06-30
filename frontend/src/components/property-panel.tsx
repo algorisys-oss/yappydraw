@@ -2,6 +2,7 @@ import { type Component, Show, createMemo, For, createSignal, createEffect, Inde
 import { draggablePanel } from '../utils/draggable-panel';
 import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
+import { customFontOptions, addCustomFontFromFile } from "../utils/custom-fonts";
 import type { Slide } from "../types/slide-types";
 import type { DrawingElement } from "../types";
 import {
@@ -1413,29 +1414,36 @@ const PropertyPanel: Component = () => {
                 );
             }
             case 'select': {
+                const isFontPicker = prop.key === 'fontFamily';
                 // Read target fresh in reactive/handler contexts to avoid stale closures
                 const filteredOptions = () => {
                     const target = activeTarget();
                     const elType = target?.type === 'element' ? target.data?.type
                         : target?.type === 'slide' ? 'slide'
                         : target?.type === 'canvas' ? 'canvas' : undefined;
-                    return prop.options?.filter(o =>
+                    const base = prop.options?.filter(o =>
                         !o.excludeFrom || !elType || !o.excludeFrom.includes(elType as any)
                     ) ?? [];
+                    // The font picker also lists any user-added custom fonts.
+                    return isFontPicker ? [...base, ...customFontOptions()] : base;
                 };
                 const selectVal = () => getPropertyValue(prop);
+                let fontFileInput: HTMLInputElement | undefined;
+                const applyVal = (val: string) => {
+                    const target = activeTarget();
+                    const isNum = prop.options?.some(o => typeof o.value === 'number');
+                    handleChange(prop.key, isNum ? Number(val) : val, target?.type, target?.type === 'element' ? target?.data?.id : undefined);
+                };
                 return (
                     <div class="control-row">
                         <label>{prop.label}</label>
                         <select
                             value={isMixed(selectVal()) ? '__mixed__' : (selectVal() ?? prop.defaultValue)}
                             onChange={(e) => {
-                                const target = activeTarget();
                                 const val = e.currentTarget.value;
                                 if (val === '__mixed__') return;
-                                // Try to parse number if options are numbers
-                                const isNum = prop.options?.some(o => typeof o.value === 'number');
-                                handleChange(prop.key, isNum ? Number(val) : val, target?.type, target?.type === 'element' ? target?.data?.id : undefined);
+                                if (val === '__add_font__') { e.currentTarget.value = String(selectVal() ?? prop.defaultValue ?? ''); fontFileInput?.click(); return; }
+                                applyVal(val);
                             }}
                         >
                             <Show when={isMixed(selectVal())}>
@@ -1444,7 +1452,20 @@ const PropertyPanel: Component = () => {
                             <For each={filteredOptions()}>
                                 {(opt) => <option value={opt.value ?? ''}>{opt.label}</option>}
                             </For>
+                            <Show when={isFontPicker}>
+                                <option value="__add_font__">＋ Add font…</option>
+                            </Show>
                         </select>
+                        <Show when={isFontPicker}>
+                            <input ref={el => fontFileInput = el} type="file" accept=".ttf,.otf,.woff,.woff2"
+                                style={{ display: 'none' }}
+                                onChange={async (e) => {
+                                    const input = e.currentTarget; const file = input.files?.[0]; input.value = '';
+                                    if (!file) return;
+                                    const font = await addCustomFontFromFile(file);
+                                    applyVal(font.key);
+                                }} />
+                        </Show>
                     </div>
                 );
             }
@@ -1592,9 +1613,18 @@ const PropertyPanel: Component = () => {
 
 
     // Group properties
+    // Property search: filter the visible controls by label / key / group.
+    const [propSearch, setPropSearch] = createSignal('');
+    const isSearching = () => propSearch().trim().length > 0;
+
     const groupedProperties = createMemo(() => {
+        const q = propSearch().trim().toLowerCase();
         const groups: Record<string, PropertyConfig[]> = {};
         activeProperties().forEach(p => {
+            if (q) {
+                const hay = `${p.label} ${p.key} ${p.group}`.toLowerCase();
+                if (!hay.includes(q)) return;
+            }
             if (!groups[p.group]) groups[p.group] = [];
             groups[p.group].push(p);
         });
@@ -1766,14 +1796,31 @@ const PropertyPanel: Component = () => {
                                         </div>
                                     </div>
                                 </Show>
+                                <Show when={activeProperties().length > 0}>
+                                    <div class="property-search">
+                                        <input
+                                            type="text"
+                                            placeholder="Search properties…"
+                                            value={propSearch()}
+                                            onInput={(e) => setPropSearch(e.currentTarget.value)}
+                                            onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Escape') setPropSearch(''); }}
+                                        />
+                                        <Show when={isSearching()}>
+                                            <button class="property-search-clear" title="Clear" onClick={() => setPropSearch('')}>×</button>
+                                        </Show>
+                                    </div>
+                                    <Show when={Object.keys(groupedProperties()).length === 0}>
+                                        <div class="property-search-empty">No properties match “{propSearch()}”.</div>
+                                    </Show>
+                                </Show>
                                 <For each={Object.keys(groupedProperties())}>
                                     {(group) => (
                                         <div class="property-group">
                                             <div class="group-title" onClick={() => toggleGroup(group)}>
                                                 <span>{group.toUpperCase()}</span>
-                                                <span class="group-chevron">{collapsedGroups().has(group) ? '\u25B8' : '\u25BE'}</span>
+                                                <span class="group-chevron">{(isSearching() || !collapsedGroups().has(group)) ? '\u25BE' : '\u25B8'}</span>
                                             </div>
-                                            <Show when={!collapsedGroups().has(group)}>
+                                            <Show when={isSearching() || !collapsedGroups().has(group)}>
                                                 <Show when={group === 'gradient' && (() => {
                                                     const target = activeTarget();
                                                     if (!target) return false;
@@ -1804,6 +1851,11 @@ const PropertyPanel: Component = () => {
                                                         return renderControl(prop);
                                                     }}
                                                 </For>
+                                                {/* Appearance stack (extra fills/strokes) sits right under the basic
+                                                    Fill so the two fill controls are adjacent. */}
+                                                <Show when={group === 'background' && isElement() && targetData()}>
+                                                    <AppearanceEditor el={() => targetData()} />
+                                                </Show>
                                                 {/* Crop button for image elements in filter group */}
                                                 <Show when={group === 'filter' && (() => {
                                                     const target = activeTarget();
@@ -1867,8 +1919,9 @@ const PropertyPanel: Component = () => {
                                     )}
                                 </For>
 
-                                {/* Appearance stack — extra fills/strokes (single element) */}
-                                <Show when={isElement() && targetData()}>
+                                {/* Fallback: elements without a Background group still get the
+                                    Appearance stack (it renders adjacent to Fill otherwise). */}
+                                <Show when={isElement() && targetData() && !groupedProperties()['background'] && !isSearching()}>
                                     <AppearanceEditor el={() => targetData()} />
                                 </Show>
 

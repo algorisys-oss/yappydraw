@@ -122,6 +122,11 @@ export class CanvasRenderer implements IRenderer {
     get font(): string { return this.ctx.font; }
     set font(value: string) { this.ctx.font = value; }
 
+    // Canvas 2D letterSpacing (Chrome 99+/Safari 16+). Guarded so it degrades to
+    // no-op on engines without support rather than throwing.
+    get letterSpacing(): string { return (this.ctx as any).letterSpacing ?? '0px'; }
+    set letterSpacing(value: string) { try { (this.ctx as any).letterSpacing = value; } catch { /* unsupported */ } }
+
     get textAlign(): CanvasTextAlign { return this.ctx.textAlign; }
     set textAlign(value: CanvasTextAlign) { this.ctx.textAlign = value; }
 

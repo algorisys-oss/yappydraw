@@ -699,43 +699,11 @@ export function selectionOnDown(
     let hitId: string | null = null;
     const threshold = 10 / store.viewState.scale;
 
-    // STEP 1: Check if click is within any group's bounding box
-    const sortedGroups = getGroupsSortedByPriority(store.elements, store.layers);
-
-    for (const { groupId } of sortedGroups) {
-        const groupElements = store.elements.filter(el =>
-            el.groupIds && el.groupIds.includes(groupId)
-        );
-
-        const hasInteractableElement = groupElements.some(el =>
-            helpers.canInteractWithElement(el) && isLayerVisible(el.layerId)
-        );
-
-        if (!hasInteractableElement) continue;
-
-        if (isPointInGroupBounds(x, y, groupId, store.elements)) {
-            const idsToSelect = groupElements.map(el => el.id);
-            const isAllSelected = idsToSelect.every(id => store.selection.includes(id));
-
-            if (e.shiftKey || e.ctrlKey || e.metaKey) {
-                if (isAllSelected) {
-                    setStore('selection', s => s.filter(id => !idsToSelect.includes(id)));
-                } else {
-                    setStore('selection', s => [...new Set([...s, ...idsToSelect])]);
-                }
-            } else {
-                if (!isAllSelected) {
-                    setStore('selection', idsToSelect);
-                }
-            }
-
-            if (store.selection.length > 0) {
-                initMoveState(pState, x, y);
-            }
-
-            return;
-        }
-    }
+    // NOTE: the group-bounding-box hit (select a whole group by clicking its area)
+    // is handled as a FALLBACK further down — only when the per-element hit-test
+    // below finds nothing. Doing it pre-emptively here would shadow an on-top
+    // element sitting in the gap between members (e.g. a connector between two
+    // grouped shapes), making it un-clickable.
 
     const elementMap = new Map<string, DrawingElement>();
     for (const el of store.elements) elementMap.set(el.id, el);
@@ -831,6 +799,29 @@ export function selectionOnDown(
                     });
                     return;
                 }
+            }
+        }
+
+        // Fallback group hit: the click missed every element but lands inside a
+        // group's bounding box (e.g. empty space between members) → select that
+        // group. Runs after the per-element test so connectors/elements in the gap
+        // win when actually clicked.
+        const sortedGroups = getGroupsSortedByPriority(store.elements, store.layers);
+        for (const { groupId } of sortedGroups) {
+            const groupElements = store.elements.filter(el => el.groupIds && el.groupIds.includes(groupId));
+            const hasInteractable = groupElements.some(el => helpers.canInteractWithElement(el) && isLayerVisible(el.layerId));
+            if (!hasInteractable) continue;
+            if (isPointInGroupBounds(x, y, groupId, store.elements)) {
+                const idsToSelect = groupElements.map(el => el.id);
+                const isAllSelected = idsToSelect.every(id => store.selection.includes(id));
+                if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                    if (isAllSelected) setStore('selection', s => s.filter(id => !idsToSelect.includes(id)));
+                    else setStore('selection', s => [...new Set([...s, ...idsToSelect])]);
+                } else if (!isAllSelected) {
+                    setStore('selection', idsToSelect);
+                }
+                if (store.selection.length > 0) initMoveState(pState, x, y);
+                return;
             }
         }
 
@@ -2322,8 +2313,14 @@ function handleMove(
             }
             signals.setPoolLaneDropTarget(poolDrop);
 
-            // Mindmap reparent detection (suppress if pool lane detected)
-            if (poolDrop) {
+            // Mindmap reparent detection (suppress if pool lane detected).
+            // Only mindmap/hierarchy NODES participate — a node either already has a
+            // parentId, or is itself a parent of some node. This stops the
+            // "Reparent Node?" prompt from firing for ordinary shapes dropped over
+            // each other (e.g. a BPMN event moved onto a rectangle).
+            const parentIds = new Set(store.elements.map(e => e.parentId).filter(Boolean) as string[]);
+            const isHierarchyNode = (el: DrawingElement) => !!el.parentId || parentIds.has(el.id);
+            if (poolDrop || !isHierarchyNode(selEl)) {
                 signals.setReparentDropTarget(null);
             } else {
                 let dropId: string | null = null;
@@ -2331,6 +2328,7 @@ function handleMove(
                     if (el.id === selEl.id) continue;
                     if (el.type === 'line' || el.type === 'arrow' || el.type === 'organicBranch' || el.type === 'bezier') continue;
                     if (store.selection.includes(el.id)) continue;
+                    if (!isHierarchyNode(el)) continue;   // target must also be a mindmap node
                     if (hitTestElement(el, selCX, selCY, 0, store.elements)) {
                         dropId = el.id;
                         break;

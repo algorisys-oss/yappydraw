@@ -238,6 +238,41 @@ export const UmlDoc: Component = () => {
                         the order of interactions between objects.
                     </p>
                 </div>
+
+                <h3>Generate from text (DSL)</h3>
+                <p>
+                    The fastest way to build a complete sequence diagram is to describe it
+                    in the <strong>Import Diagram</strong> dialog (Mermaid <code>sequenceDiagram</code>
+                    syntax or native YSL). Yappy lays out lifelines, cascades the messages,
+                    and draws combined fragments, notes and activation bars automatically.
+                </p>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Feature</th><th>Mermaid</th><th>YSL</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Participant / actor</td><td><code>participant A as Alice</code> / <code>actor U as User</code></td><td><code>a [lifeline] "Alice"</code> / <code>u [actor] "User"</code></td></tr>
+                        <tr><td>Sync call (solid, filled head)</td><td><code>A-&gt;&gt;B: msg</code></td><td><code>a -&gt;&gt; b "msg"</code></td></tr>
+                        <tr><td>Reply (dashed)</td><td><code>B--&gt;&gt;A: ok</code></td><td><code>b --&gt;&gt; a "ok"</code></td></tr>
+                        <tr><td>Async / lost</td><td><code>A-)B</code> / <code>A-xB</code></td><td><code>a -&gt; b</code></td></tr>
+                        <tr><td>Self message</td><td><code>A-&gt;&gt;A: think</code></td><td><code>a -&gt;&gt; a "think"</code></td></tr>
+                        <tr><td>Activation</td><td><code>A-&gt;&gt;+B</code> … <code>B--&gt;&gt;-A</code></td><td><code>activate b</code> … <code>deactivate b</code></td></tr>
+                        <tr><td>Loop / opt / break</td><td><code>loop label</code> … <code>end</code></td><td><code>loop "label"</code> … <code>end</code></td></tr>
+                        <tr><td>Alternatives</td><td><code>alt cond</code> … <code>else other</code> … <code>end</code></td><td><code>alt "cond"</code> … <code>else "other"</code> … <code>end</code></td></tr>
+                        <tr><td>Parallel</td><td><code>par a</code> … <code>and b</code> … <code>end</code></td><td><code>par "a"</code> … <code>and "b"</code> … <code>end</code></td></tr>
+                        <tr><td>Note</td><td><code>Note over A,B: text</code></td><td><code>note over a,b "text"</code></td></tr>
+                        <tr><td>Auto-number messages</td><td><code>autonumber</code></td><td><code>autonumber</code></td></tr>
+                    </tbody>
+                </table>
+                <div class="tip-box">
+                    <h5>Known limitations</h5>
+                    <p>
+                        Lost-message (<code>-x</code>) arrows render with a normal arrowhead (no cross
+                        glyph yet), and nested activation bars on the same lifeline are staggered
+                        rather than precisely boxed. Generated diagrams are fully editable on the
+                        canvas afterwards — drag participants, edit message text, or restyle any element.
+                    </p>
+                </div>
             </section>
 
             {/* State Diagrams */}

@@ -50,6 +50,10 @@ export class TextRenderer extends ShapeRenderer {
         }
 
         renderer.font = `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
+        // Letter spacing (tracking) — set once so it applies to measurement, wrapping
+        // and drawing across the normal / vertical / per-glyph paths below. Restored by
+        // the renderer.save()/restore() pair wrapping this method.
+        renderer.letterSpacing = el.letterSpacing ? `${el.letterSpacing}px` : '0px';
 
         const lineHeight = fontSize * 1.2;
         const padding = 4; // Small internal padding
@@ -83,13 +87,17 @@ export class TextRenderer extends ShapeRenderer {
         if (el.charTransforms && el.charTransforms.length && !(el.text || '').includes('\n')) {
             const chars = [...(el.text || '')];
             const baseColor = el.textColor || el.strokeColor || '#000000';
+            const baseFont = `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
             renderer.textAlign = 'center';
             renderer.textBaseline = 'middle';
             let adv = el.x + padding;
             const baseY = el.y + el.height / 2;
             chars.forEach((ch, i) => {
-                const w = renderer.measureText(ch).width;
                 const t = el.charTransforms![i] || { dx: 0, dy: 0, scale: 1, rot: 0 };
+                // Per-glyph font override (Touch Type): set it before measuring so the
+                // glyph advance matches the drawn width, then restore the base font.
+                if (t.font) renderer.font = `${fontStyle}${fontWeight}${fontSize}px ${resolveFontFamily(t.font)}`;
+                const w = renderer.measureText(ch).width;
                 const cx2 = adv + w / 2;
                 renderer.save();
                 // Per-glyph colour override (Touch Type), else the element's text colour.
@@ -99,6 +107,7 @@ export class TextRenderer extends ShapeRenderer {
                 if (t.scale && t.scale !== 1) renderer.scale(t.scale, t.scale);
                 renderer.fillText(ch, 0, 0);
                 renderer.restore();
+                if (t.font) renderer.font = baseFont;
                 adv += w;
             });
             renderer.restore();

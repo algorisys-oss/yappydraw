@@ -9,15 +9,13 @@ import PenToolGroup from "./pen-tool-group";
 import TextToolGroup from "./text-tool-group";
 import ShapeToolGroup from "./shape-tool-group";
 import SketchnoteToolGroup from "./sketchnote-tool-group";
-import InfraToolGroup from "./infra-tool-group";
+import ArchitectureToolGroup from "./architecture-tool-group";
 
 import WireframeToolGroup from "./wireframe-tool-group";
 import MindmapToolGroup from "./mindmap-tool-group";
-import TechnicalToolGroup from "./technical-tool-group";
 import UmlToolGroup from "./uml-tool-group";
 
 import StatusToolGroup from "./status-tool-group";
-import CloudInfraToolGroup from "./cloud-infra-tool-group";
 import DataMetricsToolGroup from "./data-metrics-tool-group";
 import ConnectionRelToolGroup from "./connection-rel-tool-group";
 import ConnectorToolGroup from "./connector-tool-group";
@@ -79,12 +77,14 @@ const Toolbar: Component = () => {
         if (!el) return;
         const r = el.getBoundingClientRect();
         if (!r.width && !r.height) return; // not laid out yet
-        const M = 32; // keep at least this many px on-screen on every edge
+        // Keep the WHOLE toolbar on-screen so the drag-handle is always reachable.
+        // Pull in any right/bottom overflow first, then guarantee the top-left edge
+        // is visible (which wins if the bar is larger than the viewport).
         let dx = 0, dy = 0;
-        if (r.right < M) dx = M - r.right;
-        else if (r.left > window.innerWidth - M) dx = (window.innerWidth - M) - r.left;
-        if (r.bottom < M) dy = M - r.bottom;
-        else if (r.top > window.innerHeight - M) dy = (window.innerHeight - M) - r.top;
+        if (r.right > window.innerWidth) dx = window.innerWidth - r.right;
+        if (r.bottom > window.innerHeight) dy = window.innerHeight - r.bottom;
+        if (r.left + dx < 0) dx = -r.left;
+        if (r.top + dy < 0) dy = -r.top;
         if (dx || dy) {
             const p = position();
             const next = { x: p.x + dx, y: p.y + dy };
@@ -157,7 +157,11 @@ const Toolbar: Component = () => {
     };
 
     const onPointerUp = () => {
-        if (isDragging()) { try { localStorage.setItem('toolbarPos', JSON.stringify(position())); } catch { /* ignore */ } }
+        if (isDragging()) {
+            // Snap back if the user parked it off-screen, then persist the on-screen
+            // position so it never gets lost beyond the viewport.
+            requestAnimationFrame(() => { clampIntoView(); try { localStorage.setItem('toolbarPos', JSON.stringify(position())); } catch { /* ignore */ } });
+        }
         setIsDragging(false);
         setIsResizing(false);
     };
@@ -464,8 +468,8 @@ const Toolbar: Component = () => {
                     {/* Status & Annotation Group (Checkbox, Badge, Tag, Pin, etc.) */}
                     <StatusToolGroup />
 
-                    {/* Cloud & Container Infrastructure (Kubernetes, Container, API Gateway, etc.) */}
-                    <CloudInfraToolGroup />
+                    {/* Architecture Group — unified Infrastructure + Cloud-Native + Blocks/DFD/State */}
+                    <ArchitectureToolGroup />
 
                     {/* Data & Metrics (Bar Chart, Pie Chart, Trend, Funnel, Gauge, Table) */}
                     <DataMetricsToolGroup />
@@ -473,17 +477,11 @@ const Toolbar: Component = () => {
                     {/* Connection & Relationship (Puzzle, Chain, Bridge, Magnet, Scale, etc.) */}
                     <ConnectionRelToolGroup />
 
-                    {/* Infrastructure Tool Group (Server, LB, Cloud, User, etc.) */}
-                    <InfraToolGroup />
-
                     {/* Wireframing Essentials (Browser Window, Mobile, Input, Button) */}
                     <WireframeToolGroup />
 
                     {/* Data Structures (Array, Stack, Queue, LinkedList, BinaryTree, HashTable) */}
                     <DsToolGroup />
-
-                    {/* Technical Diagramming Group (DFD, Isometric Cube, Cylinder) */}
-                    <TechnicalToolGroup />
 
                     {/* UML Tool Group (Class, Actor, UseCase) */}
                     <UmlToolGroup />

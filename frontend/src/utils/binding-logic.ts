@@ -139,8 +139,11 @@ export function refreshLinePoints(
             line.endBinding?.position
         );
 
-        // Convert world points to relative points for storage
-        return rawPoints.map(p => ({ x: p.x - sx, y: p.y - sy }));
+        // Convert world points to relative points for storage. Connector points are
+        // stored as a FLAT number[] (matching `connect()` and the straight-line branch
+        // below); returning {x,y} objects here corrupts the elbow on every bound-shape
+        // move (e.g. when a group of connected shapes is dragged), so flatten.
+        return rawPoints.flatMap(p => [p.x - sx, p.y - sy]);
     }
 
     // If it's a straight line/arrow that already has points, update them to be consistent with sx/sy

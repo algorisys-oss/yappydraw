@@ -60,6 +60,9 @@ export class SvgRenderer implements IRenderer {
     lineDashOffset = 0;
     globalAlpha = 1;
     fontVal = '10px sans-serif';
+    letterSpacingVal = '0px';
+    get letterSpacing(): string { return this.letterSpacingVal; }
+    set letterSpacing(v: string) { this.letterSpacingVal = v || '0px'; }
     textAlign: CanvasTextAlign = 'start';
     textBaseline: CanvasTextBaseline = 'alphabetic';
 
@@ -216,6 +219,8 @@ export class SvgRenderer implements IRenderer {
         else if (this.textBaseline === 'top' || this.textBaseline === 'hanging') t.setAttribute('dominant-baseline', 'hanging');
         t.setAttribute('fill', typeof this.fillStyleVal === 'string' ? this.fillStyleVal : '#000');
         if (this.globalAlpha < 1) t.setAttribute('fill-opacity', `${this.globalAlpha}`);
+        const ls = parseFloat(this.letterSpacingVal);
+        if (ls) t.setAttribute('letter-spacing', `${ls}`);
         t.textContent = text;
         this.group.appendChild(t);
     }
@@ -228,7 +233,7 @@ export class SvgRenderer implements IRenderer {
         const style = /\bitalic\b/.test(f) ? 'italic' : 'normal';
         return { size, family, weight, style };
     }
-    measureText(text: string): TextMetrics { const { size } = this.parseFont(); return { width: text.length * size * 0.55 }; }
+    measureText(text: string): TextMetrics { const { size } = this.parseFont(); const ls = parseFloat(this.letterSpacingVal) || 0; return { width: text.length * size * 0.55 + Math.max(0, text.length) * ls }; }
 
     // ── Images ──
     drawImage(image: any, dx: number, dy: number, dw?: number, dh?: number): void {
