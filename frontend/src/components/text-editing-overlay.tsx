@@ -64,7 +64,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 const text = props.editText();
                 const fontSize = el.fontSize || (el.type === 'text' ? 20 : 28);
                 const existingWidth = el.width || 200;
-                const measuredHeight = measureWrappedTextHeight(text, existingWidth, fontSize, el.fontFamily);
+                const measuredHeight = measureWrappedTextHeight(text, existingWidth, fontSize, el.fontFamily, el.letterSpacing);
                 // Only grow, never shrink — preserve existing height to prevent text jumping
                 const newHeight = Math.max(measuredHeight, el.height, fontSize * 1.2);
 
@@ -308,7 +308,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 // measureWrappedTextHeight returns N * lineHeight which matches CSS line-height spacing
                 if (isStandaloneText) {
                     const text = props.editText() || '';
-                    const wrappedHeight = measureWrappedTextHeight(text, el.width || 200, fontSizeVal, el.fontFamily);
+                    const wrappedHeight = measureWrappedTextHeight(text, el.width || 200, fontSizeVal, el.fontFamily, el.letterSpacing);
                     const totalTextH = wrappedHeight * scale;
                     const vAlign = el.verticalAlign || 'middle';
                     if (vAlign === 'top') {

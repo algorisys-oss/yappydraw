@@ -99,7 +99,7 @@ export function commitText(ctx: TextEditingContext): void {
                 const fontSize = el.fontSize || 28;
                 // Preserve existing width, recalculate height based on wrapped content
                 const existingWidth = el.width || 200;
-                const height = measureWrappedTextHeight(newText, existingWidth, fontSize, el.fontFamily);
+                const height = measureWrappedTextHeight(newText, existingWidth, fontSize, el.fontFamily, el.letterSpacing);
                 const finalHeight = Math.max(height, fontSize * 1.2);
 
                 updateElement(id, { text: newText, height: finalHeight }, true);
@@ -190,7 +190,7 @@ export function commitRichText(ctx: TextEditingContext): void {
         if (plainText) {
             const fontSize = el.fontSize || 20;
             const existingWidth = el.width || 200;
-            const height = measureWrappedTextHeight(plainText, existingWidth, fontSize, el.fontFamily);
+            const height = measureWrappedTextHeight(plainText, existingWidth, fontSize, el.fontFamily, el.letterSpacing);
             const finalHeight = Math.max(height, fontSize * 1.2);
             updateElement(id, { richText: spans, text: plainText, height: finalHeight }, true);
         } else {

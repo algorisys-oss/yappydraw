@@ -4652,7 +4652,7 @@ export const setTextVertical = (id: string, on?: boolean): boolean => {
         setStore('elements', e => e.id === id, { verticalText: true, width: Math.round(v.width), height: Math.round(v.height) } as any);
     } else {
         const w = Math.max(40, Math.round(measureMaxLineWidth(el) + 12));
-        const h = Math.max((el.fontSize || 28) * 1.2, measureWrappedTextHeight(el.text || '', w, el.fontSize || 28, el.fontFamily));
+        const h = Math.max((el.fontSize || 28) * 1.2, measureWrappedTextHeight(el.text || '', w, el.fontSize || 28, el.fontFamily, el.letterSpacing));
         setStore('elements', e => e.id === id, { verticalText: false, width: w, height: Math.round(h) } as any);
     }
     bumpDirtyRevision();

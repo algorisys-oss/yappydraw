@@ -2039,7 +2039,7 @@ function applyResize(
 
                 if (isHorizontalOnly) {
                     // Horizontal resize: recalculate height based on wrapped text
-                    const calculatedHeight = measureWrappedTextHeight(singleEl.text, newWidth, fontSize, singleEl.fontFamily);
+                    const calculatedHeight = measureWrappedTextHeight(singleEl.text, newWidth, fontSize, singleEl.fontFamily, singleEl.letterSpacing);
                     updates.height = Math.max(calculatedHeight, fontSize * 1.2);
                 }
                 // For all other handles (corners and vertical), allow free resize

@@ -121,13 +121,17 @@ export const measureContainerText = (
 ): TextMetrics => {
     const fontSize = el.fontSize || 28;
     const fontStr = getFontString(el);
-    const cacheKey = `${text}|${fontStr}|${availableWidth}|${el.type}`;
+    const letterSpacing = el.letterSpacing || 0;
+    const cacheKey = `${text}|${fontStr}|${availableWidth}|${el.type}|${letterSpacing}`;
 
     const cached = _textMetricsCache.get(cacheKey);
     if (cached) return cached;
 
     ctx.save();
     ctx.font = fontStr;
+    // Tracking widens the text — measure with it so wrapping + the fitted box match
+    // what's drawn (Illustrator-style). save()/restore() resets it afterwards.
+    ctx.letterSpacing = letterSpacing ? `${letterSpacing}px` : '0px';
 
     // For shapes that are inefficient with space (circle, diamond),
     // we use a smaller inscribed area for wrapping
@@ -197,6 +201,7 @@ export interface VerticalTextLayout {
 export const measureVerticalText = (el: Partial<DrawingElement>): VerticalTextLayout => {
     const ctx = getMeasurementContext();
     ctx.font = getFontString(el);
+    ctx.letterSpacing = '0px'; // tracking is horizontal — don't apply to stacked glyphs
     const fontSize = el.fontSize || 28;
     const padding = 6;
     const columns = (el.text || '').split('\n').map(line => [...line]); // spread → surrogate-safe
@@ -217,8 +222,10 @@ export const measureVerticalText = (el: Partial<DrawingElement>): VerticalTextLa
 export const measureMaxLineWidth = (el: Partial<DrawingElement>): number => {
     const ctx = getMeasurementContext();
     ctx.font = getFontString(el);
+    ctx.letterSpacing = el.letterSpacing ? `${el.letterSpacing}px` : '0px';
     let max = 0;
     for (const line of (el.text || '').split('\n')) max = Math.max(max, ctx.measureText(line).width);
+    ctx.letterSpacing = '0px'; // shared context — reset so it doesn't leak
     return max;
 };
 
@@ -230,13 +237,15 @@ export const measureWrappedTextHeight = (
     text: string,
     width: number,
     fontSize: number,
-    fontFamily?: string
+    fontFamily?: string,
+    letterSpacing?: number
 ): number => {
     if (!text) return fontSize * 1.2;
 
     const ctx = getMeasurementRenderer();
     const resolvedFont = resolveFontFamily(fontFamily);
     ctx.font = `${fontSize}px ${resolvedFont}`;
+    ctx.letterSpacing = letterSpacing ? `${letterSpacing}px` : '0px';
 
     const padding = 4;
     const availableWidth = Math.max(width - padding * 2, 20);
@@ -253,6 +262,7 @@ export const measureWrappedTextHeight = (
         }
     });
 
+    ctx.letterSpacing = '0px'; // shared renderer — reset so it doesn't leak
     const lineHeight = fontSize * 1.2;
     return totalLines * lineHeight;
 };
