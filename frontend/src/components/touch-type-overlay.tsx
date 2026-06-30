@@ -167,14 +167,15 @@ export const TouchTypeOverlay = () => {
             setSelSet(next);
             return; // shift-click selects a contiguous range, doesn't drag
         }
-        if (!selSet().has(pick)) { setSelSet(new Set([pick])); anchor = pick; }
-        else anchor = pick;
-        // Drag the whole selection: snapshot history once, capture each glyph's base.
-        const ids = selArr();
-        setCharTransforms(el.id, ids, {}, true);
-        const bases = new Map<number, { dx: number; dy: number }>();
-        for (const i of ids) { const t = curT(i); bases.set(i, { dx: t.dx || 0, dy: t.dy || 0 }); }
-        drag = { startW: w, bases };
+        // Plain click → select ONLY this glyph and drag just it. Dragging always
+        // moves exactly the letter you grabbed — no surprise group-move from a
+        // selection left over from an earlier marquee/Shift-select. (Multi-select
+        // via Shift/Ctrl/marquee is still used by the style controls above.)
+        setSelSet(new Set([pick]));
+        anchor = pick;
+        setCharTransforms(el.id, [pick], {}, true); // history snapshot
+        const t = curT(pick);
+        drag = { startW: w, bases: new Map([[pick, { dx: t.dx || 0, dy: t.dy || 0 }]]) };
     };
 
     const onMove = (e: PointerEvent) => {
