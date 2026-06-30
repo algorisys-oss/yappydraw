@@ -44,6 +44,10 @@ function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: n
 // Per-colour dark-mode adjustment cache (keyed by the input colour string).
 const _darkAdjustCache = new Map<string, string>();
 
+// Sketchy line-based fill styles. In sketch mode RoughJS hatches them; in
+// architectural mode we draw clean hatch lines (applyHatchFill) instead.
+const HATCH_FILL_STYLES = ['hachure', 'cross-hatch', 'zigzag', 'dashed', 'zigzag-line'];
+
 export class RenderPipeline {
     /**
      * Dark-mode colour mapping. See docs/design/dark-mode.md.
@@ -260,6 +264,12 @@ export class RenderPipeline {
         if (isComplexFill) {
             fill = undefined;
         }
+        // Architectural (clean) mode can't use RoughJS hatching, so we draw clean
+        // hatch lines in applyComplexFills instead — suppress the solid fill here so
+        // the hatch shows through. Sketch mode keeps the fill so RoughJS can hatch it.
+        if (el.renderStyle === 'architectural' && HATCH_FILL_STYLES.includes(el.fillStyle as string)) {
+            fill = undefined;
+        }
 
         const density = el.fillDensity || 1;
         const baseGap = 5;
@@ -295,11 +305,21 @@ export class RenderPipeline {
         const useImage = fillStyle === 'image' && !!el.backgroundImage;
         const useMesh = fillStyle === 'mesh' && !!el.meshGradient;
         const usePattern = fillStyle === 'pattern' && !!el.patternFill;
+        // Clean hatch lines for the sketchy fill styles, architectural mode only
+        // (sketch mode leaves these to RoughJS).
+        const useHatch = el.renderStyle === 'architectural' && HATCH_FILL_STYLES.includes(fillStyle as string)
+            && !!el.backgroundColor && el.backgroundColor !== 'transparent';
 
-        if (!useGradient && !useDots && !useImage && !useMesh && !usePattern) return;
+        if (!useGradient && !useDots && !useImage && !useMesh && !usePattern && !useHatch) return;
 
         renderer.save();
         renderer.translate(cx, cy);
+
+        if (useHatch) {
+            this.applyHatchFill(renderer, el, fillStyle as string, context.isDarkMode);
+            renderer.restore();
+            return;
+        }
 
         if (useImage) {
             this.applyImageFill(renderer, el);
@@ -393,6 +413,69 @@ export class RenderPipeline {
 
         renderer.drawImage(img, -dw / 2, -dh / 2, dw, dh);
         renderer.restore();
+    }
+
+    /**
+     * Clean (non-RoughJS) hatch fill for architectural mode: clips to the shape
+     * outline and strokes parallel hatch lines in the fill colour, matching the
+     * sketch-mode hachure / cross-hatch / zigzag / dashed styles. Runs in the
+     * center-translated frame (geometry is center-relative), mirroring image fill.
+     */
+    private static applyHatchFill(renderer: IRenderer, el: DrawingElement, fillStyle: string, isDarkMode: boolean) {
+        const geometry = getShapeGeometry(el);
+        if (!geometry) return;
+
+        renderer.save();
+        if (geometry.type === 'path') {
+            renderer.clipPath(geometry.path);
+        } else {
+            renderer.beginPath();
+            this.renderGeometry(renderer, geometry);
+            renderer.clip();
+        }
+
+        const w = el.width, h = el.height;
+        const density = el.fillDensity || 1;
+        const gap = Math.max(4, 9 / density);
+        const color = this.adjustColor(el.backgroundColor, isDarkMode);
+        renderer.strokeStyle = color;
+        renderer.lineWidth = Math.max(0.75, (el.strokeWidth || 1) * 0.5);
+
+        const zig = fillStyle === 'zigzag' || fillStyle === 'zigzag-line';
+        if (fillStyle === 'dashed') renderer.setLineDash([6, 4]);
+
+        this.drawHatchLines(renderer, w, h, gap, 60, zig);
+        if (fillStyle === 'cross-hatch') this.drawHatchLines(renderer, w, h, gap, -30, false);
+
+        if (fillStyle === 'dashed') renderer.setLineDash([]);
+        renderer.restore();
+    }
+
+    /** Stroke parallel (optionally zig-zag) lines at `angleDeg`, spaced `gap` apart, in the center frame. */
+    private static drawHatchLines(renderer: IRenderer, w: number, h: number, gap: number, angleDeg: number, zigzag: boolean) {
+        const a = (angleDeg * Math.PI) / 180;
+        const dx = Math.cos(a), dy = Math.sin(a);     // line direction
+        const px = -Math.sin(a), py = Math.cos(a);    // perpendicular (offset axis)
+        const R = Math.abs(w) + Math.abs(h);          // covers the whole box
+        const amp = Math.min(gap * 0.55, 5);          // zig-zag amplitude
+        const wave = gap * 1.4;                        // zig-zag wavelength
+        for (let d = -R; d <= R; d += gap) {
+            const ox = d * px, oy = d * py;
+            renderer.beginPath();
+            if (!zigzag) {
+                renderer.moveTo(ox - R * dx, oy - R * dy);
+                renderer.lineTo(ox + R * dx, oy + R * dy);
+            } else {
+                let sign = 1, first = true;
+                for (let t = -R; t <= R; t += wave) {
+                    const x = ox + t * dx + sign * amp * px;
+                    const y = oy + t * dy + sign * amp * py;
+                    if (first) { renderer.moveTo(x, y); first = false; } else renderer.lineTo(x, y);
+                    sign = -sign;
+                }
+            }
+            renderer.stroke();
+        }
     }
 
     /**

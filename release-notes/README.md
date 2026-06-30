@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.5.19](0.5.19.md) — Hatch fills (hachure/cross-hatch/zigzag/dashed) in architectural mode
 - [0.5.18](0.5.18.md) — UML Object, Port, History & Activity Action shapes
 - [0.5.17](0.5.17.md) — UML Deployment Node & Artifact shapes
 - [0.5.16](0.5.16.md) — Google Fonts, custom-font hardening & UML in the Architecture group
