@@ -109,6 +109,8 @@ const shapeToolCatalog: { type: ToolType; label: string; group: string }[] = [
     { type: 'umlNote', label: 'UML Note', group: 'UML' },
     { type: 'umlPackage', label: 'UML Package', group: 'UML' },
     { type: 'umlComponent', label: 'UML Component', group: 'UML' },
+    { type: 'umlNode', label: 'UML Deployment Node', group: 'UML' },
+    { type: 'umlArtifact', label: 'UML Artifact', group: 'UML' },
     { type: 'umlState', label: 'UML State', group: 'UML' },
     { type: 'umlLifeline', label: 'UML Lifeline', group: 'UML' },
     { type: 'umlFragment', label: 'UML Fragment', group: 'UML' },

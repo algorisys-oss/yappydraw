@@ -127,7 +127,8 @@ export const getTransformOptions = (currentType: ElementType, isPolylineShape = 
     const umlShapes: ElementType[] = [
         'umlClass', 'umlInterface', 'umlActor', 'umlUseCase', 'umlNote',
         'umlPackage', 'umlComponent', 'umlState', 'umlLifeline', 'umlFragment',
-        'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface'
+        'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface',
+        'umlNode', 'umlArtifact'
     ];
 
     // Unbound polylines are shapes, not connectors
@@ -328,6 +329,8 @@ export const getShapeIcon = (type: ElementType): string => {
         'umlNote': '🗒',
         'umlPackage': '📦',
         'umlComponent': '⧉',
+        'umlNode': '🧊',
+        'umlArtifact': '📄',
         'umlState': '▢',
         'umlLifeline': '⫶',
         'umlFragment': '⬒',

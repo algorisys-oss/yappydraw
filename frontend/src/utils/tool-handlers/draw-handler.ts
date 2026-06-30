@@ -28,7 +28,7 @@ const SOLID_STROKE_SHAPES = [
     'callout', 'speechBubble', 'database', 'document', 'cylinder',
     'isometricCube', 'solidBlock', 'perspectiveBlock',
     'umlClass', 'umlEnum', 'umlInterface', 'umlActor', 'umlComponent', 'umlState',
-    'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive',
+    'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlNode', 'umlArtifact',
     'table', 'codeBlock',
     'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable',
     'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch',

@@ -49,6 +49,9 @@ export const SHAPE_ALIASES: Record<string, ElementType> = {
     'lifeline': 'umlLifeline',
     'package': 'umlPackage',
     'fragment': 'umlFragment',
+    'node': 'umlNode',
+    'deployment-node': 'umlNode',
+    'artifact': 'umlArtifact',
     'enum': 'umlEnum',
 
     // Infrastructure

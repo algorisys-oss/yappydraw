@@ -318,6 +318,25 @@ Examples:
                 </ul>
             </section>
 
+            {/* Deployment Diagrams */}
+            <section class="doc-section">
+                <h2>Deployment Diagrams</h2>
+                <p>
+                    Show how software is deployed onto hardware/runtime nodes and which
+                    artifacts run where. Find <strong>Deployment Node</strong> and
+                    <strong>Artifact</strong> in the <strong>Architecture</strong> toolbar group
+                    (UML Structure section), or via DSL with <code>[node]</code> / <code>[artifact]</code>.
+                </p>
+                <table class="api-table">
+                    <thead><tr><th>Element</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Deployment Node</strong></td><td>3-D box for a device, server or execution environment (label on the front face).</td></tr>
+                        <tr><td><strong>Artifact</strong></td><td>Rectangle with a folded-corner document icon — a deployable file (e.g. <code>app.jar</code>, a binary, a script).</td></tr>
+                    </tbody>
+                </table>
+                <p>Both render in sketch and architectural styles and accept full fill / stroke / text styling.</p>
+            </section>
+
             {/* Best Practices */}
             <section class="doc-section">
                 <h2>UML Best Practices</h2>

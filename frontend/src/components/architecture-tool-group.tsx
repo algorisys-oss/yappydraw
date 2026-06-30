@@ -88,6 +88,8 @@ const sections: Section[] = [
             { type: 'umlEnum', icon: List, label: 'Enum' },
             { type: 'umlPackage', icon: Folder, label: 'Package' },
             { type: 'umlComponent', icon: ComponentIcon, label: 'Component' },
+            { type: 'umlNode', icon: Box, label: 'Deployment Node' },
+            { type: 'umlArtifact', icon: FileText, label: 'Artifact' },
             { type: 'umlNote', icon: FileText, label: 'Note' },
         ],
     },

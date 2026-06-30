@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.5.17](0.5.17.md) — UML Deployment Node & Artifact shapes
 - [0.5.16](0.5.16.md) — Google Fonts, custom-font hardening & UML in the Architecture group
 - [0.5.15](0.5.15.md) — Industry-grade sequence diagrams, unified Architecture group, custom/per-char fonts & a UX sweep
 - [0.5.14](0.5.14.md) — Appearance pattern fills export as true SVG `<pattern>`

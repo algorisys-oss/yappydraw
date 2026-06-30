@@ -294,6 +294,7 @@ function hitTestGeometry(
         el.type === 'umlComponent' || el.type === 'umlState' || el.type === 'umlLifeline' ||
         el.type === 'umlFragment' || el.type === 'umlSignalSend' || el.type === 'umlSignalReceive' ||
         el.type === 'umlProvidedInterface' || el.type === 'umlRequiredInterface' ||
+        el.type === 'umlNode' || el.type === 'umlArtifact' ||
         el.type === 'trophy' || el.type === 'clock' || el.type === 'gear' ||
         el.type === 'target' || el.type === 'rocket' || el.type === 'flag' ||
         el.type === 'key' || el.type === 'magnifyingGlass' || el.type === 'book' ||
