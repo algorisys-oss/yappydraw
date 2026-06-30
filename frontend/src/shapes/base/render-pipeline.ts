@@ -720,6 +720,9 @@ export class RenderPipeline {
         const chars = [...text];
         const baseFont = getFontString(el);
         const baseColor = el.textColor || el.strokeColor || '#000000';
+        // Spread glyphs by the element's letter spacing (measureText includes it),
+        // so the hit-test overlay's matching layout lines up. Restored by the caller's save().
+        renderer.letterSpacing = el.letterSpacing ? `${el.letterSpacing}px` : '0px';
         renderer.textAlign = 'center';
         renderer.textBaseline = 'middle';
 

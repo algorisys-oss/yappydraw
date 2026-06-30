@@ -59,14 +59,20 @@ export const TouchTypeOverlay = () => {
         const isText = el.type === 'text' || el.type === 'richtext';
         const ctx = getMeasurementContext();
         const baseFont = getFontString(el);
+        // Match the renderer's advance: it measures with letterSpacing set, which
+        // spreads the glyphs out. Without this the boxes bunch on the left and
+        // clicks on the (visually spaced) later letters miss.
+        const ls = (el as any).letterSpacing ? `${(el as any).letterSpacing}px` : '0px';
         const chars = [...touchTypeText(el)];
         const widths: number[] = [];
         let total = 0;
         for (let i = 0; i < chars.length; i++) {
             const t = el.charTransforms?.[i];
             ctx.font = t?.font ? getFontString({ ...el, fontFamily: t.font }) : baseFont;
+            (ctx as any).letterSpacing = ls;
             const w = ctx.measureText(chars[i]).width; widths.push(w); total += w;
         }
+        (ctx as any).letterSpacing = '0px'; // shared context — reset so it doesn't leak
         const baseY = el.y + el.height / 2;
         let adv = isText ? el.x + 4 : (el.x + el.width / 2 - total / 2);
         const out: { i: number; cx: number; cy: number; w: number }[] = [];
