@@ -62,6 +62,10 @@ const SHAPE_DEFAULTS: Partial<Record<ElementType, ShapeSize>> = {
     umlFragment: { width: 200, height: 150 },
     umlNode: { width: 160, height: 100 },
     umlArtifact: { width: 140, height: 80 },
+    umlObject: { width: 160, height: 70 },
+    umlPort: { width: 16, height: 16 },
+    umlHistory: { width: 36, height: 36 },
+    umlAction: { width: 130, height: 56 },
 
     // ─── Infrastructure ──────────────────────────────────
     database: { width: 100, height: 120 },

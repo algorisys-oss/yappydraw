@@ -52,6 +52,13 @@ export const SHAPE_ALIASES: Record<string, ElementType> = {
     'node': 'umlNode',
     'deployment-node': 'umlNode',
     'artifact': 'umlArtifact',
+    'object': 'umlObject',
+    'instance': 'umlObject',
+    'port': 'umlPort',
+    'history': 'umlHistory',
+    'history-state': 'umlHistory',
+    'action': 'umlAction',
+    'activity-action': 'umlAction',
     'enum': 'umlEnum',
 
     // Infrastructure

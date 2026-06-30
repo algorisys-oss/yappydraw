@@ -95,7 +95,15 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         case 'umlFragment':
         case 'umlNode':
         case 'umlArtifact':
+        case 'umlObject':
+        case 'umlPort':
             return { type: 'rect', x: x, y: y, w: w, h: h, r: el.roundness ? 10 : 0 };
+
+        case 'umlAction':
+            return { type: 'rect', x: x, y: y, w: w, h: h, r: Math.min(Math.abs(h) / 2, Math.abs(w) / 2, 18) };
+
+        case 'umlHistory':
+            return { type: 'ellipse', cx: x + w / 2, cy: y + h / 2, rx: w / 2, ry: h / 2 };
 
         case 'umlState':
             return { type: 'rect', x: x, y: y, w: w, h: h, r: Math.min(Math.abs(w), Math.abs(h)) * 0.15 };

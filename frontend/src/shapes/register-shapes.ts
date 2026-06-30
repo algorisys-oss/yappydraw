@@ -106,7 +106,7 @@ export function registerShapes() {
     shapeRegistry.register('umlEnum', umlEnumRenderer);
 
     const umlGeneralRenderer = new UmlGeneralRenderer();
-    const umlTypes = ['umlActor', 'umlUseCase', 'umlNote', 'umlPackage', 'umlComponent', 'umlLifeline', 'umlFragment', 'umlNode', 'umlArtifact'] as const;
+    const umlTypes = ['umlActor', 'umlUseCase', 'umlNote', 'umlPackage', 'umlComponent', 'umlLifeline', 'umlFragment', 'umlNode', 'umlArtifact', 'umlObject', 'umlPort', 'umlHistory', 'umlAction'] as const;
     umlTypes.forEach(type => shapeRegistry.register(type, umlGeneralRenderer));
 
     const peopleRenderer = new PeopleRenderer();

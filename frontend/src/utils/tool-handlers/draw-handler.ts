@@ -29,6 +29,7 @@ const SOLID_STROKE_SHAPES = [
     'isometricCube', 'solidBlock', 'perspectiveBlock',
     'umlClass', 'umlEnum', 'umlInterface', 'umlActor', 'umlComponent', 'umlState',
     'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlNode', 'umlArtifact',
+    'umlObject', 'umlPort', 'umlHistory', 'umlAction',
     'table', 'codeBlock',
     'dsArray', 'dsStack', 'dsQueue', 'dsLinkedList', 'dsBinaryTree', 'dsHashTable',
     'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch',

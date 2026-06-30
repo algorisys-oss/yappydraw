@@ -8,6 +8,7 @@ import {
     GripVertical, Layers, Code, Network,
     Layout, Disc, List, FileText, Folder, Component as ComponentIcon,
     RectangleHorizontal, ArrowDown, Frame, ChevronRight, ChevronLeft, CircleDashed,
+    Square, SquareDot, Activity, History,
 } from "lucide-solid";
 import {
     KubernetesIcon, ContainerIcon, ApiGatewayIcon, CdnIcon, StorageBlobIcon,
@@ -90,6 +91,8 @@ const sections: Section[] = [
             { type: 'umlComponent', icon: ComponentIcon, label: 'Component' },
             { type: 'umlNode', icon: Box, label: 'Deployment Node' },
             { type: 'umlArtifact', icon: FileText, label: 'Artifact' },
+            { type: 'umlObject', icon: Square, label: 'Object / Instance' },
+            { type: 'umlPort', icon: SquareDot, label: 'Port' },
             { type: 'umlNote', icon: FileText, label: 'Note' },
         ],
     },
@@ -105,6 +108,8 @@ const sections: Section[] = [
             { type: 'umlSignalReceive', icon: ChevronLeft, label: 'Signal Receive' },
             { type: 'umlProvidedInterface', icon: CircleDot, label: 'Provided Interface' },
             { type: 'umlRequiredInterface', icon: CircleDashed, label: 'Required Interface' },
+            { type: 'umlAction', icon: Activity, label: 'Activity Action' },
+            { type: 'umlHistory', icon: History, label: 'History State' },
         ],
     },
 ];

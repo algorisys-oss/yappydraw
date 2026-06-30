@@ -2,6 +2,7 @@ import { ShapeRenderer } from "../base/shape-renderer";
 import type { RenderContext } from "../base/types";
 import { RenderPipeline } from "../base/render-pipeline";
 import type { IRenderer } from "../../rendering/IRenderer";
+import { getFontString, getMeasurementContext } from "../../utils/text-utils";
 
 export class UmlGeneralRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
@@ -34,6 +35,13 @@ export class UmlGeneralRenderer extends ShapeRenderer {
             renderer.rect(x, y + d, w - d, h - d);
         } else if (el.type === 'umlArtifact') {
             renderer.rect(x, y, w, h);
+        } else if (el.type === 'umlObject' || el.type === 'umlPort') {
+            renderer.rect(x, y, w, h);
+        } else if (el.type === 'umlHistory') {
+            renderer.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+        } else if (el.type === 'umlAction') {
+            // Activity action: rounded "stadium" rectangle.
+            renderer.roundRect(x, y, w, h, Math.min(h / 2, w / 2, 18));
         }
 
         renderer.fillStyle = options.fill || 'transparent';
@@ -128,6 +136,28 @@ export class UmlGeneralRenderer extends ShapeRenderer {
             this.drawArtifactIconClean(renderer, x, y, w, options);
         }
 
+        // Object/instance: underline the (centred) label to denote an instance.
+        if (el.type === 'umlObject' && el.containerText) {
+            renderer.font = getFontString(el);
+            const tw = renderer.measureText(el.containerText).width;
+            const uy = cy + (el.fontSize || 16) * 0.55;
+            renderer.strokeStyle = options.stroke || '#000000';
+            renderer.lineWidth = el.strokeWidth;
+            renderer.beginPath();
+            renderer.moveTo(cx - tw / 2, uy);
+            renderer.lineTo(cx + tw / 2, uy);
+            renderer.stroke();
+        }
+
+        // History pseudostate: an "H" glyph centred in the circle.
+        if (el.type === 'umlHistory') {
+            renderer.fillStyle = options.stroke || '#000000';
+            renderer.font = `bold ${Math.max(10, Math.min(w, h) * 0.5)}px sans-serif`;
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillText('H', cx, cy);
+        }
+
         // Text: lifeline renders text in top box only; node centres on its front face.
         if (el.type === 'umlLifeline') {
             const boxH = Math.min(60, Math.max(30, h * 0.2));
@@ -136,6 +166,8 @@ export class UmlGeneralRenderer extends ShapeRenderer {
         } else if (el.type === 'umlNode') {
             const d = this.nodeDepth(w, h);
             RenderPipeline.renderText(context, el.x + (w - d) / 2, el.y + d + (h - d) / 2);
+        } else if (el.type === 'umlPort' || el.type === 'umlHistory') {
+            // Port is a marker (no label); History draws its own "H".
         } else {
             RenderPipeline.renderText(context, cx, cy);
         }
@@ -204,6 +236,24 @@ export class UmlGeneralRenderer extends ShapeRenderer {
             const ix = x + w - s - 8, iy = y + 8, fold = s * 0.4;
             rc.path(`M ${ix} ${iy} L ${ix + s - fold} ${iy} L ${ix + s} ${iy + fold} L ${ix + s} ${iy + s} L ${ix} ${iy + s} Z`, options);
             rc.path(`M ${ix + s - fold} ${iy} L ${ix + s - fold} ${iy + fold} L ${ix + s} ${iy + fold}`, options);
+        } else if (el.type === 'umlObject') {
+            rc.rectangle(x, y, w, h, options);
+        } else if (el.type === 'umlPort') {
+            rc.rectangle(x, y, w, h, options);
+        } else if (el.type === 'umlHistory') {
+            rc.ellipse(x + w / 2, y + h / 2, w, h, options);
+        } else if (el.type === 'umlAction') {
+            // Activity action: rounded "stadium" rect via an arc path.
+            const r = Math.min(h / 2, w / 2, 18);
+            rc.path(`M ${x + r} ${y} L ${x + w - r} ${y} A ${r} ${r} 0 0 1 ${x + w - r} ${y + h} L ${x + r} ${y + h} A ${r} ${r} 0 0 1 ${x + r} ${y} Z`, options);
+        }
+
+        // Object/instance: underline the label (sketch).
+        if (el.type === 'umlObject' && el.containerText) {
+            const ctx = getMeasurementContext(); ctx.font = getFontString(el);
+            const tw = ctx.measureText(el.containerText).width;
+            const uy = cy + (el.fontSize || 16) * 0.55;
+            rc.line(cx - tw / 2, uy, cx + tw / 2, uy, { ...options, fill: 'none' });
         }
 
         // Text: lifeline renders text in top box only; node centres on its front face.
@@ -214,6 +264,16 @@ export class UmlGeneralRenderer extends ShapeRenderer {
         } else if (el.type === 'umlNode') {
             const d = this.nodeDepth(w, h);
             RenderPipeline.renderText(context, el.x + (w - d) / 2, el.y + d + (h - d) / 2);
+        } else if (el.type === 'umlPort') {
+            // marker — no label
+        } else if (el.type === 'umlHistory') {
+            // "H" glyph (matches architectural)
+            const tr = context.renderer;
+            tr.fillStyle = options.stroke || '#000000';
+            tr.font = `bold ${Math.max(10, Math.min(w, h) * 0.5)}px sans-serif`;
+            tr.textAlign = 'center';
+            tr.textBaseline = 'middle';
+            tr.fillText('H', cx, cy);
         } else {
             RenderPipeline.renderText(context, cx, cy);
         }
@@ -228,8 +288,12 @@ export class UmlGeneralRenderer extends ShapeRenderer {
             this.drawPackagePath(renderer, el.x, el.y, el.width, el.height);
         } else if (el.type === 'umlNote') {
             this.drawNotePath(renderer, el.x, el.y, el.width, el.height);
-        } else if (el.type === 'umlComponent' || el.type === 'umlLifeline' || el.type === 'umlFragment' || el.type === 'umlArtifact') {
+        } else if (el.type === 'umlComponent' || el.type === 'umlLifeline' || el.type === 'umlFragment' || el.type === 'umlArtifact' || el.type === 'umlObject' || el.type === 'umlPort') {
             renderer.rect(el.x, el.y, el.width, el.height);
+        } else if (el.type === 'umlHistory') {
+            renderer.ellipse(el.x + el.width / 2, el.y + el.height / 2, el.width / 2, el.height / 2, 0, 0, Math.PI * 2);
+        } else if (el.type === 'umlAction') {
+            renderer.roundRect(el.x, el.y, el.width, el.height, Math.min(el.height / 2, el.width / 2, 18));
         } else if (el.type === 'umlNode') {
             // Hit/selection path: the front face of the 3D box.
             const d = this.nodeDepth(el.width, el.height);
