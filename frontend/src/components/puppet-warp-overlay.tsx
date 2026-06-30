@@ -13,8 +13,14 @@ export const PuppetWarpOverlay = () => {
     const [drag, setDrag] = createSignal<number | null>(null);
     let dragging = false;
 
+    // Puppet Warp deforms a vector outline (shapes/paths) or warps image pixels.
+    // Text glyphs and connectors have nothing the mesh can bend, so gate them out.
+    const NON_WARPABLE = new Set(['text', 'richtext', 'line', 'arrow', 'organicBranch']);
     const target = (): DrawingElement | undefined => store.elements.find(e => e.id === store.selection[0]);
-    const active = () => store.puppetWarpActive && !!target();
+    const warpable = (): boolean => { const el = target(); return !!el && !NON_WARPABLE.has(el.type); };
+    const active = () => store.puppetWarpActive && warpable();
+    // The tool is on but the selected element can't be warped — show a hint instead.
+    const notice = () => store.puppetWarpActive && !!target() && !warpable();
     const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
 
     // Pin world position = element centre + pin (centred-local) rotated by el.angle.
@@ -78,6 +84,13 @@ export const PuppetWarpOverlay = () => {
     };
 
     return (
+        <>
+        <Show when={notice()}>
+            <div class="pw-notice">
+                Puppet Warp works on shapes, paths &amp; images — not text or connectors.
+                <button class="pw-done" onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); togglePuppetWarp(false); }}>Done ✕</button>
+            </div>
+        </Show>
         <Show when={active()}>
             <div class="pw-overlay" onPointerDown={onDown} onContextMenu={(e) => e.preventDefault()}>
                 <svg class="pw-svg">
@@ -92,5 +105,6 @@ export const PuppetWarpOverlay = () => {
                 </div>
             </div>
         </Show>
+        </>
     );
 };
