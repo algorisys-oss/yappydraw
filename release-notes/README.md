@@ -27,6 +27,13 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.5.27](0.5.27.md) — Letter Spacing for shape & connector labels
+- [0.5.26](0.5.26.md) — Touch Type works with letter spacing
+- [0.5.25](0.5.25.md) — Touch Type: dragging a letter moves only that letter
+- [0.5.24](0.5.24.md) — Reliable Touch Type letter selection
+- [0.5.23](0.5.23.md) — Spinner arrows on numeric property fields
+- [0.5.22](0.5.22.md) — Puppet Warp gated to warp-capable elements
+- [0.5.21](0.5.21.md) — Touch Type: multi-letter select & shape labels
 - [0.5.20](0.5.20.md) — Letter spacing now drives text auto-resize & wrapping (Illustrator parity)
 - [0.5.19](0.5.19.md) — Hatch fills (hachure/cross-hatch/zigzag/dashed) in architectural mode
 - [0.5.18](0.5.18.md) — UML Object, Port, History & Activity Action shapes

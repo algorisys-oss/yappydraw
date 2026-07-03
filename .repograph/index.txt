@@ -217,7 +217,7 @@ frontend/src/components/symmetry-overlay.tsx | typescript | 63 | SymmetryOverlay
 frontend/src/components/technical-tool-group.tsx | typescript | 141 | Component:1 TechnicalToolGroup:26 handler:33 getActiveTool:43 handleToolClick:52 as:60 as:66 handleRightClick:74 toggleMenu:80 activeTool:87 isActive:88 getDropdownPosition:90
 frontend/src/components/template-browser.css | - | 364 |
 frontend/src/components/template-browser.tsx | typescript | 147 | Component:1 isPresentationTemplate:7 TemplateBrowserProps:11 TemplateBrowser:17 templates:23 handleSelect:25
-frontend/src/components/text-editing-overlay.tsx | typescript | 502 | section:4 Component:8 TextEditingOverlayProps:20 TextEditingOverlay:34 activeTextElement:37 handleTextBlur:43 section:136 sections:299
+frontend/src/components/text-editing-overlay.tsx | typescript | 503 | section:4 Component:8 TextEditingOverlayProps:20 TextEditingOverlay:34 activeTextElement:37 handleTextBlur:43 section:136 sections:299
 frontend/src/components/text-editor-modal.css | - | 138 |
 frontend/src/components/text-editor-modal.tsx | typescript | 247 | Component:7 TextEditorModalProps:15 TextEditorModal:32 updateActiveFormats:41 syncSpans:52 execFormat:59 handleDone:66 handleKeyDown:79 handleDocClick:91 getFontStyle:126
 frontend/src/components/text-tool-group.tsx | typescript | 133 | Component:1 TextType:8 TextToolGroup:15 handler:22 getCurrentTextTool:32 isTextToolActive:36 handleSelectText:44 handleRightClick:66 toggleMenu:72 getDropdownPosition:79
@@ -306,7 +306,7 @@ frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | Artboards
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 134 | EffectsDoc:10 Tools:127
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
-frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 437 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
+frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 439 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 375 | MasksAppearanceTraceDoc:8 tools:14 dropdown:159
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
@@ -335,7 +335,7 @@ frontend/src/rendering/IRenderer.ts | typescript | 108 | ICanvasGradient:14{addC
 frontend/src/rendering/SvgRenderer.ts | typescript | 285 | Mat:19 SvgGradient:33{constructor:37 addColorStop:38} SvgRenderer:41{letterSpacing:64 constructor:69 save:76 restore:77 translate:80 rotate:81 scale:82 transform:83 matrixAttr:85 beginPath:88 closePath:89 moveTo:90 lineTo:91 quadraticCurveTo:92 bezierCurveTo:93 rect:94 roundRect:98 arc:104 ellipse:124 arcTo:134 paint:137 applyStroke:162 emit:171 pathNode:185 fill:187 stroke:188 fillRect:189 strokeRect:190 clip:192 clipPath:193 clipCurrent:194 fillPath:204 strokePath:205 fillText:208 parseFont:227 measureText:236 drawImage:239 drawImageCropped:253 createLinearGradient:258 createRadialGradient:259 createConicGradient:260 createPattern:261 fillStyle:264 strokeStyle:266 setLineDash:268 font:269 globalCompositeOperation:273 shadowColor:275 shadowBlur:277 shadowOffsetX:279 shadowOffsetY:281 filter:283}
 frontend/src/rendering/index.ts | typescript | 2 |
 frontend/src/shapes/base/erase-mask.ts | typescript | 203 | CoreRender:23 acquirePool:41 readLocalPoints:56 paddedWorldAABB:68 applyEraseStrokes:87 renderWithEraseMask:141
-frontend/src/shapes/base/render-pipeline.ts | typescript | 1040 | parseColorRgba:18 hslToRgb:36 RenderPipeline:51{adjustColor:63 shadeColor:88 applyTransformations:137 restoreTransformations:197 applyStrokeStyle:204 buildStrokeGradient:228 buildRenderOptions:257 applyComplexFills:298 applyImageFill:365 applyHatchFill:424 drawHatchLines:455 applyMeshFill:489 applyPatternFill:524 applyGradient:550}
+frontend/src/shapes/base/render-pipeline.ts | typescript | 1043 | parseColorRgba:18 hslToRgb:36 RenderPipeline:51{adjustColor:63 shadeColor:88 applyTransformations:137 restoreTransformations:197 applyStrokeStyle:204 buildStrokeGradient:228 buildRenderOptions:257 applyComplexFills:298 applyImageFill:365 applyHatchFill:424 drawHatchLines:455 applyMeshFill:489 applyPatternFill:524 applyGradient:550}
 frontend/src/shapes/base/shape-renderer.ts | typescript | 277 | ShapeRenderer:6{render:11}
 frontend/src/shapes/base/types.ts | typescript | 13 | RenderContext:5 RenderStyle:13
 frontend/src/shapes/register-shapes.ts | typescript | 148 | registerShapes:35
@@ -344,7 +344,7 @@ frontend/src/shapes/renderers/circle-renderer.ts | typescript | 74 | CircleRende
 frontend/src/shapes/renderers/cloud-infra-renderer.ts | typescript | 456 | CloudInfraRenderer:7{renderArchitectural:8 renderSketch:268 roundRect:405 getHexPath:421 getShieldPath:435 definePath:450}
 frontend/src/shapes/renderers/code-block-renderer.ts | typescript | 179 | CodeBlockRenderer:7{renderArchitectural:8 renderSketch:12 renderCommon:16 definePath:176}
 frontend/src/shapes/renderers/connection-rel-renderer.ts | typescript | 559 | ConnectionRelRenderer:7{renderArchitectural:8 renderSketch:379 roundRect:504 getPuzzlePath:518 getMagnetPath:536 definePath:553}
-frontend/src/shapes/renderers/connector-renderer.ts | typescript | 711 | ConnectorRenderer:9{render:15}
+frontend/src/shapes/renderers/connector-renderer.ts | typescript | 712 | ConnectorRenderer:9{render:15}
 frontend/src/shapes/renderers/container-renderer.ts | typescript | 105 | ContainerRenderer:6{renderArchitectural:7 renderSketch:60 getRoundedRectPath:89 definePath:95}
 frontend/src/shapes/renderers/data-metrics-renderer.ts | typescript | 1558 | PieSlice:9 GanttTask:16 JourneyTask:23 QuadrantData:28 XYChartData:36 DataMetricsRenderer:43{renderArchitectural:44 renderSketch:335 renderDataPieArchitectural:505}
 frontend/src/shapes/renderers/data-structure-renderer.ts | typescript | 1066 | DataStructureRenderer:12{renderArchitectural:13 renderSketch:17 renderCommon:21 parseValues:39 getItemAlpha:44 getHighlightState:67 getCellStyle:101 drawRoundedRect:108 drawTitle:121 getColors:137 hexToRgba:160 fillBackground:168 renderArray:218 renderStack:340 renderQueue:472 renderLinkedList:599}

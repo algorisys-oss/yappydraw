@@ -477,6 +477,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                 height: useTopLeftAnchor ? '100%' : undefined,
                                 'box-sizing': 'border-box',
                                 font: `${fontStyle} ${fontWeight} ${fontSizeVal * scale}px ${fontFamily}`,
+                                'letter-spacing': `${(el.letterSpacing || 0) * scale}px`,
                                 color: RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus'),
                                 background: 'transparent',
                                 border: 'none',

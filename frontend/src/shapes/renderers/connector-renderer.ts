@@ -157,6 +157,7 @@ export class ConnectorRenderer extends ShapeRenderer {
         const fontFamily = resolveFontFamily(el.fontFamily);
         renderer.save();
         renderer.font = `${el.fontWeight || 'normal'} ${el.fontStyle || 'normal'} ${fontSize}px ${fontFamily}`;
+        renderer.letterSpacing = el.letterSpacing ? `${el.letterSpacing}px` : '0px';
         renderer.textAlign = 'center';
         renderer.textBaseline = 'middle';
 

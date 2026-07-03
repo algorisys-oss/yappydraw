@@ -345,8 +345,10 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                         dropdown) choose <strong>＋ Add font…</strong> to upload a <code>.ttf/.otf/.woff/.woff2</code>,
                         or <strong>🔍 Google Fonts…</strong> to search a curated list of popular Google Fonts and add one
                         by name. Added fonts load immediately, persist across reloads, and work like any built-in font.</li>
-                    <li><strong>Letter spacing</strong>: a text element's <strong>Letter Spacing</strong> property
-                        (Text group) tightens or loosens tracking, applied through measurement, wrapping and drawing.</li>
+                    <li><strong>Letter spacing</strong>: the <strong>Letter Spacing</strong> property (Text group)
+                        tightens or loosens tracking on text elements, <strong>shape labels</strong> and
+                        <strong>connector labels</strong> alike, applied through measurement, wrapping, in-place
+                        editing and drawing (<code>Yappy.createElement(type, x, y, w, h, {'{'} letterSpacing: 2 {'}'})</code>).</li>
                     <li><strong>Slice</strong> (Command Palette → Slice): drag a rectangle to export exactly that
                         region as a PNG (<code>Yappy.exportRegion(x,y,w,h)</code>). Artboards remain for persistent
                         named export regions.</li>

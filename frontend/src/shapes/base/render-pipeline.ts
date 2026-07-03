@@ -823,6 +823,9 @@ export class RenderPipeline {
         const metrics = measureContainerText(renderer, el, textStr, maxWidth);
 
         renderer.font = getFontString(el);
+        // measureContainerText wraps with letterSpacing — draw with it too or the
+        // painted lines won't match the measured layout. Reset by restore() below.
+        renderer.letterSpacing = el.letterSpacing ? `${el.letterSpacing}px` : '0px';
 
         // Resolve Text Color
         const textColorRaw = el.textColor || el.strokeColor || '#000000';
