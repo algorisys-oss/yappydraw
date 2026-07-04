@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.5.30](0.5.30.md) — Page thumbnails, font pairings & stock photos
 - [0.5.29](0.5.29.md) — Faithful background removal + image model setting
 - [0.5.28](0.5.28.md) — Design Studio: Canva-style design documents, templates, brand kit, elements, text effects, AI
 - [0.5.27](0.5.27.md) — Letter Spacing for shape & connector labels

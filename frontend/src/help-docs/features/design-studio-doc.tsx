@@ -30,7 +30,8 @@ const DesignStudioDoc: Component = () => {
                 <p>
                     With nothing selected, the property panel shows the active page — background, and under
                     <strong> Page Size</strong> a preset dropdown plus width/height fields (resizing re-lays-out
-                    all pages so they never overlap).
+                    all pages so they never overlap). Every page in the panel shows a <strong>live thumbnail</strong>
+                    that refreshes as you edit (about a second after each change).
                 </p>
                 <pre><code>{`const Y = window.Yappy;
 Y.newDesign('instagram-post');          // preset id …
@@ -77,10 +78,22 @@ Y.applyBrandKit(kit.id, { fonts: false }); // colors only`}</code></pre>
             <section class="doc-section">
                 <h2>Elements library & SVG import</h2>
                 <p>
-                    <strong>Menu → Elements</strong>: quick shapes, <strong>frames</strong> (dashed placeholders —
-                    drop a photo onto one to fill it, cover-fit), and a searchable <strong>icon library</strong>
-                    (Lucide). Icons insert as fully editable vector paths.
+                    <strong>Menu → Elements</strong> opens a three-tab panel:
                 </p>
+                <ul>
+                    <li><strong>Elements</strong> — quick shapes, <strong>frames</strong> (dashed placeholders —
+                        drop a photo onto one to fill it, cover-fit), and a searchable <strong>icon library</strong>
+                        (Lucide). Icons insert as fully editable vector paths.</li>
+                    <li><strong>Fonts</strong> — curated heading/body <strong>font pairings</strong> (Modern,
+                        Editorial, Bold Statement…), previewed in their own faces. Clicking a pair refonts every
+                        text element (40px+/bold → heading font, rest → body) and sets the body font as the
+                        default for new text. Google fonts load automatically.
+                        <code>Y.applyFontPairing('editorial')</code></li>
+                    <li><strong>Photos</strong> — search openly-licensed <strong>stock photos</strong> (Wikimedia
+                        Commons, no API key). Click a result to insert it on the active page; the source link and
+                        attribution are kept on the element.
+                        <code>Y.searchStockPhotos('mountain')</code> → <code>Y.insertStockPhoto(photo)</code></li>
+                </ul>
                 <p>
                     Dropping an <strong>.svg file</strong> onto the canvas imports it as editable vector paths
                     (not a raster image): full path grammar, groups, transforms, and basic shapes are supported;

@@ -2,6 +2,8 @@ import { type Component, For, Show, createSignal, createMemo, createResource, Su
 import { render } from 'solid-js/web';
 import { store, toggleElementsPanel } from '../store/app-store';
 import { importSvgToCanvas } from '../utils/svg-import';
+import { FONT_PAIRINGS, applyFontPairing, type FontPairing } from '../brand/font-pairing';
+import { searchStockPhotos, insertStockPhoto, type StockPhoto } from '../utils/stock-photos';
 import { YappyAPI } from '../api';
 import { showToast } from './toast';
 import {
@@ -25,7 +27,9 @@ const FEATURED_ICONS = [
 
 const MAX_RESULTS = 96;
 
-/** Insert position: top-left third of the active page (or near viewport origin). */
+type PanelTab = 'elements' | 'fonts' | 'photos';
+
+/** Insert position: centered on the active page (or near viewport origin). */
 function insertOrigin(size: number): { x: number, y: number } {
     const page = store.slides[store.activeSlideIndex];
     if (page) {
@@ -37,8 +41,35 @@ function insertOrigin(size: number): { x: number, y: number } {
     return { x: 200, y: 200 };
 }
 
+/** CSS font-family for previewing a pair font (built-in key or Google family). */
+const previewFamily = (family: string, google?: boolean): string => {
+    if (google) return `'${family}', sans-serif`;
+    switch (family) {
+        case 'poppins': return "'Poppins', sans-serif";
+        case 'caveat': return "'Caveat', cursive";
+        case 'serif': return 'serif';
+        case 'monospace': case 'code': return 'monospace';
+        default: return 'sans-serif';
+    }
+};
+
+/** Lazily load a Google font's CSS so pair previews render in-face. */
+const ensurePreviewFont = (family: string) => {
+    const id = `fp-preview-${family.replace(/\s+/g, '+')}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id; link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g, '+')}&display=swap`;
+    document.head.appendChild(link);
+};
+
 const ElementsPanel: Component = () => {
+    const [tab, setTab] = createSignal<PanelTab>('elements');
     const [query, setQuery] = createSignal('');
+    const [photoQuery, setPhotoQuery] = createSignal('');
+    const [photos, setPhotos] = createSignal<StockPhoto[]>([]);
+    const [photosLoading, setPhotosLoading] = createSignal(false);
+    const [photosError, setPhotosError] = createSignal('');
 
     // The full lucide-solid module is heavy — load it only when the panel opens.
     const [lucide] = createResource(() => store.showElementsPanel, async (open) => {
@@ -96,6 +127,21 @@ const ElementsPanel: Component = () => {
         showToast('Frame added — drop a photo onto it to fill', 'info');
     };
 
+    const runPhotoSearch = async () => {
+        const q = photoQuery().trim();
+        if (!q) return;
+        setPhotosLoading(true);
+        setPhotosError('');
+        try {
+            setPhotos(await searchStockPhotos(q));
+        } catch (e: any) {
+            setPhotos([]);
+            setPhotosError(e?.message || 'Photo search failed');
+        } finally {
+            setPhotosLoading(false);
+        }
+    };
+
     const SHAPES: { type: string; label: string; icon: any }[] = [
         { type: 'rectangle', label: 'Rectangle', icon: Square },
         { type: 'circle', label: 'Circle', icon: CircleIcon },
@@ -107,6 +153,22 @@ const ElementsPanel: Component = () => {
         { type: 'arrowRight', label: 'Arrow', icon: ArrowRight },
     ];
 
+    const FontPairRow: Component<{ pair: FontPairing }> = (props) => {
+        if (props.pair.heading.google) ensurePreviewFont(props.pair.heading.family);
+        if (props.pair.body.google) ensurePreviewFont(props.pair.body.family);
+        return (
+            <button class="ep-pair" title={`Apply "${props.pair.name}" to all text`}
+                onClick={() => applyFontPairing(props.pair.id)}>
+                <span class="ep-pair-heading" style={{ 'font-family': previewFamily(props.pair.heading.family, props.pair.heading.google) }}>
+                    {props.pair.name}
+                </span>
+                <span class="ep-pair-body" style={{ 'font-family': previewFamily(props.pair.body.family, props.pair.body.google) }}>
+                    {props.pair.heading.family} + {props.pair.body.family}
+                </span>
+            </button>
+        );
+    };
+
     return (
         <Show when={store.showElementsPanel}>
             <div class="elements-panel" ref={draggablePanel('.elements-panel-header')}>
@@ -114,49 +176,100 @@ const ElementsPanel: Component = () => {
                     <div class="ep-title"><Shapes size={14} /><h3>Elements</h3></div>
                     <button class="ep-icon-btn" title="Close" onClick={() => toggleElementsPanel(false)}><X size={15} /></button>
                 </div>
-                <div class="ep-search">
-                    <Search size={13} />
-                    <input type="text" placeholder="Search icons…" value={query()}
-                        onInput={(e) => setQuery(e.currentTarget.value)} />
+
+                <div class="ep-tabs">
+                    <button class={`ep-tab ${tab() === 'elements' ? 'active' : ''}`} onClick={() => setTab('elements')}>Elements</button>
+                    <button class={`ep-tab ${tab() === 'fonts' ? 'active' : ''}`} onClick={() => setTab('fonts')}>Fonts</button>
+                    <button class={`ep-tab ${tab() === 'photos' ? 'active' : ''}`} onClick={() => setTab('photos')}>Photos</button>
                 </div>
-                <div class="elements-panel-body">
-                    <div class="ep-section">Shapes</div>
-                    <div class="ep-grid ep-grid-shapes">
-                        <For each={SHAPES}>
-                            {(s) => (
-                                <button class="ep-cell ep-cell-shape" title={`Insert ${s.label}`} onClick={() => insertShape(s.type)}>
-                                    <s.icon size={20} />
-                                    <span class="ep-shape-label">{s.label}</span>
-                                </button>
-                            )}
+
+                {/* ── Elements: shapes, frames, icons ── */}
+                <Show when={tab() === 'elements'}>
+                    <div class="ep-search">
+                        <Search size={13} />
+                        <input type="text" placeholder="Search icons…" value={query()}
+                            onInput={(e) => setQuery(e.currentTarget.value)} />
+                    </div>
+                    <div class="elements-panel-body">
+                        <div class="ep-section">Shapes</div>
+                        <div class="ep-grid ep-grid-shapes">
+                            <For each={SHAPES}>
+                                {(s) => (
+                                    <button class="ep-cell ep-cell-shape" title={`Insert ${s.label}`} onClick={() => insertShape(s.type)}>
+                                        <s.icon size={20} />
+                                        <span class="ep-shape-label">{s.label}</span>
+                                    </button>
+                                )}
+                            </For>
+                        </div>
+                        <div class="ep-section">Frames (drop a photo in)</div>
+                        <div class="ep-grid ep-grid-shapes">
+                            <button class="ep-cell" onClick={() => insertFrame('rectangle')}><span class="ep-frame-rect" /></button>
+                            <button class="ep-cell" onClick={() => insertFrame('circle')}><span class="ep-frame-circle" /></button>
+                        </div>
+                        <div class="ep-section">Icons</div>
+                        <Suspense fallback={<div class="ep-loading">Loading icons…</div>}>
+                            <Show when={lucide()} fallback={<div class="ep-loading">Loading icons…</div>}>
+                                <div class="ep-grid">
+                                    <For each={visibleIcons()}>
+                                        {(name) => {
+                                            const IconComp = (lucide() as any)[name];
+                                            return (
+                                                <button class="ep-cell" title={name} onClick={() => insertIcon(name)}>
+                                                    <IconComp size={20} />
+                                                </button>
+                                            );
+                                        }}
+                                    </For>
+                                </div>
+                                <Show when={query() && visibleIcons().length === 0}>
+                                    <div class="ep-loading">No icons match “{query()}”</div>
+                                </Show>
+                            </Show>
+                        </Suspense>
+                    </div>
+                </Show>
+
+                {/* ── Fonts: curated heading/body pairings ── */}
+                <Show when={tab() === 'fonts'}>
+                    <div class="elements-panel-body">
+                        <div class="ep-section">Font pairs — click to apply to all text</div>
+                        <For each={FONT_PAIRINGS}>
+                            {(pair) => <FontPairRow pair={pair} />}
                         </For>
                     </div>
-                    <div class="ep-section">Frames (drop a photo in)</div>
-                    <div class="ep-grid ep-grid-shapes">
-                        <button class="ep-cell" onClick={() => insertFrame('rectangle')}><span class="ep-frame-rect" /></button>
-                        <button class="ep-cell" onClick={() => insertFrame('circle')}><span class="ep-frame-circle" /></button>
+                </Show>
+
+                {/* ── Photos: openly-licensed stock search (Wikimedia Commons) ── */}
+                <Show when={tab() === 'photos'}>
+                    <div class="ep-search">
+                        <Search size={13} />
+                        <input type="text" placeholder="Search photos… (Enter)" value={photoQuery()}
+                            onInput={(e) => setPhotoQuery(e.currentTarget.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') runPhotoSearch(); }} />
                     </div>
-                    <div class="ep-section">Icons</div>
-                    <Suspense fallback={<div class="ep-loading">Loading icons…</div>}>
-                        <Show when={lucide()} fallback={<div class="ep-loading">Loading icons…</div>}>
-                            <div class="ep-grid">
-                                <For each={visibleIcons()}>
-                                    {(name) => {
-                                        const IconComp = (lucide() as any)[name];
-                                        return (
-                                            <button class="ep-cell" title={name} onClick={() => insertIcon(name)}>
-                                                <IconComp size={20} />
+                    <div class="elements-panel-body">
+                        <Show when={!photosLoading()} fallback={<div class="ep-loading">Searching…</div>}>
+                            <Show when={photos().length > 0} fallback={
+                                <div class="ep-loading">
+                                    {photosError() || 'Openly-licensed photos via Wikimedia Commons. Type a search and press Enter.'}
+                                </div>
+                            }>
+                                <div class="ep-photo-grid">
+                                    <For each={photos()}>
+                                        {(p) => (
+                                            <button class="ep-photo" title={`${p.title}${p.creator ? ` — ${p.creator}` : ''} (click to insert)`}
+                                                onClick={() => insertStockPhoto(p)}>
+                                                <img src={p.thumbnail} alt={p.title} loading="lazy" />
                                             </button>
-                                        );
-                                    }}
-                                </For>
-                            </div>
-                            <Show when={query() && visibleIcons().length === 0}>
-                                <div class="ep-loading">No icons match “{query()}”</div>
+                                        )}
+                                    </For>
+                                </div>
+                                <div class="ep-attribution">Openly licensed via Wikimedia Commons — source link kept on each image.</div>
                             </Show>
                         </Show>
-                    </Suspense>
-                </div>
+                    </div>
+                </Show>
             </div>
         </Show>
     );

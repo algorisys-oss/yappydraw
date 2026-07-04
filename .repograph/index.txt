@@ -75,12 +75,13 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 2996 | Theme:3 HarmonyType:39 ElementOptions:90 ElementType:475 as:475 Window:2988
+frontend/src/api.ts | typescript | 3010 | Theme:3 HarmonyType:41 ElementOptions:92 ElementType:477 as:477 Window:3002
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1439 | Component:1 App:89 moves:104 onPenMove:105 hidePen:109 handleKeyUp:139 handleKeyDown:149 as:658 handleFullscreenChange:773 handleBeforeUnload:779 handlePaste:783 handleGlobalDragEnter:885 handleGlobalDragOver:900 showDropFallbackPrompt:919 cleanup:949 outsideClick:977 isImageFile:989 first:990 must:1003 extractDropData:1005 processExtractedDrop:1060 handleGlobalDrop:1177 handleDocumentDrop:1223
 frontend/src/assets/player-assets.ts | typescript | 3 | hh:2
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
+frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
 frontend/src/components/advanced-p3-picker.tsx | typescript | 188 | Component:1 OKLCH:2 Props:4 AdvancedP3Picker:9 handleCanvasMouseDown:75 update:77 onMouseMove:90 onMouseUp:91 handleHueMouseDown:99 update:101 onMouseMove:111 onMouseUp:112
 frontend/src/components/ai-prompt-dialog.css | - | 407 |
 frontend/src/components/ai-prompt-dialog.tsx | typescript | 399 | Component:6 GenerateResult:8 AIPromptDialogProps:15 diagram:33 AIPromptDialog:35 hasSketch:50 canGenerate:51 handleKeyDown:56 handleSketchUpload:79 clearSketch:91 handlePaste:99 handleDragOver:114 handleDragLeave:119 handleDrop:124 handleGenerate:131 openSettings:178 openRocketSettings:183 activeProviderLabel:188
@@ -122,8 +123,8 @@ frontend/src/components/ds-ops-panel.tsx | typescript | 397 | Component:8 DsOper
 frontend/src/components/ds-tool-group.tsx | typescript | 134 | Component:1 DsToolGroup:19 handler:26 getActiveTool:36 handleToolClick:45 as:53 as:59 handleRightClick:67 toggleMenu:73 activeTool:80 isActive:81 getDropdownPosition:83
 frontend/src/components/dsl-import-dialog.css | - | 241 |
 frontend/src/components/dsl-import-dialog.tsx | typescript | 240 | Component:7 DSLImportDialogProps:16 DSLImportDialog:34 handleKeyDown:44 handleImport:90 canImport:123 nodeCount:128 edgeCount:129
-frontend/src/components/elements-panel.css | - | 73 |
-frontend/src/components/elements-panel.tsx | typescript | 165 | Component:1 insertOrigin:29 ElementsPanel:40 iconToSvgText:64 insertIcon:75 insertShape:83 insertFrame:90
+frontend/src/components/elements-panel.css | - | 134 |
+frontend/src/components/elements-panel.tsx | typescript | 278 | Component:1 FontPairing:5 StockPhoto:6 PanelTab:30 insertOrigin:33 previewFamily:45 ensurePreviewFont:57 ElementsPanel:66 iconToSvgText:95 insertIcon:106 insertShape:114 insertFrame:121 runPhotoSearch:130
 frontend/src/components/embed-viewer.css | - | 81 |
 frontend/src/components/embed-viewer.tsx | typescript | 170 | EmbedOptions:12 parseEmbedOptions:20 EmbedViewer:36 fitToView:41 handleResize:123 openUrl:129
 frontend/src/components/export-dialog.css | - | 147 |
@@ -314,7 +315,7 @@ frontend/src/examples/examples-page.tsx | typescript | 337 | Component:6 Example
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
-frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 136 | DesignStudioDoc:9
+frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 149 | DesignStudioDoc:9
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 134 | EffectsDoc:10 Tools:127
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 439 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
@@ -497,7 +498,7 @@ frontend/src/utils/performance-monitor.ts | typescript | 49 | PerformanceMonitor
 frontend/src/utils/pointer-helpers.ts | typescript | 56 | PointerHelpers:15 PointerSignals:33
 frontend/src/utils/pointer-state.ts | typescript | 195 | PointerState:7 createPointerState:119
 frontend/src/utils/pool-containment.ts | typescript | 179 | getPoolLabelWidth:11 getLaneLabelWidth:14 getPoolLabelHeight:17 getLaneLabelHeight:20 computeLaneSizes:26 LaneRect:50 getPoolLaneRect:58 hitTestPoolLane:102 assignToPoolLane:145 unassignFromPool:149 shiftLaneIndicesOnRemove:154 shiftLaneIndicesOnInsert:168
-frontend/src/utils/recording-manager.ts | typescript | 144 | setupRecording:23
+frontend/src/utils/recording-manager.ts | typescript | 155 | setupRecording:23
 frontend/src/utils/render-element.ts | typescript | 197 | cubicBezier:24 cubicBezierAngle:30 renderVariableWidthStroke:162 adjustColor:193
 frontend/src/utils/reparent.ts | typescript | 186 | confirmAndReparent:17
 frontend/src/utils/rich-text-utils.ts | typescript | 499 | spansToHtml:16 htmlToSpans:144 mergeAdjacentSpans:287 sameFormatting:302 spansToPlainText:318 plainTextToSpans:325 RichTextSegment:333 RichTextLayout:341 Token:348 buildSpanFontString:358 getLineHeight:369 layoutRichText:377 measureRichTextHeight:488
@@ -512,6 +513,7 @@ frontend/src/utils/slide-utils.ts | typescript | 58 |
 frontend/src/utils/snap-helpers.ts | typescript | 28 | snapToGrid:8 snapDimension:25
 frontend/src/utils/snap-renderer.ts | typescript | 119 | renderSnappingGuides:13 renderSpacingGuides:42
 frontend/src/utils/spacing.ts | typescript | 255 | SpacingGuide:3 SpacingResult:13
+frontend/src/utils/stock-photos.ts | typescript | 148 | StockPhoto:13 searchStockPhotos:37 fetchPhotoData:96 insertStockPhoto:114
 frontend/src/utils/stroke-stabilizer.ts | typescript | 117 | StabSample:21 StrokeStabilizer:27{next:29 finish:34} createStrokeStabilizer:40 pushStabilizedSample:86 finishStabilizer:109
 frontend/src/utils/svg-import.ts | typescript | 490 | Matrix:16 parseTransform:35 Sub:64 arcToCubics:73 parseSvgPathData:132 ellipseSubs:246 nodeToSubs:257 SvgStyle:302 styleOf:304 Drawable:329 collectDrawables:331 SvgImportOptions:376 svgToElements:389 importSvgToCanvas:476
 frontend/src/utils/svg-paint.ts | typescript | 133 | svgPatternDef:19 splitAlpha:45 svgFillPaint:65
@@ -609,6 +611,7 @@ tests/comprehensive-features.spec.ts | typescript | 238 |
 tests/curvature.spec.ts | typescript | 35 |
 tests/data-structures.spec.ts | typescript | 188 |
 tests/default-style.spec.ts | typescript | 17 |
+tests/design-extras.spec.ts | typescript | 122 | Window:6
 tests/design-mode.spec.ts | typescript | 109 | Window:6
 tests/design-templates.spec.ts | typescript | 87 | Window:6
 tests/docType-redraw.spec.ts | typescript | 36 | countMagenta:9

@@ -36,6 +36,8 @@ import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-temp
 import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
 import { importSvgToCanvas } from "./utils/svg-import";
 import { TEXT_EFFECT_PRESETS, getTextEffectPreset } from "./config/text-effect-presets";
+import { FONT_PAIRINGS, applyFontPairing } from "./brand/font-pairing";
+import { searchStockPhotos, insertStockPhoto } from "./utils/stock-photos";
 import { generateTints, generateHarmony, extractImagePalette, parseHex, type HarmonyType } from "./utils/color-harmony";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
@@ -2177,6 +2179,18 @@ export const YappyAPI = {
         const m = await import('./ai/canva-ai');
         return m.removeBackground(id, opts);
     },
+
+    // Font pairings
+    /** List curated heading/body font pairings. */
+    getFontPairings() { return FONT_PAIRINGS.map(p => ({ id: p.id, name: p.name, heading: p.heading.family, body: p.body.family })); },
+    /** Apply a font pairing to all text elements (heading = 40px+/bold) and set the body font as default. */
+    async applyFontPairing(id: string) { return applyFontPairing(id); },
+
+    // Stock photos (Wikimedia Commons — openly licensed, no key needed)
+    /** Search openly-licensed stock photos. Returns photo descriptors for insertStockPhoto. */
+    async searchStockPhotos(query: string, page: number = 1) { return searchStockPhotos(query, page); },
+    /** Insert a photo returned by searchStockPhotos, centered on the active page. Returns the element id. */
+    async insertStockPhoto(photo: any) { return insertStockPhoto(photo); },
 
     // Text effects
     /** List text-effect preset ids/names (none, shadow, lift, hollow, splice, outline, echo, neon, background). */

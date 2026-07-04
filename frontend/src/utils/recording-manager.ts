@@ -36,11 +36,11 @@ export function setupRecording(getCanvasRef: () => HTMLCanvasElement | undefined
 
     // ─── Thumbnail Capture ──────────────────────────────────────────────
 
-    const captureThumbnail = () => {
+    const captureThumbnail = (index: number = store.activeSlideIndex) => {
         const canvasRef = getCanvasRef();
         if (!canvasRef) return;
 
-        const slide = store.slides[store.activeSlideIndex];
+        const slide = store.slides[index];
         if (!slide) return;
 
         const { width: sW, height: sH } = slide.dimensions;
@@ -89,19 +89,30 @@ export function setupRecording(getCanvasRef: () => HTMLCanvasElement | undefined
         tCtx.restore();
 
         const dataUrl = thumbCanvas.toDataURL('image/jpeg', 0.6);
-        updateSlideThumbnail(store.activeSlideIndex, dataUrl);
+        updateSlideThumbnail(index, dataUrl);
     };
 
-    // Trigger thumbnail capture on slide change or debounced element changes
+    // Trigger thumbnail capture on slide change or debounced document changes.
+    // Refreshes the active page, then backfills any pages that have no
+    // thumbnail yet (loaded/added pages show a live preview without being
+    // visited first).
     let thumbTimeout: any;
     createEffect(() => {
-        // Track slide index and element count (not deep property changes)
+        // Track slide navigation, structure changes, and edits (dirtyRevision
+        // bumps on move/recolor/etc., which elements.length alone misses)
         store.activeSlideIndex;
         store.elements.length;
+        store.slides.length;
+        store.dirtyRevision;
 
         window.clearTimeout(thumbTimeout);
         thumbTimeout = window.setTimeout(() => {
-            untrack(() => captureThumbnail());
+            untrack(() => {
+                captureThumbnail();
+                store.slides.forEach((s, i) => {
+                    if (!s.thumbnail && i !== store.activeSlideIndex) captureThumbnail(i);
+                });
+            });
         }, 1000); // 1s throttle for thumbnails
     });
 

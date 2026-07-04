@@ -7,6 +7,12 @@ export default defineConfig({
   envDir: '..',  // .env files are in the project root, not in frontend/
   plugins: [solid(), assemblyScriptPlugin()],
   base: './',
+  optimizeDeps: {
+    // Pre-bundle deps that are only reached via lazy chunks (Elements panel
+    // dynamic-imports the full lucide-solid) so the dev server never
+    // discovers them mid-session and forces a full page reload.
+    include: ['lucide-solid', 'roughjs', 'jspdf', 'pptxgenjs'],
+  },
   build: {
     outDir: '../dist',
     emptyOutDir: true,
