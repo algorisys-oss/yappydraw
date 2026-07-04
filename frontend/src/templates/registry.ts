@@ -2,6 +2,8 @@ import type { Template, TemplateCategory, CategoryInfo } from '../types/template
 import * as diagramTemplates from './data/diagrams';
 import * as dslExamples from './data/dsl-examples';
 import * as presentations from './data/presentations';
+import { allDesignTemplates } from './data/designs';
+import { listUserTemplates } from './user-templates';
 
 /**
  * Template Registry
@@ -54,6 +56,18 @@ class TemplateRegistry {
             id: 'presentations',
             name: 'Presentations',
             description: 'Multi-slide presentation decks'
+        });
+
+        this.categoriesInfo.set('designs', {
+            id: 'designs',
+            name: 'Designs',
+            description: 'Social posts, posters, cards, and print designs'
+        });
+
+        this.categoriesInfo.set('my-templates', {
+            id: 'my-templates',
+            name: 'My Templates',
+            description: 'Templates you saved from your own documents'
         });
     }
 
@@ -113,6 +127,28 @@ class TemplateRegistry {
         this.registerTemplate(presentations.teamIntro as unknown as Template);
         this.registerTemplate(presentations.techArchitecture as unknown as Template);
         this.registerTemplate(presentations.quarterlyReview as unknown as Template);
+
+        // Register design templates (Canva-style fixed-size documents)
+        for (const design of allDesignTemplates) {
+            this.registerTemplate(design as unknown as Template);
+        }
+
+        // Register user-saved templates from localStorage
+        this.refreshUserTemplates();
+    }
+
+    /**
+     * (Re)load user-saved templates from localStorage. Call after a save or
+     * delete so the browser reflects the current set.
+     */
+    refreshUserTemplates(): void {
+        // Drop stale user templates, then re-add current ones
+        for (const [id, tpl] of this.templates) {
+            if (tpl.metadata.category === 'my-templates') this.templates.delete(id);
+        }
+        for (const user of listUserTemplates()) {
+            this.registerTemplate(user as unknown as Template);
+        }
     }
 
     /**
@@ -198,3 +234,4 @@ export const getAllCategories = () => templateRegistry.getAllCategories();
 export const getActiveCategories = () => templateRegistry.getActiveCategories();
 export const searchTemplates = (query: string) => templateRegistry.searchTemplates(query);
 export const registerTemplate = (template: Template) => templateRegistry.registerTemplate(template);
+export const refreshUserTemplates = () => templateRegistry.refreshUserTemplates();

@@ -1,4 +1,5 @@
 import { type Component, For, createSignal, Show } from 'solid-js';
+import { isPagedDocType } from '../types/slide-types';
 import { Pin, PinOff } from 'lucide-solid';
 import { store, updateElement, pushToHistory, updateSlideBackground, updateDefaultStyles } from '../store/app-store';
 import { AdvancedP3Picker } from './advanced-p3-picker';
@@ -57,7 +58,7 @@ export const ColorPalettePicker: Component = () => {
                     updateElement(id, { backgroundColor: data, fillStyle: 'solid' });
                 }
             });
-        } else if (store.docType === 'slides') {
+        } else if (isPagedDocType(store.docType)) {
             pushToHistory();
             if (isImage) {
                 updateSlideBackground(store.activeSlideIndex, { backgroundImage: data, fillStyle: 'image' });

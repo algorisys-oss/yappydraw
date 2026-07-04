@@ -93,6 +93,7 @@ export interface IRenderer {
     textAlign: CanvasTextAlign;
     textBaseline: CanvasTextBaseline;
     fillText(text: string, x: number, y: number, maxWidth?: number): void;
+    strokeText(text: string, x: number, y: number, maxWidth?: number): void;
     measureText(text: string): TextMetrics;
 
     // ── Gradients & Patterns ──

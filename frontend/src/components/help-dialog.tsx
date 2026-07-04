@@ -133,7 +133,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Switch Layer', keys: 'Alt+1-9' },
             { label: 'New Layer', keys: 'Ctrl+Shift+N' },
             { label: 'Reorder Layer', keys: 'Alt+[ / Alt+]' },
-            { label: 'New Slide', keys: 'Ctrl+M' },
+            { label: 'New Slide / Page', keys: 'Ctrl+M' },
             { label: 'Next State / Slide', keys: 'Alt+Right' },
             { label: 'Prev State / Slide', keys: 'Alt+Left' },
             { label: 'Cycle Stroke Style', keys: 'S' },

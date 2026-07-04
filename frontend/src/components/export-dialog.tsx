@@ -1,7 +1,8 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { X } from "lucide-solid";
-import { store } from "../store/app-store";
-import { exportToPng, exportToSvg, exportToPdf, exportToPptx } from "../utils/export";
+import { store, pageNoun } from "../store/app-store";
+import { isPagedDocType } from "../types/slide-types";
+import { exportToPng, exportToSvg, exportToPdf, exportToPptx, exportPageToPng } from "../utils/export";
 import { setRequestRecording } from "./canvas";
 import "./export-dialog.css";
 
@@ -15,6 +16,8 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
     const [scale, setScale] = createSignal<number>(2);
     const [hasBackground, setHasBackground] = createSignal(true);
     const [onlySelected, setOnlySelected] = createSignal(store.selection.length > 0);
+    const [currentPageOnly, setCurrentPageOnly] = createSignal(false);
+    const isPaged = () => isPagedDocType(store.docType) && store.slides.length > 0;
 
     // Auto-update onlySelected when dialog opens or selection changes
     createEffect(() => {
@@ -41,7 +44,11 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
 
     const handleExport = () => {
         if (format() === 'png') {
-            exportToPng(scale(), hasBackground(), onlySelected());
+            if (currentPageOnly() && isPaged() && !onlySelected()) {
+                exportPageToPng(store.activeSlideIndex, scale());
+            } else {
+                exportToPng(scale(), hasBackground(), onlySelected());
+            }
         } else if (format() === 'svg') {
             exportToSvg(onlySelected());
         } else if (format() === 'pdf') {
@@ -109,6 +116,19 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                                 {store.selection.length === 0 && <span class="hint">(No items selected)</span>}
                             </label>
                         </div>
+
+                        <Show when={isPaged() && format() === 'png'}>
+                            <div class="option-group">
+                                <label class="checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={currentPageOnly()}
+                                        onChange={(e) => setCurrentPageOnly(e.currentTarget.checked)}
+                                    />
+                                    Current {pageNoun()} Only (exact {pageNoun().toLowerCase()} bounds)
+                                </label>
+                            </div>
+                        </Show>
 
                         <Show when={format() === 'png' || format() === 'pdf' || format() === 'pptx'}>
                             <div class="option-group">

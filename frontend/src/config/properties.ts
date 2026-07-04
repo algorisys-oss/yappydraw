@@ -1,5 +1,7 @@
 import type { ElementType } from "../types";
 import { COLOR_PALETTES } from "./color-palettes";
+import { PAGE_SIZE_PRESETS } from "./page-size-presets";
+import { TEXT_EFFECT_PRESETS } from "./text-effect-presets";
 
 /** Which style variants each font supports (based on Google Fonts availability) */
 export const fontCapabilities: Record<string, { bold: boolean; italic: boolean }> = {
@@ -96,6 +98,7 @@ export const properties: PropertyConfig[] = [
         type: 'select',
         options: [
             { label: 'Slide Presentation', value: 'slides' },
+            { label: 'Design Document', value: 'design' },
             { label: 'Infinite Canvas', value: 'infinite' }
         ],
         group: 'canvas',
@@ -337,6 +340,51 @@ export const properties: PropertyConfig[] = [
         group: 'slide',
         applicableTo: ['slide'],
         defaultValue: 'easeInOutQuad'
+    },
+    // Text effect presets (Canva-style one-click looks)
+    {
+        key: 'textEffect',
+        label: 'Text Effect',
+        type: 'select',
+        options: TEXT_EFFECT_PRESETS.map(p => ({ label: p.name, value: p.id })),
+        group: 'text',
+        applicableTo: ['text'],
+        defaultValue: 'none'
+    },
+    // Page size (design documents only — filtered in property-panel)
+    {
+        key: 'pageSizePreset',
+        label: 'Page Size',
+        type: 'select',
+        options: [
+            { label: 'Custom', value: 'custom' },
+            ...PAGE_SIZE_PRESETS.map(p => ({ label: `${p.name} (${p.width}×${p.height})`, value: p.id }))
+        ],
+        group: 'slide',
+        applicableTo: ['slide'],
+        defaultValue: 'custom'
+    },
+    {
+        key: 'pageWidth',
+        label: 'Page Width',
+        type: 'number',
+        min: 16,
+        max: 20000,
+        step: 1,
+        group: 'slide',
+        applicableTo: ['slide'],
+        defaultValue: 1080
+    },
+    {
+        key: 'pageHeight',
+        label: 'Page Height',
+        type: 'number',
+        min: 16,
+        max: 20000,
+        step: 1,
+        group: 'slide',
+        applicableTo: ['slide'],
+        defaultValue: 1080
     },
 
     // Style

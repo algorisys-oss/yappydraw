@@ -224,6 +224,28 @@ export class SvgRenderer implements IRenderer {
         t.textContent = text;
         this.group.appendChild(t);
     }
+    strokeText(text: string, x: number, y: number): void {
+        if (!text) return;
+        const t = document.createElementNS(NS, 'text');
+        t.setAttribute('x', `${r3(x)}`); t.setAttribute('y', `${r3(y)}`);
+        t.setAttribute('transform', this.matrixAttr());
+        const { size, family, weight, style } = this.parseFont();
+        t.setAttribute('font-size', `${size}`); t.setAttribute('font-family', family);
+        if (weight && weight !== 'normal') t.setAttribute('font-weight', weight);
+        if (style && style !== 'normal') t.setAttribute('font-style', style);
+        t.setAttribute('text-anchor', this.textAlign === 'center' ? 'middle' : this.textAlign === 'right' || this.textAlign === 'end' ? 'end' : 'start');
+        if (this.textBaseline === 'middle') t.setAttribute('dominant-baseline', 'central');
+        else if (this.textBaseline === 'top' || this.textBaseline === 'hanging') t.setAttribute('dominant-baseline', 'hanging');
+        t.setAttribute('fill', 'none');
+        t.setAttribute('stroke', typeof this.strokeStyleVal === 'string' ? this.strokeStyleVal : '#000');
+        t.setAttribute('stroke-width', `${this.lineWidth}`);
+        t.setAttribute('stroke-linejoin', 'round');
+        if (this.globalAlpha < 1) t.setAttribute('stroke-opacity', `${this.globalAlpha}`);
+        const ls = parseFloat(this.letterSpacingVal);
+        if (ls) t.setAttribute('letter-spacing', `${ls}`);
+        t.textContent = text;
+        this.group.appendChild(t);
+    }
     private parseFont(): { size: number; family: string; weight: string; style: string } {
         // e.g. "italic bold 14px Inter, sans-serif"
         const f = this.fontVal;

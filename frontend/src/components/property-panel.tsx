@@ -1,10 +1,14 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
 import { draggablePanel } from '../utils/draggable-panel';
 import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
+import { pageNoun, setPageSize } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import { customFontOptions, addCustomFontFromFile } from "../utils/custom-fonts";
 import GoogleFontsDialog from "./google-fonts-dialog";
 import type { Slide } from "../types/slide-types";
+import { isPagedDocType } from "../types/slide-types";
+import { findPagePreset, getPagePreset } from "../config/page-size-presets";
+import { getTextEffectPreset } from "../config/text-effect-presets";
 import type { DrawingElement } from "../types";
 import {
     Copy, ChevronsDown, ChevronDown, ChevronUp, ChevronsUp, Trash2, Palette,
@@ -862,7 +866,7 @@ const PropertyPanel: Component = () => {
         }
 
         // Slide context - when in slide mode with no selection
-        if (store.docType === 'slides') {
+        if (isPagedDocType(store.docType)) {
             const activeSlide = store.slides[store.activeSlideIndex];
             if (activeSlide) {
                 return { type: 'slide' as const, data: activeSlide as Slide };
@@ -923,7 +927,12 @@ const PropertyPanel: Component = () => {
 
             // In slides mode, hide canvasBackgroundColor from canvas settings —
             // each slide has its own backgroundColor via slide properties
-            if (target.type === 'canvas' && p.key === 'canvasBackgroundColor' && store.docType === 'slides') {
+            if (target.type === 'canvas' && p.key === 'canvasBackgroundColor' && isPagedDocType(store.docType)) {
+                return false;
+            }
+
+            // Page size controls only apply to design documents
+            if (['pageSizePreset', 'pageWidth', 'pageHeight'].includes(p.key) && store.docType !== 'design') {
                 return false;
             }
 
@@ -1238,6 +1247,20 @@ const PropertyPanel: Component = () => {
             return;
         }
 
+        // Text effect presets expand into a multi-attribute patch derived from
+        // the element's current colors (see config/text-effect-presets.ts).
+        if (key === 'textEffect' && (target.type === 'element' || target.type === 'multi')) {
+            const preset = getTextEffectPreset(finalValue);
+            if (preset) {
+                const ids = target.type === 'multi' ? store.selection : [targetId || target.data!.id!];
+                ids.forEach(id => {
+                    const el = store.elements.find(e => e.id === id);
+                    if (el) updateElement(id, preset.patch(el), history);
+                });
+            }
+            return;
+        }
+
         // Picking a solid background colour should also switch the element back to a solid
         // fill — otherwise a non-solid fillStyle (gradient/hachure) ignores the new colour and
         // the swatch appears to do nothing / show an odd colour.
@@ -1266,6 +1289,19 @@ const PropertyPanel: Component = () => {
             else if (key === 'docType') setDocType(value);
         } else if (target.type === 'slide') {
             const slideIndex = store.activeSlideIndex;
+            if (key === 'pageSizePreset') {
+                const preset = getPagePreset(value);
+                if (preset) setPageSize(preset.width, preset.height);
+                return;
+            }
+            if (key === 'pageWidth' || key === 'pageHeight') {
+                const dims = store.slides[slideIndex]?.dimensions;
+                if (!dims) return;
+                const w = key === 'pageWidth' ? Number(value) : dims.width;
+                const h = key === 'pageHeight' ? Number(value) : dims.height;
+                if (Number.isFinite(w) && Number.isFinite(h)) setPageSize(w, h);
+                return;
+            }
             if (key === 'transitionType') updateSlideTransition(slideIndex, { type: value });
             else if (key === 'transitionDuration') updateSlideTransition(slideIndex, { duration: value });
             else if (key === 'transitionEasing') updateSlideTransition(slideIndex, { easing: value });
@@ -1306,6 +1342,9 @@ const PropertyPanel: Component = () => {
         }
         if (target.type === 'slide') {
             const slide = target.data as Slide;
+            if (prop.key === 'pageSizePreset') return findPagePreset(slide.dimensions.width, slide.dimensions.height)?.id || 'custom';
+            if (prop.key === 'pageWidth') return slide.dimensions.width;
+            if (prop.key === 'pageHeight') return slide.dimensions.height;
             if (prop.key === 'transitionType') return slide.transition?.type || 'none';
             if (prop.key === 'transitionDuration') return slide.transition?.duration || 500;
             if (prop.key === 'transitionEasing') return slide.transition?.easing || 'easeInOutQuad';
@@ -1701,7 +1740,7 @@ const PropertyPanel: Component = () => {
                                 </button>
                                 <Show when={!store.isPropertyPanelMinimized}>
                                     <div style={{ display: 'flex', 'flex-direction': 'column', gap: '2px' }}>
-                                        <h3 style={{ 'line-height': '1' }}>{targetType() === 'element' ? 'Properties' : targetType() === 'canvas' ? 'Canvas' : targetType() === 'slide' ? `Slide ${store.activeSlideIndex + 1}` : targetType() === 'multi' ? `Selection (${store.selection.length})` : targetType() === 'defaults' ? 'Defaults' : 'Properties'}</h3>
+                                        <h3 style={{ 'line-height': '1' }}>{targetType() === 'element' ? 'Properties' : targetType() === 'canvas' ? 'Canvas' : targetType() === 'slide' ? `${pageNoun()} ${store.activeSlideIndex + 1}` : targetType() === 'multi' ? `Selection (${store.selection.length})` : targetType() === 'defaults' ? 'Defaults' : 'Properties'}</h3>
                                         <div
                                             class="mode-badge"
                                             classList={{ [store.appMode]: true }}

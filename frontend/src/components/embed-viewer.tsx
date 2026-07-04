@@ -1,4 +1,5 @@
 import { createSignal, onMount, onCleanup, Show } from "solid-js";
+import { isPagedDocType } from '../types/slide-types';
 import type { Component } from "solid-js";
 import Canvas from "./canvas";
 import { loadDocument, setStore, store, zoomToFit, zoomToFitSlide, setCanvasBackgroundColor } from "../store/app-store";
@@ -38,7 +39,7 @@ const EmbedViewer: Component = () => {
     const options = parseEmbedOptions(window.location.hash);
 
     const fitToView = () => {
-        if (store.docType === 'slides') {
+        if (isPagedDocType(store.docType)) {
             zoomToFitSlide();
         } else {
             zoomToFit();
@@ -103,7 +104,7 @@ const EmbedViewer: Component = () => {
             }
 
             // Navigate to specific slide
-            if (options.slide && store.docType === 'slides' && store.slides.length > 0) {
+            if (options.slide && isPagedDocType(store.docType) && store.slides.length > 0) {
                 const slideIndex = Math.max(0, Math.min(options.slide - 1, store.slides.length - 1));
                 setStore("activeSlideIndex", slideIndex);
             }

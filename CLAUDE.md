@@ -1,3 +1,11 @@
+## Development process
+
+Our rigorous development process is defined in `LOOP.md` (repo root): 40 rules
+across 7 tiers — read-before-write, scope lock, TDD/verification, plan-first,
+deviation rules, self-review, safety/traceability, and agent-loop discipline.
+Follow it for all development work; ignore any rule that is clearly not relevant
+to the task at hand.
+
 ## Navigating this codebase (read this first)
 
 Before grepping or reading broadly, use the repo map at `.repograph/index.txt`

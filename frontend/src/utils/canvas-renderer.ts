@@ -5,6 +5,7 @@
  */
 
 import type { DrawingElement } from '../types';
+import { isPagedDocType } from '../types/slide-types';
 import type { SnappingGuide } from './object-snapping';
 import type { SpacingGuide } from './spacing';
 import { isLayerVisible, store } from '../store/app-store';
@@ -166,7 +167,7 @@ export function cullElementsForAnimation(
     activeSlideIndex: number,
     vp: ViewportBounds
 ): DrawingElement[] {
-    if (docType === 'slides' && slides.length > 0) {
+    if (isPagedDocType(docType) && slides.length > 0) {
         const activeSlide = slides[activeSlideIndex];
         if (activeSlide) {
             const { x: sX, y: sY } = activeSlide.spatialPosition;
@@ -358,7 +359,7 @@ export function renderSlideBoundaries(
     ctx.translate(panX, panY);
     ctx.scale(scale, scale);
 
-    if (docType === 'slides') {
+    if (isPagedDocType(docType)) {
         const activeSlide = slides[activeSlideIndex];
         if (activeSlide) {
             const { width: sW, height: sH } = activeSlide.dimensions;
@@ -662,7 +663,7 @@ export function renderLayersAndElements(
     let totalRendered = 0;
 
     // Artboards: named export-region frames drawn behind all content.
-    if (store.artboards && store.artboards.length && store.docType !== 'slides') {
+    if (store.artboards && store.artboards.length && !isPagedDocType(store.docType)) {
         const bleed = Math.max(0, store.globalSettings.bleed || 0);
         ctx.save();
         for (const ab of store.artboards) {
@@ -692,7 +693,7 @@ export function renderLayersAndElements(
 
     // Trim View: clip all element rendering to the union of the artboard rects,
     // hiding any overflow (Illustrator's View > Trim View).
-    const trimming = store.trimView && store.artboards.length > 0 && store.docType !== 'slides';
+    const trimming = store.trimView && store.artboards.length > 0 && !isPagedDocType(store.docType);
     if (trimming) {
         ctx.save();
         ctx.beginPath();
@@ -781,7 +782,7 @@ export function renderLayersAndElements(
         layerElements.forEach(el => {
             const animState = animatedStates.get(el.id);
             const isMasterLayer = layer.isMaster;
-            const needsMasterProjection = isMasterLayer && docType === 'slides';
+            const needsMasterProjection = isMasterLayer && isPagedDocType(docType);
             const needsTextVar = el.type === 'text' && el.text && el.text.startsWith('=');
 
             // Only create a copy when we need to mutate (animation, master projection, or text variables)
@@ -805,7 +806,7 @@ export function renderLayersAndElements(
             }
 
             // Strict slide isolation
-            if (docType === 'slides' && !isMasterLayer) {
+            if (isPagedDocType(docType) && !isMasterLayer) {
                 const activeSlide = slides[activeSlideIndex];
                 if (activeSlide) {
                     const { x: sX, y: sY } = activeSlide.spatialPosition;

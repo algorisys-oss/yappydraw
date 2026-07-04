@@ -6,6 +6,7 @@
  */
 
 import { type Component, createEffect, createSignal, Show } from "solid-js";
+import { isPagedDocType } from '../types/slide-types';
 import { store, setViewState, zoomToFitSlide } from "../store/app-store";
 
 interface ScrollBackButtonProps {
@@ -31,7 +32,7 @@ const ScrollBackButton: Component<ScrollBackButtonProps> = (props) => {
 
         let minX: number, minY: number, maxX: number, maxY: number;
 
-        if (store.docType === 'slides') {
+        if (isPagedDocType(store.docType)) {
             // In slide mode, check visibility of the active slide region
             const slide = store.slides[store.activeSlideIndex];
             if (!slide) { setShowScrollBack(false); return; }
@@ -63,7 +64,7 @@ const ScrollBackButton: Component<ScrollBackButtonProps> = (props) => {
 
     const handleScrollBack = () => {
         // In slide mode, fit the active slide into view
-        if (store.docType === 'slides') {
+        if (isPagedDocType(store.docType)) {
             zoomToFitSlide();
             return;
         }

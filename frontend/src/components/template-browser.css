@@ -362,3 +362,42 @@
 .template-card-presentation .template-info {
     border-top: none;
 }
+/* ── Design templates + user templates (Canva-style) ── */
+.template-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.template-save-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 12.5px;
+    cursor: pointer;
+}
+.template-save-btn:hover { border-color: var(--accent-color, #6366f1); color: var(--accent-color, #6366f1); }
+
+.template-design-preview {
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary, rgba(0, 0, 0, 0.04));
+    border-radius: 6px 6px 0 0;
+}
+.template-design-page {
+    border-radius: 3px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.template-delete-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+}
+.template-delete-btn:hover { color: #dc2626; }

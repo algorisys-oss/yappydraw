@@ -1,5 +1,6 @@
 import { For, Show, createSignal, createEffect, onMount, onCleanup } from "solid-js";
-import { store, setActiveSlide, addSlide, deleteSlide, duplicateSlide, reorderSlides, insertNewSlide } from "../store/app-store";
+import { store, setActiveSlide, addSlide, deleteSlide, duplicateSlide, reorderSlides, insertNewSlide, pageNoun } from "../store/app-store";
+import { isPagedDocType } from "../types/slide-types";
 import { X, Zap, Copy } from "lucide-solid";
 import { SlideTransitionPicker } from "./slide-transition-picker";
 import "./slide-navigator.css";
@@ -95,9 +96,9 @@ export const SlideNavigator = () => {
     });
 
     return (
-        <Show when={store.docType === 'slides'}>
+        <Show when={isPagedDocType(store.docType)}>
             <div class="slide-navigator" id="slide-navigator" onClick={() => setActivePickerIndex(null)}>
-                <div class="slide-navigator-header">Slides</div>
+                <div class="slide-navigator-header">{pageNoun()}s</div>
                 <div class="slide-list-container" ref={listContainerRef}>
                     <For each={store.slides}>
                         {(slide, index) => (
@@ -119,11 +120,11 @@ export const SlideNavigator = () => {
                                         class="slide-delete-btn"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            if (confirm(`Delete Slide ${index() + 1}?`)) {
+                                            if (confirm(`Delete ${pageNoun()} ${index() + 1}?`)) {
                                                 deleteSlide(index());
                                             }
                                         }}
-                                        title="Delete Slide"
+                                        title={`Delete ${pageNoun()}`}
                                     >
                                         <X size={14} />
                                     </button>
@@ -142,14 +143,14 @@ export const SlideNavigator = () => {
                                             e.stopPropagation();
                                             duplicateSlide(index());
                                         }}
-                                        title="Duplicate Slide"
+                                        title={`Duplicate ${pageNoun()}`}
                                     >
                                         <Copy size={14} />
                                     </button>
 
                                     <div class="slide-preview">
                                         <Show when={slide.thumbnail} fallback={
-                                            <div class="slide-name-tag">{slide.name || `Slide ${index() + 1}`}</div>
+                                            <div class="slide-name-tag">{slide.name || `${pageNoun()} ${index() + 1}`}</div>
                                         }>
                                             <img src={slide.thumbnail} class="slide-thumbnail-img" />
                                         </Show>
@@ -171,9 +172,9 @@ export const SlideNavigator = () => {
                     <button
                         class="add-slide-btn"
                         onClick={() => addSlide()}
-                        title="Add Slide (Ctrl+M)"
+                        title={`Add ${pageNoun()} (Ctrl+M)`}
                     >
-                        <span class="icon">+ Add Slide</span>
+                        <span class="icon">+ Add {pageNoun()}</span>
                     </button>
                 </div>
 
@@ -186,20 +187,18 @@ export const SlideNavigator = () => {
                         }}
                     >
                         <div class="menu-item" onClick={(e) => {
-                            console.log('Insert Above clicked');
                             e.stopPropagation();
                             insertNewSlide(contextMenu()!.index, 'before');
                             closeContextMenu();
                         }}>
-                            Insert Slide Above
+                            Insert {pageNoun()} Above
                         </div>
                         <div class="menu-item" onClick={(e) => {
-                            console.log('Insert Below clicked');
                             e.stopPropagation();
                             insertNewSlide(contextMenu()!.index, 'after');
                             closeContextMenu();
                         }}>
-                            Insert Slide Below
+                            Insert {pageNoun()} Below
                         </div>
                     </div>
                 </Show>

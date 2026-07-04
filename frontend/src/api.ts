@@ -6,7 +6,7 @@ import {
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
     toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
-    toggleSwatchesPanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
+    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
@@ -19,17 +19,23 @@ import {
     createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
-    updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument,
+    updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument, setPageSize,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
-    setSelectedTool, loadTemplate, moveSelectedElements,
+    setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
     saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
-import { exportToSvg, exportArtboard, exportRegion } from "./utils/export";
+import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
+import { PAGE_SIZE_PRESETS, getPagePreset } from "./config/page-size-presets";
+import { templateRegistry, getTemplateById, getTemplatesByCategory, refreshUserTemplates } from "./templates/registry";
+import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
+import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
+import { importSvgToCanvas } from "./utils/svg-import";
+import { TEXT_EFFECT_PRESETS, getTextEffectPreset } from "./config/text-effect-presets";
 import { generateTints, generateHarmony, extractImagePalette, parseHex, type HarmonyType } from "./utils/color-harmony";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
@@ -2060,9 +2066,129 @@ export const YappyAPI = {
     retreatPresentation() { return retreatPresentation(); },
     goToFirstSlide() { return setActiveSlide(0); },
     goToLastSlide() { return setActiveSlide(store.slides.length - 1); },
-    setDocType(type: 'infinite' | 'slides') { setDocType(type); },
+    setDocType(type: 'infinite' | 'slides' | 'design') { setDocType(type); },
     loadDocument(doc: any) { loadDocument(doc); },
-    resetToNewDocument(docType: 'infinite' | 'slides' = 'slides') { resetToNewDocument(docType); },
+    resetToNewDocument(docType: 'infinite' | 'slides' | 'design' = 'slides', pageSize?: { width: number, height: number }) { resetToNewDocument(docType, pageSize); },
+    /** Create a new Canva-style design document. Pass a page-size preset id (e.g. 'instagram-post') or explicit {width, height}. */
+    newDesign(size?: string | { width: number, height: number }) {
+        const resolved = typeof size === 'string' ? getPagePreset(size) : size;
+        resetToNewDocument('design', resolved ? { width: resolved.width, height: resolved.height } : undefined);
+    },
+    /** Resize pages in a design document (all pages by default). */
+    setPageSize(width: number, height: number, applyAll: boolean = true) { setPageSize(width, height, applyAll); },
+    /** List available page-size presets for design documents. */
+    getPageSizePresets() { return PAGE_SIZE_PRESETS.map(p => ({ ...p })); },
+    /** Export one page/slide to PNG at exact page bounds. Returns the data URL. */
+    exportPageToPng(pageIndex?: number, scale: number = 1, download: boolean = true) {
+        return exportPageToPng(pageIndex ?? store.activeSlideIndex, scale, download);
+    },
+
+    // Templates
+    /** List template metadata, optionally filtered by category (e.g. 'designs', 'my-templates'). */
+    getTemplates(category?: string) {
+        const all = category
+            ? getTemplatesByCategory(category as any)
+            : templateRegistry.getAllTemplates();
+        return all.map(t => ({ ...t.metadata }));
+    },
+    /** Apply a template by id (design, presentation, or user-saved document templates). */
+    applyTemplate(id: string): boolean {
+        const template: any = getTemplateById(id);
+        if (!template) return false;
+        if (template.doc?.version) {
+            loadDocument(JSON.parse(JSON.stringify(template.doc)));
+            return true;
+        }
+        if (template.pages?.length > 0 && template.pageSize) {
+            loadDesignTemplate(template);
+            return true;
+        }
+        if (template.slides?.length > 0) {
+            loadPresentationTemplate(template);
+            return true;
+        }
+        if (template.dslContent) return false; // DSL templates need the import dialog
+        loadTemplate(template.data);
+        return true;
+    },
+    /** Save the current document as a reusable template under My Templates. */
+    saveAsTemplate(name: string, description?: string) {
+        const saved = saveCurrentAsTemplate(name, description);
+        if (saved) refreshUserTemplates();
+        return saved ? { ...saved.metadata } : null;
+    },
+    /** Delete a user-saved template by id. */
+    deleteUserTemplate(id: string): boolean {
+        const ok = deleteUserTemplate(id);
+        if (ok) refreshUserTemplates();
+        return ok;
+    },
+
+    // Brand Kits
+    /** List saved brand kits. */
+    listBrandKits() { return listBrandKits(); },
+    /** Create and save a brand kit. Pass {fromDocument: true} to extract colors from the current document. */
+    createBrandKit(partial?: { name?: string; colors?: any; fonts?: any; fromDocument?: boolean }) {
+        const kit = createBrandKit(partial?.fromDocument
+            ? { ...partial, colors: { ...extractBrandColorsFromDocument(), ...partial?.colors } }
+            : partial);
+        saveBrandKit(kit);
+        return kit;
+    },
+    /** Update and persist a brand kit object. */
+    saveBrandKit(kit: any): boolean { return saveBrandKit(kit); },
+    /** Delete a brand kit by id. */
+    deleteBrandKit(id: string): boolean { return deleteBrandKit(id); },
+    /** Extract a brand color palette from the current document. */
+    extractBrandColors() { return extractBrandColorsFromDocument(); },
+    /** Apply a brand kit (by id or object) to the whole document: luminance-matched recolor + heading/body refont. */
+    applyBrandKit(kitOrId: string | any, opts?: { colors?: boolean; fonts?: boolean }): boolean {
+        const kit = typeof kitOrId === 'string' ? listBrandKits().find(k => k.id === kitOrId) : kitOrId;
+        if (!kit) return false;
+        applyBrandKit(kit, opts);
+        return true;
+    },
+    /** Show/hide the Brand Kit panel. */
+    toggleBrandKitPanel(visible?: boolean) { toggleBrandKitPanel(visible); },
+
+    // Elements / SVG import
+    /** Import SVG markup as editable vector path elements. Returns the new element ids. */
+    importSvg(svgText: string, opts?: { x?: number; y?: number; targetWidth?: number }) {
+        return importSvgToCanvas(svgText, opts);
+    },
+    /** Show/hide the Elements library panel (shapes, frames, icon library). */
+    toggleElementsPanel(visible?: boolean) { toggleElementsPanel(visible); },
+
+    // AI assists (Canva-style; keys from AI Settings)
+    /** Magic Write: transform text of the given (or selected) text elements. Modes: rewrite|shorten|expand|fix|custom. */
+    async magicWrite(mode: 'rewrite' | 'shorten' | 'expand' | 'fix' | 'custom' = 'rewrite', instruction?: string, ids?: string[]) {
+        const m = await import('./ai/canva-ai');
+        return m.magicWrite(ids ?? [...store.selection], mode, instruction);
+    },
+    /** Generate an image from a prompt (OpenAI) and insert it on the active page. Returns the element id. */
+    async generateImage(promptText: string, opts?: { size?: '1024x1024' | '1536x1024' | '1024x1536' }) {
+        const m = await import('./ai/canva-ai');
+        return m.generateImage(promptText, opts);
+    },
+    /** Remove the background of the selected (or given) image element via OpenAI image editing. */
+    async removeBackground(id?: string) {
+        const m = await import('./ai/canva-ai');
+        return m.removeBackground(id);
+    },
+
+    // Text effects
+    /** List text-effect preset ids/names (none, shadow, lift, hollow, splice, outline, echo, neon, background). */
+    getTextEffectPresets() { return TEXT_EFFECT_PRESETS.map(p => ({ id: p.id, name: p.name })); },
+    /** Apply a text-effect preset to the given element ids (or the current selection). */
+    applyTextEffect(presetId: string, ids?: string[]): number {
+        const preset = getTextEffectPreset(presetId);
+        if (!preset) return 0;
+        const targets = (ids ?? store.selection)
+            .map(id => store.elements.find(e => e.id === id))
+            .filter((e): e is NonNullable<typeof e> => !!e && e.type === 'text');
+        targets.forEach(el => updateElement(el.id, preset.patch(el)));
+        return targets.length;
+    },
 
     // Z-Order
     bringToFront(ids: string[]) { bringToFront(ids); },

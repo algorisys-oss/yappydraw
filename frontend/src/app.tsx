@@ -1,4 +1,5 @@
 import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal } from 'solid-js';
+import { isPagedDocType } from './types/slide-types';
 import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel,
   toggleMinimap, toggleRulers, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
@@ -54,6 +55,8 @@ const LayerPanel = lazy(() => import('./components/layer-panel'));
 const SymbolsPanel = lazy(() => import('./components/symbols-panel'));
 const GraphicStylesPanel = lazy(() => import('./components/graphic-styles-panel'));
 const SwatchesPanel = lazy(() => import('./components/swatches-panel'));
+const BrandKitPanel = lazy(() => import('./components/brand-kit-panel'));
+const ElementsPanel = lazy(() => import('./components/elements-panel'));
 const PatternsPanel = lazy(() => import('./components/patterns-panel'));
 const RecolorPanel = lazy(() => import('./components/recolor-panel'));
 const VectorToolsPanel = lazy(() => import('./components/vector-tools-panel'));
@@ -121,9 +124,9 @@ const App: Component = () => {
     registerShapes();
     initAPI();
 
-    // Auto-save: silently restore last session, then start watchers
-    loadAutoSave();
-    initAutoSave();
+    // Auto-save: silently restore last session (async — large docs come from
+    // IndexedDB), then start the watchers
+    loadAutoSave().finally(() => initAutoSave());
 
     // Cloud storage: register providers and restore config
     initCloudStorage();
@@ -1057,6 +1060,27 @@ const App: Component = () => {
     const processExtractedDrop = async (data: ReturnType<typeof extractDropData>) => {
       let imageFiles: File[] = [];
 
+      // SVG files import as editable vector paths (not raster images)
+      const allDroppedFiles = [...data.filesFromList, ...data.filesFromItems];
+      const svgFiles = allDroppedFiles.filter(f => f.type === 'image/svg+xml' || f.name.toLowerCase().endsWith('.svg'));
+      if (svgFiles.length > 0) {
+        if (!store.welcomeDismissed) setStore('welcomeDismissed', true);
+        const { x: worldX, y: worldY } = screenToWorld(data.clientX, data.clientY, store.viewState);
+        const { importSvgToCanvas } = await import('./utils/svg-import');
+        let placed = 0;
+        for (const f of svgFiles) {
+          try {
+            const text = await f.text();
+            const ids = importSvgToCanvas(text, { x: worldX + placed * 30, y: worldY + placed * 30 });
+            if (ids.length > 0) placed++;
+          } catch (err) {
+            console.error('[DND drop] SVG import failed:', err);
+          }
+        }
+        if (placed > 0) return true;
+        // Fall through to raster handling if vector import found nothing
+      }
+
       // 1. Try files from dt.files
       const allListFiles = data.filesFromList;
       if (allListFiles.length > 0) {
@@ -1248,6 +1272,8 @@ const App: Component = () => {
             <SymbolsPanel />
             <GraphicStylesPanel />
             <SwatchesPanel />
+            <BrandKitPanel />
+            <ElementsPanel />
             <PatternsPanel />
             <RecolorPanel />
             <VectorToolsPanel />
@@ -1290,7 +1316,7 @@ const App: Component = () => {
         <SymbolismOverlay />
         <TypeOnPathOverlay />
         <SymbolEditBanner />
-        <Show when={store.docType === 'slides'}>
+        <Show when={isPagedDocType(store.docType)}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={
             <Show when={store.appMode === 'presentation'}>
               <PresentationControls />

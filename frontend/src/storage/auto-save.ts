@@ -1,24 +1,31 @@
 /**
- * localStorage Auto-Save
+ * Auto-Save (IndexedDB + localStorage)
  *
  * Provides real-time auto-save with debouncing, immediate save on slide
  * transitions and tab close, crash recovery, and multi-tab awareness.
  *
- * localStorage keys:
- *   yappy:autosave       — full SlideDocument v4 JSON
- *   yappy:autosave:meta  — { timestamp, tabId, docName, elementCount, sizeBytes, viewState, activeSlideIndex }
+ * Storage layout:
+ *   IndexedDB `yappy:autosave`     — full SlideDocument v4 JSON (no size limit)
+ *   localStorage `yappy:autosave`  — synchronous copy while the doc is small
+ *                                    (beforeunload safety; IDB writes are async)
+ *   localStorage `yappy:autosave:meta` — small metadata; stays in localStorage
+ *                                    so cross-tab `storage` events keep working
  */
 
 import { createEffect, on } from 'solid-js';
+import { isPagedDocType } from '../types/slide-types';
 import { store, setStore, saveActiveSlide, loadDocument, setViewState, setActiveSlide } from '../store/app-store';
 import { drawingId, setDrawingId } from '../components/menu';
 import { showToast } from '../components/toast';
 import type { SlideDocument } from '../types/slide-types';
+import { idbGet, idbSet, idbDelete } from './idb-kv';
 
 const AUTOSAVE_KEY = 'yappy:autosave';
 const META_KEY = 'yappy:autosave:meta';
 const DEBOUNCE_MS = 1000;
 const SIZE_WARN_BYTES = 4 * 1024 * 1024; // 4MB
+/** Keep a synchronous localStorage copy only below this size. */
+const LOCAL_COPY_LIMIT = 3 * 1024 * 1024; // 3MB
 
 let debounceTimer: number | undefined;
 let _isSaving = false;
@@ -88,6 +95,7 @@ export function clearAutoSave(): void {
         localStorage.removeItem(AUTOSAVE_KEY);
         localStorage.removeItem(META_KEY);
     } catch { /* ignore */ }
+    void idbDelete(AUTOSAVE_KEY);
     setStore('isDirty', false);
 }
 
@@ -95,16 +103,21 @@ export function clearAutoSave(): void {
  * Silently restore the last auto-saved document (like Excalidraw/tldraw).
  * Returns true if a document was restored, false otherwise.
  */
-export function loadAutoSave(): boolean {
+export async function loadAutoSave(): Promise<boolean> {
     try {
         const metaRaw = localStorage.getItem(META_KEY);
         if (!metaRaw) return false;
         const meta: AutoSaveMeta = JSON.parse(metaRaw);
         // Skip truly empty documents (no elements AND no slides beyond default)
-        const hasSlides = meta.docType === 'slides' || (meta.slideCount && meta.slideCount > 0);
+        const hasSlides = isPagedDocType(meta.docType) || (meta.slideCount && meta.slideCount > 0);
         if (meta.elementCount === 0 && !hasSlides) return false;
 
-        const raw = localStorage.getItem(AUTOSAVE_KEY);
+        // Prefer the synchronous localStorage copy (freshest after a crash);
+        // large documents only exist in IndexedDB.
+        let raw = localStorage.getItem(AUTOSAVE_KEY);
+        if (!raw) {
+            raw = (await idbGet<string>(AUTOSAVE_KEY)) ?? null;
+        }
         if (!raw) return false;
 
         const doc: SlideDocument = JSON.parse(raw);
@@ -141,7 +154,7 @@ interface AutoSaveMeta {
     sizeBytes: number;
     viewState?: { scale: number; panX: number; panY: number };
     activeSlideIndex?: number;
-    docType?: 'infinite' | 'slides';
+    docType?: 'infinite' | 'slides' | 'design';
     slideCount?: number;
 }
 
@@ -186,7 +199,20 @@ function performAutoSave(): void {
             console.warn(`[auto-save] Document size: ${(sizeBytes / 1024 / 1024).toFixed(1)}MB`);
         }
 
-        localStorage.setItem(AUTOSAVE_KEY, json);
+        // Primary store: IndexedDB (async, effectively unlimited)
+        void idbSet(AUTOSAVE_KEY, json);
+        // Synchronous localStorage copy while small — survives an immediate
+        // tab close where the async IDB write may not complete.
+        try {
+            if (sizeBytes < LOCAL_COPY_LIMIT) {
+                localStorage.setItem(AUTOSAVE_KEY, json);
+            } else {
+                localStorage.removeItem(AUTOSAVE_KEY);
+            }
+        } catch {
+            // Quota exceeded — IDB still has the document
+            try { localStorage.removeItem(AUTOSAVE_KEY); } catch { /* ignore */ }
+        }
         localStorage.setItem(META_KEY, JSON.stringify({
             timestamp: new Date().toISOString(),
             tabId,
@@ -200,11 +226,7 @@ function performAutoSave(): void {
         } satisfies AutoSaveMeta));
 
     } catch (e: any) {
-        if (e?.name === 'QuotaExceededError' || e?.code === 22) {
-            showToast('Auto-save failed: document too large for localStorage', 'error');
-        } else {
-            console.error('[auto-save] save failed:', e);
-        }
+        console.error('[auto-save] save failed:', e);
     } finally {
         _isSaving = false;
     }

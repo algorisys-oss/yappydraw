@@ -5,6 +5,7 @@
  */
 
 import type { DrawingElement } from '../../types';
+import { isPagedDocType } from '../../types/slide-types';
 import { store, setViewState, updateElement, pushToHistory, updateSlideBackground, isLayerVisible } from '../../store/app-store';
 import { calculateAllAnimatedStates } from '../animation-utils';
 import { hitTestElement } from '../hit-testing';
@@ -125,7 +126,7 @@ export function applyAssetAtClientPoint(
                 updateElement(hitId, { fillStyle: 'image', backgroundImage: data });
             }
         }
-    } else if (store.docType === 'slides') {
+    } else if (isPagedDocType(store.docType)) {
         // Drop anywhere on the canvas (even outside slide bounds) updates the ACTIVE slide background
         const activeSlideIndex = store.activeSlideIndex;
         if (activeSlideIndex !== -1) {
@@ -232,7 +233,7 @@ function handleUmlSectionScroll(e: WheelEvent, ctx: WheelContext): boolean {
 // ─── Wheel Handler (Zoom & Pan) ─────────────────────────────────────
 
 export function handleWheel(e: WheelEvent, wheelCtx?: WheelContext): void {
-    if (store.appMode === 'presentation' && store.docType === 'slides') return;
+    if (store.appMode === 'presentation' && isPagedDocType(store.docType)) return;
 
     // UML section scroll interception
     if (wheelCtx && handleUmlSectionScroll(e, wheelCtx)) {

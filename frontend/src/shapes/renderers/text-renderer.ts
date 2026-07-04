@@ -125,6 +125,20 @@ export class TextRenderer extends ShapeRenderer {
         const textColorRaw = el.textColor || el.strokeColor || '#000000';
         const textColor = RenderPipeline.adjustColor(textColorRaw, isDarkMode);
 
+        // Text outline (Hollow/Splice effects): stroke each glyph; skip the fill
+        // entirely when the fill color is 'transparent' (outline-only text).
+        const strokeOn = !!el.textStrokeEnabled && (el.textStrokeWidth ?? 2) > 0;
+        const fillOn = textColorRaw !== 'transparent';
+        const drawTextLine = (line: string, x: number, y: number) => {
+            if (strokeOn) {
+                renderer.lineWidth = el.textStrokeWidth ?? 2;
+                renderer.strokeStyle = RenderPipeline.adjustColor(el.textStrokeColor || textColorRaw, isDarkMode);
+                renderer.lineJoin = 'round';
+                renderer.strokeText(line, x, y);
+            }
+            if (fillOn) renderer.fillText(line, x, y);
+        };
+
         // Apply text alignment
         const textAlign = el.textAlign || 'center';
         renderer.textAlign = textAlign;
@@ -171,7 +185,7 @@ export class TextRenderer extends ShapeRenderer {
             lines.forEach((line, index) => {
                 const xPos = getXPosition();
                 const yOffset = el.y + verticalPadding + index * lineHeight;
-                renderer.fillText(line, xPos, yOffset);
+                drawTextLine(line, xPos, yOffset);
             });
         } else {
             renderer.fillStyle = textColor;
@@ -186,7 +200,7 @@ export class TextRenderer extends ShapeRenderer {
 
             // Render each line at the correct Y offset with vertical centering
             lines.forEach((line, index) => {
-                renderer.fillText(line, xPos, el.y + verticalPadding + index * lineHeight);
+                drawTextLine(line, xPos, el.y + verticalPadding + index * lineHeight);
             });
         }
         renderer.restore();

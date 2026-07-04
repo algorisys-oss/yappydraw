@@ -317,6 +317,12 @@ export interface DrawingElement {
     textHighlightColor?: string;
     textHighlightPadding?: number;
     textHighlightRadius?: number;
+    // Text outline (Hollow/Splice text effects): stroke drawn around each glyph
+    textStrokeEnabled?: boolean;
+    textStrokeColor?: string;
+    textStrokeWidth?: number;
+    /** Active text-effect preset id (see config/text-effect-presets.ts) */
+    textEffect?: string;
 
     // Rich text: per-span formatting (when present, takes priority over plain text)
     richText?: RichTextSpan[];

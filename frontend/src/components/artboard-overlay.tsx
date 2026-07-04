@@ -1,4 +1,5 @@
 import { Show, For, createMemo, onMount, onCleanup } from 'solid-js';
+import { isPagedDocType } from '../types/slide-types';
 import { store, pushToHistory, updateArtboardLive, setActiveArtboard, deleteArtboard } from '../store/app-store';
 import './artboard-overlay.css';
 
@@ -83,7 +84,7 @@ export const ArtboardOverlay = () => {
         left: w2sx(ab.x), top: w2sy(ab.y), w: ab.width * scale(), h: ab.height * scale(),
     });
 
-    const visible = createMemo(() => store.docType !== 'slides' && (store.artboards?.length ?? 0) > 0);
+    const visible = createMemo(() => !isPagedDocType(store.docType) && (store.artboards?.length ?? 0) > 0);
 
     return (
         <Show when={visible()}>

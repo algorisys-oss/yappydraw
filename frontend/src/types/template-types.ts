@@ -10,7 +10,9 @@ export type TemplateCategory =
     | 'animations'
     | 'wireframes'
     | 'dsl-examples'
-    | 'presentations';
+    | 'presentations'
+    | 'designs'
+    | 'my-templates';
 
 /**
  * Template metadata
@@ -24,6 +26,8 @@ export interface TemplateMetadata {
     thumbnail?: string; // Base64 data URL or path
     author?: string;
     order?: number; // For sorting within category
+    /** Fixed page size for design templates (shown as a badge in the browser) */
+    pageSize?: { width: number; height: number };
 }
 
 /**
@@ -99,5 +103,45 @@ export interface PresentationTemplate {
     slides: PresentationSlideTemplate[];
     palette?: SlidePalette;
     /** Dummy data field — not used, but satisfies Template['data'] when registered */
+    data: DrawingData;
+}
+
+// ─── Design Templates (Canva-style fixed-size documents) ─────
+
+/**
+ * A single page within a design template.
+ * Element positions are relative to page origin (0,0 = top-left).
+ */
+export interface DesignPageTemplate {
+    name: string;
+    backgroundColor?: string;
+    fillStyle?: import('../types').FillStyle;
+    gradientStops?: import('../types').GradientStop[];
+    gradientDirection?: number;
+    elements: Partial<DrawingElement>[];
+}
+
+/**
+ * A fixed-page-size design template (social post, poster, card, …).
+ * Loaded as a `design` document via loadDesignTemplate.
+ */
+export interface DesignTemplate {
+    metadata: TemplateMetadata;
+    pageSize: { width: number; height: number };
+    pages: DesignPageTemplate[];
+    palette?: SlidePalette;
+    /** Dummy data field — satisfies Template['data'] when registered */
+    data: DrawingData;
+}
+
+/**
+ * A user-saved template: a full document snapshot (any docType), created via
+ * "Save as Template". Loading it restores the snapshot as a new document.
+ */
+export interface UserTemplate {
+    metadata: TemplateMetadata;
+    /** Full v4 SlideDocument snapshot */
+    doc: import('./slide-types').SlideDocument;
+    /** Dummy data field — satisfies Template['data'] when registered */
     data: DrawingData;
 }

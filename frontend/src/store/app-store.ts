@@ -2,7 +2,9 @@ import { batch } from "solid-js";
 import { createStore } from "solid-js/store";
 import type { DrawingElement, ViewState, ToolType, Layer, GridSettings, AppMode, ElementType, Guide } from "../types";
 import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } from '../types/slide-types';
-import type { Slide, GlobalSettings, SlideTransition } from '../types/slide-types';
+import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/slide-types';
+import { isPagedDocType } from '../types/slide-types';
+import { idbDelete } from '../storage/idb-kv';
 import type { ElementAnimation, DisplayState } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
@@ -75,7 +77,7 @@ interface AppState {
     // Slide Management
     slides: Slide[];
     activeSlideIndex: number;
-    docType: 'infinite' | 'slides';
+    docType: DocType;
 
     // Remaining Global State
     selectedTool: ToolType;
@@ -105,6 +107,10 @@ interface AppState {
     showGraphicStylesPanel: boolean;
     /** Swatches panel visibility (transient, not persisted). */
     showSwatchesPanel: boolean;
+    /** Brand Kit panel visibility (transient, not persisted). */
+    showBrandKitPanel: boolean;
+    /** Elements library panel visibility (transient, not persisted). */
+    showElementsPanel: boolean;
     /** Recolor Artwork panel visibility (transient, not persisted). */
     showRecolorPanel: boolean;
     /** Vector Tools palette visibility (persisted in localStorage). */
@@ -361,6 +367,8 @@ const initialState: AppState = {
     showSymbolsPanel: false,
     showGraphicStylesPanel: false,
     showSwatchesPanel: false,
+    showBrandKitPanel: false,
+    showElementsPanel: false,
     showRecolorPanel: false,
     showVectorToolsPanel: (() => { try { return localStorage.getItem('showVectorToolsPanel') === '1'; } catch { return false; } })(),
     measureActive: false,
@@ -473,7 +481,7 @@ interface HistorySnapshot {
     patterns: PatternSwatch[];
     gridSettings: GridSettings;
     canvasBackgroundColor: string;
-    docType: 'infinite' | 'slides';
+    docType: DocType;
 }
 const undoStack: HistorySnapshot[] = [];
 const redoStack: HistorySnapshot[] = [];
@@ -1548,6 +1556,23 @@ export const retreatPresentation = async () => {
     }
 };
 
+/** "Page" in design documents, "Slide" in presentations. */
+export const pageNoun = (): 'Page' | 'Slide' => store.docType === 'design' ? 'Page' : 'Slide';
+
+/** Horizontal gap between paged frames on the spatial canvas. */
+const PAGE_GAP = 80;
+
+/** Spatial X to the right of a frame (size-aware so wide pages never overlap). */
+const nextSpatialX = (slide?: Slide): number =>
+    slide ? slide.spatialPosition.x + slide.dimensions.width + PAGE_GAP : 0;
+
+/** New pages inherit the active page's dimensions in design docs (uniform page size). */
+const newPageDimensions = (): { width: number, height: number } | undefined => {
+    if (store.docType !== 'design') return undefined;
+    const active = store.slides[store.activeSlideIndex] || store.slides[0];
+    return active ? { ...active.dimensions } : undefined;
+};
+
 export const addSlide = () => {
     pushToHistory();
     saveActiveSlide();
@@ -1555,15 +1580,15 @@ export const addSlide = () => {
     const nextIndex = store.slides.length;
     // Position new slide to the right of the last one
     const lastSlide = store.slides[store.slides.length - 1];
-    const newX = lastSlide ? lastSlide.spatialPosition.x + 2000 : 0;
+    const newX = nextSpatialX(lastSlide);
 
-    const newSlide = createDefaultSlide(undefined, `Slide ${nextIndex + 1}`, newX, 0);
+    const newSlide = createDefaultSlide(undefined, `${pageNoun()} ${nextIndex + 1}`, newX, 0, newPageDimensions());
     newSlide.order = nextIndex;
 
     setStore("slides", (prev) => [...prev, newSlide]);
     setActiveSlide(nextIndex);
 
-    showToast('Slide added', 'success');
+    showToast(`${pageNoun()} added`, 'success');
 };
 
 export const insertNewSlide = (targetIndex: number, position: 'before' | 'after') => {
@@ -1573,12 +1598,12 @@ export const insertNewSlide = (targetIndex: number, position: 'before' | 'after'
     // 1. Determine new slide position (Spatially always at the end to avoid collision)
     const sortedByX = [...store.slides].sort((a, b) => a.spatialPosition.x - b.spatialPosition.x);
     const lastSlide = sortedByX[sortedByX.length - 1];
-    const newX = lastSlide ? lastSlide.spatialPosition.x + 2000 : 0;
+    const newX = nextSpatialX(lastSlide);
 
     const insertionIndex = position === 'before' ? targetIndex : targetIndex + 1;
 
     // 2. Create and Insert
-    const newSlide = createDefaultSlide(undefined, `Slide ${store.slides.length + 1}`, newX, 0);
+    const newSlide = createDefaultSlide(undefined, `${pageNoun()} ${store.slides.length + 1}`, newX, 0, newPageDimensions());
 
     const newSlides = store.slides.map(s => ({ ...s }));
     newSlides.splice(insertionIndex, 0, newSlide);
@@ -1601,7 +1626,7 @@ export const insertNewSlide = (targetIndex: number, position: 'before' | 'after'
 
     // Now transition to the new slide
     setActiveSlide(insertionIndex);
-    showToast('Slide inserted', 'success');
+    showToast(`${pageNoun()} inserted`, 'success');
 };
 
 export const duplicateSlide = (index: number) => {
@@ -1625,7 +1650,7 @@ export const duplicateSlide = (index: number) => {
     const lastSlide = store.slides.reduce((prev, current) => {
         return (prev.spatialPosition.x > current.spatialPosition.x) ? prev : current;
     });
-    const newX = lastSlide.spatialPosition.x + 2000;
+    const newX = nextSpatialX(lastSlide);
     const offset = { x: newX - sX, y: 0 };
 
     // 3. Clone elements with ID mapping
@@ -1694,12 +1719,12 @@ export const duplicateSlide = (index: number) => {
         setActiveSlide(index + 1);
     });
 
-    showToast('Slide duplicated', 'success');
+    showToast(`${pageNoun()} duplicated`, 'success');
 };
 
 export const deleteSlide = (index: number) => {
     if (store.slides.length <= 1) {
-        showToast('Cannot delete the last slide', 'error');
+        showToast(`Cannot delete the last ${pageNoun().toLowerCase()}`, 'error');
         return;
     }
 
@@ -1747,7 +1772,7 @@ export const deleteSlide = (index: number) => {
         setActiveSlide(nextIndex);
     });
 
-    showToast('Slide deleted', 'info');
+    showToast(`${pageNoun()} deleted`, 'info');
 };
 
 export const reorderSlides = (fromIndex: number, toIndex: number) => {
@@ -1933,7 +1958,7 @@ export const loadDocument = (doc: any) => {
         // - v1/v2 legacy: default to 'infinite' (pre-slide format)
         const loadedDocType = doc.metadata?.docType || (doc.version >= 3 ? 'slides' : 'infinite');
         setStore("docType", loadedDocType);
-        setStore("showSlideNavigator", loadedDocType === 'slides');
+        setStore("showSlideNavigator", isPagedDocType(loadedDocType));
         setStore("showSlideToolbar", true);
         setStore("showUtilityToolbar", false);
 
@@ -1947,6 +1972,12 @@ export const loadDocument = (doc: any) => {
         }
         // Apply first slide's canvas texture (or reset to 'none' if unset)
         setStore("canvasTexture", slides[0]?.canvasTexture ?? 'none');
+        // Sync canvas dimensions with the first slide — saveActiveSlide writes
+        // store.dimensions back into the slide, so a stale value here would
+        // silently overwrite the loaded page size on the first slide action.
+        if (slides[0]?.dimensions) {
+            setStore("dimensions", { ...slides[0].dimensions });
+        }
 
         if (!layers.some((l: Layer) => l.id === store.activeLayerId)) {
             setStore("activeLayerId", layers[0]?.id || 'default-layer');
@@ -1969,11 +2000,49 @@ export const loadDocument = (doc: any) => {
 
 // --- Document Type Actions ---
 
-export const setDocType = (type: 'infinite' | 'slides') => {
+export const setDocType = (type: DocType) => {
     batch(() => {
         setStore("docType", type);
-        setStore("showSlideNavigator", type === 'slides');
+        setStore("showSlideNavigator", isPagedDocType(type));
     });
+};
+
+/**
+ * Resize pages in a design document. Applies to the active page, or all pages
+ * when `applyAll` is true. Pages are re-laid-out spatially afterwards so
+ * resized frames never overlap their neighbours.
+ */
+export const setPageSize = (width: number, height: number, applyAll: boolean = true) => {
+    if (!isPagedDocType(store.docType)) return;
+    const w = Math.max(16, Math.round(width));
+    const h = Math.max(16, Math.round(height));
+
+    pushToHistory();
+
+    const ordered = store.slides.map(s => ({ ...s, dimensions: { ...s.dimensions }, spatialPosition: { ...s.spatialPosition } }));
+    ordered.forEach((s, i) => {
+        if (applyAll || i === store.activeSlideIndex) {
+            s.dimensions = { width: w, height: h };
+        }
+    });
+    // Re-layout left-to-right in order with a fixed gap
+    let x = 0;
+    ordered.forEach(s => {
+        s.spatialPosition = { x, y: s.spatialPosition.y };
+        // Invalidate any saved viewport for the old position
+        s.lastViewState = undefined;
+        x += s.dimensions.width + 80;
+    });
+
+    batch(() => {
+        setStore("slides", ordered);
+        const active = ordered[store.activeSlideIndex];
+        if (active) {
+            setStore("dimensions", { ...active.dimensions });
+        }
+    });
+    zoomToFitSlide();
+    bumpDirtyRevision();
 };
 
 // --- State Morphing Actions ---
@@ -2083,17 +2152,24 @@ export const clearHistory = () => {
     setStore("redoStackLength", 0);
 };
 
-export const resetToNewDocument = (docType: 'infinite' | 'slides' = 'slides') => {
-    const doc = createSlideDocument('Untitled', docType);
+export const resetToNewDocument = (docType: DocType = 'slides', pageSize?: { width: number, height: number }) => {
+    const doc = createSlideDocument('Untitled', docType, pageSize);
     loadDocument(doc);
-    // Clear auto-save data (inline to avoid circular import)
+    // Clear auto-save data (inline to avoid circular import with storage/auto-save)
     try { localStorage.removeItem('yappy:autosave'); localStorage.removeItem('yappy:autosave:meta'); } catch {}
+    void idbDelete('yappy:autosave');
     setStore("isDirty", false);
     setStore("welcomeDismissed", true);
     setStore("showSlideToolbar", true);
     setStore("showUtilityToolbar", false);
-    // Default to 100% zoom for new documents, centered on the first slide
+    // Default to 100% zoom for new documents, centered on the first slide.
+    // Design pages are often taller/wider than the window (stories, posters,
+    // A4) — fit the page in view instead so the user sees the whole frame.
     setTimeout(() => {
+        if (docType === 'design') {
+            zoomToFitSlide();
+            return;
+        }
         const firstSlide = store.slides[0];
         if (firstSlide) {
             const { x: sx, y: sy } = firstSlide.spatialPosition;
@@ -2107,7 +2183,7 @@ export const resetToNewDocument = (docType: 'infinite' | 'slides' = 'slides') =>
             setStore('viewState', { scale: 1, panX: 0, panY: 0 });
         }
     }, 120);
-    showToast(`New ${docType === 'slides' ? 'presentation' : 'sketch'} created`, 'info');
+    showToast(`New ${docType === 'slides' ? 'presentation' : docType === 'design' ? 'design' : 'sketch'} created`, 'info');
 };
 
 export const duplicateElement = (id: string) => {
@@ -3820,7 +3896,7 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
             // and fullscreen state to begin initiating. The resize/fullscreen listeners
             // will catch the final dimensions.
             setTimeout(() => {
-                if (store.docType === 'slides') {
+                if (isPagedDocType(store.docType)) {
                     zoomToFitSlide();
                 } else {
                     // Infinite canvas: reset to 100% zoom, centered on content
@@ -4021,6 +4097,14 @@ export const toggleSwatchesPanel = (visible?: boolean) => {
     const next = visible ?? !store.showSwatchesPanel;
     if (next) repairLibraryIds();
     setStore('showSwatchesPanel', next);
+};
+
+export const toggleBrandKitPanel = (visible?: boolean) => {
+    setStore('showBrandKitPanel', visible ?? !store.showBrandKitPanel);
+};
+
+export const toggleElementsPanel = (visible?: boolean) => {
+    setStore('showElementsPanel', visible ?? !store.showElementsPanel);
 };
 
 /** Create a swatch (from a colour, or the first selected element's fill). */
@@ -5595,6 +5679,61 @@ export const loadPresentationTemplate = (template: {
         globalSettings: {},
     };
     loadDocument(doc);
+};
+
+/**
+ * Load a Canva-style design template: fixed page size, one frame per page,
+ * loaded as a `design` document.
+ */
+export const loadDesignTemplate = (template: {
+    metadata?: { name?: string };
+    pageSize: { width: number; height: number };
+    pages: Array<{
+        name: string;
+        backgroundColor?: string;
+        fillStyle?: string;
+        gradientStops?: any[];
+        gradientDirection?: number;
+        elements: Partial<DrawingElement>[];
+    }>;
+}) => {
+    const { width: pw, height: ph } = template.pageSize;
+    const gap = 80;
+    const allElements: DrawingElement[] = [];
+    const slides: Slide[] = [];
+
+    template.pages.forEach((pageTemplate, index) => {
+        const spatialX = index * (pw + gap);
+
+        const pageElements = pageTemplate.elements.map(el => ({
+            ...el,
+            x: (el.x || 0) + spatialX,
+            y: el.y || 0,
+        })) as DrawingElement[];
+        allElements.push(...pageElements);
+
+        slides.push({
+            id: generateId('slide'),
+            name: pageTemplate.name || `Page ${index + 1}`,
+            spatialPosition: { x: spatialX, y: 0 },
+            dimensions: { width: pw, height: ph },
+            order: index,
+            backgroundColor: pageTemplate.backgroundColor || '',
+            fillStyle: (pageTemplate.fillStyle as any) || undefined,
+            gradientStops: pageTemplate.gradientStops || undefined,
+            gradientDirection: pageTemplate.gradientDirection || undefined,
+            transition: { ...DEFAULT_SLIDE_TRANSITION },
+        });
+    });
+
+    loadDocument({
+        version: 4,
+        metadata: { name: template.metadata?.name || 'Design', docType: 'design' as const },
+        elements: allElements,
+        layers: [{ id: 'default-layer', name: 'Layer 1', visible: true, locked: false, opacity: 1, order: 0, backgroundColor: 'transparent' }],
+        slides,
+        globalSettings: {},
+    });
 };
 
 

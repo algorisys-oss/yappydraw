@@ -138,6 +138,11 @@ export class CanvasRenderer implements IRenderer {
         else this.ctx.fillText(text, x, y);
     }
 
+    strokeText(text: string, x: number, y: number, maxWidth?: number): void {
+        if (maxWidth !== undefined) this.ctx.strokeText(text, x, y, maxWidth);
+        else this.ctx.strokeText(text, x, y);
+    }
+
     measureText(text: string): TextMetrics {
         return this.ctx.measureText(text);
     }

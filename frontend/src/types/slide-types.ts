@@ -68,13 +68,25 @@ export interface Slide {
 }
 
 /**
+ * Document types:
+ * - 'infinite': free-form infinite canvas
+ * - 'slides': paged presentation (16:9 slides, transitions, present mode)
+ * - 'design': paged Canva-style design document (fixed-size pages, size presets)
+ * 'slides' and 'design' share the same paged substrate (Slide frames).
+ */
+export type DocType = 'infinite' | 'slides' | 'design';
+
+/** True for document types built on paged Slide frames (slides + design). */
+export const isPagedDocType = (t?: string | null): boolean => t === 'slides' || t === 'design';
+
+/**
  * Metadata for a slide document
  */
 export interface SlideDocumentMetadata {
     name?: string;
     createdAt?: string;
     updatedAt?: string;
-    docType?: 'infinite' | 'slides';
+    docType?: DocType;
 }
 
 /**
@@ -124,11 +136,11 @@ export interface SlideDocument {
 /**
  * Default slide factory
  */
-export const createDefaultSlide = (id?: string, name?: string, x: number = 0, y: number = 0): Slide => ({
+export const createDefaultSlide = (id?: string, name?: string, x: number = 0, y: number = 0, dimensions?: { width: number, height: number }): Slide => ({
     id: id || crypto.randomUUID(),
     name: name || 'Slide 1',
     spatialPosition: { x, y },
-    dimensions: { width: 1920, height: 1080 }, // Default 1080p
+    dimensions: dimensions ? { ...dimensions } : { width: 1920, height: 1080 }, // Default 1080p
     backgroundColor: '',
     order: 0,
     transition: { ...DEFAULT_SLIDE_TRANSITION }
@@ -137,7 +149,7 @@ export const createDefaultSlide = (id?: string, name?: string, x: number = 0, y:
 /**
  * Create a new empty slide document
  */
-export const createSlideDocument = (name?: string, docType: 'infinite' | 'slides' = 'slides'): SlideDocument => ({
+export const createSlideDocument = (name?: string, docType: DocType = 'slides', pageSize?: { width: number, height: number }): SlideDocument => ({
     version: 4,
     metadata: {
         name,
@@ -155,7 +167,7 @@ export const createSlideDocument = (name?: string, docType: 'infinite' | 'slides
         order: 0,
         backgroundColor: 'transparent'
     }],
-    slides: [createDefaultSlide()],
+    slides: [createDefaultSlide(undefined, docType === 'design' ? 'Page 1' : 'Slide 1', 0, 0, pageSize)],
     globalSettings: {},
     gridSettings: {
         enabled: false,

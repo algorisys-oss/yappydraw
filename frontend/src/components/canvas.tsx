@@ -1,4 +1,5 @@
 import { type Component, onMount, createEffect, onCleanup, createSignal, Show, untrack, batch } from "solid-js";
+import { isPagedDocType } from '../types/slide-types';
 import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
@@ -256,7 +257,7 @@ const Canvas: Component = () => {
 
             // Re-fit the slide to the new window size
             // (important after entering/exiting fullscreen and window resizes)
-            if (store.docType === 'slides') {
+            if (isPagedDocType(store.docType)) {
                 zoomToFitSlide();
                 // Sometimes browsers need a tiny extra moment for layout to settle
                 // after fullscreen or URL bar shifts
@@ -587,7 +588,7 @@ const Canvas: Component = () => {
      * Used to make hit testing match the rendered (projected) position.
      */
     const applyMasterProjection = (el: DrawingElement): DrawingElement => {
-        if (store.docType !== 'slides') return el;
+        if (!isPagedDocType(store.docType)) return el;
         const layer = store.layers.find(l => l.id === el.layerId);
         if (!layer?.isMaster) return el;
         const activeSlide = store.slides[store.activeSlideIndex];
@@ -1034,7 +1035,7 @@ const Canvas: Component = () => {
         if (gUndoRepeatInterval !== null) { clearInterval(gUndoRepeatInterval); gUndoRepeatInterval = null; }
     };
 
-    const fitView = () => { store.docType === 'slides' ? zoomToFitSlide() : zoomToFit(); };
+    const fitView = () => { isPagedDocType(store.docType) ? zoomToFitSlide() : zoomToFit(); };
 
     // Two fingers held stationary keep undoing (Procreate). Armed on a 2-finger
     // start; fires only if the gesture stays a still, uncommitted 2-finger hold.

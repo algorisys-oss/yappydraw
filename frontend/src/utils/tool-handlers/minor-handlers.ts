@@ -5,6 +5,7 @@
  */
 
 import { batch } from 'solid-js';
+import { isPagedDocType } from '../../types/slide-types';
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
@@ -203,7 +204,7 @@ export function presentationOnDown(
         }
     }
 
-    if (store.docType === 'slides') {
+    if (isPagedDocType(store.docType)) {
         if (isNavTool) {
             if (e.button === 0) {
                 advancePresentation();
@@ -242,9 +243,9 @@ export function presentationOnMove(
     // If elements are selected and being dragged, let selectionOnMove handle it
     if (isNavTool && store.selection.length > 0) return false;
 
-    if (store.docType === 'slides' && isNavTool) return true;
+    if (isPagedDocType(store.docType) && isNavTool) return true;
 
-    if (store.docType === 'slides') {
+    if (isPagedDocType(store.docType)) {
         // Fall through to world-coord calculation and tool logic
         return false;
     } else if (pState.isDragging && isNavTool) {
@@ -274,9 +275,9 @@ export function presentationOnUp(
     // If elements are selected, let selectionOnUp handle it
     if (isNavTool && store.selection.length > 0) return false;
 
-    if (store.docType === 'slides' && isNavTool) return true;
+    if (isPagedDocType(store.docType) && isNavTool) return true;
 
-    if (store.docType !== 'slides' && isNavTool) {
+    if (!isPagedDocType(store.docType) && isNavTool) {
         // Distinguish click from drag: if pointer barely moved, treat as click-to-advance
         const dx = e.clientX - pState.startX;
         const dy = e.clientY - pState.startY;

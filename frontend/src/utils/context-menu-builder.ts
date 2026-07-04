@@ -5,6 +5,7 @@
  */
 
 import type { DrawingElement, TableCellSelection } from '../types';
+import { isPagedDocType } from '../types/slide-types';
 import type { MenuItem } from '../components/context-menu';
 import {
     store, setStore, pushToHistory, updateElement, selectAll,
@@ -1107,6 +1108,30 @@ export function getContextMenuItems(
             items.push({ label: 'Release Clipping Mask', shortcut: 'Ctrl+Alt+7', icon: '✂', onClick: releaseClippingMask });
         }
 
+        // AI assists (Canva-style): Magic Write on text, background removal on images.
+        if (store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'text')) {
+            items.push({
+                label: 'Magic Write (AI)', icon: '✦', submenu: [
+                    { label: 'Rewrite', onClick: () => { import('../ai/canva-ai').then(m => m.magicWrite([...store.selection], 'rewrite')); } },
+                    { label: 'Shorten', onClick: () => { import('../ai/canva-ai').then(m => m.magicWrite([...store.selection], 'shorten')); } },
+                    { label: 'Expand', onClick: () => { import('../ai/canva-ai').then(m => m.magicWrite([...store.selection], 'expand')); } },
+                    { label: 'Fix Spelling & Grammar', onClick: () => { import('../ai/canva-ai').then(m => m.magicWrite([...store.selection], 'fix')); } },
+                    {
+                        label: 'Custom Instruction…', onClick: () => {
+                            const instruction = prompt('How should the text change?', 'Make it punchier');
+                            if (instruction) import('../ai/canva-ai').then(m => m.magicWrite([...store.selection], 'custom', instruction));
+                        },
+                    },
+                ],
+            });
+        }
+        if (store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'image')) {
+            items.push({
+                label: 'Remove Background (AI)', icon: '✦',
+                onClick: () => { import('../ai/canva-ai').then(m => m.removeBackground(store.selection.find(id => store.elements.find(e => e.id === id)?.type === 'image'))); },
+            });
+        }
+
         // Image Trace — vectorize a selected bitmap into a path.
         if (store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'image')) {
             items.push({
@@ -1366,7 +1391,7 @@ export function getContextMenuItems(
                     ];
                 })(),
             },
-            { label: 'Zoom to Fit', shortcut: 'Ctrl+1', onClick: store.docType === 'slides' ? zoomToFitSlide : zoomToFit },
+            { label: 'Zoom to Fit', shortcut: 'Ctrl+1', onClick: isPagedDocType(store.docType) ? zoomToFitSlide : zoomToFit },
             { separator: true },
             { label: 'Show Grid', checked: store.gridSettings.enabled, onClick: toggleGrid },
             { label: 'Snap to Grid', checked: store.gridSettings.snapToGrid, onClick: toggleSnapToGrid },

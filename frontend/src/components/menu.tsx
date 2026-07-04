@@ -3,8 +3,8 @@ import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
 import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
-    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
-    toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
+    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
+    toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
@@ -12,7 +12,7 @@ import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
-    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2
+    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
@@ -40,6 +40,8 @@ import { cloudStorageManager } from "../storage/cloud";
 import type { CloudFileInfo } from "../storage/cloud/types";
 import { migrateToSlideFormat, isSlideDocument } from "../utils/migration";
 import type { SlideDocument } from "../types/slide-types";
+import { isPagedDocType } from "../types/slide-types";
+import DesignSizeDialog from "./design-size-dialog";
 import type { Template } from "../types/template-types";
 import { exportToHtml } from "../utils/export-to-html";
 import { YappyAPI } from "../api";
@@ -74,9 +76,9 @@ export const handleSaveRequest = (intent: 'workspace' | 'disk' | 'disk-json') =>
     }
 };
 
-export const handleNew = (docType: 'infinite' | 'slides' = 'slides') => {
+export const handleNew = (docType: 'infinite' | 'slides' | 'design' = 'slides', pageSize?: { width: number, height: number }) => {
     const proceed = () => {
-        resetToNewDocument(docType);
+        resetToNewDocument(docType, pageSize);
         setDrawingId('Untitled');
     };
 
@@ -98,6 +100,7 @@ const Menu: Component = () => {
     const [saveIntent, setSaveIntent] = createSignal<'workspace' | 'disk' | 'disk-json'>('workspace');
     sharedSetSaveIntent = setSaveIntent;
     const [isTemplateBrowserOpen, setIsTemplateBrowserOpen] = createSignal(false);
+    const [isDesignSizeOpen, setIsDesignSizeOpen] = createSignal(false);
 
     const handleUnsavedCancel = () => {
         pendingUnsavedAction = null;
@@ -255,7 +258,7 @@ const Menu: Component = () => {
     };
 
     const handleResetView = () => {
-        store.docType === 'slides' ? zoomToFitSlide() : zoomToFit();
+        isPagedDocType(store.docType) ? zoomToFitSlide() : zoomToFit();
     };
 
 
@@ -265,6 +268,23 @@ const Menu: Component = () => {
             setIsTemplateBrowserOpen(false);
             setDslImportInitialText(template.dslContent);
             setIsDSLImportOpen(true);
+            return;
+        }
+
+        // User-saved template: restore the full document snapshot
+        if ((template as any).doc?.version) {
+            const snapshot = JSON.parse(JSON.stringify((template as any).doc));
+            loadDocument(snapshot);
+            setIsTemplateBrowserOpen(false);
+            showToast(`"${template.metadata.name}" loaded`, 'success');
+            return;
+        }
+
+        // Design template: fixed-size multi-page design document
+        if ((template as any).pages?.length > 0 && (template as any).pageSize) {
+            loadDesignTemplate(template as any);
+            setIsTemplateBrowserOpen(false);
+            showToast(`"${template.metadata.name}" loaded`, 'success');
             return;
         }
 
@@ -621,6 +641,12 @@ const Menu: Component = () => {
                     onSelectTemplate={handleTemplateSelect}
                 />
 
+                <DesignSizeDialog
+                    isOpen={isDesignSizeOpen()}
+                    onClose={() => setIsDesignSizeOpen(false)}
+                    onPick={(size) => handleNew('design', size)}
+                />
+
                 <DSLImportDialog
                     isOpen={isDSLImportOpen()}
                     onClose={() => { setIsDSLImportOpen(false); setDslImportInitialText(''); }}
@@ -690,6 +716,10 @@ const Menu: Component = () => {
                                         <FilePlus size={16} />
                                         <span class="label">New Presentation</span>
                                     </button>
+                                    <button class="menu-item" onClick={() => { setIsDesignSizeOpen(true); setIsMenuOpen(false); }}>
+                                        <Layout size={16} />
+                                        <span class="label">New Design…</span>
+                                    </button>
                                     <button class="menu-item" onClick={() => { setIsTemplateBrowserOpen(true); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
                                         <span class="label">Templates</span>
@@ -711,6 +741,14 @@ const Menu: Component = () => {
                                     <button class="menu-item" onClick={() => { setIsAISlidesOpen(true); setIsMenuOpen(false); }}>
                                         <Sparkles size={16} />
                                         <span class="label">AI Presentation</span>
+                                    </button>
+                                    <button class="menu-item" onClick={() => {
+                                        setIsMenuOpen(false);
+                                        const imgPrompt = prompt('Describe the image to generate:');
+                                        if (imgPrompt) import('../ai/canva-ai').then(m => m.generateImage(imgPrompt));
+                                    }}>
+                                        <Sparkles size={16} />
+                                        <span class="label">AI Image…</span>
                                     </button>
                                     <div class="menu-separator"></div>
                                     <button class="menu-item" onClick={() => { setLoadExportInitialTab('load'); setIsLoadExportOpen(true); setIsMenuOpen(false); }}>
@@ -789,6 +827,20 @@ const Menu: Component = () => {
                                             <span class="shortcut">Alt+G</span>
                                         </div>
                                     </div>
+                                    <div class="menu-item" onClick={() => { toggleElementsPanel(); setIsMenuOpen(false); }}>
+                                        <Shapes size={16} />
+                                        <span class="label">Elements</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.showElementsPanel}><Check size={14} class="check-icon" /></Show>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { toggleBrandKitPanel(); setIsMenuOpen(false); }}>
+                                        <Palette size={16} />
+                                        <span class="label">Brand Kit</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.showBrandKitPanel}><Check size={14} class="check-icon" /></Show>
+                                        </div>
+                                    </div>
                                     <div class="menu-item" onClick={() => { toggleSwatchesPanel(); setIsMenuOpen(false); }}>
                                         <Palette size={16} />
                                         <span class="label">Swatches</span>
@@ -836,10 +888,10 @@ const Menu: Component = () => {
                                             <span class="shortcut">Alt+R</span>
                                         </div>
                                     </div>
-                                    <Show when={store.docType === 'slides'}>
+                                    <Show when={isPagedDocType(store.docType)}>
                                         <div class="menu-item" onClick={() => { toggleSlideNavigator(); setIsMenuOpen(false); }}>
                                             <Layout size={16} />
-                                            <span class="label">Slide Panel</span>
+                                            <span class="label">{store.docType === 'design' ? 'Pages Panel' : 'Slide Panel'}</span>
                                             <div class="menu-item-right">
                                                 <Show when={store.showSlideNavigator}><Check size={14} class="check-icon" /></Show>
                                             </div>
@@ -862,10 +914,10 @@ const Menu: Component = () => {
                                             <Show when={store.showUtilityToolbar}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
-                                    <Show when={store.docType === 'slides'}>
+                                    <Show when={isPagedDocType(store.docType)}>
                                         <div class="menu-item" onClick={() => { toggleSlideToolbar(); setIsMenuOpen(false); }}>
                                             <Play size={16} />
-                                            <span class="label">Slide Toolbar</span>
+                                            <span class="label">{store.docType === 'design' ? 'Page Toolbar' : 'Slide Toolbar'}</span>
                                             <div class="menu-item-right">
                                                 <Show when={store.showSlideToolbar}><Check size={14} class="check-icon" /></Show>
                                             </div>

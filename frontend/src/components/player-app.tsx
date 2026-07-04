@@ -1,4 +1,5 @@
 import { createSignal, onMount, Show } from "solid-js";
+import { isPagedDocType } from '../types/slide-types';
 import type { Component } from "solid-js";
 import Canvas from "./canvas";
 import { loadDocument, setStore, store } from "../store/app-store";
@@ -40,7 +41,7 @@ const PlayerApp: Component = () => {
                 setStore("readOnly", false); // Allow Ink tool interactions
 
                 // FIX: Ensure we start at Slide 0 and load its elements
-                if (store.docType === 'slides' && store.slides.length > 0) {
+                if (isPagedDocType(store.docType) && store.slides.length > 0) {
                     setStore("activeSlideIndex", 0);
                     const firstSlide = store.slides[0];
                     setStore("viewState", {
@@ -77,7 +78,7 @@ const PlayerApp: Component = () => {
                 // Trigger first-slide animations after Canvas fully mounts
                 // Need sufficient delay for SolidJS to render <Show> → Canvas → onMount chain
                 setTimeout(() => {
-                    if (store.docType === 'slides' && store.slides.length > 0) {
+                    if (isPagedDocType(store.docType) && store.slides.length > 0) {
                         slideBuildManager.init(store.activeSlideIndex);
                         slideBuildManager.playInitial();
                     }

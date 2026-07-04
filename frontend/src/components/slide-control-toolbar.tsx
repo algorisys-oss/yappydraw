@@ -1,4 +1,5 @@
 import { type Component, createSignal, createEffect, Show } from 'solid-js';
+import { isPagedDocType } from '../types/slide-types';
 import {
     store, togglePresentationMode, toggleSlideToolbar,
     setSlideToolbarPosition, setIsPreviewing, setActiveSlide
@@ -83,7 +84,7 @@ export const SlideControlToolbar: Component = () => {
     };
 
     return (
-        <Show when={store.docType === 'slides' && store.showSlideToolbar && store.appMode !== 'presentation'}>
+        <Show when={isPagedDocType(store.docType) && store.showSlideToolbar && store.appMode !== 'presentation'}>
             <div
                 ref={toolbarRef}
                 onPointerDown={handlePointerDown}

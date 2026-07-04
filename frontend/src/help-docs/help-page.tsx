@@ -41,6 +41,7 @@ const EffectsDoc = lazy(() => import('./features/effects-doc'));
 const MasksAppearanceTraceDoc = lazy(() => import('./features/masks-appearance-trace-doc'));
 const SymbolsDoc = lazy(() => import('./features/symbols-doc'));
 const ArtboardsDoc = lazy(() => import('./features/artboards-doc'));
+const DesignStudioDoc = lazy(() => import('./features/design-studio-doc'));
 const WorkspaceDoc = lazy(() => import('./features/workspace-doc'));
 
 // Registry of all shape documentation - organized by category in logical sequence
@@ -162,6 +163,14 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Design',
         description: 'Named export-region frames: presets, on-canvas move/resize/delete, and per-region PNG export',
         content: ArtboardsDoc
+    },
+    {
+        id: 'design-studio',
+        name: 'Design Studio',
+        icon: '🎨',
+        category: 'Design',
+        description: 'Canva-style design documents: pages & size presets, templates, brand kit, elements library, SVG import, text effects, AI assists',
+        content: DesignStudioDoc
     },
     {
         id: 'workspace',

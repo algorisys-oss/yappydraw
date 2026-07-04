@@ -1,5 +1,7 @@
 import { store } from "../store/app-store";
+import { isPagedDocType } from '../types/slide-types';
 import { renderElement } from "./render-element";
+import { renderSlideBackground } from "./canvas-renderer";
 import rough from 'roughjs/bin/rough';
 import { jsPDF } from "jspdf";
 import PptxGenJS from "pptxgenjs";
@@ -202,6 +204,42 @@ export const exportArtboard = (artboardId: string, scale = 1, download = true): 
     }
     const url = canvas.toDataURL('image/png');
     if (download) { const link = document.createElement('a'); link.download = `${ab.name}.png`; link.href = url; link.click(); }
+    return url;
+};
+
+/**
+ * Export a single page/slide to PNG at exact page bounds (elements clipped,
+ * page background rendered). Used by paged docs (slides + design documents).
+ */
+export const exportPageToPng = (pageIndex: number, scale = 1, download = true): string | undefined => {
+    const slide = store.slides[pageIndex];
+    if (!slide) return undefined;
+    const { x: sX, y: sY } = slide.spatialPosition;
+    const { width: sW, height: sH } = slide.dimensions;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(sW * scale));
+    canvas.height = Math.max(1, Math.round(sH * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return undefined;
+    ctx.scale(scale, scale);
+    ctx.translate(-sX, -sY);
+    ctx.beginPath(); ctx.rect(sX, sY, sW, sH); ctx.clip();
+    const rc = rough.canvas(canvas);
+    renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
+    for (const el of store.elements) {
+        if (el.isClipMask) continue;
+        const cx = el.x + (el.width || 0) / 2;
+        const cy = el.y + (el.height || 0) / 2;
+        if (!(cx >= sX && cx <= sX + sW && cy >= sY && cy <= sY + sH)) continue;
+        try { renderElement(rc, ctx, el); } catch { /* skip */ }
+    }
+    const url = canvas.toDataURL('image/png');
+    if (download) {
+        const link = document.createElement('a');
+        link.download = `${slide.name || `page-${pageIndex + 1}`}.png`;
+        link.href = url;
+        link.click();
+    }
     return url;
 };
 
@@ -808,7 +846,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
     const allElements = store.elements;
     if (allElements.length === 0) return;
 
-    const isSlides = store.docType === 'slides' && store.slides.length > 0 && !onlySelected;
+    const isSlides = isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected;
 
     if (isSlides) {
         // Multi-page: one page per slide
@@ -931,7 +969,7 @@ export const exportToPptx = async (scale: number, background: boolean, onlySelec
 
     const pptx = new PptxGenJS();
 
-    const isSlides = store.docType === 'slides' && store.slides.length > 0 && !onlySelected;
+    const isSlides = isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected;
 
     if (isSlides) {
         const sortedSlides = [...store.slides].sort((a, b) => a.order - b.order);

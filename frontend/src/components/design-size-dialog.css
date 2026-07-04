@@ -1,0 +1,114 @@
+.dsd-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2200;
+    animation: dsd-fade 0.15s ease-out;
+}
+@keyframes dsd-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.dsd-modal {
+    width: min(560px, 94vw);
+    max-height: 84vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.dsd-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+.dsd-header h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.dsd-close { border: none; background: transparent; cursor: pointer; color: var(--text-secondary); padding: 2px; }
+.dsd-close:hover { color: var(--text-primary); }
+
+.dsd-body {
+    overflow-y: auto;
+    padding: 12px 16px 16px;
+}
+
+.dsd-category { margin-bottom: 14px; }
+.dsd-category-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin: 6px 0 8px;
+}
+
+.dsd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+    gap: 8px;
+}
+
+.dsd-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+}
+.dsd-card:hover { border-color: var(--accent-color, #6366f1); background: rgba(99, 102, 241, 0.06); }
+
+.dsd-preview-wrap {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.dsd-preview {
+    border: 1.5px solid var(--text-secondary);
+    border-radius: 3px;
+    background: var(--bg-canvas, transparent);
+}
+
+.dsd-card-name { font-size: 12px; font-weight: 500; text-align: center; }
+.dsd-card-size { font-size: 10.5px; color: var(--text-secondary); }
+
+.dsd-custom-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dsd-custom-row input {
+    width: 90px;
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+.dsd-x, .dsd-unit { color: var(--text-secondary); font-size: 13px; }
+.dsd-create {
+    margin-left: auto;
+    padding: 6px 16px;
+    border: none;
+    border-radius: 6px;
+    background: var(--accent-color, #6366f1);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+.dsd-create:hover { filter: brightness(1.08); }

@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.5.28](0.5.28.md) — Design Studio: Canva-style design documents, templates, brand kit, elements, text effects, AI
 - [0.5.27](0.5.27.md) — Letter Spacing for shape & connector labels
 - [0.5.26](0.5.26.md) — Touch Type works with letter spacing
 - [0.5.25](0.5.25.md) — Touch Type: dragging a letter moves only that letter
