@@ -105,7 +105,9 @@ Y.applyTextEffect('neon');          // applies to selection`}</code></pre>
                 <h2>AI assists</h2>
                 <p>
                     Configure an API key in <strong>AI Settings</strong> first (OpenAI needed for images; Magic
-                    Write works with OpenAI, Gemini, or Anthropic).
+                    Write works with OpenAI, Gemini, or Anthropic). The OpenAI section also has an
+                    <strong> Image Model</strong> selector — GPT Image 1 (best quality, requires a verified
+                    OpenAI organization) or DALL·E 3.
                 </p>
                 <ul>
                     <li><strong>Magic Write</strong> — right-click a text element → Magic Write (AI): rewrite,
@@ -113,7 +115,10 @@ Y.applyTextEffect('neon');          // applies to selection`}</code></pre>
                     <li><strong>AI Image</strong> — Menu → AI Image…: describe an image, it's generated and
                         inserted on the active page.</li>
                     <li><strong>Remove Background</strong> — right-click an image → Remove Background (AI):
-                        replaces it with a transparent-background version.</li>
+                        replaces it with a transparent-background version. Your original pixels are preserved —
+                        the AI result is used only as a transparency mask, so the subject is never restyled
+                        (pass <code>{'{preserveOriginal: false}'}</code> via the API to take the AI's
+                        regenerated image instead).</li>
                 </ul>
                 <pre><code>{`await Y.magicWrite('shorten');
 await Y.generateImage('isometric rocket illustration');

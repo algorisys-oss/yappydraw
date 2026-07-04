@@ -2170,10 +2170,12 @@ export const YappyAPI = {
         const m = await import('./ai/canva-ai');
         return m.generateImage(promptText, opts);
     },
-    /** Remove the background of the selected (or given) image element via OpenAI image editing. */
-    async removeBackground(id?: string) {
+    /** Remove the background of the selected (or given) image element via OpenAI image editing.
+     *  Original pixels are preserved by default (AI output used only as an alpha mask);
+     *  pass {preserveOriginal: false} to take the AI's regenerated image as-is. */
+    async removeBackground(id?: string, opts?: { preserveOriginal?: boolean }) {
         const m = await import('./ai/canva-ai');
-        return m.removeBackground(id);
+        return m.removeBackground(id, opts);
     },
 
     // Text effects

@@ -7,7 +7,7 @@
  * Uses the shared provider config from ai-settings (API keys in AI Settings dialog).
  */
 import { callLLM } from './ai-providers';
-import { getActiveProviderConfig, getApiKey } from './ai-settings';
+import { getActiveProviderConfig, getApiKey, getImageModel } from './ai-settings';
 import { store, setStore, pushToHistory, updateElement, bumpDirtyRevision } from '../store/app-store';
 import { showToast } from '../components/toast';
 import type { DrawingElement } from '../types';
@@ -149,27 +149,80 @@ function insertImageElement(dataURL: string, width: number, height: number, name
  */
 export async function generateImage(prompt: string, opts: { size?: '1024x1024' | '1536x1024' | '1024x1536' } = {}): Promise<string | null> {
     const size = opts.size || '1024x1024';
+    const model = getImageModel('openai') || 'gpt-image-1';
+    const dalleSize = size === '1536x1024' ? '1792x1024' : size === '1024x1536' ? '1024x1792' : '1024x1024';
     showToast('Generating image…', 'info');
-    let result = await openaiGenerateImage(prompt, size, 'gpt-image-1');
-    if (!result.dataURL) {
-        // gpt-image-1 may be unavailable on the account — fall back to dall-e-3
-        const dalleSize = size === '1536x1024' ? '1792x1024' : size === '1024x1536' ? '1024x1792' : '1024x1024';
+    let result = await openaiGenerateImage(prompt, model.startsWith('dall-e') ? dalleSize : size, model);
+    if (!result.dataURL && model !== 'dall-e-3') {
+        // Configured model unavailable on this account — fall back to dall-e-3
         const fallback = await openaiGenerateImage(prompt, dalleSize, 'dall-e-3');
-        if (!fallback.dataURL) {
-            showToast(result.error || fallback.error || 'Image generation failed', 'error');
-            return null;
-        }
-        result = fallback;
+        if (fallback.dataURL) result = fallback;
+    }
+    if (!result.dataURL) {
+        showToast(result.error || 'Image generation failed', 'error');
+        return null;
     }
     const [w, h] = size.split('x').map(Number);
     return insertImageElement(result.dataURL!, w || 1024, h || 1024, 'AI image');
 }
 
+const loadImg = (src: string): Promise<HTMLImageElement> => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+});
+
+/**
+ * Keep the ORIGINAL pixels and take only the transparency from the AI result:
+ * draw the original, then `destination-in` the AI output scaled to the same
+ * size — the AI's alpha becomes a mask, so any restyling in its RGB channels
+ * is discarded. Returns null if the mask looks unusable (fully opaque or
+ * fully transparent), in which case the caller falls back to the AI output.
+ */
+async function applyAlphaMask(originalURL: string, aiURL: string): Promise<string | null> {
+    try {
+        const [orig, ai] = await Promise.all([loadImg(originalURL), loadImg(aiURL)]);
+        const canvas = document.createElement('canvas');
+        canvas.width = orig.naturalWidth;
+        canvas.height = orig.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+        ctx.drawImage(orig, 0, 0);
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(ai, 0, 0, canvas.width, canvas.height);
+
+        // Sanity check the mask: some pixels transparent AND some kept.
+        // Sample ~1000 pixels regardless of image size.
+        const sample = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        const totalPixels = sample.length / 4;
+        const step = 4 * Math.max(1, Math.floor(totalPixels / 1000));
+        let transparent = 0, opaque = 0;
+        for (let i = 3; i < sample.length; i += step) {
+            if (sample[i] < 16) transparent++; else opaque++;
+        }
+        if (transparent === 0 || opaque === 0) return null;
+        return canvas.toDataURL('image/png');
+    } catch {
+        return null;
+    }
+}
+
+export interface RemoveBackgroundOptions {
+    /**
+     * Keep the original pixels and use the AI result only as an alpha mask
+     * (default true — prevents gpt-image-1 from restyling the subject).
+     * Set false to take the AI's regenerated image as-is.
+     */
+    preserveOriginal?: boolean;
+}
+
 /**
  * Remove the background of the selected image element (OpenAI gpt-image-1
  * edits with transparent background). Replaces the element's image in place.
+ * By default the original pixels are preserved via alpha-mask compositing.
  */
-export async function removeBackground(id?: string): Promise<boolean> {
+export async function removeBackground(id?: string, opts: RemoveBackgroundOptions = {}): Promise<boolean> {
     const targetId = id || store.selection[0];
     const el = store.elements.find(e => e.id === targetId);
     if (!el || el.type !== 'image' || !el.dataURL) {
@@ -185,18 +238,38 @@ export async function removeBackground(id?: string): Promise<boolean> {
     showToast('Removing background…', 'info');
     try {
         const blob = await (await fetch(el.dataURL)).blob();
-        const form = new FormData();
-        form.append('model', 'gpt-image-1');
-        form.append('image', new File([blob], 'image.png', { type: blob.type || 'image/png' }));
-        form.append('prompt', 'Isolate the main subject and remove the background completely. Keep the subject unchanged.');
-        form.append('background', 'transparent');
-        form.append('size', 'auto');
+        const buildForm = (withFidelity: boolean) => {
+            const form = new FormData();
+            form.append('model', 'gpt-image-1');
+            form.append('image', new File([blob], 'image.png', { type: blob.type || 'image/png' }));
+            form.append('prompt',
+                'Remove the background completely so it is fully transparent. ' +
+                'Keep the foreground subject pixel-identical to the input — do not restyle, repaint, ' +
+                'recolor, sharpen, or add any effects, glow, outlines, or shadows. ' +
+                'Do not move, crop, or resize the subject.');
+            form.append('background', 'transparent');
+            form.append('size', 'auto');
+            // Preserve input details (faces, textures) instead of re-imagining them
+            if (withFidelity) form.append('input_fidelity', 'high');
+            return form;
+        };
 
-        const res = await fetch('https://api.openai.com/v1/images/edits', {
+        let res = await fetch('https://api.openai.com/v1/images/edits', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${apiKey}` },
-            body: form,
+            body: buildForm(true),
         });
+        if (res.status === 400) {
+            // Some accounts/models reject input_fidelity — retry without it
+            const errText = await res.clone().text().catch(() => '');
+            if (errText.includes('input_fidelity')) {
+                res = await fetch('https://api.openai.com/v1/images/edits', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${apiKey}` },
+                    body: buildForm(false),
+                });
+            }
+        }
         if (!res.ok) {
             const errText = await res.text().catch(() => '');
             let detail = '';
@@ -210,8 +283,15 @@ export async function removeBackground(id?: string): Promise<boolean> {
             showToast('Background removal returned no image', 'error');
             return false;
         }
+
+        let resultURL = `data:image/png;base64,${b64}`;
+        if (opts.preserveOriginal !== false) {
+            const masked = await applyAlphaMask(el.dataURL, resultURL);
+            if (masked) resultURL = masked;
+        }
+
         pushToHistory();
-        updateElement(el.id, { dataURL: `data:image/png;base64,${b64}` });
+        updateElement(el.id, { dataURL: resultURL });
         showToast('Background removed', 'success');
         return true;
     } catch (err: any) {

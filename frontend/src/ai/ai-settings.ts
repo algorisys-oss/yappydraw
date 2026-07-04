@@ -7,7 +7,8 @@ export type AIProvider = 'openai' | 'gemini' | 'anthropic';
 
 export interface AIProviderConfig {
     apiKey: string;     // base64-encoded
-    model: string;      // selected model ID
+    model: string;      // selected model ID (text/chat)
+    imageModel?: string; // selected image-generation model ID (providers with image support)
     enabled: boolean;
 }
 
@@ -32,6 +33,19 @@ export const PROVIDER_MODELS: Record<AIProvider, { id: string; label: string }[]
     ],
 };
 
+/**
+ * Image-generation models per provider (empty = no image support wired up).
+ * Used by AI Image and Remove Background; selectable in AI Settings.
+ */
+export const PROVIDER_IMAGE_MODELS: Record<AIProvider, { id: string; label: string }[]> = {
+    openai: [
+        { id: 'gpt-image-1', label: 'GPT Image 1 (best; needs verified org)' },
+        { id: 'dall-e-3', label: 'DALL·E 3' },
+    ],
+    gemini: [],
+    anthropic: [],
+};
+
 export const PROVIDER_LABELS: Record<AIProvider, string> = {
     openai: 'OpenAI',
     gemini: 'Google Gemini',
@@ -52,7 +66,7 @@ function getDefaultConfig(): AIConfig {
     return {
         activeProvider: 'openai',
         providers: {
-            openai: { apiKey: '', model: 'gpt-4o', enabled: true },
+            openai: { apiKey: '', model: 'gpt-4o', imageModel: 'gpt-image-1', enabled: true },
             gemini: { apiKey: '', model: 'gemini-2.0-flash', enabled: true },
             anthropic: { apiKey: '', model: 'claude-sonnet-4-5-20250929', enabled: true },
         },
@@ -100,6 +114,14 @@ export function setApiKey(provider: AIProvider, key: string): void {
 export function hasAnyApiKey(): boolean {
     const config = loadAIConfig();
     return Object.values(config.providers).some(p => p.apiKey !== '');
+}
+
+/** The image model configured for a provider (falls back to the provider's first option). */
+export function getImageModel(provider: AIProvider): string {
+    const config = loadAIConfig();
+    return config.providers[provider]?.imageModel
+        || PROVIDER_IMAGE_MODELS[provider][0]?.id
+        || '';
 }
 
 export function getActiveProviderConfig(): { provider: AIProvider; model: string; apiKey: string } {

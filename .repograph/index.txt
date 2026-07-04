@@ -63,8 +63,8 @@ frontend/public/sitemap.xml | - | 15 |
 frontend/public/terms-of-service.html | - | 200 |
 frontend/public/vite.svg | - | 1 |
 frontend/src/ai/ai-providers.ts | typescript | 231 | ImageContent:9 LLMRequest:16 LLMResponse:27 callLLM:37 callOpenAI:49
-frontend/src/ai/ai-settings.ts | typescript | 113 | AIProvider:6 AIProviderConfig:8 AIConfig:14 obfuscate:43 deobfuscate:47 getDefaultConfig:51 loadAIConfig:62 saveAIConfig:82 getApiKey:88 setApiKey:94 hasAnyApiKey:100 getActiveProviderConfig:105
-frontend/src/ai/canva-ai.ts | typescript | 221 | MagicWriteMode:15 magicWrite:28 ImageGenResult:77 openaiGenerateImage:79 insertImageElement:119 generateImage:150 removeBackground:172
+frontend/src/ai/ai-settings.ts | typescript | 135 | AIProvider:6 AIProviderConfig:8 AIConfig:15 obfuscate:57 deobfuscate:61 getDefaultConfig:65 loadAIConfig:76 saveAIConfig:96 getApiKey:102 setApiKey:108 hasAnyApiKey:114 getImageModel:120 getActiveProviderConfig:127
+frontend/src/ai/canva-ai.ts | typescript | 301 | MagicWriteMode:15 magicWrite:28 ImageGenResult:77 openaiGenerateImage:79 insertImageElement:119 generateImage:150 applyAlphaMask:183 RemoveBackgroundOptions:211 removeBackground:225
 frontend/src/ai/drawing-content-prompt.ts | typescript | 200 | buildVisionResearchUserPrompt:172 buildResearchUserPrompt:187
 frontend/src/ai/drawing-engine.ts | typescript | 554 | LLMResponse:7 AIProvider:8 GenerateOptions:22 SketchOptions:32 GenerateResult:37 generateDiagram:52 generateDiagramQuick:65 generateDiagramDeep:130 generateDiagramFromSketch:250 generateDiagramFromSketchQuick:263 generateDiagramFromSketchDeep:339 processLLMResponse:473 extractJSON:530
 frontend/src/ai/drawing-visual-prompt.ts | typescript | 78 | buildDeepDiagramSystemPrompt:17
@@ -75,7 +75,7 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 2994 | Theme:3 HarmonyType:39 ElementOptions:90 ElementType:475 as:475 Window:2986
+frontend/src/api.ts | typescript | 2996 | Theme:3 HarmonyType:39 ElementOptions:90 ElementType:475 as:475 Window:2988
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1439 | Component:1 App:89 moves:104 onPenMove:105 hidePen:109 handleKeyUp:139 handleKeyDown:149 as:658 handleFullscreenChange:773 handleBeforeUnload:779 handlePaste:783 handleGlobalDragEnter:885 handleGlobalDragOver:900 showDropFallbackPrompt:919 cleanup:949 outsideClick:977 isImageFile:989 first:990 must:1003 extractDropData:1005 processExtractedDrop:1060 handleGlobalDrop:1177 handleDocumentDrop:1223
 frontend/src/assets/player-assets.ts | typescript | 3 | hh:2
@@ -85,7 +85,7 @@ frontend/src/components/advanced-p3-picker.tsx | typescript | 188 | Component:1 
 frontend/src/components/ai-prompt-dialog.css | - | 407 |
 frontend/src/components/ai-prompt-dialog.tsx | typescript | 399 | Component:6 GenerateResult:8 AIPromptDialogProps:15 diagram:33 AIPromptDialog:35 hasSketch:50 canGenerate:51 handleKeyDown:56 handleSketchUpload:79 clearSketch:91 handlePaste:99 handleDragOver:114 handleDragLeave:119 handleDrop:124 handleGenerate:131 openSettings:178 openRocketSettings:183 activeProviderLabel:188
 frontend/src/components/ai-settings-dialog.css | - | 205 |
-frontend/src/components/ai-settings-dialog.tsx | typescript | 171 | Component:5 AIConfig:9 AISettingsDialogProps:18 AISettingsDialog:23 handleKeyDown:33 updateAndSave:44 setProviderKey:50 getProviderKey:63 setProviderModel:68 setActiveProvider:78 toggleKeyVisibility:82
+frontend/src/components/ai-settings-dialog.tsx | typescript | 195 | Component:5 AIConfig:9 AISettingsDialogProps:18 AISettingsDialog:23 handleKeyDown:33 updateAndSave:44 setProviderKey:50 getProviderKey:63 setProviderModel:68 setProviderImageModel:78 setActiveProvider:88 toggleKeyVisibility:92
 frontend/src/components/ai-slides-dialog.css | - | 350 |
 frontend/src/components/ai-slides-dialog.tsx | typescript | 278 | Component:5 GeneratePresResult:7 AISlidesDialogProps:12 AISlidesDialog:47 canGenerate:57 handleKeyDown:61 handleGenerate:79 openSettings:113 activeProviderLabel:118
 frontend/src/components/animation-panel.tsx | typescript | 1549 | Component:1 StaggerConfig:5 getPresetsForType:67 getKeyframeDefaults:139 AnimationPanel:188 toggleExpanded:207 addPreset:216 addPathAnimation:238 addMorphAnimation:259 addRotateAnimation:279 addAutoSpinAnimation:299 addKeyframeAnimation:319 removeAnimation:340 updateAnimProperty:348 handleReorder:355 handlePlay:362 handleStop:369 handlePlayStagger:376 handleApplyStagger:440 handleClearStagger:468 kfAnim:1334 keyframes:1335 updateKeyframe:1337 addKeyframe:1343 removeKeyframe:1354 isColorProp:1361 propStep:1363 propHint:1371
@@ -314,7 +314,7 @@ frontend/src/examples/examples-page.tsx | typescript | 337 | Component:6 Example
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
-frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 131 | DesignStudioDoc:9
+frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 136 | DesignStudioDoc:9
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 134 | EffectsDoc:10 Tools:127
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 439 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
@@ -601,7 +601,7 @@ tests/blob-brush.spec.ts | typescript | 24 | paths:3
 tests/bpmn.spec.ts | typescript | 327 | markers:152
 tests/brand-kit.spec.ts | typescript | 97 | Window:6
 tests/builtin-panel-drag.spec.ts | typescript | 31 | drag:13
-tests/canva-ai.spec.ts | typescript | 98 | Window:6
+tests/canva-ai.spec.ts | typescript | 159 | Window:6
 tests/clipping-mask.spec.ts | typescript | 70 |
 tests/code-block.spec.ts | typescript | 163 | hello:35 App:128
 tests/color-batch.spec.ts | typescript | 62 | hexToRgb:6 lum:22

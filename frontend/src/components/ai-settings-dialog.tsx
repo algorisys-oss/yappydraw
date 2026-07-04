@@ -5,7 +5,7 @@
 import { type Component, createSignal, createEffect, onCleanup, Show, For } from "solid-js";
 import { X, Eye, EyeOff, Key } from "lucide-solid";
 import {
-    loadAIConfig, saveAIConfig, PROVIDER_MODELS, PROVIDER_LABELS,
+    loadAIConfig, saveAIConfig, PROVIDER_MODELS, PROVIDER_IMAGE_MODELS, PROVIDER_LABELS,
     type AIConfig, type AIProvider,
 } from "../ai/ai-settings";
 import "./ai-settings-dialog.css";
@@ -71,6 +71,16 @@ const AISettingsDialog: Component<AISettingsDialogProps> = (props) => {
             providers: {
                 ...c.providers,
                 [provider]: { ...c.providers[provider], model },
+            },
+        }));
+    };
+
+    const setProviderImageModel = (provider: AIProvider, imageModel: string) => {
+        updateAndSave(c => ({
+            ...c,
+            providers: {
+                ...c.providers,
+                [provider]: { ...c.providers[provider], imageModel },
             },
         }));
     };
@@ -149,6 +159,20 @@ const AISettingsDialog: Component<AISettingsDialogProps> = (props) => {
                                         </For>
                                     </select>
                                 </div>
+
+                                <Show when={PROVIDER_IMAGE_MODELS[provider].length > 0}>
+                                    <div class="ai-settings-row">
+                                        <label>Image Model</label>
+                                        <select
+                                            value={config().providers[provider].imageModel || PROVIDER_IMAGE_MODELS[provider][0].id}
+                                            onChange={(e) => setProviderImageModel(provider, e.currentTarget.value)}
+                                        >
+                                            <For each={PROVIDER_IMAGE_MODELS[provider]}>
+                                                {(m) => <option value={m.id} selected={m.id === (config().providers[provider].imageModel || PROVIDER_IMAGE_MODELS[provider][0].id)}>{m.label}</option>}
+                                            </For>
+                                        </select>
+                                    </div>
+                                </Show>
                             </div>
                         )}
                     </For>
