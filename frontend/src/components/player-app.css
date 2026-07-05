@@ -26,3 +26,22 @@
 .resize-handle {
     display: none !important;
 }
+/* Arcade: play button for documents that carry a game script */
+.player-play-game {
+    position: fixed;
+    left: 50%;
+    bottom: 12%;
+    transform: translateX(-50%);
+    z-index: 2500;
+    padding: 18px 44px;
+    border: none;
+    border-radius: 999px;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.player-play-game:hover { background: #15803d; }

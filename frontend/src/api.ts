@@ -19,7 +19,7 @@ import {
     createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
-    updateSlideTransition, updateSlideBackground, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize,
+    updateSlideTransition, updateSlideBackground, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, toggleBehaviorsPanel,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
@@ -2098,6 +2098,44 @@ export const YappyAPI = {
      *  Returns the new element id, or null if the page has no image background. */
     detachBackgroundImage(pageIndex?: number) {
         return detachSlideBackgroundImage(pageIndex ?? store.activeSlideIndex);
+    },
+
+    // Arcade (game mode)
+    /** Set the document's game script (persisted with the document; runs on Play). */
+    setGameScript(script: string) { setGameScript(script); },
+    /** The document's current game script. */
+    getGameScript(): string { return store.gameScript; },
+    /** Start the game (uses the stored script unless one is passed). The document
+     *  is snapshotted and fully restored on stop. Returns false on script errors. */
+    async startGame(script?: string) { const m = await import('./game/game-runtime'); return m.startGame(script); },
+    /** Stop a running game and restore the document. */
+    async stopGame() { const m = await import('./game/game-runtime'); m.stopGame(); },
+    /** True while a game is running. */
+    isGameRunning(): boolean { return store.gameActive; },
+
+    // Visual game builder (behaviors → generated game.* script)
+    /** Get a sprite's behaviors (visual builder rules). */
+    getBehaviors(id: string) { return store.elements.find(e => e.id === id)?.behaviors ?? []; },
+    /** Set a sprite's behaviors. Also ensures it has a stable name (tag) if missing. */
+    setBehaviors(id: string, behaviors: any[]) { updateElement(id, { behaviors } as any, true); },
+    /** Get / set the scene-level behaviors (on start, score, win/lose). */
+    getSceneBehaviors() { return store.sceneBehaviors ?? []; },
+    setSceneBehaviors(behaviors: any[]) { setSceneBehaviors(behaviors); },
+    /** Name a sprite (sets its `tag`, used to reference it in behaviors and game.find). */
+    nameSprite(id: string, name: string) { updateElement(id, { tag: name } as any, true); },
+    /** Show/hide the visual Game Builder (Behaviors) panel. */
+    toggleGameBuilder(visible?: boolean) { toggleBehaviorsPanel(visible); },
+    /** Compile the current document's blocks to a `game.*` script (the "See the code" view). */
+    async compileGame(): Promise<string> {
+        const m = await import('./game/behaviors-to-script');
+        return m.generateGameScript(store.elements, store.sceneBehaviors ?? []);
+    },
+    /** Compile the blocks and play the resulting game (Play button). */
+    async playBehaviorGame(): Promise<boolean> {
+        const [g, r] = await Promise.all([import('./game/behaviors-to-script'), import('./game/game-runtime')]);
+        const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? []);
+        if (!script) return false;
+        return r.startGame(script);
     },
 
     // Version history (local IndexedDB snapshots)

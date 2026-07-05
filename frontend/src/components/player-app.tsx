@@ -8,6 +8,8 @@ import { PresentationControls } from "./presentation-controls";
 import type { SlideDocument } from "../types/slide-types";
 import { showToast } from "./toast";
 import { slideBuildManager } from "../utils/animation/slide-build-manager";
+import { startGame } from "../game/game-runtime";
+import GameOverlay from "./game-overlay";
 import Toast from "./toast";
 import "./player-app.css";
 
@@ -99,10 +101,20 @@ const PlayerApp: Component = () => {
                     <Canvas />
                 </div>
 
-                {/* Presentation Controls Overlay */}
-                <div class="player-controls">
-                    <PresentationControls />
-                </div>
+                {/* Presentation Controls Overlay (hidden while a game runs) */}
+                <Show when={!store.gameActive}>
+                    <div class="player-controls">
+                        <PresentationControls />
+                    </div>
+                </Show>
+
+                {/* Arcade: documents with a game script get a big Play button */}
+                <Show when={store.gameScript?.trim() && !store.gameActive}>
+                    <button class="player-play-game" onClick={() => startGame()}>
+                        ▶ Play Game
+                    </button>
+                </Show>
+                <GameOverlay />
             </Show>
 
             <Toast />

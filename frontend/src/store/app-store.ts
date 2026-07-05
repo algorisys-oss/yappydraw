@@ -244,6 +244,16 @@ interface AppState {
     /** Locked crop aspect ratio (w/h) while dragging; null = freeform. */
     cropAspect: number | null;
 
+    // Arcade (game mode)
+    /** True while a game script is running (Play mode). */
+    gameActive: boolean;
+    /** The document's game script (persisted in SlideDocument.gameScript). */
+    gameScript: string;
+    /** Visual builder: scene-level behaviors (persisted in SlideDocument.sceneBehaviors). */
+    sceneBehaviors: import('../types').DrawingElement['behaviors'];
+    /** Visual builder: the floating Behaviors panel is open. */
+    showBehaviorsPanel: boolean;
+
     // Video Playback
     activeVideoElementIds: string[];
 
@@ -454,6 +464,10 @@ const initialState: AppState = {
     cropModeElementId: null,
     cropRect: null,
     cropAspect: null,
+    gameActive: false,
+    gameScript: '',
+    sceneBehaviors: [],
+    showBehaviorsPanel: false,
     activeVideoElementIds: [],
     dirtyRevision: 0,
 };
@@ -1383,6 +1397,21 @@ export const resetCrop = (elementId: string) => {
     setStore('cropRect', null);
 };
 
+// --- Arcade (game mode) ---
+export const setGameScript = (script: string) => {
+    setStore('gameScript', script);
+    bumpDirtyRevision(); // persists via autosave / save
+};
+
+/** Replace the scene-level behaviors (visual builder). */
+export const setSceneBehaviors = (behaviors: import('../types').DrawingElement['behaviors']) => {
+    setStore('sceneBehaviors', behaviors ?? []);
+    bumpDirtyRevision();
+};
+
+export const toggleBehaviorsPanel = (visible?: boolean) =>
+    setStore('showBehaviorsPanel', v => visible ?? !v);
+
 // --- Video Playback Actions ---
 export const startVideoPlayback = (elementId: string) => {
     const el = store.elements.find(e => e.id === elementId);
@@ -2015,6 +2044,9 @@ export const loadDocument = (doc: any) => {
 
         setStore("activeSlideIndex", 0);
         setStore("selection", []);
+        setStore("gameScript", typeof doc.gameScript === 'string' ? doc.gameScript : '');
+        setStore("sceneBehaviors", Array.isArray(doc.sceneBehaviors) ? doc.sceneBehaviors : []);
+        setStore("gameActive", false);
 
         // Apply first slide's explicit background if set (overrides theme default)
         const firstSlideBg = slides.length > 0 ? slides[0].backgroundColor : '';

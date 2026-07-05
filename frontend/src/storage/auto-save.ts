@@ -20,6 +20,7 @@ import { showToast } from '../components/toast';
 import type { SlideDocument } from '../types/slide-types';
 import { idbGet, idbSet, idbDelete } from './idb-kv';
 import { maybeSnapshotVersion } from './version-history';
+import { effectiveGameScript } from '../game/behaviors-to-script';
 
 const AUTOSAVE_KEY = 'yappy:autosave';
 const META_KEY = 'yappy:autosave:meta';
@@ -186,6 +187,8 @@ export function buildCurrentDocument(): SlideDocument {
         swatches: JSON.parse(JSON.stringify(store.swatches ?? [])),
         patterns: JSON.parse(JSON.stringify(store.patterns ?? [])),
         artboards: JSON.parse(JSON.stringify(store.artboards ?? [])),
+        gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript),
+        sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
     };
 }
 

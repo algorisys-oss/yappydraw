@@ -36,7 +36,7 @@ export const CanvasToolbar: Component = () => {
     });
 
     return (
-        <Show when={store.docType === 'infinite' && store.appMode === 'presentation' && store.showCanvasToolbar}>
+        <Show when={store.docType === 'infinite' && store.appMode === 'presentation' && store.showCanvasToolbar && !store.gameActive}>
             <Show when={isVisible()}>
                 <div
                     style={{

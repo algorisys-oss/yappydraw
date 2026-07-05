@@ -34,6 +34,7 @@ import { PathEraserOverlay } from './components/path-eraser-overlay';
 import { PuppetWarpOverlay } from './components/puppet-warp-overlay';
 import { PerspectiveGridOverlay } from './components/perspective-grid-overlay';
 import { TouchTypeOverlay } from './components/touch-type-overlay';
+import GameOverlay from './components/game-overlay';
 import { SliceToolOverlay } from './components/slice-tool-overlay';
 import { SymbolismOverlay } from './components/symbolism-overlay';
 import { TypeOnPathOverlay } from './components/type-on-path-overlay';
@@ -59,6 +60,7 @@ const BrandKitPanel = lazy(() => import('./components/brand-kit-panel'));
 const ElementsPanel = lazy(() => import('./components/elements-panel'));
 const PatternsPanel = lazy(() => import('./components/patterns-panel'));
 const RecolorPanel = lazy(() => import('./components/recolor-panel'));
+const BehaviorsPanel = lazy(() => import('./components/behaviors-panel'));
 const VectorToolsPanel = lazy(() => import('./components/vector-tools-panel'));
 const HistoryPanel = lazy(() => import('./components/history-panel'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
@@ -1295,6 +1297,7 @@ const App: Component = () => {
             <ElementsPanel />
             <PatternsPanel />
             <RecolorPanel />
+            <BehaviorsPanel />
             <VectorToolsPanel />
             <HistoryPanel />
             <StatusBar />
@@ -1331,13 +1334,14 @@ const App: Component = () => {
         <PuppetWarpOverlay />
         <PerspectiveGridOverlay />
         <TouchTypeOverlay />
+        <GameOverlay />
         <SliceToolOverlay />
         <SymbolismOverlay />
         <TypeOnPathOverlay />
         <SymbolEditBanner />
         <Show when={isPagedDocType(store.docType)}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={
-            <Show when={store.appMode === 'presentation'}>
+            <Show when={store.appMode === 'presentation' && !store.gameActive}>
               <PresentationControls />
             </Show>
           }>

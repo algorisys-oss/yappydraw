@@ -43,6 +43,7 @@ const SymbolsDoc = lazy(() => import('./features/symbols-doc'));
 const ArtboardsDoc = lazy(() => import('./features/artboards-doc'));
 const DesignStudioDoc = lazy(() => import('./features/design-studio-doc'));
 const WorkspaceDoc = lazy(() => import('./features/workspace-doc'));
+const ArcadeDoc = lazy(() => import('./features/arcade-doc'));
 
 // Registry of all shape documentation - organized by category in logical sequence
 const shapeDocuments: ShapeDoc[] = [
@@ -222,6 +223,15 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Features',
         description: 'Animate elements with presets, keyframes, and spring physics',
         content: AnimationDoc
+    },
+    {
+        id: 'arcade',
+        name: 'Arcade (Games)',
+        icon: '🎮',
+        category: 'Features',
+        description: 'Flash-style game mode: a visual no-code Game Builder (WHEN→DO behaviors) OR a JavaScript game script drives the live canvas — Play/Stop, sprites, collisions, touch gamepad, HTML export',
+        keywords: 'game games arcade flash actionscript scratch blueprint no-code visual builder behaviors behavior WHEN DO rule trigger action script play stop tick loop sprite spawn hit collision bounce glide velocity hud score pong catch maze gamepad dpad joystick touch controls keyboard onkey pointer tap game.find game.spawn game.onTick goToState playAnim goToPage end game over win export html player interactive kid learn to code',
+        content: ArcadeDoc
     },
     {
         id: 'embedding',

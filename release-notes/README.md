@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.6.0](0.6.0.md) — Arcade: build games on the canvas (visual Game Builder + runtime)
 - [0.5.33](0.5.33.md) — Template pack + polish round
 - [0.5.32](0.5.32.md) — Magic Resize, offline PWA, version history & AI studio round 2
 - [0.5.31](0.5.31.md) — Design workflow gaps closed + Google Fonts live preview

@@ -11,7 +11,7 @@ import {
     store, setStore, pushToHistory, updateElement, selectAll,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
     blendShapes,
-    toggleRecolorPanel,
+    toggleRecolorPanel, toggleBehaviorsPanel,
     toggleShapeBuilder,
     toggleCutTool,
     toggleLivePaint,
@@ -1251,6 +1251,7 @@ export function getContextMenuItems(
                 { label: 'Eyedropper — pick style from…', icon: '💧', onClick: () => startEyedropper() },
                 { label: 'Save as Graphic Style', icon: '🎨', onClick: () => createGraphicStyle([...store.selection]) },
                 { label: 'Recolor Artwork…', icon: '🌈', onClick: () => toggleRecolorPanel(true) },
+                ...(selectionCount === 1 ? [{ label: 'Edit Behaviors (Game)…', icon: '🎮', onClick: () => toggleBehaviorsPanel(true) }] : []),
                 { label: 'Select Similar (Magic Wand)', icon: '🪄', onClick: () => selectSimilar() },
                 {
                     label: 'Distort & Transform', icon: '〰️', submenu: [

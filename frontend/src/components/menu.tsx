@@ -5,16 +5,17 @@ import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
-    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore
+    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
-    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes
+    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, Gamepad2
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
+import { effectiveGameScript } from "../game/behaviors-to-script";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
 import { isGlobalPlaying, isGlobalPaused, animationEngine } from "../utils/animation/animation-engine";
@@ -26,6 +27,7 @@ const ExportDialog = lazy(() => import("./export-dialog"));
 const SaveDialog = lazy(() => import("./save-dialog"));
 const TemplateBrowser = lazy(() => import("./template-browser"));
 const VersionHistoryDialog = lazy(() => import("./version-history-dialog"));
+const GameScriptDialog = lazy(() => import("./game-script-dialog"));
 const CloudStorageDialogLazy = lazy(() => import("./cloud-storage-dialog").then(m => ({ default: m.CloudStorageDialog as any })));
 const DSLImportDialog = lazy(() => import("./dsl-import-dialog"));
 const UnsavedChangesDialog = lazy(() => import("./unsaved-changes-dialog"));
@@ -105,6 +107,7 @@ const Menu: Component = () => {
     const [isDesignSizeOpen, setIsDesignSizeOpen] = createSignal(false);
     const [isMagicResizeOpen, setIsMagicResizeOpen] = createSignal(false);
     const [isVersionHistoryOpen, setIsVersionHistoryOpen] = createSignal(false);
+    const [isGameScriptOpen, setIsGameScriptOpen] = createSignal(false);
 
     const handleUnsavedCancel = () => {
         pendingUnsavedAction = null;
@@ -171,7 +174,9 @@ const Menu: Component = () => {
                 symbols: JSON.parse(JSON.stringify(store.symbols)),
                 graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
                 swatches: JSON.parse(JSON.stringify(store.swatches)),
-                artboards: JSON.parse(JSON.stringify(store.artboards))
+                artboards: JSON.parse(JSON.stringify(store.artboards)),
+                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript),
+                sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined
             };
             const baseFilename = filename.replace(/\.(json|yappy)$/i, '');
 
@@ -395,7 +400,9 @@ const Menu: Component = () => {
                 symbols: JSON.parse(JSON.stringify(store.symbols)),
                 graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
                 swatches: JSON.parse(JSON.stringify(store.swatches)),
-                artboards: JSON.parse(JSON.stringify(store.artboards))
+                artboards: JSON.parse(JSON.stringify(store.artboards)),
+                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript),
+                sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined
             };
 
             await exportToHtml(slideDoc, drawingId());
@@ -657,6 +664,11 @@ const Menu: Component = () => {
                     onClose={() => setIsVersionHistoryOpen(false)}
                 />
 
+                <GameScriptDialog
+                    isOpen={isGameScriptOpen()}
+                    onClose={() => setIsGameScriptOpen(false)}
+                />
+
                 <DesignSizeDialog
                     title="Magic Resize"
                     isOpen={isMagicResizeOpen()}
@@ -777,6 +789,27 @@ const Menu: Component = () => {
                                     }}>
                                         <Sparkles size={16} />
                                         <span class="label">AI Design…</span>
+                                    </button>
+                                    <div class="menu-separator"></div>
+                                    <button class="menu-item" onClick={() => { toggleBehaviorsPanel(true); setIsMenuOpen(false); }}>
+                                        <Gamepad2 size={16} />
+                                        <span class="label">Game Builder</span>
+                                    </button>
+                                    <Show when={store.sceneBehaviors?.length || store.elements.some(e => e.behaviors?.length) || store.gameScript?.trim()}>
+                                        <button class="menu-item" onClick={() => {
+                                            setIsMenuOpen(false);
+                                            Promise.all([import('../game/behaviors-to-script'), import('../game/game-runtime')]).then(([g, r]) => {
+                                                const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? []) || store.gameScript;
+                                                if (script) r.startGame(script);
+                                            });
+                                        }}>
+                                            <CirclePlay size={16} />
+                                            <span class="label">Play Game</span>
+                                        </button>
+                                    </Show>
+                                    <button class="menu-item" onClick={() => { setIsGameScriptOpen(true); setIsMenuOpen(false); }}>
+                                        <Gamepad2 size={16} />
+                                        <span class="label">Game Script (advanced)…</span>
                                     </button>
                                     <button class="menu-item" onClick={() => {
                                         setIsMenuOpen(false);

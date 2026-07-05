@@ -131,6 +131,11 @@ export interface SlideDocument {
     graphicStyles?: import('../types').GraphicStyle[];
     swatches?: import('../types').Swatch[];
     patterns?: import('../types').PatternSwatch[];
+    /** Arcade: JavaScript game script run by the in-editor Play mode and the HTML player.
+     *  When the visual builder is used, this is regenerated from the behaviors. */
+    gameScript?: string;
+    /** Arcade visual builder: scene-level WHEN→DO rules (on start, score, win/lose). */
+    sceneBehaviors?: import('../types').DrawingElement['behaviors'];
 }
 
 /**

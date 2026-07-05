@@ -69,6 +69,8 @@ export function saveCurrentAsTemplate(name: string, description = ''): UserTempl
         swatches: deep(store.swatches ?? []),
         patterns: deep(store.patterns ?? []),
         artboards: deep(store.artboards ?? []),
+        gameScript: store.gameScript || undefined,
+        sceneBehaviors: store.sceneBehaviors?.length ? deep(store.sceneBehaviors) : undefined,
     };
 
     // Small thumbnail from the active page (paged docs only)
