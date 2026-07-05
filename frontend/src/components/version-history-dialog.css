@@ -57,7 +57,16 @@
     cursor: pointer;
 }
 .vh-item:hover { background: var(--bg-surface); border-color: var(--border-color); }
-.vh-item-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vh-thumb {
+    width: 64px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.vh-item-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .vh-item-name { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
 .vh-badge {
     font-size: 10px; font-weight: 600;

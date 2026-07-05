@@ -12,14 +12,16 @@
 }
 
 .modal-content {
-    background: white;
+    background: var(--bg-panel, #ffffff);
+    color: var(--text-primary, #333333);
+    border: 1px solid var(--border-color, #e5e7eb);
     padding: 24px;
     border-radius: 8px;
     width: min(560px, 92vw);
     max-height: 85vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-lg, 0 4px 6px rgba(0, 0, 0, 0.1));
 }
 
 .modal-header {
@@ -32,21 +34,21 @@
 .modal-header h3 {
     margin: 0;
     font-size: 1.25rem;
-    color: #333;
+    color: var(--text-primary, #333333);
 }
 
 .close-btn {
     background: none;
     border: none;
     cursor: pointer;
-    color: #666;
+    color: var(--text-secondary, #666666);
     padding: 4px;
     border-radius: 4px;
 }
 
 .close-btn:hover {
-    background: #f0f0f0;
-    color: #333;
+    background: var(--bg-secondary, #f0f0f0);
+    color: var(--text-primary, #333333);
 }
 
 .modal-body {
@@ -67,6 +69,30 @@
     gap: 10px;
 }
 
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: 1px solid var(--border-color, #eeeeee);
+    background: var(--bg-panel, transparent);
+}
+
+.file-item:hover,
+.file-item.active {
+    background: var(--bg-secondary, #f8f9fa);
+    border-color: var(--accent-color, #3b82f6);
+    outline: 2px solid var(--accent-color, #3b82f6);
+}
+
+.file-item span {
+    font-size: 0.95rem;
+    color: var(--text-primary, #333333);
+}
+
 .file-card {
     flex-direction: column;
     align-items: stretch;
@@ -80,8 +106,8 @@
     justify-content: center;
     aspect-ratio: 4 / 3;
     border-radius: 4px;
-    background: #f3f4f6;
-    color: #9ca3af;
+    background: var(--bg-secondary, #f3f4f6);
+    color: var(--text-secondary, #9ca3af);
     overflow: hidden;
 }
 
@@ -101,46 +127,23 @@
 
 .file-card-name {
     font-size: 0.85rem;
-    color: #333;
+    color: var(--text-primary, #333333);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.file-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
-    border: 1px solid #eee;
-}
-
-.file-item:hover,
-.file-item.active {
-    background: #f8f9fa;
-    border-color: #3b82f6;
-    outline: 2px solid #3b82f6;
-}
-
-.file-item span {
-    font-size: 0.95rem;
-    color: #333;
-}
-
 .loading,
 .empty {
     text-align: center;
-    color: #666;
+    color: var(--text-secondary, #666666);
     padding: 20px;
 }
 
 .delete-file-btn {
     background: transparent;
     border: none;
-    color: #9ca3af;
+    color: var(--text-secondary, #9ca3af);
     padding: 4px;
     border-radius: 4px;
     cursor: pointer;
@@ -151,5 +154,5 @@
 
 .delete-file-btn:hover {
     color: #ef4444;
-    background: #fee2e2;
+    background: rgba(239, 68, 68, 0.12);
 }

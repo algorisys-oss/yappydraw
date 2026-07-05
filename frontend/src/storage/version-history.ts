@@ -10,6 +10,7 @@
 
 import { idbGet, idbSet, idbDelete } from './idb-kv';
 import { loadDocument } from '../store/app-store';
+import { captureDocThumbnail } from './doc-thumbnails';
 
 const INDEX_KEY = 'yappy:versions:index';
 const VERSION_KEY = (id: string) => `yappy:version:${id}`;
@@ -26,6 +27,8 @@ export interface VersionMeta {
     sizeBytes: number;
     /** Set for manual snapshots (snapshotVersionNow). */
     label?: string;
+    /** Small page preview (JPEG data URL) captured at snapshot time. */
+    thumb?: string;
 }
 
 let lastSnapshotAt = 0;
@@ -40,8 +43,11 @@ async function writeIndex(index: VersionMeta[]): Promise<void> {
 }
 
 async function saveSnapshot(json: string, meta: Omit<VersionMeta, 'id' | 'timestamp' | 'sizeBytes'>): Promise<VersionMeta> {
+    let thumb: string | undefined;
+    try { thumb = captureDocThumbnail(); } catch { /* preview is best-effort */ }
     const entry: VersionMeta = {
         ...meta,
+        thumb,
         id: `v-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,
         timestamp: new Date().toISOString(),
         sizeBytes: json.length,

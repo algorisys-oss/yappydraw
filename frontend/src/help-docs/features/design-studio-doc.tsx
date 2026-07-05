@@ -57,8 +57,11 @@ Y.exportPageToPng(0, 2);                 // export page 1 at 2x`}</code></pre>
             <section class="doc-section">
                 <h2>Design templates & My Templates</h2>
                 <p>
-                    <strong>Menu → Templates → Designs</strong> holds ready-made social posts, posters, cards,
-                    a resume, certificate, and more — each opens as a design document at its native page size.
+                    <strong>Menu → Templates → Designs</strong> holds 30+ ready-made designs — Instagram posts
+                    (product, quote, tips, testimonial, hiring, podcast, sale), stories (event, countdown,
+                    quote), YouTube thumbnails, deck title/section slides, webinar banners, posters, flyers
+                    (sale, café menu, open house), business cards, price lists, certificates, vouchers, and
+                    invitations — each opens as a design document at its native page size.
                     A <strong>search box</strong> at the top matches names, descriptions, and tags across every
                     category. In a design document, templates that <strong>fit your page</strong> (same size or
                     aspect ratio) float to the top with a green <em>✓ fits</em> badge — and picking a size in
@@ -204,10 +207,10 @@ Y.magicResize({ width: 1200, height: 628 }); // … or explicit size`}</code></p
                 <h2>Version history & recents</h2>
                 <p>
                     <strong>Menu → Version History…</strong> lists automatic snapshots of your document (about
-                    every 3 minutes while editing; newest 15 kept, stored locally in IndexedDB). Click one to
-                    restore it, or use <strong>Snapshot now</strong> before a risky change. The
-                    <strong> Open Drawing</strong> dialog shows saved documents as a thumbnail grid, most recently
-                    saved first.
+                    every 3 minutes while editing; newest 15 kept, stored locally in IndexedDB), each with a
+                    small page preview. Click one to restore it, or use <strong>Snapshot now</strong> before a
+                    risky change. The <strong>Open Drawing</strong> dialog shows saved documents as a thumbnail
+                    grid, most recently saved first.
                 </p>
                 <pre><code>{`await Y.snapshotVersion('before rebrand');
 await Y.listVersions();

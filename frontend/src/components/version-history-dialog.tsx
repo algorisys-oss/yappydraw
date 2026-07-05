@@ -83,6 +83,9 @@ const VersionHistoryDialog: Component<VersionHistoryDialogProps> = (props) => {
                                     <For each={versions()}>
                                         {(v) => (
                                             <div class="vh-item" onClick={() => handleRestore(v)} title="Click to restore this version">
+                                                <Show when={v.thumb}>
+                                                    <img class="vh-thumb" src={v.thumb} alt="" loading="lazy" />
+                                                </Show>
                                                 <div class="vh-item-main">
                                                     <span class="vh-item-name">
                                                         {v.name || 'Untitled'}

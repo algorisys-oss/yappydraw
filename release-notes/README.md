@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.5.33](0.5.33.md) — Template pack + polish round
 - [0.5.32](0.5.32.md) — Magic Resize, offline PWA, version history & AI studio round 2
 - [0.5.31](0.5.31.md) — Design workflow gaps closed + Google Fonts live preview
 - [0.5.30](0.5.30.md) — Page thumbnails, font pairings & stock photos

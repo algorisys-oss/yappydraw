@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.33] - 2026-07-05
+
+### Added
+- **Design template pack** — 21 new built-in templates (33 total): Instagram posts (product, tips carousel, testimonial, hiring, podcast, minimal sale), stories (countdown, quote), tutorial YouTube thumbnail, deck title/section slides, webinar banner, typographic & workshop posters, café menu, open-house flyer, thank-you card, light business card, price list, gift voucher, and birthday invite. Builders extracted to `templates/data/designs/helpers.ts`.
+- **PWA lifecycle toasts** — first install shows "ready to work offline / installable"; a background update shows "reload to finish applying" (hooked on `controllerchange`, so it fires exactly when the new service worker takes over).
+- **Version-history previews** — each snapshot now carries a small page thumbnail, shown in the Version History list.
+
+### Changed
+- **Magic Resize edge anchoring** — elements within 8% of a page edge stay pinned to that edge with their margin scaled, instead of drifting with the normalized center (logos and footer badges keep their margins).
+
+### Fixed
+- **Open Drawing dialog in dark mode** — its stylesheet used hard-coded light colors; now themed via CSS variables (panel, text, borders, hover) in every theme.
+
+- Files: `frontend/src/templates/data/designs/{helpers,index,pack}.ts`, `frontend/src/app.tsx`, `frontend/src/components/{file-open-dialog.css,version-history-dialog.tsx,version-history-dialog.css}`, `frontend/src/storage/version-history.ts`, `frontend/src/utils/magic-resize.ts`, `frontend/src/help-docs/features/design-studio-doc.tsx`, tests `canva-next.spec.ts`
+
 ## [0.5.32] - 2026-07-05
 
 ### Added

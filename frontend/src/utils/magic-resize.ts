@@ -20,6 +20,10 @@ import type { DrawingElement } from '../types';
 
 const PAGE_GAP = 80;
 const BACKGROUND_COVERAGE = 0.85;
+/** Elements whose margin to a page edge is under this fraction of the page
+ *  dimension are treated as edge-anchored: the margin scales with the element
+ *  instead of drifting with the normalized center. */
+const EDGE_ANCHOR_FRACTION = 0.08;
 
 interface Rect { x: number; y: number; width: number; height: number }
 
@@ -45,12 +49,35 @@ function mapElement(el: DrawingElement, oldPage: Rect, newPage: Rect): Partial<D
     const s = Math.min(newPage.width / oldPage.width, newPage.height / oldPage.height);
     const w = el.width * s;
     const h = el.height * s;
-    const patch: Partial<DrawingElement> = {
-        x: newPage.x + relX * newPage.width - w / 2,
-        y: newPage.y + relY * newPage.height - h / 2,
-        width: w,
-        height: h,
-    };
+
+    // Per-axis position: edge-anchored elements keep their (scaled) margin to
+    // that edge; everything else maps by normalized center.
+    const leftMargin = el.x - oldPage.x;
+    const rightMargin = oldPage.x + oldPage.width - (el.x + el.width);
+    const topMargin = el.y - oldPage.y;
+    const bottomMargin = oldPage.y + oldPage.height - (el.y + el.height);
+    const tx = oldPage.width * EDGE_ANCHOR_FRACTION;
+    const ty = oldPage.height * EDGE_ANCHOR_FRACTION;
+
+    let x: number;
+    if (leftMargin >= 0 && leftMargin < tx && leftMargin <= rightMargin) {
+        x = newPage.x + leftMargin * s;
+    } else if (rightMargin >= 0 && rightMargin < tx) {
+        x = newPage.x + newPage.width - rightMargin * s - w;
+    } else {
+        x = newPage.x + relX * newPage.width - w / 2;
+    }
+
+    let y: number;
+    if (topMargin >= 0 && topMargin < ty && topMargin <= bottomMargin) {
+        y = newPage.y + topMargin * s;
+    } else if (bottomMargin >= 0 && bottomMargin < ty) {
+        y = newPage.y + newPage.height - bottomMargin * s - h;
+    } else {
+        y = newPage.y + relY * newPage.height - h / 2;
+    }
+
+    const patch: Partial<DrawingElement> = { x, y, width: w, height: h };
     if (el.fontSize) patch.fontSize = Math.max(4, el.fontSize * s);
     if (el.points) (patch as any).points = scalePoints(el.points, s);
     if ((el as any).controlPoints) (patch as any).controlPoints = scalePoints((el as any).controlPoints, s);
