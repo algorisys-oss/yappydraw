@@ -1,0 +1,18 @@
+/* Shared param-editor controls (behavior-editors.tsx). Neutral `be-*` classes
+   so the Behaviors panel and the Game Graph nodes render identical inputs. */
+
+.be-sel, .be-num, .be-text {
+    padding: 6px 8px; min-height: 32px;
+    border: 1px solid var(--border-color); border-radius: 6px;
+    background: var(--bg-panel); color: var(--text-primary); font-size: 12px; outline: none;
+}
+.be-sel:focus, .be-num:focus, .be-text:focus { border-color: var(--accent-color, #6366f1); }
+.be-num { width: 58px; }
+.be-text { flex: 1; min-width: 80px; }
+.be-color { width: 34px; height: 32px; border: 1px solid var(--border-color); border-radius: 6px; background: none; cursor: pointer; padding: 2px; }
+.be-unit { font-size: 12px; color: var(--text-secondary); }
+.be-hear {
+    border: 1px solid var(--border-color); border-radius: 6px; min-height: 32px;
+    background: var(--bg-panel); color: var(--text-primary); cursor: pointer; padding: 0 8px; font-size: 11px;
+}
+.be-hear:hover { border-color: var(--accent-color, #6366f1); }

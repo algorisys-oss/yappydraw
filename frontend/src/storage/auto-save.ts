@@ -187,8 +187,9 @@ export function buildCurrentDocument(): SlideDocument {
         swatches: JSON.parse(JSON.stringify(store.swatches ?? [])),
         patterns: JSON.parse(JSON.stringify(store.patterns ?? [])),
         artboards: JSON.parse(JSON.stringify(store.artboards ?? [])),
-        gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript),
+        gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? []),
         sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
+        gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined,
     };
 }
 

@@ -31,9 +31,34 @@ const ArcadeDoc: Component = () => {
                     <li>Draw shapes for your sprites. Select one and give it a <strong>Name</strong>
                         (e.g. "Ball") in the panel — that's how rules refer to it.</li>
                     <li>Add rules as <strong>WHEN → DO</strong>: pick a trigger
-                        (<em>when it starts, while key held, when it hits…, when tapped, when it leaves the
-                        screen</em>) and one or more actions (<em>move, glide, bounce, change score, spawn,
-                        destroy, go to state, play effect, win, game over…</em>).</li>
+                        (<em>when it starts, every moment, key pressed/held, when tapped, when it hits…, when it
+                        leaves the screen, when a variable reaches…, every few seconds</em>) and one or more
+                        actions (<em>move, glide, bounce, change score, set/change/show variable, jump to,
+                        spawn, destroy, go to state, play effect, <strong>play sound</strong>,
+                        <strong>background music</strong>, go to page, win, game over…</em>).</li>
+                    <li><strong>Sound</strong> is built in — no files needed. <em>Play sound</em> offers arcade
+                        SFX (coin, jump, hit, powerup, explosion, win, lose…); the ▶ button in the panel lets
+                        you hear one. A Scene rule <em>on start → background music on</em> loops a gentle tune.
+                        Sound works offline and in exported games.</li>
+                    <li><strong>Physics for platformers:</strong> give a sprite <em>gravity</em> so it falls,
+                        <em>jump</em> for an upward hop, and <em>while touching [Ground] → land</em> so it rests
+                        on platforms instead of falling through. The <em>Jump &amp; Run</em> example wires this up.</li>
+                    <li><strong>Variables</strong> (the <em>Vars</em> tab) hold numbers like lives, health, or
+                        ammo. Declare them with a starting value in one place; rules change them with
+                        <em>set/change variable</em>, react with <em>when a variable reaches…</em>, and gate
+                        actions with <em>only if</em>. Names used in rules but not yet declared show up as
+                        one-tap chips, and renaming a variable updates every rule that uses it. For example: a
+                        Scene rule
+                        <em>on start → set variable "lives" to 3</em>, a sprite rule
+                        <em>when it hits Spike → change variable "lives" by −1</em>, and a Scene rule
+                        <em>when "lives" is at most 0 → game over</em>. Use <em>show variable</em> to display
+                        it on screen.</li>
+                    <li><strong>Messages &amp; logic:</strong> a rule can <em>broadcast a message</em> and any sprite
+                        can react with <em>when I receive [message]</em> — wire a button to a door, a death to a
+                        "game over" everywhere. Add <strong>Only if…</strong> to a rule (the ? button) to gate it
+                        on a variable — two rules with opposite conditions give you if/else
+                        (<em>hit Spike, only if lives ≥ 2 → lose a life</em>; <em>hit Spike, only if lives ≤ 1 →
+                        game over</em>).</li>
                     <li>The <strong>Scene</strong> tab holds whole-game rules (set the score at start, win/lose).
                         The <strong>Code</strong> tab shows the <code>game.*</code> code your blocks generate —
                         a read-only peek that's a nice bridge to real coding.</li>
@@ -44,6 +69,31 @@ const ArcadeDoc: Component = () => {
                     Blocks are the real thing — they compile to the same <code>game.*</code> script the code
                     editor uses, so a builder game and a hand-written game play identically and both export.
                 </p>
+            </section>
+
+            <section class="doc-section">
+                <h2>Game Graph — the node view</h2>
+                <p>
+                    <strong>Menu → Game Graph</strong> (or the <strong>Graph</strong> button in the Behaviors
+                    panel) opens a full-screen node view of your whole game — a Blueprint/Scratch-style map.
+                    Every rule is a <strong>node</strong> (its sprite, WHEN trigger, and DO actions); a
+                    <em>broadcast</em> in one node draws a <strong>wire</strong> to every node that
+                    <em>receives</em> that message, so you can see at a glance how the game's events connect.
+                </p>
+                <ul>
+                    <li><strong>Edit rules right in the node</strong> — each card has the same editable
+                        <strong>WHEN</strong> trigger picker, <strong>DO</strong> action rows (＋ action to add,
+                        × to remove), and <strong>＋ only if</strong> guard as the Behaviors panel. Change a
+                        dropdown or type a value and it writes straight to the game (no bouncing back to a panel).</li>
+                    <li><strong>Scroll</strong> to zoom, <strong>drag empty space</strong> to pan,
+                        <strong>drag a node's header</strong> to lay it out (positions are saved). <kbd>Esc</kbd> closes.</li>
+                    <li><strong>Wire it up:</strong> drag from a node's <strong>output port</strong> (the dot on a
+                        broadcasting rule) onto another node — it connects them by giving the target rule that
+                        message (or, dropped on a plain sprite, adds a new "when I receive…" listener).</li>
+                    <li><strong>＋ Add rule</strong> (pick Scene or a sprite) drops a new node; the trash removes it.</li>
+                    <li>It's the same game — <strong>▶ Play</strong> runs it, and it's one model with the
+                        Behaviors panel (edit in either, the graph and the panel share the exact same editors).</li>
+                </ul>
             </section>
 
             <section class="doc-section">

@@ -35,9 +35,9 @@ export function buildPongExample(): void {
     ]);
     const ball = mk('circle', X + W / 2 - 16, Y + H / 2, 32, 32, 'Ball', '#dc2626', [
         b({ kind: 'start' }, [{ kind: 'glide', dir: 'upRight', speed: 'medium' }]),
-        b({ kind: 'hit', target: 'edge', edge: 'any' }, [{ kind: 'bounce' }]),
-        b({ kind: 'hit', target: 'Paddle' }, [{ kind: 'bounce' }, { kind: 'score', delta: 1 }]),
-        b({ kind: 'leaveScreen' }, [{ kind: 'gameOver', message: 'GAME OVER' }]),
+        b({ kind: 'hit', target: 'edge', edge: 'any' }, [{ kind: 'bounce' }, { kind: 'playSound', sound: 'blip' }]),
+        b({ kind: 'hit', target: 'Paddle' }, [{ kind: 'bounce' }, { kind: 'score', delta: 1 }, { kind: 'playSound', sound: 'coin' }]),
+        b({ kind: 'leaveScreen' }, [{ kind: 'playSound', sound: 'lose' }, { kind: 'gameOver', message: 'GAME OVER' }]),
     ]);
 
     pushToHistory();
@@ -74,5 +74,30 @@ export function buildCatchExample(): void {
     setStore('elements', prev => [...prev, basket, star]);
     setStore('selection', [star.id]);
     setSceneBehaviors([b({ kind: 'start' }, [{ kind: 'score', delta: 0 }])]);
+    bumpDirtyRevision();
+}
+
+/** Build a Platformer: a hero that falls, runs, jumps, and lands on a ground bar. */
+export function buildPlatformerExample(): void {
+    const page = store.slides[store.activeSlideIndex] || store.slides[0];
+    const X = page ? page.spatialPosition.x : 0;
+    const Y = page ? page.spatialPosition.y : 0;
+    const W = page ? page.dimensions.width : 800;
+    const H = page ? page.dimensions.height : 600;
+
+    const ground = mk('rectangle', X, Y + H - 60, W, 60, 'Ground', '#334155', []);
+    const hero = mk('rectangle', X + W / 2 - 24, Y + 80, 48, 48, 'Hero', '#22c55e', [
+        b({ kind: 'start' }, [{ kind: 'gravity', on: true }]),
+        b({ kind: 'keyHold', button: 'left' }, [{ kind: 'moveDir', dir: 'left', speed: 'medium' }]),
+        b({ kind: 'keyHold', button: 'right' }, [{ kind: 'moveDir', dir: 'right', speed: 'medium' }]),
+        b({ kind: 'keyPress', button: 'a' }, [{ kind: 'jump', strength: 'medium' }, { kind: 'playSound', sound: 'jump' }]),
+        b({ kind: 'touching', target: 'Ground' }, [{ kind: 'land' }]),
+        b({ kind: 'leaveScreen' }, [{ kind: 'playSound', sound: 'lose' }, { kind: 'gameOver', message: 'FELL OFF!' }]),
+    ]);
+
+    pushToHistory();
+    setStore('elements', prev => [...prev, ground, hero]);
+    setStore('selection', [hero.id]);
+    setSceneBehaviors([]);
     bumpDirtyRevision();
 }

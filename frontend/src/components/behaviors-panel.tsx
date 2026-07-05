@@ -9,84 +9,21 @@
  */
 
 import { type Component, For, Show, createMemo, createSignal, createEffect } from 'solid-js';
-import { Gamepad2, X, Play, Plus, Trash2 } from 'lucide-solid';
-import { store, updateElement, setSceneBehaviors, toggleBehaviorsPanel } from '../store/app-store';
+import { Gamepad2, X, Play, Plus, Trash2, ChevronUp, ChevronDown, Copy, ClipboardPaste } from 'lucide-solid';
+import { store, updateElement, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph } from '../store/app-store';
 import { draggablePanel } from '../utils/draggable-panel';
 import { generateGameScript } from '../game/behaviors-to-script';
-import { buildPongExample, buildCatchExample } from '../game/behavior-examples';
+import { buildPongExample, buildCatchExample, buildPlatformerExample } from '../game/behavior-examples';
 import { startGame } from '../game/game-runtime';
-import { newBehaviorId, ANIM_PRESETS, type Behavior, type Trigger, type Action } from '../game/behavior-types';
+import { newBehaviorId, type Behavior, type Trigger, type Action } from '../game/behavior-types';
+import { TRIGGERS, COMPARE, ACTIONS, SCENE_ACTION_KINDS, defaultTrigger, defaultAction } from '../game/behavior-ui';
+import { TriggerParams, ActionParams } from '../game/behavior-editors';
 import type { DrawingElement } from '../types';
 import { showToast } from './toast';
 import './behaviors-panel.css';
 
-// ── Friendly option lists ──
-const TRIGGERS: { v: Trigger['kind']; label: string }[] = [
-    { v: 'start', label: 'When it starts' },
-    { v: 'tick', label: 'Every moment' },
-    { v: 'keyPress', label: 'When key pressed' },
-    { v: 'keyHold', label: 'While key held' },
-    { v: 'tap', label: 'When tapped' },
-    { v: 'hit', label: 'When it hits…' },
-    { v: 'leaveScreen', label: 'When it leaves the screen' },
-];
-const BUTTONS = [
-    { v: 'left', label: '◀ Left' }, { v: 'right', label: '▶ Right' },
-    { v: 'up', label: '▲ Up' }, { v: 'down', label: '▼ Down' },
-    { v: 'a', label: 'A / Space' }, { v: 'b', label: 'B / Shift' },
-] as const;
-const SPEEDS = ['slow', 'medium', 'fast'] as const;
-const DIR4 = ['left', 'right', 'up', 'down'] as const;
-const DIR8 = ['up', 'down', 'left', 'right', 'upLeft', 'upRight', 'downLeft', 'downRight'] as const;
-const EDGES = ['any', 'left', 'right', 'top', 'bottom'] as const;
-const SPAWN_AT = [
-    { v: 'randomTop', label: 'random top' }, { v: 'randomEdge', label: 'random spot' },
-    { v: 'center', label: 'center' }, { v: 'here', label: 'here' },
-] as const;
-
-// Sprite actions (need a `this`); Scene actions are a safe subset.
-const ACTIONS: { v: Action['kind']; label: string }[] = [
-    { v: 'moveDir', label: 'move' }, { v: 'glide', label: 'glide (keep moving)' },
-    { v: 'bounce', label: 'bounce' }, { v: 'rotate', label: 'rotate' },
-    { v: 'color', label: 'change color' }, { v: 'scale', label: 'grow / shrink' },
-    { v: 'show', label: 'show' }, { v: 'hide', label: 'hide' },
-    { v: 'setText', label: 'set text' }, { v: 'moveTo', label: 'jump to' }, { v: 'spawn', label: 'spawn a copy' },
-    { v: 'destroy', label: 'destroy' }, { v: 'score', label: 'change score' },
-    { v: 'goToState', label: 'go to state' }, { v: 'playAnim', label: 'play effect' },
-    { v: 'goToPage', label: 'go to page' }, { v: 'win', label: 'win!' }, { v: 'gameOver', label: 'game over' },
-];
-const SCENE_ACTION_KINDS = new Set<Action['kind']>(['score', 'spawn', 'goToState', 'goToPage', 'win', 'gameOver']);
-
-const defaultTrigger = (kind: Trigger['kind']): Trigger => {
-    switch (kind) {
-        case 'keyPress': case 'keyHold': return { kind, button: 'left' } as Trigger;
-        case 'hit': return { kind: 'hit', target: 'edge', edge: 'any' };
-        default: return { kind } as Trigger;
-    }
-};
-const defaultAction = (kind: Action['kind']): Action => {
-    switch (kind) {
-        case 'moveDir': return { kind, dir: 'right', speed: 'medium' };
-        case 'glide': return { kind, dir: 'right', speed: 'medium' };
-        case 'rotate': return { kind, deg: 10 };
-        case 'color': return { kind, color: '#f59e0b' };
-        case 'scale': return { kind, factor: 1.1 };
-        case 'setText': return { kind, text: 'Hi' };
-        case 'moveTo': return { kind, at: 'randomTop' };
-        case 'spawn': return { kind, sprite: '', at: 'randomTop' };
-        case 'destroy': return { kind, target: 'this' };
-        case 'score': return { kind, delta: 1 };
-        case 'goToState': return { kind, state: '' };
-        case 'playAnim': return { kind, preset: 'bounce' };
-        case 'goToPage': return { kind, index: 0 };
-        case 'win': return { kind, message: 'YOU WIN!' };
-        case 'gameOver': return { kind, message: 'GAME OVER' };
-        default: return { kind } as Action;
-    }
-};
-
 const BehaviorsPanel: Component = () => {
-    const [tab, setTab] = createSignal<'sprite' | 'scene' | 'code'>('sprite');
+    const [tab, setTab] = createSignal<'sprite' | 'scene' | 'vars' | 'code'>('sprite');
     const [code, setCode] = createSignal('');
 
     const selectedEl = createMemo<DrawingElement | null>(() => {
@@ -99,7 +36,7 @@ const BehaviorsPanel: Component = () => {
 
     // Keep the Code tab live.
     createEffect(() => {
-        if (tab() === 'code') { store.dirtyRevision; setCode(generateGameScript(store.elements, store.sceneBehaviors ?? [])); }
+        if (tab() === 'code') { store.dirtyRevision; setCode(generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [])); }
     });
 
     // ── read/write helpers ──
@@ -112,6 +49,47 @@ const BehaviorsPanel: Component = () => {
     const list = () => (isScene() ? sceneBehaviors() : spriteBehaviors());
     const write = (next: Behavior[]) => (isScene() ? writeScene(next) : writeSprite(next));
 
+    // ── variables registry ──
+    const gameVars = () => store.gameVars ?? [];
+    /** All variable names referenced anywhere in the game's rules. */
+    const referencedVars = createMemo<string[]>(() => {
+        store.dirtyRevision;
+        const names = new Set<string>();
+        const scan = (bs: Behavior[] = []) => {
+            for (const b of bs) {
+                if (b.condition?.name) names.add(b.condition.name);
+                if (b.trigger.kind === 'varReaches') names.add((b.trigger as any).name);
+                for (const a of b.actions) {
+                    if (a.kind === 'setVar' || a.kind === 'changeVar' || a.kind === 'showVar') names.add((a as any).name);
+                }
+            }
+        };
+        store.elements.forEach(e => scan(e.behaviors));
+        scan(store.sceneBehaviors ?? []);
+        return [...names].filter(Boolean);
+    });
+    const undefinedVars = () => referencedVars().filter(n => !gameVars().some(v => v.name === n));
+
+    const addVar = (name = 'newVar', initial = 0) => {
+        if (gameVars().some(v => v.name === name)) return;
+        setGameVars([...gameVars(), { name, initial }]);
+    };
+    const removeVar = (name: string) => setGameVars(gameVars().filter(v => v.name !== name));
+    const patchVarInitial = (name: string, initial: number) => setGameVars(gameVars().map(v => v.name === name ? { ...v, initial } : v));
+    /** Rename a variable in the registry AND every rule that references it. */
+    const renameVar = (oldName: string, newName: string) => {
+        if (!newName || oldName === newName) return;
+        setGameVars(gameVars().map(v => v.name === oldName ? { ...v, name: newName } : v));
+        const fix = (bs: Behavior[]): Behavior[] => bs.map(b => ({
+            ...b,
+            condition: b.condition?.name === oldName ? { ...b.condition, name: newName } : b.condition,
+            trigger: (b.trigger.kind === 'varReaches' && (b.trigger as any).name === oldName) ? { ...b.trigger, name: newName } as Trigger : b.trigger,
+            actions: b.actions.map(a => ('name' in a && (a as any).name === oldName) ? { ...a, name: newName } : a),
+        }));
+        store.elements.forEach(e => { if (e.behaviors?.some(b => JSON.stringify(b).includes(`"${oldName}"`))) updateElement(e.id, { behaviors: fix(e.behaviors) } as any, false); });
+        setSceneBehaviors(fix(store.sceneBehaviors ?? []));
+    };
+
     const ensureName = () => {
         if (isScene()) return;
         const el = selectedEl();
@@ -121,6 +99,10 @@ const BehaviorsPanel: Component = () => {
         }
     };
 
+    const [clipboard, setClipboard] = createSignal<Behavior[] | null>(null);
+    const cloneBehaviors = (bs: Behavior[]): Behavior[] =>
+        bs.map(b => ({ id: newBehaviorId(), trigger: { ...b.trigger }, actions: b.actions.map(a => ({ ...a })) }));
+
     const addBehavior = () => {
         ensureName();
         const b: Behavior = { id: newBehaviorId(), trigger: isScene() ? { kind: 'start' } : { kind: 'tick' }, actions: [] };
@@ -128,86 +110,39 @@ const BehaviorsPanel: Component = () => {
     };
     const updateBehavior = (i: number, patch: Partial<Behavior>) => write(list().map((b, j) => (j === i ? { ...b, ...patch } : b)));
     const removeBehavior = (i: number) => write(list().filter((_, j) => j !== i));
+    const moveBehavior = (i: number, dir: -1 | 1) => {
+        const j = i + dir; const arr = list();
+        if (j < 0 || j >= arr.length) return;
+        const next = arr.slice(); [next[i], next[j]] = [next[j], next[i]]; write(next);
+    };
+    const duplicateBehavior = (i: number) => {
+        const arr = list(); const copy = cloneBehaviors([arr[i]])[0];
+        write([...arr.slice(0, i + 1), copy, ...arr.slice(i + 1)]);
+    };
+    const copyAll = () => { ensureName(); setClipboard(cloneBehaviors(spriteBehaviors())); showToast('Behaviors copied', 'info'); };
+    const pasteAll = () => { const c = clipboard(); if (!c?.length) return; ensureName(); writeSprite([...spriteBehaviors(), ...cloneBehaviors(c)]); };
+    const duplicateAction = (i: number, k: number) => updateBehavior(i, { actions: list()[i].actions.flatMap((a, j) => (j === k ? [a, { ...a }] : [a])) });
+    const moveAction = (i: number, k: number, dir: -1 | 1) => {
+        const acts = list()[i].actions.slice(); const j = k + dir;
+        if (j < 0 || j >= acts.length) return;
+        [acts[k], acts[j]] = [acts[j], acts[k]]; updateBehavior(i, { actions: acts });
+    };
     const setTrigger = (i: number, kind: Trigger['kind']) => updateBehavior(i, { trigger: defaultTrigger(kind) });
     const patchTrigger = (i: number, patch: any) => updateBehavior(i, { trigger: { ...list()[i].trigger, ...patch } as Trigger });
     const addAction = (i: number) => updateBehavior(i, { actions: [...list()[i].actions, defaultAction(isScene() ? 'score' : 'moveDir')] });
+    const toggleCondition = (i: number) => updateBehavior(i, { condition: list()[i].condition ? undefined : { name: 'lives', compare: 'atLeast', value: 1 } });
+    const patchCondition = (i: number, patch: any) => updateBehavior(i, { condition: { ...(list()[i].condition as any), ...patch } });
     const setAction = (i: number, k: number, kind: Action['kind']) => updateBehavior(i, { actions: list()[i].actions.map((a, j) => (j === k ? defaultAction(kind) : a)) });
     const patchAction = (i: number, k: number, patch: any) => updateBehavior(i, { actions: list()[i].actions.map((a, j) => (j === k ? { ...a, ...patch } : a)) });
     const removeAction = (i: number, k: number) => updateBehavior(i, { actions: list()[i].actions.filter((_, j) => j !== k) });
 
     const play = () => {
-        const script = generateGameScript(store.elements, store.sceneBehaviors ?? []);
+        const script = generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? []);
         if (!script) { showToast('Add some behaviors first', 'info'); return; }
         if (startGame(script)) showToast('Playing — Esc or Stop to end', 'info');
     };
 
     const availableActions = () => (isScene() ? ACTIONS.filter(a => SCENE_ACTION_KINDS.has(a.v)) : ACTIONS);
-
-    // ── param editors ──
-    const TriggerParams: Component<{ b: Behavior; i: number }> = (p) => {
-        const t = () => p.b.trigger;
-        return (
-            <>
-                <Show when={t().kind === 'keyPress' || t().kind === 'keyHold'}>
-                    <select class="bp-sel" value={(t() as any).button} onChange={e => patchTrigger(p.i, { button: e.currentTarget.value })}>
-                        <For each={BUTTONS}>{b => <option value={b.v}>{b.label}</option>}</For>
-                    </select>
-                </Show>
-                <Show when={t().kind === 'hit'}>
-                    <select class="bp-sel" value={(t() as any).target}
-                        onChange={e => patchTrigger(p.i, e.currentTarget.value === 'edge' ? { target: 'edge', edge: 'any' } : { target: e.currentTarget.value, edge: undefined })}>
-                        <option value="edge">a wall</option>
-                        <For each={namedSprites()}>{n => <option value={n}>{n}</option>}</For>
-                    </select>
-                    <Show when={(t() as any).target === 'edge'}>
-                        <select class="bp-sel" value={(t() as any).edge} onChange={e => patchTrigger(p.i, { edge: e.currentTarget.value })}>
-                            <For each={EDGES}>{ed => <option value={ed}>{ed}</option>}</For>
-                        </select>
-                    </Show>
-                </Show>
-            </>
-        );
-    };
-
-    const ActionParams: Component<{ a: Action; i: number; k: number }> = (p) => {
-        const a = () => p.a as any;
-        const set = (patch: any) => patchAction(p.i, p.k, patch);
-        return (
-            <Show when={a().kind !== 'bounce' && a().kind !== 'show' && a().kind !== 'hide'}>
-                <Show when={a().kind === 'moveDir'}>
-                    <select class="bp-sel" value={a().dir} onChange={e => set({ dir: e.currentTarget.value })}><For each={DIR4}>{d => <option>{d}</option>}</For></select>
-                    <select class="bp-sel" value={a().speed} onChange={e => set({ speed: e.currentTarget.value })}><For each={SPEEDS}>{s => <option>{s}</option>}</For></select>
-                </Show>
-                <Show when={a().kind === 'glide'}>
-                    <select class="bp-sel" value={a().dir} onChange={e => set({ dir: e.currentTarget.value })}><For each={DIR8}>{d => <option>{d}</option>}</For></select>
-                    <select class="bp-sel" value={a().speed} onChange={e => set({ speed: e.currentTarget.value })}><For each={SPEEDS}>{s => <option>{s}</option>}</For></select>
-                </Show>
-                <Show when={a().kind === 'rotate'}><input class="bp-num" type="number" value={a().deg} onInput={e => set({ deg: Number(e.currentTarget.value) })} /><span class="bp-unit">°</span></Show>
-                <Show when={a().kind === 'color'}><input class="bp-color" type="color" value={a().color} onInput={e => set({ color: e.currentTarget.value })} /></Show>
-                <Show when={a().kind === 'scale'}><input class="bp-num" type="number" step="0.1" value={a().factor} onInput={e => set({ factor: Number(e.currentTarget.value) })} />×</Show>
-                <Show when={a().kind === 'setText'}><input class="bp-text" type="text" value={a().text} onInput={e => set({ text: e.currentTarget.value })} /></Show>
-                <Show when={a().kind === 'moveTo'}>
-                    <select class="bp-sel" value={a().at} onChange={e => set({ at: e.currentTarget.value })}><For each={SPAWN_AT}>{s => <option value={s.v}>{s.label}</option>}</For></select>
-                </Show>
-                <Show when={a().kind === 'spawn'}>
-                    <select class="bp-sel" value={a().sprite} onChange={e => set({ sprite: e.currentTarget.value })}><option value="">(pick sprite)</option><For each={namedSprites()}>{n => <option value={n}>{n}</option>}</For></select>
-                    <select class="bp-sel" value={a().at} onChange={e => set({ at: e.currentTarget.value })}><For each={SPAWN_AT}>{s => <option value={s.v}>{s.label}</option>}</For></select>
-                </Show>
-                <Show when={a().kind === 'destroy'}>
-                    <select class="bp-sel" value={a().target} onChange={e => set({ target: e.currentTarget.value })}><option value="this">this</option><For each={namedSprites()}>{n => <option value={n}>{n}</option>}</For></select>
-                </Show>
-                <Show when={a().kind === 'score'}><input class="bp-num" type="number" value={a().delta} onInput={e => set({ delta: Number(e.currentTarget.value) })} /></Show>
-                <Show when={a().kind === 'goToState'}>
-                    <select class="bp-sel" value={a().state} onChange={e => set({ state: e.currentTarget.value })}><option value="">(pick state)</option><For each={stateNames()}>{n => <option value={n}>{n}</option>}</For></select>
-                </Show>
-                <Show when={a().kind === 'playAnim'}>
-                    <select class="bp-sel" value={a().preset} onChange={e => set({ preset: e.currentTarget.value })}><For each={ANIM_PRESETS}>{pr => <option>{pr}</option>}</For></select>
-                </Show>
-                <Show when={a().kind === 'goToPage'}><input class="bp-num" type="number" value={a().index} onInput={e => set({ index: Number(e.currentTarget.value) })} /></Show>
-                <Show when={a().kind === 'win' || a().kind === 'gameOver'}><input class="bp-text" type="text" value={a().message} onInput={e => set({ message: e.currentTarget.value })} /></Show>
-            </Show>
-        );
-    };
 
     const RuleList: Component = () => (
         <div class="bp-rules">
@@ -219,9 +154,25 @@ const BehaviorsPanel: Component = () => {
                             <select class="bp-sel" value={b.trigger.kind} onChange={e => setTrigger(i(), e.currentTarget.value as Trigger['kind'])}>
                                 <For each={isScene() ? TRIGGERS.filter(t => t.v === 'start' || t.v === 'tick') : TRIGGERS}>{t => <option value={t.v}>{t.label}</option>}</For>
                             </select>
-                            <TriggerParams b={b} i={i()} />
-                            <button class="bp-del" title="Delete rule" onClick={() => removeBehavior(i())}><Trash2 size={13} /></button>
+                            <TriggerParams trigger={b.trigger} sprites={namedSprites()} onPatch={patch => patchTrigger(i(), patch)} />
+                            <div class="bp-rule-tools">
+                                <button class="bp-del" title="Move up" onClick={() => moveBehavior(i(), -1)}><ChevronUp size={13} /></button>
+                                <button class="bp-del" title="Move down" onClick={() => moveBehavior(i(), 1)}><ChevronDown size={13} /></button>
+                                <button class="bp-del" title="Duplicate rule" onClick={() => duplicateBehavior(i())}><Copy size={13} /></button>
+                                <button class="bp-del" title={b.condition ? 'Remove condition' : 'Only if… (add a condition)'} onClick={() => toggleCondition(i())}>?</button>
+                                <button class="bp-del" title="Delete rule" onClick={() => removeBehavior(i())}><Trash2 size={13} /></button>
+                            </div>
                         </div>
+                        <Show when={b.condition}>
+                            <div class="bp-do bp-if">
+                                <span class="bp-kw bp-if-kw">ONLY IF</span>
+                                <input class="bp-text" type="text" style={{ 'min-width': '70px' }} value={b.condition!.name} onInput={e => patchCondition(i(), { name: e.currentTarget.value })} />
+                                <select class="bp-sel" value={b.condition!.compare} onChange={e => patchCondition(i(), { compare: e.currentTarget.value })}>
+                                    <For each={COMPARE}>{c => <option value={c.v}>{c.label}</option>}</For>
+                                </select>
+                                <input class="bp-num" type="number" value={b.condition!.value} onInput={e => patchCondition(i(), { value: Number(e.currentTarget.value) })} />
+                            </div>
+                        </Show>
                         <For each={b.actions}>
                             {(a, k) => (
                                 <div class="bp-do">
@@ -229,8 +180,13 @@ const BehaviorsPanel: Component = () => {
                                     <select class="bp-sel" value={a.kind} onChange={e => setAction(i(), k(), e.currentTarget.value as Action['kind'])}>
                                         <For each={availableActions()}>{ac => <option value={ac.v}>{ac.label}</option>}</For>
                                     </select>
-                                    <ActionParams a={a} i={i()} k={k()} />
-                                    <button class="bp-del" title="Remove action" onClick={() => removeAction(i(), k())}><X size={13} /></button>
+                                    <ActionParams action={a} sprites={namedSprites()} states={stateNames()} onPatch={patch => patchAction(i(), k(), patch)} />
+                                    <div class="bp-rule-tools">
+                                        <button class="bp-del" title="Move up" onClick={() => moveAction(i(), k(), -1)}><ChevronUp size={12} /></button>
+                                        <button class="bp-del" title="Move down" onClick={() => moveAction(i(), k(), 1)}><ChevronDown size={12} /></button>
+                                        <button class="bp-del" title="Duplicate action" onClick={() => duplicateAction(i(), k())}><Copy size={12} /></button>
+                                        <button class="bp-del" title="Remove action" onClick={() => removeAction(i(), k())}><X size={13} /></button>
+                                    </div>
                                 </div>
                             )}
                         </For>
@@ -248,6 +204,7 @@ const BehaviorsPanel: Component = () => {
                 <div class="behaviors-panel-header">
                     <div class="bp-title"><Gamepad2 size={15} /><h3>Game Builder</h3></div>
                     <div class="bp-head-actions">
+                        <button class="bp-graph-btn" title="Open the node graph" onClick={() => { toggleBehaviorsPanel(false); toggleGameGraph(true); }}>Graph</button>
                         <button class="bp-play" title="Play the game" onClick={play}><Play size={14} /> Play</button>
                         <button class="bp-icon-btn" title="Close" onClick={() => toggleBehaviorsPanel(false)}><X size={15} /></button>
                     </div>
@@ -256,6 +213,7 @@ const BehaviorsPanel: Component = () => {
                 <div class="bp-tabs">
                     <button class={`bp-tab ${tab() === 'sprite' ? 'active' : ''}`} onClick={() => setTab('sprite')}>Sprite</button>
                     <button class={`bp-tab ${tab() === 'scene' ? 'active' : ''}`} onClick={() => setTab('scene')}>Scene</button>
+                    <button class={`bp-tab ${tab() === 'vars' ? 'active' : ''}`} onClick={() => setTab('vars')}>Vars</button>
                     <button class={`bp-tab ${tab() === 'code' ? 'active' : ''}`} onClick={() => setTab('code')}>Code</button>
                 </div>
 
@@ -272,6 +230,9 @@ const BehaviorsPanel: Component = () => {
                                         <button class="bp-add" onClick={() => { buildCatchExample(); showToast('Catch loaded — press Play!', 'success'); }}>
                                             <Play size={14} /> Load example: Catch the Star
                                         </button>
+                                        <button class="bp-add" onClick={() => { buildPlatformerExample(); showToast('Platformer loaded — press Play!', 'success'); }}>
+                                            <Play size={14} /> Load example: Jump & Run
+                                        </button>
                                     </div>
                                 }>
                                 <div class="bp-empty">Select one sprite on the canvas to give it behaviors.</div>
@@ -282,6 +243,10 @@ const BehaviorsPanel: Component = () => {
                                 <input class="bp-name" type="text" placeholder="e.g. Ball"
                                     value={selectedEl()!.tag ?? ''}
                                     onInput={e => { const el = selectedEl(); if (el) updateElement(el.id, { tag: e.currentTarget.value || null } as any, false); }} />
+                                <button class="bp-copy" title="Copy this sprite's behaviors" onClick={copyAll}><Copy size={14} /></button>
+                                <Show when={clipboard()?.length}>
+                                    <button class="bp-copy" title="Paste copied behaviors onto this sprite" onClick={pasteAll}><ClipboardPaste size={14} /></button>
+                                </Show>
                             </div>
                             <RuleList />
                         </Show>
@@ -289,6 +254,32 @@ const BehaviorsPanel: Component = () => {
                     <Show when={tab() === 'scene'}>
                         <div class="bp-hint">Scene rules run for the whole game (set the score, spawn things, decide win/lose).</div>
                         <RuleList />
+                    </Show>
+                    <Show when={tab() === 'vars'}>
+                        <div class="bp-hint">Variables remember numbers — lives, health, ammo. Set their starting value here; rules change them.</div>
+                        <div class="bp-vars">
+                            <For each={gameVars()} fallback={<div class="bp-empty">No variables yet.</div>}>
+                                {(v) => (
+                                    <div class="bp-var-row">
+                                        <input class="bp-name" type="text" value={v.name}
+                                            onChange={e => renameVar(v.name, e.currentTarget.value.trim())} />
+                                        <span class="bp-unit">starts at</span>
+                                        <input class="bp-num" type="number" value={v.initial}
+                                            onInput={e => patchVarInitial(v.name, Number(e.currentTarget.value))} />
+                                        <button class="bp-del" title="Delete variable" onClick={() => removeVar(v.name)}><Trash2 size={13} /></button>
+                                    </div>
+                                )}
+                            </For>
+                            <button class="bp-add" onClick={() => addVar(`var${gameVars().length + 1}`, 0)}><Plus size={15} /> Add variable</button>
+                            <Show when={undefinedVars().length}>
+                                <div class="bp-hint">Used in rules but not defined — tap to add:</div>
+                                <div class="bp-var-chips">
+                                    <For each={undefinedVars()}>
+                                        {(n) => <button class="bp-chip" onClick={() => addVar(n, 0)}><Plus size={11} /> {n}</button>}
+                                    </For>
+                                </div>
+                            </Show>
+                        </div>
                     </Show>
                     <Show when={tab() === 'code'}>
                         <div class="bp-hint">This is the game.* code your blocks make (read-only — a peek under the hood).</div>

@@ -32,6 +32,11 @@
     background: #16a34a; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
 }
 .bp-play:hover { background: #15803d; }
+.bp-graph-btn {
+    padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer;
+    background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);
+}
+.bp-graph-btn:hover { background: var(--bg-panel); border-color: var(--accent-color, #6366f1); }
 .bp-icon-btn { border: none; background: transparent; color: var(--text-secondary); cursor: pointer; padding: 4px; }
 .bp-icon-btn:hover { color: var(--text-primary); }
 
@@ -66,6 +71,8 @@
     color: #6366f1; background: rgba(99,102,241,0.12); padding: 2px 6px; border-radius: 5px;
 }
 .bp-do-kw { color: #16a34a; background: rgba(22,163,74,0.12); }
+.bp-if-kw { color: #b45309; background: rgba(180,83,9,0.12); }
+.bp-if { padding-left: 10px; }
 
 .bp-sel, .bp-num, .bp-text {
     padding: 6px 8px; min-height: 32px;
@@ -78,11 +85,19 @@
 .bp-color { width: 34px; height: 32px; border: 1px solid var(--border-color); border-radius: 6px; background: none; cursor: pointer; padding: 2px; }
 .bp-unit { font-size: 12px; color: var(--text-secondary); }
 
+.bp-rule-tools { margin-left: auto; display: flex; gap: 1px; flex-shrink: 0; }
 .bp-del {
-    margin-left: auto; border: none; background: transparent; color: var(--text-secondary);
-    cursor: pointer; padding: 4px; border-radius: 5px; min-width: 28px; min-height: 28px;
+    border: none; background: transparent; color: var(--text-secondary);
+    cursor: pointer; padding: 4px; border-radius: 5px; min-width: 26px; min-height: 26px;
 }
-.bp-del:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+.bp-del:hover { color: var(--text-primary); background: var(--bg-panel); }
+.bp-rule-tools .bp-del:last-child:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+.bp-copy {
+    border: 1px solid var(--border-color); background: var(--bg-panel); color: var(--text-secondary);
+    cursor: pointer; padding: 6px; border-radius: 6px; min-width: 32px; min-height: 32px;
+    display: flex; align-items: center; justify-content: center;
+}
+.bp-copy:hover { border-color: var(--accent-color, #6366f1); color: var(--text-primary); }
 
 .bp-add-do {
     align-self: flex-start; margin-left: 10px;
@@ -98,6 +113,17 @@
     background: transparent; color: var(--accent-color, #6366f1); font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .bp-add:hover { background: rgba(99,102,241,0.08); }
+
+.bp-vars { display: flex; flex-direction: column; gap: 8px; }
+.bp-var-row { display: flex; align-items: center; gap: 8px; }
+.bp-var-row .bp-name { flex: 1; min-width: 60px; }
+.bp-var-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.bp-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 5px 10px; border: 1px dashed var(--accent-color, #6366f1); border-radius: 999px;
+    background: transparent; color: var(--accent-color, #6366f1); font-size: 12px; cursor: pointer;
+}
+.bp-chip:hover { background: rgba(99,102,241,0.08); }
 
 .bp-code {
     margin: 4px 0 0; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;

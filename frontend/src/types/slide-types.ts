@@ -136,6 +136,8 @@ export interface SlideDocument {
     gameScript?: string;
     /** Arcade visual builder: scene-level WHEN→DO rules (on start, score, win/lose). */
     sceneBehaviors?: import('../types').DrawingElement['behaviors'];
+    /** Arcade visual builder: declared game variables with their starting values. */
+    gameVars?: { name: string; initial: number }[];
 }
 
 /**

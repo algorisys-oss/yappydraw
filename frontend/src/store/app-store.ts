@@ -251,8 +251,12 @@ interface AppState {
     gameScript: string;
     /** Visual builder: scene-level behaviors (persisted in SlideDocument.sceneBehaviors). */
     sceneBehaviors: import('../types').DrawingElement['behaviors'];
+    /** Visual builder: declared game variables with starting values. */
+    gameVars: { name: string; initial: number }[];
     /** Visual builder: the floating Behaviors panel is open. */
     showBehaviorsPanel: boolean;
+    /** Visual builder: the full-screen node-graph editor is open. */
+    showGameGraph: boolean;
 
     // Video Playback
     activeVideoElementIds: string[];
@@ -467,7 +471,9 @@ const initialState: AppState = {
     gameActive: false,
     gameScript: '',
     sceneBehaviors: [],
+    gameVars: [],
     showBehaviorsPanel: false,
+    showGameGraph: false,
     activeVideoElementIds: [],
     dirtyRevision: 0,
 };
@@ -1412,6 +1418,26 @@ export const setSceneBehaviors = (behaviors: import('../types').DrawingElement['
 export const toggleBehaviorsPanel = (visible?: boolean) =>
     setStore('showBehaviorsPanel', v => visible ?? !v);
 
+export const toggleGameGraph = (visible?: boolean) =>
+    setStore('showGameGraph', v => visible ?? !v);
+
+/** Set a behavior's graph-node position (persists on the behavior). */
+export const setBehaviorGraphPos = (owner: string, behaviorId: string, pos: { x: number; y: number }) => {
+    if (owner === '') {
+        setStore('sceneBehaviors', bs => (bs ?? []).map(b => b.id === behaviorId ? { ...b, graphPos: pos } : b));
+    } else {
+        const idx = store.elements.findIndex(e => e.tag === owner);
+        if (idx >= 0) setStore('elements', idx, 'behaviors', bs => (bs ?? []).map(b => b.id === behaviorId ? { ...b, graphPos: pos } : b));
+    }
+    bumpDirtyRevision();
+};
+
+/** Replace the declared game variables. */
+export const setGameVars = (vars: { name: string; initial: number }[]) => {
+    setStore('gameVars', vars);
+    bumpDirtyRevision();
+};
+
 // --- Video Playback Actions ---
 export const startVideoPlayback = (elementId: string) => {
     const el = store.elements.find(e => e.id === elementId);
@@ -2046,6 +2072,7 @@ export const loadDocument = (doc: any) => {
         setStore("selection", []);
         setStore("gameScript", typeof doc.gameScript === 'string' ? doc.gameScript : '');
         setStore("sceneBehaviors", Array.isArray(doc.sceneBehaviors) ? doc.sceneBehaviors : []);
+        setStore("gameVars", Array.isArray(doc.gameVars) ? doc.gameVars : []);
         setStore("gameActive", false);
 
         // Apply first slide's explicit background if set (overrides theme default)

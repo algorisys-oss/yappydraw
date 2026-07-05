@@ -5,7 +5,7 @@ import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
-    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel
+    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import {
@@ -175,8 +175,9 @@ const Menu: Component = () => {
                 graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
                 swatches: JSON.parse(JSON.stringify(store.swatches)),
                 artboards: JSON.parse(JSON.stringify(store.artboards)),
-                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript),
-                sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined
+                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? []),
+                sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
+                gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined
             };
             const baseFilename = filename.replace(/\.(json|yappy)$/i, '');
 
@@ -401,8 +402,9 @@ const Menu: Component = () => {
                 graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
                 swatches: JSON.parse(JSON.stringify(store.swatches)),
                 artboards: JSON.parse(JSON.stringify(store.artboards)),
-                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript),
-                sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined
+                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? []),
+                sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
+                gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined
             };
 
             await exportToHtml(slideDoc, drawingId());
@@ -795,11 +797,15 @@ const Menu: Component = () => {
                                         <Gamepad2 size={16} />
                                         <span class="label">Game Builder</span>
                                     </button>
+                                    <button class="menu-item" onClick={() => { toggleGameGraph(true); setIsMenuOpen(false); }}>
+                                        <Grid2x2 size={16} />
+                                        <span class="label">Game Graph (node view)</span>
+                                    </button>
                                     <Show when={store.sceneBehaviors?.length || store.elements.some(e => e.behaviors?.length) || store.gameScript?.trim()}>
                                         <button class="menu-item" onClick={() => {
                                             setIsMenuOpen(false);
                                             Promise.all([import('../game/behaviors-to-script'), import('../game/game-runtime')]).then(([g, r]) => {
-                                                const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? []) || store.gameScript;
+                                                const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? []) || store.gameScript;
                                                 if (script) r.startGame(script);
                                             });
                                         }}>

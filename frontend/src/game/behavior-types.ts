@@ -16,6 +16,7 @@ export type Dir8 =
 export type Dir4 = 'up' | 'down' | 'left' | 'right';
 export type Edge = 'any' | 'left' | 'right' | 'top' | 'bottom';
 export type SpawnAt = 'here' | 'randomTop' | 'randomEdge' | 'center';
+export type Compare = 'atLeast' | 'atMost' | 'equals';
 
 /** WHEN — what starts the rule. */
 export type Trigger =
@@ -26,13 +27,27 @@ export type Trigger =
     | { kind: 'tap' }
     /** target = a sprite tag, or 'edge' with a side. */
     | { kind: 'hit'; target: string; edge?: Edge }
-    | { kind: 'leaveScreen' };
+    /** Every frame while overlapping a sprite (vs `hit` = once on contact). */
+    | { kind: 'touching'; target: string }
+    | { kind: 'leaveScreen' }
+    /** A variable crosses a threshold (lives, health, score). */
+    | { kind: 'varReaches'; name: string; value: number; compare: Compare }
+    /** Repeats every `seconds` while the game runs. */
+    | { kind: 'timer'; seconds: number }
+    /** Fires when any sprite broadcasts this message (event wiring). */
+    | { kind: 'receive'; message: string };
 
 /** DO — what happens. */
 export type Action =
     | { kind: 'moveDir'; dir: Dir4; speed: Speed }
     | { kind: 'glide'; dir: Dir8; speed: Speed }
     | { kind: 'bounce' }
+    /** Physics: make this sprite fall (or stop falling). */
+    | { kind: 'gravity'; on: boolean }
+    /** Physics: an upward impulse (jump height by level). */
+    | { kind: 'jump'; strength: Speed }
+    /** Physics: rest on top of the sprite it's touching (platform landing). */
+    | { kind: 'land' }
     | { kind: 'rotate'; deg: number }
     | { kind: 'color'; color: string }
     | { kind: 'scale'; factor: number }
@@ -43,16 +58,33 @@ export type Action =
     | { kind: 'spawn'; sprite: string; at: SpawnAt }
     | { kind: 'destroy'; target: 'this' | string }
     | { kind: 'score'; delta: number }
+    | { kind: 'setVar'; name: string; value: number }
+    | { kind: 'changeVar'; name: string; delta: number }
+    | { kind: 'showVar'; name: string }
     | { kind: 'goToState'; state: string }
     | { kind: 'playAnim'; preset: string }
+    | { kind: 'playSound'; sound: string }
+    | { kind: 'music'; on: boolean }
     | { kind: 'goToPage'; index: number }
+    | { kind: 'broadcast'; message: string }
     | { kind: 'win'; message: string }
     | { kind: 'gameOver'; message: string };
+
+/** Optional "only if" guard on a rule — a variable comparison. */
+export interface Condition {
+    name: string;
+    compare: Compare;
+    value: number;
+}
 
 export interface Behavior {
     id: string;
     trigger: Trigger;
     actions: Action[];
+    /** When set, the actions run only if this variable comparison is true. */
+    condition?: Condition;
+    /** Node position in the visual graph editor (persisted; auto-laid-out if unset). */
+    graphPos?: { x: number; y: number };
 }
 
 /** Numeric speed (world px/s) for the friendly Speed levels. */
@@ -71,6 +103,9 @@ export const DIR4_VEC: Record<Dir4, { x: number; y: number }> = {
 
 /** Animation presets offered by the builder (subset of element-animator presets). */
 export const ANIM_PRESETS = ['bounce', 'pulse', 'shakeX', 'flash', 'tada', 'wobble', 'rubberBand'] as const;
+
+/** Built-in sound effects (synthesized — see sound-engine.ts). */
+export const SOUND_NAMES = ['coin', 'jump', 'hit', 'powerup', 'explosion', 'blip', 'win', 'lose', 'click'] as const;
 
 let _bid = 0;
 export const newBehaviorId = (): string => `bhv-${Date.now()}-${++_bid}`;

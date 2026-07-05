@@ -71,6 +71,7 @@ export function saveCurrentAsTemplate(name: string, description = ''): UserTempl
         artboards: deep(store.artboards ?? []),
         gameScript: store.gameScript || undefined,
         sceneBehaviors: store.sceneBehaviors?.length ? deep(store.sceneBehaviors) : undefined,
+        gameVars: store.gameVars?.length ? deep(store.gameVars) : undefined,
     };
 
     // Small thumbnail from the active page (paged docs only)

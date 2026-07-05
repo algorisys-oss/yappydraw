@@ -44,6 +44,14 @@ function emitAction(a: Action, me: string, other: string, dt: string, elements: 
         }
         case 'bounce':
             return `_bounce(${me}, ${other});`;
+        case 'gravity':
+            return a.on
+                ? `{ _grav.add(${me}.id); const _v = _V(${me}); _setV(${me}, _v.vx, _v.vy); }`
+                : `_grav.delete(${me}.id);`;
+        case 'jump':
+            return `{ const _v = _V(${me}); _setV(${me}, _v.vx, -JUMP[${q(a.strength)}]); }`;
+        case 'land':
+            return `_land(${me}, ${other});`;
         case 'rotate':
             return `${me}.rotateBy(${num(a.deg)});`;
         case 'color':
@@ -78,12 +86,24 @@ function emitAction(a: Action, me: string, other: string, dt: string, elements: 
             return a.target === 'this' ? `${me}.destroy();` : `{ const _t = S(${q(a.target)}); if (_t) _t.destroy(); }`;
         case 'score':
             return `game.score(${num(a.delta)});`;
+        case 'setVar':
+            return `_setVar(${q(a.name)}, ${num(a.value)});`;
+        case 'changeVar':
+            return `_setVar(${q(a.name)}, (_vars[${q(a.name)}] || 0) + ${num(a.delta)});`;
+        case 'showVar':
+            return `_showVar(${q(a.name)});`;
         case 'goToState':
             return `game.goToState(${q(a.state)});`;
         case 'playAnim':
             return `game.playAnim(${me}, ${q(a.preset)});`;
+        case 'playSound':
+            return `game.sound(${q(a.sound)});`;
+        case 'music':
+            return `game.music(${a.on ? 'true' : 'false'});`;
         case 'goToPage':
             return `game.goToPage(${num(a.index)});`;
+        case 'broadcast':
+            return `_emit(${q(a.message)});`;
         case 'win':
             return `game.end(${q(a.message || 'YOU WIN!')});`;
         case 'gameOver':
@@ -99,6 +119,30 @@ function actionsBlock(actions: Action[], me: string, other: string, dt: string, 
     return stmts.map(s => indent + s).join('\n');
 }
 
+/** A behavior's actions, wrapped in its optional "only if [variable]" condition. */
+function guarded(b: Behavior, me: string, other: string, dt: string, elements: DrawingElement[], indent: string): string {
+    if (!b.condition) return actionsBlock(b.actions, me, other, dt, elements, indent);
+    const c = b.condition;
+    const cmp = c.compare === 'atMost' ? '<=' : c.compare === 'equals' ? '===' : '>=';
+    const body = actionsBlock(b.actions, me, other, dt, elements, indent + '  ');
+    return `${indent}if ((_vars[${q(c.name)}] || 0) ${cmp} ${num(c.value)}) {\n${body}\n${indent}}`;
+}
+
+/** Tick-body for a "when variable reaches" trigger (enter-detected via _hit). */
+function emitVarReaches(t: Extract<Trigger, { kind: 'varReaches' }>, b: Behavior, me: string, keyBase: string, elements: DrawingElement[]): string {
+    const cmp = t.compare === 'atMost' ? '<=' : t.compare === 'equals' ? '===' : '>=';
+    const key = q(keyBase);
+    return `  { const _me = ${me}; const _k = ${key}; const _cv = (_vars[${q(t.name)}] || 0);\n` +
+        `    if (_cv ${cmp} ${num(t.value)}) { if (!_hit.has(_k)) { _hit.add(_k);\n${guarded(b, '_me', 'null', 'dt', elements, '      ')}\n    } } else { _hit.delete(_k); } }`;
+}
+
+/** Tick-body for a repeating "every N seconds" timer trigger. */
+function emitTimer(t: Extract<Trigger, { kind: 'timer' }>, b: Behavior, me: string, elements: DrawingElement[]): string {
+    const id = q(b.id);
+    const secs = num(Math.max(0.05, t.seconds));
+    return `  { _tmr[${id}] = (_tmr[${id}] || 0) + dt; if (_tmr[${id}] >= ${secs}) { _tmr[${id}] = 0; const _me = ${me};\n${guarded(b, '_me', 'null', 'dt', elements, '    ')}\n  } }`;
+}
+
 /** Does this behavior list reference a sprite target for `hit`? Collect targets. */
 function hitTargets(t: Trigger): { isEdge: boolean; edge?: string; tag?: string } | null {
     if (t.kind !== 'hit') return null;
@@ -111,15 +155,17 @@ function hitTargets(t: Trigger): { isEdge: boolean; edge?: string; tag?: string 
  * hand-written fallback (advanced code path). Keeps the saved `gameScript` in
  * sync with the blocks so the exported HTML player runs the block-built game.
  */
-export function effectiveGameScript(elements: DrawingElement[], sceneBehaviors: Behavior[] = [], fallback?: string): string | undefined {
-    const gen = generateGameScript(elements, sceneBehaviors);
+export function effectiveGameScript(elements: DrawingElement[], sceneBehaviors: Behavior[] = [], fallback?: string, gameVars: GameVar[] = []): string | undefined {
+    const gen = generateGameScript(elements, sceneBehaviors, gameVars);
     return gen || fallback || undefined;
 }
+
+export interface GameVar { name: string; initial: number }
 
 /**
  * Compile blocks to a game script. Returns '' if there are no behaviors.
  */
-export function generateGameScript(elements: DrawingElement[], sceneBehaviors: Behavior[] = []): string {
+export function generateGameScript(elements: DrawingElement[], sceneBehaviors: Behavior[] = [], gameVars: GameVar[] = []): string {
     const sprites = taggedSprites(elements);
     if (sprites.length === 0 && sceneBehaviors.length === 0) return '';
 
@@ -149,21 +195,68 @@ export function generateGameScript(elements: DrawingElement[], sceneBehaviors: B
     L.push('  }');
     L.push('  _setV(sp, vx, vy);');
     L.push('}');
+    L.push('const _vars = {};                       // named numbers (lives, health, …)');
+    L.push('const _vh = {};                         // on-screen labels for shown variables');
+    L.push('function _showVar(name) {');
+    L.push('  const label = name + ": " + (_vars[name] || 0);');
+    L.push('  if (_vh[name] && _vh[name].alive) { _vh[name].setText(label); }');
+    L.push('  else { const i = Object.keys(_vh).length; _vh[name] = game.spawnText(label, X + 20, Y + 20 + i * 42, 28, { textColor: "#111827", textAlign: "left" }); }');
+    L.push('}');
+    L.push('function _setVar(name, v) { _vars[name] = v; if (_vh[name]) _showVar(name); }');
+    L.push('const _tmr = {};                        // per-timer accumulators');
+    L.push('const _msg = {};                         // message bus: name -> handlers');
+    L.push('const _on = (m, fn) => { (_msg[m] || (_msg[m] = [])).push(fn); };');
+    L.push('const _emit = (m) => { (_msg[m] || []).forEach(fn => { try { fn(); } catch (e) {} }); };');
+    L.push('const _grav = new Set();                // sprites affected by gravity');
+    L.push('const GRAV = 1500;                      // gravity strength (px/sec/sec)');
+    L.push('const JUMP = { slow: 560, medium: 780, fast: 1000 };');
+    L.push('function _land(sp, other) {             // rest on top of a platform');
+    L.push('  if (!sp || !other || !sp.alive || !other.alive) return;');
+    L.push('  const v = _V(sp);');
+    L.push('  if (v.vy >= 0 && sp.y + sp.height > other.y && sp.y + sp.height < other.y + other.height + 24) {');
+    L.push('    sp.moveTo(sp.x, other.y - sp.height); _setV(sp, v.vx, 0);');
+    L.push('  }');
+    L.push('}');
     L.push('');
 
     // ── Setup: scene start, then per-sprite start ──
     const startLines: string[] = [];
     for (const b of sceneBehaviors) {
-        if (b.trigger.kind === 'start') startLines.push(actionsBlock(b.actions, 'null', 'null', '0.016', elements, ''));
+        if (b.trigger.kind === 'start') startLines.push(guarded(b, 'null', 'null', '0.016', elements, ''));
     }
     for (const s of sprites) {
         const me = `S(${q(s.tag)})`;
         for (const b of (s.el.behaviors || [])) {
             if (b.trigger.kind === 'start') {
-                startLines.push(`{ const _me = ${me}; if (_me) {\n${actionsBlock(b.actions, '_me', 'null', '0.016', elements, '  ')}\n} }`);
+                startLines.push(`{ const _me = ${me}; if (_me) {\n${guarded(b, '_me', 'null', '0.016', elements, '  ')}\n} }`);
             }
         }
     }
+    // ── declared variables: initialise before anything runs ──
+    if (gameVars.length) {
+        L.push('// —— variables ——');
+        for (const v of gameVars) if (v.name) L.push(`_setVar(${q(v.name)}, ${num(v.initial || 0)});`);
+        L.push('');
+    }
+
+    // ── receive → message handlers (registered BEFORE start, so a broadcast on
+    //    start reaches its listeners) ──
+    const recvLines: string[] = [];
+    for (const s of sprites) {
+        const me = `S(${q(s.tag)})`;
+        for (const b of (s.el.behaviors || [])) {
+            if (b.trigger.kind === 'receive') {
+                recvLines.push(`_on(${q(b.trigger.message)}, () => { const _me = ${me}; if (_me) {\n${guarded(b, '_me', 'null', '0.12', elements, '  ')}\n} });`);
+            }
+        }
+    }
+    for (const b of sceneBehaviors) {
+        if (b.trigger.kind === 'receive') {
+            recvLines.push(`_on(${q(b.trigger.message)}, () => {\n${guarded(b, 'null', 'null', '0.12', elements, '  ')}\n});`);
+        }
+    }
+    if (recvLines.length) { L.push('// —— messages ——'); L.push(...recvLines); L.push(''); }
+
     if (startLines.length) { L.push('// —— on start ——'); L.push(...startLines); L.push(''); }
 
     // ── keyPress → onKey handlers grouped by button ──
@@ -172,13 +265,13 @@ export function generateGameScript(elements: DrawingElement[], sceneBehaviors: B
         const me = `S(${q(s.tag)})`;
         for (const b of (s.el.behaviors || [])) {
             if (b.trigger.kind === 'keyPress') {
-                (pressByBtn[b.trigger.button] ||= []).push(`{ const _me = ${me}; if (_me) {\n${actionsBlock(b.actions, '_me', 'null', '0.12', elements, '  ')}\n} }`);
+                (pressByBtn[b.trigger.button] ||= []).push(`{ const _me = ${me}; if (_me) {\n${guarded(b, '_me', 'null', '0.12', elements, '  ')}\n} }`);
             }
         }
     }
     for (const b of sceneBehaviors) {
         if (b.trigger.kind === 'keyPress') {
-            (pressByBtn[b.trigger.button] ||= []).push(actionsBlock(b.actions, 'null', 'null', '0.12', elements, ''));
+            (pressByBtn[b.trigger.button] ||= []).push(guarded(b, 'null', 'null', '0.12', elements, ''));
         }
     }
     for (const [btn, blocks] of Object.entries(pressByBtn)) {
@@ -194,7 +287,7 @@ export function generateGameScript(elements: DrawingElement[], sceneBehaviors: B
         const me = `S(${q(s.tag)})`;
         for (const b of (s.el.behaviors || [])) {
             if (b.trigger.kind === 'tap') {
-                tapBlocks.push(`{ const _me = ${me}; if (_me && px >= _me.x && px <= _me.x + _me.width && py >= _me.y && py <= _me.y + _me.height) {\n${actionsBlock(b.actions, '_me', 'null', '0.12', elements, '  ')}\n} }`);
+                tapBlocks.push(`{ const _me = ${me}; if (_me && px >= _me.x && px <= _me.x + _me.width && py >= _me.y && py <= _me.y + _me.height) {\n${guarded(b, '_me', 'null', '0.12', elements, '  ')}\n} }`);
             }
         }
     }
@@ -207,18 +300,18 @@ export function generateGameScript(elements: DrawingElement[], sceneBehaviors: B
 
     // ── onTick: integrate velocity, keyHold, hit, leaveScreen, tick ──
     L.push('game.onTick((dt, t) => {');
-    L.push('  for (const [id, v] of _vel) { const sp = game.find(id); if (sp && sp.alive) sp.moveBy(v.vx * dt, v.vy * dt); }');
+    L.push('  for (const [id, v] of _vel) { if (_grav.has(id)) v.vy += GRAV * dt; const sp = game.find(id); if (sp && sp.alive) sp.moveBy(v.vx * dt, v.vy * dt); }');
 
     for (const s of sprites) {
         const me = `S(${q(s.tag)})`;
         for (const b of (s.el.behaviors || [])) {
             const t = b.trigger;
             if (t.kind === 'keyHold') {
-                L.push(`  if (game.key(${q(t.button)})) { const _me = ${me}; if (_me) {\n${actionsBlock(b.actions, '_me', 'null', 'dt', elements, '    ')}\n  } }`);
+                L.push(`  if (game.key(${q(t.button)})) { const _me = ${me}; if (_me) {\n${guarded(b, '_me', 'null', 'dt', elements, '    ')}\n  } }`);
             } else if (t.kind === 'tick') {
-                L.push(`  { const _me = ${me}; if (_me) {\n${actionsBlock(b.actions, '_me', 'null', 'dt', elements, '    ')}\n  } }`);
+                L.push(`  { const _me = ${me}; if (_me) {\n${guarded(b, '_me', 'null', 'dt', elements, '    ')}\n  } }`);
             } else if (t.kind === 'leaveScreen') {
-                L.push(`  { const _me = ${me}; if (_me && _off(_me)) {\n${actionsBlock(b.actions, '_me', 'null', 'dt', elements, '    ')}\n  } }`);
+                L.push(`  { const _me = ${me}; if (_me && _off(_me)) {\n${guarded(b, '_me', 'null', 'dt', elements, '    ')}\n  } }`);
             } else if (t.kind === 'hit') {
                 const info = hitTargets(t)!;
                 const key = q(`${s.tag}|${t.target}|${b.id}`);
@@ -230,17 +323,27 @@ export function generateGameScript(elements: DrawingElement[], sceneBehaviors: B
                         : side === 'bottom' ? '_me.y + _me.height >= Y + H'
                         : '(_me.x <= X || _me.x + _me.width >= X + W || _me.y <= Y || _me.y + _me.height >= Y + H)';
                     L.push(`  { const _me = ${me}; const _k = ${key};`);
-                    L.push(`    if (_me && ${test}) { if (!_hit.has(_k)) { _hit.add(_k);\n${actionsBlock(b.actions, '_me', 'null', 'dt', elements, '      ')}\n    } } else { _hit.delete(_k); } }`);
+                    L.push(`    if (_me && ${test}) { if (!_hit.has(_k)) { _hit.add(_k);\n${guarded(b, '_me', 'null', 'dt', elements, '      ')}\n    } } else { _hit.delete(_k); } }`);
                 } else {
                     L.push(`  { const _me = ${me}; const _other = S(${q(info.tag as string)}); const _k = ${key};`);
-                    L.push(`    if (_me && _other && game.hit(_me, _other)) { if (!_hit.has(_k)) { _hit.add(_k);\n${actionsBlock(b.actions, '_me', '_other', 'dt', elements, '      ')}\n    } } else { _hit.delete(_k); } }`);
+                    L.push(`    if (_me && _other && game.hit(_me, _other)) { if (!_hit.has(_k)) { _hit.add(_k);\n${guarded(b, '_me', '_other', 'dt', elements, '      ')}\n    } } else { _hit.delete(_k); } }`);
                 }
+            } else if (t.kind === 'touching') {
+                L.push(`  { const _me = ${me}; const _other = S(${q(t.target)}); if (_me && _other && game.hit(_me, _other)) {\n${guarded(b, '_me', '_other', 'dt', elements, '    ')}\n  } }`);
+            } else if (t.kind === 'varReaches') {
+                L.push(emitVarReaches(t, b, me, `${s.tag}|${b.id}`, elements));
+            } else if (t.kind === 'timer') {
+                L.push(emitTimer(t, b, me, elements));
             }
         }
     }
     for (const b of sceneBehaviors) {
         if (b.trigger.kind === 'tick') {
-            L.push(`  {\n${actionsBlock(b.actions, 'null', 'null', 'dt', elements, '    ')}\n  }`);
+            L.push(`  {\n${guarded(b, 'null', 'null', 'dt', elements, '    ')}\n  }`);
+        } else if (b.trigger.kind === 'varReaches') {
+            L.push(emitVarReaches(b.trigger, b, 'null', `scene|${b.id}`, elements));
+        } else if (b.trigger.kind === 'timer') {
+            L.push(emitTimer(b.trigger, b, 'null', elements));
         }
     }
     L.push('});');

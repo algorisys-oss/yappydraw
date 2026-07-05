@@ -129,6 +129,10 @@ export interface GameApi {
     playAnim(sprite: Sprite | null, preset: string): void;
     /** Jump to another page/slide by index. */
     goToPage(index: number): void;
+    /** Play a built-in sound effect (coin/jump/hit/powerup/explosion/win/lose/…). */
+    sound(name: string): void;
+    /** Turn looping background music on or off. */
+    music(on: boolean): void;
     /** Stop the game loop (the Stop button restores the document). */
     end(message?: string): void;
     /** Show/hide the on-screen touch gamepad regardless of device default. */
@@ -277,6 +281,8 @@ function buildApi(): GameApi {
                 m.sequenceAnimator.playAnimation(sprite.id, { id: `bhv-${Date.now()}`, type: 'preset', name: preset, trigger: 'programmatic' } as any, () => {}));
         },
         goToPage: (index) => { if (index >= 0 && index < store.slides.length) setActiveSlide(index); },
+        sound: (name) => { void import('./sound-engine').then(m => m.playSfx(name)); },
+        music: (on) => { void import('./sound-engine').then(m => (on ? m.startMusic() : m.stopMusic())); },
         end: (message) => {
             setEnded(true);
             if (message) {
@@ -379,6 +385,7 @@ export function stopGame(): void {
     if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
     window.removeEventListener('keydown', onKeyDown, true);
     window.removeEventListener('keyup', onKeyUp, true);
+    void import('./sound-engine').then(m => m.stopMusic());
     held.clear();
     tickHandlers = [];
     keyHandlers.length = 0;

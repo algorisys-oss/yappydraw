@@ -230,7 +230,7 @@ const shapeDocuments: ShapeDoc[] = [
         icon: '🎮',
         category: 'Features',
         description: 'Flash-style game mode: a visual no-code Game Builder (WHEN→DO behaviors) OR a JavaScript game script drives the live canvas — Play/Stop, sprites, collisions, touch gamepad, HTML export',
-        keywords: 'game games arcade flash actionscript scratch blueprint no-code visual builder behaviors behavior WHEN DO rule trigger action script play stop tick loop sprite spawn hit collision bounce glide velocity hud score pong catch maze gamepad dpad joystick touch controls keyboard onkey pointer tap game.find game.spawn game.onTick goToState playAnim goToPage end game over win export html player interactive kid learn to code',
+        keywords: 'game games arcade flash actionscript scratch blueprint no-code visual builder behaviors behavior WHEN DO rule trigger action script play stop tick loop sprite spawn hit collision bounce glide velocity gravity physics jump land platform platformer variable lives health score condition only if branch if else broadcast receive message event wiring node graph nodes wires blueprint flow visual node editor pan zoom sound sfx music audio hud pong catch maze gamepad dpad joystick touch controls keyboard onkey pointer tap game.find game.spawn game.onTick goToState playAnim goToPage end game over win export html player interactive kid learn to code',
         content: ArcadeDoc
     },
     {
