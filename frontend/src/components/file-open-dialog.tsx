@@ -1,5 +1,6 @@
 import { type Component, createSignal, onMount, createEffect, For, Show } from "solid-js";
 import { storage } from "../storage/file-system-storage";
+import { getDocThumbnails, removeDocThumbnail } from "../storage/doc-thumbnails";
 import { showToast } from "./toast";
 import { X, FileText, Trash2 } from "lucide-solid";
 import "./file-open-dialog.css";
@@ -11,7 +12,7 @@ interface FileOpenDialogProps {
 }
 
 const FileOpenDialog: Component<FileOpenDialogProps> = (props) => {
-    const [files, setFiles] = createSignal<{ id: string, name: string }[]>([]);
+    const [files, setFiles] = createSignal<{ id: string, name: string, thumb?: string, updatedAt?: string }[]>([]);
     const [loading, setLoading] = createSignal(false);
     const [activeId, setActiveId] = createSignal<string | null>(null);
     const [isKeyboardNavigating, setIsKeyboardNavigating] = createSignal(false);
@@ -21,12 +22,16 @@ const FileOpenDialog: Component<FileOpenDialogProps> = (props) => {
     const fetchFiles = async () => {
         setLoading(true);
         try {
-            const list = await storage.listDrawings();
+            const [list, thumbs] = await Promise.all([storage.listDrawings(), getDocThumbnails()]);
             const fileObjects = list
-                .map(f => {
-                    return { id: f, name: f };
-                })
-                .sort((a, b) => a.name.localeCompare(b.name));
+                .map(f => ({ id: f, name: f, thumb: thumbs[f]?.thumb, updatedAt: thumbs[f]?.updatedAt }))
+                // Recently saved first (thumbnail timestamps), then alphabetical
+                .sort((a, b) => {
+                    if (a.updatedAt && b.updatedAt) return b.updatedAt.localeCompare(a.updatedAt);
+                    if (a.updatedAt) return -1;
+                    if (b.updatedAt) return 1;
+                    return a.name.localeCompare(b.name);
+                });
 
             setFiles(fileObjects);
             if (fileObjects.length > 0) setActiveId(fileObjects[0].id);
@@ -43,6 +48,7 @@ const FileOpenDialog: Component<FileOpenDialogProps> = (props) => {
         if (confirm(`Are you sure you want to delete "${displayName}"?`)) {
             try {
                 await storage.deleteDrawing(fileId);
+                void removeDocThumbnail(fileId);
                 fetchFiles();
                 showToast(`Deleted "${displayName}"`, 'success');
             } catch (err) {
@@ -149,11 +155,11 @@ const FileOpenDialog: Component<FileOpenDialogProps> = (props) => {
                         <Show when={!loading() && files().length === 0}>
                             <div class="empty">No saved drawings found.</div>
                         </Show>
-                        <div class="file-list">
+                        <div class="file-grid">
                             <For each={files()}>
                                 {(file) => (
                                     <div
-                                        class={`file-item ${activeId() === file.id ? 'active' : ''}`}
+                                        class={`file-item file-card ${activeId() === file.id ? 'active' : ''}`}
                                         onClick={() => props.onSelect(file.id)}
                                         onMouseEnter={() => {
                                             if (!isKeyboardNavigating()) {
@@ -161,13 +167,17 @@ const FileOpenDialog: Component<FileOpenDialogProps> = (props) => {
                                             }
                                         }}
                                     >
-                                        <div style={{ display: 'flex', "align-items": 'center', gap: '8px', flex: 1 }}>
-                                            <FileText size={16} />
-                                            <span>{file.name}</span>
+                                        <div class="file-card-preview">
+                                            <Show when={file.thumb} fallback={<FileText size={28} />}>
+                                                <img src={file.thumb} alt={file.name} loading="lazy" />
+                                            </Show>
                                         </div>
-                                        <button class="delete-file-btn" onClick={(e) => handleDelete(file.id, e)} title="Delete">
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div class="file-card-row">
+                                            <span class="file-card-name" title={file.name}>{file.name}</span>
+                                            <button class="delete-file-btn" onClick={(e) => handleDelete(file.id, e)} title="Delete">
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </For>

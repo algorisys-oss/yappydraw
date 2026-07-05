@@ -19,6 +19,7 @@ import { drawingId, setDrawingId } from '../components/menu';
 import { showToast } from '../components/toast';
 import type { SlideDocument } from '../types/slide-types';
 import { idbGet, idbSet, idbDelete } from './idb-kv';
+import { maybeSnapshotVersion } from './version-history';
 
 const AUTOSAVE_KEY = 'yappy:autosave';
 const META_KEY = 'yappy:autosave:meta';
@@ -163,34 +164,38 @@ function scheduleAutoSave(): void {
     debounceTimer = window.setTimeout(performAutoSave, DEBOUNCE_MS);
 }
 
+/** Snapshot the live store into a full SlideDocument v4 (deep-copied). */
+export function buildCurrentDocument(): SlideDocument {
+    // Sync canvas background/dimensions into slides array
+    saveActiveSlide();
+    return {
+        version: 4,
+        metadata: {
+            name: drawingId(),
+            updatedAt: new Date().toISOString(),
+            docType: store.docType,
+        },
+        elements: JSON.parse(JSON.stringify(store.elements ?? [])),
+        layers: JSON.parse(JSON.stringify(store.layers ?? [])),
+        slides: JSON.parse(JSON.stringify(store.slides ?? [])),
+        globalSettings: JSON.parse(JSON.stringify(store.globalSettings ?? {})),
+        gridSettings: JSON.parse(JSON.stringify(store.gridSettings ?? {})),
+        states: JSON.parse(JSON.stringify(store.states ?? [])),
+        symbols: JSON.parse(JSON.stringify(store.symbols ?? [])),
+        graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles ?? [])),
+        swatches: JSON.parse(JSON.stringify(store.swatches ?? [])),
+        patterns: JSON.parse(JSON.stringify(store.patterns ?? [])),
+        artboards: JSON.parse(JSON.stringify(store.artboards ?? [])),
+    };
+}
+
 function performAutoSave(): void {
     // Don't save pristine/empty documents
     if (!store.isDirty) return;
 
     _isSaving = true;
     try {
-        // Sync canvas background/dimensions into slides array
-        saveActiveSlide();
-
-        const slideDoc: SlideDocument = {
-            version: 4,
-            metadata: {
-                name: drawingId(),
-                updatedAt: new Date().toISOString(),
-                docType: store.docType,
-            },
-            elements: JSON.parse(JSON.stringify(store.elements ?? [])),
-            layers: JSON.parse(JSON.stringify(store.layers ?? [])),
-            slides: JSON.parse(JSON.stringify(store.slides ?? [])),
-            globalSettings: JSON.parse(JSON.stringify(store.globalSettings ?? {})),
-            gridSettings: JSON.parse(JSON.stringify(store.gridSettings ?? {})),
-            states: JSON.parse(JSON.stringify(store.states ?? [])),
-            symbols: JSON.parse(JSON.stringify(store.symbols ?? [])),
-            graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles ?? [])),
-            swatches: JSON.parse(JSON.stringify(store.swatches ?? [])),
-            patterns: JSON.parse(JSON.stringify(store.patterns ?? [])),
-            artboards: JSON.parse(JSON.stringify(store.artboards ?? [])),
-        };
+        const slideDoc = buildCurrentDocument();
 
         const json = JSON.stringify(slideDoc);
         const sizeBytes = new Blob([json]).size;
@@ -201,6 +206,13 @@ function performAutoSave(): void {
 
         // Primary store: IndexedDB (async, effectively unlimited)
         void idbSet(AUTOSAVE_KEY, json);
+        // Version history: throttled snapshot (3-min interval, ring of 15)
+        void maybeSnapshotVersion(json, {
+            name: drawingId(),
+            docType: store.docType,
+            elementCount: store.elements.length,
+            pageCount: store.slides.length,
+        });
         // Synchronous localStorage copy while small — survives an immediate
         // tab close where the async IDB write may not complete.
         try {

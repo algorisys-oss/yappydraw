@@ -208,6 +208,150 @@ async function applyAlphaMask(originalURL: string, aiURL: string): Promise<strin
     }
 }
 
+/** POST to OpenAI images/edits; returns the b64 result or an error string. */
+async function postImageEdit(form: FormData, apiKey: string): Promise<{ b64: string | null; error?: string }> {
+    try {
+        const res = await fetch('https://api.openai.com/v1/images/edits', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${apiKey}` },
+            body: form,
+        });
+        if (!res.ok) {
+            const errText = await res.text().catch(() => '');
+            let detail = '';
+            try { detail = JSON.parse(errText).error?.message || ''; } catch { detail = errText.slice(0, 200); }
+            return { b64: null, error: `OpenAI image edit error ${res.status}: ${detail}` };
+        }
+        const data = await res.json();
+        const b64 = data.data?.[0]?.b64_json;
+        return b64 ? { b64 } : { b64: null, error: 'OpenAI returned no image data' };
+    } catch (err: any) {
+        return { b64: null, error: `Network error calling OpenAI Images: ${err?.message || err}` };
+    }
+}
+
+/**
+ * Magic Edit — repaint the selected image per a natural-language instruction
+ * (e.g. "remove the person on the left", "make the sky sunset orange").
+ * Replaces the element's image in place. Returns true on success.
+ */
+export async function magicEditImage(id?: string, instruction?: string): Promise<boolean> {
+    const targetId = id || store.selection[0];
+    const el = store.elements.find(e => e.id === targetId);
+    if (!el || el.type !== 'image' || !el.dataURL) {
+        showToast('Select an image element first', 'info');
+        return false;
+    }
+    if (!instruction?.trim()) {
+        showToast('Describe the change first', 'info');
+        return false;
+    }
+    const apiKey = getApiKey('openai');
+    if (!apiKey) {
+        showToast('Add an OpenAI API key in AI Settings first', 'error');
+        return false;
+    }
+
+    showToast('Magic Edit…', 'info');
+    const blob = await (await fetch(el.dataURL)).blob();
+    const form = new FormData();
+    form.append('model', 'gpt-image-1');
+    form.append('image', new File([blob], 'image.png', { type: blob.type || 'image/png' }));
+    form.append('prompt',
+        `${instruction.trim()}. Apply ONLY this change — keep everything else in the image ` +
+        'pixel-identical to the input: same composition, colors, style, and framing.');
+    form.append('size', 'auto');
+
+    const { b64, error } = await postImageEdit(form, apiKey);
+    if (!b64) {
+        showToast(error || 'Magic Edit failed', 'error');
+        return false;
+    }
+    pushToHistory();
+    updateElement(el.id, { dataURL: `data:image/png;base64,${b64}` });
+    showToast('Magic Edit applied', 'success');
+    return true;
+}
+
+export interface ExpandImageOptions {
+    /** Margins to add, as fractions of the source image size (default 0.25 each). */
+    left?: number; right?: number; top?: number; bottom?: number;
+    /** Optional guidance for what the extended areas should contain. */
+    prompt?: string;
+}
+
+/**
+ * Magic Expand — outpaint the selected image: the source is placed on a larger
+ * transparent canvas and the AI fills the new margins seamlessly. The element
+ * grows by the same margins so the original subject stays put on the page.
+ */
+export async function expandImage(id?: string, opts: ExpandImageOptions = {}): Promise<boolean> {
+    const targetId = id || store.selection[0];
+    const el = store.elements.find(e => e.id === targetId);
+    if (!el || el.type !== 'image' || !el.dataURL) {
+        showToast('Select an image element first', 'info');
+        return false;
+    }
+    const apiKey = getApiKey('openai');
+    if (!apiKey) {
+        showToast('Add an OpenAI API key in AI Settings first', 'error');
+        return false;
+    }
+
+    const left = Math.max(0, opts.left ?? 0.25);
+    const right = Math.max(0, opts.right ?? 0.25);
+    const top = Math.max(0, opts.top ?? 0.25);
+    const bottom = Math.max(0, opts.bottom ?? 0.25);
+    if (left + right + top + bottom === 0) return false;
+
+    showToast('Magic Expand…', 'info');
+    try {
+        const orig = await loadImg(el.dataURL);
+        const ow = orig.naturalWidth, oh = orig.naturalHeight;
+        const nw = Math.round(ow * (1 + left + right));
+        const nh = Math.round(oh * (1 + top + bottom));
+        const canvas = document.createElement('canvas');
+        canvas.width = nw; canvas.height = nh;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return false;
+        ctx.drawImage(orig, Math.round(ow * left), Math.round(oh * top));
+        const paddedBlob: Blob = await new Promise((resolve, reject) =>
+            canvas.toBlob(b => b ? resolve(b) : reject(new Error('canvas.toBlob failed')), 'image/png'));
+
+        const form = new FormData();
+        form.append('model', 'gpt-image-1');
+        form.append('image', new File([paddedBlob], 'image.png', { type: 'image/png' }));
+        // The padded canvas doubles as the mask: its transparent margins are
+        // exactly the regions to generate.
+        form.append('mask', new File([paddedBlob], 'mask.png', { type: 'image/png' }));
+        form.append('prompt',
+            (opts.prompt?.trim() ? `${opts.prompt.trim()}. ` : '') +
+            'Extend the existing image seamlessly into the transparent areas, continuing its ' +
+            'scene, lighting, style, and perspective. Keep the original (non-transparent) pixels unchanged.');
+        form.append('size', 'auto');
+
+        const { b64, error } = await postImageEdit(form, apiKey);
+        if (!b64) {
+            showToast(error || 'Magic Expand failed', 'error');
+            return false;
+        }
+
+        pushToHistory();
+        updateElement(el.id, {
+            dataURL: `data:image/png;base64,${b64}`,
+            x: el.x - el.width * left,
+            y: el.y - el.height * top,
+            width: el.width * (1 + left + right),
+            height: el.height * (1 + top + bottom),
+        });
+        showToast('Magic Expand applied', 'success');
+        return true;
+    } catch (err: any) {
+        showToast(`Magic Expand failed: ${err?.message || err}`, 'error');
+        return false;
+    }
+}
+
 export interface RemoveBackgroundOptions {
     /**
      * Keep the original pixels and use the AI result only as an alpha mask

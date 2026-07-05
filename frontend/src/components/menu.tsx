@@ -25,6 +25,7 @@ const FileOpenDialog = lazy(() => import("./file-open-dialog"));
 const ExportDialog = lazy(() => import("./export-dialog"));
 const SaveDialog = lazy(() => import("./save-dialog"));
 const TemplateBrowser = lazy(() => import("./template-browser"));
+const VersionHistoryDialog = lazy(() => import("./version-history-dialog"));
 const CloudStorageDialogLazy = lazy(() => import("./cloud-storage-dialog").then(m => ({ default: m.CloudStorageDialog as any })));
 const DSLImportDialog = lazy(() => import("./dsl-import-dialog"));
 const UnsavedChangesDialog = lazy(() => import("./unsaved-changes-dialog"));
@@ -102,6 +103,8 @@ const Menu: Component = () => {
     sharedSetSaveIntent = setSaveIntent;
     const [isTemplateBrowserOpen, setIsTemplateBrowserOpen] = createSignal(false);
     const [isDesignSizeOpen, setIsDesignSizeOpen] = createSignal(false);
+    const [isMagicResizeOpen, setIsMagicResizeOpen] = createSignal(false);
+    const [isVersionHistoryOpen, setIsVersionHistoryOpen] = createSignal(false);
 
     const handleUnsavedCancel = () => {
         pendingUnsavedAction = null;
@@ -179,6 +182,7 @@ const Menu: Component = () => {
                 }
                 await storage.saveDrawing(filename, slideDoc);
                 clearAutoSave();
+                void import('../storage/doc-thumbnails').then(m => m.setDocThumbnail(filename));
                 showToast(`Drawing saved successfully!`, 'success');
             } else {
                 const jsonString = JSON.stringify(slideDoc, null, 2);
@@ -648,6 +652,23 @@ const Menu: Component = () => {
                     onPick={(size) => handleNew('design', size, () => setIsTemplateBrowserOpen(true))}
                 />
 
+                <VersionHistoryDialog
+                    isOpen={isVersionHistoryOpen()}
+                    onClose={() => setIsVersionHistoryOpen(false)}
+                />
+
+                <DesignSizeDialog
+                    title="Magic Resize"
+                    isOpen={isMagicResizeOpen()}
+                    onClose={() => setIsMagicResizeOpen(false)}
+                    onPick={(size) => {
+                        import('../utils/magic-resize').then(m => {
+                            const ok = m.magicResize(size.width, size.height);
+                            showToast(ok ? `Resized to ${size.width}×${size.height}` : 'Magic Resize needs a paged document', ok ? 'success' : 'error');
+                        });
+                    }}
+                />
+
                 <DSLImportDialog
                     isOpen={isDSLImportOpen()}
                     onClose={() => { setIsDSLImportOpen(false); setDslImportInitialText(''); }}
@@ -721,6 +742,12 @@ const Menu: Component = () => {
                                         <Layout size={16} />
                                         <span class="label">New Design…</span>
                                     </button>
+                                    <Show when={isPagedDocType(store.docType)}>
+                                        <button class="menu-item" onClick={() => { setIsMagicResizeOpen(true); setIsMenuOpen(false); }}>
+                                            <Maximize size={16} />
+                                            <span class="label">Magic Resize…</span>
+                                        </button>
+                                    </Show>
                                     <button class="menu-item" onClick={() => { setIsTemplateBrowserOpen(true); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
                                         <span class="label">Templates</span>
@@ -742,6 +769,14 @@ const Menu: Component = () => {
                                     <button class="menu-item" onClick={() => { setIsAISlidesOpen(true); setIsMenuOpen(false); }}>
                                         <Sparkles size={16} />
                                         <span class="label">AI Presentation</span>
+                                    </button>
+                                    <button class="menu-item" onClick={() => {
+                                        setIsMenuOpen(false);
+                                        const brief = prompt('Describe the design (e.g. "sale poster for a coffee shop, warm tones"):');
+                                        if (brief) import('../ai/design-generator').then(m => m.generateDesign(brief));
+                                    }}>
+                                        <Sparkles size={16} />
+                                        <span class="label">AI Design…</span>
                                     </button>
                                     <button class="menu-item" onClick={() => {
                                         setIsMenuOpen(false);
@@ -772,6 +807,10 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+Shift+E</span>
                                         </div>
+                                    </button>
+                                    <button class="menu-item" onClick={() => { setIsVersionHistoryOpen(true); setIsMenuOpen(false); }}>
+                                        <History size={16} />
+                                        <span class="label">Version History…</span>
                                     </button>
                                     <div class="menu-separator"></div>
                                     <div class="menu-item" onClick={() => { toggleTimelapse(); setIsMenuOpen(false); }}>

@@ -31,6 +31,7 @@ import {
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
 import { PAGE_SIZE_PRESETS, getPagePreset } from "./config/page-size-presets";
+import { magicResize } from "./utils/magic-resize";
 import { templateRegistry, getTemplateById, getTemplatesByCategory, searchTemplates, refreshUserTemplates } from "./templates/registry";
 import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
 import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
@@ -2078,6 +2079,15 @@ export const YappyAPI = {
     },
     /** Resize pages in a design document (all pages by default). */
     setPageSize(width: number, height: number, applyAll: boolean = true) { setPageSize(width, height, applyAll); },
+    /** Magic Resize: repurpose the design to another size — page backgrounds
+     *  stretch to fill, everything else scales uniformly (fonts included) and
+     *  keeps its relative position. Pass a preset id (e.g. 'instagram-story')
+     *  or {width, height}. */
+    magicResize(size: string | { width: number, height: number }): boolean {
+        const resolved = typeof size === 'string' ? getPagePreset(size) : size;
+        if (!resolved) return false;
+        return magicResize(resolved.width, resolved.height);
+    },
     /** List available page-size presets for design documents. */
     getPageSizePresets() { return PAGE_SIZE_PRESETS.map(p => ({ ...p })); },
     /** Export one page/slide to PNG (or JPG) at exact page bounds. Returns the data URL. */
@@ -2089,6 +2099,26 @@ export const YappyAPI = {
     detachBackgroundImage(pageIndex?: number) {
         return detachSlideBackgroundImage(pageIndex ?? store.activeSlideIndex);
     },
+
+    // Version history (local IndexedDB snapshots)
+    /** List saved version snapshots (newest first, metadata only). */
+    async listVersions() { const m = await import('./storage/version-history'); return m.listVersions(); },
+    /** Record a version snapshot of the current document immediately. */
+    async snapshotVersion(label?: string) {
+        const m = await import('./storage/version-history');
+        const a = await import('./storage/auto-save');
+        const doc = a.buildCurrentDocument();
+        return m.snapshotVersionNow(JSON.stringify(doc), {
+            name: doc.metadata?.name || 'Untitled',
+            docType: store.docType,
+            elementCount: store.elements.length,
+            pageCount: store.slides.length,
+        }, label);
+    },
+    /** Restore a version snapshot by id (replaces the current document; undoable via reload of prior autosave). */
+    async restoreVersion(id: string) { const m = await import('./storage/version-history'); return m.restoreVersion(id); },
+    /** Delete a version snapshot by id. */
+    async deleteVersion(id: string) { const m = await import('./storage/version-history'); return m.deleteVersion(id); },
 
     // Templates
     /** List template metadata, optionally filtered by category (e.g. 'designs', 'my-templates'). */
@@ -2185,6 +2215,26 @@ export const YappyAPI = {
     async removeBackground(id?: string, opts?: { preserveOriginal?: boolean }) {
         const m = await import('./ai/canva-ai');
         return m.removeBackground(id, opts);
+    },
+    /** Generate a full design document from a text brief (any LLM provider):
+     *  headline, subhead, bullets, CTA and palette laid out proportionally.
+     *  Pass a preset id or {width, height} (default 1080×1080). */
+    async generateDesign(promptText: string, size?: string | { width: number, height: number }) {
+        const m = await import('./ai/design-generator');
+        const resolved = typeof size === 'string' ? getPagePreset(size) : size;
+        return m.generateDesign(promptText, resolved ? { width: resolved.width, height: resolved.height } : undefined);
+    },
+    /** Magic Edit: repaint the selected (or given) image per an instruction, e.g.
+     *  "remove the person on the left" (OpenAI image edits). */
+    async magicEditImage(instruction: string, id?: string) {
+        const m = await import('./ai/canva-ai');
+        return m.magicEditImage(id, instruction);
+    },
+    /** Magic Expand: outpaint the selected (or given) image — margins are fractions
+     *  of the source size (default 0.25 each side). The element grows to match. */
+    async expandImage(opts?: { left?: number; right?: number; top?: number; bottom?: number; prompt?: string }, id?: string) {
+        const m = await import('./ai/canva-ai');
+        return m.expandImage(id, opts);
     },
 
     // Font pairings

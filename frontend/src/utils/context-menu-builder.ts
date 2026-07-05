@@ -1126,9 +1126,30 @@ export function getContextMenuItems(
             });
         }
         if (store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'image')) {
+            const firstImageId = () => store.selection.find(id => store.elements.find(e => e.id === id)?.type === 'image');
             items.push({
                 label: 'Remove Background (AI)', icon: '✦',
-                onClick: () => { import('../ai/canva-ai').then(m => m.removeBackground(store.selection.find(id => store.elements.find(e => e.id === id)?.type === 'image'))); },
+                onClick: () => { import('../ai/canva-ai').then(m => m.removeBackground(firstImageId())); },
+            });
+            items.push({
+                label: 'Magic Edit (AI)…', icon: '✦',
+                onClick: () => {
+                    const instruction = prompt('Describe the change (e.g. "remove the person on the left"):');
+                    if (instruction) import('../ai/canva-ai').then(m => m.magicEditImage(firstImageId(), instruction));
+                },
+            });
+            items.push({
+                label: 'Magic Expand (AI)', icon: '✦', submenu: [
+                    { label: 'All sides +25%', onClick: () => { import('../ai/canva-ai').then(m => m.expandImage(firstImageId())); } },
+                    { label: 'Wider (+50% left & right)', onClick: () => { import('../ai/canva-ai').then(m => m.expandImage(firstImageId(), { left: 0.5, right: 0.5, top: 0, bottom: 0 })); } },
+                    { label: 'Taller (+50% top & bottom)', onClick: () => { import('../ai/canva-ai').then(m => m.expandImage(firstImageId(), { left: 0, right: 0, top: 0.5, bottom: 0.5 })); } },
+                    {
+                        label: 'Custom…', onClick: () => {
+                            const guidance = prompt('What should the extended areas contain? (optional)') || undefined;
+                            import('../ai/canva-ai').then(m => m.expandImage(firstImageId(), { prompt: guidance }));
+                        },
+                    },
+                ],
             });
         }
 

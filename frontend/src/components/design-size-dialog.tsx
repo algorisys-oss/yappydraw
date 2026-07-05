@@ -9,6 +9,8 @@ export interface DesignSizeDialogProps {
     onClose: () => void;
     /** Called with the chosen page size; the caller creates the document. */
     onPick: (size: { width: number, height: number }) => void;
+    /** Dialog heading; defaults to "New Design" (also used for Magic Resize). */
+    title?: string;
 }
 
 /**
@@ -47,7 +49,7 @@ const DesignSizeDialog: Component<DesignSizeDialogProps> = (props) => {
                     onKeyDown={(e) => { if (e.key === 'Escape') props.onClose(); }}>
                     <div class="dsd-modal" onClick={(e) => e.stopPropagation()}>
                         <div class="dsd-header">
-                            <h2>New Design</h2>
+                            <h2>{props.title || 'New Design'}</h2>
                             <button class="dsd-close" type="button" onClick={props.onClose}><X size={18} /></button>
                         </div>
                         <div class="dsd-body">

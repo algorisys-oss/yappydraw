@@ -157,19 +157,82 @@ Y.applyTextEffect('neon');          // applies to selection`}</code></pre>
                         shorten, expand, fix grammar, or a custom instruction.</li>
                     <li><strong>AI Image</strong> — Menu → AI Image…: describe an image, it's generated and
                         inserted on the active page.</li>
+                    <li><strong>AI Design</strong> — Menu → AI Design…: describe the design ("sale poster for a
+                        coffee shop, warm tones") and a ready-to-edit design document is generated — headline,
+                        subhead, bullets, CTA pill, and a matching palette, laid out for the chosen size. Works
+                        with any configured text provider. <code>Y.generateDesign(brief, 'instagram-post')</code></li>
                     <li><strong>Remove Background</strong> — right-click an image → Remove Background (AI):
                         replaces it with a transparent-background version. Your original pixels are preserved —
                         the AI result is used only as a transparency mask, so the subject is never restyled
                         (pass <code>{'{preserveOriginal: false}'}</code> via the API to take the AI's
                         regenerated image instead).</li>
+                    <li><strong>Magic Edit</strong> — right-click an image → Magic Edit (AI)…: describe a change
+                        ("remove the person on the left") and only that region is repainted.
+                        <code>Y.magicEditImage('remove the car')</code></li>
+                    <li><strong>Magic Expand</strong> — right-click an image → Magic Expand (AI): outpaint the
+                        photo beyond its borders (all sides +25%, wider, taller, or custom guidance). The element
+                        grows by the same margins so the subject stays put.
+                        <code>{'Y.expandImage({ left: 0.5, right: 0.5 })'}</code></li>
                 </ul>
                 <pre><code>{`await Y.magicWrite('shorten');
 await Y.generateImage('isometric rocket illustration');
-await Y.removeBackground();          // selected image`}</code></pre>
+await Y.generateDesign('launch poster for a coffee brand');
+await Y.removeBackground();          // selected image
+await Y.magicEditImage('make the sky sunset orange');
+await Y.expandImage();               // +25% all sides`}</code></pre>
                 <p class="tip-box">
                     Documents, saved templates, and brand kits are stored in <strong>IndexedDB</strong> (works in
                     all modern browsers, including iOS Safari), so large designs with photos and logos are not
                     limited by the old ~5&nbsp;MB localStorage quota.
+                </p>
+            </section>
+
+            <section class="doc-section">
+                <h2>Magic Resize</h2>
+                <p>
+                    <strong>Menu → Magic Resize…</strong> repurposes the whole document to another format in one
+                    step — design an Instagram post, resize to a story, poster, or banner. Page backgrounds
+                    stretch to fill the new size; every other element scales <em>uniformly</em> (nothing distorts,
+                    font sizes included) and keeps its relative position on the page. All pages resize together,
+                    and it's one undo step.
+                </p>
+                <pre><code>{`Y.magicResize('instagram-story');       // preset id …
+Y.magicResize({ width: 1200, height: 628 }); // … or explicit size`}</code></pre>
+            </section>
+
+            <section class="doc-section">
+                <h2>Version history & recents</h2>
+                <p>
+                    <strong>Menu → Version History…</strong> lists automatic snapshots of your document (about
+                    every 3 minutes while editing; newest 15 kept, stored locally in IndexedDB). Click one to
+                    restore it, or use <strong>Snapshot now</strong> before a risky change. The
+                    <strong> Open Drawing</strong> dialog shows saved documents as a thumbnail grid, most recently
+                    saved first.
+                </p>
+                <pre><code>{`await Y.snapshotVersion('before rebrand');
+await Y.listVersions();
+await Y.restoreVersion(id);`}</code></pre>
+            </section>
+
+            <section class="doc-section">
+                <h2>Lists & rich text</h2>
+                <p>
+                    Rich-text elements (the <strong>Rich Text</strong> tool) get a mini toolbar while editing:
+                    bold/italic/underline/strikethrough, text color, font, and <strong>bullet / numbered
+                    lists</strong> — Enter adds the next item, Tab indents nested levels. Pasting a bulleted
+                    outline from another app converts to list formatting automatically.
+                </p>
+            </section>
+
+            <section class="doc-section">
+                <h2>Install & offline (PWA)</h2>
+                <p>
+                    Yappy is an installable web app: use your browser's <strong>Install</strong> action to add it
+                    to the desktop / home screen. After the first visit everything needed to run is cached, so
+                    Yappy <strong>cold-loads and works fully offline</strong> — drawing, design documents,
+                    templates, autosave, version history, and export. Online-only features (AI, stock photos,
+                    Google Fonts not yet used, Google Drive) resume when you're back on the network; display
+                    fonts you've already used are cached for offline reuse.
                 </p>
             </section>
         </div>

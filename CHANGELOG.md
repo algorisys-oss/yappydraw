@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.32] - 2026-07-05
+
+### Added
+- **Magic Resize** — Menu → Magic Resize… (or `Y.magicResize('instagram-story')`) repurposes the whole design to another format in one step: page backgrounds stretch to fill, everything else scales uniformly (fonts included) and keeps its relative page position. Single undo step, all pages together.
+- **Installable PWA with full offline support** — service worker (vite-plugin-pwa/workbox) precaches the app shell (~9 MB, 152 entries), so Yappy cold-loads and works with no network after the first visit; Google Fonts are runtime-cached for offline reuse. Verified with an automated offline cold-load check against the production build.
+- **Version history** — automatic local snapshots every ~3 minutes while editing (newest 15, IndexedDB), plus manual "Snapshot now"; Menu → Version History… lists and restores them (`Y.snapshotVersion/listVersions/restoreVersion/deleteVersion`).
+- **Recents grid** — the Open Drawing dialog is now a thumbnail grid sorted by most recently saved (thumbnails cached client-side at save time).
+- **Magic Edit (AI)** — right-click an image → describe a change ("remove the person on the left") and the image is repainted via OpenAI image edits (`Y.magicEditImage(instruction)`).
+- **Magic Expand (AI)** — outpaint an image beyond its borders (+25% all sides, wider, taller, or custom guidance); the element grows by the same margins so the subject stays in place (`Y.expandImage({left, right, top, bottom, prompt})`).
+- **AI Design generation** — Menu → AI Design… turns a text brief into a ready-to-edit design document (headline, subhead, bullets, CTA pill, harmonious palette) laid out proportionally for any page size; works with any configured LLM provider (`Y.generateDesign(brief, sizeOrPreset)`).
+
+### Changed
+- Design-studio help doc covers Magic Resize, version history/recents, Magic Edit/Expand, AI Design, rich-text bullet/numbered lists, and PWA install/offline; Help search keywords updated for all of it.
+
+### Fixed
+- **Google Fonts picker: hover contrast + keyboard navigation (user-reported)** — the Done button now keeps AA contrast on hover in light and dark themes (fixed indigo instead of a brightness filter over the theme accent), and the list supports ↑/↓ arrow navigation from the search box with Enter applying the focused font (panel stays open, rows scroll into view, hover syncs the focus).
+
+- Files: `frontend/src/utils/magic-resize.ts`, `frontend/src/storage/{version-history,doc-thumbnails,auto-save}.ts`, `frontend/src/components/{version-history-dialog.tsx,version-history-dialog.css,file-open-dialog.tsx,file-open-dialog.css,menu.tsx,design-size-dialog.tsx}`, `frontend/src/ai/{canva-ai.ts,design-generator.ts}`, `frontend/src/utils/context-menu-builder.ts`, `frontend/src/api.ts`, `vite.config.ts`, `frontend/public/pwa-{192,512}.png`, tests `canva-next.spec.ts`
+
 ## [0.5.31] - 2026-07-05
 
 ### Added
