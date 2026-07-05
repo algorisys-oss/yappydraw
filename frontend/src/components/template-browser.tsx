@@ -1,7 +1,8 @@
-import { type Component, createSignal, createMemo, For, Show } from 'solid-js';
-import { getActiveCategories, getTemplatesByCategory, refreshUserTemplates } from '../templates/registry';
+import { type Component, createSignal, createMemo, createEffect, on, For, Show } from 'solid-js';
+import { getActiveCategories, getTemplatesByCategory, searchTemplates, refreshUserTemplates } from '../templates/registry';
 import { saveCurrentAsTemplate, deleteUserTemplate } from '../templates/user-templates';
 import { showToast } from './toast';
+import { store } from '../store/app-store';
 import type { Template, TemplateCategory, PresentationTemplate, DesignTemplate } from '../types/template-types';
 import './template-browser.css';
 
@@ -30,11 +31,51 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
     // Bumped after save/delete so categories and templates recompute
     const [version, setVersion] = createSignal(0);
     const categories = createMemo(() => { version(); return getActiveCategories(); });
+    // Design documents open on the Designs category — its templates match the workflow
     const [selectedCategory, setSelectedCategory] = createSignal<TemplateCategory>(
-        getActiveCategories()[0]?.id || 'diagrams'
+        store.docType === 'design' && getActiveCategories().some(c => c.id === 'designs')
+            ? 'designs'
+            : (getActiveCategories()[0]?.id || 'diagrams')
     );
+    const [search, setSearch] = createSignal('');
 
-    const templates = createMemo(() => { version(); return getTemplatesByCategory(selectedCategory()); });
+    // Each time the browser opens: fresh search, and design docs land on Designs
+    createEffect(on(() => props.isOpen, (open) => {
+        if (!open) return;
+        setSearch('');
+        if (store.docType === 'design' && getActiveCategories().some(c => c.id === 'designs')) {
+            setSelectedCategory('designs');
+        }
+    }, { defer: true }));
+
+    /** Current design-page size, used to suggest templates that fit. */
+    const currentPageSize = (): { width: number; height: number } | null => {
+        if (store.docType !== 'design') return null;
+        const s = store.slides[store.activeSlideIndex] || store.slides[0];
+        return s ? { width: s.dimensions.width, height: s.dimensions.height } : null;
+    };
+
+    /** 'exact' = same pixel size, 'ratio' = same aspect ratio, null = no match. */
+    const sizeMatch = (t: Template): 'exact' | 'ratio' | null => {
+        const ps = currentPageSize();
+        if (!ps) return null;
+        const pageSize = (t as any).pageSize as { width: number; height: number } | undefined;
+        if (!pageSize) return null;
+        if (pageSize.width === ps.width && pageSize.height === ps.height) return 'exact';
+        return Math.abs(pageSize.width / pageSize.height - ps.width / ps.height) < 0.02 ? 'ratio' : null;
+    };
+
+    const templates = createMemo(() => {
+        version();
+        const q = search().trim();
+        let list = q ? searchTemplates(q) : getTemplatesByCategory(selectedCategory());
+        // In a design doc, float size-matching templates to the top
+        if (currentPageSize()) {
+            const rank = (t: Template) => { const m = sizeMatch(t); return m === 'exact' ? 0 : m === 'ratio' ? 1 : 2; };
+            list = [...list].sort((a, b) => rank(a) - rank(b));
+        }
+        return list;
+    });
 
     const handleSelect = (template: Template) => {
         props.onSelectTemplate(template);
@@ -92,8 +133,21 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
                         </div>
                     </div>
 
-                    {/* Category Tabs — hide when only one category */}
-                    <Show when={categories().length > 1}>
+                    {/* Search across all categories by name, description, or tag */}
+                    <div class="template-search">
+                        <input
+                            type="text"
+                            placeholder="Search templates… (name, tag, or description)"
+                            value={search()}
+                            onInput={(e) => setSearch(e.currentTarget.value)}
+                        />
+                        <Show when={search()}>
+                            <button class="template-search-clear" title="Clear search" onClick={() => setSearch('')}>×</button>
+                        </Show>
+                    </div>
+
+                    {/* Category Tabs — hidden while searching or when only one category */}
+                    <Show when={!search().trim() && categories().length > 1}>
                         <div class="template-categories">
                             <For each={categories()}>
                                 {(category) => (
@@ -148,6 +202,11 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
                                             <div class="template-info">
                                                 <div class="template-name-row">
                                                     <h3 class="template-name">{template.metadata.name}</h3>
+                                                    <Show when={sizeMatch(template)}>
+                                                        <span class="template-fit-badge" title={sizeMatch(template) === 'exact' ? 'Same size as your page' : 'Same aspect ratio as your page'}>
+                                                            ✓ fits
+                                                        </span>
+                                                    </Show>
                                                     <span class="template-slide-badge">{dt.pageSize.width}×{dt.pageSize.height}</span>
                                                 </div>
                                                 <p class="template-description">{template.metadata.description}</p>
@@ -235,7 +294,7 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
 
                     <Show when={templates().length === 0}>
                         <div class="template-empty">
-                            <p>No templates available in this category</p>
+                            <p>{search().trim() ? `No templates match “${search().trim()}”` : 'No templates available in this category'}</p>
                         </div>
                     </Show>
                 </div>

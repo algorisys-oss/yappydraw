@@ -211,7 +211,7 @@ export const exportArtboard = (artboardId: string, scale = 1, download = true): 
  * Export a single page/slide to PNG at exact page bounds (elements clipped,
  * page background rendered). Used by paged docs (slides + design documents).
  */
-export const exportPageToPng = (pageIndex: number, scale = 1, download = true): string | undefined => {
+export const exportPageToPng = (pageIndex: number, scale = 1, download = true, format: 'png' | 'jpeg' = 'png'): string | undefined => {
     const slide = store.slides[pageIndex];
     if (!slide) return undefined;
     const { x: sX, y: sY } = slide.spatialPosition;
@@ -221,6 +221,11 @@ export const exportPageToPng = (pageIndex: number, scale = 1, download = true): 
     canvas.height = Math.max(1, Math.round(sH * scale));
     const ctx = canvas.getContext('2d');
     if (!ctx) return undefined;
+    if (format === 'jpeg') {
+        // JPEG has no transparency — always white background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
     ctx.scale(scale, scale);
     ctx.translate(-sX, -sY);
     ctx.beginPath(); ctx.rect(sX, sY, sW, sH); ctx.clip();
@@ -233,10 +238,11 @@ export const exportPageToPng = (pageIndex: number, scale = 1, download = true): 
         if (!(cx >= sX && cx <= sX + sW && cy >= sY && cy <= sY + sH)) continue;
         try { renderElement(rc, ctx, el); } catch { /* skip */ }
     }
-    const url = canvas.toDataURL('image/png');
+    const ext = format === 'jpeg' ? 'jpg' : 'png';
+    const url = format === 'jpeg' ? canvas.toDataURL('image/jpeg', 0.92) : canvas.toDataURL('image/png');
     if (download) {
         const link = document.createElement('a');
-        link.download = `${slide.name || `page-${pageIndex + 1}`}.png`;
+        link.download = `${slide.name || `page-${pageIndex + 1}`}.${ext}`;
         link.href = url;
         link.click();
     }

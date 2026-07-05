@@ -76,10 +76,11 @@ export const handleSaveRequest = (intent: 'workspace' | 'disk' | 'disk-json') =>
     }
 };
 
-export const handleNew = (docType: 'infinite' | 'slides' | 'design' = 'slides', pageSize?: { width: number, height: number }) => {
+export const handleNew = (docType: 'infinite' | 'slides' | 'design' = 'slides', pageSize?: { width: number, height: number }, after?: () => void) => {
     const proceed = () => {
         resetToNewDocument(docType, pageSize);
         setDrawingId('Untitled');
+        after?.();
     };
 
     if (!store.isDirty) {
@@ -644,7 +645,7 @@ const Menu: Component = () => {
                 <DesignSizeDialog
                     isOpen={isDesignSizeOpen()}
                     onClose={() => setIsDesignSizeOpen(false)}
-                    onPick={(size) => handleNew('design', size)}
+                    onPick={(size) => handleNew('design', size, () => setIsTemplateBrowserOpen(true))}
                 />
 
                 <DSLImportDialog

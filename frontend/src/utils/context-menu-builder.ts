@@ -27,7 +27,7 @@ import {
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
     addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp,
-    zoomToFit, zoomToFitSlide, updateGlobalSettings,
+    zoomToFit, zoomToFitSlide, updateGlobalSettings, detachSlideBackgroundImage, updateSlideBackground,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
 import {
@@ -1132,6 +1132,23 @@ export function getContextMenuItems(
             });
         }
 
+        // Set a selected image as the page background (paged docs); counterpart of
+        // "Detach Image from Background" on the canvas menu.
+        if (isPagedDocType(store.docType) && selectionCount === 1) {
+            const imgEl = store.elements.find(e => e.id === store.selection[0]);
+            if (imgEl?.type === 'image' && imgEl.dataURL && store.activeSlideIndex >= 0) {
+                items.push({
+                    label: 'Set as Page Background', icon: '🖼',
+                    onClick: () => {
+                        pushToHistory();
+                        updateSlideBackground(store.activeSlideIndex, { backgroundImage: imgEl.dataURL, fillStyle: 'image' });
+                        setStore('elements', prev => prev.filter(e => e.id !== imgEl.id));
+                        setStore('selection', []);
+                    },
+                });
+            }
+        }
+
         // Image Trace — vectorize a selected bitmap into a path.
         if (store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'image')) {
             items.push({
@@ -1392,6 +1409,10 @@ export function getContextMenuItems(
                 })(),
             },
             { label: 'Zoom to Fit', shortcut: 'Ctrl+1', onClick: isPagedDocType(store.docType) ? zoomToFitSlide : zoomToFit },
+            ...(isPagedDocType(store.docType) && store.slides[store.activeSlideIndex]?.fillStyle === 'image' && store.slides[store.activeSlideIndex]?.backgroundImage ? [
+                { separator: true } as MenuItem,
+                { label: 'Detach Image from Background', icon: '🖼', onClick: () => detachSlideBackgroundImage() },
+            ] : []),
             { separator: true },
             { label: 'Show Grid', checked: store.gridSettings.enabled, onClick: toggleGrid },
             { label: 'Snap to Grid', checked: store.gridSettings.snapToGrid, onClick: toggleSnapToGrid },

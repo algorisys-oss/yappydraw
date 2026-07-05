@@ -54,7 +54,7 @@ import { registerColorDropCommit } from "../utils/color-drop";
 import { pushStabilizedSample } from "../utils/stroke-stabilizer";
 import { showToast } from "./toast";
 import { hitTestElement } from "../utils/hit-testing";
-import { renderCropOverlay, hitTestCropHandle, applyCropDrag, getCropHandleCursor, finalizeCropRect, type CropHandle } from "../utils/image-crop-utils";
+import { renderCropOverlay, hitTestCropHandle, applyCropDrag, constrainCropToAspect, getCropHandleCursor, finalizeCropRect, type CropHandle } from "../utils/image-crop-utils";
 import { perfMonitor } from "../utils/performance-monitor";
 import { fitShapeToText, fitUmlClassToContent } from "../utils/text-utils";
 import { plainTextToSpans } from "../utils/rich-text-utils";
@@ -1545,7 +1545,10 @@ const Canvas: Component = () => {
                 if (cropDragHandle && cropDragStartRect) {
                     const dx = x - cropDragStartX;
                     const dy = y - cropDragStartY;
-                    const newRect = applyCropDrag(cropDragHandle, cropDragStartRect, dx, dy, cropEl.width, cropEl.height);
+                    let newRect = applyCropDrag(cropDragHandle, cropDragStartRect, dx, dy, cropEl.width, cropEl.height);
+                    if (store.cropAspect) {
+                        newRect = constrainCropToAspect(newRect, cropDragHandle, store.cropAspect, cropEl.width, cropEl.height);
+                    }
                     updateCropRect(newRect);
                     requestAnimationFrame(draw);
                     return;

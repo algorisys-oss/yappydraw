@@ -1,6 +1,6 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
 import { draggablePanel } from '../utils/draggable-panel';
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
 import { pageNoun, setPageSize } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import { customFontOptions, addCustomFontFromFile } from "../utils/custom-fonts";
@@ -1962,6 +1962,42 @@ const PropertyPanel: Component = () => {
                                                             </button>
                                                         </Show>
                                                     </div>
+                                                    {/* Aspect-ratio presets — visible while crop mode is active */}
+                                                    <Show when={(() => {
+                                                        const target = activeTarget();
+                                                        return target?.type === 'element' && store.cropModeElementId === target.data.id;
+                                                    })()}>
+                                                        <div class="control-row" style={{ "margin-top": "6px", gap: "4px", "flex-wrap": "wrap" }}>
+                                                            <For each={[
+                                                                { label: 'Free', ratio: null as number | null },
+                                                                { label: '1:1', ratio: 1 },
+                                                                { label: '4:5', ratio: 4 / 5 },
+                                                                { label: '3:4', ratio: 3 / 4 },
+                                                                { label: '16:9', ratio: 16 / 9 },
+                                                                { label: '9:16', ratio: 9 / 16 },
+                                                            ]}>
+                                                                {(opt) => (
+                                                                    <button
+                                                                        style={{
+                                                                            flex: "1",
+                                                                            "min-width": "38px",
+                                                                            "font-size": "11px",
+                                                                            padding: "4px 6px",
+                                                                            background: store.cropAspect === opt.ratio ? "var(--accent-color, #6366f1)" : "var(--bg-secondary)",
+                                                                            border: "1px solid var(--border-color)",
+                                                                            "border-radius": "4px",
+                                                                            color: store.cropAspect === opt.ratio ? "#fff" : "var(--text-primary)",
+                                                                            cursor: "pointer",
+                                                                        }}
+                                                                        title={opt.ratio === null ? 'Freeform crop' : `Lock crop to ${opt.label}`}
+                                                                        onClick={() => setCropAspect(opt.ratio)}
+                                                                    >
+                                                                        {opt.label}
+                                                                    </button>
+                                                                )}
+                                                            </For>
+                                                        </div>
+                                                    </Show>
                                                 </Show>
                                             </Show>
                                         </div>

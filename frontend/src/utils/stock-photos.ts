@@ -91,9 +91,12 @@ const blobToDataURL = (blob: Blob): Promise<string> => new Promise((resolve, rej
     r.readAsDataURL(blob);
 });
 
+/** MIME type used when dragging a stock photo result onto the canvas. */
+export const STOCK_PHOTO_MIME = 'application/x-yappy-stock-photo';
+
 /** Fetch the photo as a data URL. The sized thumbnail comes first — Commons
  *  originals can be enormous (50MB+), which would bloat the document. */
-async function fetchPhotoData(photo: StockPhoto): Promise<string | null> {
+export async function fetchPhotoData(photo: StockPhoto): Promise<string | null> {
     for (const src of [photo.thumbnail, photo.url]) {
         if (!src) continue;
         try {
@@ -108,12 +111,17 @@ async function fetchPhotoData(photo: StockPhoto): Promise<string | null> {
 }
 
 /**
- * Insert a stock photo centered on the active page. Returns the element id.
+ * Insert a stock photo centered on the active page (or on `at`, a world-space
+ * point — used by drag-and-drop). Returns the element id.
  * The element's `link` points to the source page (attribution).
  */
-export async function insertStockPhoto(photo: StockPhoto): Promise<string | null> {
-    showToast('Adding photo…', 'info');
-    const dataURL = await fetchPhotoData(photo);
+export async function insertStockPhoto(
+    photo: StockPhoto,
+    at?: { x: number; y: number },
+    preloadedDataURL?: string,
+): Promise<string | null> {
+    if (!preloadedDataURL) showToast('Adding photo…', 'info');
+    const dataURL = preloadedDataURL || await fetchPhotoData(photo);
     if (!dataURL) {
         showToast('Could not load that photo — try another', 'error');
         return null;
@@ -123,8 +131,8 @@ export async function insertStockPhoto(photo: StockPhoto): Promise<string | null
     const maxW = page ? page.dimensions.width * 0.6 : 512;
     const scale = Math.min(1, maxW / photo.width);
     const w = Math.round(photo.width * scale), h = Math.round(photo.height * scale);
-    const x = page ? page.spatialPosition.x + (page.dimensions.width - w) / 2 : 120;
-    const y = page ? page.spatialPosition.y + (page.dimensions.height - h) / 2 : 120;
+    const x = at ? at.x - w / 2 : page ? page.spatialPosition.x + (page.dimensions.width - w) / 2 : 120;
+    const y = at ? at.y - h / 2 : page ? page.spatialPosition.y + (page.dimensions.height - h) / 2 : 120;
 
     const el: DrawingElement = {
         id: `image-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,

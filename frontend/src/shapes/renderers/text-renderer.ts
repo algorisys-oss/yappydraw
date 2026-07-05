@@ -129,7 +129,19 @@ export class TextRenderer extends ShapeRenderer {
         // entirely when the fill color is 'transparent' (outline-only text).
         const strokeOn = !!el.textStrokeEnabled && (el.textStrokeWidth ?? 2) > 0;
         const fillOn = textColorRaw !== 'transparent';
+        // Glitch effect: cyan/magenta copies offset either side of the fill
+        // (chromatic aberration). Colors stay fixed in dark mode — they're the look.
+        const glitchOn = el.textEffect === 'glitch' && fillOn;
+        const glitchOffset = Math.max(1.5, fontSize / 14);
         const drawTextLine = (line: string, x: number, y: number) => {
+            if (glitchOn) {
+                const prevFill = renderer.fillStyle;
+                renderer.fillStyle = '#00e5ff';
+                renderer.fillText(line, x - glitchOffset, y);
+                renderer.fillStyle = '#ff2d78';
+                renderer.fillText(line, x + glitchOffset, y);
+                renderer.fillStyle = prevFill;
+            }
             if (strokeOn) {
                 renderer.lineWidth = el.textStrokeWidth ?? 2;
                 renderer.strokeStyle = RenderPipeline.adjustColor(el.textStrokeColor || textColorRaw, isDarkMode);

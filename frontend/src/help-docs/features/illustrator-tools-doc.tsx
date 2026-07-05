@@ -343,8 +343,11 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                         element, pressing <span class="kbd">Esc</span>, or <strong>Done&nbsp;✕</strong>.</li>
                     <li><strong>Custom &amp; Google fonts</strong>: in the Font picker (property panel or the Touch Type
                         dropdown) choose <strong>＋ Add font…</strong> to upload a <code>.ttf/.otf/.woff/.woff2</code>,
-                        or <strong>🔍 Google Fonts…</strong> to search a curated list of popular Google Fonts and add one
-                        by name. Added fonts load immediately, persist across reloads, and work like any built-in font.</li>
+                        or <strong>🔍 Google Fonts…</strong> to search a curated list of popular Google Fonts. The
+                        picker docks to the right with the canvas still visible: each click applies the font to your
+                        selection live (marked <em>✓ applied</em>), so you can try fonts back-to-back and close with
+                        <strong> Done</strong>, <span class="kbd">Esc</span>, or ✕ when happy. Added fonts load
+                        immediately, persist across reloads, and work like any built-in font.</li>
                     <li><strong>Letter spacing</strong>: the <strong>Letter Spacing</strong> property (Text group)
                         tightens or loosens tracking on text elements, <strong>shape labels</strong> and
                         <strong>connector labels</strong> alike, applied through measurement, wrapping, in-place

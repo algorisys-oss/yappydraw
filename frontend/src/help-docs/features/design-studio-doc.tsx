@@ -41,8 +41,16 @@ Y.addSlide();                            // add a page
 Y.setPageSize(1280, 720);                // resize all pages
 Y.exportPageToPng(0, 2);                 // export page 1 at 2x`}</code></pre>
                 <p class="tip-box">
-                    Export dialog → PNG shows a <strong>Current Page Only</strong> option in paged documents —
-                    exact page bounds, page background included. PDF export emits one page per document page.
+                    Export dialog → <strong>PNG and JPG</strong> show a <strong>Current Page Only</strong> option in
+                    paged documents — exact page bounds, page background included (JPG always exports on white).
+                    PDF export emits one page per document page.
+                </p>
+                <p>
+                    <strong>Page backgrounds:</strong> drop an image onto empty canvas to set it as the active
+                    page's background. Right-click a selected image → <strong>Set as Page Background</strong> does
+                    the same; right-click empty canvas → <strong>Detach Image from Background</strong> turns the
+                    background back into a regular image element you can move, crop, and filter.
+                    <code>Y.detachBackgroundImage()</code>
                 </p>
             </section>
 
@@ -51,13 +59,30 @@ Y.exportPageToPng(0, 2);                 // export page 1 at 2x`}</code></pre>
                 <p>
                     <strong>Menu → Templates → Designs</strong> holds ready-made social posts, posters, cards,
                     a resume, certificate, and more — each opens as a design document at its native page size.
+                    A <strong>search box</strong> at the top matches names, descriptions, and tags across every
+                    category. In a design document, templates that <strong>fit your page</strong> (same size or
+                    aspect ratio) float to the top with a green <em>✓ fits</em> badge — and picking a size in
+                    <strong> New Design…</strong> opens the template browser automatically so you can start from
+                    a matching layout (or just close it for a blank page).
                     <strong> Save Current as Template</strong> (in the template browser header) snapshots the whole
                     document into <strong>My Templates</strong>; delete via the × on a card.
                 </p>
                 <pre><code>{`Y.getTemplates('designs');          // list design templates
+Y.searchTemplates('poster');         // search by name/tag/description
 Y.applyTemplate('design-poster-event');
 Y.saveAsTemplate('My layout');       // → My Templates
 Y.deleteUserTemplate(id);`}</code></pre>
+            </section>
+
+            <section class="doc-section">
+                <h2>Cropping images</h2>
+                <p>
+                    Select an image → property panel → <strong>Crop Image</strong> (Enter applies, Escape cancels).
+                    While cropping, <strong>aspect-ratio presets</strong> appear: Free, 1:1, 4:5, 3:4, 16:9, 9:16.
+                    Picking one snaps the crop to the largest centered rect of that ratio and <strong>locks the
+                    ratio while you drag</strong> the handles — Free unlocks. <strong>Reset Crop</strong> restores
+                    the full image.
+                </p>
             </section>
 
             <section class="doc-section">
@@ -81,8 +106,9 @@ Y.applyBrandKit(kit.id, { fonts: false }); // colors only`}</code></pre>
                     <strong>Menu → Elements</strong> opens a three-tab panel:
                 </p>
                 <ul>
-                    <li><strong>Elements</strong> — quick shapes, <strong>frames</strong> (dashed placeholders —
-                        drop a photo onto one to fill it, cover-fit), and a searchable <strong>icon library</strong>
+                    <li><strong>Elements</strong> — quick shapes, <strong>frames</strong> in six shapes
+                        (rectangle, circle, triangle, star, heart, hexagon — dashed placeholders; drop a photo
+                        onto one to fill it, cover-fit), and a searchable <strong>icon library</strong>
                         (Lucide). Icons insert as fully editable vector paths.</li>
                     <li><strong>Fonts</strong> — curated heading/body <strong>font pairings</strong> (Modern,
                         Editorial, Bold Statement…), previewed in their own faces. Clicking a pair refonts every
@@ -90,8 +116,11 @@ Y.applyBrandKit(kit.id, { fonts: false }); // colors only`}</code></pre>
                         default for new text. Google fonts load automatically.
                         <code>Y.applyFontPairing('editorial')</code></li>
                     <li><strong>Photos</strong> — search openly-licensed <strong>stock photos</strong> (Wikimedia
-                        Commons, no API key). Click a result to insert it on the active page; the source link and
-                        attribution are kept on the element.
+                        Commons, no API key), with <strong>All / Landscape / Portrait / Square</strong> orientation
+                        filters. Click a result to insert it on the active page, or <strong>drag it onto the
+                        canvas</strong> — onto a frame or shape to fill it, onto an image to replace it, or onto
+                        empty space to place it at the drop point. The source link and attribution are kept on
+                        the element.
                         <code>Y.searchStockPhotos('mountain')</code> → <code>Y.insertStockPhoto(photo)</code></li>
                 </ul>
                 <p>
@@ -107,8 +136,9 @@ Y.importSvg('<svg …>…</svg>', { targetWidth: 300 });`}</code></pre>
                 <h2>Text effects</h2>
                 <p>
                     Select a text element → property panel → <strong>Text Effect</strong>: Shadow, Lift, Hollow,
-                    Splice, Outline, Echo, Neon, Background — or None to reset. Effects compose shadow, glow,
-                    glyph outline, and highlight attributes, so you can fine-tune afterwards.
+                    Splice, Outline, Echo, Neon, <strong>Glitch</strong> (cyan/magenta chromatic-aberration copies),
+                    Background — or None to reset. Effects compose shadow, glow, glyph outline, and highlight
+                    attributes, so you can fine-tune afterwards.
                 </p>
                 <pre><code>{`Y.getTextEffectPresets();
 Y.applyTextEffect('neon');          // applies to selection`}</code></pre>

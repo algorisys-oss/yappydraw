@@ -12,6 +12,7 @@ import { hitTestElement } from '../hit-testing';
 import { screenToWorld } from '../viewport-transforms';
 import { calculateUmlClassLayout, calculateUml2SectionLayout } from '../uml-layout-utils';
 import { IMAGE_FILL_EXCLUDED } from '../../config/properties';
+import { STOCK_PHOTO_MIME, fetchPhotoData, insertStockPhoto, type StockPhoto } from '../stock-photos';
 import type { IRenderer } from '../../rendering/IRenderer';
 
 /**
@@ -50,6 +51,23 @@ export async function handleDrop(e: DragEvent, ctx: CanvasEventContext): Promise
     e.preventDefault();
     e.stopPropagation();
 
+    // Stock-photo drag from the Elements panel: fill the shape/image under the
+    // pointer, or insert a new image element at the drop point on a miss.
+    const stockJson = dt?.getData(STOCK_PHOTO_MIME);
+    if (stockJson) {
+        try {
+            const photo = JSON.parse(stockJson) as StockPhoto;
+            const dataURL = await fetchPhotoData(photo);
+            if (!dataURL) return;
+            const applied = applyAssetAtClientPoint(e.clientX, e.clientY, dataURL, ctx, { onMiss: 'skip' });
+            if (!applied) {
+                const { x, y } = ctx.getWorldCoordinates(e.clientX, e.clientY);
+                await insertStockPhoto(photo, { x, y }, dataURL);
+            }
+        } catch { /* malformed drag payload — ignore */ }
+        return;
+    }
+
     const data = e.dataTransfer?.getData('text/plain');
     if (!data) return;
     applyAssetAtClientPoint(e.clientX, e.clientY, data, ctx);
@@ -66,6 +84,7 @@ export function applyAssetAtClientPoint(
     clientY: number,
     data: string,
     ctx: CanvasEventContext,
+    opts?: { onMiss?: 'background' | 'skip' },
 ): boolean {
     // Loosened color detection to be very inclusive for various color strings
     const isColor = data.startsWith('color(') ||
@@ -126,6 +145,8 @@ export function applyAssetAtClientPoint(
                 updateElement(hitId, { fillStyle: 'image', backgroundImage: data });
             }
         }
+    } else if (opts?.onMiss === 'skip') {
+        return false;
     } else if (isPagedDocType(store.docType)) {
         // Drop anywhere on the canvas (even outside slide bounds) updates the ACTIVE slide background
         const activeSlideIndex = store.activeSlideIndex;

@@ -105,6 +105,12 @@ export const TEXT_EFFECT_PRESETS: TextEffectPreset[] = [
         }),
     },
     {
+        id: 'glitch', name: 'Glitch',
+        // Chromatic-aberration copies are drawn by the text renderer when
+        // textEffect === 'glitch'; no shadow/stroke attributes needed.
+        patch: (el) => ({ ...RESET, ...restoreFill(el), textEffect: 'glitch' }),
+    },
+    {
         id: 'background', name: 'Background',
         patch: (el) => ({
             ...RESET, ...restoreFill(el),

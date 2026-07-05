@@ -62,6 +62,60 @@
     color: var(--text-primary);
 }
 
+/* Search box */
+.template-search {
+    position: relative;
+    margin: 12px 24px 0;
+}
+
+.template-search input {
+    width: 100%;
+    padding: 8px 32px 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+    color: #111827;
+    font-size: 13px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.template-search input:focus {
+    border-color: #6366f1;
+    background: #ffffff;
+}
+
+.template-browser-dialog button.template-search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 6px;
+    box-shadow: none;
+}
+
+.template-browser-dialog button.template-search-clear:hover {
+    color: #374151;
+}
+
+[data-theme="dark"] .template-search input,
+[data-theme="focus"] .template-search input {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f3f4f6;
+}
+
+[data-theme="dark"] .template-search input:focus,
+[data-theme="focus"] .template-search input:focus {
+    border-color: #6366f1;
+    background: #111827;
+}
+
 /* Category Tabs — segmented control (high specificity to override global button) */
 .template-browser-dialog .template-categories {
     display: inline-flex;
@@ -357,6 +411,24 @@
 [data-theme="focus"] .template-slide-badge {
     background: #1e3a5f;
     color: #93c5fd;
+}
+
+.template-fit-badge {
+    flex-shrink: 0;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    background: #dcfce7;
+    color: #166534;
+    white-space: nowrap;
+}
+
+[data-theme="dark"] .template-fit-badge,
+[data-theme="focus"] .template-fit-badge {
+    background: #14532d;
+    color: #86efac;
 }
 
 .template-card-presentation .template-info {

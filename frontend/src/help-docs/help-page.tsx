@@ -128,7 +128,7 @@ const shapeDocuments: ShapeDoc[] = [
         icon: '🪄',
         category: 'Design',
         description: 'Magic Wand, Distort & Transform (Liquify), Knife & Scissors, generative shapes (spiral/arc/grids), Vertical Type, and the Symbol Sprayer — with API examples',
-        keywords: 'lens flare spiral arc rectangular grid polar grid magic wand select similar distort transform pucker bloat twirl zigzag crystallize roughen liquify knife scissors curvature reshape blob brush path eraser puppet warp perspective grid touch type vertical type slice graph chart symbolism sprayer width tool live paint shape builder pathfinder offset stroke outline type on path vector tools palette',
+        keywords: 'lens flare spiral arc rectangular grid polar grid magic wand select similar distort transform pucker bloat twirl zigzag crystallize roughen liquify knife scissors curvature reshape blob brush path eraser puppet warp perspective grid touch type vertical type slice graph chart symbolism sprayer width tool live paint shape builder pathfinder offset stroke outline type on path vector tools palette google fonts font picker add font custom font ttf otf woff letter spacing preview applied',
         content: IllustratorToolsDoc
     },
     {
@@ -170,6 +170,7 @@ const shapeDocuments: ShapeDoc[] = [
         icon: '🎨',
         category: 'Design',
         description: 'Canva-style design documents: pages & size presets, templates, brand kit, elements library, SVG import, text effects, AI assists',
+        keywords: 'canva design document page size preset instagram post story poster flyer business card template search fits badge my templates brand kit font pairing elements panel frames photo frame heart star hexagon stock photos wikimedia orientation landscape portrait square drag drop crop aspect ratio 1:1 4:5 16:9 9:16 lock text effect shadow lift hollow splice outline echo neon glitch background highlight curved set as page background detach image background jpg jpeg png export current page only magic write ai image generate remove background thumbnail indexeddb',
         content: DesignStudioDoc
     },
     {

@@ -3,7 +3,7 @@ import { render } from 'solid-js/web';
 import { store, toggleElementsPanel } from '../store/app-store';
 import { importSvgToCanvas } from '../utils/svg-import';
 import { FONT_PAIRINGS, applyFontPairing, type FontPairing } from '../brand/font-pairing';
-import { searchStockPhotos, insertStockPhoto, type StockPhoto } from '../utils/stock-photos';
+import { searchStockPhotos, insertStockPhoto, STOCK_PHOTO_MIME, type StockPhoto } from '../utils/stock-photos';
 import { YappyAPI } from '../api';
 import { showToast } from './toast';
 import {
@@ -70,6 +70,17 @@ const ElementsPanel: Component = () => {
     const [photos, setPhotos] = createSignal<StockPhoto[]>([]);
     const [photosLoading, setPhotosLoading] = createSignal(false);
     const [photosError, setPhotosError] = createSignal('');
+    const [photoOrientation, setPhotoOrientation] = createSignal<'all' | 'landscape' | 'portrait' | 'square'>('all');
+
+    const visiblePhotos = createMemo(() => {
+        const o = photoOrientation();
+        if (o === 'all') return photos();
+        return photos().filter(p => {
+            const r = p.width / p.height;
+            if (o === 'square') return r >= 0.9 && r <= 1.1;
+            return o === 'landscape' ? r > 1.1 : r < 0.9;
+        });
+    });
 
     // The full lucide-solid module is heavy — load it only when the panel opens.
     const [lucide] = createResource(() => store.showElementsPanel, async (open) => {
@@ -118,7 +129,7 @@ const ElementsPanel: Component = () => {
         YappyAPI.setSelected([id]);
     };
 
-    const insertFrame = (type: 'rectangle' | 'circle') => {
+    const insertFrame = (type: string) => {
         insertShape(type, {
             strokeColor: '#94a3b8', strokeWidth: 2, strokeStyle: 'dashed',
             backgroundColor: '#f1f5f9', fillStyle: 'solid',
@@ -126,6 +137,15 @@ const ElementsPanel: Component = () => {
         });
         showToast('Frame added — drop a photo onto it to fill', 'info');
     };
+
+    const FRAMES: { type: string; label: string; icon: any }[] = [
+        { type: 'rectangle', label: 'Rect', icon: Square },
+        { type: 'circle', label: 'Circle', icon: CircleIcon },
+        { type: 'triangle', label: 'Triangle', icon: Triangle },
+        { type: 'star', label: 'Star', icon: Star },
+        { type: 'heart', label: 'Heart', icon: Heart },
+        { type: 'hexagon', label: 'Hexagon', icon: Hexagon },
+    ];
 
     const runPhotoSearch = async () => {
         const q = photoQuery().trim();
@@ -204,8 +224,14 @@ const ElementsPanel: Component = () => {
                         </div>
                         <div class="ep-section">Frames (drop a photo in)</div>
                         <div class="ep-grid ep-grid-shapes">
-                            <button class="ep-cell" onClick={() => insertFrame('rectangle')}><span class="ep-frame-rect" /></button>
-                            <button class="ep-cell" onClick={() => insertFrame('circle')}><span class="ep-frame-circle" /></button>
+                            <For each={FRAMES}>
+                                {(f) => (
+                                    <button class="ep-cell ep-cell-shape ep-cell-frame" title={`Insert ${f.label} frame — drop a photo onto it to fill`} onClick={() => insertFrame(f.type)}>
+                                        <f.icon size={20} stroke-dasharray="3 2" />
+                                        <span class="ep-shape-label">{f.label}</span>
+                                    </button>
+                                )}
+                            </For>
                         </div>
                         <div class="ep-section">Icons</div>
                         <Suspense fallback={<div class="ep-loading">Loading icons…</div>}>
@@ -248,17 +274,40 @@ const ElementsPanel: Component = () => {
                             onInput={(e) => setPhotoQuery(e.currentTarget.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter') runPhotoSearch(); }} />
                     </div>
+                    <div class="ep-photo-filters">
+                        <For each={[
+                            { id: 'all' as const, label: 'All' },
+                            { id: 'landscape' as const, label: 'Landscape' },
+                            { id: 'portrait' as const, label: 'Portrait' },
+                            { id: 'square' as const, label: 'Square' },
+                        ]}>
+                            {(o) => (
+                                <button class={`ep-chip ${photoOrientation() === o.id ? 'active' : ''}`}
+                                    onClick={() => setPhotoOrientation(o.id)}>
+                                    {o.label}
+                                </button>
+                            )}
+                        </For>
+                    </div>
                     <div class="elements-panel-body">
                         <Show when={!photosLoading()} fallback={<div class="ep-loading">Searching…</div>}>
-                            <Show when={photos().length > 0} fallback={
+                            <Show when={visiblePhotos().length > 0} fallback={
                                 <div class="ep-loading">
-                                    {photosError() || 'Openly-licensed photos via Wikimedia Commons. Type a search and press Enter.'}
+                                    {photosError()
+                                        || (photos().length > 0 ? `No ${photoOrientation()} photos in these results — try another search or filter.`
+                                        : 'Openly-licensed photos via Wikimedia Commons. Type a search and press Enter.')}
                                 </div>
                             }>
                                 <div class="ep-photo-grid">
-                                    <For each={photos()}>
+                                    <For each={visiblePhotos()}>
                                         {(p) => (
-                                            <button class="ep-photo" title={`${p.title}${p.creator ? ` — ${p.creator}` : ''} (click to insert)`}
+                                            <button class="ep-photo" title={`${p.title}${p.creator ? ` — ${p.creator}` : ''} (click to insert, or drag onto the canvas)`}
+                                                draggable={true}
+                                                onDragStart={(e) => {
+                                                    e.dataTransfer?.setData(STOCK_PHOTO_MIME, JSON.stringify(p));
+                                                    e.dataTransfer?.setData('text/plain', p.thumbnail);
+                                                    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
+                                                }}
                                                 onClick={() => insertStockPhoto(p)}>
                                                 <img src={p.thumbnail} alt={p.title} loading="lazy" />
                                             </button>

@@ -1,4 +1,4 @@
-import { type Component, Show, For, createSignal, createMemo, createEffect } from "solid-js";
+import { type Component, Show, For, createSignal, createMemo, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
 import { X, Search } from "lucide-solid";
 import { GOOGLE_FONTS, addGoogleFont } from "../utils/custom-fonts";
@@ -13,15 +13,26 @@ export interface GoogleFontsDialogProps {
 
 /**
  * Searchable picker over a curated list of popular Google Fonts. Selecting a font
- * loads it (Google CSS API, no key needed), registers it, and returns its key.
+ * loads it (Google CSS API, no key needed), registers it, and applies it — the
+ * dialog stays open so different fonts can be tried live on the selection; close
+ * with Done, ×, Escape, or a click outside.
  * Each row previews in its own family — loaded lazily as it scrolls into view.
  */
 const GoogleFontsDialog: Component<GoogleFontsDialogProps> = (props) => {
     const [query, setQuery] = createSignal("");
+    const [applied, setApplied] = createSignal<string | null>(null);
     let inputRef: HTMLInputElement | undefined;
 
     createEffect(() => {
-        if (props.isOpen) { setQuery(""); setTimeout(() => inputRef?.focus(), 50); }
+        if (props.isOpen) { setQuery(""); setApplied(null); setTimeout(() => inputRef?.focus(), 50); }
+    });
+
+    // Docked panel (no backdrop) — close on Escape from anywhere.
+    createEffect(() => {
+        if (!props.isOpen) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') props.onClose(); };
+        window.addEventListener('keydown', onKey);
+        onCleanup(() => window.removeEventListener('keydown', onKey));
     });
 
     const filtered = createMemo(() => {
@@ -32,7 +43,7 @@ const GoogleFontsDialog: Component<GoogleFontsDialogProps> = (props) => {
     const pick = async (family: string) => {
         const font = await addGoogleFont(family);
         props.onPick(font.key);
-        props.onClose();
+        setApplied(family);
     };
 
     // Lazily load a row's font for preview when it mounts.
@@ -48,9 +59,9 @@ const GoogleFontsDialog: Component<GoogleFontsDialogProps> = (props) => {
     return (
         <Show when={props.isOpen}>
             <Portal>
-                <div class="gf-overlay" onClick={(e) => { if (e.target === e.currentTarget) props.onClose(); }}
-                    onKeyDown={(e) => { if (e.key === 'Escape') props.onClose(); }}>
-                    <div class="gf-modal" onClick={(e) => e.stopPropagation()}>
+                {/* Docked to the right, no dimmed backdrop — the canvas stays visible
+                    and interactive so font picks preview live on the selection. */}
+                <div class="gf-modal gf-docked" onClick={(e) => e.stopPropagation()}>
                         <div class="gf-header">
                             <h2>Google Fonts</h2>
                             <button class="gf-close" type="button" onClick={props.onClose}><X size={18} /></button>
@@ -67,17 +78,22 @@ const GoogleFontsDialog: Component<GoogleFontsDialogProps> = (props) => {
                                 {(family) => {
                                     previewLink(family);
                                     return (
-                                        <button class="gf-item" type="button" onClick={() => pick(family)}
+                                        <button class="gf-item" type="button" classList={{ applied: applied() === family }}
+                                            onClick={() => pick(family)}
                                             style={{ "font-family": `"${family}", sans-serif` }}>
                                             <span class="gf-name">{family}</span>
-                                            <span class="gf-sample">AaBbGg 123</span>
+                                            <Show when={applied() === family} fallback={<span class="gf-sample">AaBbGg 123</span>}>
+                                                <span class="gf-applied">✓ applied</span>
+                                            </Show>
                                         </button>
                                     );
                                 }}
                             </For>
                         </div>
-                        <div class="gf-footer">{filtered().length} fonts · loaded on demand</div>
-                    </div>
+                        <div class="gf-footer">
+                            <span>{filtered().length} fonts · click to try on your selection</span>
+                            <button class="gf-done" type="button" onClick={props.onClose}>Done</button>
+                        </div>
                 </div>
             </Portal>
         </Show>

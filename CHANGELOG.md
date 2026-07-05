@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.31] - 2026-07-05
+
+### Added
+- **JPG in the Export dialog** — JPG joins PNG/SVG/PDF/PPTX/video, with scale (1–3x) and Current Page Only support (always exports on a white background; `exportPageToPng(i, scale, download, 'jpeg')` on the API).
+- **Set as Page Background / Detach Image from Background** — right-click a selected image → *Set as Page Background*; right-click empty canvas → *Detach Image from Background* to turn a page's image background back into a movable, croppable image element (`Y.detachBackgroundImage()`).
+- **Six frame shapes** — the Elements panel now offers rectangle, circle, triangle, star, heart, and hexagon photo frames (was rect/circle).
+- **Glitch text effect** — cyan/magenta chromatic-aberration preset alongside Shadow/Lift/Hollow/Splice/Outline/Echo/Neon/Background.
+- **Aspect-ratio crop presets** — while cropping an image: Free, 1:1, 4:5, 3:4, 16:9, 9:16. Presets snap to the largest centered rect and lock the ratio during handle drags.
+- **Template search + size suggestions** — the template browser has a free-text search (name/tag/description, all categories); in a design document, templates matching the page size or aspect ratio sort first with a "✓ fits" badge, and picking a size in New Design… opens the browser automatically (`Y.searchTemplates(q)`).
+- **Stock photo orientation filters + drag-to-canvas** — All/Landscape/Portrait/Square chips on the Photos tab; results can be dragged onto a frame/shape (fills it), an image (replaces it), or empty canvas (inserts at the drop point).
+
+### Changed
+- **Google Fonts picker stays open for previewing** — it now docks to the right without a backdrop; each click applies the font to the selection live (marked "✓ applied") so fonts can be compared back-to-back. Close with Done, Esc, or ✕. (User-reported UX issue.)
+
+- Files: `frontend/src/components/{export-dialog,template-browser,elements-panel,google-fonts-dialog,property-panel,canvas,menu}.tsx`, `frontend/src/utils/{export,image-crop-utils,stock-photos,context-menu-builder,tool-handlers/canvas-event-handlers}.ts`, `frontend/src/store/app-store.ts`, `frontend/src/config/text-effect-presets.ts`, `frontend/src/shapes/renderers/text-renderer.ts`, `frontend/src/api.ts`
+
 ## [0.27.25] - 2026-06-12
 
 ### Added

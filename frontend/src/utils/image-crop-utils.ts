@@ -316,6 +316,61 @@ export function applyCropDrag(
 }
 
 /**
+ * Constrain a dragged crop rect to a locked aspect ratio (w/h). The corner or
+ * edge opposite the dragged handle stays anchored; the rect shrinks to fit
+ * element bounds without breaking the ratio.
+ */
+export function constrainCropToAspect(
+    rect: { x: number; y: number; width: number; height: number },
+    handle: CropHandle,
+    aspect: number,
+    elWidth: number,
+    elHeight: number,
+    minSize = 20
+): { x: number; y: number; width: number; height: number } {
+    if (!handle || handle === 'move' || aspect <= 0) return rect;
+    const { x, y, width, height } = rect;
+    const right = x + width, bottom = y + height;
+    const cx = x + width / 2, cy = y + height / 2;
+
+    const heightDriven = handle === 'tm' || handle === 'bm';
+    let w = heightDriven ? height * aspect : width;
+    let h = heightDriven ? height : width / aspect;
+
+    let maxW: number, maxH: number;
+    switch (handle) {
+        case 'br': maxW = elWidth - x; maxH = elHeight - y; break;
+        case 'tr': maxW = elWidth - x; maxH = bottom; break;
+        case 'bl': maxW = right; maxH = elHeight - y; break;
+        case 'tl': maxW = right; maxH = bottom; break;
+        case 'rm': maxW = elWidth - x; maxH = 2 * Math.min(cy, elHeight - cy); break;
+        case 'lm': maxW = right; maxH = 2 * Math.min(cy, elHeight - cy); break;
+        case 'bm': maxH = elHeight - y; maxW = 2 * Math.min(cx, elWidth - cx); break;
+        case 'tm': maxH = bottom; maxW = 2 * Math.min(cx, elWidth - cx); break;
+        default: return rect;
+    }
+    const s = Math.min(1, maxW / w, maxH / h);
+    w = Math.max(minSize, w * s);
+    h = w / aspect;
+
+    let nx: number, ny: number;
+    switch (handle) {
+        case 'br': nx = x; ny = y; break;
+        case 'tr': nx = x; ny = bottom - h; break;
+        case 'bl': nx = right - w; ny = y; break;
+        case 'tl': nx = right - w; ny = bottom - h; break;
+        case 'rm': nx = x; ny = cy - h / 2; break;
+        case 'lm': nx = right - w; ny = cy - h / 2; break;
+        case 'bm': nx = cx - w / 2; ny = y; break;
+        case 'tm': nx = cx - w / 2; ny = bottom - h; break;
+        default: return rect;
+    }
+    nx = Math.max(0, Math.min(nx, elWidth - w));
+    ny = Math.max(0, Math.min(ny, elHeight - h));
+    return { x: nx, y: ny, width: w, height: h };
+}
+
+/**
  * Get the CSS cursor for a crop handle.
  */
 export function getCropHandleCursor(handle: CropHandle): string {

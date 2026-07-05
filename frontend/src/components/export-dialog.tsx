@@ -2,7 +2,7 @@ import { type Component, createSignal, Show, createEffect, onCleanup } from "sol
 import { X } from "lucide-solid";
 import { store, pageNoun } from "../store/app-store";
 import { isPagedDocType } from "../types/slide-types";
-import { exportToPng, exportToSvg, exportToPdf, exportToPptx, exportPageToPng } from "../utils/export";
+import { exportToPng, exportToSvg, exportToPdf, exportToPptx, exportPageToPng, exportToJpg } from "../utils/export";
 import { setRequestRecording } from "./canvas";
 import "./export-dialog.css";
 
@@ -12,7 +12,7 @@ interface ExportDialogProps {
 }
 
 const ExportDialog: Component<ExportDialogProps> = (props) => {
-    const [format, setFormat] = createSignal<'png' | 'svg' | 'pdf' | 'pptx' | 'webm' | 'mp4'>('png');
+    const [format, setFormat] = createSignal<'png' | 'jpg' | 'svg' | 'pdf' | 'pptx' | 'webm' | 'mp4'>('png');
     const [scale, setScale] = createSignal<number>(2);
     const [hasBackground, setHasBackground] = createSignal(true);
     const [onlySelected, setOnlySelected] = createSignal(store.selection.length > 0);
@@ -49,6 +49,12 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
             } else {
                 exportToPng(scale(), hasBackground(), onlySelected());
             }
+        } else if (format() === 'jpg') {
+            if (currentPageOnly() && isPaged() && !onlySelected()) {
+                exportPageToPng(store.activeSlideIndex, scale(), true, 'jpeg');
+            } else {
+                exportToJpg(scale(), onlySelected());
+            }
         } else if (format() === 'svg') {
             exportToSvg(onlySelected());
         } else if (format() === 'pdf') {
@@ -80,6 +86,10 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                                 <label class="radio-label">
                                     <input type="radio" name="format" checked={format() === 'png'} onChange={() => setFormat('png')} />
                                     PNG
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="format" checked={format() === 'jpg'} onChange={() => setFormat('jpg')} />
+                                    JPG
                                 </label>
                                 <label class="radio-label">
                                     <input type="radio" name="format" checked={format() === 'svg'} onChange={() => setFormat('svg')} />
@@ -117,7 +127,7 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                             </label>
                         </div>
 
-                        <Show when={isPaged() && format() === 'png'}>
+                        <Show when={isPaged() && (format() === 'png' || format() === 'jpg')}>
                             <div class="option-group">
                                 <label class="checkbox-label">
                                     <input
@@ -130,7 +140,7 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                             </div>
                         </Show>
 
-                        <Show when={format() === 'png' || format() === 'pdf' || format() === 'pptx'}>
+                        <Show when={format() === 'png' || format() === 'jpg' || format() === 'pdf' || format() === 'pptx'}>
                             <div class="option-group">
                                 <label>Scale</label>
                                 <div class="scale-group">
@@ -140,12 +150,14 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                                 </div>
                             </div>
 
-                            <div class="option-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" checked={hasBackground()} onChange={(e) => setHasBackground(e.currentTarget.checked)} />
-                                    White Background
-                                </label>
-                            </div>
+                            <Show when={format() !== 'jpg'}>
+                                <div class="option-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" checked={hasBackground()} onChange={(e) => setHasBackground(e.currentTarget.checked)} />
+                                        White Background
+                                    </label>
+                                </div>
+                            </Show>
                         </Show>
                     </div>
 

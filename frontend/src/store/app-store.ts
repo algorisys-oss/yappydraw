@@ -241,6 +241,8 @@ interface AppState {
     // Image Crop Mode
     cropModeElementId: string | null;
     cropRect: { x: number; y: number; width: number; height: number } | null;
+    /** Locked crop aspect ratio (w/h) while dragging; null = freeform. */
+    cropAspect: number | null;
 
     // Video Playback
     activeVideoElementIds: string[];
@@ -451,6 +453,7 @@ const initialState: AppState = {
     },
     cropModeElementId: null,
     cropRect: null,
+    cropAspect: null,
     activeVideoElementIds: [],
     dirtyRevision: 0,
 };
@@ -1342,6 +1345,7 @@ export const enterCropMode = (elementId: string) => {
 
     setStore('cropModeElementId', elementId);
     setStore('cropRect', cropRect);
+    setStore('cropAspect', null);
 };
 
 export const exitCropMode = (apply: boolean) => {
@@ -1351,6 +1355,21 @@ export const exitCropMode = (apply: boolean) => {
     }
     setStore('cropModeElementId', null);
     setStore('cropRect', null);
+    setStore('cropAspect', null);
+};
+
+/**
+ * Lock the crop to an aspect ratio (w/h) and snap the crop rect to the largest
+ * centered rect of that ratio. Pass null to unlock (freeform).
+ */
+export const setCropAspect = (ratio: number | null) => {
+    setStore('cropAspect', ratio);
+    if (ratio === null) return;
+    const el = store.elements.find(e => e.id === store.cropModeElementId);
+    if (!el) return;
+    let w = el.width, h = w / ratio;
+    if (h > el.height) { h = el.height; w = h * ratio; }
+    setStore('cropRect', { x: (el.width - w) / 2, y: (el.height - h) / 2, width: w, height: h });
 };
 
 export const updateCropRect = (rect: { x: number; y: number; width: number; height: number }) => {
@@ -1846,6 +1865,38 @@ export const updateSlideBackground = (slideIndex: number, updates: Partial<Slide
         }
     }
     bumpDirtyRevision();
+};
+
+/**
+ * Detach a slide's background image into a regular image element covering the
+ * page, so it can be moved/cropped/filtered like any other image. Clears the
+ * slide's image fill (reverts to solid background).
+ */
+export const detachSlideBackgroundImage = (slideIndex: number = store.activeSlideIndex): string | null => {
+    const slide = store.slides[slideIndex];
+    if (!slide?.backgroundImage || slide.fillStyle !== 'image') return null;
+
+    pushToHistory();
+    const el: DrawingElement = {
+        id: `image-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,
+        type: 'image',
+        x: slide.spatialPosition.x, y: slide.spatialPosition.y,
+        width: slide.dimensions.width, height: slide.dimensions.height,
+        dataURL: slide.backgroundImage, status: 'loaded',
+        backgroundColor: 'transparent', fillStyle: 'solid',
+        strokeColor: 'transparent', strokeWidth: 0, strokeStyle: 'solid',
+        opacity: slide.backgroundOpacity ?? 100, angle: 0, roughness: 0, renderStyle: 'architectural',
+        locked: false, layerId: store.activeLayerId || 'default-layer',
+        seed: Math.floor(Math.random() * 2 ** 31), roundness: null,
+    } as DrawingElement;
+
+    batch(() => {
+        setStore('elements', prev => [...prev, el]);
+        setStore('slides', slideIndex, { backgroundImage: undefined, fillStyle: 'solid' });
+        setStore('selection', [el.id]);
+    });
+    bumpDirtyRevision();
+    return el.id;
 };
 
 export const loadDocument = (doc: any) => {

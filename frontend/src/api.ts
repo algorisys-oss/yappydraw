@@ -19,7 +19,7 @@ import {
     createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
-    updateSlideTransition, updateSlideBackground, setDocType, loadDocument, resetToNewDocument, setPageSize,
+    updateSlideTransition, updateSlideBackground, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
@@ -31,7 +31,7 @@ import {
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
 import { PAGE_SIZE_PRESETS, getPagePreset } from "./config/page-size-presets";
-import { templateRegistry, getTemplateById, getTemplatesByCategory, refreshUserTemplates } from "./templates/registry";
+import { templateRegistry, getTemplateById, getTemplatesByCategory, searchTemplates, refreshUserTemplates } from "./templates/registry";
 import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
 import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
 import { importSvgToCanvas } from "./utils/svg-import";
@@ -2080,9 +2080,14 @@ export const YappyAPI = {
     setPageSize(width: number, height: number, applyAll: boolean = true) { setPageSize(width, height, applyAll); },
     /** List available page-size presets for design documents. */
     getPageSizePresets() { return PAGE_SIZE_PRESETS.map(p => ({ ...p })); },
-    /** Export one page/slide to PNG at exact page bounds. Returns the data URL. */
-    exportPageToPng(pageIndex?: number, scale: number = 1, download: boolean = true) {
-        return exportPageToPng(pageIndex ?? store.activeSlideIndex, scale, download);
+    /** Export one page/slide to PNG (or JPG) at exact page bounds. Returns the data URL. */
+    exportPageToPng(pageIndex?: number, scale: number = 1, download: boolean = true, format: 'png' | 'jpeg' = 'png') {
+        return exportPageToPng(pageIndex ?? store.activeSlideIndex, scale, download, format);
+    },
+    /** Detach the page's background image into a regular image element covering the page.
+     *  Returns the new element id, or null if the page has no image background. */
+    detachBackgroundImage(pageIndex?: number) {
+        return detachSlideBackgroundImage(pageIndex ?? store.activeSlideIndex);
     },
 
     // Templates
@@ -2113,6 +2118,8 @@ export const YappyAPI = {
         loadTemplate(template.data);
         return true;
     },
+    /** Search templates by name, description, or tag. Returns matching template metadata. */
+    searchTemplates(query: string) { return searchTemplates(query).map(t => ({ ...t.metadata })); },
     /** Save the current document as a reusable template under My Templates. */
     saveAsTemplate(name: string, description?: string) {
         const saved = saveCurrentAsTemplate(name, description);
@@ -2189,11 +2196,12 @@ export const YappyAPI = {
     // Stock photos (Wikimedia Commons — openly licensed, no key needed)
     /** Search openly-licensed stock photos. Returns photo descriptors for insertStockPhoto. */
     async searchStockPhotos(query: string, page: number = 1) { return searchStockPhotos(query, page); },
-    /** Insert a photo returned by searchStockPhotos, centered on the active page. Returns the element id. */
-    async insertStockPhoto(photo: any) { return insertStockPhoto(photo); },
+    /** Insert a photo returned by searchStockPhotos, centered on the active page
+     *  (or on `at`, a world-space point). Returns the element id. */
+    async insertStockPhoto(photo: any, at?: { x: number; y: number }) { return insertStockPhoto(photo, at); },
 
     // Text effects
-    /** List text-effect preset ids/names (none, shadow, lift, hollow, splice, outline, echo, neon, background). */
+    /** List text-effect preset ids/names (none, shadow, lift, hollow, splice, outline, echo, neon, glitch, background). */
     getTextEffectPresets() { return TEXT_EFFECT_PRESETS.map(p => ({ id: p.id, name: p.name })); },
     /** Apply a text-effect preset to the given element ids (or the current selection). */
     applyTextEffect(presetId: string, ids?: string[]): number {
