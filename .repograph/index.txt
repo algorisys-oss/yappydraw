@@ -185,7 +185,7 @@ frontend/src/components/property-panel.tsx | typescript | 2111 | Component:1 Pro
 frontend/src/components/puppet-warp-overlay.css | - | 36 |
 frontend/src/components/puppet-warp-overlay.tsx | typescript | 110 | PuppetWarpOverlay:12 target:19 warpable:20 active:21 notice:23 toWorld:24 pinWorld:27 hitPin:33 onDown:42 onMove:63 onUp:70 onKey:76 pinDots:81
 frontend/src/components/quick-toolbar.css | - | 503 |
-frontend/src/components/quick-toolbar.tsx | typescript | 744 | Component:7 QuickPropertyDef:15 getIcon:63 handleDocClick:112 isTransparent:129 handleDocClick:177 activeOption:193 isActive:233 toggle:239 handleDocClick:301 activeLabel:317 categories:321 QuickToolbar:374 selectedElement:378 handler:460 handlePropertyChange:474 handlePropertyStart:512 x:519 y:544 value:580 isDisabled:623
+frontend/src/components/quick-toolbar.tsx | typescript | 751 | Component:7 QuickPropertyDef:15 getIcon:63 handleDocClick:112 isTransparent:129 handleDocClick:177 activeOption:193 isActive:233 toggle:239 handleDocClick:301 activeLabel:317 categories:321 QuickToolbar:374 selectedElement:378 handler:460 handlePropertyChange:474 handlePropertyStart:519 x:526 y:551 value:587 isDisabled:630
 frontend/src/components/recolor-panel.css | - | 61 |
 frontend/src/components/recolor-panel.tsx | typescript | 98 | Component:1 RecolorPanel:16 swatches:23 beginEdit:25 pickLive:31 endEdit:38 valHex:39
 frontend/src/components/recording-overlay.css | - | 100 |

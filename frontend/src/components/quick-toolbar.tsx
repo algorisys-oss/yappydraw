@@ -506,6 +506,13 @@ const ToolbarContainer: Component<{
                 return;
             }
         }
+        // For text/richtext the visible font colour is `textColor || strokeColor`, so a
+        // baked-in default textColor (from defaults) overrides strokeColor and the "Text
+        // Color" swatch never changes anything. Set both, matching p3-color-picker.
+        if (key === 'strokeColor' && (el.type === 'text' || el.type === 'richtext')) {
+            updateElement(id, { strokeColor: value, textColor: value }, false);
+            return;
+        }
         updateElement(id, { [key]: value }, false);
     };
 
