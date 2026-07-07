@@ -108,7 +108,72 @@ function geometryToDs(geo: ShapeGeometry): { ds: string[]; evenOdd: boolean } {
 }
 
 
+/**
+ * Render every page of a paged doc (design / slides) into one canvas — the
+ * whole-document PNG/JPG export. Each page is drawn at its exact page bounds
+ * (clipped, with its own background) and the pages are stacked vertically with
+ * a gap, so the *entire* design is exported, not just the crop around elements.
+ * The widest page sets the canvas width; narrower pages are centred.
+ */
+const PAGED_EXPORT_GAP = 40; // world-unit gap between stacked pages
+function renderPagedDocToCanvas(scale: number, whiteBackground: boolean): HTMLCanvasElement | null {
+    const sortedSlides = [...store.slides].sort((a, b) => a.order - b.order);
+    if (sortedSlides.length === 0) return null;
+
+    const maxW = Math.max(...sortedSlides.map(s => s.dimensions.width));
+    const totalH = sortedSlides.reduce((sum, s) => sum + s.dimensions.height, 0)
+        + PAGED_EXPORT_GAP * (sortedSlides.length - 1);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(maxW * scale));
+    canvas.height = Math.max(1, Math.round(totalH * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    if (whiteBackground) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    ctx.scale(scale, scale);
+
+    const rc = rough.canvas(canvas);
+    let destY = 0;
+    for (const slide of sortedSlides) {
+        const { width: sW, height: sH } = slide.dimensions;
+        const { x: sX, y: sY } = slide.spatialPosition;
+        const destX = (maxW - sW) / 2; // centre narrower pages
+
+        ctx.save();
+        // Map this page's world rect onto its slot in the stacked output.
+        ctx.translate(destX - sX, destY - sY);
+        ctx.beginPath(); ctx.rect(sX, sY, sW, sH); ctx.clip();
+        renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
+        for (const el of store.elements) {
+            if (el.isClipMask) continue;
+            const cx = el.x + (el.width || 0) / 2;
+            const cy = el.y + (el.height || 0) / 2;
+            if (!(cx >= sX && cx <= sX + sW && cy >= sY && cy <= sY + sH)) continue;
+            try { renderElement(rc, ctx, el); } catch { /* skip */ }
+        }
+        ctx.restore();
+        destY += sH + PAGED_EXPORT_GAP;
+    }
+    return canvas;
+}
+
 export const exportToPng = async (scale: number, background: boolean, onlySelected: boolean) => {
+    // Paged docs (design / slides): export every page at full page bounds with its
+    // background, not just the element-bounding-box crop.
+    if (isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected) {
+        const canvas = renderPagedDocToCanvas(scale, background);
+        if (!canvas) return;
+        const link = document.createElement('a');
+        link.download = store.docType === 'design' ? 'yappy_design.png' : 'yappy_slides.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        return;
+    }
+
     let elements = store.elements;
     if (onlySelected) {
         if (store.selection.length === 0) return; // Nothing to export
@@ -250,6 +315,17 @@ export const exportPageToPng = (pageIndex: number, scale = 1, download = true, f
 };
 
 export const exportToJpg = async (scale: number, onlySelected: boolean) => {
+    // Paged docs (design / slides): export every page at full page bounds.
+    if (isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected) {
+        const canvas = renderPagedDocToCanvas(scale, true); // JPEG has no transparency
+        if (!canvas) return;
+        const link = document.createElement('a');
+        link.download = store.docType === 'design' ? 'yappy_design.jpg' : 'yappy_slides.jpg';
+        link.href = canvas.toDataURL('image/jpeg', 0.92);
+        link.click();
+        return;
+    }
+
     let elements = store.elements;
     if (onlySelected) {
         if (store.selection.length === 0) return;
@@ -346,7 +422,10 @@ export const exportToSvg = (onlySelected: boolean) => {
         if (store.selection.length === 0) return;
         elements = elements.filter(el => store.selection.includes(el.id));
     }
-    if (elements.length === 0) return;
+    // Paged docs (design / slides): include the full page area so the entire
+    // design is exported, not just the element-bounding box.
+    const paged = isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected;
+    if (elements.length === 0 && !paged) return;
 
     // Calculate Bounds
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -356,6 +435,14 @@ export const exportToSvg = (onlySelected: boolean) => {
         maxX = Math.max(maxX, el.x + el.width);
         maxY = Math.max(maxY, el.y + el.height);
     });
+    if (paged) {
+        store.slides.forEach(s => {
+            minX = Math.min(minX, s.spatialPosition.x);
+            minY = Math.min(minY, s.spatialPosition.y);
+            maxX = Math.max(maxX, s.spatialPosition.x + s.dimensions.width);
+            maxY = Math.max(maxY, s.spatialPosition.y + s.dimensions.height);
+        });
+    }
 
     const padding = 20;
     const width = maxX - minX + padding * 2;
@@ -380,6 +467,21 @@ export const exportToSvg = (onlySelected: boolean) => {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.setAttribute('transform', `translate(${-minX + padding}, ${-minY + padding})`);
     svg.appendChild(g);
+
+    // Paged docs: draw each page's background rect beneath its elements. Solid
+    // colours export exactly; gradient/texture/image backgrounds fall back to the
+    // page's base colour (full vector parity for those is out of scope here).
+    if (paged) {
+        [...store.slides].sort((a, b) => a.order - b.order).forEach(s => {
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', `${s.spatialPosition.x}`);
+            rect.setAttribute('y', `${s.spatialPosition.y}`);
+            rect.setAttribute('width', `${s.dimensions.width}`);
+            rect.setAttribute('height', `${s.dimensions.height}`);
+            rect.setAttribute('fill', s.backgroundColor || (store.theme !== 'light' ? '#121212' : '#ffffff'));
+            g.appendChild(rect);
+        });
+    }
 
     elements.forEach(el => {
         let node: SVGElement | null = null;

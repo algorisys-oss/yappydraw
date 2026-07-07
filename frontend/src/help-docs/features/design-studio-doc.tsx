@@ -43,7 +43,10 @@ Y.exportPageToPng(0, 2);                 // export page 1 at 2x`}</code></pre>
                 <p class="tip-box">
                     Export dialog → <strong>PNG and JPG</strong> show a <strong>Current Page Only</strong> option in
                     paged documents — exact page bounds, page background included (JPG always exports on white).
-                    PDF export emits one page per document page.
+                    Leave it unchecked to export the <strong>whole design</strong>: every page is rendered at its
+                    full page bounds with its own background, stacked vertically (multi-page designs). PDF and PPTX
+                    export emit one file page per document page. SVG export includes the full page area and each
+                    page's background.
                 </p>
                 <p>
                     <strong>Page backgrounds:</strong> drop an image onto empty canvas to set it as the active
