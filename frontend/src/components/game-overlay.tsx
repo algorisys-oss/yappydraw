@@ -42,7 +42,12 @@ const GameOverlay: Component = () => {
         const { x, y } = toWorld(e);
         gamePointerMove(x, y);
     };
-    const onUp = () => gamePointerUp();
+    const onUp = (e: PointerEvent) => {
+        // Release capture so the next tap on a UI control (Stop / Replay) lands on
+        // THAT element — a lingering capture on the overlay eats the first click.
+        (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+        gamePointerUp();
+    };
 
     // A gamepad button: press on pointerdown, release on up/cancel/leave —
     // pointer capture keeps multi-touch (move + jump simultaneously) working.
@@ -72,16 +77,18 @@ const GameOverlay: Component = () => {
                     onPointerCancel={onUp}
                     onContextMenu={(e) => e.preventDefault()}
                 >
-                    <button class="game-stop" title="Stop game (Esc)" onPointerDown={(e) => e.stopPropagation()} onClick={stopGame}>
+                    {/* Act on pointerdown, not click: a captured pointer can send the
+                        button's pointerup to the overlay, so the click never fires. */}
+                    <button class="game-stop" title="Stop game (Esc)" onPointerDown={(e) => { e.stopPropagation(); stopGame(); }}>
                         <Square size={14} /> Stop
                     </button>
 
                     <Show when={ended()}>
                         <div class="game-ended" onPointerDown={(e) => e.stopPropagation()}>
-                            <button class="game-replay" onClick={restartGame}>
+                            <button class="game-replay" onPointerDown={(e) => { e.stopPropagation(); restartGame(); }}>
                                 <RotateCcw size={18} /> Play again
                             </button>
-                            <button class="game-exit" onClick={stopGame}>
+                            <button class="game-exit" onPointerDown={(e) => { e.stopPropagation(); stopGame(); }}>
                                 <Square size={16} /> Exit
                             </button>
                         </div>

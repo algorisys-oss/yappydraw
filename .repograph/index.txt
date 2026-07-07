@@ -138,7 +138,7 @@ frontend/src/components/file-open-dialog.tsx | typescript | 192 | Component:1 Fi
 frontend/src/components/game-graph.css | - | 133 |
 frontend/src/components/game-graph.tsx | typescript | 355 | Component:9 Behavior:15 GameGraph:32 triggersFor:46 actionsFor:47 posOf:55 targetPosOf:60 flowColor:61 onWheel:73 onSurfaceDown:85 toSurface:91 onSurfaceMove:96 onSurfaceUp:102 startFlowWire:109 resolveFlowWire:114 startWire:135 resolveWire:140 startNodeDrag:162 moveNodeDrag:169 endNodeDrag:174 writeOwner:181 behaviorsOf:185 addNode:187 deleteNode:196 bhv:199 patchBehavior:200 setTriggerKind:202 patchTrigger:203 toggleCondition:204 patchCondition:205 addActionTo:206 setActionKind:207 patchActionAt:208 removeActionAt:209 play:211 onKey:219 a:246 a:253 a:260 a:267 meta:275 owner:276
 frontend/src/components/game-overlay.css | - | 110 |
-frontend/src/components/game-overlay.tsx | typescript | 108 | Component:11 GameButton:19 GameOverlay:23 padVisible:28 ended:32 toWorld:34 onDown:36 onMove:41 onUp:45
+frontend/src/components/game-overlay.tsx | typescript | 115 | Component:11 GameButton:19 GameOverlay:23 padVisible:28 ended:32 toWorld:34 onDown:36 onMove:41 onUp:45
 frontend/src/components/game-script-dialog.css | - | 139 |
 frontend/src/components/game-script-dialog.tsx | typescript | 135 | Component:12 GameScriptDialog:40 isCode:42 generated:44 close:50 eject:53 applyTemplate:61 save:67 play:69
 frontend/src/components/game-view-switcher.css | - | 29 |
