@@ -17,6 +17,10 @@
  *   - branch   : `if (variable ? value)` → routes execution to a true / false pin.
  *   - sequence : run its ordered outputs (seq0, seq1, …) one after another.
  *   - delay    : wait `seconds`, then continue out (one-shot; drained in the tick).
+ *   - forLoop  : repeat the `loop` output N times, then continue out `done`. Its
+ *                data output ('val') is the current loop index (0-based).
+ *   - gate     : Unreal-style stateful gate. Exec inputs enter / open / close /
+ *                toggle; execution passes out `out` only while the gate is open.
  *
  * Data (pure) nodes carry a VALUE along data wires instead of execution:
  *   - getVar   : reads a variable's current value.
@@ -32,7 +36,7 @@
 
 import type { Trigger, Action, Condition, Compare } from './behavior-types';
 
-export type BPNodeKind = 'event' | 'action' | 'branch' | 'sequence' | 'delay'
+export type BPNodeKind = 'event' | 'action' | 'branch' | 'sequence' | 'delay' | 'forLoop' | 'gate'
     | 'getVar' | 'literal' | 'compare' | 'math' | 'random' | 'spriteProp';
 
 /** Math operators (compile straight to JS). */
@@ -76,14 +80,27 @@ export interface BPNode {
     /** spriteProp nodes: which sprite (tag) and which property to read. */
     spriteTag?: string;
     prop?: SpriteProp;
+    /** forLoop nodes: iteration count (inline fallback; a wired `times` input wins). */
+    times?: number;
+    /** gate nodes: whether the gate starts open (default closed). */
+    startOpen?: boolean;
 }
 
 /** Pure/data node kinds (no exec pins; they produce a value on the 'val' data pin). */
 export const DATA_KINDS: BPNodeKind[] = ['getVar', 'literal', 'compare', 'math', 'random', 'spriteProp'];
 export const isDataNode = (k: BPNodeKind): boolean => DATA_KINDS.includes(k);
 
-/** Data OUTPUT pins a node exposes (data nodes → one 'val'). */
-export const dataOutputs = (n: BPNode): BPPin[] => isDataNode(n.kind) ? ['val'] : [];
+/** Data OUTPUT pins a node exposes (data nodes → 'val'; forLoop → 'val' = loop index). */
+export const dataOutputs = (n: BPNode): BPPin[] => (isDataNode(n.kind) || n.kind === 'forLoop') ? ['val'] : [];
+
+/**
+ * Exec INPUT ports a node accepts. Most nodes have a single implicit 'in';
+ * a gate exposes enter / open / close / toggle; events and data nodes have none.
+ */
+export const execInputs = (kind: BPNodeKind): BPPin[] =>
+    kind === 'event' || isDataNode(kind) ? []
+        : kind === 'gate' ? ['enter', 'open', 'close', 'toggle']
+            : ['in'];
 
 /** The numeric action params a data wire can drive (port name = the value it replaces). */
 export const actionDataPorts = (a?: Action): BPPin[] => {
@@ -93,12 +110,13 @@ export const actionDataPorts = (a?: Action): BPPin[] => {
     return [];
 };
 
-/** Data INPUT ports a node accepts (compare/math: a,b · branch: cond · action: its numeric params). */
+/** Data INPUT ports a node accepts (compare/math: a,b · branch: cond · forLoop: times · action: numeric params). */
 export const dataInputs = (n: BPNode): BPPin[] =>
     n.kind === 'compare' || n.kind === 'math' ? ['a', 'b']
         : n.kind === 'branch' ? ['cond']
-            : n.kind === 'action' ? actionDataPorts(n.action)
-                : [];
+            : n.kind === 'forLoop' ? ['times']
+                : n.kind === 'action' ? actionDataPorts(n.action)
+                    : [];
 
 /**
  * A directed wire. Exec wires connect an output pin to a node's exec input
@@ -130,12 +148,13 @@ export const seqCount = (n: BPNode): number => Math.max(2, n.count ?? 2);
 export const pinsOf = (n: BPNode): BPPin[] => {
     if (isDataNode(n.kind)) return [];
     if (n.kind === 'branch') return ['true', 'false'];
+    if (n.kind === 'forLoop') return ['loop', 'done'];
     if (n.kind === 'sequence') return Array.from({ length: seqCount(n) }, (_, i) => `seq${i}`);
-    return ['out']; // event, action, delay
+    return ['out']; // event, action, delay, gate
 };
 
-/** Whether a node kind has an exec INPUT pin (events start chains; data nodes are pure). */
-export const hasExecIn = (kind: BPNodeKind): boolean => kind !== 'event' && !isDataNode(kind);
+/** Whether a node kind has any exec INPUT (events start chains; data nodes are pure). */
+export const hasExecIn = (kind: BPNodeKind): boolean => execInputs(kind).length > 0;
 
 let _bpid = 0;
 export const newBPNodeId = (): string => `bp-${Date.now()}-${++_bpid}`;

@@ -215,6 +215,7 @@ export function generateGameScript(elements: DrawingElement[], sceneBehaviors: B
     L.push('const _tmr = {};                        // per-timer accumulators');
     L.push('const _pending = [];                     // one-shot delayed continuations (Blueprint delay)');
     L.push('const _after = (secs, fn) => _pending.push({ t: Math.max(0, secs), fn });');
+    L.push('const _gate = {};                        // Blueprint gate state (once / toggle)');
     L.push('const _msg = {};                         // message bus: name -> handlers');
     L.push('const _on = (m, fn) => { (_msg[m] || (_msg[m] = [])).push(fn); };');
     L.push('const _emit = (m) => { (_msg[m] || []).forEach(fn => { try { fn(); } catch (e) {} }); };');

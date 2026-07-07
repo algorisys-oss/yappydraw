@@ -36,6 +36,8 @@ const GameGraph: Component = () => {
     const [drag, setDrag] = createSignal<{ id: string; owner: string; x: number; y: number } | null>(null);
     // While dragging a wire from an output port: source + live cursor (surface coords).
     const [wiring, setWiring] = createSignal<{ fromId: string; message: string; cx: number; cy: number } | null>(null);
+    // While dragging a rule's flow-out port to retarget its goToState / goToPage jump.
+    const [flowWiring, setFlowWiring] = createSignal<{ fromId: string; owner: string; kind: 'state' | 'page'; cx: number; cy: number } | null>(null);
 
     const owners = createMemo(() => { store.dirtyRevision; return ['', ...store.elements.filter(e => !!e.tag).map(e => e.tag as string)]; });
     const sprites = createMemo(() => { store.dirtyRevision; return store.elements.filter(e => !!e.tag).map(e => e.tag as string); });
@@ -92,12 +94,40 @@ const GameGraph: Component = () => {
     };
     const onSurfaceMove = (e: PointerEvent) => {
         if (wiring()) { const w = wiring()!; const p = toSurface(e.clientX, e.clientY); setWiring({ ...w, cx: p.x, cy: p.y }); return; }
+        if (flowWiring()) { const w = flowWiring()!; const p = toSurface(e.clientX, e.clientY); setFlowWiring({ ...w, cx: p.x, cy: p.y }); return; }
         if (!panning) return;
         setPan({ x: panning.px + (e.clientX - panning.sx), y: panning.py + (e.clientY - panning.sy) });
     };
     const onSurfaceUp = (e: PointerEvent) => {
         if (wiring()) { resolveWire(e); setWiring(null); return; }
+        if (flowWiring()) { resolveFlowWire(e); setFlowWiring(null); return; }
         panning = null;
+    };
+
+    // ── flow-wire drag: retarget a rule's goToState / goToPage to another target pill ──
+    const startFlowWire = (e: PointerEvent, fromId: string, owner: string, kind: 'state' | 'page') => {
+        e.stopPropagation();
+        const p = toSurface(e.clientX, e.clientY);
+        setFlowWiring({ fromId, owner, kind, cx: p.x, cy: p.y });
+    };
+    const resolveFlowWire = (e: PointerEvent) => {
+        const w = flowWiring()!;
+        const pill = (e.target as HTMLElement)?.closest?.('.gg-target') as HTMLElement | null;
+        if (!pill) return; // dropped on empty space
+        const kind = pill.dataset.targetKind, key = pill.dataset.targetKey;
+        if (!kind || key == null) return;
+        const bs = behaviorsOf(w.owner);
+        const b = bs.find(x => x.id === w.fromId);
+        if (!b) return;
+        let done = false;
+        const actions = b.actions.map(a => {
+            if (done) return a;
+            if (kind === 'state' && a.kind === 'goToState') { done = true; return { ...a, state: key }; }
+            if (kind === 'page' && a.kind === 'goToPage') { done = true; return { ...a, index: Number(key) }; }
+            return a;
+        });
+        if (done) { writeOwner(w.owner, bs.map(x => x.id === w.fromId ? { ...x, actions } : x)); showToast(`Rewired → ${pill.dataset.targetLabel || key}`, 'success'); }
+        else showToast(`Drop on a ${w.kind} target to rewire`, 'info');
     };
 
     // ── wire drag: connect a broadcast output to a receiver ──
@@ -231,6 +261,13 @@ const GameGraph: Component = () => {
                                             fill="none" stroke={flowColor(wire.kind)} stroke-width="2.5" stroke-dasharray="2 6" stroke-linecap="round" opacity="0.9" />;
                                     }}
                                 </For>
+                                <Show when={flowWiring()}>
+                                    {w => {
+                                        const a = () => posOf(w().fromId);
+                                        return <path d={wirePath(a().x + NODE_W, a().y + FLOW_PORT_Y, w().cx, w().cy)}
+                                            fill="none" stroke={flowColor(w().kind)} stroke-width="2.5" stroke-dasharray="2 6" stroke-linecap="round" opacity="0.9" />;
+                                    }}
+                                </Show>
                             </svg>
                             <For each={allBehaviors()}>
                                 {(b) => {
@@ -251,8 +288,9 @@ const GameGraph: Component = () => {
                                                     onPointerDown={e => startWire(e, b.id, broadcastsOf(b)[0])} />
                                             </Show>
                                             <Show when={flowTargetsOf(b).length}>
-                                                <span class="gg-port gg-out-flow" title="This rule jumps to a state / page"
-                                                    style={{ background: flowColor(flowTargetsOf(b)[0].kind) }} />
+                                                <span class="gg-port gg-out-flow" title="Drag to a state / page pill to rewire this jump"
+                                                    style={{ background: flowColor(flowTargetsOf(b)[0].kind) }}
+                                                    onPointerDown={e => startFlowWire(e, b.id, owner(), flowTargetsOf(b)[0].kind)} />
                                             </Show>
                                             <div class="gg-body">
                                                 <div class="gg-row">
@@ -296,7 +334,8 @@ const GameGraph: Component = () => {
                             </For>
                             <For each={flowTargets()}>
                                 {(t) => (
-                                    <div class={`gg-target gg-target-${t.kind}`} style={{ left: `${t.x}px`, top: `${t.y}px`, width: `${TARGET_W}px`, '--flow-color': flowColor(t.kind) }}>
+                                    <div class={`gg-target gg-target-${t.kind}`} data-target-kind={t.kind} data-target-key={t.id.slice(t.id.indexOf(':') + 1)} data-target-label={t.label}
+                                        style={{ left: `${t.x}px`, top: `${t.y}px`, width: `${TARGET_W}px`, '--flow-color': flowColor(t.kind) }}>
                                         <span class="gg-port gg-in gg-target-in" style={{ background: flowColor(t.kind) }} />
                                         <span class="gg-target-kw">{t.kind === 'state' ? 'STATE' : 'PAGE'}</span>
                                         <span class="gg-target-label" title={t.label}>{t.label}</span>

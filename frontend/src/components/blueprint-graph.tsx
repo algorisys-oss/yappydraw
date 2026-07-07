@@ -14,8 +14,8 @@
  */
 
 import { type Component, For, Show, createSignal, createMemo, onMount, onCleanup } from 'solid-js';
-import { Portal } from 'solid-js/web';
-import { X, Play, Zap, Trash2, Workflow, GitBranch, Cog, ListOrdered, Timer, Plus, Minus, Variable, Hash, Scale, Sigma, Dices, Move } from 'lucide-solid';
+import { Portal, Dynamic } from 'solid-js/web';
+import { X, Play, Zap, Trash2, Workflow, GitBranch, Cog, ListOrdered, Timer, Plus, Minus, Variable, Hash, Scale, Sigma, Dices, Move, Repeat, DoorOpen, ChevronDown, Database } from 'lucide-solid';
 import {
     store, blueprintFor, setBlueprintNodes, setBlueprintEdges, setBlueprintNodePos, toggleBlueprint,
 } from '../store/app-store';
@@ -23,7 +23,7 @@ import type { Trigger, Action } from '../game/behavior-types';
 import { TRIGGERS, COMPARE, ACTIONS, SCENE_ACTION_KINDS, defaultTrigger, defaultAction } from '../game/behavior-ui';
 import { TriggerParams, ActionParams } from '../game/behavior-editors';
 import { wirePath } from '../game/graph-layout';
-import { type BPNode, type BPEdge, type BPPin, type BPNodeKind, newBPNodeId, BP_EVENT_KINDS, hasExecIn, pinsOf, seqCount, isDataNode, dataInputs, MATH_OPS, SPRITE_PROPS } from '../game/blueprint-types';
+import { type BPNode, type BPEdge, type BPPin, type BPNodeKind, newBPNodeId, BP_EVENT_KINDS, hasExecIn, pinsOf, seqCount, dataInputs, dataOutputs, execInputs, MATH_OPS, SPRITE_PROPS } from '../game/blueprint-types';
 import { generateGameScript } from '../game/behaviors-to-script';
 import { startGame } from '../game/game-runtime';
 import { showToast } from './toast';
@@ -39,16 +39,39 @@ const DATA_COLOR = '#22d3ee'; // data wires / pins (cyan)
 /** y of a given exec output pin on a node (pins stack top-down in `pinsOf` order). */
 const pinOutY = (n: BPNode, pin: BPPin) => OUT_Y + Math.max(0, pinsOf(n).indexOf(pin)) * PIN_STEP;
 const pinColor = (pin: BPPin) => pin === 'val' ? DATA_COLOR : pin === 'true' ? '#22c55e' : pin === 'false' ? '#ef4444' : EXEC_COLOR;
-const pinLabel = (pin: BPPin): string => pin === 'true' ? 'T' : pin === 'false' ? 'F' : pin.startsWith('seq') ? String(Number(pin.slice(3)) + 1) : '';
+const pinLabel = (pin: BPPin): string =>
+    pin === 'true' ? 'T' : pin === 'false' ? 'F' : pin === 'loop' ? '↻' : pin === 'done' ? '✓' : pin.startsWith('seq') ? String(Number(pin.slice(3)) + 1) : '';
+
+// Palette dropdown groups (keep Event/Action as primary buttons).
+const FLOW_ITEMS: { k: BPNodeKind; label: string; icon: any }[] = [
+    { k: 'branch', label: 'Branch', icon: GitBranch },
+    { k: 'sequence', label: 'Sequence', icon: ListOrdered },
+    { k: 'delay', label: 'Delay', icon: Timer },
+    { k: 'forLoop', label: 'For Loop', icon: Repeat },
+    { k: 'gate', label: 'Gate', icon: DoorOpen },
+];
+const DATA_ITEMS: { k: BPNodeKind; label: string; icon: any }[] = [
+    { k: 'getVar', label: 'Get Variable', icon: Variable },
+    { k: 'literal', label: 'Value', icon: Hash },
+    { k: 'compare', label: 'Compare', icon: Scale },
+    { k: 'math', label: 'Math', icon: Sigma },
+    { k: 'random', label: 'Random', icon: Dices },
+    { k: 'spriteProp', label: 'Sprite Property', icon: Move },
+];
 /** y of the single data OUTPUT pin ('val'). */
 const dataOutY = (_n: BPNode) => OUT_Y;
-/** y of a data INPUT port — below the exec-in if the node has one, then stacked. */
-const dataInY = (n: BPNode, inPin: BPPin) => (hasExecIn(n.kind) ? IN_Y + PIN_STEP : IN_Y) + Math.max(0, dataInputs(n).indexOf(inPin)) * PIN_STEP;
+/** y of an exec INPUT port (they stack for a gate). */
+const execInY = (n: BPNode, port: BPPin) => IN_Y + Math.max(0, execInputs(n.kind).indexOf(port)) * PIN_STEP;
+/** y of a data INPUT port — below the exec inputs, then stacked. */
+const dataInY = (n: BPNode, inPin: BPPin) => IN_Y + (execInputs(n.kind).length || 0) * PIN_STEP + Math.max(0, dataInputs(n).indexOf(inPin)) * PIN_STEP;
+/** Short label for an exec-input pin (gate ports). */
+const execInLabel = (port: BPPin) => port === 'in' ? '' : port.charAt(0).toUpperCase();
 
 const BlueprintGraph: Component = () => {
     const [scale, setScale] = createSignal(1);
     const [pan, setPan] = createSignal({ x: 60, y: 60 });
     const [owner, setOwner] = createSignal(''); // '' = Scene, else a sprite tag
+    const [menu, setMenu] = createSignal<'flow' | 'data' | null>(null);
     const [drag, setDrag] = createSignal<{ id: string; x: number; y: number } | null>(null);
     const [wiring, setWiring] = createSignal<{ fromId: string; pin: BPPin; cx: number; cy: number } | null>(null);
 
@@ -81,11 +104,11 @@ const BlueprintGraph: Component = () => {
         writeNodes(graph().nodes.filter(n => n.id !== id));
         writeEdges(graph().edges.filter(e => e.from !== id && e.to !== id));
     };
-    /** An exec pin carries at most one wire — replace any existing wire from (from,pin). */
-    const connect = (from: string, pin: BPPin, to: string) => {
+    /** An exec output pin carries at most one wire — replace it. `toPin` = the target's exec-input port. */
+    const connect = (from: string, pin: BPPin, to: string, toPin: BPPin) => {
         if (from === to) return;
-        const kept = graph().edges.filter(e => !(e.from === from && e.pin === pin && e.toPin === undefined));
-        writeEdges([...kept, { from, pin, to }]);
+        const kept = graph().edges.filter(e => !(e.from === from && e.pin === pin && e.pin !== 'val'));
+        writeEdges([...kept, { from, pin, to, toPin }]);
     };
     /** A data input holds at most one wire — replace any existing wire into (to,toPin). */
     const connectData = (from: string, to: string, toPin: BPPin) => {
@@ -111,7 +134,9 @@ const BlueprintGraph: Component = () => {
                                         : kind === 'compare' ? { ...base, op: 'atLeast' }
                                             : kind === 'math' ? { ...base, mathOp: '+' }
                                                 : kind === 'random' ? { ...base, min: 1, max: 6 }
-                                                    : { ...base, spriteTag: sprites()[0] ?? '', prop: 'x' }; // spriteProp
+                                                    : kind === 'forLoop' ? { ...base, times: 3 }
+                                                        : kind === 'gate' ? { ...base, startOpen: false }
+                                                            : { ...base, spriteTag: sprites()[0] ?? '', prop: 'x' }; // spriteProp
         writeNodes([...graph().nodes, node]);
     };
 
@@ -164,12 +189,15 @@ const BlueprintGraph: Component = () => {
         if (w.pin === 'val') {
             // Data wire: land on the first free data input (else the first).
             const ins = dataInputs(target);
-            if (!ins.length) { showToast('Data wire needs a Compare or Branch target', 'info'); return; }
-            const used = new Set(graph().edges.filter(x => x.to === targetId && x.toPin).map(x => x.toPin));
+            if (!ins.length) { showToast('Data wire needs a Compare / Branch / action target', 'info'); return; }
+            const used = new Set(graph().edges.filter(x => x.to === targetId && x.pin === 'val').map(x => x.toPin));
             connectData(w.fromId, targetId, ins.find(p => !used.has(p)) ?? ins[0]);
         } else {
-            if (!hasExecIn(target.kind)) { showToast('Wire must end on an action, branch, sequence or delay', 'info'); return; }
-            connect(w.fromId, w.pin, targetId);
+            if (!hasExecIn(target.kind)) { showToast('Wire must end on an action / flow node', 'info'); return; }
+            // Land on the specific exec-input pin if dropped on one, else the first.
+            const pinEl = (e.target as HTMLElement)?.closest?.('[data-execin]') as HTMLElement | null;
+            const port = pinEl?.dataset.execin ?? execInputs(target.kind)[0] ?? 'in';
+            connect(w.fromId, w.pin, targetId, port);
         }
     };
 
@@ -214,7 +242,11 @@ const BlueprintGraph: Component = () => {
     };
 
     onMount(() => {
-        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && store.showBlueprint && !store.gameActive) toggleBlueprint(false); };
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key !== 'Escape' || !store.showBlueprint || store.gameActive) return;
+            if (menu()) { setMenu(null); return; } // close an open palette menu first
+            toggleBlueprint(false);
+        };
         window.addEventListener('keydown', onKey);
         onCleanup(() => window.removeEventListener('keydown', onKey));
     });
@@ -231,16 +263,36 @@ const BlueprintGraph: Component = () => {
                             </select>
                             <button class="bp-add" title="Add an event (entry point)" onClick={() => addNode('event')}><Zap size={14} /> Event</button>
                             <button class="bp-add" title="Add an action" onClick={() => addNode('action')}><Cog size={14} /> Action</button>
-                            <button class="bp-add" title="Add a branch (if / else)" onClick={() => addNode('branch')}><GitBranch size={14} /> Branch</button>
-                            <button class="bp-add" title="Add a sequence (run outputs in order)" onClick={() => addNode('sequence')}><ListOrdered size={14} /> Sequence</button>
-                            <button class="bp-add" title="Add a delay (wait, then continue)" onClick={() => addNode('delay')}><Timer size={14} /> Delay</button>
-                            <span class="bp-sep" />
-                            <button class="bp-add bp-add-data" title="Read a variable's value" onClick={() => addNode('getVar')}><Variable size={14} /> Get</button>
-                            <button class="bp-add bp-add-data" title="A constant number" onClick={() => addNode('literal')}><Hash size={14} /> Value</button>
-                            <button class="bp-add bp-add-data" title="Compare two values → true / false" onClick={() => addNode('compare')}><Scale size={14} /> Compare</button>
-                            <button class="bp-add bp-add-data" title="Arithmetic: a ⟨+ − × ÷⟩ b → number" onClick={() => addNode('math')}><Sigma size={14} /> Math</button>
-                            <button class="bp-add bp-add-data" title="A random number in [min, max)" onClick={() => addNode('random')}><Dices size={14} /> Random</button>
-                            <button class="bp-add bp-add-data" title="Read a sprite's x / y / size" onClick={() => addNode('spriteProp')}><Move size={14} /> Sprite</button>
+                            <div class="bp-dd">
+                                <button class="bp-add" title="Flow control nodes" onClick={() => setMenu(m => m === 'flow' ? null : 'flow')}>
+                                    <Workflow size={14} /> Flow <ChevronDown size={12} />
+                                </button>
+                                <Show when={menu() === 'flow'}>
+                                    <div class="bp-dd-backdrop" onPointerDown={() => setMenu(null)} />
+                                    <div class="bp-dd-menu">
+                                        <For each={FLOW_ITEMS}>{it =>
+                                            <button class="bp-dd-item" onClick={() => { addNode(it.k); setMenu(null); }}>
+                                                <Dynamic component={it.icon} size={14} /> {it.label}
+                                            </button>}
+                                        </For>
+                                    </div>
+                                </Show>
+                            </div>
+                            <div class="bp-dd">
+                                <button class="bp-add bp-add-data" title="Data (value) nodes" onClick={() => setMenu(m => m === 'data' ? null : 'data')}>
+                                    <Database size={14} /> Data <ChevronDown size={12} />
+                                </button>
+                                <Show when={menu() === 'data'}>
+                                    <div class="bp-dd-backdrop" onPointerDown={() => setMenu(null)} />
+                                    <div class="bp-dd-menu">
+                                        <For each={DATA_ITEMS}>{it =>
+                                            <button class="bp-dd-item" onClick={() => { addNode(it.k); setMenu(null); }}>
+                                                <Dynamic component={it.icon} size={14} /> {it.label}
+                                            </button>}
+                                        </For>
+                                    </div>
+                                </Show>
+                            </div>
                             <button class="bp-play" onClick={play}><Play size={14} /> Play</button>
                             <button class="bp-close" onClick={() => toggleBlueprint(false)}><X size={18} /></button>
                         </div>
@@ -253,11 +305,11 @@ const BlueprintGraph: Component = () => {
                                 <For each={edges()}>
                                     {(e) => {
                                         const from = () => nodeById(e.from), to = () => nodeById(e.to);
-                                        const isData = () => e.toPin !== undefined;
+                                        const isData = () => e.pin === 'val';
                                         const x1 = () => (from()?.x ?? 0) + BP_NODE_W;
                                         const y1 = () => (from()?.y ?? 0) + (isData() ? dataOutY(from()!) : (from() ? pinOutY(from()!, e.pin) : OUT_Y));
                                         const x2 = () => to()?.x ?? 0;
-                                        const y2 = () => (to()?.y ?? 0) + (isData() && to() ? dataInY(to()!, e.toPin!) : IN_Y);
+                                        const y2 = () => (to()?.y ?? 0) + (!to() ? IN_Y : isData() ? dataInY(to()!, e.toPin!) : execInY(to()!, e.toPin ?? 'in'));
                                         return <path d={wirePath(x1(), y1(), x2(), y2())}
                                             fill="none" stroke={isData() ? DATA_COLOR : pinColor(e.pin)} stroke-width="2.5"
                                             stroke-dasharray={isData() ? '4 4' : undefined} opacity="0.9" />;
@@ -274,13 +326,15 @@ const BlueprintGraph: Component = () => {
                             <For each={nodes()}>
                                 {(n) => (
                                     <div class={`bp-node bp-${n.kind}`} data-id={n.id}
-                                        style={{ left: `${n.x}px`, top: `${n.y}px`, width: `${BP_NODE_W}px`, 'min-height': n.kind === 'sequence' ? `${40 + seqCount(n) * PIN_STEP}px` : undefined }}>
+                                        style={{ left: `${n.x}px`, top: `${n.y}px`, width: `${BP_NODE_W}px`, 'min-height': n.kind === 'sequence' ? `${40 + seqCount(n) * PIN_STEP}px` : n.kind === 'gate' ? `${34 + execInputs('gate').length * PIN_STEP}px` : undefined }}>
                                         <div class="bp-node-head" onPointerDown={e => startNodeDrag(e, n.id)} onPointerMove={moveNodeDrag} onPointerUp={endNodeDrag} onPointerCancel={endNodeDrag}>
                                             <span class="bp-kind">
                                                 {n.kind === 'event' ? <><Zap size={11} /> EVENT</>
                                                     : n.kind === 'branch' ? <><GitBranch size={11} /> BRANCH</>
                                                         : n.kind === 'sequence' ? <><ListOrdered size={11} /> SEQUENCE</>
                                                             : n.kind === 'delay' ? <><Timer size={11} /> DELAY</>
+                                                        : n.kind === 'forLoop' ? <><Repeat size={11} /> FOR LOOP</>
+                                                            : n.kind === 'gate' ? <><DoorOpen size={11} /> GATE</>
                                                                 : n.kind === 'getVar' ? <><Variable size={11} /> GET</>
                                                                     : n.kind === 'literal' ? <><Hash size={11} /> VALUE</>
                                                                         : n.kind === 'compare' ? <><Scale size={11} /> COMPARE</>
@@ -292,7 +346,12 @@ const BlueprintGraph: Component = () => {
                                             <button class="bp-del" title="Delete node" onPointerDown={e => e.stopPropagation()} onClick={() => deleteNode(n.id)}><Trash2 size={12} /></button>
                                         </div>
 
-                                        <Show when={hasExecIn(n.kind)}><span class="bp-pin bp-in" title="exec in" /></Show>
+                                        <For each={execInputs(n.kind)}>
+                                            {(port) => (<>
+                                                <span class="bp-pin bp-in" data-execin={port} title={port === 'in' ? 'exec in' : port} style={{ top: `${execInY(n, port) - 6}px` }} />
+                                                <Show when={execInLabel(port)}><span class="bp-pin-lbl bp-execin-lbl" style={{ top: `${execInY(n, port) - 6}px` }}>{execInLabel(port)}</span></Show>
+                                            </>)}
+                                        </For>
 
                                         <div class="bp-body">
                                             <Show when={n.kind === 'event' && n.trigger}>
@@ -384,6 +443,23 @@ const BlueprintGraph: Component = () => {
                                                     </select>
                                                 </div>
                                             </Show>
+                                            <Show when={n.kind === 'forLoop'}>
+                                                <div class="bp-row">
+                                                    <span class="bp-if">repeat</span>
+                                                    <input class="be-num" type="number" min="0" value={n.times ?? 3} onInput={e => patchNode(n.id, { times: Number(e.currentTarget.value) })} />
+                                                    <span class="be-unit">times</span>
+                                                </div>
+                                            </Show>
+                                            <Show when={n.kind === 'gate'}>
+                                                <div class="bp-row">
+                                                    <span class="bp-if">starts</span>
+                                                    <select class="be-sel" value={n.startOpen ? 'open' : 'closed'} onChange={e => patchNode(n.id, { startOpen: e.currentTarget.value === 'open' })}>
+                                                        <option value="closed">closed</option>
+                                                        <option value="open">open</option>
+                                                    </select>
+                                                    <span class="bp-gate-hint">enter · open · close · toggle</span>
+                                                </div>
+                                            </Show>
                                         </div>
 
                                         <For each={pinsOf(n)}>
@@ -394,10 +470,11 @@ const BlueprintGraph: Component = () => {
                                                 <Show when={pinLabel(pin)}><span class="bp-pin-lbl" style={{ top: `${pinOutY(n, pin) - 6}px` }}>{pinLabel(pin)}</span></Show>
                                             </>)}
                                         </For>
-                                        {/* data output ('val') on data nodes */}
-                                        <Show when={isDataNode(n.kind)}>
-                                            <span class="bp-pin bp-dout" title="value out — drag onto a Compare or Branch"
+                                        {/* data output ('val'): data nodes + the forLoop index */}
+                                        <Show when={dataOutputs(n).length > 0}>
+                                            <span class="bp-pin bp-dout" title={n.kind === 'forLoop' ? 'loop index — drag onto a value input' : 'value out — drag onto a Compare / Branch / action'}
                                                 style={{ top: `${dataOutY(n) - 6}px` }} onPointerDown={e => startWire(e, n.id, 'val')} />
+                                            <Show when={n.kind === 'forLoop'}><span class="bp-pin-lbl" style={{ top: `${dataOutY(n) - 6}px` }}>i</span></Show>
                                         </Show>
                                         {/* data input ports (compare: a,b · branch: cond) — targets for data wires */}
                                         <For each={dataInputs(n)}>

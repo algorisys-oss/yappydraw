@@ -105,7 +105,8 @@
 .gg-out { right: -7px; cursor: crosshair; }
 .gg-out:hover { transform: scale(1.3); }
 /* Scene-flow (goToState/goToPage) output — sits below the message out port. */
-.gg-out-flow { right: -7px; top: 44px; pointer-events: none; }
+.gg-out-flow { right: -7px; top: 44px; cursor: crosshair; }
+.gg-out-flow:hover { transform: scale(1.3); }
 
 /* Scene-flow target pill (a state or a page a rule jumps to). Read-only marker. */
 .gg-target {

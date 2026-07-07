@@ -81,7 +81,8 @@ const ArcadeDoc: Component = () => {
                     <em>receives</em> that message, so you can see at a glance how the game's events connect.
                     Rules that <em>go to a state</em> or <em>go to a page</em> also draw a dashed
                     <strong>flow wire</strong> to a target pill (violet for states, sky-blue for pages), so
-                    your scene / level flow is visible too.
+                    your scene / level flow is visible too — and you can <strong>drag a rule's flow-out port
+                    onto another pill</strong> to re-target the jump.
                 </p>
                 <ul>
                     <li><strong>Edit rules right in the node</strong> — each card has the same editable
@@ -122,9 +123,19 @@ const ArcadeDoc: Component = () => {
                     <li><strong>Branch</strong> nodes route execution: <code>if [variable] [compares] [value]</code>
                         sends flow out the green <strong>T</strong> pin when true, the red <strong>F</strong> pin
                         when false.</li>
+                    <li>Add nodes from the palette: <strong>Event</strong> and <strong>Action</strong> are direct
+                        buttons; <strong>Flow ▾</strong> holds Branch / Sequence / Delay / For Loop / Gate, and
+                        <strong>Data ▾</strong> holds the value nodes.</li>
                     <li><strong>Sequence</strong> nodes run their outputs <em>in order</em> (1, 2, 3…) — use
                         <strong>＋ / −</strong> to add or remove steps. <strong>Delay</strong> nodes wait a number
                         of seconds, then continue — great for "spawn, wait 2s, spawn again".</li>
+                    <li><strong>For Loop</strong> repeats its <em>↻</em> output a set number of times (the count can
+                        be wired), then continues out <em>✓ done</em>. Its <em>i</em> data output is the current
+                        loop index — wire it into an action param or Math node.</li>
+                    <li><strong>Gate</strong> is a stateful pass (Unreal-style): exec inputs <em>enter · open ·
+                        close · toggle</em> and one <em>out</em>. Execution passing into <em>enter</em> continues
+                        out only while the gate is open; wire other events into <em>open</em> / <em>close</em> /
+                        <em>toggle</em> to control it (choose whether it starts open or closed).</li>
                     <li><strong>Data nodes</strong> carry a <em>value</em> (cyan square pins, dashed wires) instead
                         of execution: <strong>Get</strong> reads a variable, <strong>Value</strong> is a constant,
                         <strong>Compare</strong> tests <code>a ⟨op⟩ b → true/false</code>, and <strong>Math</strong>

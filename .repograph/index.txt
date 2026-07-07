@@ -98,8 +98,8 @@ frontend/src/components/behaviors-panel.css | - | 133 |
 frontend/src/components/behaviors-panel.tsx | typescript | 294 | Component:11 Behavior:18 BehaviorsPanel:25 spriteBehaviors:43 sceneBehaviors:44 writeSprite:46 writeScene:47 isScene:48 list:49 write:50 gameVars:53 scan:58 undefinedVars:71 addVar:73 removeVar:77 patchVarInitial:78 renameVar:80 fix:83 ensureName:93 cloneBehaviors:103 addBehavior:106 updateBehavior:111 removeBehavior:112 moveBehavior:113 duplicateBehavior:118 copyAll:122 pasteAll:123 duplicateAction:124 moveAction:125 setTrigger:130 patchTrigger:131 addAction:132 toggleCondition:133 patchCondition:134 setAction:135 patchAction:136 removeAction:137 play:139 availableActions:145 RuleList:147
 frontend/src/components/blob-brush-overlay.css | - | 24 |
 frontend/src/components/blob-brush-overlay.tsx | typescript | 73 | BlobBrushOverlay:11 active:17 toWorld:18 onDown:20 onMove:26 onUp:31 onKey:43 scale:53 strokeScreen:54 cur:55
-frontend/src/components/blueprint-graph.css | - | 123 |
-frontend/src/components/blueprint-graph.tsx | typescript | 424 | Component:16 BPNode:26 pinOutY:40 pinColor:41 pinLabel:42 dataOutY:44 dataInY:46 BlueprintGraph:48 isSprite:57 nodeById:67 posOf:68 srcPinY:70 writeNodes:77 writeEdges:78 patchNode:79 deleteNode:80 connect:85 connectData:91 addNode:97 onWheel:120 onSurfaceDown:131 toSurface:136 onSurfaceMove:141 onSurfaceUp:146 startWire:152 resolveWire:157 startNodeDrag:178 moveNodeDrag:185 endNodeDrag:190 setEventKind:197 patchTrigger:198 setActKind:199 patchAction:200 patchCond:201 setSeqCount:203 play:209 onKey:217 from:255 isData:256 x1:257 y1:258 x2:259 y2:260 a:268
+frontend/src/components/blueprint-graph.css | - | 150 |
+frontend/src/components/blueprint-graph.tsx | typescript | 501 | Component:16 BPNode:26 pinOutY:40 pinColor:41 pinLabel:42 dataOutY:62 execInY:64 dataInY:66 execInLabel:68 BlueprintGraph:70 isSprite:80 nodeById:90 posOf:91 srcPinY:93 writeNodes:100 writeEdges:101 patchNode:102 deleteNode:103 connect:108 connectData:114 addNode:120 onWheel:145 onSurfaceDown:156 toSurface:161 onSurfaceMove:166 onSurfaceUp:171 startWire:177 resolveWire:182 startNodeDrag:206 moveNodeDrag:213 endNodeDrag:218 setEventKind:225 patchTrigger:226 setActKind:227 patchAction:228 patchCond:229 setSeqCount:231 play:237 onKey:245 from:307 isData:308 x1:309 y1:310 x2:311 y2:312 a:320
 frontend/src/components/bpmn-tool-group.tsx | typescript | 249 | Component:1 BpmnToolGroup:137 handler:144 getActiveTool:154 handleToolClick:163 as:171 as:177 handleRightClick:185 toggleMenu:191 activeTool:198 isActive:199 getDropdownPosition:201
 frontend/src/components/brand-kit-panel.css | - | 69 |
 frontend/src/components/brand-kit-panel.tsx | typescript | 179 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
@@ -135,8 +135,8 @@ frontend/src/components/export-dialog.css | - | 147 |
 frontend/src/components/export-dialog.tsx | typescript | 176 | Component:1 ExportDialogProps:9 ExportDialog:14 isPaged:20 handleKeyDown:34 handleExport:45
 frontend/src/components/file-open-dialog.css | - | 158 |
 frontend/src/components/file-open-dialog.tsx | typescript | 192 | Component:1 FileOpenDialogProps:8 FileOpenDialog:14 fetchFiles:22 handleDelete:45 handleKeyDown:61 handleMouseMove:97
-frontend/src/components/game-graph.css | - | 132 |
-frontend/src/components/game-graph.tsx | typescript | 315 | Component:9 Behavior:15 GameGraph:31 triggersFor:43 actionsFor:44 posOf:52 targetPosOf:57 flowColor:58 onWheel:70 onSurfaceDown:82 toSurface:88 onSurfaceMove:93 onSurfaceUp:98 startWire:104 resolveWire:109 startNodeDrag:131 moveNodeDrag:138 endNodeDrag:143 writeOwner:150 behaviorsOf:154 addNode:156 deleteNode:165 bhv:168 patchBehavior:169 setTriggerKind:171 patchTrigger:172 toggleCondition:173 patchCondition:174 addActionTo:175 setActionKind:176 patchActionAt:177 removeActionAt:178 play:180 onKey:188 a:215 a:222 a:229 meta:237 owner:238
+frontend/src/components/game-graph.css | - | 133 |
+frontend/src/components/game-graph.tsx | typescript | 354 | Component:9 Behavior:15 GameGraph:31 triggersFor:45 actionsFor:46 posOf:54 targetPosOf:59 flowColor:60 onWheel:72 onSurfaceDown:84 toSurface:90 onSurfaceMove:95 onSurfaceUp:101 startFlowWire:108 resolveFlowWire:113 startWire:134 resolveWire:139 startNodeDrag:161 moveNodeDrag:168 endNodeDrag:173 writeOwner:180 behaviorsOf:184 addNode:186 deleteNode:195 bhv:198 patchBehavior:199 setTriggerKind:201 patchTrigger:202 toggleCondition:203 patchCondition:204 addActionTo:205 setActionKind:206 patchActionAt:207 removeActionAt:208 play:210 onKey:218 a:245 a:252 a:259 a:266 meta:274 owner:275
 frontend/src/components/game-overlay.css | - | 110 |
 frontend/src/components/game-overlay.tsx | typescript | 108 | Component:11 GameButton:19 GameOverlay:23 padVisible:28 ended:32 toWorld:34 onDown:36 onMove:41 onUp:45
 frontend/src/components/game-script-dialog.css | - | 122 |
@@ -329,15 +329,15 @@ frontend/src/game/behavior-editors.tsx | typescript | 125 | Component:11 Trigger
 frontend/src/game/behavior-examples.ts | typescript | 103 | Behavior:8 buildPongExample:25 buildCatchExample:54 buildPlatformerExample:81
 frontend/src/game/behavior-types.ts | typescript | 115 | Speed:12 Dir8:13 Dir4:16 Edge:17 SpawnAt:18 Compare:19 Trigger:22 Action:41 Condition:74 Behavior:80
 frontend/src/game/behavior-ui.ts | typescript | 161 | triggerLabel:99 actionLabel:116 conditionLabel:149
-frontend/src/game/behaviors-to-script.ts | typescript | 370 | SpriteWithBehaviors:20 taggedSprites:23 emitAction:40 actionsBlock:122 guarded:128 emitVarReaches:137 emitTimer:145 hitTargets:152 effectiveGameScript:163 GameVar:168 generateGameScript:176
-frontend/src/game/blueprint-to-script.ts | typescript | 229 | BPFragments:29 follow:40 evalInput:46 evalDataNode:52 emitChain:82 compileBlueprintFragments:133 compileAllBlueprints:211 blueprintsProduceCode:226
-frontend/src/game/blueprint-types.ts | typescript | 144 | BPNodeKind:35 MathOp:39 SpriteProp:43 BPPin:47 BPNode:49 BPEdge:108 Blueprint:115
+frontend/src/game/behaviors-to-script.ts | typescript | 371 | SpriteWithBehaviors:20 taggedSprites:23 emitAction:40 actionsBlock:122 guarded:128 emitVarReaches:137 emitTimer:145 hitTargets:152 effectiveGameScript:163 GameVar:168 generateGameScript:176
+frontend/src/game/blueprint-to-script.ts | typescript | 262 | BPFragments:29 follow:40 evalInput:49 evalDataNode:55 emitChain:87 compileBlueprintFragments:166 compileAllBlueprints:244 blueprintsProduceCode:259
+frontend/src/game/blueprint-types.ts | typescript | 163 | BPNodeKind:39 MathOp:43 SpriteProp:47 BPPin:51 BPNode:53 BPEdge:126 Blueprint:133
 frontend/src/game/game-runtime.ts | typescript | 415 | GameButton:25 Sprite:63{constructor:65 el:66 alive:67 x:68 y:69 width:70 height:71 angle:72 text:73 cx:75 cy:76 set:78 moveTo:79 moveBy:80 centerAt:81 rotateBy:82 color:83 setText:84 hide:85 show:86 destroy:87} GameApi:99{onTick:103 onKey:105 key:107 pointer:109 onPointerDown:110 find:112 findAll:113 spawn:115 spawnText:117 hit:119 hud:121 score:123 getScore:125 goToState:127 playAnim:129 goToPage:131 sound:133 music:135 end:137 pad:139 random:140 clamp:141} Snapshot:146 pageRect:197 buildApi:203 startGame:310
 frontend/src/game/game-templates.ts | typescript | 98 | GameTemplate:3
 frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 120 | ac:14 tone:31 sweep:46 noise:62 Sfx:78 playSfx:80 startMusic:99 stopMusic:111 setMuted:115
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
-frontend/src/help-docs/features/arcade-doc.tsx | typescript | 222 | ArcadeDoc:8 a:90
+frontend/src/help-docs/features/arcade-doc.tsx | typescript | 233 | ArcadeDoc:8 a:91
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 248 | DesignStudioDoc:9
@@ -634,7 +634,7 @@ tests/behaviors-builder.spec.ts | typescript | 339 | Window:6 buildPong:19
 tests/behaviors-panel.spec.ts | typescript | 126 | Window:7
 tests/blend.spec.ts | typescript | 41 | S:10 hex:37
 tests/blob-brush.spec.ts | typescript | 24 | paths:3
-tests/blueprint-graph.spec.ts | typescript | 360 | Window:7
+tests/blueprint-graph.spec.ts | typescript | 449 | Window:7
 tests/bpmn.spec.ts | typescript | 327 | markers:152
 tests/brand-kit.spec.ts | typescript | 97 | Window:6
 tests/builtin-panel-drag.spec.ts | typescript | 31 | drag:13
@@ -663,7 +663,7 @@ tests/free-transform-pivot.spec.ts | typescript | 72 |
 tests/free-transform-rotated-resize.spec.ts | typescript | 111 | toClient:40
 tests/free-transform-shear.spec.ts | typescript | 86 | clickWorld:25
 tests/free-transform-warp.spec.ts | typescript | 308 | clickWorld:25
-tests/game-graph.spec.ts | typescript | 155 | Window:7
+tests/game-graph.spec.ts | typescript | 181 | Window:7
 tests/generate-samples.spec.ts | typescript | 122 | saveState:13
 tests/generative-shapes.spec.ts | typescript | 31 |
 tests/global.d.ts | typescript | 241 | Window:2

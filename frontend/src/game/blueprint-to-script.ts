@@ -36,11 +36,14 @@ export interface BPFragments {
 
 const emptyFragments = (): BPFragments => ({ start: [], recv: [], press: {}, tap: [], tick: [] });
 
-/** The node an EXEC output pin wires to (first match; Phase 1 = one target per pin). */
-function follow(bp: Blueprint, nodeId: string, pin: BPPin): string | null {
-    const e = bp.edges.find(e => e.from === nodeId && e.pin === pin && e.toPin === undefined);
-    return e ? e.to : null;
+/** The node + exec-input port an EXEC output pin wires to (exec pins are never 'val'). */
+function follow(bp: Blueprint, nodeId: string, pin: BPPin): { to: string; port: BPPin } | null {
+    const e = bp.edges.find(e => e.from === nodeId && e.pin === pin && e.pin !== 'val');
+    return e ? { to: e.to, port: e.toPin ?? 'in' } : null;
 }
+
+/** node-scoped loop variable name for a forLoop (also its `index` data value). */
+const loopVar = (id: string) => '_l' + id.replace(/[^A-Za-z0-9]/g, '_');
 
 /** The data expression feeding an input port (`to`,`toPin`), or null if unwired. */
 function evalInput(bp: Blueprint, to: string, toPin: BPPin): string | null {
@@ -71,19 +74,36 @@ function evalDataNode(bp: Blueprint, nodeId: string): string {
     if (n.kind === 'spriteProp') {
         return `(S(${q(n.spriteTag ?? '')}) ? S(${q(n.spriteTag ?? '')}).${n.prop ?? 'x'} : 0)`;
     }
+    if (n.kind === 'forLoop') return loopVar(n.id); // the current loop index
     return '0';
 }
 
 /**
- * Emit the execution chain starting at `nodeId`, following `out` pins. `me` /
- * `other` are the sprite-handle expressions for this event context; `dt` is its
- * delta-time expression. Cycles are cut (Phase 1 has no loop nodes).
+ * Emit the execution chain entering a node via `next` = { to, port }. `port` is
+ * the exec-input port entered ('in' for most nodes; a gate uses enter/open/close/
+ * toggle). `me`/`other` are sprite-handle expressions; `dt` the delta-time. Cycles
+ * are cut by node id.
  */
-function emitChain(bp: Blueprint, nodeId: string | null, elements: DrawingElement[], me: string, other: string, dt: string, indent: string, visited: Set<string>): string {
-    if (!nodeId || visited.has(nodeId)) return '';
+function emitChain(bp: Blueprint, next: { to: string; port: BPPin } | null, elements: DrawingElement[], me: string, other: string, dt: string, indent: string, visited: Set<string>): string {
+    // Keyed by node + entry port so a gate reached via a different input (e.g. the
+    // Enter→…→Close "do once" idiom) still emits, while true cycles are cut.
+    if (!next || visited.has(next.to + ':' + next.port)) return '';
+    const nodeId = next.to, entry = next.port;
     const n = bp.nodes.find(x => x.id === nodeId);
     if (!n) return '';
-    const seen = new Set(visited); seen.add(nodeId);
+    const seen = new Set(visited); seen.add(nodeId + ':' + entry);
+
+    // Gate — a stateful pass. Which exec input fired decides what happens.
+    if (n.kind === 'gate') {
+        const key = q(`bp|gate|${n.id}`);
+        const def = n.startOpen ? 'true' : 'false';
+        if (entry === 'open') return `${indent}_gate[${key}] = true;`;
+        if (entry === 'close') return `${indent}_gate[${key}] = false;`;
+        if (entry === 'toggle') return `${indent}_gate[${key}] = !(_gate[${key}] ?? ${def});`;
+        // enter: pass out `out` only while open.
+        const out = emitChain(bp, follow(bp, n.id, 'out'), elements, me, other, dt, indent + '  ', seen);
+        return `${indent}if (_gate[${key}] ?? ${def}) {\n${out}\n${indent}}`;
+    }
 
     if (n.kind === 'action' && n.action) {
         // Any wired numeric params (score delta, setVar value, …) override the literal.
@@ -105,6 +125,19 @@ function emitChain(bp: Blueprint, nodeId: string | null, elements: DrawingElemen
         const fBody = emitChain(bp, follow(bp, n.id, 'false'), elements, me, other, dt, indent + '  ', seen);
         let s = `${indent}if (${test}) {\n${tBody}\n${indent}}`;
         if (fBody) s += ` else {\n${fBody}\n${indent}}`;
+        return s;
+    }
+    if (n.kind === 'forLoop') {
+        // Repeat the `loop` chain N times (wired `times` wins over the inline count),
+        // then continue out `done`. Loop var is node-scoped to avoid nesting collisions.
+        const timesExpr = evalInput(bp, n.id, 'times') ?? num(Math.max(0, n.times ?? 3));
+        // Loop var declared in the enclosing scope (so its `index` data output is
+        // still readable in the `done` chain) and node-scoped to avoid collisions.
+        const lv = loopVar(n.id);
+        const body = emitChain(bp, follow(bp, n.id, 'loop'), elements, me, other, dt, indent + '  ', seen);
+        const done = emitChain(bp, follow(bp, n.id, 'done'), elements, me, other, dt, indent, seen);
+        let s = `${indent}let ${lv} = 0;\n${indent}for (; ${lv} < (${timesExpr}); ${lv}++) {\n${body}\n${indent}}`;
+        if (done) s += `\n${done}`;
         return s;
     }
     if (n.kind === 'sequence') {
@@ -137,7 +170,7 @@ export function compileBlueprintFragments(bp: Blueprint | null | undefined, elem
     const isSprite = ownerTag !== '';
     const me = isSprite ? '_me' : 'null';
     const meDecl = isSprite ? `const _me = S(${q(ownerTag)}); ` : '';
-    const chain = (first: string | null, dt: string, other: string, indent: string) =>
+    const chain = (first: { to: string; port: BPPin } | null, dt: string, other: string, indent: string) =>
         emitChain(bp, first, elements, me, other, dt, indent, new Set());
 
     for (const n of bp.nodes) {
