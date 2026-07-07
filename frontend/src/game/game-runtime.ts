@@ -15,7 +15,7 @@
  */
 
 import { batch } from 'solid-js';
-import { store, setStore, zoomToFitSlide, applyDisplayState, setActiveSlide } from '../store/app-store';
+import { store, setStore, zoomToFitSlide, applyDisplayState, setActiveSlide, setViewState } from '../store/app-store';
 import { showToast } from '../components/toast';
 import type { DrawingElement } from '../types';
 
@@ -148,6 +148,7 @@ interface Snapshot {
     selection: string[];
     activeSlideIndex: number;
     appMode: string;
+    viewState: { scale: number; panX: number; panY: number; rotation?: number };
 }
 
 let snapshot: Snapshot | null = null;
@@ -320,6 +321,7 @@ export function startGame(script?: string): boolean {
         selection: [...store.selection],
         activeSlideIndex: store.activeSlideIndex,
         appMode: store.appMode,
+        viewState: { ...store.viewState },
     };
     lastScript = src;
     tickHandlers = [];
@@ -401,6 +403,8 @@ export function stopGame(): void {
             setStore('appMode', snap.appMode as any);
             setStore('gameActive', false);
         });
+        // Restore the exact pre-play camera (startGame did zoomToFitSlide).
+        setViewState(snap.viewState);
     } else {
         setStore('gameActive', false);
     }
