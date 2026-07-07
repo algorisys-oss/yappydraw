@@ -10,9 +10,11 @@
  */
 
 import { type Component, Show } from 'solid-js';
-import { Play } from 'lucide-solid';
+import { Play, Download } from 'lucide-solid';
 import { store } from '../store/app-store';
 import { showToast } from './toast';
+import { drawingId } from './menu';
+import { exportSceneAsHtml } from '../utils/export-game';
 import { GameViewSwitcher, type GameView } from './game-view-switcher';
 import './game-mode-bar.css';
 
@@ -35,10 +37,22 @@ const play = () => {
     });
 };
 
+const exportGame = async () => {
+    try {
+        showToast('Generating game HTML…', 'loading', 0);
+        await exportSceneAsHtml(drawingId());
+        showToast('Game exported — a self-contained playable HTML file', 'success');
+    } catch (e) {
+        console.error(e);
+        showToast('Failed to export the game', 'error');
+    }
+};
+
 export const GameModeBar: Component = () => (
     <Show when={store.docType === 'game' && !store.gameActive && !anyEditorOpen()}>
         <div class="game-mode-bar" role="toolbar" aria-label="Game views">
             <GameViewSwitcher current={currentView()} />
+            <button class="gmb-export" title="Download this game as a self-contained playable HTML file" onClick={exportGame}><Download size={14} /> Export</button>
             <button class="gmb-play" title="Play the game" onClick={play}><Play size={14} /> Play</button>
         </div>
     </Show>

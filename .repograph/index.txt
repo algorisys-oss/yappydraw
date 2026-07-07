@@ -137,8 +137,8 @@ frontend/src/components/file-open-dialog.css | - | 158 |
 frontend/src/components/file-open-dialog.tsx | typescript | 192 | Component:1 FileOpenDialogProps:8 FileOpenDialog:14 fetchFiles:22 handleDelete:45 handleKeyDown:61 handleMouseMove:97
 frontend/src/components/game-graph.css | - | 133 |
 frontend/src/components/game-graph.tsx | typescript | 355 | Component:9 Behavior:15 GameGraph:32 triggersFor:46 actionsFor:47 posOf:55 targetPosOf:60 flowColor:61 onWheel:73 onSurfaceDown:85 toSurface:91 onSurfaceMove:96 onSurfaceUp:102 startFlowWire:109 resolveFlowWire:114 startWire:135 resolveWire:140 startNodeDrag:162 moveNodeDrag:169 endNodeDrag:174 writeOwner:181 behaviorsOf:185 addNode:187 deleteNode:196 bhv:199 patchBehavior:200 setTriggerKind:202 patchTrigger:203 toggleCondition:204 patchCondition:205 addActionTo:206 setActionKind:207 patchActionAt:208 removeActionAt:209 play:211 onKey:219 a:246 a:253 a:260 a:267 meta:275 owner:276
-frontend/src/components/game-mode-bar.css | - | 33 |
-frontend/src/components/game-mode-bar.tsx | typescript | 47 | Component:12 GameView:16 anyEditorOpen:19 currentView:23 play:30 GameModeBar:38
+frontend/src/components/game-mode-bar.css | - | 48 |
+frontend/src/components/game-mode-bar.tsx | typescript | 61 | Component:12 GameView:18 anyEditorOpen:21 currentView:25 play:32 exportGame:40 GameModeBar:51
 frontend/src/components/game-overlay.css | - | 110 |
 frontend/src/components/game-overlay.tsx | typescript | 115 | Component:11 GameButton:19 GameOverlay:23 padVisible:28 ended:32 toWorld:34 onDown:36 onMove:41 onUp:45
 frontend/src/components/game-script-dialog.css | - | 139 |
@@ -166,7 +166,7 @@ frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 d
 frontend/src/components/measure-overlay.css | - | 46 |
 frontend/src/components/measure-overlay.tsx | typescript | 78 | MeasureOverlay:11 toWorld:16 onDown:18 onMove:25 onUp:30 onKey:35 seg:44
 frontend/src/components/menu.css | - | 292 |
-frontend/src/components/menu.tsx | typescript | 1289 | Component:1 handleSaveRequest:79 handleNew:86 proceed:87 Menu:102 handleUnsavedCancel:116 handleUnsavedDiscard:121 handleUnsavedSave:128 onPaletteEscape:145 performSave:156 is:221 handleLoad:257 handleResetView:277 loadTemplateAction:282 handleTemplateSelect:322 handleOpenJson:331 handleLoadJsonText:373 handleExportHtml:389 handleExportRocket:427 handleDeployToRocket:460 onLeftMouseDown:511 onRightMouseDown:526 onMouseMove:540 onMouseUp:555 handleResize:564
+frontend/src/components/menu.tsx | typescript | 1263 | Component:1 handleSaveRequest:79 handleNew:86 proceed:87 Menu:102 handleUnsavedCancel:116 handleUnsavedDiscard:121 handleUnsavedSave:128 onPaletteEscape:145 performSave:156 is:221 handleLoad:257 handleResetView:277 loadTemplateAction:282 handleTemplateSelect:322 handleOpenJson:331 handleLoadJsonText:373 handleExportHtml:389 handleExportRocket:401 handleDeployToRocket:434 onLeftMouseDown:485 onRightMouseDown:500 onMouseMove:514 onMouseUp:529 handleResize:538
 frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
 frontend/src/components/mindmap-tool-group.tsx | typescript | 135 | Component:1 MindmapToolGroup:16 handler:23 getActiveMindmapTool:34 handleToolClick:48 as:56 as:61 handleRightClick:68 toggleMenu:74 as:76 activeTool:81 isActive:82 getDropdownPosition:84
@@ -348,7 +348,7 @@ frontend/src/game/game-templates.ts | typescript | 228 | GameTemplate:3
 frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 120 | ac:14 tone:31 sweep:46 noise:62 Sfx:78 playSfx:80 startMusic:99 stopMusic:111 setMuted:115
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
-frontend/src/help-docs/features/arcade-doc.tsx | typescript | 263 | ArcadeDoc:8 a:117
+frontend/src/help-docs/features/arcade-doc.tsx | typescript | 264 | ArcadeDoc:8 a:117
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 248 | DesignStudioDoc:9
@@ -502,6 +502,7 @@ frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperat
 frontend/src/utils/element-transforms.ts | typescript | 369 | changeElementType:4 isConnectorType:11 getTransformOptions:99 getShapeIcon:154 getShapeTooltip:350 getCurveTypeOptions:354 getCurveTypeIcon:358 getCurveTypeTooltip:367
 frontend/src/utils/envelope-warp.ts | typescript | 252 | Pt:20 WarpGrid:21 getWarpGrid:26 defaultWarpGrid:40 catmull:59 subdivideGrid:66 getEffectiveGrid:98 defaultWarpCorners:105 bilinear:112 invBilinear:120 pointInQuad:142 meshWarpPoint:154 geoToSubpolylines:188 warpGeometry:237
 frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19 parseExpr:72
+frontend/src/utils/export-game.ts | typescript | 42 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
 frontend/src/utils/export.ts | typescript | 1192 | ShapeGeometry:11 buildAppearanceSvgGroup:20 geometryToDs:74 renderPagedDocToCanvas:119
 frontend/src/utils/geometry-scale.ts | typescript | 69 | scalePoints:13 scalePathAnchors:33 scalePathSubpaths:47 scaleEraseStrokes:53
@@ -676,6 +677,7 @@ tests/free-transform-pivot.spec.ts | typescript | 72 |
 tests/free-transform-rotated-resize.spec.ts | typescript | 111 | toClient:40
 tests/free-transform-shear.spec.ts | typescript | 86 | clickWorld:25
 tests/free-transform-warp.spec.ts | typescript | 308 | clickWorld:25
+tests/game-export.spec.ts | typescript | 70 | Window:3
 tests/game-graph.spec.ts | typescript | 181 | Window:7
 tests/game-mode-bar.spec.ts | typescript | 34 | Window:4
 tests/generate-samples.spec.ts | typescript | 122 | saveState:13

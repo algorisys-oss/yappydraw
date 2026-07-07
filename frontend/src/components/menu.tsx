@@ -16,6 +16,7 @@ import {
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
+import { exportSceneAsHtml } from "../utils/export-game";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
 import { isGlobalPlaying, isGlobalPaused, animationEngine } from "../utils/animation/animation-engine";
@@ -50,7 +51,6 @@ import type { SlideDocument } from "../types/slide-types";
 import { isPagedDocType } from "../types/slide-types";
 import DesignSizeDialog from "./design-size-dialog";
 import type { Template } from "../types/template-types";
-import { exportToHtml } from "../utils/export-to-html";
 import { YappyAPI } from "../api";
 import { loadRocketConfig, hasRocketConfig, rocketLogin, rocketEnsureApp, rocketImportSchema } from "../ai/rocket-settings";
 import "./menu.css";
@@ -389,33 +389,7 @@ const Menu: Component = () => {
     const handleExportHtml = async () => {
         try {
             showToast('Generating HTML...', 'loading', 0);
-            saveActiveSlide(); // Sync current inputs
-
-            const slideDoc: SlideDocument = {
-                version: 4,
-                metadata: {
-                    name: drawingId(),
-                    updatedAt: new Date().toISOString(),
-                    docType: store.docType
-                },
-                elements: JSON.parse(JSON.stringify(store.elements)),
-                layers: JSON.parse(JSON.stringify(store.layers)),
-                slides: JSON.parse(JSON.stringify(store.slides)),
-                globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
-                gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
-                states: JSON.parse(JSON.stringify(store.states)),
-                symbols: JSON.parse(JSON.stringify(store.symbols)),
-                graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
-                swatches: JSON.parse(JSON.stringify(store.swatches)),
-                artboards: JSON.parse(JSON.stringify(store.artboards)),
-                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode),
-                sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
-                gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined,
-                blueprints: store.blueprints && Object.keys(store.blueprints).length ? JSON.parse(JSON.stringify(store.blueprints)) : undefined,
-                gameAuthoringMode: store.gameAuthoringMode === 'code' ? 'code' : undefined,
-            };
-
-            await exportToHtml(slideDoc, drawingId());
+            await exportSceneAsHtml(drawingId());
             showToast('HTML Exported successfully!', 'success');
             setIsLoadExportOpen(false);
         } catch (e) {

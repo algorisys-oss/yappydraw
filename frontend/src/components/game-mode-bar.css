@@ -31,3 +31,18 @@
     flex: 0 0 auto;
 }
 .gmb-play:hover { background: #15803d; }
+.gmb-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+.gmb-export:hover { border-color: var(--accent-color, #6366f1); color: var(--accent-color, #6366f1); }

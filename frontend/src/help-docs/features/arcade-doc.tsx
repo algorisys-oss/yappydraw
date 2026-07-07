@@ -242,10 +242,11 @@ game.random(min, max) · game.clamp(v, min, max)`}</code></pre>
             <section class="doc-section">
                 <h2>Sharing your game</h2>
                 <p>
-                    <strong>Menu → Export / Save… → HTML</strong> produces a single self-contained file:
-                    anyone opening it sees your design with a big <strong>▶ Play Game</strong> button — no
-                    install, works offline, touch controls included. The script also travels with
-                    <code> .yappy</code>/JSON saves and My Templates.
+                    Hit <strong>⬇ Export</strong> on the game bar (or <strong>Menu → Save… → Export HTML</strong>)
+                    to download a single self-contained file: anyone opening it sees your game with a big
+                    <strong>▶ Play Game</strong> button — no install, works offline, touch controls included.
+                    Visual and Blueprint games export just like code games (the graph is compiled into the file).
+                    The script also travels with <code>.yappy</code>/JSON saves and My Templates.
                 </p>
                 <pre><code>{`const Y = window.Yappy;      // scripting from the console works too
 Y.setGameScript(src);        // save a script
