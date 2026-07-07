@@ -156,7 +156,7 @@ interface AutoSaveMeta {
     sizeBytes: number;
     viewState?: { scale: number; panX: number; panY: number };
     activeSlideIndex?: number;
-    docType?: 'infinite' | 'slides' | 'design';
+    docType?: 'infinite' | 'slides' | 'design' | 'game';
     slideCount?: number;
 }
 

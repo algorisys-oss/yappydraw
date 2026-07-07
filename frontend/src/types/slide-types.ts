@@ -74,10 +74,20 @@ export interface Slide {
  * - 'design': paged Canva-style design document (fixed-size pages, size presets)
  * 'slides' and 'design' share the same paged substrate (Slide frames).
  */
-export type DocType = 'infinite' | 'slides' | 'design';
+export type DocType = 'infinite' | 'slides' | 'design' | 'game';
 
-/** True for document types built on paged Slide frames (slides + design). */
-export const isPagedDocType = (t?: string | null): boolean => t === 'slides' || t === 'design';
+/**
+ * True for document types built on a paged Slide "stage" frame (slides, design,
+ * game). Controls page rendering, page-exact export, and the Play stage.
+ */
+export const isPagedDocType = (t?: string | null): boolean => t === 'slides' || t === 'design' || t === 'game';
+
+/**
+ * True for MULTI-PAGE / presentation documents (slides + design) — the ones with a
+ * slide navigator, "Add Page", page-control toolbar and Present mode. A `game` is a
+ * single fixed stage, so it is paged but NOT multi-page (no slide/present chrome).
+ */
+export const isMultiPageDocType = (t?: string | null): boolean => t === 'slides' || t === 'design';
 
 /**
  * Metadata for a slide document
@@ -180,7 +190,7 @@ export const createSlideDocument = (name?: string, docType: DocType = 'slides', 
         order: 0,
         backgroundColor: 'transparent'
     }],
-    slides: [createDefaultSlide(undefined, docType === 'design' ? 'Page 1' : 'Slide 1', 0, 0, pageSize)],
+    slides: [createDefaultSlide(undefined, docType === 'game' ? 'Stage' : docType === 'design' ? 'Page 1' : 'Slide 1', 0, 0, pageSize)],
     globalSettings: {},
     gridSettings: {
         enabled: false,

@@ -83,7 +83,7 @@ export const handleSaveRequest = (intent: 'workspace' | 'disk' | 'disk-json') =>
     }
 };
 
-export const handleNew = (docType: 'infinite' | 'slides' | 'design' = 'slides', pageSize?: { width: number, height: number }, after?: () => void) => {
+export const handleNew = (docType: 'infinite' | 'slides' | 'design' | 'game' = 'slides', pageSize?: { width: number, height: number }, after?: () => void) => {
     const proceed = () => {
         resetToNewDocument(docType, pageSize);
         setDrawingId('Untitled');

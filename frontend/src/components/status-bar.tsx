@@ -1,5 +1,5 @@
 import { type Component, Show, For } from "solid-js";
-import { isPagedDocType } from '../types/slide-types';
+import { isMultiPageDocType } from '../types/slide-types';
 import { store, setViewState, undo, redo, togglePresentationMode, resetRotation, pageNoun } from "../store/app-store";
 import { drawingId } from "./menu";
 import { Plus, Minus, Undo2, Redo2, Play } from "lucide-solid";
@@ -200,7 +200,7 @@ const StatusBar: Component = () => {
             </div>
 
             {/* Slide Info (slides mode only) */}
-            <Show when={isPagedDocType(store.docType)}>
+            <Show when={isMultiPageDocType(store.docType)}>
                 <div class="status-section">
                     <span>{pageNoun()} {store.activeSlideIndex + 1}/{store.slides.length}</span>
                 </div>

@@ -173,7 +173,7 @@ frontend/src/components/my-games-dialog.css | - | 82 |
 frontend/src/components/my-games-dialog.tsx | typescript | 129 | Component:9 GameCard:24 MyGamesDialog:26 fetchGames:30 load:45 play:54 open:63 del:70
 frontend/src/components/my-games-signal.ts | typescript | 4 |
 frontend/src/components/new-game-dialog.css | - | 55 |
-frontend/src/components/new-game-dialog.tsx | typescript | 86 | Component:11 Choice:20 NewGameDialog:38 pick:40
+frontend/src/components/new-game-dialog.tsx | typescript | 87 | Component:11 Choice:20 NewGameDialog:38 pick:40
 frontend/src/components/new-game-signal.ts | typescript | 4 |
 frontend/src/components/p3-color-picker.tsx | typescript | 265 | Component:1 setPalettePinned:15 ColorPalettePicker:20 activePalette:25 applyAsset:27 onSwatchPointerDown:82 onSwatchPointerMove:87 onSwatchPointerUp:99 handleDragStart:110
 frontend/src/components/path-editor-overlay.tsx | typescript | 303 | Component:8 onMove:120 onUp:156
@@ -465,7 +465,7 @@ frontend/src/templates/user-templates.ts | typescript | 114 | listUserTemplates:
 frontend/src/types.ts | typescript | 730 | ElementType:2 SymbolDef:24 Artboard:27 GraphicStyle:31 Swatch:35 PatternSwatch:39 ToolType:41 PathAnchor:49 PathSubpath:67 AppMode:72 FillStyle:73 PatternType:77 PatternFill:85 MeshGradient:106 StrokeStyle:118 FontFamily:122 TextAlign:123 VerticalAlign:124 ArrowHead:125 RichTextSpan:127 GradientStop:142 GradientType:147 BlendMode:149 Point:171 EntranceAnimation:178 ExitAnimation:214 PaintFill:240 PaintStroke:242 DrawingElement:244 TableCellSelection:647 TableCellFormatType:655 TableCellFormat:657 TableBorderStyle:670 TableCellBorder:672 TableCellBorders:677 Layer:684 GridSettings:699 Guide:713 ViewState:719
 frontend/src/types/brand-types.ts | typescript | 41 | BrandColors:5 BrandFonts:13 BrandKit:20
 frontend/src/types/motion-types.ts | typescript | 116 | AnimationTrigger:3 AnimationAction:11 BaseAnimation:22 PresetAnimation:35 PropertyAnimation:42 PathAnimation:51 RotateAnimation:60 AutoSpinAnimation:68 MorphAnimation:76 AnimationKeyframe:83 KeyframeAnimation:89 ElementAnimation:95 DrawingElementState:99 DisplayState:112
-frontend/src/types/slide-types.ts | typescript | 194 | SlideTransitionType:7 SlideTransitionEasing:20 SlideTransition:34 Slide:52 DocType:77 SlideDocumentMetadata:85 GlobalSettings:95 SlideDocument:120
+frontend/src/types/slide-types.ts | typescript | 204 | SlideTransitionType:7 SlideTransitionEasing:20 SlideTransition:34 Slide:52 DocType:77 SlideDocumentMetadata:95 GlobalSettings:105 SlideDocument:130
 frontend/src/types/template-types.ts | typescript | 147 | TemplateCategory:7 TemplateMetadata:20 DrawingData:36 Template:48 CategoryInfo:58 SlidePalette:70 PresentationSlideTemplate:87 PresentationTemplate:101 DesignPageTemplate:115 DesignTemplate:128 UserTemplate:141
 frontend/src/utils/alignment.ts | typescript | 165 | AlignmentType:3 DistributionType:4
 frontend/src/utils/anchor-points.ts | typescript | 232 | Point:4 AnchorPoint:9 getAnchorPoints:17 findClosestAnchor:199 isNearAnchor:226

@@ -2070,9 +2070,9 @@ export const YappyAPI = {
     retreatPresentation() { return retreatPresentation(); },
     goToFirstSlide() { return setActiveSlide(0); },
     goToLastSlide() { return setActiveSlide(store.slides.length - 1); },
-    setDocType(type: 'infinite' | 'slides' | 'design') { setDocType(type); },
+    setDocType(type: 'infinite' | 'slides' | 'design' | 'game') { setDocType(type); },
     loadDocument(doc: any) { loadDocument(doc); },
-    resetToNewDocument(docType: 'infinite' | 'slides' | 'design' = 'slides', pageSize?: { width: number, height: number }) { resetToNewDocument(docType, pageSize); },
+    resetToNewDocument(docType: 'infinite' | 'slides' | 'design' | 'game' = 'slides', pageSize?: { width: number, height: number }) { resetToNewDocument(docType, pageSize); },
     /** Create a new Canva-style design document. Pass a page-size preset id (e.g. 'instagram-post') or explicit {width, height}. */
     newDesign(size?: string | { width: number, height: number }) {
         const resolved = typeof size === 'string' ? getPagePreset(size) : size;

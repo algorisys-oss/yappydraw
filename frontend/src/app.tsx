@@ -1,5 +1,5 @@
 import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal } from 'solid-js';
-import { isPagedDocType } from './types/slide-types';
+import { isMultiPageDocType } from './types/slide-types';
 import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel,
   toggleMinimap, toggleRulers, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
@@ -1343,7 +1343,7 @@ const App: Component = () => {
         <SymbolismOverlay />
         <TypeOnPathOverlay />
         <SymbolEditBanner />
-        <Show when={isPagedDocType(store.docType)}>
+        <Show when={isMultiPageDocType(store.docType)}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={
             <Show when={store.appMode === 'presentation' && !store.gameActive}>
               <PresentationControls />

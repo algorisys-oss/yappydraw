@@ -40,8 +40,9 @@ const NewGameDialog: Component = () => {
     const pick = (c: Choice) => {
         setShowNewGame(false);
         const s = stage();
-        // A game is a paged (design) document — its page is the fixed stage/window.
-        handleNew('design', { width: s.w, height: s.h }, c.after);
+        // A game is a single-stage paged doc — the page is the fixed play window,
+        // without the multi-page slide/present chrome (docType 'game').
+        handleNew('game', { width: s.w, height: s.h }, c.after);
     };
     return (
         <Show when={showNewGame()}>
