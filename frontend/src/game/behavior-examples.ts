@@ -77,26 +77,52 @@ export function buildCatchExample(): void {
     bumpDirtyRevision();
 }
 
-/** Build a Platformer: a hero that falls, runs, jumps, and lands on a ground bar. */
+/** Build a Platformer with actual gameplay: run & jump across floating platforms,
+ *  collect the 3 coins, and reach the flag to win. Fall off the screen and it's
+ *  game over. Platform gaps/heights are tuned to the jump arc (GRAV/JUMP) so every
+ *  jump is makeable. */
 export function buildPlatformerExample(): void {
     const page = store.slides[store.activeSlideIndex] || store.slides[0];
     const X = page ? page.spatialPosition.x : 0;
     const Y = page ? page.spatialPosition.y : 0;
     const W = page ? page.dimensions.width : 800;
     const H = page ? page.dimensions.height : 600;
+    const G = Y + H - 40;                          // ground top
 
-    const ground = mk('rectangle', X, Y + H - 60, W, 60, 'Ground', '#334155', []);
-    const hero = mk('rectangle', X + W / 2 - 24, Y + 80, 48, 48, 'Hero', '#22c55e', [
+    // Platforms the hero must traverse (each a distinct tag so it can be landed on).
+    const ground = mk('rectangle', X, G, W, 40, 'Ground', '#334155', []);
+    const p1 = mk('rectangle', X + 170, Y + 430, 120, 20, 'P1', '#64748b', []);
+    const p2 = mk('rectangle', X + 350, Y + 320, 120, 20, 'P2', '#64748b', []);
+    const p3 = mk('rectangle', X + 560, Y + 380, 190, 20, 'P3', '#64748b', []);
+
+    // Collectibles + goal flag (unique tags — hit-detection resolves one per tag).
+    const coin1 = mk('circle', X + 216, Y + 372, 26, 26, 'Coin1', '#fbbf24', []);
+    const coin2 = mk('circle', X + 396, Y + 262, 26, 26, 'Coin2', '#fbbf24', []);
+    const coin3 = mk('circle', X + 612, Y + 322, 26, 26, 'Coin3', '#fbbf24', []);
+    const flag = mk('triangle', X + 700, Y + 336, 34, 44, 'Goal', '#ef4444', []);
+
+    const grab = (coin: string) => b({ kind: 'hit', target: coin }, [
+        { kind: 'score', delta: 100 }, { kind: 'destroy', target: coin }, { kind: 'playSound', sound: 'coin' },
+    ]);
+
+    const hero = mk('rectangle', X + 40, Y + 80, 40, 44, 'Hero', '#22c55e', [
         b({ kind: 'start' }, [{ kind: 'gravity', on: true }]),
         b({ kind: 'keyHold', button: 'left' }, [{ kind: 'moveDir', dir: 'left', speed: 'medium' }]),
         b({ kind: 'keyHold', button: 'right' }, [{ kind: 'moveDir', dir: 'right', speed: 'medium' }]),
         b({ kind: 'keyPress', button: 'a' }, [{ kind: 'jump', strength: 'medium' }, { kind: 'playSound', sound: 'jump' }]),
+        // land on the ground and every platform
         b({ kind: 'touching', target: 'Ground' }, [{ kind: 'land' }]),
+        b({ kind: 'touching', target: 'P1' }, [{ kind: 'land' }]),
+        b({ kind: 'touching', target: 'P2' }, [{ kind: 'land' }]),
+        b({ kind: 'touching', target: 'P3' }, [{ kind: 'land' }]),
+        // collect coins, reach the flag to win, fall off to lose
+        grab('Coin1'), grab('Coin2'), grab('Coin3'),
+        b({ kind: 'hit', target: 'Goal' }, [{ kind: 'playSound', sound: 'win' }, { kind: 'win', message: 'YOU WIN!' }]),
         b({ kind: 'leaveScreen' }, [{ kind: 'playSound', sound: 'lose' }, { kind: 'gameOver', message: 'FELL OFF!' }]),
     ]);
 
     pushToHistory();
-    setStore('elements', prev => [...prev, ground, hero]);
+    setStore('elements', prev => [...prev, ground, p1, p2, p3, coin1, coin2, coin3, flag, hero]);
     setStore('selection', [hero.id]);
     setSceneBehaviors([]);
     bumpDirtyRevision();

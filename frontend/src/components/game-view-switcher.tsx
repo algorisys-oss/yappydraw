@@ -26,13 +26,13 @@ const show = (v: GameView) => {
 export const GameViewSwitcher: Component<{ current: GameView }> = (p) => (
     <div class="gvs" role="tablist" aria-label="Game editor view">
         <button class="gvs-btn" classList={{ active: p.current === 'simple' }} title="Simple builder (rule list)"
-            onClick={() => show('simple')}><Gamepad2 size={13} /> Simple</button>
+            onClick={() => show('simple')}><Gamepad2 size={13} /> <span class="gvs-label">Simple</span></button>
         <button class="gvs-btn" classList={{ active: p.current === 'graph' }} title="Node graph (rules + message/flow wires)"
-            onClick={() => show('graph')}><Grid2x2 size={13} /> Graph</button>
+            onClick={() => show('graph')}><Grid2x2 size={13} /> <span class="gvs-label">Graph</span></button>
         <button class="gvs-btn" classList={{ active: p.current === 'blueprint' }} title="Blueprint (execution flow)"
-            onClick={() => show('blueprint')}><Workflow size={13} /> Blueprint</button>
+            onClick={() => show('blueprint')}><Workflow size={13} /> <span class="gvs-label">Blueprint</span></button>
         <button class="gvs-btn" classList={{ active: p.current === 'code' }} title="Code (the game script)"
-            onClick={() => show('code')}><Code size={13} /> Code</button>
+            onClick={() => show('code')}><Code size={13} /> <span class="gvs-label">Code</span></button>
     </div>
 );
 

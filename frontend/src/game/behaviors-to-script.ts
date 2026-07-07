@@ -54,7 +54,9 @@ export function emitAction(a: Action, me: string, other: string, dt: string, ele
                 ? `{ _grav.add(${me}.id); const _v = _V(${me}); _setV(${me}, _v.vx, _v.vy); }`
                 : `_grav.delete(${me}.id);`;
         case 'jump':
-            return `{ const _v = _V(${me}); _setV(${me}, _v.vx, -JUMP[${q(a.strength)}]); }`;
+            // Gravity sprites can only jump while grounded (a real platformer hop,
+            // not a floaty mid-air repeat); non-gravity sprites jump unconditionally.
+            return `{ const _id = ${me}.id; if (!_grav.has(_id) || _ground.has(_id)) { const _v = _V(${me}); _setV(${me}, _v.vx, -JUMP[${q(a.strength)}]); _ground.delete(_id); } }`;
         case 'land':
             return `_land(${me}, ${other});`;
         case 'rotate':
@@ -222,13 +224,14 @@ export function generateGameScript(elements: DrawingElement[], sceneBehaviors: B
     L.push('const _on = (m, fn) => { (_msg[m] || (_msg[m] = [])).push(fn); };');
     L.push('const _emit = (m) => { (_msg[m] || []).forEach(fn => { try { fn(); } catch (e) {} }); };');
     L.push('const _grav = new Set();                // sprites affected by gravity');
-    L.push('const GRAV = 1500;                      // gravity strength (px/sec/sec)');
-    L.push('const JUMP = { slow: 560, medium: 780, fast: 1000 };');
+    L.push('const _ground = new Set();              // gravity sprites resting on a platform this frame');
+    L.push('const GRAV = 2200;                      // gravity strength (px/sec/sec)');
+    L.push('const JUMP = { slow: 680, medium: 860, fast: 1040 };');
     L.push('function _land(sp, other) {             // rest on top of a platform');
     L.push('  if (!sp || !other || !sp.alive || !other.alive) return;');
     L.push('  const v = _V(sp);');
     L.push('  if (v.vy >= 0 && sp.y + sp.height > other.y && sp.y + sp.height < other.y + other.height + 24) {');
-    L.push('    sp.moveTo(sp.x, other.y - sp.height); _setV(sp, v.vx, 0);');
+    L.push('    sp.moveTo(sp.x, other.y - sp.height); _setV(sp, v.vx, 0); _ground.add(sp.id);');
     L.push('  }');
     L.push('}');
     L.push('');
@@ -319,7 +322,7 @@ export function generateGameScript(elements: DrawingElement[], sceneBehaviors: B
     // ── onTick: integrate velocity, keyHold, hit, leaveScreen, tick ──
     L.push('game.onTick((dt, t) => {');
     L.push('  for (let _i = _pending.length - 1; _i >= 0; _i--) { _pending[_i].t -= dt; if (_pending[_i].t <= 0) { const _f = _pending.splice(_i, 1)[0].fn; try { _f(); } catch (e) {} } }');
-    L.push('  for (const [id, v] of _vel) { if (_grav.has(id)) v.vy += GRAV * dt; const sp = game.find(id); if (sp && sp.alive) sp.moveBy(v.vx * dt, v.vy * dt); }');
+    L.push('  for (const [id, v] of _vel) { if (_grav.has(id)) { _ground.delete(id); v.vy += GRAV * dt; } const sp = game.find(id); if (sp && sp.alive) sp.moveBy(v.vx * dt, v.vy * dt); }');
 
     for (const s of sprites) {
         const me = `S(${q(s.tag)})`;

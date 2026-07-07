@@ -27,6 +27,8 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.11](0.8.11.md) — Slingshot & Platformer play right; Play button no longer clipped
+- [0.8.10](0.8.10.md) — Slingshot: an Angry-Birds sample game
 - [0.7.1](0.7.1.md) — Quick toolbar font colour fix (text / rich-text)
 - [0.7.0](0.7.0.md) — Game Engine: variables, sound, physics & the node graph
 - [0.6.0](0.6.0.md) — Arcade: build games on the canvas (visual Game Builder + runtime)

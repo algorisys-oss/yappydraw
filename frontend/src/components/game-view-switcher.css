@@ -6,12 +6,19 @@
     border-radius: 8px;
     background: var(--bg-secondary, rgba(148, 163, 184, 0.15));
     border: 1px solid var(--border-color);
+    /* In tight headers (the 340px behaviors panel), scroll rather than overflow
+       and clip a neighbouring control like the Play button. */
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
 }
+.gvs::-webkit-scrollbar { display: none; }
 .gvs-btn {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 5px 10px;
+    padding: 5px 9px;
+    flex: 0 0 auto;
     border: none;
     border-radius: 6px;
     background: transparent;

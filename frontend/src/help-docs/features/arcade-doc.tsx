@@ -42,7 +42,11 @@ const ArcadeDoc: Component = () => {
                         Sound works offline and in exported games.</li>
                     <li><strong>Physics for platformers:</strong> give a sprite <em>gravity</em> so it falls,
                         <em>jump</em> for an upward hop, and <em>while touching [Ground] → land</em> so it rests
-                        on platforms instead of falling through. The <em>Jump &amp; Run</em> example wires this up.</li>
+                        on platforms instead of falling through. <em>Jump</em> only fires when the sprite is
+                        standing on something (no mid-air double-jumps), so it reads like a real platformer hop.
+                        The <strong>Platformer</strong> example is a full little level: run and jump across three
+                        floating platforms, collect the coins for points, and reach the flag to win (fall off the
+                        screen and it's game over).</li>
                     <li><strong>Variables</strong> (the <em>Vars</em> tab) hold numbers like lives, health, or
                         ammo. Declare them with a starting value in one place; rules change them with
                         <em>set/change variable</em>, react with <em>when a variable reaches…</em>, and gate
@@ -77,7 +81,8 @@ const ArcadeDoc: Component = () => {
                     The game tools live under <strong>Menu → Game</strong>: <strong>New Game…</strong> (pick a
                     <strong>stage size</strong> — the page is your fixed play window — then Blank /
                     Pong / Catch / Platformer / <strong>Slingshot</strong> (an Angry-Birds-style code sample:
-                    drag the bird back, release to fire, smash the blocks to pop the pigs) / Code),
+                    drag the bird back, release to fire, smash the blocks to pop the pigs — clear a level and
+                        press <kbd>Space</kbd> for the next) / Code),
                     <strong>My Games…</strong> (a gallery of your saved games —
                     hover a card to Play, click to open, or start a new one), and the editors Build · Node Graph ·
                     Blueprint · Code · Play. The three visual editors — <strong>Simple</strong> (rule list),

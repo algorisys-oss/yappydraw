@@ -99,7 +99,7 @@ const SLINGSHOT = `// SLINGSHOT — a tiny Angry Birds.
 // Space = next level / retry after a miss. Esc stops.
 const W = game.width, H = game.height, X = game.x, Y = game.y;
 const GROUND = Y + H - 56;
-const GRAV = 1600, REST = 0.42, FRICT = 0.85, STOP = 24, DMG = 360, POWER = 7.5, MAXPULL = 135;
+const GRAV = 1600, REST = 0.42, FRICT = 0.85, STOP = 24, DMG = 360, POWER = 10.5, MAXPULL = 145;
 const AX = X + 150, AY = GROUND - 100;        // slingshot pouch anchor
 const R = X + W - 40;                          // right-side reference
 
@@ -188,7 +188,8 @@ game.onTick((dt) => {
   bird.moveBy(vx * dt, vy * dt); face();
   const speed = Math.hypot(vx, vy);
 
-  if (bird.y + bird.height >= GROUND) { bird.moveTo(bird.x, GROUND - bird.height); if (vy > 0) vy = -vy * REST; vx *= FRICT; if (Math.abs(vy) < STOP) vy = 0; }
+  let onGround = false;
+  if (bird.y + bird.height >= GROUND) { onGround = true; bird.moveTo(bird.x, GROUND - bird.height); if (vy > 0) vy = -vy * REST; vx *= FRICT; if (Math.abs(vy) < STOP) vy = 0; }
   if (bird.x < X) { bird.moveTo(X, bird.y); vx = Math.abs(vx) * REST; }
   if (bird.y < Y) { bird.moveTo(bird.x, Y); vy = Math.abs(vy); }
 
@@ -209,7 +210,7 @@ game.onTick((dt) => {
 
   if (pigs.length === 0 && !cleared) { cleared = true; game.hud('LEVEL CLEAR!   Space = next'); game.sound('win'); return; }
 
-  const settled = bird.y + bird.height >= GROUND - 1 && speed < STOP && flightT > 0.4;
+  const settled = onGround && Math.abs(vx) < STOP && Math.abs(vy) < STOP && flightT > 0.4;
   const gone = bird.x > X + W + 60 || bird.y > Y + H + 140;
   if (settled || gone) {
     birdsLeft--;

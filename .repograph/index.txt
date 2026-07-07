@@ -94,7 +94,7 @@ frontend/src/components/architecture-tool-group.css | - | 50 |
 frontend/src/components/architecture-tool-group.tsx | typescript | 235 | Component:1 Tool:20 Section:21 ArchitectureToolGroup:120 handler:130 isActive:140 activeTool:141 activate:150 handleToolClick:157 handleRightClick:171 toggleMenu:177 getDropdownPosition:182
 frontend/src/components/artboard-overlay.css | - | 97 |
 frontend/src/components/artboard-overlay.tsx | typescript | 150 | HandleKey:16 ArtboardOverlay:19 activeId:20 scale:23 w2sx:24 w2sy:25 startDrag:29 onMove:39 onUp:57 onKey:63 onWinDown:67 rect:83 r:94 isActive:95 hx:131 hy:132
-frontend/src/components/behaviors-panel.css | - | 133 |
+frontend/src/components/behaviors-panel.css | - | 142 |
 frontend/src/components/behaviors-panel.tsx | typescript | 294 | Component:11 Behavior:19 BehaviorsPanel:26 spriteBehaviors:44 sceneBehaviors:45 writeSprite:47 writeScene:48 isScene:49 list:50 write:51 gameVars:54 scan:59 undefinedVars:72 addVar:74 removeVar:78 patchVarInitial:79 renameVar:81 fix:84 ensureName:94 cloneBehaviors:104 addBehavior:107 updateBehavior:112 removeBehavior:113 moveBehavior:114 duplicateBehavior:119 copyAll:123 pasteAll:124 duplicateAction:125 moveAction:126 setTrigger:131 patchTrigger:132 addAction:133 toggleCondition:134 patchCondition:135 setAction:136 patchAction:137 removeAction:138 play:140 availableActions:146 RuleList:148
 frontend/src/components/blob-brush-overlay.css | - | 24 |
 frontend/src/components/blob-brush-overlay.tsx | typescript | 73 | BlobBrushOverlay:11 active:17 toWorld:18 onDown:20 onMove:26 onUp:31 onKey:43 scale:53 strokeScreen:54 cur:55
@@ -141,7 +141,7 @@ frontend/src/components/game-overlay.css | - | 110 |
 frontend/src/components/game-overlay.tsx | typescript | 115 | Component:11 GameButton:19 GameOverlay:23 padVisible:28 ended:32 toWorld:34 onDown:36 onMove:41 onUp:45
 frontend/src/components/game-script-dialog.css | - | 139 |
 frontend/src/components/game-script-dialog.tsx | typescript | 135 | Component:12 GameScriptDialog:40 isCode:42 generated:44 close:50 eject:53 applyTemplate:61 save:67 play:69
-frontend/src/components/game-view-switcher.css | - | 29 |
+frontend/src/components/game-view-switcher.css | - | 36 |
 frontend/src/components/game-view-switcher.tsx | typescript | 39 | Component:12 GameView:17 show:19
 frontend/src/components/google-fonts-dialog.css | - | 110 |
 frontend/src/components/google-fonts-dialog.tsx | typescript | 133 | Component:1 GoogleFontsDialogProps:7 GoogleFontsDialog:21 onKey:35 pick:55 handleListKeys:62 previewLink:78
@@ -334,18 +334,18 @@ frontend/src/examples/examples-page.css | - | 536 |
 frontend/src/examples/examples-page.tsx | typescript | 337 | Component:6 ExampleTemplate:10 getTemplateFromHash:95 ExamplesPage:101 handleHashChange:109 loadPreview:127 navigateToTemplate:156 openInEditor:163 filteredTemplates:168 currentTemplate:178 handleBackToApp:180 as:307
 frontend/src/game/behavior-editors.css | - | 18 |
 frontend/src/game/behavior-editors.tsx | typescript | 125 | Component:11 Trigger:12 t:18 set:19 a:63 set:64
-frontend/src/game/behavior-examples.ts | typescript | 103 | Behavior:8 buildPongExample:25 buildCatchExample:54 buildPlatformerExample:81
+frontend/src/game/behavior-examples.ts | typescript | 129 | Behavior:8 buildPongExample:25 buildCatchExample:54 buildPlatformerExample:84
 frontend/src/game/behavior-types.ts | typescript | 115 | Speed:12 Dir8:13 Dir4:16 Edge:17 SpawnAt:18 Compare:19 Trigger:22 Action:41 Condition:74 Behavior:80
 frontend/src/game/behavior-ui.ts | typescript | 161 | triggerLabel:99 actionLabel:116 conditionLabel:149
-frontend/src/game/behaviors-to-script.ts | typescript | 373 | SpriteWithBehaviors:20 taggedSprites:23 emitAction:40 actionsBlock:122 guarded:128 emitVarReaches:137 emitTimer:145 hitTargets:152 effectiveGameScript:163 GameVar:170 generateGameScript:178
+frontend/src/game/behaviors-to-script.ts | typescript | 376 | SpriteWithBehaviors:20 taggedSprites:23 emitAction:40 actionsBlock:124 guarded:130 emitVarReaches:139 emitTimer:147 hitTargets:154 effectiveGameScript:165 GameVar:172 generateGameScript:180
 frontend/src/game/blueprint-to-script.ts | typescript | 262 | BPFragments:29 follow:40 evalInput:49 evalDataNode:55 emitChain:87 compileBlueprintFragments:166 compileAllBlueprints:244 blueprintsProduceCode:259
 frontend/src/game/blueprint-types.ts | typescript | 163 | BPNodeKind:39 MathOp:43 SpriteProp:47 BPPin:51 BPNode:53 BPEdge:126 Blueprint:133
 frontend/src/game/game-runtime.ts | typescript | 419 | GameButton:25 Sprite:63{constructor:65 el:66 alive:67 x:68 y:69 width:70 height:71 angle:72 text:73 cx:75 cy:76 set:78 moveTo:79 moveBy:80 centerAt:81 rotateBy:82 color:83 setText:84 hide:85 show:86 destroy:87} GameApi:99{onTick:103 onKey:105 key:107 pointer:109 onPointerDown:110 find:112 findAll:113 spawn:115 spawnText:117 hit:119 hud:121 score:123 getScore:125 goToState:127 playAnim:129 goToPage:131 sound:133 music:135 end:137 pad:139 random:140 clamp:141} Snapshot:146 pageRect:198 buildApi:204 startGame:311
-frontend/src/game/game-templates.ts | typescript | 227 | GameTemplate:3
+frontend/src/game/game-templates.ts | typescript | 228 | GameTemplate:3
 frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 120 | ac:14 tone:31 sweep:46 noise:62 Sfx:78 playSfx:80 startMusic:99 stopMusic:111 setMuted:115
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
-frontend/src/help-docs/features/arcade-doc.tsx | typescript | 248 | ArcadeDoc:8 a:102
+frontend/src/help-docs/features/arcade-doc.tsx | typescript | 253 | ArcadeDoc:8 a:107
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 248 | DesignStudioDoc:9
@@ -639,6 +639,7 @@ tests/artboard-delete.spec.ts | typescript | 55 | G:23
 tests/artboard-overlay.spec.ts | typescript | 52 |
 tests/artboards.spec.ts | typescript | 28 |
 tests/behaviors-builder.spec.ts | typescript | 339 | Window:6 buildPong:19
+tests/behaviors-header-fit.spec.ts | typescript | 31 | Window:4
 tests/behaviors-panel.spec.ts | typescript | 126 | Window:7
 tests/blend.spec.ts | typescript | 41 | S:10 hex:37
 tests/blob-brush.spec.ts | typescript | 24 | paths:3
@@ -705,6 +706,7 @@ tests/panel-drag.spec.ts | typescript | 35 |
 tests/path-eraser.spec.ts | typescript | 18 |
 tests/pen-features.spec.ts | typescript | 146 |
 tests/perspective-grid.spec.ts | typescript | 24 |
+tests/platformer-repro.spec.ts | typescript | 54 | Window:4
 tests/productivity-features.spec.ts | typescript | 115 |
 tests/propeak-1.spec.ts | typescript | 281 | sleep:51 setCur:68 ease:70 moveToClient:71 moveTo:75 clickFx:76 findBtn:85 cue:92 ensureTool:105 place:112 think:115 estW:119 tctr:120 line:124 typeAt:126 swoosh:133 at:134 refURL:155
 tests/propeak-2.spec.ts | typescript | 233 | two:6 sleep:49 setCur:66 ease:68 moveToClient:69 moveTo:73 clickFx:74 findBtn:83 cue:93 ensureTool:105 place:112 think:115 estW:116 tctr:117 centre:121 pR:137
@@ -723,6 +725,7 @@ tests/sequence-diagram.spec.ts | typescript | 75 |
 tests/shape-builder.spec.ts | typescript | 72 |
 tests/slice.spec.ts | typescript | 14 |
 tests/slides.spec.ts | typescript | 243 | to:13
+tests/slingshot-repro.spec.ts | typescript | 85 | Window:5 shoot:44
 tests/smooth-path.spec.ts | typescript | 35 | dev:27
 tests/snapping.spec.ts | typescript | 125 |
 tests/solid-block.spec.ts | typescript | 38 |
