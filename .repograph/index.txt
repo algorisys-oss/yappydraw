@@ -99,7 +99,7 @@ frontend/src/components/behaviors-panel.tsx | typescript | 294 | Component:11 Be
 frontend/src/components/blob-brush-overlay.css | - | 24 |
 frontend/src/components/blob-brush-overlay.tsx | typescript | 73 | BlobBrushOverlay:11 active:17 toWorld:18 onDown:20 onMove:26 onUp:31 onKey:43 scale:53 strokeScreen:54 cur:55
 frontend/src/components/blueprint-graph.css | - | 152 |
-frontend/src/components/blueprint-graph.tsx | typescript | 502 | Component:16 BPNode:26 pinOutY:41 pinColor:42 pinLabel:43 dataOutY:63 execInY:65 dataInY:67 execInLabel:69 BlueprintGraph:71 isSprite:81 nodeById:91 posOf:92 srcPinY:94 writeNodes:101 writeEdges:102 patchNode:103 deleteNode:104 connect:109 connectData:115 addNode:121 onWheel:146 onSurfaceDown:157 toSurface:162 onSurfaceMove:167 onSurfaceUp:172 startWire:178 resolveWire:183 startNodeDrag:207 moveNodeDrag:214 endNodeDrag:219 setEventKind:226 patchTrigger:227 setActKind:228 patchAction:229 patchCond:230 setSeqCount:232 play:238 onKey:246 from:308 isData:309 x1:310 y1:311 x2:312 y2:313 a:321
+frontend/src/components/blueprint-graph.tsx | typescript | 515 | Component:16 BPNode:26 pinOutY:41 pinColor:42 pinLabel:43 dataOutY:64 execInY:66 dataInY:68 execInLabel:70 BlueprintGraph:72 isSprite:82 nodeById:92 posOf:93 srcPinY:95 writeNodes:102 writeEdges:103 patchNode:104 deleteNode:105 connect:110 connectData:116 addNode:122 onWheel:148 onSurfaceDown:159 toSurface:164 onSurfaceMove:169 onSurfaceUp:174 startWire:180 resolveWire:185 startNodeDrag:209 moveNodeDrag:216 endNodeDrag:221 setEventKind:228 patchTrigger:229 setActKind:230 patchAction:231 patchCond:232 setSeqCount:234 play:240 onKey:248 from:310 isData:311 x1:312 y1:313 x2:314 y2:315 a:323
 frontend/src/components/bpmn-tool-group.tsx | typescript | 249 | Component:1 BpmnToolGroup:137 handler:144 getActiveTool:154 handleToolClick:163 as:171 as:177 handleRightClick:185 toggleMenu:191 activeTool:198 isActive:199 getDropdownPosition:201
 frontend/src/components/brand-kit-panel.css | - | 69 |
 frontend/src/components/brand-kit-panel.tsx | typescript | 179 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
@@ -175,7 +175,7 @@ frontend/src/components/my-games-dialog.css | - | 82 |
 frontend/src/components/my-games-dialog.tsx | typescript | 129 | Component:9 GameCard:24 MyGamesDialog:26 fetchGames:30 load:45 play:54 open:63 del:70
 frontend/src/components/my-games-signal.ts | typescript | 4 |
 frontend/src/components/new-game-dialog.css | - | 55 |
-frontend/src/components/new-game-dialog.tsx | typescript | 95 | Component:11 Choice:22 slingshotScript:24 loadCodeGame:25 NewGameDialog:46 pick:48
+frontend/src/components/new-game-dialog.tsx | typescript | 96 | Component:11 Choice:22 slingshotScript:24 loadCodeGame:25 NewGameDialog:47 pick:49
 frontend/src/components/new-game-signal.ts | typescript | 4 |
 frontend/src/components/p3-color-picker.tsx | typescript | 265 | Component:1 setPalettePinned:15 ColorPalettePicker:20 activePalette:25 applyAsset:27 onSwatchPointerDown:82 onSwatchPointerMove:87 onSwatchPointerUp:99 handleDragStart:110
 frontend/src/components/path-editor-overlay.tsx | typescript | 303 | Component:8 onMove:120 onUp:156
@@ -335,20 +335,20 @@ frontend/src/dsl/ysl/parser.ts | typescript | 786 | Token:9 SourceLocation:10 Pa
 frontend/src/examples/examples-page.css | - | 536 |
 frontend/src/examples/examples-page.tsx | typescript | 337 | Component:6 ExampleTemplate:10 getTemplateFromHash:95 ExamplesPage:101 handleHashChange:109 loadPreview:127 navigateToTemplate:156 openInEditor:163 filteredTemplates:168 currentTemplate:178 handleBackToApp:180 as:307
 frontend/src/game/behavior-editors.css | - | 18 |
-frontend/src/game/behavior-editors.tsx | typescript | 125 | Component:11 Trigger:12 t:18 set:19 a:63 set:64
+frontend/src/game/behavior-editors.tsx | typescript | 133 | Component:11 Trigger:12 t:18 set:19 a:63 set:64
 frontend/src/game/behavior-examples.ts | typescript | 129 | Behavior:8 buildPongExample:25 buildCatchExample:54 buildPlatformerExample:84
-frontend/src/game/behavior-types.ts | typescript | 115 | Speed:12 Dir8:13 Dir4:16 Edge:17 SpawnAt:18 Compare:19 Trigger:22 Action:41 Condition:74 Behavior:80
-frontend/src/game/behavior-ui.ts | typescript | 161 | triggerLabel:99 actionLabel:116 conditionLabel:149
-frontend/src/game/behaviors-to-script.ts | typescript | 376 | SpriteWithBehaviors:20 taggedSprites:23 emitAction:40 actionsBlock:124 guarded:130 emitVarReaches:139 emitTimer:147 hitTargets:154 effectiveGameScript:165 GameVar:172 generateGameScript:180
-frontend/src/game/blueprint-examples.ts | typescript | 179 | BPEdge:18 BPNode:18 Blueprint:18 Rule:34 graphFromRules:41 install:61 buildBlueprintPlatformerExample:80 buildBlueprintBreakoutExample:127
-frontend/src/game/blueprint-to-script.ts | typescript | 262 | BPFragments:29 follow:40 evalInput:49 evalDataNode:55 emitChain:87 compileBlueprintFragments:166 compileAllBlueprints:244 blueprintsProduceCode:259
-frontend/src/game/blueprint-types.ts | typescript | 163 | BPNodeKind:39 MathOp:43 SpriteProp:47 BPPin:51 BPNode:53 BPEdge:126 Blueprint:133
+frontend/src/game/behavior-types.ts | typescript | 121 | Speed:12 Dir8:13 Dir4:16 Edge:17 SpawnAt:18 Compare:19 Trigger:22 Action:41 Condition:80 Behavior:86
+frontend/src/game/behavior-ui.ts | typescript | 167 | triggerLabel:103 actionLabel:120 conditionLabel:155
+frontend/src/game/behaviors-to-script.ts | typescript | 381 | SpriteWithBehaviors:20 taggedSprites:23 emitAction:40 actionsBlock:129 guarded:135 emitVarReaches:144 emitTimer:152 hitTargets:159 effectiveGameScript:170 GameVar:177 generateGameScript:185
+frontend/src/game/blueprint-examples.ts | typescript | 301 | BPEdge:18 BPNode:18 Blueprint:18 Rule:34 graphFromRules:41 install:61 buildBlueprintPlatformerExample:80 buildBlueprintBreakoutExample:127 graphBuilder:182 slingshotSample:207 buildBlueprintSlingshotExample:293
+frontend/src/game/blueprint-to-script.ts | typescript | 266 | BPFragments:29 follow:40 evalInput:49 evalDataNode:55 emitChain:91 compileBlueprintFragments:170 compileAllBlueprints:248 blueprintsProduceCode:263
+frontend/src/game/blueprint-types.ts | typescript | 167 | BPNodeKind:39 MathOp:43 SpriteProp:47 BPPin:51 BPNode:53 BPEdge:130 Blueprint:137
 frontend/src/game/game-runtime.ts | typescript | 419 | GameButton:25 Sprite:63{constructor:65 el:66 alive:67 x:68 y:69 width:70 height:71 angle:72 text:73 cx:75 cy:76 set:78 moveTo:79 moveBy:80 centerAt:81 rotateBy:82 color:83 setText:84 hide:85 show:86 destroy:87} GameApi:99{onTick:103 onKey:105 key:107 pointer:109 onPointerDown:110 find:112 findAll:113 spawn:115 spawnText:117 hit:119 hud:121 score:123 getScore:125 goToState:127 playAnim:129 goToPage:131 sound:133 music:135 end:137 pad:139 random:140 clamp:141} Snapshot:146 pageRect:198 buildApi:204 startGame:311
 frontend/src/game/game-templates.ts | typescript | 228 | GameTemplate:3
 frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 120 | ac:14 tone:31 sweep:46 noise:62 Sfx:78 playSfx:80 startMusic:99 stopMusic:111 setMuted:115
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
-frontend/src/help-docs/features/arcade-doc.tsx | typescript | 256 | ArcadeDoc:8 a:110
+frontend/src/help-docs/features/arcade-doc.tsx | typescript | 263 | ArcadeDoc:8 a:117
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 248 | DesignStudioDoc:9
@@ -646,7 +646,7 @@ tests/behaviors-header-fit.spec.ts | typescript | 31 | Window:4
 tests/behaviors-panel.spec.ts | typescript | 126 | Window:7
 tests/blend.spec.ts | typescript | 41 | S:10 hex:37
 tests/blob-brush.spec.ts | typescript | 24 | paths:3
-tests/blueprint-games.spec.ts | typescript | 86 | Window:4 boot:6
+tests/blueprint-games.spec.ts | typescript | 167 | Window:4 boot:6
 tests/blueprint-graph.spec.ts | typescript | 449 | Window:7
 tests/bpmn.spec.ts | typescript | 327 | markers:152
 tests/brand-kit.spec.ts | typescript | 97 | Window:6

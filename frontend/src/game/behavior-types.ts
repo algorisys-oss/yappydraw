@@ -55,6 +55,12 @@ export type Action =
     | { kind: 'hide' }
     | { kind: 'setText'; text: string }
     | { kind: 'moveTo'; at: SpawnAt }
+    /** Physics: set this sprite's velocity directly (vx, vy px/sec). Data-wireable
+     *  in the Blueprint (drag pointer math into vx/vy) — the basis for aim/launch. */
+    | { kind: 'setVelocity'; vx: number; vy: number }
+    /** Move this sprite's CENTER to an absolute world point. Data-wireable (x, y) —
+     *  e.g. follow the pointer while aiming. */
+    | { kind: 'moveToXY'; x: number; y: number }
     | { kind: 'spawn'; sprite: string; at: SpawnAt }
     | { kind: 'destroy'; target: 'this' | string }
     | { kind: 'score'; delta: number }

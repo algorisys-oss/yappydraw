@@ -37,7 +37,7 @@
 import type { Trigger, Action, Condition, Compare } from './behavior-types';
 
 export type BPNodeKind = 'event' | 'action' | 'branch' | 'sequence' | 'delay' | 'forLoop' | 'gate'
-    | 'getVar' | 'literal' | 'compare' | 'math' | 'random' | 'spriteProp';
+    | 'getVar' | 'literal' | 'compare' | 'math' | 'random' | 'spriteProp' | 'pointer';
 
 /** Math operators (compile straight to JS). */
 export type MathOp = '+' | '-' | '*' | '/' | '%';
@@ -80,6 +80,8 @@ export interface BPNode {
     /** spriteProp nodes: which sprite (tag) and which property to read. */
     spriteTag?: string;
     prop?: SpriteProp;
+    /** pointer nodes: which pointer axis to read (down → 1/0). */
+    axis?: 'x' | 'y' | 'down';
     /** forLoop nodes: iteration count (inline fallback; a wired `times` input wins). */
     times?: number;
     /** gate nodes: whether the gate starts open (default closed). */
@@ -87,7 +89,7 @@ export interface BPNode {
 }
 
 /** Pure/data node kinds (no exec pins; they produce a value on the 'val' data pin). */
-export const DATA_KINDS: BPNodeKind[] = ['getVar', 'literal', 'compare', 'math', 'random', 'spriteProp'];
+export const DATA_KINDS: BPNodeKind[] = ['getVar', 'literal', 'compare', 'math', 'random', 'spriteProp', 'pointer'];
 export const isDataNode = (k: BPNodeKind): boolean => DATA_KINDS.includes(k);
 
 /** Data OUTPUT pins a node exposes (data nodes → 'val'; forLoop → 'val' = loop index). */
@@ -107,6 +109,8 @@ export const actionDataPorts = (a?: Action): BPPin[] => {
     if (!a) return [];
     if (a.kind === 'score' || a.kind === 'changeVar') return ['delta'];
     if (a.kind === 'setVar') return ['value'];
+    if (a.kind === 'setVelocity') return ['vx', 'vy'];
+    if (a.kind === 'moveToXY') return ['x', 'y'];
     return [];
 };
 

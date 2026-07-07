@@ -177,3 +177,125 @@ export function buildBlueprintBreakoutExample(): void {
 
     install(elements, { '': sceneGraph, Ball: ballGraph, Paddle: paddleGraph }, 'Ball');
 }
+
+/** Tiny node/edge builder with rough auto-layout (positions aren't load-bearing). */
+function graphBuilder() {
+    const nodes: BPNode[] = [];
+    const edges: BPEdge[] = [];
+    let i = 0;
+    const N = (kind: BPNode['kind'], props: Partial<BPNode>): string => {
+        const id = newBPNodeId();
+        nodes.push({ id, kind, x: 40 + (i % 6) * 200, y: 40 + Math.floor(i / 6) * 130, ...props } as BPNode);
+        i++;
+        return id;
+    };
+    const E = (from: string, pin: string, to: string, toPin?: string) =>
+        edges.push(toPin ? { from, pin, to, toPin } : { from, pin, to } as BPEdge);
+    return { nodes, edges, N, E };
+}
+
+/**
+ * Blueprint Slingshot — the drag-aim Angry-Birds sample, authored entirely as a
+ * Blueprint. This is what the new **pointer** data node and **setVelocity /
+ * moveToXY** actions unlock: tap the bird, drag to aim (it follows the pointer),
+ * release to fire (launch velocity = (anchor − pointer) × power, then gravity
+ * takes over). Pop every pig. Multi-shot: leaving the screen resets it to the sling.
+ *
+ * Exported pure helper so tests can compile the exact same graph the New Game
+ * starter installs.
+ */
+export function slingshotSample(X: number, Y: number, W: number, H: number) {
+    const GROUND = Y + H - 40;
+    const AX = X + 130, AY = GROUND - 120;   // sling pouch anchor
+    const POWER = 7;
+    const pigTags = ['Pig1', 'Pig2', 'Pig3'];
+
+    const elements: DrawingElement[] = [
+        el('rectangle', X, Y, W, H, 'Sky', '#bfe9ff'),
+        el('rectangle', X, GROUND, W, Y + H - GROUND, 'Ground', '#7cb342'),
+        el('rectangle', AX - 6, AY, 12, GROUND - AY, 'Post', '#6d4c41'),
+        el('circle', AX - 20, AY - 20, 40, 40, 'Bird', '#e53935'),
+        el('circle', X + W - 250, GROUND - 46, 46, 46, 'Pig1', '#5bbf3a'),
+        el('circle', X + W - 160, GROUND - 46, 46, 46, 'Pig2', '#5bbf3a'),
+        el('circle', X + W - 90, GROUND - 130, 46, 46, 'Pig3', '#5bbf3a'),
+    ];
+
+    // —— Bird graph: aim by dragging the pointer, release to launch ——
+    const g = graphBuilder();
+    // reusable data nodes
+    const Lpow = g.N('literal', { dataValue: POWER });
+    const Lax = g.N('literal', { dataValue: AX });
+    const Lay = g.N('literal', { dataValue: AY });
+    const L1 = g.N('literal', { dataValue: 1 });
+    const Px = g.N('pointer', { axis: 'x' });
+    const Py = g.N('pointer', { axis: 'y' });
+    const Pdown = g.N('pointer', { axis: 'down' });
+    const Gaim = g.N('getVar', { varName: 'aiming' });
+
+    // start → sit the bird in the pouch, aiming off
+    const Estart = g.N('event', { trigger: { kind: 'start' } });
+    const Aplace = g.N('action', { action: { kind: 'moveToXY', x: AX, y: AY } });
+    const Aaim0s = g.N('action', { action: { kind: 'setVar', name: 'aiming', value: 0 } });
+    g.E(Estart, 'out', Aplace); g.E(Aplace, 'out', Aaim0s);
+
+    // tap the bird → start aiming
+    const Etap = g.N('event', { trigger: { kind: 'tap' } });
+    const Aaim1 = g.N('action', { action: { kind: 'setVar', name: 'aiming', value: 1 } });
+    g.E(Etap, 'out', Aaim1);
+
+    // every tick → if aiming: follow the pointer while it's held, launch on release
+    const Etick = g.N('event', { trigger: { kind: 'tick' } });
+    const C1 = g.N('compare', { op: 'atLeast' }); g.E(Gaim, 'val', C1, 'a'); g.E(L1, 'val', C1, 'b');
+    const B1 = g.N('branch', { condition: { name: 'aiming', compare: 'atLeast', value: 1 } }); g.E(C1, 'val', B1, 'cond');
+    const C2 = g.N('compare', { op: 'atLeast' }); g.E(Pdown, 'val', C2, 'a'); g.E(L1, 'val', C2, 'b');
+    const B2 = g.N('branch', { condition: { name: 'aiming', compare: 'atLeast', value: 1 } }); g.E(C2, 'val', B2, 'cond');
+    g.E(Etick, 'out', B1); g.E(B1, 'true', B2);
+    // held → bird follows the pointer
+    const Afollow = g.N('action', { action: { kind: 'moveToXY', x: 0, y: 0 } }); g.E(Px, 'val', Afollow, 'x'); g.E(Py, 'val', Afollow, 'y');
+    g.E(B2, 'true', Afollow);
+    // released → velocity = (anchor − pointer) × POWER, then gravity on
+    const Mvxs = g.N('math', { mathOp: '-' }); g.E(Lax, 'val', Mvxs, 'a'); g.E(Px, 'val', Mvxs, 'b');
+    const Mvx = g.N('math', { mathOp: '*' }); g.E(Mvxs, 'val', Mvx, 'a'); g.E(Lpow, 'val', Mvx, 'b');
+    const Mvys = g.N('math', { mathOp: '-' }); g.E(Lay, 'val', Mvys, 'a'); g.E(Py, 'val', Mvys, 'b');
+    const Mvy = g.N('math', { mathOp: '*' }); g.E(Mvys, 'val', Mvy, 'a'); g.E(Lpow, 'val', Mvy, 'b');
+    const Avel = g.N('action', { action: { kind: 'setVelocity', vx: 0, vy: 0 } }); g.E(Mvx, 'val', Avel, 'vx'); g.E(Mvy, 'val', Avel, 'vy');
+    const Agrav = g.N('action', { action: { kind: 'gravity', on: true } });
+    const Aaim0 = g.N('action', { action: { kind: 'setVar', name: 'aiming', value: 0 } });
+    const Asnd = g.N('action', { action: { kind: 'playSound', sound: 'powerup' } });
+    g.E(B2, 'false', Avel); g.E(Avel, 'out', Agrav); g.E(Agrav, 'out', Aaim0); g.E(Aaim0, 'out', Asnd);
+
+    // hit a pig → pop it, score, tick the counter
+    for (const pt of pigTags) {
+        const Eh = g.N('event', { trigger: { kind: 'hit', target: pt } });
+        const Ad = g.N('action', { action: { kind: 'destroy', target: pt } });
+        const As = g.N('action', { action: { kind: 'score', delta: 1000 } });
+        const Ac = g.N('action', { action: { kind: 'changeVar', name: 'pigs', delta: -1 } });
+        const Ae = g.N('action', { action: { kind: 'playSound', sound: 'explosion' } });
+        g.E(Eh, 'out', Ad); g.E(Ad, 'out', As); g.E(As, 'out', Ac); g.E(Ac, 'out', Ae);
+    }
+
+    // flew off screen → reset to the sling for the next shot
+    const Elv = g.N('event', { trigger: { kind: 'leaveScreen' } });
+    const Astop = g.N('action', { action: { kind: 'setVelocity', vx: 0, vy: 0 } });
+    const Agoff = g.N('action', { action: { kind: 'gravity', on: false } });
+    const Arsp = g.N('action', { action: { kind: 'moveToXY', x: AX, y: AY } });
+    g.E(Elv, 'out', Astop); g.E(Astop, 'out', Agoff); g.E(Agoff, 'out', Arsp);
+
+    const birdGraph: Blueprint = { nodes: g.nodes, edges: g.edges };
+    const sceneGraph = graphFromRules([
+        { trigger: { kind: 'start' }, actions: [{ kind: 'setVar', name: 'pigs', value: pigTags.length }, { kind: 'showVar', name: 'pigs' }] },
+        { trigger: { kind: 'varReaches', name: 'pigs', value: 0, compare: 'atMost' }, actions: [{ kind: 'playSound', sound: 'win' }, { kind: 'win', message: "POPPED 'EM ALL!" }] },
+    ]);
+
+    return { elements, blueprints: { '': sceneGraph, Bird: birdGraph } as Record<string, Blueprint> };
+}
+
+export function buildBlueprintSlingshotExample(): void {
+    const p = page();
+    const X = p ? p.spatialPosition.x : 0;
+    const Y = p ? p.spatialPosition.y : 0;
+    const W = p ? p.dimensions.width : 1280;
+    const H = p ? p.dimensions.height : 720;
+    const { elements, blueprints } = slingshotSample(X, Y, W, H);
+    install(elements, blueprints, 'Bird');
+}

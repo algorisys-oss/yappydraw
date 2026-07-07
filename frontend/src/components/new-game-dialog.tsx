@@ -13,7 +13,7 @@ import { Portal } from 'solid-js/web';
 import { X, Gamepad2, Code, Sparkles, Target, Workflow } from 'lucide-solid';
 import { toggleBehaviorsPanel, toggleGameScript, setGameAuthoringMode, setGameScript } from '../store/app-store';
 import { buildPongExample, buildCatchExample, buildPlatformerExample } from '../game/behavior-examples';
-import { buildBlueprintPlatformerExample, buildBlueprintBreakoutExample } from '../game/blueprint-examples';
+import { buildBlueprintPlatformerExample, buildBlueprintBreakoutExample, buildBlueprintSlingshotExample } from '../game/blueprint-examples';
 import { GAME_TEMPLATES } from '../game/game-templates';
 import { handleNew } from './menu';
 import { showNewGame, setShowNewGame } from './new-game-signal';
@@ -40,6 +40,7 @@ const CHOICES: Choice[] = [
     { key: 'slingshot', title: 'Slingshot', sub: 'Angry-Birds-style — drag & fire (code)', icon: Target, stage: { w: 1280, h: 720 }, after: () => loadCodeGame(slingshotScript()) },
     { key: 'bp-platformer', title: 'Platformer · Blueprint', sub: 'The platformer, wired in the Blueprint editor', icon: Workflow, after: () => buildBlueprintPlatformerExample() },
     { key: 'bp-breakout', title: 'Breakout · Blueprint', sub: 'Smash the bricks — Blueprint + variables', icon: Workflow, after: () => buildBlueprintBreakoutExample() },
+    { key: 'bp-slingshot', title: 'Slingshot · Blueprint', sub: 'Drag & fire — Blueprint pointer + physics', icon: Workflow, stage: { w: 1280, h: 720 }, after: () => buildBlueprintSlingshotExample() },
     { key: 'code', title: 'Code (Advanced)', sub: 'Hand-write the game script yourself', icon: Code, after: () => { setGameAuthoringMode('code'); toggleGameScript(true); } },
 ];
 

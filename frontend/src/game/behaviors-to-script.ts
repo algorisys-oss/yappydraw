@@ -71,6 +71,11 @@ export function emitAction(a: Action, me: string, other: string, dt: string, ele
             return `${me}.hide();`;
         case 'setText':
             return `${me}.setText(${q(a.text)});`;
+        case 'setVelocity':
+            // Directly set the owner's velocity (adds it to _vel so gravity integrates it).
+            return `_setV(${me}, ${ov?.vx ?? num(a.vx)}, ${ov?.vy ?? num(a.vy)});`;
+        case 'moveToXY':
+            return `${me}.centerAt(${ov?.x ?? num(a.x)}, ${ov?.y ?? num(a.y)});`;
         case 'moveTo': {
             const pos = a.at === 'randomTop' ? `{ x: X + Math.random() * (W - ${me}.width), y: Y }`
                 : a.at === 'randomEdge' ? `{ x: X + Math.random() * (W - ${me}.width), y: Y + Math.random() * (H - ${me}.height) }`

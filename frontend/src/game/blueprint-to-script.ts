@@ -74,6 +74,10 @@ function evalDataNode(bp: Blueprint, nodeId: string): string {
     if (n.kind === 'spriteProp') {
         return `(S(${q(n.spriteTag ?? '')}) ? S(${q(n.spriteTag ?? '')}).${n.prop ?? 'x'} : 0)`;
     }
+    if (n.kind === 'pointer') {
+        const ax = n.axis ?? 'x';
+        return ax === 'down' ? '(game.pointer().down ? 1 : 0)' : `game.pointer().${ax}`;
+    }
     if (n.kind === 'forLoop') return loopVar(n.id); // the current loop index
     return '0';
 }

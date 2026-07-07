@@ -44,7 +44,9 @@ export const ACTIONS: { v: Action['kind']; label: string }[] = [
     { v: 'rotate', label: 'rotate' },
     { v: 'color', label: 'change color' }, { v: 'scale', label: 'grow / shrink' },
     { v: 'show', label: 'show' }, { v: 'hide', label: 'hide' },
-    { v: 'setText', label: 'set text' }, { v: 'moveTo', label: 'jump to' }, { v: 'spawn', label: 'spawn a copy' },
+    { v: 'setText', label: 'set text' }, { v: 'moveTo', label: 'jump to' },
+    { v: 'setVelocity', label: 'set velocity (vx, vy)' }, { v: 'moveToXY', label: 'move to point (x, y)' },
+    { v: 'spawn', label: 'spawn a copy' },
     { v: 'destroy', label: 'destroy' }, { v: 'score', label: 'change score' },
     { v: 'setVar', label: 'set variable' }, { v: 'changeVar', label: 'change variable' }, { v: 'showVar', label: 'show variable' },
     { v: 'goToState', label: 'go to state' }, { v: 'playAnim', label: 'play effect' },
@@ -76,6 +78,8 @@ export const defaultAction = (kind: Action['kind']): Action => {
         case 'scale': return { kind, factor: 1.1 };
         case 'setText': return { kind, text: 'Hi' };
         case 'moveTo': return { kind, at: 'randomTop' };
+        case 'setVelocity': return { kind, vx: 0, vy: 0 };
+        case 'moveToXY': return { kind, x: 0, y: 0 };
         case 'spawn': return { kind, sprite: '', at: 'randomTop' };
         case 'destroy': return { kind, target: 'this' };
         case 'score': return { kind, delta: 1 };
@@ -128,6 +132,8 @@ export function actionLabel(a: Action): string {
         case 'hide': return 'hide';
         case 'setText': return `set text "${a.text}"`;
         case 'moveTo': return `jump to ${a.at}`;
+        case 'setVelocity': return `velocity (${a.vx}, ${a.vy})`;
+        case 'moveToXY': return `move to (${a.x}, ${a.y})`;
         case 'spawn': return `spawn ${a.sprite || '?'} (${a.at})`;
         case 'destroy': return `destroy ${a.target}`;
         case 'score': return `score ${a.delta >= 0 ? '+' : ''}${a.delta}`;

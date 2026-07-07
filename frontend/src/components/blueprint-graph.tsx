@@ -15,7 +15,7 @@
 
 import { type Component, For, Show, createSignal, createMemo, onMount, onCleanup } from 'solid-js';
 import { Portal, Dynamic } from 'solid-js/web';
-import { X, Play, Zap, Trash2, Workflow, GitBranch, Cog, ListOrdered, Timer, Plus, Minus, Variable, Hash, Scale, Sigma, Dices, Move, Repeat, DoorOpen, ChevronDown, Database } from 'lucide-solid';
+import { X, Play, Zap, Trash2, Workflow, GitBranch, Cog, ListOrdered, Timer, Plus, Minus, Variable, Hash, Scale, Sigma, Dices, Move, Repeat, DoorOpen, ChevronDown, Database, MousePointer2 } from 'lucide-solid';
 import {
     store, blueprintFor, setBlueprintNodes, setBlueprintEdges, setBlueprintNodePos, toggleBlueprint,
 } from '../store/app-store';
@@ -58,6 +58,7 @@ const DATA_ITEMS: { k: BPNodeKind; label: string; icon: any }[] = [
     { k: 'math', label: 'Math', icon: Sigma },
     { k: 'random', label: 'Random', icon: Dices },
     { k: 'spriteProp', label: 'Sprite Property', icon: Move },
+    { k: 'pointer', label: 'Pointer', icon: MousePointer2 },
 ];
 /** y of the single data OUTPUT pin ('val'). */
 const dataOutY = (_n: BPNode) => OUT_Y;
@@ -137,6 +138,7 @@ const BlueprintGraph: Component = () => {
                                                 : kind === 'random' ? { ...base, min: 1, max: 6 }
                                                     : kind === 'forLoop' ? { ...base, times: 3 }
                                                         : kind === 'gate' ? { ...base, startOpen: false }
+                                                            : kind === 'pointer' ? { ...base, axis: 'x' }
                                                             : { ...base, spriteTag: sprites()[0] ?? '', prop: 'x' }; // spriteProp
         writeNodes([...graph().nodes, node]);
     };
@@ -342,6 +344,7 @@ const BlueprintGraph: Component = () => {
                                                                             : n.kind === 'math' ? <><Sigma size={11} /> MATH</>
                                                                                 : n.kind === 'random' ? <><Dices size={11} /> RANDOM</>
                                                                                     : n.kind === 'spriteProp' ? <><Move size={11} /> SPRITE</>
+                                                                                        : n.kind === 'pointer' ? <><MousePointer2 size={11} /> POINTER</>
                                                                                         : <><Cog size={11} /> DO</>}
                                             </span>
                                             <button class="bp-del" title="Delete node" onPointerDown={e => e.stopPropagation()} onClick={() => deleteNode(n.id)}><Trash2 size={12} /></button>
@@ -431,6 +434,16 @@ const BlueprintGraph: Component = () => {
                                                     <input class="be-num" type="number" value={n.min ?? 0} onInput={e => patchNode(n.id, { min: Number(e.currentTarget.value) })} />
                                                     <span class="bp-if">max</span>
                                                     <input class="be-num" type="number" value={n.max ?? 1} onInput={e => patchNode(n.id, { max: Number(e.currentTarget.value) })} />
+                                                </div>
+                                            </Show>
+                                            <Show when={n.kind === 'pointer'}>
+                                                <div class="bp-row">
+                                                    <span class="bp-if">pointer</span>
+                                                    <select class="be-sel" value={n.axis ?? 'x'} onChange={e => patchNode(n.id, { axis: e.currentTarget.value as any })}>
+                                                        <option value="x">x</option>
+                                                        <option value="y">y</option>
+                                                        <option value="down">is down (1/0)</option>
+                                                    </select>
                                                 </div>
                                             </Show>
                                             <Show when={n.kind === 'spriteProp'}>

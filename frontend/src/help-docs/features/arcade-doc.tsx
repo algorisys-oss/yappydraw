@@ -47,6 +47,12 @@ const ArcadeDoc: Component = () => {
                         The <strong>Platformer</strong> example is a full little level: run and jump across three
                         floating platforms, collect the coins for points, and reach the flag to win (fall off the
                         screen and it's game over).</li>
+                    <li><strong>Pointer &amp; velocity (Blueprint):</strong> the Blueprint editor has a
+                        <em>Pointer</em> data node (read the pointer's x / y / is-down) plus <em>set velocity
+                        (vx, vy)</em> and <em>move to point (x, y)</em> actions whose numbers you can wire from
+                        data (drag a Math result into vx). Together they make aim/drag games possible — the
+                        <strong>Slingshot · Blueprint</strong> sample uses them to follow the pointer while you
+                        drag and launch the bird on release.</li>
                     <li><strong>Variables</strong> (the <em>Vars</em> tab) hold numbers like lives, health, or
                         ammo. Declare them with a starting value in one place; rules change them with
                         <em>set/change variable</em>, react with <em>when a variable reaches…</em>, and gate
@@ -82,9 +88,10 @@ const ArcadeDoc: Component = () => {
                     <strong>stage size</strong> — the page is your fixed play window — then Blank /
                     Pong / Catch / Platformer / <strong>Slingshot</strong> (an Angry-Birds-style code sample:
                     drag the bird back, release to fire, smash the blocks to pop the pigs — clear a level and
-                        press <kbd>Space</kbd> for the next) / Code / and two <strong>Blueprint</strong> samples
-                        (<strong>Platformer · Blueprint</strong> and <strong>Breakout · Blueprint</strong>) that
-                        open ready-made in the Blueprint editor so you can see a whole game wired as nodes),
+                        press <kbd>Space</kbd> for the next) / Code / and three <strong>Blueprint</strong> samples
+                        (<strong>Platformer · Blueprint</strong>, <strong>Breakout · Blueprint</strong> and a
+                        drag-aim <strong>Slingshot · Blueprint</strong>) that open ready-made in the Blueprint
+                        editor so you can see a whole game wired as nodes),
                     <strong>My Games…</strong> (a gallery of your saved games —
                     hover a card to Play, click to open, or start a new one), and the editors Build · Node Graph ·
                     Blueprint · Code · Play. The three visual editors — <strong>Simple</strong> (rule list),
