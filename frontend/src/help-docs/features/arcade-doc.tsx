@@ -76,7 +76,9 @@ const ArcadeDoc: Component = () => {
                 <p>
                     The game tools live under <strong>Menu → Game</strong>: <strong>New Game…</strong> (pick a
                     <strong>stage size</strong> — the page is your fixed play window — then Blank /
-                    Pong / Catch / Platformer / Code), <strong>My Games…</strong> (a gallery of your saved games —
+                    Pong / Catch / Platformer / <strong>Slingshot</strong> (an Angry-Birds-style code sample:
+                    drag the bird back, release to fire, smash the blocks to pop the pigs) / Code),
+                    <strong>My Games…</strong> (a gallery of your saved games —
                     hover a card to Play, click to open, or start a new one), and the editors Build · Node Graph ·
                     Blueprint · Code · Play. The three visual editors — <strong>Simple</strong> (rule list),
                     <strong>Graph</strong> (node/wire view) and <strong>Blueprint</strong> (execution flow) —
