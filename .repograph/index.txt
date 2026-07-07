@@ -76,9 +76,9 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 3111 | Theme:3 HarmonyType:42 ElementOptions:93 ElementType:478 as:478 Window:3103
+frontend/src/api.ts | typescript | 3123 | Theme:3 HarmonyType:43 ElementOptions:94 ElementType:479 as:479 Window:3115
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1464 | Component:1 App:92 moves:107 onPenMove:108 hidePen:112 onControllerChange:132 handleKeyUp:161 handleKeyDown:171 as:680 handleFullscreenChange:795 handleBeforeUnload:801 handlePaste:805 handleGlobalDragEnter:907 handleGlobalDragOver:922 showDropFallbackPrompt:941 cleanup:971 outsideClick:999 isImageFile:1011 first:1012 must:1025 extractDropData:1027 processExtractedDrop:1082 handleGlobalDrop:1199 handleDocumentDrop:1245
+frontend/src/app.tsx | typescript | 1466 | Component:1 App:93 moves:108 onPenMove:109 hidePen:113 onControllerChange:133 handleKeyUp:162 handleKeyDown:172 as:681 handleFullscreenChange:796 handleBeforeUnload:802 handlePaste:806 handleGlobalDragEnter:908 handleGlobalDragOver:923 showDropFallbackPrompt:942 cleanup:972 outsideClick:1000 isImageFile:1012 first:1013 must:1026 extractDropData:1028 processExtractedDrop:1083 handleGlobalDrop:1200 handleDocumentDrop:1246
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -98,6 +98,8 @@ frontend/src/components/behaviors-panel.css | - | 133 |
 frontend/src/components/behaviors-panel.tsx | typescript | 294 | Component:11 Behavior:18 BehaviorsPanel:25 spriteBehaviors:43 sceneBehaviors:44 writeSprite:46 writeScene:47 isScene:48 list:49 write:50 gameVars:53 scan:58 undefinedVars:71 addVar:73 removeVar:77 patchVarInitial:78 renameVar:80 fix:83 ensureName:93 cloneBehaviors:103 addBehavior:106 updateBehavior:111 removeBehavior:112 moveBehavior:113 duplicateBehavior:118 copyAll:122 pasteAll:123 duplicateAction:124 moveAction:125 setTrigger:130 patchTrigger:131 addAction:132 toggleCondition:133 patchCondition:134 setAction:135 patchAction:136 removeAction:137 play:139 availableActions:145 RuleList:147
 frontend/src/components/blob-brush-overlay.css | - | 24 |
 frontend/src/components/blob-brush-overlay.tsx | typescript | 73 | BlobBrushOverlay:11 active:17 toWorld:18 onDown:20 onMove:26 onUp:31 onKey:43 scale:53 strokeScreen:54 cur:55
+frontend/src/components/blueprint-graph.css | - | 123 |
+frontend/src/components/blueprint-graph.tsx | typescript | 424 | Component:16 BPNode:26 pinOutY:40 pinColor:41 pinLabel:42 dataOutY:44 dataInY:46 BlueprintGraph:48 isSprite:57 nodeById:67 posOf:68 srcPinY:70 writeNodes:77 writeEdges:78 patchNode:79 deleteNode:80 connect:85 connectData:91 addNode:97 onWheel:120 onSurfaceDown:131 toSurface:136 onSurfaceMove:141 onSurfaceUp:146 startWire:152 resolveWire:157 startNodeDrag:178 moveNodeDrag:185 endNodeDrag:190 setEventKind:197 patchTrigger:198 setActKind:199 patchAction:200 patchCond:201 setSeqCount:203 play:209 onKey:217 from:255 isData:256 x1:257 y1:258 x2:259 y2:260 a:268
 frontend/src/components/bpmn-tool-group.tsx | typescript | 249 | Component:1 BpmnToolGroup:137 handler:144 getActiveTool:154 handleToolClick:163 as:171 as:177 handleRightClick:185 toggleMenu:191 activeTool:198 isActive:199 getDropdownPosition:201
 frontend/src/components/brand-kit-panel.css | - | 69 |
 frontend/src/components/brand-kit-panel.tsx | typescript | 179 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
@@ -133,8 +135,8 @@ frontend/src/components/export-dialog.css | - | 147 |
 frontend/src/components/export-dialog.tsx | typescript | 176 | Component:1 ExportDialogProps:9 ExportDialog:14 isPaged:20 handleKeyDown:34 handleExport:45
 frontend/src/components/file-open-dialog.css | - | 158 |
 frontend/src/components/file-open-dialog.tsx | typescript | 192 | Component:1 FileOpenDialogProps:8 FileOpenDialog:14 fetchFiles:22 handleDelete:45 handleKeyDown:61 handleMouseMove:97
-frontend/src/components/game-graph.css | - | 111 |
-frontend/src/components/game-graph.tsx | typescript | 285 | Component:9 Behavior:15 GameGraph:26 triggersFor:38 actionsFor:39 posOf:47 onWheel:60 onSurfaceDown:72 toSurface:78 onSurfaceMove:83 onSurfaceUp:88 startWire:94 resolveWire:99 startNodeDrag:121 moveNodeDrag:128 endNodeDrag:133 writeOwner:140 behaviorsOf:144 addNode:146 deleteNode:155 bhv:158 patchBehavior:159 setTriggerKind:161 patchTrigger:162 toggleCondition:163 patchCondition:164 addActionTo:165 setActionKind:166 patchActionAt:167 removeActionAt:168 play:170 onKey:178 a:205 a:212 meta:220 owner:221
+frontend/src/components/game-graph.css | - | 132 |
+frontend/src/components/game-graph.tsx | typescript | 315 | Component:9 Behavior:15 GameGraph:31 triggersFor:43 actionsFor:44 posOf:52 targetPosOf:57 flowColor:58 onWheel:70 onSurfaceDown:82 toSurface:88 onSurfaceMove:93 onSurfaceUp:98 startWire:104 resolveWire:109 startNodeDrag:131 moveNodeDrag:138 endNodeDrag:143 writeOwner:150 behaviorsOf:154 addNode:156 deleteNode:165 bhv:168 patchBehavior:169 setTriggerKind:171 patchTrigger:172 toggleCondition:173 patchCondition:174 addActionTo:175 setActionKind:176 patchActionAt:177 removeActionAt:178 play:180 onKey:188 a:215 a:222 a:229 meta:237 owner:238
 frontend/src/components/game-overlay.css | - | 110 |
 frontend/src/components/game-overlay.tsx | typescript | 108 | Component:11 GameButton:19 GameOverlay:23 padVisible:28 ended:32 toWorld:34 onDown:36 onMove:41 onUp:45
 frontend/src/components/game-script-dialog.css | - | 122 |
@@ -160,7 +162,7 @@ frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 d
 frontend/src/components/measure-overlay.css | - | 46 |
 frontend/src/components/measure-overlay.tsx | typescript | 78 | MeasureOverlay:11 toWorld:16 onDown:18 onMove:25 onUp:30 onKey:35 seg:44
 frontend/src/components/menu.css | - | 278 |
-frontend/src/components/menu.tsx | typescript | 1260 | Component:1 handleSaveRequest:75 handleNew:82 proceed:83 Menu:98 handleUnsavedCancel:112 handleUnsavedDiscard:117 handleUnsavedSave:124 onPaletteEscape:141 performSave:152 is:215 handleLoad:251 handleResetView:271 loadTemplateAction:276 handleTemplateSelect:316 handleOpenJson:325 handleLoadJsonText:367 handleExportHtml:383 handleExportRocket:419 handleDeployToRocket:452 onLeftMouseDown:503 onRightMouseDown:518 onMouseMove:532 onMouseUp:547 handleResize:556
+frontend/src/components/menu.tsx | typescript | 1264 | Component:1 handleSaveRequest:75 handleNew:82 proceed:83 Menu:98 handleUnsavedCancel:112 handleUnsavedDiscard:117 handleUnsavedSave:124 onPaletteEscape:141 performSave:152 is:215 handleLoad:251 handleResetView:271 loadTemplateAction:276 handleTemplateSelect:316 handleOpenJson:325 handleLoadJsonText:367 handleExportHtml:383 handleExportRocket:419 handleDeployToRocket:452 onLeftMouseDown:503 onRightMouseDown:518 onMouseMove:532 onMouseUp:547 handleResize:556
 frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
 frontend/src/components/mindmap-tool-group.tsx | typescript | 135 | Component:1 MindmapToolGroup:16 handler:23 getActiveMindmapTool:34 handleToolClick:48 as:56 as:61 handleRightClick:68 toggleMenu:74 as:76 activeTool:81 isActive:82 getDropdownPosition:84
@@ -327,13 +329,15 @@ frontend/src/game/behavior-editors.tsx | typescript | 125 | Component:11 Trigger
 frontend/src/game/behavior-examples.ts | typescript | 103 | Behavior:8 buildPongExample:25 buildCatchExample:54 buildPlatformerExample:81
 frontend/src/game/behavior-types.ts | typescript | 115 | Speed:12 Dir8:13 Dir4:16 Edge:17 SpawnAt:18 Compare:19 Trigger:22 Action:41 Condition:74 Behavior:80
 frontend/src/game/behavior-ui.ts | typescript | 161 | triggerLabel:99 actionLabel:116 conditionLabel:149
-frontend/src/game/behaviors-to-script.ts | typescript | 352 | SpriteWithBehaviors:18 taggedSprites:21 emitAction:35 actionsBlock:117 guarded:123 emitVarReaches:132 emitTimer:140 hitTargets:147 effectiveGameScript:158 GameVar:163 generateGameScript:168
+frontend/src/game/behaviors-to-script.ts | typescript | 370 | SpriteWithBehaviors:20 taggedSprites:23 emitAction:40 actionsBlock:122 guarded:128 emitVarReaches:137 emitTimer:145 hitTargets:152 effectiveGameScript:163 GameVar:168 generateGameScript:176
+frontend/src/game/blueprint-to-script.ts | typescript | 229 | BPFragments:29 follow:40 evalInput:46 evalDataNode:52 emitChain:82 compileBlueprintFragments:133 compileAllBlueprints:211 blueprintsProduceCode:226
+frontend/src/game/blueprint-types.ts | typescript | 144 | BPNodeKind:35 MathOp:39 SpriteProp:43 BPPin:47 BPNode:49 BPEdge:108 Blueprint:115
 frontend/src/game/game-runtime.ts | typescript | 415 | GameButton:25 Sprite:63{constructor:65 el:66 alive:67 x:68 y:69 width:70 height:71 angle:72 text:73 cx:75 cy:76 set:78 moveTo:79 moveBy:80 centerAt:81 rotateBy:82 color:83 setText:84 hide:85 show:86 destroy:87} GameApi:99{onTick:103 onKey:105 key:107 pointer:109 onPointerDown:110 find:112 findAll:113 spawn:115 spawnText:117 hit:119 hud:121 score:123 getScore:125 goToState:127 playAnim:129 goToPage:131 sound:133 music:135 end:137 pad:139 random:140 clamp:141} Snapshot:146 pageRect:197 buildApi:203 startGame:310
 frontend/src/game/game-templates.ts | typescript | 98 | GameTemplate:3
-frontend/src/game/graph-layout.ts | typescript | 92 | GraphNode:14 GraphWire:22 buildGraphNodes:30 deriveWires:53 wirePath:74 messageColor:88
+frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 120 | ac:14 tone:31 sweep:46 noise:62 Sfx:78 playSfx:80 startMusic:99 stopMusic:111 setMuted:115
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
-frontend/src/help-docs/features/arcade-doc.tsx | typescript | 174 | ArcadeDoc:8 a:87
+frontend/src/help-docs/features/arcade-doc.tsx | typescript | 222 | ArcadeDoc:8 a:90
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 248 | DesignStudioDoc:9
@@ -406,7 +410,7 @@ frontend/src/shapes/renderers/uml-state-renderer.ts | typescript | 201 | Uml2Sec
 frontend/src/shapes/renderers/video-renderer.ts | typescript | 90 | VideoRenderer:6{renderArchitectural:7 renderSketch:11 renderCommon:15 drawPlaceholder:35 drawPlayButton:56 definePath:87}
 frontend/src/shapes/renderers/wireframe-renderer.ts | typescript | 125 | WireframeRenderer:7{renderArchitectural:8 renderSketch:78 getRoundedRectPath:111 definePath:117}
 frontend/src/shapes/shape-registry.ts | typescript | 16 | ShapeRegistry:4
-frontend/src/storage/auto-save.ts | typescript | 260 | initAutoSave:42 forceAutoSave:84 clearAutoSave:95 loadAutoSave:108 AutoSaveMeta:151 scheduleAutoSave:163 buildCurrentDocument:169 performAutoSave:196 handleStorageEvent:251
+frontend/src/storage/auto-save.ts | typescript | 261 | initAutoSave:42 forceAutoSave:84 clearAutoSave:95 loadAutoSave:108 AutoSaveMeta:151 scheduleAutoSave:163 buildCurrentDocument:169 performAutoSave:197 handleStorageEvent:252
 frontend/src/storage/cloud/compression.ts | typescript | 27 | compressDocument:14 decompressToDocument:23
 frontend/src/storage/cloud/index.ts | typescript | 60 | initCloudStorage:22
 frontend/src/storage/cloud/provider-registry.ts | typescript | 42 | ProviderRegistry:11
@@ -422,7 +426,7 @@ frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 Docu
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 readIndex:37 writeIndex:41 saveSnapshot:45 maybeSnapshotVersion:68 snapshotVersionNow:85 listVersions:96 restoreVersion:101 deleteVersion:113
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 6880 | LayoutDirection:10 OutlineNode:10 BooleanOp:11 Poly:11 ShapeFace:11 DistortKind:12 Theme:39 ResolvedTheme:40 AppState:67 HistorySnapshot:495 AlignmentType:4113 DistributionType:4113 CharPatch:4473 CharPatchArg:4476 SelBBox:5430 LastTransform:5680 RegionPathfinderOp:6039 SelectSimilarMatch:6172 buildPathFromPoly:6425 WorldSub:6514 rdpAnchors:6517 normalizeWorldSubs:6545 makePathFromWorldSubs:6560 elementToWorldSubs:6581 startInkCleanupIfNeeded:6819
+frontend/src/store/app-store.ts | typescript | 6934 | LayoutDirection:10 OutlineNode:10 BooleanOp:11 Poly:11 ShapeFace:11 DistortKind:12 Theme:39 ResolvedTheme:40 AppState:67 HistorySnapshot:501 BP:1450 AlignmentType:4167 DistributionType:4167 CharPatch:4527 CharPatchArg:4530 SelBBox:5484 LastTransform:5734 RegionPathfinderOp:6093 SelectSimilarMatch:6226 buildPathFromPoly:6479 WorldSub:6568 rdpAnchors:6571 normalizeWorldSubs:6599 makePathFromWorldSubs:6614 elementToWorldSubs:6635 startInkCleanupIfNeeded:6873
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
 frontend/src/templates/data/designs/index.ts | typescript | 272 |
 frontend/src/templates/data/designs/pack.ts | typescript | 445 |
@@ -453,7 +457,7 @@ frontend/src/templates/user-templates.ts | typescript | 114 | listUserTemplates:
 frontend/src/types.ts | typescript | 730 | ElementType:2 SymbolDef:24 Artboard:27 GraphicStyle:31 Swatch:35 PatternSwatch:39 ToolType:41 PathAnchor:49 PathSubpath:67 AppMode:72 FillStyle:73 PatternType:77 PatternFill:85 MeshGradient:106 StrokeStyle:118 FontFamily:122 TextAlign:123 VerticalAlign:124 ArrowHead:125 RichTextSpan:127 GradientStop:142 GradientType:147 BlendMode:149 Point:171 EntranceAnimation:178 ExitAnimation:214 PaintFill:240 PaintStroke:242 DrawingElement:244 TableCellSelection:647 TableCellFormatType:655 TableCellFormat:657 TableBorderStyle:670 TableCellBorder:672 TableCellBorders:677 Layer:684 GridSettings:699 Guide:713 ViewState:719
 frontend/src/types/brand-types.ts | typescript | 41 | BrandColors:5 BrandFonts:13 BrandKit:20
 frontend/src/types/motion-types.ts | typescript | 116 | AnimationTrigger:3 AnimationAction:11 BaseAnimation:22 PresetAnimation:35 PropertyAnimation:42 PathAnimation:51 RotateAnimation:60 AutoSpinAnimation:68 MorphAnimation:76 AnimationKeyframe:83 KeyframeAnimation:89 ElementAnimation:95 DrawingElementState:99 DisplayState:112
-frontend/src/types/slide-types.ts | typescript | 188 | SlideTransitionType:7 SlideTransitionEasing:20 SlideTransition:34 Slide:52 DocType:77 SlideDocumentMetadata:85 GlobalSettings:95 SlideDocument:120
+frontend/src/types/slide-types.ts | typescript | 192 | SlideTransitionType:7 SlideTransitionEasing:20 SlideTransition:34 Slide:52 DocType:77 SlideDocumentMetadata:85 GlobalSettings:95 SlideDocument:120
 frontend/src/types/template-types.ts | typescript | 147 | TemplateCategory:7 TemplateMetadata:20 DrawingData:36 Template:48 CategoryInfo:58 SlidePalette:70 PresentationSlideTemplate:87 PresentationTemplate:101 DesignPageTemplate:115 DesignTemplate:128 UserTemplate:141
 frontend/src/utils/alignment.ts | typescript | 165 | AlignmentType:3 DistributionType:4
 frontend/src/utils/anchor-points.ts | typescript | 232 | Point:4 AnchorPoint:9 getAnchorPoints:17 findClosestAnchor:199 isNearAnchor:226
@@ -630,6 +634,7 @@ tests/behaviors-builder.spec.ts | typescript | 339 | Window:6 buildPong:19
 tests/behaviors-panel.spec.ts | typescript | 126 | Window:7
 tests/blend.spec.ts | typescript | 41 | S:10 hex:37
 tests/blob-brush.spec.ts | typescript | 24 | paths:3
+tests/blueprint-graph.spec.ts | typescript | 360 | Window:7
 tests/bpmn.spec.ts | typescript | 327 | markers:152
 tests/brand-kit.spec.ts | typescript | 97 | Window:6
 tests/builtin-panel-drag.spec.ts | typescript | 31 | drag:13
@@ -658,7 +663,7 @@ tests/free-transform-pivot.spec.ts | typescript | 72 |
 tests/free-transform-rotated-resize.spec.ts | typescript | 111 | toClient:40
 tests/free-transform-shear.spec.ts | typescript | 86 | clickWorld:25
 tests/free-transform-warp.spec.ts | typescript | 308 | clickWorld:25
-tests/game-graph.spec.ts | typescript | 135 | Window:7
+tests/game-graph.spec.ts | typescript | 155 | Window:7
 tests/generate-samples.spec.ts | typescript | 122 | saveState:13
 tests/generative-shapes.spec.ts | typescript | 31 |
 tests/global.d.ts | typescript | 241 | Window:2

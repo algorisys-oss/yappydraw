@@ -138,6 +138,10 @@ export interface SlideDocument {
     sceneBehaviors?: import('../types').DrawingElement['behaviors'];
     /** Arcade visual builder: declared game variables with their starting values. */
     gameVars?: { name: string; initial: number }[];
+    /** Arcade Blueprint: owner-keyed execution-flow graphs ('' = scene, tag = sprite). */
+    blueprints?: Record<string, import('../game/blueprint-types').Blueprint>;
+    /** @deprecated legacy single scene-level Blueprint (migrated into `blueprints['']`). */
+    blueprint?: import('../game/blueprint-types').Blueprint;
 }
 
 /**

@@ -1,0 +1,123 @@
+.bp-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10065; /* above chrome, same tier as the Game Graph */
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary, #0f172a);
+    color: var(--text-primary);
+}
+
+.bp-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; border-bottom: 1px solid var(--border-color);
+    background: var(--bg-panel); flex-shrink: 0;
+}
+.bp-title { display: flex; align-items: center; gap: 8px; }
+.bp-title h2 { margin: 0; font-size: 15px; font-weight: 700; }
+.bp-sub { font-size: 12px; color: var(--text-secondary); }
+.bp-head-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.bp-add, .bp-play, .bp-close {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 12px; border: none; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.bp-add { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
+.bp-add:hover { border-color: var(--accent-color, #6366f1); }
+.bp-add-data:hover { border-color: #22d3ee; }
+.bp-sep { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--border-color); }
+.bp-play { background: #16a34a; color: #fff; }
+.bp-play:hover { background: #15803d; }
+.bp-close { background: transparent; color: var(--text-secondary); padding: 6px; border-radius: 8px; }
+.bp-close:hover { color: var(--text-primary); }
+
+.bp-viewport {
+    flex: 1; position: relative; overflow: hidden; touch-action: none; cursor: grab;
+    background-image: radial-gradient(circle, rgba(148,163,184,0.25) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+.bp-viewport:active { cursor: grabbing; }
+.bp-surface { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+.bp-wires { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; }
+
+.bp-node {
+    position: absolute;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    font-size: 12px;
+}
+/* kind accents on the left edge */
+.bp-event    { border-left: 4px solid #f59e0b; }
+.bp-action   { border-left: 4px solid #16a34a; }
+.bp-branch   { border-left: 4px solid #6366f1; }
+.bp-sequence { border-left: 4px solid #0ea5e9; }
+.bp-delay    { border-left: 4px solid #a855f7; }
+.bp-getVar   { border-left: 4px solid #22d3ee; }
+.bp-literal  { border-left: 4px solid #22d3ee; }
+.bp-compare  { border-left: 4px solid #22d3ee; }
+.bp-math     { border-left: 4px solid #22d3ee; }
+.bp-random     { border-left: 4px solid #22d3ee; }
+.bp-spriteProp { border-left: 4px solid #22d3ee; }
+
+.bp-node-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 10px; border-bottom: 1px solid var(--border-color);
+    border-radius: 10px 10px 0 0; cursor: grab; user-select: none;
+}
+.bp-event  .bp-node-head { background: rgba(245,158,11,0.14); }
+.bp-action .bp-node-head { background: rgba(22,163,74,0.14); }
+.bp-branch .bp-node-head { background: rgba(99,102,241,0.14); }
+.bp-node-head:active { cursor: grabbing; }
+.bp-kind { display: flex; align-items: center; gap: 4px; font-weight: 800; font-size: 10px; letter-spacing: 0.04em; }
+.bp-sequence .bp-node-head { background: rgba(14,165,233,0.14); }
+.bp-delay    .bp-node-head { background: rgba(168,85,247,0.14); }
+.bp-getVar .bp-node-head, .bp-literal .bp-node-head, .bp-compare .bp-node-head, .bp-math .bp-node-head,
+.bp-random .bp-node-head, .bp-spriteProp .bp-node-head { background: rgba(34,211,238,0.14); }
+.bp-getVar .bp-kind, .bp-literal .bp-kind, .bp-compare .bp-kind, .bp-math .bp-kind,
+.bp-random .bp-kind, .bp-spriteProp .bp-kind { color: #0891b2; }
+.bp-event  .bp-kind { color: #f59e0b; }
+.bp-action .bp-kind { color: #16a34a; }
+.bp-branch .bp-kind { color: var(--accent-color, #6366f1); }
+.bp-sequence .bp-kind { color: #0ea5e9; }
+.bp-delay    .bp-kind { color: #a855f7; }
+.bp-del { border: none; background: transparent; color: var(--text-secondary); cursor: pointer; padding: 3px; border-radius: 4px; display: flex; }
+.bp-del:hover { color: #ef4444; background: var(--bg-secondary); }
+
+.bp-body { padding: 8px 10px 10px; }
+.bp-row { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.bp-if { font-size: 11px; font-weight: 800; color: var(--accent-color, #6366f1); }
+.bp-seq-lbl { font-size: 11px; color: var(--text-secondary); }
+.bp-step {
+    display: flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; padding: 0; border-radius: 5px;
+    border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer;
+}
+.bp-step:hover { border-color: #0ea5e9; }
+
+/* pins */
+.bp-pin {
+    position: absolute; width: 13px; height: 13px; border-radius: 50%;
+    border: 2px solid var(--bg-panel); background: #94a3b8;
+}
+.bp-in { left: -7px; top: 20px; background: #e2e8f0; }
+/* output pins are positioned per-pin via inline `top` (they stack for sequence/branch). */
+.bp-out { right: -7px; cursor: crosshair; }
+.bp-out:hover { transform: scale(1.3); }
+/* data pins are square (⬦) and cyan, to read differently from round exec pins. */
+.bp-dout { right: -7px; background: #22d3ee; border-radius: 3px; cursor: crosshair; }
+.bp-dout:hover { transform: scale(1.3); }
+.bp-din { left: -7px; background: #22d3ee; border-radius: 3px; }
+.bp-din-lbl { font-size: 10px; font-weight: 800; color: #0891b2; }
+.bp-pin-lbl { position: absolute; right: 10px; font-size: 9px; font-weight: 800; color: var(--text-secondary); }
+
+.bp-empty {
+    position: absolute; left: 40px; top: 40px; max-width: 320px;
+    padding: 14px 16px; border: 1px dashed var(--border-color); border-radius: 10px;
+    color: var(--text-secondary); font-size: 13px; line-height: 1.5; background: var(--bg-panel);
+}
+
+.bp-foot {
+    padding: 6px 16px; font-size: 11px; color: var(--text-secondary);
+    border-top: 1px solid var(--border-color); background: var(--bg-panel); text-align: center; flex-shrink: 0;
+}

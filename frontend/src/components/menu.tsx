@@ -5,14 +5,14 @@ import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
-    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph
+    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
-    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, Gamepad2
+    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, Gamepad2, Workflow
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
@@ -175,7 +175,7 @@ const Menu: Component = () => {
                 graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
                 swatches: JSON.parse(JSON.stringify(store.swatches)),
                 artboards: JSON.parse(JSON.stringify(store.artboards)),
-                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? []),
+                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints),
                 sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
                 gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined
             };
@@ -402,7 +402,7 @@ const Menu: Component = () => {
                 graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
                 swatches: JSON.parse(JSON.stringify(store.swatches)),
                 artboards: JSON.parse(JSON.stringify(store.artboards)),
-                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? []),
+                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints),
                 sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
                 gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined
             };
@@ -801,11 +801,15 @@ const Menu: Component = () => {
                                         <Grid2x2 size={16} />
                                         <span class="label">Game Graph (node view)</span>
                                     </button>
+                                    <button class="menu-item" onClick={() => { toggleBlueprint(true); setIsMenuOpen(false); }}>
+                                        <Workflow size={16} />
+                                        <span class="label">Blueprint (exec-flow)</span>
+                                    </button>
                                     <Show when={store.sceneBehaviors?.length || store.elements.some(e => e.behaviors?.length) || store.gameScript?.trim()}>
                                         <button class="menu-item" onClick={() => {
                                             setIsMenuOpen(false);
                                             Promise.all([import('../game/behaviors-to-script'), import('../game/game-runtime')]).then(([g, r]) => {
-                                                const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? []) || store.gameScript;
+                                                const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints) || store.gameScript;
                                                 if (script) r.startGame(script);
                                             });
                                         }}>

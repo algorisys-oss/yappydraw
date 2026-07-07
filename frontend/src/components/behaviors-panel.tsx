@@ -36,7 +36,7 @@ const BehaviorsPanel: Component = () => {
 
     // Keep the Code tab live.
     createEffect(() => {
-        if (tab() === 'code') { store.dirtyRevision; setCode(generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [])); }
+        if (tab() === 'code') { store.dirtyRevision; setCode(generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints)); }
     });
 
     // ── read/write helpers ──
@@ -137,7 +137,7 @@ const BehaviorsPanel: Component = () => {
     const removeAction = (i: number, k: number) => updateBehavior(i, { actions: list()[i].actions.filter((_, j) => j !== k) });
 
     const play = () => {
-        const script = generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? []);
+        const script = generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints);
         if (!script) { showToast('Add some behaviors first', 'info'); return; }
         if (startGame(script)) showToast('Playing — Esc or Stop to end', 'info');
     };

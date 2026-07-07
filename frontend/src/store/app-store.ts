@@ -253,10 +253,14 @@ interface AppState {
     sceneBehaviors: import('../types').DrawingElement['behaviors'];
     /** Visual builder: declared game variables with starting values. */
     gameVars: { name: string; initial: number }[];
+    /** Blueprint: owner-keyed exec-flow graphs ('' = scene, tag = sprite). Persisted in SlideDocument.blueprints. */
+    blueprints: Record<string, import('../game/blueprint-types').Blueprint>;
     /** Visual builder: the floating Behaviors panel is open. */
     showBehaviorsPanel: boolean;
     /** Visual builder: the full-screen node-graph editor is open. */
     showGameGraph: boolean;
+    /** Blueprint: the full-screen execution-flow editor is open. */
+    showBlueprint: boolean;
 
     // Video Playback
     activeVideoElementIds: string[];
@@ -472,8 +476,10 @@ const initialState: AppState = {
     gameScript: '',
     sceneBehaviors: [],
     gameVars: [],
+    blueprints: {},
     showBehaviorsPanel: false,
     showGameGraph: false,
+    showBlueprint: false,
     activeVideoElementIds: [],
     dirtyRevision: 0,
 };
@@ -1438,6 +1444,44 @@ export const setGameVars = (vars: { name: string; initial: number }[]) => {
     bumpDirtyRevision();
 };
 
+// --- Blueprint (execution-flow graph) ---
+// Graphs are keyed by owner: '' = Scene, or a sprite's tag. An empty graph is
+// pruned from the map so autosave/`blueprintsProduceCode` stay clean.
+type BP = import('../game/blueprint-types').Blueprint;
+const emptyGraph = (): BP => ({ nodes: [], edges: [] });
+/** The graph for an owner ('' = scene), always a concrete object (never undefined). */
+export const blueprintFor = (owner: string): BP => store.blueprints[owner] ?? emptyGraph();
+const writeGraph = (owner: string, g: BP) => {
+    if (!g.nodes.length && !g.edges.length) {
+        if (store.blueprints[owner]) setStore('blueprints', reconcileOmit(owner));
+    } else {
+        setStore('blueprints', owner, { nodes: g.nodes, edges: g.edges });
+    }
+    bumpDirtyRevision();
+};
+/** Build a new blueprints map without `owner` (Solid can't delete a key in place). */
+const reconcileOmit = (owner: string) => {
+    const next: Record<string, BP> = {};
+    for (const [k, v] of Object.entries(store.blueprints)) if (k !== owner) next[k] = v;
+    return next;
+};
+/** Replace an owner's whole graph. */
+export const setBlueprint = (owner: string, bp: BP) => writeGraph(owner, { nodes: bp.nodes ?? [], edges: bp.edges ?? [] });
+/** Replace an owner's nodes. */
+export const setBlueprintNodes = (owner: string, nodes: import('../game/blueprint-types').BPNode[]) =>
+    writeGraph(owner, { nodes, edges: blueprintFor(owner).edges });
+/** Replace an owner's edges. */
+export const setBlueprintEdges = (owner: string, edges: import('../game/blueprint-types').BPEdge[]) =>
+    writeGraph(owner, { nodes: blueprintFor(owner).nodes, edges });
+/** Move one node (persists its position). */
+export const setBlueprintNodePos = (owner: string, id: string, pos: { x: number; y: number }) => {
+    const g = blueprintFor(owner);
+    writeGraph(owner, { nodes: g.nodes.map(n => n.id === id ? { ...n, x: Math.round(pos.x), y: Math.round(pos.y) } : n), edges: g.edges });
+};
+
+export const toggleBlueprint = (visible?: boolean) =>
+    setStore('showBlueprint', v => visible ?? !v);
+
 // --- Video Playback Actions ---
 export const startVideoPlayback = (elementId: string) => {
     const el = store.elements.find(e => e.id === elementId);
@@ -2073,6 +2117,16 @@ export const loadDocument = (doc: any) => {
         setStore("gameScript", typeof doc.gameScript === 'string' ? doc.gameScript : '');
         setStore("sceneBehaviors", Array.isArray(doc.sceneBehaviors) ? doc.sceneBehaviors : []);
         setStore("gameVars", Array.isArray(doc.gameVars) ? doc.gameVars : []);
+        // Blueprints: owner-keyed map; migrate a legacy single scene graph into blueprints[''].
+        const loadedBlueprints: Record<string, import('../game/blueprint-types').Blueprint> = {};
+        if (doc.blueprints && typeof doc.blueprints === 'object') {
+            for (const [owner, g] of Object.entries(doc.blueprints)) {
+                if (g && Array.isArray((g as any).nodes)) loadedBlueprints[owner] = { nodes: (g as any).nodes, edges: (g as any).edges ?? [] };
+            }
+        } else if (doc.blueprint && Array.isArray(doc.blueprint.nodes)) {
+            loadedBlueprints[''] = { nodes: doc.blueprint.nodes, edges: doc.blueprint.edges ?? [] };
+        }
+        setStore("blueprints", loadedBlueprints);
         setStore("gameActive", false);
 
         // Apply first slide's explicit background if set (overrides theme default)

@@ -21,10 +21,25 @@ export interface GraphNode {
 }
 export interface GraphWire { from: string; to: string; message: string }
 
+/** A scene-flow destination (a state or a page) referenced by goToState/goToPage. */
+export interface FlowTarget {
+    id: string;            // 'state:<name>' | 'page:<index>'
+    kind: 'state' | 'page';
+    label: string;
+    x: number;
+    y: number;
+}
+/** A flow wire from a rule node to a scene-flow target (state/page). */
+export interface FlowWire { from: string; to: string; kind: 'state' | 'page' }
+
 export const NODE_W = 240;
+export const TARGET_W = 168;
+export const FLOW_STATE_COLOR = '#8b5cf6'; // violet — state jumps
+export const FLOW_PAGE_COLOR = '#0ea5e9';  // sky — page jumps
 const COL_GAP = 90;
 const ROW_GAP = 30;
 const NODE_H_EST = 150; // used only for auto-layout spacing
+const TARGET_ROW_GAP = 66;
 
 /** All behaviors as graph nodes with resolved positions. */
 export function buildGraphNodes(elements: DrawingElement[], sceneBehaviors: Behavior[]): GraphNode[] {
@@ -62,6 +77,59 @@ export function deriveWires(nodes: GraphNode[]): GraphWire[] {
             for (const toId of receivers.get(msg) ?? []) {
                 if (toId !== n.behavior.id) wires.push({ from: n.behavior.id, to: toId, message: msg });
             }
+        }
+    }
+    return wires;
+}
+
+/**
+ * The scene-flow destinations a behavior jumps to — its goToState / goToPage
+ * actions, as flow-output edges. `slideName` maps a page index to a readable
+ * page name for the label (optional).
+ */
+export function flowTargetsOf(b: Behavior, slideName?: (i: number) => string | undefined): { id: string; kind: 'state' | 'page'; label: string }[] {
+    const out: { id: string; kind: 'state' | 'page'; label: string }[] = [];
+    for (const a of b.actions) {
+        if (a.kind === 'goToState') {
+            const key = (a.state ?? '') as string;
+            out.push({ id: `state:${key}`, kind: 'state', label: key || '(unset state)' });
+        } else if (a.kind === 'goToPage') {
+            const i = (a.index ?? 0) as number;
+            const nm = slideName?.(i);
+            out.push({ id: `page:${i}`, kind: 'page', label: nm ? `${nm}` : `Page ${i}` });
+        }
+    }
+    return out;
+}
+
+/**
+ * Distinct scene-flow targets (states/pages any rule jumps to), auto-placed in a
+ * column just to the right of the furthest node. Positions are derived (not
+ * persisted) — the column tracks the graph as nodes move.
+ */
+export function deriveFlowTargets(nodes: GraphNode[], slideName?: (i: number) => string | undefined): FlowTarget[] {
+    const map = new Map<string, { id: string; kind: 'state' | 'page'; label: string }>();
+    for (const n of nodes) for (const t of flowTargetsOf(n.behavior, slideName)) if (!map.has(t.id)) map.set(t.id, t);
+    if (map.size === 0) return [];
+    let maxRight = 0;
+    for (const n of nodes) maxRight = Math.max(maxRight, n.x + NODE_W);
+    const colX = maxRight + COL_GAP + 40;
+    const targets: FlowTarget[] = [];
+    let y = 40;
+    for (const t of map.values()) { targets.push({ ...t, x: colX, y }); y += TARGET_ROW_GAP; }
+    return targets;
+}
+
+/** Flow wires: every rule that jumps → its state/page target node. */
+export function deriveFlowWires(nodes: GraphNode[]): FlowWire[] {
+    const wires: FlowWire[] = [];
+    const seen = new Set<string>();
+    for (const n of nodes) {
+        for (const t of flowTargetsOf(n.behavior)) {
+            const key = `${n.behavior.id}->${t.id}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            wires.push({ from: n.behavior.id, to: t.id, kind: t.kind });
         }
     }
     return wires;

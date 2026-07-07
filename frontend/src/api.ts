@@ -20,6 +20,7 @@ import {
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
+    setBlueprint, toggleBlueprint, blueprintFor,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
@@ -2130,15 +2131,26 @@ export const YappyAPI = {
     toggleGameBuilder(visible?: boolean) { toggleBehaviorsPanel(visible); },
     /** Show/hide the full-screen node-graph editor. */
     toggleGameGraph(visible?: boolean) { toggleGameGraph(visible); },
+    /** Get an owner's Blueprint ('' = Scene, else a sprite tag): {nodes, edges}. */
+    getBlueprint(owner = '') { return blueprintFor(owner); },
+    /** Set an owner's Blueprint ('' = Scene by default). */
+    setBlueprint(bp: { nodes: any[]; edges: any[] }, owner = '') { setBlueprint(owner, bp as any); },
+    /** Get / set a specific owner's Blueprint (Scene or a sprite tag). */
+    getBlueprintFor(owner: string) { return blueprintFor(owner); },
+    setBlueprintFor(owner: string, bp: { nodes: any[]; edges: any[] }) { setBlueprint(owner, bp as any); },
+    /** All Blueprints keyed by owner ('' = Scene). */
+    getBlueprints() { return store.blueprints; },
+    /** Show/hide the full-screen Blueprint (execution-flow) editor. */
+    toggleBlueprint(visible?: boolean) { toggleBlueprint(visible); },
     /** Compile the current document's blocks to a `game.*` script (the "See the code" view). */
     async compileGame(): Promise<string> {
         const m = await import('./game/behaviors-to-script');
-        return m.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? []);
+        return m.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints);
     },
     /** Compile the blocks and play the resulting game (Play button). */
     async playBehaviorGame(): Promise<boolean> {
         const [g, r] = await Promise.all([import('./game/behaviors-to-script'), import('./game/game-runtime')]);
-        const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? []);
+        const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints);
         if (!script) return false;
         return r.startGame(script);
     },

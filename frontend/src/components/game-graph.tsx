@@ -15,13 +15,18 @@ import {
 import { newBehaviorId, type Behavior, type Trigger, type Action } from '../game/behavior-types';
 import { TRIGGERS, COMPARE, ACTIONS, SCENE_ACTION_KINDS, defaultTrigger, defaultAction, broadcastsOf, receivesOf } from '../game/behavior-ui';
 import { TriggerParams, ActionParams } from '../game/behavior-editors';
-import { buildGraphNodes, deriveWires, wirePath, messageColor, NODE_W } from '../game/graph-layout';
+import {
+    buildGraphNodes, deriveWires, wirePath, messageColor, NODE_W,
+    deriveFlowTargets, deriveFlowWires, flowTargetsOf, TARGET_W, FLOW_STATE_COLOR, FLOW_PAGE_COLOR,
+} from '../game/graph-layout';
 import { generateGameScript } from '../game/behaviors-to-script';
 import { startGame } from '../game/game-runtime';
 import { showToast } from './toast';
 import './game-graph.css';
 
-const PORT_Y = 30; // wire attaches this far below a node's top (in the header)
+const PORT_Y = 30;       // message wire attaches this far below a node's top
+const FLOW_PORT_Y = 50;  // scene-flow (goToState/goToPage) wire attaches here
+const TARGET_PORT_Y = 20; // input port on a flow-target pill (its vertical centre)
 
 const GameGraph: Component = () => {
     const [scale, setScale] = createSignal(1);
@@ -46,6 +51,11 @@ const GameGraph: Component = () => {
     });
     const posOf = (id: string) => { const n = nodes().find(x => x.behavior.id === id); return n ? { x: n.x, y: n.y } : { x: 0, y: 0 }; };
     const wires = createMemo(() => deriveWires(nodes()));
+    // Scene-flow: goToState / goToPage jumps drawn as wires to target pills.
+    const flowTargets = createMemo(() => deriveFlowTargets(nodes(), i => store.slides[i]?.name));
+    const flowWires = createMemo(() => deriveFlowWires(nodes()));
+    const targetPosOf = (id: string) => { const t = flowTargets().find(x => x.id === id); return t ? { x: t.x, y: t.y } : { x: 0, y: 0 }; };
+    const flowColor = (kind: 'state' | 'page') => kind === 'state' ? FLOW_STATE_COLOR : FLOW_PAGE_COLOR;
     /** Raw behavior refs (stable across edits) — the node <For> keys by these so
      *  editing one node's fields recreates only that card, not every card. */
     const allBehaviors = createMemo<Behavior[]>(() => {
@@ -168,7 +178,7 @@ const GameGraph: Component = () => {
     const removeActionAt = (owner: string, id: string, k: number) => { const b = bhv(owner, id); if (b) patchBehavior(owner, id, { actions: b.actions.filter((_, j) => j !== k) }); };
 
     const play = () => {
-        const script = generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? []);
+        const script = generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints);
         if (!script) { showToast('Add some rules first', 'info'); return; }
         toggleGameGraph(false);
         if (startGame(script)) showToast('Playing — Esc or Stop to end', 'info');
@@ -185,7 +195,7 @@ const GameGraph: Component = () => {
             <Portal>
                 <div class="gg-overlay">
                     <div class="gg-header">
-                        <div class="gg-title"><Gamepad2 size={16} /><h2>Game Graph</h2><span class="gg-sub">nodes are your rules · wires are messages</span></div>
+                        <div class="gg-title"><Gamepad2 size={16} /><h2>Game Graph</h2><span class="gg-sub">nodes are your rules · wires are messages &amp; scene flow</span></div>
                         <div class="gg-head-actions">
                             <select class="gg-sel" value={addOwner()} onChange={e => setAddOwner(e.currentTarget.value)}>
                                 <For each={owners()}>{o => <option value={o}>{o === '' ? 'Scene' : o}</option>}</For>
@@ -214,6 +224,13 @@ const GameGraph: Component = () => {
                                             fill="none" stroke={messageColor(w().message)} stroke-width="2.5" stroke-dasharray="6 4" opacity="0.9" />;
                                     }}
                                 </Show>
+                                <For each={flowWires()}>
+                                    {(wire) => {
+                                        const a = () => posOf(wire.from), b = () => targetPosOf(wire.to);
+                                        return <path d={wirePath(a().x + NODE_W, a().y + FLOW_PORT_Y, b().x, b().y + TARGET_PORT_Y)}
+                                            fill="none" stroke={flowColor(wire.kind)} stroke-width="2.5" stroke-dasharray="2 6" stroke-linecap="round" opacity="0.9" />;
+                                    }}
+                                </For>
                             </svg>
                             <For each={allBehaviors()}>
                                 {(b) => {
@@ -232,6 +249,10 @@ const GameGraph: Component = () => {
                                                 <span class="gg-port gg-out" title="Drag to a node to wire this message"
                                                     style={{ background: messageColor(broadcastsOf(b)[0]) }}
                                                     onPointerDown={e => startWire(e, b.id, broadcastsOf(b)[0])} />
+                                            </Show>
+                                            <Show when={flowTargetsOf(b).length}>
+                                                <span class="gg-port gg-out-flow" title="This rule jumps to a state / page"
+                                                    style={{ background: flowColor(flowTargetsOf(b)[0].kind) }} />
                                             </Show>
                                             <div class="gg-body">
                                                 <div class="gg-row">
@@ -273,9 +294,18 @@ const GameGraph: Component = () => {
                                     );
                                 }}
                             </For>
+                            <For each={flowTargets()}>
+                                {(t) => (
+                                    <div class={`gg-target gg-target-${t.kind}`} style={{ left: `${t.x}px`, top: `${t.y}px`, width: `${TARGET_W}px`, '--flow-color': flowColor(t.kind) }}>
+                                        <span class="gg-port gg-in gg-target-in" style={{ background: flowColor(t.kind) }} />
+                                        <span class="gg-target-kw">{t.kind === 'state' ? 'STATE' : 'PAGE'}</span>
+                                        <span class="gg-target-label" title={t.label}>{t.label}</span>
+                                    </div>
+                                )}
+                            </For>
                         </div>
                     </div>
-                    <div class="gg-foot">Edit rules right in the nodes · drag a node's header to move it · scroll to zoom · drag empty space to pan · Esc closes</div>
+                    <div class="gg-foot">Edit rules right in the nodes · dashed wires show state / page jumps · scroll to zoom · drag empty space to pan · Esc closes</div>
                 </div>
             </Portal>
         </Show>

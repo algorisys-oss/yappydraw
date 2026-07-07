@@ -79,6 +79,9 @@ const ArcadeDoc: Component = () => {
                     Every rule is a <strong>node</strong> (its sprite, WHEN trigger, and DO actions); a
                     <em>broadcast</em> in one node draws a <strong>wire</strong> to every node that
                     <em>receives</em> that message, so you can see at a glance how the game's events connect.
+                    Rules that <em>go to a state</em> or <em>go to a page</em> also draw a dashed
+                    <strong>flow wire</strong> to a target pill (violet for states, sky-blue for pages), so
+                    your scene / level flow is visible too.
                 </p>
                 <ul>
                     <li><strong>Edit rules right in the node</strong> — each card has the same editable
@@ -93,6 +96,51 @@ const ArcadeDoc: Component = () => {
                     <li><strong>＋ Add rule</strong> (pick Scene or a sprite) drops a new node; the trash removes it.</li>
                     <li>It's the same game — <strong>▶ Play</strong> runs it, and it's one model with the
                         Behaviors panel (edit in either, the graph and the panel share the exact same editors).</li>
+                </ul>
+            </section>
+
+            <section class="doc-section">
+                <h2>Blueprint — execution-flow nodes (advanced)</h2>
+                <p>
+                    <strong>Menu → Blueprint (exec-flow)</strong> opens a true node-graph where you
+                    wire <em>execution</em> from an <strong>Event</strong> through <strong>Action</strong> and
+                    <strong>Branch</strong> nodes — Unreal-Blueprint style. Where the Game Graph shows your
+                    existing rules, the Blueprint lets you draw the <em>order</em> things happen in.
+                </p>
+                <ul>
+                    <li><strong>Owner dropdown:</strong> each Blueprint belongs to an owner — the
+                        <strong>Scene</strong> or a specific <strong>sprite</strong>. Pick a sprite and its
+                        actions bind to it (move, jump, bounce, hit…); pick Scene for game-wide logic
+                        (score, variables, spawn, go to state / page, win / game over).</li>
+                    <li><strong>Event</strong> nodes are entry points. Scene events: on start, every moment,
+                        key, tap, timer, when a variable reaches…, when a message is received. Sprite owners
+                        also get <em>when it hits…</em>, <em>while touching…</em>, and <em>when it leaves the
+                        screen</em>. Each event has one <strong>output pin</strong>.</li>
+                    <li><strong>Action</strong> nodes do one thing, with an <strong>exec-in</strong> pin (left)
+                        and an <strong>exec-out</strong> pin (right). Sprite owners unlock the full action set;
+                        the Scene owner offers the scene-safe subset.</li>
+                    <li><strong>Branch</strong> nodes route execution: <code>if [variable] [compares] [value]</code>
+                        sends flow out the green <strong>T</strong> pin when true, the red <strong>F</strong> pin
+                        when false.</li>
+                    <li><strong>Sequence</strong> nodes run their outputs <em>in order</em> (1, 2, 3…) — use
+                        <strong>＋ / −</strong> to add or remove steps. <strong>Delay</strong> nodes wait a number
+                        of seconds, then continue — great for "spawn, wait 2s, spawn again".</li>
+                    <li><strong>Data nodes</strong> carry a <em>value</em> (cyan square pins, dashed wires) instead
+                        of execution: <strong>Get</strong> reads a variable, <strong>Value</strong> is a constant,
+                        <strong>Compare</strong> tests <code>a ⟨op⟩ b → true/false</code>, and <strong>Math</strong>
+                        computes <code>a ⟨+ − × ÷ %⟩ b → number</code>. Drag a Get/Value's output into a
+                        Compare/Math's <em>a</em>/<em>b</em>, then the Compare's output into a <strong>Branch</strong>'s
+                        condition (a wired condition overrides the branch's typed-in fallback), or a Math/Get output
+                        into a numeric <strong>action param</strong> — e.g. wire <em>level × 10</em> into a
+                        <em>change score</em> node so the amount is computed at runtime. <strong>Random</strong>
+                        gives a number in a range, and <strong>Sprite</strong> reads a sprite's x / y / size —
+                        feed them into Math/Compare or straight into an action param.</li>
+                    <li><strong>Wire it up:</strong> drag from a node's right-edge pin onto another node to
+                        connect execution. Drag a node's header to move it; scroll to zoom; <kbd>Esc</kbd> closes.</li>
+                    <li><strong>▶ Play</strong> compiles every owner's graph to the same runtime as the blocks —
+                        it runs alongside any behaviors you've built. API:
+                        <code>Y.getBlueprint(owner)</code> / <code>Y.setBlueprintFor(owner, &#123;nodes, edges&#125;)</code>
+                        (owner <code>''</code> = Scene), <code>Y.toggleBlueprint(true)</code>.</li>
                 </ul>
             </section>
 
