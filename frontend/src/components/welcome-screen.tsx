@@ -64,7 +64,7 @@ export const WelcomeScreen: Component = () => {
                     'letter-spacing': '-0.01em',
                     opacity: '0', animation: 'wsFadeUp 0.5s ease-out 0.05s forwards',
                 }}>
-                    Click anywhere to sketch your first idea
+                    Click a tool to start creating
                 </h1>
 
                 <p style={{
