@@ -11,10 +11,21 @@ import { exportPageToPng } from '../utils/export';
 const KEY = 'yappy:doc-thumbs';
 const THUMB_WIDTH = 220;
 
-type ThumbMap = Record<string, { thumb: string; updatedAt: string }>;
+export type ThumbRecord = { thumb: string; updatedAt: string; isGame?: boolean; mode?: 'visual' | 'code' };
+type ThumbMap = Record<string, ThumbRecord>;
 
 export async function getDocThumbnails(): Promise<ThumbMap> {
     return (await idbGet<ThumbMap>(KEY)) ?? {};
+}
+
+/** Is the CURRENT document a game (has behaviors / a blueprint / a script)? */
+function currentDocIsGame(): boolean {
+    const bp = store.blueprints ?? {};
+    return (store.sceneBehaviors?.length ?? 0) > 0
+        || store.elements.some(e => (e.behaviors?.length ?? 0) > 0)
+        || Object.values(bp).some(g => (g?.nodes?.length ?? 0) > 0)
+        || !!store.gameScript?.trim()
+        || store.gameAuthoringMode === 'code';
 }
 
 /** Render a small preview of the active page (paged and infinite docs both
@@ -35,7 +46,7 @@ export async function setDocThumbnail(id: string, thumb?: string): Promise<void>
     const dataURL = thumb ?? captureDocThumbnail();
     if (!dataURL) return;
     const map = await getDocThumbnails();
-    map[id] = { thumb: dataURL, updatedAt: new Date().toISOString() };
+    map[id] = { thumb: dataURL, updatedAt: new Date().toISOString(), isGame: currentDocIsGame(), mode: store.gameAuthoringMode };
     await idbSet(KEY, map);
 }
 

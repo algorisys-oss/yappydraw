@@ -29,7 +29,9 @@ const TemplateBrowser = lazy(() => import("./template-browser"));
 const VersionHistoryDialog = lazy(() => import("./version-history-dialog"));
 const GameScriptDialog = lazy(() => import("./game-script-dialog"));
 const NewGameDialog = lazy(() => import("./new-game-dialog"));
+const MyGamesDialog = lazy(() => import("./my-games-dialog"));
 import { setShowNewGame } from "./new-game-signal";
+import { setShowMyGames } from "./my-games-signal";
 const CloudStorageDialogLazy = lazy(() => import("./cloud-storage-dialog").then(m => ({ default: m.CloudStorageDialog as any })));
 const DSLImportDialog = lazy(() => import("./dsl-import-dialog"));
 const UnsavedChangesDialog = lazy(() => import("./unsaved-changes-dialog"));
@@ -177,9 +179,11 @@ const Menu: Component = () => {
                 graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
                 swatches: JSON.parse(JSON.stringify(store.swatches)),
                 artboards: JSON.parse(JSON.stringify(store.artboards)),
-                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints),
+                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode),
                 sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
-                gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined
+                gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined,
+                blueprints: store.blueprints && Object.keys(store.blueprints).length ? JSON.parse(JSON.stringify(store.blueprints)) : undefined,
+                gameAuthoringMode: store.gameAuthoringMode === 'code' ? 'code' : undefined,
             };
             const baseFilename = filename.replace(/\.(json|yappy)$/i, '');
 
@@ -404,9 +408,11 @@ const Menu: Component = () => {
                 graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),
                 swatches: JSON.parse(JSON.stringify(store.swatches)),
                 artboards: JSON.parse(JSON.stringify(store.artboards)),
-                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints),
+                gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode),
                 sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
-                gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined
+                gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined,
+                blueprints: store.blueprints && Object.keys(store.blueprints).length ? JSON.parse(JSON.stringify(store.blueprints)) : undefined,
+                gameAuthoringMode: store.gameAuthoringMode === 'code' ? 'code' : undefined,
             };
 
             await exportToHtml(slideDoc, drawingId());
@@ -672,6 +678,8 @@ const Menu: Component = () => {
 
                 <NewGameDialog />
 
+                <MyGamesDialog />
+
                 <DesignSizeDialog
                     title="Magic Resize"
                     isOpen={isMagicResizeOpen()}
@@ -804,6 +812,10 @@ const Menu: Component = () => {
                                         <button class="menu-item menu-sub" onClick={() => { setShowNewGame(true); setIsMenuOpen(false); }}>
                                             <FilePlus size={15} />
                                             <span class="label">New Game…</span>
+                                        </button>
+                                        <button class="menu-item menu-sub" onClick={() => { setShowMyGames(true); setIsMenuOpen(false); }}>
+                                            <Gamepad2 size={15} />
+                                            <span class="label">My Games…</span>
                                         </button>
                                         <button class="menu-item menu-sub" onClick={() => { toggleBehaviorsPanel(true); setIsMenuOpen(false); }}>
                                             <Gamepad2 size={15} />

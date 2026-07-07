@@ -1,0 +1,82 @@
+.mg-overlay {
+    position: fixed; inset: 0; z-index: 10068;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+}
+.mg-modal {
+    width: min(880px, 96vw); max-height: 88vh;
+    display: flex; flex-direction: column;
+    background: var(--bg-panel, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    color: var(--text-primary);
+}
+.mg-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border-color);
+}
+.mg-title { display: flex; align-items: center; gap: 9px; }
+.mg-title h2 { margin: 0; font-size: 17px; font-weight: 800; }
+.mg-close { border: none; background: transparent; color: var(--text-secondary); cursor: pointer; padding: 6px; border-radius: 8px; }
+.mg-close:hover { color: var(--text-primary); background: var(--bg-secondary); }
+
+.mg-body { padding: 18px 20px 22px; overflow-y: auto; }
+.mg-loading, .mg-empty { color: var(--text-secondary); font-size: 13px; padding: 24px 4px; text-align: center; }
+
+.mg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+}
+.mg-card {
+    display: flex; flex-direction: column;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 11px; overflow: hidden; cursor: pointer; padding: 0; text-align: left;
+    transition: border-color 0.12s, transform 0.06s;
+}
+.mg-card:hover { border-color: var(--accent-color, #6366f1); transform: translateY(-1px); }
+
+.mg-preview {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    display: flex; align-items: center; justify-content: center;
+    background: repeating-conic-gradient(rgba(148,163,184,0.10) 0% 25%, transparent 0% 50%) 50% / 18px 18px;
+    color: var(--text-secondary);
+}
+.mg-preview img { width: 100%; height: 100%; object-fit: cover; }
+.mg-play {
+    position: absolute; inset: 0; margin: auto;
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: rgba(22, 163, 74, 0.92); color: #fff; cursor: pointer;
+    opacity: 0; transform: scale(0.9); transition: opacity 0.12s, transform 0.12s;
+}
+.mg-card:hover .mg-play { opacity: 1; transform: scale(1); }
+.mg-play:hover { background: #16a34a; }
+.mg-badge {
+    position: absolute; top: 6px; left: 6px;
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 6px; border-radius: 999px; font-size: 10px; font-weight: 700;
+    background: rgba(15,23,42,0.72); color: #e2e8f0;
+}
+
+.mg-row { display: flex; align-items: center; gap: 6px; padding: 8px 10px; }
+.mg-name { flex: 1; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mg-del { border: none; background: transparent; color: var(--text-secondary); cursor: pointer; padding: 4px; border-radius: 6px; display: flex; }
+.mg-del:hover { color: #ef4444; background: var(--bg-panel); }
+
+/* New Game tile */
+.mg-new {
+    align-items: center; justify-content: center; gap: 8px;
+    aspect-ratio: auto; min-height: 100%;
+    border-style: dashed; color: var(--text-secondary);
+}
+.mg-new:hover { color: var(--accent-color, #6366f1); }
+.mg-new-plus {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; margin-top: 22px; border-radius: 12px;
+    background: rgba(99,102,241,0.12); color: var(--accent-color, #6366f1);
+}
+.mg-new-label { font-size: 13px; font-weight: 700; margin-bottom: 22px; }

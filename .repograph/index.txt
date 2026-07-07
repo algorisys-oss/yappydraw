@@ -164,11 +164,14 @@ frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 d
 frontend/src/components/measure-overlay.css | - | 46 |
 frontend/src/components/measure-overlay.tsx | typescript | 78 | MeasureOverlay:11 toWorld:16 onDown:18 onMove:25 onUp:30 onKey:35 seg:44
 frontend/src/components/menu.css | - | 292 |
-frontend/src/components/menu.tsx | typescript | 1277 | Component:1 handleSaveRequest:77 handleNew:84 proceed:85 Menu:100 handleUnsavedCancel:114 handleUnsavedDiscard:119 handleUnsavedSave:126 onPaletteEscape:143 performSave:154 is:217 handleLoad:253 handleResetView:273 loadTemplateAction:278 handleTemplateSelect:318 handleOpenJson:327 handleLoadJsonText:369 handleExportHtml:385 handleExportRocket:421 handleDeployToRocket:454 onLeftMouseDown:505 onRightMouseDown:520 onMouseMove:534 onMouseUp:549 handleResize:558
+frontend/src/components/menu.tsx | typescript | 1289 | Component:1 handleSaveRequest:79 handleNew:86 proceed:87 Menu:102 handleUnsavedCancel:116 handleUnsavedDiscard:121 handleUnsavedSave:128 onPaletteEscape:145 performSave:156 is:221 handleLoad:257 handleResetView:277 loadTemplateAction:282 handleTemplateSelect:322 handleOpenJson:331 handleLoadJsonText:373 handleExportHtml:389 handleExportRocket:427 handleDeployToRocket:460 onLeftMouseDown:511 onRightMouseDown:526 onMouseMove:540 onMouseUp:555 handleResize:564
 frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
 frontend/src/components/mindmap-tool-group.tsx | typescript | 135 | Component:1 MindmapToolGroup:16 handler:23 getActiveMindmapTool:34 handleToolClick:48 as:56 as:61 handleRightClick:68 toggleMenu:74 as:76 activeTool:81 isActive:82 getDropdownPosition:84
 frontend/src/components/minimap.tsx | typescript | 282 | MinimapProps:8 Minimap:13 getContentBounds:23 getMinimapScale:56 renderMinimap:63 handleClick:123 handlePointerDown:147 handlePointerMove:173 handlePointerUp:194 track:209
+frontend/src/components/my-games-dialog.css | - | 82 |
+frontend/src/components/my-games-dialog.tsx | typescript | 129 | Component:9 GameCard:24 MyGamesDialog:26 fetchGames:30 load:45 play:54 open:63 del:70
+frontend/src/components/my-games-signal.ts | typescript | 4 |
 frontend/src/components/new-game-dialog.css | - | 41 |
 frontend/src/components/new-game-dialog.tsx | typescript | 63 | Component:11 Choice:20 newGame:23 NewGameDialog:33 pick:34
 frontend/src/components/new-game-signal.ts | typescript | 4 |
@@ -342,7 +345,7 @@ frontend/src/game/game-templates.ts | typescript | 98 | GameTemplate:3
 frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 120 | ac:14 tone:31 sweep:46 noise:62 Sfx:78 playSfx:80 startMusic:99 stopMusic:111 setMuted:115
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
-frontend/src/help-docs/features/arcade-doc.tsx | typescript | 243 | ArcadeDoc:8 a:97
+frontend/src/help-docs/features/arcade-doc.tsx | typescript | 245 | ArcadeDoc:8 a:99
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 248 | DesignStudioDoc:9
@@ -424,7 +427,7 @@ frontend/src/storage/cloud/providers/google-drive-provider.ts | typescript | 425
 frontend/src/storage/cloud/storage-manager.ts | typescript | 181 | StorageManager:24{constructor:30 getActiveProvider:37 setActiveProvider:42 getAvailableProviders:57 restoreFromConfig:65 save:77 load:82 delete:87 list:92 getAuthState:99 signIn:103 signOut:108 getConfig:116 clearConfig:120 persistConfig:127 loadPersistedConfig:136 enableAutoSync:148 disableAutoSync:157 getSyncFileId:166 isAutoSyncEnabled:170 ensureProvider:176}
 frontend/src/storage/cloud/token-store.ts | typescript | 60 | StoredTokens:12 saveTokens:24 loadTokens:37 clearTokens:54
 frontend/src/storage/cloud/types.ts | typescript | 146 | CloudFileInfo:16 FolderInfo:31 ProviderConfig:41 AuthState:54 ListOptions:65 ListResult:76 SaveOptions:85 CloudStorageProvider:103{getAuthState:113 signIn:114 signOut:115 onAuthStateChange:117 save:120 load:121 delete:122 list:123 listFolders:126 createFolder:127 listSharedDrives:130 initialize:133 dispose:134} ProviderRegistration:140
-frontend/src/storage/doc-thumbnails.ts | typescript | 48 | ThumbMap:14 getDocThumbnails:16 captureDocThumbnail:22 setDocThumbnail:34 removeDocThumbnail:42
+frontend/src/storage/doc-thumbnails.ts | typescript | 59 | ThumbRecord:14 ThumbMap:15 getDocThumbnails:17 currentDocIsGame:22 captureDocThumbnail:33 setDocThumbnail:45 removeDocThumbnail:53
 frontend/src/storage/file-system-storage.ts | typescript | 134 | FileSystemStorage:5{saveDrawing:8}
 frontend/src/storage/idb-kv.ts | typescript | 99 | openDb:19 withStore:41 idbGet:58 idbSet:64 idbDelete:71 idbMigrateFromLocalStorage:82
 frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 DocumentData:31 StorageInterface:40{saveDrawing:41 loadDrawing:42 listDrawings:43 deleteDrawing:44}

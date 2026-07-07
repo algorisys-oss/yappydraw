@@ -74,8 +74,10 @@ const ArcadeDoc: Component = () => {
             <section class="doc-section">
                 <h2>Game Graph — the node view</h2>
                 <p>
-                    The game tools live under <strong>Menu → Game</strong> (Build · Node Graph · Blueprint ·
-                    Play · Advanced Script). The three editors — <strong>Simple</strong> (rule list),
+                    The game tools live under <strong>Menu → Game</strong>: <strong>New Game…</strong> (Blank /
+                    Pong / Catch / Platformer / Code), <strong>My Games…</strong> (a gallery of your saved games —
+                    hover a card to Play, click to open, or start a new one), and the editors Build · Node Graph ·
+                    Blueprint · Code · Play. The three visual editors — <strong>Simple</strong> (rule list),
                     <strong>Graph</strong> (node/wire view) and <strong>Blueprint</strong> (execution flow) —
                     are three views of the same game; a <strong>Simple · Graph · Blueprint</strong> switcher in
                     each header hops between them in a click.
