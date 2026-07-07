@@ -74,8 +74,14 @@ const ArcadeDoc: Component = () => {
             <section class="doc-section">
                 <h2>Game Graph — the node view</h2>
                 <p>
-                    <strong>Menu → Game Graph</strong> (or the <strong>Graph</strong> button in the Behaviors
-                    panel) opens a full-screen node view of your whole game — a Blueprint/Scratch-style map.
+                    The game tools live under <strong>Menu → Game</strong> (Build · Node Graph · Blueprint ·
+                    Play · Advanced Script). The three editors — <strong>Simple</strong> (rule list),
+                    <strong>Graph</strong> (node/wire view) and <strong>Blueprint</strong> (execution flow) —
+                    are three views of the same game; a <strong>Simple · Graph · Blueprint</strong> switcher in
+                    each header hops between them in a click.
+                </p>
+                <p>
+                    <strong>Menu → Game → Node Graph</strong> opens a full-screen node view of your whole game.
                     Every rule is a <strong>node</strong> (its sprite, WHEN trigger, and DO actions); a
                     <em>broadcast</em> in one node draws a <strong>wire</strong> to every node that
                     <em>receives</em> that message, so you can see at a glance how the game's events connect.

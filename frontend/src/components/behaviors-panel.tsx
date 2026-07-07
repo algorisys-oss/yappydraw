@@ -9,9 +9,10 @@
  */
 
 import { type Component, For, Show, createMemo, createSignal, createEffect } from 'solid-js';
-import { Gamepad2, X, Play, Plus, Trash2, ChevronUp, ChevronDown, Copy, ClipboardPaste } from 'lucide-solid';
-import { store, updateElement, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph } from '../store/app-store';
+import { X, Play, Plus, Trash2, ChevronUp, ChevronDown, Copy, ClipboardPaste } from 'lucide-solid';
+import { store, updateElement, setSceneBehaviors, setGameVars, toggleBehaviorsPanel } from '../store/app-store';
 import { draggablePanel } from '../utils/draggable-panel';
+import { GameViewSwitcher } from './game-view-switcher';
 import { generateGameScript } from '../game/behaviors-to-script';
 import { buildPongExample, buildCatchExample, buildPlatformerExample } from '../game/behavior-examples';
 import { startGame } from '../game/game-runtime';
@@ -202,9 +203,8 @@ const BehaviorsPanel: Component = () => {
         <Show when={store.showBehaviorsPanel}>
             <div class="behaviors-panel" ref={draggablePanel('.behaviors-panel-header')}>
                 <div class="behaviors-panel-header">
-                    <div class="bp-title"><Gamepad2 size={15} /><h3>Game Builder</h3></div>
+                    <GameViewSwitcher current="simple" />
                     <div class="bp-head-actions">
-                        <button class="bp-graph-btn" title="Open the node graph" onClick={() => { toggleBehaviorsPanel(false); toggleGameGraph(true); }}>Graph</button>
                         <button class="bp-play" title="Play the game" onClick={play}><Play size={14} /> Play</button>
                         <button class="bp-icon-btn" title="Close" onClick={() => toggleBehaviorsPanel(false)}><X size={15} /></button>
                     </div>

@@ -12,7 +12,7 @@ import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
-    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, Gamepad2, Workflow
+    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, Gamepad2, Workflow, ChevronDown
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
@@ -108,6 +108,7 @@ const Menu: Component = () => {
     const [isMagicResizeOpen, setIsMagicResizeOpen] = createSignal(false);
     const [isVersionHistoryOpen, setIsVersionHistoryOpen] = createSignal(false);
     const [isGameScriptOpen, setIsGameScriptOpen] = createSignal(false);
+    const [gameMenuOpen, setGameMenuOpen] = createSignal(false);
 
     const handleUnsavedCancel = () => {
         pendingUnsavedAction = null;
@@ -793,34 +794,42 @@ const Menu: Component = () => {
                                         <span class="label">AI Design…</span>
                                     </button>
                                     <div class="menu-separator"></div>
-                                    <button class="menu-item" onClick={() => { toggleBehaviorsPanel(true); setIsMenuOpen(false); }}>
+                                    {/* Game tools grouped into one collapsible section (Build has a Simple/Graph/Blueprint switcher inside). */}
+                                    <button class="menu-item menu-group" classList={{ expanded: gameMenuOpen() }} onClick={() => setGameMenuOpen(o => !o)}>
                                         <Gamepad2 size={16} />
-                                        <span class="label">Game Builder</span>
+                                        <span class="label">Game</span>
+                                        <ChevronDown size={14} class="menu-group-chevron" />
                                     </button>
-                                    <button class="menu-item" onClick={() => { toggleGameGraph(true); setIsMenuOpen(false); }}>
-                                        <Grid2x2 size={16} />
-                                        <span class="label">Game Graph (node view)</span>
-                                    </button>
-                                    <button class="menu-item" onClick={() => { toggleBlueprint(true); setIsMenuOpen(false); }}>
-                                        <Workflow size={16} />
-                                        <span class="label">Blueprint (exec-flow)</span>
-                                    </button>
-                                    <Show when={store.sceneBehaviors?.length || store.elements.some(e => e.behaviors?.length) || store.gameScript?.trim()}>
-                                        <button class="menu-item" onClick={() => {
-                                            setIsMenuOpen(false);
-                                            Promise.all([import('../game/behaviors-to-script'), import('../game/game-runtime')]).then(([g, r]) => {
-                                                const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints) || store.gameScript;
-                                                if (script) r.startGame(script);
-                                            });
-                                        }}>
-                                            <CirclePlay size={16} />
-                                            <span class="label">Play Game</span>
+                                    <Show when={gameMenuOpen()}>
+                                        <button class="menu-item menu-sub" onClick={() => { toggleBehaviorsPanel(true); setIsMenuOpen(false); }}>
+                                            <Gamepad2 size={15} />
+                                            <span class="label">Build</span>
+                                        </button>
+                                        <button class="menu-item menu-sub" onClick={() => { toggleGameGraph(true); setIsMenuOpen(false); }}>
+                                            <Grid2x2 size={15} />
+                                            <span class="label">Node Graph</span>
+                                        </button>
+                                        <button class="menu-item menu-sub" onClick={() => { toggleBlueprint(true); setIsMenuOpen(false); }}>
+                                            <Workflow size={15} />
+                                            <span class="label">Blueprint</span>
+                                        </button>
+                                        <Show when={store.sceneBehaviors?.length || store.elements.some(e => e.behaviors?.length) || (store.blueprints && Object.keys(store.blueprints).length) || store.gameScript?.trim()}>
+                                            <button class="menu-item menu-sub" onClick={() => {
+                                                setIsMenuOpen(false);
+                                                Promise.all([import('../game/behaviors-to-script'), import('../game/game-runtime')]).then(([g, r]) => {
+                                                    const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints) || store.gameScript;
+                                                    if (script) r.startGame(script);
+                                                });
+                                            }}>
+                                                <CirclePlay size={15} />
+                                                <span class="label">Play Game</span>
+                                            </button>
+                                        </Show>
+                                        <button class="menu-item menu-sub" onClick={() => { setIsGameScriptOpen(true); setIsMenuOpen(false); }}>
+                                            <FileText size={15} />
+                                            <span class="label">Advanced Script…</span>
                                         </button>
                                     </Show>
-                                    <button class="menu-item" onClick={() => { setIsGameScriptOpen(true); setIsMenuOpen(false); }}>
-                                        <Gamepad2 size={16} />
-                                        <span class="label">Game Script (advanced)…</span>
-                                    </button>
                                     <button class="menu-item" onClick={() => {
                                         setIsMenuOpen(false);
                                         const imgPrompt = prompt('Describe the image to generate:');

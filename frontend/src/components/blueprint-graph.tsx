@@ -27,6 +27,7 @@ import { type BPNode, type BPEdge, type BPPin, type BPNodeKind, newBPNodeId, BP_
 import { generateGameScript } from '../game/behaviors-to-script';
 import { startGame } from '../game/game-runtime';
 import { showToast } from './toast';
+import { GameViewSwitcher } from './game-view-switcher';
 import './blueprint-graph.css';
 
 const BP_NODE_W = 236;
@@ -256,7 +257,7 @@ const BlueprintGraph: Component = () => {
             <Portal>
                 <div class="bp-overlay">
                     <div class="bp-header">
-                        <div class="bp-title"><Workflow size={16} /><h2>Blueprint</h2><span class="bp-sub">events flow along exec wires → actions</span></div>
+                        <div class="bp-title"><Workflow size={16} /><h2>Blueprint</h2><GameViewSwitcher current="blueprint" /></div>
                         <div class="bp-head-actions">
                             <select class="bp-sel" title="Whose logic to edit" value={owner()} onChange={e => setOwner(e.currentTarget.value)}>
                                 <For each={owners()}>{o => <option value={o}>{o === '' ? 'Scene' : o}</option>}</For>

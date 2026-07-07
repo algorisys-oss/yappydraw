@@ -22,6 +22,7 @@ import {
 import { generateGameScript } from '../game/behaviors-to-script';
 import { startGame } from '../game/game-runtime';
 import { showToast } from './toast';
+import { GameViewSwitcher } from './game-view-switcher';
 import './game-graph.css';
 
 const PORT_Y = 30;       // message wire attaches this far below a node's top
@@ -225,7 +226,7 @@ const GameGraph: Component = () => {
             <Portal>
                 <div class="gg-overlay">
                     <div class="gg-header">
-                        <div class="gg-title"><Gamepad2 size={16} /><h2>Game Graph</h2><span class="gg-sub">nodes are your rules · wires are messages &amp; scene flow</span></div>
+                        <div class="gg-title"><Gamepad2 size={16} /><h2>Game Graph</h2><GameViewSwitcher current="graph" /></div>
                         <div class="gg-head-actions">
                             <select class="gg-sel" value={addOwner()} onChange={e => setAddOwner(e.currentTarget.value)}>
                                 <For each={owners()}>{o => <option value={o}>{o === '' ? 'Scene' : o}</option>}</For>
