@@ -13,7 +13,7 @@ import { X, Play, Plus, Trash2, ChevronUp, ChevronDown, Copy, ClipboardPaste } f
 import { store, updateElement, setSceneBehaviors, setGameVars, toggleBehaviorsPanel } from '../store/app-store';
 import { draggablePanel } from '../utils/draggable-panel';
 import { GameViewSwitcher } from './game-view-switcher';
-import { generateGameScript } from '../game/behaviors-to-script';
+import { effectiveGameScript } from '../game/behaviors-to-script';
 import { buildPongExample, buildCatchExample, buildPlatformerExample } from '../game/behavior-examples';
 import { startGame } from '../game/game-runtime';
 import { newBehaviorId, type Behavior, type Trigger, type Action } from '../game/behavior-types';
@@ -37,7 +37,7 @@ const BehaviorsPanel: Component = () => {
 
     // Keep the Code tab live.
     createEffect(() => {
-        if (tab() === 'code') { store.dirtyRevision; setCode(generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints)); }
+        if (tab() === 'code') { store.dirtyRevision; setCode(effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode) || ''); }
     });
 
     // ── read/write helpers ──
@@ -138,7 +138,7 @@ const BehaviorsPanel: Component = () => {
     const removeAction = (i: number, k: number) => updateBehavior(i, { actions: list()[i].actions.filter((_, j) => j !== k) });
 
     const play = () => {
-        const script = generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints);
+        const script = effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode);
         if (!script) { showToast('Add some behaviors first', 'info'); return; }
         if (startGame(script)) showToast('Playing — Esc or Stop to end', 'info');
     };

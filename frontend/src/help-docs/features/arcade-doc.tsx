@@ -162,11 +162,15 @@ const ArcadeDoc: Component = () => {
             </section>
 
             <section class="doc-section">
-                <h2>Game Script — write code (advanced)</h2>
+                <h2>Code — the game's script</h2>
                 <ol>
-                    <li><strong>Menu → Game Script (advanced)…</strong> opens the code editor. Pick a starter —
-                        <strong> Pong</strong>, <strong>Catch the Stars</strong>, or <strong>Blank</strong> —
-                        or write your own.</li>
+                    <li><strong>Menu → Game → Code</strong> (or the <strong>Code</strong> tab in any editor's
+                        view switcher) shows the game's script. A game has <em>one</em> script — for a visual
+                        game it is <strong>generated from your blocks and read-only</strong> (a learning bridge).</li>
+                    <li>Press <strong>Eject to code</strong> to hand-write it: the script becomes the source of
+                        truth (your blocks stay but stop compiling). Code-authored games can start from a
+                        starter — <strong>Pong</strong>, <strong>Catch the Stars</strong>, or <strong>Blank</strong>
+                        — or you write your own. This is a one-way switch (visual → code).</li>
                     <li>Press <strong>▶ Play</strong>. The document is snapshotted; your script runs once
                         (setup), then <code>game.onTick</code> fires every frame.</li>
                     <li>Play mode is a <strong>clean stage</strong> — every editor toolbar, panel, and the

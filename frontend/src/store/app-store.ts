@@ -249,6 +249,8 @@ interface AppState {
     gameActive: boolean;
     /** The document's game script (persisted in SlideDocument.gameScript). */
     gameScript: string;
+    /** How the game is authored: 'visual' (blocks → generated script) or 'code' (script is the source). */
+    gameAuthoringMode: 'visual' | 'code';
     /** Visual builder: scene-level behaviors (persisted in SlideDocument.sceneBehaviors). */
     sceneBehaviors: import('../types').DrawingElement['behaviors'];
     /** Visual builder: declared game variables with starting values. */
@@ -261,6 +263,8 @@ interface AppState {
     showGameGraph: boolean;
     /** Blueprint: the full-screen execution-flow editor is open. */
     showBlueprint: boolean;
+    /** The Code (game script) view is open. */
+    showGameScript: boolean;
 
     // Video Playback
     activeVideoElementIds: string[];
@@ -474,12 +478,14 @@ const initialState: AppState = {
     cropAspect: null,
     gameActive: false,
     gameScript: '',
+    gameAuthoringMode: 'visual',
     sceneBehaviors: [],
     gameVars: [],
     blueprints: {},
     showBehaviorsPanel: false,
     showGameGraph: false,
     showBlueprint: false,
+    showGameScript: false,
     activeVideoElementIds: [],
     dirtyRevision: 0,
 };
@@ -1482,6 +1488,15 @@ export const setBlueprintNodePos = (owner: string, id: string, pos: { x: number;
 export const toggleBlueprint = (visible?: boolean) =>
     setStore('showBlueprint', v => visible ?? !v);
 
+export const toggleGameScript = (visible?: boolean) =>
+    setStore('showGameScript', v => visible ?? !v);
+
+/** Switch how the game is authored ('visual' blocks vs hand-written 'code'). */
+export const setGameAuthoringMode = (mode: 'visual' | 'code') => {
+    setStore('gameAuthoringMode', mode);
+    bumpDirtyRevision();
+};
+
 // --- Video Playback Actions ---
 export const startVideoPlayback = (elementId: string) => {
     const el = store.elements.find(e => e.id === elementId);
@@ -2115,6 +2130,7 @@ export const loadDocument = (doc: any) => {
         setStore("activeSlideIndex", 0);
         setStore("selection", []);
         setStore("gameScript", typeof doc.gameScript === 'string' ? doc.gameScript : '');
+        setStore("gameAuthoringMode", doc.gameAuthoringMode === 'code' ? 'code' : 'visual');
         setStore("sceneBehaviors", Array.isArray(doc.sceneBehaviors) ? doc.sceneBehaviors : []);
         setStore("gameVars", Array.isArray(doc.gameVars) ? doc.gameVars : []);
         // Blueprints: owner-keyed map; migrate a legacy single scene graph into blueprints[''].

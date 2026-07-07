@@ -24,7 +24,7 @@ import { TRIGGERS, COMPARE, ACTIONS, SCENE_ACTION_KINDS, defaultTrigger, default
 import { TriggerParams, ActionParams } from '../game/behavior-editors';
 import { wirePath } from '../game/graph-layout';
 import { type BPNode, type BPEdge, type BPPin, type BPNodeKind, newBPNodeId, BP_EVENT_KINDS, hasExecIn, pinsOf, seqCount, dataInputs, dataOutputs, execInputs, MATH_OPS, SPRITE_PROPS } from '../game/blueprint-types';
-import { generateGameScript } from '../game/behaviors-to-script';
+import { effectiveGameScript } from '../game/behaviors-to-script';
 import { startGame } from '../game/game-runtime';
 import { showToast } from './toast';
 import { GameViewSwitcher } from './game-view-switcher';
@@ -236,7 +236,7 @@ const BlueprintGraph: Component = () => {
     };
 
     const play = () => {
-        const script = generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints);
+        const script = effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode);
         if (!script) { showToast('Add an event wired to an action first', 'info'); return; }
         toggleBlueprint(false);
         if (startGame(script)) showToast('Playing — Esc or Stop to end', 'info');

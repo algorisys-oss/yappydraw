@@ -120,3 +120,20 @@
     cursor: pointer;
 }
 .gs-play:hover { background: #15803d; }
+
+/* Code view: header switcher + eject banner (visual → code). */
+.gs-title { display: flex; align-items: center; gap: 10px; }
+.gs-banner {
+    display: flex; align-items: center; gap: 8px;
+    margin: 0 0 10px; padding: 8px 12px;
+    background: rgba(99,102,241,0.10); border: 1px solid var(--border-color);
+    border-radius: 8px; font-size: 12px; color: var(--text-secondary);
+}
+.gs-banner span { flex: 1; }
+.gs-eject {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 11px; border: none; border-radius: 999px; cursor: pointer;
+    background: var(--accent-color, #6366f1); color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.gs-eject:hover { filter: brightness(1.08); }
+.gs-editor[readonly] { opacity: 0.85; cursor: default; }

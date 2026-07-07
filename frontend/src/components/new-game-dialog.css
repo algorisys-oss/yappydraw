@@ -1,0 +1,41 @@
+.ng-overlay {
+    position: fixed; inset: 0; z-index: 10070;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+}
+.ng-modal {
+    width: min(720px, 96vw);
+    background: var(--bg-panel, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    padding: 20px 22px 24px;
+    color: var(--text-primary);
+}
+.ng-header { display: flex; align-items: center; justify-content: space-between; }
+.ng-header h2 { margin: 0; font-size: 18px; font-weight: 800; }
+.ng-close { border: none; background: transparent; color: var(--text-secondary); cursor: pointer; padding: 6px; border-radius: 8px; }
+.ng-close:hover { color: var(--text-primary); background: var(--bg-secondary); }
+.ng-lead { margin: 6px 0 16px; font-size: 13px; color: var(--text-secondary); }
+
+.ng-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+.ng-card {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 16px; text-align: left;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 11px; cursor: pointer; transition: border-color 0.12s, transform 0.06s;
+}
+.ng-card:hover { border-color: var(--accent-color, #6366f1); transform: translateY(-1px); }
+.ng-card-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; margin-bottom: 6px; border-radius: 10px;
+    background: rgba(99, 102, 241, 0.12); color: var(--accent-color, #6366f1);
+}
+.ng-code .ng-card-icon { background: rgba(148, 163, 184, 0.18); color: var(--text-secondary); }
+.ng-card-title { font-size: 14px; font-weight: 700; }
+.ng-card-sub { font-size: 12px; color: var(--text-secondary); line-height: 1.35; }

@@ -2145,12 +2145,12 @@ export const YappyAPI = {
     /** Compile the current document's blocks to a `game.*` script (the "See the code" view). */
     async compileGame(): Promise<string> {
         const m = await import('./game/behaviors-to-script');
-        return m.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints);
+        return m.effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode) || '';
     },
     /** Compile the blocks and play the resulting game (Play button). */
     async playBehaviorGame(): Promise<boolean> {
         const [g, r] = await Promise.all([import('./game/behaviors-to-script'), import('./game/game-runtime')]);
-        const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints);
+        const script = g.effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode);
         if (!script) return false;
         return r.startGame(script);
     },

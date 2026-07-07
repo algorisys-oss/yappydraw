@@ -134,6 +134,8 @@ export interface SlideDocument {
     /** Arcade: JavaScript game script run by the in-editor Play mode and the HTML player.
      *  When the visual builder is used, this is regenerated from the behaviors. */
     gameScript?: string;
+    /** Arcade: how the game is authored — 'visual' (blocks) or 'code' (script is source). */
+    gameAuthoringMode?: 'visual' | 'code';
     /** Arcade visual builder: scene-level WHEN→DO rules (on start, score, win/lose). */
     sceneBehaviors?: import('../types').DrawingElement['behaviors'];
     /** Arcade visual builder: declared game variables with their starting values. */

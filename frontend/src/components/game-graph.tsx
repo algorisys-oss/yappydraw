@@ -19,7 +19,7 @@ import {
     buildGraphNodes, deriveWires, wirePath, messageColor, NODE_W,
     deriveFlowTargets, deriveFlowWires, flowTargetsOf, TARGET_W, FLOW_STATE_COLOR, FLOW_PAGE_COLOR,
 } from '../game/graph-layout';
-import { generateGameScript } from '../game/behaviors-to-script';
+import { effectiveGameScript } from '../game/behaviors-to-script';
 import { startGame } from '../game/game-runtime';
 import { showToast } from './toast';
 import { GameViewSwitcher } from './game-view-switcher';
@@ -209,7 +209,7 @@ const GameGraph: Component = () => {
     const removeActionAt = (owner: string, id: string, k: number) => { const b = bhv(owner, id); if (b) patchBehavior(owner, id, { actions: b.actions.filter((_, j) => j !== k) }); };
 
     const play = () => {
-        const script = generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints);
+        const script = effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode);
         if (!script) { showToast('Add some rules first', 'info'); return; }
         toggleGameGraph(false);
         if (startGame(script)) showToast('Playing — Esc or Stop to end', 'info');

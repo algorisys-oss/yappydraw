@@ -5,14 +5,14 @@ import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
-    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint
+    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
-    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, Gamepad2, Workflow, ChevronDown
+    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, Gamepad2, Workflow, ChevronDown, Code
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
@@ -28,6 +28,8 @@ const SaveDialog = lazy(() => import("./save-dialog"));
 const TemplateBrowser = lazy(() => import("./template-browser"));
 const VersionHistoryDialog = lazy(() => import("./version-history-dialog"));
 const GameScriptDialog = lazy(() => import("./game-script-dialog"));
+const NewGameDialog = lazy(() => import("./new-game-dialog"));
+import { setShowNewGame } from "./new-game-signal";
 const CloudStorageDialogLazy = lazy(() => import("./cloud-storage-dialog").then(m => ({ default: m.CloudStorageDialog as any })));
 const DSLImportDialog = lazy(() => import("./dsl-import-dialog"));
 const UnsavedChangesDialog = lazy(() => import("./unsaved-changes-dialog"));
@@ -107,7 +109,6 @@ const Menu: Component = () => {
     const [isDesignSizeOpen, setIsDesignSizeOpen] = createSignal(false);
     const [isMagicResizeOpen, setIsMagicResizeOpen] = createSignal(false);
     const [isVersionHistoryOpen, setIsVersionHistoryOpen] = createSignal(false);
-    const [isGameScriptOpen, setIsGameScriptOpen] = createSignal(false);
     const [gameMenuOpen, setGameMenuOpen] = createSignal(false);
 
     const handleUnsavedCancel = () => {
@@ -667,10 +668,9 @@ const Menu: Component = () => {
                     onClose={() => setIsVersionHistoryOpen(false)}
                 />
 
-                <GameScriptDialog
-                    isOpen={isGameScriptOpen()}
-                    onClose={() => setIsGameScriptOpen(false)}
-                />
+                <GameScriptDialog />
+
+                <NewGameDialog />
 
                 <DesignSizeDialog
                     title="Magic Resize"
@@ -801,6 +801,10 @@ const Menu: Component = () => {
                                         <ChevronDown size={14} class="menu-group-chevron" />
                                     </button>
                                     <Show when={gameMenuOpen()}>
+                                        <button class="menu-item menu-sub" onClick={() => { setShowNewGame(true); setIsMenuOpen(false); }}>
+                                            <FilePlus size={15} />
+                                            <span class="label">New Game…</span>
+                                        </button>
                                         <button class="menu-item menu-sub" onClick={() => { toggleBehaviorsPanel(true); setIsMenuOpen(false); }}>
                                             <Gamepad2 size={15} />
                                             <span class="label">Build</span>
@@ -817,7 +821,7 @@ const Menu: Component = () => {
                                             <button class="menu-item menu-sub" onClick={() => {
                                                 setIsMenuOpen(false);
                                                 Promise.all([import('../game/behaviors-to-script'), import('../game/game-runtime')]).then(([g, r]) => {
-                                                    const script = g.generateGameScript(store.elements, store.sceneBehaviors ?? [], store.gameVars ?? [], store.blueprints) || store.gameScript;
+                                                    const script = g.effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode);
                                                     if (script) r.startGame(script);
                                                 });
                                             }}>
@@ -825,9 +829,9 @@ const Menu: Component = () => {
                                                 <span class="label">Play Game</span>
                                             </button>
                                         </Show>
-                                        <button class="menu-item menu-sub" onClick={() => { setIsGameScriptOpen(true); setIsMenuOpen(false); }}>
-                                            <FileText size={15} />
-                                            <span class="label">Advanced Script…</span>
+                                        <button class="menu-item menu-sub" onClick={() => { toggleGameScript(true); setIsMenuOpen(false); }}>
+                                            <Code size={15} />
+                                            <span class="label">Code</span>
                                         </button>
                                     </Show>
                                     <button class="menu-item" onClick={() => {

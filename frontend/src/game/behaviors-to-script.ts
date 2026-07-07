@@ -160,7 +160,9 @@ function hitTargets(t: Trigger): { isEdge: boolean; edge?: string; tag?: string 
  * hand-written fallback (advanced code path). Keeps the saved `gameScript` in
  * sync with the blocks so the exported HTML player runs the block-built game.
  */
-export function effectiveGameScript(elements: DrawingElement[], sceneBehaviors: Behavior[] = [], fallback?: string, gameVars: GameVar[] = [], blueprints?: Record<string, Blueprint> | null): string | undefined {
+export function effectiveGameScript(elements: DrawingElement[], sceneBehaviors: Behavior[] = [], fallback?: string, gameVars: GameVar[] = [], blueprints?: Record<string, Blueprint> | null, mode?: 'visual' | 'code'): string | undefined {
+    // Code-authored games: the hand-written script IS the source — never regenerate.
+    if (mode === 'code') return fallback || undefined;
     const gen = generateGameScript(elements, sceneBehaviors, gameVars, blueprints);
     return gen || fallback || undefined;
 }
