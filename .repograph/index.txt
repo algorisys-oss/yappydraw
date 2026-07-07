@@ -175,7 +175,7 @@ frontend/src/components/my-games-dialog.css | - | 82 |
 frontend/src/components/my-games-dialog.tsx | typescript | 129 | Component:9 GameCard:24 MyGamesDialog:26 fetchGames:30 load:45 play:54 open:63 del:70
 frontend/src/components/my-games-signal.ts | typescript | 4 |
 frontend/src/components/new-game-dialog.css | - | 55 |
-frontend/src/components/new-game-dialog.tsx | typescript | 96 | Component:11 Choice:22 slingshotScript:24 loadCodeGame:25 NewGameDialog:47 pick:49
+frontend/src/components/new-game-dialog.tsx | typescript | 98 | Component:11 Choice:22 slingshotScript:24 flappyScript:25 loadCodeGame:26 NewGameDialog:49 pick:51
 frontend/src/components/new-game-signal.ts | typescript | 4 |
 frontend/src/components/p3-color-picker.tsx | typescript | 265 | Component:1 setPalettePinned:15 ColorPalettePicker:20 activePalette:25 applyAsset:27 onSwatchPointerDown:82 onSwatchPointerMove:87 onSwatchPointerUp:99 handleDragStart:110
 frontend/src/components/path-editor-overlay.tsx | typescript | 303 | Component:8 onMove:120 onUp:156
@@ -344,11 +344,11 @@ frontend/src/game/blueprint-examples.ts | typescript | 301 | BPEdge:18 BPNode:18
 frontend/src/game/blueprint-to-script.ts | typescript | 266 | BPFragments:29 follow:40 evalInput:49 evalDataNode:55 emitChain:91 compileBlueprintFragments:170 compileAllBlueprints:248 blueprintsProduceCode:263
 frontend/src/game/blueprint-types.ts | typescript | 167 | BPNodeKind:39 MathOp:43 SpriteProp:47 BPPin:51 BPNode:53 BPEdge:130 Blueprint:137
 frontend/src/game/game-runtime.ts | typescript | 419 | GameButton:25 Sprite:63{constructor:65 el:66 alive:67 x:68 y:69 width:70 height:71 angle:72 text:73 cx:75 cy:76 set:78 moveTo:79 moveBy:80 centerAt:81 rotateBy:82 color:83 setText:84 hide:85 show:86 destroy:87} GameApi:99{onTick:103 onKey:105 key:107 pointer:109 onPointerDown:110 find:112 findAll:113 spawn:115 spawnText:117 hit:119 hud:121 score:123 getScore:125 goToState:127 playAnim:129 goToPage:131 sound:133 music:135 end:137 pad:139 random:140 clamp:141} Snapshot:146 pageRect:198 buildApi:204 startGame:311
-frontend/src/game/game-templates.ts | typescript | 228 | GameTemplate:3
+frontend/src/game/game-templates.ts | typescript | 287 | GameTemplate:3
 frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 120 | ac:14 tone:31 sweep:46 noise:62 Sfx:78 playSfx:80 startMusic:99 stopMusic:111 setMuted:115
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
-frontend/src/help-docs/features/arcade-doc.tsx | typescript | 264 | ArcadeDoc:8 a:117
+frontend/src/help-docs/features/arcade-doc.tsx | typescript | 265 | ArcadeDoc:8 a:118
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 248 | DesignStudioDoc:9
@@ -670,6 +670,7 @@ tests/dsl.spec.ts | typescript | 904 |
 tests/element-management.spec.ts | typescript | 419 |
 tests/export_shortcut.spec.ts | typescript | 33 |
 tests/eyedropper.spec.ts | typescript | 37 |
+tests/flappy.spec.ts | typescript | 36 | Window:3
 tests/flare.spec.ts | typescript | 15 |
 tests/flowchart.spec.ts | typescript | 66 |
 tests/free-transform-numeric.spec.ts | typescript | 62 |

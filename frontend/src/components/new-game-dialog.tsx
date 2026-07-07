@@ -10,7 +10,7 @@
 
 import { type Component, For, Show, createSignal } from 'solid-js';
 import { Portal } from 'solid-js/web';
-import { X, Gamepad2, Code, Sparkles, Target, Workflow } from 'lucide-solid';
+import { X, Gamepad2, Code, Sparkles, Target, Workflow, Bird } from 'lucide-solid';
 import { toggleBehaviorsPanel, toggleGameScript, setGameAuthoringMode, setGameScript } from '../store/app-store';
 import { buildPongExample, buildCatchExample, buildPlatformerExample } from '../game/behavior-examples';
 import { buildBlueprintPlatformerExample, buildBlueprintBreakoutExample, buildBlueprintSlingshotExample } from '../game/blueprint-examples';
@@ -22,6 +22,7 @@ import './new-game-dialog.css';
 type Choice = { key: string; title: string; sub: string; icon: any; after: () => void; stage?: { w: number; h: number } };
 
 const slingshotScript = () => GAME_TEMPLATES.find(t => t.id === 'slingshot')?.script ?? '';
+const flappyScript = () => GAME_TEMPLATES.find(t => t.id === 'flappy')?.script ?? '';
 const loadCodeGame = (script: string) => { setGameScript(script); setGameAuthoringMode('code'); toggleGameScript(true); };
 
 /** Stage presets — the game's play window (its page). game.width/height bind to this. */
@@ -38,6 +39,7 @@ const CHOICES: Choice[] = [
     { key: 'catch', title: 'Catch the Stars', sub: 'Move to catch falling things', icon: Sparkles, after: () => { buildCatchExample(); toggleBehaviorsPanel(true); } },
     { key: 'platformer', title: 'Platformer', sub: 'Jump & run with gravity', icon: Sparkles, after: () => { buildPlatformerExample(); toggleBehaviorsPanel(true); } },
     { key: 'slingshot', title: 'Slingshot', sub: 'Angry-Birds-style — drag & fire (code)', icon: Target, stage: { w: 1280, h: 720 }, after: () => loadCodeGame(slingshotScript()) },
+    { key: 'flappy', title: 'Flappy', sub: 'One-button flyer — tap to flap (code)', icon: Bird, stage: { w: 540, h: 960 }, after: () => loadCodeGame(flappyScript()) },
     { key: 'bp-platformer', title: 'Platformer · Blueprint', sub: 'The platformer, wired in the Blueprint editor', icon: Workflow, after: () => buildBlueprintPlatformerExample() },
     { key: 'bp-breakout', title: 'Breakout · Blueprint', sub: 'Smash the bricks — Blueprint + variables', icon: Workflow, after: () => buildBlueprintBreakoutExample() },
     { key: 'bp-slingshot', title: 'Slingshot · Blueprint', sub: 'Drag & fire — Blueprint pointer + physics', icon: Workflow, stage: { w: 1280, h: 720 }, after: () => buildBlueprintSlingshotExample() },

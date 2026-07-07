@@ -88,7 +88,8 @@ const ArcadeDoc: Component = () => {
                     <strong>stage size</strong> — the page is your fixed play window — then Blank /
                     Pong / Catch / Platformer / <strong>Slingshot</strong> (an Angry-Birds-style code sample:
                     drag the bird back, release to fire, smash the blocks to pop the pigs — clear a level and
-                        press <kbd>Space</kbd> for the next) / Code / and three <strong>Blueprint</strong> samples
+                        press <kbd>Space</kbd> for the next) / <strong>Flappy</strong> (a one-button flyer — tap or
+                        <kbd>Space</kbd> to flap through the pipes) / Code / and three <strong>Blueprint</strong> samples
                         (<strong>Platformer · Blueprint</strong>, <strong>Breakout · Blueprint</strong> and a
                         drag-aim <strong>Slingshot · Blueprint</strong>) that open ready-made in the Blueprint
                         editor so you can see a whole game wired as nodes),

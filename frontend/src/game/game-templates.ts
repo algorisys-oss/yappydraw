@@ -220,9 +220,68 @@ game.onTick((dt) => {
 });
 `;
 
+// A tiny Flappy Bird — one button (Space / tap): flap to stay airborne, thread the
+// scrolling pipe gaps. Hit a pipe or the ground and it's over; Space to retry.
+const FLAPPY = `// FLAPPY — tap / Space to flap. Thread the pipes. Don't touch anything.
+const W = game.width, H = game.height, X = game.x, Y = game.y;
+const GROUND = Y + H - 46;
+const GRAV = 2000, FLAP = 600, SPEED = 190, GAP = 210, PIPE_W = 84, SPAWN = 1.5, R = 24;
+
+// —— scene ——
+game.spawn('rectangle', X, Y, W, H, { backgroundColor: '#4ec0ca' });
+game.spawn('rectangle', X, GROUND, W, Y + H - GROUND, { backgroundColor: '#ded895', strokeColor: '#c9c08a', strokeWidth: 3 });
+const bird = game.spawn('circle', X + W * 0.28 - R, Y + H * 0.42 - R, R * 2, R * 2,
+  { backgroundColor: '#ffdf00', strokeColor: '#e0a800', strokeWidth: 3 });
+const eye = game.spawn('circle', 0, 0, 7, 7, { backgroundColor: '#222' });
+
+let vy = 0, started = false, dead = false, score = 0, spawnT = 0, pipes = [];
+const HOMEX = X + W * 0.28, HOMEY = Y + H * 0.42;
+const msg = () => game.hud(dead ? 'GAME OVER — Space to retry' : (started ? '' : 'Tap / Space to flap'));
+const face = () => eye.centerAt(bird.cx + 9, bird.cy - 8);
+
+function reset() {
+  pipes.forEach(p => { p.top.destroy(); p.bot.destroy(); }); pipes = [];
+  bird.centerAt(HOMEX, HOMEY); face(); vy = 0; started = false; dead = false; spawnT = 0;
+  if (score) game.score(-score); score = 0; msg();
+}
+function flap() {
+  if (dead) { reset(); return; }
+  started = true; vy = -FLAP; game.sound('blip');
+}
+function die() { dead = true; game.sound('lose'); msg(); }
+function spawnPipe() {
+  const gy = Y + 70 + Math.random() * ((GROUND - GAP - 70) - (Y + 70));
+  const top = game.spawn('rectangle', X + W, Y, PIPE_W, gy - Y, { backgroundColor: '#5cb85c', strokeColor: '#3d8b3d', strokeWidth: 3 });
+  const bot = game.spawn('rectangle', X + W, gy + GAP, PIPE_W, GROUND - (gy + GAP), { backgroundColor: '#5cb85c', strokeColor: '#3d8b3d', strokeWidth: 3 });
+  pipes.push({ top, bot, passed: false });
+}
+
+game.onKey('a', flap);
+game.onPointerDown(() => flap());
+msg(); face();
+
+game.onTick((dt) => {
+  if (!started || dead) return;
+  vy += GRAV * dt; bird.moveBy(0, vy * dt); face();
+  if (bird.y < Y) { bird.moveTo(bird.x, Y); vy = 0; }
+  if (bird.y + bird.height >= GROUND) { bird.moveTo(bird.x, GROUND - bird.height); die(); return; }
+
+  spawnT += dt; if (spawnT >= SPAWN) { spawnT = 0; spawnPipe(); }
+
+  for (let i = pipes.length - 1; i >= 0; i--) {
+    const p = pipes[i];
+    p.top.moveBy(-SPEED * dt, 0); p.bot.moveBy(-SPEED * dt, 0);
+    if (game.hit(bird, p.top) || game.hit(bird, p.bot)) { die(); return; }
+    if (!p.passed && p.top.x + p.top.width < bird.x) { p.passed = true; score++; game.score(1); game.sound('coin'); }
+    if (p.top.x + p.top.width < X - 10) { p.top.destroy(); p.bot.destroy(); pipes.splice(i, 1); }
+  }
+});
+`;
+
 export const GAME_TEMPLATES: GameTemplate[] = [
     { id: 'blank', name: 'Blank', script: BLANK },
     { id: 'pong', name: 'Pong', script: PONG },
     { id: 'catch', name: 'Catch the Stars', script: CATCH },
     { id: 'slingshot', name: 'Slingshot (Angry Birds)', script: SLINGSHOT },
+    { id: 'flappy', name: 'Flappy', script: FLAPPY },
 ];

@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.15](0.8.15.md) — Flappy sample game (one-button flyer)
 - [0.8.14](0.8.14.md) — One-click game Export on the canvas game bar
 - [0.8.13](0.8.13.md) — Pointer & velocity nodes → a drag-aim Blueprint Slingshot
 - [0.8.12](0.8.12.md) — Blueprint sample games (Platformer/Breakout) + a canvas view switcher
