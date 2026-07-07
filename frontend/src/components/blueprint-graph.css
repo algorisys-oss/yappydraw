@@ -139,7 +139,9 @@
 .bp-gate-hint { font-size: 9px; color: var(--text-secondary); white-space: nowrap; }
 
 .bp-empty {
-    position: absolute; left: 40px; top: 40px; max-width: 320px;
+    /* width (not just max-width): the surface is absolutely positioned with no
+       intrinsic width, so max-width alone collapses this to min-content. */
+    position: absolute; left: 40px; top: 40px; width: 320px;
     padding: 14px 16px; border: 1px dashed var(--border-color); border-radius: 10px;
     color: var(--text-secondary); font-size: 13px; line-height: 1.5; background: var(--bg-panel);
 }

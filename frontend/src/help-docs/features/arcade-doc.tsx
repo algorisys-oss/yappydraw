@@ -74,7 +74,8 @@ const ArcadeDoc: Component = () => {
             <section class="doc-section">
                 <h2>Game Graph — the node view</h2>
                 <p>
-                    The game tools live under <strong>Menu → Game</strong>: <strong>New Game…</strong> (Blank /
+                    The game tools live under <strong>Menu → Game</strong>: <strong>New Game…</strong> (pick a
+                    <strong>stage size</strong> — the page is your fixed play window — then Blank /
                     Pong / Catch / Platformer / Code), <strong>My Games…</strong> (a gallery of your saved games —
                     hover a card to Play, click to open, or start a new one), and the editors Build · Node Graph ·
                     Blueprint · Code · Play. The three visual editors — <strong>Simple</strong> (rule list),

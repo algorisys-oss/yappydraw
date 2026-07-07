@@ -98,7 +98,7 @@ frontend/src/components/behaviors-panel.css | - | 133 |
 frontend/src/components/behaviors-panel.tsx | typescript | 294 | Component:11 Behavior:19 BehaviorsPanel:26 spriteBehaviors:44 sceneBehaviors:45 writeSprite:47 writeScene:48 isScene:49 list:50 write:51 gameVars:54 scan:59 undefinedVars:72 addVar:74 removeVar:78 patchVarInitial:79 renameVar:81 fix:84 ensureName:94 cloneBehaviors:104 addBehavior:107 updateBehavior:112 removeBehavior:113 moveBehavior:114 duplicateBehavior:119 copyAll:123 pasteAll:124 duplicateAction:125 moveAction:126 setTrigger:131 patchTrigger:132 addAction:133 toggleCondition:134 patchCondition:135 setAction:136 patchAction:137 removeAction:138 play:140 availableActions:146 RuleList:148
 frontend/src/components/blob-brush-overlay.css | - | 24 |
 frontend/src/components/blob-brush-overlay.tsx | typescript | 73 | BlobBrushOverlay:11 active:17 toWorld:18 onDown:20 onMove:26 onUp:31 onKey:43 scale:53 strokeScreen:54 cur:55
-frontend/src/components/blueprint-graph.css | - | 150 |
+frontend/src/components/blueprint-graph.css | - | 152 |
 frontend/src/components/blueprint-graph.tsx | typescript | 502 | Component:16 BPNode:26 pinOutY:41 pinColor:42 pinLabel:43 dataOutY:63 execInY:65 dataInY:67 execInLabel:69 BlueprintGraph:71 isSprite:81 nodeById:91 posOf:92 srcPinY:94 writeNodes:101 writeEdges:102 patchNode:103 deleteNode:104 connect:109 connectData:115 addNode:121 onWheel:146 onSurfaceDown:157 toSurface:162 onSurfaceMove:167 onSurfaceUp:172 startWire:178 resolveWire:183 startNodeDrag:207 moveNodeDrag:214 endNodeDrag:219 setEventKind:226 patchTrigger:227 setActKind:228 patchAction:229 patchCond:230 setSeqCount:232 play:238 onKey:246 from:308 isData:309 x1:310 y1:311 x2:312 y2:313 a:321
 frontend/src/components/bpmn-tool-group.tsx | typescript | 249 | Component:1 BpmnToolGroup:137 handler:144 getActiveTool:154 handleToolClick:163 as:171 as:177 handleRightClick:185 toggleMenu:191 activeTool:198 isActive:199 getDropdownPosition:201
 frontend/src/components/brand-kit-panel.css | - | 69 |
@@ -172,8 +172,8 @@ frontend/src/components/minimap.tsx | typescript | 282 | MinimapProps:8 Minimap:
 frontend/src/components/my-games-dialog.css | - | 82 |
 frontend/src/components/my-games-dialog.tsx | typescript | 129 | Component:9 GameCard:24 MyGamesDialog:26 fetchGames:30 load:45 play:54 open:63 del:70
 frontend/src/components/my-games-signal.ts | typescript | 4 |
-frontend/src/components/new-game-dialog.css | - | 41 |
-frontend/src/components/new-game-dialog.tsx | typescript | 63 | Component:11 Choice:20 newGame:23 NewGameDialog:33 pick:34
+frontend/src/components/new-game-dialog.css | - | 55 |
+frontend/src/components/new-game-dialog.tsx | typescript | 86 | Component:11 Choice:20 NewGameDialog:38 pick:40
 frontend/src/components/new-game-signal.ts | typescript | 4 |
 frontend/src/components/p3-color-picker.tsx | typescript | 265 | Component:1 setPalettePinned:15 ColorPalettePicker:20 activePalette:25 applyAsset:27 onSwatchPointerDown:82 onSwatchPointerMove:87 onSwatchPointerUp:99 handleDragStart:110
 frontend/src/components/path-editor-overlay.tsx | typescript | 303 | Component:8 onMove:120 onUp:156
@@ -271,7 +271,7 @@ frontend/src/components/video-overlay.css | - | 70 |
 frontend/src/components/video-overlay.tsx | typescript | 204 | Component:1 onDragStart:69 onDragMove:83 onDragEnd:91 toggleLock:98 close:104 VideoOverlay:177 handleKeyDown:179
 frontend/src/components/video-url-dialog.css | - | 183 |
 frontend/src/components/video-url-dialog.tsx | typescript | 135 | Component:1 VideoProvider:4 VideoUrlDialogProps:7 VideoUrlDialog:14 handleSubmit:55 handleKeyDown:61
-frontend/src/components/welcome-screen.tsx | typescript | 537 | Component:2 WelcomeScreen:8 isVisible:11 handler:30 createArrow:85 renderArrow:95 getCategoryIcon:189
+frontend/src/components/welcome-screen.tsx | typescript | 109 | Component:1 WelcomeScreen:9 isVisible:10 handler:24
 frontend/src/components/width-tool-overlay.css | - | 39 |
 frontend/src/components/width-tool-overlay.tsx | typescript | 92 | WidthToolOverlay:14 active:19 toWorld:20 candidatePaths:22 onDown:28 onMove:44 onUp:45 onKey:62 guide:71
 frontend/src/components/wireframe-tool-group.tsx | typescript | 268 | Component:1 UIShapeCategory:5 as:67 WireframeToolGroup:84 handler:91 getActiveTool:101 handleToolClick:114 handleRightClick:136 toggleMenu:142 activeTool:149 isActive:150 getDropdownPosition:152 as:219
@@ -345,7 +345,7 @@ frontend/src/game/game-templates.ts | typescript | 98 | GameTemplate:3
 frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 120 | ac:14 tone:31 sweep:46 noise:62 Sfx:78 playSfx:80 startMusic:99 stopMusic:111 setMuted:115
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1113 | AnimationDoc:8 to:715
-frontend/src/help-docs/features/arcade-doc.tsx | typescript | 245 | ArcadeDoc:8 a:99
+frontend/src/help-docs/features/arcade-doc.tsx | typescript | 246 | ArcadeDoc:8 a:100
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 110 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 248 | DesignStudioDoc:9

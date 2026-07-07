@@ -8,7 +8,7 @@
  * A game IS a document; each option resets to a new doc and opens the right editor.
  */
 
-import { type Component, For, Show } from 'solid-js';
+import { type Component, For, Show, createSignal } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { X, Gamepad2, Code, Sparkles } from 'lucide-solid';
 import { toggleBehaviorsPanel, toggleGameScript, setGameAuthoringMode } from '../store/app-store';
@@ -17,21 +17,32 @@ import { handleNew } from './menu';
 import { showNewGame, setShowNewGame } from './new-game-signal';
 import './new-game-dialog.css';
 
-type Choice = { key: string; title: string; sub: string; icon: any; run: () => void };
+type Choice = { key: string; title: string; sub: string; icon: any; after: () => void };
 
-/** Reset to a fresh game document, then open the given editor (after any unsaved prompt). */
-const newGame = (after: () => void) => handleNew('infinite', undefined, after);
+/** Stage presets — the game's play window (its page). game.width/height bind to this. */
+const STAGES: { key: string; label: string; w: number; h: number }[] = [
+    { key: 'landscape', label: 'Landscape', w: 800, h: 600 },
+    { key: 'wide', label: 'Wide 16:9', w: 1280, h: 720 },
+    { key: 'portrait', label: 'Portrait', w: 540, h: 960 },
+    { key: 'square', label: 'Square', w: 720, h: 720 },
+];
 
 const CHOICES: Choice[] = [
-    { key: 'blank', title: 'Blank Game', sub: 'Start from scratch with the visual builder', icon: Gamepad2, run: () => newGame(() => toggleBehaviorsPanel(true)) },
-    { key: 'pong', title: 'Pong', sub: 'Classic paddle & ball starter', icon: Sparkles, run: () => newGame(() => { buildPongExample(); toggleBehaviorsPanel(true); }) },
-    { key: 'catch', title: 'Catch the Stars', sub: 'Move to catch falling things', icon: Sparkles, run: () => newGame(() => { buildCatchExample(); toggleBehaviorsPanel(true); }) },
-    { key: 'platformer', title: 'Platformer', sub: 'Jump & run with gravity', icon: Sparkles, run: () => newGame(() => { buildPlatformerExample(); toggleBehaviorsPanel(true); }) },
-    { key: 'code', title: 'Code (Advanced)', sub: 'Hand-write the game script yourself', icon: Code, run: () => newGame(() => { setGameAuthoringMode('code'); toggleGameScript(true); }) },
+    { key: 'blank', title: 'Blank Game', sub: 'Start from scratch with the visual builder', icon: Gamepad2, after: () => toggleBehaviorsPanel(true) },
+    { key: 'pong', title: 'Pong', sub: 'Classic paddle & ball starter', icon: Sparkles, after: () => { buildPongExample(); toggleBehaviorsPanel(true); } },
+    { key: 'catch', title: 'Catch the Stars', sub: 'Move to catch falling things', icon: Sparkles, after: () => { buildCatchExample(); toggleBehaviorsPanel(true); } },
+    { key: 'platformer', title: 'Platformer', sub: 'Jump & run with gravity', icon: Sparkles, after: () => { buildPlatformerExample(); toggleBehaviorsPanel(true); } },
+    { key: 'code', title: 'Code (Advanced)', sub: 'Hand-write the game script yourself', icon: Code, after: () => { setGameAuthoringMode('code'); toggleGameScript(true); } },
 ];
 
 const NewGameDialog: Component = () => {
-    const pick = (c: Choice) => { setShowNewGame(false); c.run(); };
+    const [stage, setStage] = createSignal(STAGES[0]);
+    const pick = (c: Choice) => {
+        setShowNewGame(false);
+        const s = stage();
+        // A game is a paged (design) document — its page is the fixed stage/window.
+        handleNew('design', { width: s.w, height: s.h }, c.after);
+    };
     return (
         <Show when={showNewGame()}>
             <Portal>
@@ -41,7 +52,19 @@ const NewGameDialog: Component = () => {
                             <h2>New Game</h2>
                             <button class="ng-close" onClick={() => setShowNewGame(false)}><X size={18} /></button>
                         </div>
-                        <p class="ng-lead">Pick how you'd like to start. You can switch views (Simple · Graph · Blueprint · Code) any time.</p>
+                        <p class="ng-lead">Pick a stage size and a starting point. You can switch views (Simple · Graph · Blueprint · Code) any time.</p>
+                        <div class="ng-stage-row">
+                            <span class="ng-stage-label">Stage</span>
+                            <div class="ng-stage-chips">
+                                <For each={STAGES}>
+                                    {(s) => (
+                                        <button class="ng-stage-chip" classList={{ active: stage().key === s.key }} onClick={() => setStage(s)}>
+                                            {s.label} <span class="ng-stage-dim">{s.w}×{s.h}</span>
+                                        </button>
+                                    )}
+                                </For>
+                            </div>
+                        </div>
                         <div class="ng-grid">
                             <For each={CHOICES}>
                                 {(c) => (

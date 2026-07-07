@@ -39,3 +39,17 @@
 .ng-code .ng-card-icon { background: rgba(148, 163, 184, 0.18); color: var(--text-secondary); }
 .ng-card-title { font-size: 14px; font-weight: 700; }
 .ng-card-sub { font-size: 12px; color: var(--text-secondary); line-height: 1.35; }
+
+/* Stage-size chooser */
+.ng-stage-row { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; flex-wrap: wrap; }
+.ng-stage-label { font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+.ng-stage-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.ng-stage-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 11px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--border-color); background: var(--bg-secondary);
+    color: var(--text-primary); font-size: 12px; font-weight: 600;
+}
+.ng-stage-chip:hover { border-color: var(--accent-color, #6366f1); }
+.ng-stage-chip.active { border-color: var(--accent-color, #6366f1); background: rgba(99,102,241,0.12); color: var(--accent-color, #6366f1); }
+.ng-stage-dim { font-size: 10px; opacity: 0.65; font-weight: 500; }
