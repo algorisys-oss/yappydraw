@@ -63,6 +63,7 @@ const RecolorPanel = lazy(() => import('./components/recolor-panel'));
 const BehaviorsPanel = lazy(() => import('./components/behaviors-panel'));
 const GameGraph = lazy(() => import('./components/game-graph'));
 const BlueprintGraph = lazy(() => import('./components/blueprint-graph'));
+const GameModeBar = lazy(() => import('./components/game-mode-bar'));
 const VectorToolsPanel = lazy(() => import('./components/vector-tools-panel'));
 const HistoryPanel = lazy(() => import('./components/history-panel'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
@@ -1302,6 +1303,7 @@ const App: Component = () => {
             <BehaviorsPanel />
             <GameGraph />
             <BlueprintGraph />
+            <GameModeBar />
             <VectorToolsPanel />
             <HistoryPanel />
             <StatusBar />

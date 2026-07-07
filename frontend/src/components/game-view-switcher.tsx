@@ -23,7 +23,7 @@ const show = (v: GameView) => {
     toggleGameScript(v === 'code');
 };
 
-export const GameViewSwitcher: Component<{ current: GameView }> = (p) => (
+export const GameViewSwitcher: Component<{ current?: GameView }> = (p) => (
     <div class="gvs" role="tablist" aria-label="Game editor view">
         <button class="gvs-btn" classList={{ active: p.current === 'simple' }} title="Simple builder (rule list)"
             onClick={() => show('simple')}><Gamepad2 size={13} /> <span class="gvs-label">Simple</span></button>

@@ -82,13 +82,16 @@ const ArcadeDoc: Component = () => {
                     <strong>stage size</strong> — the page is your fixed play window — then Blank /
                     Pong / Catch / Platformer / <strong>Slingshot</strong> (an Angry-Birds-style code sample:
                     drag the bird back, release to fire, smash the blocks to pop the pigs — clear a level and
-                        press <kbd>Space</kbd> for the next) / Code),
+                        press <kbd>Space</kbd> for the next) / Code / and two <strong>Blueprint</strong> samples
+                        (<strong>Platformer · Blueprint</strong> and <strong>Breakout · Blueprint</strong>) that
+                        open ready-made in the Blueprint editor so you can see a whole game wired as nodes),
                     <strong>My Games…</strong> (a gallery of your saved games —
                     hover a card to Play, click to open, or start a new one), and the editors Build · Node Graph ·
                     Blueprint · Code · Play. The three visual editors — <strong>Simple</strong> (rule list),
                     <strong>Graph</strong> (node/wire view) and <strong>Blueprint</strong> (execution flow) —
-                    are three views of the same game; a <strong>Simple · Graph · Blueprint</strong> switcher in
-                    each header hops between them in a click.
+                    are three views of the same game; a <strong>Simple · Graph · Blueprint · Code</strong>
+                    switcher in each header hops between them in a click, and the same switcher (plus ▶ Play)
+                    floats at the bottom of the game canvas so you can jump views without opening a panel.
                 </p>
                 <p>
                     <strong>Menu → Game → Node Graph</strong> opens a full-screen node view of your whole game.

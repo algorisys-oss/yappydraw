@@ -10,9 +10,10 @@
 
 import { type Component, For, Show, createSignal } from 'solid-js';
 import { Portal } from 'solid-js/web';
-import { X, Gamepad2, Code, Sparkles, Target } from 'lucide-solid';
+import { X, Gamepad2, Code, Sparkles, Target, Workflow } from 'lucide-solid';
 import { toggleBehaviorsPanel, toggleGameScript, setGameAuthoringMode, setGameScript } from '../store/app-store';
 import { buildPongExample, buildCatchExample, buildPlatformerExample } from '../game/behavior-examples';
+import { buildBlueprintPlatformerExample, buildBlueprintBreakoutExample } from '../game/blueprint-examples';
 import { GAME_TEMPLATES } from '../game/game-templates';
 import { handleNew } from './menu';
 import { showNewGame, setShowNewGame } from './new-game-signal';
@@ -37,6 +38,8 @@ const CHOICES: Choice[] = [
     { key: 'catch', title: 'Catch the Stars', sub: 'Move to catch falling things', icon: Sparkles, after: () => { buildCatchExample(); toggleBehaviorsPanel(true); } },
     { key: 'platformer', title: 'Platformer', sub: 'Jump & run with gravity', icon: Sparkles, after: () => { buildPlatformerExample(); toggleBehaviorsPanel(true); } },
     { key: 'slingshot', title: 'Slingshot', sub: 'Angry-Birds-style — drag & fire (code)', icon: Target, stage: { w: 1280, h: 720 }, after: () => loadCodeGame(slingshotScript()) },
+    { key: 'bp-platformer', title: 'Platformer · Blueprint', sub: 'The platformer, wired in the Blueprint editor', icon: Workflow, after: () => buildBlueprintPlatformerExample() },
+    { key: 'bp-breakout', title: 'Breakout · Blueprint', sub: 'Smash the bricks — Blueprint + variables', icon: Workflow, after: () => buildBlueprintBreakoutExample() },
     { key: 'code', title: 'Code (Advanced)', sub: 'Hand-write the game script yourself', icon: Code, after: () => { setGameAuthoringMode('code'); toggleGameScript(true); } },
 ];
 

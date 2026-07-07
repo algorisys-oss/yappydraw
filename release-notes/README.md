@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.12](0.8.12.md) — Blueprint sample games (Platformer/Breakout) + a canvas view switcher
 - [0.8.11](0.8.11.md) — Slingshot & Platformer play right; Play button no longer clipped
 - [0.8.10](0.8.10.md) — Slingshot: an Angry-Birds sample game
 - [0.7.1](0.7.1.md) — Quick toolbar font colour fix (text / rich-text)

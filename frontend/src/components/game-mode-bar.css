@@ -1,0 +1,33 @@
+/* Floating game-view launcher, centered at the bottom of the game canvas
+   (the top-center is occupied by the main tool palette). */
+.game-mode-bar {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    max-width: calc(100vw - 32px);
+}
+.gmb-play {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 999px;
+    background: #16a34a;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+.gmb-play:hover { background: #15803d; }
