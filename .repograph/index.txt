@@ -359,7 +359,7 @@ frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | Embedding
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 444 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 375 | MasksAppearanceTraceDoc:8 tools:14 dropdown:159
-frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 144 | StickLibraryDoc:9
+frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 129 | WorkspaceDoc:9 and:32
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 587 | YslTutorialDoc:8
@@ -382,8 +382,8 @@ frontend/src/index.css | - | 453 |
 frontend/src/index.tsx | typescript | 109 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84
 frontend/src/library/stick-figures/assets.ts | typescript | 47 | Variant:11 buildVariantAssets:22
 frontend/src/library/stick-figures/builder.ts | typescript | 138 | Variant:20 doc:26 subToPoints:35 curveLimb:42 hair:79 skirt:87 Pose:93 figureInner:115 buildFigure:120
-frontend/src/library/stick-figures/index.ts | typescript | 148 | StickPartRole:30 parseHex:34 roleFromFill:46 InsertStickOptions:57 insertStickFigure:75 StickRecolor:112 recolorStickFigure:122 selectionHasStickFigure:145
-frontend/src/library/stick-figures/poses.ts | typescript | 178 | Pose:9
+frontend/src/library/stick-figures/index.ts | typescript | 174 | StickPartRole:30 parseHex:34 roleFromFill:46 InsertStickOptions:57 insertStickFigure:75 StickRecolor:112 recolorStickFigure:122 selectionHasStickFigure:145 toMonochromeSvg:158
+frontend/src/library/stick-figures/poses.ts | typescript | 253 | Pose:9
 frontend/src/library/stick-figures/prefs.ts | typescript | 44 | load:12 save:16 toggleStickFavorite:24 pushStickRecent:33 StickColorMode:39 setStickColorMode:42
 frontend/src/library/stick-figures/props.ts | typescript | 48 | pdoc:11 PropDef:15
 frontend/src/library/stick-figures/registry.ts | typescript | 63 | StickVariant:21 filterStickAssets:37 searchStickAssets:54

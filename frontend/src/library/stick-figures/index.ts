@@ -146,3 +146,29 @@ export function selectionHasStickFigure(ids: string[]): boolean {
     const idSet = new Set(ids);
     return store.elements.some(e => idSet.has(e.id) && !!e.sfRole);
 }
+
+const _monoCache = new Map<string, string>();
+/**
+ * A monochrome copy of an asset's SVG (accent fills stripped) — for previewing
+ * figures the way they'll drop while Mono mode is on. Mirrors the insert logic:
+ * an element is an accent if it's tagged `data-sf-role="accent"` OR (untagged) its
+ * fill classifies as accent via {@link roleFromFill}. Neutral props keep their fill.
+ * Cached per source string.
+ */
+export function toMonochromeSvg(svg: string): string {
+    const hit = _monoCache.get(svg);
+    if (hit) return hit;
+    try {
+        const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+        doc.querySelectorAll<SVGElement>('[fill]').forEach(el => {
+            const fill = el.getAttribute('fill');
+            if (!fill || fill === 'none') return;
+            const role = el.getAttribute('data-sf-role');
+            const isAccent = role === 'accent' || (!role && roleFromFill(fill) === 'accent');
+            if (isAccent) el.setAttribute('fill', 'none');
+        });
+        const out = doc.documentElement.outerHTML;
+        _monoCache.set(svg, out);
+        return out;
+    } catch { return svg; }
+}

@@ -24,9 +24,10 @@ const StickLibraryDoc: Component = () => {
                 <h2>What it’s for</h2>
                 <p>
                     Illustrated people make explainers, workshops and presentations far more relatable — but drawing
-                    them from scratch is slow. The library ships <strong>24 hand-authored figures</strong> across six
+                    them from scratch is slow. The library ships a large set of hand-authored figures across six
                     everyday categories (Daily &amp; Emotions, Office &amp; Work, Meetings &amp; Talks, Street &amp;
-                    Travel, Social &amp; Family, and Services) so you can drop the right pose in a click.
+                    Travel, Social &amp; Family, and Services) — each in four character variants — plus standalone
+                    props and ready-made multi-figure scenes, so you can drop the right pose in a click.
                 </p>
                 <p class="tip-box">
                     Figures import as normal Yappy <strong>path</strong> shapes grouped into one object. That means you

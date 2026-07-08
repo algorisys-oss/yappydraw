@@ -7,7 +7,7 @@ import {
     STICK_CATEGORIES, filterStickAssets, searchStickAssets, getStickAsset,
     insertStickFigure, recolorStickFigure, selectionHasStickFigure,
     stickFavorites, isStickFavorite, toggleStickFavorite, stickRecents,
-    stickColorMode, setStickColorMode,
+    stickColorMode, setStickColorMode, toMonochromeSvg,
     STICK_FIGURE_MIME, type StickAsset, type StickCategory, type StickVariant,
 } from '../library/stick-figures';
 import './stick-figure-panel.css';
@@ -148,8 +148,8 @@ const StickFigurePanel: Component = () => {
                                             onClick={(e) => { e.stopPropagation(); toggleStickFavorite(asset.id); }}>
                                             <Star size={12} />
                                         </button>
-                                        {/* Our own trusted inline SVG string */}
-                                        <div class="sp-thumb" innerHTML={asset.svg} />
+                                        {/* Our own trusted inline SVG string (mono preview follows the toggle) */}
+                                        <div class="sp-thumb" innerHTML={stickColorMode() === 'mono' ? toMonochromeSvg(asset.svg) : asset.svg} />
                                         <span class="sp-label">{asset.name}</span>
                                     </div>
                                 )}
