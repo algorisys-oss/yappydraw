@@ -152,6 +152,27 @@ Y.bakeAnimatedFigure(a);                          // freeze current frame → ed
                 </p>
             </section>
 
+            {/* ─── TIMELINE ─────────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Direct the whole scene (Scene Timeline)</h2>
+                <p>
+                    Click <strong>Scene timeline</strong> in the panel to open a timeline across the bottom of the
+                    screen. Every animated figure becomes a <strong>track</strong>, with its action sequence shown as
+                    coloured blocks along a time ruler.
+                </p>
+                <ul>
+                    <li><strong>Play / Pause / Restart</strong> and a <strong>Loop</strong> toggle drive all figures
+                        together from one clock.</li>
+                    <li><strong>Scrub</strong> — drag the red playhead (or click the ruler) to jump to any moment; every
+                        figure poses at that instant. Great for lining up a scene or grabbing a frame to bake.</li>
+                    <li>Click a track's <strong>label</strong> to select that figure on the canvas.</li>
+                </ul>
+                <p class="tip-box">
+                    The scene length is set automatically by the longest figure. API:
+                    <code> toggleSceneTimeline(true)</code>, <code>playScene()</code>, <code>seekScene(seconds)</code>.
+                </p>
+            </section>
+
             {/* ─── EXPORT ───────────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Export your animation as a video</h2>

@@ -1,0 +1,135 @@
+import { type Component, For, Show, createMemo, createEffect, untrack, onMount } from 'solid-js';
+import { store, setStore, toggleSceneTimeline } from '../store/app-store';
+import { effectiveTime } from '../utils/animation/animation-engine';
+import { getClip, CLIP_LIST } from '../library/stick-figures';
+import { Play, Pause, RotateCcw, Repeat, X, Film } from 'lucide-solid';
+import './scene-timeline.css';
+
+/** Block colour per motion clip. */
+const CLIP_COLOR: Record<string, string> = {
+    idle: '#94a3b8', walk: '#3b82f6', wave: '#22c55e', talk: '#8b5cf6', point: '#f59e0b', jump: '#ef4444',
+};
+const clipColor = (id: string) => CLIP_COLOR[id] || '#6366f1';
+const clipName = (id: string) => CLIP_LIST.find(c => c.id === id)?.name || id;
+
+interface FigTrack { id: string; label: string; steps: { clip: string; dur: number }[]; total: number; }
+
+const SceneTimeline: Component = () => {
+    /** Animated figures on the canvas → track rows. */
+    const tracks = createMemo<FigTrack[]>(() => {
+        const figs = store.elements.filter(e => e.type === 'stickRig');
+        return figs.map((e, i) => {
+            const r = e.stickRig!;
+            let steps: { clip: string; dur: number }[];
+            if (r.sequence?.length) steps = r.sequence as any;
+            else if (r.path) steps = [{ clip: 'walk', dur: r.path.dur || 4 }];
+            else steps = [{ clip: r.clip, dur: getClip(r.clip).duration }];
+            const total = steps.reduce((s, a) => s + Math.max(0.1, a.dur), 0);
+            return { id: e.id, label: `Figure ${i + 1}`, steps, total };
+        });
+    });
+
+    /** Auto scene duration = longest track (min 4s). */
+    createEffect(() => {
+        const dur = Math.max(4, ...tracks().map(t => t.total));
+        untrack(() => { if (Math.abs(dur - store.storyDuration) > 0.05) setStore('storyDuration', dur); });
+    });
+
+    // Play controller: advance the playhead from the clock while playing.
+    let last = 0;
+    createEffect(() => {
+        const et = effectiveTime();               // re-run each animation frame
+        if (!store.showSceneTimeline) return;
+        untrack(() => {
+            const now = et / 1000;
+            const dt = Math.min(0.1, Math.max(0, now - last));
+            last = now;
+            if (!store.storyPlaying) return;
+            let nt = store.storyTime + dt;
+            if (nt >= store.storyDuration) {
+                if (store.storyLoop) nt = nt % store.storyDuration;
+                else { nt = store.storyDuration; setStore('storyPlaying', false); }
+            }
+            setStore('storyTime', nt);
+        });
+    });
+
+    onMount(() => { last = effectiveTime() / 1000; });
+
+    const dur = () => store.storyDuration;
+    const pct = (v: number) => `${Math.max(0, Math.min(100, (v / dur()) * 100))}%`;
+
+    const play = () => setStore('storyPlaying', !store.storyPlaying);
+    const restart = () => setStore({ storyTime: 0, storyPlaying: true } as any);
+
+    let rulerRef: HTMLDivElement | undefined;
+    const seekFromEvent = (clientX: number) => {
+        if (!rulerRef) return;
+        const r = rulerRef.getBoundingClientRect();
+        const f = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+        setStore({ storyTime: f * dur(), storyPlaying: false } as any);
+    };
+    const onRulerDown = (e: PointerEvent) => {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        seekFromEvent(e.clientX);
+        const move = (ev: PointerEvent) => seekFromEvent(ev.clientX);
+        const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+    };
+
+    const selectFigure = (id: string) => setStore('selection', [id]);
+
+    return (
+        <Show when={store.showSceneTimeline}>
+            <div class="scene-timeline">
+                <div class="st-bar">
+                    <div class="st-title"><Film size={14} /> Scene Timeline</div>
+                    <button class="st-btn" title="Restart" onClick={restart}><RotateCcw size={15} /></button>
+                    <button class="st-btn st-play" title={store.storyPlaying ? 'Pause' : 'Play'} onClick={play}>
+                        <Show when={store.storyPlaying} fallback={<Play size={16} />}><Pause size={16} /></Show>
+                    </button>
+                    <button class={`st-btn ${store.storyLoop ? 'active' : ''}`} title="Loop" onClick={() => setStore('storyLoop', !store.storyLoop)}><Repeat size={15} /></button>
+                    <span class="st-time">{store.storyTime.toFixed(1)} / {dur().toFixed(1)}s</span>
+                    <div class="st-spacer" />
+                    <button class="st-btn" title="Close" onClick={() => toggleSceneTimeline(false)}><X size={15} /></button>
+                </div>
+
+                <div class="st-body">
+                    <Show when={tracks().length > 0} fallback={
+                        <div class="st-empty">Add animated figures (Stick Figures → Animated) — they'll appear here as tracks you can play and scrub together.</div>
+                    }>
+                        <div class="st-tracks">
+                            <For each={tracks()}>
+                                {(tk) => (
+                                    <div class="st-track">
+                                        <button class={`st-label ${store.selection.includes(tk.id) ? 'sel' : ''}`} onClick={() => selectFigure(tk.id)}>{tk.label}</button>
+                                        <div class="st-row">
+                                            <For each={(() => { let acc = 0; return tk.steps.map(s => { const start = acc; acc += Math.max(0.1, s.dur); return { ...s, start }; }); })()}>
+                                                {(seg) => (
+                                                    <div class="st-block" title={`${clipName(seg.clip)} · ${seg.dur}s`}
+                                                        style={{ left: pct(seg.start), width: pct(seg.dur), background: clipColor(seg.clip) }}>
+                                                        <span>{clipName(seg.clip)}</span>
+                                                    </div>
+                                                )}
+                                            </For>
+                                        </div>
+                                    </div>
+                                )}
+                            </For>
+                        </div>
+                        {/* Ruler + playhead overlaid on the track area */}
+                        <div class="st-ruler" ref={rulerRef} onPointerDown={onRulerDown}>
+                            <For each={Array.from({ length: Math.floor(dur()) + 1 })}>
+                                {(_, i) => <div class="st-tick" style={{ left: pct(i()) }}><span>{i()}s</span></div>}
+                            </For>
+                        </div>
+                        <div class="st-playhead" style={{ left: `calc(88px + (100% - 88px) * ${store.storyTime / dur()})` }} />
+                    </Show>
+                </div>
+            </div>
+        </Show>
+    );
+};
+
+export default SceneTimeline;

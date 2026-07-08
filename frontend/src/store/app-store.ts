@@ -113,6 +113,13 @@ interface AppState {
     showElementsPanel: boolean;
     /** Stick-figure library panel visibility (transient, not persisted). */
     showStickFigurePanel: boolean;
+    /** Scene Timeline (stick-figure animation director) visibility + playhead state. */
+    showSceneTimeline: boolean;
+    /** Scene playhead time in seconds (drives animated figures when the timeline is open). */
+    storyTime: number;
+    storyPlaying: boolean;
+    storyLoop: boolean;
+    storyDuration: number;
     /** Recolor Artwork panel visibility (transient, not persisted). */
     showRecolorPanel: boolean;
     /** Vector Tools palette visibility (persisted in localStorage). */
@@ -396,6 +403,11 @@ const initialState: AppState = {
     showBrandKitPanel: false,
     showElementsPanel: false,
     showStickFigurePanel: false,
+    showSceneTimeline: false,
+    storyTime: 0,
+    storyPlaying: false,
+    storyLoop: true,
+    storyDuration: 6,
     showRecolorPanel: false,
     showVectorToolsPanel: (() => { try { return localStorage.getItem('showVectorToolsPanel') === '1'; } catch { return false; } })(),
     measureActive: false,
@@ -4292,6 +4304,12 @@ export const toggleElementsPanel = (visible?: boolean) => {
 
 export const toggleStickFigurePanel = (visible?: boolean) => {
     setStore('showStickFigurePanel', visible ?? !store.showStickFigurePanel);
+};
+
+export const toggleSceneTimeline = (visible?: boolean) => {
+    const next = visible ?? !store.showSceneTimeline;
+    setStore('showSceneTimeline', next);
+    if (!next) setStore('storyPlaying', false);
 };
 
 /** Create a swatch (from a colour, or the first selected element's fill). */

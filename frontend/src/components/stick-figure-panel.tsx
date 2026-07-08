@@ -1,5 +1,5 @@
 import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
-import { store, toggleStickFigurePanel, createSymbol, toggleSymbolsPanel } from '../store/app-store';
+import { store, toggleStickFigurePanel, createSymbol, toggleSymbolsPanel, toggleSceneTimeline } from '../store/app-store';
 import { draggablePanel } from '../utils/draggable-panel';
 import { showToast } from './toast';
 import { PersonStanding, X, Search, Component as ComponentIcon, Star, Clock, Play, Pause, Film, Layers, FlipHorizontal2, Route, Video, Square } from 'lucide-solid';
@@ -290,6 +290,10 @@ const StickFigurePanel: Component = () => {
                                 <Video size={13} /> Record video
                             </button>
                         </Show>
+                        <button class={`sp-symbol-btn sp-path-btn ${store.showSceneTimeline ? 'sp-tl-on' : ''}`}
+                            title="Open the Scene Timeline to play & scrub all figures together" onClick={() => toggleSceneTimeline()}>
+                            <Film size={13} /> Scene timeline
+                        </button>
                     </div>
                 </Show>
 

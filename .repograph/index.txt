@@ -76,9 +76,9 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 3185 | Theme:3 HarmonyType:47 ElementOptions:98 ElementType:483 as:483 Window:3177
+frontend/src/api.ts | typescript | 3191 | Theme:3 HarmonyType:47 ElementOptions:98 ElementType:483 as:483 Window:3183
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1470 | Component:1 App:95 moves:110 onPenMove:111 hidePen:115 onControllerChange:135 handleKeyUp:164 handleKeyDown:174 as:683 handleFullscreenChange:798 handleBeforeUnload:804 handlePaste:808 handleGlobalDragEnter:910 handleGlobalDragOver:925 showDropFallbackPrompt:944 cleanup:974 outsideClick:1002 isImageFile:1014 first:1015 must:1028 extractDropData:1030 processExtractedDrop:1085 handleGlobalDrop:1202 handleDocumentDrop:1248
+frontend/src/app.tsx | typescript | 1472 | Component:1 App:96 moves:111 onPenMove:112 hidePen:116 onControllerChange:136 handleKeyUp:165 handleKeyDown:175 as:684 handleFullscreenChange:799 handleBeforeUnload:805 handlePaste:809 handleGlobalDragEnter:911 handleGlobalDragOver:926 showDropFallbackPrompt:945 cleanup:975 outsideClick:1003 isImageFile:1015 first:1016 must:1029 extractDropData:1031 processExtractedDrop:1086 handleGlobalDrop:1203 handleDocumentDrop:1249
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -212,6 +212,8 @@ frontend/src/components/rocket-settings-dialog.tsx | typescript | 182 | Componen
 frontend/src/components/ruler-overlay.tsx | typescript | 235 | niceStep:9 DragState:17 RulerOverlay:30 theme:37 palette:38 worldToScreenX:45 worldToScreenY:46 screenToWorldX:47 screenToWorldY:48 drawRuler:50 onWindowPointerMove:128 onWindowPointerUp:134 startCreate:143 startMove:150 onResize:157 screen:178
 frontend/src/components/save-dialog.css | - | 120 |
 frontend/src/components/save-dialog.tsx | typescript | 73 | Component:1 SaveDialogProps:5 SaveDialog:12 handleSave:21 handleKeyDown:28
+frontend/src/components/scene-timeline.css | - | 66 |
+frontend/src/components/scene-timeline.tsx | typescript | 135 | Component:1 clipColor:12 clipName:13 FigTrack:15 SceneTimeline:17 dur:59 pct:60 play:62 restart:63 seekFromEvent:66 onRulerDown:72 move:75 up:76 selectFigure:81
 frontend/src/components/scroll-back-button.tsx | typescript | 136 | Component:8 ScrollBackButtonProps:12 ScrollBackButton:16 handleScrollBack:65
 frontend/src/components/settings-dialog.css | - | 206 |
 frontend/src/components/settings-dialog.tsx | typescript | 414 | Component:1 SettingsDialogProps:10 SettingsDialog:26 handleKeyDown:29 defaults:40 CloudSettingsContent:342 handleSignIn:355 handleSignOut:367
@@ -233,7 +235,7 @@ frontend/src/components/status-bar.css | - | 191 |
 frontend/src/components/status-bar.tsx | typescript | 312 | Component:1 Hint:13 isMindmapNode:24 getContextHints:31 StatusBar:111 handleZoomIn:112 handleZoomOut:117 zoomToCenter:122 resetZoom:131 rotationDeg:136 toolLabel:138
 frontend/src/components/status-tool-group.tsx | typescript | 162 | Component:1 StatusToolGroup:47 handler:54 getActiveTool:64 handleToolClick:73 as:81 as:87 handleRightClick:95 toggleMenu:101 activeTool:108 isActive:109 getDropdownPosition:111
 frontend/src/components/stick-figure-panel.css | - | 192 |
-frontend/src/components/stick-figure-panel.tsx | typescript | 336 | Component:1 StickAsset:17 ActiveCat:21 ActiveVariant:22 clipThumb:25 StickFigurePanel:36 byId:41 dropCentered:59 onGridKey:62 setOutline:75 setAccent:76 addToSymbols:79 dropAnimated:89 bakeSelected:90 writeSeq:94 addStep:95 editStep:96 removeStep:97 walkPath:103
+frontend/src/components/stick-figure-panel.tsx | typescript | 340 | Component:1 StickAsset:17 ActiveCat:21 ActiveVariant:22 clipThumb:25 StickFigurePanel:36 byId:41 dropCentered:59 onGridKey:62 setOutline:75 setAccent:76 addToSymbols:79 dropAnimated:89 bakeSelected:90 writeSeq:94 addStep:95 editStep:96 removeStep:97 walkPath:103
 frontend/src/components/swatches-panel.css | - | 72 |
 frontend/src/components/swatches-panel.tsx | typescript | 65 | Component:1 SwatchesPanel:13 startRename:16 commitRename:17
 frontend/src/components/symbol-edit-banner.css | - | 53 |
@@ -359,7 +361,7 @@ frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | Embedding
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 444 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 375 | MasksAppearanceTraceDoc:8 tools:14 dropdown:159
-frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 187 | StickAnimationDoc:9
+frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 208 | StickAnimationDoc:9
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 129 | WorkspaceDoc:9 and:32
@@ -424,7 +426,7 @@ frontend/src/shapes/renderers/rectangle-renderer.ts | typescript | 89 | Rectangl
 frontend/src/shapes/renderers/sketchnote-renderer.ts | typescript | 797 | SketchnoteRenderer:7{renderArchitectural:8 renderSketch:290}
 frontend/src/shapes/renderers/specialty-shape-renderer.ts | typescript | 334 | SpecialtyShapeRenderer:8{createShadedGradient:13 hasGradientFill:65 renderArchitectural:71 renderSketch:210 renderSketchGeometry:280 definePath:326}
 frontend/src/shapes/renderers/status-renderer.ts | typescript | 285 | StatusRenderer:7{renderArchitectural:8 renderSketch:144 roundRect:204 drawSymbol:218 getTagPath:229 getPinPath:243 getStampPath:256 definePath:279}
-frontend/src/shapes/renderers/stick-rig-renderer.ts | typescript | 147 | JointId:15 RigPose:15 BoxPose:17 lerpRigPose:24 StickRigRenderer:46{computePose:48 renderArchitectural:112 renderSketch:127 definePath:140}
+frontend/src/shapes/renderers/stick-rig-renderer.ts | typescript | 148 | JointId:15 RigPose:15 BoxPose:17 lerpRigPose:24 StickRigRenderer:46{computePose:48 renderArchitectural:113 renderSketch:128 definePath:141}
 frontend/src/shapes/renderers/sticky-note-renderer.ts | typescript | 83 | StickyNoteRenderer:6{renderArchitectural:7 renderSketch:35 getPoints:46 definePath:67}
 frontend/src/shapes/renderers/symbol-instance-renderer.ts | typescript | 52 | SymbolInstanceRenderer:14{renderArchitectural:15 renderSketch:16 draw:18 definePath:51}
 frontend/src/shapes/renderers/table-renderer.ts | typescript | 1649 | MergedCellRegion:12 TableRenderer:20{renderArchitectural:21 renderSketch:26 renderTable:32}
@@ -454,7 +456,7 @@ frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 Docu
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 readIndex:37 writeIndex:41 saveSnapshot:45 maybeSnapshotVersion:68 snapshotVersionNow:85 listVersions:96 restoreVersion:101 deleteVersion:113
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 6957 | LayoutDirection:10 OutlineNode:10 BooleanOp:11 Poly:11 ShapeFace:11 DistortKind:12 Theme:39 ResolvedTheme:40 AppState:67 HistorySnapshot:510 BP:1459 AlignmentType:4186 DistributionType:4186 CharPatch:4550 CharPatchArg:4553 SelBBox:5507 LastTransform:5757 RegionPathfinderOp:6116 SelectSimilarMatch:6249 buildPathFromPoly:6502 WorldSub:6591 rdpAnchors:6594 normalizeWorldSubs:6622 makePathFromWorldSubs:6637 elementToWorldSubs:6658 startInkCleanupIfNeeded:6896
+frontend/src/store/app-store.ts | typescript | 6975 | LayoutDirection:10 OutlineNode:10 BooleanOp:11 Poly:11 ShapeFace:11 DistortKind:12 Theme:39 ResolvedTheme:40 AppState:67 HistorySnapshot:522 BP:1471 AlignmentType:4198 DistributionType:4198 CharPatch:4568 CharPatchArg:4571 SelBBox:5525 LastTransform:5775 RegionPathfinderOp:6134 SelectSimilarMatch:6267 buildPathFromPoly:6520 WorldSub:6609 rdpAnchors:6612 normalizeWorldSubs:6640 makePathFromWorldSubs:6655 elementToWorldSubs:6676 startInkCleanupIfNeeded:6914
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
 frontend/src/templates/data/designs/index.ts | typescript | 272 |
 frontend/src/templates/data/designs/pack.ts | typescript | 445 |

@@ -6,7 +6,7 @@ import {
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
     toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
-    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
+    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleSceneTimeline, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
@@ -2314,6 +2314,12 @@ export const YappyAPI = {
     },
     /** Stop an in-progress canvas recording (saves + downloads the file). */
     stopRecording() { setRequestRecording({ start: false }); },
+    /** Show/hide the Scene Timeline (play & scrub all animated figures together). */
+    toggleSceneTimeline(visible?: boolean) { toggleSceneTimeline(visible); },
+    /** Play/pause the scene timeline. */
+    playScene(playing?: boolean) { setStore('storyPlaying', playing ?? !store.storyPlaying); },
+    /** Move the scene playhead to `seconds` (pauses playback). */
+    seekScene(seconds: number) { setStore({ storyTime: Math.max(0, seconds), storyPlaying: false } as any); },
 
     // AI assists (Canva-style; keys from AI Settings)
     /** Magic Write: transform text of the given (or selected) text elements. Modes: rewrite|shorten|expand|fix|custom. */

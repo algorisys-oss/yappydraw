@@ -48,7 +48,8 @@ export class StickRigRenderer extends ShapeRenderer {
     private computePose(el: any): BoxPose {
         const data = el.stickRig || { clip: 'idle' };
         const sx = el.width / RIG_W, sy = el.height / RIG_H;
-        const t = effectiveTime() / 1000;
+        // Scene Timeline drives a shared, scrubbable clock; otherwise free-run.
+        const t = store.showSceneTimeline ? store.storyTime : effectiveTime() / 1000;
 
         let clipId: string = data.clip || 'idle';
         let facing: 1 | -1 = data.facing ?? 1;
