@@ -18,6 +18,7 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
     | 'bpmnDataObject' | 'bpmnAnnotation' | 'bpmnPool'
     | 'bpmnEventGateway' | 'bpmnDataStore' | 'bpmnGroup'
     | 'path'
+    | 'stickRig'
     | 'video' | 'symbolInstance';
 
 /** A reusable symbol definition: a normalized (origin-0) snapshot of elements. */
@@ -270,6 +271,17 @@ export interface DrawingElement {
     /** Semantic part role for stick-figure-library imports: 'body' | 'head' | 'accent' | 'prop'.
      *  Enables one-click per-part recolour (outline vs accent) of a dropped figure. */
     sfRole?: string;
+    /** Animated stick-figure rig payload (element type 'stickRig'). The figure is drawn
+     *  procedurally from a motion clip + the global clock; stroke/width come from this element. */
+    stickRig?: {
+        clip: string;
+        speed?: number;
+        facing?: 1 | -1;
+        playing?: boolean;
+        previewPhase?: number;
+        /** Walk-along-a-path: the figure traverses element `pathId` over `dur` seconds. */
+        path?: { pathId: string; dur: number; loop?: boolean; autoFace?: boolean };
+    };
 
     // Specific to Linear (Line, Arrow, Pencil)
     points?: Point[] | number[];

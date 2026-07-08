@@ -301,6 +301,7 @@ function hitTestGeometry(
         el.type === 'key' || el.type === 'magnifyingGlass' || el.type === 'book' ||
         el.type === 'megaphone' || el.type === 'eye' || el.type === 'thoughtBubble' ||
         el.type === 'stickFigure' || el.type === 'sittingPerson' || el.type === 'presentingPerson' ||
+        el.type === 'stickRig' ||
         el.type === 'handPointRight' || el.type === 'thumbsUp' ||
         el.type === 'faceHappy' || el.type === 'faceSad' || el.type === 'faceConfused' ||
         el.type === 'checkbox' || el.type === 'checkboxChecked' || el.type === 'numberedBadge' ||

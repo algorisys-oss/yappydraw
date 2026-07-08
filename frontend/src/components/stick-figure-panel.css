@@ -167,3 +167,11 @@
     background: transparent; color: var(--text-primary); cursor: pointer;
 }
 .sp-symbol-btn:hover { border-color: var(--accent-color, #6366f1); background: rgba(99, 102, 241, 0.06); }
+
+/* ── Animated figures ── */
+.sp-chip-anim.active { background: #0ea5e9; border-color: #0ea5e9; }
+.sp-anim-hint { font-size: 10.5px; color: var(--text-secondary); line-height: 1.35; margin-bottom: 8px; }
+.sp-anim-clips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.sp-anim-row { display: flex; gap: 6px; }
+.sp-path-btn { width: 100%; justify-content: center; margin-top: 6px; }
+.sp-path-btn:hover { border-color: #0ea5e9; }

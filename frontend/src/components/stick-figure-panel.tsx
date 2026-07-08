@@ -2,18 +2,25 @@ import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
 import { store, toggleStickFigurePanel, createSymbol, toggleSymbolsPanel } from '../store/app-store';
 import { draggablePanel } from '../utils/draggable-panel';
 import { showToast } from './toast';
-import { PersonStanding, X, Search, Component as ComponentIcon, Star, Clock } from 'lucide-solid';
+import { PersonStanding, X, Search, Component as ComponentIcon, Star, Clock, Play, Pause, Film, Layers, FlipHorizontal2, Route } from 'lucide-solid';
 import {
     STICK_CATEGORIES, filterStickAssets, searchStickAssets, getStickAsset,
     insertStickFigure, recolorStickFigure, selectionHasStickFigure,
     stickFavorites, isStickFavorite, toggleStickFavorite, stickRecents,
     stickColorMode, setStickColorMode, toMonochromeSvg,
+    CLIP_LIST, poseAt, rigPoseToSvg, defaultRig,
+    insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying,
+    flipAnimatedFigure, bakeAnimatedFigure, selectionHasAnimatedFigure,
+    attachFigureToPath, detachFigurePath, pathFollowCandidate, selectedFigurePath,
     STICK_FIGURE_MIME, type StickAsset, type StickCategory, type StickVariant,
 } from '../library/stick-figures';
 import './stick-figure-panel.css';
 
-type ActiveCat = StickCategory | 'all' | 'favorites' | 'recents';
+type ActiveCat = StickCategory | 'all' | 'favorites' | 'recents' | 'animated';
 type ActiveVariant = StickVariant | 'all';
+
+/** Static preview SVG for a clip (a representative frame). */
+const clipThumb = (clipId: string): string => rigPoseToSvg(defaultRig(), poseAt(clipId, clipId === 'walk' ? 0.13 : 0.25, 1));
 
 /** Quick recolour presets (outline colour). */
 const OUTLINE_SWATCHES = ['#1f2937', '#0f172a', '#334155', '#7c3aed', '#dc2626', '#0891b2', '#15803d', '#b45309'];
@@ -38,12 +45,13 @@ const StickFigurePanel: Component = () => {
         const c = cat();
         if (c === 'favorites') return byId(stickFavorites());
         if (c === 'recents') return byId(stickRecents());
+        if (c === 'animated') return [];
         return filterStickAssets({ category: c, variant: variant() });
     });
 
     /** Variant chips only matter for figure categories (props/scenes/favs/recents have none). */
     const showVariants = createMemo(() =>
-        !query().trim() && !['props', 'scenes', 'favorites', 'recents'].includes(cat()));
+        !query().trim() && !['props', 'scenes', 'favorites', 'recents', 'animated'].includes(cat()));
 
     /** Click → drop centered on the active page as one editable group. */
     const dropCentered = (asset: StickAsset) => insertStickFigure(asset.id);
@@ -72,6 +80,18 @@ const StickFigurePanel: Component = () => {
         if (id) { toggleSymbolsPanel(true); showToast('Added to Symbols — place linked instances from the Symbols panel', 'success'); }
     };
 
+    // ── Animated figures ──
+    const canAnimate = createMemo(() => selectionHasAnimatedFigure(store.selection));
+    /** The clip + playing state of the first selected animated figure (for the controls). */
+    const selRig = createMemo(() => store.elements.find(e => store.selection.includes(e.id) && e.type === 'stickRig')?.stickRig);
+    const dropAnimated = (clipId: string) => insertAnimatedFigure(clipId);
+    const bakeSelected = () => { const n = bakeAnimatedFigure(store.selection[0]); if (n.length) showToast('Baked to editable paths', 'success'); };
+    /** (figure, path) pair available in the selection to attach. */
+    const pathCandidate = createMemo(() => pathFollowCandidate(store.selection));
+    /** Whether the selected figure is already following a path. */
+    const followingPath = createMemo(() => selectedFigurePath(store.selection));
+    const walkPath = () => { const c = pathCandidate(); if (c) { attachFigureToPath(c.figureId, c.pathId); showToast('Figure now walks the path', 'success'); } };
+
     return (
         <Show when={store.showStickFigurePanel}>
             <div class="stick-panel" ref={draggablePanel('.stick-panel-header')}>
@@ -99,6 +119,8 @@ const StickFigurePanel: Component = () => {
                             title="Your starred figures" onClick={() => setCat('favorites')}><Star size={11} /> Favourites</button>
                         <button class={`sp-chip ${cat() === 'recents' ? 'active' : ''}`}
                             title="Recently used" onClick={() => setCat('recents')}><Clock size={11} /> Recent</button>
+                        <button class={`sp-chip sp-chip-anim ${cat() === 'animated' ? 'active' : ''}`}
+                            title="Animated figures — walk, wave, talk…" onClick={() => setCat('animated')}><Film size={11} /> Animated</button>
                         <button class={`sp-chip ${cat() === 'all' ? 'active' : ''}`} onClick={() => setCat('all')}>All</button>
                         <For each={STICK_CATEGORIES}>
                             {(c) => (
@@ -123,6 +145,27 @@ const StickFigurePanel: Component = () => {
                     </div>
                 </Show>
 
+                {/* ── Animated: motion-clip grid ── */}
+                <Show when={cat() === 'animated' && !query().trim()}>
+                    <div class="stick-panel-body">
+                        <div class="sp-anim-hint">Click a motion to add an animated figure. It plays on the canvas; select it to switch clip, pause, or bake.</div>
+                        <div class="sp-grid">
+                            <For each={CLIP_LIST}>
+                                {(c) => (
+                                    <div class="sp-cell" tabindex="0" role="button"
+                                        title={`${c.name} — add an animated figure`}
+                                        onClick={() => dropAnimated(c.id)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dropAnimated(c.id); } }}>
+                                        <div class="sp-thumb" innerHTML={clipThumb(c.id)} />
+                                        <span class="sp-label">{c.name}</span>
+                                    </div>
+                                )}
+                            </For>
+                        </div>
+                    </div>
+                </Show>
+
+                <Show when={cat() !== 'animated' || query().trim()}>
                 <div class="stick-panel-body">
                     <Show when={visible().length > 0} fallback={
                         <div class="sp-empty">
@@ -157,10 +200,53 @@ const StickFigurePanel: Component = () => {
                         </div>
                     </Show>
                 </div>
+                </Show>
+
+                {/* ── Animated figure controls (selected stickRig) ── */}
+                <Show when={canAnimate()}>
+                    <div class="sp-recolor">
+                        <div class="sp-recolor-title">Animated figure</div>
+                        <div class="sp-anim-clips">
+                            <For each={CLIP_LIST}>
+                                {(c) => (
+                                    <button class={`sp-chip ${selRig()?.clip === c.id ? 'active' : ''}`}
+                                        onClick={() => setAnimatedFigureClip(store.selection, c.id)}>{c.name}</button>
+                                )}
+                            </For>
+                        </div>
+                        <div class="sp-anim-row">
+                            <button class="sp-symbol-btn" onClick={() => setAnimatedFigurePlaying(store.selection)}>
+                                <Show when={selRig()?.playing !== false} fallback={<><Play size={13} /> Play</>}><Pause size={13} /> Pause</Show>
+                            </button>
+                            <button class="sp-symbol-btn" title="Flip facing (left / right)" onClick={() => flipAnimatedFigure(store.selection)}>
+                                <FlipHorizontal2 size={13} /> Flip
+                            </button>
+                            <button class="sp-symbol-btn" title="Bake the current frame to editable paths" onClick={bakeSelected}>
+                                <Layers size={13} /> Bake
+                            </button>
+                        </div>
+                        {/* Walk-along-a-path */}
+                        <Show when={pathCandidate() && !followingPath()}>
+                            <button class="sp-symbol-btn sp-path-btn" title="The figure walks along the selected path" onClick={walkPath}>
+                                <Route size={13} /> Walk this path
+                            </button>
+                        </Show>
+                        <Show when={followingPath()}>
+                            <button class="sp-symbol-btn sp-path-btn" title="Stop following the path" onClick={() => detachFigurePath(followingPath()!.figureId)}>
+                                <Route size={13} /> Stop following path
+                            </button>
+                        </Show>
+                        <Show when={!pathCandidate() && !followingPath()}>
+                            <div class="sp-anim-hint">Tip: draw a line/path, then select it <em>and</em> the figure (shift-click) to make the figure walk it.</div>
+                        </Show>
+                    </div>
+                </Show>
 
                 {/* Recolour the selected figure by semantic part */}
                 <Show when={canRecolor()} fallback={
-                    <div class="sp-foot">Click to add centered · drag onto the canvas to place · drops as an editable, recolourable group.</div>
+                    <Show when={!canAnimate()}>
+                        <div class="sp-foot">Click to add centered · drag onto the canvas to place · drops as an editable, recolourable group.</div>
+                    </Show>
                 }>
                     <div class="sp-recolor">
                         <div class="sp-recolor-title">Recolour selected figure</div>

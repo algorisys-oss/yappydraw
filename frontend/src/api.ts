@@ -37,7 +37,9 @@ import { templateRegistry, getTemplateById, getTemplatesByCategory, searchTempla
 import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
 import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
 import { importSvgToCanvas } from "./utils/svg-import";
-import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES } from "./library/stick-figures";
+import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
+    insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
+    attachFigureToPath, detachFigurePath } from "./library/stick-figures";
 import { TEXT_EFFECT_PRESETS, getTextEffectPreset } from "./config/text-effect-presets";
 import { FONT_PAIRINGS, applyFontPairing } from "./brand/font-pairing";
 import { searchStockPhotos, insertStockPhoto } from "./utils/stock-photos";
@@ -2279,6 +2281,28 @@ export const YappyAPI = {
     },
     /** Show/hide the Stick Figures library panel. */
     toggleStickFigurePanel(visible?: boolean) { toggleStickFigurePanel(visible); },
+
+    // Animated stick figures (procedural rig)
+    /** List motion clip ids/names (idle/walk/wave/talk/point/jump). */
+    listStickFigureClips() { return CLIP_LIST.map(c => ({ id: c.id, name: c.name })); },
+    /** Insert an animated stick figure playing `clip`. Omit x/y to center on the page. */
+    insertAnimatedFigure(clip = 'walk', opts?: { x?: number; y?: number; width?: number; facing?: 1 | -1; speed?: number }) {
+        return insertAnimatedFigure(clip, opts);
+    },
+    /** Change the motion clip of the given (or selected) animated figures. */
+    setAnimatedFigureClip(clip: string, ids?: string[]) { setAnimatedFigureClip(ids ?? [...store.selection], clip); },
+    /** Play/pause the given (or selected) animated figures (toggles if `playing` omitted). */
+    setAnimatedFigurePlaying(playing?: boolean, ids?: string[]) { setAnimatedFigurePlaying(ids ?? [...store.selection], playing); },
+    /** Flip the facing (left/right) of the given (or selected) animated figures. */
+    flipAnimatedFigure(ids?: string[]) { flipAnimatedFigure(ids ?? [...store.selection]); },
+    /** Bake the current frame of an animated figure to editable path elements. */
+    bakeAnimatedFigure(id?: string) { return bakeAnimatedFigure(id ?? store.selection[0]); },
+    /** Make an animated figure walk along a path element over `dur` seconds (loops, auto-faces). */
+    attachFigureToPath(figureId: string, pathId: string, opts?: { dur?: number; loop?: boolean; autoFace?: boolean }) {
+        return attachFigureToPath(figureId, pathId, opts);
+    },
+    /** Stop a figure following its path (it animates in place again). */
+    detachFigurePath(id?: string) { detachFigurePath(id ?? store.selection[0]); },
 
     // AI assists (Canva-style; keys from AI Settings)
     /** Magic Write: transform text of the given (or selected) text elements. Modes: rewrite|shorten|expand|fix|custom. */

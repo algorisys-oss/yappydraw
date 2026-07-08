@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.21](0.8.21.md) — Animated stick figures (walk/wave/talk/point/jump, walk-along-a-path) + Convert-to-Path fix
 - [0.8.20](0.8.20.md) — More stick-figure poses (225 assets) + monochrome preview fix
 - [0.8.19](0.8.19.md) — Stick-figure browsing ergonomics (colour/mono, favourites, recents, keyboard)
 - [0.8.18](0.8.18.md) — Stick-figure variant filter fix (props/scenes no longer bleed into gender views)

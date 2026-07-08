@@ -43,6 +43,7 @@ const SymbolsDoc = lazy(() => import('./features/symbols-doc'));
 const ArtboardsDoc = lazy(() => import('./features/artboards-doc'));
 const DesignStudioDoc = lazy(() => import('./features/design-studio-doc'));
 const StickLibraryDoc = lazy(() => import('./features/stick-library-doc'));
+const StickAnimationDoc = lazy(() => import('./features/stick-animation-doc'));
 const WorkspaceDoc = lazy(() => import('./features/workspace-doc'));
 const ArcadeDoc = lazy(() => import('./features/arcade-doc'));
 
@@ -166,6 +167,15 @@ const shapeDocuments: ShapeDoc[] = [
         description: 'Drawify-style editable stick figures: the panel, search & categories, drag/click to add, drop-as-editable-group, recolour & ungroup, and the API',
         keywords: 'stick figure people person drawify illustration character pose variant man woman boy girl male female child kid hair skirt wave walk run jump sit dance think point sad office laptop desk present chart briefcase coffee idea lightbulb handshake meeting podium mic speaker raise hand clipboard applaud notes travel bike bicycle bag phone luggage suitcase umbrella celebrate love heart selfie gift toast delivery box support headset doctor guide waiter chef cleaner broom props laptop phone microphone bar chart briefcase package coffee cup speech bubble arrow trophy scenes handshake team family celebration category search drag drop editable group recolour recolor part role outline accent body head prop semantic stroke width 4px ungroup bezier limb symbol add to symbols colour mono monochrome favourites favorites star recent recents keyboard arrow keys vector svg insertStickFigure recolorStickFigure listStickFigures',
         content: StickLibraryDoc
+    },
+    {
+        id: 'stick-animation',
+        name: 'Animated Stick Figures',
+        icon: '🎞',
+        category: 'Design',
+        description: 'Skeletal animated stick figures for storytelling: walk/wave/talk/point/jump/idle motions, play/pause, flip, switch clip, bake to editable paths — with a step-by-step tutorial',
+        keywords: 'animate animation animated stick figure motion clip walk walking cycle wave waving talk talking gesture point pointing jump jumping idle breathe skeleton rig joints forward kinematics foot planting ik bend knee elbow storytelling story loop play pause flip facing left right bake freeze frame convert to paths procedural insertAnimatedFigure setAnimatedFigureClip flipAnimatedFigure bakeAnimatedFigure tutorial step by step',
+        content: StickAnimationDoc
     },
     {
         id: 'artboards',

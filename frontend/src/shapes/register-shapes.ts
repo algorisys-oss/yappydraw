@@ -23,6 +23,7 @@ import { UmlStateRenderer } from "./renderers/uml-state-renderer";
 import { UmlInterfaceRenderer } from "./renderers/uml-interface-renderer";
 import { UmlEnumRenderer } from "./renderers/uml-enum-renderer";
 import { PeopleRenderer } from "./renderers/people-renderer";
+import { StickRigRenderer } from "./renderers/stick-rig-renderer";
 import { StatusRenderer } from "./renderers/status-renderer";
 import { CloudInfraRenderer } from "./renderers/cloud-infra-renderer";
 import { DataMetricsRenderer } from "./renderers/data-metrics-renderer";
@@ -112,6 +113,8 @@ export function registerShapes() {
     const peopleRenderer = new PeopleRenderer();
     const peopleTypes = ['stickFigure', 'sittingPerson', 'presentingPerson', 'handPointRight', 'thumbsUp', 'faceHappy', 'faceSad', 'faceConfused'] as const;
     peopleTypes.forEach(type => shapeRegistry.register(type, peopleRenderer));
+
+    shapeRegistry.register('stickRig', new StickRigRenderer());
 
     const statusRenderer = new StatusRenderer();
     const statusTypes = ['checkbox', 'checkboxChecked', 'numberedBadge', 'questionMark', 'exclamationMark', 'tag', 'pin', 'stamp'] as const;

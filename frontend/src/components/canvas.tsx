@@ -152,9 +152,11 @@ const Canvas: Component = () => {
         if (store.appMode === 'presentation') {
             animationEngine.setForceTicker(true);
         } else {
-            // Only disable if no flow animations (handled by store usually, but explicit here is safe)
-            const hasFlow = store.elements.some(el => el.flowAnimation);
-            animationEngine.setForceTicker(hasFlow);
+            // Keep the ticker alive for flow (marching-ants) AND any playing stick-rig
+            // figure — the stickRig renderer re-poses from the clock each repaint.
+            const needsTicker = store.elements.some(el =>
+                el.flowAnimation || (el.type === 'stickRig' && el.stickRig?.playing !== false));
+            animationEngine.setForceTicker(needsTicker);
         }
     });
 

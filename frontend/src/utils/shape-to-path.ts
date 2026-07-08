@@ -37,12 +37,31 @@ function rdp(points: { x: number; y: number }[], eps: number): { x: number; y: n
 
 const corner = (x: number, y: number): PathAnchor => ({ x, y, kind: 'corner' });
 
+/** Normalize `el.points` (packed number[] or {x,y}[]) to {x,y}[]. */
+function normalizePoints(points: any): { x: number; y: number }[] {
+    if (!points || !points.length) return [];
+    if (typeof points[0] === 'object') return points.map((p: any) => ({ x: p.x, y: p.y }));
+    const out: { x: number; y: number }[] = [];
+    for (let i = 0; i < points.length - 1; i += 2) out.push({ x: points[i], y: points[i + 1] });
+    return out;
+}
+
 /**
  * @returns anchors (element-origin coords) + closed flag, or null if the shape can't
  * be converted (already a path, or no geometry).
  */
 export function shapeToPath(el: DrawingElement): { anchors: PathAnchor[]; closed: boolean } | null {
     if (el.type === 'path') return null;
+
+    // Line / connector / freehand elements store `el.points` in ELEMENT-ORIGIN coords
+    // (0,0 = top-left), unlike the centred geometry other shapes emit — so use them
+    // directly, WITHOUT the centre offset, or the path shifts by (w/2, h/2).
+    if (el.points && el.points.length > 0) {
+        const pts = normalizePoints(el.points);
+        if (pts.length < 2) return null;
+        return { anchors: pts.map(p => corner(p.x, p.y)), closed: false };
+    }
+
     const geo = getShapeGeometry(el);
     if (!geo) return null;
     const w = el.width, h = el.height;
