@@ -120,6 +120,8 @@ interface AppState {
     storyPlaying: boolean;
     storyLoop: boolean;
     storyDuration: number;
+    /** Restart the scene playhead whenever the active slide/page changes. */
+    storySyncSlides: boolean;
     /** Recolor Artwork panel visibility (transient, not persisted). */
     showRecolorPanel: boolean;
     /** Vector Tools palette visibility (persisted in localStorage). */
@@ -408,6 +410,7 @@ const initialState: AppState = {
     storyPlaying: false,
     storyLoop: true,
     storyDuration: 6,
+    storySyncSlides: false,
     showRecolorPanel: false,
     showVectorToolsPanel: (() => { try { return localStorage.getItem('showVectorToolsPanel') === '1'; } catch { return false; } })(),
     measureActive: false,

@@ -170,8 +170,11 @@ Y.bakeAnimatedFigure(a);                          // freeze current frame → ed
                     <li><strong>Scrub</strong> — drag the red playhead (or click the ruler) to jump to any moment; every
                         figure poses at that instant. Great for lining up a scene or grabbing a frame to bake.</li>
                     <li>Click a track's <strong>label</strong> to select that figure on the canvas.</li>
-                    <li><strong>Resize a step</strong> — drag the right edge of a block on the timeline to change how
-                        long that motion runs (snaps to ½&nbsp;second).</li>
+                    <li><strong>Reorder a step</strong> — drag a block left/right to change the order of actions.</li>
+                    <li><strong>Resize a step</strong> — drag the right edge of a block to change how long that motion
+                        runs (snaps to ½&nbsp;second).</li>
+                    <li><strong>Sync to slides</strong> — on a slides/pages document, the screen button restarts the
+                        scene from the start whenever you change slide, so each slide plays its animation fresh.</li>
                 </ul>
                 <p class="tip-box">
                     The scene length is set automatically by the longest figure. API:

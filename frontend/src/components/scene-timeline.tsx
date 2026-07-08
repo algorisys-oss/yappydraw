@@ -1,8 +1,9 @@
-import { type Component, For, Show, createMemo, createEffect, untrack, onMount } from 'solid-js';
+import { type Component, For, Show, createMemo, createEffect, untrack, onMount, on } from 'solid-js';
 import { store, setStore, toggleSceneTimeline } from '../store/app-store';
+import { isPagedDocType } from '../types/slide-types';
 import { effectiveTime } from '../utils/animation/animation-engine';
 import { getClip, CLIP_LIST, getFigureSequence, setFigureSequence } from '../library/stick-figures';
-import { Play, Pause, RotateCcw, Repeat, X, Film } from 'lucide-solid';
+import { Play, Pause, RotateCcw, Repeat, X, Film, MonitorPlay } from 'lucide-solid';
 import './scene-timeline.css';
 
 /** Block colour per motion clip. */
@@ -29,6 +30,32 @@ const SceneTimeline: Component = () => {
             return { id: e.id, label: `Figure ${i + 1}`, steps, total, editable: !!r.sequence?.length };
         });
     });
+
+    /** Drag a block body to reorder that step within the sequence (live). */
+    const reorderStep = (e: PointerEvent, figureId: string, index: number) => {
+        e.preventDefault();
+        const rowEl = (e.currentTarget as HTMLElement).closest('.st-row') as HTMLElement;
+        if (!rowEl) return;
+        const rect = rowEl.getBoundingClientRect();
+        const pps = rect.width / Math.max(0.5, store.storyDuration);
+        const startX = e.clientX;
+        let di = index, moved = false;
+        const move = (ev: PointerEvent) => {
+            if (!moved && Math.abs(ev.clientX - startX) < 5) return;
+            moved = true;
+            const pt = (ev.clientX - rect.left) / pps;
+            const cur = getFigureSequence(figureId);
+            if (di < 0 || di >= cur.length) return;
+            const dragged = cur[di];
+            const rest = cur.filter((_, i) => i !== di);
+            let acc = 0, ins = rest.length;
+            for (let i = 0; i < rest.length; i++) { const c = acc + rest[i].dur / 2; if (pt < c) { ins = i; break; } acc += rest[i].dur; }
+            if (ins !== di) { setFigureSequence(figureId, [...rest.slice(0, ins), dragged, ...rest.slice(ins)]); di = ins; }
+        };
+        const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+    };
 
     /** Drag a sequence block's right edge to change that step's duration (snap 0.5s). */
     const resizeStep = (e: PointerEvent, figureId: string, stepIndex: number) => {
@@ -75,6 +102,13 @@ const SceneTimeline: Component = () => {
 
     onMount(() => { last = effectiveTime() / 1000; });
 
+    // Restart the scene from 0 when the active slide/page changes (if enabled).
+    createEffect(on(() => store.activeSlideIndex, () => {
+        if (store.showSceneTimeline && store.storySyncSlides) setStore({ storyTime: 0, storyPlaying: true } as any);
+    }, { defer: true }));
+
+    const paged = createMemo(() => isPagedDocType(store.docType));
+
     const dur = () => store.storyDuration;
     const pct = (v: number) => `${Math.max(0, Math.min(100, (v / dur()) * 100))}%`;
 
@@ -109,6 +143,10 @@ const SceneTimeline: Component = () => {
                         <Show when={store.storyPlaying} fallback={<Play size={16} />}><Pause size={16} /></Show>
                     </button>
                     <button class={`st-btn ${store.storyLoop ? 'active' : ''}`} title="Loop" onClick={() => setStore('storyLoop', !store.storyLoop)}><Repeat size={15} /></button>
+                    <Show when={paged()}>
+                        <button class={`st-btn ${store.storySyncSlides ? 'active' : ''}`}
+                            title="Restart the scene when the slide/page changes" onClick={() => setStore('storySyncSlides', !store.storySyncSlides)}><MonitorPlay size={15} /></button>
+                    </Show>
                     <span class="st-time">{store.storyTime.toFixed(1)} / {dur().toFixed(1)}s</span>
                     <div class="st-spacer" />
                     <button class="st-btn" title="Close" onClick={() => toggleSceneTimeline(false)}><X size={15} /></button>
@@ -126,8 +164,10 @@ const SceneTimeline: Component = () => {
                                         <div class="st-row">
                                             <For each={(() => { let acc = 0; return tk.steps.map(s => { const start = acc; acc += Math.max(0.1, s.dur); return { ...s, start }; }); })()}>
                                                 {(seg, i) => (
-                                                    <div class="st-block" title={`${clipName(seg.clip)} · ${seg.dur}s${tk.editable ? ' — drag the edge to resize' : ''}`}
-                                                        style={{ left: pct(seg.start), width: pct(seg.dur), background: clipColor(seg.clip) }}>
+                                                    <div class="st-block" classList={{ editable: tk.editable }}
+                                                        title={`${clipName(seg.clip)} · ${seg.dur}s${tk.editable ? ' — drag to reorder, drag the edge to resize' : ''}`}
+                                                        style={{ left: pct(seg.start), width: pct(seg.dur), background: clipColor(seg.clip) }}
+                                                        onPointerDown={(e) => { if (tk.editable) reorderStep(e, tk.id, i()); }}>
                                                         <span>{clipName(seg.clip)}</span>
                                                         <Show when={tk.editable}>
                                                             <div class="st-resize" onPointerDown={(e) => resizeStep(e, tk.id, i())} />

@@ -51,6 +51,8 @@
     border-right: 2px solid rgba(255, 255, 255, 0.55);
 }
 .st-block span { text-overflow: ellipsis; overflow: hidden; pointer-events: none; }
+.st-block.editable { cursor: grab; }
+.st-block.editable:active { cursor: grabbing; }
 .st-resize {
     position: absolute; top: 0; right: 0; width: 8px; height: 100%;
     cursor: ew-resize; background: rgba(255, 255, 255, 0.001);
