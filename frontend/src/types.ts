@@ -281,6 +281,8 @@ export interface DrawingElement {
         previewPhase?: number;
         /** Walk-along-a-path: the figure traverses element `pathId` over `dur` seconds. */
         path?: { pathId: string; dur: number; loop?: boolean; autoFace?: boolean };
+        /** Timed action sequence (loops): each step plays `clip` for `dur` seconds. Overrides `clip`. */
+        sequence?: { clip: string; dur: number }[];
     };
 
     // Specific to Linear (Line, Arrow, Pencil)

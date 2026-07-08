@@ -12,6 +12,7 @@ import {
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying,
     flipAnimatedFigure, bakeAnimatedFigure, selectionHasAnimatedFigure,
     attachFigureToPath, detachFigurePath, pathFollowCandidate, selectedFigurePath,
+    setFigureSequence,
     STICK_FIGURE_MIME, type StickAsset, type StickCategory, type StickVariant,
 } from '../library/stick-figures';
 import './stick-figure-panel.css';
@@ -86,6 +87,14 @@ const StickFigurePanel: Component = () => {
     const selRig = createMemo(() => store.elements.find(e => store.selection.includes(e.id) && e.type === 'stickRig')?.stickRig);
     const dropAnimated = (clipId: string) => insertAnimatedFigure(clipId);
     const bakeSelected = () => { const n = bakeAnimatedFigure(store.selection[0]); if (n.length) showToast('Baked to editable paths', 'success'); };
+    /** The selected animated figure's element id (for sequence editing). */
+    const selFigureId = createMemo(() => store.elements.find(e => store.selection.includes(e.id) && e.type === 'stickRig')?.id);
+    const sequence = createMemo<{ clip: string; dur: number }[]>(() => (selRig()?.sequence as any) || []);
+    const writeSeq = (steps: { clip: string; dur: number }[]) => { const id = selFigureId(); if (id) setFigureSequence(id, steps); };
+    const addStep = () => writeSeq([...sequence(), { clip: selRig()?.clip || 'walk', dur: 2 }]);
+    const editStep = (i: number, patch: Partial<{ clip: string; dur: number }>) => writeSeq(sequence().map((s, j) => j === i ? { ...s, ...patch } : s));
+    const removeStep = (i: number) => writeSeq(sequence().filter((_, j) => j !== i));
+
     /** (figure, path) pair available in the selection to attach. */
     const pathCandidate = createMemo(() => pathFollowCandidate(store.selection));
     /** Whether the selected figure is already following a path. */
@@ -238,6 +247,36 @@ const StickFigurePanel: Component = () => {
                         </Show>
                         <Show when={!pathCandidate() && !followingPath()}>
                             <div class="sp-anim-hint">Tip: draw a line/path, then select it <em>and</em> the figure (shift-click) to make the figure walk it.</div>
+                        </Show>
+
+                        {/* Action sequence (plays steps in order, loops) */}
+                        <Show when={!followingPath()}>
+                            <div class="sp-seq">
+                                <div class="sp-seq-head">
+                                    <span>Action sequence</span>
+                                    <Show when={sequence().length > 0}>
+                                        <button class="sp-seq-clear" title="Clear sequence" onClick={() => writeSeq([])}>Clear</button>
+                                    </Show>
+                                </div>
+                                <For each={sequence()}>
+                                    {(step, i) => (
+                                        <div class="sp-seq-row">
+                                            <span class="sp-seq-n">{i() + 1}</span>
+                                            <select class="sp-seq-clip" value={step.clip} onChange={(e) => editStep(i(), { clip: e.currentTarget.value })}>
+                                                <For each={CLIP_LIST}>{(c) => <option value={c.id}>{c.name}</option>}</For>
+                                            </select>
+                                            <input class="sp-seq-dur" type="number" min="0.5" step="0.5" value={step.dur}
+                                                onInput={(e) => editStep(i(), { dur: Math.max(0.5, parseFloat(e.currentTarget.value) || 0.5) })} />
+                                            <span class="sp-seq-s">s</span>
+                                            <button class="sp-seq-x" title="Remove step" onClick={() => removeStep(i())}>×</button>
+                                        </div>
+                                    )}
+                                </For>
+                                <button class="sp-symbol-btn sp-seq-add" onClick={addStep}>+ Add step</button>
+                                <Show when={sequence().length === 0}>
+                                    <div class="sp-anim-hint">Chain motions over time — e.g. Walk 3s → Wave 2s → Talk 2s.</div>
+                                </Show>
+                            </div>
                         </Show>
                     </div>
                 </Show>

@@ -111,6 +111,29 @@ const StickAnimationDoc: Component = () => {
                 </p>
             </section>
 
+            {/* ─── SEQUENCES ────────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Chain actions over time (sequences)</h2>
+                <p>
+                    Give a figure a little script: with it selected, use the <strong>Action sequence</strong> editor in
+                    the panel to add <strong>timed steps</strong> — each a motion played for a number of seconds. The
+                    figure runs the steps in order and loops.
+                </p>
+                <ol class="doc-steps">
+                    <li><strong>+ Add step</strong> to append a motion; pick the clip from the dropdown and set its
+                        duration in seconds.</li>
+                    <li>Add more — e.g. <em>Walk 3s → Wave 2s → Talk 2s</em> — for a figure that walks up, waves, then
+                        chats, forever.</li>
+                    <li>Remove a step with <strong>×</strong>, or <strong>Clear</strong> to go back to a single clip.</li>
+                </ol>
+                <p class="tip-box">
+                    Transitions between steps are <strong>cross-faded</strong> automatically, so the figure eases from
+                    one motion into the next instead of snapping. A sequence plays in place; combine figures with
+                    different sequences (and path-follow) to stage a whole little scene.
+                    API: <code>setFigureSequence([{'{ clip:\'walk\', dur:3 }'}, …], id?)</code>.
+                </p>
+            </section>
+
             {/* ─── API ──────────────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Automate it (API)</h2>

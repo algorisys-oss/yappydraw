@@ -175,3 +175,16 @@
 .sp-anim-row { display: flex; gap: 6px; }
 .sp-path-btn { width: 100%; justify-content: center; margin-top: 6px; }
 .sp-path-btn:hover { border-color: #0ea5e9; }
+
+/* ── Action sequence editor ── */
+.sp-seq { margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 8px; }
+.sp-seq-head { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 6px; }
+.sp-seq-clear { border: none; background: transparent; color: var(--accent-color, #6366f1); font-size: 10.5px; cursor: pointer; padding: 0; }
+.sp-seq-row { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+.sp-seq-n { width: 14px; font-size: 10px; color: var(--text-secondary); text-align: center; }
+.sp-seq-clip { flex: 1; min-width: 0; font-size: 11px; padding: 3px 4px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--bg-panel); color: var(--text-primary); }
+.sp-seq-dur { width: 42px; font-size: 11px; padding: 3px 4px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--bg-panel); color: var(--text-primary); }
+.sp-seq-s { font-size: 10px; color: var(--text-secondary); }
+.sp-seq-x { border: none; background: transparent; color: var(--text-secondary); font-size: 15px; line-height: 1; cursor: pointer; padding: 0 2px; }
+.sp-seq-x:hover { color: #dc2626; }
+.sp-seq-add { width: 100%; justify-content: center; margin-top: 2px; }

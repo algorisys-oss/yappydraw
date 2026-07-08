@@ -20,6 +20,20 @@ interface BoxPose {
     head: { cx: number; cy: number; rx: number; ry: number };
 }
 
+/** Linear blend between two canonical poses (for smooth sequence transitions). */
+function lerpRigPose(a: RigPose, b: RigPose, f: number): RigPose {
+    const L = (u: number, v: number) => u + (v - u) * f;
+    const joints = new Map<JointId, { x: number; y: number }>();
+    for (const [k, p] of a.joints) {
+        const q = b.joints.get(k) || p;
+        joints.set(k, { x: L(p.x, q.x), y: L(p.y, q.y) });
+    }
+    return { joints, head: { x: L(a.head.x, b.head.x), y: L(a.head.y, b.head.y) }, headR: L(a.headR, b.headR) };
+}
+
+/** Cross-fade duration between sequence steps (seconds). */
+const SEQ_BLEND = 0.18;
+
 const CHAINS: JointId[][] = [
     ['pelvis', 'shoulder'],
     ['shoulder', 'head'],
@@ -60,6 +74,25 @@ export class StickRigRenderer extends ShapeRenderer {
             }
         }
 
+        // Action sequence: cycle through timed steps (unless following a path).
+        let blended: RigPose | null = null;
+        if (phase === undefined && data.sequence?.length) {
+            const seq = data.sequence as { clip: string; dur: number }[];
+            const total = seq.reduce((s, a) => s + Math.max(0.1, a.dur), 0);
+            const base = data.playing !== false ? t * (data.speed ?? 1) : (data.previewPhase ?? 0) * total;
+            let tt = ((base % total) + total) % total;
+            let idx = 0, step = seq[0], local = tt;
+            for (let i = 0; i < seq.length; i++) { const d = Math.max(0.1, seq[i].dur); if (tt < d) { idx = i; step = seq[i]; local = tt; break; } tt -= d; }
+            clipId = step.clip;
+            phase = local / getClip(clipId).duration;
+            // Cross-fade from the previous step's final pose over the first SEQ_BLEND s.
+            if (seq.length > 1 && local < SEQ_BLEND) {
+                const prev = seq[(idx - 1 + seq.length) % seq.length];
+                const prevPose = poseAt(prev.clip, (prev.dur / getClip(prev.clip).duration), facing);
+                blended = lerpRigPose(prevPose, poseAt(clipId, phase, facing), local / SEQ_BLEND);
+            }
+        }
+
         if (phase === undefined) {
             const clip = getClip(clipId);
             phase = data.playing !== false
@@ -67,7 +100,7 @@ export class StickRigRenderer extends ShapeRenderer {
                 : (data.previewPhase ?? 0);
         }
 
-        const pose: RigPose = poseAt(clipId, phase ?? 0, facing);
+        const pose: RigPose = blended ?? poseAt(clipId, phase ?? 0, facing);
         const X = (p: { x: number; y: number }) => [originX + p.x * sx, originY + p.y * sy] as [number, number];
         const bones = CHAINS.map(chain => chain.map(id => X(pose.joints.get(id)!)));
         return {

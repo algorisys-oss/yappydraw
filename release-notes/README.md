@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.22](0.8.22.md) — Stick-figure action sequences (chain motions over time) + smooth transitions
 - [0.8.21](0.8.21.md) — Animated stick figures (walk/wave/talk/point/jump, walk-along-a-path) + Convert-to-Path fix
 - [0.8.20](0.8.20.md) — More stick-figure poses (225 assets) + monochrome preview fix
 - [0.8.19](0.8.19.md) — Stick-figure browsing ergonomics (colour/mono, favourites, recents, keyboard)

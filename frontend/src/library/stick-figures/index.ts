@@ -293,6 +293,21 @@ export function selectedFigurePath(ids: string[]): { figureId: string; pathId: s
     return fig ? { figureId: fig.id, pathId: (fig.stickRig!.path as any).pathId } : null;
 }
 
+/** Set a timed action sequence on a figure (empty array clears it). */
+export function setFigureSequence(id: string, steps: { clip: string; dur: number }[]): void {
+    const el = store.elements.find(e => e.id === id && e.type === 'stickRig');
+    if (!el) return;
+    const seq = steps.filter(s => s.clip && s.dur > 0);
+    updateElement(id, { stickRig: { ...(el.stickRig as any), sequence: seq.length ? seq : undefined } }, true);
+    bumpDirtyRevision();
+}
+
+/** The action sequence on a figure (if any). */
+export function getFigureSequence(id: string): { clip: string; dur: number }[] {
+    const el = store.elements.find(e => e.id === id && e.type === 'stickRig');
+    return (el?.stickRig?.sequence as any) || [];
+}
+
 /** Flip the facing (left/right) of the selected/given animated figures. */
 export function flipAnimatedFigure(ids: string[]): void {
     const rigs = store.elements.filter(e => ids.includes(e.id) && e.type === 'stickRig');
