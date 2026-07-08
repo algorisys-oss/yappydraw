@@ -58,6 +58,7 @@ const GraphicStylesPanel = lazy(() => import('./components/graphic-styles-panel'
 const SwatchesPanel = lazy(() => import('./components/swatches-panel'));
 const BrandKitPanel = lazy(() => import('./components/brand-kit-panel'));
 const ElementsPanel = lazy(() => import('./components/elements-panel'));
+const StickFigurePanel = lazy(() => import('./components/stick-figure-panel'));
 const PatternsPanel = lazy(() => import('./components/patterns-panel'));
 const RecolorPanel = lazy(() => import('./components/recolor-panel'));
 const BehaviorsPanel = lazy(() => import('./components/behaviors-panel'));
@@ -1298,6 +1299,7 @@ const App: Component = () => {
             <SwatchesPanel />
             <BrandKitPanel />
             <ElementsPanel />
+            <StickFigurePanel />
             <PatternsPanel />
             <RecolorPanel />
             <BehaviorsPanel />

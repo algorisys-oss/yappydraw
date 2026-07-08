@@ -6,7 +6,7 @@ import {
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
     toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
-    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
+    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
@@ -37,6 +37,7 @@ import { templateRegistry, getTemplateById, getTemplatesByCategory, searchTempla
 import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
 import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
 import { importSvgToCanvas } from "./utils/svg-import";
+import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES } from "./library/stick-figures";
 import { TEXT_EFFECT_PRESETS, getTextEffectPreset } from "./config/text-effect-presets";
 import { FONT_PAIRINGS, applyFontPairing } from "./brand/font-pairing";
 import { searchStockPhotos, insertStockPhoto } from "./utils/stock-photos";
@@ -2252,6 +2253,32 @@ export const YappyAPI = {
     },
     /** Show/hide the Elements library panel (shapes, frames, icon library). */
     toggleElementsPanel(visible?: boolean) { toggleElementsPanel(visible); },
+
+    // Stick-figure library (drawify-style editable figures)
+    /** Insert a stick figure by id (e.g. "daily-waving") as one editable, recolourable
+     *  group. Omit x/y to center on the active page. Returns the new element ids. */
+    insertStickFigure(assetId: string, opts?: { x?: number; y?: number; targetWidth?: number }) {
+        return insertStickFigure(assetId, opts);
+    },
+    /** List stick-figure assets (id/name/category/tags), optionally filtered by category. */
+    listStickFigures(category?: string) {
+        const assets = category
+            ? getStickAssetsByCategory(category as any)
+            : getAllStickAssets();
+        return assets.map(a => ({ id: a.id, name: a.name, category: a.category, tags: a.tags }));
+    },
+    /** List stick-figure categories (id + name). */
+    listStickFigureCategories() {
+        return STICK_CATEGORIES.map(c => ({ id: c.id, name: c.name }));
+    },
+    /** Recolour stick-figure parts by semantic role among `ids` (default: current
+     *  selection). `outline` recolours every part's stroke; `accent` recolours the
+     *  fill of accent (colourful prop) parts. Returns the number of parts changed. */
+    recolorStickFigure(colors: { outline?: string; accent?: string }, ids?: string[]) {
+        return recolorStickFigure(ids ?? [...store.selection], colors);
+    },
+    /** Show/hide the Stick Figures library panel. */
+    toggleStickFigurePanel(visible?: boolean) { toggleStickFigurePanel(visible); },
 
     // AI assists (Canva-style; keys from AI Settings)
     /** Magic Write: transform text of the given (or selected) text elements. Modes: rewrite|shorten|expand|fix|custom. */

@@ -3,7 +3,7 @@ import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
 import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
-    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
+    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript
 } from "../store/app-store";
@@ -12,7 +12,7 @@ import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
-    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, Gamepad2, Workflow, ChevronDown, Code
+    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, PersonStanding, Gamepad2, Workflow, ChevronDown, Code
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
@@ -914,6 +914,13 @@ const Menu: Component = () => {
                                         <span class="label">Elements</span>
                                         <div class="menu-item-right">
                                             <Show when={store.showElementsPanel}><Check size={14} class="check-icon" /></Show>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { toggleStickFigurePanel(); setIsMenuOpen(false); }}>
+                                        <PersonStanding size={16} />
+                                        <span class="label">Stick Figures</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.showStickFigurePanel}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleBrandKitPanel(); setIsMenuOpen(false); }}>

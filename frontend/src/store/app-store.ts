@@ -111,6 +111,8 @@ interface AppState {
     showBrandKitPanel: boolean;
     /** Elements library panel visibility (transient, not persisted). */
     showElementsPanel: boolean;
+    /** Stick-figure library panel visibility (transient, not persisted). */
+    showStickFigurePanel: boolean;
     /** Recolor Artwork panel visibility (transient, not persisted). */
     showRecolorPanel: boolean;
     /** Vector Tools palette visibility (persisted in localStorage). */
@@ -393,6 +395,7 @@ const initialState: AppState = {
     showSwatchesPanel: false,
     showBrandKitPanel: false,
     showElementsPanel: false,
+    showStickFigurePanel: false,
     showRecolorPanel: false,
     showVectorToolsPanel: (() => { try { return localStorage.getItem('showVectorToolsPanel') === '1'; } catch { return false; } })(),
     measureActive: false,
@@ -4285,6 +4288,10 @@ export const toggleBrandKitPanel = (visible?: boolean) => {
 
 export const toggleElementsPanel = (visible?: boolean) => {
     setStore('showElementsPanel', visible ?? !store.showElementsPanel);
+};
+
+export const toggleStickFigurePanel = (visible?: boolean) => {
+    setStore('showStickFigurePanel', visible ?? !store.showStickFigurePanel);
 };
 
 /** Create a swatch (from a colour, or the first selected element's fill). */

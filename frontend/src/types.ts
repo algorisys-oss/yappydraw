@@ -267,6 +267,9 @@ export interface DrawingElement {
     locked: boolean;
     link: string | null;
     tag?: string | null;
+    /** Semantic part role for stick-figure-library imports: 'body' | 'head' | 'accent' | 'prop'.
+     *  Enables one-click per-part recolour (outline vs accent) of a dropped figure. */
+    sfRole?: string;
 
     // Specific to Linear (Line, Arrow, Pencil)
     points?: Point[] | number[];

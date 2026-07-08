@@ -1,8 +1,8 @@
 import { type Component, For, Show, createSignal, onMount, onCleanup } from "solid-js";
-import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel } from "../store/app-store";
+import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleStickFigurePanel } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import type { ToolType } from "../types";
-import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw, Command, Shapes } from "lucide-solid";
+import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw, Command, Shapes, PersonStanding } from "lucide-solid";
 
 const BRUSH_TOOLS: ToolType[] = ['fineliner', 'inkbrush', 'marker'];
 import PenToolGroup from "./pen-tool-group";
@@ -392,6 +392,16 @@ const Toolbar: Component = () => {
                 aria-label="Toggle vector tools palette"
             >
                 <Shapes size={16} />
+            </button>
+
+            {/* Stick-figure library — drawify-style editable people, drag onto the canvas */}
+            <button
+                class={`toolbar-btn ${store.showStickFigurePanel ? 'active' : ''}`}
+                onClick={() => toggleStickFigurePanel()}
+                title="Stick Figures library"
+                aria-label="Toggle stick figures panel"
+            >
+                <PersonStanding size={16} />
             </button>
 
             {/* Brainstorm / Full toggle */}

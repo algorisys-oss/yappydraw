@@ -42,6 +42,7 @@ const MasksAppearanceTraceDoc = lazy(() => import('./features/masks-appearance-t
 const SymbolsDoc = lazy(() => import('./features/symbols-doc'));
 const ArtboardsDoc = lazy(() => import('./features/artboards-doc'));
 const DesignStudioDoc = lazy(() => import('./features/design-studio-doc'));
+const StickLibraryDoc = lazy(() => import('./features/stick-library-doc'));
 const WorkspaceDoc = lazy(() => import('./features/workspace-doc'));
 const ArcadeDoc = lazy(() => import('./features/arcade-doc'));
 
@@ -156,6 +157,15 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Design',
         description: 'Reusable masters + linked instances: the Symbols panel, edit-in-place, redefine and detach',
         content: SymbolsDoc
+    },
+    {
+        id: 'stick-library',
+        name: 'Stick-Figure Library',
+        icon: '🚶',
+        category: 'Design',
+        description: 'Drawify-style editable stick figures: the panel, search & categories, drag/click to add, drop-as-editable-group, recolour & ungroup, and the API',
+        keywords: 'stick figure people person drawify illustration character pose wave walk run jump sit dance office laptop desk present chart briefcase meeting podium mic speaker raise hand clipboard travel bike bicycle bag phone celebrate love heart delivery box support headset doctor guide category search drag drop editable group recolour recolor part role outline accent body head prop semantic stroke width 4px ungroup vector svg insertStickFigure recolorStickFigure listStickFigures',
+        content: StickLibraryDoc
     },
     {
         id: 'artboards',

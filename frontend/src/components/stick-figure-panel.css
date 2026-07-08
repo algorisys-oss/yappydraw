@@ -1,0 +1,119 @@
+.stick-panel {
+    position: absolute;
+    left: 260px;
+    top: 90px;
+    width: 288px;
+    max-height: 560px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+    z-index: 52;
+    pointer-events: auto;
+    overflow: hidden;
+}
+
+.stick-panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px; border-bottom: 1px solid var(--border-color); background: var(--bg-secondary);
+}
+.sp-title { display: flex; align-items: center; gap: 6px; color: var(--text-primary); }
+.sp-title h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.sp-icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border: none; background: transparent;
+    color: var(--text-secondary); border-radius: 4px; cursor: pointer;
+}
+.sp-icon-btn svg { flex: 0 0 auto; width: 15px; height: 15px; }
+.sp-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.sp-title svg { flex: 0 0 auto; }
+
+.sp-search {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 12px; border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+.sp-search input {
+    flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+    font-size: 12.5px; color: var(--text-primary);
+}
+
+.sp-cats {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    padding: 8px 12px; border-bottom: 1px solid var(--border-color);
+}
+.sp-chip {
+    padding: 3px 8px; font-size: 10.5px;
+    border: 1px solid var(--border-color); border-radius: 12px;
+    background: transparent; color: var(--text-secondary);
+    cursor: pointer; white-space: nowrap;
+}
+.sp-chip:hover { border-color: var(--accent-color, #6366f1); color: var(--text-primary); }
+.sp-chip.active {
+    background: var(--accent-color, #6366f1);
+    border-color: var(--accent-color, #6366f1);
+    color: #fff;
+}
+
+.stick-panel-body { overflow-y: auto; padding: 10px 12px; flex: 1; }
+
+.sp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+.sp-cell {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 8px 4px 6px; border: 1px solid var(--border-color); border-radius: 8px;
+    background: var(--bg-secondary); color: var(--text-primary); cursor: grab;
+}
+.sp-cell:hover { border-color: var(--accent-color, #6366f1); background: rgba(99, 102, 241, 0.06); }
+.sp-cell:active { cursor: grabbing; }
+
+.sp-thumb {
+    width: 100%; height: 74px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    /* Light card so the dark figure outlines read in both themes. */
+    background: #ffffff;
+    border-radius: 6px;
+}
+.sp-thumb svg { width: auto; height: 100%; max-width: 100%; }
+
+.sp-label {
+    font-size: 9.5px; color: var(--text-secondary); text-align: center;
+    line-height: 1.1; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.sp-empty { padding: 16px 4px; font-size: 12px; color: var(--text-secondary); text-align: center; }
+
+.sp-foot {
+    padding: 8px 12px; border-top: 1px solid var(--border-color);
+    font-size: 10px; color: var(--text-secondary); line-height: 1.3;
+}
+
+/* ── Recolour selected figure ── */
+.sp-recolor {
+    padding: 8px 12px 10px; border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+.sp-recolor-title {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--text-secondary); margin-bottom: 6px;
+}
+.sp-recolor-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.sp-recolor-label {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--text-primary); width: 62px; flex: 0 0 auto;
+}
+.sp-color {
+    width: 22px; height: 22px; padding: 0; border: 1px solid var(--border-color);
+    border-radius: 5px; background: none; cursor: pointer;
+}
+.sp-swatches { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+.sp-sw {
+    width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.15);
+    cursor: pointer; padding: 0;
+}
+.sp-sw:hover { outline: 2px solid var(--accent-color, #6366f1); outline-offset: 1px; }

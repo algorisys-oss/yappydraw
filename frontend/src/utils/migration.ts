@@ -32,6 +32,7 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         locked: el.locked ?? false,
         link: el.link ?? null,
         tag: el.tag ?? null,
+        ...(el.sfRole !== undefined && { sfRole: el.sfRole }),
 
         // Layer reference
         layerId: el.layerId || DEFAULT_LAYER_ID,

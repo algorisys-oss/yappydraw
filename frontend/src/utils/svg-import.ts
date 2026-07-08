@@ -326,15 +326,18 @@ function styleOf(node: Element, parent: SvgStyle): SvgStyle {
 
 const SKIP_TAGS = new Set(['defs', 'symbol', 'clippath', 'mask', 'marker', 'pattern', 'lineargradient', 'radialgradient', 'style', 'metadata', 'title', 'desc', 'text', 'use', 'image', 'filter', 'script', 'foreignobject']);
 
-interface Drawable { subs: Sub[]; style: SvgStyle; strokeScale: number }
+interface Drawable { subs: Sub[]; style: SvgStyle; strokeScale: number; role?: string }
 
-function collectDrawables(node: Element, matrix: Matrix, style: SvgStyle, out: Drawable[]): void {
+function collectDrawables(node: Element, matrix: Matrix, style: SvgStyle, out: Drawable[], role?: string): void {
     const tag = node.tagName.toLowerCase();
     if (SKIP_TAGS.has(tag)) return;
     if (node.getAttribute('display') === 'none') return;
 
     const m = mul(matrix, parseTransform(node.getAttribute('transform')));
     const s = styleOf(node, style);
+    // Semantic part role (used by the stick-figure library for per-part recolour);
+    // inherits down the tree so a `<g data-sf-role>` tags all its children.
+    const r = node.getAttribute('data-sf-role') ?? role;
 
     const subs = nodeToSubs(node);
     if (subs.length > 0) {
@@ -356,11 +359,11 @@ function collectDrawables(node: Element, matrix: Matrix, style: SvgStyle, out: D
             }),
         }));
         const strokeScale = Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])) || 1;
-        out.push({ subs: txSubs, style: s, strokeScale });
+        out.push({ subs: txSubs, style: s, strokeScale, role: r });
     }
 
     for (const child of Array.from(node.children)) {
-        collectDrawables(child, m, s, out);
+        collectDrawables(child, m, s, out, r);
     }
 }
 
@@ -466,6 +469,7 @@ export function svgToElements(svgText: string, opts: SvgImportOptions = {}): Dra
             layerId: store.activeLayerId || 'default-layer',
             seed: Math.floor(Math.random() * 2 ** 31),
             roundness: null,
+            ...(d.role ? { sfRole: d.role } : {}),
             ...(opts.overrides || {}),
         } as DrawingElement);
     }
