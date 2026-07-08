@@ -1,18 +1,19 @@
 import { type Component, For, Show, createMemo, createEffect, untrack, onMount } from 'solid-js';
 import { store, setStore, toggleSceneTimeline } from '../store/app-store';
 import { effectiveTime } from '../utils/animation/animation-engine';
-import { getClip, CLIP_LIST } from '../library/stick-figures';
+import { getClip, CLIP_LIST, getFigureSequence, setFigureSequence } from '../library/stick-figures';
 import { Play, Pause, RotateCcw, Repeat, X, Film } from 'lucide-solid';
 import './scene-timeline.css';
 
 /** Block colour per motion clip. */
 const CLIP_COLOR: Record<string, string> = {
-    idle: '#94a3b8', walk: '#3b82f6', wave: '#22c55e', talk: '#8b5cf6', point: '#f59e0b', jump: '#ef4444',
+    idle: '#94a3b8', walk: '#3b82f6', run: '#06b6d4', wave: '#22c55e', talk: '#8b5cf6',
+    point: '#f59e0b', clap: '#ec4899', jump: '#ef4444', dance: '#d946ef', cheer: '#f97316',
 };
 const clipColor = (id: string) => CLIP_COLOR[id] || '#6366f1';
 const clipName = (id: string) => CLIP_LIST.find(c => c.id === id)?.name || id;
 
-interface FigTrack { id: string; label: string; steps: { clip: string; dur: number }[]; total: number; }
+interface FigTrack { id: string; label: string; steps: { clip: string; dur: number }[]; total: number; editable: boolean; }
 
 const SceneTimeline: Component = () => {
     /** Animated figures on the canvas → track rows. */
@@ -25,9 +26,27 @@ const SceneTimeline: Component = () => {
             else if (r.path) steps = [{ clip: 'walk', dur: r.path.dur || 4 }];
             else steps = [{ clip: r.clip, dur: getClip(r.clip).duration }];
             const total = steps.reduce((s, a) => s + Math.max(0.1, a.dur), 0);
-            return { id: e.id, label: `Figure ${i + 1}`, steps, total };
+            return { id: e.id, label: `Figure ${i + 1}`, steps, total, editable: !!r.sequence?.length };
         });
     });
+
+    /** Drag a sequence block's right edge to change that step's duration (snap 0.5s). */
+    const resizeStep = (e: PointerEvent, figureId: string, stepIndex: number) => {
+        e.stopPropagation(); e.preventDefault();
+        const rowEl = (e.currentTarget as HTMLElement).closest('.st-row') as HTMLElement;
+        if (!rowEl) return;
+        const pps = rowEl.getBoundingClientRect().width / Math.max(0.5, store.storyDuration);
+        const startX = e.clientX;
+        const startDur = getFigureSequence(figureId)[stepIndex]?.dur ?? 2;
+        const move = (ev: PointerEvent) => {
+            const nd = Math.max(0.5, Math.round((startDur + (ev.clientX - startX) / pps) * 2) / 2);
+            const cur = getFigureSequence(figureId);
+            setFigureSequence(figureId, cur.map((s, i) => i === stepIndex ? { ...s, dur: nd } : s));
+        };
+        const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+    };
 
     /** Auto scene duration = longest track (min 4s). */
     createEffect(() => {
@@ -106,10 +125,13 @@ const SceneTimeline: Component = () => {
                                         <button class={`st-label ${store.selection.includes(tk.id) ? 'sel' : ''}`} onClick={() => selectFigure(tk.id)}>{tk.label}</button>
                                         <div class="st-row">
                                             <For each={(() => { let acc = 0; return tk.steps.map(s => { const start = acc; acc += Math.max(0.1, s.dur); return { ...s, start }; }); })()}>
-                                                {(seg) => (
-                                                    <div class="st-block" title={`${clipName(seg.clip)} · ${seg.dur}s`}
+                                                {(seg, i) => (
+                                                    <div class="st-block" title={`${clipName(seg.clip)} · ${seg.dur}s${tk.editable ? ' — drag the edge to resize' : ''}`}
                                                         style={{ left: pct(seg.start), width: pct(seg.dur), background: clipColor(seg.clip) }}>
                                                         <span>{clipName(seg.clip)}</span>
+                                                        <Show when={tk.editable}>
+                                                            <div class="st-resize" onPointerDown={(e) => resizeStep(e, tk.id, i())} />
+                                                        </Show>
                                                     </div>
                                                 )}
                                             </For>

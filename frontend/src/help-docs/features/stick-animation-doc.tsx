@@ -23,14 +23,18 @@ const StickAnimationDoc: Component = () => {
             {/* ─── WHAT ─────────────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>The motions</h2>
-                <p>Six built-in motion clips, each loops smoothly:</p>
+                <p>Ten built-in motion clips, each loops smoothly:</p>
                 <ul>
                     <li><strong>Idle</strong> — a subtle breathing stand.</li>
-                    <li><strong>Walk</strong> — a foot-planted walk cycle (no skating).</li>
+                    <li><strong>Walk</strong> / <strong>Run</strong> — foot-planted cycles (no skating); Run leans in
+                        and pumps its arms.</li>
                     <li><strong>Wave</strong> — one arm raised, hand waving.</li>
                     <li><strong>Talk</strong> — hands gesturing near the chest.</li>
                     <li><strong>Point</strong> — an arm extended in the facing direction.</li>
+                    <li><strong>Clap</strong> — hands meeting in front.</li>
                     <li><strong>Jump</strong> — crouch, launch, tuck, land.</li>
+                    <li><strong>Dance</strong> — hip sway with alternating arms.</li>
+                    <li><strong>Cheer</strong> — both arms up, pumping.</li>
                 </ul>
             </section>
 
@@ -166,6 +170,8 @@ Y.bakeAnimatedFigure(a);                          // freeze current frame → ed
                     <li><strong>Scrub</strong> — drag the red playhead (or click the ruler) to jump to any moment; every
                         figure poses at that instant. Great for lining up a scene or grabbing a frame to bake.</li>
                     <li>Click a track's <strong>label</strong> to select that figure on the canvas.</li>
+                    <li><strong>Resize a step</strong> — drag the right edge of a block on the timeline to change how
+                        long that motion runs (snaps to ½&nbsp;second).</li>
                 </ul>
                 <p class="tip-box">
                     The scene length is set automatically by the longest figure. API:

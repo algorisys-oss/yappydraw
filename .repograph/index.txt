@@ -212,8 +212,8 @@ frontend/src/components/rocket-settings-dialog.tsx | typescript | 182 | Componen
 frontend/src/components/ruler-overlay.tsx | typescript | 235 | niceStep:9 DragState:17 RulerOverlay:30 theme:37 palette:38 worldToScreenX:45 worldToScreenY:46 screenToWorldX:47 screenToWorldY:48 drawRuler:50 onWindowPointerMove:128 onWindowPointerUp:134 startCreate:143 startMove:150 onResize:157 screen:178
 frontend/src/components/save-dialog.css | - | 120 |
 frontend/src/components/save-dialog.tsx | typescript | 73 | Component:1 SaveDialogProps:5 SaveDialog:12 handleSave:21 handleKeyDown:28
-frontend/src/components/scene-timeline.css | - | 66 |
-frontend/src/components/scene-timeline.tsx | typescript | 135 | Component:1 clipColor:12 clipName:13 FigTrack:15 SceneTimeline:17 dur:59 pct:60 play:62 restart:63 seekFromEvent:66 onRulerDown:72 move:75 up:76 selectFigure:81
+frontend/src/components/scene-timeline.css | - | 71 |
+frontend/src/components/scene-timeline.tsx | typescript | 157 | Component:1 clipColor:13 clipName:14 FigTrack:16 SceneTimeline:18 resizeStep:34 move:41 up:46 dur:78 pct:79 play:81 restart:82 seekFromEvent:85 onRulerDown:91 move:94 up:95 selectFigure:100
 frontend/src/components/scroll-back-button.tsx | typescript | 136 | Component:8 ScrollBackButtonProps:12 ScrollBackButton:16 handleScrollBack:65
 frontend/src/components/settings-dialog.css | - | 206 |
 frontend/src/components/settings-dialog.tsx | typescript | 414 | Component:1 SettingsDialogProps:10 SettingsDialog:26 handleKeyDown:29 defaults:40 CloudSettingsContent:342 handleSignIn:355 handleSignOut:367
@@ -361,7 +361,7 @@ frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | Embedding
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 444 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 375 | MasksAppearanceTraceDoc:8 tools:14 dropdown:159
-frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 215 | StickAnimationDoc:9
+frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 221 | StickAnimationDoc:9
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 129 | WorkspaceDoc:9 and:32
@@ -383,7 +383,7 @@ frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 221 | VectorPa
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 236 | WireframingDoc:8
 frontend/src/index.css | - | 453 |
 frontend/src/index.tsx | typescript | 109 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84
-frontend/src/library/stick-figures/anim/clips.ts | typescript | 171 | ClipPose:6 MotionClip:6 RigPose:6 footAt:22 poseAt:166
+frontend/src/library/stick-figures/anim/clips.ts | typescript | 249 | ClipPose:6 MotionClip:6 RigPose:6 footAt:22 runFootAt:154 poseAt:244
 frontend/src/library/stick-figures/anim/path-follow.ts | typescript | 92 | PathSample:8 isPathLike:18 sampleAnchors:27 localPolyline:47 elementPathSample:65 PathPoint:79 sampleAt:82
 frontend/src/library/stick-figures/anim/rig.ts | typescript | 194 | JointId:13 Bone:18 Vec:27 StickRig:59 StickRigData:72 ClipPose:89 MotionClip:98 solveTwoBone:111 RigPose:122 evaluateRig:133 rigPoseToSvg:180
 frontend/src/library/stick-figures/assets.ts | typescript | 47 | Variant:11 buildVariantAssets:22

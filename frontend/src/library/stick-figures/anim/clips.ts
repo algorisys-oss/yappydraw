@@ -149,9 +149,87 @@ export const jumpClip: MotionClip = {
     },
 };
 
+// ─── Run (faster, longer stride, forward lean, arms pumping) ────────────────
+const R_STRIDE = 36, R_LIFT = 30, R_GROUND = 72, R_STANCE = 0.42;
+function runFootAt(q: number): { x: number; y: number } {
+    q = ((q % 1) + 1) % 1;
+    if (q < R_STANCE) { const u = q / R_STANCE; return { x: R_STRIDE - 2 * R_STRIDE * u, y: R_GROUND }; }
+    const u = (q - R_STANCE) / (1 - R_STANCE);
+    return { x: -R_STRIDE + 2 * R_STRIDE * u, y: R_GROUND - R_LIFT * Math.sin(Math.PI * u) };
+}
+export const runClip: MotionClip = {
+    id: 'run', name: 'Run', duration: 0.62, loop: true,
+    sample(p: number): ClipPose {
+        const armL = 0.85 * Math.sin(TAU * (p + 0.5));
+        const armR = 0.85 * Math.sin(TAU * p);
+        return {
+            root: { x: 0, y: -8 * Math.abs(Math.sin(TAU * p)) },
+            angles: {
+                shoulder: 0.3,                        // forward lean
+                upperArmL: armL, foreArmL: -0.95,     // bent, pumping
+                upperArmR: armR, foreArmR: -0.95,
+                head: 0.08,
+            },
+            footTargets: { footL: runFootAt(p), footR: runFootAt(p + 0.5) },
+        };
+    },
+};
+
+// ─── Clap (hands meet in front) ─────────────────────────────────────────────
+export const clapClip: MotionClip = {
+    id: 'clap', name: 'Clap', duration: 0.55, loop: true,
+    sample(p: number): ClipPose {
+        const c = Math.max(0, Math.sin(TAU * p));   // 0 apart → 1 together
+        return {
+            angles: {
+                upperArmL: 0.55, foreArmL: -1.5 - 0.28 * c,
+                upperArmR: -0.55, foreArmR: 1.5 + 0.28 * c,
+                thighL: 0.14, shinL: 0.02, thighR: -0.14, shinR: 0.02,
+                head: 0.04,
+            },
+        };
+    },
+};
+
+// ─── Dance (hip sway, arms up alternating, bounce) ──────────────────────────
+export const danceClip: MotionClip = {
+    id: 'dance', name: 'Dance', duration: 1.2, loop: true,
+    sample(p: number): ClipPose {
+        const s = Math.sin(TAU * p);
+        const bounce = Math.abs(Math.sin(TAU * 2 * p));
+        return {
+            root: { x: 7 * s, y: -4 * bounce },
+            angles: {
+                upperArmL: -1.7 + 0.5 * s, foreArmL: -0.3,
+                upperArmR: -1.7 - 0.5 * s, foreArmR: -0.3,
+                thighL: 0.18 * s, shinL: 0.05, thighR: -0.18 * s, shinR: 0.05,
+                head: 0.1 * s,
+            },
+        };
+    },
+};
+
+// ─── Cheer (both arms up, pumping) ──────────────────────────────────────────
+export const cheerClip: MotionClip = {
+    id: 'cheer', name: 'Cheer', duration: 0.9, loop: true,
+    sample(p: number): ClipPose {
+        const s = Math.sin(TAU * 2 * p);
+        return {
+            root: { x: 0, y: -5 * Math.abs(s) },
+            angles: {
+                upperArmL: -2.55 - 0.18 * s, foreArmL: 0.15,
+                upperArmR: -2.55 + 0.18 * s, foreArmR: 0.15,
+                thighL: 0.15, shinL: 0.02, thighR: -0.15, shinR: 0.02,
+                head: 0.05,
+            },
+        };
+    },
+};
+
 export const CLIPS: Record<string, MotionClip> = {
-    idle: idleClip, walk: walkClip, wave: waveClip,
-    talk: talkClip, point: pointClip, jump: jumpClip,
+    idle: idleClip, walk: walkClip, run: runClip, wave: waveClip,
+    talk: talkClip, point: pointClip, clap: clapClip,
+    jump: jumpClip, dance: danceClip, cheer: cheerClip,
 };
 
 /** Ordered clip list for UI (id + display name). */

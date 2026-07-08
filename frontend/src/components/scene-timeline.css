@@ -50,7 +50,12 @@
     overflow: hidden; white-space: nowrap; opacity: 0.92;
     border-right: 2px solid rgba(255, 255, 255, 0.55);
 }
-.st-block span { text-overflow: ellipsis; overflow: hidden; }
+.st-block span { text-overflow: ellipsis; overflow: hidden; pointer-events: none; }
+.st-resize {
+    position: absolute; top: 0; right: 0; width: 8px; height: 100%;
+    cursor: ew-resize; background: rgba(255, 255, 255, 0.001);
+}
+.st-resize:hover { background: rgba(255, 255, 255, 0.35); }
 
 .st-ruler { position: relative; margin-left: 88px; height: 16px; margin-top: 2px; cursor: pointer; }
 .st-tick { position: absolute; top: 0; height: 100%; border-left: 1px solid var(--border-color); }

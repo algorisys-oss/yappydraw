@@ -174,7 +174,7 @@ const shapeDocuments: ShapeDoc[] = [
         icon: '🎞',
         category: 'Design',
         description: 'Skeletal animated stick figures for storytelling: walk/wave/talk/point/jump/idle motions, play/pause, flip, switch clip, bake to editable paths — with a step-by-step tutorial',
-        keywords: 'animate animation animated stick figure motion clip walk walking cycle wave waving talk talking gesture point pointing jump jumping idle breathe skeleton rig joints forward kinematics foot planting ik bend knee elbow storytelling story loop play pause flip facing left right bake freeze frame convert to paths procedural insertAnimatedFigure setAnimatedFigureClip flipAnimatedFigure bakeAnimatedFigure tutorial step by step',
+        keywords: 'animate animation animated stick figure motion clip walk walking cycle run running wave waving talk talking gesture point pointing clap clapping jump jumping dance dancing cheer cheering idle breathe skeleton rig joints forward kinematics foot planting ik bend knee elbow storytelling story sequence action timeline scene playhead scrub track record video webm export html loop play pause flip facing left right bake freeze frame convert to paths procedural insertAnimatedFigure setAnimatedFigureClip setFigureSequence flipAnimatedFigure bakeAnimatedFigure recordAnimation exportHtml toggleSceneTimeline seekScene tutorial step by step',
         content: StickAnimationDoc
     },
     {

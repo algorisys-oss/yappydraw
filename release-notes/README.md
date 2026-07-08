@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.26](0.8.26.md) — More stick-figure motions (Run/Clap/Dance/Cheer) + timeline block resize
 - [0.8.25](0.8.25.md) — Exported HTML now plays stick-figure animations
 - [0.8.24](0.8.24.md) — Scene Timeline: play & scrub all stick figures together
 - [0.8.23](0.8.23.md) — Record stick-figure animations to video (webm)
