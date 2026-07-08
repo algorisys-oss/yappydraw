@@ -12,10 +12,12 @@ import { svgToElements } from '../../utils/svg-import';
 import { store, setStore, updateElement, pushToHistory, bumpDirtyRevision } from '../../store/app-store';
 import { generateId } from '../../utils/id-generator';
 import { getStickAsset } from './registry';
+import { stickColorMode, pushStickRecent } from './prefs';
 import type { DrawingElement } from '../../types';
 
 export * from './types';
 export * from './registry';
+export * from './prefs';
 export { STICK_ASSETS } from './assets';
 
 /** Default on-canvas width for a dropped figure (world units). */
@@ -58,6 +60,8 @@ export interface InsertStickOptions {
     y?: number;
     /** Target width in world units (keeps aspect). Defaults to STICK_DEFAULT_WIDTH. */
     targetWidth?: number;
+    /** Drop with accent fills stripped (pure monochrome). Defaults to the panel's colour mode. */
+    monochrome?: boolean;
 }
 
 /**
@@ -83,10 +87,13 @@ export function insertStickFigure(assetId: string, opts: InsertStickOptions = {}
     // body outline) equals STICK_STROKE_PX, keeping thinner prop strokes proportional.
     const maxSW = Math.max(...els.map(e => e.strokeWidth || 0));
     const f = maxSW > 0 ? STICK_STROKE_PX / maxSW : 1;
+    const mono = opts.monochrome ?? (stickColorMode() === 'mono');
     const gid = generateId('group');
     for (const e of els) {
         if (e.strokeWidth) e.strokeWidth = Math.max(0.4, Math.round(e.strokeWidth * f * 100) / 100);
         if (!e.sfRole) e.sfRole = roleFromFill(e.backgroundColor);
+        // Monochrome tier: drop accent fills so the figure is pure outline.
+        if (mono && e.sfRole === 'accent') e.backgroundColor = 'transparent';
         e.groupIds = [...(e.groupIds || []), gid];
     }
 
@@ -96,6 +103,7 @@ export function insertStickFigure(assetId: string, opts: InsertStickOptions = {}
         setStore('selection', els.map(e => e.id));
     });
     bumpDirtyRevision();
+    pushStickRecent(assetId);
     return els.map(e => e.id);
 }
 

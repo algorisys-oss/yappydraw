@@ -2,15 +2,17 @@ import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
 import { store, toggleStickFigurePanel, createSymbol, toggleSymbolsPanel } from '../store/app-store';
 import { draggablePanel } from '../utils/draggable-panel';
 import { showToast } from './toast';
-import { PersonStanding, X, Search, Component as ComponentIcon } from 'lucide-solid';
+import { PersonStanding, X, Search, Component as ComponentIcon, Star, Clock } from 'lucide-solid';
 import {
-    STICK_CATEGORIES, filterStickAssets, searchStickAssets,
+    STICK_CATEGORIES, filterStickAssets, searchStickAssets, getStickAsset,
     insertStickFigure, recolorStickFigure, selectionHasStickFigure,
+    stickFavorites, isStickFavorite, toggleStickFavorite, stickRecents,
+    stickColorMode, setStickColorMode,
     STICK_FIGURE_MIME, type StickAsset, type StickCategory, type StickVariant,
 } from '../library/stick-figures';
 import './stick-figure-panel.css';
 
-type ActiveCat = StickCategory | 'all';
+type ActiveCat = StickCategory | 'all' | 'favorites' | 'recents';
 type ActiveVariant = StickVariant | 'all';
 
 /** Quick recolour presets (outline colour). */
@@ -27,18 +29,36 @@ const StickFigurePanel: Component = () => {
     const [cat, setCat] = createSignal<ActiveCat>('all');
     const [variant, setVariant] = createSignal<ActiveVariant>('male');
 
+    const byId = (ids: string[]) => ids.map(getStickAsset).filter(Boolean) as StickAsset[];
+
     /** Figures to show: search overrides category/variant filters. */
     const visible = createMemo<StickAsset[]>(() => {
         const q = query().trim();
         if (q) return searchStickAssets(q);
-        return filterStickAssets({ category: cat(), variant: variant() });
+        const c = cat();
+        if (c === 'favorites') return byId(stickFavorites());
+        if (c === 'recents') return byId(stickRecents());
+        return filterStickAssets({ category: c, variant: variant() });
     });
 
-    /** Variant chips only matter for figure categories (props/scenes have none). */
-    const showVariants = createMemo(() => cat() !== 'props' && cat() !== 'scenes' && !query().trim());
+    /** Variant chips only matter for figure categories (props/scenes/favs/recents have none). */
+    const showVariants = createMemo(() =>
+        !query().trim() && !['props', 'scenes', 'favorites', 'recents'].includes(cat()));
 
     /** Click → drop centered on the active page as one editable group. */
     const dropCentered = (asset: StickAsset) => insertStickFigure(asset.id);
+
+    /** Keyboard roving focus across the 3-column grid. */
+    const onGridKey = (e: KeyboardEvent) => {
+        const cells = Array.from((e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('.sp-cell'));
+        const i = cells.indexOf(document.activeElement as HTMLElement);
+        if (i < 0) return;
+        const delta = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1
+            : e.key === 'ArrowDown' ? 3 : e.key === 'ArrowUp' ? -3 : 0;
+        if (!delta) return;
+        const next = cells[i + delta];
+        if (next) { e.preventDefault(); next.focus(); }
+    };
 
     /** Whether the current selection includes a stick figure to recolour. */
     const canRecolor = createMemo(() => selectionHasStickFigure(store.selection));
@@ -64,11 +84,21 @@ const StickFigurePanel: Component = () => {
                     <Search size={13} />
                     <input type="text" placeholder="Search figures…" value={query()}
                         onInput={(e) => setQuery(e.currentTarget.value)} />
+                    <div class="sp-mode" title="Drop figures in colour or pure monochrome">
+                        <button class={`sp-mode-btn ${stickColorMode() === 'color' ? 'active' : ''}`}
+                            onClick={() => setStickColorMode('color')}>Colour</button>
+                        <button class={`sp-mode-btn ${stickColorMode() === 'mono' ? 'active' : ''}`}
+                            onClick={() => setStickColorMode('mono')}>Mono</button>
+                    </div>
                 </div>
 
                 {/* Category chips (hidden while searching) */}
                 <Show when={!query().trim()}>
                     <div class="sp-cats">
+                        <button class={`sp-chip sp-chip-fav ${cat() === 'favorites' ? 'active' : ''}`}
+                            title="Your starred figures" onClick={() => setCat('favorites')}><Star size={11} /> Favourites</button>
+                        <button class={`sp-chip ${cat() === 'recents' ? 'active' : ''}`}
+                            title="Recently used" onClick={() => setCat('recents')}><Clock size={11} /> Recent</button>
                         <button class={`sp-chip ${cat() === 'all' ? 'active' : ''}`} onClick={() => setCat('all')}>All</button>
                         <For each={STICK_CATEGORIES}>
                             {(c) => (
@@ -95,22 +125,33 @@ const StickFigurePanel: Component = () => {
 
                 <div class="stick-panel-body">
                     <Show when={visible().length > 0} fallback={
-                        <div class="sp-empty">No figures match “{query()}”.</div>
+                        <div class="sp-empty">
+                            {cat() === 'favorites' ? 'No favourites yet — tap the ★ on a figure to save it here.'
+                                : cat() === 'recents' ? 'Nothing used yet — figures you add show up here.'
+                                : `No figures match “${query()}”.`}
+                        </div>
                     }>
-                        <div class="sp-grid">
+                        <div class="sp-grid" onKeyDown={onGridKey}>
                             <For each={visible()}>
                                 {(asset) => (
-                                    <button class="sp-cell" title={`${asset.name} — click to add, or drag onto the canvas`}
+                                    <div class="sp-cell" tabindex="0" role="button"
+                                        title={`${asset.name} — click to add, or drag onto the canvas`}
                                         draggable={true}
                                         onDragStart={(e) => {
                                             e.dataTransfer?.setData(STICK_FIGURE_MIME, asset.id);
                                             if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
                                         }}
-                                        onClick={() => dropCentered(asset)}>
+                                        onClick={() => dropCentered(asset)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dropCentered(asset); } }}>
+                                        <button class={`sp-fav ${isStickFavorite(asset.id) ? 'on' : ''}`}
+                                            title={isStickFavorite(asset.id) ? 'Remove from favourites' : 'Add to favourites'}
+                                            onClick={(e) => { e.stopPropagation(); toggleStickFavorite(asset.id); }}>
+                                            <Star size={12} />
+                                        </button>
                                         {/* Our own trusted inline SVG string */}
                                         <div class="sp-thumb" innerHTML={asset.svg} />
                                         <span class="sp-label">{asset.name}</span>
-                                    </button>
+                                    </div>
                                 )}
                             </For>
                         </div>

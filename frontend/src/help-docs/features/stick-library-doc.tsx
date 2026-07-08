@@ -95,6 +95,21 @@ const StickLibraryDoc: Component = () => {
                 </p>
             </section>
 
+            {/* ─── BROWSE FASTER ──────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Browse faster</h2>
+                <ul>
+                    <li><strong>Colour / Mono</strong> toggle (next to search) — drop figures with their flat colour
+                        accents, or in pure monochrome (outline only). Your choice is remembered.</li>
+                    <li><strong>★ Favourites</strong> — tap the star on any figure to save it; the Favourites chip
+                        gathers them.</li>
+                    <li><strong>Recent</strong> — figures you add are listed under the Recent chip so you can re-drop
+                        them fast.</li>
+                    <li><strong>Keyboard</strong> — Tab into the grid, move with the arrow keys, and press
+                        <strong> Enter</strong> to add the focused figure.</li>
+                </ul>
+            </section>
+
             {/* ─── REUSE AS SYMBOL ────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Reuse as a Symbol</h2>
