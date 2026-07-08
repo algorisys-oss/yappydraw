@@ -38,12 +38,18 @@ const StickLibraryDoc: Component = () => {
             <section class="doc-section">
                 <h2>The Stick Figures panel</h2>
                 <p>
-                    Open it from the menu → <strong>Stick Figures</strong>. The panel has:
+                    Open it from the toolbar (walking-person button) or the menu → <strong>Stick Figures</strong>.
+                    The panel has:
                 </p>
                 <ul>
                     <li>A <strong>search box</strong> — type “wave”, “laptop”, “bike”, “box”… to match names and tags.</li>
-                    <li><strong>Category chips</strong> (All, Daily &amp; Emotions, Office &amp; Work, Meetings &amp; Talks,
-                        Street &amp; Travel, Social &amp; Family, Services) to browse by theme.</li>
+                    <li><strong>Category chips</strong> — six figure themes (Daily &amp; Emotions, Office &amp; Work,
+                        Meetings &amp; Talks, Street &amp; Travel, Social &amp; Family, Services) plus <strong>Props</strong>
+                        (standalone objects — laptop, phone, chart, box, bulb, speech bubble…) and <strong>Scenes</strong>
+                        (multi-figure bundles — handshake, team, family, celebration).</li>
+                    <li><strong>Character variant</strong> chips — <strong>Man / Woman / Boy / Girl</strong> (or All).
+                        Every figure pose comes in all four; women get hair and a skirt, children a bigger head and
+                        shorter body.</li>
                     <li>A <strong>thumbnail grid</strong> — each cell previews the figure.</li>
                 </ul>
             </section>
@@ -86,6 +92,17 @@ const StickLibraryDoc: Component = () => {
                     Figures render in the clean <strong>architectural</strong> style by default. Convert a selected
                     figure to the hand-drawn <strong>sketch</strong> look from the Properties panel if you want it to
                     match a sketchy document.
+                </p>
+            </section>
+
+            {/* ─── REUSE AS SYMBOL ────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Reuse as a Symbol</h2>
+                <p>
+                    Using the same figure many times? Select it and click <strong>Add to Symbols</strong> in the panel.
+                    It becomes a linked <strong>Symbol</strong> — place as many instances as you like and edit the
+                    master once to update them all. See the <em>Symbols &amp; Instances</em> help topic for the full
+                    workflow.
                 </p>
             </section>
 

@@ -164,7 +164,7 @@ const shapeDocuments: ShapeDoc[] = [
         icon: '🚶',
         category: 'Design',
         description: 'Drawify-style editable stick figures: the panel, search & categories, drag/click to add, drop-as-editable-group, recolour & ungroup, and the API',
-        keywords: 'stick figure people person drawify illustration character pose wave walk run jump sit dance office laptop desk present chart briefcase meeting podium mic speaker raise hand clipboard travel bike bicycle bag phone celebrate love heart delivery box support headset doctor guide category search drag drop editable group recolour recolor part role outline accent body head prop semantic stroke width 4px ungroup vector svg insertStickFigure recolorStickFigure listStickFigures',
+        keywords: 'stick figure people person drawify illustration character pose variant man woman boy girl male female child kid hair skirt wave walk run jump sit dance think point sad office laptop desk present chart briefcase coffee idea lightbulb handshake meeting podium mic speaker raise hand clipboard applaud notes travel bike bicycle bag phone luggage suitcase umbrella celebrate love heart selfie gift toast delivery box support headset doctor guide waiter chef cleaner broom props laptop phone microphone bar chart briefcase package coffee cup speech bubble arrow trophy scenes handshake team family celebration category search drag drop editable group recolour recolor part role outline accent body head prop semantic stroke width 4px ungroup bezier limb symbol add to symbols vector svg insertStickFigure recolorStickFigure listStickFigures',
         content: StickLibraryDoc
     },
     {

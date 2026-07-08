@@ -13,7 +13,7 @@ import { screenToWorld } from '../viewport-transforms';
 import { calculateUmlClassLayout, calculateUml2SectionLayout } from '../uml-layout-utils';
 import { IMAGE_FILL_EXCLUDED } from '../../config/properties';
 import { STOCK_PHOTO_MIME, fetchPhotoData, insertStockPhoto, type StockPhoto } from '../stock-photos';
-import { STICK_FIGURE_MIME, insertStickFigure, STICK_DEFAULT_WIDTH } from '../../library/stick-figures';
+import { STICK_FIGURE_MIME, insertStickFigure, getStickAsset, STICK_DEFAULT_WIDTH } from '../../library/stick-figures';
 import type { IRenderer } from '../../rendering/IRenderer';
 
 /**
@@ -73,8 +73,10 @@ export async function handleDrop(e: DragEvent, ctx: CanvasEventContext): Promise
     // centered on the cursor.
     const stickId = dt?.getData(STICK_FIGURE_MIME);
     if (stickId) {
+        const asset = getStickAsset(stickId);
         const TARGET_W = STICK_DEFAULT_WIDTH;
-        const TARGET_H = TARGET_W * (260 / 140); // figure viewBox aspect ratio
+        const aspect = asset ? asset.h / asset.w : 260 / 140; // per-asset viewBox ratio
+        const TARGET_H = TARGET_W * aspect;
         const { x, y } = ctx.getWorldCoordinates(e.clientX, e.clientY);
         insertStickFigure(stickId, { x: x - TARGET_W / 2, y: y - TARGET_H / 2, targetWidth: TARGET_W });
         return;

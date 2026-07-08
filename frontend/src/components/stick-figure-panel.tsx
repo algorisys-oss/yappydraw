@@ -1,31 +1,41 @@
 import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
-import { store, toggleStickFigurePanel } from '../store/app-store';
+import { store, toggleStickFigurePanel, createSymbol, toggleSymbolsPanel } from '../store/app-store';
 import { draggablePanel } from '../utils/draggable-panel';
-import { PersonStanding, X, Search } from 'lucide-solid';
+import { showToast } from './toast';
+import { PersonStanding, X, Search, Component as ComponentIcon } from 'lucide-solid';
 import {
-    STICK_CATEGORIES, searchStickAssets, getStickAssetsByCategory,
+    STICK_CATEGORIES, filterStickAssets, searchStickAssets,
     insertStickFigure, recolorStickFigure, selectionHasStickFigure,
-    STICK_FIGURE_MIME, type StickAsset, type StickCategory,
+    STICK_FIGURE_MIME, type StickAsset, type StickCategory, type StickVariant,
 } from '../library/stick-figures';
 import './stick-figure-panel.css';
 
 type ActiveCat = StickCategory | 'all';
+type ActiveVariant = StickVariant | 'all';
 
 /** Quick recolour presets (outline colour). */
 const OUTLINE_SWATCHES = ['#1f2937', '#0f172a', '#334155', '#7c3aed', '#dc2626', '#0891b2', '#15803d', '#b45309'];
 const ACCENT_SWATCHES = ['#3b82f6', '#ef4444', '#f59e0b', '#22c55e', '#8b5cf6', '#ec4899', '#14b8a6', '#eab308'];
 
+const VARIANT_CHIPS: { id: ActiveVariant; label: string }[] = [
+    { id: 'male', label: 'Man' }, { id: 'female', label: 'Woman' },
+    { id: 'boy', label: 'Boy' }, { id: 'girl', label: 'Girl' }, { id: 'all', label: 'All' },
+];
+
 const StickFigurePanel: Component = () => {
     const [query, setQuery] = createSignal('');
     const [cat, setCat] = createSignal<ActiveCat>('all');
+    const [variant, setVariant] = createSignal<ActiveVariant>('male');
 
-    /** Figures to show: search overrides the category filter. */
+    /** Figures to show: search overrides category/variant filters. */
     const visible = createMemo<StickAsset[]>(() => {
         const q = query().trim();
         if (q) return searchStickAssets(q);
-        const c = cat();
-        return c === 'all' ? searchStickAssets('') : getStickAssetsByCategory(c);
+        return filterStickAssets({ category: cat(), variant: variant() });
     });
+
+    /** Variant chips only matter for figure categories (props/scenes have none). */
+    const showVariants = createMemo(() => cat() !== 'props' && cat() !== 'scenes' && !query().trim());
 
     /** Click → drop centered on the active page as one editable group. */
     const dropCentered = (asset: StickAsset) => insertStickFigure(asset.id);
@@ -34,6 +44,13 @@ const StickFigurePanel: Component = () => {
     const canRecolor = createMemo(() => selectionHasStickFigure(store.selection));
     const setOutline = (c: string) => recolorStickFigure(store.selection, { outline: c });
     const setAccent = (c: string) => recolorStickFigure(store.selection, { accent: c });
+
+    /** Register the selected figure as a reusable Symbol. */
+    const addToSymbols = () => {
+        if (store.selection.length < 1) return;
+        const id = createSymbol(store.selection, 'Stick figure');
+        if (id) { toggleSymbolsPanel(true); showToast('Added to Symbols — place linked instances from the Symbols panel', 'success'); }
+    };
 
     return (
         <Show when={store.showStickFigurePanel}>
@@ -59,6 +76,18 @@ const StickFigurePanel: Component = () => {
                                     title={c.description} onClick={() => setCat(c.id)}>
                                     {c.name}
                                 </button>
+                            )}
+                        </For>
+                    </div>
+                </Show>
+
+                {/* Character variant chips */}
+                <Show when={showVariants()}>
+                    <div class="sp-variants">
+                        <For each={VARIANT_CHIPS}>
+                            {(v) => (
+                                <button class={`sp-vchip ${variant() === v.id ? 'active' : ''}`}
+                                    onClick={() => setVariant(v.id)}>{v.label}</button>
                             )}
                         </For>
                     </div>
@@ -116,6 +145,9 @@ const StickFigurePanel: Component = () => {
                                 </For>
                             </div>
                         </div>
+                        <button class="sp-symbol-btn" title="Save this figure as a reusable Symbol" onClick={addToSymbols}>
+                            <ComponentIcon size={13} /> Add to Symbols
+                        </button>
                     </div>
                 </Show>
             </div>

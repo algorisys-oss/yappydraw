@@ -232,8 +232,8 @@ frontend/src/components/state-panel.tsx | typescript | 160 | Component:1 StatePa
 frontend/src/components/status-bar.css | - | 191 |
 frontend/src/components/status-bar.tsx | typescript | 312 | Component:1 Hint:13 isMindmapNode:24 getContextHints:31 StatusBar:111 handleZoomIn:112 handleZoomOut:117 zoomToCenter:122 resetZoom:131 rotationDeg:136 toolLabel:138
 frontend/src/components/status-tool-group.tsx | typescript | 162 | Component:1 StatusToolGroup:47 handler:54 getActiveTool:64 handleToolClick:73 as:81 as:87 handleRightClick:95 toggleMenu:101 activeTool:108 isActive:109 getDropdownPosition:111
-frontend/src/components/stick-figure-panel.css | - | 119 |
-frontend/src/components/stick-figure-panel.tsx | typescript | 126 | Component:1 StickAsset:8 ActiveCat:12 StickFigurePanel:18 dropCentered:31 setOutline:35 setAccent:36
+frontend/src/components/stick-figure-panel.css | - | 143 |
+frontend/src/components/stick-figure-panel.tsx | typescript | 158 | Component:1 StickAsset:9 ActiveCat:13 ActiveVariant:14 StickFigurePanel:25 dropCentered:41 setOutline:45 setAccent:46 addToSymbols:49
 frontend/src/components/swatches-panel.css | - | 72 |
 frontend/src/components/swatches-panel.tsx | typescript | 65 | Component:1 SwatchesPanel:13 startRename:16 commitRename:17
 frontend/src/components/symbol-edit-banner.css | - | 53 |
@@ -359,7 +359,7 @@ frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | Embedding
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 444 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 375 | MasksAppearanceTraceDoc:8 tools:14 dropdown:159
-frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 112 | StickLibraryDoc:9
+frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 129 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 129 | WorkspaceDoc:9 and:32
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 587 | YslTutorialDoc:8
@@ -380,10 +380,14 @@ frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 221 | VectorPa
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 236 | WireframingDoc:8
 frontend/src/index.css | - | 453 |
 frontend/src/index.tsx | typescript | 109 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84
-frontend/src/library/stick-figures/assets.ts | typescript | 265 | doc:21 subToPoints:31 curveLimb:43
+frontend/src/library/stick-figures/assets.ts | typescript | 47 | Variant:11 buildVariantAssets:22
+frontend/src/library/stick-figures/builder.ts | typescript | 138 | Variant:20 doc:26 subToPoints:35 curveLimb:42 hair:79 skirt:87 Pose:93 figureInner:115 buildFigure:120
 frontend/src/library/stick-figures/index.ts | typescript | 140 | StickPartRole:28 parseHex:32 roleFromFill:44 InsertStickOptions:55 insertStickFigure:71 StickRecolor:104 recolorStickFigure:114 selectionHasStickFigure:137
-frontend/src/library/stick-figures/registry.ts | typescript | 33 | searchStickAssets:24
-frontend/src/library/stick-figures/types.ts | typescript | 47 | StickCategory:12 StickCategoryInfo:20 StickAsset:28
+frontend/src/library/stick-figures/poses.ts | typescript | 178 | Pose:9
+frontend/src/library/stick-figures/props.ts | typescript | 48 | pdoc:11 PropDef:15
+frontend/src/library/stick-figures/registry.ts | typescript | 53 | StickVariant:21 filterStickAssets:33 searchStickAssets:44
+frontend/src/library/stick-figures/scenes.ts | typescript | 67 | sdoc:9 SceneDef:13
+frontend/src/library/stick-figures/types.ts | typescript | 49 | StickCategory:12 StickCategoryInfo:22 StickAsset:30
 frontend/src/player.tsx | typescript | 14 |
 frontend/src/rendering/CanvasRenderer.ts | typescript | 176 | CanvasRenderer:11{constructor:13 save:18 restore:19 translate:22 rotate:23 scale:24 transform:25 beginPath:28 closePath:29 moveTo:30 lineTo:31 arc:32 ellipse:35 rect:38 roundRect:39 quadraticCurveTo:42 bezierCurveTo:45 arcTo:48 fill:53 stroke:57 fillRect:58 strokeRect:59 clip:60 fillPath:65 strokePath:69 clipPath:72 fillStyle:77 strokeStyle:80 lineWidth:83 lineCap:86 lineJoin:89 setLineDash:92 lineDashOffset:94 globalAlpha:98 globalCompositeOperation:101 shadowColor:105 shadowBlur:108 shadowOffsetX:111 shadowOffsetY:114 filter:118 font:122 letterSpacing:127 textAlign:130 textBaseline:133 fillText:136 strokeText:141 measureText:146 createLinearGradient:151 createRadialGradient:154 createConicGradient:157 createPattern:160 drawImage:165 drawImageCropped:173}
 frontend/src/rendering/IRenderer.ts | typescript | 109 | ICanvasGradient:14{addColorStop:15} ICanvasPattern:18 FillStyle:20 TextMetrics:22 IRenderer:28{save:30 restore:31 translate:34 rotate:35 scale:36 transform:38 beginPath:41 closePath:42 moveTo:43 lineTo:44 arc:45 ellipse:46 rect:47 roundRect:48 quadraticCurveTo:49 bezierCurveTo:50 arcTo:51 fill:54 stroke:55 fillRect:56 strokeRect:57 clip:58 fillPath:62 strokePath:64 clipPath:66 setLineDash:74 fillText:95 strokeText:96 measureText:97 createLinearGradient:100 createRadialGradient:101 createConicGradient:102 createPattern:103 drawImage:106 drawImageCropped:108}
@@ -571,7 +575,7 @@ frontend/src/utils/text-on-path.ts | typescript | 251 | PathPoint:18 TextPathOpt
 frontend/src/utils/text-to-outlines.ts | typescript | 160 | OutlineResult:94
 frontend/src/utils/text-utils.ts | typescript | 352 | TextMetrics:5 VerticalTextLayout:186
 frontend/src/utils/timelapse-manager.ts | typescript | 297 | TimelapseManifest:28 VideoFormat:30 newRecordingId:48 toBlobAsync:53 exportTimelapse:65 renderFrame:120 setupTimelapse:166
-frontend/src/utils/tool-handlers/canvas-event-handlers.ts | typescript | 315 | StockPhoto:15 CanvasEventContext:22 handleDragOver:30 handleDrop:39 WheelContext:190 handleUmlSectionScroll:197 handleWheel:268
+frontend/src/utils/tool-handlers/canvas-event-handlers.ts | typescript | 317 | StockPhoto:15 CanvasEventContext:22 handleDragOver:30 handleDrop:39 applyAssetAtClientPoint:96 any:154 as:154 WheelContext:192 handleUmlSectionScroll:199 handleWheel:270
 frontend/src/utils/tool-handlers/draw-handler.ts | typescript | 613 | drawOnDown:75 drawOnMove:311 drawOnUp:399 normalizeOrganicBranch:588
 frontend/src/utils/tool-handlers/minor-handlers.ts | typescript | 1010 | triggerOpenBoxReveal:26 presentationOnDown:154 presentationOnMove:235 presentationOnUp:267 panOnDown:298 panOnMove:306 panOnUp:320 laserOnDown:330 laserOnMove:340 laserOnUp:366 textOnDown:386 textOnMove:413 textOnUp:434 richTextOnDown:488 richTextOnMove:516 richTextOnUp:537 inkOnDown:595 appendEraseStroke:643 splitFreehandStroke:677 getEraserRadius:754 eraseAtPoint:760 eraserOnDown:796 eraserOnMove:809 eraserOnUp:817 connectorHandleOnDown:824 connectorHandleOnUp:905 handleAutoScroll:985
 frontend/src/utils/tool-handlers/pen-handler.ts | typescript | 55 | penOnMove:14

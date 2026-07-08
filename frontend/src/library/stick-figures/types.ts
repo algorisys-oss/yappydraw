@@ -8,14 +8,16 @@
  * recolourable / editable for free — and the parts are grouped into one object.
  */
 
-/** The six top-level catalog categories (mirrors the reference cheat-sheets). */
+/** Catalog categories: six figure themes plus standalone props and multi-figure scenes. */
 export type StickCategory =
     | 'daily'
     | 'office'
     | 'meetings'
     | 'travel'
     | 'social'
-    | 'services';
+    | 'services'
+    | 'props'
+    | 'scenes';
 
 export interface StickCategoryInfo {
     id: StickCategory;
