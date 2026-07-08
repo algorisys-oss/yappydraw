@@ -188,6 +188,12 @@ Y.bakeAnimatedFigure(a);                          // freeze current frame → ed
                     from Export → Video, and via the API: <code>recordAnimation(seconds?)</code> /
                     <code> stopRecording()</code>.
                 </p>
+                <p>
+                    Prefer a shareable webpage? <strong>Export → HTML</strong> writes a self-contained
+                    <code>.html</code> file that <strong>plays the animation</strong> when opened in any browser — the
+                    figures walk, wave and follow their paths just like on the canvas.
+                    (API: <code>exportHtml(name?)</code>.)
+                </p>
             </section>
 
             {/* ─── NOTES ────────────────────────────────────────────────── */}
@@ -197,8 +203,9 @@ Y.bakeAnimatedFigure(a);                          // freeze current frame → ed
                     <li>An animated figure is a single object — move, scale, rotate and recolour it like any shape.</li>
                     <li>It renders procedurally from a skeleton; to hand-edit the artwork, <strong>Bake</strong> it to
                         paths first.</li>
-                    <li>Share a moving animation by <strong>recording it to video</strong> (above); bake a frame for a
-                        still. Static image/PDF/HTML export captures a single frame, not the motion.</li>
+                    <li>Share a moving animation as a <strong>video</strong> (record) or a self-contained
+                        <strong>HTML</strong> page (Export → HTML) that plays it; bake a frame for a still. Image/PDF
+                        export captures a single frame.</li>
                 </ul>
             </section>
         </div>

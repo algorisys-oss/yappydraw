@@ -2320,6 +2320,8 @@ export const YappyAPI = {
     playScene(playing?: boolean) { setStore('storyPlaying', playing ?? !store.storyPlaying); },
     /** Move the scene playhead to `seconds` (pauses playback). */
     seekScene(seconds: number) { setStore({ storyTime: Math.max(0, seconds), storyPlaying: false } as any); },
+    /** Export the current scene as a self-contained HTML file (animated figures play in it). */
+    async exportHtml(name = 'animation') { const m = await import('./utils/export-game'); return m.exportSceneAsHtml(name); },
 
     // AI assists (Canva-style; keys from AI Settings)
     /** Magic Write: transform text of the given (or selected) text elements. Modes: rewrite|shorten|expand|fix|custom. */

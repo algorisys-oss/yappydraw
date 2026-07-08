@@ -76,7 +76,7 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 3191 | Theme:3 HarmonyType:47 ElementOptions:98 ElementType:483 as:483 Window:3183
+frontend/src/api.ts | typescript | 3193 | Theme:3 HarmonyType:47 ElementOptions:98 ElementType:483 as:483 Window:3185
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1472 | Component:1 App:96 moves:111 onPenMove:112 hidePen:116 onControllerChange:136 handleKeyUp:165 handleKeyDown:175 as:684 handleFullscreenChange:799 handleBeforeUnload:805 handlePaste:809 handleGlobalDragEnter:911 handleGlobalDragOver:926 showDropFallbackPrompt:945 cleanup:975 outsideClick:1003 isImageFile:1015 first:1016 must:1029 extractDropData:1031 processExtractedDrop:1086 handleGlobalDrop:1203 handleDocumentDrop:1249
 frontend/src/assets/solid.svg | - | 1 |
@@ -361,7 +361,7 @@ frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | Embedding
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 444 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 375 | MasksAppearanceTraceDoc:8 tools:14 dropdown:159
-frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 208 | StickAnimationDoc:9
+frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 215 | StickAnimationDoc:9
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 129 | WorkspaceDoc:9 and:32
