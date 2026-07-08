@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.18](0.8.18.md) — Stick-figure variant filter fix (props/scenes no longer bleed into gender views)
 - [0.8.17](0.8.17.md) — Stick-figure full catalog: variants, props & scenes
 - [0.8.16](0.8.16.md) — Stick-figure library (drawify-style editable people)
 - [0.8.15](0.8.15.md) — Flappy sample game (one-button flyer)

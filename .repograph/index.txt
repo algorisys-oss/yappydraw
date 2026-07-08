@@ -385,7 +385,7 @@ frontend/src/library/stick-figures/builder.ts | typescript | 138 | Variant:20 do
 frontend/src/library/stick-figures/index.ts | typescript | 140 | StickPartRole:28 parseHex:32 roleFromFill:44 InsertStickOptions:55 insertStickFigure:71 StickRecolor:104 recolorStickFigure:114 selectionHasStickFigure:137
 frontend/src/library/stick-figures/poses.ts | typescript | 178 | Pose:9
 frontend/src/library/stick-figures/props.ts | typescript | 48 | pdoc:11 PropDef:15
-frontend/src/library/stick-figures/registry.ts | typescript | 53 | StickVariant:21 filterStickAssets:33 searchStickAssets:44
+frontend/src/library/stick-figures/registry.ts | typescript | 63 | StickVariant:21 filterStickAssets:37 searchStickAssets:54
 frontend/src/library/stick-figures/scenes.ts | typescript | 67 | sdoc:9 SceneDef:13
 frontend/src/library/stick-figures/types.ts | typescript | 49 | StickCategory:12 StickCategoryInfo:22 StickAsset:30
 frontend/src/player.tsx | typescript | 14 |

@@ -27,15 +27,25 @@ export const getStickAssetsByCategory = (category: StickCategory): StickAsset[] 
     STICK_ASSETS.filter(a => a.category === category);
 
 /**
- * Filter by category and/or character variant. Props and scenes carry no variant,
- * so they always pass the variant filter. `variant: 'all'` disables it.
+ * Filter by category and/or character variant.
+ *
+ * When a specific gender variant is active, figures must match it AND the genderless
+ * assets (props / scenes) are hidden from mixed views — they only appear when their
+ * own category is selected, or when the variant filter is off (`variant: 'all'`).
+ * This keeps "Boy" / "Girl" showing only that variant, not a pile of props too.
  */
 export function filterStickAssets(opts: { category?: StickCategory | 'all'; variant?: StickVariant | 'all' } = {}): StickAsset[] {
     const cat = opts.category ?? 'all';
     const v = opts.variant ?? 'male';
     return STICK_ASSETS.filter(a => {
         if (cat !== 'all' && a.category !== cat) return false;
-        if (v !== 'all' && a.variant && a.variant !== v) return false;
+        if (v !== 'all') {
+            if (a.variant) {
+                if (a.variant !== v) return false;          // figure of another variant
+            } else if (cat === 'all') {
+                return false;                                // hide genderless props/scenes from mixed views
+            }
+        }
         return true;
     });
 }
