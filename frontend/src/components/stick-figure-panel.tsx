@@ -2,7 +2,8 @@ import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
 import { store, toggleStickFigurePanel, createSymbol, toggleSymbolsPanel } from '../store/app-store';
 import { draggablePanel } from '../utils/draggable-panel';
 import { showToast } from './toast';
-import { PersonStanding, X, Search, Component as ComponentIcon, Star, Clock, Play, Pause, Film, Layers, FlipHorizontal2, Route } from 'lucide-solid';
+import { PersonStanding, X, Search, Component as ComponentIcon, Star, Clock, Play, Pause, Film, Layers, FlipHorizontal2, Route, Video, Square } from 'lucide-solid';
+import { setRequestRecording } from '../utils/recording-manager';
 import {
     STICK_CATEGORIES, filterStickAssets, searchStickAssets, getStickAsset,
     insertStickFigure, recolorStickFigure, selectionHasStickFigure,
@@ -277,6 +278,17 @@ const StickFigurePanel: Component = () => {
                                     <div class="sp-anim-hint">Chain motions over time — e.g. Walk 3s → Wave 2s → Talk 2s.</div>
                                 </Show>
                             </div>
+                        </Show>
+
+                        {/* Record the animation to a video */}
+                        <Show when={!store.isRecording} fallback={
+                            <button class="sp-symbol-btn sp-path-btn sp-rec-on" onClick={() => setRequestRecording({ start: false })}>
+                                <Square size={12} /> Stop &amp; save recording
+                            </button>
+                        }>
+                            <button class="sp-symbol-btn sp-path-btn" title="Record the canvas (animations included) to a video file" onClick={() => setRequestRecording({ start: true, format: 'webm' })}>
+                                <Video size={13} /> Record video
+                            </button>
                         </Show>
                     </div>
                 </Show>

@@ -76,7 +76,7 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 3176 | Theme:3 HarmonyType:46 ElementOptions:97 ElementType:482 as:482 Window:3168
+frontend/src/api.ts | typescript | 3185 | Theme:3 HarmonyType:47 ElementOptions:98 ElementType:483 as:483 Window:3177
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1470 | Component:1 App:95 moves:110 onPenMove:111 hidePen:115 onControllerChange:135 handleKeyUp:164 handleKeyDown:174 as:683 handleFullscreenChange:798 handleBeforeUnload:804 handlePaste:808 handleGlobalDragEnter:910 handleGlobalDragOver:925 showDropFallbackPrompt:944 cleanup:974 outsideClick:1002 isImageFile:1014 first:1015 must:1028 extractDropData:1030 processExtractedDrop:1085 handleGlobalDrop:1202 handleDocumentDrop:1248
 frontend/src/assets/solid.svg | - | 1 |
@@ -232,8 +232,8 @@ frontend/src/components/state-panel.tsx | typescript | 160 | Component:1 StatePa
 frontend/src/components/status-bar.css | - | 191 |
 frontend/src/components/status-bar.tsx | typescript | 312 | Component:1 Hint:13 isMindmapNode:24 getContextHints:31 StatusBar:111 handleZoomIn:112 handleZoomOut:117 zoomToCenter:122 resetZoom:131 rotationDeg:136 toolLabel:138
 frontend/src/components/status-tool-group.tsx | typescript | 162 | Component:1 StatusToolGroup:47 handler:54 getActiveTool:64 handleToolClick:73 as:81 as:87 handleRightClick:95 toggleMenu:101 activeTool:108 isActive:109 getDropdownPosition:111
-frontend/src/components/stick-figure-panel.css | - | 190 |
-frontend/src/components/stick-figure-panel.tsx | typescript | 324 | Component:1 StickAsset:16 ActiveCat:20 ActiveVariant:21 clipThumb:24 StickFigurePanel:35 byId:40 dropCentered:58 onGridKey:61 setOutline:74 setAccent:75 addToSymbols:78 dropAnimated:88 bakeSelected:89 writeSeq:93 addStep:94 editStep:95 removeStep:96 walkPath:102
+frontend/src/components/stick-figure-panel.css | - | 192 |
+frontend/src/components/stick-figure-panel.tsx | typescript | 336 | Component:1 StickAsset:17 ActiveCat:21 ActiveVariant:22 clipThumb:25 StickFigurePanel:36 byId:41 dropCentered:59 onGridKey:62 setOutline:75 setAccent:76 addToSymbols:79 dropAnimated:89 bakeSelected:90 writeSeq:94 addStep:95 editStep:96 removeStep:97 walkPath:103
 frontend/src/components/swatches-panel.css | - | 72 |
 frontend/src/components/swatches-panel.tsx | typescript | 65 | Component:1 SwatchesPanel:13 startRename:16 commitRename:17
 frontend/src/components/symbol-edit-banner.css | - | 53 |
@@ -359,7 +359,7 @@ frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | Embedding
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 444 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 375 | MasksAppearanceTraceDoc:8 tools:14 dropdown:159
-frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 170 | StickAnimationDoc:9
+frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 187 | StickAnimationDoc:9
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 129 | WorkspaceDoc:9 and:32

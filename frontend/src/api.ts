@@ -37,6 +37,7 @@ import { templateRegistry, getTemplateById, getTemplatesByCategory, searchTempla
 import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
 import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
 import { importSvgToCanvas } from "./utils/svg-import";
+import { setRequestRecording } from "./utils/recording-manager";
 import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
     attachFigureToPath, detachFigurePath, setFigureSequence } from "./library/stick-figures";
@@ -2305,6 +2306,14 @@ export const YappyAPI = {
     detachFigurePath(id?: string) { detachFigurePath(id ?? store.selection[0]); },
     /** Set a timed action sequence on a figure, e.g. [{clip:'walk',dur:3},{clip:'wave',dur:2}] (loops). Empty clears it. */
     setFigureSequence(steps: { clip: string; dur: number }[], id?: string) { setFigureSequence(id ?? store.selection[0], steps); },
+    /** Record the live canvas (animations included) to a video that auto-downloads.
+     *  Pass `seconds` to auto-stop; otherwise call stopRecording(). */
+    recordAnimation(seconds?: number, format: 'webm' | 'mp4' = 'webm') {
+        setRequestRecording({ start: true, format });
+        if (seconds && seconds > 0) setTimeout(() => setRequestRecording({ start: false }), seconds * 1000);
+    },
+    /** Stop an in-progress canvas recording (saves + downloads the file). */
+    stopRecording() { setRequestRecording({ start: false }); },
 
     // AI assists (Canva-style; keys from AI Settings)
     /** Magic Write: transform text of the given (or selected) text elements. Modes: rewrite|shorten|expand|fix|custom. */

@@ -25,13 +25,13 @@ export function setupRecording(getCanvasRef: () => HTMLCanvasElement | undefined
 } {
     let videoRecorder: VideoRecorder | null = null;
 
-    // Effect: respond to requestRecording signal
+    // Effect: respond to requestRecording signal (start OR stop)
     createEffect(() => {
         const req = requestRecording();
-        if (req && req.start) {
-            handleStartRecording(req.format || 'webm');
-            setRequestRecording(null);
-        }
+        if (!req) return;
+        if (req.start) handleStartRecording(req.format || 'webm');
+        else handleStopRecording();
+        setRequestRecording(null);
     });
 
     // ─── Thumbnail Capture ──────────────────────────────────────────────

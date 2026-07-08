@@ -188,3 +188,5 @@
 .sp-seq-x { border: none; background: transparent; color: var(--text-secondary); font-size: 15px; line-height: 1; cursor: pointer; padding: 0 2px; }
 .sp-seq-x:hover { color: #dc2626; }
 .sp-seq-add { width: 100%; justify-content: center; margin-top: 2px; }
+.sp-rec-on { border-color: #dc2626 !important; color: #dc2626; }
+.sp-rec-on:hover { background: rgba(220, 38, 38, 0.08); }

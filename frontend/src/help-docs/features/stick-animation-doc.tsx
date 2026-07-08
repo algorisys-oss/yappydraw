@@ -152,6 +152,23 @@ Y.bakeAnimatedFigure(a);                          // freeze current frame → ed
                 </p>
             </section>
 
+            {/* ─── EXPORT ───────────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Export your animation as a video</h2>
+                <p>
+                    To share a moving animation, <strong>record it to video</strong>. With an animated figure
+                    selected, click <strong>Record video</strong> in the panel — it captures the live canvas (all
+                    figures, sequences and path-follow, exactly as they play) and then <strong>Stop &amp; save
+                    recording</strong> downloads a <code>.webm</code> file. (A red recording indicator shows while
+                    it runs.)
+                </p>
+                <p class="tip-box">
+                    Recording captures whatever is on screen, so pan/zoom to frame your scene first. Also available
+                    from Export → Video, and via the API: <code>recordAnimation(seconds?)</code> /
+                    <code> stopRecording()</code>.
+                </p>
+            </section>
+
             {/* ─── NOTES ────────────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Good to know</h2>
@@ -159,8 +176,8 @@ Y.bakeAnimatedFigure(a);                          // freeze current frame → ed
                     <li>An animated figure is a single object — move, scale, rotate and recolour it like any shape.</li>
                     <li>It renders procedurally from a skeleton; to hand-edit the artwork, <strong>Bake</strong> it to
                         paths first.</li>
-                    <li>A richer <em>storytelling director</em> (timeline, walk-along-a-path, and animated export to
-                        video) is on the roadmap; today you compose on the canvas and can bake stills.</li>
+                    <li>Share a moving animation by <strong>recording it to video</strong> (above); bake a frame for a
+                        still. Static image/PDF/HTML export captures a single frame, not the motion.</li>
                 </ul>
             </section>
         </div>
