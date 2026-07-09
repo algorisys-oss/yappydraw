@@ -1,0 +1,120 @@
+.cpp {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 220px;
+    user-select: none;
+    touch-action: none;
+}
+
+.cpp-modes {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.cpp-mode {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.15));
+    border-radius: 6px;
+    background: var(--bg-secondary, #f5f5f5);
+    color: var(--text-primary, #222);
+    cursor: pointer;
+}
+.cpp-mode.active {
+    background: var(--accent, #5f3dc4);
+    border-color: var(--accent, #5f3dc4);
+    color: #fff;
+}
+.cpp-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+    margin-left: auto;
+}
+
+/* Square (saturation/value) area */
+.cpp-sv {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    border-radius: 8px;
+    cursor: crosshair;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.cpp-sv-handle,
+.cpp-hue-handle {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+/* Hue slider */
+.cpp-hue {
+    position: relative;
+    width: 100%;
+    height: 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+}
+.cpp-hue-handle {
+    top: 50%;
+}
+
+/* Triangle (hue ring) */
+.cpp-tri {
+    width: 150px;
+    height: 150px;
+    align-self: center;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.cpp-hex {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: monospace;
+    font-size: 12px;
+}
+.cpp-hex span {
+    color: var(--text-secondary, #888);
+}
+.cpp-hex input {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 6px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.15));
+    border-radius: 4px;
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #222);
+    font-family: monospace;
+    text-transform: uppercase;
+}
+
+.cpp-recents {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.cpp-recent {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    padding: 0;
+}

@@ -30,6 +30,7 @@ import { getImage } from "../utils/image-cache";
 import { PATTERN_PRESETS, defaultPatternFill } from "../utils/pattern-fill";
 import { showToast } from "./toast";
 import MathNumberInput from "./math-number-input";
+import { ColorPickerPro } from "./color-picker-pro";
 import { playSequence } from "../utils/animation/orchestrator";
 import { AnimationPanel } from "./animation-panel";
 import { resizeTableData, defaultColWidths, defaultRowHeights, defaultTableData } from "../utils/table-utils";
@@ -411,21 +412,28 @@ const ColorControl: Component<{ prop: PropertyConfig, value: any, onChange: (val
                 </div>
 
                 <Show when={showPicker()}>
-                    <div class="hex-input-row" style={{ "margin-top": "12px" }}>
-                        <span class="hash">#</span>
-                        <input
-                            type="text"
-                            class="hex-input"
-                            value={String(props.value ?? '').replace('#', '')}
-                            onInput={(e) => props.onChange('#' + e.currentTarget.value)}
+                    <div style={{ "margin-top": "12px", display: "flex", "flex-direction": "column", gap: "10px" }}>
+                        <ColorPickerPro
+                            value={typeof props.value === 'string' && props.value.startsWith('#') ? props.value : '#000000'}
+                            onStart={() => pushToHistory()}
+                            onChange={(hex) => props.onChange(hex)}
                         />
-                        <div class="system-picker-wrapper">
+                        <div class="hex-input-row">
+                            <span class="hash">#</span>
                             <input
-                                type="color"
-                                value={typeof props.value === 'string' && props.value.startsWith('#') ? props.value : '#000000'}
-                                onFocus={() => pushToHistory()}
-                                onInput={(e) => props.onChange(e.currentTarget.value)}
+                                type="text"
+                                class="hex-input"
+                                value={String(props.value ?? '').replace('#', '')}
+                                onInput={(e) => props.onChange('#' + e.currentTarget.value)}
                             />
+                            <div class="system-picker-wrapper">
+                                <input
+                                    type="color"
+                                    value={typeof props.value === 'string' && props.value.startsWith('#') ? props.value : '#000000'}
+                                    onFocus={() => pushToHistory()}
+                                    onInput={(e) => props.onChange(e.currentTarget.value)}
+                                />
+                            </div>
                         </div>
                     </div>
                 </Show>
