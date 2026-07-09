@@ -403,6 +403,40 @@
     text-align: right;
 }
 
+.qt-mini-slider-value.editable {
+    cursor: text;
+    border-radius: 3px;
+    padding: 1px 2px;
+    margin: -1px -2px;
+}
+
+.qt-mini-slider-value.editable:hover {
+    background: var(--hover-bg, rgba(0, 0, 0, 0.06));
+    color: var(--text-primary, #111827);
+}
+
+.qt-mini-slider-input {
+    width: 30px;
+    min-width: 30px;
+    font-size: 10px;
+    text-align: right;
+    padding: 1px 2px;
+    border: 1px solid var(--primary-color, #3b82f6);
+    border-radius: 3px;
+    background: var(--surface-color, #fff);
+    color: var(--text-primary, #111827);
+    outline: none;
+    /* hide the spin buttons — the toolbar is tight */
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.qt-mini-slider-input::-webkit-outer-spin-button,
+.qt-mini-slider-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 /* ============ Mindmap Action Section ============ */
 /* Reuses the existing toolbar-btn pattern from mindmap toolbar */
 .qt-action-btn {

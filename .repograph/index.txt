@@ -196,8 +196,8 @@ frontend/src/components/property-panel.css | - | 778 |
 frontend/src/components/property-panel.tsx | typescript | 2111 | Component:1 PropertyConfig:23 isMixed:43 templates:66 handleClickOutside:68 handlePresent:123 calls:212 SlideActions:279 handlePreviewTransition:280 AlignmentControls:296 gapVal:298 hasOptions:336 activePaletteId:341 activePalette:342 paletteSwatches:344 swatches:346 ap:439 fills:440 strokes:441 commit:442 editFill:448 editStroke:449 move:450 patValue:460 onPatChange:461 sg:507 stops:508 setSG:509 editStop:510 mesh:538 ids:539 row:558 col:559 pat:594 ids:595 transparentBg:599 isCustom:600 updateStops:707 handleBarMouseDown:712 handleThumbMouseDown:729 onMove:734 onUp:744 PropertyPanel:849 handleChange:1019 seeds:1039 seeds:1046 getPropertyValue:1324 handleDelete:1403 renderControl:1410 colorVal:1413 sliderVal:1428 sliderDisplay:1429 filteredOptions:1459 selectVal:1470 applyVal:1472 isDisabled:1517 toggleVal:1525 inputVal:1541 textareaVal:1560 appendLine:1562 imgVal:1592 commit:1593 onFile:1595 numVal:1636 applyFontKey:1660 isSearching:1667 toggleGroup:1698 handleContentScroll:1708
 frontend/src/components/puppet-warp-overlay.css | - | 36 |
 frontend/src/components/puppet-warp-overlay.tsx | typescript | 110 | PuppetWarpOverlay:12 target:19 warpable:20 active:21 notice:23 toWorld:24 pinWorld:27 hitPin:33 onDown:42 onMove:63 onUp:70 onKey:76 pinDots:81
-frontend/src/components/quick-toolbar.css | - | 503 |
-frontend/src/components/quick-toolbar.tsx | typescript | 751 | Component:7 QuickPropertyDef:15 getIcon:63 handleDocClick:112 isTransparent:129 handleDocClick:177 activeOption:193 isActive:233 toggle:239 handleDocClick:301 activeLabel:317 categories:321 QuickToolbar:374 selectedElement:378 handler:460 handlePropertyChange:474 handlePropertyStart:519 x:526 y:551 value:587 isDisabled:630
+frontend/src/components/quick-toolbar.css | - | 537 |
+frontend/src/components/quick-toolbar.tsx | typescript | 796 | Component:7 QuickPropertyDef:15 getIcon:63 handleDocClick:112 isTransparent:129 handleDocClick:177 activeOption:193 isActive:233 toggle:239 an:263 clamp:275 beginEdit:277 commit:282 a:305 handleDocClick:346 activeLabel:362 categories:366 QuickToolbar:419 selectedElement:423 handler:505 handlePropertyChange:519 handlePropertyStart:564 x:571 y:596 value:632 isDisabled:675
 frontend/src/components/recolor-panel.css | - | 61 |
 frontend/src/components/recolor-panel.tsx | typescript | 98 | Component:1 RecolorPanel:16 swatches:23 beginEdit:25 pickLive:31 endEdit:38 valHex:39
 frontend/src/components/recording-overlay.css | - | 100 |
@@ -364,7 +364,7 @@ frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 37
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 224 | StickAnimationDoc:9
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
-frontend/src/help-docs/features/workspace-doc.tsx | typescript | 129 | WorkspaceDoc:9 and:32
+frontend/src/help-docs/features/workspace-doc.tsx | typescript | 135 | WorkspaceDoc:9 and:32 a:37
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 587 | YslTutorialDoc:8
 frontend/src/help-docs/help-page.css | - | 411 |
 frontend/src/help-docs/help-page.tsx | typescript | 393 | Component:6 ShapeDoc:11 Tools:130 vertical:134 getShapeFromHash:286 HelpPage:292 handleHashChange:298 navigateToShape:309 filteredShapes:314 currentDoc:325 handleBackToApp:327

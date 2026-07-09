@@ -260,7 +260,7 @@ const IconToggleControl: Component<{
     );
 };
 
-/** Mini slider */
+/** Mini slider — drag the track, or tap the value to type an exact number */
 const MiniSliderControl: Component<{
     value: number;
     min: number;
@@ -270,6 +270,21 @@ const MiniSliderControl: Component<{
     onChange: (val: number) => void;
     onStart: () => void;
 }> = (props) => {
+    const [editing, setEditing] = createSignal(false);
+
+    const clamp = (v: number) => Math.min(props.max, Math.max(props.min, v));
+
+    const beginEdit = () => {
+        props.onStart(); // snapshot history once, before edits (mirrors the track's onMouseDown)
+        setEditing(true);
+    };
+
+    const commit = (raw: string) => {
+        setEditing(false);
+        const n = Number(raw);
+        if (raw.trim() !== '' && !Number.isNaN(n)) props.onChange(clamp(n));
+    };
+
     return (
         <div class="qt-mini-slider" title={props.label}>
             <input
@@ -282,7 +297,37 @@ const MiniSliderControl: Component<{
                 onTouchStart={props.onStart}
                 onInput={(e) => props.onChange(Number(e.currentTarget.value))}
             />
-            <span class="qt-mini-slider-value">{Math.round(props.value ?? props.max)}</span>
+            <Show
+                when={editing()}
+                fallback={
+                    <span
+                        class="qt-mini-slider-value editable"
+                        title={`${props.label}: tap to type a value`}
+                        onClick={beginEdit}
+                    >
+                        {Math.round(props.value ?? props.max)}
+                    </span>
+                }
+            >
+                <input
+                    class="qt-mini-slider-input"
+                    type="number"
+                    min={props.min}
+                    max={props.max}
+                    step={props.step}
+                    value={Math.round(props.value ?? props.max)}
+                    ref={(el) => queueMicrotask(() => { el.focus(); el.select(); })}
+                    onInput={(e) => {
+                        const n = Number(e.currentTarget.value);
+                        if (e.currentTarget.value.trim() !== '' && !Number.isNaN(n)) props.onChange(clamp(n));
+                    }}
+                    onBlur={(e) => commit(e.currentTarget.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); commit(e.currentTarget.value); }
+                        else if (e.key === 'Escape') { e.preventDefault(); setEditing(false); }
+                    }}
+                />
+            </Show>
         </div>
     );
 };

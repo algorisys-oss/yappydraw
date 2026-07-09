@@ -32,6 +32,12 @@ const WorkspaceDoc: Component = () => {
                     show line width, type and arrowheads; text shows font, size and weight; images show filter presets.
                     Collapse it to a tiny chip with the slider icon; toggle it in Settings.
                 </p>
+                <p>
+                    <strong>Type an exact value on any mini-slider.</strong> Drag the little sliders (font size, opacity,
+                    …) for a quick nudge, or <strong>tap/click the number</strong> beside a slider to type a precise
+                    value — press <strong>Enter</strong> to apply, <strong>Esc</strong> to cancel. Values clamp to the
+                    slider's range automatically.
+                </p>
             </section>
 
             {/* ─── ALIGN & DISTRIBUTE ─────────────────────────────────── */}
