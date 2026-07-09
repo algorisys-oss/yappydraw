@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.37](0.8.37.md) — Mind-map layouts (dual-side + top-down) from the DSL, per-branch colour + curved links; curved connectors export as real curves
 - [0.8.36](0.8.36.md) — Quick-toolbar font-size slider steps by 1 (was 2)
 - [0.8.35](0.8.35.md) — Global colour palette: transparent swatch reads as transparent (checkerboard)
 - [0.8.34](0.8.34.md) — UML relations: spread fan-in arrowheads + edge arrowheads in the text DSL

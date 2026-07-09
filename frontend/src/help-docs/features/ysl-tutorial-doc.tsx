@@ -329,6 +329,9 @@ a    -> b     { startArrowhead: none, endArrowhead: arrow }`}</code></pre>
                         <tr><td><code>tree-up</code></td><td>Bottom-up trees</td><td>Root at bottom, branches flow up</td></tr>
                         <tr><td><code>tree-left</code></td><td>Right-to-left flows</td><td>Root at right, branches flow left</td></tr>
                         <tr><td><code>radial</code></td><td>Topic maps</td><td>Root at center, branches radiate outward</td></tr>
+                        <tr><td><code>mindmap-radial</code></td><td>Mind maps</td><td>Central node, branches split dual-side (left/right) — auto pill nodes, per-branch colour, curved links</td></tr>
+                        <tr><td><code>mindmap-down-curved</code></td><td>Mind maps</td><td>Top-down, curved branch connectors + per-branch colour</td></tr>
+                        <tr><td><code>mindmap-down-straight</code></td><td>Mind maps</td><td>Top-down, straight connectors + per-branch colour</td></tr>
                         <tr><td><code>grid</code></td><td>Showcases, catalogs</td><td>Row-major grid with configurable columns</td></tr>
                         <tr><td><code>sequence</code></td><td>Sequence diagrams</td><td>Lifelines left-to-right, messages vertical</td></tr>
                         <tr><td><code>manual</code></td><td>Free placement</td><td>Uses explicit x/y positions or auto-grid fallback</td></tr>

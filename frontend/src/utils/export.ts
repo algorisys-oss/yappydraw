@@ -190,6 +190,52 @@ function umlArrowheadGlyph(
 }
 
 /**
+ * Stroke path `d` for a curved/elbow connector, mirroring the on-canvas
+ * connector-renderer so exported SVG shows the actual curve instead of a straight
+ * chord. Returns null for a straight connector (caller draws a plain line). Uses the
+ * same default control points as the canvas: cp offset along the dominant axis.
+ */
+function connectorCurvePath(el: DrawingElement): string | null {
+    if (el.curveType !== 'bezier' && el.curveType !== 'elbow') return null;
+    const start = { x: el.x, y: el.y };
+    const end = { x: el.x + el.width, y: el.y + el.height };
+
+    if (el.curveType === 'elbow') {
+        const w = el.width, h = el.height;
+        const mid = Math.abs(w) > Math.abs(h)
+            ? `L ${start.x + w / 2} ${start.y} L ${start.x + w / 2} ${end.y} `
+            : `L ${start.x} ${start.y + h / 2} L ${end.x} ${start.y + h / 2} `;
+        return `M ${start.x} ${start.y} ${mid}L ${end.x} ${end.y}`;
+    }
+
+    const cps = el.controlPoints;
+    if (cps && cps.length > 1) {
+        return `M ${start.x} ${start.y} C ${cps[0].x} ${cps[0].y}, ${cps[1].x} ${cps[1].y}, ${end.x} ${end.y}`;
+    }
+    if (cps && cps.length === 1) {
+        return `M ${start.x} ${start.y} Q ${cps[0].x} ${cps[0].y}, ${end.x} ${end.y}`;
+    }
+    const w = el.width, h = el.height;
+    const [cp1, cp2] = Math.abs(w) > Math.abs(h)
+        ? [{ x: start.x + w / 2, y: start.y }, { x: end.x - w / 2, y: end.y }]
+        : [{ x: start.x, y: start.y + h / 2 }, { x: end.x, y: end.y - h / 2 }];
+    return `M ${start.x} ${start.y} C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${end.x} ${end.y}`;
+}
+
+/** Plain SVG <path> for a connector stroke `d`, styled from the element. */
+function connectorPathEl(el: DrawingElement, d: string): SVGPathElement {
+    const p = document.createElementNS(SVGNS, 'path');
+    p.setAttribute('d', d);
+    p.setAttribute('fill', 'none');
+    p.setAttribute('stroke', el.strokeColor || '#000');
+    p.setAttribute('stroke-width', `${el.strokeWidth || 2}`);
+    p.setAttribute('stroke-linecap', 'round');
+    if (el.strokeStyle === 'dashed') p.setAttribute('stroke-dasharray', '10 10');
+    else if (el.strokeStyle === 'dotted') p.setAttribute('stroke-dasharray', '2 8');
+    return p;
+}
+
+/**
  * Convert a shape's geometry (centred frame: origin at the element centre) into one or
  * more SVG path `d` strings. Used to export shapes as true vector `<path>`s instead of
  * embedded raster images. Returns `{ ds, evenOdd }` — `evenOdd` requests the even-odd
@@ -648,9 +694,11 @@ export const exportToSvg = (onlySelected: boolean) => {
             const endX = el.x + el.width;
             const endY = el.y + el.height;
 
+            const curveD = connectorCurvePath(el);
+
             if (el.type === 'arrow') {
                 const arrowG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                arrowG.appendChild(rc.line(el.x, el.y, endX, endY, options));
+                arrowG.appendChild(curveD ? connectorPathEl(el, curveD) : rc.line(el.x, el.y, endX, endY, options));
 
                 const angle = Math.atan2(el.height, el.width);
                 const startHeadLen = el.startArrowheadSize || 28;
@@ -682,7 +730,7 @@ export const exportToSvg = (onlySelected: boolean) => {
                 }
                 node = arrowG;
             } else {
-                node = rc.line(el.x, el.y, endX, endY, options);
+                node = curveD ? connectorPathEl(el, curveD) : rc.line(el.x, el.y, endX, endY, options);
             }
         } else if ((el.type === 'text' || el.type === 'richtext') && (el.text || (el.richText && el.richText.length > 0))) {
             const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');

@@ -49,6 +49,9 @@ export type DSLLayoutStrategy =
     | 'sequence'
     | 'radial'
     | 'mindmap-right'
+    | 'mindmap-radial'          // dual-side: children alternate left/right of a central node
+    | 'mindmap-down-curved'     // top-down tree, curved branch connectors
+    | 'mindmap-down-straight'   // top-down tree, straight connectors
     | 'manual';
 
 export interface DSLLayoutConfig {

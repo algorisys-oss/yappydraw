@@ -315,12 +315,13 @@ frontend/src/dsl/adapters/rocket/state-parser.ts | typescript | 368 | parseTrans
 frontend/src/dsl/adapters/rocket/types.ts | typescript | 271 | RocketExportResult:10 RocketExportMessage:17 RocketImportSchema:25 RocketEntity:39 RocketPrimaryKey:47 RocketField:53 RocketRelation:67 RocketRule:83 RocketStateMachine:94 RocketTransition:104 RocketTransitionAction:113 ParsedField:121 ParsedRelation:136 ParsedMethod:146 ParsedState:155 ParsedTransition:163 ParsedStateMachine:171 RocketWorkflow:179 RocketWorkflowTrigger:187 RocketWorkflowStep:196 RocketWorkflowAction:217 RocketWorkflowAssignee:228 StepGoto:235 ParsedWorkflowNodeType:239 ParsedWorkflowNode:243 ParsedWorkflowEdge:257 ParsedWorkflow:264
 frontend/src/dsl/adapters/rocket/workflow-parser.test.ts | typescript | 690 | makeNode:14 makeEdge:18
 frontend/src/dsl/adapters/rocket/workflow-parser.ts | typescript | 704 | isBpmnWorkflowNode:54 toSnakeCase:60 parseContainerText:73 parseActionConfig:114 classifyBpmnNode:159 parseWorkflowDiagram:195 convertToRocketWorkflow:317 buildTrigger:406 buildStep:436 buildActionStep:467 buildApprovalStep:502 buildAssignee:552 buildGatewayStep:564 buildParallelGatewayStep:639 buildBusinessRuleStep:671
-frontend/src/dsl/engine/dsl-engine.ts | typescript | 963 | SeqFragmentBox:18 renderDiagram:27 renderNode:170 EdgeAnchors:236 distributeClassEdgeAnchors:251 renderEdge:320 SeqParticipant:365 makeSeqLabel:376 renderSequenceTimeline:391 renderSequenceMessage:484 renderSequenceNote:536 renderSequenceFragment:585 PoolLayoutResult:638 computePoolLayout:653 renderPoolSized:744 flattenNodes:783 setParentChildRelationships:798 findLaneIndex:821 applyAutoSizing:832 computeFittedSize:858 computeUmlFittedSize:923
+frontend/src/dsl/engine/dsl-engine.ts | typescript | 969 | SeqFragmentBox:18 renderDiagram:28 renderNode:176 EdgeAnchors:242 distributeClassEdgeAnchors:257 renderEdge:326 SeqParticipant:371 makeSeqLabel:382 renderSequenceTimeline:397 renderSequenceMessage:490 renderSequenceNote:542 renderSequenceFragment:591 PoolLayoutResult:644 computePoolLayout:659 renderPoolSized:750 flattenNodes:789 setParentChildRelationships:804 findLaneIndex:827 applyAutoSizing:838 computeFittedSize:864 computeUmlFittedSize:929
+frontend/src/dsl/engine/mindmap-style.ts | typescript | 107 | isMindmapStrategy:28 applyMindmapStyling:32 paintSubtree:72 walkNodes:77 styleCentral:84 stylePill:97
 frontend/src/dsl/engine/render-helpers.ts | typescript | 94 | mergeNodeStyle:11 mergeEdgeStyle:39 mapStyleToOptions:62
 frontend/src/dsl/index.ts | typescript | 54 |
-frontend/src/dsl/layout/layout-manager.ts | typescript | 121 | flattenNodes:16 computeLayout:30 computeManualLayout:66 computeGridLayout:95
+frontend/src/dsl/layout/layout-manager.ts | typescript | 124 | flattenNodes:16 computeLayout:30 computeManualLayout:69 computeGridLayout:98
 frontend/src/dsl/layout/strategies/sequence-layout.ts | typescript | 260 | SeqPlacement:42 SeqFragmentBox:50 SeqActivation:62 SequenceTimeline:70 getSequenceEvents:84 estimateNoteHeight:93 computeSequenceTimeline:105 computeSequenceLayout:213
-frontend/src/dsl/layout/strategies/tree-layout.ts | typescript | 330 | TreeNode:14 TreeDirection:25 computeTreeLayout:31 buildTree:141 buildAdjacencyFromChildren:172 calculateSubtreeWidths:192 assignVerticalPositions:203 calculateSubtreeHeights:230 assignHorizontalPositions:241 layoutRadial:268 assignRadialPositions:273 getDirection:301 collectPositions:313 getTreeBounds:321
+frontend/src/dsl/layout/strategies/tree-layout.ts | typescript | 373 | TreeNode:14 TreeDirection:25 computeTreeLayout:31 buildTree:143 buildAdjacencyFromChildren:174 calculateSubtreeWidths:194 assignVerticalPositions:205 calculateSubtreeHeights:232 assignHorizontalPositions:243 layoutRadial:270 assignRadialPositions:275 getDirection:303 layoutDualSide:327 collectPositions:356 getTreeBounds:364
 frontend/src/dsl/layout/types.ts | typescript | 19 | NodePosition:5 LayoutPositionMap:12 LayoutConfig:14
 frontend/src/dsl/parser/index.ts | typescript | 66 | parseDSL:26
 frontend/src/dsl/parser/json-parser.ts | typescript | 62 | parseJsonDSL:12
@@ -328,7 +329,7 @@ frontend/src/dsl/parser/schema-validator.ts | typescript | 138 | validateDiagram
 frontend/src/dsl/parser/text-parser.ts | typescript | 555 | EdgeOpDef:37 parseTextDSL:77 parseFrontmatterLine:370 parseInlineStyle:412 splitRespectingQuotes:450 parseMemberList:486 splitInlineProps:498 generateEdgesFromChildren:532
 frontend/src/dsl/shape-aliases.ts | typescript | 123 | resolveShapeType:119
 frontend/src/dsl/shape-defaults.ts | typescript | 140 | ShapeSize:9 getShapeDefaults:138
-frontend/src/dsl/types.ts | typescript | 302 | DSLDiagram:14 DSLDiagramMeta:33 DSLLayoutStrategy:41 DSLLayoutConfig:54 DSLNode:64 DSLNodeStyle:83 DSLEdge:141 DSLEdgeStyle:154 DSLSequenceMeta:170 DSLSequenceEvent:177 DSLSeqMessageEvent:187 DSLSeqNoteEvent:197 DSLSeqFragmentStartEvent:206 DSLSeqFragmentSectionEvent:217 DSLSeqFragmentEndEvent:224 DSLSeqActivateEvent:230 DSLSeqDeactivateEvent:236 DSLGroup:243 DSLPool:252 DSLLane:260 DSLStyleDefaults:269 ParseError:277 ParseResult:283 RenderOptions:290 RenderResult:297
+frontend/src/dsl/types.ts | typescript | 305 | DSLDiagram:14 DSLDiagramMeta:33 DSLLayoutStrategy:41 DSLLayoutConfig:57 DSLNode:67 DSLNodeStyle:86 DSLEdge:144 DSLEdgeStyle:157 DSLSequenceMeta:173 DSLSequenceEvent:180 DSLSeqMessageEvent:190 DSLSeqNoteEvent:200 DSLSeqFragmentStartEvent:209 DSLSeqFragmentSectionEvent:220 DSLSeqFragmentEndEvent:227 DSLSeqActivateEvent:233 DSLSeqDeactivateEvent:239 DSLGroup:246 DSLPool:255 DSLLane:263 DSLStyleDefaults:272 ParseError:280 ParseResult:286 RenderOptions:293 RenderResult:300
 frontend/src/dsl/ysl/ast.ts | typescript | 282 | BaseNode:13 Program:20 FrontmatterDecl:28 Statement:35 LetDecl:56 ConstDecl:62 NodeDecl:70 EdgeDecl:80 PoolDecl:89 LaneDecl:95 PoolAssign:102 ForLoop:111 IfStatement:118 FnDecl:128 FnCall:135 TemplateDecl:143 UseTemplate:150 GroupBlock:156 AnimateBlock:165 AnimateStatement:170 EventHandler:193 ApiCall:202 Expression:210 StringLiteral:223 NumberLiteral:228 BoolLiteral:233 Identifier:238 InterpolatedString:243 BinaryExpr:248 UnaryExpr:255 ArrayLiteral:261 MemberExpr:266 RangeExpr:272 CallExpr:278
 frontend/src/dsl/ysl/environment.ts | typescript | 68 | SourceLocation:8 YSLValue:10 Environment:12
 frontend/src/dsl/ysl/errors.ts | typescript | 46 | SourceLocation:6 YSLError:11{constructor:15} LexerError:27{constructor:28} ParseError:34{constructor:35} RuntimeError:41{constructor:42}
@@ -365,7 +366,7 @@ frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 224 | Sti
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 135 | WorkspaceDoc:9 and:32 a:37
-frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 634 | YslTutorialDoc:8 members:538 Subject:553
+frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 637 | YslTutorialDoc:8 members:541 Subject:556
 frontend/src/help-docs/help-page.css | - | 411 |
 frontend/src/help-docs/help-page.tsx | typescript | 393 | Component:6 ShapeDoc:11 Tools:130 vertical:134 getShapeFromHash:286 HelpPage:292 handleHashChange:298 navigateToShape:309 filteredShapes:314 currentDoc:325 handleBackToApp:327
 frontend/src/help-docs/shapes/basic-shapes-doc.tsx | typescript | 284 | BasicShapesDoc:8
@@ -523,7 +524,7 @@ frontend/src/utils/envelope-warp.ts | typescript | 252 | Pt:20 WarpGrid:21 getWa
 frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19 parseExpr:72
 frontend/src/utils/export-game.ts | typescript | 42 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
-frontend/src/utils/export.ts | typescript | 1332 | ShapeGeometry:13 buildAppearanceSvgGroup:22 buildUmlClassNode:81 umlArrowheadGlyph:173 geometryToDs:198 renderPagedDocToCanvas:243
+frontend/src/utils/export.ts | typescript | 1380 | ShapeGeometry:13 buildAppearanceSvgGroup:22 buildUmlClassNode:81 umlArrowheadGlyph:173 connectorCurvePath:198 connectorPathEl:226 geometryToDs:244 renderPagedDocToCanvas:289
 frontend/src/utils/geometry-scale.ts | typescript | 69 | scalePoints:13 scalePathAnchors:33 scalePathSubpaths:47 scaleEraseStrokes:53
 frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
 frontend/src/utils/geometry.ts | typescript | 433 | isPointInPolygon:5 distanceToSegment:19 cubicBezier:59 cubicBezierAngle:64 getBezierPoints:98 isPointOnBezier:111 isPointOnPolyline:117 isPointInEllipse:128 isPointNearEllipseStroke:142 rotatePoint:177 with:356

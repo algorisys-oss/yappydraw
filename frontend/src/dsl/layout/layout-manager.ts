@@ -46,6 +46,9 @@ export function computeLayout(diagram: DSLDiagram): LayoutPositionMap {
         case 'tree-left':
         case 'radial':
         case 'mindmap-right':
+        case 'mindmap-radial':
+        case 'mindmap-down-curved':
+        case 'mindmap-down-straight':
             return computeTreeLayout(allNodes, edges, strategy, config, diagram.nodes);
 
         case 'grid':

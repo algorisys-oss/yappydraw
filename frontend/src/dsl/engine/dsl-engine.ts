@@ -20,6 +20,7 @@ import {
 import { YappyAPI } from '../../api';
 import { store, setStore, pushToHistory, deleteElements } from '../../store/app-store';
 import { fitShapeToText, getMeasurementRenderer, getFontString } from '../../utils/text-utils';
+import { applyMindmapStyling } from './mindmap-style';
 
 /**
  * Render a DSLDiagram to the canvas.
@@ -46,6 +47,11 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
         setStore("showSlideNavigator", false);
         setStore("activeSlideIndex", 0);
     }
+
+    // Mind-map layouts get their Miro-style look (pill nodes, per-branch colour,
+    // curved links) applied here so it follows from `layout: mindmap-*` alone.
+    // Runs before auto-sizing so any style-driven sizing is picked up.
+    applyMindmapStyling(diagram);
 
     // Pre-compute text-fitted sizes on nodes that lack explicit dimensions.
     // This ensures the layout engine spaces nodes correctly based on label length.

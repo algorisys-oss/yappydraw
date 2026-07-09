@@ -88,7 +88,9 @@ export function computeTreeLayout(
         const tree = buildTree(root.id, adjacency, nodeDims, visited);
         if (!tree) continue;
 
-        if (direction === 'radial') {
+        if (strategy === 'mindmap-radial') {
+            layoutDualSide(tree, offsetX, offsetY, hSpacing, vSpacing);
+        } else if (direction === 'radial') {
             layoutRadial(tree, offsetX, offsetY, hSpacing);
         } else if (direction === 'right' || direction === 'left') {
             calculateSubtreeHeights(tree, vSpacing);
@@ -306,8 +308,49 @@ function getDirection(strategy: DSLLayoutStrategy): TreeDirection | 'radial' {
         case 'tree-left': return 'left';
         case 'radial': return 'radial';
         case 'mindmap-right': return 'right';
+        case 'mindmap-radial': return 'right';           // handled specially (dual-side), value unused
+        case 'mindmap-down-curved': return 'down';
+        case 'mindmap-down-straight': return 'down';
         default: return 'down';
     }
+}
+
+// ─── Dual-side mind-map layout ───────────────────────────
+
+/**
+ * Balanced two-sided horizontal mind-map (Miro "Mind Map" / "Dual Side"): the
+ * central node sits at the origin and its top-level branches are split into a
+ * right group and a left group, each laid out horizontally away from the centre.
+ * Descendants of a right branch grow rightward; left branch descendants leftward.
+ * Splitting in document order (first half → right) keeps each side readable.
+ */
+function layoutDualSide(root: TreeNode, originX: number, originY: number, hSpacing: number, vSpacing: number) {
+    root.x = originX;
+    root.y = originY;
+    const kids = root.children;
+    if (kids.length === 0) return;
+
+    const mid = Math.ceil(kids.length / 2);
+    const rightKids = kids.slice(0, mid);
+    const leftKids = kids.slice(mid);
+
+    // Lay each side out as if `root` had only that side's children. The shallow
+    // copies share the real child TreeNodes, so positions land on the originals;
+    // both sides re-use `root`'s own x/y (the centre) as their anchor.
+    if (rightKids.length > 0) {
+        const rightRoot: TreeNode = { ...root, children: rightKids };
+        calculateSubtreeHeights(rightRoot, vSpacing);
+        assignHorizontalPositions(rightRoot, originX, originY, 'right', hSpacing, vSpacing);
+    }
+    if (leftKids.length > 0) {
+        const leftRoot: TreeNode = { ...root, children: leftKids };
+        calculateSubtreeHeights(leftRoot, vSpacing);
+        assignHorizontalPositions(leftRoot, originX, originY, 'left', hSpacing, vSpacing);
+    }
+    // Restore the centre (assignHorizontalPositions overwrote root.x/y on the copies,
+    // not the original, but be explicit).
+    root.x = originX;
+    root.y = originY;
 }
 
 function collectPositions(node: TreeNode, positions: LayoutPositionMap, nodeDims: Map<string, { w: number; h: number }>) {
