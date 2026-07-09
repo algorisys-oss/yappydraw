@@ -1926,6 +1926,41 @@ export const YappyAPI = {
     setParent(childId: string, parentId: string | null) { setParent(childId, parentId); },
     reorderMindmap(rootId: string, direction: LayoutDirection) { reorderMindmap(rootId, direction); },
     applyMindmapStyling(rootId: string) { applyMindmapStyling(rootId); },
+    /**
+     * Seed a ready-to-edit mind map: an emphasised central node with a few branches
+     * (some with sub-branches), laid out + coloured via the existing mindmap engine.
+     * `direction` is any mindmap layout — 'balanced' (dual-side), 'radial',
+     * 'horizontal-right', 'vertical-down', etc. Returns the central node's id.
+     */
+    createMindMap(opts?: { x?: number; y?: number; title?: string; direction?: LayoutDirection; branches?: { label: string; children?: string[] }[] }) {
+        const vs = store.viewState;
+        const cx = opts?.x ?? (vs ? (window.innerWidth / 2 - vs.panX) / vs.scale : 400);
+        const cy = opts?.y ?? (vs ? (window.innerHeight / 2 - vs.panY) / vs.scale : 300);
+        const direction = opts?.direction ?? 'balanced';
+        const branches = opts?.branches ?? [
+            { label: 'Idea 1' },
+            { label: 'Idea 2', children: ['Detail A', 'Detail B'] },
+            { label: 'Idea 3' },
+            { label: 'Idea 4' },
+        ];
+
+        pushToHistory();
+        const rootId = this.createElement('rectangle', cx - 85, cy - 32, 170, 64, {
+            containerText: opts?.title ?? 'Central Idea',
+            backgroundColor: '#5f3dc4', strokeColor: '#3b2a99', textColor: '#ffffff',
+            fillStyle: 'solid', borderRadius: 24,
+        });
+        for (const b of branches) {
+            const bid = addChildNode(rootId, { text: b.label, recordHistory: false, select: false, reflow: false });
+            if (bid && b.children) {
+                for (const c of b.children) addChildNode(bid, { text: c, recordHistory: false, select: false, reflow: false });
+            }
+        }
+        reorderMindmap(rootId, direction);   // sets mindmapDir + lays out the tree
+        applyMindmapStyling(rootId);          // per-branch colour
+        this.select(rootId);
+        return rootId;
+    },
     /** Build a mindmap subtree under `parentId` from an indented/bulleted text outline. Returns the new node ids. */
     mindmapFromOutline(parentId: string, outline: string) { return pasteMindmapOutline(parentId, parseOutline(outline)); },
     /** Pathfinder boolean over ≥2 element ids: 'union' | 'subtract' | 'intersect' | 'exclude'. Returns new path ids. */

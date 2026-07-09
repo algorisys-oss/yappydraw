@@ -12,7 +12,7 @@ import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
-    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, PersonStanding, Gamepad2, Workflow, ChevronDown, Code
+    Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, PersonStanding, Gamepad2, Workflow, ChevronDown, Code, Network
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
@@ -738,6 +738,10 @@ const Menu: Component = () => {
                                     <button class="menu-item" onClick={() => { setIsDesignSizeOpen(true); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
                                         <span class="label">New Design…</span>
+                                    </button>
+                                    <button class="menu-item" onClick={() => { YappyAPI.createMindMap(); setIsMenuOpen(false); }}>
+                                        <Network size={16} />
+                                        <span class="label">New Mind Map</span>
                                     </button>
                                     <Show when={isPagedDocType(store.docType)}>
                                         <button class="menu-item" onClick={() => { setIsMagicResizeOpen(true); setIsMenuOpen(false); }}>
