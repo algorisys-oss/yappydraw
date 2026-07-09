@@ -523,6 +523,41 @@ Yappy.importMermaid(\`graph TD
 \`);`}</code></pre>
             </section>
 
+            {/* UML class members */}
+            <section class="doc-section">
+                <h2>UML Class Members</h2>
+                <p>
+                    Give a <code>[class]</code> (or <code>[interface]</code>) node attribute and
+                    method compartments with <code>attributes:</code> and <code>methods:</code>
+                    keys inside its <code>{'{ … }'}</code> block. Separate members with a
+                    semicolon (<code>;</code>):
+                </p>
+                <pre><code>{`Subject [class] "Subject" {
+  attributes: "-observers: List",
+  methods: "subscribe(o); notify(data)"
+}`}</code></pre>
+                <p>
+                    The equivalent Mermaid <code>classDiagram</code> block works too — both the
+                    same-line brace (<code>class Subject {'{'}</code>) and the brace on the next
+                    line are accepted, and each relationship arrow renders its proper UML
+                    arrowhead (see the UML shapes help).
+                </p>
+            </section>
+
+            {/* Headless / CLI export */}
+            <section class="doc-section">
+                <h2>Headless SVG Export (CLI)</h2>
+                <p>
+                    Render a <code>.ysl</code> / <code>.mmd</code> file to SVG from the terminal —
+                    handy for batch or CI diagram generation. It boots a headless browser,
+                    imports the DSL, and writes the exported SVG:
+                </p>
+                <pre><code>{`npm run render:dsl -- diagram.ysl -o diagram.svg
+
+# against an already-running instance, or to stdout:
+npm run render:dsl -- diagram.mmd --url http://localhost:5173 -o -`}</code></pre>
+            </section>
+
             {/* Full Example */}
             <section class="doc-section">
                 <h2>Complete Example</h2>

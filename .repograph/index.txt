@@ -294,7 +294,7 @@ frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UI
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
 frontend/src/dsl/adapters/mermaid/block-parser.ts | typescript | 209 | parseMermaidBlock:31 tokenizeBlockLine:190
-frontend/src/dsl/adapters/mermaid/class-parser.ts | typescript | 268 | RelationSpec:54 mapRelationship:61 parseMermaidClass:87
+frontend/src/dsl/adapters/mermaid/class-parser.ts | typescript | 272 | RelationSpec:59 mapRelationship:66 parseMermaidClass:92
 frontend/src/dsl/adapters/mermaid/er-parser.ts | typescript | 188 | cardinalityLabel:36 parseMermaidER:47
 frontend/src/dsl/adapters/mermaid/flowchart-parser.ts | typescript | 490 | parseMermaidFlowchart:29 LineParseResult:172 parseFlowchartLine:181 NodeToken:227 EdgeToken:234 FlowchartToken:240 tokenizeFlowchartLine:246 EdgeMatch:305 matchEdgeOperator:312 NodeMatch:361 matchNode:367 ShapeMatch:389 matchShapeBrackets:394 ensureNode:440 parseCssStyle:468 mapCssToNodeStyle:481
 frontend/src/dsl/adapters/mermaid/gantt-parser.ts | typescript | 212 | GanttTask:22 addDays:39 parseDuration:45 parseMermaidGantt:54
@@ -325,7 +325,7 @@ frontend/src/dsl/layout/types.ts | typescript | 19 | NodePosition:5 LayoutPositi
 frontend/src/dsl/parser/index.ts | typescript | 66 | parseDSL:26
 frontend/src/dsl/parser/json-parser.ts | typescript | 62 | parseJsonDSL:12
 frontend/src/dsl/parser/schema-validator.ts | typescript | 138 | validateDiagram:17 validateNodeChildren:122
-frontend/src/dsl/parser/text-parser.ts | typescript | 513 | EdgeOpDef:33 parseTextDSL:73 parseFrontmatterLine:347 parseInlineStyle:389 splitRespectingQuotes:427 splitInlineProps:460 generateEdgesFromChildren:490
+frontend/src/dsl/parser/text-parser.ts | typescript | 537 | EdgeOpDef:37 parseTextDSL:77 parseFrontmatterLine:352 parseInlineStyle:394 splitRespectingQuotes:432 parseMemberList:468 splitInlineProps:480 generateEdgesFromChildren:514
 frontend/src/dsl/shape-aliases.ts | typescript | 123 | resolveShapeType:119
 frontend/src/dsl/shape-defaults.ts | typescript | 140 | ShapeSize:9 getShapeDefaults:138
 frontend/src/dsl/types.ts | typescript | 302 | DSLDiagram:14 DSLDiagramMeta:33 DSLLayoutStrategy:41 DSLLayoutConfig:54 DSLNode:64 DSLNodeStyle:83 DSLEdge:141 DSLEdgeStyle:154 DSLSequenceMeta:170 DSLSequenceEvent:177 DSLSeqMessageEvent:187 DSLSeqNoteEvent:197 DSLSeqFragmentStartEvent:206 DSLSeqFragmentSectionEvent:217 DSLSeqFragmentEndEvent:224 DSLSeqActivateEvent:230 DSLSeqDeactivateEvent:236 DSLGroup:243 DSLPool:252 DSLLane:260 DSLStyleDefaults:269 ParseError:277 ParseResult:283 RenderOptions:290 RenderResult:297
@@ -365,7 +365,7 @@ frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 224 | Sti
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 135 | WorkspaceDoc:9 and:32 a:37
-frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 587 | YslTutorialDoc:8
+frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 622 | YslTutorialDoc:8 members:526 Subject:541
 frontend/src/help-docs/help-page.css | - | 411 |
 frontend/src/help-docs/help-page.tsx | typescript | 393 | Component:6 ShapeDoc:11 Tools:130 vertical:134 getShapeFromHash:286 HelpPage:292 handleHashChange:298 navigateToShape:309 filteredShapes:314 currentDoc:325 handleBackToApp:327
 frontend/src/help-docs/shapes/basic-shapes-doc.tsx | typescript | 284 | BasicShapesDoc:8
@@ -523,7 +523,7 @@ frontend/src/utils/envelope-warp.ts | typescript | 252 | Pt:20 WarpGrid:21 getWa
 frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19 parseExpr:72
 frontend/src/utils/export-game.ts | typescript | 42 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
-frontend/src/utils/export.ts | typescript | 1192 | ShapeGeometry:11 buildAppearanceSvgGroup:20 geometryToDs:74 renderPagedDocToCanvas:119
+frontend/src/utils/export.ts | typescript | 1332 | ShapeGeometry:13 buildAppearanceSvgGroup:22 buildUmlClassNode:81 umlArrowheadGlyph:173 geometryToDs:198 renderPagedDocToCanvas:243
 frontend/src/utils/geometry-scale.ts | typescript | 69 | scalePoints:13 scalePathAnchors:33 scalePathSubpaths:47 scaleEraseStrokes:53
 frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
 frontend/src/utils/geometry.ts | typescript | 433 | isPointInPolygon:5 distanceToSegment:19 cubicBezier:59 cubicBezierAngle:64 getBezierPoints:98 isPointOnBezier:111 isPointOnPolyline:117 isPointInEllipse:128 isPointNearEllipseStroke:142 rotatePoint:177 with:356
@@ -647,6 +647,7 @@ scripts/generate_slides.py | python | 150 |
 scripts/generate_slides_v2.py | python | 363 | generate_elements:184 create_slides_structure:299
 scripts/generate_slides_v3.py | python | 478 | generate_elements:287 create_slides_structure:408
 scripts/publish-oss.sh | shell | 193 | info:40 warn:41 error:42
+scripts/render-dsl.mjs | javascript | 161 | parseArgs:34 opts:35 fail:54 isUp:74 waitUntilUp:81 main:90
 scripts/repograph-refresh.sh | shell | 25 |
 scripts/test_relative_path.ts | typescript | 58 |
 tests/_mesh.spec.ts | typescript | 49 | w2s:34 key:43

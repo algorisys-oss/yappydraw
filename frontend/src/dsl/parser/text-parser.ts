@@ -11,6 +11,10 @@
  *   # Comments (lines starting with #)
  *
  *   nodeId [shape] "label" { style }  # Node declaration
+ *
+ *   # UML class members — attributes / methods compartments (`;`-separated):
+ *   Subject [class] "Subject" { attributes: "count: int", methods: "subscribe(o); notify(data)" }
+ *
  *   fromId -> toId "label" { style }  # Edge: arrow
  *   fromId -- toId "label"            # Edge: line
  *   fromId ~> toId "label"            # Edge: bezier arrow
@@ -258,11 +262,12 @@ export function parseTextDSL(input: string): ParseResult {
             if (styleStr) {
                 const parsed = parseInlineStyle(styleStr, lineNum, warnings);
                 if (Object.keys(parsed).length > 0) {
-                    const { style, dimensions, properties } = splitInlineProps(parsed);
+                    const { style, dimensions, properties, sections } = splitInlineProps(parsed);
                     if (Object.keys(style).length > 0) node.style = style as DSLNodeStyle;
                     if (dimensions.width !== undefined) node.width = dimensions.width;
                     if (dimensions.height !== undefined) node.height = dimensions.height;
                     if (Object.keys(properties).length > 0) node.properties = properties;
+                    if (sections.attributes !== undefined || sections.methods !== undefined) node.sections = sections;
                 }
             }
             if (poolRef) {
@@ -455,22 +460,41 @@ function splitRespectingQuotes(str: string): string[] {
 const PROPERTY_PREFIXES = ['ds', 'bpmn', 'code', 'starPoints', 'polygonSides', 'shapeRatio', 'sideRatio', 'depth', 'viewAngle'];
 
 /**
- * Split parsed inline key-value pairs into style, dimensions, and domain properties.
+ * Normalise a UML member list into the newline-separated string the renderers
+ * expect (`attributesText` / `methodsText`). Members are separated by `;` (or an
+ * explicit newline); each is trimmed and blanks are dropped, e.g.
+ *   "count: int; +active: bool"  →  "count: int\n+active: bool"
+ */
+function parseMemberList(value: any): string {
+    return String(value)
+        .split(/[;\n]/)
+        .map(s => s.trim())
+        .filter(Boolean)
+        .join('\n');
+}
+
+/**
+ * Split parsed inline key-value pairs into style, dimensions, domain properties,
+ * and UML class sections (`attributes` / `methods`).
  */
 function splitInlineProps(parsed: Record<string, any>): {
     style: Record<string, any>;
     dimensions: { width?: number; height?: number };
     properties: Record<string, any>;
+    sections: { attributes?: string; methods?: string };
 } {
     const style: Record<string, any> = {};
     const dimensions: { width?: number; height?: number } = {};
     const properties: Record<string, any> = {};
+    const sections: { attributes?: string; methods?: string } = {};
 
     for (const [key, value] of Object.entries(parsed)) {
         if (key === 'width') {
             dimensions.width = typeof value === 'number' ? value : parseInt(value, 10);
         } else if (key === 'height') {
             dimensions.height = typeof value === 'number' ? value : parseInt(value, 10);
+        } else if (key === 'attributes' || key === 'methods') {
+            sections[key] = parseMemberList(value);
         } else if (PROPERTY_PREFIXES.some(p => key.startsWith(p))) {
             properties[key] = value;
         } else {
@@ -478,7 +502,7 @@ function splitInlineProps(parsed: Record<string, any>): {
         }
     }
 
-    return { style, dimensions, properties };
+    return { style, dimensions, properties, sections };
 }
 
 // ─── Children → Edges Generation ────────────────────────

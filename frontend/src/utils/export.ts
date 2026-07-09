@@ -5,7 +5,9 @@ import { renderSlideBackground } from "./canvas-renderer";
 import rough from 'roughjs/bin/rough';
 import { jsPDF } from "jspdf";
 import PptxGenJS from "pptxgenjs";
-import { resolveFontFamily, wrapText, getMeasurementRenderer } from "./text-utils";
+import { resolveFontFamily, wrapText, getMeasurementRenderer, measureContainerText } from "./text-utils";
+import { calculateUmlClassLayout, calculateUml2SectionLayout } from "./uml-layout-utils";
+import type { DrawingElement } from "../types";
 import { buildFilterString } from "./image-filter-utils";
 import { layoutRichText } from "./rich-text-utils";
 import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
@@ -63,6 +65,128 @@ function buildAppearanceSvgGroup(el: any, rc: any, options: any, defs: SVGElemen
         }
     }
     return g;
+}
+
+/**
+ * Build the full vector SVG for a `umlClass` / `umlInterface` element — header
+ * (stereotype + name), the attribute / method compartments, and the divider lines.
+ *
+ * The generic export path only drew the box + `containerText` (the class name), so
+ * the member compartments were silently dropped from exported SVG (the on-canvas
+ * uml-class-renderer draws them via a clipped path that the geometry/containerText
+ * export path never runs). This mirrors that renderer's layout — reusing
+ * `calculateUmlClassLayout` / `calculateUml2SectionLayout` for identical geometry —
+ * but emits plain `<text>`/`<line>` so it is crisp vector in both render styles.
+ */
+function buildUmlClassNode(el: DrawingElement): SVGGElement {
+    const g = document.createElementNS(SVGNS, 'g') as SVGGElement;
+    const mr = getMeasurementRenderer();
+    const stroke = el.strokeColor || '#000';
+    const strokeWidth = el.strokeWidth || 2;
+    const textColor = el.textColor || el.strokeColor || '#000';
+    const family = resolveFontFamily(el.fontFamily);
+    const baseSize = el.fontSize || 20;
+    const isInterface = el.type === 'umlInterface';
+
+    // Outer box (fill + stroke).
+    const box = document.createElementNS(SVGNS, 'rect');
+    box.setAttribute('x', `${el.x}`); box.setAttribute('y', `${el.y}`);
+    box.setAttribute('width', `${el.width}`); box.setAttribute('height', `${el.height}`);
+    box.setAttribute('fill', el.backgroundColor && el.backgroundColor !== 'transparent' ? el.backgroundColor : 'none');
+    box.setAttribute('stroke', stroke); box.setAttribute('stroke-width', `${strokeWidth}`);
+    if (el.strokeStyle === 'dashed') box.setAttribute('stroke-dasharray', '10 10');
+    else if (el.strokeStyle === 'dotted') box.setAttribute('stroke-dasharray', '2 8');
+    g.appendChild(box);
+
+    const divider = (y: number) => {
+        if (y >= el.y + el.height) return;
+        const l = document.createElementNS(SVGNS, 'line');
+        l.setAttribute('x1', `${el.x}`); l.setAttribute('y1', `${y}`);
+        l.setAttribute('x2', `${el.x + el.width}`); l.setAttribute('y2', `${y}`);
+        l.setAttribute('stroke', stroke); l.setAttribute('stroke-width', `${strokeWidth}`);
+        g.appendChild(l);
+    };
+
+    const centerText = (text: string, cy: number, size: number, weight?: string, fontStyle?: string) => {
+        if (!text) return;
+        const t = document.createElementNS(SVGNS, 'text');
+        t.setAttribute('x', `${el.x + el.width / 2}`); t.setAttribute('y', `${cy}`);
+        t.setAttribute('font-size', `${size}`); t.setAttribute('font-family', family);
+        if (weight) t.setAttribute('font-weight', weight);
+        if (fontStyle) t.setAttribute('font-style', fontStyle);
+        t.setAttribute('fill', textColor);
+        t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('dominant-baseline', 'central');
+        t.textContent = text;
+        g.appendChild(t);
+    };
+
+    // Member compartment: left-aligned, wrapped exactly like the on-canvas renderer.
+    const memberFontSize = baseSize * 0.9;
+    const memberEl = { ...el, fontSize: memberFontSize } as DrawingElement;
+    const emitBand = (text: string, top: number) => {
+        if (!text) return;
+        const metrics = measureContainerText(mr, memberEl, text, el.width - 20);
+        metrics.lines.forEach((ln: string, i: number) => {
+            if (!ln) return;
+            const t = document.createElementNS(SVGNS, 'text');
+            t.setAttribute('x', `${el.x + 10}`);
+            t.setAttribute('y', `${top + 10 + i * metrics.lineHeight}`);
+            t.setAttribute('font-size', `${memberFontSize}`); t.setAttribute('font-family', family);
+            t.setAttribute('fill', textColor);
+            t.setAttribute('text-anchor', 'start');
+            t.setAttribute('dominant-baseline', 'hanging');
+            t.textContent = ln;
+            g.appendChild(t);
+        });
+    };
+
+    if (isInterface) {
+        const layout = calculateUml2SectionLayout(mr, el, 'methodsText');
+        divider(el.y + layout.headerHeight);
+        centerText('«interface»', el.y + layout.headerHeight * 0.33, baseSize * 0.7, 'normal', 'italic');
+        centerText(el.containerText || '', el.y + layout.headerHeight * 0.67, baseSize, 'bold');
+        emitBand(el.methodsText || '', el.y + layout.headerHeight);
+    } else {
+        const layout = calculateUmlClassLayout(mr, el);
+        centerText(el.containerText || '', el.y + layout.headerHeight / 2, baseSize, 'bold');
+        divider(el.y + layout.headerHeight);
+        if (layout.hasAttributes && layout.hasMethods) {
+            divider(el.y + layout.headerHeight + layout.attrHeight);
+        }
+        emitBand(el.attributesText || '', el.y + layout.headerHeight);
+        emitBand(el.methodsText || '', el.y + layout.headerHeight + layout.attrHeight);
+    }
+
+    return g;
+}
+
+/** UML arrowheads that export as a filled/hollow glyph rather than an open-V. */
+const UML_ARROWHEADS = new Set(['triangle', 'diamond', 'diamondFilled']);
+
+/**
+ * Build the polygon for a UML arrowhead glyph at (tipX, tipY), oriented along
+ * `ang` (the line's travel direction, tip pointing forward). Hollow triangle =
+ * generalization/realization; hollow diamond = aggregation; filled diamond =
+ * composition. Mirrors the on-canvas path-renderer so exported SVG matches.
+ */
+function umlArrowheadGlyph(
+    tipX: number, tipY: number, ang: number, headLen: number,
+    kind: string, stroke: string, strokeWidth: number
+): SVGPolygonElement {
+    const c = Math.cos(ang), s = Math.sin(ang);
+    const local: number[][] = kind === 'triangle'
+        ? [[0, 0], [-headLen * Math.cos(Math.PI / 6), -headLen * Math.sin(Math.PI / 6)], [-headLen * Math.cos(Math.PI / 6), headLen * Math.sin(Math.PI / 6)]]
+        : [[0, 0], [-headLen, -headLen / 2], [-2 * headLen, 0], [-headLen, headLen / 2]];
+    const points = local
+        .map(([lx, ly]) => `${(tipX + lx * c - ly * s).toFixed(2)},${(tipY + lx * s + ly * c).toFixed(2)}`)
+        .join(' ');
+    const poly = document.createElementNS(SVGNS, 'polygon');
+    poly.setAttribute('points', points);
+    poly.setAttribute('fill', kind === 'diamondFilled' ? stroke : '#ffffff');
+    poly.setAttribute('stroke', stroke);
+    poly.setAttribute('stroke-width', `${strokeWidth}`);
+    return poly;
 }
 
 /**
@@ -502,7 +626,12 @@ export const exportToSvg = (onlySelected: boolean) => {
         // (leave node null) so they export as crisp vectors instead of rough/sketchy SVG.
         const archClean = (el.renderStyle ?? 'sketch') === 'architectural';
 
-        if (el.type === 'rectangle' && !archClean) {
+        if (el.type === 'umlClass' || el.type === 'umlInterface') {
+            // Full UML box: header + attribute/method compartments + dividers.
+            // Owns its own header-name text, so the generic containerText block
+            // below is skipped for these types (see the `el.type !==` guards there).
+            node = buildUmlClassNode(el);
+        } else if (el.type === 'rectangle' && !archClean) {
             node = rc.rectangle(el.x, el.y, el.width, el.height, options);
         } else if (el.type === 'circle' && !archClean) {
             node = rc.ellipse(el.x + el.width / 2, el.y + el.height / 2, Math.abs(el.width), Math.abs(el.height), options);
@@ -527,18 +656,29 @@ export const exportToSvg = (onlySelected: boolean) => {
                 const startHeadLen = el.startArrowheadSize || 28;
                 const endHeadLen = el.endArrowheadSize || 28;
 
+                const headStroke = el.strokeColor || '#000';
+                const headWidth = el.strokeWidth || 2;
+
                 if (el.startArrowhead) {
-                    const p1 = { x: el.x - startHeadLen * Math.cos(angle + Math.PI - Math.PI / 6), y: el.y - startHeadLen * Math.sin(angle + Math.PI - Math.PI / 6) };
-                    const p2 = { x: el.x - startHeadLen * Math.cos(angle + Math.PI + Math.PI / 6), y: el.y - startHeadLen * Math.sin(angle + Math.PI + Math.PI / 6) };
-                    arrowG.appendChild(rc.line(el.x, el.y, p1.x, p1.y, options));
-                    arrowG.appendChild(rc.line(el.x, el.y, p2.x, p2.y, options));
+                    if (UML_ARROWHEADS.has(el.startArrowhead)) {
+                        arrowG.appendChild(umlArrowheadGlyph(el.x, el.y, angle + Math.PI, startHeadLen, el.startArrowhead, headStroke, headWidth));
+                    } else {
+                        const p1 = { x: el.x - startHeadLen * Math.cos(angle + Math.PI - Math.PI / 6), y: el.y - startHeadLen * Math.sin(angle + Math.PI - Math.PI / 6) };
+                        const p2 = { x: el.x - startHeadLen * Math.cos(angle + Math.PI + Math.PI / 6), y: el.y - startHeadLen * Math.sin(angle + Math.PI + Math.PI / 6) };
+                        arrowG.appendChild(rc.line(el.x, el.y, p1.x, p1.y, options));
+                        arrowG.appendChild(rc.line(el.x, el.y, p2.x, p2.y, options));
+                    }
                 }
 
                 if (el.endArrowhead || (!el.startArrowhead && !el.endArrowhead)) { // Default to end arrow if none specified for legacy
-                    const p1 = { x: endX - endHeadLen * Math.cos(angle - Math.PI / 6), y: endY - endHeadLen * Math.sin(angle - Math.PI / 6) };
-                    const p2 = { x: endX - endHeadLen * Math.cos(angle + Math.PI / 6), y: endY - endHeadLen * Math.sin(angle + Math.PI / 6) };
-                    arrowG.appendChild(rc.line(endX, endY, p1.x, p1.y, options));
-                    arrowG.appendChild(rc.line(endX, endY, p2.x, p2.y, options));
+                    if (el.endArrowhead && UML_ARROWHEADS.has(el.endArrowhead)) {
+                        arrowG.appendChild(umlArrowheadGlyph(endX, endY, angle, endHeadLen, el.endArrowhead, headStroke, headWidth));
+                    } else {
+                        const p1 = { x: endX - endHeadLen * Math.cos(angle - Math.PI / 6), y: endY - endHeadLen * Math.sin(angle - Math.PI / 6) };
+                        const p2 = { x: endX - endHeadLen * Math.cos(angle + Math.PI / 6), y: endY - endHeadLen * Math.sin(angle + Math.PI / 6) };
+                        arrowG.appendChild(rc.line(endX, endY, p1.x, p1.y, options));
+                        arrowG.appendChild(rc.line(endX, endY, p2.x, p2.y, options));
+                    }
                 }
                 node = arrowG;
             } else {
@@ -803,7 +943,7 @@ export const exportToSvg = (onlySelected: boolean) => {
 
         // Render containerText inside shapes (rectangles, circles, etc.)
         // Skip for canvas fallback shapes — container text is already rendered by the canvas pipeline
-        if (node && !isCanvasFallback && (el.containerText || (el.richContainerText && el.richContainerText.length > 0)) && el.type !== 'text') {
+        if (node && !isCanvasFallback && (el.containerText || (el.richContainerText && el.richContainerText.length > 0)) && el.type !== 'text' && el.type !== 'umlClass' && el.type !== 'umlInterface') {
             const wrapper = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             wrapper.appendChild(node);
 

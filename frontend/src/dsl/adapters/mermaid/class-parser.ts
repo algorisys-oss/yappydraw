@@ -30,7 +30,12 @@ const RELATION_RE = /^(\S+)\s+(?:"[^"]*"\s+)?(<\|--|<\|\.\.|\*-->|\*--|\*\.\.|o-
 // Also handle reversed: B --|> A
 const RELATION_RE2 = /^(\S+)\s+(?:"[^"]*"\s+)?(--\|>|\.\.\|>|\.\|>|<--\*|<--o|--\*|\.\.o|--o|<--|-->|--)\s+(?:"[^"]*"\s+)?(\S+)\s*(?::\s*(.+))?$/;
 
-const CLASS_DEF_RE = /^class\s+(\S+?)(?:::(\S+))?\s*(?:\{([^}]*)\})?$/;
+// class Name { inline; members }  |  class Name {   (block opens on this line)  |  class Name
+// Group 3 = inline `{ … }` body (both braces on this line); group 4 = a lone
+// trailing `{` opening a multi-line block (Mermaid's canonical form). Without
+// group 4 the same-line-brace form failed to match and the whole class body was
+// mis-parsed line-by-line (members leaked into a bogus class).
+const CLASS_DEF_RE = /^class\s+(\S+?)(?:::(\S+))?\s*(?:\{([^}]*)\})?\s*(\{)?\s*$/;
 const CLASS_MEMBER_RE = /^(\S+)\s*:\s*(.+)$/;
 const ANNOTATION_RE = /^<<(\w+)>>\s+(\S+)$/;
 
@@ -118,14 +123,12 @@ export function parseMermaidClass(input: string): AdapterResult {
         if (/^(direction|namespace|note)\b/i.test(line)) continue;
         if (/^(click|callback|link|cssClass)\b/i.test(line)) continue;
 
-        // Handle closing brace for multi-line class
+        // Handle members + closing brace for a multi-line class block. Accepts the
+        // brace on its own line (`}`) or trailing a final member (`+run() }`).
         if (inClassBlock) {
-            if (line === '}') {
-                inClassBlock = false;
-                continue;
-            }
-            // Parse member
-            const member = line.trim();
+            let member = line.trim();
+            let closing = false;
+            if (member.endsWith('}')) { closing = true; member = member.slice(0, -1).trim(); }
             if (member) {
                 const cls = classMap.get(currentClassId);
                 if (cls) {
@@ -136,13 +139,14 @@ export function parseMermaidClass(input: string): AdapterResult {
                     }
                 }
             }
+            if (closing) inClassBlock = false;
             continue;
         }
 
         // Class definition: class ClassName { ... }
         const classMatch = line.match(CLASS_DEF_RE);
         if (classMatch) {
-            const [, id, _styleClass, body] = classMatch;
+            const [, id, _styleClass, body, openBrace] = classMatch;
             ensureClass(id);
 
             if (body !== undefined) {
@@ -156,16 +160,16 @@ export function parseMermaidClass(input: string): AdapterResult {
                         cls.attributes.push(m);
                     }
                 }
-            } else if (lines[i + 1]?.trim() === '{' || line.endsWith('{')) {
-                // Multi-line block detected — but our regex already handles inline { }
-                // If body was undefined and next line is {, handle it
-            }
-
-            // Check if next line starts a block
-            if (i + 1 < lines.length && lines[i + 1].trim() === '{') {
+            } else if (openBrace) {
+                // Opening brace on THIS line — `class Foo {` — start a multi-line block.
                 inClassBlock = true;
                 currentClassId = id;
-                i++; // Skip the opening brace
+            } else if (i + 1 < lines.length && lines[i + 1].trim() === '{') {
+                // Opening brace on the NEXT line — `class Foo\n{` — start the block,
+                // skipping the lone brace.
+                inClassBlock = true;
+                currentClassId = id;
+                i++;
             }
             continue;
         }
