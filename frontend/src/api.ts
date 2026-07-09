@@ -1778,8 +1778,25 @@ export const YappyAPI = {
             return { x: bx, y: by };
         };
 
-        const startP = intersect(sx, sy, tx, ty, source);
-        const endP = intersect(tx, ty, sx, sy, target);
+        // Optional explicit anchor fractions (0-1 across the shape bbox). Callers that
+        // route several edges into one shape (e.g. many subclasses → one base class) pass
+        // these to spread the endpoints along the border instead of all clipping to the
+        // center line — which is what makes UML arrowheads pile up on top of each other.
+        const { startAnchor, endAnchor, ...restOptions } =
+            (options ?? {}) as ElementOptions & {
+                type?: 'line' | 'arrow' | 'organicBranch';
+                startAnchor?: { fx: number; fy: number };
+                endAnchor?: { fx: number; fy: number };
+            };
+
+        const endP = endAnchor
+            ? { x: target.x + endAnchor.fx * target.width, y: target.y + endAnchor.fy * target.height }
+            : intersect(tx, ty, sx, sy, target);
+        // Aim the start clip at the resolved head (not the raw center) so a distributed
+        // endpoint still yields a straight, well-pointed line.
+        const startP = startAnchor
+            ? { x: source.x + startAnchor.fx * source.width, y: source.y + startAnchor.fy * source.height }
+            : intersect(sx, sy, endP.x, endP.y, source);
 
         // Compute anchor fractions for stable bindings (endpoint position relative to shape bbox)
         const startFx = source.width ? (startP.x - source.x) / source.width : 0.5;
@@ -1788,7 +1805,7 @@ export const YappyAPI = {
         const endFy = target.height ? (endP.y - target.y) / target.height : 0.5;
 
         const id = this.createElement(type as ElementType, startP.x, startP.y, endP.x - startP.x, endP.y - startP.y, {
-            ...options,
+            ...restOptions,
             curveType,
             startBinding: { elementId: sourceId, focus: 0, gap: 5, anchorFractionX: startFx, anchorFractionY: startFy },
             endBinding: { elementId: targetId, focus: 0, gap: 5, anchorFractionX: endFx, anchorFractionY: endFy },

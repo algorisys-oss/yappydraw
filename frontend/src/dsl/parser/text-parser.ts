@@ -235,6 +235,17 @@ export function parseTextDSL(input: string): ParseResult {
             if (label) edge.label = label;
             if (styleStr) {
                 const parsed = parseInlineStyle(styleStr, lineNum, warnings);
+                // Arrowheads are edge-level props (the engine reads edge.startArrowhead /
+                // edge.endArrowhead), not style props — hoist them out of the { } block so
+                // a UML relation like `sub -> base { endArrowhead: triangle }` actually
+                // decorates the head. `none`/`null` mean "no head" (e.g. a diamond-only end).
+                for (const key of ['startArrowhead', 'endArrowhead'] as const) {
+                    if (key in parsed) {
+                        const v = parsed[key];
+                        edge[key] = (v === 'none' || v === 'null' || v === null) ? null : v;
+                        delete parsed[key];
+                    }
+                }
                 if (Object.keys(parsed).length > 0) edge.style = parsed as any;
             }
             if (edgeDef.strokeStyle) {

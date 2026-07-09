@@ -128,6 +128,10 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
         // combined fragments, activation bars) rather than a flat edge list.
         elementCount += renderSequenceTimeline(diagram, nodeIdMap, edgeIdMap);
     } else if (diagram.edges) {
+        // Spread edges that share a class/interface endpoint along its border so their
+        // UML arrowheads don't pile up on the center-line clip point (many subclasses →
+        // one base). No-op for single edges and for non-class diagrams.
+        const anchorMap = distributeClassEdgeAnchors(diagram.edges, nodeIdMap);
         for (const edge of diagram.edges) {
             const sourceCanvasId = nodeIdMap.get(edge.from);
             const targetCanvasId = nodeIdMap.get(edge.to);
@@ -136,7 +140,7 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
                 continue;
             }
 
-            const edgeElementId = renderEdge(edge, sourceCanvasId, targetCanvasId, diagram);
+            const edgeElementId = renderEdge(edge, sourceCanvasId, targetCanvasId, diagram, anchorMap.get(edge));
             if (edgeElementId) {
                 const edgeKey = edge.id ?? `${edge.from}->${edge.to}`;
                 edgeIdMap.set(edgeKey, edgeElementId);
@@ -229,11 +233,96 @@ function renderNode(
 
 // ─── Edge Rendering ──────────────────────────────────────
 
+type EdgeAnchors = {
+    startAnchor?: { fx: number; fy: number };
+    endAnchor?: { fx: number; fy: number };
+};
+
+/**
+ * When several edges share one class/interface endpoint (the base of an inheritance
+ * fan, an interface with many implementers), the default center-line clip lands every
+ * arrowhead on nearly the same border point and they overlap. Spread each group evenly
+ * along the border facing its neighbours, so heads read as distinct.
+ *
+ * Only touches edges whose *both* ends are `umlClass`/`umlInterface`, so sequence,
+ * flowchart, and ER diagrams are unaffected. Groups of one are left alone (the natural
+ * center clip is best for a lone edge).
+ */
+function distributeClassEdgeAnchors(
+    edges: DSLEdge[],
+    nodeIdMap: Map<string, string>
+): Map<DSLEdge, EdgeAnchors> {
+    const result = new Map<DSLEdge, EdgeAnchors>();
+    const geo = (dslId: string) => {
+        const cid = nodeIdMap.get(dslId);
+        const el = cid ? YappyAPI.getElement(cid) : null;
+        if (!el || !el.width || !el.height) return null;
+        return { cx: el.x + el.width / 2, cy: el.y + el.height / 2, w: el.width, h: el.height, type: el.type };
+    };
+    const isClass = (t?: string) => t === 'umlClass' || t === 'umlInterface';
+
+    const classEdges = edges.filter(e => {
+        const s = geo(e.from), t = geo(e.to);
+        return s && t && isClass(s.type) && isClass(t.type);
+    });
+    if (classEdges.length === 0) return result;
+
+    // Spread a group of edges (all touching `shape` at the given end) along the border
+    // facing the group's average neighbour, then hand each edge its anchor fraction.
+    const distribute = (
+        group: { edge: DSLEdge; ox: number; oy: number }[],
+        shape: { cx: number; cy: number; w: number; h: number },
+        assign: (edge: DSLEdge, a: { fx: number; fy: number }) => void
+    ) => {
+        if (group.length < 2) return;
+        const avgX = group.reduce((s, g) => s + g.ox, 0) / group.length;
+        const avgY = group.reduce((s, g) => s + g.oy, 0) / group.length;
+        const dx = avgX - shape.cx, dy = avgY - shape.cy;
+        // Which border does the group mostly come from? Compare normalized overhangs.
+        const vertical = Math.abs(dy) / shape.h >= Math.abs(dx) / shape.w;
+        const sorted = [...group].sort((a, b) => (vertical ? a.ox - b.ox : a.oy - b.oy));
+        const n = sorted.length;
+        sorted.forEach((g, i) => {
+            const frac = 0.2 + 0.6 * (i / (n - 1)); // keep heads off the corners
+            assign(g.edge, vertical
+                ? { fx: frac, fy: dy > 0 ? 1 : 0 }
+                : { fx: dx > 0 ? 1 : 0, fy: frac });
+        });
+    };
+
+    const groupBy = (keyOf: (e: DSLEdge) => string, otherOf: (e: DSLEdge) => string) => {
+        const groups = new Map<string, { edge: DSLEdge; ox: number; oy: number }[]>();
+        for (const e of classEdges) {
+            const other = geo(otherOf(e));
+            if (!other) continue;
+            const key = keyOf(e);
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key)!.push({ edge: e, ox: other.cx, oy: other.cy });
+        }
+        return groups;
+    };
+
+    for (const [tid, group] of groupBy(e => e.to, e => e.from)) {
+        const t = geo(tid); if (!t) continue;
+        distribute(group, t, (edge, a) => {
+            const cur = result.get(edge) ?? {}; cur.endAnchor = a; result.set(edge, cur);
+        });
+    }
+    for (const [sid, group] of groupBy(e => e.from, e => e.to)) {
+        const s = geo(sid); if (!s) continue;
+        distribute(group, s, (edge, a) => {
+            const cur = result.get(edge) ?? {}; cur.startAnchor = a; result.set(edge, cur);
+        });
+    }
+    return result;
+}
+
 function renderEdge(
     edge: DSLEdge,
     sourceCanvasId: string,
     targetCanvasId: string,
-    diagram: DSLDiagram
+    diagram: DSLDiagram,
+    anchors?: EdgeAnchors
 ): string | null {
     const mergedStyle = mergeEdgeStyle(edge.style, diagram.defaults);
     const styleOpts = mapStyleToOptions(mergedStyle);
@@ -246,6 +335,8 @@ function renderEdge(
 
     if (edge.startArrowhead !== undefined) connectOpts.startArrowhead = edge.startArrowhead;
     if (edge.endArrowhead !== undefined) connectOpts.endArrowhead = edge.endArrowhead;
+    if (anchors?.startAnchor) connectOpts.startAnchor = anchors.startAnchor;
+    if (anchors?.endAnchor) connectOpts.endAnchor = anchors.endAnchor;
 
     const connectorId = YappyAPI.connect(sourceCanvasId, targetCanvasId, connectOpts);
 

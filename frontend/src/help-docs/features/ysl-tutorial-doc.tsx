@@ -249,6 +249,18 @@ a -> c "No" { strokeColor: "#dc2626" }
 x -- y
 p ~> q "Curved"
 r => s "Elbow"`}</code></pre>
+                <h3>Edge Arrowheads (UML relations)</h3>
+                <p>
+                    Set <code>startArrowhead</code> / <code>endArrowhead</code> in an edge's
+                    <code>{' { } '}</code> block to decorate either end — handy for hand-built UML
+                    relations. Values: <code>arrow</code>, <code>triangle</code> (inheritance),
+                    <code>diamond</code> (aggregation), <code>diamondFilled</code> (composition),
+                    <code>circle</code>, <code>dot</code>, <code>bar</code>, or
+                    <code>none</code> for a bare end.
+                </p>
+                <pre><code>{`sub  -> base  { endArrowhead: triangle }        # inheritance
+part -> whole { endArrowhead: diamondFilled }   # composition
+a    -> b     { startArrowhead: none, endArrowhead: arrow }`}</code></pre>
             </section>
 
             {/* Inline Styling */}

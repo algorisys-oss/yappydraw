@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.34](0.8.34.md) — UML relations: spread fan-in arrowheads + edge arrowheads in the text DSL
 - [0.8.33](0.8.33.md) — UML class boxes auto-size to their members (no more wrapped/dropped types)
 - [0.8.32](0.8.32.md) — Begin/end arrowheads on curvy bezier lines
 - [0.8.31](0.8.31.md) — Real UML class diagrams in exported SVG + YSL class members + headless render CLI

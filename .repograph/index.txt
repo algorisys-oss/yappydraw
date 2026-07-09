@@ -76,7 +76,7 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 3193 | Theme:3 HarmonyType:47 ElementOptions:98 ElementType:483 as:483 Window:3185
+frontend/src/api.ts | typescript | 3210 | Theme:3 HarmonyType:47 ElementOptions:98 ElementType:483 as:483 Window:3202
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1472 | Component:1 App:96 moves:111 onPenMove:112 hidePen:116 onControllerChange:136 handleKeyUp:165 handleKeyDown:175 as:684 handleFullscreenChange:799 handleBeforeUnload:805 handlePaste:809 handleGlobalDragEnter:911 handleGlobalDragOver:926 showDropFallbackPrompt:945 cleanup:975 outsideClick:1003 isImageFile:1015 first:1016 must:1029 extractDropData:1031 processExtractedDrop:1086 handleGlobalDrop:1203 handleDocumentDrop:1249
 frontend/src/assets/solid.svg | - | 1 |
@@ -315,7 +315,7 @@ frontend/src/dsl/adapters/rocket/state-parser.ts | typescript | 368 | parseTrans
 frontend/src/dsl/adapters/rocket/types.ts | typescript | 271 | RocketExportResult:10 RocketExportMessage:17 RocketImportSchema:25 RocketEntity:39 RocketPrimaryKey:47 RocketField:53 RocketRelation:67 RocketRule:83 RocketStateMachine:94 RocketTransition:104 RocketTransitionAction:113 ParsedField:121 ParsedRelation:136 ParsedMethod:146 ParsedState:155 ParsedTransition:163 ParsedStateMachine:171 RocketWorkflow:179 RocketWorkflowTrigger:187 RocketWorkflowStep:196 RocketWorkflowAction:217 RocketWorkflowAssignee:228 StepGoto:235 ParsedWorkflowNodeType:239 ParsedWorkflowNode:243 ParsedWorkflowEdge:257 ParsedWorkflow:264
 frontend/src/dsl/adapters/rocket/workflow-parser.test.ts | typescript | 690 | makeNode:14 makeEdge:18
 frontend/src/dsl/adapters/rocket/workflow-parser.ts | typescript | 704 | isBpmnWorkflowNode:54 toSnakeCase:60 parseContainerText:73 parseActionConfig:114 classifyBpmnNode:159 parseWorkflowDiagram:195 convertToRocketWorkflow:317 buildTrigger:406 buildStep:436 buildActionStep:467 buildApprovalStep:502 buildAssignee:552 buildGatewayStep:564 buildParallelGatewayStep:639 buildBusinessRuleStep:671
-frontend/src/dsl/engine/dsl-engine.ts | typescript | 872 | SeqFragmentBox:18 renderDiagram:27 renderNode:166 renderEdge:232 SeqParticipant:274 makeSeqLabel:285 renderSequenceTimeline:300 renderSequenceMessage:393 renderSequenceNote:445 renderSequenceFragment:494 PoolLayoutResult:547 computePoolLayout:562 renderPoolSized:653 flattenNodes:692 setParentChildRelationships:707 findLaneIndex:730 applyAutoSizing:741 computeFittedSize:767 computeUmlFittedSize:832
+frontend/src/dsl/engine/dsl-engine.ts | typescript | 963 | SeqFragmentBox:18 renderDiagram:27 renderNode:170 EdgeAnchors:236 distributeClassEdgeAnchors:251 renderEdge:320 SeqParticipant:365 makeSeqLabel:376 renderSequenceTimeline:391 renderSequenceMessage:484 renderSequenceNote:536 renderSequenceFragment:585 PoolLayoutResult:638 computePoolLayout:653 renderPoolSized:744 flattenNodes:783 setParentChildRelationships:798 findLaneIndex:821 applyAutoSizing:832 computeFittedSize:858 computeUmlFittedSize:923
 frontend/src/dsl/engine/render-helpers.ts | typescript | 94 | mergeNodeStyle:11 mergeEdgeStyle:39 mapStyleToOptions:62
 frontend/src/dsl/index.ts | typescript | 54 |
 frontend/src/dsl/layout/layout-manager.ts | typescript | 121 | flattenNodes:16 computeLayout:30 computeManualLayout:66 computeGridLayout:95
@@ -325,7 +325,7 @@ frontend/src/dsl/layout/types.ts | typescript | 19 | NodePosition:5 LayoutPositi
 frontend/src/dsl/parser/index.ts | typescript | 66 | parseDSL:26
 frontend/src/dsl/parser/json-parser.ts | typescript | 62 | parseJsonDSL:12
 frontend/src/dsl/parser/schema-validator.ts | typescript | 138 | validateDiagram:17 validateNodeChildren:122
-frontend/src/dsl/parser/text-parser.ts | typescript | 537 | EdgeOpDef:37 parseTextDSL:77 parseFrontmatterLine:352 parseInlineStyle:394 splitRespectingQuotes:432 parseMemberList:468 splitInlineProps:480 generateEdgesFromChildren:514
+frontend/src/dsl/parser/text-parser.ts | typescript | 548 | EdgeOpDef:37 parseTextDSL:77 parseFrontmatterLine:363 parseInlineStyle:405 splitRespectingQuotes:443 parseMemberList:479 splitInlineProps:491 generateEdgesFromChildren:525
 frontend/src/dsl/shape-aliases.ts | typescript | 123 | resolveShapeType:119
 frontend/src/dsl/shape-defaults.ts | typescript | 140 | ShapeSize:9 getShapeDefaults:138
 frontend/src/dsl/types.ts | typescript | 302 | DSLDiagram:14 DSLDiagramMeta:33 DSLLayoutStrategy:41 DSLLayoutConfig:54 DSLNode:64 DSLNodeStyle:83 DSLEdge:141 DSLEdgeStyle:154 DSLSequenceMeta:170 DSLSequenceEvent:177 DSLSeqMessageEvent:187 DSLSeqNoteEvent:197 DSLSeqFragmentStartEvent:206 DSLSeqFragmentSectionEvent:217 DSLSeqFragmentEndEvent:224 DSLSeqActivateEvent:230 DSLSeqDeactivateEvent:236 DSLGroup:243 DSLPool:252 DSLLane:260 DSLStyleDefaults:269 ParseError:277 ParseResult:283 RenderOptions:290 RenderResult:297
@@ -365,7 +365,7 @@ frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 224 | Sti
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 135 | WorkspaceDoc:9 and:32 a:37
-frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 622 | YslTutorialDoc:8 members:526 Subject:541
+frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 634 | YslTutorialDoc:8 members:538 Subject:553
 frontend/src/help-docs/help-page.css | - | 411 |
 frontend/src/help-docs/help-page.tsx | typescript | 393 | Component:6 ShapeDoc:11 Tools:130 vertical:134 getShapeFromHash:286 HelpPage:292 handleHashChange:298 navigateToShape:309 filteredShapes:314 currentDoc:325 handleBackToApp:327
 frontend/src/help-docs/shapes/basic-shapes-doc.tsx | typescript | 284 | BasicShapesDoc:8
