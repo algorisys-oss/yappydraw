@@ -134,6 +134,9 @@ const Menu: Component = () => {
         setIsLoadExportOpen(true);
     };
     const [isPalettePickerOpen, setIsPalettePickerOpen] = createSignal(isPalettePinned());
+    // The Properties panel docks to the right edge (~280px). Shift the fixed top-right
+    // palette + theme controls left of it while it's open so they don't overlap its header.
+    const propPanelOffset = () => (store.showPropertyPanel && !store.isPropertyPanelMinimized) ? 290 : 0;
     let palettePickerRef: HTMLDivElement | undefined;
 
     createEffect(() => {
@@ -1139,7 +1142,7 @@ const Menu: Component = () => {
                     <Show when={!isMobile()}>
                         <div
                             ref={palettePickerRef}
-                            style={{ position: 'fixed', top: '12px', right: '60px', "z-index": 10000 }}
+                            style={{ position: 'fixed', top: '12px', right: `${60 + propPanelOffset()}px`, "z-index": 10000, transition: 'right 0.15s ease' }}
                         >
                             <div class="menu-container" style={{ position: 'relative' }}>
                                 <button
@@ -1172,7 +1175,7 @@ const Menu: Component = () => {
                                         style={{
                                             position: 'fixed',
                                             top: '54px',
-                                            right: '12px',
+                                            right: `${12 + propPanelOffset()}px`,
                                             left: 'auto',
                                             bottom: 'auto',
                                             margin: 0,
@@ -1190,7 +1193,7 @@ const Menu: Component = () => {
 
                     {/* Desktop: standalone theme toggle, always visible at top-right */}
                     <Show when={!isMobile()}>
-                        <div style={{ position: 'fixed', top: '12px', right: '12px', "z-index": 10000 }}>
+                        <div style={{ position: 'fixed', top: '12px', right: `${12 + propPanelOffset()}px`, "z-index": 10000, transition: 'right 0.15s ease' }}>
                             <div class="menu-container">
                                 <button
                                     class="menu-btn"
