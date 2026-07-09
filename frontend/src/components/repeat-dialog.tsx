@@ -1,5 +1,6 @@
 import { createSignal, Show } from 'solid-js';
 import { radialRepeat, gridRepeat, store } from '../store/app-store';
+import { onEscapeKey } from '../utils/use-escape';
 
 // Global open state so the command palette / context menu can launch the dialog.
 const [isOpen, setIsOpen] = createSignal(false);
@@ -12,6 +13,7 @@ export const repeatDialogOpen = isOpen;
  * a ring, faceCenter orients each outward), grid tiles rows × cols.
  */
 export const RepeatDialog = () => {
+    onEscapeKey(isOpen, () => setIsOpen(false));
     const [mode, setMode] = createSignal<'radial' | 'grid'>('radial');
     const [count, setCount] = createSignal(6);
     const [radius, setRadius] = createSignal(120);

@@ -1,5 +1,6 @@
 import { type Component, Show } from "solid-js";
 import { X } from "lucide-solid";
+import { onEscapeKey } from "../utils/use-escape";
 import "./unsaved-changes-dialog.css";
 
 export interface UnsavedChangesDialogProps {
@@ -10,6 +11,7 @@ export interface UnsavedChangesDialogProps {
 }
 
 const UnsavedChangesDialog: Component<UnsavedChangesDialogProps> = (props) => {
+    onEscapeKey(() => props.isOpen, () => props.onCancel());
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") props.onCancel();
     };

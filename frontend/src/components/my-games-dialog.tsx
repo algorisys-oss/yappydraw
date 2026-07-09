@@ -19,11 +19,13 @@ import { setDrawingId } from './menu';
 import { showMyGames, setShowMyGames } from './my-games-signal';
 import { setShowNewGame } from './new-game-signal';
 import { showToast } from './toast';
+import { onEscapeKey } from '../utils/use-escape';
 import './my-games-dialog.css';
 
 type GameCard = { id: string; name: string; thumb?: string; updatedAt?: string; mode?: 'visual' | 'code' };
 
 const MyGamesDialog: Component = () => {
+    onEscapeKey(showMyGames, () => setShowMyGames(false));
     const [games, setGames] = createSignal<GameCard[]>([]);
     const [loading, setLoading] = createSignal(false);
 

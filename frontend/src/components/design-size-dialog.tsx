@@ -2,6 +2,7 @@ import { type Component, Show, For, createSignal } from "solid-js";
 import { Portal } from "solid-js/web";
 import { X } from "lucide-solid";
 import { PAGE_SIZE_PRESETS, PAGE_PRESET_CATEGORIES, DEFAULT_DESIGN_PAGE_SIZE, type PageSizePreset } from "../config/page-size-presets";
+import { onEscapeKey } from "../utils/use-escape";
 import "./design-size-dialog.css";
 
 export interface DesignSizeDialogProps {
@@ -18,6 +19,7 @@ export interface DesignSizeDialogProps {
  * custom width × height row. Preview boxes show the aspect ratio at a glance.
  */
 const DesignSizeDialog: Component<DesignSizeDialogProps> = (props) => {
+    onEscapeKey(() => props.isOpen, () => props.onClose());
     const [customW, setCustomW] = createSignal(DEFAULT_DESIGN_PAGE_SIZE.width);
     const [customH, setCustomH] = createSignal(DEFAULT_DESIGN_PAGE_SIZE.height);
 

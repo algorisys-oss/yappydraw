@@ -17,6 +17,7 @@ import { buildBlueprintPlatformerExample, buildBlueprintBreakoutExample, buildBl
 import { GAME_TEMPLATES } from '../game/game-templates';
 import { handleNew } from './menu';
 import { showNewGame, setShowNewGame } from './new-game-signal';
+import { onEscapeKey } from '../utils/use-escape';
 import './new-game-dialog.css';
 
 type Choice = { key: string; title: string; sub: string; icon: any; after: () => void; stage?: { w: number; h: number } };
@@ -47,6 +48,7 @@ const CHOICES: Choice[] = [
 ];
 
 const NewGameDialog: Component = () => {
+    onEscapeKey(showNewGame, () => setShowNewGame(false));
     const [stage, setStage] = createSignal(STAGES[0]);
     const pick = (c: Choice) => {
         setShowNewGame(false);

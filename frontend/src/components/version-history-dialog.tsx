@@ -6,6 +6,7 @@ import { buildCurrentDocument } from "../storage/auto-save";
 import { store } from "../store/app-store";
 import { drawingId } from "./menu";
 import { showToast } from "./toast";
+import { onEscapeKey } from "../utils/use-escape";
 import "./version-history-dialog.css";
 
 interface VersionHistoryDialogProps {
@@ -22,6 +23,7 @@ const timeAgo = (iso: string): string => {
 };
 
 const VersionHistoryDialog: Component<VersionHistoryDialogProps> = (props) => {
+    onEscapeKey(() => props.isOpen, () => props.onClose());
     const [versions, setVersions] = createSignal<VersionMeta[]>([]);
     const [loading, setLoading] = createSignal(false);
 

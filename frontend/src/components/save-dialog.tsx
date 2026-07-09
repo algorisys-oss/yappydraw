@@ -1,5 +1,6 @@
 import { type Component, createSignal, Show, createEffect } from "solid-js";
 import { X } from "lucide-solid";
+import { onEscapeKey } from "../utils/use-escape";
 import "./save-dialog.css";
 
 interface SaveDialogProps {
@@ -10,6 +11,7 @@ interface SaveDialogProps {
 }
 
 const SaveDialog: Component<SaveDialogProps> = (props) => {
+    onEscapeKey(() => props.isOpen, () => props.onClose());
     const [filename, setFilename] = createSignal("");
 
     createEffect(() => {

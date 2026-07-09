@@ -18,6 +18,7 @@ import { startGame } from "../game/game-runtime";
 import { GAME_TEMPLATES } from "../game/game-templates";
 import { GameViewSwitcher } from "./game-view-switcher";
 import { showToast } from "./toast";
+import { onEscapeKey } from "../utils/use-escape";
 import "./game-script-dialog.css";
 
 const CHEATSHEET = `game.width / height / x / y      the page = your stage
@@ -48,6 +49,7 @@ const GameScriptDialog: Component = () => {
     });
 
     const close = () => toggleGameScript(false);
+    onEscapeKey(() => store.showGameScript, close);
 
     /** One-way: freeze the generated script as the source and switch to code authoring. */
     const eject = (seed?: string) => {

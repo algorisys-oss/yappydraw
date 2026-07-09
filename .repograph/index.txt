@@ -122,7 +122,7 @@ frontend/src/components/cut-overlay.css | - | 55 |
 frontend/src/components/cut-overlay.tsx | typescript | 86 | CutOverlay:14 active:20 toWorld:21 onDown:23 onMove:29 onUp:30 onKey:55 lineScreen:64
 frontend/src/components/data-metrics-tool-group.tsx | typescript | 195 | Component:1 DataMetricsToolGroup:80 handler:87 getActiveTool:97 handleToolClick:106 as:114 as:120 handleRightClick:128 toggleMenu:134 activeTool:141 isActive:142 getDropdownPosition:144
 frontend/src/components/design-size-dialog.css | - | 114 |
-frontend/src/components/design-size-dialog.tsx | typescript | 94 | Component:1 PageSizePreset:4 DesignSizeDialogProps:7 DesignSizeDialog:20 pick:24 pickCustom:29 previewStyle:38
+frontend/src/components/design-size-dialog.tsx | typescript | 96 | Component:1 PageSizePreset:4 DesignSizeDialogProps:8 DesignSizeDialog:21 pick:26 pickCustom:31 previewStyle:40
 frontend/src/components/ds-ops-panel.tsx | typescript | 397 | Component:8 DsOperation:15 DsOpsPanel:19 resetAutoHide:47 handleOperation:79 handleStop:120 handleSpeedChange:125 handleInputKeyDown:131 stopPropagation:153
 frontend/src/components/ds-tool-group.tsx | typescript | 134 | Component:1 DsToolGroup:19 handler:26 getActiveTool:36 handleToolClick:45 as:53 as:59 handleRightClick:67 toggleMenu:73 activeTool:80 isActive:81 getDropdownPosition:83
 frontend/src/components/dsl-import-dialog.css | - | 241 |
@@ -142,7 +142,7 @@ frontend/src/components/game-mode-bar.tsx | typescript | 61 | Component:12 GameV
 frontend/src/components/game-overlay.css | - | 110 |
 frontend/src/components/game-overlay.tsx | typescript | 115 | Component:11 GameButton:19 GameOverlay:23 padVisible:28 ended:32 toWorld:34 onDown:36 onMove:41 onUp:45
 frontend/src/components/game-script-dialog.css | - | 139 |
-frontend/src/components/game-script-dialog.tsx | typescript | 135 | Component:12 GameScriptDialog:40 isCode:42 generated:44 close:50 eject:53 applyTemplate:61 save:67 play:69
+frontend/src/components/game-script-dialog.tsx | typescript | 137 | Component:12 GameScriptDialog:41 isCode:43 generated:45 close:51 eject:55 applyTemplate:63 save:69 play:71
 frontend/src/components/game-view-switcher.css | - | 36 |
 frontend/src/components/game-view-switcher.tsx | typescript | 39 | Component:12 GameView:17 show:19
 frontend/src/components/google-fonts-dialog.css | - | 110 |
@@ -172,10 +172,10 @@ frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 tar
 frontend/src/components/mindmap-tool-group.tsx | typescript | 135 | Component:1 MindmapToolGroup:16 handler:23 getActiveMindmapTool:34 handleToolClick:48 as:56 as:61 handleRightClick:68 toggleMenu:74 as:76 activeTool:81 isActive:82 getDropdownPosition:84
 frontend/src/components/minimap.tsx | typescript | 282 | MinimapProps:8 Minimap:13 getContentBounds:23 getMinimapScale:56 renderMinimap:63 handleClick:123 handlePointerDown:147 handlePointerMove:173 handlePointerUp:194 track:209
 frontend/src/components/my-games-dialog.css | - | 82 |
-frontend/src/components/my-games-dialog.tsx | typescript | 129 | Component:9 GameCard:24 MyGamesDialog:26 fetchGames:30 load:45 play:54 open:63 del:70
+frontend/src/components/my-games-dialog.tsx | typescript | 131 | Component:9 GameCard:25 MyGamesDialog:27 fetchGames:32 load:47 play:56 open:65 del:72
 frontend/src/components/my-games-signal.ts | typescript | 4 |
 frontend/src/components/new-game-dialog.css | - | 55 |
-frontend/src/components/new-game-dialog.tsx | typescript | 98 | Component:11 Choice:22 slingshotScript:24 flappyScript:25 loadCodeGame:26 NewGameDialog:49 pick:51
+frontend/src/components/new-game-dialog.tsx | typescript | 100 | Component:11 Choice:23 slingshotScript:25 flappyScript:26 loadCodeGame:27 NewGameDialog:50 pick:53
 frontend/src/components/new-game-signal.ts | typescript | 4 |
 frontend/src/components/p3-color-picker.tsx | typescript | 274 | Component:1 setPalettePinned:15 ColorPalettePicker:20 activePalette:25 applyAsset:27 onSwatchPointerDown:82 onSwatchPointerMove:87 onSwatchPointerUp:99 handleDragStart:110
 frontend/src/components/path-editor-overlay.tsx | typescript | 303 | Component:8 onMove:120 onUp:156
@@ -202,7 +202,7 @@ frontend/src/components/recolor-panel.css | - | 61 |
 frontend/src/components/recolor-panel.tsx | typescript | 98 | Component:1 RecolorPanel:16 swatches:23 beginEdit:25 pickLive:31 endEdit:38 valHex:39
 frontend/src/components/recording-overlay.css | - | 100 |
 frontend/src/components/recording-overlay.tsx | typescript | 42 | Component:1 Props:5 RecordingOverlay:9 formatTime:19
-frontend/src/components/repeat-dialog.tsx | typescript | 90 | openRepeatDialog:6 RepeatDialog:14 close:23 apply:24
+frontend/src/components/repeat-dialog.tsx | typescript | 92 | openRepeatDialog:7 RepeatDialog:15 close:25 apply:26
 frontend/src/components/reshape-tool-overlay.css | - | 23 |
 frontend/src/components/reshape-tool-overlay.tsx | typescript | 108 | ReshapeToolOverlay:13 active:19 toWorld:20 candidatePaths:22 onDown:28 onMove:57 onUp:75 onKey:85
 frontend/src/components/rich-text-editing-overlay.css | - | 182 |
@@ -211,7 +211,7 @@ frontend/src/components/rocket-settings-dialog.css | - | 183 |
 frontend/src/components/rocket-settings-dialog.tsx | typescript | 182 | Component:5 RocketConfig:7 RocketSettingsDialogProps:13 RocketSettingsDialog:18 handleKeyDown:38 handleDone:49 handleTest:59
 frontend/src/components/ruler-overlay.tsx | typescript | 235 | niceStep:9 DragState:17 RulerOverlay:30 theme:37 palette:38 worldToScreenX:45 worldToScreenY:46 screenToWorldX:47 screenToWorldY:48 drawRuler:50 onWindowPointerMove:128 onWindowPointerUp:134 startCreate:143 startMove:150 onResize:157 screen:178
 frontend/src/components/save-dialog.css | - | 120 |
-frontend/src/components/save-dialog.tsx | typescript | 73 | Component:1 SaveDialogProps:5 SaveDialog:12 handleSave:21 handleKeyDown:28
+frontend/src/components/save-dialog.tsx | typescript | 75 | Component:1 SaveDialogProps:6 SaveDialog:13 handleSave:23 handleKeyDown:30
 frontend/src/components/scene-timeline.css | - | 73 |
 frontend/src/components/scene-timeline.tsx | typescript | 197 | Component:1 clipColor:14 clipName:15 FigTrack:17 SceneTimeline:19 reorderStep:35 move:43 up:55 resizeStep:61 move:68 up:73 dur:112 pct:113 play:115 restart:116 seekFromEvent:119 onRulerDown:125 move:128 up:129 selectFigure:134
 frontend/src/components/scroll-back-button.tsx | typescript | 136 | Component:8 ScrollBackButtonProps:12 ScrollBackButton:16 handleScrollBack:65
@@ -268,15 +268,15 @@ frontend/src/components/type-on-path-overlay.css | - | 23 |
 frontend/src/components/type-on-path-overlay.tsx | typescript | 72 | text:13 TypeOnPathOverlay:16 active:18 toWorld:19 pick:21 onMove:33 onDown:34 onKey:46 box:52
 frontend/src/components/uml-tool-group.tsx | typescript | 145 | Component:1 UmlToolGroup:30 handler:37 getActiveUmlTool:47 handleToolClick:56 as:64 as:70 handleRightClick:78 toggleMenu:84 activeTool:91 isActive:92 getDropdownPosition:94
 frontend/src/components/unsaved-changes-dialog.css | - | 111 |
-frontend/src/components/unsaved-changes-dialog.tsx | typescript | 53 | Component:1 UnsavedChangesDialogProps:5 UnsavedChangesDialog:12 handleKeyDown:13
+frontend/src/components/unsaved-changes-dialog.tsx | typescript | 55 | Component:1 UnsavedChangesDialogProps:6 UnsavedChangesDialog:13 handleKeyDown:15
 frontend/src/components/vector-tools-panel.css | - | 70 |
 frontend/src/components/vector-tools-panel.tsx | typescript | 165 | Component:1 Tool:24 VectorToolsPanel:26 center:30 selTexts:39 modeRun:42 setupPanel:105
 frontend/src/components/version-history-dialog.css | - | 96 |
-frontend/src/components/version-history-dialog.tsx | typescript | 120 | Component:1 VersionMeta:4 VersionHistoryDialogProps:11 timeAgo:16 VersionHistoryDialog:24 refresh:28 handleSnapshot:35 handleRestore:47 handleDelete:54
+frontend/src/components/version-history-dialog.tsx | typescript | 122 | Component:1 VersionMeta:4 VersionHistoryDialogProps:12 timeAgo:17 VersionHistoryDialog:25 refresh:30 handleSnapshot:37 handleRestore:49 handleDelete:56
 frontend/src/components/video-overlay.css | - | 70 |
 frontend/src/components/video-overlay.tsx | typescript | 204 | Component:1 onDragStart:69 onDragMove:83 onDragEnd:91 toggleLock:98 close:104 VideoOverlay:177 handleKeyDown:179
 frontend/src/components/video-url-dialog.css | - | 183 |
-frontend/src/components/video-url-dialog.tsx | typescript | 135 | Component:1 VideoProvider:4 VideoUrlDialogProps:7 VideoUrlDialog:14 handleSubmit:55 handleKeyDown:61
+frontend/src/components/video-url-dialog.tsx | typescript | 137 | Component:1 VideoProvider:4 VideoUrlDialogProps:8 VideoUrlDialog:15 handleSubmit:57 handleKeyDown:63
 frontend/src/components/welcome-screen.tsx | typescript | 109 | Component:1 WelcomeScreen:9 isVisible:10 handler:24
 frontend/src/components/width-tool-overlay.css | - | 39 |
 frontend/src/components/width-tool-overlay.tsx | typescript | 92 | WidthToolOverlay:14 active:19 toWorld:20 candidatePaths:22 onDown:28 onMove:44 onUp:45 onKey:62 guide:71
@@ -594,6 +594,7 @@ frontend/src/utils/tool-handlers/selection-handler.ts | typescript | 2661 | getM
 frontend/src/utils/tool-handlers/text-editing-handler.ts | typescript | 494 | TableEditingCell:20 EditingPropertyType:29 TextEditingContext:31 commitText:52 commitRichText:180 handleDoubleClick:230
 frontend/src/utils/transform-pivot.ts | typescript | 48 | selectionKey:23 setTransformPivot:28 clearTransformPivot:33 getCustomPivot:38 getElementPivot:46
 frontend/src/utils/uml-layout-utils.ts | typescript | 117 | UmlClassLayout:9 calculateUmlClassLayout:21 Uml2SectionLayout:76 calculateUml2SectionLayout:83
+frontend/src/utils/use-escape.ts | typescript | 24 | Accessor:1 onEscapeKey:12
 frontend/src/utils/variable-width.ts | typescript | 89 | WidthPoint:11 Pt:12 widthAt:15 centerlineCommands:31 sampleCenterline:39 buildWidthRibbon:62
 frontend/src/utils/video-recorder.ts | typescript | 104 | VideoFormat:6 VideoRecorder:8{constructor:15 start:19 stop:63 saveFile:70 cleanup:96}
 frontend/src/utils/video-utils.ts | typescript | 148 | VideoProvider:5 detectVideoProvider:12 extractYouTubeId:20 extractVimeoId:26 getEmbedURL:32 getPosterURL:46 fetchVimeoPoster:56 captureVideoFrame:70 isValidVideoURL:125 fetchPoster:137
