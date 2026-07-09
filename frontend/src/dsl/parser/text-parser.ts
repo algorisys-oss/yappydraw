@@ -246,6 +246,13 @@ export function parseTextDSL(input: string): ParseResult {
                         delete parsed[key];
                     }
                 }
+                // `curveType` (straight | bezier | elbow) is likewise an edge-level prop the
+                // engine reads off the edge, not the style block — hoist it so a source can ask
+                // for an elbow route to keep a cross-hierarchy edge from cutting through a box.
+                if ('curveType' in parsed) {
+                    edge.curveType = parsed.curveType;
+                    delete parsed.curveType;
+                }
                 if (Object.keys(parsed).length > 0) edge.style = parsed as any;
             }
             if (edgeDef.strokeStyle) {

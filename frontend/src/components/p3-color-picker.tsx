@@ -224,10 +224,19 @@ export const ColorPalettePicker: Component = () => {
                                     style={{
                                         width: '24px',
                                         height: '24px',
-                                        background: swatch.value === 'transparent' ? 'white' : swatch.value,
+                                        // `transparent` renders as a checkerboard (the standard "no
+                                        // colour" convention) so it's distinguishable from White —
+                                        // painting it solid white made the two swatches identical.
+                                        background: swatch.value === 'transparent'
+                                            ? 'repeating-conic-gradient(#c7ccd1 0% 25%, #ffffff 0% 50%) 50% / 8px 8px'
+                                            : swatch.value,
                                         'border-radius': '6px',
                                         cursor: 'grab',
-                                        border: '1px solid rgba(0,0,0,0.1)',
+                                        // Two-ring outline so near-white swatches (White / Off-White /
+                                        // Light-Gray) get a crisp dark edge AND dark swatches separate
+                                        // from the dark panel (outer light halo).
+                                        border: '1px solid rgba(0,0,0,0.18)',
+                                        'box-shadow': '0 0 0 1px rgba(255,255,255,0.10)',
                                         transition: 'transform 0.2s',
                                         'touch-action': 'none',
                                     }}

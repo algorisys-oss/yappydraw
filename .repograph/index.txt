@@ -177,7 +177,7 @@ frontend/src/components/my-games-signal.ts | typescript | 4 |
 frontend/src/components/new-game-dialog.css | - | 55 |
 frontend/src/components/new-game-dialog.tsx | typescript | 98 | Component:11 Choice:22 slingshotScript:24 flappyScript:25 loadCodeGame:26 NewGameDialog:49 pick:51
 frontend/src/components/new-game-signal.ts | typescript | 4 |
-frontend/src/components/p3-color-picker.tsx | typescript | 265 | Component:1 setPalettePinned:15 ColorPalettePicker:20 activePalette:25 applyAsset:27 onSwatchPointerDown:82 onSwatchPointerMove:87 onSwatchPointerUp:99 handleDragStart:110
+frontend/src/components/p3-color-picker.tsx | typescript | 274 | Component:1 setPalettePinned:15 ColorPalettePicker:20 activePalette:25 applyAsset:27 onSwatchPointerDown:82 onSwatchPointerMove:87 onSwatchPointerUp:99 handleDragStart:110
 frontend/src/components/path-editor-overlay.tsx | typescript | 303 | Component:8 onMove:120 onUp:156
 frontend/src/components/path-eraser-overlay.css | - | 24 |
 frontend/src/components/path-eraser-overlay.tsx | typescript | 62 | PathEraserOverlay:11 active:17 toWorld:18 onDown:20 onMove:25 onUp:26 onKey:32 scale:42 strokeScreen:43 cur:44
@@ -325,7 +325,7 @@ frontend/src/dsl/layout/types.ts | typescript | 19 | NodePosition:5 LayoutPositi
 frontend/src/dsl/parser/index.ts | typescript | 66 | parseDSL:26
 frontend/src/dsl/parser/json-parser.ts | typescript | 62 | parseJsonDSL:12
 frontend/src/dsl/parser/schema-validator.ts | typescript | 138 | validateDiagram:17 validateNodeChildren:122
-frontend/src/dsl/parser/text-parser.ts | typescript | 548 | EdgeOpDef:37 parseTextDSL:77 parseFrontmatterLine:363 parseInlineStyle:405 splitRespectingQuotes:443 parseMemberList:479 splitInlineProps:491 generateEdgesFromChildren:525
+frontend/src/dsl/parser/text-parser.ts | typescript | 555 | EdgeOpDef:37 parseTextDSL:77 parseFrontmatterLine:370 parseInlineStyle:412 splitRespectingQuotes:450 parseMemberList:486 splitInlineProps:498 generateEdgesFromChildren:532
 frontend/src/dsl/shape-aliases.ts | typescript | 123 | resolveShapeType:119
 frontend/src/dsl/shape-defaults.ts | typescript | 140 | ShapeSize:9 getShapeDefaults:138
 frontend/src/dsl/types.ts | typescript | 302 | DSLDiagram:14 DSLDiagramMeta:33 DSLLayoutStrategy:41 DSLLayoutConfig:54 DSLNode:64 DSLNodeStyle:83 DSLEdge:141 DSLEdgeStyle:154 DSLSequenceMeta:170 DSLSequenceEvent:177 DSLSeqMessageEvent:187 DSLSeqNoteEvent:197 DSLSeqFragmentStartEvent:206 DSLSeqFragmentSectionEvent:217 DSLSeqFragmentEndEvent:224 DSLSeqActivateEvent:230 DSLSeqDeactivateEvent:236 DSLGroup:243 DSLPool:252 DSLLane:260 DSLStyleDefaults:269 ParseError:277 ParseResult:283 RenderOptions:290 RenderResult:297
