@@ -99,7 +99,7 @@ const shapeProperties: QuickPropertyDef[] = [
     {
         // Shown for all shapes (a shape can hold text), matching Font / Align below.
         key: 'fontSize', controlType: 'mini-slider', label: 'Font Size',
-        min: 8, max: 200, step: 2,
+        min: 8, max: 200, step: 1,
     },
     {
         key: 'fontFamily', controlType: 'icon-select', label: 'Font',
@@ -173,7 +173,7 @@ const textProperties: QuickPropertyDef[] = [
         key: 'fontFamily', controlType: 'icon-select', label: 'Font',
         options: fontFamilyOptions
     },
-    { key: 'fontSize', controlType: 'mini-slider', label: 'Font Size', min: 8, max: 200, step: 2 },
+    { key: 'fontSize', controlType: 'mini-slider', label: 'Font Size', min: 8, max: 200, step: 1 },
     { key: 'fontWeight', controlType: 'icon-toggle', label: 'Bold' },
     { key: 'fontStyle', controlType: 'icon-toggle', label: 'Italic' },
     {
