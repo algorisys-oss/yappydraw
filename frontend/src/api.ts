@@ -32,6 +32,7 @@ import {
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
 import { PAGE_SIZE_PRESETS, getPagePreset } from "./config/page-size-presets";
+import { CANVAS_THEMES } from "./config/canvas-themes";
 import { magicResize } from "./utils/magic-resize";
 import { templateRegistry, getTemplateById, getTemplatesByCategory, searchTemplates, refreshUserTemplates } from "./templates/registry";
 import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
@@ -2608,6 +2609,14 @@ export const YappyAPI = {
     // Canvas
     setCanvasBackgroundColor(color: string) { setCanvasBackgroundColor(color); },
     setCanvasTexture(texture: 'none' | 'dots' | 'grid' | 'graph' | 'paper' | 'notebook') { setCanvasTexture(texture); },
+    /** Apply a named canvas background theme (see CANVAS_THEMES): sets background + texture in one go. */
+    setCanvasTheme(themeId: string) {
+        const t = CANVAS_THEMES.find(x => x.id === themeId);
+        if (!t) return false;
+        setCanvasBackgroundColor(t.background);
+        setCanvasTexture(t.texture);
+        return true;
+    },
     zoomToFitSlide() { zoomToFitSlide(); },
 
     // Tool Selection

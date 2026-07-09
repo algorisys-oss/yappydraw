@@ -31,6 +31,7 @@ import { PATTERN_PRESETS, defaultPatternFill } from "../utils/pattern-fill";
 import { showToast } from "./toast";
 import MathNumberInput from "./math-number-input";
 import { ColorPickerPro } from "./color-picker-pro";
+import { CANVAS_THEMES, matchCanvasTheme } from "../config/canvas-themes";
 import { playSequence } from "../utils/animation/orchestrator";
 import { AnimationPanel } from "./animation-panel";
 import { resizeTableData, defaultColWidths, defaultRowHeights, defaultTableData } from "../utils/table-utils";
@@ -1850,6 +1851,37 @@ const PropertyPanel: Component = () => {
                                                     <Copy size={12} />
                                                 </button>
                                             </div>
+                                        </div>
+                                    </div>
+                                </Show>
+                                <Show when={targetType() === 'canvas' && !isPagedDocType(store.docType)}>
+                                    <div class="property-group">
+                                        <div class="group-title">CANVAS THEME</div>
+                                        <div class="canvas-theme-grid">
+                                            <For each={CANVAS_THEMES}>
+                                                {(theme) => {
+                                                    const active = () => matchCanvasTheme(store.canvasBackgroundColor, store.canvasTexture)?.id === theme.id;
+                                                    const dark = () => { const c = theme.background.replace('#', ''); const h = c.length === 3 ? c.split('').map(x => x + x).join('') : c; const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16); return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5; };
+                                                    const ink = () => dark() ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.35)';
+                                                    const pattern = () => {
+                                                        if (theme.texture === 'dots') return { 'background-image': `radial-gradient(${ink()} 1px, transparent 1px)`, 'background-size': '7px 7px' };
+                                                        if (theme.texture === 'grid' || theme.texture === 'graph') return { 'background-image': `linear-gradient(${ink()} 1px, transparent 1px), linear-gradient(90deg, ${ink()} 1px, transparent 1px)`, 'background-size': '7px 7px' };
+                                                        if (theme.texture === 'notebook') return { 'background-image': `linear-gradient(${ink()} 1px, transparent 1px)`, 'background-size': '100% 7px' };
+                                                        return {};
+                                                    };
+                                                    return (
+                                                        <button
+                                                            class="canvas-theme-chip"
+                                                            classList={{ active: active() }}
+                                                            title={theme.name}
+                                                            onClick={() => { setCanvasBackgroundColor(theme.background); setCanvasTexture(theme.texture); }}
+                                                        >
+                                                            <span class="canvas-theme-preview" style={{ background: theme.background, ...pattern() }} />
+                                                            <span class="canvas-theme-name">{theme.name}</span>
+                                                        </button>
+                                                    );
+                                                }}
+                                            </For>
                                         </div>
                                     </div>
                                 </Show>

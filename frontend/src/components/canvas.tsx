@@ -344,7 +344,7 @@ const Canvas: Component = () => {
         // 3. Render backgrounds & grids
         renderWorkspaceBackground(ctx, canvasRef, store.resolvedTheme, store.docType, store.canvasBackgroundColor);
         renderSlideBoundaries(ctx, rc, store.slides, store.docType, store.activeSlideIndex, scale, panX, panY, store.resolvedTheme);
-        renderCanvasTexture(ctx, canvasRef, store.canvasTexture, scale, panX, panY, isDarkMode);
+        renderCanvasTexture(ctx, canvasRef, store.canvasTexture, scale, panX, panY, isDarkMode, store.canvasBackgroundColor);
 
         // 4. Enter world-space for elements
         ctx.save();

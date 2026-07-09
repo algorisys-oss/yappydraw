@@ -776,3 +776,42 @@ input[type="text"] {
     font-weight: normal;
     font-style: italic;
 }
+/* Canvas background themes picker */
+.canvas-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 6px;
+}
+.canvas-theme-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+.canvas-theme-preview {
+    display: block;
+    height: 34px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.15));
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.canvas-theme-chip.active .canvas-theme-preview {
+    border-color: var(--accent, #5f3dc4);
+    box-shadow: 0 0 0 2px var(--accent, #5f3dc4);
+}
+.canvas-theme-name {
+    font-size: 10px;
+    color: var(--text-secondary, #888);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.canvas-theme-chip.active .canvas-theme-name {
+    color: var(--text-primary, #222);
+    font-weight: 600;
+}

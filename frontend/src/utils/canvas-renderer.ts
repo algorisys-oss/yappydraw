@@ -426,6 +426,22 @@ export function renderSlideBoundaries(
 
 // ─── Canvas Texture ─────────────────────────────────────────────────
 
+/** True if a CSS colour reads as "dark" (perceived luminance < ~0.5). Handles #hex and rgb(). */
+function isColorDark(color: string): boolean {
+    let r = 255, g = 255, b = 255;
+    const c = color.trim();
+    if (c.startsWith('#')) {
+        let h = c.slice(1);
+        if (h.length === 3) h = h.split('').map(ch => ch + ch).join('');
+        if (h.length >= 6) { r = parseInt(h.slice(0, 2), 16); g = parseInt(h.slice(2, 4), 16); b = parseInt(h.slice(4, 6), 16); }
+    } else {
+        const m = c.match(/rgba?\(([^)]+)\)/);
+        if (m) { const p = m[1].split(',').map(s => parseFloat(s)); [r, g, b] = [p[0] ?? 255, p[1] ?? 255, p[2] ?? 255]; }
+        else if (c === 'transparent') return false;
+    }
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
+}
+
 export function renderCanvasTexture(
     ctx: CanvasRenderingContext2D,
     canvas: HTMLCanvasElement,
@@ -433,10 +449,15 @@ export function renderCanvasTexture(
     scale: number,
     panX: number,
     panY: number,
-    _isDarkMode: boolean
+    _isDarkMode: boolean,
+    backgroundColor?: string
 ): void {
     if (texture === 'none') return;
-    const dk = (c: string) => RenderPipeline.adjustColor(c, _isDarkMode);   // black grid → light on dark
+    // Derive the texture ink from the CANVAS background's luminance (not the UI theme),
+    // so a dark/blueprint canvas gets light lines and a light canvas gets dark lines —
+    // the key to background themes reading correctly. Falls back to the UI dark mode.
+    const bgDark = backgroundColor ? isColorDark(backgroundColor) : _isDarkMode;
+    const ink = (a: number) => bgDark ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a})`;
 
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -446,7 +467,7 @@ export function renderCanvasTexture(
         // Screen-space repetition so it works in both infinite and slides mode —
         // no vertical margin line, since it would have no meaningful anchor on an infinite canvas.
         const spacing = 32;
-        const lineColor = dk('rgba(30, 90, 180, 0.18)'); // faint blue rule
+        const lineColor = bgDark ? 'rgba(130, 170, 230, 0.28)' : 'rgba(30, 90, 180, 0.18)'; // faint blue rule
         const gridStartY = (panY % (spacing * scale));
 
         ctx.strokeStyle = lineColor;
@@ -460,10 +481,10 @@ export function renderCanvasTexture(
     } else if (texture === 'dots' || texture === 'grid' || texture === 'graph') {
         const spacing = texture === 'graph' ? 40 : 20;
         const subSpacing = spacing / 4;
-        // Canvas textures use fixed subtle colors so content isn't affected by UI theme
-        const dotColor = dk('rgba(0,0,0,0.08)');
-        const lineColor = dk('rgba(0,0,0,0.05)');
-        const majorLineColor = dk('rgba(0,0,0,0.1)');
+        // Ink derived from the canvas background luminance (see `ink` above).
+        const dotColor = ink(0.14);
+        const lineColor = ink(0.08);
+        const majorLineColor = ink(0.16);
 
         const gridStartX = (panX % (spacing * scale));
         const gridStartY = (panY % (spacing * scale));
