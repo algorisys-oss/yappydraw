@@ -744,7 +744,12 @@ function applyAutoSizing(nodes: DSLNode[]): void {
             const resolvedType = resolveShapeType(node.shape) as ElementType;
             if (resolvedType === 'text') continue;
             const defaults = getShapeDefaults(resolvedType);
-            const fitted = computeFittedSize(resolvedType, node.label, defaults, node.style?.fontSize);
+            // UML class/interface boxes must fit their MEMBER lines, not just the
+            // class name — otherwise `name: Type` members wrap/overflow (see
+            // computeUmlFittedSize).
+            const fitted = (resolvedType === 'umlClass' || resolvedType === 'umlInterface') && node.sections
+                ? computeUmlFittedSize(resolvedType, node.label, node.sections, defaults, node.style?.fontSize)
+                : computeFittedSize(resolvedType, node.label, defaults, node.style?.fontSize);
             node.width = Math.max(defaults.width, fitted.width);
             node.height = Math.max(defaults.height, fitted.height);
         }
@@ -812,5 +817,56 @@ function computeFittedSize(
         const lines = Math.ceil((label.length * charWidth) / (estWidth - padding));
         const estHeight = Math.max(defaults.height, lines * fs * 1.4 + padding);
         return { width: estWidth, height: estHeight };
+    }
+}
+
+/**
+ * Size a umlClass / umlInterface box to fit its widest member line (so nothing
+ * wraps) and all its members (so nothing overflows the compartments). The generic
+ * label fitter measures only the class NAME, leaving the box at its 180px default —
+ * too narrow for `name: Type` members, which then wrap on canvas (clipped) and, in
+ * SVG export (unclipped), spill past the compartment so the type after the colon
+ * looks dropped. Measured with the same renderer/font the drawers use, so the sizing
+ * and the wrap decision stay in agreement.
+ */
+function computeUmlFittedSize(
+    type: ElementType,
+    label: string,
+    sections: { attributes?: string; methods?: string },
+    defaults: { width: number; height: number },
+    fontSize?: number,
+): { width: number; height: number } {
+    try {
+        const renderer = getMeasurementRenderer();
+        const baseSize = fontSize ?? 28;      // MUST match getFontString's default
+        const memberSize = baseSize * 0.9;    // renderers draw members at 0.9×
+
+        // Widest single line across the (bold) header name and every member line.
+        renderer.font = getFontString({ fontSize: baseSize, fontWeight: 'bold' });
+        let maxLineW = renderer.measureText(label || '').width;
+
+        const attrLines = (sections.attributes || '').split('\n').map(s => s.trim()).filter(Boolean);
+        const methodLines = (sections.methods || '').split('\n').map(s => s.trim()).filter(Boolean);
+        renderer.font = getFontString({ fontSize: memberSize });
+        for (const ln of [...attrLines, ...methodLines]) {
+            maxLineW = Math.max(maxLineW, renderer.measureText(ln).width);
+        }
+
+        // +34: 10px inner padding each side of the member text + slack so a small
+        // measured/rendered metric drift can't tip a line into wrapping.
+        const width = Math.max(defaults.width, Math.ceil(maxLineW) + 34);
+
+        // Height: header band + one row per member line + compartment padding.
+        const headerH = type === 'umlInterface'
+            ? Math.max(40, baseSize * 1.8)    // stereotype line + name
+            : Math.max(30, baseSize + 14);
+        const lineH = memberSize * 1.4;
+        const attrH = attrLines.length ? attrLines.length * lineH + 14 : (type === 'umlClass' ? 20 : 0);
+        const methodH = methodLines.length ? methodLines.length * lineH + 14 : 0;
+        const height = Math.max(defaults.height, Math.ceil(headerH + attrH + methodH));
+
+        return { width, height };
+    } catch {
+        return { width: defaults.width, height: defaults.height };
     }
 }
