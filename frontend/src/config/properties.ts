@@ -1268,7 +1268,7 @@ export const properties: PropertyConfig[] = [
             { label: 'Bar', value: 'bar' }
         ],
         group: 'style',
-        applicableTo: ['arrow', 'line', 'organicBranch'],
+        applicableTo: ['arrow', 'line', 'organicBranch', 'bezier'],
         defaultValue: null
     },
     {
@@ -1278,7 +1278,7 @@ export const properties: PropertyConfig[] = [
         min: 1,
         max: 100,
         group: 'style',
-        applicableTo: ['arrow', 'line', 'organicBranch'],
+        applicableTo: ['arrow', 'line', 'organicBranch', 'bezier'],
         defaultValue: 28,
         dependsOn: { key: 'startArrowhead', value: ['arrow', 'triangle', 'diamond', 'diamondFilled', 'crowsfoot', 'circle', 'dot', 'bar'] }
     },
@@ -1298,7 +1298,7 @@ export const properties: PropertyConfig[] = [
             { label: 'Bar', value: 'bar' }
         ],
         group: 'style',
-        applicableTo: ['arrow', 'line', 'organicBranch'],
+        applicableTo: ['arrow', 'line', 'organicBranch', 'bezier'],
         defaultValue: null
     },
     {
@@ -1308,7 +1308,7 @@ export const properties: PropertyConfig[] = [
         min: 1,
         max: 100,
         group: 'style',
-        applicableTo: ['arrow', 'line', 'organicBranch'],
+        applicableTo: ['arrow', 'line', 'organicBranch', 'bezier'],
         defaultValue: 28,
         dependsOn: { key: 'endArrowhead', value: ['arrow', 'triangle', 'diamond', 'diamondFilled', 'crowsfoot', 'circle', 'dot', 'bar'] }
     },
