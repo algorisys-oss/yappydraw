@@ -755,7 +755,8 @@ const Menu: Component = () => {
                                         });
                                         setIsMenuOpen(false);
                                     }}>
-                                        <span class="label">…Sitemap</span>
+                                        <Network size={15} />
+                                        <span class="label">Sitemap</span>
                                     </button>
                                     <button class="menu-item menu-sub" onClick={() => {
                                         YappyAPI.createMindMap({
@@ -767,7 +768,8 @@ const Menu: Component = () => {
                                         });
                                         setIsMenuOpen(false);
                                     }}>
-                                        <span class="label">…Random Words</span>
+                                        <Sparkles size={15} />
+                                        <span class="label">Random Words</span>
                                     </button>
                                     <Show when={isPagedDocType(store.docType)}>
                                         <button class="menu-item" onClick={() => { setIsMagicResizeOpen(true); setIsMenuOpen(false); }}>
