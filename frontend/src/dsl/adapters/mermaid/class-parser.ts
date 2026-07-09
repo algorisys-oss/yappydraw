@@ -16,34 +16,71 @@
  */
 
 import type { DSLDiagram, DSLNode, DSLEdge, ParseError } from '../../types';
+import type { ArrowHead } from '../../../types';
 import type { AdapterResult } from '../adapter-interface';
 
 // Relationship patterns
 // A <|-- B, A *-- B, A o-- B, A --> B, A ..> B, A -- B, A <|.. B
-const RELATION_RE = /^(\S+)\s+(<\|--|<\|\.\.|\*--|\*\.\.| o--|o\.\.| --|\.\.>|-->|--)\s+(\S+)\s*(?::\s*(.+))?$/;
+// Optional quoted cardinality labels may sit either side of the arrow, e.g.
+//   Subject "1" o-- "0..*" Observer : observers
+// NOTE: arrow alternatives must NOT carry a leading space — the preceding \s+
+// already consumes the separator, so ` o--` could never match (Gap 2). Order
+// longer/arrowed forms before their prefixes (`-->` before `--`, `..>` before `..`).
+const RELATION_RE = /^(\S+)\s+(?:"[^"]*"\s+)?(<\|--|<\|\.\.|\*-->|\*--|\*\.\.|o-->|o--|o\.\.|\.\.>|-->|\.\.|--)\s+(?:"[^"]*"\s+)?(\S+)\s*(?::\s*(.+))?$/;
 // Also handle reversed: B --|> A
-const RELATION_RE2 = /^(\S+)\s+(--\|>|\.\.?\|>|--\*|\.\.o|--o|-->|--)\s+(\S+)\s*(?::\s*(.+))?$/;
+const RELATION_RE2 = /^(\S+)\s+(?:"[^"]*"\s+)?(--\|>|\.\.\|>|\.\|>|<--\*|<--o|--\*|\.\.o|--o|<--|-->|--)\s+(?:"[^"]*"\s+)?(\S+)\s*(?::\s*(.+))?$/;
 
 const CLASS_DEF_RE = /^class\s+(\S+?)(?:::(\S+))?\s*(?:\{([^}]*)\})?$/;
 const CLASS_MEMBER_RE = /^(\S+)\s*:\s*(.+)$/;
 const ANNOTATION_RE = /^<<(\w+)>>\s+(\S+)$/;
 
-/** Map Mermaid relationship arrows to edge style */
-function mapRelationship(arrow: string): { type: 'arrow' | 'line'; label?: string; style?: string } {
+/**
+ * UML relationship spec for a Mermaid class arrow.
+ *
+ * `decorated` says which written side carries the UML glyph:
+ *   - 'left'  → generalization/composition/aggregation: the glyph sits on the
+ *              base / whole (the left operand of `A <|-- B`, `A *-- B`, `A o-- B`).
+ *   - 'right' → association/dependency and the reversed forms: the open arrow
+ *              points at the right operand (the target/base).
+ *   - null   → a plain undirected link (`--`) or dashed link (`..`), no glyph.
+ * `glyph` is the UML arrowhead (hollow `triangle`, hollow `diamond`, filled
+ * `diamondFilled`, open `arrow`). `nav` adds a small open arrow on the far end
+ * for the navigable composite/aggregate forms (`*-->`, `o-->`).
+ *
+ * This replaces the old text-label workaround ("extends"/"composition"/…): the
+ * relation kind is now drawn as the correct arrowhead (Gap 3) rather than typed
+ * out as a label. Any user-supplied `: label` (role/cardinality) is preserved.
+ */
+type RelationSpec = {
+    decorated: 'left' | 'right' | null;
+    glyph: ArrowHead;
+    dashed?: boolean;
+    nav?: boolean;
+};
+
+function mapRelationship(arrow: string): RelationSpec {
     switch (arrow) {
-        case '<|--': return { type: 'arrow', label: 'extends' };
-        case '<|..': return { type: 'arrow', label: 'implements', style: 'dashed' };
-        case '*--': return { type: 'arrow', label: 'composition' };
-        case 'o--': return { type: 'arrow', label: 'aggregation' };
-        case '..>': return { type: 'arrow', style: 'dashed' };
-        case '-->': return { type: 'arrow' };
-        case '--': return { type: 'line' };
-        // Reversed forms
-        case '--|>': return { type: 'arrow', label: 'extends' };
-        case '..|>': return { type: 'arrow', label: 'implements', style: 'dashed' };
-        case '--*': return { type: 'arrow', label: 'composition' };
-        case '--o': return { type: 'arrow', label: 'aggregation' };
-        default: return { type: 'arrow' };
+        // Generalization / realization — hollow triangle on the base (left)
+        case '<|--': return { decorated: 'left', glyph: 'triangle' };
+        case '<|..': return { decorated: 'left', glyph: 'triangle', dashed: true };
+        // Composition — filled diamond on the whole (left)
+        case '*--': return { decorated: 'left', glyph: 'diamondFilled' };
+        case '*-->': return { decorated: 'left', glyph: 'diamondFilled', nav: true };
+        // Aggregation — hollow diamond on the aggregate (left)
+        case 'o--': return { decorated: 'left', glyph: 'diamond' };
+        case 'o-->': return { decorated: 'left', glyph: 'diamond', nav: true };
+        // Dependency / association — open arrow on the target (right)
+        case '..>': return { decorated: 'right', glyph: 'arrow', dashed: true };
+        case '-->': return { decorated: 'right', glyph: 'arrow' };
+        case '..': return { decorated: null, glyph: null, dashed: true };
+        case '--': return { decorated: null, glyph: null };
+        // Reversed forms — decoration moves to the right operand
+        case '--|>': case '.|>': return { decorated: 'right', glyph: 'triangle' };
+        case '..|>': return { decorated: 'right', glyph: 'triangle', dashed: true };
+        case '--*': case '<--*': return { decorated: 'right', glyph: 'diamondFilled' };
+        case '--o': case '<--o': return { decorated: 'right', glyph: 'diamond' };
+        case '<--': return { decorated: 'left', glyph: 'arrow' };
+        default: return { decorated: 'right', glyph: 'arrow' };
     }
 }
 
@@ -173,13 +210,19 @@ export function parseMermaidClass(input: string): AdapterResult {
             ensureClass(rightId);
 
             const rel = mapRelationship(arrow);
+            // Orient the connector so the UML glyph (endArrowhead, drawn at `to`)
+            // lands on the decorated side, and null out the opposite end so the
+            // default 'arrow' head doesn't leak onto plain/decorated relations.
+            const decoratedIsLeft = rel.decorated === 'left';
             const edge: DSLEdge = {
-                from: rightId,
-                to: leftId,
-                type: rel.type,
-                label: label?.trim() || rel.label,
+                from: decoratedIsLeft ? rightId : leftId,
+                to: decoratedIsLeft ? leftId : rightId,
+                type: rel.glyph === null ? 'line' : 'arrow',
+                label: label?.trim(),
+                endArrowhead: rel.glyph,
+                startArrowhead: rel.nav ? 'arrow' : null,
             };
-            if (rel.style === 'dashed') {
+            if (rel.dashed) {
                 edge.style = { strokeStyle: 'dashed' };
             }
             edges.push(edge);

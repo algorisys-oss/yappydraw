@@ -132,40 +132,61 @@ export const UmlDoc: Component = () => {
                 </table>
 
                 <h3>Relationships</h3>
+                <p>
+                    When you import a Mermaid <code>classDiagram</code>, each relationship
+                    arrow renders with its proper UML arrowhead (not just a text label).
+                    The decoration lands on the correct end automatically — the hollow
+                    triangle on the base class, the diamond on the whole/aggregate, the
+                    open arrow on the target.
+                </p>
                 <table class="api-table">
                     <thead>
                         <tr>
+                            <th>Mermaid Syntax</th>
                             <th>Arrow Style</th>
                             <th>Relationship</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
+                            <td><code>A --&gt; B</code></td>
                             <td>Solid line, open arrow</td>
                             <td>Association</td>
                         </tr>
                         <tr>
+                            <td><code>A *-- B</code></td>
                             <td>Solid line, filled diamond</td>
                             <td>Composition</td>
                         </tr>
                         <tr>
+                            <td><code>A o-- B</code></td>
                             <td>Solid line, hollow diamond</td>
                             <td>Aggregation</td>
                         </tr>
                         <tr>
+                            <td><code>A ..&gt; B</code></td>
                             <td>Dashed line, open arrow</td>
                             <td>Dependency</td>
                         </tr>
                         <tr>
+                            <td><code>A &lt;|-- B</code></td>
                             <td>Solid line, hollow triangle</td>
                             <td>Inheritance</td>
                         </tr>
                         <tr>
+                            <td><code>A &lt;|.. B</code></td>
                             <td>Dashed line, hollow triangle</td>
                             <td>Implementation</td>
                         </tr>
                     </tbody>
                 </table>
+                <p>
+                    Reversed forms (<code>B --|&gt; A</code>, <code>B --* A</code>,
+                    <code>B --o A</code>) and navigable composites/aggregates
+                    (<code>A *--&gt; B</code>, <code>A o--&gt; B</code>) are also
+                    recognised, and optional cardinality/role labels are preserved,
+                    e.g. <code>{`Subject "1" o-- "0..*" Observer : observers`}</code>.
+                </p>
             </section>
 
             {/* Use Case Diagrams */}

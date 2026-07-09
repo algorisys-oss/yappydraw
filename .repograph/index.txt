@@ -294,7 +294,7 @@ frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UI
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
 frontend/src/dsl/adapters/mermaid/block-parser.ts | typescript | 209 | parseMermaidBlock:31 tokenizeBlockLine:190
-frontend/src/dsl/adapters/mermaid/class-parser.ts | typescript | 225 | mapRelationship:32 parseMermaidClass:50
+frontend/src/dsl/adapters/mermaid/class-parser.ts | typescript | 268 | RelationSpec:54 mapRelationship:61 parseMermaidClass:87
 frontend/src/dsl/adapters/mermaid/er-parser.ts | typescript | 188 | cardinalityLabel:36 parseMermaidER:47
 frontend/src/dsl/adapters/mermaid/flowchart-parser.ts | typescript | 490 | parseMermaidFlowchart:29 LineParseResult:172 parseFlowchartLine:181 NodeToken:227 EdgeToken:234 FlowchartToken:240 tokenizeFlowchartLine:246 EdgeMatch:305 matchEdgeOperator:312 NodeMatch:361 matchNode:367 ShapeMatch:389 matchShapeBrackets:394 ensureNode:440 parseCssStyle:468 mapCssToNodeStyle:481
 frontend/src/dsl/adapters/mermaid/gantt-parser.ts | typescript | 212 | GanttTask:22 addDays:39 parseDuration:45 parseMermaidGantt:54
@@ -315,7 +315,7 @@ frontend/src/dsl/adapters/rocket/state-parser.ts | typescript | 368 | parseTrans
 frontend/src/dsl/adapters/rocket/types.ts | typescript | 271 | RocketExportResult:10 RocketExportMessage:17 RocketImportSchema:25 RocketEntity:39 RocketPrimaryKey:47 RocketField:53 RocketRelation:67 RocketRule:83 RocketStateMachine:94 RocketTransition:104 RocketTransitionAction:113 ParsedField:121 ParsedRelation:136 ParsedMethod:146 ParsedState:155 ParsedTransition:163 ParsedStateMachine:171 RocketWorkflow:179 RocketWorkflowTrigger:187 RocketWorkflowStep:196 RocketWorkflowAction:217 RocketWorkflowAssignee:228 StepGoto:235 ParsedWorkflowNodeType:239 ParsedWorkflowNode:243 ParsedWorkflowEdge:257 ParsedWorkflow:264
 frontend/src/dsl/adapters/rocket/workflow-parser.test.ts | typescript | 690 | makeNode:14 makeEdge:18
 frontend/src/dsl/adapters/rocket/workflow-parser.ts | typescript | 704 | isBpmnWorkflowNode:54 toSnakeCase:60 parseContainerText:73 parseActionConfig:114 classifyBpmnNode:159 parseWorkflowDiagram:195 convertToRocketWorkflow:317 buildTrigger:406 buildStep:436 buildActionStep:467 buildApprovalStep:502 buildAssignee:552 buildGatewayStep:564 buildParallelGatewayStep:639 buildBusinessRuleStep:671
-frontend/src/dsl/engine/dsl-engine.ts | typescript | 812 | SeqFragmentBox:18 renderDiagram:27 renderNode:166 renderEdge:228 SeqParticipant:270 makeSeqLabel:281 renderSequenceTimeline:296 renderSequenceMessage:389 renderSequenceNote:441 renderSequenceFragment:490 PoolLayoutResult:543 computePoolLayout:558 renderPoolSized:649 flattenNodes:688 setParentChildRelationships:703 findLaneIndex:726 applyAutoSizing:737 computeFittedSize:758
+frontend/src/dsl/engine/dsl-engine.ts | typescript | 816 | SeqFragmentBox:18 renderDiagram:27 renderNode:166 renderEdge:232 SeqParticipant:274 makeSeqLabel:285 renderSequenceTimeline:300 renderSequenceMessage:393 renderSequenceNote:445 renderSequenceFragment:494 PoolLayoutResult:547 computePoolLayout:562 renderPoolSized:653 flattenNodes:692 setParentChildRelationships:707 findLaneIndex:730 applyAutoSizing:741 computeFittedSize:762
 frontend/src/dsl/engine/render-helpers.ts | typescript | 94 | mergeNodeStyle:11 mergeEdgeStyle:39 mapStyleToOptions:62
 frontend/src/dsl/index.ts | typescript | 54 |
 frontend/src/dsl/layout/layout-manager.ts | typescript | 121 | flattenNodes:16 computeLayout:30 computeManualLayout:66 computeGridLayout:95
@@ -378,7 +378,7 @@ frontend/src/help-docs/shapes/infrastructure-doc.tsx | typescript | 293 | Infras
 frontend/src/help-docs/shapes/mindmap-doc.tsx | typescript | 344 | MindmapDoc:8
 frontend/src/help-docs/shapes/sketchnote-doc.tsx | typescript | 370 | SketchnoteDoc:8
 frontend/src/help-docs/shapes/table-doc.tsx | typescript | 741 | TableDoc:7 with:428 with:437
-frontend/src/help-docs/shapes/uml-doc.tsx | typescript | 355 | UmlDoc:8 diagrams:14 with:34 or:49
+frontend/src/help-docs/shapes/uml-doc.tsx | typescript | 376 | UmlDoc:8 diagrams:14 with:34 or:49
 frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 221 | VectorPathsDoc:9
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 236 | WireframingDoc:8
 frontend/src/index.css | - | 453 |

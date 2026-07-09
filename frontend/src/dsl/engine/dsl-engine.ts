@@ -188,10 +188,14 @@ function renderNode(
         ...(node.tag ? { tag: node.tag } : {}),
     };
 
-    // UML class sections
+    // UML class sections.
+    // Canonical element fields are `attributesText` / `methodsText` — the renderers
+    // (uml-class-renderer / uml-interface-renderer), the shared layout in
+    // uml-layout-utils, and the SVG export path all read those. Writing to
+    // `umlAttributes` / `umlMethods` (as before) left members invisible.
     if (node.sections) {
-        if (node.sections.attributes !== undefined) elementOpts.umlAttributes = node.sections.attributes;
-        if (node.sections.methods !== undefined) elementOpts.umlMethods = node.sections.methods;
+        if (node.sections.attributes !== undefined) elementOpts.attributesText = node.sections.attributes;
+        if (node.sections.methods !== undefined) elementOpts.methodsText = node.sections.methods;
     }
 
     // Domain-specific properties (BPMN types, DS values, etc.)
