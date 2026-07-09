@@ -385,7 +385,7 @@ frontend/src/index.css | - | 453 |
 frontend/src/index.tsx | typescript | 109 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84
 frontend/src/library/stick-figures/anim/clips.ts | typescript | 249 | ClipPose:6 MotionClip:6 RigPose:6 footAt:22 runFootAt:154 poseAt:244
 frontend/src/library/stick-figures/anim/path-follow.ts | typescript | 92 | PathSample:8 isPathLike:18 sampleAnchors:27 localPolyline:47 elementPathSample:65 PathPoint:79 sampleAt:82
-frontend/src/library/stick-figures/anim/rig.ts | typescript | 194 | JointId:13 Bone:18 Vec:27 StickRig:59 StickRigData:72 ClipPose:89 MotionClip:98 solveTwoBone:111 RigPose:122 evaluateRig:133 rigPoseToSvg:180
+frontend/src/library/stick-figures/anim/rig.ts | typescript | 209 | JointId:13 Bone:18 Vec:27 StickRig:59 StickRigData:72 ClipPose:89 MotionClip:98 solveTwoBone:111 RigPose:122 evaluateRig:133 headAttach:184 rigPoseToSvg:194
 frontend/src/library/stick-figures/assets.ts | typescript | 47 | Variant:11 buildVariantAssets:22
 frontend/src/library/stick-figures/builder.ts | typescript | 138 | Variant:20 doc:26 subToPoints:35 curveLimb:42 hair:79 skirt:87 Pose:93 figureInner:115 buildFigure:120
 frontend/src/library/stick-figures/index.ts | typescript | 362 | StickPartRole:35 parseHex:39 roleFromFill:51 InsertStickOptions:62 insertStickFigure:80 StickRecolor:117 recolorStickFigure:127 selectionHasStickFigure:150 toMonochromeSvg:163 InsertAnimatedOptions:187 insertAnimatedFigure:196 setAnimatedFigurePlaying:228 setAnimatedFigureClip:241 attachFigureToPath:250 detachFigurePath:262 setFigurePathDuration:271 pathFollowCandidate:282 selectedFigurePath:291 setFigureSequence:297 getFigureSequence:306 flipAnimatedFigure:312 selectionHasAnimatedFigure:324 bakeAnimatedFigure:333
@@ -426,7 +426,7 @@ frontend/src/shapes/renderers/rectangle-renderer.ts | typescript | 89 | Rectangl
 frontend/src/shapes/renderers/sketchnote-renderer.ts | typescript | 797 | SketchnoteRenderer:7{renderArchitectural:8 renderSketch:290}
 frontend/src/shapes/renderers/specialty-shape-renderer.ts | typescript | 334 | SpecialtyShapeRenderer:8{createShadedGradient:13 hasGradientFill:65 renderArchitectural:71 renderSketch:210 renderSketchGeometry:280 definePath:326}
 frontend/src/shapes/renderers/status-renderer.ts | typescript | 285 | StatusRenderer:7{renderArchitectural:8 renderSketch:144 roundRect:204 drawSymbol:218 getTagPath:229 getPinPath:243 getStampPath:256 definePath:279}
-frontend/src/shapes/renderers/stick-rig-renderer.ts | typescript | 148 | JointId:15 RigPose:15 BoxPose:17 lerpRigPose:24 StickRigRenderer:46{computePose:48 renderArchitectural:113 renderSketch:128 definePath:141}
+frontend/src/shapes/renderers/stick-rig-renderer.ts | typescript | 151 | JointId:15 RigPose:15 BoxPose:17 lerpRigPose:24 StickRigRenderer:46{computePose:48 renderArchitectural:116 renderSketch:131 definePath:144}
 frontend/src/shapes/renderers/sticky-note-renderer.ts | typescript | 83 | StickyNoteRenderer:6{renderArchitectural:7 renderSketch:35 getPoints:46 definePath:67}
 frontend/src/shapes/renderers/symbol-instance-renderer.ts | typescript | 52 | SymbolInstanceRenderer:14{renderArchitectural:15 renderSketch:16 draw:18 definePath:51}
 frontend/src/shapes/renderers/table-renderer.ts | typescript | 1649 | MergedCellRegion:12 TableRenderer:20{renderArchitectural:21 renderSketch:26 renderTable:32}

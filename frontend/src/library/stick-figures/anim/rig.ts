@@ -176,15 +176,30 @@ export function evaluateRig(rig: StickRig, pose: ClipPose): RigPose {
     return { joints, head: joints.get('head')!, headR: HEAD_RADIUS * s };
 }
 
+/**
+ * Point where the neck meets the head circle — the head-outline point along the
+ * shoulder→head-centre direction, so the neck line stops at the edge instead of
+ * continuing to the centre (which would draw a radius line inside the head).
+ */
+export function headAttach(pose: RigPose): Vec {
+    const sh = pose.joints.get('shoulder');
+    const hd = pose.head;
+    if (!sh) return hd;
+    const dx = sh.x - hd.x, dy = sh.y - hd.y;
+    const len = Math.hypot(dx, dy) || 1;
+    return { x: hd.x + (dx / len) * pose.headR, y: hd.y + (dy / len) * pose.headR };
+}
+
 /** Render a pose to an SVG string (bones + head), role-tagged for recolour/bake. */
 export function rigPoseToSvg(rig: StickRig, pose: RigPose, w = 140, h = 260): string {
     const j = pose.joints;
-    const P = (id: JointId) => { const p = j.get(id)!; return `${Math.round(p.x * 10) / 10} ${Math.round(p.y * 10) / 10}`; };
+    const fmt = (p: Vec) => `${Math.round(p.x * 10) / 10} ${Math.round(p.y * 10) / 10}`;
+    const P = (id: JointId) => fmt(j.get(id)!);
     const sw = rig.style.strokeWidth;
     const bone = (d: string) => `<path d="${d}" data-sf-role="body"/>`;
     const inner =
         bone(`M${P('pelvis')}L${P('shoulder')}`) +                       // spine
-        bone(`M${P('shoulder')}L${P('head')}`) +                          // neck
+        bone(`M${P('shoulder')}L${fmt(headAttach(pose))}`) +              // neck (stops at head edge)
         bone(`M${P('shoulder')}L${P('upperArmL')}L${P('foreArmL')}`) +    // left arm
         bone(`M${P('shoulder')}L${P('upperArmR')}L${P('foreArmR')}`) +    // right arm
         bone(`M${P('pelvis')}L${P('thighL')}L${P('shinL')}`) +            // left leg

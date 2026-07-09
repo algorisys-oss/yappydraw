@@ -12,7 +12,7 @@ import { store } from '../../store/app-store';
 import { effectiveTime } from '../../utils/animation/animation-engine';
 import { getClip, poseAt, WALK_STRIDE } from '../../library/stick-figures/anim/clips';
 import { elementPathSample, sampleAt } from '../../library/stick-figures/anim/path-follow';
-import { RIG_W, RIG_H, type JointId, type RigPose } from '../../library/stick-figures/anim/rig';
+import { RIG_W, RIG_H, headAttach, type JointId, type RigPose } from '../../library/stick-figures/anim/rig';
 
 interface BoxPose {
     /** Bone polylines in absolute canvas coords. */
@@ -104,6 +104,9 @@ export class StickRigRenderer extends ShapeRenderer {
         const pose: RigPose = blended ?? poseAt(clipId, phase ?? 0, facing);
         const X = (p: { x: number; y: number }) => [originX + p.x * sx, originY + p.y * sy] as [number, number];
         const bones = CHAINS.map(chain => chain.map(id => X(pose.joints.get(id)!)));
+        // Neck (CHAINS[1] = shoulder→head) stops at the head-circle edge, not its
+        // centre — otherwise the segment inside the head reads as a radius line.
+        bones[1] = [X(pose.joints.get('shoulder')!), X(headAttach(pose))];
         return {
             bones,
             head: { cx: originX + pose.head.x * sx, cy: originY + pose.head.y * sy, rx: pose.headR * sx, ry: pose.headR * sy },
