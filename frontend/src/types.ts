@@ -349,6 +349,10 @@ export interface DrawingElement {
 
     // Text inside shapes (for labels on rectangles, circles, etc.)
     containerText?: string;
+    /** Draggable in-shape label offset from its aligned position, in the element's
+     *  unrotated local frame (px). Lets the user reposition the text within the shape. */
+    textOffsetX?: number;
+    textOffsetY?: number;
     labelPosition?: 'start' | 'middle' | 'end'; // For line/arrow labels
 
     // UML Specific (Multi-section text)

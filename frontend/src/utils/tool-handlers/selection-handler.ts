@@ -215,6 +215,20 @@ export function selectionOnDown(
             return;
         }
 
+        // Draggable in-shape label — reposition the text within the shape.
+        if (hitHandle.handle === 'text-move') {
+            pushToHistory();
+            const el = store.elements.find(e => e.id === hitHandle.id);
+            pState.isDragging = true;
+            pState.draggingHandle = 'text-move';
+            pState.textMoveId = hitHandle.id;
+            pState.textOffsetStartX = el?.textOffsetX || 0;
+            pState.textOffsetStartY = el?.textOffsetY || 0;
+            pState.startX = x;
+            pState.startY = y;
+            return;
+        }
+
         // Rotation pivot — drag to reposition the rotation centre. Pure UI state, so
         // no history entry (unlike rotate/resize, which mutate the document).
         if (hitHandle.handle === 'pivot') {
@@ -889,7 +903,7 @@ export function selectionOnMove(
             } else if (hit.handle.startsWith('path-')) {
                 helpers.setCursor('move');
                 pState.hoveredConnector = null;
-            } else if (hit.handle === 'table-move') {
+            } else if (hit.handle === 'table-move' || hit.handle === 'text-move') {
                 helpers.setCursor('move');
                 pState.hoveredConnector = null;
             } else if (hit.handle.startsWith('connector-')) {
@@ -1296,6 +1310,23 @@ function handleResize(
     if (pState.draggingHandle === 'pivot') {
         setTransformPivot(x, y, store.selection);
         bumpDirtyRevision();
+        return;
+    }
+
+    // Draggable in-shape label — apply the world drag delta in the element's local
+    // (unrotated) frame, so `textOffsetX/Y` tracks the pointer even for rotated shapes.
+    if (pState.draggingHandle === 'text-move' && pState.textMoveId) {
+        const t = store.elements.find(e => e.id === pState.textMoveId);
+        if (t) {
+            const dx = x - pState.startX, dy = y - pState.startY;
+            const a = -(t.angle || 0);
+            const lx = dx * Math.cos(a) - dy * Math.sin(a);
+            const ly = dx * Math.sin(a) + dy * Math.cos(a);
+            updateElement(t.id, {
+                textOffsetX: Math.round(pState.textOffsetStartX + lx),
+                textOffsetY: Math.round(pState.textOffsetStartY + ly),
+            }, false);
+        }
         return;
     }
 

@@ -848,18 +848,20 @@ export class RenderPipeline {
             startY = cy - metrics.textHeight / 2 + metrics.lineHeight / 2 + startYOffset;
         }
 
-        // Fine-tune baseline shift for better visual centering (font dependent)
+        // Fine-tune baseline shift for better visual centering (font dependent).
+        // `textOffsetX/Y` is the user's draggable-label offset (local frame).
         const baselineShift = el.fontFamily === 'hand-drawn' ? 2 : 0;
-        const textYAdjusted = startY + baselineShift;
+        const textYAdjusted = startY + baselineShift + (el.textOffsetY || 0);
 
         // Calculate x position based on alignment
         const getXPosition = () => {
+            const ox = el.textOffsetX || 0;
             if (textAlign === 'left') {
-                return cx - (el.width || maxWidth) / 2 + 10;
+                return cx - (el.width || maxWidth) / 2 + 10 + ox;
             } else if (textAlign === 'right') {
-                return cx + (el.width || maxWidth) / 2 - 10;
+                return cx + (el.width || maxWidth) / 2 - 10 + ox;
             }
-            return cx; // center
+            return cx + ox; // center
         };
 
         // Render Highlight

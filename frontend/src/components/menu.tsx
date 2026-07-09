@@ -18,6 +18,7 @@ import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-mana
 import { effectiveGameScript } from "../game/behaviors-to-script";
 import { exportSceneAsHtml } from "../utils/export-game";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
+import { draggablePanel } from "../utils/draggable-panel";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
 import { isGlobalPlaying, isGlobalPaused, animationEngine } from "../utils/animation/animation-engine";
 import { clickOutside } from "../utils/click-outside";
@@ -1167,12 +1168,14 @@ const Menu: Component = () => {
                                 <Show when={isPalettePickerOpen()}>
                                     <div
                                         class="menu-dropdown"
+                                        ref={draggablePanel('.palette-drag-handle')}
                                         style={{
-                                            position: 'absolute',
-                                            top: '100%',
+                                            position: 'fixed',
+                                            top: '54px',
+                                            right: '12px',
                                             left: 'auto',
-                                            right: 0,
-                                            margin: '8px 0 0 0',
+                                            bottom: 'auto',
+                                            margin: 0,
                                             padding: '4px',
                                             width: 'auto',
                                             'min-width': '220px'

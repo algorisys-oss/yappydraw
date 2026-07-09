@@ -12,6 +12,10 @@ export interface PointerState {
     isDragging: boolean;
     isSelecting: boolean;
     draggingHandle: string | null;
+    /** Draggable in-shape label: the element being repositioned + its start offset. */
+    textMoveId: string | null;
+    textOffsetStartX: number;
+    textOffsetStartY: number;
     initialPositions: Map<string, any>;
     draggingFromConnector: { elementId: string; anchorPosition: string; startX: number; startY: number } | null;
     hoveredConnector: { elementId: string; handle: string } | null;
@@ -125,6 +129,9 @@ export function createPointerState(): PointerState {
         isDragging: false,
         isSelecting: false,
         draggingHandle: null,
+        textMoveId: null,
+        textOffsetStartX: 0,
+        textOffsetStartY: 0,
         initialPositions: new Map(),
         draggingFromConnector: null,
         hoveredConnector: null,

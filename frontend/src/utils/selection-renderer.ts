@@ -16,6 +16,18 @@ import { getDeleteHandlePosition } from './handle-detection';
 
 const MINDMAP_CONNECTOR_TYPES = ['line', 'arrow', 'organicBranch', 'bezier', 'polyline'];
 
+const LABEL_DRAG_EXCLUDED = new Set([
+    'line', 'arrow', 'bezier', 'organicBranch', 'polyline', 'table', 'text', 'richtext',
+    'codeBlock', 'umlClass', 'umlInterface', 'umlEnum', 'umlState',
+]);
+/** Mirrors handle-detection: a container shape whose text is repositionable. */
+function isLabelDraggable(el: DrawingElement): boolean {
+    return !!el.containerText && el.containerText.trim().length > 0
+        && !LABEL_DRAG_EXCLUDED.has(el.type)
+        && !el.type.startsWith('ds')
+        && !el.isEditing;
+}
+
 /**
  * Draw the floating quick-delete button (white disc, red ring, red ✕) at a
  * world-space point. Touch-friendly affordance so a selection can be deleted
@@ -421,6 +433,25 @@ export function renderElementOverlays(
                         ctx.closePath();
                         ctx.fill();
                     }
+                    ctx.restore();
+                }
+
+                // Draggable in-shape label handle — a small grab dot at the text's
+                // current position (only for container shapes that render their text
+                // through the shared pipeline; matches handle-detection's eligibility).
+                if (isLabelDraggable(renderedEl)) {
+                    const lx = hcx + (renderedEl.textOffsetX || 0);
+                    const ly = hcy + (renderedEl.textOffsetY || 0);
+                    const pos = hAngle ? rotatePoint(lx, ly, hcx, hcy, hAngle) : { x: lx, y: ly };
+                    const r = 5 / scale;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(59,130,246,0.9)';
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5 / scale;
+                    ctx.fill();
+                    ctx.stroke();
                     ctx.restore();
                 }
             }

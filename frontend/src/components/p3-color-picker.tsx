@@ -151,8 +151,8 @@ export const ColorPalettePicker: Component = () => {
                 </div>
             }>
                 <div style={{ padding: '8px' }}>
-                    <div style={{ display: 'flex', 'align-items': 'center', gap: '6px', 'margin-bottom': '8px' }}>
-                        <span style={{ 'font-size': '10px', 'font-weight': 'bold', color: 'var(--text-secondary)', 'flex-shrink': 0 }}>PALETTE</span>
+                    <div class="palette-drag-handle" style={{ display: 'flex', 'align-items': 'center', gap: '6px', 'margin-bottom': '8px' }}>
+                        <span style={{ 'font-size': '10px', 'font-weight': 'bold', color: 'var(--text-secondary)', 'flex-shrink': 0, cursor: 'move' }} title="Drag to move">⠿ PALETTE</span>
                         <select
                             value={activePaletteId()}
                             onChange={(e) => setActivePaletteId(e.currentTarget.value)}

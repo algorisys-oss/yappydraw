@@ -543,5 +543,35 @@ export function getHandleAtPosition(
             }
         }
     }
+
+    // Draggable in-shape label handle — lowest priority (any real handle wins). A small
+    // grab dot sits at the label's current position; grabbing it repositions the text
+    // (textOffsetX/Y) instead of moving the shape. Only for single-selected container
+    // shapes whose text goes through the shared renderer (not connectors / text / tables
+    // / UML compartments, which draw their own text).
+    if (selection.length === 1) {
+        const el = elements.find(e => e.id === selection[0]);
+        if (el && TEXT_MOVE_ELIGIBLE(el)) {
+            const ecx = el.x + el.width / 2, ecy = el.y + el.height / 2;
+            const local = unrotatePoint(x, y, ecx, ecy, el.angle || 0);
+            const tx = ecx + (el.textOffsetX || 0), ty = ecy + (el.textOffsetY || 0);
+            if (Math.hypot(local.x - tx, local.y - ty) <= 11 / scale) {
+                return { id: el.id, handle: 'text-move' };
+            }
+        }
+    }
     return null;
+}
+
+const TEXT_MOVE_EXCLUDED = new Set([
+    'line', 'arrow', 'bezier', 'organicBranch', 'polyline', 'table', 'text', 'richtext',
+    'codeBlock', 'umlClass', 'umlInterface', 'umlEnum', 'umlState',
+]);
+/** A single-selected shape is label-draggable if it has visible container text and
+ *  isn't a type that renders its own text (connectors, tables, UML compartments, …). */
+function TEXT_MOVE_ELIGIBLE(el: DrawingElement): boolean {
+    return !!el.containerText && el.containerText.trim().length > 0
+        && !TEXT_MOVE_EXCLUDED.has(el.type)
+        && !el.type.startsWith('ds')
+        && !el.isEditing;
 }

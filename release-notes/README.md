@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.45](0.8.45.md) — Draggable in-shape text labels + movable colour palette panel
 - [0.8.44](0.8.44.md) — Tidy Canvas Theme + Texture (Texture moved under the Theme picker, no duplication)
 - [0.8.43](0.8.43.md) — Canvas background themes (dot/line/graph/notebook/paper/blueprint/dark…)
 - [0.8.42](0.8.42.md) — Fix empty-looking Sitemap / Random Words menu items
