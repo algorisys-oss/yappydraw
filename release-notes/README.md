@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.41](0.8.41.md) — Mind-map presets: Sitemap (top-down) & Random Words (radial)
 - [0.8.40](0.8.40.md) — Advanced colour picker: square (SV + hue) & triangle (Krita-style hue ring) modes
 - [0.8.39](0.8.39.md) — New Mind Map menu action + createMindMap API (seeds a ready-to-edit map)
 - [0.8.38](0.8.38.md) — Escape closes every dialog (9 dialogs fixed via a shared hook)

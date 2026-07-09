@@ -743,6 +743,32 @@ const Menu: Component = () => {
                                         <Network size={16} />
                                         <span class="label">New Mind Map</span>
                                     </button>
+                                    <button class="menu-item menu-sub" onClick={() => {
+                                        YappyAPI.createMindMap({
+                                            title: 'Home', direction: 'vertical-down',
+                                            branches: [
+                                                { label: 'About' },
+                                                { label: 'Products', children: ['Product A', 'Product B'] },
+                                                { label: 'Blog', children: ['Posts'] },
+                                                { label: 'Contact' },
+                                            ],
+                                        });
+                                        setIsMenuOpen(false);
+                                    }}>
+                                        <span class="label">…Sitemap</span>
+                                    </button>
+                                    <button class="menu-item menu-sub" onClick={() => {
+                                        YappyAPI.createMindMap({
+                                            title: 'Brainstorm', direction: 'radial',
+                                            branches: [
+                                                { label: 'Ocean' }, { label: 'Mountain' }, { label: 'Journey' },
+                                                { label: 'Spark' }, { label: 'Rhythm' }, { label: 'Garden' },
+                                            ],
+                                        });
+                                        setIsMenuOpen(false);
+                                    }}>
+                                        <span class="label">…Random Words</span>
+                                    </button>
                                     <Show when={isPagedDocType(store.docType)}>
                                         <button class="menu-item" onClick={() => { setIsMagicResizeOpen(true); setIsMenuOpen(false); }}>
                                             <Maximize size={16} />
