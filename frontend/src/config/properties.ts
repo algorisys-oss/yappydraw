@@ -210,22 +210,10 @@ export const properties: PropertyConfig[] = [
         applicableTo: ['canvas'],
         defaultValue: '#fafafa'
     },
-    {
-        key: 'canvasTexture',
-        label: 'Canvas Texture',
-        type: 'select',
-        options: [
-            { label: 'None', value: 'none' },
-            { label: 'Dots', value: 'dots' },
-            { label: 'Grid', value: 'grid' },
-            { label: 'Graph Paper', value: 'graph' },
-            { label: 'Recycled Paper', value: 'paper' },
-            { label: 'Notebook', value: 'notebook' }
-        ],
-        group: 'canvas',
-        applicableTo: ['canvas'],
-        defaultValue: 'none'
-    },
+    // NOTE: `canvasTexture` is intentionally NOT a config-driven property — it's
+    // rendered as a "Fine-tune" row directly under the CANVAS THEME picker in
+    // property-panel.tsx (the theme sets background + texture together; this is the
+    // granular override). Kept out of the generic canvas group to avoid duplication.
     {
         key: 'maxLayers',
         label: 'Max Layers',

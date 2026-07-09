@@ -2633,7 +2633,7 @@ Imports (heuristic): `solid-js`, `../store/app-store`, `../utils/animation/slide
 
 ### [frontend/src/components/property-panel.css](frontend/src/components/property-panel.css) — other, 817 lines
 
-### [frontend/src/components/property-panel.tsx](frontend/src/components/property-panel.tsx) — typescript, 2151 lines
+### [frontend/src/components/property-panel.tsx](frontend/src/components/property-panel.tsx) — typescript, 2163 lines
 
 Symbols:
 
@@ -3682,7 +3682,7 @@ Symbols:
 
 - `interface` [PageSizePreset](frontend/src/config/page-size-presets.ts#L5)
 
-### [frontend/src/config/properties.ts](frontend/src/config/properties.ts) — typescript, 1903 lines
+### [frontend/src/config/properties.ts](frontend/src/config/properties.ts) — typescript, 1891 lines
 
 Symbols:
 

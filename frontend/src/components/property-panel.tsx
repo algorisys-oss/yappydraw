@@ -1883,6 +1883,18 @@ const PropertyPanel: Component = () => {
                                                 }}
                                             </For>
                                         </div>
+                                        <div class="control-row" style={{ "margin-top": "10px" }}>
+                                            <label>Texture</label>
+                                            <select value={store.canvasTexture} onChange={(e) => setCanvasTexture(e.currentTarget.value as any)}>
+                                                <option value="none">None</option>
+                                                <option value="dots">Dots</option>
+                                                <option value="grid">Grid</option>
+                                                <option value="graph">Graph Paper</option>
+                                                <option value="paper">Recycled Paper</option>
+                                                <option value="notebook">Notebook</option>
+                                            </select>
+                                        </div>
+                                        <div class="group-title" style={{ "margin-top": "6px", opacity: 0.6, "font-weight": "normal", "font-style": "italic" }}>Theme sets background + texture; tweak either here or in Background below.</div>
                                     </div>
                                 </Show>
                                 <Show when={activeProperties().length > 0}>
