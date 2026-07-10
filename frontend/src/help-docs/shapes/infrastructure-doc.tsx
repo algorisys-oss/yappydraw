@@ -157,6 +157,37 @@ export const InfrastructureDoc: Component = () => {
                 </table>
             </section>
 
+            {/* Placing Shapes (UI) */}
+            <section class="doc-section">
+                <h2>Placing Infrastructure Shapes</h2>
+                <p>
+                    Infrastructure and cloud shapes live in the <strong>Architecture</strong> group on the
+                    toolbar (the unified Infrastructure + Cloud-Native picker). Add them to the canvas like any
+                    other shape:
+                </p>
+                <ol>
+                    <li>Open the <strong>Architecture</strong> shape group in the toolbar (or press
+                        <span class="kbd">/</span> to open the command palette and search for a shape by name,
+                        e.g. "Load Balancer").</li>
+                    <li>Pick a shape such as <strong>Server</strong>, <strong>Database</strong>, or
+                        <strong>Kubernetes</strong>.</li>
+                    <li>Click once on the canvas to drop it at a default size, or click-drag to size it as you place it.</li>
+                    <li>Double-click the shape to add a label, and use the <strong>Properties</strong> panel to set
+                        stroke, fill, and drawing style.</li>
+                    <li>Connect shapes with the <strong>Arrow</strong> or <strong>Line</strong> tool — connectors
+                        bind to a shape's edge and follow it when you move it.</li>
+                </ol>
+
+                <div class="tip-box">
+                    <h5>Tip: Search instead of hunting</h5>
+                    <p>
+                        There are dozens of infrastructure and cloud shapes. The fastest way to place one is the
+                        command palette (<span class="kbd">/</span>) — type "firewall", "cdn", "api gateway", etc.
+                        and press <span class="kbd">Enter</span>.
+                    </p>
+                </div>
+            </section>
+
             {/* Architecture Patterns */}
             <section class="doc-section">
                 <h2>Common Architecture Patterns</h2>
@@ -273,6 +304,111 @@ export const InfrastructureDoc: Component = () => {
                     <li><strong>Red</strong> - Security components</li>
                     <li><strong>Gray</strong> - External systems or users</li>
                 </ul>
+            </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Every infrastructure shape can be created and updated from code through the global
+                    <code class="code-inline">window.Yappy</code> object. Use the generic
+                    <code class="code-inline">Yappy.createElement(type, x, y, width, height, options)</code> with
+                    one of the infrastructure element <strong>type</strong> strings, then tweak it with
+                    <code class="code-inline">Yappy.updateElement(id, &#123; ... &#125;)</code>.
+                </p>
+
+                <h3>Element Types</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Type strings</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Infrastructure</td>
+                            <td>
+                                <code class="code-inline">'server'</code>, <code class="code-inline">'loadBalancer'</code>,
+                                <code class="code-inline">'firewall'</code>, <code class="code-inline">'router'</code>,
+                                <code class="code-inline">'messageQueue'</code>, <code class="code-inline">'lambda'</code>,
+                                <code class="code-inline">'user'</code>, <code class="code-inline">'browser'</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Cloud-Native</td>
+                            <td>
+                                <code class="code-inline">'kubernetes'</code>, <code class="code-inline">'container'</code>,
+                                <code class="code-inline">'apiGateway'</code>, <code class="code-inline">'cdn'</code>,
+                                <code class="code-inline">'storageBlob'</code>, <code class="code-inline">'eventBus'</code>,
+                                <code class="code-inline">'microservice'</code>, <code class="code-inline">'shield'</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Data</td>
+                            <td>
+                                <code class="code-inline">'database'</code>, <code class="code-inline">'document'</code>,
+                                <code class="code-inline">'internalStorage'</code>, <code class="code-inline">'mobilePhone'</code>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Build a Mini Architecture</h3>
+                <div class="code-block">
+{`// window.Yappy is the global scripting entry point.
+
+// A web client talking to a load balancer, two app servers and a DB
+const browser = Yappy.createElement('browser', 60, 200, 90, 90, {
+    containerText: 'Client'
+});
+
+const lb = Yappy.createElement('loadBalancer', 220, 210, 120, 70, {
+    containerText: 'ALB',
+    strokeColor: '#ea580c'        // orange = networking
+});
+
+const app1 = Yappy.createElement('server', 420, 120, 110, 80, {
+    containerText: 'app-1',
+    strokeColor: '#2563eb'        // blue = compute
+});
+const app2 = Yappy.createElement('server', 420, 260, 110, 80, {
+    containerText: 'app-2',
+    strokeColor: '#2563eb'
+});
+
+const db = Yappy.createElement('database', 620, 190, 110, 90, {
+    containerText: 'Postgres',
+    strokeColor: '#16a34a'        // green = data
+});
+
+// Wire them together with bound connectors
+Yappy.connect(browser, lb);
+Yappy.connect(lb, app1);
+Yappy.connect(lb, app2);
+Yappy.connect(app1, db);
+Yappy.connect(app2, db);`}
+                </div>
+
+                <h3>Update a Shape Later</h3>
+                <div class="code-block">
+{`// Recolour, relabel or move any element by id
+Yappy.updateElement(app1, {
+    backgroundColor: '#dbeafe',
+    fillStyle: 'solid',
+    containerText: 'app-1 (primary)'
+});`}
+                </div>
+
+                <div class="tip-box">
+                    <h5>Tip: Colour by role</h5>
+                    <p>
+                        Pass <code class="code-inline">strokeColor</code> in the options to follow the
+                        colour-coding convention below (blue = compute, green = data, orange = networking,
+                        red = security). Set <code class="code-inline">fillStyle: 'solid'</code> together with
+                        <code class="code-inline">backgroundColor</code> for a filled look.
+                    </p>
+                </div>
             </section>
 
             {/* Best Practices */}

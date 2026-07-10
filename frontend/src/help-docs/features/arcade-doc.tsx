@@ -241,6 +241,39 @@ game.random(min, max) · game.clamp(v, min, max)`}</code></pre>
             </section>
 
             <section class="doc-section">
+                <h2>Scripting (Yappy API)</h2>
+                <p>
+                    The <code>game.*</code> calls above are the <em>in-game</em> runtime — they run while a
+                    game is playing. To <strong>author and control</strong> games from the outside (the browser
+                    console, a script, or automation), use the global <code>window.Yappy</code> object. It sets
+                    the script, drives the visual builder / Blueprint model, and starts/stops play.
+                </p>
+                <pre><code>{`const Y = window.Yappy;
+
+// Hand-written game: set the script and play it
+Y.setGameScript('game.onTick(() => {})');
+Y.startGame();                 // Y.startGame(src) also accepts a one-off script
+Y.isGameRunning();             // true while playing
+Y.stopGame();                  // restore the editor exactly
+
+// Visual (no-code) game: rules + variables
+Y.setSceneBehaviors([{ when: { kind: 'start' }, actions: [] }]);
+Y.setGameVars([{ name: 'lives', initial: 3 }]);
+Y.toggleGameBuilder(true);     // open the Behaviors panel
+Y.toggleGameGraph(true);       // open the node-graph view
+
+// Blueprint (exec-flow) per owner ('' = Scene)
+Y.setBlueprintFor('', { nodes: [], edges: [] });
+const bp = Y.getBlueprint('');
+Y.toggleBlueprint(true);`}</code></pre>
+                <p class="tip-box">
+                    A game has one script: for a visual/Blueprint game the script is compiled from your
+                    blocks. <code>Y.setSceneBehaviors</code> / <code>Y.setBlueprintFor</code> author the model;
+                    <code> Y.startGame()</code> compiles and plays whichever authoring you used.
+                </p>
+            </section>
+
+            <section class="doc-section">
                 <h2>Sharing your game</h2>
                 <p>
                     Hit <strong>⬇ Export</strong> on the game bar (or <strong>Menu → Save… → Export HTML</strong>)

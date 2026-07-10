@@ -9,6 +9,27 @@ const EmbeddingDoc: Component = () => {
                 The embedded view shows a read-only canvas with pan/zoom — no toolbars or editing UI.
             </p>
 
+            <h2>How to (in the app)</h2>
+            <p>You don't need to write any code to get an embeddable link — just save the drawing and reuse its name:</p>
+            <ol>
+                <li><strong>Save &amp; name your drawing.</strong> Open <strong>Menu → Export / Save...</strong>
+                    (<code>Ctrl+Alt+S</code>) and save to your workspace with a memorable name. The name becomes
+                    the drawing's id.</li>
+                <li><strong>Read the id from the URL bar.</strong> While editing, the address shows
+                    <code> #doc=my-drawing</code> — that <code>my-drawing</code> part is the id.</li>
+                <li><strong>Build the embed link.</strong> Swap <code>#doc=</code> for <code>#/embed/</code>:
+                    <code> https://your-host/#/embed/my-drawing</code>. Append options like
+                    <code> ?theme=dark&amp;slide=2</code> if you want (see below).</li>
+                <li><strong>Paste it where you need it</strong> — drop the link into a Notion <code>/embed</code>
+                    block, or wrap it in the <code>&lt;iframe&gt;</code> snippet below for Confluence, a wiki, or
+                    any web page.</li>
+            </ol>
+            <p class="tip-box">
+                Prefer to generate the snippet automatically? Open the browser console and call
+                <code> Yappy.getEmbedHtml('my-drawing')</code> (see <strong>Programmatic API</strong> below) — it
+                returns a ready-to-paste iframe.
+            </p>
+
             <h2>Embed URL</h2>
             <p>Use this URL pattern to embed any saved drawing:</p>
             <pre><code>{`<iframe

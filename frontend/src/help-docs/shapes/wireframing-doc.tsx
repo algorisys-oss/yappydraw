@@ -16,6 +16,34 @@ export const WireframingDoc: Component = () => {
                 </p>
             </header>
 
+            {/* How to (in the app) */}
+            <section class="doc-section">
+                <h2>How to (in the app)</h2>
+                <ol>
+                    <li>Open the <strong>Wireframe / UI</strong> group in the shape toolbar
+                        (device frames, buttons, inputs, cards, nav bars, and more).</li>
+                    <li>Click a component, then click or drag on the canvas to place and size
+                        it. Start with a <strong>Browser Window</strong> or
+                        <strong>Mobile Phone</strong> frame, then drop UI elements inside it.</li>
+                    <li>Double-click a button, input or card to edit its label text.</li>
+                    <li>Use the <strong>Properties</strong> panel to adjust fill, stroke,
+                        corner radius and roughness — bump roughness up for a low-fidelity
+                        "sketch" feel, or switch to the architectural style for crisp mockups.</li>
+                    <li>Hold <span class="kbd">Alt</span> and drag to duplicate a component, and
+                        use grid snapping to keep rows and columns aligned.</li>
+                    <li>Connect screens with the <strong>Arrow</strong> tool
+                        (<span class="kbd">A</span>) to sketch a user flow, labelling each arrow
+                        with the triggering action.</li>
+                </ol>
+                <div class="tip-box">
+                    <h5>Tip</h5>
+                    <p>
+                        Group a completed screen (<span class="kbd">Ctrl</span>+<span class="kbd">G</span>)
+                        so you can move and duplicate the whole layout as one unit.
+                    </p>
+                </div>
+            </section>
+
             {/* Container Elements */}
             <section class="doc-section">
                 <h2>Device Containers</h2>
@@ -228,6 +256,39 @@ export const WireframingDoc: Component = () => {
                     <li><strong>Iterate quickly</strong> - Wireframes should be fast to change</li>
                     <li><strong>Test with users</strong> - Validate layouts before high-fidelity</li>
                 </ul>
+            </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Wireframe elements can be scripted from the console via the global
+                    <code>window.Yappy</code> object. There are convenience helpers plus the
+                    generic <code>createUIComponent(type, x, y, width?, height?, options?)</code>,
+                    which applies each component's default size.
+                </p>
+                <pre class="code-block"><code>{`// A browser frame with a primary button and an input inside it
+Yappy.createBrowserWindow(80, 80, 480, 320);
+Yappy.createSolidButton(120, 260, 'Sign up');
+Yappy.createUIComponent('inputField', 120, 180, 300, 40, { containerText: 'Email' });
+Yappy.createUIComponent('checkbox', 120, 230);`}</code></pre>
+                <p>
+                    Component <code>type</code> strings include: <code>browserWindow</code>,
+                    <code>mobilePhone</code>, <code>solidButton</code>,
+                    <code>ghostButton</code>, <code>capsule</code>, <code>inputField</code>,
+                    <code>checkbox</code>, <code>checkboxChecked</code>,
+                    <code>radioButton</code>, <code>toggleSwitch</code>, <code>slider</code>,
+                    <code>dropdown</code>, <code>avatar</code>, <code>card</code>, and
+                    <code>navbar</code>.
+                </p>
+                <p class="tip-box">
+                    Convenience helpers: <code>createBrowserWindow(x, y, w, h)</code>,
+                    <code>createSolidButton(x, y, label)</code>,
+                    <code>createDropdown(x, y, label)</code>, and
+                    <code>createCard(x, y, w, h)</code>. Set labels with
+                    <code>containerText</code> and restyle later via
+                    <code>Yappy.updateElement(id, {`{...}`})</code>.
+                </p>
             </section>
         </div>
     );

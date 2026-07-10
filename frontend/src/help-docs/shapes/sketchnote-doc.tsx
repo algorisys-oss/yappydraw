@@ -16,6 +16,37 @@ export const SketchnoteDoc: Component = () => {
                 </p>
             </header>
 
+            {/* Placing Shapes (UI) */}
+            <section class="doc-section">
+                <h2>Adding Sketchnote Shapes</h2>
+                <p>
+                    The sketchnote vocabulary lives in the <strong>Sketchnote & People</strong> group on the
+                    toolbar (icons, faces, people, containers, dividers and markers). Drop them onto the canvas
+                    like any other shape:
+                </p>
+                <ol>
+                    <li>Open the <strong>Sketchnote & People</strong> group in the toolbar, or press
+                        <span class="kbd">/</span> to open the command palette and search by name
+                        (e.g. "lightbulb", "thumbs up", "wavy divider").</li>
+                    <li>Pick a shape, then click once on the canvas to drop it at a default size, or click-drag
+                        to size it while placing.</li>
+                    <li>Double-click a container shape (sticky note, scroll, banner, speech bubble) to type a label
+                        inside it.</li>
+                    <li>Use the <strong>Properties</strong> panel to set stroke and fill colour, and increase
+                        <strong>Roughness</strong> for a loose, hand-drawn look.</li>
+                    <li>Switch the drawing style to <strong>Sketch</strong> for the classic sketchnote feel, or
+                        <strong>Architectural</strong> for clean lines — every shape renders in both.</li>
+                </ol>
+
+                <div class="tip-box">
+                    <h5>Tip: Search beats scrolling</h5>
+                    <p>
+                        There are dozens of sketchnote icons. The quickest way to place one is the command
+                        palette (<span class="kbd">/</span>) — type the name and press <span class="kbd">Enter</span>.
+                    </p>
+                </div>
+            </section>
+
             {/* Icons & Symbols */}
             <section class="doc-section">
                 <h2>Icons & Symbols</h2>
@@ -362,6 +393,125 @@ export const SketchnoteDoc: Component = () => {
                     <li><strong>Modular</strong> - Grid of related sections</li>
                     <li><strong>Popcorn</strong> - Scattered, organic placement</li>
                 </ul>
+            </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Sketchnote shapes are ordinary Yappy elements, so you can generate a whole visual note from
+                    code. The API is exposed on the global <code class="code-inline">window.Yappy</code> object.
+                    Use <code class="code-inline">Yappy.createElement(type, x, y, width, height, options)</code> with
+                    a sketchnote <strong>type</strong> string, then adjust it with
+                    <code class="code-inline">Yappy.updateElement(id, &#123; ... &#125;)</code>.
+                </p>
+
+                <h3>Element Types</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Type strings</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Icons</td>
+                            <td>
+                                <code class="code-inline">'lightbulb'</code>, <code class="code-inline">'target'</code>,
+                                <code class="code-inline">'rocket'</code>, <code class="code-inline">'flag'</code>,
+                                <code class="code-inline">'trophy'</code>, <code class="code-inline">'key'</code>,
+                                <code class="code-inline">'gear'</code>, <code class="code-inline">'clock'</code>,
+                                <code class="code-inline">'magnifyingGlass'</code>, <code class="code-inline">'book'</code>,
+                                <code class="code-inline">'megaphone'</code>, <code class="code-inline">'eye'</code>,
+                                <code class="code-inline">'signpost'</code>, <code class="code-inline">'burstBlob'</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>People &amp; faces</td>
+                            <td>
+                                <code class="code-inline">'starPerson'</code>, <code class="code-inline">'stickFigure'</code>,
+                                <code class="code-inline">'sittingPerson'</code>, <code class="code-inline">'presentingPerson'</code>,
+                                <code class="code-inline">'handPointRight'</code>, <code class="code-inline">'thumbsUp'</code>,
+                                <code class="code-inline">'faceHappy'</code>, <code class="code-inline">'faceSad'</code>,
+                                <code class="code-inline">'faceConfused'</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Containers</td>
+                            <td>
+                                <code class="code-inline">'scroll'</code>, <code class="code-inline">'ribbon'</code>,
+                                <code class="code-inline">'doubleBanner'</code>, <code class="code-inline">'speechBubble'</code>,
+                                <code class="code-inline">'thoughtBubble'</code>, <code class="code-inline">'callout'</code>,
+                                <code class="code-inline">'cloud'</code>, <code class="code-inline">'burst'</code>,
+                                <code class="code-inline">'stickyNote'</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Markers &amp; status</td>
+                            <td>
+                                <code class="code-inline">'checkbox'</code>, <code class="code-inline">'checkboxChecked'</code>,
+                                <code class="code-inline">'numberedBadge'</code>, <code class="code-inline">'questionMark'</code>,
+                                <code class="code-inline">'exclamationMark'</code>, <code class="code-inline">'pin'</code>,
+                                <code class="code-inline">'tag'</code>, <code class="code-inline">'stamp'</code>,
+                                <code class="code-inline">'wavyDivider'</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Growth &amp; connection</td>
+                            <td>
+                                <code class="code-inline">'seedling'</code>, <code class="code-inline">'tree'</code>,
+                                <code class="code-inline">'mountain'</code>, <code class="code-inline">'bridge'</code>,
+                                <code class="code-inline">'puzzlePiece'</code>, <code class="code-inline">'chainLink'</code>,
+                                <code class="code-inline">'scale'</code>, <code class="code-inline">'funnel'</code>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Compose a Sketchnote</h3>
+                <div class="code-block">
+{`// window.Yappy is the global scripting entry point.
+
+// A key insight, called out with a lightbulb and a banner label
+const idea = Yappy.createElement('lightbulb', 120, 120, 80, 100, {
+    strokeColor: '#f59e0b',
+    roughness: 2               // loose, hand-drawn line
+});
+
+const banner = Yappy.createElement('doubleBanner', 240, 130, 220, 60, {
+    containerText: 'Big Idea', // label rendered inside the container
+    strokeColor: '#1e293b'
+});
+
+// A to-do marker and a happy face for a positive outcome
+Yappy.createElement('checkbox', 120, 280, 40, 40);
+Yappy.createElement('faceHappy', 200, 275, 50, 50, {
+    strokeColor: '#16a34a'
+});
+
+// Show a relationship between two ideas
+Yappy.connect(idea, banner, { type: 'arrow' });`}
+                </div>
+
+                <h3>Restyle a Shape Later</h3>
+                <div class="code-block">
+{`// Give the banner a solid fill and a new label
+Yappy.updateElement(banner, {
+    backgroundColor: '#fef3c7',
+    fillStyle: 'solid',
+    containerText: 'Key Takeaway'
+});`}
+                </div>
+
+                <div class="tip-box">
+                    <h5>Tip: Turn up the roughness</h5>
+                    <p>
+                        Pass <code class="code-inline">roughness: 2</code> (or higher) in the options to get the
+                        loose, sketchy line quality that makes sketchnotes feel hand-drawn. Container shapes accept
+                        <code class="code-inline">containerText</code> to place a label inside them.
+                    </p>
+                </div>
             </section>
         </div>
     );

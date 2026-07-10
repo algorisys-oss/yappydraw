@@ -18,6 +18,29 @@ const YslTutorialDoc: Component = () => {
                 </p>
             </header>
 
+            {/* How to run it (in the app) */}
+            <section class="doc-section">
+                <h2>How to run it (in the app)</h2>
+                <p>You don't need the console to use YSL — it's built into the menu:</p>
+                <ol>
+                    <li>Open the import dialog: <strong>Menu → Import from Text</strong>, or press
+                        <span class="kbd">Ctrl+Shift+I</span>.</li>
+                    <li><strong>Paste your YSL</strong> (or JSON / Mermaid) into the text box. A badge shows the
+                        format Yappy detected — <em>Text DSL</em>, <em>JSON</em>, <em>Mermaid</em>, or
+                        <em> Markdown → Slides</em>.</li>
+                    <li>Optionally pick a <strong>Layout</strong> from the dropdown to override the
+                        <code> layout:</code> in your frontmatter.</li>
+                    <li>Click <strong>Import Diagram</strong>. Yappy creates the shapes, wires up the connectors,
+                        and auto-arranges everything on the canvas.</li>
+                    <li>Nothing happens? Check the syntax against the examples below — every non-blank line must
+                        be a node, an edge, or frontmatter.</li>
+                </ol>
+                <p class="tip-box">
+                    Some built-in templates open this same dialog pre-filled with their YSL, so you can tweak the
+                    text and re-import to see the diagram change.
+                </p>
+            </section>
+
             {/* Quick Start */}
             <section class="doc-section">
                 <h2>Quick Start</h2>

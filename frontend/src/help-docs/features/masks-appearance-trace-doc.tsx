@@ -88,7 +88,9 @@ const rect = Y.createRectangle(150, 150, 260, 200,
 const star = Y.createStar(180, 160, 200, 200, 5,
   { backgroundColor: '#000' });   // top object = the mask
 Y.setSelected([rect, star]);
-Y.makeClippingMask();              // → a blue star (rect shows only through the star)`}</code></pre>
+Y.makeClippingMask();              // → a blue star (rect shows only through the star)
+// later, to undo it non-destructively (right-click → Release, or Ctrl+Alt+7):
+Y.setSelected([star]); Y.releaseClippingMask();   // both original objects come back`}</code></pre>
 
                 <p><strong>2 — Circular avatar (photo clipped to a circle):</strong></p>
                 <pre><code>{`const Y = window.Yappy; Y.clear();

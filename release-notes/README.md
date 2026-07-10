@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.52](0.8.52.md) — Two-audience help docs (UI + verified Scripting API in every doc) + grouped context menu (Create/Select/Arrange/Export)
 - [0.8.51](0.8.51.md) — Smooth Morph blend (true shape morph) + Envelope Make-with-Top-Object (warp into a silhouette)
 - [0.8.50](0.8.50.md) — Desktop Phase 2: native Open/Save (.yappy), Open Recent, file associations, single-instance & auto-update
 - [0.8.49](0.8.49.md) — Native desktop app (Tauri v2, builds `.deb`/`.rpm`/`.AppImage`); export crop/dropped-element/missing-effect fix

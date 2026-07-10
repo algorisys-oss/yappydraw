@@ -519,6 +519,57 @@ export const BpmnDoc: Component = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Every BPMN shape can be created from the browser console (or a script)
+                    via the global <code>window.Yappy</code> object. Use the dedicated
+                    <code>createBpmnShape</code> helper (it applies a sensible default size
+                    per shape) or the generic <code>createElement</code>.
+                </p>
+                <pre class="code-block"><code>{`// Build a tiny process: Start -> Task -> End
+const start = Yappy.createBpmnShape('bpmnStartEvent', 100, 200);
+const task  = Yappy.createBpmnShape('bpmnTask', 200, 190, 120, 80, { containerText: 'Review Order' });
+const end   = Yappy.createBpmnShape('bpmnEndEvent', 380, 200);
+
+// Connect them with sequence-flow arrows
+Yappy.createArrow(150, 225, 200, 230);
+Yappy.createArrow(320, 230, 380, 225);`}</code></pre>
+                <p>
+                    Shape <code>type</code> strings: <code>bpmnStartEvent</code>,
+                    <code>bpmnEndEvent</code>, <code>bpmnIntermediateEvent</code>,
+                    <code>bpmnExclusiveGateway</code>, <code>bpmnParallelGateway</code>,
+                    <code>bpmnInclusiveGateway</code>, <code>bpmnEventGateway</code>,
+                    <code>bpmnTask</code>, <code>bpmnSubProcess</code>,
+                    <code>bpmnCallActivity</code>, <code>bpmnDataObject</code>,
+                    <code>bpmnDataStore</code>, <code>bpmnAnnotation</code>,
+                    <code>bpmnGroup</code>, <code>bpmnPool</code>.
+                </p>
+
+                <h3>Setting event / task / loop markers</h3>
+                <p>
+                    The property-panel dropdowns map to element attributes you can set with
+                    <code>updateElement</code>:
+                </p>
+                <pre class="code-block"><code>{`// A timer intermediate event + a user task with a parallel multi-instance marker
+const timer = Yappy.createBpmnShape('bpmnIntermediateEvent', 200, 300);
+Yappy.updateElement(timer, { bpmnEventType: 'timer' });
+
+const t = Yappy.createBpmnShape('bpmnTask', 300, 290, 120, 80);
+Yappy.updateElement(t, { bpmnTaskType: 'user', bpmnLoopType: 'parallel' });`}</code></pre>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Attribute</th><th>Accepted values</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>bpmnEventType</code></td><td>none, message, timer, error, signal, conditional, escalation, compensation, link, terminate, cancel</td></tr>
+                        <tr><td><code>bpmnTaskType</code></td><td>none, user, service, script, manual, send, receive, businessRule</td></tr>
+                        <tr><td><code>bpmnLoopType</code></td><td>none, standard, parallel, sequential, compensation</td></tr>
+                    </tbody>
+                </table>
+            </section>
         </div>
     );
 };

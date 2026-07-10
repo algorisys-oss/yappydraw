@@ -82,6 +82,48 @@ export const UmlDoc: Component = () => {
                 </table>
             </section>
 
+            {/* How to (in the app) */}
+            <section class="doc-section">
+                <h2>How to (in the app)</h2>
+                <h3>Place a UML shape</h3>
+                <ol>
+                    <li>Open the <strong>Architecture</strong> toolbar group and choose the
+                        <strong>UML</strong> section (Class, Use Case, Sequence, State,
+                        Component, Deployment).</li>
+                    <li>Click the shape you want (e.g. <strong>Class Box</strong>), then click
+                        or drag on the canvas to place and size it.</li>
+                    <li>Double-click the shape to edit its text — for a class box, type the
+                        name, attributes and methods on separate lines.</li>
+                    <li>Restyle fill, stroke and text from the <strong>Properties</strong>
+                        panel on the right; both <em>sketch</em> and <em>architectural</em>
+                        render styles are supported.</li>
+                </ol>
+
+                <h3>Connect shapes with UML relationships</h3>
+                <ol>
+                    <li>Pick the <strong>Arrow</strong> tool (<span class="kbd">A</span>) and
+                        drag from one shape to another — hover an edge to snap to a
+                        connection point.</li>
+                    <li>With the connector selected, choose the arrowhead / line style
+                        (open arrow, hollow triangle, filled/hollow diamond, dashed) from the
+                        Properties panel to express association, inheritance, composition,
+                        aggregation, dependency or implementation.</li>
+                    <li>Double-click the connector to add cardinality or role labels
+                        (e.g. <code>1</code> … <code>0..*</code>).</li>
+                </ol>
+
+                <div class="tip-box">
+                    <h5>Faster: generate from text</h5>
+                    <p>
+                        For a whole diagram at once, open the <strong>Import Diagram</strong>
+                        dialog and paste Mermaid (<code>classDiagram</code>,
+                        <code>sequenceDiagram</code>, <code>stateDiagram</code>) or native YSL —
+                        Yappy lays out the shapes and draws the correct UML arrowheads
+                        automatically. Everything stays editable on the canvas afterwards.
+                    </p>
+                </div>
+            </section>
+
             {/* Class Diagrams */}
             <section class="doc-section">
                 <h2>Class Diagrams</h2>
@@ -368,6 +410,43 @@ Examples:
                     <li><strong>Group related elements</strong> - Use packages for organization</li>
                     <li><strong>Add notes</strong> - Clarify complex parts with annotations</li>
                 </ul>
+            </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    UML shapes are created from the console via the global
+                    <code>window.Yappy</code> object using the generic
+                    <code>createElement(type, x, y, width, height, options)</code>, then
+                    connected with <code>createArrow</code>.
+                </p>
+                <pre class="code-block"><code>{`// Two classes with an inheritance relationship
+const base = Yappy.createElement('umlClass', 200, 80, 180, 120, {
+  containerText: 'Shape\\n- x: number\\n- y: number\\n+ area(): number',
+});
+const sub = Yappy.createElement('umlClass', 200, 260, 180, 120, {
+  containerText: 'Circle\\n- r: number\\n+ area(): number',
+});
+// Sub -> Base (style the arrowhead as a hollow triangle in the panel)
+Yappy.createArrow(290, 260, 290, 200);`}</code></pre>
+                <p>
+                    UML <code>type</code> strings include: <code>umlClass</code>,
+                    <code>umlInterface</code>, <code>umlEnum</code>, <code>umlObject</code>,
+                    <code>umlActor</code>, <code>umlUseCase</code>, <code>umlLifeline</code>,
+                    <code>umlState</code>, <code>umlAction</code>, <code>umlHistory</code>,
+                    <code>umlComponent</code>, <code>umlPackage</code>, <code>umlNode</code>,
+                    <code>umlArtifact</code>, <code>umlPort</code>,
+                    <code>umlProvidedInterface</code>, <code>umlRequiredInterface</code>,
+                    <code>umlSignalSend</code>, <code>umlSignalReceive</code>,
+                    <code>umlFragment</code>, and <code>umlNote</code>.
+                </p>
+                <p class="tip-box">
+                    Update any shape later with
+                    <code>Yappy.updateElement(id, {`{ containerText: '...', backgroundColor: '#f5f5ff' }`})</code>.
+                    For a full diagram from text, prefer the Import Diagram dialog (Mermaid / YSL)
+                    described above.
+                </p>
             </section>
         </div>
     );

@@ -214,6 +214,100 @@ export const VectorPathsDoc: Component = () => {
                     and have new anchors inserted (Alt-click a segment), just like a simple path.
                 </p>
             </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Everything the Pen tool and the right-click <strong>Path</strong> menu do is also
+                    available programmatically. The global entry point is <code>window.Yappy</code>
+                    (usable as <code>Yappy</code> in the console or a script block). Anchors use the
+                    <code> PathAnchor</code> shape <code>{`{ x, y, kind?: 'corner' | 'smooth', inX?, inY?, outX?, outY? }`}</code>,
+                    where the handle offsets are relative to the anchor.
+                </p>
+
+                <h3>Create &amp; read paths</h3>
+                <pre class="code-block"><code>{`// A closed triangle from three corner anchors
+const tri = Yappy.createPath([
+  { x: 100, y: 100, kind: 'corner' },
+  { x: 260, y: 140, kind: 'corner' },
+  { x: 140, y: 260, kind: 'corner' },
+], { closed: true, strokeColor: '#1e1e1e', strokeWidth: 2 });
+
+// A smooth curve (Bezier handles via out/in offsets)
+Yappy.createPath([
+  { x: 100, y: 300, kind: 'smooth', outX: 60, outY: -60 },
+  { x: 300, y: 300, kind: 'smooth', inX: -60, inY: -60 },
+], { closed: false });
+
+// Read an editable path back
+const data = Yappy.getPath(tri); // { anchors, closed } or { subpaths }`}</code></pre>
+
+                <h3>Holes &amp; compound paths</h3>
+                <pre class="code-block"><code>{`// A donut: outer ring + inner hole (even-odd fill)
+Yappy.createMultiPath([
+  { closed: true, anchors: [
+    { x: 0, y: 0 }, { x: 200, y: 0 }, { x: 200, y: 200 }, { x: 0, y: 200 },
+  ] },
+  { closed: true, anchors: [
+    { x: 60, y: 60 }, { x: 140, y: 60 }, { x: 140, y: 140 }, { x: 60, y: 140 },
+  ] },
+], { backgroundColor: '#4dabf7' });
+
+// Or build/release a compound from existing selected shapes
+Yappy.makeCompoundPath([idA, idB]);
+Yappy.releaseCompoundPath([compoundId]);`}</code></pre>
+
+                <h3>Convert, combine &amp; derive</h3>
+                <pre class="code-block"><code>{`// Any shape -> editable path (in place)
+Yappy.convertToPath([shapeId]);
+
+// Boolean (Pathfinder) ops on 2+ ids
+Yappy.pathfinder([a, b], 'union');    // 'union' | 'subtract' | 'intersect' | 'exclude'
+Yappy.pathfinderRegion([a, b], 'divide'); // 'divide' | 'trim' | 'merge' | 'crop' | 'outline'
+
+// Stroke -> filled outline shape
+Yappy.outlineStroke([lineId]);
+
+// Parallel copy, +grows / -shrinks
+Yappy.offsetPath([pathId], 10);
+
+// Chain open paths into one (auto-closes if ends meet)
+Yappy.joinPaths([p1, p2]);`}</code></pre>
+
+                <h3>Tidy up</h3>
+                <pre class="code-block"><code>{`// Reduce anchor count while keeping the shape
+Yappy.simplifyPath([pathId]);
+
+// Smooth anchors (strength 0..1, iterations). No ids -> current selection.
+Yappy.smoothPath([pathId], 0.5, 2);`}</code></pre>
+
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Method</th><th>Purpose</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>createPath(anchors, opts?)</code></td><td>New single-subpath path; <code>opts.closed</code> fills it</td></tr>
+                        <tr><td><code>createMultiPath(subpaths, opts?)</code></td><td>Multi-subpath path (holes / islands, even-odd)</td></tr>
+                        <tr><td><code>getPath(id)</code></td><td>Read anchors + <code>closed</code>, or <code>subpaths</code></td></tr>
+                        <tr><td><code>convertToPath(ids)</code></td><td>Turn shapes into editable paths in place</td></tr>
+                        <tr><td><code>pathfinder(ids, op)</code></td><td>Boolean: union / subtract / intersect / exclude</td></tr>
+                        <tr><td><code>pathfinderRegion(ids, op)</code></td><td>Region: divide / trim / merge / crop / outline</td></tr>
+                        <tr><td><code>outlineStroke(ids)</code></td><td>Convert a stroke into a filled outline path</td></tr>
+                        <tr><td><code>offsetPath(ids, distance)</code></td><td>Parallel copy (+out / −in)</td></tr>
+                        <tr><td><code>simplifyPath(ids)</code></td><td>Reduce anchor count, keep shape</td></tr>
+                        <tr><td><code>smoothPath(ids?, strength?, iterations?)</code></td><td>Smooth anchors (defaults 0.5, 2)</td></tr>
+                        <tr><td><code>makeCompoundPath(ids)</code></td><td>Combine shapes into one compound path</td></tr>
+                        <tr><td><code>releaseCompoundPath(ids)</code></td><td>Split a compound back into separate paths</td></tr>
+                        <tr><td><code>joinPaths(ids)</code></td><td>Chain open paths by nearest endpoints</td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    Need a shape with no dedicated helper? The generics
+                    <code> Yappy.createElement('path', x, y, w, h, opts)</code> and
+                    <code> Yappy.updateElement(id, {`{ ... }`})</code> always work.
+                </p>
+            </section>
         </div>
     );
 };

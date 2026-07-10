@@ -330,6 +330,42 @@ setTimeout(() => {                       // let the image load first
                     </tbody>
                 </table>
             </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Every toolkit move is also on the global <code>window.Yappy</code> object — paste these into
+                    the browser DevTools console to build marks programmatically (or drive them from a script).
+                    All calls act on the current selection unless an id list is passed.
+                </p>
+
+                <p><strong>Repeat &amp; symmetry</strong> — rings, grids, mirrors and step-and-repeat:</p>
+                <pre><code>{`const Y = window.Yappy; Y.clear();
+const petal = Y.createStar(300, 180, 60, 120, 3, { backgroundColor:'#8b5cf6' });
+Y.setSelected([petal]);
+Y.radialRepeat(8, { radius: 120, faceCenter: true }); // 8 copies in a ring, facing out
+Y.gridRepeat(3, 4, { gapX: 16, gapY: 16 });           // tile as rows × cols
+Y.mirrorCopy('horizontal');                           // reflect across the right edge
+Y.transformAgain();                                   // replay the last move/duplicate`}</code></pre>
+
+                <p><strong>Symmetry guide</strong> — a shared reflection axis to mirror halves onto:</p>
+                <pre><code>{`Y.toggleSymmetryGuide(true);      // show the axis (optional 2nd arg = position)
+Y.setSymmetryAxis('vertical');    // 'vertical' (left↔right) or 'horizontal'
+Y.setSelected([petal]);
+Y.mirrorAcrossSymmetry();         // drop a reflected copy across the guide`}</code></pre>
+
+                <p><strong>Text → Outlines</strong> and <strong>Shape Builder</strong>:</p>
+                <pre><code>{`const t = Y.createText(160, 200, 'AB', { fontSize: 96 });
+const [outline] = Y.convertTextToOutlines([t]);   // glyphs → editable vector path (counters as holes)
+Y.toggleShapeBuilder(true);                       // arm Shape Builder, then drag across regions on canvas`}</code></pre>
+                <p class="tip-box">
+                    Warp / envelope / mesh / shear scripting lives in <strong>Hands-on Examples</strong> above
+                    (<code>setElementTransform</code>, <code>toggleEnvelopeWarp</code>, <code>applyMeshWarp</code>,
+                    <code> bakeWarp</code>). Pathfinder booleans and Offset/Outline Stroke are in the
+                    <strong> Vector Paths</strong> doc.
+                </p>
+            </section>
         </div>
     );
 };

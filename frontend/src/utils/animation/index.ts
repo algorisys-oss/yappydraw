@@ -24,6 +24,7 @@ export {
     animateElement,
     animateElements,
     stopElementAnimation,
+    stopAllElementAnimations,
     pauseElementAnimation,
     resumeElementAnimation,
     isElementAnimating,
@@ -53,6 +54,9 @@ export {
     // Keyframe animation
     interpolateKeyframes,
     animateElementKeyframes,
+    // Path & morph animation
+    animateAlongPath,
+    animateMorph,
     // Play configured animation
     playEntranceAnimation,
     playExitAnimation,

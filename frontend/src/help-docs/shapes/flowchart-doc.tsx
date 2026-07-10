@@ -256,6 +256,38 @@ export const FlowchartDoc: Component = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Flowchart symbols are plain shapes, so build them from the console via the
+                    global <code>window.Yappy</code> object with the generic
+                    <code>createElement(type, x, y, width, height, options)</code> and wire them
+                    up with <code>createArrow</code>.
+                </p>
+                <pre class="code-block"><code>{`// Start -> Process -> Decision
+const start = Yappy.createElement('ellipse', 120, 40, 120, 50, { containerText: 'Start' });
+const proc  = Yappy.createElement('rectangle', 120, 130, 120, 60, { containerText: 'Validate input' });
+const dec   = Yappy.createElement('diamond', 110, 230, 140, 90, { containerText: 'Valid?' });
+
+Yappy.createArrow(180, 90, 180, 130);   // Start -> Process
+Yappy.createArrow(180, 190, 180, 230);  // Process -> Decision`}</code></pre>
+                <p>
+                    Symbol → <code>type</code> string: <strong>Process</strong> =
+                    <code>rectangle</code>, <strong>Decision</strong> = <code>diamond</code>,
+                    <strong>Start/End</strong> = <code>ellipse</code> (or <code>circle</code>),
+                    <strong>Data</strong> = <code>parallelogram</code>,
+                    <strong>Document</strong> = <code>document</code>,
+                    <strong>Database</strong> = <code>cylinder</code>,
+                    <strong>Predefined Process</strong> = <code>predefinedProcess</code>,
+                    <strong>Manual Operation</strong> = <code>trapezoid</code>.
+                </p>
+                <p class="tip-box">
+                    Pass a label as <code>containerText</code>, and restyle any shape afterwards
+                    with <code>Yappy.updateElement(id, {`{ backgroundColor: '#eef', strokeColor: '#334' }`})</code>.
+                </p>
+            </section>
         </div>
     );
 };

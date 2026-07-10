@@ -1115,17 +1115,22 @@ export function getContextMenuItems(
             items.push({ label: 'Ungroup', shortcut: 'Ctrl+Shift+G', onClick: ungroupSelected });
         }
 
-        // Symbols / instances
+        // Create reusable assets from the selection (symbol / pattern / artboard / graphic style).
         if (selectionCount >= 1) {
             const anyInstance = store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'symbolInstance');
-            items.push({ label: 'Create Symbol', icon: '◈', onClick: () => createSymbol([...store.selection]) });
-            items.push({ label: 'Make Pattern from Selection', icon: '▦', onClick: () => createPatternFromSelection([...store.selection]) });
+            items.push({
+                label: 'Create', icon: '＋', submenu: [
+                    { label: 'Symbol', icon: '◈', onClick: () => createSymbol([...store.selection]) },
+                    { label: 'Pattern from Selection', icon: '▦', onClick: () => createPatternFromSelection([...store.selection]) },
+                    { label: 'Artboard from Selection', icon: '▭', onClick: () => addArtboard('selection') },
+                    { label: 'Graphic Style', icon: '🎨', onClick: () => createGraphicStyle([...store.selection]) },
+                ],
+            });
             if (anyInstance && store.selection.length === 1) {
                 const instId = store.selection[0];
                 items.push({ label: 'Edit Symbol (in place)', icon: '✎', onClick: () => enterSymbolEdit(instId) });
             }
             if (anyInstance) items.push({ label: 'Detach Instance', icon: '⛓', onClick: () => detachInstance([...store.selection]) });
-            items.push({ label: 'Artboard from Selection', icon: '▭', onClick: () => addArtboard('selection') });
         }
 
         const isAnyClipped = store.selection.some(id => {
@@ -1227,48 +1232,32 @@ export function getContextMenuItems(
             ],
         });
 
-        // Select by Type / Same Property
-        items.push({ label: 'Select by Type', submenu: buildSelectByTypeMenu() });
-        if (selectionCount === 1) {
-            const samePropertyMenu = buildSelectBySamePropertyMenu();
-            if (samePropertyMenu.length > 0) {
-                items.push({ label: 'Select by Same Property', submenu: samePropertyMenu });
+        // Select (by type / same property / similar) — grouped into one submenu.
+        {
+            const selectSub: MenuItem[] = [{ label: 'By Type', submenu: buildSelectByTypeMenu() }];
+            if (selectionCount === 1) {
+                const samePropertyMenu = buildSelectBySamePropertyMenu();
+                if (samePropertyMenu.length > 0) selectSub.push({ label: 'By Same Property', submenu: samePropertyMenu });
             }
+            selectSub.push({ label: 'Similar (Magic Wand)', icon: '🪄', onClick: () => selectSimilar() });
+            items.push({ label: 'Select', icon: '⇱', submenu: selectSub });
         }
 
-        items.push({ separator: true });
-
-        // Export Selection
+        // Arrange (z-order) + Export — grouped submenus.
         items.push(
             {
-                label: 'Export as PNG',
-                onClick: () => exportToPng(2, true, true) // 2x scale, white bg, selection only
+                label: 'Arrange', icon: '⤒', submenu: [
+                    { label: 'Bring to Front', shortcut: 'Ctrl+]', onClick: () => bringToFront(store.selection) },
+                    { label: 'Bring Forward', onClick: () => store.selection.forEach(id => moveElementZIndex(id, 'forward')) },
+                    { label: 'Send Backward', onClick: () => store.selection.forEach(id => moveElementZIndex(id, 'backward')) },
+                    { label: 'Send to Back', shortcut: 'Ctrl+[', onClick: () => sendToBack(store.selection) },
+                ],
             },
             {
-                label: 'Export as SVG',
-                onClick: () => exportToSvg(true) // selection only
-            }
-        );
-
-        items.push({ separator: true });
-
-        // Layering
-        items.push(
-            {
-                label: 'Bring to Front', shortcut: 'Ctrl+]',
-                onClick: () => bringToFront(store.selection)
-            },
-            {
-                label: 'Send to Back', shortcut: 'Ctrl+[',
-                onClick: () => sendToBack(store.selection)
-            },
-            {
-                label: 'Bring Forward',
-                onClick: () => store.selection.forEach(id => moveElementZIndex(id, 'forward'))
-            },
-            {
-                label: 'Send Backward',
-                onClick: () => store.selection.forEach(id => moveElementZIndex(id, 'backward'))
+                label: 'Export', icon: '⤓', submenu: [
+                    { label: 'PNG', onClick: () => exportToPng(2, true, true) },   // 2x, white bg, selection only
+                    { label: 'SVG', onClick: () => exportToSvg(true) },             // selection only
+                ],
             },
             { separator: true }
         );
@@ -1277,10 +1266,8 @@ export function getContextMenuItems(
         if (selectionCount >= 1) {
             items.push(
                 { label: 'Eyedropper — pick style from…', icon: '💧', onClick: () => startEyedropper() },
-                { label: 'Save as Graphic Style', icon: '🎨', onClick: () => createGraphicStyle([...store.selection]) },
                 { label: 'Recolor Artwork…', icon: '🌈', onClick: () => toggleRecolorPanel(true) },
                 ...(selectionCount === 1 ? [{ label: 'Edit Behaviors (Game)…', icon: '🎮', onClick: () => toggleBehaviorsPanel(true) }] : []),
-                { label: 'Select Similar (Magic Wand)', icon: '🪄', onClick: () => selectSimilar() },
                 {
                     label: 'Distort & Transform', icon: '〰️', submenu: [
                         { label: 'Pucker', onClick: () => applyDistort([...store.selection], 'pucker', 0.25) },

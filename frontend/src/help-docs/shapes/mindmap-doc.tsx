@@ -337,6 +337,57 @@ export const MindmapDoc: Component = () => {
                     <li><strong>Review and refine</strong> - Reorganize branches as the map grows</li>
                 </ul>
             </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Mind maps have a dedicated API on the global <code>window.Yappy</code> object.
+                    The quickest way is <code>createMindMap</code>, which builds a laid-out,
+                    colour-themed tree in one call:
+                </p>
+                <pre class="code-block"><code>{`// Central topic with two branches (one has children)
+const rootId = Yappy.createMindMap({
+  x: 400, y: 300,
+  title: 'Product Launch',
+  direction: 'balanced',
+  branches: [
+    { label: 'Marketing', children: ['Ads', 'Social', 'PR'] },
+    { label: 'Engineering', children: ['API', 'UI'] },
+  ],
+});`}</code></pre>
+                <p>
+                    <code>direction</code> is any layout: <code>balanced</code>,
+                    <code>radial</code>, <code>horizontal-right</code>,
+                    <code>horizontal-left</code>, <code>vertical-down</code>, or
+                    <code>vertical-up</code>.
+                </p>
+
+                <h3>Growing a tree node-by-node</h3>
+                <pre class="code-block"><code>{`// Add a child to a node, then a sibling; re-layout + recolour the whole tree
+const childId = Yappy.addChildNode(rootId);
+const sibId   = Yappy.addSiblingNode(childId);
+Yappy.setParent(sibId, rootId);          // reparent a node (null detaches it)
+
+Yappy.reorderMindmap(rootId, 'radial');  // switch layout direction + reflow
+Yappy.applyMindmapStyling(rootId);       // per-branch colour theme`}</code></pre>
+
+                <h3>Build a subtree from an outline</h3>
+                <pre class="code-block"><code>{`// Indented / bulleted text becomes nested nodes under the given parent
+Yappy.mindmapFromOutline(rootId, \`
+Phase 1
+  Research
+  Prototype
+Phase 2
+  Build
+  Test
+\`);`}</code></pre>
+                <p class="tip-box">
+                    <code>createMindMap</code>, <code>addChildNode</code> and
+                    <code>addSiblingNode</code> all return the new node id(s), so you can chain
+                    further edits or pass them to <code>Yappy.updateElement(id, {`{...}`})</code>.
+                </p>
+            </section>
         </div>
     );
 };

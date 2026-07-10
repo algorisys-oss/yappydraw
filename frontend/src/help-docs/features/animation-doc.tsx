@@ -820,6 +820,11 @@ Yappy.animateElementKeyframes(elementId, 'opacity', [
             {/* API Reference */}
             <section class="doc-section">
                 <h2>API Reference</h2>
+                <p>
+                    Every method below lives on the global <code>window.Yappy</code> object, so you can
+                    drive animations from the browser console or a script (e.g.
+                    <code> Yappy.animateElement(id, &#123; x: 400 &#125;, &#123; duration: 800 &#125;)</code>).
+                </p>
 
                 <table class="api-table">
                     <thead>
@@ -850,8 +855,12 @@ Yappy.animateElementKeyframes(elementId, 'opacity', [
                             <td>Shape morphing</td>
                         </tr>
                         <tr>
-                            <td><code>playAnimation(id, name, config)</code></td>
-                            <td>Play a preset animation</td>
+                            <td><code>playEntranceAnimation(id, options?)</code></td>
+                            <td>Play the element's configured entrance animation</td>
+                        </tr>
+                        <tr>
+                            <td><code>playExitAnimation(id, options?)</code></td>
+                            <td>Play the element's configured exit animation</td>
                         </tr>
                         <tr>
                             <td><code>stopAllElementAnimations(id)</code></td>

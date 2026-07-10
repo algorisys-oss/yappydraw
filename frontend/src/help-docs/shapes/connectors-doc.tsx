@@ -266,6 +266,44 @@ export const ConnectorsDoc: Component = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Connectors are created through the global <code>window.Yappy</code> (usable as
+                    <code> Yappy</code>). Line-like helpers take the two endpoints
+                    <code> (x1, y1, x2, y2)</code> rather than a bounding box:
+                </p>
+                <pre class="code-block"><code>{`// Straight line, arrow, and bezier curve
+Yappy.createLine(80, 80, 320, 80, { strokeColor: '#1e1e1e', strokeWidth: 2 });
+Yappy.createArrow(80, 140, 320, 140);
+Yappy.createBezier(80, 220, 320, 220);
+
+// Arrowheads: startArrowhead / endArrowhead
+// 'arrow' | 'triangle' | 'dot' | 'circle' | 'bar' | 'diamond' | 'diamondFilled' | 'crowsfoot' | null
+Yappy.createArrow(80, 300, 320, 300, {
+  startArrowhead: 'dot',
+  endArrowhead: 'triangle',
+  strokeStyle: 'dashed',
+});`}</code></pre>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Method / type</th><th>Purpose</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>createLine(x1, y1, x2, y2, opts?)</code></td><td>Plain line (type <code>'line'</code>)</td></tr>
+                        <tr><td><code>createArrow(x1, y1, x2, y2, opts?)</code></td><td>Arrow (type <code>'arrow'</code>, default end arrowhead)</td></tr>
+                        <tr><td><code>createBezier(x1, y1, x2, y2, opts?)</code></td><td>Smooth curve (type <code>'bezier'</code>)</td></tr>
+                        <tr><td><code>createElement('polyline', …)</code> / <code>'elbow'</code></td><td>Multi-segment / right-angle connectors</td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    Set <code>startArrowhead</code> / <code>endArrowhead</code> to any of the arrowhead
+                    names above (or <code>null</code> for none) to build one-way or bidirectional arrows.
+                    Restyle later with <code>Yappy.updateElement(id, {`{ ... }`})</code>.
+                </p>
+            </section>
         </div>
     );
 };

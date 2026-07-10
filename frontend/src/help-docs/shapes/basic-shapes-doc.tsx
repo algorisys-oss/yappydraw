@@ -277,6 +277,45 @@ export const BasicShapesDoc: Component = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Create basic shapes from the console or a script via the global
+                    <code> window.Yappy</code> (usable as <code>Yappy</code>). Each returns the new
+                    element's <code>id</code>. Positions are canvas coordinates:
+                    <code> (x, y)</code> is the top-left corner, then <code>width</code>, <code>height</code>.
+                </p>
+                <pre class="code-block"><code>{`// Dedicated helpers
+Yappy.createRectangle(80, 80, 160, 90, { borderRadius: 12, backgroundColor: '#a5d8ff' });
+Yappy.createCircle(300, 80, 100, 100, { fillStyle: 'hachure' });
+Yappy.createDiamond(80, 240, 140, 100);
+Yappy.createTriangle(300, 240, 120, 120, { strokeColor: '#e03131' });
+
+// Generic form (type strings: 'rectangle' | 'circle' | 'diamond' | 'triangle')
+const id = Yappy.createElement('rectangle', 0, 0, 200, 120, { roughness: 1.5 });
+
+// Restyle afterwards
+Yappy.updateElement(id, { backgroundColor: '#ffd43b', strokeWidth: 3 });`}</code></pre>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Method</th><th>Type string</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>createRectangle(x, y, w, h, opts?)</code></td><td><code>'rectangle'</code></td></tr>
+                        <tr><td><code>createCircle(x, y, w, h, opts?)</code></td><td><code>'circle'</code></td></tr>
+                        <tr><td><code>createDiamond(x, y, w, h, opts?)</code></td><td><code>'diamond'</code></td></tr>
+                        <tr><td><code>createTriangle(x, y, w, h, opts?)</code></td><td><code>'triangle'</code></td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    Common <code>opts</code>: <code>backgroundColor</code>, <code>strokeColor</code>,
+                    <code> strokeWidth</code>, <code>fillStyle</code> (<code>'solid' | 'hachure' | 'cross-hatch'</code>),
+                    <code> strokeStyle</code> (<code>'solid' | 'dashed' | 'dotted'</code>),
+                    <code> roughness</code>, <code>opacity</code>, <code>borderRadius</code>.
+                </p>
+            </section>
         </div>
     );
 };

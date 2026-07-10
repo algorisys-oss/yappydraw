@@ -241,6 +241,35 @@ await Y.restoreVersion(id);`}</code></pre>
                     fonts you've already used are cached for offline reuse.
                 </p>
             </section>
+
+            <section class="doc-section">
+                <h2>Scripting (API) — quick reference</h2>
+                <p>
+                    Everything above is scriptable from the global <code>window.Yappy</code> object. The snippets in
+                    each section run as-is in the browser console; this table collects the Design Studio methods in
+                    one place (all verified against <code>api.ts</code>).
+                </p>
+                <pre><code>{`const Y = window.Yappy;
+Y.newDesign('instagram-post');           // new fixed-size doc
+Y.addSlide();                            // add a page
+Y.setPageSize(1280, 720);                // resize all pages
+Y.magicResize('instagram-story');        // repurpose the whole doc
+await Y.exportPageToPng(0, 2);           // export page 1 at 2×`}</code></pre>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Area</th><th>Methods</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Documents &amp; pages</td><td><code>newDesign(size?)</code>, <code>getPageSizePresets()</code>, <code>addSlide()</code>, <code>setPageSize(w,h)</code>, <code>magicResize(size)</code>, <code>exportPageToPng(i?, scale?)</code>, <code>detachBackgroundImage(i?)</code></td></tr>
+                        <tr><td>Templates</td><td><code>getTemplates(cat?)</code>, <code>searchTemplates(q)</code>, <code>applyTemplate(id)</code>, <code>saveAsTemplate(name, desc?)</code>, <code>deleteUserTemplate(id)</code></td></tr>
+                        <tr><td>Brand kit &amp; fonts</td><td><code>createBrandKit(opts?)</code>, <code>applyBrandKit(id, opts?)</code>, <code>applyFontPairing(id)</code></td></tr>
+                        <tr><td>Elements &amp; photos</td><td><code>toggleElementsPanel(show?)</code>, <code>importSvg(text, opts?)</code>, <code>searchStockPhotos(q)</code>, <code>insertStockPhoto(photo)</code></td></tr>
+                        <tr><td>Text effects</td><td><code>getTextEffectPresets()</code>, <code>applyTextEffect(id, ids?)</code></td></tr>
+                        <tr><td>AI assists</td><td><code>magicWrite(mode?)</code>, <code>generateImage(prompt)</code>, <code>generateDesign(brief, size?)</code>, <code>removeBackground(id?)</code>, <code>magicEditImage(instr)</code>, <code>expandImage(opts?)</code></td></tr>
+                        <tr><td>Version history</td><td><code>snapshotVersion(label?)</code>, <code>listVersions()</code>, <code>restoreVersion(id)</code></td></tr>
+                    </tbody>
+                </table>
+            </section>
         </div>
     );
 };

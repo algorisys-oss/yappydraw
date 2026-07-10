@@ -365,6 +365,44 @@ export const DrawingToolsDoc: Component = () => {
                     can nudge where the text starts and whether it sits on or just outside the outline.
                 </p>
             </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    The freehand tools (Pencil, Fineliner, Marker, Ink Brush) are primarily
+                    <em> interactive</em> — you draw with a pointer or stylus. For programmatic strokes,
+                    the global <code>window.Yappy</code> (usable as <code>Yappy</code>) exposes a few
+                    ways to commit ink from a list of world points.
+                </p>
+                <pre class="code-block"><code>{`// Blob brush: filled stroke from world points (radius = half-thickness).
+// Same-colour overlaps merge into one shape.
+Yappy.blobStroke([
+  { x: 100, y: 100 }, { x: 160, y: 130 }, { x: 220, y: 100 },
+], 14);
+
+// A vector "pen" stroke as an open path (crisp, fully editable)
+Yappy.createPath([
+  { x: 100, y: 220, kind: 'smooth', outX: 40, outY: -40 },
+  { x: 240, y: 220, kind: 'smooth', inX: -40, inY: -40 },
+], { closed: false, strokeColor: '#1e1e1e', strokeWidth: 3 });`}</code></pre>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Method</th><th>Purpose</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>blobStroke(points, radius?)</code></td><td>Commit a filled brush stroke (default radius 14)</td></tr>
+                        <tr><td><code>createPath(anchors, opts?)</code></td><td>A crisp, editable vector stroke as a path</td></tr>
+                        <tr><td><code>toggleBlobBrush(active?)</code></td><td>Turn the blob brush tool on/off</td></tr>
+                        <tr><td><code>togglePathEraser(active?)</code></td><td>Turn the path eraser on/off</td></tr>
+                        <tr><td><code>pathErase(points, radius?)</code></td><td>Carve an eraser swath out of overlapping shapes</td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    For the full vector-path scripting surface (smoothing, simplifying, outlining a stroke
+                    into a filled shape), see the <strong>Vector Paths</strong> help page.
+                </p>
+            </section>
         </div>
     );
 };

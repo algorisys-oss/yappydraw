@@ -103,6 +103,44 @@ Y.pasteOnAllArtboards();       // copy the selection onto every artboard`}</code
                     a bleed boundary + crop marks around each artboard.
                 </p>
             </section>
+
+            {/* ─── SCRIPTING (API) ────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    The full artboard workflow is scriptable from the global <code>window.Yappy</code> object —
+                    add frames, rename/resize them, list them, and batch-export.
+                </p>
+                <pre><code>{`const Y = window.Yappy;
+
+// add, rename, resize, inspect
+const id = Y.addArtboard('Square 1080', 0, 0);
+Y.renameArtboard(id, 'Cover');
+Y.updateArtboard(id, { width: 1200, height: 1200 });
+Y.listArtboards();               // [{ id, name, x, y, width, height }, …]
+
+// tidy + export every frame at 2×
+Y.rearrangeArtboards(3, 40);     // 3 columns, 40px gap
+Y.listArtboards().forEach(a => Y.exportArtboard(a.id, 2));
+
+Y.deleteArtboard(id);            // remove one frame`}</code></pre>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Method</th><th>What it does</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>addArtboard(preset?, x?, y?)</code></td><td>Add a frame from a preset (or <code>'selection'</code>); returns its id.</td></tr>
+                        <tr><td><code>renameArtboard(id, name)</code></td><td>Rename a frame.</td></tr>
+                        <tr><td><code>updateArtboard(id, patch)</code></td><td>Patch position/size (<code>x,y,width,height</code>).</td></tr>
+                        <tr><td><code>deleteArtboard(id)</code></td><td>Remove a frame.</td></tr>
+                        <tr><td><code>rearrangeArtboards(cols?, gap?)</code></td><td>Lay every frame out in a grid.</td></tr>
+                        <tr><td><code>duplicateArtboard(id?, gap?)</code></td><td>Copy a frame and its artwork.</td></tr>
+                        <tr><td><code>fitArtboardToArtwork(id?, pad?)</code></td><td>Shrink-wrap a frame to its content.</td></tr>
+                        <tr><td><code>listArtboards()</code></td><td>Return all frames as plain objects.</td></tr>
+                        <tr><td><code>exportArtboard(id, scale?)</code></td><td>Download a PNG of just that region.</td></tr>
+                    </tbody>
+                </table>
+            </section>
         </div>
     );
 };

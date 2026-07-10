@@ -262,6 +262,43 @@ export const GeometricShapesDoc: Component = () => {
                     </div>
                 </div>
             </section>
+
+            {/* Scripting (API) */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Geometric shapes are created through the global <code>window.Yappy</code> (usable as
+                    <code> Yappy</code>). Most use the generic
+                    <code> Yappy.createElement(type, x, y, w, h, opts)</code> with the shape's type string;
+                    stars have a dedicated helper.
+                </p>
+                <pre class="code-block"><code>{`// Polygons & badges (type string = the shape name)
+Yappy.createElement('hexagon', 80, 80, 120, 120);
+Yappy.createElement('pentagon', 220, 80, 120, 120);
+Yappy.createElement('octagon', 360, 80, 120, 120, { backgroundColor: '#ffc9c9' });
+Yappy.createElement('cylinder', 80, 240, 120, 150);   // pseudo-3D
+Yappy.createElement('isometricCube', 240, 240, 120, 120);
+
+// Star: dedicated helper takes a point count
+const star = Yappy.createStar(400, 240, 120, 120, 5, { starPoints: 5 });`}</code></pre>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Shape</th><th>Type string</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Pentagon / Hexagon / Septagon / Octagon</td><td><code>'pentagon'</code>, <code>'hexagon'</code>, <code>'septagon'</code>, <code>'octagon'</code></td></tr>
+                        <tr><td>Star</td><td><code>'star'</code> (or <code>createStar(...)</code>)</td></tr>
+                        <tr><td>Polygon</td><td><code>'polygon'</code></td></tr>
+                        <tr><td>Parallelogram / Trapezoid</td><td><code>'parallelogram'</code>, <code>'trapezoid'</code></td></tr>
+                        <tr><td>Cross / Heart / Cloud / Capsule</td><td><code>'cross'</code>, <code>'heart'</code>, <code>'cloud'</code>, <code>'capsule'</code></td></tr>
+                        <tr><td>3D blocks / Cylinder</td><td><code>'isometricCube'</code>, <code>'solidBlock'</code>, <code>'perspectiveBlock'</code>, <code>'cylinder'</code></td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    Tune a star with <code>opts.starPoints</code>, and restyle any shape afterwards with
+                    <code> Yappy.updateElement(id, {`{ backgroundColor, strokeColor, fillStyle, opacity }`})</code>.
+                </p>
+            </section>
         </div>
     );
 };

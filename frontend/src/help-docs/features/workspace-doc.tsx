@@ -148,6 +148,58 @@ const WorkspaceDoc: Component = () => {
                     <strong> PNG</strong> (2×) for crisp raster output; <strong>PDF</strong> for print.
                 </p>
             </section>
+
+            {/* ─── SCRIPTING (API) ────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Every workspace helper is scriptable from the global <code>window.Yappy</code> object — paste
+                    these into the browser console. History, view-fit, blends and repeat/transform commands act on
+                    the current selection unless you pass explicit ids.
+                </p>
+                <pre class="code-block"><code>{`const Y = window.Yappy;
+
+// History
+Y.undo();                 // step back
+Y.redo();                 // step forward
+
+// Fit the whole drawing to the viewport
+await Y.zoomToFit();`}</code></pre>
+                <h3>Blends</h3>
+                <pre class="code-block"><code>{`// select exactly two objects first, then:
+Y.blend(6);               // 6 graduated in-between copies
+Y.blendMorph(8);          // 8 outline-morph steps (editable paths)
+
+// two objects + a path/line (the spine) selected:
+Y.blendAlongPath(10, true); // 10 copies along the spine, orient to tangent`}</code></pre>
+                <h3>Repeat &amp; transform</h3>
+                <pre class="code-block"><code>{`// operate on the current selection
+Y.radialRepeat(8, { radius: 160, faceCenter: true }); // 8 around a ring
+Y.gridRepeat(3, 4, { gapX: 20, gapY: 20 });           // 3×4 grid of copies
+Y.mirrorCopy('horizontal');                           // mirrored duplicate
+Y.transformAgain();                                   // repeat the last move/scale/rotate`}</code></pre>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Method</th><th>What it does</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>undo()</code> / <code>redo()</code></td><td>Step through the history timeline.</td></tr>
+                        <tr><td><code>zoomToFit()</code></td><td>Fit all artwork to the viewport (async).</td></tr>
+                        <tr><td><code>blend(steps?, ids?)</code></td><td>Graduated blend between two objects.</td></tr>
+                        <tr><td><code>blendMorph(steps?, ids?)</code></td><td>Outline-morph blend (new editable paths).</td></tr>
+                        <tr><td><code>blendAlongPath(steps?, orient?, ids?)</code></td><td>Distribute the blend along a selected spine.</td></tr>
+                        <tr><td><code>radialRepeat(count, opts?)</code></td><td>Copies arranged around a ring.</td></tr>
+                        <tr><td><code>gridRepeat(rows, cols, opts?)</code></td><td>Copies in a grid.</td></tr>
+                        <tr><td><code>mirrorCopy(axis)</code></td><td>Mirrored duplicate (<code>'horizontal'</code>/<code>'vertical'</code>).</td></tr>
+                        <tr><td><code>transformAgain()</code></td><td>Re-apply the last transform.</td></tr>
+                        <tr><td><code>loadDocument(doc)</code></td><td>Replace the document with a saved JSON snapshot.</td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    Save/restore the whole document as JSON: grab it with a snapshot and reload it later with
+                    <code> Y.loadDocument(json)</code> — handy for programmatic scene resets.
+                </p>
+            </section>
         </div>
     );
 };

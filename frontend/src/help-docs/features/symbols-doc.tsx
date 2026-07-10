@@ -101,6 +101,41 @@ Y.placeInstance(symId, 420, 100);`}</code></pre>
                     <code> toggleSymbolsPanel()</code>.
                 </p>
             </section>
+
+            {/* ─── SCRIPTING (API) ────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Scripting (API)</h2>
+                <p>
+                    Symbols are fully scriptable from the global <code>window.Yappy</code> object — build a master
+                    from ids, scatter instances, redefine the master, and break the link.
+                </p>
+                <pre><code>{`const Y = window.Yappy; Y.clear();
+
+// build a master from two shapes, then place more instances
+const a = Y.createCircle(100, 100, 90, 90, { backgroundColor: '#2563eb' });
+const b = Y.createStar(118, 118, 54, 54, 5, { backgroundColor: '#facc15' });
+const sym = Y.createSymbol('Badge', [a, b]);   // returns the symbol id
+Y.placeInstance(sym, 260, 100);
+Y.placeInstance(sym, 420, 100);
+
+Y.listSymbols();                 // [{ id, name, width, height, instances }, …]`}</code></pre>
+                <pre><code>{`// redefine the master from a redrawn version, or detach a copy
+Y.redefineSymbol(sym, [newId1, newId2]);   // every instance updates
+Y.detachInstance();                        // detach the selected instance(s)`}</code></pre>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Method</th><th>What it does</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>createSymbol(name?, ids?)</code></td><td>Make a master from ids (default: selection); returns its id.</td></tr>
+                        <tr><td><code>placeInstance(symbolId, x?, y?)</code></td><td>Drop a linked instance on the canvas.</td></tr>
+                        <tr><td><code>redefineSymbol(symbolId, fromIds)</code></td><td>Replace the master; all instances update.</td></tr>
+                        <tr><td><code>detachInstance(ids?)</code></td><td>Break the link into editable shapes (default: selection).</td></tr>
+                        <tr><td><code>enterSymbolEdit(instanceId)</code> / <code>exitSymbolEdit(save)</code></td><td>Edit-in-place, then apply or cancel.</td></tr>
+                        <tr><td><code>renameSymbol</code> / <code>deleteSymbol</code> / <code>listSymbols()</code></td><td>Manage the symbol library.</td></tr>
+                    </tbody>
+                </table>
+            </section>
         </div>
     );
 };

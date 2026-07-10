@@ -106,6 +106,45 @@ const BulkEditingDoc: Component = () => {
                 <li>The "Mixed" indicator tells you at a glance which properties vary across your selection.</li>
                 <li>You can combine Select by Type with manual Shift+click to refine your selection before bulk editing.</li>
             </ul>
+
+            <h2>Scripting (API)</h2>
+            <p>
+                The same select-then-restyle workflow is scriptable from the global <code>window.Yappy</code>
+                object. Use <strong>Magic Wand</strong> (<code>selectSimilar</code>) to grow a selection by a shared
+                property, then loop over <code>getSelection()</code> and call <code>updateElement</code> to apply a
+                bulk change.
+            </p>
+            <pre class="code-block"><code>{`const Y = window.Yappy;
+
+// select every object that shares the first selected object's fill
+Y.selectSimilar();
+
+// match a different property (from a specific reference object)
+Y.selectSimilar('rect-3', 'stroke');   // 'fill' | 'stroke' | 'both' |
+                                       // 'fontFamily' | 'fontSize' | 'opacity' |
+                                       // 'strokeWidth' | 'type'`}</code></pre>
+            <p>Bulk-edit the current selection by updating each element:</p>
+            <pre class="code-block"><code>{`const Y = window.Yappy;
+
+// grab all blue shapes, then recolour + thicken them together
+Y.selectSimilar(undefined, 'fill');
+Y.getSelection().forEach(id =>
+    Y.updateElement(id, { backgroundColor: '#e03131', strokeWidth: 3 })
+);
+
+// or set the selection explicitly by id
+Y.setSelected(['rect-1', 'rect-2']);`}</code></pre>
+            <table class="doc-table">
+                <thead>
+                    <tr><th>Method</th><th>What it does</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>selectSimilar(refId?, match?)</code></td><td>Grow the selection to objects sharing a property (Magic Wand).</td></tr>
+                    <tr><td><code>getSelection()</code></td><td>Return the ids of the currently selected elements.</td></tr>
+                    <tr><td><code>setSelected(ids)</code></td><td>Replace the selection with the given ids.</td></tr>
+                    <tr><td><code>updateElement(id, patch)</code></td><td>Apply a property patch to one element (loop for bulk).</td></tr>
+                </tbody>
+            </table>
         </div>
     );
 };

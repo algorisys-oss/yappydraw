@@ -486,7 +486,14 @@ const merges = Yappy.getMergedCells(tableId);
 
             {/* API Reference */}
             <section class="doc-section">
-                <h2>API Reference</h2>
+                <h2>Scripting (API)</h2>
+                <p>
+                    Every table can be built and driven from code. The API is exposed on the global
+                    <code class="code-inline">window.Yappy</code> object, so you can call these methods
+                    from the browser console, a script element, or the in-app scripting panel. The
+                    <strong>Using the API</strong> snippets throughout this page all use these methods; the
+                    table below is the full reference.
+                </p>
 
                 <table class="api-table">
                     <thead>

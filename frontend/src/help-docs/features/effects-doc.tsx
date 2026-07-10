@@ -42,6 +42,11 @@ Y.convertToShape('rounded', 24);      // rounded rect, 24px corner radius`}</cod
                     selected shapes into ruler guides at their edges (Illustrator’s <kbd>⌘5</kbd>) and removes the
                     shapes, leaving a clean guide scaffold.
                 </p>
+                <p>
+                    <strong>UI:</strong> select a rectangle → Command Palette (<kbd>Ctrl/⌘ + K</kbd>) →
+                    <em> Split Into Grid (4×4)</em>; then with the cells selected run
+                    <em> Convert Shapes to Guides</em>.
+                </p>
                 <pre><code>{`const id = Y.createRectangle(0, 0, 400, 400, { backgroundColor: 'transparent', strokeColor: '#000' });
 Y.splitIntoGrid(4, 4, 0, id);         // 16 cells (rows, cols, gap, id)
 Y.select(Y.getSelection());           // …select the cells, then:
@@ -111,6 +116,11 @@ Y.clearTransformEffect();   // remove the effect`}</code></pre>
                     shadow with zero offset). Both are non-destructive element properties; set the radius to
                     <code>0</code> / pass <code>enabled:false</code> to remove.
                 </p>
+                <p>
+                    <strong>How to reach it:</strong> Feather, Outer Glow and Scribble are
+                    <em> scripting-first</em> effects — run them from the console / API below (they don’t have a
+                    palette or right-click entry yet). Select the object first, then call the method.
+                </p>
                 <pre><code>{`Y.setFeather(8);                          // 8px soft edge on the selection
 Y.setGlow({ color: '#00e5ff', blur: 18 }); // cyan outer glow
 Y.setGlow({ enabled: false });            // remove the glow`}</code></pre>
@@ -167,6 +177,8 @@ Y.shuffleSelectionColors();                       // randomise the order`}</code
                 <p>
                     Organise global swatches into named <strong>groups</strong>, and generate a labelled
                     <strong> swatch info sheet</strong> (colour chip + name + hex + RGB) for brand guidelines.
+                    <strong> UI:</strong> open the <strong>Swatches</strong> panel (<kbd>Alt + W</kbd>, or View →
+                    Swatches) to add, group and apply swatches; the info sheet drops onto the canvas.
                 </p>
                 <pre><code>{`Y.createSwatch('#112233', 'navy', 'Brand');   // colour, name, group
 Y.createSwatchGroupFromSelection('Palette');  // selection colours → group
