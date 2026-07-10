@@ -1,0 +1,25 @@
+[package]
+name = "yappy-desktop"
+version = "0.8.49"
+description = "Yappy — desktop wrapper for the diagramming & vector-illustration app"
+authors = ["Algorisys"]
+edition = "2021"
+rust-version = "1.77.2"
+
+# The library holds the app entry point; the binary (main.rs) is a thin shim
+# that calls into it, so the same code can also drive mobile targets later.
+[lib]
+name = "yappy_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+# Used for production builds (or when no dev server is specified). DO NOT REMOVE!
+custom-protocol = ["tauri/custom-protocol"]

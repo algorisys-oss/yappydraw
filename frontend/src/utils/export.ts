@@ -15,8 +15,75 @@ import { svgFillPaint, svgPatternDef } from "./svg-paint";
 import { SvgRenderer } from "../rendering/SvgRenderer";
 import { getImage } from "./image-cache";
 import { rasterizeWarpedImage } from "./image-warp";
+import { transformEffectRenderCopies, hasTransformEffect } from "./transform-effect";
+import { hasExtrude, isExtrudeTilted, renderExtrudeBody } from "./extrude";
 
 const SVGNS = 'http://www.w3.org/2000/svg';
+
+interface Bounds { minX: number; minY: number; maxX: number; maxY: number; }
+
+/**
+ * Visual world-space AABB of a single element — accounts for rotation, stroke width,
+ * shadow/glow/feather, and the 3D-extrude depth. WITHOUT these the export crop box is the
+ * raw x/y/w/h box, so rotated shapes, thick strokes and effects get clipped on export.
+ */
+function elementAABB(el: DrawingElement): Bounds {
+    const cx = el.x + (el.width || 0) / 2, cy = el.y + (el.height || 0) / 2;
+    const a = (el.angle || 0) * Math.PI / 180, cos = Math.cos(a), sin = Math.sin(a);
+    const hw = Math.abs(el.width || 0) / 2, hh = Math.abs(el.height || 0) / 2;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const [dx, dy] of [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]]) {
+        const x = cx + dx * cos - dy * sin, y = cy + dx * sin + dy * cos;
+        minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+    }
+    // Stroke half-width + shadow/glow/feather spread padding.
+    const shadow = el.shadowEnabled ? (el.shadowBlur || 0) + Math.max(Math.abs(el.shadowOffsetX || 0), Math.abs(el.shadowOffsetY || 0)) : 0;
+    const pad = (el.strokeWidth || 0) / 2 + shadow + (el.glowEnabled ? (el.glowBlur || 0) : 0) + (el.featherRadius || 0);
+    minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+    // 3D extrude body extends in the depth direction.
+    if (el.extrude && el.extrude.depth > 0) {
+        const r = (el.extrude.angle || 0) * Math.PI / 180;
+        const ex = Math.cos(r) * el.extrude.depth, ey = Math.sin(r) * el.extrude.depth;
+        minX = Math.min(minX, minX + ex); maxX = Math.max(maxX, maxX + ex);
+        minY = Math.min(minY, minY + ey); maxY = Math.max(maxY, maxY + ey);
+    }
+    return { minX, minY, maxX, maxY };
+}
+
+/** Union AABB of a set of elements, expanding for live Transform-effect copies. */
+function elementsBounds(elements: DrawingElement[]): Bounds {
+    let b: Bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+    const acc = (o: Bounds) => { b.minX = Math.min(b.minX, o.minX); b.minY = Math.min(b.minY, o.minY); b.maxX = Math.max(b.maxX, o.maxX); b.maxY = Math.max(b.maxY, o.maxY); };
+    for (const el of elements) {
+        const copies = transformEffectRenderCopies(el);
+        if (copies.length) for (const c of copies) acc(elementAABB(c));
+        else acc(elementAABB(el));
+    }
+    return b;
+}
+
+/** AABB-overlap test — true when an element visually overlaps the page rect (rotation-padded). */
+function overlapsRect(el: DrawingElement, rx: number, ry: number, rw: number, rh: number): boolean {
+    const b = elementAABB(el);
+    return b.maxX >= rx && b.minX <= rx + rw && b.maxY >= ry && b.minY <= ry + rh;
+}
+
+/**
+ * Render one element to a raster canvas INCLUDING its live effects — the 3D-extrude body and
+ * Transform-effect copies. `renderElement` alone draws only the flat base shape (effects live in
+ * the canvas render hook), so exports must replay that hook or effects vanish from the output.
+ */
+function renderElWithEffects(rc: ReturnType<typeof rough.canvas>, ctx: CanvasRenderingContext2D, el: DrawingElement): void {
+    if (hasExtrude(el)) {
+        renderExtrudeBody(ctx, el);
+        if (isExtrudeTilted(el)) return; // the full tilted solid (incl. front) is already drawn
+    }
+    if (hasTransformEffect(el)) {
+        for (const copy of transformEffectRenderCopies(el)) renderElement(rc, ctx, copy);
+        return;
+    }
+    renderElement(rc, ctx, el);
+}
 
 /** Build an SVG <g> of the element's appearance-stack extras (centred frame), or null. */
 function buildAppearanceSvgGroup(el: any, rc: any, options: any, defs: SVGElement): SVGGElement | null {
@@ -320,10 +387,10 @@ function renderPagedDocToCanvas(scale: number, whiteBackground: boolean): HTMLCa
         renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
         for (const el of store.elements) {
             if (el.isClipMask) continue;
-            const cx = el.x + (el.width || 0) / 2;
-            const cy = el.y + (el.height || 0) / 2;
-            if (!(cx >= sX && cx <= sX + sW && cy >= sY && cy <= sY + sH)) continue;
-            try { renderElement(rc, ctx, el); } catch { /* skip */ }
+            // Include any element that OVERLAPS the page (not just those centred inside it) —
+            // a shape hanging over an edge or centred off-page still renders (clipped to the page).
+            if (!overlapsRect(el, sX, sY, sW, sH)) continue;
+            try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
         }
         ctx.restore();
         destY += sH + PAGED_EXPORT_GAP;
@@ -351,14 +418,9 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     }
     if (elements.length === 0) return;
 
-    // Calculate Bounds
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    elements.forEach(el => {
-        minX = Math.min(minX, el.x);
-        minY = Math.min(minY, el.y);
-        maxX = Math.max(maxX, el.x + el.width);
-        maxY = Math.max(maxY, el.y + el.height);
-    });
+    // Visual bounds — rotation / stroke / shadow / extrude / transform-effect aware, so nothing
+    // is cropped off the export (the raw x/y/w/h box misses all of those).
+    const { minX, minY, maxX, maxY } = elementsBounds(elements);
 
     // Padding
     const padding = 20;
@@ -384,7 +446,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     // Render
     const rc = rough.canvas(canvas);
     elements.forEach(el => {
-        renderElement(rc, ctx, el);
+        renderElWithEffects(rc, ctx, el);
     });
 
     // Download
@@ -409,7 +471,7 @@ export const exportRegion = (x: number, y: number, w: number, h: number, name = 
     for (const el of store.elements) {
         if (el.isClipMask) continue;
         if (el.x + el.width < x || el.x > x + w || el.y + el.height < y || el.y > y + h) continue;
-        try { renderElement(rc, ctx, el); } catch { /* skip */ }
+        try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
     }
     const url = canvas.toDataURL('image/png');
     if (download) { const link = document.createElement('a'); link.download = `${name}.png`; link.href = url; link.click(); }
@@ -435,7 +497,7 @@ export const exportArtboard = (artboardId: string, scale = 1, download = true): 
     for (const el of store.elements) {
         if (el.isClipMask) continue;
         if (el.x + el.width < ab.x || el.x > ab.x + ab.width || el.y + el.height < ab.y || el.y > ab.y + ab.height) continue; // outside the artboard
-        try { renderElement(rc, ctx, el); } catch { /* skip */ }
+        try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
     }
     const url = canvas.toDataURL('image/png');
     if (download) { const link = document.createElement('a'); link.download = `${ab.name}.png`; link.href = url; link.click(); }
@@ -468,10 +530,9 @@ export const exportPageToPng = (pageIndex: number, scale = 1, download = true, f
     renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
     for (const el of store.elements) {
         if (el.isClipMask) continue;
-        const cx = el.x + (el.width || 0) / 2;
-        const cy = el.y + (el.height || 0) / 2;
-        if (!(cx >= sX && cx <= sX + sW && cy >= sY && cy <= sY + sH)) continue;
-        try { renderElement(rc, ctx, el); } catch { /* skip */ }
+        // Overlap (not centre) test — see renderPagedDocToCanvas.
+        if (!overlapsRect(el, sX, sY, sW, sH)) continue;
+        try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
     }
     const ext = format === 'jpeg' ? 'jpg' : 'png';
     const url = format === 'jpeg' ? canvas.toDataURL('image/jpeg', 0.92) : canvas.toDataURL('image/png');
@@ -503,13 +564,8 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
     }
     if (elements.length === 0) return;
 
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    elements.forEach(el => {
-        minX = Math.min(minX, el.x);
-        minY = Math.min(minY, el.y);
-        maxX = Math.max(maxX, el.x + el.width);
-        maxY = Math.max(maxY, el.y + el.height);
-    });
+    const __eb = elementsBounds(elements);
+    let minX = __eb.minX, minY = __eb.minY, maxX = __eb.maxX, maxY = __eb.maxY;
 
     const padding = 20;
     const width = maxX - minX + padding * 2;
@@ -531,7 +587,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
 
     const rc = rough.canvas(canvas);
     elements.forEach(el => {
-        renderElement(rc, ctx, el);
+        renderElWithEffects(rc, ctx, el);
     });
 
     const link = document.createElement('a');
@@ -544,13 +600,8 @@ export const copyCanvasAsPng = async (scale: number) => {
     const elements = store.elements;
     if (elements.length === 0) return;
 
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    elements.forEach(el => {
-        minX = Math.min(minX, el.x);
-        minY = Math.min(minY, el.y);
-        maxX = Math.max(maxX, el.x + el.width);
-        maxY = Math.max(maxY, el.y + el.height);
-    });
+    const __eb = elementsBounds(elements);
+    let minX = __eb.minX, minY = __eb.minY, maxX = __eb.maxX, maxY = __eb.maxY;
 
     const padding = 20;
     const width = maxX - minX + padding * 2;
@@ -571,7 +622,7 @@ export const copyCanvasAsPng = async (scale: number) => {
 
     const rc = rough.canvas(canvas);
     elements.forEach(el => {
-        renderElement(rc, ctx, el);
+        renderElWithEffects(rc, ctx, el);
     });
 
     canvas.toBlob(async (blob) => {
@@ -598,13 +649,8 @@ export const exportToSvg = (onlySelected: boolean) => {
     if (elements.length === 0 && !paged) return;
 
     // Calculate Bounds
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    elements.forEach(el => {
-        minX = Math.min(minX, el.x);
-        minY = Math.min(minY, el.y);
-        maxX = Math.max(maxX, el.x + el.width);
-        maxY = Math.max(maxY, el.y + el.height);
-    });
+    const __eb = elementsBounds(elements);
+    let minX = __eb.minX, minY = __eb.minY, maxX = __eb.maxX, maxY = __eb.maxY;
     if (paged) {
         store.slides.forEach(s => {
             minX = Math.min(minX, s.spatialPosition.x);
@@ -1189,7 +1235,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
             // Render elements
             const rc = rough.canvas(canvas);
             slideElements.forEach(el => {
-                renderElement(rc, ctx, el);
+                renderElWithEffects(rc, ctx, el);
             });
 
             // Add page (first page already exists)
@@ -1213,13 +1259,8 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
         if (elements.length === 0) return;
 
         // Calculate bounds
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        elements.forEach(el => {
-            minX = Math.min(minX, el.x);
-            minY = Math.min(minY, el.y);
-            maxX = Math.max(maxX, el.x + el.width);
-            maxY = Math.max(maxY, el.y + el.height);
-        });
+        const __eb = elementsBounds(elements);
+        let minX = __eb.minX, minY = __eb.minY, maxX = __eb.maxX, maxY = __eb.maxY;
 
         const padding = 20;
         const width = maxX - minX + padding * 2;
@@ -1242,7 +1283,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
 
         const rc = rough.canvas(canvas);
         elements.forEach(el => {
-            renderElement(rc, ctx, el);
+            renderElWithEffects(rc, ctx, el);
         });
 
         const orientation = width >= height ? 'landscape' : 'portrait';
@@ -1305,7 +1346,7 @@ export const exportToPptx = async (scale: number, background: boolean, onlySelec
 
             const rc = rough.canvas(canvas);
             slideElements.forEach(el => {
-                renderElement(rc, ctx, el);
+                renderElWithEffects(rc, ctx, el);
             });
 
             // Per-slide dimensions in inches (in case slides differ in size)
@@ -1330,13 +1371,8 @@ export const exportToPptx = async (scale: number, background: boolean, onlySelec
         }
         if (elements.length === 0) return;
 
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        elements.forEach(el => {
-            minX = Math.min(minX, el.x);
-            minY = Math.min(minY, el.y);
-            maxX = Math.max(maxX, el.x + el.width);
-            maxY = Math.max(maxY, el.y + el.height);
-        });
+        const __eb = elementsBounds(elements);
+        let minX = __eb.minX, minY = __eb.minY, maxX = __eb.maxX, maxY = __eb.maxY;
 
         const padding = 20;
         const width = maxX - minX + padding * 2;
@@ -1358,7 +1394,7 @@ export const exportToPptx = async (scale: number, background: boolean, onlySelec
 
         const rc = rough.canvas(canvas);
         elements.forEach(el => {
-            renderElement(rc, ctx, el);
+            renderElWithEffects(rc, ctx, el);
         });
 
         const slideW = 10;

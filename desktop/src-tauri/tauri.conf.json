@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Yappy",
+  "version": "0.8.49",
+  "identifier": "com.algorisys.yappy",
+  "build": {
+    "beforeDevCommand": "cd .. && npm run desktop:dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "cd .. && npm run desktop:build",
+    "frontendDist": "../../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Yappy",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "GraphicsAndDesign",
+    "shortDescription": "Diagramming, drawing & vector-illustration app.",
+    "longDescription": "Yappy — an infinite-canvas app for diagrams, sketches, presentations and Illustrator-class vector work (pen/paths, pathfinder, warp, live 3D & transform effects). This desktop build wraps the web frontend in a native window via Tauri; it runs fully client-side and offline."
+  }
+}

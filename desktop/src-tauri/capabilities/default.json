@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capability set for the Yappy main window. The app is self-contained in the webview and needs no privileged APIs yet, so only the core defaults are granted. Add fs/dialog/updater permissions here when native file open/save and auto-update land (see docs/tauri-desktop-plan.md).",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}

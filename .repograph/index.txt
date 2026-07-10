@@ -527,7 +527,7 @@ frontend/src/utils/envelope-warp.ts | typescript | 289 | Pt:20 WarpGrid:21 getWa
 frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19 parseExpr:72
 frontend/src/utils/export-game.ts | typescript | 42 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
-frontend/src/utils/export.ts | typescript | 1380 | ShapeGeometry:13 buildAppearanceSvgGroup:22 buildUmlClassNode:81 umlArrowheadGlyph:173 connectorCurvePath:198 connectorPathEl:226 geometryToDs:244 renderPagedDocToCanvas:289
+frontend/src/utils/export.ts | typescript | 1416 | ShapeGeometry:13 Bounds:23 elementAABB:30 elementsBounds:54 overlapsRect:66 renderElWithEffects:76 buildAppearanceSvgGroup:89 buildUmlClassNode:148 umlArrowheadGlyph:240 connectorCurvePath:265 connectorPathEl:293 geometryToDs:311 renderPagedDocToCanvas:356
 frontend/src/utils/extrude.ts | typescript | 129 | Poly:12 Ring:12 MultiPoly:16 hasExtrude:18 isExtrudeTilted:24 tilted:29 darken:37 baseColor:52 extrudeGeometry:59 drawBody:74 drawFront:100 renderExtrudeBody:121
 frontend/src/utils/geometry-scale.ts | typescript | 69 | scalePoints:13 scalePathAnchors:33 scalePathSubpaths:47 scaleEraseStrokes:53
 frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
