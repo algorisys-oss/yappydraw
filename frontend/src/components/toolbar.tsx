@@ -4,6 +4,7 @@ import { generateId } from "../utils/id-generator";
 import { addImagePlaceholder } from "../utils/image-actions";
 import type { ToolType } from "../types";
 import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw, Command, Shapes, PersonStanding } from "lucide-solid";
+import { isPanelOpen } from "../store/dock-layout";
 
 const BRUSH_TOOLS: ToolType[] = ['fineliner', 'inkbrush', 'marker'];
 import PenToolGroup from "./pen-tool-group";
@@ -398,7 +399,7 @@ const Toolbar: Component = () => {
 
             {/* Stick-figure library — drawify-style editable people, drag onto the canvas */}
             <button
-                class={`toolbar-btn ${store.showStickFigurePanel ? 'active' : ''}`}
+                class={`toolbar-btn ${isPanelOpen('stickFigure') ? 'active' : ''}`}
                 onClick={() => toggleStickFigurePanel()}
                 title="Stick Figures library"
                 aria-label="Toggle stick figures panel"

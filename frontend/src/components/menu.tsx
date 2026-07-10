@@ -957,7 +957,7 @@ const Menu: Component = () => {
                                         <PersonStanding size={16} />
                                         <span class="label">Stick Figures</span>
                                         <div class="menu-item-right">
-                                            <Show when={store.showStickFigurePanel}><Check size={14} class="check-icon" /></Show>
+                                            <Show when={isPanelOpen('stickFigure')}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleBrandKitPanel(); setIsMenuOpen(false); }}>
@@ -994,7 +994,7 @@ const Menu: Component = () => {
                                         <Camera size={16} />
                                         <span class="label">Display States</span>
                                         <div class="menu-item-right">
-                                            <Show when={store.showStatePanel}><Check size={14} class="check-icon" /></Show>
+                                            <Show when={isPanelOpen('state')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+S</span>
                                         </div>
                                     </div>

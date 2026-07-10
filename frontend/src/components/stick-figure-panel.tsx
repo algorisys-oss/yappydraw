@@ -1,8 +1,7 @@
 import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
-import { store, toggleStickFigurePanel, createSymbol, toggleSymbolsPanel, toggleSceneTimeline } from '../store/app-store';
-import { draggablePanel } from '../utils/draggable-panel';
+import { store, createSymbol, toggleSymbolsPanel, toggleSceneTimeline } from '../store/app-store';
 import { showToast } from './toast';
-import { PersonStanding, X, Search, Component as ComponentIcon, Star, Clock, Play, Pause, Film, Layers, FlipHorizontal2, Route, Video, Square } from 'lucide-solid';
+import { Search, Component as ComponentIcon, Star, Clock, Play, Pause, Film, Layers, FlipHorizontal2, Route, Video, Square } from 'lucide-solid';
 import { setRequestRecording } from '../utils/recording-manager';
 import {
     STICK_CATEGORIES, filterStickAssets, searchStickAssets, getStickAsset,
@@ -103,13 +102,7 @@ const StickFigurePanel: Component = () => {
     const walkPath = () => { const c = pathCandidate(); if (c) { attachFigureToPath(c.figureId, c.pathId); showToast('Figure now walks the path', 'success'); } };
 
     return (
-        <Show when={store.showStickFigurePanel}>
-            <div class="stick-panel" ref={draggablePanel('.stick-panel-header')}>
-                <div class="stick-panel-header">
-                    <div class="sp-title"><PersonStanding size={15} /><h3>Stick Figures</h3></div>
-                    <button class="sp-icon-btn" title="Close" onClick={() => toggleStickFigurePanel(false)}><X size={15} /></button>
-                </div>
-
+        <>
                 <div class="sp-search">
                     <Search size={13} />
                     <input type="text" placeholder="Search figures…" value={query()}
@@ -332,8 +325,7 @@ const StickFigurePanel: Component = () => {
                         </button>
                     </div>
                 </Show>
-            </div>
-        </Show>
+        </>
     );
 };
 

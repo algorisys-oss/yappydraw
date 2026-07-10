@@ -18,6 +18,9 @@ const SymbolsPanel = lazy(() => import("../symbols-panel"));
 const RecolorPanel = lazy(() => import("../recolor-panel"));
 const BrandKitPanel = lazy(() => import("../brand-kit-panel"));
 const ElementsPanel = lazy(() => import("../elements-panel"));
+const StatePanel = lazy(() => import("../state-panel").then(m => ({ default: m.StatePanel })));
+const BehaviorsPanel = lazy(() => import("../behaviors-panel"));
+const StickFigurePanel = lazy(() => import("../stick-figure-panel"));
 
 export interface PanelDef {
     id: string;
@@ -37,6 +40,9 @@ export const PANEL_REGISTRY: PanelDef[] = [
     { id: 'recolor', title: 'Recolor Artwork', component: RecolorPanel },
     { id: 'brandKit', title: 'Brand Kit', component: BrandKitPanel },
     { id: 'elements', title: 'Elements', component: ElementsPanel },
+    { id: 'state', title: 'Display States', component: StatePanel },
+    { id: 'behaviors', title: 'Behaviors', component: BehaviorsPanel },
+    { id: 'stickFigure', title: 'Stick Figures', component: StickFigurePanel },
 ];
 
 export function panelDef(id: string): PanelDef | undefined {

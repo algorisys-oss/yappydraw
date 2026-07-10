@@ -1453,7 +1453,7 @@ export const setSceneBehaviors = (behaviors: import('../types').DrawingElement['
 };
 
 export const toggleBehaviorsPanel = (visible?: boolean) =>
-    setStore('showBehaviorsPanel', v => visible ?? !v);
+    setPanelOpen('behaviors', visible);
 
 export const toggleGameGraph = (visible?: boolean) =>
     setStore('showGameGraph', v => visible ?? !v);
@@ -2253,7 +2253,7 @@ export const setPageSize = (width: number, height: number, applyAll: boolean = t
 // --- State Morphing Actions ---
 
 export const toggleStatePanel = (visible?: boolean) => {
-    setStore("showStatePanel", visible ?? !store.showStatePanel);
+    setPanelOpen('state', visible);
 };
 
 export const addDisplayState = (name: string) => {
@@ -4313,7 +4313,7 @@ export const toggleElementsPanel = (visible?: boolean) => {
 };
 
 export const toggleStickFigurePanel = (visible?: boolean) => {
-    setStore('showStickFigurePanel', visible ?? !store.showStickFigurePanel);
+    setPanelOpen('stickFigure', visible);
 };
 
 export const toggleSceneTimeline = (visible?: boolean) => {

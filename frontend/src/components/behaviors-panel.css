@@ -31,17 +31,17 @@
     }
 }
 
-.behaviors-panel-header {
+/* In-body toolbar (dock chrome supplies the title bar; the view switcher + Play live here now). */
+.bp-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    /* The view switcher + Play + Close can exceed the 340px panel width; wrap the
-       actions to a second row instead of clipping the Play (run) button. */
+    /* The view switcher + Play can exceed the panel width; wrap the actions to a
+       second row instead of clipping the Play (run) button. */
     flex-wrap: wrap;
     row-gap: 8px;
     padding: 10px 12px;
     border-bottom: 1px solid var(--border-color);
-    cursor: move;
 }
 .bp-title { display: flex; align-items: center; gap: 7px; }
 .bp-title h3 { margin: 0; font-size: 14px; font-weight: 600; }
@@ -49,8 +49,8 @@
 /* Narrow panel (340px): compact the view switcher so it fits on one row next to
    Play — show each tab's label only when active; the rest stay icon-only (tooltip
    still names them). The header's flex-wrap remains a safety net. */
-.behaviors-panel .gvs-btn:not(.active) .gvs-label { display: none; }
-.behaviors-panel .gvs-btn:not(.active) { padding-left: 7px; padding-right: 7px; }
+.bp-toolbar .gvs-btn:not(.active) .gvs-label { display: none; }
+.bp-toolbar .gvs-btn:not(.active) { padding-left: 7px; padding-right: 7px; }
 .bp-play {
     display: flex; align-items: center; gap: 6px;
     padding: 6px 14px; border: none; border-radius: 999px;

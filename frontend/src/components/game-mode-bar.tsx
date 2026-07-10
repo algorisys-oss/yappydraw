@@ -12,6 +12,7 @@
 import { type Component, Show } from 'solid-js';
 import { Play, Download } from 'lucide-solid';
 import { store } from '../store/app-store';
+import { isPanelOpen } from '../store/dock-layout';
 import { showToast } from './toast';
 import { drawingId } from './menu';
 import { exportSceneAsHtml } from '../utils/export-game';
@@ -19,14 +20,14 @@ import { GameViewSwitcher, type GameView } from './game-view-switcher';
 import './game-mode-bar.css';
 
 const anyEditorOpen = () =>
-    store.showBehaviorsPanel || store.showGameGraph || store.showBlueprint || store.showGameScript;
+    isPanelOpen('behaviors') || store.showGameGraph || store.showBlueprint || store.showGameScript;
 
 /** Which view (if any) is currently open — highlights the matching switcher tab. */
 const currentView = (): GameView | undefined =>
     store.showBlueprint ? 'blueprint'
         : store.showGameScript ? 'code'
             : store.showGameGraph ? 'graph'
-                : store.showBehaviorsPanel ? 'simple'
+                : isPanelOpen('behaviors') ? 'simple'
                     : undefined;
 
 const play = () => {

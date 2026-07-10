@@ -10,8 +10,7 @@
 
 import { type Component, For, Show, createMemo, createSignal, createEffect } from 'solid-js';
 import { X, Play, Plus, Trash2, ChevronUp, ChevronDown, Copy, ClipboardPaste } from 'lucide-solid';
-import { store, updateElement, setSceneBehaviors, setGameVars, toggleBehaviorsPanel } from '../store/app-store';
-import { draggablePanel } from '../utils/draggable-panel';
+import { store, updateElement, setSceneBehaviors, setGameVars } from '../store/app-store';
 import { GameViewSwitcher } from './game-view-switcher';
 import { effectiveGameScript } from '../game/behaviors-to-script';
 import { buildPongExample, buildCatchExample, buildPlatformerExample } from '../game/behavior-examples';
@@ -200,13 +199,11 @@ const BehaviorsPanel: Component = () => {
     );
 
     return (
-        <Show when={store.showBehaviorsPanel}>
-            <div class="behaviors-panel" ref={draggablePanel('.behaviors-panel-header')}>
-                <div class="behaviors-panel-header">
+        <>
+                <div class="bp-toolbar">
                     <GameViewSwitcher current="simple" />
                     <div class="bp-head-actions">
                         <button class="bp-play" title="Play the game" onClick={play}><Play size={14} /> Play</button>
-                        <button class="bp-icon-btn" title="Close" onClick={() => toggleBehaviorsPanel(false)}><X size={15} /></button>
                     </div>
                 </div>
 
@@ -286,8 +283,7 @@ const BehaviorsPanel: Component = () => {
                         <pre class="bp-code">{code() || '// Add behaviors to see the generated code.'}</pre>
                     </Show>
                 </div>
-            </div>
-        </Show>
+        </>
     );
 };
 

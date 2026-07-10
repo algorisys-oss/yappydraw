@@ -54,15 +54,12 @@ import { updateElement, deleteArtboard, swapFillStroke, selectAll } from './stor
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const DockContainer = lazy(() => import('./components/dock/dock-container'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
-const StickFigurePanel = lazy(() => import('./components/stick-figure-panel'));
 const SceneTimeline = lazy(() => import('./components/scene-timeline'));
-const BehaviorsPanel = lazy(() => import('./components/behaviors-panel'));
 const GameGraph = lazy(() => import('./components/game-graph'));
 const BlueprintGraph = lazy(() => import('./components/blueprint-graph'));
 const GameModeBar = lazy(() => import('./components/game-mode-bar'));
 const VectorToolsPanel = lazy(() => import('./components/vector-tools-panel'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
-const StatePanel = lazy(() => import('./components/state-panel').then(m => ({ default: m.StatePanel })));
 const Toast = lazy(() => import('./components/toast'));
 const QuickToolbar = lazy(() => import('./components/quick-toolbar').then(m => ({ default: m.QuickToolbar })));
 const SlideNavigator = lazy(() => import('./components/slide-navigator').then(m => ({ default: m.SlideNavigator })));
@@ -1294,9 +1291,7 @@ const App: Component = () => {
             <DockContainer />
             <PropertyPanel />
             <LayerPanel />
-            <StickFigurePanel />
             <SceneTimeline />
-            <BehaviorsPanel />
             <GameGraph />
             <BlueprintGraph />
             <GameModeBar />
@@ -1355,7 +1350,6 @@ const App: Component = () => {
         {/* Panels hidden in Presentation Mode */}
         <Show when={store.appMode !== 'presentation'}>
           <CommandPalette />
-          <StatePanel />
           <WelcomeScreen />
         </Show>
 
