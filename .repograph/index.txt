@@ -195,11 +195,11 @@ frontend/src/components/player-app.css | - | 47 |
 frontend/src/components/player-app.tsx | typescript | 125 | Window:18 PlayerApp:23
 frontend/src/components/presentation-controls.tsx | typescript | 226 | Component:1 PresentationControls:6 resetHideTimeout:10 handleNext:37 handlePrev:42
 frontend/src/components/property-panel.css | - | 817 |
-frontend/src/components/property-panel.tsx | typescript | 2330 | Component:1 PropertyConfig:25 isMixed:47 templates:70 handleClickOutside:72 handlePresent:127 calls:216 SlideActions:283 handlePreviewTransition:284 AlignmentControls:300 gapVal:302 hasOptions:340 activePaletteId:345 activePalette:346 paletteSwatches:348 swatches:350 ap:450 fills:451 strokes:452 commit:453 editFill:459 editStroke:460 move:461 patValue:471 onPatChange:472 sg:518 stops:519 setSG:520 editStop:521 mesh:549 ids:550 row:569 col:570 pat:605 ids:606 transparentBg:610 isCustom:611 warp:696 ids:697 bend:699 preset:700 reapply:701 ex:731 ids:732 Row:736 fx:771 ids:772 num:777 scalePct:778 Row:780 updateStops:850 handleBarMouseDown:855 handleThumbMouseDown:872 onMove:877 onUp:887 PropertyPanel:992 handleChange:1162 seeds:1182 seeds:1189 getPropertyValue:1467 handleDelete:1546 renderControl:1553 colorVal:1556 sliderVal:1571 sliderDisplay:1572 filteredOptions:1620 selectVal:1631 applyVal:1633 isDisabled:1678 toggleVal:1686 inputVal:1702 textareaVal:1721 appendLine:1723 imgVal:1753 commit:1754 onFile:1756 numVal:1797 applyFontKey:1821 isSearching:1828 toggleGroup:1859 +5 more
+frontend/src/components/property-panel.tsx | typescript | 2389 | Component:1 PropertyConfig:26 isMixed:48 templates:71 handleClickOutside:73 handlePresent:128 calls:217 SlideActions:293 handlePreviewTransition:294 AlignmentControls:310 gapVal:312 hasOptions:350 activePaletteId:355 activePalette:356 paletteSwatches:358 swatches:360 ap:460 fills:461 strokes:462 commit:463 editFill:469 editStroke:470 move:471 patValue:481 onPatChange:482 sg:528 stops:529 setSG:530 editStop:531 mesh:559 ids:560 row:579 col:580 pat:615 ids:616 transparentBg:620 isCustom:621 el:706 id:707 set:708 snap:709 feather:710 glowOn:711 glowBlur:712 glowColor:713 warp:750 ids:751 bend:753 preset:754 reapply:755 ex:785 ids:786 Row:790 fx:825 ids:826 num:831 scalePct:832 Row:834 updateStops:904 handleBarMouseDown:909 handleThumbMouseDown:926 onMove:931 onUp:941 PropertyPanel:1046 handleChange:1216 seeds:1236 seeds:1243 getPropertyValue:1521 handleDelete:1600 renderControl:1607 colorVal:1610 sliderVal:1625 sliderDisplay:1626 filteredOptions:1674 selectVal:1685 applyVal:1687 isDisabled:1732 toggleVal:1740 inputVal:1756 textareaVal:1775 +13 more
 frontend/src/components/puppet-warp-overlay.css | - | 36 |
 frontend/src/components/puppet-warp-overlay.tsx | typescript | 110 | PuppetWarpOverlay:12 target:19 warpable:20 active:21 notice:23 toWorld:24 pinWorld:27 hitPin:33 onDown:42 onMove:63 onUp:70 onKey:76 pinDots:81
 frontend/src/components/quick-toolbar.css | - | 537 |
-frontend/src/components/quick-toolbar.tsx | typescript | 800 | Component:7 QuickPropertyDef:15 getIcon:63 handleDocClick:112 isTransparent:129 handleDocClick:177 activeOption:193 isActive:233 toggle:239 an:263 clamp:275 beginEdit:277 commit:282 a:305 is:325 handleDocClick:350 activeLabel:366 categories:370 QuickToolbar:423 selectedElement:427 handler:509 handlePropertyChange:523 handlePropertyStart:568 x:575 y:600 value:636 isDisabled:679
+frontend/src/components/quick-toolbar.tsx | typescript | 812 | Component:7 QuickPropertyDef:16 getIcon:64 handleDocClick:113 isTransparent:130 handleDocClick:178 activeOption:194 isActive:234 toggle:240 an:264 clamp:276 beginEdit:278 commit:283 a:306 is:326 handleDocClick:351 activeLabel:367 categories:371 QuickToolbar:424 selectedElement:428 handler:510 handlePropertyChange:524 handlePropertyStart:569 x:576 y:601 value:637 isDisabled:680
 frontend/src/components/recolor-panel.css | - | 61 |
 frontend/src/components/recolor-panel.tsx | typescript | 98 | Component:1 RecolorPanel:16 swatches:23 beginEdit:25 pickLive:31 endEdit:38 valHex:39
 frontend/src/components/recording-overlay.css | - | 100 |
@@ -263,7 +263,7 @@ frontend/src/components/timelapse-player.tsx | typescript | 173 | Component:1 Ti
 frontend/src/components/toast.css | - | 109 |
 frontend/src/components/toast.tsx | typescript | 55 | ToastType:5 showToast:15 hideToast:31 Toast:36
 frontend/src/components/toolbar.css | - | 254 |
-frontend/src/components/toolbar.tsx | typescript | 567 | Component:1 VideoProvider:24 Toolbar:67 clampIntoView:74 wrapWidth:109 onResizeDown:114 toggleBrainstormMode:125 onPointerDown:131 onPointerMove:144 onPointerUp:158 handleResize:177 handleToolClick:192 handleVideoInsert:202 handleRightClick:250 handleImageUpload:256
+frontend/src/components/toolbar.tsx | typescript | 569 | Component:1 VideoProvider:25 Toolbar:68 clampIntoView:75 wrapWidth:110 onResizeDown:115 toggleBrainstormMode:126 onPointerDown:132 onPointerMove:145 onPointerUp:159 handleResize:178 handleToolClick:193 handleVideoInsert:203 handleRightClick:251 handleImageUpload:257
 frontend/src/components/touch-type-overlay.css | - | 58 |
 frontend/src/components/touch-type-overlay.tsx | typescript | 308 | TouchTypeOverlay:29 target:39 active:48 toWorld:49 selArr:50 curT:51 stop:52 twoPts:53 glyphBoxes:57 hitGlyph:93 applyAll:114 bumpScale:115 bumpRot:116 setColorLive:117 snapColor:118 setFont:119 firstSel:120 glyphColor:121 glyphFont:122 onFontFile:125 startGesture:133 onDown:146 onMove:187 onUp:210 onKey:243 selScreens:260 controlPos:261 marqueeRect:262
 frontend/src/components/type-on-path-overlay.css | - | 23 |
@@ -361,7 +361,7 @@ frontend/src/help-docs/features/arcade-doc.tsx | typescript | 298 | ArcadeDoc:8 
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 148 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 152 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 277 | DesignStudioDoc:9
-frontend/src/help-docs/features/effects-doc.tsx | typescript | 201 | EffectsDoc:10 Tools:194
+frontend/src/help-docs/features/effects-doc.tsx | typescript | 203 | EffectsDoc:10 Tools:196
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 124 | EmbeddingDoc:3
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 485 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 373 | LogoToolkitDoc:9 the:146
@@ -422,7 +422,7 @@ frontend/src/shapes/renderers/data-structure-renderer.ts | typescript | 1066 | D
 frontend/src/shapes/renderers/diamond-renderer.ts | typescript | 185 | DiamondRenderer:6{renderArchitectural:7 renderSketch:25 getRadius:74 drawDiamondArch:80 getRoundedDiamondPath:117 definePath:140 executePath:155}
 frontend/src/shapes/renderers/flowchart-renderer.ts | typescript | 145 | FlowchartRenderer:7{renderArchitectural:8 renderSketch:73 getDatabasePath:109 getDatabaseTopPath:120 getDocumentPath:128 definePath:139}
 frontend/src/shapes/renderers/freehand-renderer.ts | typescript | 317 | FreehandRenderer:9{render:14 renderArchitectural:31 renderSketch:35 renderCommon:39 renderStrokeText:75 smoothPoints:100 renderFineliner:118 renderInkbrush:134 for:143 if:150}
-frontend/src/shapes/renderers/image-renderer.ts | typescript | 133 | ImageRenderer:9{renderArchitectural:10 renderSketch:14 renderCommon:18 renderWarped:61 renderWithPixelEffect:72 definePath:130}
+frontend/src/shapes/renderers/image-renderer.ts | typescript | 174 | ImageRenderer:9{renderArchitectural:10 renderSketch:14 renderPlaceholder:20 renderCommon:59 renderWarped:102 renderWithPixelEffect:113 definePath:171}
 frontend/src/shapes/renderers/infra-renderer.ts | typescript | 254 | InfraRenderer:6{renderArchitectural:7}
 frontend/src/shapes/renderers/path-renderer.ts | typescript | 325 | PathRenderer:8{render:14 RenderPipeline:37 renderSketch:44 renderCommon:48 renderFlow:67 renderer:109 cubicBezier:134 cubicBezierAngle:139 drawOrganicBranch:145 drawCurvedText:231 drawArrowhead:254 definePath:310}
 frontend/src/shapes/renderers/people-renderer.ts | typescript | 463 | PeopleRenderer:7{renderArchitectural:8 renderSketch:172 renderFace:251 renderFaceSketch:314 getHandPointRightPath:361 getThumbsUpPath:413 definePath:457}
@@ -518,7 +518,7 @@ frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:
 frontend/src/utils/color-harmony.ts | typescript | 83 | HarmonyType:10 generateTints:19 generateHarmony:29 loadImage:41 extractImagePalette:56
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 443 | Command:23
-frontend/src/utils/context-menu-builder.ts | typescript | 1718 | MergedCellRegion:57 buildSelectByTypeMenu:73 buildSelectBySamePropertyMenu:152 getContextMenuItems:182 buildFormatMenuItems:1549 buildBorderMenuItems:1644
+frontend/src/utils/context-menu-builder.ts | typescript | 1722 | MergedCellRegion:58 buildSelectByTypeMenu:74 buildSelectBySamePropertyMenu:153 getContextMenuItems:183 buildFormatMenuItems:1553 buildBorderMenuItems:1648
 frontend/src/utils/curve-fit.ts | typescript | 38 | Pt:10 catmullRomAnchors:13
 frontend/src/utils/custom-fonts.ts | typescript | 176 | CustomFont:18 loadGoogleLink:34 activate:47 persist:67 initCustomFonts:77 addCustomFontFromFile:104 addGoogleFont:119 removeCustomFont:132 customFontOptions:139
 frontend/src/utils/document-io.ts | typescript | 56 | buildSlideDocument:12 normalizeDocument:35 gzipString:40 gunzipBytes:46 decodeDocumentBytes:52
@@ -540,9 +540,11 @@ frontend/src/utils/hard-refresh.ts | typescript | 42 | hardRefresh:14
 frontend/src/utils/hierarchy.ts | typescript | 68 | getDescendants:44 isDescendantOf:65
 frontend/src/utils/hit-testing.ts | typescript | 425 | unrotatePoint:27 unshearPoint:35 hitTestElement:61 hitTestGeometry:91 hitTestPathElement:347 isPointInEraseHole:377
 frontend/src/utils/id-generator.ts | typescript | 120 | generateId:54 scanMax:71
+frontend/src/utils/image-actions.ts | typescript | 47 | viewportCenter:18 addImagePlaceholder:26 replaceImageOn:39
 frontend/src/utils/image-cache.ts | typescript | 50 | setImageLoadCallback:6 getImage:10
 frontend/src/utils/image-crop-utils.ts | typescript | 385 | CropHandle:10 cropToSourcePixels:15 sourceToCropLocal:33 initCropRect:51 finalizeCropRect:65 renderCropOverlay:86 getCropHandlePositions:182 hitTestCropHandle:206 applyCropDrag:240 constrainCropToAspect:323 getCropHandleCursor:376
 frontend/src/utils/image-filter-utils.ts | typescript | 34 | buildFilterString:7 hasActiveFilters:32
+frontend/src/utils/image-io.ts | typescript | 73 | PickedImage:6 compressImageDataUrl:19 openImagePicker:52
 frontend/src/utils/image-pixel-effects.ts | typescript | 520 | PixelEffectType:6 PixelEffectConfig:23 generatePixelMask:62 applySequentialLTR:140 applySequentialRTL:154 applySequentialTTB:168 applySequentialBTT:182 seededRandom:197 applyRandomPixels:202 applyWaveCenter:217 applyWaveCorner:245 applyScanLines:262 applyBlockReveal:286 applySpiral:318 applyGlitch:342
 frontend/src/utils/image-trace.ts | typescript | 323 | Pt:8 toBinary:12 edgePt:35 marchingSquares:46 rdp:102 skeletonize:123 traceSkeleton:150 traceImageCenterline:198 quantizeColors:220 loopsToSubpaths:260 traceImageDataColor:276 traceImageData:302
 frontend/src/utils/image-warp.ts | typescript | 125 | WarpGrid:9 Pt:11 affineFromTriangles:15 inflate:34 srcRect:43 tessellate:53 drawWarpedImage:74 warpedImageBounds:101 rasterizeWarpedImage:112

@@ -4,6 +4,7 @@ import { store, updateElement, renameElement, deleteElements, duplicateElement, 
 import { pageNoun, setPageSize } from "../store/app-store";
 import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude } from "../store/app-store";
 import { WARP_PRESETS } from "../utils/envelope-warp";
+import { replaceImageOn } from "../utils/image-actions";
 import { slideTransitionManager } from "../utils/animation";
 import { customFontOptions, addCustomFontFromFile } from "../utils/custom-fonts";
 import GoogleFontsDialog from "./google-fonts-dialog";
@@ -229,6 +230,15 @@ const ImagePixelEffectActions: Component<{ elementId: string }> = (props) => {
 
     return (
         <Show when={isImage()}>
+            <div class="property-group">
+                <div class="group-title">IMAGE</div>
+                <button
+                    class="icon-btn"
+                    style={{ width: '100%', "font-size": "12px", padding: '6px' }}
+                    onClick={() => { void replaceImageOn(props.elementId); }}
+                    title="Pick a file to fill / replace this image (keeps its size & position)"
+                >{el()?.dataURL ? '↻ Replace Image…' : '＋ Add Image…'}</button>
+            </div>
             <div class="property-group">
                 <div class="group-title">PIXEL EFFECTS - QUICK PREVIEW</div>
                 <div class="alignment-row" style={{ "display": "grid", "grid-template-columns": "repeat(3, 1fr)", "gap": "6px" }}>
@@ -684,6 +694,50 @@ const PatternEditor: Component<{ el: () => any }> = (props) => {
                     <button style={btn} title="Save this pattern to the Patterns library (Alt+P)" onClick={() => savePatternSwatchFromElement(ids())}>Save to Library</button>
                     <button style={btn} title="Remove the pattern fill" onClick={() => clearPatternFill(ids())}>Remove pattern</button>
                 </div>
+            </div>
+        </Show>
+    );
+};
+
+/** Glow & Feather editor — live sliders for the soft-edge feather radius and the outer-glow
+ *  colour + radius. `updateElement` writes the element fields directly; history is snapshotted
+ *  once on interaction start (like the shared number controls). */
+const GlowFeatherEditor: Component<{ el: () => any }> = (props) => {
+    const el = () => props.el();
+    const id = () => el()?.id as string | undefined;
+    const set = (patch: any) => { const i = id(); if (i) updateElement(i, patch, false); };
+    const snap = () => pushToHistory();
+    const feather = () => Math.round(el()?.featherRadius ?? 0);
+    const glowOn = () => !!el()?.glowEnabled;
+    const glowBlur = () => Math.round(el()?.glowBlur ?? 12);
+    const glowColor = () => el()?.glowColor ?? '#ffd400';
+    return (
+        <Show when={id()}>
+            <div class="property-group">
+                <div class="group-title"><span>GLOW &amp; FEATHER</span></div>
+                {/* Feather (soft edge) */}
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '6px' }}>
+                    <span style={{ 'font-size': '11px', 'min-width': '54px' }}>Feather</span>
+                    <input type="range" style={{ flex: '1' }} min={0} max={60} step={1} value={feather()}
+                        onMouseDown={snap} onInput={e => set({ featherRadius: parseInt(e.currentTarget.value) })} />
+                    <span style={{ 'font-size': '11px', 'min-width': '30px', 'text-align': 'right' }}>{feather()}</span>
+                </div>
+                {/* Outer glow */}
+                <label class="control-row" style={{ gap: '6px', 'align-items': 'center', 'font-size': '11px', cursor: 'pointer', 'margin-bottom': glowOn() ? '6px' : '0' }}>
+                    <input type="checkbox" checked={glowOn()} onChange={e => { snap(); set({ glowEnabled: e.currentTarget.checked, glowColor: glowColor(), glowBlur: glowBlur() }); }} />
+                    <span>Outer Glow</span>
+                </label>
+                <Show when={glowOn()}>
+                    <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '6px' }}>
+                        <span style={{ 'font-size': '11px', 'min-width': '54px' }}>Colour</span>
+                        <input type="color" style={{ width: '28px', height: '20px', padding: '0', border: '1px solid var(--border-color)', 'border-radius': '3px', cursor: 'pointer' }}
+                            value={glowColor()} onInput={e => { snap(); set({ glowColor: e.currentTarget.value }); }} />
+                        <span style={{ 'font-size': '11px', 'min-width': '40px' }}>Radius</span>
+                        <input type="range" style={{ flex: '1' }} min={0} max={40} step={1} value={glowBlur()}
+                            onMouseDown={snap} onInput={e => set({ glowBlur: parseInt(e.currentTarget.value) })} />
+                        <span style={{ 'font-size': '11px', 'min-width': '24px', 'text-align': 'right' }}>{glowBlur()}</span>
+                    </div>
+                </Show>
             </div>
         </Show>
     );
@@ -2244,6 +2298,11 @@ const PropertyPanel: Component = () => {
                                 {/* Live 3D Extrude editor (Add button when absent; controls when present) */}
                                 <Show when={isElement() && targetData()}>
                                     <ExtrudeEditor el={() => targetData()} />
+                                </Show>
+
+                                {/* Glow & Feather live sliders */}
+                                <Show when={isElement() && targetData()}>
+                                    <GlowFeatherEditor el={() => targetData()} />
                                 </Show>
 
                                 {/* Layers for elements */}

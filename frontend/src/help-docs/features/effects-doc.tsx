@@ -118,9 +118,11 @@ Y.clearTransformEffect();   // remove the effect`}</code></pre>
                     <code>0</code> / pass <code>enabled:false</code> to remove.
                 </p>
                 <p>
-                    <strong>How to reach it:</strong> Feather, Outer Glow and Scribble are
-                    <em> scripting-first</em> effects — run them from the console / API below (they don’t have a
-                    palette or right-click entry yet). Select the object first, then call the method.
+                    <strong>How to reach it:</strong> the property panel has a <strong>GLOW &amp; FEATHER</strong>
+                    section with live sliders — <strong>Feather</strong> radius, and an <strong>Outer Glow</strong>
+                    toggle with <strong>colour</strong> + <strong>radius</strong>. They’re also in the right-click
+                    <strong> Effects ✨</strong> menu (presets) and the command palette (⌘/Ctrl-K). Scribble is in
+                    the Effects menu / palette too. Or script them:
                 </p>
                 <pre><code>{`Y.setFeather(8);                          // 8px soft edge on the selection
 Y.setGlow({ color: '#00e5ff', blur: 18 }); // cyan outer glow

@@ -8,6 +8,7 @@ import type { DrawingElement, TableCellSelection } from '../types';
 import { isPagedDocType } from '../types/slide-types';
 import type { MenuItem } from '../components/context-menu';
 import { WARP_PRESETS } from './envelope-warp';
+import { replaceImageOn } from './image-actions';
 import {
     store, setStore, pushToHistory, updateElement, selectAll,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
@@ -1192,6 +1193,9 @@ export function getContextMenuItems(
                     },
                 ],
             });
+        }
+        if (selectionCount === 1 && firstEl?.type === 'image') {
+            items.push({ label: firstEl.dataURL ? 'Replace Image…' : 'Add Image…', icon: '🖼', onClick: () => { void replaceImageOn(firstEl.id); } });
         }
         if (store.selection.some(id => store.elements.find(e => e.id === id)?.type === 'image')) {
             const firstImageId = () => store.selection.find(id => store.elements.find(e => e.id === id)?.type === 'image');

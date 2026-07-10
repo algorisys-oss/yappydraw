@@ -15,9 +15,50 @@ export class ImageRenderer extends ShapeRenderer {
         this.renderCommon(context);
     }
 
+    /** Empty image element (no dataURL) → a dashed frame + image glyph + hint. Double-click it
+     *  (or use Replace Image) to fill it. */
+    private renderPlaceholder(renderer: IRenderer, el: RenderContext['element']): void {
+        const { x, y, width: w, height: h } = el;
+        const aw = Math.abs(w), ah = Math.abs(h);
+        if (aw < 2 || ah < 2) return;
+        renderer.save();
+        renderer.fillStyle = 'rgba(148,163,184,0.12)';
+        renderer.fillRect(x, y, w, h);
+        renderer.strokeStyle = 'rgba(100,116,139,0.85)';
+        renderer.lineWidth = 1.5;
+        renderer.setLineDash([6, 4]);
+        renderer.strokeRect(x + 0.75, y + 0.75, w - 1.5, h - 1.5);
+        renderer.setLineDash([]);
+        // Image glyph (frame + sun + mountains), centred and scaled to the box.
+        const cx = x + w / 2, cy = y + h / 2, s = Math.min(aw, ah) * 0.26;
+        renderer.strokeStyle = 'rgba(100,116,139,0.9)';
+        renderer.fillStyle = 'rgba(100,116,139,0.9)';
+        renderer.lineWidth = Math.max(1.5, s * 0.09);
+        renderer.strokeRect(cx - s, cy - s * 0.75, s * 2, s * 1.5);
+        renderer.beginPath();
+        renderer.arc(cx + s * 0.45, cy - s * 0.28, s * 0.22, 0, Math.PI * 2);
+        renderer.fill();
+        renderer.beginPath();
+        renderer.moveTo(cx - s * 0.95, cy + s * 0.7);
+        renderer.lineTo(cx - s * 0.3, cy - s * 0.05);
+        renderer.lineTo(cx + s * 0.12, cy + s * 0.35);
+        renderer.lineTo(cx + s * 0.55, cy - s * 0.2);
+        renderer.lineTo(cx + s * 0.95, cy + s * 0.7);
+        renderer.closePath();
+        renderer.fill();
+        if (ah > 64 && aw > 96) {
+            renderer.fillStyle = 'rgba(100,116,139,0.95)';
+            renderer.font = '12px system-ui, sans-serif';
+            renderer.textAlign = 'center';
+            renderer.textBaseline = 'middle';
+            renderer.fillText('Click to add image', cx, y + h - 14);
+        }
+        renderer.restore();
+    }
+
     private renderCommon(context: RenderContext): void {
         const { renderer, element: el } = context;
-        if (!el.dataURL) return;
+        if (!el.dataURL) { this.renderPlaceholder(renderer, el); return; }
 
         const img = getImage(el.dataURL);
         if (img) {

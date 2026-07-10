@@ -7,8 +7,9 @@
 import { type Component, Show, For, createSignal, createMemo, createEffect, onCleanup } from "solid-js";
 import { store, updateElement, pushToHistory, applyMindmapStyling } from "../store/app-store";
 import { getElementPreviewBaseState, isElementAnimating } from "../utils/animation/element-animator";
+import { replaceImageOn } from "../utils/image-actions";
 import {
-    Palette, SlidersHorizontal,
+    Palette, SlidersHorizontal, Image as ImageIcon,
     Bold, Italic, AlignLeft, AlignCenter, AlignRight, WrapText, Type,
     AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd
 } from "lucide-solid";
@@ -779,6 +780,17 @@ const ToolbarContainer: Component<{
                                         title="Auto Style Branch"
                                     >
                                         <Palette size={18} />
+                                    </button>
+                                </Show>
+
+                                <Show when={el().type === 'image'}>
+                                    <Show when={props.quickProps().length > 0}><div class="qt-divider" /></Show>
+                                    <button
+                                        class="qt-action-btn"
+                                        onClick={() => { void replaceImageOn(el().id); }}
+                                        title={el().dataURL ? 'Replace image…' : 'Add image…'}
+                                    >
+                                        <ImageIcon size={18} />
                                     </button>
                                 </Show>
                             </div>

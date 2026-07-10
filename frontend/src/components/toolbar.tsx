@@ -1,6 +1,7 @@
 import { type Component, For, Show, createSignal, onMount, onCleanup } from "solid-js";
 import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleStickFigurePanel } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
+import { addImagePlaceholder } from "../utils/image-actions";
 import type { ToolType } from "../types";
 import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw, Command, Shapes, PersonStanding } from "lucide-solid";
 
@@ -367,6 +368,7 @@ const Toolbar: Component = () => {
                 type="file"
                 ref={el => fileInputRef = el}
                 onChange={handleImageUpload}
+                on:cancel={() => addImagePlaceholder()}
                 accept="image/*"
                 style={{ display: 'none' }}
             />
