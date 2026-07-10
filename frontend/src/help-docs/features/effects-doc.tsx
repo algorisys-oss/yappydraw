@@ -66,7 +66,8 @@ Y.convertToGuides();                  // drop guides at every cell edge`}</code>
                 <p>
                     <strong>Property panel → 3D EXTRUDE</strong>: <em>+ Add 3D Extrude</em>, then drag
                     <strong> Depth</strong> (length), <strong>Angle</strong> (direction), <strong>Tilt X/Y</strong>
-                    (rotate the shape in 3D), and <strong>Shade</strong> (wall darkness). <strong>Expand</strong>
+                    (rotate the shape in 3D), <strong>Bevel</strong> (a lit chamfer on the front edge), and
+                    <strong> Shade</strong> (wall darkness). <strong>Expand</strong>
                     bakes the result into editable face elements (front / side / back) — which also makes it
                     SVG-exportable. Or right-click → <strong>Repeat &amp; Mirror ▸ 3D Extrude</strong>.
                 </p>

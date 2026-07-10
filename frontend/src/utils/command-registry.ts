@@ -12,7 +12,8 @@ import {
     updateGlobalSettings, togglePenStabilization,
     toggleShapeBuilder, toggleLivePaint, makeLivePaint, releaseLivePaint, selectSimilar, applyDistort,
     toggleCutTool, toggleWidthTool, clearWidthProfile, toggleSymbolSprayer, setTextVertical,
-    toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid, toggleSliceTool, toggleTouchType, toggleSymbolism
+    toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid, toggleSliceTool, toggleTouchType, toggleSymbolism,
+    applyFeather, applyGlow, applyScribble, setExtrude, toggleRevolve, setTransformEffect
 } from "../store/app-store";
 import { flipSelected, lockSelected } from "./object-context-actions";
 import { openRepeatDialog } from "../components/repeat-dialog";
@@ -263,6 +264,15 @@ export const getCommands = (): Command[] => {
         { id: 'action-flip-h', label: 'Flip Horizontal', category: 'Actions', action: () => flipSelected('horizontal'), shortcut: 'Shift+H' },
         { id: 'action-flip-v', label: 'Flip Vertical', category: 'Actions', action: () => flipSelected('vertical'), shortcut: 'Shift+V' },
         { id: 'action-outlines', label: 'Create Outlines (text → vector)', category: 'Actions', action: () => { void convertTextToOutlines(store.selection); }, shortcut: 'Ctrl+Shift+O' },
+        { id: 'effect-feather', label: 'Effect: Feather (soft edge)', category: 'Actions', action: () => applyFeather([...store.selection], 12) },
+        { id: 'effect-feather-off', label: 'Effect: Remove Feather', category: 'Actions', action: () => applyFeather([...store.selection], 0) },
+        { id: 'effect-glow', label: 'Effect: Outer Glow', category: 'Actions', action: () => applyGlow([...store.selection], { blur: 14 }) },
+        { id: 'effect-glow-off', label: 'Effect: Remove Outer Glow', category: 'Actions', action: () => applyGlow([...store.selection], { enabled: false }) },
+        { id: 'effect-scribble', label: 'Effect: Scribble fill', category: 'Actions', action: () => applyScribble([...store.selection], {}) },
+        { id: 'effect-3d-extrude', label: 'Effect: 3D Extrude', category: 'Actions', action: () => setExtrude([...store.selection], { depth: 32, angle: 135 }) },
+        { id: 'effect-3d-bevel', label: 'Effect: 3D Bevel', category: 'Actions', action: () => setExtrude([...store.selection], { depth: 40, angle: 135, bevel: 10 }) },
+        { id: 'effect-3d-revolve', label: 'Effect: 3D Revolve (lathe)', category: 'Actions', action: () => toggleRevolve([...store.selection], true) },
+        { id: 'effect-transform', label: 'Effect: Transform (live copies — spiral)', category: 'Actions', action: () => setTransformEffect([...store.selection], { copies: 12, rotate: 24, scaleX: 0.9, scaleY: 0.9 }) },
         { id: 'action-swap-fill-stroke', label: 'Swap Fill / Stroke', category: 'Actions', action: () => swapFillStroke(), shortcut: 'Shift+X' },
         { id: 'action-clean-up', label: 'Clean Up (stray points, empty text, unpainted)', category: 'Actions', action: () => cleanUpElements() },
         { id: 'action-paste-all-artboards', label: 'Paste on All Artboards', category: 'Actions', action: () => pasteOnAllArtboards() },

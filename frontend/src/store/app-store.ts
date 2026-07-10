@@ -6725,6 +6725,85 @@ export const clearExtrude = (ids: string[]) => {
     bumpDirtyRevision();
 };
 
+/** Feather — soft-blur an object's edges to transparent (radius px; 0 removes). */
+export const applyFeather = (ids: string[], radius: number) => {
+    if (!ids.length) { showToast('Feather: select an object', 'info'); return; }
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ featherRadius: Math.max(0, radius) }));
+    bumpDirtyRevision();
+    showToast(radius > 0 ? `Feather ${radius}px` : 'Feather removed', 'success');
+};
+
+/** Outer Glow — a coloured halo around the object. `enabled:false` removes it. */
+export const applyGlow = (ids: string[], opts: { color?: string; blur?: number; enabled?: boolean } = {}) => {
+    if (!ids.length) { showToast('Glow: select an object', 'info'); return; }
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({
+        glowEnabled: opts.enabled !== false,
+        glowColor: opts.color ?? '#ffd400',
+        glowBlur: opts.blur ?? 12,
+    }));
+    bumpDirtyRevision();
+    showToast(opts.enabled === false ? 'Glow removed' : 'Outer glow applied', 'success');
+};
+
+/** Scribble (Illustrator effect) — replace each shape's fill with a back-and-forth scribble
+ *  path in the fill colour. Returns the new path ids. */
+export const applyScribble = (ids: string[], opts: { spacing?: number; angle?: number; strokeWidth?: number } = {}): string[] => {
+    if (!ids.length) { showToast('Scribble: select an object', 'info'); return []; }
+    const spacing = Math.max(2, opts.spacing ?? 8);
+    const strokeWidth = opts.strokeWidth ?? 2;
+    const a = (opts.angle ?? 0) * Math.PI / 180;
+    const batch = new Set<string>();
+    const created: DrawingElement[] = [];
+    for (const id of ids) {
+        const el = store.elements.find(e => e.id === id);
+        if (!el) continue;
+        const color = (el.backgroundColor && el.backgroundColor !== 'transparent') ? el.backgroundColor : (el.strokeColor || '#000000');
+        const rows = Math.max(2, Math.floor(Math.abs(el.height) / spacing));
+        const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+        const world: { x: number; y: number }[] = [];
+        for (let r = 0; r <= rows; r++) {
+            const y = el.y + (r / rows) * el.height;
+            const ltr = r % 2 === 0;
+            const p0 = { x: ltr ? el.x : el.x + el.width, y }, p1 = { x: ltr ? el.x + el.width : el.x, y };
+            for (const p of [p0, p1]) {
+                const dx = p.x - cx, dy = p.y - cy;
+                world.push({ x: cx + dx * Math.cos(a) - dy * Math.sin(a), y: cy + dx * Math.sin(a) + dy * Math.cos(a) });
+            }
+        }
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const p of world) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); }
+        const anchors: PathAnchor[] = world.map(p => ({ x: p.x - minX, y: p.y - minY, kind: 'corner' as const }));
+        created.push({
+            ...store.defaultElementStyles, id: generateId('path', batch), type: 'path',
+            x: minX, y: minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY),
+            pathAnchors: anchors, pathClosed: false, strokeColor: color, strokeWidth, backgroundColor: 'transparent',
+            angle: 0, seed: Math.floor(Math.random() * 2 ** 31), layerId: store.activeLayerId,
+        } as DrawingElement);
+    }
+    if (!created.length) return [];
+    pushToHistory();
+    setStore('elements', list => [...list, ...created]);
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ backgroundColor: 'transparent' }));
+    setStore('selection', created.map(c => c.id));
+    bumpDirtyRevision();
+    showToast('Scribble applied', 'success');
+    return created.map(c => c.id);
+};
+
+/** Toggle the live 3D Revolve (lathe) effect — spins the shape's silhouette into a solid. */
+export const toggleRevolve = (ids: string[], on?: boolean) => {
+    if (ids.length === 0) { showToast('Revolve: select an object', 'info'); return; }
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), (e: DrawingElement) => ({
+        revolve3d: (on ?? !e.revolve3d?.on) ? { on: true } : undefined,
+        extrude: undefined, // extrude + revolve are mutually exclusive
+    }));
+    bumpDirtyRevision();
+    showToast('3D revolve applied', 'success');
+};
+
 /**
  * Expand (bake) the 3D extrude into editable face elements (Illustrator "Expand Appearance"):
  * a back-face path, a unioned side-wall path, and a front-face path — grouped, replacing the

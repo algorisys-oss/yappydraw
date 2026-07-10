@@ -22,7 +22,7 @@ import {
     selectSimilar,
     applyDistort,
     addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
-    mirrorCopy, transformAgain, mirrorAcrossSymmetry, setTransformEffect, expandTransformEffect, clearTransformEffect, setExtrude, clearExtrude, expandExtrude,
+    mirrorCopy, transformAgain, mirrorAcrossSymmetry, setTransformEffect, expandTransformEffect, clearTransformEffect, setExtrude, clearExtrude, expandExtrude, toggleRevolve, applyFeather, applyGlow, applyScribble,
     bringToFront, sendToBack, moveElementZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
@@ -393,9 +393,14 @@ export function getContextMenuItems(
                 ...(store.symmetry.enabled
                     ? [{ label: 'Mirror Across Symmetry Guide', icon: '⋈', onClick: () => mirrorAcrossSymmetry() }]
                     : []),
-                { separator: true },
+            ]
+        });
+
+        // Effects — one browsable home for the appearance/geometry effects.
+        items.push({
+            label: 'Effects', icon: '✨', submenu: [
                 {
-                    label: 'Transform Effect (live)', icon: '❋', submenu: [
+                    label: 'Transform Effect (live copies)', icon: '❋', submenu: [
                         { label: 'Radial Fan ×12', icon: '✳', onClick: () => setTransformEffect([...store.selection], { copies: 11, rotate: 30, scaleX: 1, scaleY: 1, moveX: 0, moveY: 0, originX: 0, originY: 0.5 }) },
                         { label: 'Rosette ×12 (in place)', icon: '❄', onClick: () => setTransformEffect([...store.selection], { copies: 11, rotate: 30, scaleX: 1, scaleY: 1, moveX: 0, moveY: 0, originX: 0.5, originY: 0.5 }) },
                         { label: 'Spiral ×14 (rotate + shrink)', icon: '➰', onClick: () => setTransformEffect([...store.selection], { copies: 14, rotate: 22, scaleX: 0.86, scaleY: 0.86, moveX: 8, moveY: -6, originX: 0.5, originY: 0.5 }) },
@@ -406,15 +411,45 @@ export function getContextMenuItems(
                     ]
                 },
                 {
-                    label: '3D Extrude', icon: '⬗', submenu: [
+                    label: '3D (Extrude / Bevel / Revolve)', icon: '⬗', submenu: [
                         { label: 'Extrude (depth 28)', icon: '⬗', onClick: () => setExtrude([...store.selection], { depth: 28, angle: 135 }) },
                         { label: 'Deep (depth 60)', icon: '◆', onClick: () => setExtrude([...store.selection], { depth: 60, angle: 135 }) },
                         { label: 'Tilted (3D perspective)', icon: '◈', onClick: () => setExtrude([...store.selection], { depth: 40, angle: 135, rotX: 25, rotY: -20 }) },
+                        { label: 'Beveled edge', icon: '◇', onClick: () => setExtrude([...store.selection], { depth: 40, angle: 135, bevel: 10 }) },
+                        { label: 'Revolve (lathe)', icon: '◉', onClick: () => toggleRevolve([...store.selection], true) },
                         { separator: true },
                         { label: 'Expand to Faces', icon: '⤓', onClick: () => expandExtrude([...store.selection]) },
-                        { label: 'Remove 3D', icon: '✕', onClick: () => clearExtrude([...store.selection]) },
+                        { label: 'Remove 3D', icon: '✕', onClick: () => { clearExtrude([...store.selection]); toggleRevolve([...store.selection], false); } },
                     ]
                 },
+                {
+                    label: 'Distort & Transform', icon: '〰️', submenu: [
+                        { label: 'Pucker', onClick: () => applyDistort([...store.selection], 'pucker', 0.25) },
+                        { label: 'Bloat', onClick: () => applyDistort([...store.selection], 'bloat', 0.25) },
+                        { label: 'Twirl', onClick: () => applyDistort([...store.selection], 'twirl', 0.25) },
+                        { label: 'Zig-Zag', onClick: () => applyDistort([...store.selection], 'zigzag', 0.12) },
+                        { label: 'Crystallize', onClick: () => applyDistort([...store.selection], 'crystallize', 0.18) },
+                        { label: 'Roughen', onClick: () => applyDistort([...store.selection], 'roughen', 0.1) },
+                    ],
+                },
+                {
+                    label: 'Feather (soft edge)', icon: '☁', submenu: [
+                        { label: 'Soft (6px)', onClick: () => applyFeather([...store.selection], 6) },
+                        { label: 'Medium (14px)', onClick: () => applyFeather([...store.selection], 14) },
+                        { label: 'Strong (28px)', onClick: () => applyFeather([...store.selection], 28) },
+                        { label: 'Remove', icon: '✕', onClick: () => applyFeather([...store.selection], 0) },
+                    ],
+                },
+                {
+                    label: 'Outer Glow', icon: '☀', submenu: [
+                        { label: 'Yellow', onClick: () => applyGlow([...store.selection], { color: '#ffd400', blur: 14 }) },
+                        { label: 'Cyan', onClick: () => applyGlow([...store.selection], { color: '#22d3ee', blur: 16 }) },
+                        { label: 'Magenta', onClick: () => applyGlow([...store.selection], { color: '#e879f9', blur: 16 }) },
+                        { label: 'White', onClick: () => applyGlow([...store.selection], { color: '#ffffff', blur: 18 }) },
+                        { label: 'Remove', icon: '✕', onClick: () => applyGlow([...store.selection], { enabled: false }) },
+                    ],
+                },
+                { label: 'Scribble fill', icon: '✎', onClick: () => applyScribble([...store.selection], {}) },
             ]
         }, { separator: true });
 
@@ -1268,16 +1303,6 @@ export function getContextMenuItems(
                 { label: 'Eyedropper — pick style from…', icon: '💧', onClick: () => startEyedropper() },
                 { label: 'Recolor Artwork…', icon: '🌈', onClick: () => toggleRecolorPanel(true) },
                 ...(selectionCount === 1 ? [{ label: 'Edit Behaviors (Game)…', icon: '🎮', onClick: () => toggleBehaviorsPanel(true) }] : []),
-                {
-                    label: 'Distort & Transform', icon: '〰️', submenu: [
-                        { label: 'Pucker', onClick: () => applyDistort([...store.selection], 'pucker', 0.25) },
-                        { label: 'Bloat', onClick: () => applyDistort([...store.selection], 'bloat', 0.25) },
-                        { label: 'Twirl', onClick: () => applyDistort([...store.selection], 'twirl', 0.25) },
-                        { label: 'Zig-Zag', onClick: () => applyDistort([...store.selection], 'zigzag', 0.12) },
-                        { label: 'Crystallize', onClick: () => applyDistort([...store.selection], 'crystallize', 0.18) },
-                        { label: 'Roughen', onClick: () => applyDistort([...store.selection], 'roughen', 0.1) },
-                    ],
-                },
             );
         }
         if (selectionCount === 2) {

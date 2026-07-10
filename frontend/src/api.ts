@@ -11,7 +11,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, makeClippingMask, makeOpacityMask, releaseClippingMask,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection,
@@ -1618,6 +1618,8 @@ export const YappyAPI = {
     clearExtrude(ids?: string[]) { clearExtrude(ids ?? [...store.selection]); },
     /** Expand the 3D Extrude into editable face elements (back / side / front), grouped. */
     expandExtrude(ids?: string[]): string[] { return expandExtrude(ids ?? [...store.selection]); },
+    /** Toggle the live 3D Revolve (lathe) effect — spins the shape's silhouette into a solid of revolution. */
+    toggleRevolve(on?: boolean, ids?: string[]) { toggleRevolve(ids ?? [...store.selection], on); },
 
     /** Appearance stack: add an extra fill/stroke over the base shape (both render styles). */
     addAppearanceFill(fill?: any, ids?: string[]) { addAppearanceFill(ids ?? store.selection, fill); },
@@ -2076,56 +2078,16 @@ export const YappyAPI = {
     /** Toggle printer crop marks at the selection's corners. */
     toggleObjectCropMarks(on?: boolean, ids?: string[]) { toggleObjectCropMarks(ids, on); },
     /** Feather (soft-blur the edges) of the selection. radius in px; 0 turns it off. */
-    setFeather(radius: number, ids?: string[]) {
-        const targets = ids ?? [...store.selection];
-        if (!targets.length) return;
-        pushToHistory();
-        targets.forEach(id => updateElement(id, { featherRadius: Math.max(0, radius) }));
-    },
+    setFeather(radius: number, ids?: string[]) { applyFeather(ids ?? [...store.selection], radius); },
     /** Outer glow — a coloured halo around the selection. Pass enabled:false to remove. */
-    setGlow(opts: { color?: string; blur?: number; enabled?: boolean } = {}, ids?: string[]) {
-        const targets = ids ?? [...store.selection];
-        if (!targets.length) return;
-        pushToHistory();
-        targets.forEach(id => updateElement(id, {
-            glowEnabled: opts.enabled !== false,
-            glowColor: opts.color ?? '#ffd400',
-            glowBlur: opts.blur ?? 12,
-        }));
-    },
+    setGlow(opts: { color?: string; blur?: number; enabled?: boolean } = {}, ids?: string[]) { applyGlow(ids ?? [...store.selection], opts); },
     /**
      * Scribble (Illustrator effect): replace each selected shape's fill with a
      * back-and-forth scribble path in the fill colour. spacing = line gap (px),
      * angle = scribble direction (deg). Bbox-based (not clipped to the outline).
      */
     scribble(opts: { spacing?: number; angle?: number; strokeWidth?: number } = {}, ids?: string[]): string[] {
-        const targets = ids ?? [...store.selection];
-        const spacing = Math.max(2, opts.spacing ?? 8);
-        const strokeWidth = opts.strokeWidth ?? 2;
-        const a = (opts.angle ?? 0) * Math.PI / 180;
-        const created: string[] = [];
-        for (const id of targets) {
-            const el = store.elements.find(e => e.id === id);
-            if (!el) continue;
-            const color = (el.backgroundColor && el.backgroundColor !== 'transparent') ? el.backgroundColor : (el.strokeColor || '#000000');
-            const rows = Math.max(2, Math.floor(Math.abs(el.height) / spacing));
-            const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
-            const raw: { x: number; y: number }[] = [];
-            for (let r = 0; r <= rows; r++) {
-                const y = el.y + (r / rows) * el.height;
-                const ltr = r % 2 === 0;
-                raw.push({ x: ltr ? el.x : el.x + el.width, y });
-                raw.push({ x: ltr ? el.x + el.width : el.x, y });
-            }
-            const anchors = raw.map(p => {
-                const dx = p.x - cx, dy = p.y - cy;
-                return { x: cx + dx * Math.cos(a) - dy * Math.sin(a), y: cy + dx * Math.sin(a) + dy * Math.cos(a), kind: 'corner' as const };
-            });
-            const nid = this.createPath(anchors, { closed: false, strokeColor: color, strokeWidth, backgroundColor: 'transparent' });
-            if (nid) { created.push(nid); updateElement(id, { backgroundColor: 'transparent' }); }
-        }
-        if (created.length) this.select(created);
-        return created;
+        return applyScribble(ids ?? [...store.selection], opts);
     },
     /**
      * Create Swatch Info: generate a labelled swatch sheet (colour chip + name +

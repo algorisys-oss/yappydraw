@@ -1,6 +1,6 @@
 [package]
 name = "yappy-desktop"
-version = "0.8.53"
+version = "0.8.54"
 description = "Yappy — desktop wrapper for the diagramming & vector-illustration app"
 authors = ["Algorisys"]
 edition = "2021"

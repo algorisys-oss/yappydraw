@@ -276,6 +276,7 @@ export interface Extrude3D {
     shade?: number;
     rotX?: number;   // tilt about the horizontal axis (deg) — foreshortens vertically
     rotY?: number;   // tilt about the vertical axis (deg) — foreshortens horizontally
+    bevel?: number;  // bevel/chamfer size in px on the front edge (0 = flat front)
 }
 
 export interface DrawingElement {
@@ -475,6 +476,8 @@ export interface DrawingElement {
     transformEffect?: TransformEffect;
     // Live 3D Extrude effect — shaded depth behind the shape (see Extrude3D). Bakeable via expandExtrude.
     extrude?: Extrude3D;
+    // Live 3D Revolve (lathe) effect — spins the silhouette around its vertical axis into a solid.
+    revolve3d?: { on?: boolean };
     // General Free-Transform shear factors (NOT the perspectiveBlock-specific skewX/skewY
     // below, which warp that shape's 3D back face). Applied about the element centre as the
     // matrix [[1, shearX],[shearY, 1]] — shearX shifts x by shearX·y, shearY shifts y by shearY·x.

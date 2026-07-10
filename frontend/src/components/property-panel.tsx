@@ -752,6 +752,7 @@ const ExtrudeEditor: Component<{ el: () => any }> = (props) => {
                     {Row({ label: 'Angle', min: 0, max: 360, step: 5, val: () => Math.round(ex()!.angle ?? 0), on: v => live({ angle: v }), onC: v => commit({ angle: v }), suffix: '°' })}
                     {Row({ label: 'Tilt X', min: -70, max: 70, step: 1, val: () => Math.round(ex()!.rotX ?? 0), on: v => live({ rotX: v }), onC: v => commit({ rotX: v }), suffix: '°' })}
                     {Row({ label: 'Tilt Y', min: -70, max: 70, step: 1, val: () => Math.round(ex()!.rotY ?? 0), on: v => live({ rotY: v }), onC: v => commit({ rotY: v }), suffix: '°' })}
+                    {Row({ label: 'Bevel', min: 0, max: 30, step: 1, val: () => Math.round(ex()!.bevel ?? 0), on: v => live({ bevel: v }), onC: v => commit({ bevel: v }) })}
                     {Row({ label: 'Shade', min: 0, max: 90, step: 5, val: () => Math.round((ex()!.shade ?? 0.35) * 100), on: v => live({ shade: v / 100 }), onC: v => commit({ shade: v / 100 }), suffix: '%' })}
                     <div class="control-row" style={{ gap: '6px' }}>
                         <button style={btn} title="Bake the 3D into editable face elements" onClick={() => expandExtrude(ids())}>Expand</button>

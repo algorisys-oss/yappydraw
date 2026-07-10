@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.54](0.8.54.md) — 3D Bevel & Revolve (lathe); consolidated Effects menu (+ Feather/Glow/Scribble now in UI); export image + "works once" fixes
 - [0.8.53](0.8.53.md) — Fix export transparent border (20px→2px) + quick-toolbar font-size snap-to-8; OSS ships a clean lockfile
 - [0.8.52](0.8.52.md) — Two-audience help docs (UI + verified Scripting API in every doc) + grouped context menu (Create/Select/Arrange/Export)
 - [0.8.51](0.8.51.md) — Smooth Morph blend (true shape morph) + Envelope Make-with-Top-Object (warp into a silhouette)

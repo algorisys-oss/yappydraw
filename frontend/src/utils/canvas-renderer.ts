@@ -12,7 +12,8 @@ import { isLayerVisible, store } from '../store/app-store';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { renderElement } from './render-element';
 import { hasTransformEffect, transformEffectRenderCopies } from './transform-effect';
-import { hasExtrude, isExtrudeTilted, renderExtrudeBody } from './extrude';
+import { hasExtrude, extrudeOwnsFront, renderExtrudeBody } from './extrude';
+import { hasRevolve, renderRevolve } from './revolve';
 import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
 import { RenderPipeline } from '../shapes/base/render-pipeline';
@@ -877,10 +878,12 @@ export function renderLayersAndElements(
                 // Live 3D Extrude: draw the shaded depth body BEHIND, then the shape's front face
                 // renders on top via the normal path below. When TILTED, the body render also draws
                 // the (foreshortened) flat front, so skip the normal render. Skipped in outline view.
-                const extrudeTilted = isExtrudeTilted(renderedEl) && !store.outlineView;
+                const extrudeOwns = extrudeOwnsFront(renderedEl) && !store.outlineView;
+                const revolveOwns = hasRevolve(renderedEl) && !store.outlineView;
                 if (hasExtrude(renderedEl) && !store.outlineView) renderExtrudeBody(ctx, renderedEl);
-                if (extrudeTilted) {
-                    // full 3D solid already drawn (body + flat front) — nothing more to render
+                if (revolveOwns) renderRevolve(ctx, renderedEl);
+                if (extrudeOwns || revolveOwns) {
+                    // full 3D solid already drawn (extrude front / lathe) — nothing more to render
                 } else if (opacityMask) {
                     renderOpacityMasked(ctx, renderedEl, mask!, isDarkMode, layerOpacity);
                 } else if (hasTransformEffect(renderedEl)) {

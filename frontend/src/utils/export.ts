@@ -13,14 +13,27 @@ import { layoutRichText } from "./rich-text-utils";
 import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
 import { svgFillPaint, svgPatternDef } from "./svg-paint";
 import { SvgRenderer } from "../rendering/SvgRenderer";
-import { getImage } from "./image-cache";
+import { getImage, preloadImages } from "./image-cache";
 import { rasterizeWarpedImage } from "./image-warp";
 import { transformEffectRenderCopies, hasTransformEffect } from "./transform-effect";
-import { hasExtrude, isExtrudeTilted, renderExtrudeBody } from "./extrude";
+import { hasExtrude, extrudeOwnsFront, renderExtrudeBody } from "./extrude";
+import { hasRevolve, renderRevolve } from "./revolve";
+import { showToast } from "../components/toast";
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
 interface Bounds { minX: number; minY: number; maxX: number; maxY: number; }
+
+/** Decode every image the export will draw (element images + slide backgrounds) into the cache
+ *  first — exporters render synchronously, so an un-cached image (e.g. one just placed on top of
+ *  another) would otherwise export blank. */
+export async function ensureExportImages(): Promise<void> {
+    await preloadImages([
+        ...store.elements.filter(e => e.type === 'image').map(e => e.dataURL),
+        ...store.elements.map(e => (e as any).fillImageUrl),
+        ...store.slides.map(s => (s as any).backgroundImage),
+    ]);
+}
 
 /**
  * Visual world-space AABB of a single element — accounts for rotation, stroke width,
@@ -74,9 +87,10 @@ function overlapsRect(el: DrawingElement, rx: number, ry: number, rw: number, rh
  * the canvas render hook), so exports must replay that hook or effects vanish from the output.
  */
 function renderElWithEffects(rc: ReturnType<typeof rough.canvas>, ctx: CanvasRenderingContext2D, el: DrawingElement): void {
+    if (hasRevolve(el)) { renderRevolve(ctx, el); return; } // full lathe solid replaces the shape
     if (hasExtrude(el)) {
         renderExtrudeBody(ctx, el);
-        if (isExtrudeTilted(el)) return; // the full tilted solid (incl. front) is already drawn
+        if (extrudeOwnsFront(el)) return; // full 3D solid (tilt/bevel front) already drawn
     }
     if (hasTransformEffect(el)) {
         for (const copy of transformEffectRenderCopies(el)) renderElement(rc, ctx, copy);
@@ -399,6 +413,7 @@ function renderPagedDocToCanvas(scale: number, whiteBackground: boolean): HTMLCa
 }
 
 export const exportToPng = async (scale: number, background: boolean, onlySelected: boolean) => {
+    await ensureExportImages();
     // Paged docs (design / slides): export every page at full page bounds with its
     // background, not just the element-bounding-box crop.
     if (isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected) {
@@ -413,7 +428,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
 
     let elements = store.elements;
     if (onlySelected) {
-        if (store.selection.length === 0) return; // Nothing to export
+        if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
     }
     if (elements.length === 0) return;
@@ -546,6 +561,7 @@ export const exportPageToPng = (pageIndex: number, scale = 1, download = true, f
 };
 
 export const exportToJpg = async (scale: number, onlySelected: boolean) => {
+    await ensureExportImages();
     // Paged docs (design / slides): export every page at full page bounds.
     if (isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected) {
         const canvas = renderPagedDocToCanvas(scale, true); // JPEG has no transparency
@@ -559,7 +575,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
 
     let elements = store.elements;
     if (onlySelected) {
-        if (store.selection.length === 0) return;
+        if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
     }
     if (elements.length === 0) return;
@@ -597,6 +613,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
 };
 
 export const copyCanvasAsPng = async (scale: number) => {
+    await ensureExportImages();
     const elements = store.elements;
     if (elements.length === 0) return;
 
@@ -640,7 +657,7 @@ export const copyCanvasAsPng = async (scale: number) => {
 export const exportToSvg = (onlySelected: boolean) => {
     let elements = store.elements;
     if (onlySelected) {
-        if (store.selection.length === 0) return;
+        if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
     }
     // Paged docs (design / slides): include the full page area so the entire
@@ -1185,6 +1202,7 @@ export const exportToSvg = (onlySelected: boolean) => {
 };
 
 export const exportToPdf = async (scale: number, background: boolean, onlySelected: boolean) => {
+    await ensureExportImages();
     const allElements = store.elements;
     if (allElements.length === 0) return;
 
@@ -1301,6 +1319,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
 };
 
 export const exportToPptx = async (scale: number, background: boolean, onlySelected: boolean) => {
+    await ensureExportImages();
     const allElements = store.elements;
     if (allElements.length === 0) return;
 

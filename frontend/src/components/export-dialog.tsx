@@ -1,8 +1,8 @@
-import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
+import { type Component, createSignal, Show, createEffect, onCleanup, untrack } from "solid-js";
 import { X } from "lucide-solid";
 import { store, pageNoun } from "../store/app-store";
 import { isPagedDocType } from "../types/slide-types";
-import { exportToPng, exportToSvg, exportToPdf, exportToPptx, exportPageToPng, exportToJpg } from "../utils/export";
+import { exportToPng, exportToSvg, exportToPdf, exportToPptx, exportPageToPng, exportToJpg, ensureExportImages } from "../utils/export";
 import { setRequestRecording } from "./canvas";
 import "./export-dialog.css";
 
@@ -19,12 +19,13 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
     const [currentPageOnly, setCurrentPageOnly] = createSignal(false);
     const isPaged = () => isPagedDocType(store.docType) && store.slides.length > 0;
 
-    // Auto-update onlySelected when dialog opens or selection changes
+    // Reset "only selected" to match the CURRENT selection each time the dialog OPENS.
+    // (untrack the selection read so this runs on the open-transition only, not on every
+    // selection change while open.) Without the reset it stuck at `true` from a prior export,
+    // so re-opening with nothing selected made the export a silent no-op — "works once".
     createEffect(() => {
         if (props.isOpen) {
-            if (store.selection.length > 0) {
-                setOnlySelected(true);
-            }
+            setOnlySelected(untrack(() => store.selection.length) > 0);
         }
     });
 
@@ -42,7 +43,9 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
         }
     });
 
-    const handleExport = () => {
+    const handleExport = async () => {
+        // Decode all images first so nothing exports blank (esp. exportPageToPng, which is sync).
+        await ensureExportImages();
         if (format() === 'png') {
             if (currentPageOnly() && isPaged() && !onlySelected()) {
                 exportPageToPng(store.activeSlideIndex, scale());

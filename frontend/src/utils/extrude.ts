@@ -25,6 +25,12 @@ export function isExtrudeTilted(el: DrawingElement): boolean {
     return hasExtrude(el) && !!(el.extrude!.rotX || el.extrude!.rotY);
 }
 
+/** True when the extrude effect draws the front face itself (tilt or bevel) — the caller must
+ *  then SKIP the element's normal render so the two don't double-draw. */
+export function extrudeOwnsFront(el: DrawingElement): boolean {
+    return hasExtrude(el) && (isExtrudeTilted(el) || (el.extrude!.bevel || 0) > 0);
+}
+
 /** Foreshorten world outline rings about the shape centre to fake an X/Y tilt. */
 function tilted(polys: MultiPoly, cx: number, cy: number, rotX = 0, rotY = 0): MultiPoly {
     const fx = Math.cos((rotY || 0) * Math.PI / 180);
@@ -46,6 +52,27 @@ function darken(color: string | undefined, amt: number): string {
     } catch {
         return '#777777';
     }
+}
+
+/** Lighten a hex colour toward white by `amt` (0..1) — used for the lit bevel facet. */
+function lighten(color: string | undefined, amt: number): string {
+    if (!color || color === 'transparent' || color[0] !== '#') return '#dddddd';
+    try {
+        const { r, g, b } = parseHex(color);
+        return rgbToHex(r + (255 - r) * amt, g + (255 - g) * amt, b + (255 - b) * amt);
+    } catch { return '#cccccc'; }
+}
+
+/** Inset a ring toward its centroid by `amt` px (a cheap chamfer for the bevel facet). */
+function insetRing(ring: Ring, amt: number): Ring {
+    let cx = 0, cy = 0;
+    for (const p of ring) { cx += p[0]; cy += p[1]; }
+    cx /= ring.length; cy /= ring.length;
+    return ring.map(([x, y]) => {
+        const dx = cx - x, dy = cy - y, d = Math.hypot(dx, dy) || 1;
+        const t = Math.min(amt, d * 0.8);
+        return [x + (dx / d) * t, y + (dy / d) * t] as [number, number];
+    });
 }
 
 /** The colour the extrusion body is shaded from (the shape's fill, else stroke, else grey). */
@@ -112,18 +139,49 @@ function drawFront(ctx: CanvasRenderingContext2D, g: { front: MultiPoly; base: s
     }
 }
 
+/** Draw a beveled front: a lit chamfer ring between the outline and an inset front face. */
+function drawBevelFront(ctx: CanvasRenderingContext2D, g: { front: MultiPoly; base: string }, bevel: number, el: DrawingElement): void {
+    const inset: MultiPoly = g.front.map(poly => poly.map(ring => insetRing(ring, bevel)));
+    const tracePoly = (rings: Ring[]) => {
+        for (const ring of rings) {
+            if (ring.length < 3) continue;
+            ctx.moveTo(ring[0][0], ring[0][1]);
+            for (let i = 1; i < ring.length; i++) ctx.lineTo(ring[i][0], ring[i][1]);
+            ctx.closePath();
+        }
+    };
+    // 1) Bevel facet ring = full outer outline with the inset outline punched out (even-odd).
+    ctx.fillStyle = lighten(g.base, 0.28);
+    ctx.beginPath();
+    for (const poly of g.front) tracePoly([poly[0]]);
+    for (const poly of inset) tracePoly([poly[0]]);
+    ctx.fill('evenodd');
+    // 2) Inset front face (base colour), keeping any holes.
+    ctx.fillStyle = g.base;
+    ctx.beginPath();
+    for (const poly of inset) tracePoly(poly);
+    ctx.fill('evenodd');
+    // 3) Outline stroke on the full silhouette for definition.
+    if (el.strokeColor && el.strokeColor !== 'transparent' && (el.strokeWidth ?? 0) > 0) {
+        ctx.strokeStyle = el.strokeColor; ctx.lineWidth = el.strokeWidth!; ctx.lineJoin = 'round';
+        ctx.beginPath(); for (const poly of g.front) tracePoly([poly[0]]); ctx.stroke();
+    }
+}
+
 /**
  * Draw the 3D body (back face + side walls) for an extruded element. Call in WORLD space
  * (the element render loop's ctx) BEFORE the element's own front face is drawn on top.
- * For a TILTED extrude, also draws the flat front face (the caller must then skip the
- * element's normal render — see `isExtrudeTilted`).
+ * When the effect owns the front (tilt or bevel), it also draws the front here and the caller
+ * must skip the element's normal render — see `extrudeOwnsFront`.
  */
 export function renderExtrudeBody(ctx: CanvasRenderingContext2D, el: DrawingElement): void {
     const g = extrudeGeometry(el);
     if (!g) return;
+    const bevel = el.extrude!.bevel || 0;
     ctx.save();
     ctx.globalAlpha *= (el.opacity ?? 100) / 100;
     drawBody(ctx, g);
-    if (isExtrudeTilted(el)) drawFront(ctx, g, el);
+    if (bevel > 0) drawBevelFront(ctx, g, bevel, el);
+    else if (isExtrudeTilted(el)) drawFront(ctx, g, el);
     ctx.restore();
 }
