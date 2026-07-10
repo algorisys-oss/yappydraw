@@ -78,7 +78,7 @@ frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/api.ts | typescript | 3324 | Theme:3 HarmonyType:48 ElementOptions:116 normalizeElementType:322 ElementType:527 as:527 Window:3316
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1411 | Component:1 App:92 moves:112 onPenMove:113 hidePen:117 onControllerChange:137 handleKeyUp:166 handleKeyDown:176 as:685 handleFullscreenChange:800 handleBeforeUnload:806 handlePaste:810 handleGlobalDragEnter:912 handleGlobalDragOver:927 showDropFallbackPrompt:946 cleanup:976 outsideClick:1004 isImageFile:1016 first:1017 must:1030 extractDropData:1032 processExtractedDrop:1087 handleGlobalDrop:1204 handleDocumentDrop:1250
+frontend/src/app.tsx | typescript | 1405 | Component:1 App:89 moves:109 onPenMove:110 hidePen:114 onControllerChange:134 handleKeyUp:163 handleKeyDown:173 as:682 handleFullscreenChange:797 handleBeforeUnload:803 handlePaste:807 handleGlobalDragEnter:909 handleGlobalDragOver:924 showDropFallbackPrompt:943 cleanup:973 outsideClick:1001 isImageFile:1013 first:1014 must:1027 extractDropData:1029 processExtractedDrop:1084 handleGlobalDrop:1201 handleDocumentDrop:1247
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -101,8 +101,8 @@ frontend/src/components/blob-brush-overlay.tsx | typescript | 73 | BlobBrushOver
 frontend/src/components/blueprint-graph.css | - | 152 |
 frontend/src/components/blueprint-graph.tsx | typescript | 515 | Component:16 BPNode:26 pinOutY:41 pinColor:42 pinLabel:43 dataOutY:64 execInY:66 dataInY:68 execInLabel:70 BlueprintGraph:72 isSprite:82 nodeById:92 posOf:93 srcPinY:95 writeNodes:102 writeEdges:103 patchNode:104 deleteNode:105 connect:110 connectData:116 addNode:122 onWheel:148 onSurfaceDown:159 toSurface:164 onSurfaceMove:169 onSurfaceUp:174 startWire:180 resolveWire:185 startNodeDrag:209 moveNodeDrag:216 endNodeDrag:221 setEventKind:228 patchTrigger:229 setActKind:230 patchAction:231 patchCond:232 setSeqCount:234 play:240 onKey:248 from:310 isData:311 x1:312 y1:313 x2:314 y2:315 a:323
 frontend/src/components/bpmn-tool-group.tsx | typescript | 249 | Component:1 BpmnToolGroup:137 handler:144 getActiveTool:154 handleToolClick:163 as:171 as:177 handleRightClick:185 toggleMenu:191 activeTool:198 isActive:199 getDropdownPosition:201
-frontend/src/components/brand-kit-panel.css | - | 84 |
-frontend/src/components/brand-kit-panel.tsx | typescript | 179 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
+frontend/src/components/brand-kit-panel.css | - | 88 |
+frontend/src/components/brand-kit-panel.tsx | typescript | 171 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
 frontend/src/components/canvas-toolbar.tsx | typescript | 124 | Component:1 CanvasToolbar:5 resetHideTimeout:9 toolBtnStyle:27
 frontend/src/components/canvas.tsx | typescript | 2253 | Component:1 TextEditingContext:50 CanvasEventContext:52 CropHandle:57 Canvas:76 setEditingId:183 flushPenPoints:226 handleResize:255 buildAnchorMenu:289 draw:319 and:485 viewportTransform:530 getWorldCoordinates:539 getWheelCtx:547 onWheel:553 normalizePencil:556 applyMasterProjection:592 canInteractWithElement:602 checkBinding:608 refreshLinePoints:611 refreshBoundLine:614 commitText:633 commitRichText:641 isPenDrawingTool:669 pickStylusTouch:678 findTouchById:686 finalizeTouchStroke:694 smartShapeEnabled:724 cancelShapeHold:728 resetActiveStroke:736 fireShapeHold:747 armShapeHold:796 noteShapeMove:804 beginTouchPenStroke:820 handleTouchStart:840 handleTouchMove:871 handleTouchEnd:924 isTouchBlockedByGesture:967 cancelLongPress:988 clearUndoRepeat:1035 fitView:1040 armUndoRepeat:1044 cancelInflightForGesture:1065 beginGesture:1092 updateGesture:1123 endGesture:1174 fireTap:1181 handleTouchStartGesture:1187 handleTouchMoveGesture:1222 handleTouchEndGesture:1307 handlePointerDown:1354 handlePointerMove:1524 handlePointerUp:1639 handleDoubleClick:1721 handleCropKeys:1850 handlePolylineKeys:1875 handlePenKeys:1892 dropHandler:1910 for:1927
 frontend/src/components/cloud-infra-tool-group.tsx | typescript | 221 | Component:1 CloudInfraToolGroup:106 handler:113 getActiveTool:123 handleToolClick:132 as:140 as:146 handleRightClick:154 toggleMenu:160 activeTool:167 isActive:168 getDropdownPosition:170
@@ -130,13 +130,13 @@ frontend/src/components/dock/arrange-panel.tsx | typescript | 32 | Component:6 D
 frontend/src/components/dock/dock-container.tsx | typescript | 174 | Component:12 DockZone:17 edgeAt:33 insertIndexAt:42 def:57 st:58 onTitleDown:60 move:70 up:83 ids:123 width:124 onResize:125 move:128 up:132 DockContainer:148 floating:149 st:155
 frontend/src/components/dock/dock.css | - | 146 |
 frontend/src/components/dock/effects-panel.tsx | typescript | 34 | Component:7 DockEffectsPanel:10 sel:11 has:12
-frontend/src/components/dock/panel-registry.ts | typescript | 38 | PanelDef:19 panelDef:36
+frontend/src/components/dock/panel-registry.ts | typescript | 44 | PanelDef:22 panelDef:42
 frontend/src/components/ds-ops-panel.tsx | typescript | 397 | Component:8 DsOperation:15 DsOpsPanel:19 resetAutoHide:47 handleOperation:79 handleStop:120 handleSpeedChange:125 handleInputKeyDown:131 stopPropagation:153
 frontend/src/components/ds-tool-group.tsx | typescript | 134 | Component:1 DsToolGroup:19 handler:26 getActiveTool:36 handleToolClick:45 as:53 as:59 handleRightClick:67 toggleMenu:73 activeTool:80 isActive:81 getDropdownPosition:83
 frontend/src/components/dsl-import-dialog.css | - | 241 |
 frontend/src/components/dsl-import-dialog.tsx | typescript | 240 | Component:7 DSLImportDialogProps:16 DSLImportDialog:34 handleKeyDown:44 handleImport:90 canImport:123 nodeCount:128 edgeCount:129
 frontend/src/components/elements-panel.css | - | 149 |
-frontend/src/components/elements-panel.tsx | typescript | 327 | Component:1 FontPairing:5 StockPhoto:6 PanelTab:30 insertOrigin:33 previewFamily:45 ensurePreviewFont:57 ElementsPanel:66 iconToSvgText:106 insertIcon:117 insertShape:125 insertFrame:132 runPhotoSearch:150
+frontend/src/components/elements-panel.tsx | typescript | 320 | Component:1 FontPairing:6 StockPhoto:7 PanelTab:30 insertOrigin:33 previewFamily:45 ensurePreviewFont:57 ElementsPanel:66 iconToSvgText:106 insertIcon:117 insertShape:125 insertFrame:132 runPhotoSearch:150
 frontend/src/components/embed-viewer.css | - | 81 |
 frontend/src/components/embed-viewer.tsx | typescript | 170 | EmbedOptions:12 parseEmbedOptions:20 EmbedViewer:36 fitToView:41 handleResize:123 openUrl:129
 frontend/src/components/export-dialog.css | - | 147 |
@@ -208,7 +208,7 @@ frontend/src/components/puppet-warp-overlay.tsx | typescript | 110 | PuppetWarpO
 frontend/src/components/quick-toolbar.css | - | 537 |
 frontend/src/components/quick-toolbar.tsx | typescript | 812 | Component:7 QuickPropertyDef:16 getIcon:64 handleDocClick:113 isTransparent:130 handleDocClick:178 activeOption:194 isActive:234 toggle:240 an:264 clamp:276 beginEdit:278 commit:283 a:306 is:326 handleDocClick:351 activeLabel:367 categories:371 QuickToolbar:424 selectedElement:428 handler:510 handlePropertyChange:524 handlePropertyStart:569 x:576 y:601 value:637 isDisabled:680
 frontend/src/components/recolor-panel.css | - | 61 |
-frontend/src/components/recolor-panel.tsx | typescript | 98 | Component:1 RecolorPanel:16 swatches:23 beginEdit:25 pickLive:31 endEdit:38 valHex:39
+frontend/src/components/recolor-panel.tsx | typescript | 89 | Component:1 RecolorPanel:15 swatches:22 beginEdit:24 pickLive:30 endEdit:37 valHex:38
 frontend/src/components/recording-overlay.css | - | 100 |
 frontend/src/components/recording-overlay.tsx | typescript | 42 | Component:1 Props:5 RecordingOverlay:9 formatTime:19
 frontend/src/components/repeat-dialog.tsx | typescript | 92 | openRepeatDialog:7 RepeatDialog:15 close:25 apply:26

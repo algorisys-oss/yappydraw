@@ -15,6 +15,9 @@ const SwatchesPanel = lazy(() => import("../swatches-panel"));
 const GraphicStylesPanel = lazy(() => import("../graphic-styles-panel"));
 const PatternsPanel = lazy(() => import("../patterns-panel"));
 const SymbolsPanel = lazy(() => import("../symbols-panel"));
+const RecolorPanel = lazy(() => import("../recolor-panel"));
+const BrandKitPanel = lazy(() => import("../brand-kit-panel"));
+const ElementsPanel = lazy(() => import("../elements-panel"));
 
 export interface PanelDef {
     id: string;
@@ -31,6 +34,9 @@ export const PANEL_REGISTRY: PanelDef[] = [
     { id: 'graphicStyles', title: 'Graphic Styles', component: GraphicStylesPanel },
     { id: 'patterns', title: 'Patterns', component: PatternsPanel },
     { id: 'symbols', title: 'Symbols', component: SymbolsPanel },
+    { id: 'recolor', title: 'Recolor Artwork', component: RecolorPanel },
+    { id: 'brandKit', title: 'Brand Kit', component: BrandKitPanel },
+    { id: 'elements', title: 'Elements', component: ElementsPanel },
 ];
 
 export function panelDef(id: string): PanelDef | undefined {

@@ -950,7 +950,7 @@ const Menu: Component = () => {
                                         <Shapes size={16} />
                                         <span class="label">Elements</span>
                                         <div class="menu-item-right">
-                                            <Show when={store.showElementsPanel}><Check size={14} class="check-icon" /></Show>
+                                            <Show when={isPanelOpen('elements')}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleStickFigurePanel(); setIsMenuOpen(false); }}>
@@ -964,7 +964,7 @@ const Menu: Component = () => {
                                         <Palette size={16} />
                                         <span class="label">Brand Kit</span>
                                         <div class="menu-item-right">
-                                            <Show when={store.showBrandKitPanel}><Check size={14} class="check-icon" /></Show>
+                                            <Show when={isPanelOpen('brandKit')}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleSwatchesPanel(); setIsMenuOpen(false); }}>

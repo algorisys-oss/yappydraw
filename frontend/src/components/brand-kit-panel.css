@@ -46,6 +46,10 @@
 }
 .bk-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 
+/* In-body toolbar (dock chrome supplies the title bar; the "new kit" actions live here now). */
+.bk-toolbar { display: flex; justify-content: flex-end; gap: 4px; }
+.bk-toolbar .bk-icon-btn { width: auto; gap: 4px; padding: 3px 8px; font-size: 12px; border: 1px solid var(--border-color); }
+
 .brand-panel-body { overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
 .bk-empty { text-align: center; color: var(--text-secondary); font-size: 12px; line-height: 1.6; padding: 22px 8px; }
 

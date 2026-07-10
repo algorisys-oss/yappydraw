@@ -1,16 +1,16 @@
 import { type Component, For, Show, createSignal, createMemo, createResource, Suspense } from 'solid-js';
 import { render } from 'solid-js/web';
-import { store, toggleElementsPanel } from '../store/app-store';
+import { store } from '../store/app-store';
+import { isPanelOpen } from '../store/dock-layout';
 import { importSvgToCanvas } from '../utils/svg-import';
 import { FONT_PAIRINGS, applyFontPairing, type FontPairing } from '../brand/font-pairing';
 import { searchStockPhotos, insertStockPhoto, STOCK_PHOTO_MIME, type StockPhoto } from '../utils/stock-photos';
 import { YappyAPI } from '../api';
 import { showToast } from './toast';
 import {
-    Shapes, X, Search,
+    Search,
     Square, Circle as CircleIcon, Triangle, Star, Heart, Hexagon, MessageSquare, ArrowRight,
 } from 'lucide-solid';
-import { draggablePanel } from '../utils/draggable-panel';
 import './elements-panel.css';
 
 /** Icons shown before the user searches (a useful, popular subset). */
@@ -83,7 +83,7 @@ const ElementsPanel: Component = () => {
     });
 
     // The full lucide-solid module is heavy — load it only when the panel opens.
-    const [lucide] = createResource(() => store.showElementsPanel, async (open) => {
+    const [lucide] = createResource(() => isPanelOpen('elements'), async (open) => {
         if (!open) return null;
         return await import('lucide-solid');
     });
@@ -190,13 +190,7 @@ const ElementsPanel: Component = () => {
     };
 
     return (
-        <Show when={store.showElementsPanel}>
-            <div class="elements-panel" ref={draggablePanel('.elements-panel-header')}>
-                <div class="elements-panel-header">
-                    <div class="ep-title"><Shapes size={14} /><h3>Elements</h3></div>
-                    <button class="ep-icon-btn" title="Close" onClick={() => toggleElementsPanel(false)}><X size={15} /></button>
-                </div>
-
+        <>
                 <div class="ep-tabs">
                     <button class={`ep-tab ${tab() === 'elements' ? 'active' : ''}`} onClick={() => setTab('elements')}>Elements</button>
                     <button class={`ep-tab ${tab() === 'fonts' ? 'active' : ''}`} onClick={() => setTab('fonts')}>Fonts</button>
@@ -319,8 +313,7 @@ const ElementsPanel: Component = () => {
                         </Show>
                     </div>
                 </Show>
-            </div>
-        </Show>
+        </>
     );
 };
 

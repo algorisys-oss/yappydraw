@@ -54,11 +54,8 @@ import { updateElement, deleteArtboard, swapFillStroke, selectAll } from './stor
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const DockContainer = lazy(() => import('./components/dock/dock-container'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
-const BrandKitPanel = lazy(() => import('./components/brand-kit-panel'));
-const ElementsPanel = lazy(() => import('./components/elements-panel'));
 const StickFigurePanel = lazy(() => import('./components/stick-figure-panel'));
 const SceneTimeline = lazy(() => import('./components/scene-timeline'));
-const RecolorPanel = lazy(() => import('./components/recolor-panel'));
 const BehaviorsPanel = lazy(() => import('./components/behaviors-panel'));
 const GameGraph = lazy(() => import('./components/game-graph'));
 const BlueprintGraph = lazy(() => import('./components/blueprint-graph'));
@@ -1297,11 +1294,8 @@ const App: Component = () => {
             <DockContainer />
             <PropertyPanel />
             <LayerPanel />
-            <BrandKitPanel />
-            <ElementsPanel />
             <StickFigurePanel />
             <SceneTimeline />
-            <RecolorPanel />
             <BehaviorsPanel />
             <GameGraph />
             <BlueprintGraph />

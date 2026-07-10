@@ -1,5 +1,6 @@
 import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
-import { store, toggleBrandKitPanel } from '../store/app-store';
+import { store } from '../store/app-store';
+import { isPanelOpen } from '../store/dock-layout';
 import {
     listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit,
     extractBrandColorsFromDocument, applyBrandKit,
@@ -8,8 +9,7 @@ import type { BrandKit, BrandColors } from '../types/brand-types';
 import { customFontOptions } from '../utils/custom-fonts';
 import { YappyAPI } from '../api';
 import { showToast } from './toast';
-import { Palette, X, Plus, Trash2, Wand2, Upload, ImagePlus } from 'lucide-solid';
-import { draggablePanel } from '../utils/draggable-panel';
+import { Plus, Trash2, Wand2, Upload, ImagePlus } from 'lucide-solid';
 import './brand-kit-panel.css';
 
 const COLOR_ROLES: { key: keyof BrandColors; label: string }[] = [
@@ -37,7 +37,7 @@ const BrandKitPanel: Component = () => {
     const [version, setVersion] = createSignal(0);
     // Re-read on every open (localStorage isn't reactive — kits may have been
     // created via the API or another panel since this memo last ran)
-    const kits = createMemo(() => { version(); store.showBrandKitPanel; return listBrandKits(); });
+    const kits = createMemo(() => { version(); isPanelOpen('brandKit'); return listBrandKits(); });
     const [activeId, setActiveId] = createSignal<string | null>(null);
     let logoInputRef: HTMLInputElement | undefined;
 
@@ -101,22 +101,16 @@ const BrandKitPanel: Component = () => {
     };
 
     return (
-        <Show when={store.showBrandKitPanel}>
-            <div class="brand-panel" ref={draggablePanel('.brand-panel-header')}>
-                <div class="brand-panel-header">
-                    <div class="bk-title"><Palette size={14} /><h3>Brand Kit</h3></div>
-                    <div class="bk-header-actions">
-                        <button class="bk-icon-btn" title="New kit from document colors" onClick={() => handleNew(true)}><Wand2 size={15} /></button>
-                        <button class="bk-icon-btn" title="New blank kit" onClick={() => handleNew(false)}><Plus size={15} /></button>
-                        <button class="bk-icon-btn" title="Close" onClick={() => toggleBrandKitPanel(false)}><X size={15} /></button>
-                    </div>
-                </div>
-                <div class="brand-panel-body">
-                    <Show when={active()} fallback={
-                        <div class="bk-empty">No brand kits yet.<br />Use the wand to extract one from this document, or + for a blank kit.</div>
-                    }>
-                        {(kit) => (
-                            <>
+        <div class="brand-panel-body">
+            <div class="bk-toolbar">
+                <button class="bk-icon-btn" title="New kit from document colors" onClick={() => handleNew(true)}><Wand2 size={15} /> From doc</button>
+                <button class="bk-icon-btn" title="New blank kit" onClick={() => handleNew(false)}><Plus size={15} /> Blank</button>
+            </div>
+            <Show when={active()} fallback={
+                <div class="bk-empty">No brand kits yet.<br />Use the wand to extract one from this document, or + for a blank kit.</div>
+            }>
+                {(kit) => (
+                    <>
                                 <div class="bk-row">
                                     <select class="bk-select" onChange={(e) => setActiveId(e.currentTarget.value)}>
                                         <For each={kits()}>{(k) => <option value={k.id} selected={k.id === kit().id}>{k.name}</option>}</For>
@@ -169,10 +163,8 @@ const BrandKitPanel: Component = () => {
                                 <button class="bk-apply" onClick={() => applyBrandKit(kit())}>Apply Brand to Document</button>
                             </>
                         )}
-                    </Show>
-                </div>
-            </div>
-        </Show>
+            </Show>
+        </div>
     );
 };
 

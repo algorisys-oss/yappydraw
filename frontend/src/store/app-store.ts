@@ -4305,11 +4305,11 @@ export const toggleSwatchesPanel = (visible?: boolean) => {
 };
 
 export const toggleBrandKitPanel = (visible?: boolean) => {
-    setStore('showBrandKitPanel', visible ?? !store.showBrandKitPanel);
+    setPanelOpen('brandKit', visible);
 };
 
 export const toggleElementsPanel = (visible?: boolean) => {
-    setStore('showElementsPanel', visible ?? !store.showElementsPanel);
+    setPanelOpen('elements', visible);
 };
 
 export const toggleStickFigurePanel = (visible?: boolean) => {
@@ -4632,7 +4632,7 @@ export const blendShapesMorph = (ids?: string[], steps = 8): string[] => {
 
 // ── Recolor artwork ──────────────────────────────────────────────────────────
 
-export const toggleRecolorPanel = (visible?: boolean) => setStore('showRecolorPanel', v => visible ?? !v);
+export const toggleRecolorPanel = (visible?: boolean) => setPanelOpen('recolor', visible);
 export const toggleVectorToolsPanel = (visible?: boolean) => {
     const next = visible ?? !store.showVectorToolsPanel;
     setStore('showVectorToolsPanel', next);
