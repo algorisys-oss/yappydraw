@@ -389,7 +389,7 @@ const Toolbar: Component = () => {
             {/* Vector Tools palette — one-tap access to Shape Builder, Live Paint, Puppet Warp,
                 Perspective Grid, Blob Brush, Curvature, Reshape, Symbolism, etc. */}
             <button
-                class={`toolbar-btn ${store.showVectorToolsPanel ? 'active' : ''}`}
+                class={`toolbar-btn ${isPanelOpen('vectorTools') ? 'active' : ''}`}
                 onClick={() => toggleVectorToolsPanel()}
                 title="Vector Tools palette"
                 aria-label="Toggle vector tools palette"

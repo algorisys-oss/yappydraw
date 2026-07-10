@@ -1,6 +1,6 @@
-import { type Component, For, Show, createSignal, onCleanup } from 'solid-js';
+import { type Component, For, Show, createSignal } from 'solid-js';
 import {
-    store, toggleVectorToolsPanel,
+    store,
     toggleShapeBuilder, toggleLivePaint, toggleCutTool, toggleWidthTool, toggleCurveTool,
     toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid,
     toggleSymbolSprayer, toggleSymbolism, toggleSliceTool, selectSimilar,
@@ -9,17 +9,17 @@ import {
 import { YappyAPI } from '../api';
 import {
     Combine, PaintBucket, Spline, Waypoints, Scissors, PenLine, Brush, Eraser,
-    Frame, Grid3x3, SprayCan, Sparkles, Crop, Wand2, X,
+    Frame, Grid3x3, SprayCan, Sparkles, Crop, Wand2,
     Type, AlignVerticalJustifyCenter, TextCursor, Tornado, Grid2x2, Target, Sun, Waves, PlusCircle,
 } from 'lucide-solid';
-import { draggablePanel } from '../utils/draggable-panel';
 import './vector-tools-panel.css';
 
 /**
- * Vector Tools — a dedicated floating, draggable palette surfacing every Illustrator-class
- * tool as a labelled row (grouped Build / Path / Paint / Warp / Symbol / Text / Insert /
- * Effects). Mode-tool rows highlight while active; one-shot tools fire immediately; the
- * Distort row expands into a flyout of the six effects. Visibility persists across reloads.
+ * Vector Tools — a dockable palette (registered in the dock; drag/float/collapse via the dock
+ * chrome) surfacing every Illustrator-class tool as a labelled row (grouped Build / Path / Paint /
+ * Warp / Symbol / Text / Insert / Effects). Mode-tool rows highlight while active; one-shot tools
+ * fire immediately; the Distort row expands into a flyout of the six effects. Renders body-only;
+ * open/where state persists in the dock layout.
  */
 type Tool = { label: string; icon: any; active?: () => boolean; run: () => void };
 
@@ -100,65 +100,41 @@ const VectorToolsPanel: Component = () => {
         { label: 'Crystallize', kind: 'crystallize', amt: 0.18 }, { label: 'Roughen', kind: 'roughen', amt: 0.1 },
     ];
 
-    // Wire dragging (header) + persist the resized dimensions (native CSS resize grip writes
-    // inline width/height; we save them and restore on next open).
-    const setupPanel = (el: HTMLDivElement) => {
-        draggablePanel('.vt-header')(el);
-        try {
-            const saved = JSON.parse(localStorage.getItem('vectorToolsSize') || 'null');
-            if (saved?.w) el.style.width = saved.w + 'px';
-            if (saved?.h) el.style.height = saved.h + 'px';
-        } catch { /* ignore */ }
-        const ro = new ResizeObserver(() => {
-            try { localStorage.setItem('vectorToolsSize', JSON.stringify({ w: Math.round(el.offsetWidth), h: Math.round(el.offsetHeight) })); } catch { /* ignore */ }
-        });
-        ro.observe(el);
-        onCleanup(() => ro.disconnect());
-    };
-
     return (
-        <Show when={store.showVectorToolsPanel}>
-            <div class="vt-panel" ref={(el) => setupPanel(el)}>
-                <div class="vt-header">
-                    <span class="vt-title">Vector Tools</span>
-                    <button class="vt-close" title="Close" onClick={() => toggleVectorToolsPanel(false)}><X size={16} /></button>
-                </div>
-                <div class="vt-body">
-                    <For each={groups}>
-                        {(g) => (
-                            <div class="vt-group">
-                                <div class="vt-group-name">{g.name}</div>
-                                <For each={g.tools}>
-                                    {(t) => (
-                                        <button class={`vt-row ${t.active?.() ? 'vt-on' : ''}`} title={t.label} onClick={() => t.run()}>
-                                            <t.icon size={15} /><span>{t.label}</span>
-                                        </button>
-                                    )}
-                                </For>
-                            </div>
-                        )}
-                    </For>
-
-                    {/* Effects — Distort & Transform flyout */}
+        <div class="vt-body">
+            <For each={groups}>
+                {(g) => (
                     <div class="vt-group">
-                        <div class="vt-group-name">Effects</div>
-                        <button class={`vt-row ${distortOpen() ? 'vt-on' : ''}`} onClick={() => setDistortOpen(v => !v)}>
-                            <Waves size={15} /><span>Distort &amp; Transform</span>
-                            <PlusCircle size={13} class="vt-row-caret" />
-                        </button>
-                        <Show when={distortOpen()}>
-                            <div class="vt-flyout">
-                                <For each={distorts}>
-                                    {(d) => (
-                                        <button class="vt-sub" onClick={() => applyDistort([...store.selection], d.kind, d.amt)}>{d.label}</button>
-                                    )}
-                                </For>
-                            </div>
-                        </Show>
+                        <div class="vt-group-name">{g.name}</div>
+                        <For each={g.tools}>
+                            {(t) => (
+                                <button class={`vt-row ${t.active?.() ? 'vt-on' : ''}`} title={t.label} onClick={() => t.run()}>
+                                    <t.icon size={15} /><span>{t.label}</span>
+                                </button>
+                            )}
+                        </For>
                     </div>
-                </div>
+                )}
+            </For>
+
+            {/* Effects — Distort & Transform flyout */}
+            <div class="vt-group">
+                <div class="vt-group-name">Effects</div>
+                <button class={`vt-row ${distortOpen() ? 'vt-on' : ''}`} onClick={() => setDistortOpen(v => !v)}>
+                    <Waves size={15} /><span>Distort &amp; Transform</span>
+                    <PlusCircle size={13} class="vt-row-caret" />
+                </button>
+                <Show when={distortOpen()}>
+                    <div class="vt-flyout">
+                        <For each={distorts}>
+                            {(d) => (
+                                <button class="vt-sub" onClick={() => applyDistort([...store.selection], d.kind, d.amt)}>{d.label}</button>
+                            )}
+                        </For>
+                    </div>
+                </Show>
             </div>
-        </Show>
+        </div>
     );
 };
 

@@ -58,7 +58,6 @@ const SceneTimeline = lazy(() => import('./components/scene-timeline'));
 const GameGraph = lazy(() => import('./components/game-graph'));
 const BlueprintGraph = lazy(() => import('./components/blueprint-graph'));
 const GameModeBar = lazy(() => import('./components/game-mode-bar'));
-const VectorToolsPanel = lazy(() => import('./components/vector-tools-panel'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
 const Toast = lazy(() => import('./components/toast'));
 const QuickToolbar = lazy(() => import('./components/quick-toolbar').then(m => ({ default: m.QuickToolbar })));
@@ -1295,7 +1294,6 @@ const App: Component = () => {
             <GameGraph />
             <BlueprintGraph />
             <GameModeBar />
-            <VectorToolsPanel />
             <StatusBar />
           </Show>
           <Show when={store.zenMode}>

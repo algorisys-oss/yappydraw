@@ -21,6 +21,7 @@ const ElementsPanel = lazy(() => import("../elements-panel"));
 const StatePanel = lazy(() => import("../state-panel").then(m => ({ default: m.StatePanel })));
 const BehaviorsPanel = lazy(() => import("../behaviors-panel"));
 const StickFigurePanel = lazy(() => import("../stick-figure-panel"));
+const VectorToolsPanel = lazy(() => import("../vector-tools-panel"));
 
 export interface PanelDef {
     id: string;
@@ -43,6 +44,7 @@ export const PANEL_REGISTRY: PanelDef[] = [
     { id: 'state', title: 'Display States', component: StatePanel },
     { id: 'behaviors', title: 'Behaviors', component: BehaviorsPanel },
     { id: 'stickFigure', title: 'Stick Figures', component: StickFigurePanel },
+    { id: 'vectorTools', title: 'Vector Tools', component: VectorToolsPanel },
 ];
 
 export function panelDef(id: string): PanelDef | undefined {

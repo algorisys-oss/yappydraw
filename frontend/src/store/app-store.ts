@@ -419,7 +419,7 @@ const initialState: AppState = {
     storyDuration: 6,
     storySyncSlides: false,
     showRecolorPanel: false,
-    showVectorToolsPanel: (() => { try { return localStorage.getItem('showVectorToolsPanel') === '1'; } catch { return false; } })(),
+    showVectorToolsPanel: false, // dead flag — Vector Tools panel state now lives in the persisted dock layout
     measureActive: false,
     shapeBuilderActive: false,
     cutToolActive: false,
@@ -4634,9 +4634,8 @@ export const blendShapesMorph = (ids?: string[], steps = 8): string[] => {
 
 export const toggleRecolorPanel = (visible?: boolean) => setPanelOpen('recolor', visible);
 export const toggleVectorToolsPanel = (visible?: boolean) => {
-    const next = visible ?? !store.showVectorToolsPanel;
-    setStore('showVectorToolsPanel', next);
-    try { localStorage.setItem('showVectorToolsPanel', next ? '1' : '0'); } catch { /* ignore */ }
+    // Panel state (open/where) now lives in the persisted dock layout, not the old localStorage flag.
+    setPanelOpen('vectorTools', visible);
 };
 
 export const toggleMeasure = (active?: boolean) => setStore('measureActive', v => active ?? !v);
