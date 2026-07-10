@@ -15,6 +15,22 @@
     overflow: hidden;
 }
 
+/* Phones: 340px + right:16px clips on narrow screens. Dock as a full-width
+   bottom sheet that clears the bottom tool toolbar. */
+@media (max-width: 600px) {
+    .behaviors-panel {
+        position: fixed;
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        max-height: 52vh;
+        border-radius: 12px 12px 0 0;
+        z-index: 10001;
+    }
+}
+
 .behaviors-panel-header {
     display: flex;
     align-items: center;

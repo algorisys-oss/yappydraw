@@ -52,6 +52,7 @@ import { screenToWorld } from './utils/viewport-transforms';
 import { parseOutline } from './utils/mindmap-layout';
 import { updateElement, deleteArtboard, swapFillStroke, selectAll } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
+const DockContainer = lazy(() => import('./components/dock/dock-container'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
 const SymbolsPanel = lazy(() => import('./components/symbols-panel'));
 const GraphicStylesPanel = lazy(() => import('./components/graphic-styles-panel'));
@@ -1298,6 +1299,7 @@ const App: Component = () => {
             <Toolbar />
           </Show>
           <Show when={!store.zenMode}>
+            <DockContainer />
             <PropertyPanel />
             <LayerPanel />
             <SymbolsPanel />
@@ -1373,92 +1375,34 @@ const App: Component = () => {
           <WelcomeScreen />
         </Show>
 
-        {/* Floating buttons (above status bar) */}
+        {/* Floating utility cluster — bottom-left on desktop/tablet; on phones it
+            relocates to a top-right rail (see .floating-tools-cluster in index.css)
+            so the bottom-docked toolbar can't swallow its taps. */}
         <Show when={store.appMode !== 'presentation'}>
-          <button
-            class="floating-settings-btn"
-            onClick={() => setShowSettings(true)}
-            title="Global Settings"
-            style={{
-              position: 'fixed',
-              bottom: '34px',
-              left: '12px',
-              width: '36px',
-              height: '36px',
-              padding: '0',
-              'box-sizing': 'border-box',
-              'border-radius': '50%',
-              border: 'none',
-              background: 'var(--bg-panel, #ffffff)',
-              color: 'var(--text-secondary, #4b5563)',
-              'box-shadow': '0 2px 8px rgba(0, 0, 0, 0.12)',
-              cursor: 'pointer',
-              display: 'flex',
-              'align-items': 'center',
-              'justify-content': 'center',
-              'z-index': '1000',
-              transition: 'all 0.2s ease',
-              overflow: 'visible'
-            }}
-          >
-            <Settings size={20} />
-          </button>
-          <button
-            class="floating-settings-btn"
-            classList={{ 'active': store.showPropertyPanel }}
-            onClick={() => togglePropertyPanel()}
-            title="Toggle Properties (Alt+Enter)"
-            style={{
-              position: 'fixed',
-              bottom: '34px',
-              left: '56px',
-              width: '36px',
-              height: '36px',
-              padding: '0',
-              'box-sizing': 'border-box',
-              'border-radius': '50%',
-              border: 'none',
-              background: 'var(--bg-panel, #ffffff)',
-              color: 'var(--text-primary, #111827)',
-              'box-shadow': '0 2px 8px rgba(0, 0, 0, 0.12)',
-              cursor: 'pointer',
-              display: 'flex',
-              'align-items': 'center',
-              'justify-content': 'center',
-              'z-index': '1000',
-              transition: 'all 0.2s ease',
-              overflow: 'visible'
-            }}
-          >
-            <SlidersHorizontal size={20} />
-          </button>
-          <button
-            class="floating-settings-btn"
-            onClick={() => setShowHelp(true)}
-            title="Shortcuts & Help (?)"
-            style={{
-              position: 'fixed',
-              bottom: '34px',
-              left: '100px',
-              width: '36px',
-              height: '36px',
-              'border-radius': '50%',
-              border: 'none',
-              background: 'var(--bg-panel, #ffffff)',
-              color: 'var(--text-secondary, #4b5563)',
-              'box-shadow': '0 2px 8px rgba(0, 0, 0, 0.12)',
-              cursor: 'pointer',
-              display: 'flex',
-              'align-items': 'center',
-              'justify-content': 'center',
-              'z-index': '1000',
-              transition: 'all 0.2s ease',
-              'font-weight': 'bold',
-              'font-size': '16px'
-            }}
-          >
-            ?
-          </button>
+          <div class="floating-tools-cluster">
+            <button
+              class="floating-settings-btn"
+              onClick={() => setShowSettings(true)}
+              title="Global Settings"
+            >
+              <Settings size={20} />
+            </button>
+            <button
+              class="floating-settings-btn"
+              classList={{ 'active': store.showPropertyPanel }}
+              onClick={() => togglePropertyPanel()}
+              title="Toggle Properties (Alt+Enter)"
+            >
+              <SlidersHorizontal size={20} />
+            </button>
+            <button
+              class="floating-settings-btn help-btn"
+              onClick={() => setShowHelp(true)}
+              title="Shortcuts & Help (?)"
+            >
+              ?
+            </button>
+          </div>
           <SlideControlToolbar />
           <QuickToolbar />
         </Show>

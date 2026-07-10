@@ -365,9 +365,36 @@ button:focus-visible {
   cursor: grabbing;
 }
 
-/* Floating Settings Button */
+/* Floating utility cluster (Settings / Properties toggle / Help) */
+.floating-tools-cluster {
+  position: fixed;
+  bottom: 34px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 1000;
+}
+
 .floating-settings-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-panel, #ffffff);
+  color: var(--text-secondary, #4b5563);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s ease;
+}
+
+.floating-settings-btn.help-btn {
+  font-weight: bold;
+  font-size: 16px;
 }
 
 .floating-settings-btn:hover {
@@ -377,6 +404,26 @@ button:focus-visible {
 .floating-settings-btn.active {
   background: #3b82f6 !important;
   color: #ffffff !important;
+}
+
+/* Phones: the tool toolbar force-docks to the bottom band (toolbar.css
+   @media max-width:600px). Move the cluster to a vertical rail at the top-right,
+   clear of the bottom toolbar / status bar / property bottom-sheet, and enlarge
+   the buttons for touch. */
+@media (max-width: 600px) {
+  .floating-tools-cluster {
+    bottom: auto;
+    left: auto;
+    top: calc(66px + env(safe-area-inset-top, 0px));
+    right: 10px;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10003; /* above the bottom toolbar (10002) */
+  }
+  .floating-settings-btn {
+    width: 42px;
+    height: 42px;
+  }
 }
 
 /* Zen mode exit button */

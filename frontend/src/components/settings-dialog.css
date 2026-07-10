@@ -17,6 +17,7 @@
     padding: 24px;
     border-radius: 12px;
     width: 420px;
+    max-width: 92vw;
     max-height: 80vh;
     overflow-y: auto;
     box-shadow: var(--shadow-sm);

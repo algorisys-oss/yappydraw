@@ -1,5 +1,6 @@
 import { type Component, Show, createEffect, onCleanup, createSignal, For } from 'solid-js';
 import { store, setStore } from '../store/app-store';
+import { YappyMascot } from './mascot';
 
 /**
  * Welcome screen — shown on an empty canvas. A single bold call to action over a
@@ -56,6 +57,10 @@ export const WelcomeScreen: Component = () => {
                     @keyframes wsFadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
                     @keyframes wsFadeIn { from { opacity: 0; } to { opacity: 1; } }
                 `}</style>
+
+                <div style={{ opacity: '0', animation: 'wsFadeUp 0.5s ease-out 0s forwards' }}>
+                    <YappyMascot size={width() < 640 ? 168 : 210} />
+                </div>
 
                 <h1 style={{
                     margin: '0', 'font-weight': '800',

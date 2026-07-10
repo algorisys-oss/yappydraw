@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.56](0.8.56.md) — Brand mascot (paint-brush bicycle) splash + welcome; full mobile/tablet responsive pass (untappable phone buttons, off-screen panels)
 - [0.8.55](0.8.55.md) — Image placeholder + replace-in-place flow; tunable Glow & Feather panel sliders
 - [0.8.54](0.8.54.md) — 3D Bevel & Revolve (lathe); consolidated Effects menu (+ Feather/Glow/Scribble now in UI); export image + "works once" fixes
 - [0.8.53](0.8.53.md) — Fix export transparent border (20px→2px) + quick-toolbar font-size snap-to-8; OSS ships a clean lockfile

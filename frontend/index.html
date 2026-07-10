@@ -48,9 +48,189 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Handlee&family=Inter:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&family=Permanent+Marker&family=Poppins:ital,wght@0,400;0,700;1,400;1,700&family=Source+Code+Pro:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+
+  <!--
+    Boot splash — the YappyDraw mascot (a paint-brush bicycle) shown the instant
+    the page opens, before the JS bundle loads, so first paint is the mascot
+    rather than a blank flash. index.tsx fades it out (adds #splash.splash--done)
+    once the app has mounted. INTERIM ART: hand-authored vector — swap only the
+    single <svg class="mascot"> block below to replace it. The same mascot is
+    reused on the welcome dialog (see YappyMascot in mascot.tsx).
+  -->
+  <style>
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      background: radial-gradient(circle at 50% 38%, #f2f7ff 0%, #e6edfb 55%, #d7e0f2 100%);
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+    #splash.splash--done {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #splash svg.mascot {
+      width: min(56vw, 300px);
+      height: auto;
+      filter: drop-shadow(0 16px 34px rgba(30, 58, 120, 0.18));
+      animation: splashFloat 3.2s ease-in-out infinite;
+    }
+    @keyframes splashFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-9px); }
+    }
+    #splash .spokes {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: splashSpin 2.6s linear infinite;
+    }
+    @keyframes splashSpin { to { transform: rotate(360deg); } }
+    #splash .wordmark {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-weight: 800;
+      font-size: 28px;
+      letter-spacing: 0.3px;
+      color: #1e293b;
+    }
+    #splash .wordmark b { color: #4c8dff; font-weight: 800; }
+    #splash .dots { display: flex; gap: 9px; }
+    #splash .dots i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #4c8dff;
+      display: block;
+      animation: splashDot 1s ease-in-out infinite;
+    }
+    #splash .dots i:nth-child(2) { background: #a855f7; animation-delay: 0.15s; }
+    #splash .dots i:nth-child(3) { background: #f472b6; animation-delay: 0.3s; }
+    #splash .dots i:nth-child(4) { background: #22d3ee; animation-delay: 0.45s; }
+    @keyframes splashDot {
+      0%, 100% { transform: translateY(0); opacity: 0.5; }
+      50% { transform: translateY(-7px); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #splash svg.mascot,
+      #splash .spokes,
+      #splash .dots i { animation: none; }
+    }
+  </style>
 </head>
 
 <body>
+  <div id="splash" role="status" aria-label="Loading YappyDraw">
+    <!-- ===== INTERIM MASCOT: paint-brush bicycle (swap this whole <svg> block) ===== -->
+    <svg class="mascot" viewBox="0 0 300 210" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="frameGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#4c8dff" />
+          <stop offset="1" stop-color="#22d3ee" />
+        </linearGradient>
+        <linearGradient id="rimGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#a855f7" />
+          <stop offset="1" stop-color="#4c8dff" />
+        </linearGradient>
+        <linearGradient id="swoosh" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#f472b6" />
+          <stop offset="0.35" stop-color="#a855f7" />
+          <stop offset="0.65" stop-color="#4c8dff" />
+          <stop offset="1" stop-color="#34d399" />
+        </linearGradient>
+        <linearGradient id="woodGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f6c667" />
+          <stop offset="1" stop-color="#d99a3f" />
+        </linearGradient>
+      </defs>
+
+      <!-- colourful paint swoosh sweeping behind the bike -->
+      <path d="M18,188 C78,150 120,204 176,158 C220,122 246,150 292,104" fill="none"
+            stroke="url(#swoosh)" stroke-width="14" stroke-linecap="round" opacity="0.45" />
+
+      <!-- wheels: rim + spinning spokes + hub -->
+      <g>
+        <circle cx="78" cy="150" r="34" fill="none" stroke="url(#rimGrad)" stroke-width="6" />
+        <g class="spokes" stroke="#94a3b8" stroke-width="2.5">
+          <line x1="50" y1="150" x2="106" y2="150" />
+          <line x1="78" y1="122" x2="78" y2="178" />
+          <line x1="58.2" y1="130.2" x2="97.8" y2="169.8" />
+          <line x1="97.8" y1="130.2" x2="58.2" y2="169.8" />
+        </g>
+        <circle cx="78" cy="150" r="6" fill="#334155" />
+      </g>
+      <g>
+        <circle cx="222" cy="150" r="34" fill="none" stroke="url(#rimGrad)" stroke-width="6" />
+        <g class="spokes" stroke="#94a3b8" stroke-width="2.5">
+          <line x1="194" y1="150" x2="250" y2="150" />
+          <line x1="222" y1="122" x2="222" y2="178" />
+          <line x1="202.2" y1="130.2" x2="241.8" y2="169.8" />
+          <line x1="241.8" y1="130.2" x2="202.2" y2="169.8" />
+        </g>
+        <circle cx="222" cy="150" r="6" fill="#334155" />
+      </g>
+
+      <!-- frame: diamond of tubes -->
+      <g fill="none" stroke="url(#frameGrad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M78,150 L150,150" />           <!-- chainstay -->
+        <path d="M150,150 L120,92" />            <!-- seat tube -->
+        <path d="M120,92 L78,150" />             <!-- seat stay -->
+        <path d="M120,92 L196,96" />             <!-- top tube -->
+        <path d="M150,150 L196,96" />            <!-- down tube -->
+        <path d="M196,96 L222,150" />            <!-- fork -->
+      </g>
+
+      <!-- saddle -->
+      <path d="M104,90 Q120,82 136,90 Q124,96 104,90 Z" fill="#334155" />
+      <!-- crank + pedal -->
+      <circle cx="150" cy="150" r="5" fill="#334155" />
+      <rect x="146" y="163" width="18" height="5" rx="2.5" fill="#334155" transform="rotate(20 155 165)" />
+
+      <!-- handlebar stem + riser bar -->
+      <g fill="none" stroke="url(#frameGrad)" stroke-width="7" stroke-linecap="round">
+        <path d="M196,96 L198,76" />
+        <path d="M174,76 L222,76" />
+      </g>
+
+      <!-- LEFT paint-brush grip -->
+      <g>
+        <line x1="174" y1="76" x2="174" y2="60" stroke="url(#woodGrad)" stroke-width="6" stroke-linecap="round" />
+        <rect x="168.5" y="52" width="11" height="8" rx="2" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1" />
+        <path d="M169,52 L179,52 L177,36 Q174,32 171,36 Z" fill="#f472b6" />
+        <circle cx="174" cy="35" r="3.4" fill="#ec4899" />
+      </g>
+      <!-- RIGHT paint-brush grip -->
+      <g>
+        <line x1="222" y1="76" x2="222" y2="60" stroke="url(#woodGrad)" stroke-width="6" stroke-linecap="round" />
+        <rect x="216.5" y="52" width="11" height="8" rx="2" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1" />
+        <path d="M217,52 L227,52 L225,36 Q222,32 219,36 Z" fill="#22d3ee" />
+        <circle cx="222" cy="35" r="3.4" fill="#06b6d4" />
+      </g>
+
+      <!-- paint sprinkles flung around the mascot -->
+      <g>
+        <circle cx="150" cy="30" r="4" fill="#a855f7" />
+        <circle cx="130" cy="46" r="2.6" fill="#f59e0b" />
+        <circle cx="245" cy="52" r="3.2" fill="#34d399" />
+        <circle cx="258" cy="72" r="2.4" fill="#f472b6" />
+        <circle cx="196" cy="40" r="2.6" fill="#4c8dff" />
+        <circle cx="160" cy="48" r="2.2" fill="#22d3ee" />
+        <circle cx="42" cy="96" r="3.4" fill="#f472b6" />
+        <circle cx="30" cy="120" r="2.4" fill="#a855f7" />
+        <circle cx="60" cy="70" r="2.8" fill="#34d399" />
+        <ellipse cx="252" cy="40" rx="4.4" ry="2" fill="#ef4444" transform="rotate(-25 252 40)" />
+        <ellipse cx="112" cy="34" rx="4" ry="1.8" fill="#4c8dff" transform="rotate(20 112 34)" />
+        <ellipse cx="48" cy="84" rx="4" ry="1.8" fill="#f59e0b" transform="rotate(-40 48 84)" />
+      </g>
+    </svg>
+    <!-- ===== END MASCOT ===== -->
+    <div class="wordmark">Yappy<b>Draw</b></div>
+    <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  </div>
   <div id="root"></div>
   <script type="module" src="/src/index.tsx"></script>
   <!-- GoatCounter Analytics - privacy-friendly, no cookies -->

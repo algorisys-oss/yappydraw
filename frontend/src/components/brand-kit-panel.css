@@ -17,6 +17,21 @@
     overflow: hidden;
 }
 
+/* Phones: the fixed left:260px offset pushes this panel off-screen. Dock it as a
+   full-width bottom sheet that clears the bottom tool toolbar. */
+@media (max-width: 600px) {
+    .brand-panel {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        max-height: 50vh;
+        border-radius: 12px 12px 0 0;
+        z-index: 10001;
+    }
+}
+
 .brand-panel-header {
     display: flex; justify-content: space-between; align-items: center;
     padding: 10px 12px; border-bottom: 1px solid var(--border-color); background: var(--bg-secondary);

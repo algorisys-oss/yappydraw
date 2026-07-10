@@ -15,6 +15,7 @@ import {
     toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid, toggleSliceTool, toggleTouchType, toggleSymbolism,
     applyFeather, applyGlow, applyScribble, setExtrude, toggleRevolve, setTransformEffect
 } from "../store/app-store";
+import { togglePanel, resetDockLayout } from "../store/dock-layout";
 import { flipSelected, lockSelected } from "./object-context-actions";
 import { openRepeatDialog } from "../components/repeat-dialog";
 import { setIsDSLImportOpen } from "../components/menu";
@@ -269,6 +270,8 @@ export const getCommands = (): Command[] => {
         { id: 'effect-glow', label: 'Effect: Outer Glow', category: 'Actions', action: () => applyGlow([...store.selection], { blur: 14 }) },
         { id: 'effect-glow-off', label: 'Effect: Remove Outer Glow', category: 'Actions', action: () => applyGlow([...store.selection], { enabled: false }) },
         { id: 'effect-scribble', label: 'Effect: Scribble fill', category: 'Actions', action: () => applyScribble([...store.selection], {}) },
+        { id: 'panel-effects', label: 'Panel: Effects (dockable)', category: 'View', action: () => togglePanel('effects', 'docked') },
+        { id: 'panel-reset-layout', label: 'Panel: Reset Dock Layout', category: 'View', action: () => resetDockLayout() },
         { id: 'effect-3d-extrude', label: 'Effect: 3D Extrude', category: 'Actions', action: () => setExtrude([...store.selection], { depth: 32, angle: 135 }) },
         { id: 'effect-3d-bevel', label: 'Effect: 3D Bevel', category: 'Actions', action: () => setExtrude([...store.selection], { depth: 40, angle: 135, bevel: 10 }) },
         { id: 'effect-3d-revolve', label: 'Effect: 3D Revolve (lathe)', category: 'Actions', action: () => toggleRevolve([...store.selection], true) },

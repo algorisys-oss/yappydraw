@@ -107,3 +107,13 @@ const Router = () => {
 }
 
 render(() => <Router />, root!)
+
+// Fade out the boot splash (defined in index.html) once the app has mounted.
+{
+    const splash = document.getElementById('splash')
+    if (splash) {
+        splash.classList.add('splash--done')
+        splash.addEventListener('transitionend', () => splash.remove(), { once: true })
+        setTimeout(() => splash.remove(), 900)
+    }
+}

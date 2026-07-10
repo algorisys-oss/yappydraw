@@ -568,6 +568,18 @@ input[type="text"] {
     }
 }
 
+/* Phones only: the tool toolbar force-docks to the bottom band (toolbar.css
+   @media max-width:600px), so lift the property bottom-sheet clear of it and the
+   status bar. Tablets (601–768px) keep the toolbar up top, so their sheet stays
+   at bottom:0 via the rule above. Declared after it to win the cascade. */
+@media (max-width: 600px) {
+    .property-panel-container {
+        bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+        max-height: 42vh;
+        z-index: 10001; /* above the floating buttons, below the bottom toolbar (10002) */
+    }
+}
+
 .swatch-row {
     display: flex;
     gap: 8px;
