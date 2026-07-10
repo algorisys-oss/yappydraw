@@ -446,6 +446,25 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
             </section>
 
             <section class="doc-section">
+                <h2>📐 On-canvas measurement</h2>
+                <p>
+                    <strong>Transform HUD.</strong> Select anything and a small badge rides just below it
+                    showing its live <strong>W × H</strong> and position <strong>X, Y</strong> — plus the
+                    <strong> rotation ∠</strong> when a single object is turned. It updates as you drag,
+                    resize, or rotate, so you always know the exact size and placement without opening a
+                    panel. A multi-selection reports its combined bounding box. (The badge is passive — it
+                    never blocks the canvas — and hides in Presentation mode.)
+                </p>
+                <p>
+                    <strong>Measure tool</strong> (View menu → <em>Measure</em>): drag a line across the
+                    canvas to read its <strong>distance</strong> and <strong>angle</strong>. Pair it with
+                    <strong> Rulers &amp; Guides</strong> (<span class="kbd">Alt</span>+<span class="kbd">R</span>),
+                    <strong>Snap to Grid</strong> (<span class="kbd">Shift</span>+<span class="kbd">;</span>),
+                    and the alignment/equal-spacing guides that appear while you drag for precise layout.
+                </p>
+            </section>
+
+            <section class="doc-section">
                 <h2>Where these map in Illustrator</h2>
                 <table class="api-table">
                     <thead>

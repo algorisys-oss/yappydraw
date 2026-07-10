@@ -1,0 +1,38 @@
+/* Passive overlay layer — must never intercept pointer events (canvas sits under it). */
+.transform-hud-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    pointer-events: none;
+}
+
+.transform-hud {
+    position: absolute;
+    /* Anchor point is the bottom-center of the selection box; nudge the badge just below it. */
+    transform: translate(-50%, 8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.25;
+    white-space: nowrap;
+    color: #fff;
+    background: var(--accent-color, #6366f1);
+    border-radius: 5px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+}
+
+.thud-dim {
+    font-variant-numeric: tabular-nums;
+}
+
+.thud-sub {
+    font-size: 10px;
+    font-weight: 500;
+    opacity: 0.85;
+    font-variant-numeric: tabular-nums;
+}

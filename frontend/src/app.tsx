@@ -23,6 +23,7 @@ import { SymmetryOverlay } from './components/symmetry-overlay';
 import { MeshOverlay } from './components/mesh-overlay';
 import { ArtboardOverlay } from './components/artboard-overlay';
 import { MeasureOverlay } from './components/measure-overlay';
+import { TransformHud } from './components/transform-hud';
 import { ShapeBuilderOverlay } from './components/shape-builder-overlay';
 import { CutOverlay } from './components/cut-overlay';
 import { SymbolSprayerOverlay } from './components/symbol-sprayer-overlay';
@@ -1315,6 +1316,7 @@ const App: Component = () => {
         <MeshOverlay />
         <ArtboardOverlay />
         <MeasureOverlay />
+        <TransformHud />
         <ShapeBuilderOverlay />
         <CutOverlay />
         <SymbolSprayerOverlay />

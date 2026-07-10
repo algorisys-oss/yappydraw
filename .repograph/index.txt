@@ -78,7 +78,7 @@ frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/api.ts | typescript | 3324 | Theme:3 HarmonyType:48 ElementOptions:116 normalizeElementType:322 ElementType:527 as:527 Window:3316
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1396 | Component:1 App:85 moves:105 onPenMove:106 hidePen:110 onControllerChange:130 handleKeyUp:159 handleKeyDown:169 as:678 handleFullscreenChange:793 handleBeforeUnload:799 handlePaste:803 handleGlobalDragEnter:905 handleGlobalDragOver:920 showDropFallbackPrompt:939 cleanup:969 outsideClick:997 isImageFile:1009 first:1010 must:1023 extractDropData:1025 processExtractedDrop:1080 handleGlobalDrop:1197 handleDocumentDrop:1243
+frontend/src/app.tsx | typescript | 1398 | Component:1 App:86 moves:106 onPenMove:107 hidePen:111 onControllerChange:131 handleKeyUp:160 handleKeyDown:170 as:679 handleFullscreenChange:794 handleBeforeUnload:800 handlePaste:804 handleGlobalDragEnter:906 handleGlobalDragOver:921 showDropFallbackPrompt:940 cleanup:970 outsideClick:998 isImageFile:1010 first:1011 must:1024 extractDropData:1026 processExtractedDrop:1081 handleGlobalDrop:1198 handleDocumentDrop:1244
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -273,6 +273,8 @@ frontend/src/components/toolbar.css | - | 254 |
 frontend/src/components/toolbar.tsx | typescript | 570 | Component:1 VideoProvider:26 Toolbar:69 clampIntoView:76 wrapWidth:111 onResizeDown:116 toggleBrainstormMode:127 onPointerDown:133 onPointerMove:146 onPointerUp:160 handleResize:179 handleToolClick:194 handleVideoInsert:204 handleRightClick:252 handleImageUpload:258
 frontend/src/components/touch-type-overlay.css | - | 58 |
 frontend/src/components/touch-type-overlay.tsx | typescript | 308 | TouchTypeOverlay:29 target:39 active:48 toWorld:49 selArr:50 curT:51 stop:52 twoPts:53 glyphBoxes:57 hitGlyph:93 applyAll:114 bumpScale:115 bumpRot:116 setColorLive:117 snapColor:118 setFont:119 firstSel:120 glyphColor:121 glyphFont:122 onFontFile:125 startGesture:133 onDown:146 onMove:187 onUp:210 onKey:243 selScreens:260 controlPos:261 marqueeRect:262
+frontend/src/components/transform-hud.css | - | 38 |
+frontend/src/components/transform-hud.tsx | typescript | 80 | fmt:21 TransformHud:26 info:27
 frontend/src/components/type-on-path-overlay.css | - | 23 |
 frontend/src/components/type-on-path-overlay.tsx | typescript | 72 | text:13 TypeOnPathOverlay:16 active:18 toWorld:19 pick:21 onMove:33 onDown:34 onKey:46 box:52
 frontend/src/components/uml-tool-group.tsx | typescript | 145 | Component:1 UmlToolGroup:30 handler:37 getActiveUmlTool:47 handleToolClick:56 as:64 as:70 handleRightClick:78 toggleMenu:84 activeTool:91 isActive:92 getDropdownPosition:94
@@ -370,7 +372,7 @@ frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 152 | BulkEd
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 277 | DesignStudioDoc:9
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 203 | EffectsDoc:10 Tools:196
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 124 | EmbeddingDoc:3
-frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 485 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
+frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 504 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 373 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 377 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 224 | StickAnimationDoc:9
