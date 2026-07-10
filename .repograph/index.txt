@@ -125,10 +125,12 @@ frontend/src/components/cut-overlay.tsx | typescript | 86 | CutOverlay:14 active
 frontend/src/components/data-metrics-tool-group.tsx | typescript | 195 | Component:1 DataMetricsToolGroup:80 handler:87 getActiveTool:97 handleToolClick:106 as:114 as:120 handleRightClick:128 toggleMenu:134 activeTool:141 isActive:142 getDropdownPosition:144
 frontend/src/components/design-size-dialog.css | - | 114 |
 frontend/src/components/design-size-dialog.tsx | typescript | 96 | Component:1 PageSizePreset:4 DesignSizeDialogProps:8 DesignSizeDialog:21 pick:26 pickCustom:31 previewStyle:40
-frontend/src/components/dock/dock-container.tsx | typescript | 101 | Component:8 def:18 st:19 onTitleDown:23 move:28 up:29 ids:58 width:59 onResize:60 move:63 up:67 DockContainer:83 floating:84 st:90
-frontend/src/components/dock/dock.css | - | 112 |
+frontend/src/components/dock/align-panel.tsx | typescript | 47 | Component:6 DockAlignPanel:14 count:15 enough:16
+frontend/src/components/dock/arrange-panel.tsx | typescript | 32 | Component:6 DockArrangePanel:11 sel:12 has:13
+frontend/src/components/dock/dock-container.tsx | typescript | 174 | Component:12 DockZone:17 edgeAt:33 insertIndexAt:42 def:57 st:58 onTitleDown:60 move:70 up:83 ids:123 width:124 onResize:125 move:128 up:132 DockContainer:148 floating:149 st:155
+frontend/src/components/dock/dock.css | - | 146 |
 frontend/src/components/dock/effects-panel.tsx | typescript | 34 | Component:7 DockEffectsPanel:10 sel:11 has:12
-frontend/src/components/dock/panel-registry.ts | typescript | 21 | PanelDef:9 panelDef:19
+frontend/src/components/dock/panel-registry.ts | typescript | 25 | PanelDef:11 panelDef:23
 frontend/src/components/ds-ops-panel.tsx | typescript | 397 | Component:8 DsOperation:15 DsOpsPanel:19 resetAutoHide:47 handleOperation:79 handleStop:120 handleSpeedChange:125 handleInputKeyDown:131 stopPropagation:153
 frontend/src/components/ds-tool-group.tsx | typescript | 134 | Component:1 DsToolGroup:19 handler:26 getActiveTool:36 handleToolClick:45 as:53 as:59 handleRightClick:67 toggleMenu:73 activeTool:80 isActive:81 getDropdownPosition:83
 frontend/src/components/dsl-import-dialog.css | - | 241 |
@@ -467,7 +469,7 @@ frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 T
 frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 readIndex:37 writeIndex:41 saveSnapshot:45 maybeSnapshotVersion:68 snapshotVersionNow:85 listVersions:96 restoreVersion:101 deleteVersion:113
 frontend/src/store/app-store.test.ts | typescript | 66 |
 frontend/src/store/app-store.ts | typescript | 7423 | LayoutDirection:10 OutlineNode:10 BooleanOp:11 Poly:11 ShapeFace:11 DistortKind:12 WarpPreset:33 Theme:42 ResolvedTheme:43 AppState:70 HistorySnapshot:528 BP:1477 AlignmentType:4204 DistributionType:4204 CharPatch:4735 CharPatchArg:4738 SelBBox:5692 LastTransform:5942 RegionPathfinderOp:6301 SelectSimilarMatch:6434 buildPathFromPoly:6968 WorldSub:7057 rdpAnchors:7060 normalizeWorldSubs:7088 makePathFromWorldSubs:7103 elementToWorldSubs:7124 startInkCleanupIfNeeded:7362
-frontend/src/store/dock-layout.ts | typescript | 121 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:52 hidePanel:63 dockPanel:68 floatPanel:77
+frontend/src/store/dock-layout.ts | typescript | 135 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:52 hidePanel:63 dockPanel:68 dockPanelAt:78
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
 frontend/src/templates/data/designs/index.ts | typescript | 272 |
 frontend/src/templates/data/designs/pack.ts | typescript | 445 |
@@ -523,7 +525,7 @@ frontend/src/utils/color-adjust.ts | typescript | 69 | hexToHsl:12 hslToHex:29 s
 frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:28
 frontend/src/utils/color-harmony.ts | typescript | 83 | HarmonyType:10 generateTints:19 generateHarmony:29 loadImage:41 extractImagePalette:56
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
-frontend/src/utils/command-registry.ts | typescript | 446 | Command:24
+frontend/src/utils/command-registry.ts | typescript | 448 | Command:24
 frontend/src/utils/context-menu-builder.ts | typescript | 1722 | MergedCellRegion:58 buildSelectByTypeMenu:74 buildSelectBySamePropertyMenu:153 getContextMenuItems:183 buildFormatMenuItems:1553 buildBorderMenuItems:1648
 frontend/src/utils/curve-fit.ts | typescript | 38 | Pt:10 catmullRomAnchors:13
 frontend/src/utils/custom-fonts.ts | typescript | 176 | CustomFont:18 loadGoogleLink:34 activate:47 persist:67 initCustomFonts:77 addCustomFontFromFile:104 addGoogleFont:119 removeCustomFont:132 customFontOptions:139
@@ -600,7 +602,7 @@ frontend/src/utils/text-to-outlines.ts | typescript | 160 | OutlineResult:94
 frontend/src/utils/text-utils.ts | typescript | 352 | TextMetrics:5 VerticalTextLayout:186
 frontend/src/utils/timelapse-manager.ts | typescript | 297 | TimelapseManifest:28 VideoFormat:30 newRecordingId:48 toBlobAsync:53 exportTimelapse:65 renderFrame:120 setupTimelapse:166
 frontend/src/utils/tool-handlers/canvas-event-handlers.ts | typescript | 317 | StockPhoto:15 CanvasEventContext:22 handleDragOver:30 handleDrop:39 applyAssetAtClientPoint:96 any:154 as:154 WheelContext:192 handleUmlSectionScroll:199 handleWheel:270
-frontend/src/utils/tool-handlers/draw-handler.ts | typescript | 613 | drawOnDown:75 drawOnMove:311 drawOnUp:399 normalizeOrganicBranch:588
+frontend/src/utils/tool-handlers/draw-handler.ts | typescript | 632 | drawOnDown:75 drawOnMove:311 drawOnUp:399 normalizeOrganicBranch:607
 frontend/src/utils/tool-handlers/minor-handlers.ts | typescript | 1010 | triggerOpenBoxReveal:26 presentationOnDown:154 presentationOnMove:235 presentationOnUp:267 panOnDown:298 panOnMove:306 panOnUp:320 laserOnDown:330 laserOnMove:340 laserOnUp:366 textOnDown:386 textOnMove:413 textOnUp:434 richTextOnDown:488 richTextOnMove:516 richTextOnUp:537 inkOnDown:595 appendEraseStroke:643 splitFreehandStroke:677 getEraserRadius:754 eraseAtPoint:760 eraserOnDown:796 eraserOnMove:809 eraserOnUp:817 connectorHandleOnDown:824 connectorHandleOnUp:905 handleAutoScroll:985
 frontend/src/utils/tool-handlers/pen-handler.ts | typescript | 55 | penOnMove:14
 frontend/src/utils/tool-handlers/pen-path-handler.ts | typescript | 205 | snap:23 constrainHandleVec:34 writePenElement:47 resetPen:79 penOnDown:90 penOnMove:144 penOnUp:167 penFinalize:176 penUndo:193

@@ -271,6 +271,8 @@ export const getCommands = (): Command[] => {
         { id: 'effect-glow-off', label: 'Effect: Remove Outer Glow', category: 'Actions', action: () => applyGlow([...store.selection], { enabled: false }) },
         { id: 'effect-scribble', label: 'Effect: Scribble fill', category: 'Actions', action: () => applyScribble([...store.selection], {}) },
         { id: 'panel-effects', label: 'Panel: Effects (dockable)', category: 'View', action: () => togglePanel('effects', 'docked') },
+        { id: 'panel-align', label: 'Panel: Align & Distribute (dockable)', category: 'View', action: () => togglePanel('align', 'docked') },
+        { id: 'panel-arrange', label: 'Panel: Arrange (dockable)', category: 'View', action: () => togglePanel('arrange', 'docked') },
         { id: 'panel-reset-layout', label: 'Panel: Reset Dock Layout', category: 'View', action: () => resetDockLayout() },
         { id: 'effect-3d-extrude', label: 'Effect: 3D Extrude', category: 'Actions', action: () => setExtrude([...store.selection], { depth: 32, angle: 135 }) },
         { id: 'effect-3d-bevel', label: 'Effect: 3D Bevel', category: 'Actions', action: () => setExtrude([...store.selection], { depth: 40, angle: 135, bevel: 10 }) },

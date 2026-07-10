@@ -74,6 +74,20 @@ export function dockPanel(id: string, zone: DockZone, order?: number) {
     persist();
 }
 
+/** Dock `id` into `zone` at a specific slot, renumbering the zone's stack so the order sticks. */
+export function dockPanelAt(id: string, zone: DockZone, index: number) {
+    const others = dockedPanels(zone).filter((x) => x !== id);
+    const ordered = [...others];
+    ordered.splice(Math.max(0, Math.min(index, ordered.length)), 0, id);
+    ordered.forEach((pid, i) => {
+        setDockLayout('panels', pid, (p) => ({
+            floatX: 140, floatY: 120, ...(p || {}),
+            mode: 'docked' as const, zone, order: i,
+        }));
+    });
+    persist();
+}
+
 export function floatPanel(id: string, x?: number, y?: number) {
     setDockLayout('panels', id, (p) => ({
         ...(p || {}),

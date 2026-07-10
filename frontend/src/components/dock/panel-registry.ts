@@ -5,6 +5,8 @@
  */
 import type { Component } from "solid-js";
 import DockEffectsPanel from "./effects-panel";
+import DockAlignPanel from "./align-panel";
+import DockArrangePanel from "./arrange-panel";
 
 export interface PanelDef {
     id: string;
@@ -14,6 +16,8 @@ export interface PanelDef {
 
 export const PANEL_REGISTRY: PanelDef[] = [
     { id: 'effects', title: 'Effects', component: DockEffectsPanel },
+    { id: 'align', title: 'Align & Distribute', component: DockAlignPanel },
+    { id: 'arrange', title: 'Arrange', component: DockArrangePanel },
 ];
 
 export function panelDef(id: string): PanelDef | undefined {

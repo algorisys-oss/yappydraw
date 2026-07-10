@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.57](0.8.57.md) — Dockable panels: drag-to-dock + tear-out + reorder (Align/Arrange panels); fix invisible "ghost" line/arrow/pen elements from stray clicks
 - [0.8.56](0.8.56.md) — Brand mascot (paint-brush bicycle) splash + welcome; full mobile/tablet responsive pass (untappable phone buttons, off-screen panels)
 - [0.8.55](0.8.55.md) — Image placeholder + replace-in-place flow; tunable Glow & Feather panel sliders
 - [0.8.54](0.8.54.md) — 3D Bevel & Revolve (lathe); consolidated Effects menu (+ Feather/Glow/Scribble now in UI); export image + "works once" fixes

@@ -65,6 +65,26 @@
 }
 .dock-panel-title.draggable { cursor: move; }
 
+.dock-panel.dragging { opacity: 0.9; }
+.dock-floating .dock-panel.dragging { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28); }
+
+/* Drag-to-dock drop indicators: translucent columns pinned to each edge while a panel is being
+   dragged; the armed edge (pointer within EDGE_THRESHOLD) brightens. */
+.dock-drop-hint {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    z-index: 44; /* above zones (40) + floating panels (45? no) — sits under the dragged panel */
+    pointer-events: none;
+    background: var(--primary-color, #3b82f6);
+    opacity: 0.06;
+    border: 2px dashed var(--primary-color, #3b82f6);
+    transition: opacity 0.12s ease, background 0.12s ease;
+}
+.dock-drop-hint-left { left: 0; border-right-width: 3px; }
+.dock-drop-hint-right { right: 0; border-left-width: 3px; }
+.dock-drop-hint.active { opacity: 0.2; }
+
 .dock-panel-name {
     font-size: 12px;
     font-weight: 600;
@@ -105,8 +125,22 @@
 }
 .dock-floating .dock-panel-body { max-height: 60vh; }
 
-/* Phones: fall back to a bottom sheet rather than an edge dock. */
+/* Phones: fall back to a bottom sheet rather than an edge dock, lifted clear of the
+   bottom-docked tool toolbar + status bar (same 84px inset the other phone panels use). */
 @media (max-width: 600px) {
-    .dock-zone { top: auto; left: 0; right: 0; bottom: 0; width: auto !important; max-height: 45vh; flex-direction: column; }
+    .dock-zone {
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+        width: auto !important;
+        max-height: 42vh;
+        flex-direction: column;
+        border-radius: 12px 12px 0 0;
+        z-index: 10001;
+    }
+    .dock-zone-left, .dock-zone-right { border-left: none; border-right: none; }
     .dock-zone-resize { display: none; }
+    /* Drag-to-dock drop hints are meaningless in the phone bottom-sheet fallback. */
+    .dock-drop-hint { display: none; }
 }

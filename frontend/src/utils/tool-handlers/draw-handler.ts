@@ -535,6 +535,25 @@ export function drawOnUp(
             }
         }
 
+        // Discard zero-extent line/arrow/pen strokes from a stray single click or tap.
+        // These tools are CLICK_EXEMPT above (so real short/multi-point strokes survive),
+        // but a click-without-drag leaves a 0×0 element that renders nothing yet lingers as
+        // an invisible "ghost": it inflates the element count and survives reload — reported
+        // as "fine-1 / arrw-1 hidden". Bound connectors (a deliberately short arrow snapped
+        // between adjacent shapes) and anything with real extent are kept.
+        const GHOST_PRONE = ['line', 'arrow', 'fineliner', 'inkbrush', 'marker', 'ink'];
+        if (GHOST_PRONE.includes(el.type)) {
+            const GHOST_MIN = 3;
+            const ghost = store.elements.find(e => e.id === pState.currentId);
+            const isBound = !!(ghost && (ghost.startBinding || ghost.endBinding));
+            if (ghost && !isBound && Math.abs(ghost.width) < GHOST_MIN && Math.abs(ghost.height) < GHOST_MIN) {
+                deleteElements([pState.currentId]);
+                pState.currentId = null;
+                helpers.draw();
+                return;
+            }
+        }
+
         // Apply minimum dimensions for UI shapes (click-to-create)
         const uiShapeDef = getUIShapeDef(el.type);
         if (uiShapeDef) {
