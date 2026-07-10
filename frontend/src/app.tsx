@@ -56,7 +56,6 @@ const DockContainer = lazy(() => import('./components/dock/dock-container'));
 const LayerPanel = lazy(() => import('./components/layer-panel'));
 const SymbolsPanel = lazy(() => import('./components/symbols-panel'));
 const GraphicStylesPanel = lazy(() => import('./components/graphic-styles-panel'));
-const SwatchesPanel = lazy(() => import('./components/swatches-panel'));
 const BrandKitPanel = lazy(() => import('./components/brand-kit-panel'));
 const ElementsPanel = lazy(() => import('./components/elements-panel'));
 const StickFigurePanel = lazy(() => import('./components/stick-figure-panel'));
@@ -68,7 +67,6 @@ const GameGraph = lazy(() => import('./components/game-graph'));
 const BlueprintGraph = lazy(() => import('./components/blueprint-graph'));
 const GameModeBar = lazy(() => import('./components/game-mode-bar'));
 const VectorToolsPanel = lazy(() => import('./components/vector-tools-panel'));
-const HistoryPanel = lazy(() => import('./components/history-panel'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
 const StatePanel = lazy(() => import('./components/state-panel').then(m => ({ default: m.StatePanel })));
 const Toast = lazy(() => import('./components/toast'));
@@ -1304,7 +1302,6 @@ const App: Component = () => {
             <LayerPanel />
             <SymbolsPanel />
             <GraphicStylesPanel />
-            <SwatchesPanel />
             <BrandKitPanel />
             <ElementsPanel />
             <StickFigurePanel />
@@ -1316,7 +1313,6 @@ const App: Component = () => {
             <BlueprintGraph />
             <GameModeBar />
             <VectorToolsPanel />
-            <HistoryPanel />
             <StatusBar />
           </Show>
           <Show when={store.zenMode}>

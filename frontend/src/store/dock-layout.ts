@@ -65,6 +65,18 @@ export function hidePanel(id: string) {
     persist();
 }
 
+/**
+ * Open/close a panel explicitly (visible omitted = toggle). Bridge used by the legacy
+ * `toggleXxxPanel` app-store actions as their panels migrate onto the dock (Phase D), so the
+ * existing toolbar/menu/hotkey/API entry points keep working while the dock owns the rendering.
+ */
+export function setPanelOpen(id: string, visible?: boolean, mode: 'floating' | 'docked' = 'floating') {
+    const open = isPanelOpen(id);
+    const want = visible ?? !open;
+    if (want && !open) togglePanel(id, mode); // hidden → shows it
+    else if (!want && open) hidePanel(id);
+}
+
 export function dockPanel(id: string, zone: DockZone, order?: number) {
     setDockLayout('panels', id, (p) => ({
         floatX: 140, floatY: 120, ...(p || {}),

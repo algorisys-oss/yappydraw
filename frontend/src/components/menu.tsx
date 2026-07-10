@@ -8,6 +8,7 @@ import {
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
+import { isPanelOpen } from "../store/dock-layout"; // History/Swatches migrated to the dock (Phase D)
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
@@ -933,7 +934,7 @@ const Menu: Component = () => {
                                         <History size={16} />
                                         <span class="label">History Panel</span>
                                         <div class="menu-item-right">
-                                            <Show when={store.showHistoryPanel}><Check size={14} class="check-icon" /></Show>
+                                            <Show when={isPanelOpen('history')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+H</span>
                                         </div>
                                     </div>
@@ -970,7 +971,7 @@ const Menu: Component = () => {
                                         <Palette size={16} />
                                         <span class="label">Swatches</span>
                                         <div class="menu-item-right">
-                                            <Show when={store.showSwatchesPanel}><Check size={14} class="check-icon" /></Show>
+                                            <Show when={isPanelOpen('swatches')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+W</span>
                                         </div>
                                     </div>

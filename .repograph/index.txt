@@ -78,7 +78,7 @@ frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/api.ts | typescript | 3324 | Theme:3 HarmonyType:48 ElementOptions:116 normalizeElementType:322 ElementType:527 as:527 Window:3316
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1421 | Component:1 App:97 moves:117 onPenMove:118 hidePen:122 onControllerChange:142 handleKeyUp:171 handleKeyDown:181 as:690 handleFullscreenChange:805 handleBeforeUnload:811 handlePaste:815 handleGlobalDragEnter:917 handleGlobalDragOver:932 showDropFallbackPrompt:951 cleanup:981 outsideClick:1009 isImageFile:1021 first:1022 must:1035 extractDropData:1037 processExtractedDrop:1092 handleGlobalDrop:1209 handleDocumentDrop:1255
+frontend/src/app.tsx | typescript | 1417 | Component:1 App:95 moves:115 onPenMove:116 hidePen:120 onControllerChange:140 handleKeyUp:169 handleKeyDown:179 as:688 handleFullscreenChange:803 handleBeforeUnload:809 handlePaste:813 handleGlobalDragEnter:915 handleGlobalDragOver:930 showDropFallbackPrompt:949 cleanup:979 outsideClick:1007 isImageFile:1019 first:1020 must:1033 extractDropData:1035 processExtractedDrop:1090 handleGlobalDrop:1207 handleDocumentDrop:1253
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -130,7 +130,7 @@ frontend/src/components/dock/arrange-panel.tsx | typescript | 32 | Component:6 D
 frontend/src/components/dock/dock-container.tsx | typescript | 174 | Component:12 DockZone:17 edgeAt:33 insertIndexAt:42 def:57 st:58 onTitleDown:60 move:70 up:83 ids:123 width:124 onResize:125 move:128 up:132 DockContainer:148 floating:149 st:155
 frontend/src/components/dock/dock.css | - | 146 |
 frontend/src/components/dock/effects-panel.tsx | typescript | 34 | Component:7 DockEffectsPanel:10 sel:11 has:12
-frontend/src/components/dock/panel-registry.ts | typescript | 25 | PanelDef:11 panelDef:23
+frontend/src/components/dock/panel-registry.ts | typescript | 32 | PanelDef:16 panelDef:30
 frontend/src/components/ds-ops-panel.tsx | typescript | 397 | Component:8 DsOperation:15 DsOpsPanel:19 resetAutoHide:47 handleOperation:79 handleStop:120 handleSpeedChange:125 handleInputKeyDown:131 stopPropagation:153
 frontend/src/components/ds-tool-group.tsx | typescript | 134 | Component:1 DsToolGroup:19 handler:26 getActiveTool:36 handleToolClick:45 as:53 as:59 handleRightClick:67 toggleMenu:73 activeTool:80 isActive:81 getDropdownPosition:83
 frontend/src/components/dsl-import-dialog.css | - | 241 |
@@ -160,7 +160,7 @@ frontend/src/components/graphic-styles-panel.tsx | typescript | 97 | Component:1
 frontend/src/components/help-dialog.css | - | 184 |
 frontend/src/components/help-dialog.tsx | typescript | 300 | ShortcutEntry:5 ShortcutCategory:10 parseKeys:173 Props:192 HelpDialog:197 handleKeyDown:200
 frontend/src/components/history-panel.css | - | 68 |
-frontend/src/components/history-panel.tsx | typescript | 47 | Component:1 HistoryPanel:13
+frontend/src/components/history-panel.tsx | typescript | 38 | Component:1 HistoryPanel:12
 frontend/src/components/infra-tool-group.tsx | typescript | 137 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:76 activeTool:83 isActive:84 getDropdownPosition:86
 frontend/src/components/layer-context-menu.tsx | typescript | 99 | Component:1 MenuItem:3 Props:5 LayerContextMenu:13 layer:14
 frontend/src/components/layer-panel.css | - | 593 |
@@ -175,7 +175,7 @@ frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 d
 frontend/src/components/measure-overlay.css | - | 46 |
 frontend/src/components/measure-overlay.tsx | typescript | 78 | MeasureOverlay:11 toWorld:16 onDown:18 onMove:25 onUp:30 onKey:35 seg:44
 frontend/src/components/menu.css | - | 292 |
-frontend/src/components/menu.tsx | typescript | 1308 | Component:1 handleSaveRequest:80 handleNew:87 proceed:88 Menu:103 handleUnsavedCancel:117 handleUnsavedDiscard:122 handleUnsavedSave:129 propPanelOffset:139 onPaletteEscape:149 performSave:160 is:225 handleLoad:261 handleResetView:281 loadTemplateAction:286 handleTemplateSelect:326 handleOpenJson:335 handleLoadJsonText:377 handleExportHtml:393 handleExportRocket:405 handleDeployToRocket:438 onLeftMouseDown:489 onRightMouseDown:504 onMouseMove:518 onMouseUp:533 handleResize:542
+frontend/src/components/menu.tsx | typescript | 1309 | Component:1 handleSaveRequest:81 handleNew:88 proceed:89 Menu:104 handleUnsavedCancel:118 handleUnsavedDiscard:123 handleUnsavedSave:130 propPanelOffset:140 onPaletteEscape:150 performSave:161 is:226 handleLoad:262 handleResetView:282 loadTemplateAction:287 handleTemplateSelect:327 handleOpenJson:336 handleLoadJsonText:378 handleExportHtml:394 handleExportRocket:406 handleDeployToRocket:439 onLeftMouseDown:490 onRightMouseDown:505 onMouseMove:519 onMouseUp:534 handleResize:543
 frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
 frontend/src/components/mindmap-tool-group.tsx | typescript | 135 | Component:1 MindmapToolGroup:16 handler:23 getActiveMindmapTool:34 handleToolClick:48 as:56 as:61 handleRightClick:68 toggleMenu:74 as:76 activeTool:81 isActive:82 getDropdownPosition:84
@@ -245,8 +245,8 @@ frontend/src/components/status-bar.tsx | typescript | 312 | Component:1 Hint:13 
 frontend/src/components/status-tool-group.tsx | typescript | 162 | Component:1 StatusToolGroup:47 handler:54 getActiveTool:64 handleToolClick:73 as:81 as:87 handleRightClick:95 toggleMenu:101 activeTool:108 isActive:109 getDropdownPosition:111
 frontend/src/components/stick-figure-panel.css | - | 208 |
 frontend/src/components/stick-figure-panel.tsx | typescript | 340 | Component:1 StickAsset:17 ActiveCat:21 ActiveVariant:22 clipThumb:25 StickFigurePanel:36 byId:41 dropCentered:59 onGridKey:62 setOutline:75 setAccent:76 addToSymbols:79 dropAnimated:89 bakeSelected:90 writeSeq:94 addStep:95 editStep:96 removeStep:97 walkPath:103
-frontend/src/components/swatches-panel.css | - | 72 |
-frontend/src/components/swatches-panel.tsx | typescript | 65 | Component:1 SwatchesPanel:13 startRename:16 commitRename:17
+frontend/src/components/swatches-panel.css | - | 76 |
+frontend/src/components/swatches-panel.tsx | typescript | 60 | Component:1 SwatchesPanel:16 startRename:19 commitRename:20
 frontend/src/components/symbol-edit-banner.css | - | 53 |
 frontend/src/components/symbol-edit-banner.tsx | typescript | 39 | SymbolEditBanner:11 onKey:13
 frontend/src/components/symbol-sprayer-overlay.css | - | 43 |
@@ -468,8 +468,8 @@ frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 Docu
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 readIndex:37 writeIndex:41 saveSnapshot:45 maybeSnapshotVersion:68 snapshotVersionNow:85 listVersions:96 restoreVersion:101 deleteVersion:113
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 7423 | LayoutDirection:10 OutlineNode:10 BooleanOp:11 Poly:11 ShapeFace:11 DistortKind:12 WarpPreset:33 Theme:42 ResolvedTheme:43 AppState:70 HistorySnapshot:528 BP:1477 AlignmentType:4204 DistributionType:4204 CharPatch:4735 CharPatchArg:4738 SelBBox:5692 LastTransform:5942 RegionPathfinderOp:6301 SelectSimilarMatch:6434 buildPathFromPoly:6968 WorldSub:7057 rdpAnchors:7060 normalizeWorldSubs:7088 makePathFromWorldSubs:7103 elementToWorldSubs:7124 startInkCleanupIfNeeded:7362
-frontend/src/store/dock-layout.ts | typescript | 135 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:52 hidePanel:63 dockPanel:68 dockPanelAt:78
+frontend/src/store/app-store.ts | typescript | 7427 | LayoutDirection:14 OutlineNode:14 BooleanOp:15 Poly:15 ShapeFace:15 DistortKind:16 WarpPreset:37 Theme:46 ResolvedTheme:47 AppState:74 HistorySnapshot:532 BP:1481 AlignmentType:4208 DistributionType:4208 CharPatch:4739 CharPatchArg:4742 SelBBox:5696 LastTransform:5946 RegionPathfinderOp:6305 SelectSimilarMatch:6438 buildPathFromPoly:6972 WorldSub:7061 rdpAnchors:7064 normalizeWorldSubs:7092 makePathFromWorldSubs:7107 elementToWorldSubs:7128 startInkCleanupIfNeeded:7366
+frontend/src/store/dock-layout.ts | typescript | 147 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:52 hidePanel:63 setPanelOpen:73 dockPanel:80 dockPanelAt:90
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
 frontend/src/templates/data/designs/index.ts | typescript | 272 |
 frontend/src/templates/data/designs/pack.ts | typescript | 445 |

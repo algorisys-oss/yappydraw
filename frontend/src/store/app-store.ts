@@ -1,5 +1,9 @@
 import { batch } from "solid-js";
 import { createStore } from "solid-js/store";
+// Dockable-panel system (Phase D): migrated panels are toggled through the dock store so the
+// existing toolbar/menu/hotkey/API entry points keep working. dock-layout has no app-store import,
+// so this one-way edge introduces no cycle.
+import { setPanelOpen, isPanelOpen } from "./dock-layout";
 import type { DrawingElement, ViewState, ToolType, Layer, GridSettings, AppMode, ElementType, Guide } from "../types";
 import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } from '../types/slide-types';
 import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/slide-types';
@@ -631,7 +635,7 @@ export const redo = () => {
     setStore("redoStackLength", redoStack.length);
 };
 
-export const toggleHistoryPanel = (visible?: boolean) => setStore('showHistoryPanel', v => visible ?? !v);
+export const toggleHistoryPanel = (visible?: boolean) => setPanelOpen('history', visible);
 
 /** Toggle (or set) the pen/vector-path Clock-Method handle constrain. */
 export const setPenConstrain = (on?: boolean) => setStore('penConstrain', v => on ?? !v);
@@ -4295,9 +4299,9 @@ export const repairLibraryIds = () => {
 };
 
 export const toggleSwatchesPanel = (visible?: boolean) => {
-    const next = visible ?? !store.showSwatchesPanel;
+    const next = visible ?? !isPanelOpen('swatches');
     if (next) repairLibraryIds();
-    setStore('showSwatchesPanel', next);
+    setPanelOpen('swatches', next);
 };
 
 export const toggleBrandKitPanel = (visible?: boolean) => {
