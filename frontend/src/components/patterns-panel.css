@@ -37,6 +37,10 @@
 .pat-icon-btn:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
 .pat-icon-btn:disabled { opacity: 0.4; cursor: default; }
 
+/* In-body toolbar (dock chrome supplies the title bar; the panel action lives here now). */
+.pat-toolbar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+.pat-toolbar .pat-icon-btn { width: auto; gap: 4px; padding: 3px 8px; font-size: 12px; border: 1px solid var(--border-color); }
+
 .patterns-panel-body { overflow-y: auto; padding: 8px; flex: 1; }
 
 .pat-empty { text-align: center; color: var(--text-secondary); font-size: 12px; line-height: 1.6; padding: 24px 12px; }

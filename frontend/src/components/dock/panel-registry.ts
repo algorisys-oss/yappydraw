@@ -12,6 +12,9 @@ import DockArrangePanel from "./arrange-panel";
 // Migrated existing panels (Phase D) — registered body-only; chrome comes from PanelChrome.
 const HistoryPanel = lazy(() => import("../history-panel"));
 const SwatchesPanel = lazy(() => import("../swatches-panel"));
+const GraphicStylesPanel = lazy(() => import("../graphic-styles-panel"));
+const PatternsPanel = lazy(() => import("../patterns-panel"));
+const SymbolsPanel = lazy(() => import("../symbols-panel"));
 
 export interface PanelDef {
     id: string;
@@ -25,6 +28,9 @@ export const PANEL_REGISTRY: PanelDef[] = [
     { id: 'arrange', title: 'Arrange', component: DockArrangePanel },
     { id: 'history', title: 'History', component: HistoryPanel },
     { id: 'swatches', title: 'Swatches', component: SwatchesPanel },
+    { id: 'graphicStyles', title: 'Graphic Styles', component: GraphicStylesPanel },
+    { id: 'patterns', title: 'Patterns', component: PatternsPanel },
+    { id: 'symbols', title: 'Symbols', component: SymbolsPanel },
 ];
 
 export function panelDef(id: string): PanelDef | undefined {

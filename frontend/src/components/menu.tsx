@@ -926,7 +926,7 @@ const Menu: Component = () => {
                                         <ComponentIcon size={16} />
                                         <span class="label">Symbols Panel</span>
                                         <div class="menu-item-right">
-                                            <Show when={store.showSymbolsPanel}><Check size={14} class="check-icon" /></Show>
+                                            <Show when={isPanelOpen('symbols')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+B</span>
                                         </div>
                                     </div>
@@ -942,7 +942,7 @@ const Menu: Component = () => {
                                         <Palette size={16} />
                                         <span class="label">Graphic Styles</span>
                                         <div class="menu-item-right">
-                                            <Show when={store.showGraphicStylesPanel}><Check size={14} class="check-icon" /></Show>
+                                            <Show when={isPanelOpen('graphicStyles')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+G</span>
                                         </div>
                                     </div>
@@ -979,7 +979,7 @@ const Menu: Component = () => {
                                         <Grid2x2 size={16} />
                                         <span class="label">Patterns</span>
                                         <div class="menu-item-right">
-                                            <Show when={store.showPatternsPanel}><Check size={14} class="check-icon" /></Show>
+                                            <Show when={isPanelOpen('patterns')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+P</span>
                                         </div>
                                     </div>

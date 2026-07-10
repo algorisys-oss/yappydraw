@@ -78,7 +78,7 @@ frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/api.ts | typescript | 3324 | Theme:3 HarmonyType:48 ElementOptions:116 normalizeElementType:322 ElementType:527 as:527 Window:3316
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1417 | Component:1 App:95 moves:115 onPenMove:116 hidePen:120 onControllerChange:140 handleKeyUp:169 handleKeyDown:179 as:688 handleFullscreenChange:803 handleBeforeUnload:809 handlePaste:813 handleGlobalDragEnter:915 handleGlobalDragOver:930 showDropFallbackPrompt:949 cleanup:979 outsideClick:1007 isImageFile:1019 first:1020 must:1033 extractDropData:1035 processExtractedDrop:1090 handleGlobalDrop:1207 handleDocumentDrop:1253
+frontend/src/app.tsx | typescript | 1411 | Component:1 App:92 moves:112 onPenMove:113 hidePen:117 onControllerChange:137 handleKeyUp:166 handleKeyDown:176 as:685 handleFullscreenChange:800 handleBeforeUnload:806 handlePaste:810 handleGlobalDragEnter:912 handleGlobalDragOver:927 showDropFallbackPrompt:946 cleanup:976 outsideClick:1004 isImageFile:1016 first:1017 must:1030 extractDropData:1032 processExtractedDrop:1087 handleGlobalDrop:1204 handleDocumentDrop:1250
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -130,7 +130,7 @@ frontend/src/components/dock/arrange-panel.tsx | typescript | 32 | Component:6 D
 frontend/src/components/dock/dock-container.tsx | typescript | 174 | Component:12 DockZone:17 edgeAt:33 insertIndexAt:42 def:57 st:58 onTitleDown:60 move:70 up:83 ids:123 width:124 onResize:125 move:128 up:132 DockContainer:148 floating:149 st:155
 frontend/src/components/dock/dock.css | - | 146 |
 frontend/src/components/dock/effects-panel.tsx | typescript | 34 | Component:7 DockEffectsPanel:10 sel:11 has:12
-frontend/src/components/dock/panel-registry.ts | typescript | 32 | PanelDef:16 panelDef:30
+frontend/src/components/dock/panel-registry.ts | typescript | 38 | PanelDef:19 panelDef:36
 frontend/src/components/ds-ops-panel.tsx | typescript | 397 | Component:8 DsOperation:15 DsOpsPanel:19 resetAutoHide:47 handleOperation:79 handleStop:120 handleSpeedChange:125 handleInputKeyDown:131 stopPropagation:153
 frontend/src/components/ds-tool-group.tsx | typescript | 134 | Component:1 DsToolGroup:19 handler:26 getActiveTool:36 handleToolClick:45 as:53 as:59 handleRightClick:67 toggleMenu:73 activeTool:80 isActive:81 getDropdownPosition:83
 frontend/src/components/dsl-import-dialog.css | - | 241 |
@@ -155,8 +155,8 @@ frontend/src/components/game-view-switcher.css | - | 36 |
 frontend/src/components/game-view-switcher.tsx | typescript | 39 | Component:12 GameView:17 show:19
 frontend/src/components/google-fonts-dialog.css | - | 110 |
 frontend/src/components/google-fonts-dialog.tsx | typescript | 133 | Component:1 GoogleFontsDialogProps:7 GoogleFontsDialog:21 onKey:35 pick:55 handleListKeys:62 previewLink:78
-frontend/src/components/graphic-styles-panel.css | - | 83 |
-frontend/src/components/graphic-styles-panel.tsx | typescript | 97 | Component:1 draw:18 GraphicStylesPanel:44 startRename:48 commitRename:49
+frontend/src/components/graphic-styles-panel.css | - | 87 |
+frontend/src/components/graphic-styles-panel.tsx | typescript | 88 | Component:1 draw:17 GraphicStylesPanel:43 startRename:47 commitRename:48
 frontend/src/components/help-dialog.css | - | 184 |
 frontend/src/components/help-dialog.tsx | typescript | 300 | ShortcutEntry:5 ShortcutCategory:10 parseKeys:173 Props:192 HelpDialog:197 handleKeyDown:200
 frontend/src/components/history-panel.css | - | 68 |
@@ -190,8 +190,8 @@ frontend/src/components/p3-color-picker.tsx | typescript | 274 | Component:1 set
 frontend/src/components/path-editor-overlay.tsx | typescript | 303 | Component:8 onMove:120 onUp:156
 frontend/src/components/path-eraser-overlay.css | - | 24 |
 frontend/src/components/path-eraser-overlay.tsx | typescript | 62 | PathEraserOverlay:11 active:17 toWorld:18 onDown:20 onMove:25 onUp:26 onKey:32 scale:42 strokeScreen:43 cur:44
-frontend/src/components/patterns-panel.css | - | 84 |
-frontend/src/components/patterns-panel.tsx | typescript | 104 | Component:1 isCustom:19 draw:21 PatternsPanel:51 startRename:55 commitRename:56
+frontend/src/components/patterns-panel.css | - | 88 |
+frontend/src/components/patterns-panel.tsx | typescript | 95 | Component:1 isCustom:18 draw:20 PatternsPanel:50 startRename:54 commitRename:55
 frontend/src/components/pen-options-bar.css | - | 65 |
 frontend/src/components/pen-options-bar.tsx | typescript | 34 | Component:1 PenOptionsBar:11 selectedPath:12 visible:16
 frontend/src/components/pen-tool-group.css | - | 104 |
@@ -253,8 +253,8 @@ frontend/src/components/symbol-sprayer-overlay.css | - | 43 |
 frontend/src/components/symbol-sprayer-overlay.tsx | typescript | 78 | SymbolSprayerOverlay:11 active:17 toWorld:18 addPoint:20 onDown:28 onMove:34 onUp:39 onKey:52 dots:61 cur:62 rScreen:63
 frontend/src/components/symbolism-overlay.css | - | 25 |
 frontend/src/components/symbolism-overlay.tsx | typescript | 76 | SymbolismOverlay:17 active:23 toWorld:24 onDown:26 onMove:33 onUp:41 onKey:47 cur:57 scale:58
-frontend/src/components/symbols-panel.css | - | 218 |
-frontend/src/components/symbols-panel.tsx | typescript | 183 | Component:1 instanceCount:17 draw:24 SymbolsPanel:60 place:64 startRename:71 commitRename:72 redefine:77 remove:82
+frontend/src/components/symbols-panel.css | - | 222 |
+frontend/src/components/symbols-panel.tsx | typescript | 171 | Component:1 instanceCount:16 draw:23 SymbolsPanel:59 place:63 startRename:70 commitRename:71 redefine:76 remove:81
 frontend/src/components/symmetry-overlay.tsx | typescript | 63 | SymmetryOverlay:9 worldToScreenX:12 worldToScreenY:13 screenToWorldX:14 screenToWorldY:15 onMove:17 onUp:22 screen:36
 frontend/src/components/technical-tool-group.tsx | typescript | 141 | Component:1 TechnicalToolGroup:26 handler:33 getActiveTool:43 handleToolClick:52 as:60 as:66 handleRightClick:74 toggleMenu:80 activeTool:87 isActive:88 getDropdownPosition:90
 frontend/src/components/template-browser.css | - | 475 |

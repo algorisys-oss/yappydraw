@@ -1,13 +1,12 @@
 import { type Component, For, Show, createSignal, onMount, createEffect } from 'solid-js';
 import {
-    store, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle,
+    store, createGraphicStyle, applyGraphicStyle,
     updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
 } from '../store/app-store';
 import { renderElement } from '../utils/render-element';
 import rough from 'roughjs';
 import type { GraphicStyle, DrawingElement } from '../types';
-import { Plus, Trash2, RefreshCw, Palette, X } from 'lucide-solid';
-import { draggablePanel } from '../utils/draggable-panel';
+import { Plus, Trash2, RefreshCw, Palette } from 'lucide-solid';
 import './graphic-styles-panel.css';
 
 const THUMB = 52;
@@ -49,48 +48,40 @@ const GraphicStylesPanel: Component = () => {
     const commitRename = (id: string) => { renameGraphicStyle(id, editingName()); setEditingId(null); setEditingName(''); };
 
     return (
-        <Show when={store.showGraphicStylesPanel}>
-            <div class="gstyles-panel" ref={draggablePanel(".gstyles-panel-header")}>
-                <div class="gstyles-panel-header">
-                    <div class="gs-title"><Palette size={15} /><h3>Graphic Styles</h3></div>
-                    <div class="gs-header-actions">
-                        <button class="gs-icon-btn" title="Save selection's style" disabled={store.selection.length === 0} onClick={() => createGraphicStyle()}><Plus size={15} /></button>
-                        <button class="gs-icon-btn" title="Close" onClick={() => toggleGraphicStylesPanel(false)}><X size={15} /></button>
-                    </div>
-                </div>
-                <div class="gstyles-panel-body">
-                    <Show when={store.graphicStyles.length > 0} fallback={
-                        <div class="gs-empty">No styles yet.<br />Select an object and click <Plus size={12} /> to save its look.</div>
-                    }>
-                        <div class="gs-grid">
-                            <For each={store.graphicStyles}>
-                                {(gs) => (
-                                    <div class="gs-card">
-                                        <div class="gs-thumb" title="Apply to selection" onClick={() => applyGraphicStyle(gs.id)}>
-                                            <StyleThumb gs={gs} />
-                                        </div>
-                                        <Show when={editingId() === gs.id} fallback={
-                                            <div class="gs-name" title={gs.name} onDblClick={() => startRename(gs)}>{gs.name}</div>
-                                        }>
-                                            <input class="gs-name-input" value={editingName()} autofocus
-                                                onInput={(e) => setEditingName(e.currentTarget.value)}
-                                                onBlur={() => commitRename(gs.id)}
-                                                onKeyDown={(e) => { if (e.key === 'Enter') commitRename(gs.id); else if (e.key === 'Escape') { setEditingId(null); setEditingName(''); } }}
-                                            />
-                                        </Show>
-                                        <div class="gs-actions">
-                                            <button class="gs-act" title="Apply to selection" onClick={() => applyGraphicStyle(gs.id)}><Palette size={13} /></button>
-                                            <button class="gs-act" title="Redefine from selection" disabled={store.selection.length === 0} onClick={() => updateGraphicStyle(gs.id)}><RefreshCw size={13} /></button>
-                                            <button class="gs-act gs-danger" title="Delete style" onClick={() => deleteGraphicStyle(gs.id)}><Trash2 size={13} /></button>
-                                        </div>
-                                    </div>
-                                )}
-                            </For>
-                        </div>
-                    </Show>
-                </div>
+        <div class="gstyles-panel-body">
+            <div class="gs-toolbar">
+                <button class="gs-icon-btn" title="Save selection's style" disabled={store.selection.length === 0} onClick={() => createGraphicStyle()}><Plus size={15} /> Save style</button>
             </div>
-        </Show>
+            <Show when={store.graphicStyles.length > 0} fallback={
+                <div class="gs-empty">No styles yet.<br />Select an object and click <Plus size={12} /> to save its look.</div>
+            }>
+                <div class="gs-grid">
+                    <For each={store.graphicStyles}>
+                        {(gs) => (
+                            <div class="gs-card">
+                                <div class="gs-thumb" title="Apply to selection" onClick={() => applyGraphicStyle(gs.id)}>
+                                    <StyleThumb gs={gs} />
+                                </div>
+                                <Show when={editingId() === gs.id} fallback={
+                                    <div class="gs-name" title={gs.name} onDblClick={() => startRename(gs)}>{gs.name}</div>
+                                }>
+                                    <input class="gs-name-input" value={editingName()} autofocus
+                                        onInput={(e) => setEditingName(e.currentTarget.value)}
+                                        onBlur={() => commitRename(gs.id)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') commitRename(gs.id); else if (e.key === 'Escape') { setEditingId(null); setEditingName(''); } }}
+                                    />
+                                </Show>
+                                <div class="gs-actions">
+                                    <button class="gs-act" title="Apply to selection" onClick={() => applyGraphicStyle(gs.id)}><Palette size={13} /></button>
+                                    <button class="gs-act" title="Redefine from selection" disabled={store.selection.length === 0} onClick={() => updateGraphicStyle(gs.id)}><RefreshCw size={13} /></button>
+                                    <button class="gs-act gs-danger" title="Delete style" onClick={() => deleteGraphicStyle(gs.id)}><Trash2 size={13} /></button>
+                                </div>
+                            </div>
+                        )}
+                    </For>
+                </div>
+            </Show>
+        </div>
     );
 };
 

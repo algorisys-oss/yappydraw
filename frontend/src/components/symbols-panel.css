@@ -67,6 +67,10 @@
     cursor: default;
 }
 
+/* In-body toolbar (dock chrome supplies the title bar; the panel action lives here now). */
+.sp-toolbar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+.sp-toolbar .sp-icon-btn { width: auto; gap: 4px; padding: 3px 8px; font-size: 12px; border: 1px solid var(--border-color); }
+
 .symbols-panel-body {
     overflow-y: auto;
     padding: 8px;
@@ -181,13 +185,13 @@
 /* lucide icons render as <svg> with width/height *attributes*; as flex items
    inside these centred buttons they can collapse to 0 main-size (a Chromium
    SVG-in-flex quirk), leaving the icon invisible. Pin the icon box in CSS. */
-.symbols-panel .sp-act svg {
+.sp-act svg {
     flex: 0 0 auto;
     width: 13px;
     height: 13px;
 }
 
-.symbols-panel .sp-icon-btn svg {
+.sp-icon-btn svg {
     flex: 0 0 auto;
     width: 15px;
     height: 15px;

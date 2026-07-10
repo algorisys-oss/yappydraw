@@ -1,14 +1,13 @@
 import { type Component, For, Show, createSignal, onMount, createEffect } from 'solid-js';
 import {
-    store, toggleSymbolsPanel, placeInstance, renameSymbol, deleteSymbol,
+    store, placeInstance, renameSymbol, deleteSymbol,
     redefineSymbol, createSymbol, selectInstancesOf, toggleSymbolSprayer,
 } from '../store/app-store';
 import { renderElement } from '../utils/render-element';
 import { screenToWorld } from '../utils/viewport-transforms';
 import rough from 'roughjs';
 import type { SymbolDef } from '../types';
-import { X, Plus, Trash2, RefreshCw, Component as ComponentIcon, SprayCan } from 'lucide-solid';
-import { draggablePanel } from '../utils/draggable-panel';
+import { Plus, Trash2, RefreshCw, SprayCan } from 'lucide-solid';
 import './symbols-panel.css';
 
 const THUMB = 56; // px
@@ -88,26 +87,17 @@ const SymbolsPanel: Component = () => {
     };
 
     return (
-        <Show when={store.showSymbolsPanel}>
-            <div class="symbols-panel" ref={draggablePanel(".symbols-panel-header")}>
-                <div class="symbols-panel-header">
-                    <div class="sp-title"><ComponentIcon size={15} /><h3>Symbols</h3></div>
-                    <div class="sp-header-actions">
+                <div class="symbols-panel-body">
+                    <div class="sp-toolbar">
                         <button
                             class="sp-icon-btn"
                             title="Create symbol from selection"
                             disabled={store.selection.length === 0}
                             onClick={() => createSymbol([...store.selection])}
                         >
-                            <Plus size={15} />
-                        </button>
-                        <button class="sp-icon-btn" title="Close" onClick={() => toggleSymbolsPanel(false)}>
-                            <X size={15} />
+                            <Plus size={15} /> Create symbol
                         </button>
                     </div>
-                </div>
-
-                <div class="symbols-panel-body">
                     <Show
                         when={store.symbols.length > 0}
                         fallback={
@@ -175,8 +165,6 @@ const SymbolsPanel: Component = () => {
                         </div>
                     </Show>
                 </div>
-            </div>
-        </Show>
     );
 };
 

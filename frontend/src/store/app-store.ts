@@ -3223,7 +3223,7 @@ export const deletePatternSwatch = (swatchId: string) => {
 };
 
 export const togglePatternsPanel = (visible?: boolean) => {
-    setStore('showPatternsPanel', visible ?? !store.showPatternsPanel);
+    setPanelOpen('patterns', visible);
 };
 
 /** Change the node-grid size of a mesh fill, preserving colours where possible. */
@@ -3909,7 +3909,7 @@ export const toggleLayerPanel = (visible?: boolean) => {
 };
 
 export const toggleSymbolsPanel = (visible?: boolean) => {
-    setStore('showSymbolsPanel', (v) => visible ?? !v);
+    setPanelOpen('symbols', visible);
 };
 
 export const toggleMeshEdit = (active?: boolean) => {
@@ -4225,9 +4225,9 @@ export const cancelEyedropper = () => setStore('eyedropper', { active: false, ta
 // ── Graphic styles (named reusable appearances) ──────────────────────────────
 
 export const toggleGraphicStylesPanel = (visible?: boolean) => {
-    const next = visible ?? !store.showGraphicStylesPanel;
+    const next = visible ?? !isPanelOpen('graphicStyles');
     if (next) repairLibraryIds();
-    setStore('showGraphicStylesPanel', next);
+    setPanelOpen('graphicStyles', next);
 };
 
 /** Save the (first) selected element's appearance as a named graphic style. */

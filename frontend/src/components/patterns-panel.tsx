@@ -1,13 +1,12 @@
 import { type Component, For, Show, createSignal, onMount, createEffect } from 'solid-js';
 import {
-    store, togglePatternsPanel, addPatternSwatchFromSelection, applyPatternSwatch,
+    store, addPatternSwatchFromSelection, applyPatternSwatch,
     updatePatternSwatch, renamePatternSwatch, deletePatternSwatch,
 } from '../store/app-store';
 import { renderElement } from '../utils/render-element';
 import rough from 'roughjs';
 import type { PatternSwatch, DrawingElement } from '../types';
-import { Plus, Trash2, RefreshCw, Grid2x2, X } from 'lucide-solid';
-import { draggablePanel } from '../utils/draggable-panel';
+import { Plus, Trash2, RefreshCw, Grid2x2 } from 'lucide-solid';
 import './patterns-panel.css';
 
 const THUMB = 52;
@@ -56,48 +55,40 @@ const PatternsPanel: Component = () => {
     const commitRename = (id: string) => { renamePatternSwatch(id, editingName()); setEditingId(null); setEditingName(''); };
 
     return (
-        <Show when={store.showPatternsPanel}>
-            <div class="patterns-panel" ref={draggablePanel('.patterns-panel-header')}>
-                <div class="patterns-panel-header">
-                    <div class="pat-title"><Grid2x2 size={15} /><h3>Patterns</h3></div>
-                    <div class="pat-header-actions">
-                        <button class="pat-icon-btn" title="Capture selection as a pattern" disabled={store.selection.length === 0} onClick={() => addPatternSwatchFromSelection()}><Plus size={15} /></button>
-                        <button class="pat-icon-btn" title="Close" onClick={() => togglePatternsPanel(false)}><X size={15} /></button>
-                    </div>
-                </div>
-                <div class="patterns-panel-body">
-                    <Show when={store.patterns.length > 0} fallback={
-                        <div class="pat-empty">No patterns yet.<br />Select artwork and click <Plus size={12} /> to capture it as a tile, or save a shape's pattern from the Properties panel.</div>
-                    }>
-                        <div class="pat-grid">
-                            <For each={store.patterns}>
-                                {(sw) => (
-                                    <div class="pat-card">
-                                        <div class="pat-thumb" title="Apply to selection" onClick={() => applyPatternSwatch(sw.id)}>
-                                            <PatternThumb sw={sw} />
-                                        </div>
-                                        <Show when={editingId() === sw.id} fallback={
-                                            <div class="pat-name" title={sw.name} onDblClick={() => startRename(sw)}>{sw.name}</div>
-                                        }>
-                                            <input class="pat-name-input" value={editingName()} autofocus
-                                                onInput={(e) => setEditingName(e.currentTarget.value)}
-                                                onBlur={() => commitRename(sw.id)}
-                                                onKeyDown={(e) => { if (e.key === 'Enter') commitRename(sw.id); else if (e.key === 'Escape') { setEditingId(null); setEditingName(''); } }}
-                                            />
-                                        </Show>
-                                        <div class="pat-actions">
-                                            <button class="pat-act" title="Apply to selection" onClick={() => applyPatternSwatch(sw.id)}><Grid2x2 size={13} /></button>
-                                            <button class="pat-act" title="Redefine from selected shape's pattern" disabled={store.selection.length === 0} onClick={() => updatePatternSwatch(sw.id)}><RefreshCw size={13} /></button>
-                                            <button class="pat-act pat-danger" title="Delete pattern" onClick={() => deletePatternSwatch(sw.id)}><Trash2 size={13} /></button>
-                                        </div>
-                                    </div>
-                                )}
-                            </For>
-                        </div>
-                    </Show>
-                </div>
+        <div class="patterns-panel-body">
+            <div class="pat-toolbar">
+                <button class="pat-icon-btn" title="Capture selection as a pattern" disabled={store.selection.length === 0} onClick={() => addPatternSwatchFromSelection()}><Plus size={15} /> Capture</button>
             </div>
-        </Show>
+            <Show when={store.patterns.length > 0} fallback={
+                <div class="pat-empty">No patterns yet.<br />Select artwork and click <Plus size={12} /> to capture it as a tile, or save a shape's pattern from the Properties panel.</div>
+            }>
+                <div class="pat-grid">
+                    <For each={store.patterns}>
+                        {(sw) => (
+                            <div class="pat-card">
+                                <div class="pat-thumb" title="Apply to selection" onClick={() => applyPatternSwatch(sw.id)}>
+                                    <PatternThumb sw={sw} />
+                                </div>
+                                <Show when={editingId() === sw.id} fallback={
+                                    <div class="pat-name" title={sw.name} onDblClick={() => startRename(sw)}>{sw.name}</div>
+                                }>
+                                    <input class="pat-name-input" value={editingName()} autofocus
+                                        onInput={(e) => setEditingName(e.currentTarget.value)}
+                                        onBlur={() => commitRename(sw.id)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') commitRename(sw.id); else if (e.key === 'Escape') { setEditingId(null); setEditingName(''); } }}
+                                    />
+                                </Show>
+                                <div class="pat-actions">
+                                    <button class="pat-act" title="Apply to selection" onClick={() => applyPatternSwatch(sw.id)}><Grid2x2 size={13} /></button>
+                                    <button class="pat-act" title="Redefine from selected shape's pattern" disabled={store.selection.length === 0} onClick={() => updatePatternSwatch(sw.id)}><RefreshCw size={13} /></button>
+                                    <button class="pat-act pat-danger" title="Delete pattern" onClick={() => deletePatternSwatch(sw.id)}><Trash2 size={13} /></button>
+                                </div>
+                            </div>
+                        )}
+                    </For>
+                </div>
+            </Show>
+        </div>
     );
 };
 
