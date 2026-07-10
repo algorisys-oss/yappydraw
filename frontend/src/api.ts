@@ -11,7 +11,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, makeClippingMask, makeOpacityMask, releaseClippingMask,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection,
@@ -23,7 +23,7 @@ import {
     setBlueprint, toggleBlueprint, blueprintFor,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
@@ -1585,6 +1585,17 @@ export const YappyAPI = {
     /** Expand the live Transform effect into real elements (copies 1..N become new elements). */
     expandTransformEffect(ids?: string[]): string[] { return expandTransformEffect(ids ?? [...store.selection]); },
 
+    /**
+     * Live 3D Extrude effect (Illustrator's Effect ▸ 3D ▸ Extrude & Bevel — the "3D text" look):
+     * draws shaded depth (back face + side walls) behind the shape. Non-destructive, re-editable.
+     * @param ex `{ depth (px), angle (deg, 0=right/90=down), shade (0..1 wall darkening) }`
+     */
+    setExtrude(ex?: Partial<import("./types").Extrude3D>, ids?: string[]) { setExtrude(ids ?? [...store.selection], ex); },
+    /** Remove the 3D Extrude effect. */
+    clearExtrude(ids?: string[]) { clearExtrude(ids ?? [...store.selection]); },
+    /** Expand the 3D Extrude into editable face elements (back / side / front), grouped. */
+    expandExtrude(ids?: string[]): string[] { return expandExtrude(ids ?? [...store.selection]); },
+
     /** Appearance stack: add an extra fill/stroke over the base shape (both render styles). */
     addAppearanceFill(fill?: any, ids?: string[]) { addAppearanceFill(ids ?? store.selection, fill); },
     addAppearanceStroke(stroke?: any, ids?: string[]) { addAppearanceStroke(ids ?? store.selection, stroke); },
@@ -2507,6 +2518,9 @@ export const YappyAPI = {
     toggleAlignToKey(on?: boolean) { toggleAlignToKey(on); },
     /** Blend: create `steps` interpolated copies between two objects (default 4). */
     blend(steps = 4, ids?: string[]) { blendShapes(ids, steps); },
+    /** Blend along a spine: distribute `steps` interpolated copies of two shapes along a
+     *  selected path/line (auto-oriented to the tangent). Selection = two shapes + one path. */
+    blendAlongPath(steps = 8, orient = true, ids?: string[]) { return blendAlongPath(ids ?? [...store.selection], steps, orient); },
     /** Recolor Artwork: open the panel / remap a colour / shift the palette's HSL across the selection. */
     toggleRecolorPanel(visible?: boolean) { toggleRecolorPanel(visible); },
     getSelectionColors(ids?: string[]) { return getSelectionColors(ids); },

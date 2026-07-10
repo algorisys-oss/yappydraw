@@ -89,6 +89,18 @@ const WorkspaceDoc: Component = () => {
                     The blend uses the first object's shape for the steps (it grows/recolours toward the second), so
                     it's ideal for graduated copies along a line. <code>Yappy.blend(steps)</code>.
                 </p>
+                <h3>Blend along a spine</h3>
+                <p>
+                    Select <strong>two objects plus a path or line</strong> (the spine), then right-click →
+                    <strong> Blend Along Spine</strong> → step count. The in-between copies are distributed
+                    <em> along the path</em> (evenly by arc length) and auto-rotated to follow its tangent —
+                    Illustrator's <em>Blend + Replace Spine</em>. Great for beads-on-a-string, ribbons, and
+                    text/shape trails that curve. <code>Yappy.blendAlongPath(steps, orient)</code>.
+                </p>
+                <p class="tip-box">
+                    The steps interpolate size / colour / rotation / opacity between the two ends (using the first
+                    object's shape). Draw the spine with the Pen, Line, or Pencil, then select all three.
+                </p>
             </section>
 
             {/* ─── HISTORY PANEL ──────────────────────────────────────── */}

@@ -2,7 +2,8 @@ import { type Component, Show, createMemo, For, createSignal, createEffect, Inde
 import { draggablePanel } from '../utils/draggable-panel';
 import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
 import { pageNoun, setPageSize } from "../store/app-store";
-import { setTransformEffect, clearTransformEffect, expandTransformEffect } from "../store/app-store";
+import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude } from "../store/app-store";
+import { WARP_PRESETS } from "../utils/envelope-warp";
 import { slideTransitionManager } from "../utils/animation";
 import { customFontOptions, addCustomFontFromFile } from "../utils/custom-fonts";
 import GoogleFontsDialog from "./google-fonts-dialog";
@@ -683,6 +684,80 @@ const PatternEditor: Component<{ el: () => any }> = (props) => {
                     <button style={btn} title="Save this pattern to the Patterns library (Alt+P)" onClick={() => savePatternSwatchFromElement(ids())}>Save to Library</button>
                     <button style={btn} title="Remove the pattern fill" onClick={() => clearPatternFill(ids())}>Remove pattern</button>
                 </div>
+            </div>
+        </Show>
+    );
+};
+
+/** Warp-preset editor — preset picker + live bend slider + Bake/Remove. Self-gating: only
+ *  shows when the element carries a preset warp (`el.warp.preset`), so free-drag envelope /
+ *  mesh warps are unaffected. Operates on the active element's `warp`. */
+const WarpPresetEditor: Component<{ el: () => any }> = (props) => {
+    const warp = () => props.el()?.warp as { preset?: string; bend?: number } | undefined;
+    const ids = () => [props.el()?.id].filter(Boolean) as string[];
+    const btn = { padding: '2px 8px', cursor: 'pointer', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', 'border-radius': '4px', 'font-size': '11px' } as any;
+    const bend = () => Math.round((warp()?.bend ?? 0.5) * 100);
+    const preset = () => (warp()?.preset ?? 'arc') as any;
+    const reapply = (p: string, b: number, history: boolean) => applyWarpPreset(ids(), p as any, b, history);
+    return (
+        <Show when={ids().length === 1 && warp()?.preset}>
+            <div class="property-group">
+                <div class="group-title"><span>WARP PRESET</span></div>
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '6px' }}>
+                    <span style={{ 'font-size': '11px', 'min-width': '54px' }}>Style</span>
+                    <select style={{ flex: '1', 'font-size': '11px' }} value={preset()} onChange={e => reapply(e.currentTarget.value, (warp()?.bend ?? 0.5), true)}>
+                        <For each={WARP_PRESETS}>{(w) => <option value={w.id}>{w.label}</option>}</For>
+                    </select>
+                </div>
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '6px' }}>
+                    <span style={{ 'font-size': '11px', 'min-width': '54px' }}>Bend</span>
+                    <input type="range" style={{ flex: '1' }} min={-100} max={100} step={1} value={bend()}
+                        onInput={e => reapply(preset(), parseInt(e.currentTarget.value) / 100, false)}
+                        onChange={e => reapply(preset(), parseInt(e.currentTarget.value) / 100, true)} />
+                    <span style={{ 'font-size': '11px', 'min-width': '34px', 'text-align': 'right' }}>{bend()}%</span>
+                </div>
+                <div class="control-row" style={{ gap: '6px' }}>
+                    <button style={btn} title="Bake the warp into permanent geometry" onClick={() => bakeWarp(ids())}>Bake</button>
+                    <button style={btn} title="Remove the warp" onClick={() => toggleEnvelopeWarp(ids())}>Remove</button>
+                </div>
+            </div>
+        </Show>
+    );
+};
+
+/** Live 3D Extrude editor — depth / direction / shade sliders + Add/Remove. Self-gating:
+ *  shows an "Add" button when absent, controls when present. Operates on `el.extrude`. */
+const ExtrudeEditor: Component<{ el: () => any }> = (props) => {
+    const ex = () => props.el()?.extrude as import("../types").Extrude3D | undefined;
+    const ids = () => [props.el()?.id].filter(Boolean) as string[];
+    const btn = { padding: '2px 8px', cursor: 'pointer', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', 'border-radius': '4px', 'font-size': '11px' } as any;
+    const live = (p: Partial<import("../types").Extrude3D>) => setExtrude(ids(), p, false);
+    const commit = (p: Partial<import("../types").Extrude3D>) => setExtrude(ids(), p, true);
+    const Row = (p: { label: string; min: number; max: number; step: number; val: () => number; on: (v: number) => void; onC: (v: number) => void; suffix?: string }) => (
+        <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '5px' }}>
+            <span style={{ 'font-size': '11px', 'min-width': '54px' }}>{p.label}</span>
+            <input type="range" style={{ flex: '1' }} min={p.min} max={p.max} step={p.step} value={p.val()}
+                onInput={e => p.on(parseFloat(e.currentTarget.value))} onChange={e => p.onC(parseFloat(e.currentTarget.value))} />
+            <span style={{ 'font-size': '11px', 'min-width': '34px', 'text-align': 'right' }}>{p.val()}{p.suffix ?? ''}</span>
+        </div>
+    );
+    return (
+        <Show when={ids().length === 1}>
+            <div class="property-group">
+                <div class="group-title"><span>3D EXTRUDE</span></div>
+                <Show when={ex()} fallback={
+                    <button style={btn} title="Add a 3D extrude (shaded depth behind the shape)" onClick={() => setExtrude(ids())}>+ Add 3D Extrude</button>
+                }>
+                    {Row({ label: 'Depth', min: 0, max: 120, step: 1, val: () => Math.round(ex()!.depth ?? 0), on: v => live({ depth: v }), onC: v => commit({ depth: v }) })}
+                    {Row({ label: 'Angle', min: 0, max: 360, step: 5, val: () => Math.round(ex()!.angle ?? 0), on: v => live({ angle: v }), onC: v => commit({ angle: v }), suffix: '°' })}
+                    {Row({ label: 'Tilt X', min: -70, max: 70, step: 1, val: () => Math.round(ex()!.rotX ?? 0), on: v => live({ rotX: v }), onC: v => commit({ rotX: v }), suffix: '°' })}
+                    {Row({ label: 'Tilt Y', min: -70, max: 70, step: 1, val: () => Math.round(ex()!.rotY ?? 0), on: v => live({ rotY: v }), onC: v => commit({ rotY: v }), suffix: '°' })}
+                    {Row({ label: 'Shade', min: 0, max: 90, step: 5, val: () => Math.round((ex()!.shade ?? 0.35) * 100), on: v => live({ shade: v / 100 }), onC: v => commit({ shade: v / 100 }), suffix: '%' })}
+                    <div class="control-row" style={{ gap: '6px' }}>
+                        <button style={btn} title="Bake the 3D into editable face elements" onClick={() => expandExtrude(ids())}>Expand</button>
+                        <button style={btn} title="Remove the 3D extrude" onClick={() => clearExtrude(ids())}>Remove</button>
+                    </div>
+                </Show>
             </div>
         </Show>
     );
@@ -1514,7 +1589,25 @@ const PropertyPanel: Component = () => {
                                 value={isMixed(sliderVal()) ? '' : (sliderVal() ?? prop.defaultValue)}
                                 placeholder={isMixed(sliderVal()) ? '—' : undefined}
                                 onFocus={() => pushToHistory()}
-                                onInput={(e) => handleChange(prop.key, Number(e.currentTarget.value), activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined, false)}
+                                onInput={(e) => {
+                                    // Allow the field to be cleared/edited: empty or partial (e.g. "-", ".")
+                                    // input must NOT commit — otherwise Number('')=0 snaps the value (and a
+                                    // clamped field like font-size jumps to its min) mid-edit.
+                                    const raw = e.currentTarget.value;
+                                    if (raw === '' || raw === '-' || raw === '.' || raw === '-.') return;
+                                    const n = Number(raw);
+                                    if (!Number.isFinite(n)) return;
+                                    handleChange(prop.key, n, activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined, false);
+                                }}
+                                onBlur={(e) => {
+                                    // On blur, resync an empty/invalid field back to the current value so it
+                                    // never shows a stale/blank box.
+                                    const raw = e.currentTarget.value;
+                                    if (raw === '' || !Number.isFinite(Number(raw))) {
+                                        const v = sliderVal();
+                                        e.currentTarget.value = String(isMixed(v) ? '' : (v ?? prop.defaultValue));
+                                    }
+                                }}
                             />
                         </div>
                     </div>
@@ -2137,9 +2230,19 @@ const PropertyPanel: Component = () => {
                                     <PatternEditor el={() => targetData()} />
                                 </Show>
 
+                                {/* Warp-preset editor (self-gating: only when a preset warp is set) */}
+                                <Show when={isElement() && targetData()}>
+                                    <WarpPresetEditor el={() => targetData()} />
+                                </Show>
+
                                 {/* Live Transform effect editor (Add button when absent; controls when present) */}
                                 <Show when={isElement() && targetData()}>
                                     <TransformEffectEditor el={() => targetData()} />
+                                </Show>
+
+                                {/* Live 3D Extrude editor (Add button when absent; controls when present) */}
+                                <Show when={isElement() && targetData()}>
+                                    <ExtrudeEditor el={() => targetData()} />
                                 </Show>
 
                                 {/* Layers for elements */}

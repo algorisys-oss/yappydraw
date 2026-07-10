@@ -50,6 +50,33 @@ Y.convertToGuides();                  // drop guides at every cell edge`}</code>
 
             {/* ─── EDGE EFFECTS ───────────────────────────────────────── */}
             <section class="doc-section">
+                <h2>3D Extrude</h2>
+                <p>
+                    Give any shape or text depth — Illustrator's <em>Effect ▸ 3D ▸ Extrude &amp; Bevel</em>,
+                    the classic "3D text" look. A <strong>non-destructive</strong> shaded back face + side
+                    walls draw behind the shape (their colour derives from the fill), and the flat front stays
+                    fully editable. Renders in both <strong>Sketch</strong> and <strong>Architectural</strong>
+                    styles.
+                </p>
+                <p>
+                    <strong>Property panel → 3D EXTRUDE</strong>: <em>+ Add 3D Extrude</em>, then drag
+                    <strong> Depth</strong> (length), <strong>Angle</strong> (direction), <strong>Tilt X/Y</strong>
+                    (rotate the shape in 3D), and <strong>Shade</strong> (wall darkness). <strong>Expand</strong>
+                    bakes the result into editable face elements (front / side / back) — which also makes it
+                    SVG-exportable. Or right-click → <strong>Repeat &amp; Mirror ▸ 3D Extrude</strong>.
+                </p>
+                <pre><code>{`Yappy.setExtrude({ depth: 40, angle: 135, rotX: 25, rotY: -20, shade: 0.4 });
+Yappy.expandExtrude();   // bake to editable front/side/back face paths
+Yappy.clearExtrude();`}</code></pre>
+                <p class="tip-box">
+                    <strong>3D text:</strong> extrude works on a shape's <em>outline</em>, and a text element's
+                    outline is its bounding box — so for extruded <em>letters</em>, right-click →
+                    <strong> Convert to Outlines</strong> first, then apply 3D. (Real shapes — stars, circles,
+                    paths — extrude directly.)
+                </p>
+            </section>
+
+            <section class="doc-section">
                 <h2>Transform Effect (live copies)</h2>
                 <p>
                     A <strong>non-destructive</strong> effect that draws many accumulating copies of an object —

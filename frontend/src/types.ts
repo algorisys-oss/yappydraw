@@ -263,6 +263,21 @@ export interface TransformEffect {
     originY?: number;
 }
 
+/**
+ * Live 3D Extrude effect (Illustrator's Effect ▸ 3D ▸ Extrude & Bevel, "3D text" look):
+ * a non-destructive modifier that draws an extruded back face + shaded side walls behind
+ * the shape at render time, giving it depth. `angle` is the extrusion direction (degrees,
+ * 0=right, 90=down), `depth` the length in px, `shade` the wall darkening (0..1). Absent =
+ * flat shape (fully back-compatible). Bake with `expandExtrude`.
+ */
+export interface Extrude3D {
+    depth: number;
+    angle: number;
+    shade?: number;
+    rotX?: number;   // tilt about the horizontal axis (deg) — foreshortens vertically
+    rotY?: number;   // tilt about the vertical axis (deg) — foreshortens horizontally
+}
+
 export interface DrawingElement {
     id: string;
     type: ElementType;
@@ -458,6 +473,8 @@ export interface DrawingElement {
     // Live Transform effect — non-destructive accumulating copies (see TransformEffect).
     // Absent = no effect. Bakeable via expandTransformEffect.
     transformEffect?: TransformEffect;
+    // Live 3D Extrude effect — shaded depth behind the shape (see Extrude3D). Bakeable via expandExtrude.
+    extrude?: Extrude3D;
     // General Free-Transform shear factors (NOT the perspectiveBlock-specific skewX/skewY
     // below, which warp that shape's 3D back face). Applied about the element centre as the
     // matrix [[1, shearX],[shearY, 1]] — shearX shifts x by shearX·y, shearY shifts y by shearY·x.

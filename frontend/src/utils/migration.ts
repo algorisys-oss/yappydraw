@@ -94,6 +94,7 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         ...(el.patternSwatchId !== undefined && { patternSwatchId: el.patternSwatchId }),
         ...(el.appearance !== undefined && { appearance: el.appearance }),
         ...(el.transformEffect !== undefined && { transformEffect: el.transformEffect }),
+        ...(el.extrude !== undefined && { extrude: el.extrude }),
 
         // Shadows
         ...(el.shadowEnabled !== undefined && { shadowEnabled: el.shadowEnabled }),

@@ -12,6 +12,7 @@ import { isLayerVisible, store } from '../store/app-store';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { renderElement } from './render-element';
 import { hasTransformEffect, transformEffectRenderCopies } from './transform-effect';
+import { hasExtrude, isExtrudeTilted, renderExtrudeBody } from './extrude';
 import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
 import { RenderPipeline } from '../shapes/base/render-pipeline';
@@ -872,8 +873,15 @@ export function renderLayersAndElements(
                 if (store.outlineView) renderedEl = toOutlineElement(renderedEl, isDarkMode, scale);
                 // Masked elements skip the element cache so the mask tracks live edits.
                 // Outline view also bypasses the cache (its hash doesn't track the mode).
-                const shouldCache = !animState && !isFocusDimmed && !mask && !store.outlineView;
-                if (opacityMask) {
+                const shouldCache = !animState && !isFocusDimmed && !mask && !store.outlineView && !renderedEl.extrude;
+                // Live 3D Extrude: draw the shaded depth body BEHIND, then the shape's front face
+                // renders on top via the normal path below. When TILTED, the body render also draws
+                // the (foreshortened) flat front, so skip the normal render. Skipped in outline view.
+                const extrudeTilted = isExtrudeTilted(renderedEl) && !store.outlineView;
+                if (hasExtrude(renderedEl) && !store.outlineView) renderExtrudeBody(ctx, renderedEl);
+                if (extrudeTilted) {
+                    // full 3D solid already drawn (body + flat front) — nothing more to render
+                } else if (opacityMask) {
                     renderOpacityMasked(ctx, renderedEl, mask!, isDarkMode, layerOpacity);
                 } else if (hasTransformEffect(renderedEl)) {
                     // Live Transform effect — draw N accumulating copies. Each copy is a plain

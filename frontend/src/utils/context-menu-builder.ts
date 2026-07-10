@@ -11,7 +11,7 @@ import { WARP_PRESETS } from './envelope-warp';
 import {
     store, setStore, pushToHistory, updateElement, selectAll,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
-    blendShapes,
+    blendShapes, blendAlongPath,
     toggleRecolorPanel, toggleBehaviorsPanel,
     toggleShapeBuilder,
     toggleCutTool,
@@ -22,7 +22,7 @@ import {
     selectSimilar,
     applyDistort,
     addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
-    mirrorCopy, transformAgain, mirrorAcrossSymmetry, setTransformEffect, expandTransformEffect, clearTransformEffect,
+    mirrorCopy, transformAgain, mirrorAcrossSymmetry, setTransformEffect, expandTransformEffect, clearTransformEffect, setExtrude, clearExtrude, expandExtrude,
     bringToFront, sendToBack, moveElementZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
@@ -403,6 +403,16 @@ export function getContextMenuItems(
                         { separator: true },
                         { label: 'Expand to Elements', icon: '⤓', onClick: () => expandTransformEffect([...store.selection]) },
                         { label: 'Remove Effect', icon: '✕', onClick: () => clearTransformEffect([...store.selection]) },
+                    ]
+                },
+                {
+                    label: '3D Extrude', icon: '⬗', submenu: [
+                        { label: 'Extrude (depth 28)', icon: '⬗', onClick: () => setExtrude([...store.selection], { depth: 28, angle: 135 }) },
+                        { label: 'Deep (depth 60)', icon: '◆', onClick: () => setExtrude([...store.selection], { depth: 60, angle: 135 }) },
+                        { label: 'Tilted (3D perspective)', icon: '◈', onClick: () => setExtrude([...store.selection], { depth: 40, angle: 135, rotX: 25, rotY: -20 }) },
+                        { separator: true },
+                        { label: 'Expand to Faces', icon: '⤓', onClick: () => expandExtrude([...store.selection]) },
+                        { label: 'Remove 3D', icon: '✕', onClick: () => clearExtrude([...store.selection]) },
                     ]
                 },
             ]
@@ -1293,6 +1303,22 @@ export function getContextMenuItems(
                     { label: '16 steps', onClick: () => blendShapes(two, 16) },
                 ],
             });
+        }
+        if (selectionCount === 3) {
+            const three = [...store.selection];
+            const SPINE = ['line', 'arrow', 'bezier', 'polyline', 'elbow', 'path', 'fineliner', 'ink'];
+            const hasSpine = store.elements.some(e => three.includes(e.id) && SPINE.includes(e.type));
+            const shapeCount = store.elements.filter(e => three.includes(e.id) && !SPINE.includes(e.type)).length;
+            if (hasSpine && shapeCount >= 2) {
+                items.push({
+                    label: 'Blend Along Spine', icon: '➰', submenu: [
+                        { label: '4 steps', onClick: () => blendAlongPath(three, 4) },
+                        { label: '8 steps', onClick: () => blendAlongPath(three, 8) },
+                        { label: '16 steps', onClick: () => blendAlongPath(three, 16) },
+                        { label: '24 steps', onClick: () => blendAlongPath(three, 24) },
+                    ],
+                });
+            }
         }
         if (selectionCount >= 2) {
             items.push({ label: 'Shape Builder', icon: '⬓', onClick: () => toggleShapeBuilder(true) });

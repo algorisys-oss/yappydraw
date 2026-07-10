@@ -19,8 +19,10 @@ import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
-import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType, PatternSwatch, TransformEffect } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType, PatternSwatch, TransformEffect, Extrude3D } from "../types";
 import { transformCopy, effectiveCopies } from "../utils/transform-effect";
+import { extrudeGeometry } from "../utils/extrude";
+import { elementPathSample, sampleAt } from "../library/stick-figures/anim/path-follow";
 import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos, parseHex, rgbToHex } from "../utils/mesh-gradient";
 import { defaultPatternFill } from "../utils/pattern-fill";
 import { captureElementsToDataURL } from "../utils/pattern-capture";
@@ -4463,6 +4465,75 @@ export const blendShapes = (ids?: string[], steps = 4) => {
     showToast(`Blended — ${n} steps`, 'success');
 };
 
+/** Element types usable as a blend spine (an open path/line to distribute the blend along). */
+const SPINE_TYPES = ['line', 'arrow', 'bezier', 'polyline', 'elbow', 'path', 'fineliner', 'ink'];
+
+/**
+ * Blend along a spine (Illustrator's Object ▸ Blend, then Replace Spine): distribute `steps`
+ * interpolated copies of two shapes ALONG a selected path, each interpolating size/colour
+ * between the two endpoints and (by default) oriented to the path tangent. Reuses the
+ * arc-length path sampler (`elementPathSample`/`sampleAt`). Selection = two shapes + one
+ * path/line spine (auto-detected). Destructive (creates real copies).
+ */
+export const blendAlongPath = (ids?: string[], steps = 8, orient = true): string[] => {
+    const sel = ids ?? store.selection;
+    const els = store.elements.filter(e => sel.includes(e.id));
+    const spine = els.find(e => SPINE_TYPES.includes(e.type));
+    if (!spine) { showToast('Blend along spine: include a path/line as the spine', 'info'); return []; }
+    const shapes = els.filter(e => e.id !== spine.id);
+    if (shapes.length < 2) { showToast('Blend along spine: select two shapes + a path', 'info'); return []; }
+    const a = shapes[0], b = shapes[shapes.length - 1];
+    const sample = elementPathSample(spine);
+    if (!sample) { showToast('Blend along spine: path too short', 'info'); return []; }
+
+    const n = Math.max(1, Math.min(60, Math.round(steps)));
+    const lerp = (x: number, y: number, t: number) => x + (y - x) * t;
+    const lerpColor = (c1?: string, c2?: string, t = 0): string | undefined => {
+        if (!c1 || c1 === 'transparent') return c2;
+        if (!c2 || c2 === 'transparent') return c1;
+        const A = parseHex(c1), B = parseHex(c2);
+        return rgbToHex(lerp(A.r, B.r, t), lerp(A.g, B.g, t), lerp(A.b, B.b, t));
+    };
+    const tangentDeg = (pp: { tx: number; ty: number }) => Math.atan2(pp.ty, pp.tx) * 180 / Math.PI;
+
+    pushToHistory();
+    const batch = new Set<string>();
+    const additions: DrawingElement[] = [];
+    // Endpoints: move A → path start, B → path end (keep their own size).
+    const pa = sampleAt(sample, 0), pb = sampleAt(sample, 1);
+    const aEnd = { x: pa.x - a.width / 2, y: pa.y - a.height / 2, angle: orient ? tangentDeg(pa) : (a.angle || 0) };
+    const bEnd = { x: pb.x - b.width / 2, y: pb.y - b.height / 2, angle: orient ? tangentDeg(pb) : (b.angle || 0) };
+    // Intermediates k=1..n interpolate A→B, positioned along the spine.
+    for (let k = 1; k <= n; k++) {
+        const t = k / (n + 1);
+        const pp = sampleAt(sample, t);
+        const w = lerp(a.width, b.width, t), h = lerp(a.height, b.height, t);
+        const id = generateId(a.type as any, batch); batch.add(id);
+        additions.push({
+            ...a, id,
+            x: pp.x - w / 2, y: pp.y - h / 2, width: w, height: h,
+            angle: orient ? tangentDeg(pp) : lerp(a.angle || 0, b.angle || 0, t),
+            opacity: lerp(a.opacity ?? 100, b.opacity ?? 100, t),
+            strokeWidth: lerp(a.strokeWidth ?? 1, b.strokeWidth ?? 1, t),
+            backgroundColor: lerpColor(a.backgroundColor, b.backgroundColor, t) ?? a.backgroundColor,
+            strokeColor: lerpColor(a.strokeColor, b.strokeColor, t) ?? a.strokeColor,
+            groupIds: undefined, fillSwatchId: undefined, strokeSwatchId: undefined,
+        } as DrawingElement);
+    }
+    setStore('elements', (list: DrawingElement[]) => {
+        const copy = list.map(e =>
+            e.id === a.id ? { ...e, ...aEnd } as DrawingElement :
+            e.id === b.id ? { ...e, ...bEnd } as DrawingElement : e);
+        const idx = copy.findIndex(e => e.id === a.id);
+        copy.splice(idx + 1, 0, ...additions);
+        return copy;
+    });
+    setStore('selection', [a.id, ...additions.map(x => x.id), b.id]);
+    bumpDirtyRevision();
+    showToast(`Blended along spine — ${n} steps`, 'success');
+    return additions.map(x => x.id);
+};
+
 // ── Recolor artwork ──────────────────────────────────────────────────────────
 
 export const toggleRecolorPanel = (visible?: boolean) => setStore('showRecolorPanel', v => visible ?? !v);
@@ -6490,6 +6561,81 @@ export const clearTransformEffect = (ids: string[]) => {
     pushToHistory();
     setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ transformEffect: undefined }));
     bumpDirtyRevision();
+};
+
+// ── Live 3D Extrude effect (Illustrator's Effect ▸ 3D ▸ Extrude & Bevel) ──
+
+const DEFAULT_EXTRUDE: Extrude3D = { depth: 28, angle: 135, shade: 0.35 };
+
+/** Apply / update the live 3D Extrude effect (shaded depth behind the shape). `history=false`
+ *  skips the undo snapshot + toast (for live slider dragging). */
+export const setExtrude = (ids: string[], ex?: Partial<Extrude3D>, history = true) => {
+    if (ids.length === 0) { if (history) showToast('3D: select an object', 'info'); return; }
+    if (history) pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), (e: DrawingElement) => ({
+        extrude: { ...DEFAULT_EXTRUDE, ...e.extrude, ...ex } as Extrude3D,
+    }));
+    bumpDirtyRevision();
+    if (history) showToast('3D extrude applied', 'success');
+};
+
+/** Remove the 3D Extrude effect, leaving the flat shape. */
+export const clearExtrude = (ids: string[]) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ extrude: undefined }));
+    bumpDirtyRevision();
+};
+
+/**
+ * Expand (bake) the 3D extrude into editable face elements (Illustrator "Expand Appearance"):
+ * a back-face path, a unioned side-wall path, and a front-face path — grouped, replacing the
+ * original. Makes the 3D result editable per-face and SVG-exportable. Returns the new ids.
+ */
+export const expandExtrude = (ids: string[]): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.extrude && (e.extrude.depth || 0) > 0);
+    if (targets.length === 0) { showToast('Expand: no 3D extrude', 'info'); return []; }
+    pushToHistory();
+    const batch = new Set<string>();
+    const additions: DrawingElement[] = [];
+    const removeIds = new Set<string>();
+    for (const el of targets) {
+        const g = extrudeGeometry(el);
+        if (!g) continue;
+        removeIds.add(el.id);
+        const grp = generateId('group', batch);
+        const shift = (ring: [number, number][]) => ring.map(([x, y]) => [x + g.dx, y + g.dy] as [number, number]);
+        // Side walls → union of per-edge quads into a clean region.
+        const quads: Poly[] = [];
+        for (const poly of g.front) for (const ring of poly) {
+            for (let i = 0; i < ring.length; i++) {
+                const a = ring[i], b = ring[(i + 1) % ring.length];
+                quads.push([[a, b, [b[0] + g.dx, b[1] + g.dy], [a[0] + g.dx, a[1] + g.dy], a]]);
+            }
+        }
+        const side = unionPolys(quads);
+        const backPoly: Poly = (g.front.flat() as [number, number][][]).map(shift);
+        const frontPoly: Poly = (g.front.flat() as [number, number][][]).map((r) => r.slice());
+        const mk = (poly: Poly, fill: string, withStroke: boolean) => {
+            const p = buildPathFromPoly(poly, {
+                backgroundColor: fill, fillStyle: 'solid',
+                strokeColor: withStroke && el.strokeColor && el.strokeColor !== 'transparent' ? el.strokeColor : 'transparent',
+                strokeWidth: withStroke ? (el.strokeWidth ?? 0) : 0,
+                renderStyle: el.renderStyle, opacity: el.opacity, groupIds: [grp],
+            }, undefined, batch);
+            if (p) additions.push(p);
+        };
+        // back (furthest) → side → front (nearest, on top)
+        mk(backPoly, g.backCol, false);
+        for (const sp of side) mk(sp, g.wallCol, false);
+        mk(frontPoly, g.base, true);
+    }
+    if (!additions.length) { showToast('Expand: could not bake', 'info'); return []; }
+    setStore('elements', list => [...list.filter(e => !removeIds.has(e.id)), ...additions]);
+    setStore('selection', additions.map(a => a.id));
+    bumpDirtyRevision();
+    showToast(`Expanded 3D — ${additions.length} faces`, 'success');
+    return additions.map(a => a.id);
 };
 
 /**
