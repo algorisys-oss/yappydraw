@@ -50,6 +50,33 @@ Y.convertToGuides();                  // drop guides at every cell edge`}</code>
 
             {/* ─── EDGE EFFECTS ───────────────────────────────────────── */}
             <section class="doc-section">
+                <h2>Transform Effect (live copies)</h2>
+                <p>
+                    A <strong>non-destructive</strong> effect that draws many accumulating copies of an object —
+                    Illustrator’s <em>Effect ▸ Distort &amp; Transform ▸ Transform</em>. Each copy applies the same
+                    per-step <strong>move / rotate / scale / reflect</strong> one more time, so a small rotation builds a
+                    radial fan or rosette, and rotate-plus-shrink-plus-move builds a spiral. The original stays a single
+                    editable object — change the base and every copy updates. Renders in both <strong>Sketch</strong> and
+                    <strong>Architectural</strong> styles.
+                </p>
+                <p>
+                    Right-click a selection → <strong>Repeat &amp; Mirror ▸ Transform Effect (live)</strong> for presets
+                    (Radial Fan, Rosette, Spiral, Echo), then <strong>Expand to Elements</strong> to bake the copies into
+                    real, editable objects, or <strong>Remove Effect</strong> to clear it.
+                </p>
+                <pre><code>{`Y.setTransformEffect({ copies: 11, rotate: 30, originX: 0, originY: 0.5 }); // radial fan
+Y.setTransformEffect({ copies: 14, rotate: 22, scaleX: 0.86, scaleY: 0.86, moveX: 8, moveY: -6 }); // spiral
+Y.expandTransformEffect();  // bake copies 1..N into real elements
+Y.clearTransformEffect();   // remove the effect`}</code></pre>
+                <p class="tip-box">
+                    <strong>Pivot:</strong> <code>originX/originY</code> are bbox fractions (0–1, default centre 0.5).
+                    Set <code>originX:0</code> to rotate about the left edge for a fan that opens outward.
+                    <strong>Known limits (first cut):</strong> scale is uniform, and <em>Expand</em> bakes cleanly for
+                    move + rotate + uniform-scale + reflect (non-uniform-scale-with-rotation baking is a follow-up).
+                </p>
+            </section>
+
+            <section class="doc-section">
                 <h2>Feather &amp; Outer Glow</h2>
                 <p>
                     <strong>Feather</strong> softly blurs an object’s edges to transparent — great for soft shadows,

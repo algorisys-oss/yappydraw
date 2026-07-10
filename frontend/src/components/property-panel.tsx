@@ -2,6 +2,7 @@ import { type Component, Show, createMemo, For, createSignal, createEffect, Inde
 import { draggablePanel } from '../utils/draggable-panel';
 import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
 import { pageNoun, setPageSize } from "../store/app-store";
+import { setTransformEffect, clearTransformEffect, expandTransformEffect } from "../store/app-store";
 import { slideTransitionManager } from "../utils/animation";
 import { customFontOptions, addCustomFontFromFile } from "../utils/custom-fonts";
 import GoogleFontsDialog from "./google-fonts-dialog";
@@ -682,6 +683,63 @@ const PatternEditor: Component<{ el: () => any }> = (props) => {
                     <button style={btn} title="Save this pattern to the Patterns library (Alt+P)" onClick={() => savePatternSwatchFromElement(ids())}>Save to Library</button>
                     <button style={btn} title="Remove the pattern fill" onClick={() => clearPatternFill(ids())}>Remove pattern</button>
                 </div>
+            </div>
+        </Show>
+    );
+};
+
+/** Live Transform-effect editor — copies / rotate / scale / move / pivot / reflect sliders,
+ *  plus Expand & Remove. Operates on the active element's `transformEffect`. Self-gating:
+ *  shows an "Add" button when absent, the full controls when present. */
+const TransformEffectEditor: Component<{ el: () => any }> = (props) => {
+    const fx = () => props.el()?.transformEffect as import("../types").TransformEffect | undefined;
+    const ids = () => [props.el()?.id].filter(Boolean) as string[];
+    const btn = { padding: '2px 8px', cursor: 'pointer', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', 'border-radius': '4px', 'font-size': '11px' } as any;
+    // live drag: onInput updates without a history entry; onChange commits one.
+    const live = (patch: Partial<import("../types").TransformEffect>) => setTransformEffect(ids(), patch, false);
+    const commit = (patch: Partial<import("../types").TransformEffect>) => setTransformEffect(ids(), patch, true);
+    const num = (v: any, d: number) => { const n = parseFloat(v); return Number.isFinite(n) ? n : d; };
+    const scalePct = () => Math.round((fx()?.scaleX ?? 1) * 100);
+
+    const Row = (p: { label: string; min: number; max: number; step: number; val: () => number; on: (v: number) => void; onCommit: (v: number) => void; suffix?: string }) => (
+        <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '5px' }}>
+            <span style={{ 'font-size': '11px', 'min-width': '54px' }}>{p.label}</span>
+            <input type="range" style={{ flex: '1' }} min={p.min} max={p.max} step={p.step} value={p.val()}
+                onInput={e => p.on(num(e.currentTarget.value, p.val()))}
+                onChange={e => p.onCommit(num(e.currentTarget.value, p.val()))} />
+            <span style={{ 'font-size': '11px', 'min-width': '34px', 'text-align': 'right' }}>{p.val()}{p.suffix ?? ''}</span>
+        </div>
+    );
+
+    return (
+        <Show when={ids().length === 1}>
+            <div class="property-group">
+                <div class="group-title"><span>TRANSFORM EFFECT</span></div>
+                <Show when={!fx()} fallback={
+                    <>
+                        {Row({ label: 'Copies', min: 0, max: 60, step: 1, val: () => fx()!.copies ?? 0, on: v => live({ copies: v }), onCommit: v => commit({ copies: v }) })}
+                        {Row({ label: 'Rotate', min: -180, max: 180, step: 1, val: () => Math.round(fx()!.rotate ?? 0), on: v => live({ rotate: v }), onCommit: v => commit({ rotate: v }), suffix: '°' })}
+                        {Row({ label: 'Scale', min: 20, max: 180, step: 1, val: () => scalePct(), on: v => live({ scaleX: v / 100, scaleY: v / 100 }), onCommit: v => commit({ scaleX: v / 100, scaleY: v / 100 }), suffix: '%' })}
+                        {Row({ label: 'Move X', min: -120, max: 120, step: 1, val: () => Math.round(fx()!.moveX ?? 0), on: v => live({ moveX: v }), onCommit: v => commit({ moveX: v }) })}
+                        {Row({ label: 'Move Y', min: -120, max: 120, step: 1, val: () => Math.round(fx()!.moveY ?? 0), on: v => live({ moveY: v }), onCommit: v => commit({ moveY: v }) })}
+                        {Row({ label: 'Pivot X', min: 0, max: 100, step: 5, val: () => Math.round((fx()!.originX ?? 0.5) * 100), on: v => live({ originX: v / 100 }), onCommit: v => commit({ originX: v / 100 }), suffix: '%' })}
+                        {Row({ label: 'Pivot Y', min: 0, max: 100, step: 5, val: () => Math.round((fx()!.originY ?? 0.5) * 100), on: v => live({ originY: v / 100 }), onCommit: v => commit({ originY: v / 100 }), suffix: '%' })}
+                        <div class="control-row" style={{ gap: '10px', 'align-items': 'center', 'margin': '4px 0 6px' }}>
+                            <label style={{ 'font-size': '11px', cursor: 'pointer', display: 'flex', gap: '4px', 'align-items': 'center' }}>
+                                <input type="checkbox" checked={!!fx()!.reflectX} onChange={e => commit({ reflectX: e.currentTarget.checked })} /> Reflect X
+                            </label>
+                            <label style={{ 'font-size': '11px', cursor: 'pointer', display: 'flex', gap: '4px', 'align-items': 'center' }}>
+                                <input type="checkbox" checked={!!fx()!.reflectY} onChange={e => commit({ reflectY: e.currentTarget.checked })} /> Reflect Y
+                            </label>
+                        </div>
+                        <div class="control-row" style={{ gap: '6px' }}>
+                            <button style={btn} title="Bake the copies into real, editable elements" onClick={() => expandTransformEffect(ids())}>Expand</button>
+                            <button style={btn} title="Remove the transform effect" onClick={() => clearTransformEffect(ids())}>Remove</button>
+                        </div>
+                    </>
+                }>
+                    <button style={btn} title="Add a live Transform effect (accumulating copies)" onClick={() => setTransformEffect(ids())}>+ Add Transform Effect</button>
+                </Show>
             </div>
         </Show>
     );
@@ -2077,6 +2135,11 @@ const PropertyPanel: Component = () => {
                                 {/* Vector pattern editor (self-gating: only when a pattern fill is set) */}
                                 <Show when={isElement() && targetData()}>
                                     <PatternEditor el={() => targetData()} />
+                                </Show>
+
+                                {/* Live Transform effect editor (Add button when absent; controls when present) */}
+                                <Show when={isElement() && targetData()}>
+                                    <TransformEffectEditor el={() => targetData()} />
                                 </Show>
 
                                 {/* Layers for elements */}

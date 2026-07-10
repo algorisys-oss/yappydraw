@@ -11,6 +11,7 @@ import type { SpacingGuide } from './spacing';
 import { isLayerVisible, store } from '../store/app-store';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { renderElement } from './render-element';
+import { hasTransformEffect, transformEffectRenderCopies } from './transform-effect';
 import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
 import { RenderPipeline } from '../shapes/base/render-pipeline';
@@ -874,6 +875,14 @@ export function renderLayersAndElements(
                 const shouldCache = !animState && !isFocusDimmed && !mask && !store.outlineView;
                 if (opacityMask) {
                     renderOpacityMasked(ctx, renderedEl, mask!, isDarkMode, layerOpacity);
+                } else if (hasTransformEffect(renderedEl)) {
+                    // Live Transform effect — draw N accumulating copies. Each copy is a plain
+                    // element clone, so it re-enters renderElement and gets its own transform,
+                    // fill/stroke, appearance and shadow for free in both render styles. Bypass
+                    // the per-id element cache (one id → N copies would collide).
+                    for (const copyEl of transformEffectRenderCopies(renderedEl)) {
+                        renderElement(cachedRc, ctx, copyEl, isDarkMode, layerOpacity, sharedRenderer);
+                    }
                 } else {
                     if (shouldCache) beginElement(renderedEl.id, computeElementHash(renderedEl));
                     renderElement(cachedRc, ctx, renderedEl, isDarkMode, layerOpacity, sharedRenderer);

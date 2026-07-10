@@ -1,4 +1,4 @@
-import type { DrawingElement } from "../types";
+import type { DrawingElement, ElementType } from "../types";
 import { isWasmEnabled } from "../wasm/feature-flags";
 import { wasmGetShapeGeometry } from "../wasm/bridge/shape-paths-bridge";
 import { getPathSubpaths, subpathsToPathData } from "./math/path-utils";
@@ -113,6 +113,11 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         case 'umlProvidedInterface':
 
         case 'circle':
+        // Defensive: 'ellipse'/'oval' aren't real ElementTypes (the tool creates 'circle'),
+        // but tolerate any that slipped in via the API or an old doc so they still render
+        // and participate in Pathfinder/boolean geometry instead of vanishing.
+        case 'ellipse' as ElementType:
+        case 'oval' as ElementType:
             return { type: 'ellipse', cx: 0, cy: 0, rx: w / 2, ry: h / 2 };
 
         case 'umlRequiredInterface': {

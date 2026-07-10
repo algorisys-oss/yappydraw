@@ -11,7 +11,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp, makeClippingMask, makeOpacityMask, releaseClippingMask,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection,
@@ -286,6 +286,31 @@ interface ElementOptions {
     poolLaneIndex?: number;
 }
 
+/**
+ * Common synonyms scripters intuitively reach for that aren't real `ElementType`s.
+ * The toolbar labels the circle tool "Ellipse", so `createElement('ellipse', …)` is a
+ * very natural call — but `'ellipse'` isn't a valid type, and an unrecognized type
+ * produces an invisible, non-functional element (no geometry, no Pathfinder/boolean
+ * participation). Remap the obvious ones to what the caller clearly meant.
+ */
+const ELEMENT_TYPE_ALIASES: Record<string, ElementType> = {
+    ellipse: 'circle',
+    oval: 'circle',
+    rect: 'rectangle',
+    square: 'rectangle',
+    tri: 'triangle',
+};
+
+/** Normalize a caller-supplied element type: resolve known synonyms, warn on remap. */
+function normalizeElementType(type: ElementType): ElementType {
+    const alias = ELEMENT_TYPE_ALIASES[type as string];
+    if (alias) {
+        console.warn(`[Yappy] createElement: '${type}' is not a valid element type; using '${alias}' instead.`);
+        return alias;
+    }
+    return type;
+}
+
 export const YappyAPI = {
     /**
      * Get the current state wrapper
@@ -298,6 +323,7 @@ export const YappyAPI = {
      * Create a generic element
      */
     createElement(type: ElementType, x: number, y: number, width: number, height: number, options?: ElementOptions): string {
+        type = normalizeElementType(type);
         const id = generateId(type);
         const defaults = store.defaultElementStyles;
 
@@ -1520,6 +1546,16 @@ export const YappyAPI = {
         return applyMeshWarp(ids ?? store.selection, rows, cols);
     },
 
+    /**
+     * Warp preset (Illustrator "Make with Warp"): deform the selection along a named envelope —
+     * `'arc' | 'arch' | 'flag' | 'wave' | 'rise' | 'bulge'`, bent by `bend` (-1..1). Live &
+     * re-editable (change bend to re-warp); non-path shapes convert to a path first. Bake
+     * permanently with `bakeWarp`. Renders in both sketch & architectural styles.
+     */
+    applyWarpPreset(preset: 'arc' | 'arch' | 'flag' | 'wave' | 'rise' | 'bulge', bend = 0.5, ids?: string[]): string[] {
+        return applyWarpPreset(ids ?? [...store.selection], preset, bend);
+    },
+
     /** Free Transform: toggle bicubic (Catmull-Rom) smoothing on a warped element's mesh. */
     toggleMeshSmooth(ids?: string[]): string[] {
         return toggleMeshSmooth(ids ?? store.selection);
@@ -1533,6 +1569,21 @@ export const YappyAPI = {
     bakeWarp(ids?: string[]): string[] {
         return bakeWarp(ids ?? store.selection);
     },
+
+    /**
+     * Live Transform effect (Illustrator's Effect ▸ Distort & Transform ▸ Transform): draw
+     * `copies` accumulating, non-destructive copies of the element, each with the per-step
+     * move/rotate/scale/reflect applied one more time — spirals, echoes, radial fans. Merges
+     * over any existing effect. Renders in both sketch & architectural styles.
+     * @param fx `{ copies, moveX, moveY, scaleX, scaleY, rotate, reflectX, reflectY, originX, originY }`
+     */
+    setTransformEffect(fx?: Partial<import("./types").TransformEffect>, ids?: string[]) {
+        setTransformEffect(ids ?? [...store.selection], fx);
+    },
+    /** Remove the live Transform effect, leaving just the base element. */
+    clearTransformEffect(ids?: string[]) { clearTransformEffect(ids ?? [...store.selection]); },
+    /** Expand the live Transform effect into real elements (copies 1..N become new elements). */
+    expandTransformEffect(ids?: string[]): string[] { return expandTransformEffect(ids ?? [...store.selection]); },
 
     /** Appearance stack: add an extra fill/stroke over the base shape (both render styles). */
     addAppearanceFill(fill?: any, ids?: string[]) { addAppearanceFill(ids ?? store.selection, fill); },

@@ -7,6 +7,7 @@
 import type { DrawingElement, TableCellSelection } from '../types';
 import { isPagedDocType } from '../types/slide-types';
 import type { MenuItem } from '../components/context-menu';
+import { WARP_PRESETS } from './envelope-warp';
 import {
     store, setStore, pushToHistory, updateElement, selectAll,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
@@ -21,12 +22,12 @@ import {
     selectSimilar,
     applyDistort,
     addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
-    mirrorCopy, transformAgain, mirrorAcrossSymmetry,
+    mirrorCopy, transformAgain, mirrorAcrossSymmetry, setTransformEffect, expandTransformEffect, clearTransformEffect,
     bringToFront, sendToBack, moveElementZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, toggleMeshSmooth, bakeWarp,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, toggleMeshSmooth, bakeWarp,
     zoomToFit, zoomToFitSlide, updateGlobalSettings, detachSlideBackgroundImage, updateSlideBackground,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
@@ -368,6 +369,11 @@ export function getContextMenuItems(
                     { label: '5 × 5', onClick: () => applyMeshWarp([...store.selection], 5, 5) },
                 ]
             });
+            pathOps.push({
+                label: 'Warp Preset', icon: '〜', submenu: WARP_PRESETS.map(w => (
+                    { label: w.label, onClick: () => applyWarpPreset([...store.selection], w.id, 0.5) }
+                ))
+            });
             if (anyWarped) {
                 const anySmooth = store.selection.some(id => store.elements.find(x => x.id === id)?.warp?.smooth);
                 pathOps.push({ label: anySmooth ? 'Mesh: Sharp (bilinear)' : 'Mesh: Smooth (bicubic)', icon: '∿', onClick: () => toggleMeshSmooth([...store.selection]) });
@@ -387,6 +393,18 @@ export function getContextMenuItems(
                 ...(store.symmetry.enabled
                     ? [{ label: 'Mirror Across Symmetry Guide', icon: '⋈', onClick: () => mirrorAcrossSymmetry() }]
                     : []),
+                { separator: true },
+                {
+                    label: 'Transform Effect (live)', icon: '❋', submenu: [
+                        { label: 'Radial Fan ×12', icon: '✳', onClick: () => setTransformEffect([...store.selection], { copies: 11, rotate: 30, scaleX: 1, scaleY: 1, moveX: 0, moveY: 0, originX: 0, originY: 0.5 }) },
+                        { label: 'Rosette ×12 (in place)', icon: '❄', onClick: () => setTransformEffect([...store.selection], { copies: 11, rotate: 30, scaleX: 1, scaleY: 1, moveX: 0, moveY: 0, originX: 0.5, originY: 0.5 }) },
+                        { label: 'Spiral ×14 (rotate + shrink)', icon: '➰', onClick: () => setTransformEffect([...store.selection], { copies: 14, rotate: 22, scaleX: 0.86, scaleY: 0.86, moveX: 8, moveY: -6, originX: 0.5, originY: 0.5 }) },
+                        { label: 'Echo ×6 (offset trail)', icon: '⋯', onClick: () => setTransformEffect([...store.selection], { copies: 6, rotate: 0, scaleX: 1, scaleY: 1, moveX: 24, moveY: 18, originX: 0.5, originY: 0.5 }) },
+                        { separator: true },
+                        { label: 'Expand to Elements', icon: '⤓', onClick: () => expandTransformEffect([...store.selection]) },
+                        { label: 'Remove Effect', icon: '✕', onClick: () => clearTransformEffect([...store.selection]) },
+                    ]
+                },
             ]
         }, { separator: true });
 

@@ -107,6 +107,43 @@ export function defaultWarpCorners(width: number, height: number): Pt[] {
     return [{ x: -mw, y: -mh }, { x: mw, y: -mh }, { x: mw, y: mh }, { x: -mw, y: mh }];
 }
 
+// ── Named warp presets (Illustrator "Make with Warp") ─────────────────────
+
+export type WarpPreset = 'arc' | 'arch' | 'flag' | 'wave' | 'rise' | 'bulge';
+export const WARP_PRESETS: { id: WarpPreset; label: string }[] = [
+    { id: 'arc', label: 'Arc' }, { id: 'arch', label: 'Arch' }, { id: 'flag', label: 'Flag' },
+    { id: 'wave', label: 'Wave' }, { id: 'rise', label: 'Rise' }, { id: 'bulge', label: 'Bulge' },
+];
+
+/**
+ * Generate a warp control grid for a named preset. Each control point is displaced from the
+ * even grid by a parametric deformer scaled by `bend` (-1..1). A denser grid (default 5×9)
+ * + bicubic smoothing gives clean curves. The result plugs straight into `el.warp` so the
+ * existing render/hit-test/bake path renders it with no changes.
+ */
+export function warpPresetGrid(width: number, height: number, preset: WarpPreset, bend: number, rows = 5, cols = 9): WarpGrid {
+    const g = defaultWarpGrid(width, height, rows, cols);
+    const mh = height / 2;
+    const a = Math.max(-1, Math.min(1, bend));
+    const points = g.points.map((p, i) => {
+        const c = i % cols, r = Math.floor(i / cols);
+        const u = cols === 1 ? 0.5 : c / (cols - 1);   // 0..1 left→right
+        const v = rows === 1 ? 0.5 : r / (rows - 1);   // 0..1 top→bottom
+        const U = 2 * u - 1;                            // -1..1
+        let dy = 0;
+        switch (preset) {
+            case 'arc':   dy = -a * mh * (1 - U * U); break;              // whole shape bows (rainbow)
+            case 'arch':  dy = -a * mh * (1 - U * U) * (1 - v); break;    // top edge arcs, base held
+            case 'flag':  dy = a * mh * Math.sin(2 * Math.PI * u); break; // single S wave across width
+            case 'wave':  dy = a * mh * Math.sin(4 * Math.PI * u); break; // double wave
+            case 'rise':  dy = -a * mh * U; break;                        // linear slope (right rises)
+            case 'bulge': dy = a * mh * (1 - U * U) * (2 * v - 1); break; // top up + bottom down (fatten)
+        }
+        return { x: p.x, y: p.y + dy };
+    });
+    return { rows, cols, points };
+}
+
 // ── Bilinear (single cell) ────────────────────────────────────────────────
 
 function bilinear(p00: Pt, p10: Pt, p11: Pt, p01: Pt, u: number, v: number): Pt {

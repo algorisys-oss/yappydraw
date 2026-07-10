@@ -242,6 +242,27 @@ export interface PaintFill { color: string; opacity?: number; visible?: boolean;
 /** One extra stroke in the appearance stack. */
 export interface PaintStroke { color: string; width: number; opacity?: number; dash?: 'solid' | 'dashed' | 'dotted'; visible?: boolean; }
 
+/**
+ * Live "Transform effect" (Illustrator's Effect ▸ Distort & Transform ▸ Transform):
+ * a non-destructive modifier that renders `copies` accumulating ghost copies of the
+ * element at draw time. Copy k (1..copies) has the transform applied k times, so a
+ * per-step rotate/move/scale builds spirals, echoes, and radial fans. `expandTransformEffect`
+ * bakes the ghosts into real elements. Rotate/scale pivot about `origin` (bbox fraction,
+ * default centre). Absent = no effect (fully back-compatible).
+ */
+export interface TransformEffect {
+    copies: number;        // additional copies beyond the original (0 = no-op)
+    moveX?: number;        // per-step translation (element-local px, pre-rotation)
+    moveY?: number;
+    scaleX?: number;       // per-step scale multiplier (1 = none)
+    scaleY?: number;
+    rotate?: number;       // per-step rotation, degrees
+    reflectX?: boolean;    // reflect each copy horizontally about the origin
+    reflectY?: boolean;    // reflect each copy vertically about the origin
+    originX?: number;      // rotate/scale pivot, bbox fraction 0..1 (default 0.5)
+    originY?: number;
+}
+
 export interface DrawingElement {
     id: string;
     type: ElementType;
@@ -434,6 +455,9 @@ export interface DrawingElement {
     // Appearance stack — extra fills/strokes drawn OVER the base shape, bottom-to-top.
     // Absent = just the base backgroundColor/strokeColor (fully back-compatible).
     appearance?: { fills?: PaintFill[]; strokes?: PaintStroke[] };
+    // Live Transform effect — non-destructive accumulating copies (see TransformEffect).
+    // Absent = no effect. Bakeable via expandTransformEffect.
+    transformEffect?: TransformEffect;
     // General Free-Transform shear factors (NOT the perspectiveBlock-specific skewX/skewY
     // below, which warp that shape's 3D back face). Applied about the element centre as the
     // matrix [[1, shearX],[shearY, 1]] — shearX shifts x by shearX·y, shearY shifts y by shearY·x.
@@ -442,7 +466,10 @@ export interface DrawingElement {
     // Envelope / mesh warp — non-affine free-distort by an R×C control-point grid (row-major
     // `points`, in the centred-local frame). `corners` [TL,TR,BR,BL] is the legacy 2×2 form,
     // still read for back-compat. Absent = no warp. See utils/envelope-warp.ts.
-    warp?: { corners?: { x: number; y: number }[]; rows?: number; cols?: number; points?: { x: number; y: number }[]; smooth?: boolean };
+    warp?: { corners?: { x: number; y: number }[]; rows?: number; cols?: number; points?: { x: number; y: number }[]; smooth?: boolean;
+        // Named warp preset (Arc/Arch/Flag/Wave/Rise/Bulge) + its bend amount [-1..1]. When set,
+        // the control `points` are regenerated from the preset, so a bend slider stays live.
+        preset?: string; bend?: number };
     /** Puppet Warp pins (centred-local coords): `base` = rest position, current = {x,y}. The
      *  warp grid is recomputed from pin displacements via RBF interpolation. */
     puppetPins?: { baseX: number; baseY: number; x: number; y: number }[];

@@ -119,6 +119,39 @@ Yappy.distort('roughen', 0.08);  // light grunge`}</code></pre>
                 </p>
             </section>
 
+            {/* Warp Presets */}
+            <section class="doc-section">
+                <h2>〜 Warp Presets — Make with Warp</h2>
+                <p>
+                    Bend a shape or text along a named envelope — Illustrator's <em>Object → Envelope Distort
+                    → Make with Warp</em>. Select an object, right-click → <strong>Path → Warp Preset</strong>,
+                    and pick a style. The warp is <strong>live and re-editable</strong> (re-apply with a
+                    different bend to reshape); non-path shapes convert to a path first. Renders in both
+                    <strong> Sketch</strong> and <strong>Architectural</strong> styles. <strong>Apply / Bake
+                    Warp</strong> makes it permanent geometry.
+                </p>
+                <table class="api-table">
+                    <thead><tr><th>Preset</th><th>Shape</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Arc</strong></td><td>Whole object bows into a rainbow.</td></tr>
+                        <tr><td><strong>Arch</strong></td><td>Top edge arcs up, base held.</td></tr>
+                        <tr><td><strong>Flag</strong></td><td>Single S-wave across the width.</td></tr>
+                        <tr><td><strong>Wave</strong></td><td>Double wave (two humps).</td></tr>
+                        <tr><td><strong>Rise</strong></td><td>Linear slope — one side rises.</td></tr>
+                        <tr><td><strong>Bulge</strong></td><td>Fattens the middle (top up, bottom down).</td></tr>
+                    </tbody>
+                </table>
+                <pre class="code-block"><code>{`const t = Yappy.createElement('text', 200, 200, 360, 120, { containerText: 'WARP', fontSize: 96 });
+Yappy.setSelected([t]);
+Yappy.applyWarpPreset('arc', 0.6);   // bend -1..1
+Yappy.applyWarpPreset('flag', -0.5); // re-warp live
+Yappy.bakeWarp();                    // make it permanent geometry`}</code></pre>
+                <p class="tip-box">
+                    For a fully custom envelope, use <strong>Mesh Warp</strong> (drag the orange control
+                    points) or <strong>Envelope Distort</strong> (4-corner) in the same Path menu.
+                </p>
+            </section>
+
             {/* Knife & Scissors */}
             <section class="doc-section">
                 <h2>✂️ Knife &amp; Scissors</h2>

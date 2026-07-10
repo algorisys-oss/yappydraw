@@ -19,7 +19,8 @@ import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
-import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType, PatternSwatch } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType, PatternSwatch, TransformEffect } from "../types";
+import { transformCopy, effectiveCopies } from "../utils/transform-effect";
 import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos, parseHex, rgbToHex } from "../utils/mesh-gradient";
 import { defaultPatternFill } from "../utils/pattern-fill";
 import { captureElementsToDataURL } from "../utils/pattern-capture";
@@ -27,7 +28,7 @@ import { isSolidColor, shiftHexHue, adjustHexLightness, adjustHexSaturation } fr
 import { getStyleSnapshot } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
-import { defaultWarpGrid, getWarpGrid } from "../utils/envelope-warp";
+import { defaultWarpGrid, getWarpGrid, warpPresetGrid, type WarpPreset } from "../utils/envelope-warp";
 import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
@@ -6369,6 +6370,34 @@ export const toggleEnvelopeWarp = (ids: string[]): string[] => applyWarpGrid(ids
  */
 export const applyMeshWarp = (ids: string[], rows = 3, cols = 3): string[] => applyWarpGrid(ids, rows, cols, 'set');
 
+/**
+ * Apply a named warp preset (Illustrator "Make with Warp"): Arc/Arch/Flag/Wave/Rise/Bulge,
+ * bent by `bend` (-1..1). Non-path/image shapes convert to a path first (so the warp deforms
+ * an outline). Stores `preset`+`bend` on `el.warp` so a bend slider stays live/re-editable.
+ * Bake with `bakeWarp` to make it permanent geometry.
+ */
+export const applyWarpPreset = (ids: string[], preset: WarpPreset, bend = 0.5, history = true): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id));
+    if (targets.length === 0) { if (history) showToast('Warp: select a shape', 'info'); return []; }
+    if (history) pushToHistory();
+    const out: string[] = [];
+    setStore('elements', list => list.map(el => {
+        if (!ids.includes(el.id)) return el;
+        let base = el;
+        if (el.type !== 'path' && el.type !== 'image') {
+            const r = shapeToPath(el);
+            if (!r) return el;
+            base = { ...el, type: 'path', pathAnchors: r.anchors, pathClosed: r.closed, points: undefined, controlPoints: undefined } as DrawingElement;
+        }
+        out.push(el.id);
+        const grid = warpPresetGrid(base.width, base.height, preset, bend);
+        return { ...base, warp: { ...grid, smooth: true, preset, bend } } as DrawingElement;
+    }));
+    bumpDirtyRevision();
+    if (history) showToast(out.length ? `Warp: ${preset}` : 'Warp: unsupported shape', out.length ? 'success' : 'info');
+    return out;
+};
+
 /** Toggle bicubic (Catmull-Rom) smoothing on a warped element's mesh. */
 export const toggleMeshSmooth = (ids: string[]): string[] => {
     const targets = store.elements.filter(e => ids.includes(e.id) && e.warp);
@@ -6437,6 +6466,59 @@ export const bakeWarp = (ids: string[]): string[] => {
     bumpDirtyRevision();
     showToast(out.length ? 'Warp baked' : 'Bake: unsupported shape', out.length ? 'success' : 'info');
     return out;
+};
+
+// ── Live Transform effect (Illustrator's Effect ▸ Distort & Transform ▸ Transform) ──
+
+const DEFAULT_TRANSFORM_EFFECT: TransformEffect = { copies: 6, rotate: 15, scaleX: 1, scaleY: 1, moveX: 0, moveY: 0 };
+
+/** Apply / update the live Transform effect on the given elements (merges over existing).
+ *  `history=false` skips the undo snapshot + toast (for live slider dragging). */
+export const setTransformEffect = (ids: string[], fx?: Partial<TransformEffect>, history = true) => {
+    if (ids.length === 0) { if (history) showToast('Transform: select an object', 'info'); return; }
+    if (history) pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), (e: DrawingElement) => ({
+        transformEffect: { ...DEFAULT_TRANSFORM_EFFECT, ...e.transformEffect, ...fx } as TransformEffect,
+    }));
+    bumpDirtyRevision();
+    if (history) showToast('Transform effect applied', 'success');
+};
+
+/** Remove the live Transform effect, leaving just the base element. */
+export const clearTransformEffect = (ids: string[]) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ transformEffect: undefined }));
+    bumpDirtyRevision();
+};
+
+/**
+ * Expand (bake) the live Transform effect into real elements — Illustrator's "Expand
+ * Appearance". The source keeps its geometry (effect stripped); copies 1..N become new
+ * elements via the SAME per-copy math the live renderer uses. Returns the new copy ids.
+ */
+export const expandTransformEffect = (ids: string[]): string[] => {
+    const targets = store.elements.filter(e => ids.includes(e.id) && effectiveCopies(e.transformEffect) > 0);
+    if (targets.length === 0) { showToast('Expand: no transform effect', 'info'); return []; }
+    pushToHistory();
+    const newIds: string[] = [];
+    for (const el of targets) {
+        const fx = el.transformEffect!;
+        const n = effectiveCopies(fx);
+        // Append copies 1..N as fresh elements (cloneSelection gives group-aware new ids/seeds).
+        for (let k = 1; k <= n; k++) {
+            const made = cloneSelection([el.id], (clone, src) => {
+                const t = transformCopy(src, fx, k, ''); // reuse the render math; ignore its id
+                return { ...clone, x: t.x, y: t.y, angle: t.angle, renderScale: t.renderScale, flipX: t.flipX, flipY: t.flipY };
+            });
+            newIds.push(...made);
+        }
+    }
+    // Strip the live effect from the sources (they now render as their plain base).
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ transformEffect: undefined }));
+    bumpDirtyRevision();
+    showToast(`Expanded — ${newIds.length} copies`, 'success');
+    return newIds;
 };
 
 const applyWarpGrid = (ids: string[], rows: number, cols: number, mode: 'toggle' | 'set'): string[] => {
