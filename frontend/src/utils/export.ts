@@ -423,7 +423,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     const { minX, minY, maxX, maxY } = elementsBounds(elements);
 
     // Padding
-    const padding = 20;
+    const padding = 2;   // tight crop — avoid a transparent border (visual bounds already include stroke/effects)
     const width = maxX - minX + padding * 2;
     const height = maxY - minY + padding * 2;
 
@@ -567,7 +567,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
     const __eb = elementsBounds(elements);
     let minX = __eb.minX, minY = __eb.minY, maxX = __eb.maxX, maxY = __eb.maxY;
 
-    const padding = 20;
+    const padding = 2;   // tight crop — avoid a transparent border (visual bounds already include stroke/effects)
     const width = maxX - minX + padding * 2;
     const height = maxY - minY + padding * 2;
 
@@ -603,7 +603,7 @@ export const copyCanvasAsPng = async (scale: number) => {
     const __eb = elementsBounds(elements);
     let minX = __eb.minX, minY = __eb.minY, maxX = __eb.maxX, maxY = __eb.maxY;
 
-    const padding = 20;
+    const padding = 2;   // tight crop — avoid a transparent border (visual bounds already include stroke/effects)
     const width = maxX - minX + padding * 2;
     const height = maxY - minY + padding * 2;
 
@@ -660,7 +660,7 @@ export const exportToSvg = (onlySelected: boolean) => {
         });
     }
 
-    const padding = 20;
+    const padding = 2;   // tight crop — avoid a transparent border (visual bounds already include stroke/effects)
     const width = maxX - minX + padding * 2;
     const height = maxY - minY + padding * 2;
 

@@ -199,7 +199,7 @@ frontend/src/components/property-panel.tsx | typescript | 2329 | Component:1 Pro
 frontend/src/components/puppet-warp-overlay.css | - | 36 |
 frontend/src/components/puppet-warp-overlay.tsx | typescript | 110 | PuppetWarpOverlay:12 target:19 warpable:20 active:21 notice:23 toWorld:24 pinWorld:27 hitPin:33 onDown:42 onMove:63 onUp:70 onKey:76 pinDots:81
 frontend/src/components/quick-toolbar.css | - | 537 |
-frontend/src/components/quick-toolbar.tsx | typescript | 796 | Component:7 QuickPropertyDef:15 getIcon:63 handleDocClick:112 isTransparent:129 handleDocClick:177 activeOption:193 isActive:233 toggle:239 an:263 clamp:275 beginEdit:277 commit:282 a:305 handleDocClick:346 activeLabel:362 categories:366 QuickToolbar:419 selectedElement:423 handler:505 handlePropertyChange:519 handlePropertyStart:564 x:571 y:596 value:632 isDisabled:675
+frontend/src/components/quick-toolbar.tsx | typescript | 800 | Component:7 QuickPropertyDef:15 getIcon:63 handleDocClick:112 isTransparent:129 handleDocClick:177 activeOption:193 isActive:233 toggle:239 an:263 clamp:275 beginEdit:277 commit:282 a:305 is:325 handleDocClick:350 activeLabel:366 categories:370 QuickToolbar:423 selectedElement:427 handler:509 handlePropertyChange:523 handlePropertyStart:568 x:575 y:600 value:636 isDisabled:679
 frontend/src/components/recolor-panel.css | - | 61 |
 frontend/src/components/recolor-panel.tsx | typescript | 98 | Component:1 RecolorPanel:16 swatches:23 beginEdit:25 pickLive:31 endEdit:38 valHex:39
 frontend/src/components/recording-overlay.css | - | 100 |
@@ -655,7 +655,7 @@ scripts/gen-large-sketch.cjs | javascript | 1211 | seed:17 id:21 makeShape:25 ma
 scripts/generate_slides.py | python | 150 |
 scripts/generate_slides_v2.py | python | 363 | generate_elements:184 create_slides_structure:299
 scripts/generate_slides_v3.py | python | 478 | generate_elements:287 create_slides_structure:408
-scripts/publish-oss.sh | shell | 193 | info:40 warn:41 error:42
+scripts/publish-oss.sh | shell | 203 | info:40 warn:41 error:42
 scripts/render-dsl.mjs | javascript | 161 | parseArgs:34 opts:35 fail:54 isUp:74 waitUntilUp:81 main:90
 scripts/repograph-refresh.sh | shell | 25 |
 scripts/test_relative_path.ts | typescript | 58 |

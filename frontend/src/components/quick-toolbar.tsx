@@ -318,8 +318,12 @@ const MiniSliderControl: Component<{
                     value={Math.round(props.value ?? props.max)}
                     ref={(el) => queueMicrotask(() => { el.focus(); el.select(); })}
                     onInput={(e) => {
-                        const n = Number(e.currentTarget.value);
-                        if (e.currentTarget.value.trim() !== '' && !Number.isNaN(n)) props.onChange(clamp(n));
+                        const raw = e.currentTarget.value;
+                        const n = Number(raw);
+                        // Live-preview only COMPLETE, in-range values. A partial or below-min entry
+                        // (e.g. "1" while typing "16") must stay in the field — clamping it to the min
+                        // mid-type is what made font size snap to 8 and block further typing.
+                        if (raw.trim() !== '' && !Number.isNaN(n) && n >= props.min && n <= props.max) props.onChange(n);
                     }}
                     onBlur={(e) => commit(e.currentTarget.value)}
                     onKeyDown={(e) => {
