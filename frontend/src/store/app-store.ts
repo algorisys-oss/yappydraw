@@ -30,7 +30,7 @@ import { isSolidColor, shiftHexHue, adjustHexLightness, adjustHexSaturation } fr
 import { getStyleSnapshot } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
-import { defaultWarpGrid, getWarpGrid, warpPresetGrid, type WarpPreset } from "../utils/envelope-warp";
+import { defaultWarpGrid, getWarpGrid, warpPresetGrid, silhouetteWarpGrid, type WarpPreset } from "../utils/envelope-warp";
 import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
@@ -4534,6 +4534,98 @@ export const blendAlongPath = (ids?: string[], steps = 8, orient = true): string
     return additions.map(x => x.id);
 };
 
+/** Arc-length-even resample of a closed ring to exactly `n` points. */
+const resampleRing = (ring: [number, number][], n: number): [number, number][] => {
+    if (ring.length < 2) return ring.slice();
+    const cum = [0]; let len = 0;
+    for (let i = 1; i <= ring.length; i++) {
+        const a = ring[i - 1], b = ring[i % ring.length];
+        len += Math.hypot(b[0] - a[0], b[1] - a[1]); cum.push(len);
+    }
+    if (len < 1e-6) return ring.slice();
+    const out: [number, number][] = [];
+    for (let k = 0; k < n; k++) {
+        const target = (k / n) * len;
+        let i = 1; while (i < cum.length - 1 && cum[i] < target) i++;
+        const segLen = (cum[i] - cum[i - 1]) || 1, u = (target - cum[i - 1]) / segLen;
+        const a = ring[(i - 1) % ring.length], b = ring[i % ring.length];
+        out.push([a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]);
+    }
+    return out;
+};
+
+/** Rotate/flip ring `rb` to best-match `ra` point-for-point (minimises twist in a morph). */
+const alignRing = (ra: [number, number][], rb: [number, number][]): [number, number][] => {
+    const n = ra.length;
+    const cost = (arr: [number, number][], off: number) => {
+        let s = 0;
+        for (let i = 0; i < n; i++) { const p = arr[(i + off) % n]; s += Math.hypot(p[0] - ra[i][0], p[1] - ra[i][1]); }
+        return s;
+    };
+    const rbRev = [...rb].reverse();
+    let best = { arr: rb, off: 0, c: Infinity };
+    for (const arr of [rb, rbRev]) {
+        for (let off = 0; off < n; off++) { const c = cost(arr, off); if (c < best.c) best = { arr, off, c }; }
+    }
+    return Array.from({ length: n }, (_, i) => best.arr[(i + best.off) % n]);
+};
+
+/**
+ * Smooth (shape-morph) blend — Illustrator's real blend: interpolate the two shapes' OUTLINES
+ * point-for-point, so a circle actually morphs into a star (not just recolours/resizes). Both
+ * outlines are sampled to the same point count and aligned to minimise twist; each step is a new
+ * `path` element. Selection = two shapes.
+ */
+export const blendShapesMorph = (ids?: string[], steps = 8): string[] => {
+    const sel = ids ?? store.selection;
+    const a = store.elements.find(e => e.id === sel[0]);
+    const b = store.elements.find(e => e.id === sel[1]);
+    if (!a || !b || a.id === b.id) { showToast('Blend: select two objects', 'info'); return []; }
+    const ringA0 = elementToMultiPolygon(a)[0]?.[0];
+    const ringB0 = elementToMultiPolygon(b)[0]?.[0];
+    if (!ringA0 || !ringB0 || ringA0.length < 3 || ringB0.length < 3) { showToast('Blend: cannot outline these shapes', 'info'); return []; }
+    const N = 120;
+    const rA = resampleRing(ringA0, N);
+    const rB = alignRing(rA, resampleRing(ringB0, N));
+
+    const n = Math.max(1, Math.min(50, Math.round(steps)));
+    const lerp = (x: number, y: number, t: number) => x + (y - x) * t;
+    const lerpColor = (c1?: string, c2?: string, t = 0): string | undefined => {
+        if (!c1 || c1 === 'transparent') return c2;
+        if (!c2 || c2 === 'transparent') return c1;
+        const A = parseHex(c1), B = parseHex(c2);
+        return rgbToHex(lerp(A.r, B.r, t), lerp(A.g, B.g, t), lerp(A.b, B.b, t));
+    };
+
+    pushToHistory();
+    const batch = new Set<string>();
+    const additions: DrawingElement[] = [];
+    for (let k = 1; k <= n; k++) {
+        const t = k / (n + 1);
+        const pts: [number, number][] = rA.map((p, i) => [lerp(p[0], rB[i][0], t), lerp(p[1], rB[i][1], t)]);
+        const el = buildPathFromPoly([pts], {
+            backgroundColor: lerpColor(a.backgroundColor, b.backgroundColor, t) ?? a.backgroundColor,
+            fillStyle: (a.fillStyle === 'solid' || b.fillStyle === 'solid') ? 'solid' : a.fillStyle,
+            strokeColor: lerpColor(a.strokeColor, b.strokeColor, t) ?? a.strokeColor,
+            strokeWidth: lerp(a.strokeWidth ?? 1, b.strokeWidth ?? 1, t),
+            opacity: lerp(a.opacity ?? 100, b.opacity ?? 100, t),
+            renderStyle: a.renderStyle,
+        }, undefined, batch);
+        if (el) additions.push(el);
+    }
+    if (!additions.length) { showToast('Blend: could not build morph', 'info'); return []; }
+    setStore('elements', (list: DrawingElement[]) => {
+        const idx = list.findIndex(e => e.id === a.id);
+        const copy = [...list];
+        copy.splice(idx + 1, 0, ...additions);
+        return copy;
+    });
+    setStore('selection', [a.id, ...additions.map(x => x.id), b.id]);
+    bumpDirtyRevision();
+    showToast(`Morph blend — ${n} steps`, 'success');
+    return additions.map(x => x.id);
+};
+
 // ── Recolor artwork ──────────────────────────────────────────────────────────
 
 export const toggleRecolorPanel = (visible?: boolean) => setStore('showRecolorPanel', v => visible ?? !v);
@@ -6467,6 +6559,52 @@ export const applyWarpPreset = (ids: string[], preset: WarpPreset, bend = 0.5, h
     bumpDirtyRevision();
     if (history) showToast(out.length ? `Warp: ${preset}` : 'Warp: unsupported shape', out.length ? 'success' : 'info');
     return out;
+};
+
+/**
+ * Envelope Distort ▸ Make with Top Object — warp artwork into the SILHOUETTE of the frontmost
+ * selected shape. The top shape becomes the envelope (consumed); the lower artwork is scaled to
+ * the top's bounding box and squeezed into its outline via a silhouette warp grid. Selection =
+ * artwork + a top shape (≥2). Returns the warped artwork id.
+ */
+export const envelopeWithTopObject = (ids?: string[]): string[] => {
+    const sel = ids ?? store.selection;
+    if (sel.length < 2) { showToast('Envelope: select artwork + a top shape', 'info'); return []; }
+    const ordered = store.elements.filter(e => sel.includes(e.id)); // z-order (bottom→top)
+    const top = ordered[ordered.length - 1];
+    const artwork = ordered[0];
+    if (top.id === artwork.id) { showToast('Envelope: need two objects', 'info'); return []; }
+    const ring = elementToMultiPolygon(top)[0]?.[0];
+    if (!ring || ring.length < 3) { showToast('Envelope: top shape has no outline', 'info'); return []; }
+    let bx = Infinity, by = Infinity, mx = -Infinity, my = -Infinity;
+    for (const [x, y] of ring) { bx = Math.min(bx, x); by = Math.min(by, y); mx = Math.max(mx, x); my = Math.max(my, y); }
+    const bw = Math.max(1, mx - bx), bh = Math.max(1, my - by);
+    const grid = silhouetteWarpGrid(ring, bx, by, bw, bh);
+
+    pushToHistory();
+    setStore('elements', list => list.map(el => {
+        if (el.id !== artwork.id) return el;
+        let base = el;
+        if (el.type !== 'path' && el.type !== 'image') {
+            const r = shapeToPath(el);
+            if (!r) return el;
+            base = { ...el, type: 'path', pathAnchors: r.anchors, pathClosed: r.closed, points: undefined, controlPoints: undefined } as DrawingElement;
+        }
+        const sx = bw / Math.max(1, base.width), sy = bh / Math.max(1, base.height);
+        return {
+            ...base,
+            x: bx, y: by, width: bw, height: bh,
+            pathAnchors: scalePathAnchors(base.pathAnchors as any, sx, sy) as any,
+            pathSubpaths: scalePathSubpaths(base.pathSubpaths as any, sx, sy) as any,
+            warp: { ...grid, smooth: true },
+        } as DrawingElement;
+    }));
+    // The top object is consumed as the envelope.
+    setStore('elements', list => list.filter(e => e.id !== top.id));
+    setStore('selection', [artwork.id]);
+    bumpDirtyRevision();
+    showToast('Envelope: made with top object', 'success');
+    return [artwork.id];
 };
 
 /** Toggle bicubic (Catmull-Rom) smoothing on a warped element's mesh. */

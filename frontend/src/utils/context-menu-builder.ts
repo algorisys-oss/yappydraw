@@ -11,7 +11,7 @@ import { WARP_PRESETS } from './envelope-warp';
 import {
     store, setStore, pushToHistory, updateElement, selectAll,
     duplicateElement, groupSelected, ungroupSelected, makeClippingMask, makeOpacityMask, releaseClippingMask, createSymbol, createPatternFromSelection, detachInstance, enterSymbolEdit, startEyedropper, createGraphicStyle, addArtboard, deleteArtboard,
-    blendShapes, blendAlongPath,
+    blendShapes, blendAlongPath, blendShapesMorph,
     toggleRecolorPanel, toggleBehaviorsPanel,
     toggleShapeBuilder,
     toggleCutTool,
@@ -27,7 +27,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, toggleMeshSmooth, bakeWarp,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp,
     zoomToFit, zoomToFitSlide, updateGlobalSettings, detachSlideBackgroundImage, updateSlideBackground,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
@@ -1301,6 +1301,9 @@ export function getContextMenuItems(
                     { label: '4 steps', onClick: () => blendShapes(two, 4) },
                     { label: '8 steps', onClick: () => blendShapes(two, 8) },
                     { label: '16 steps', onClick: () => blendShapes(two, 16) },
+                    { separator: true },
+                    { label: 'Smooth Morph ×8', icon: '❈', onClick: () => blendShapesMorph(two, 8) },
+                    { label: 'Smooth Morph ×16', icon: '❈', onClick: () => blendShapesMorph(two, 16) },
                 ],
             });
         }
@@ -1323,6 +1326,7 @@ export function getContextMenuItems(
         if (selectionCount >= 2) {
             items.push({ label: 'Shape Builder', icon: '⬓', onClick: () => toggleShapeBuilder(true) });
             items.push({ label: 'Live Paint Bucket', icon: '🪣', onClick: () => { makeLivePaint([...store.selection]); toggleLivePaint(true); } });
+            items.push({ label: 'Envelope: Make with Top Object', icon: '⬖', onClick: () => envelopeWithTopObject([...store.selection]) });
         }
         if (selectionCount >= 1) {
             items.push({ label: 'Knife / Scissors', icon: '✂️', onClick: () => toggleCutTool(true) });

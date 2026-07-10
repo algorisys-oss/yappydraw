@@ -150,6 +150,14 @@ Yappy.bakeWarp();                    // make it permanent geometry`}</code></pre
                     For a fully custom envelope, use <strong>Mesh Warp</strong> (drag the orange control
                     points) or <strong>Envelope Distort</strong> (4-corner) in the same Path menu.
                 </p>
+                <h3>Make with Top Object</h3>
+                <p>
+                    Select some <strong>artwork plus a shape on top</strong>, then right-click →
+                    <strong> Envelope: Make with Top Object</strong>. The top shape becomes the envelope
+                    (consumed), and the artwork is squeezed into its <em>silhouette</em> — text into a heart,
+                    a logo into a circle, etc. <code>Yappy.envelopeWithTopObject()</code>. Bake with
+                    <strong> Apply / Bake Warp</strong> to make it permanent.
+                </p>
             </section>
 
             {/* Knife & Scissors */}

@@ -89,6 +89,14 @@ const WorkspaceDoc: Component = () => {
                     The blend uses the first object's shape for the steps (it grows/recolours toward the second), so
                     it's ideal for graduated copies along a line. <code>Yappy.blend(steps)</code>.
                 </p>
+                <h3>Smooth Morph blend</h3>
+                <p>
+                    Right-click two shapes → <strong>Blend ▸ Smooth Morph</strong> to interpolate their
+                    <em> outlines</em> point-for-point — so a circle actually <strong>morphs into a star</strong>
+                    (not just grows/recolours). Each step is a new editable <strong>path</strong>; colours blend
+                    too. <code>Yappy.blendMorph(steps)</code>. Great for shape-transition sequences and
+                    logo/letter morphs.
+                </p>
                 <h3>Blend along a spine</h3>
                 <p>
                     Select <strong>two objects plus a path or line</strong> (the spine), then right-click →

@@ -76,7 +76,7 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 3319 | Theme:3 HarmonyType:48 ElementOptions:99 normalizeElementType:305 ElementType:510 as:510 Window:3311
+frontend/src/api.ts | typescript | 3328 | Theme:3 HarmonyType:48 ElementOptions:99 normalizeElementType:305 ElementType:510 as:510 Window:3320
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1477 | Component:1 App:96 moves:116 onPenMove:117 hidePen:121 onControllerChange:141 handleKeyUp:170 handleKeyDown:180 as:689 handleFullscreenChange:804 handleBeforeUnload:810 handlePaste:814 handleGlobalDragEnter:916 handleGlobalDragOver:931 showDropFallbackPrompt:950 cleanup:980 outsideClick:1008 isImageFile:1020 first:1021 must:1034 extractDropData:1036 processExtractedDrop:1091 handleGlobalDrop:1208 handleDocumentDrop:1254
 frontend/src/assets/solid.svg | - | 1 |
@@ -363,13 +363,13 @@ frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 113 | BulkEd
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 248 | DesignStudioDoc:9
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 188 | EffectsDoc:10 Tools:181
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 103 | EmbeddingDoc:3
-frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 477 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
+frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 485 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 337 | LogoToolkitDoc:9 the:146
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 375 | MasksAppearanceTraceDoc:8 tools:14 dropdown:159
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 224 | StickAnimationDoc:9
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 108 | SymbolsDoc:9
-frontend/src/help-docs/features/workspace-doc.tsx | typescript | 147 | WorkspaceDoc:9 and:32 a:37
+frontend/src/help-docs/features/workspace-doc.tsx | typescript | 155 | WorkspaceDoc:9 and:32 a:37
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 637 | YslTutorialDoc:8 members:541 Subject:556
 frontend/src/help-docs/help-page.css | - | 411 |
 frontend/src/help-docs/help-page.tsx | typescript | 393 | Component:6 ShapeDoc:11 Tools:130 vertical:134 getShapeFromHash:286 HelpPage:292 handleHashChange:298 navigateToShape:309 filteredShapes:314 currentDoc:325 handleBackToApp:327
@@ -461,7 +461,7 @@ frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 Docu
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 readIndex:37 writeIndex:41 saveSnapshot:45 maybeSnapshotVersion:68 snapshotVersionNow:85 listVersions:96 restoreVersion:101 deleteVersion:113
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 7206 | LayoutDirection:10 OutlineNode:10 BooleanOp:11 Poly:11 ShapeFace:11 DistortKind:12 WarpPreset:33 Theme:42 ResolvedTheme:43 AppState:70 HistorySnapshot:528 BP:1477 AlignmentType:4204 DistributionType:4204 CharPatch:4643 CharPatchArg:4646 SelBBox:5600 LastTransform:5850 RegionPathfinderOp:6209 SelectSimilarMatch:6342 buildPathFromPoly:6751 WorldSub:6840 rdpAnchors:6843 normalizeWorldSubs:6871 makePathFromWorldSubs:6886 elementToWorldSubs:6907 startInkCleanupIfNeeded:7145
+frontend/src/store/app-store.ts | typescript | 7344 | LayoutDirection:10 OutlineNode:10 BooleanOp:11 Poly:11 ShapeFace:11 DistortKind:12 WarpPreset:33 Theme:42 ResolvedTheme:43 AppState:70 HistorySnapshot:528 BP:1477 AlignmentType:4204 DistributionType:4204 CharPatch:4735 CharPatchArg:4738 SelBBox:5692 LastTransform:5942 RegionPathfinderOp:6301 SelectSimilarMatch:6434 buildPathFromPoly:6889 WorldSub:6978 rdpAnchors:6981 normalizeWorldSubs:7009 makePathFromWorldSubs:7024 elementToWorldSubs:7045 startInkCleanupIfNeeded:7283
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
 frontend/src/templates/data/designs/index.ts | typescript | 272 |
 frontend/src/templates/data/designs/pack.ts | typescript | 445 |
@@ -518,14 +518,14 @@ frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:
 frontend/src/utils/color-harmony.ts | typescript | 83 | HarmonyType:10 generateTints:19 generateHarmony:29 loadImage:41 extractImagePalette:56
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 433 | Command:22
-frontend/src/utils/context-menu-builder.ts | typescript | 1702 | MergedCellRegion:57 buildSelectByTypeMenu:73 buildSelectBySamePropertyMenu:152 getContextMenuItems:182 buildFormatMenuItems:1533 buildBorderMenuItems:1628
+frontend/src/utils/context-menu-builder.ts | typescript | 1706 | MergedCellRegion:57 buildSelectByTypeMenu:73 buildSelectBySamePropertyMenu:152 getContextMenuItems:182 buildFormatMenuItems:1537 buildBorderMenuItems:1632
 frontend/src/utils/curve-fit.ts | typescript | 38 | Pt:10 catmullRomAnchors:13
 frontend/src/utils/custom-fonts.ts | typescript | 176 | CustomFont:18 loadGoogleLink:34 activate:47 persist:67 initCustomFonts:77 addCustomFontFromFile:104 addGoogleFont:119 removeCustomFont:132 customFontOptions:139
 frontend/src/utils/document-io.ts | typescript | 56 | buildSlideDocument:12 normalizeDocument:35 gzipString:40 gunzipBytes:46 decodeDocumentBytes:52
 frontend/src/utils/draggable-panel.ts | typescript | 46 | makeDraggable:11 draggablePanel:41
 frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperationParams:23 getOperationsForType:79 parseValues:87 bstInsert:99 bstRemove:138 nodeAt:154 bstDeleteAt:159 moveSubtreeUp:192 collectRelative:211 clearSubtree:219 relToAbs:227 simpleHash:247 hashTablePut:259 hashTableRemove:270 animateDsOperation:287 executeDsOperation:350 abortDsAlgorithm:544 isDsAlgorithmRunning:551 setDsAnimationSpeed:555 getDsAnimationSpeed:559 clearDsHighlights:563 animateDsStep:580 compareValues:604 bubbleSort:613 selectionSort:662 insertionSort:714 linearSearch:765 binarySearch:796 bfsTraversal:853 dfsInorderTraversal:882 dfsPreorderTraversal:912 executeDsSortSearch:944
 frontend/src/utils/element-transforms.ts | typescript | 369 | changeElementType:4 isConnectorType:11 getTransformOptions:99 getShapeIcon:154 getShapeTooltip:350 getCurveTypeOptions:354 getCurveTypeIcon:358 getCurveTypeTooltip:367
-frontend/src/utils/envelope-warp.ts | typescript | 289 | Pt:20 WarpGrid:21 getWarpGrid:26 defaultWarpGrid:40 catmull:59 subdivideGrid:66 getEffectiveGrid:98 defaultWarpCorners:105 WarpPreset:112 warpPresetGrid:124 bilinear:149 invBilinear:157 pointInQuad:179 meshWarpPoint:191 geoToSubpolylines:225 warpGeometry:274
+frontend/src/utils/envelope-warp.ts | typescript | 327 | Pt:20 WarpGrid:21 getWarpGrid:26 defaultWarpGrid:40 catmull:59 subdivideGrid:66 getEffectiveGrid:98 defaultWarpCorners:105 WarpPreset:112 warpPresetGrid:124 verticalSpan:148 silhouetteWarpGrid:169 bilinear:187 invBilinear:195 pointInQuad:217 meshWarpPoint:229 geoToSubpolylines:263 warpGeometry:312
 frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19 parseExpr:72
 frontend/src/utils/export-game.ts | typescript | 42 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47

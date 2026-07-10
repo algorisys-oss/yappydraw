@@ -144,6 +144,44 @@ export function warpPresetGrid(width: number, height: number, preset: WarpPreset
     return { rows, cols, points };
 }
 
+/** Vertical span [yTop, yBottom] where a vertical line at `x` crosses a world ring. */
+function verticalSpan(ring: [number, number][], x: number, ymin: number, ymax: number): [number, number] {
+    const ys: number[] = [];
+    const n = ring.length;
+    for (let i = 0; i < n; i++) {
+        const a = ring[i], b = ring[(i + 1) % n];
+        const lo = Math.min(a[0], b[0]), hi = Math.max(a[0], b[0]);
+        if (x >= lo && x <= hi && a[0] !== b[0]) {
+            const t = (x - a[0]) / (b[0] - a[0]);
+            ys.push(a[1] + (b[1] - a[1]) * t);
+        }
+    }
+    if (ys.length < 2) return [ymin, ymax];
+    return [Math.min(...ys), Math.max(...ys)];
+}
+
+/**
+ * Envelope "Make with Top Object": a warp control grid that maps a bbox into a shape's
+ * SILHOUETTE. For each column, the artwork's rows are squeezed between the top/bottom of the
+ * top shape's outline at that x — so text/artwork takes the shape's form. Points are centred-local
+ * relative to the bbox centre (the standard `el.warp` frame).
+ */
+export function silhouetteWarpGrid(ring: [number, number][], bx: number, by: number, bw: number, bh: number, rows = 6, cols = 16): WarpGrid {
+    const cx = bx + bw / 2, cy = by + bh / 2;
+    const points: Pt[] = [];
+    for (let r = 0; r < rows; r++) {
+        const v = rows === 1 ? 0 : r / (rows - 1);
+        for (let c = 0; c < cols; c++) {
+            const u = cols === 1 ? 0.5 : c / (cols - 1);
+            const x = bx + u * bw;
+            const [yt, yb] = verticalSpan(ring, x, by, by + bh);
+            const y = yt + v * (yb - yt);
+            points.push({ x: x - cx, y: y - cy });
+        }
+    }
+    return { rows, cols, points };
+}
+
 // ── Bilinear (single cell) ────────────────────────────────────────────────
 
 function bilinear(p00: Pt, p10: Pt, p11: Pt, p01: Pt, u: number, v: number): Pt {
