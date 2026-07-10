@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Yappy",
-  "version": "0.8.49",
+  "version": "0.8.50",
   "identifier": "com.algorisys.yappy",
   "build": {
     "beforeDevCommand": "cd .. && npm run desktop:dev",
@@ -10,6 +10,7 @@
     "frontendDist": "../../dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Yappy",
@@ -29,6 +30,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -38,6 +40,22 @@
     ],
     "category": "GraphicsAndDesign",
     "shortDescription": "Diagramming, drawing & vector-illustration app.",
-    "longDescription": "Yappy — an infinite-canvas app for diagrams, sketches, presentations and Illustrator-class vector work (pen/paths, pathfinder, warp, live 3D & transform effects). This desktop build wraps the web frontend in a native window via Tauri; it runs fully client-side and offline."
+    "longDescription": "Yappy — an infinite-canvas app for diagrams, sketches, presentations and Illustrator-class vector work (pen/paths, pathfinder, warp, live 3D & transform effects). This desktop build wraps the web frontend in a native window via Tauri; it runs fully client-side and offline.",
+    "fileAssociations": [
+      {
+        "ext": ["yappy"],
+        "name": "Yappy Document",
+        "description": "Yappy drawing / diagram document",
+        "role": "Editor"
+      }
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/algorisys-oss/yappydraw/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEExOERDRDEyRTk4MDIyMzkKUldRNUlvRHBFczJOb2F2dVBQbC9MekJvczlLdGpLRVNlQlR5Z081dk1UU3hpWXY1V2JZdDRRTzEK"
+    }
   }
 }

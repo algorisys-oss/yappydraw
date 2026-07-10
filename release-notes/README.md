@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.50](0.8.50.md) — Desktop Phase 2: native Open/Save (.yappy), Open Recent, file associations, single-instance & auto-update
 - [0.8.49](0.8.49.md) — Native desktop app (Tauri v2, builds `.deb`/`.rpm`/`.AppImage`); export crop/dropped-element/missing-effect fix
 - [0.8.48](0.8.48.md) — Live 3D Extrude (+ tilt & Expand-to-faces), Blend-along-spine, Warp-preset panel editor; numeric-input clear fix
 - [0.8.47](0.8.47.md) — Live Transform effect (accumulating copies) + named Warp presets (Arc/Flag/Wave…); createElement type-alias fix

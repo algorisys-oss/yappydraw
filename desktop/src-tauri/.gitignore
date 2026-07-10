@@ -3,3 +3,6 @@
 
 # Tauri-generated schemas and codegen output
 /gen/
+
+# Updater signing keys (private key must NEVER be committed)
+yappy-updater.key*

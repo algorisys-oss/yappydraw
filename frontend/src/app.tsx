@@ -104,6 +104,11 @@ const App: Component = () => {
   // whole editor. Mouse/touch keep the normal system cursor (dot hidden).
   const [penPos, setPenPos] = createSignal<{ x: number; y: number } | null>(null);
   onMount(() => {
+    // Desktop (Tauri) shell: wire native menu + file Open/Save. No-op on web.
+    void import('./desktop/desktop-bridge').then(m => m.initDesktop());
+  });
+
+  onMount(() => {
     // Show the dot for the pen; null it for mouse/touch (they keep the system
     // cursor). We DON'T hide on `pointerout` — its `relatedTarget` goes null when
     // the canvas grabs pointer capture on contact, which would blink the dot off
