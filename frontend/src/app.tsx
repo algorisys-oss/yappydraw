@@ -1,5 +1,6 @@
 import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal } from 'solid-js';
 import { isMultiPageDocType } from './types/slide-types';
+import { isPanelOpen } from './store/dock-layout';
 import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel,
   toggleMinimap, toggleRulers, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
@@ -53,7 +54,6 @@ import { parseOutline } from './utils/mindmap-layout';
 import { updateElement, deleteArtboard, swapFillStroke, selectAll } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const DockContainer = lazy(() => import('./components/dock/dock-container'));
-const LayerPanel = lazy(() => import('./components/layer-panel'));
 const SceneTimeline = lazy(() => import('./components/scene-timeline'));
 const GameGraph = lazy(() => import('./components/game-graph'));
 const BlueprintGraph = lazy(() => import('./components/blueprint-graph'));
@@ -438,7 +438,7 @@ const App: Component = () => {
           togglePatternsPanel();
         } else if (key === '\\' || code === 'Backslash') {
           e.preventDefault();
-          const anyVisible = store.showPropertyPanel || store.showLayerPanel;
+          const anyVisible = store.showPropertyPanel || isPanelOpen('layers');
           togglePropertyPanel(!anyVisible);
           toggleLayerPanel(!anyVisible);
         } else if (key === '[' || code === 'BracketLeft') {
@@ -1289,7 +1289,6 @@ const App: Component = () => {
           <Show when={!store.zenMode}>
             <DockContainer />
             <PropertyPanel />
-            <LayerPanel />
             <SceneTimeline />
             <GameGraph />
             <BlueprintGraph />

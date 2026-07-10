@@ -1,8 +1,7 @@
 import { type Component, For, createSignal, Show } from 'solid-js';
-import { store, addLayer, setActiveLayer, updateLayer, deleteLayer, duplicateLayer, reorderLayers, toggleLayerPanel, minimizeLayerPanel, toggleLayerGroupingMode, createLayerGroup, toggleLayerGroupExpansion } from '../store/app-store';
-import { X, Minus, ChevronUp, Eye, EyeOff, Plus, Maximize2, Folder, FolderOpen, ChevronRight, Layers, Crown, Lock, Unlock, Copy, Trash2 } from 'lucide-solid';
+import { store, addLayer, setActiveLayer, updateLayer, deleteLayer, duplicateLayer, reorderLayers, toggleLayerGroupingMode, createLayerGroup, toggleLayerGroupExpansion } from '../store/app-store';
+import { X, Eye, EyeOff, Plus, Folder, FolderOpen, ChevronRight, Layers, Crown, Lock, Unlock, Copy, Trash2 } from 'lucide-solid';
 import LayerContextMenu from './layer-context-menu';
-import { draggablePanel } from '../utils/draggable-panel';
 import './layer-panel.css';
 
 const LayerPanel: Component = () => {
@@ -304,50 +303,24 @@ const LayerPanel: Component = () => {
     ];
 
     return (
-        <Show when={store.showLayerPanel}>
-            <div class={`layer-panel ${store.isLayerPanelMinimized ? 'minimized' : ''}`} ref={draggablePanel('.layer-panel-header')}>
-                <div class="layer-panel-header" onDblClick={() => minimizeLayerPanel(!store.isLayerPanelMinimized)}>
-                    <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
-                        <Show when={store.isLayerPanelMinimized}>
-                            <button class="minimize-btn" onClick={() => minimizeLayerPanel(false)} title="Expand">
-                                <ChevronUp size={16} />
-                            </button>
-                        </Show>
-                        <h3>Layers</h3>
+        <>
+                <div class="layer-toolbar">
+                    <div
+                        class={`group-mode-toggle ${store.layerGroupingModeEnabled ? 'active' : ''}`}
+                        onClick={toggleLayerGroupingMode}
+                        title="Toggle Grouping Mode"
+                    >
+                        <Layers size={14} />
+                        <span>Groups</span>
                     </div>
-
-                    <div class="header-actions">
-                        <Show when={!store.isLayerPanelMinimized}>
-                            <div
-                                class={`group-mode-toggle ${store.layerGroupingModeEnabled ? 'active' : ''}`}
-                                onClick={toggleLayerGroupingMode}
-                                title="Toggle Grouping Mode"
-                            >
-                                <Layers size={14} />
-                                <span>Groups</span>
-                            </div>
-                            <button class="icon-button" onClick={() => createLayerGroup()} title="New Group" disabled={store.layers.length >= store.maxLayers}>
-                                <Folder size={16} />
-                            </button>
-                            <button class="icon-button" onClick={() => addLayer()} title="Add new layer" disabled={store.layers.length >= store.maxLayers}>
-                                <Plus size={16} />
-                            </button>
-                            <button class="icon-button" onClick={() => minimizeLayerPanel(true)} title="Minimize">
-                                <Minus size={16} />
-                            </button>
-                        </Show>
-                        <Show when={store.isLayerPanelMinimized}>
-                            <button class="icon-button" onClick={() => minimizeLayerPanel(false)} title="Expand">
-                                <Maximize2 size={16} />
-                            </button>
-                        </Show>
-                        <button class="icon-button" onClick={() => toggleLayerPanel(false)} title="Close">
-                            <X size={16} />
-                        </button>
-                    </div>
+                    <button class="icon-button" onClick={() => createLayerGroup()} title="New Group" disabled={store.layers.length >= store.maxLayers}>
+                        <Folder size={16} />
+                    </button>
+                    <button class="icon-button" onClick={() => addLayer()} title="Add new layer" disabled={store.layers.length >= store.maxLayers}>
+                        <Plus size={16} />
+                    </button>
                 </div>
 
-                <Show when={!store.isLayerPanelMinimized}>
                     <div class="layer-properties">
                         <div class="opacity-control">
                             <span class="label">Opacity</span>
@@ -546,7 +519,6 @@ const LayerPanel: Component = () => {
                             </div>
                         </Show>
                     </div>
-                </Show>
 
                 <Show when={contextMenu()}>
                     <LayerContextMenu
@@ -561,8 +533,7 @@ const LayerPanel: Component = () => {
                         }}
                     />
                 </Show>
-            </div>
-        </Show>
+        </>
     );
 };
 

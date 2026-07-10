@@ -3905,7 +3905,7 @@ export const togglePropertyPanel = (visible?: boolean) => {
 };
 
 export const toggleLayerPanel = (visible?: boolean) => {
-    setStore('showLayerPanel', (v) => visible ?? !v);
+    setPanelOpen('layers', visible);
 };
 
 export const toggleSymbolsPanel = (visible?: boolean) => {

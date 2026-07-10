@@ -33,6 +33,19 @@
     background: var(--bg-secondary);
 }
 
+/* In-body toolbar (dock chrome supplies the title bar + close; the Groups / New Group / Add Layer
+   actions that used to live in the panel header live here now). */
+.layer-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+.layer-toolbar .group-mode-toggle { margin-right: auto; }
+
 .layer-properties {
     padding: 8px 12px;
     background: var(--bg-secondary);

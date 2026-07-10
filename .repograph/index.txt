@@ -78,7 +78,7 @@ frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/api.ts | typescript | 3324 | Theme:3 HarmonyType:48 ElementOptions:116 normalizeElementType:322 ElementType:527 as:527 Window:3316
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1397 | Component:1 App:85 moves:105 onPenMove:106 hidePen:110 onControllerChange:130 handleKeyUp:159 handleKeyDown:169 as:678 handleFullscreenChange:793 handleBeforeUnload:799 handlePaste:803 handleGlobalDragEnter:905 handleGlobalDragOver:920 showDropFallbackPrompt:939 cleanup:969 outsideClick:997 isImageFile:1009 first:1010 must:1023 extractDropData:1025 processExtractedDrop:1080 handleGlobalDrop:1197 handleDocumentDrop:1243
+frontend/src/app.tsx | typescript | 1396 | Component:1 App:85 moves:105 onPenMove:106 hidePen:110 onControllerChange:130 handleKeyUp:159 handleKeyDown:169 as:678 handleFullscreenChange:793 handleBeforeUnload:799 handlePaste:803 handleGlobalDragEnter:905 handleGlobalDragOver:920 showDropFallbackPrompt:939 cleanup:969 outsideClick:997 isImageFile:1009 first:1010 must:1023 extractDropData:1025 processExtractedDrop:1080 handleGlobalDrop:1197 handleDocumentDrop:1243
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -130,7 +130,7 @@ frontend/src/components/dock/arrange-panel.tsx | typescript | 32 | Component:6 D
 frontend/src/components/dock/dock-container.tsx | typescript | 174 | Component:12 DockZone:17 edgeAt:33 insertIndexAt:42 def:57 st:58 onTitleDown:60 move:70 up:83 ids:123 width:124 onResize:125 move:128 up:132 DockContainer:148 floating:149 st:155
 frontend/src/components/dock/dock.css | - | 146 |
 frontend/src/components/dock/effects-panel.tsx | typescript | 34 | Component:7 DockEffectsPanel:10 sel:11 has:12
-frontend/src/components/dock/panel-registry.ts | typescript | 52 | PanelDef:26 panelDef:50
+frontend/src/components/dock/panel-registry.ts | typescript | 54 | PanelDef:27 panelDef:52
 frontend/src/components/ds-ops-panel.tsx | typescript | 397 | Component:8 DsOperation:15 DsOpsPanel:19 resetAutoHide:47 handleOperation:79 handleStop:120 handleSpeedChange:125 handleInputKeyDown:131 stopPropagation:153
 frontend/src/components/ds-tool-group.tsx | typescript | 134 | Component:1 DsToolGroup:19 handler:26 getActiveTool:36 handleToolClick:45 as:53 as:59 handleRightClick:67 toggleMenu:73 activeTool:80 isActive:81 getDropdownPosition:83
 frontend/src/components/dsl-import-dialog.css | - | 241 |
@@ -163,8 +163,8 @@ frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 38 | Component:1 HistoryPanel:12
 frontend/src/components/infra-tool-group.tsx | typescript | 137 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:76 activeTool:83 isActive:84 getDropdownPosition:86
 frontend/src/components/layer-context-menu.tsx | typescript | 99 | Component:1 MenuItem:3 Props:5 LayerContextMenu:13 layer:14
-frontend/src/components/layer-panel.css | - | 593 |
-frontend/src/components/layer-panel.tsx | typescript | 569 | Component:1 LayerPanel:8 toggleSelected:30 clearSelection:35 onSwipeMove:37 onSwipeUp:57 endSwipeTracking:69 startSwipe:77 swipeOffset:90 groupSelectedLayers:97 deleteSelectedLayers:106 handleLayerClick:115 handleToggleVisibility:119 handleToggleLock:127 handleDeleteLayer:136 handleDuplicateLayer:143 startEditing:148 saveRename:154 cancelEditing:163 handleRenameKeyDown:168 handlePointerDown:178 handlePointerUp:184 handleDragStart:191 handleDragEnd:200 handleDragOver:207 handleDragLeave:213 handleDrop:217 displayLayers:264 visit:273 depth:434
+frontend/src/components/layer-panel.css | - | 606 |
+frontend/src/components/layer-panel.tsx | typescript | 540 | Component:1 LayerPanel:7 toggleSelected:29 clearSelection:34 onSwipeMove:36 onSwipeUp:56 endSwipeTracking:68 startSwipe:76 swipeOffset:89 groupSelectedLayers:96 deleteSelectedLayers:105 handleLayerClick:114 handleToggleVisibility:118 handleToggleLock:126 handleDeleteLayer:135 handleDuplicateLayer:142 startEditing:147 saveRename:153 cancelEditing:162 handleRenameKeyDown:167 handlePointerDown:177 handlePointerUp:183 handleDragStart:190 handleDragEnd:199 handleDragOver:206 handleDragLeave:212 handleDrop:216 displayLayers:263 visit:272 depth:407
 frontend/src/components/live-paint-overlay.css | - | 27 |
 frontend/src/components/live-paint-overlay.tsx | typescript | 66 | LivePaintOverlay:14 active:25 toWorld:26 onDown:28 onMove:35 onKey:51
 frontend/src/components/load-export-dialog.css | - | 337 |

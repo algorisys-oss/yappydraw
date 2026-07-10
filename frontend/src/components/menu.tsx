@@ -918,7 +918,7 @@ const Menu: Component = () => {
                                         <Layers size={16} />
                                         <span class="label">Layers Panel</span>
                                         <div class="menu-item-right">
-                                            <Show when={store.showLayerPanel}><Check size={14} class="check-icon" /></Show>
+                                            <Show when={isPanelOpen('layers')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+L</span>
                                         </div>
                                     </div>
