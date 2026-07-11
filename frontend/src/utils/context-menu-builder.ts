@@ -28,7 +28,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, addDimension, removeDimensionsForTarget,
     zoomToFit, zoomToFitSlide, updateGlobalSettings, detachSlideBackgroundImage, updateSlideBackground,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
@@ -1138,6 +1138,20 @@ export function getContextMenuItems(
                     { label: 'Merge', icon: '◧', onClick: () => applyPathfinderRegion([...store.selection], 'merge') },
                     { label: 'Crop', icon: '⊡', onClick: () => applyPathfinderRegion([...store.selection], 'crop') },
                     { label: 'Outline', icon: '◌', onClick: () => applyPathfinderRegion([...store.selection], 'outline') },
+                ],
+            });
+        }
+
+        // Dimension annotations (Phase 5): attach an auto-updating measurement line.
+        if (selectionCount >= 1) {
+            const tId = store.selection[0];
+            const hasDims = store.dimensionAnnotations.some(d => d.targetId === tId);
+            items.push({
+                label: 'Dimensions', icon: '↔',
+                submenu: [
+                    { label: 'Add Width', icon: '↔', onClick: () => addDimension(tId, 'width') },
+                    { label: 'Add Height', icon: '↕', onClick: () => addDimension(tId, 'height') },
+                    ...(hasDims ? [{ label: 'Remove Dimensions', icon: '✕', onClick: () => removeDimensionsForTarget(tId) }] : []),
                 ],
             });
         }

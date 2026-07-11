@@ -51,6 +51,8 @@ import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types"
 import type { PropertyTrack, TimedKeyframe } from "./types/motion-types";
 import type { EasingName } from "./utils/animation/animation-types";
 import { evaluateCompositionAt, resolveParentedPoses } from "./utils/animation/composition-evaluator";
+import { dimensionGeometry, type DimensionMeasure } from "./utils/dimension-geometry";
+import { addDimension as storeAddDimension, removeDimension as storeRemoveDimension, removeDimensionsForTarget as storeRemoveDimensionsForTarget } from "./store/app-store";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
 import type { LayoutDirection } from "./utils/mindmap-layout";
 import { parseOutline } from "./utils/mindmap-layout";
@@ -2479,6 +2481,32 @@ export const YappyAPI = {
     },
     /** Set (or clear, with null) an element's transform parent — it inherits the parent's animated transform. */
     setTransformParent(childId: string, parentId: string | null) { updateElement(childId, { transformParentId: parentId } as any, true); },
+
+    // --- Dimension annotations (precision-measurement Phase 5) ---
+    // Persistent CAD-style dimension lines that attach to an element and auto-update
+    // as it moves/resizes. Rendered as a world-space overlay; saved with the document.
+    /** Add a width/height dimension to an element (default the selection). Returns its id. */
+    addDimension(targetId?: string, measure: DimensionMeasure = 'width', offset = 24) {
+        const id = targetId ?? store.selection[0];
+        return id ? storeAddDimension(id, measure, offset) : null;
+    },
+    /** Remove a dimension annotation by id. */
+    removeDimension(id: string) { storeRemoveDimension(id); },
+    /** Remove every dimension attached to an element (default the selection). */
+    removeDimensionsForTarget(targetId?: string) {
+        const id = targetId ?? store.selection[0];
+        if (id) storeRemoveDimensionsForTarget(id);
+    },
+    /** List all dimension annotations. */
+    listDimensions() { return store.dimensionAnnotations; },
+    /** Current measured value (px) of a dimension, from its target's live bounds — for inspection/testing. */
+    getDimensionValue(id: string): number | null {
+        const dim = store.dimensionAnnotations.find(d => d.id === id);
+        if (!dim) return null;
+        const el = store.elements.find(e => e.id === dim.targetId);
+        if (!el) return null;
+        return dimensionGeometry(dim, { x: el.x, y: el.y, width: el.width, height: el.height }).value;
+    },
     /** Export the current scene as a self-contained HTML file (animated figures play in it). */
     async exportHtml(name = 'animation') { const m = await import('./utils/export-game'); return m.exportSceneAsHtml(name); },
 

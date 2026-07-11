@@ -462,6 +462,18 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                     <strong>Snap to Grid</strong> (<span class="kbd">Shift</span>+<span class="kbd">;</span>),
                     and the alignment/equal-spacing guides that appear while you drag for precise layout.
                 </p>
+                <p>
+                    <strong>Dimension annotations.</strong> Right-click a shape →
+                    <strong> Dimensions ▸ Add Width</strong> or <strong>Add Height</strong> to attach a
+                    persistent, CAD-style dimension line (extension lines, arrowheads, and a px label). Unlike
+                    the Measure tool (a transient readout), a dimension <em>stays on the drawing</em> and
+                    <strong> auto-updates</strong> as you move, resize, or animate the shape — width dimensions
+                    sit below, height dimensions to the right. Remove them via
+                    <strong> Dimensions ▸ Remove Dimensions</strong>. Scripting:
+                    <code>Yappy.addDimension(id, 'width'|'height')</code>. They're saved with the document.
+                    <em> (Current pass: linear width/height on the axis-aligned box; angular/radial and
+                    export inclusion come later.)</em>
+                </p>
             </section>
 
             <section class="doc-section">

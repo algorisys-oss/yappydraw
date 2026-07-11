@@ -2,6 +2,7 @@ import { type Component, onMount, createEffect, onCleanup, createSignal, Show, u
 import { isPagedDocType } from '../types/slide-types';
 import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { applyCompositionOverrides } from "../utils/animation/composition-evaluator";
+import { renderDimensions } from "../utils/dimension-renderer";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
@@ -426,6 +427,12 @@ const Canvas: Component = () => {
             appMode: store.appMode,
             focusBranchIds,
         });
+
+        // Persistent dimension annotations (Phase 5): a world-space overlay that reads
+        // each target's current (animated) bounds, so it auto-updates on move/resize/anim.
+        if (store.dimensionAnnotations.length > 0) {
+            renderDimensions(ctx, store.dimensionAnnotations, store.elements, animatedStates, scale, isDarkMode);
+        }
 
         // 6. Overlays
         renderSelectionOverlays(ctx, {

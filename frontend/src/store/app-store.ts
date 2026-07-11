@@ -10,6 +10,7 @@ import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/s
 import { isPagedDocType } from '../types/slide-types';
 import { idbDelete } from '../storage/idb-kv';
 import type { ElementAnimation, DisplayState, PropertyTrack } from "../types/motion-types";
+import type { DimensionAnnotation, DimensionMeasure } from "../utils/dimension-geometry";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
 import { runBooleanOp, polyToPathSubpaths, polyToSmoothSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
@@ -137,6 +138,12 @@ interface AppState {
      * override map. Transient/authoring state for now — see `docs/after-effects-plan.md`.
      */
     compositionTracks: PropertyTrack[];
+    /**
+     * Persistent dimension annotations (precision-measurement plan, Phase 5). Each
+     * attaches to an element and draws an auto-updating CAD-style dimension line.
+     * Rendered as a world-space overlay; persisted with the document.
+     */
+    dimensionAnnotations: DimensionAnnotation[];
     /** Recolor Artwork panel visibility (transient, not persisted). */
     showRecolorPanel: boolean;
     /** Vector Tools palette visibility (persisted in localStorage). */
@@ -428,6 +435,7 @@ const initialState: AppState = {
     storyDuration: 6,
     storySyncSlides: false,
     compositionTracks: [],
+    dimensionAnnotations: [],
     showRecolorPanel: false,
     showVectorToolsPanel: false, // dead flag — Vector Tools panel state now lives in the persisted dock layout
     measureActive: false,
@@ -553,6 +561,7 @@ interface HistorySnapshot {
     canvasBackgroundColor: string;
     docType: DocType;
     compositionTracks: PropertyTrack[];
+    dimensionAnnotations: DimensionAnnotation[];
 }
 const undoStack: HistorySnapshot[] = [];
 const redoStack: HistorySnapshot[] = [];
@@ -591,6 +600,7 @@ const captureSnapshot = (): HistorySnapshot => ({
     canvasBackgroundColor: store.canvasBackgroundColor,
     docType: store.docType,
     compositionTracks: store.compositionTracks.map(t => ({ ...t, keys: t.keys.map(k => ({ ...k })) })),
+    dimensionAnnotations: store.dimensionAnnotations.map(d => ({ ...d })),
 });
 
 const restoreSnapshot = (snapshot: HistorySnapshot) => {
@@ -607,6 +617,7 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("canvasBackgroundColor", snapshot.canvasBackgroundColor);
     setStore("docType", snapshot.docType);
     setStore("compositionTracks", snapshot.compositionTracks || []);
+    setStore("dimensionAnnotations", snapshot.dimensionAnnotations || []);
     setStore("selection", []); // Clear selection to avoid stale IDs
 };
 
@@ -1027,6 +1038,10 @@ export const deleteElements = (ids: string[]) => {
 
     setStore("elements", (els) => els.filter(el => !ids.includes(el.id)));
     setStore("selection", []); // Clear selection
+    // Drop dimension annotations and transform-parent links that referenced deleted elements.
+    if (store.dimensionAnnotations.some(d => deletedSet.has(d.targetId))) {
+        setStore("dimensionAnnotations", (list) => list.filter(d => !deletedSet.has(d.targetId)));
+    }
 
     if (survivingParents.size > 0) {
         const roots = new Set([...survivingParents].map(id => findMindmapRoot(id)));
@@ -2121,6 +2136,7 @@ export const loadDocument = (doc: any) => {
         setStore("states", JSON.parse(JSON.stringify(states)));
         setStore("symbols", JSON.parse(JSON.stringify(doc.symbols || [])));
         setStore("artboards", JSON.parse(JSON.stringify(doc.artboards || [])));
+        setStore("dimensionAnnotations", JSON.parse(JSON.stringify(doc.dimensionAnnotations || [])));
         setStore("graphicStyles", JSON.parse(JSON.stringify(doc.graphicStyles || [])));
         setStore("swatches", JSON.parse(JSON.stringify(doc.swatches || [])));
         setStore("patterns", JSON.parse(JSON.stringify(doc.patterns || [])));
@@ -4333,6 +4349,36 @@ export const toggleSceneTimeline = (visible?: boolean) => {
     const next = visible ?? !store.showSceneTimeline;
     setStore('showSceneTimeline', next);
     if (!next) setStore('storyPlaying', false);
+};
+
+/**
+ * Add a persistent dimension annotation to an element (measures its width or height).
+ * Auto-updates as the element moves/resizes. Returns the new dimension id.
+ */
+export const addDimension = (targetId: string, measure: DimensionMeasure = 'width', offset = 24): string | null => {
+    const el = store.elements.find(e => e.id === targetId);
+    if (!el) return null;
+    const id = generateId('dimension' as any);
+    pushToHistory();
+    setStore('dimensionAnnotations', list => [...list, { id, targetId, measure, offset }]);
+    bumpDirtyRevision();
+    return id;
+};
+
+/** Remove a dimension annotation by id. */
+export const removeDimension = (id: string) => {
+    if (!store.dimensionAnnotations.some(d => d.id === id)) return;
+    pushToHistory();
+    setStore('dimensionAnnotations', list => list.filter(d => d.id !== id));
+    bumpDirtyRevision();
+};
+
+/** Remove all dimensions attached to a given target element. */
+export const removeDimensionsForTarget = (targetId: string) => {
+    if (!store.dimensionAnnotations.some(d => d.targetId === targetId)) return;
+    pushToHistory();
+    setStore('dimensionAnnotations', list => list.filter(d => d.targetId !== targetId));
+    bumpDirtyRevision();
 };
 
 /**
