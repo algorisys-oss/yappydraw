@@ -3,7 +3,7 @@ import { isMultiPageDocType } from './types/slide-types';
 import { isPanelOpen } from './store/dock-layout';
 import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel,
-  toggleMinimap, toggleRulers, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
+  toggleMinimap, toggleRulers, toggleKeyframePanel, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
   addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
@@ -56,6 +56,7 @@ import { updateElement, deleteArtboard, swapFillStroke, selectAll } from './stor
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const DockContainer = lazy(() => import('./components/dock/dock-container'));
 const SceneTimeline = lazy(() => import('./components/scene-timeline'));
+const KeyframePanel = lazy(() => import('./components/keyframe-panel'));
 const GameGraph = lazy(() => import('./components/game-graph'));
 const BlueprintGraph = lazy(() => import('./components/blueprint-graph'));
 const GameModeBar = lazy(() => import('./components/game-mode-bar'));
@@ -402,6 +403,9 @@ const App: Component = () => {
         } else if (code === 'KeyR' || key === 'r') {
           e.preventDefault();
           toggleRulers();
+        } else if (code === 'KeyK' || key === 'k') {
+          e.preventDefault();
+          toggleKeyframePanel();
         } else if (code === 'KeyY' || key === 'y') {
           e.preventDefault();
           // Toggle the symmetry guide; when turning on, drop the axis at the
@@ -1291,6 +1295,7 @@ const App: Component = () => {
             <DockContainer />
             <PropertyPanel />
             <SceneTimeline />
+            <KeyframePanel />
             <GameGraph />
             <BlueprintGraph />
             <GameModeBar />

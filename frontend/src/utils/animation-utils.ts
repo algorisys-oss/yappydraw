@@ -92,7 +92,9 @@ export const calculateAnimatedState = (
     if (isNaN(derivedY)) derivedY = el.y;
     if (isNaN(derivedAngle)) derivedAngle = el.angle || 0;
 
-    const state = { x: derivedX, y: derivedY, angle: derivedAngle, opacity: el.opacity || 100 };
+    // Nullish default (not `|| 100`) so a genuine opacity of 0 survives the round-trip
+    // now that the render spread applies opacity generically (`{ ...el, ...animState }`).
+    const state = { x: derivedX, y: derivedY, angle: derivedAngle, opacity: el.opacity ?? 100 };
 
     // 6. Cache Result
     cache.set(el.id, state);

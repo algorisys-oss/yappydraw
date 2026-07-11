@@ -804,6 +804,9 @@ export function renderLayersAndElements(
         totalRendered += layerElements.length;
 
         layerElements.forEach(el => {
+            // Null objects are authoring gizmos: hide them in presentation/embed so
+            // only their (parented) children show. Children still follow via animatedStates.
+            if (el.isNullObject && (appMode === 'presentation' || appMode === 'embed')) return;
             const animState = animatedStates.get(el.id);
             const isMasterLayer = layer.isMaster;
             const needsMasterProjection = isMasterLayer && isPagedDocType(docType);
@@ -812,7 +815,10 @@ export function renderLayersAndElements(
             // Only create a copy when we need to mutate (animation, master projection, or text variables)
             let renderedEl: DrawingElement;
             if (animState) {
-                renderedEl = { ...el, x: animState.x, y: animState.y, angle: animState.angle };
+                // Generic spread: apply every overridden key present on the animated
+                // state (orbit/spin supply x/y/angle/opacity; the AE composition
+                // evaluator may add width/height/colors/text or opacity alone).
+                renderedEl = { ...el, ...animState };
             } else if (needsMasterProjection || needsTextVar) {
                 renderedEl = { ...el };
             } else {

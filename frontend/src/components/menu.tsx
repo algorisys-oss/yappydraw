@@ -3,7 +3,7 @@ import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
 import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
-    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleStatePanel, toggleSlideToolbar,
+    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleKeyframePanel, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript
 } from "../store/app-store";
@@ -1012,6 +1012,14 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <Show when={store.showRulers}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+R</span>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { toggleKeyframePanel(); setIsMenuOpen(false); }}>
+                                        <Key size={16} />
+                                        <span class="label">Keyframes</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.showKeyframePanel}><Check size={14} class="check-icon" /></Show>
+                                            <span class="shortcut">Alt+K</span>
                                         </div>
                                     </div>
                                     <Show when={isPagedDocType(store.docType)}>

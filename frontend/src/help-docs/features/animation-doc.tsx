@@ -49,6 +49,115 @@ export const AnimationDoc: Component = () => {
                 </div>
             </section>
 
+            {/* Keyframes Timeline (After Effects–style) */}
+            <section class="doc-section">
+                <h2>Keyframes Timeline (dope sheet)</h2>
+                <p>
+                    The <strong>Keyframes</strong> panel is an After&nbsp;Effects–style, absolute-time
+                    timeline for the selected element. Unlike the trigger-based presets above, keyframes
+                    live on a scrubbable playhead: every property is evaluated at time&nbsp;<em>t</em> and
+                    previewed live on the canvas (and in exported video). Open it from
+                    <strong> Menu → View → Keyframes</strong> or with <kbd>Alt</kbd>+<kbd>K</kbd>.
+                </p>
+
+                <h3>Authoring keyframes</h3>
+                <ol>
+                    <li>Select an element — its animatable properties appear as track rows
+                        (Position&nbsp;X/Y, Width, Height, Rotation, Opacity, Fill, Stroke).</li>
+                    <li>Move the playhead (drag the ruler) to the time you want.</li>
+                    <li>Set the property to the value you want (e.g. move/resize/recolor the element),
+                        then click the <strong>◆ stopwatch</strong> on that property row to record a
+                        keyframe at the playhead. Repeat at a later time to create motion.</li>
+                    <li>Press <strong>Play</strong> to preview, or scrub the ruler. Values between
+                        keyframes are interpolated (colours blend in hex; rotation in degrees).</li>
+                </ol>
+
+                <h3>Editing keyframes</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Action</th><th>How</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Add / update a key</td><td>Click the ◆ stopwatch on the property row (records the current value at the playhead)</td></tr>
+                        <tr><td>Retime a key</td><td>Drag its diamond left/right (snaps to 0.05&nbsp;s)</td></tr>
+                        <tr><td>Delete a key</td><td>Double-click the diamond, or select it and press <kbd>Del</kbd></td></tr>
+                        <tr><td>Scrub</td><td>Drag the ruler, or click an empty lane at the target time</td></tr>
+                        <tr><td>Duration</td><td>Edit the <em>dur</em> field in the panel header</td></tr>
+                        <tr><td>Undo / redo</td><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> — keyframe edits are in the history stack</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="code-block">
+                    <pre>{`// Scripting the timeline (window.Yappy)
+const id = Yappy.createRectangle(100, 100, 80, 60);
+Yappy.addKeyframe(id, 'x', 0, 100);        // t = 0s
+Yappy.addKeyframe(id, 'x', 2, 400);        // t = 2s
+Yappy.addKeyframe(id, 'opacity', 0, 100);
+Yappy.addKeyframe(id, 'opacity', 2, 0, 'easeInQuad');
+Yappy.toggleKeyframePanel(true);
+Yappy.seekScene(1);                         // scrub to 1s (x = 250, opacity ≈ 50)
+Yappy.evaluateComposition(1);               // → Map(id → { x, opacity })`}</pre>
+                </div>
+
+                <h3>Easing &amp; the graph editor</h3>
+                <p>
+                    Click a keyframe diamond to select it — an <strong>Easing</strong> popover opens for the
+                    segment entering that key. Pick a preset, or drag the two handles in the bezier graph to
+                    shape the timing curve by hand (overshoot is allowed — drag a handle above the box).
+                </p>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Preset</th><th>Feel</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Linear</td><td>Constant speed</td></tr>
+                        <tr><td>Ease In</td><td>Slow start, accelerate</td></tr>
+                        <tr><td>Ease Out</td><td>Fast start, decelerate</td></tr>
+                        <tr><td>Ease In-Out</td><td>Ease at both ends (natural)</td></tr>
+                        <tr><td>Hold</td><td>Stepped — the value jumps at the keyframe with no interpolation (shown as a square marker)</td></tr>
+                    </tbody>
+                </table>
+                <div class="code-block">
+                    <pre>{`// Easing is stored per keyframe (on the segment entering it):
+Yappy.addKeyframe(id, 'x', 2, 400, 'easeInQuad');   // named easing
+// or set bezier handles / hold directly on the track:
+Yappy.setCompositionTracks([{ elementId: id, property: 'x', keys: [
+  { t: 0, value: 0 },
+  { t: 2, value: 400, ease: { ox: 0.42, oy: 0, ix: 0.58, iy: 1 } }, // ease in-out
+  { t: 3, value: 400, hold: true },                                  // stepped
+]}]);`}</pre>
+                </div>
+
+                <h3>Transform parenting &amp; null objects</h3>
+                <p>
+                    Make one element inherit another's animated motion. With an element selected, pick a
+                    <strong> Parent</strong> in the Keyframes panel header — it now follows the parent's
+                    animated <em>position, rotation and scale</em> (a child with no keyframes of its own still
+                    moves when its parent animates). Great for rigs: parent several parts to one controller
+                    and animate just the controller.
+                </p>
+                <p>
+                    A <strong>null object</strong> (the ⊕ button, or <code>Yappy.createNull()</code>) is an
+                    invisible controller — it shows as a small crosshair while editing, follows every
+                    parenting rule, and never appears in exports or presentations. Parent your layers to a
+                    null and keyframe the null to move the whole group as one.
+                </p>
+                <div class="code-block">
+                    <pre>{`const ctrl = Yappy.createNull(200, 200);      // invisible controller
+const box = Yappy.createRectangle(400, 300, 80, 60);
+Yappy.setTransformParent(box, ctrl);          // box now follows ctrl
+Yappy.addKeyframe(ctrl, 'angle', 0, 0);
+Yappy.addKeyframe(ctrl, 'angle', 2, Math.PI/2); // box swings with it`}</pre>
+                </div>
+
+                <div class="tip-box">
+                    <strong>Note:</strong> the Keyframes timeline shares the playhead clock with the Scene
+                    Timeline, so only one is open at a time. Keyframe values override the stored element at
+                    render time without changing it — clearing the tracks restores the original. Transform
+                    parenting is separate from mind-map parent/child hierarchy.
+                </div>
+            </section>
+
             {/* Animation Presets */}
             <section class="doc-section">
                 <h2>Animation Presets</h2>

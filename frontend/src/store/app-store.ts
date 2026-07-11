@@ -9,7 +9,7 @@ import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } fro
 import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/slide-types';
 import { isPagedDocType } from '../types/slide-types';
 import { idbDelete } from '../storage/idb-kv';
-import type { ElementAnimation, DisplayState } from "../types/motion-types";
+import type { ElementAnimation, DisplayState, PropertyTrack } from "../types/motion-types";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
 import { runBooleanOp, polyToPathSubpaths, polyToSmoothSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
@@ -122,6 +122,8 @@ interface AppState {
     showStickFigurePanel: boolean;
     /** Scene Timeline (stick-figure animation director) visibility + playhead state. */
     showSceneTimeline: boolean;
+    /** Keyframes dope-sheet (After-Effects–class property timeline) visibility. */
+    showKeyframePanel: boolean;
     /** Scene playhead time in seconds (drives animated figures when the timeline is open). */
     storyTime: number;
     storyPlaying: boolean;
@@ -129,6 +131,12 @@ interface AppState {
     storyDuration: number;
     /** Restart the scene playhead whenever the active slide/page changes. */
     storySyncSlides: boolean;
+    /**
+     * After-Effects–class absolute-time property tracks (Phase 0 spine). Evaluated
+     * by `evaluateCompositionAt(storyTime)` and merged into the render-time
+     * override map. Transient/authoring state for now — see `docs/after-effects-plan.md`.
+     */
+    compositionTracks: PropertyTrack[];
     /** Recolor Artwork panel visibility (transient, not persisted). */
     showRecolorPanel: boolean;
     /** Vector Tools palette visibility (persisted in localStorage). */
@@ -413,11 +421,13 @@ const initialState: AppState = {
     showElementsPanel: false,
     showStickFigurePanel: false,
     showSceneTimeline: false,
+    showKeyframePanel: false,
     storyTime: 0,
     storyPlaying: false,
     storyLoop: true,
     storyDuration: 6,
     storySyncSlides: false,
+    compositionTracks: [],
     showRecolorPanel: false,
     showVectorToolsPanel: false, // dead flag — Vector Tools panel state now lives in the persisted dock layout
     measureActive: false,
@@ -542,6 +552,7 @@ interface HistorySnapshot {
     gridSettings: GridSettings;
     canvasBackgroundColor: string;
     docType: DocType;
+    compositionTracks: PropertyTrack[];
 }
 const undoStack: HistorySnapshot[] = [];
 const redoStack: HistorySnapshot[] = [];
@@ -579,6 +590,7 @@ const captureSnapshot = (): HistorySnapshot => ({
     gridSettings: { ...store.gridSettings },
     canvasBackgroundColor: store.canvasBackgroundColor,
     docType: store.docType,
+    compositionTracks: store.compositionTracks.map(t => ({ ...t, keys: t.keys.map(k => ({ ...k })) })),
 });
 
 const restoreSnapshot = (snapshot: HistorySnapshot) => {
@@ -594,6 +606,7 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("gridSettings", snapshot.gridSettings);
     setStore("canvasBackgroundColor", snapshot.canvasBackgroundColor);
     setStore("docType", snapshot.docType);
+    setStore("compositionTracks", snapshot.compositionTracks || []);
     setStore("selection", []); // Clear selection to avoid stale IDs
 };
 
@@ -4319,6 +4332,19 @@ export const toggleStickFigurePanel = (visible?: boolean) => {
 export const toggleSceneTimeline = (visible?: boolean) => {
     const next = visible ?? !store.showSceneTimeline;
     setStore('showSceneTimeline', next);
+    if (!next) setStore('storyPlaying', false);
+};
+
+/**
+ * Show/hide the Keyframes dope-sheet (After-Effects–class property timeline).
+ * Shares the storyTime/storyDuration/storyPlaying/storyLoop clock with the Scene
+ * Timeline; the two are mutually exclusive so only one play-controller drives the
+ * playhead at a time (both are bottom transport bars).
+ */
+export const toggleKeyframePanel = (visible?: boolean) => {
+    const next = visible ?? !store.showKeyframePanel;
+    setStore('showKeyframePanel', next);
+    if (next) setStore('showSceneTimeline', false);
     if (!next) setStore('storyPlaying', false);
 };
 

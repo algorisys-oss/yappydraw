@@ -99,8 +99,30 @@ export const drawOrganicBranch = (
     }
 };
 
+/** Draw a null object's crosshair gizmo (accent crosshair + dashed box) at its centre. */
+const renderNullGizmo = (ctx: CanvasRenderingContext2D, el: DrawingElement) => {
+    const cx = el.x + el.width / 2;
+    const cy = el.y + el.height / 2;
+    const r = Math.max(8, Math.min(el.width, el.height) / 2);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(el.angle || 0);
+    ctx.strokeStyle = '#6366f1';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.9;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(-r, 0); ctx.lineTo(r, 0);
+    ctx.moveTo(0, -r); ctx.lineTo(0, r);
+    ctx.stroke();
+    ctx.globalAlpha = 0.45;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeRect(-r, -r, r * 2, r * 2);
+    ctx.restore();
+};
+
 /**
- * Main rendering entry point. 
+ * Main rendering entry point.
  * Delegates to specialized renderers in the shape registry.
  */
 export const renderElement = (
@@ -128,6 +150,14 @@ const renderElementCore = (
     layerOpacity: number = 1,
     sharedRenderer?: IRenderer
 ) => {
+    // Null object: an invisible transform holder (AE parenting). Draw only a small
+    // crosshair gizmo so it can be selected/moved; the canvas loop skips it entirely
+    // in presentation, and export filters it out. Identical in both draw styles.
+    if (el.isNullObject) {
+        renderNullGizmo(ctx, el);
+        return;
+    }
+
     // Variable-width stroke (Width tool): render the path as a filled ribbon instead of a
     // constant stroke. Works in both draw styles (it's a fill). Open paths only.
     if (el.type === 'path' && el.widthProfile && el.widthProfile.length && !el.pathClosed) {

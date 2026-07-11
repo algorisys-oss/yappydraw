@@ -495,6 +495,14 @@ export interface DrawingElement {
     puppetPins?: { baseX: number; baseY: number; x: number; y: number }[];
     renderScale?: number; // Canvas-level scale for zoom animations (default: 1)
     parentId?: string | null;
+    /** After-Effects transform parent: this element inherits the animated
+     *  position/rotation/scale of `transformParentId` (composed at render time by the
+     *  composition evaluator). Distinct from `parentId` (mindmap tree). See
+     *  `docs/after-effects-plan.md` §12. */
+    transformParentId?: string | null;
+    /** Null object: an invisible transform holder used purely as an animation parent
+     *  (renders as a small crosshair gizmo, excluded from export). */
+    isNullObject?: boolean;
     isCollapsed?: boolean;
     // Editable vector path ('path' element): ordered anchors (relative to origin) +
     // closed flag. The SVG `d` for rendering/hit-test is derived from these.

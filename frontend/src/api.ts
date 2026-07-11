@@ -6,7 +6,7 @@ import {
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
     toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
-    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleSceneTimeline, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
+    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleSceneTimeline, toggleKeyframePanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
@@ -48,6 +48,9 @@ import { searchStockPhotos, insertStockPhoto } from "./utils/stock-photos";
 import { generateTints, generateHarmony, extractImagePalette, parseHex, type HarmonyType } from "./utils/color-harmony";
 import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, TextAlign, ArrowHead, VerticalAlign, Point, GradientStop, GradientType, Layer, RichTextSpan, PathAnchor, PathSubpath } from "./types";
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
+import type { PropertyTrack, TimedKeyframe } from "./types/motion-types";
+import type { EasingName } from "./utils/animation/animation-types";
+import { evaluateCompositionAt, resolveParentedPoses } from "./utils/animation/composition-evaluator";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
 import type { LayoutDirection } from "./utils/mindmap-layout";
 import { parseOutline } from "./utils/mindmap-layout";
@@ -2416,10 +2419,66 @@ export const YappyAPI = {
     stopRecording() { setRequestRecording({ start: false }); },
     /** Show/hide the Scene Timeline (play & scrub all animated figures together). */
     toggleSceneTimeline(visible?: boolean) { toggleSceneTimeline(visible); },
+    /** Show/hide the Keyframes dope-sheet (After-Effects–class per-property timeline for the selected element). */
+    toggleKeyframePanel(visible?: boolean) { toggleKeyframePanel(visible); },
     /** Play/pause the scene timeline. */
     playScene(playing?: boolean) { setStore('storyPlaying', playing ?? !store.storyPlaying); },
     /** Move the scene playhead to `seconds` (pauses playback). */
     seekScene(seconds: number) { setStore({ storyTime: Math.max(0, seconds), storyPlaying: false } as any); },
+
+    // --- After-Effects–class absolute-time composition (Phase 0 spine) ---
+    // Property tracks keyframed in absolute SECONDS, evaluated by
+    // `evaluateCompositionAt(storyTime)` and rendered as transient overrides.
+    // Open the Scene Timeline (`toggleSceneTimeline(true)`) then `seekScene(t)`
+    // to scrub. See `docs/after-effects-plan.md`.
+    /** Replace all composition tracks. */
+    setCompositionTracks(tracks: PropertyTrack[]) { setStore('compositionTracks', tracks ?? []); },
+    /** Get the current composition tracks. */
+    getCompositionTracks(): PropertyTrack[] { return store.compositionTracks; },
+    /** Remove every composition track. */
+    clearComposition() { setStore('compositionTracks', []); },
+    /**
+     * Add (or update) a single keyframe on an element's property track at time `t`
+     * seconds. Creates the track if absent; a key at the same `t` is replaced. Keys
+     * stay sorted by time. `property`: 'x'|'y'|'width'|'height'|'opacity'|'angle'
+     * (radians)|'backgroundColor'|'strokeColor'|…; colors interpolate as hex.
+     */
+    addKeyframe(elementId: string, property: string, t: number, value: number | string, easing?: EasingName) {
+        setStore('compositionTracks', (tracks: PropertyTrack[]) => {
+            const next = tracks.map(tr => ({ ...tr, keys: [...tr.keys] }));
+            let track = next.find(tr => tr.elementId === elementId && tr.property === property);
+            if (!track) { track = { elementId, property, keys: [] }; next.push(track); }
+            const key: TimedKeyframe = { t, value, easing };
+            const at = track.keys.findIndex(k => k.t === t);
+            if (at >= 0) track.keys[at] = key; else track.keys.push(key);
+            track.keys.sort((a, b) => a.t - b.t);
+            return next;
+        });
+    },
+    /** Evaluate the composition at time `t` seconds → map of elementId → property overrides
+     *  (for inspection/testing). Reflects transform parenting when present — i.e. the same
+     *  composed result the canvas renders. */
+    evaluateComposition(t: number) {
+        return store.elements.some(e => e.transformParentId)
+            ? resolveParentedPoses(store.elements, t, store.compositionTracks)
+            : evaluateCompositionAt(t, store.compositionTracks);
+    },
+    /**
+     * Create a **null object** — an invisible transform holder (renders as a crosshair
+     * gizmo, excluded from export) used purely as an animation parent. Set another
+     * element's `transformParentId` to this id (or use the Keyframes panel's Parent
+     * selector) so it inherits the null's animated position/rotation/scale. Returns the id.
+     */
+    createNull(x?: number, y?: number): string {
+        const cx = x ?? 100;
+        const cy = y ?? 100;
+        const id = this.createElement('rectangle', cx - 20, cy - 20, 40, 40, { backgroundColor: 'transparent', strokeColor: 'transparent' });
+        updateElement(id, { isNullObject: true, name: 'Null' } as any, false);
+        this.setSelected([id]);
+        return id;
+    },
+    /** Set (or clear, with null) an element's transform parent — it inherits the parent's animated transform. */
+    setTransformParent(childId: string, parentId: string | null) { updateElement(childId, { transformParentId: parentId } as any, true); },
     /** Export the current scene as a self-contained HTML file (animated figures play in it). */
     async exportHtml(name = 'animation') { const m = await import('./utils/export-game'); return m.exportSceneAsHtml(name); },
 

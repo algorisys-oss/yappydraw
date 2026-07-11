@@ -114,3 +114,48 @@ export interface DisplayState {
     name: string; // "Loading", "Success", "Error"
     overrides: Record<string, Partial<DrawingElementState>>; // map elementId -> properties
 }
+
+// ============================================================================
+// After-Effects–class absolute-time timeline (Phase 0 — the spine).
+// Distinct from the normalized (offset 0..1) presentation-mode KeyframeAnimation
+// above: this model lives in ABSOLUTE seconds and is evaluated by a pure
+// `evaluateCompositionAt(t)` seek function, independent of triggers. See
+// `docs/after-effects-plan.md` and `utils/animation/composition-evaluator.ts`.
+// ============================================================================
+
+/**
+ * A per-segment easing curve expressed as cubic-bezier tangent handles, AE-style.
+ * `ox/oy` = outgoing handle of the LEFT keyframe, `ix/iy` = incoming handle of the
+ * RIGHT keyframe, each normalized to the [0,1] segment box (x = time, y = value).
+ * When absent, a keyframe's named `easing` (or linear) is used instead.
+ */
+export interface BezierEase {
+    ox: number;
+    oy: number;
+    ix: number;
+    iy: number;
+}
+
+/** One waypoint of a `PropertyTrack`, positioned in absolute seconds. */
+export interface TimedKeyframe {
+    t: number;               // absolute time in seconds
+    value: number | string;  // number for transforms/opacity, hex string for colors
+    ease?: BezierEase;       // per-segment bezier (segment ENTERING this keyframe)
+    easing?: EasingName;     // fallback named easing when `ease` is absent
+    hold?: boolean;          // stepped: the segment ENTERING this key holds the previous value (AE "hold")
+}
+
+/** All keyframes for a single (element, property) pair. */
+export interface PropertyTrack {
+    elementId: string;
+    property: string;              // 'x' | 'y' | 'width' | 'height' | 'opacity' | 'angle' | 'backgroundColor' | 'strokeColor' | ...
+    keys: TimedKeyframe[];         // sorted ascending by `t`; minimum 1
+}
+
+/** A document/slide-level absolute-time composition (the AE-mode source of truth). */
+export interface Composition {
+    id: string;
+    duration: number;   // seconds
+    fps: number;        // frames per second (for frame-exact export + snapping)
+    tracks: PropertyTrack[];
+}

@@ -1,6 +1,7 @@
 import { type Component, onMount, createEffect, onCleanup, createSignal, Show, untrack, batch } from "solid-js";
 import { isPagedDocType } from '../types/slide-types';
 import { calculateAllAnimatedStates } from "../utils/animation-utils";
+import { applyCompositionOverrides } from "../utils/animation/composition-evaluator";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
@@ -335,6 +336,17 @@ const Canvas: Component = () => {
         const vp = computeViewportBounds(canvasRef, scale, panX, panY);
         const elementsToAnimate = cullElementsForAnimation(store.elements, store.slides, store.layers, store.docType, store.activeSlideIndex, vp);
         const animatedStates = calculateAllAnimatedStates(elementsToAnimate, currentTime, shouldAnimate);
+        // AE-mode absolute-time overrides (Phase 0 spine). Driven by the scrubbable
+        // playhead (storyTime) when EITHER the Scene Timeline or the Keyframes dope
+        // sheet is open, else the free-running clock — same convention as the stick-rig
+        // renderer. Merged INTO animatedStates so the render spread, hit-testing, and
+        // export all consume the same override map. (Transform parenting is composed
+        // inside applyCompositionOverrides when any element has a transformParentId.)
+        if (store.compositionTracks.length > 0 || store.elements.some(e => e.transformParentId)) {
+            const scrubbing = store.showSceneTimeline || store.showKeyframePanel;
+            const compTime = scrubbing ? store.storyTime : currentTime / 1000;
+            applyCompositionOverrides(animatedStates, elementsToAnimate, compTime, store.compositionTracks);
+        }
 
         // 2. Clear canvas & decay laser
         ctx.setTransform(1, 0, 0, 1, 0, 0);
