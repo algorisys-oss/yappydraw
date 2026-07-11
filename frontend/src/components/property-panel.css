@@ -320,7 +320,9 @@
     border: 1px solid var(--border-color);
     border-radius: 4px;
     cursor: pointer;
-    color-scheme: light dark;
+    /* Inherit the app theme's color-scheme (bound to data-theme in index.css)
+       so the native option popup stays legible regardless of OS preference. */
+    color-scheme: inherit;
 }
 
 .palette-selector option {
@@ -477,8 +479,9 @@ select {
     background: var(--bg-panel);
     cursor: pointer;
     min-width: 120px;
-    /* Make the OS-native option dropdown follow our theme. */
-    color-scheme: light dark;
+    /* Inherit the app theme's color-scheme (bound to data-theme in index.css)
+       so the native option dropdown follows the app theme, not the OS. */
+    color-scheme: inherit;
 }
 
 select option {

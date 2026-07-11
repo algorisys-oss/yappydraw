@@ -14,6 +14,7 @@ import {
   transformAgain, recordTransform, convertTextToOutlines, toggleSymmetryGuide
 } from './store/app-store';
 import { showToast } from './components/toast';
+import { initPWA } from './utils/pwa';
 import { toggleTimelapse } from './utils/timelapse-manager';
 import { ColorDropHud } from './components/color-drop-hud';
 import Canvas from './components/canvas';
@@ -122,23 +123,13 @@ const App: Component = () => {
     });
   });
 
-  // PWA lifecycle toasts. The service worker (autoUpdate) uses skipWaiting +
-  // clientsClaim, so `controllerchange` fires once on first install (offline
-  // ready) and again whenever an update activates in the background — at which
-  // point a reload is needed so lazy chunks match the new precache.
+  // PWA lifecycle. The service worker uses the `prompt` strategy (no
+  // skipWaiting/clientsClaim), so a new build installs and waits rather than
+  // activating mid-load and stranding a blank page. initPWA() surfaces the
+  // offline-ready and update-available toasts; applying an update is an
+  // explicit user action (version-tap hard refresh / applyPwaUpdate).
   onMount(() => {
-    if (!('serviceWorker' in navigator)) return;
-    let hadController = !!navigator.serviceWorker.controller;
-    const onControllerChange = () => {
-      if (hadController) {
-        showToast('Yappy updated in the background — reload to finish applying it', 'info', 8000);
-      } else {
-        hadController = true;
-        showToast('Yappy is ready to work offline — installable from your browser menu', 'success', 6000);
-      }
-    };
-    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
-    onCleanup(() => navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange));
+    initPWA();
   });
 
   onMount(() => {

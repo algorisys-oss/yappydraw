@@ -7,8 +7,10 @@
  * and reloads with a cache-busting query param so the document is refetched.
  *
  * Wired to a tap on the version label in the status bar (mirrors HappyPaint's
- * version-tap-to-update, adapted: yappy ships no service worker, so this does a
- * genuine cache-busting reload rather than a SW update check). Safe to call any
+ * version-tap-to-update). Yappy now ships a `prompt`-strategy service worker,
+ * so this doubles as the "apply the waiting update" button: it unregisters the
+ * SW, drops the precache, and cache-busts the document so the very next load
+ * fetches the freshly-deployed index.html + hashed assets. Safe to call any
  * time — the workspace autosaves to IndexedDB, which this never touches.
  */
 export async function hardRefresh(): Promise<void> {

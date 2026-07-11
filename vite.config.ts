@@ -7,9 +7,17 @@ export default defineConfig({
   root: 'frontend',
   envDir: '..',  // .env files are in the project root, not in frontend/
   plugins: [solid(), assemblyScriptPlugin(), VitePWA({
-    registerType: 'autoUpdate',
-    // The tap-version hard-refresh helper unregisters SWs on demand, so
-    // autoUpdate is safe alongside it.
+    // 'prompt' (NOT 'autoUpdate'): autoUpdate emits skipWaiting()+clientsClaim()
+    // in the SW, so a freshly-deployed SW activates and evicts the old precache
+    // *while the previous page is still fetching its old content-hashed chunks*.
+    // Those chunks 404 (gone from cache and from the server), the ESM graph fails
+    // to execute, and #root renders empty → the notorious "blank on first load,
+    // fine on refresh" bug. 'prompt' keeps the old page on its own consistent
+    // precache for its whole lifetime; the new build is applied only on an
+    // explicit user action (see utils/pwa.ts → initPWA, or the version-tap
+    // hard-refresh). injectRegister:false because we register via registerSW().
+    registerType: 'prompt',
+    injectRegister: false,
     includeAssets: ['favicon.svg', 'logo.png', 'fonts/outline/*.ttf'],
     manifest: {
       name: 'Yappy — Draw, Diagram & Design',

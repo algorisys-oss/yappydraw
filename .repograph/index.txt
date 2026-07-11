@@ -78,7 +78,7 @@ frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/api.ts | typescript | 3447 | Theme:3 HarmonyType:48 DimensionMeasure:55 ElementOptions:122 normalizeElementType:328 ElementType:533 as:533 Window:3439
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1408 | Component:1 App:87 moves:107 onPenMove:108 hidePen:112 onControllerChange:132 handleKeyUp:161 handleKeyDown:171 as:688 handleFullscreenChange:803 handleBeforeUnload:809 handlePaste:813 handleGlobalDragEnter:915 handleGlobalDragOver:930 showDropFallbackPrompt:949 cleanup:979 outsideClick:1007 isImageFile:1019 first:1020 must:1033 extractDropData:1035 processExtractedDrop:1090 handleGlobalDrop:1207 handleDocumentDrop:1253
+frontend/src/app.tsx | typescript | 1399 | Component:1 App:88 moves:108 onPenMove:109 hidePen:113 handleKeyUp:152 handleKeyDown:162 as:679 handleFullscreenChange:794 handleBeforeUnload:800 handlePaste:804 handleGlobalDragEnter:906 handleGlobalDragOver:921 showDropFallbackPrompt:940 cleanup:970 outsideClick:998 isImageFile:1010 first:1011 must:1024 extractDropData:1026 processExtractedDrop:1081 handleGlobalDrop:1198 handleDocumentDrop:1244
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -203,7 +203,7 @@ frontend/src/components/perspective-grid-overlay.tsx | typescript | 84 | Perspec
 frontend/src/components/player-app.css | - | 47 |
 frontend/src/components/player-app.tsx | typescript | 125 | Window:18 PlayerApp:23
 frontend/src/components/presentation-controls.tsx | typescript | 226 | Component:1 PresentationControls:6 resetHideTimeout:10 handleNext:37 handlePrev:42
-frontend/src/components/property-panel.css | - | 829 |
+frontend/src/components/property-panel.css | - | 832 |
 frontend/src/components/property-panel.tsx | typescript | 2389 | Component:1 PropertyConfig:26 isMixed:48 templates:71 handleClickOutside:73 handlePresent:128 calls:217 SlideActions:293 handlePreviewTransition:294 AlignmentControls:310 gapVal:312 hasOptions:350 activePaletteId:355 activePalette:356 paletteSwatches:358 swatches:360 ap:460 fills:461 strokes:462 commit:463 editFill:469 editStroke:470 move:471 patValue:481 onPatChange:482 sg:528 stops:529 setSG:530 editStop:531 mesh:559 ids:560 row:579 col:580 pat:615 ids:616 transparentBg:620 isCustom:621 el:706 id:707 set:708 snap:709 feather:710 glowOn:711 glowBlur:712 glowColor:713 warp:750 ids:751 bend:753 preset:754 reapply:755 ex:785 ids:786 Row:790 fx:825 ids:826 num:831 scalePct:832 Row:834 updateStops:904 handleBarMouseDown:909 handleThumbMouseDown:926 onMove:931 onUp:941 PropertyPanel:1046 handleChange:1216 seeds:1236 seeds:1243 getPropertyValue:1521 handleDelete:1600 renderControl:1607 colorVal:1610 sliderVal:1625 sliderDisplay:1626 filteredOptions:1674 selectVal:1685 applyVal:1687 isDisabled:1732 toggleVal:1740 inputVal:1756 textareaVal:1775 +13 more
 frontend/src/components/puppet-warp-overlay.css | - | 36 |
 frontend/src/components/puppet-warp-overlay.tsx | typescript | 110 | PuppetWarpOverlay:12 target:19 warpable:20 active:21 notice:23 toWorld:24 pinWorld:27 hitPin:33 onDown:42 onMove:63 onUp:70 onKey:76 pinDots:81
@@ -397,7 +397,7 @@ frontend/src/help-docs/shapes/table-doc.tsx | typescript | 748 | TableDoc:7 with
 frontend/src/help-docs/shapes/uml-doc.tsx | typescript | 455 | UmlDoc:8 diagrams:14 with:34 or:49 box:95
 frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 315 | VectorPathsDoc:9
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 297 | WireframingDoc:8
-frontend/src/index.css | - | 500 |
+frontend/src/index.css | - | 510 |
 frontend/src/index.tsx | typescript | 119 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84
 frontend/src/library/stick-figures/anim/clips.ts | typescript | 249 | ClipPose:6 MotionClip:6 RigPose:6 footAt:22 runFootAt:154 poseAt:244
 frontend/src/library/stick-figures/anim/path-follow.ts | typescript | 92 | PathSample:8 isPathLike:18 sampleAnchors:27 localPolyline:47 elementPathSample:65 PathPoint:79 sampleAt:82
@@ -553,7 +553,7 @@ frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
 frontend/src/utils/geometry.ts | typescript | 433 | isPointInPolygon:5 distanceToSegment:19 cubicBezier:59 cubicBezierAngle:64 getBezierPoints:98 isPointOnBezier:111 isPointOnPolyline:117 isPointInEllipse:128 isPointNearEllipseStroke:142 rotatePoint:177 with:356
 frontend/src/utils/group-utils.ts | typescript | 81 | getGroupBoundingBox:6 isPointInGroupBounds:42 getGroupsSortedByPriority:56
 frontend/src/utils/handle-detection.ts | typescript | 577 | unrotatePoint:18 getSelectionBoundingBox:25 getDeleteHandlePosition:58 getHandleAtPosition:98 TEXT_MOVE_ELIGIBLE:572
-frontend/src/utils/hard-refresh.ts | typescript | 42 | hardRefresh:14
+frontend/src/utils/hard-refresh.ts | typescript | 44 | hardRefresh:16
 frontend/src/utils/hierarchy.ts | typescript | 68 | getDescendants:44 isDescendantOf:65
 frontend/src/utils/hit-testing.ts | typescript | 425 | unrotatePoint:27 unshearPoint:35 hitTestElement:61 hitTestGeometry:91 hitTestPathElement:347 isPointInEraseHole:377
 frontend/src/utils/id-generator.ts | typescript | 121 | generateId:54 scanMax:71
@@ -585,6 +585,7 @@ frontend/src/utils/performance-monitor.ts | typescript | 49 | PerformanceMonitor
 frontend/src/utils/pointer-helpers.ts | typescript | 56 | PointerHelpers:15 PointerSignals:33
 frontend/src/utils/pointer-state.ts | typescript | 202 | PointerState:7 createPointerState:123
 frontend/src/utils/pool-containment.ts | typescript | 179 | getPoolLabelWidth:11 getLaneLabelWidth:14 getPoolLabelHeight:17 getLaneLabelHeight:20 computeLaneSizes:26 LaneRect:50 getPoolLaneRect:58 hitTestPoolLane:102 assignToPoolLane:145 unassignFromPool:149 shiftLaneIndicesOnRemove:154 shiftLaneIndicesOnInsert:168
+frontend/src/utils/pwa.ts | typescript | 45 | initPWA:20 applyPwaUpdate:43
 frontend/src/utils/recording-manager.ts | typescript | 155 | setupRecording:23
 frontend/src/utils/render-element.ts | typescript | 227 | cubicBezier:24 cubicBezierAngle:30 renderNullGizmo:103 renderVariableWidthStroke:192 adjustColor:223
 frontend/src/utils/reparent.ts | typescript | 186 | confirmAndReparent:17

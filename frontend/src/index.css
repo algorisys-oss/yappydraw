@@ -57,6 +57,16 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
+/* Bind the OS `color-scheme` to the *app* theme (data-theme is always set, even
+   for `system`, by setTheme). Without this, native controls — the <select>
+   option popup in particular — follow the OS light/dark preference instead of
+   the app's, so a dark app on a light-mode OS renders light option text on a
+   white system popup (illegible). color-scheme inherits, so the selects pick
+   this up as long as they don't hardcode their own value. */
+[data-theme="light"] { color-scheme: light; }
+[data-theme="dark"],
+[data-theme="focus"] { color-scheme: dark; }
+
 /* Focus Mode — dark UI chrome AND dark canvas for distraction-free drawing */
 [data-theme="focus"] {
   --bg-canvas: #1a1a2e;
