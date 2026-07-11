@@ -278,7 +278,7 @@ const StatusBar: Component = () => {
             <div class="status-section">
                 <button
                     class="status-btn version-btn"
-                    style={{ opacity: 0.5, "font-size": "inherit", "font-family": "inherit", width: "auto", padding: "0 4px" }}
+                    style={{ opacity: 0.75, "font-size": "inherit", "font-family": "inherit", width: "auto", padding: "0 4px" }}
                     title="Tap to reload the latest version (clears cache)"
                     aria-label="Reload latest version"
                     onClick={async () => { showToast('Refreshing to latest version…', 'info', 1500); await hardRefresh(); }}
