@@ -163,7 +163,7 @@ frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 38 | Component:1 HistoryPanel:12
 frontend/src/components/infra-tool-group.tsx | typescript | 137 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:76 activeTool:83 isActive:84 getDropdownPosition:86
 frontend/src/components/keyframe-panel.css | - | 127 |
-frontend/src/components/keyframe-panel.tsx | typescript | 474 | Component:1 PropKind:9 PropDef:10 snapT:25 clamp:38 matchPreset:40 near:45 formatValue:53 KeyframePanel:63 dur:68 frac:69 keysFor:72 valueAt:79 upsertKey:89 moveKey:106 deleteKey:119 addKeyHere:140 elLabel:149 wouldCycle:157 setParent:169 addNull:175 isSel:185 patchSelKey:202 applyPreset:214 laneRectOf:223 timeFromLane:227 startDragKey:231 move:242 up:252 seekFromLane:261 vx:272 vy:273 startHandleDrag:274 move:280 up:291 seekFromRuler:298 onRulerDown:304 move:307 up:308 play:333 restart:334 onKeyDown:337
+frontend/src/components/keyframe-panel.tsx | typescript | 508 | Component:1 PropKind:9 PropDef:10 animatablePropsFor:45 snapT:55 clamp:68 matchPreset:70 near:75 formatValue:83 KeyframePanel:93 dur:98 frac:99 keysFor:102 valueAt:109 upsertKey:121 moveKey:138 deleteKey:151 addKeyHere:172 elLabel:183 wouldCycle:191 setParent:203 addNull:209 isSel:219 patchSelKey:236 applyPreset:248 laneRectOf:257 timeFromLane:261 startDragKey:265 move:276 up:286 seekFromLane:295 vx:306 vy:307 startHandleDrag:308 move:314 up:325 seekFromRuler:332 onRulerDown:338 move:341 up:342 play:367 restart:368 onKeyDown:371
 frontend/src/components/layer-context-menu.tsx | typescript | 99 | Component:1 MenuItem:3 Props:5 LayerContextMenu:13 layer:14
 frontend/src/components/layer-panel.css | - | 606 |
 frontend/src/components/layer-panel.tsx | typescript | 540 | Component:1 LayerPanel:7 toggleSelected:29 clearSelection:34 onSwipeMove:36 onSwipeUp:56 endSwipeTracking:68 startSwipe:76 swipeOffset:89 groupSelectedLayers:96 deleteSelectedLayers:105 handleLayerClick:114 handleToggleVisibility:118 handleToggleLock:126 handleDeleteLayer:135 handleDuplicateLayer:142 startEditing:147 saveRename:153 cancelEditing:162 handleRenameKeyDown:167 handlePointerDown:177 handlePointerUp:183 handleDragStart:190 handleDragEnd:199 handleDragOver:206 handleDragLeave:212 handleDrop:216 displayLayers:263 visit:272 depth:407
@@ -367,7 +367,7 @@ frontend/src/game/game-runtime.ts | typescript | 419 | GameButton:25 Sprite:63{c
 frontend/src/game/game-templates.ts | typescript | 287 | GameTemplate:3
 frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 120 | ac:14 tone:31 sweep:46 noise:62 Sfx:78 playSfx:80 startMusic:99 stopMusic:111 setMuted:115
-frontend/src/help-docs/features/animation-doc.tsx | typescript | 1231 | AnimationDoc:8 to:824
+frontend/src/help-docs/features/animation-doc.tsx | typescript | 1242 | AnimationDoc:8 to:835
 frontend/src/help-docs/features/arcade-doc.tsx | typescript | 298 | ArcadeDoc:8 a:118
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 148 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 152 | BulkEditingDoc:3 entries:62 entries:63 or:97
@@ -748,7 +748,8 @@ tests/input-tablet-batch2.spec.ts | typescript | 81 | touch:70
 tests/isometric-cube.spec.ts | typescript | 34 |
 tests/isometric-flex.spec.ts | typescript | 35 |
 tests/keyframe-easing.spec.ts | typescript | 61 | midX:25
-tests/keyframe-panel.spec.ts | typescript | 76 |
+tests/keyframe-effects.spec.ts | typescript | 58 | feather:25
+tests/keyframe-panel.spec.ts | typescript | 78 |
 tests/keyframe-parenting.spec.ts | typescript | 76 | childPose:29
 tests/knife-exit.spec.ts | typescript | 36 | active:3
 tests/knife-scissors.spec.ts | typescript | 36 |

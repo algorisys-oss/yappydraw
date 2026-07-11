@@ -72,6 +72,17 @@ export const AnimationDoc: Component = () => {
                         keyframes are interpolated (colours blend in hex; rotation in degrees).</li>
                 </ol>
 
+                <h3>Animating effects</h3>
+                <p>
+                    Beyond transform and colour, the panel keyframes <strong>live-effect parameters</strong>:
+                    <strong> Feather</strong> (soft edges — on any shape), <strong>Stroke Width</strong>,
+                    <strong> Blur</strong> (images/video), and — once the effect is enabled on the element —
+                    <strong> Glow</strong> (radius + colour) and <strong>Shadow</strong> (blur, X/Y offset,
+                    colour). Effect params start at 0 ("off"), so you can key a glow or feather that reveals
+                    over time. Example: <code>Yappy.addKeyframe(id, 'featherRadius', 0, 0)</code> then
+                    <code> Yappy.addKeyframe(id, 'featherRadius', 2, 30)</code> blurs the shape in over 2s.
+                </p>
+
                 <h3>Editing keyframes</h3>
                 <table class="api-table">
                     <thead>

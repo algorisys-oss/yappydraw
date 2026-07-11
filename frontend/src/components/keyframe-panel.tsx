@@ -9,8 +9,8 @@ import './keyframe-panel.css';
 type PropKind = 'number' | 'angle' | 'opacity' | 'color';
 interface PropDef { key: string; label: string; kind: PropKind }
 
-/** The animatable channels the dope sheet exposes (Phase 1 set). */
-const ANIMATABLE_PROPS: PropDef[] = [
+/** Transform/appearance channels available on every element (Phase 1 set). */
+const BASE_PROPS: PropDef[] = [
     { key: 'x', label: 'Position X', kind: 'number' },
     { key: 'y', label: 'Position Y', kind: 'number' },
     { key: 'width', label: 'Width', kind: 'number' },
@@ -19,7 +19,37 @@ const ANIMATABLE_PROPS: PropDef[] = [
     { key: 'opacity', label: 'Opacity', kind: 'opacity' },
     { key: 'backgroundColor', label: 'Fill', kind: 'color' },
     { key: 'strokeColor', label: 'Stroke', kind: 'color' },
+    { key: 'strokeWidth', label: 'Stroke Width', kind: 'number' },
 ];
+
+/**
+ * Keyframable live-effect params (Phase 4). These are flat numeric/colour element fields
+ * that the render pipeline reads directly, so the composition override animates them for
+ * free. Feather works on any shape (0 = off); glow/shadow params only matter once the
+ * effect is enabled, so they're shown conditionally per the focused element.
+ */
+const FEATHER_PROP: PropDef = { key: 'featherRadius', label: 'Feather', kind: 'number' };
+const IMAGE_BLUR_PROP: PropDef = { key: 'filterBlur', label: 'Blur', kind: 'number' };
+const GLOW_PROPS: PropDef[] = [
+    { key: 'glowBlur', label: 'Glow Radius', kind: 'number' },
+    { key: 'glowColor', label: 'Glow Color', kind: 'color' },
+];
+const SHADOW_PROPS: PropDef[] = [
+    { key: 'shadowBlur', label: 'Shadow Blur', kind: 'number' },
+    { key: 'shadowOffsetX', label: 'Shadow X', kind: 'number' },
+    { key: 'shadowOffsetY', label: 'Shadow Y', kind: 'number' },
+    { key: 'shadowColor', label: 'Shadow Color', kind: 'color' },
+];
+
+/** The animatable channels for a specific element: base transform + its active effects. */
+function animatablePropsFor(el: any): PropDef[] {
+    if (!el) return BASE_PROPS;
+    const props = [...BASE_PROPS, FEATHER_PROP];
+    if (el.type === 'image' || el.type === 'video') props.push(IMAGE_BLUR_PROP);
+    if (el.glowEnabled) props.push(...GLOW_PROPS);
+    if (el.shadowEnabled) props.push(...SHADOW_PROPS);
+    return props;
+}
 
 /** Snap a time to 0.05s so hand-dragged keys land on tidy values. */
 const snapT = (t: number) => Math.round(t / 0.05) * 0.05;
@@ -81,6 +111,8 @@ const KeyframePanel: Component = () => {
         if (!el) return undefined;
         const ov = evaluateCompositionAt(store.storyTime, store.compositionTracks).get(el.id);
         const v = ov && (p.key in ov) ? (ov as any)[p.key] : (el as any)[p.key];
+        // Numeric effect params default to 0 when unset (0 = off) so they read + keyframe from 0.
+        if (v === undefined && p.kind !== 'color') return 0;
         return v;
     };
 
@@ -140,7 +172,9 @@ const KeyframePanel: Component = () => {
     const addKeyHere = (p: PropDef) => {
         const el = focusEl();
         if (!el) return;
-        const v = (el as any)[p.key];
+        let v = (el as any)[p.key];
+        // Numeric effect params (feather/glow/shadow…) are undefined when off — key from 0.
+        if ((v === undefined || v === null) && p.kind !== 'color') v = 0;
         if (v === undefined || v === null) return;
         upsertKey(p.key, snapT(store.storyTime), v);
     };
@@ -390,7 +424,7 @@ const KeyframePanel: Component = () => {
                 }>
                     <div class="kf-scroll">
                         <div class="kf-tracks">
-                            <For each={ANIMATABLE_PROPS}>
+                            <For each={animatablePropsFor(focusEl())}>
                                 {(p) => {
                                     const keys = createMemo(() => keysFor(p.key));
                                     return (
