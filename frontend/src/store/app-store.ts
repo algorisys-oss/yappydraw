@@ -3659,12 +3659,30 @@ export const duplicateLayer = (id: string) => {
     const idMap = new Map<string, string>();
     elementsOnLayer.forEach(el => idMap.set(el.id, generateId(el.type, layerBatchIds)));
 
+    // Remap group / clip-mask ids too, so the copy's groups are INDEPENDENT of the originals'.
+    // Without this the duplicated elements kept the original groupIds, so clicking either copy
+    // selected both groups' members at once → "move one, the other moves". Map each distinct
+    // original group id to a fresh one, consistently across all members of that group.
+    const groupIdMap = new Map<string, string>();
+    const remapGroupId = (gid: string): string => {
+        let next = groupIdMap.get(gid);
+        if (!next) { next = generateId('group'); groupIdMap.set(gid, next); }
+        return next;
+    };
+
     const duplicatedElements = elementsOnLayer.map(el => {
         const newEl: DrawingElement = JSON.parse(JSON.stringify(el));
         newEl.id = idMap.get(el.id)!;
         newEl.layerId = newLayerId;
         newEl.x += 10;
         newEl.y += 10;
+
+        if (newEl.groupIds && newEl.groupIds.length) {
+            newEl.groupIds = newEl.groupIds.map(remapGroupId);
+        }
+        if ((newEl as any).clipMaskId) {
+            (newEl as any).clipMaskId = remapGroupId((newEl as any).clipMaskId);
+        }
 
         // Remap internal bindings (same pattern as duplicateSlide)
         if (newEl.startBinding && idMap.has(newEl.startBinding.elementId)) {

@@ -89,9 +89,7 @@ export abstract class ShapeRenderer {
             renderer.setLineDash([drawLen, pathLength]);
             renderer.lineDashOffset = 0;
 
-            renderer.beginPath();
-            this.definePath(renderer, el);
-            renderer.stroke();
+            this.traceDrawStroke(renderer, el);
             renderer.restore();
         }
 
@@ -264,6 +262,23 @@ export abstract class ShapeRenderer {
      * This should call renderer.moveTo, renderer.lineTo, etc. but NOT beginPath or stroke/fill.
      */
     protected abstract definePath(renderer: IRenderer, element: any): void;
+
+    /**
+     * Trace + stroke the shape outline for the drawIn/drawOut progressive-reveal effect.
+     * The caller has already set strokeStyle/lineWidth and the reveal `lineDash`, so this
+     * only needs to lay down the path and stroke it (honoring the active dash).
+     *
+     * Default: append geometry via definePath() and stroke() — correct for shapes whose
+     * definePath adds to the current path (rect/ellipse/points/polylines). Renderers whose
+     * geometry is a self-contained Path2D (SVG `path`) MUST override this to stroke via
+     * renderer.strokePath(d) instead, because beginPath()+definePath()+stroke() cannot
+     * trace a Path2D (see CLAUDE.md render-style parity note).
+     */
+    protected traceDrawStroke(renderer: IRenderer, element: any): void {
+        renderer.beginPath();
+        this.definePath(renderer, element);
+        renderer.stroke();
+    }
 
     /**
      * Renders the shape with clean, precise lines and solid/gradient fills.

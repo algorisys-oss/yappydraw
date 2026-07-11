@@ -279,7 +279,10 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  /* Was #1a1a1a (leftover Vite boilerplate) — that made every unstyled <button> render
+     near-black on a dark-mode OS regardless of the app theme. Follow the app theme instead. */
+  background-color: var(--btn-bg);
+  color: var(--text-primary);
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -301,10 +304,6 @@ button:focus-visible {
 
   a:hover {
     color: #747bff;
-  }
-
-  button {
-    background-color: #f9f9f9;
   }
 }
 

@@ -124,6 +124,9 @@
     color: var(--text-color, inherit);
 }
 .dock-floating .dock-panel-body { max-height: 60vh; }
+/* Brief placeholder while a lazy panel body loads (first open) — keeps the panel from
+   collapsing to 0-height, avoiding a layout jump. */
+.dock-panel-loading { min-height: 48px; }
 
 /* Phones: fall back to a bottom sheet rather than an edge dock, lifted clear of the
    bottom-docked tool toolbar + status bar (same 84px inset the other phone panels use). */

@@ -9,7 +9,7 @@
  * leaves it floating. The opaque dock zones sit above the canvas, so the canvas never receives
  * pointer events under a dock (drawing-under is prevented). See docs/dockable-panel-system-plan.md.
  */
-import { type Component, For, Show, createSignal } from "solid-js";
+import { type Component, For, Show, Suspense, createSignal } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { X, ChevronDown, ChevronUp, PanelRight, PanelLeft, PictureInPicture2 } from "lucide-solid";
 import {
@@ -112,7 +112,16 @@ const PanelChrome: Component<{ id: string; floating?: boolean }> = (props) => {
                     </div>
                 </div>
                 <Show when={!st().collapsed}>
-                    <div class="dock-panel-body"><Dynamic component={def()!.component} /></div>
+                    {/* Per-panel Suspense: panel bodies are lazy()-loaded. Without a boundary here,
+                        a panel's first-open suspension bubbled up to app.tsx's single shared
+                        <Suspense fallback={null}>, which blanked the ENTIRE chrome (toolbar, dock,
+                        property panel, status bar) for a frame — the "screen refreshes on first
+                        Alt+L" flash. Scoping it here keeps the rest of the UI mounted. */}
+                    <div class="dock-panel-body">
+                        <Suspense fallback={<div class="dock-panel-loading" />}>
+                            <Dynamic component={def()!.component} />
+                        </Suspense>
+                    </div>
                 </Show>
             </div>
         </Show>

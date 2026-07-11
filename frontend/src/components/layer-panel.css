@@ -46,6 +46,32 @@
 }
 .layer-toolbar .group-mode-toggle { margin-right: auto; }
 
+/* New-group (Folder) + Add-layer (Plus) icon buttons. Without an explicit rule these
+   inherited the bare-<button> default and rendered as near-black blocks with no contrast.
+   Theme them via CSS vars so the icon is legible in both light and dark. */
+.layer-toolbar .icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--btn-bg);
+    color: var(--text-secondary);
+    box-shadow: none;
+}
+.layer-toolbar .icon-button:hover:not(:disabled) {
+    background: var(--bg-secondary);
+    border-color: var(--primary-color, #3b82f6);
+    color: var(--text-primary);
+}
+.layer-toolbar .icon-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 .layer-properties {
     padding: 8px 12px;
     background: var(--bg-secondary);

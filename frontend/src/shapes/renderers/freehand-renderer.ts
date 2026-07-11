@@ -17,8 +17,14 @@ export class FreehandRenderer extends ShapeRenderer {
         // Apply universal transformations
         const { cx, cy } = RenderPipeline.applyTransformations(renderer, element, layerOpacity);
 
-        // Standard freehand render path
-        if (element.renderStyle === 'architectural') {
+        // Draw-in / draw-out progressive reveal (drawProgress 0..100). Without this,
+        // the stroke renders fully while drawIn holds opacity at 0, so the path stays
+        // invisible and then pops in at the end. definePath()/estimatePathLength() below
+        // trace the freehand polyline, so the base reveal works unchanged.
+        const dp = element.drawProgress;
+        if (dp !== undefined && dp >= 0 && dp < 100) {
+            this.renderDrawProgress(context, cx, cy);
+        } else if (element.renderStyle === 'architectural') {
             this.renderArchitectural(context, cx, cy);
         } else {
             this.renderSketch(context, cx, cy);

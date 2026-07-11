@@ -505,7 +505,7 @@ tableLightningSplit(tableElementId, 1500);`}
                     <li><strong>Open Animation Panel</strong> - Located in the right sidebar Properties panel</li>
                     <li><strong>Configure stagger settings:</strong>
                         <ul>
-                            <li><strong>Effect</strong> - Choose animation preset (fadeIn, slideInLeft, etc.)</li>
+                            <li><strong>Effect</strong> - Choose any preset (fadeIn, slideInLeft, drawIn, shakeX, revolve, glitch, …); it is applied to <em>each</em> member of the selection/group</li>
                             <li><strong>Distribution</strong> - How elements animate (From Start, Center, Edges, Random)</li>
                             <li><strong>Stagger (ms)</strong> - Delay between each element starting</li>
                             <li><strong>Duration (ms)</strong> - How long each animation lasts</li>
@@ -522,6 +522,17 @@ tableLightningSplit(tableElementId, 1500);`}
                         The <strong>Apply</strong> button saves animations to each element with calculated delays,
                         so they'll play correctly in presentation mode. Use <strong>Clear All Animations</strong>
                         to remove animations from all selected elements.
+                    </p>
+                </div>
+
+                <div class="tip-box">
+                    <h5>Groups &amp; drawIn</h5>
+                    <p>
+                        Selecting a <strong>group</strong> is a multi-selection, so presets apply to every member.
+                        You can also use <strong>Add Animation</strong> to add a preset to the whole group at once.
+                        The <strong>drawIn</strong> / <strong>drawOut</strong> reveal works on vector paths and
+                        freehand strokes (fineliner, ink brush, marker) as well as shapes — the outline traces on
+                        progressively rather than just fading in.
                     </p>
                 </div>
 

@@ -411,15 +411,15 @@ const LayerPanel: Component = () => {
                                         <div class="layer-swipe-tray">
                                             <button class="tray-btn tray-lock" title={layer.locked ? 'Unlock' : 'Lock'}
                                                 onClick={(e) => { handleToggleLock(layer.id, e as unknown as MouseEvent); setRevealedId(null); }}>
-                                                {layer.locked ? <Unlock size={15} /> : <Lock size={15} />}
+                                                {layer.locked ? <Unlock size={20} /> : <Lock size={20} />}
                                             </button>
                                             <button class="tray-btn tray-dup" title="Duplicate"
                                                 onClick={(e) => { handleDuplicateLayer(layer.id, e as unknown as MouseEvent); setRevealedId(null); }}>
-                                                <Copy size={15} />
+                                                <Copy size={20} />
                                             </button>
                                             <button class="tray-btn tray-del" title="Delete" disabled={store.layers.length <= 1}
                                                 onClick={(e) => { handleDeleteLayer(layer.id, e as unknown as MouseEvent); setRevealedId(null); }}>
-                                                <Trash2 size={15} />
+                                                <Trash2 size={20} />
                                             </button>
                                         </div>
                                     <div

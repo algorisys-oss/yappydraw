@@ -4,6 +4,7 @@ import type { RenderContext } from "../base/types";
 import type { DrawingElement } from "../../types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { getShapeGeometry } from "../../utils/shape-geometry";
+import { geometryToDs } from "../../utils/geometry-to-ds";
 
 export class SpecialtyShapeRenderer extends ShapeRenderer {
     /**
@@ -330,5 +331,25 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
         // Translate to center as geometry is relative to center
         renderer.translate(el.x + el.width / 2, el.y + el.height / 2);
         RenderPipeline.renderGeometry(renderer, geometry);
+    }
+
+    /**
+     * These shapes back onto a self-contained Path2D (`renderGeometry` fills it via
+     * fillPath, it does NOT append to the current path). So the base's
+     * beginPath()+definePath()+stroke() traces nothing — the drawIn stroke would be
+     * invisible (leaving the element hidden by its opacity:0 until the reveal ends).
+     * Stroke the SVG `d` directly instead; the active lineDash still applies.
+     */
+    protected traceDrawStroke(renderer: IRenderer, el: any): void {
+        const geometry = getShapeGeometry(el);
+        if (!geometry) return;
+        const { ds } = geometryToDs(geometry);
+        if (!ds.length) return;
+
+        renderer.save();
+        // geometryToDs coordinates are centre-relative (same frame as definePath).
+        renderer.translate(el.x + el.width / 2, el.y + el.height / 2);
+        for (const d of ds) renderer.strokePath(d);
+        renderer.restore();
     }
 }

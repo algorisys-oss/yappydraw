@@ -2,9 +2,10 @@ import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
 import { store, updateElement, updateAnimation, reorderAnimation, setPathEditing } from '../store/app-store';
 import { sequenceAnimator } from '../utils/animation/sequence-animator';
 import { PathUtils } from '../utils/math/path-utils';
-import { animateElementsFrom, calculateStaggerDelays, type StaggerConfig } from '../utils/animation';
+import { calculateStaggerDelays, type StaggerConfig } from '../utils/animation';
 import { Play, Square, Plus, Trash2, ChevronDown, ChevronRight, ChevronUp, Edit3, Users } from 'lucide-solid';
 import type { ElementAnimation, PresetAnimation, RotateAnimation, AutoSpinAnimation, KeyframeAnimation, AnimationKeyframe } from '../types/motion-types';
+import type { DrawingElement } from '../types';
 
 // Common presets for all shapes
 const COMMON_PRESETS = [
@@ -178,11 +179,15 @@ const STAGGER_MODES = [
 ] as const;
 
 // Stagger presets for quick application
+// Presets offered when a group / multi-selection is active — mirrors COMMON_PRESETS so
+// drawIn/shakeX/etc. can be applied to a group (each member animates independently, with
+// a per-member stagger delay). Preview + Apply run the real preset function per element.
 const STAGGER_PRESETS = [
+    'drawIn', 'drawOut',
     'fadeIn', 'fadeOut',
     'slideInLeft', 'slideInRight', 'slideInUp', 'slideInDown',
     'zoomIn', 'zoomOut',
-    'bounce', 'pulse'
+    'bounce', 'pulse', 'shakeX', 'shakeY', 'revolve', 'glitch'
 ];
 
 export const AnimationPanel: Component = () => {
@@ -192,6 +197,21 @@ export const AnimationPanel: Component = () => {
         const id = selectedId();
         return id ? store.elements.find(el => el.id === id) : null;
     });
+
+    // Representative element for the animation list: the single selection, or the first
+    // member of a group. The list edits/removes propagate to every selected member by index
+    // (a group is applied the same preset sequence across all members), so the group's shared
+    // sequence stays in sync. `listElement()` is what the list/step-number rendering reads.
+    const listElement = createMemo(() => {
+        const el = element();
+        if (el) return el;
+        const ids = multiSelected();
+        return ids ? (store.elements.find(e => e.id === ids[0]) ?? null) : null;
+    });
+    const listTargetIds = () => {
+        if (element()) return [element()!.id];
+        return multiSelected() ?? [];
+    };
 
     const [isAdding, setIsAdding] = createSignal(false);
     const [expandedIds, setExpandedIds] = createSignal<Set<string>>(new Set());
@@ -213,164 +233,127 @@ export const AnimationPanel: Component = () => {
         });
     };
 
-    const addPreset = (name: string) => {
-        const el = element();
-        if (!el) return;
-
-        const newAnim: any = {
-            id: crypto.randomUUID(),
-            type: 'preset',
-            name: name,
-            duration: 1000,
-            delay: 0,
-            easing: 'easeOutQuad',
-            trigger: el.animations?.length ? 'after-prev' : 'on-load',
-            params: name === 'revolve' ? { radius: 50 }
-                : name === 'codeLineHighlight' ? { msPerLine: 800 }
-                : undefined
-        };
-
-        const currentAnims = el.animations || [];
-        updateElement(el.id, { animations: [...currentAnims, newAnim] }, true);
+    // Add an animation to EVERY selected element — so all the add-menu actions work on a group
+    // (each member gets its own copy). For a single selection this is just that one element.
+    // `make(existingCount, el)` builds the anim WITHOUT an id (a fresh id is assigned per member);
+    // `existingCount` picks the on-load vs after-prev trigger, `el` is that member (keyframe
+    // defaults are element-specific).
+    const addAnimToSelection = (make: (existingCount: number, el: DrawingElement) => any) => {
+        const ids = store.selection.length ? store.selection : (element() ? [element()!.id] : []);
+        if (!ids.length) return;
+        for (const id of ids) {
+            const el = store.elements.find(e => e.id === id);
+            if (!el) continue;
+            const currentAnims = el.animations || [];
+            const newAnim = { id: crypto.randomUUID(), ...make(currentAnims.length, el) };
+            updateElement(id, { animations: [...currentAnims, newAnim] }, true);
+        }
         setIsAdding(false);
     };
 
-    const addPathAnimation = () => {
-        const el = element();
-        if (!el) return;
+    const addPreset = (name: string) => addAnimToSelection((n) => ({
+        type: 'preset',
+        name,
+        duration: 1000,
+        delay: 0,
+        easing: 'easeOutQuad',
+        trigger: n ? 'after-prev' : 'on-load',
+        params: name === 'revolve' ? { radius: 50 }
+            : name === 'codeLineHighlight' ? { msPerLine: 800 }
+            : undefined,
+    }));
 
-        const newAnim: any = {
-            id: crypto.randomUUID(),
-            type: 'path',
-            pathData: `M 0 0 Q 300 -100 600 0`, // Simple curve default
-            orientToPath: true,
-            isRelative: true,
-            duration: 2000,
-            delay: 0,
-            easing: 'easeInOutQuad',
-            trigger: el.animations?.length ? 'after-prev' : 'on-load'
-        };
+    const addPathAnimation = () => addAnimToSelection((n) => ({
+        type: 'path',
+        pathData: `M 0 0 Q 300 -100 600 0`, // Simple curve default
+        orientToPath: true,
+        isRelative: true,
+        duration: 2000,
+        delay: 0,
+        easing: 'easeInOutQuad',
+        trigger: n ? 'after-prev' : 'on-load',
+    }));
 
-        const currentAnims = el.animations || [];
-        updateElement(el.id, { animations: [...currentAnims, newAnim] }, true);
-        setIsAdding(false);
+    const addMorphAnimation = () => addAnimToSelection((n) => ({
+        type: 'morph',
+        targetShape: 'star', // Default
+        duration: 2500,
+        delay: 0,
+        easing: 'easeInOutCubic',
+        trigger: n ? 'after-prev' : 'on-load',
+        restoreAfter: false, // Usually morphs are permanent transitions
+    }));
+
+    const addRotateAnimation = () => addAnimToSelection((n): RotateAnimation => ({
+        id: '', // replaced by addAnimToSelection
+        type: 'rotate',
+        toAngle: 90,
+        relative: true,
+        duration: 1000,
+        delay: 0,
+        easing: 'easeOutQuad',
+        trigger: n ? 'after-prev' : 'on-load',
+    }));
+
+    const addAutoSpinAnimation = () => addAnimToSelection((n): AutoSpinAnimation => ({
+        id: '', // replaced by addAnimToSelection
+        type: 'autoSpin',
+        direction: 'clockwise',
+        iterations: 1,
+        duration: 1000,
+        delay: 0,
+        easing: 'linear',
+        trigger: n ? 'after-prev' : 'on-load',
+    }));
+
+    const addKeyframeAnimation = () => addAnimToSelection((n, el): KeyframeAnimation => ({
+        id: '', // replaced by addAnimToSelection
+        type: 'keyframe',
+        property: 'x',
+        keyframes: getKeyframeDefaults(el, 'x'),
+        duration: 2000,
+        delay: 0,
+        easing: 'linear',
+        trigger: n ? 'after-prev' : 'on-load',
+    }));
+
+    // List edits are index-based so they fan out across every selected member (a group shares
+    // the same preset sequence). For a single selection listTargetIds() is just [that id].
+    const removeAnimation = (index: number) => {
+        for (const id of listTargetIds()) {
+            const el = store.elements.find(e => e.id === id);
+            if (!el?.animations) continue;
+            updateElement(id, { animations: el.animations.filter((_, i) => i !== index) }, true);
+        }
     };
 
-    const addMorphAnimation = () => {
-        const el = element();
-        if (!el) return;
-
-        const newAnim: any = {
-            id: crypto.randomUUID(),
-            type: 'morph',
-            targetShape: 'star', // Default
-            duration: 2500,
-            delay: 0,
-            easing: 'easeInOutCubic',
-            trigger: el.animations?.length ? 'after-prev' : 'on-load',
-            restoreAfter: false // Usually morphs are permanent transitions
-        };
-
-        const currentAnims = el.animations || [];
-        updateElement(el.id, { animations: [...currentAnims, newAnim] }, true);
-        setIsAdding(false);
+    const updateAnimProperty = (index: number, updates: Partial<ElementAnimation>) => {
+        for (const id of listTargetIds()) {
+            const el = store.elements.find(e => e.id === id);
+            const anim = el?.animations?.[index];
+            if (!anim) continue;
+            updateAnimation(id, anim.id, updates, true);
+        }
     };
 
-    const addRotateAnimation = () => {
-        const el = element();
-        if (!el) return;
-
-        const newAnim: RotateAnimation = {
-            id: crypto.randomUUID(),
-            type: 'rotate',
-            toAngle: 90,
-            relative: true,
-            duration: 1000,
-            delay: 0,
-            easing: 'easeOutQuad',
-            trigger: el.animations?.length ? 'after-prev' : 'on-load'
-        };
-
-        const currentAnims = el.animations || [];
-        updateElement(el.id, { animations: [...currentAnims, newAnim] }, true);
-        setIsAdding(false);
-    };
-
-    const addAutoSpinAnimation = () => {
-        const el = element();
-        if (!el) return;
-
-        const newAnim: AutoSpinAnimation = {
-            id: crypto.randomUUID(),
-            type: 'autoSpin',
-            direction: 'clockwise',
-            iterations: 1,
-            duration: 1000,
-            delay: 0,
-            easing: 'linear',
-            trigger: el.animations?.length ? 'after-prev' : 'on-load'
-        };
-
-        const currentAnims = el.animations || [];
-        updateElement(el.id, { animations: [...currentAnims, newAnim] }, true);
-        setIsAdding(false);
-    };
-
-    const addKeyframeAnimation = () => {
-        const el = element();
-        if (!el) return;
-
-        const property = 'x';
-        const newAnim: KeyframeAnimation = {
-            id: crypto.randomUUID(),
-            type: 'keyframe',
-            property,
-            keyframes: getKeyframeDefaults(el, property),
-            duration: 2000,
-            delay: 0,
-            easing: 'linear',
-            trigger: el.animations?.length ? 'after-prev' : 'on-load'
-        };
-
-        const currentAnims = el.animations || [];
-        updateElement(el.id, { animations: [...currentAnims, newAnim] }, true);
-        setIsAdding(false);
-    };
-
-    const removeAnimation = (animId: string) => {
-        const el = element();
-        if (!el || !el.animations) return;
-        updateElement(el.id, {
-            animations: el.animations.filter(a => a.id !== animId)
-        }, true);
-    };
-
-    const updateAnimProperty = (animId: string, updates: Partial<ElementAnimation>) => {
-        const el = element();
-        if (!el) return;
-
-        updateAnimation(el.id, animId, updates, true);
-    };
-
-    const handleReorder = (animId: string, direction: 'up' | 'down') => {
-        const id = selectedId();
-        if (id) {
-            reorderAnimation(id, animId, direction);
+    const handleReorder = (index: number, direction: 'up' | 'down') => {
+        for (const id of listTargetIds()) {
+            const el = store.elements.find(e => e.id === id);
+            const anim = el?.animations?.[index];
+            if (anim) reorderAnimation(id, anim.id, direction);
         }
     };
 
     const handlePlay = () => {
-        const id = selectedId();
-        if (id) {
-            sequenceAnimator.playSequence(id, 'programmatic');
-        }
+        // Preview every selected element's sequence — works for a single element and for a
+        // group/multi-selection (each member plays its own configured animations).
+        const ids = store.selection.length ? store.selection : (selectedId() ? [selectedId()!] : []);
+        for (const id of ids) sequenceAnimator.playSequence(id, 'programmatic');
     };
 
     const handleStop = () => {
-        const id = selectedId();
-        if (id) {
-            sequenceAnimator.stopSequence(id);
-        }
+        const ids = store.selection.length ? store.selection : (selectedId() ? [selectedId()!] : []);
+        for (const id of ids) sequenceAnimator.stopSequence(id);
     };
 
     const handlePlayStagger = async () => {
@@ -379,59 +362,34 @@ export const AnimationPanel: Component = () => {
 
         setIsStaggerPlaying(true);
 
+        // Run the REAL preset function per element (staggered), so effects that the old
+        // property-tween shim couldn't express — drawIn (drawProgress), shakeX (loop),
+        // revolve, glitch — actually play on a group. Distribution mode → per-member delay.
+        const preset = staggerPreset();
+        const duration = staggerDuration();
+        const easing = staggerEasing();
+        const staggerConfig: StaggerConfig = { each: staggerEach(), from: staggerMode() };
+        const delays = calculateStaggerDelays(ids.length, staggerConfig);
+        const params = preset === 'revolve' ? { radius: 50 }
+            : preset === 'codeLineHighlight' ? { msPerLine: 800 }
+            : undefined;
+
         try {
-            // Prepare animation target based on preset
-            const preset = staggerPreset();
-            let fromValues: Record<string, number> = {};
-
-            // Define "from" values for common presets
-            switch (preset) {
-                case 'fadeIn':
-                    fromValues = { opacity: 0 };
-                    break;
-                case 'fadeOut':
-                    fromValues = { opacity: 100 };
-                    break;
-                case 'slideInLeft':
-                    fromValues = { x: -100, opacity: 0 };
-                    break;
-                case 'slideInRight':
-                    fromValues = { x: 100, opacity: 0 };
-                    break;
-                case 'slideInUp':
-                    fromValues = { y: -100, opacity: 0 };
-                    break;
-                case 'slideInDown':
-                    fromValues = { y: 100, opacity: 0 };
-                    break;
-                case 'zoomIn':
-                    fromValues = { width: 0, height: 0, opacity: 0 };
-                    break;
-                case 'zoomOut':
-                    fromValues = { opacity: 100 };
-                    break;
-                case 'bounce':
-                case 'pulse':
-                    fromValues = { opacity: 50 };
-                    break;
-                default:
-                    fromValues = { opacity: 0 };
-            }
-
-            const staggerConfig: StaggerConfig = {
-                each: staggerEach(),
-                from: staggerMode()
-            };
-
-            await animateElementsFrom(
-                ids,
-                fromValues,
-                {
-                    duration: staggerDuration(),
-                    easing: staggerEasing() as any
-                },
-                staggerConfig
-            );
+            await new Promise<void>((resolve) => {
+                let remaining = ids.length;
+                const done = () => { if (--remaining <= 0) resolve(); };
+                ids.forEach((elementId, index) => {
+                    sequenceAnimator.playAnimation(elementId, {
+                        id: crypto.randomUUID(),
+                        type: 'preset',
+                        name: preset,
+                        duration,
+                        delay: Math.round(delays[index]),
+                        easing: easing as any,
+                        params,
+                    } as any, done);
+                });
+            });
         } finally {
             setIsStaggerPlaying(false);
         }
@@ -744,10 +702,10 @@ export const AnimationPanel: Component = () => {
             </Show>
 
             <div class="animation-list" style={{ display: 'flex', 'flex-direction': 'column', gap: '8px' }}>
-                <For each={element()?.animations || []}>
+                <For each={listElement()?.animations || []}>
                     {(anim, index) => {
                         // Compute click-step number for this animation
-                        const anims = element()?.animations || [];
+                        const anims = listElement()?.animations || [];
                         let step = 0;
                         for (let i = 0; i <= index(); i++) {
                             const t = anims[i].trigger;
@@ -760,13 +718,13 @@ export const AnimationPanel: Component = () => {
                         <AnimationItem
                             animation={anim}
                             index={index()}
-                            total={element()?.animations?.length || 0}
+                            total={listElement()?.animations?.length || 0}
                             expanded={expandedIds().has(anim.id)}
                             onToggle={() => toggleExpanded(anim.id)}
-                            onUpdate={(u) => updateAnimProperty(anim.id, u)}
-                            onRemove={() => removeAnimation(anim.id)}
-                            onReorder={(d) => handleReorder(anim.id, d)}
-                            elementId={element()!.id}
+                            onUpdate={(u) => updateAnimProperty(index(), u)}
+                            onRemove={() => removeAnimation(index())}
+                            onReorder={(d) => handleReorder(index(), d)}
+                            elementId={listElement()!.id}
                             stepNumber={stepNum}
                         />
                         );
