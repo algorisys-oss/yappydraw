@@ -510,6 +510,10 @@ export interface DrawingElement {
     compoundOperands?: DrawingElement[];
     /** The boolean operation combining `compoundOperands` (default 'union'). */
     compoundOp?: 'union' | 'subtract' | 'intersect' | 'exclude';
+    /** Adjustment layer: applies its CSS filter (blur/brightness/contrast/…) to everything
+     *  rendered BENEATH it, within its bounds. Renders as a dashed gizmo while editing;
+     *  the filter effect shows in presentation. See `createAdjustmentLayer`. */
+    isAdjustmentLayer?: boolean;
     isCollapsed?: boolean;
     // Editable vector path ('path' element): ordered anchors (relative to origin) +
     // closed flag. The SVG `d` for rendering/hit-test is derived from these.

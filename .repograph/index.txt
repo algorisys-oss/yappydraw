@@ -76,9 +76,9 @@ frontend/src/ai/slide-generator.ts | typescript | 592 | AISlideContent:17 Genera
 frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:84
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
-frontend/src/api.ts | typescript | 3423 | Theme:3 HarmonyType:48 DimensionMeasure:54 ElementOptions:121 normalizeElementType:327 ElementType:532 as:532 Window:3415
+frontend/src/api.ts | typescript | 3444 | Theme:3 HarmonyType:48 DimensionMeasure:54 ElementOptions:121 normalizeElementType:327 ElementType:532 as:532 Window:3436
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1403 | Component:1 App:87 moves:107 onPenMove:108 hidePen:112 onControllerChange:132 handleKeyUp:161 handleKeyDown:171 as:683 handleFullscreenChange:798 handleBeforeUnload:804 handlePaste:808 handleGlobalDragEnter:910 handleGlobalDragOver:925 showDropFallbackPrompt:944 cleanup:974 outsideClick:1002 isImageFile:1014 first:1015 must:1028 extractDropData:1030 processExtractedDrop:1085 handleGlobalDrop:1202 handleDocumentDrop:1248
+frontend/src/app.tsx | typescript | 1408 | Component:1 App:87 moves:107 onPenMove:108 hidePen:112 onControllerChange:132 handleKeyUp:161 handleKeyDown:171 as:688 handleFullscreenChange:803 handleBeforeUnload:809 handlePaste:813 handleGlobalDragEnter:915 handleGlobalDragOver:930 showDropFallbackPrompt:949 cleanup:979 outsideClick:1007 isImageFile:1019 first:1020 must:1033 extractDropData:1035 processExtractedDrop:1090 handleGlobalDrop:1207 handleDocumentDrop:1253
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -104,7 +104,7 @@ frontend/src/components/bpmn-tool-group.tsx | typescript | 249 | Component:1 Bpm
 frontend/src/components/brand-kit-panel.css | - | 88 |
 frontend/src/components/brand-kit-panel.tsx | typescript | 171 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
 frontend/src/components/canvas-toolbar.tsx | typescript | 124 | Component:1 CanvasToolbar:5 resetHideTimeout:9 toolBtnStyle:27
-frontend/src/components/canvas.tsx | typescript | 2272 | Component:1 TextEditingContext:52 CanvasEventContext:54 CropHandle:59 Canvas:78 setEditingId:185 flushPenPoints:228 handleResize:257 buildAnchorMenu:291 draw:321 and:504 viewportTransform:549 getWorldCoordinates:558 getWheelCtx:566 onWheel:572 normalizePencil:575 applyMasterProjection:611 canInteractWithElement:621 checkBinding:627 refreshLinePoints:630 refreshBoundLine:633 commitText:652 commitRichText:660 isPenDrawingTool:688 pickStylusTouch:697 findTouchById:705 finalizeTouchStroke:713 smartShapeEnabled:743 cancelShapeHold:747 resetActiveStroke:755 fireShapeHold:766 armShapeHold:815 noteShapeMove:823 beginTouchPenStroke:839 handleTouchStart:859 handleTouchMove:890 handleTouchEnd:943 isTouchBlockedByGesture:986 cancelLongPress:1007 clearUndoRepeat:1054 fitView:1059 armUndoRepeat:1063 cancelInflightForGesture:1084 beginGesture:1111 updateGesture:1142 endGesture:1193 fireTap:1200 handleTouchStartGesture:1206 handleTouchMoveGesture:1241 handleTouchEndGesture:1326 handlePointerDown:1373 handlePointerMove:1543 handlePointerUp:1658 handleDoubleClick:1740 handleCropKeys:1869 handlePolylineKeys:1894 handlePenKeys:1911 dropHandler:1929 for:1946
+frontend/src/components/canvas.tsx | typescript | 2279 | Component:1 TextEditingContext:52 CanvasEventContext:54 CropHandle:59 Canvas:78 setEditingId:185 flushPenPoints:228 handleResize:257 buildAnchorMenu:291 draw:321 and:504 viewportTransform:549 getWorldCoordinates:558 getWheelCtx:566 onWheel:572 normalizePencil:575 applyMasterProjection:611 canInteractWithElement:621 checkBinding:627 refreshLinePoints:630 refreshBoundLine:633 commitText:652 commitRichText:660 isPenDrawingTool:688 pickStylusTouch:697 findTouchById:705 finalizeTouchStroke:713 smartShapeEnabled:743 cancelShapeHold:747 resetActiveStroke:755 fireShapeHold:766 armShapeHold:815 noteShapeMove:823 beginTouchPenStroke:839 handleTouchStart:859 handleTouchMove:890 handleTouchEnd:943 isTouchBlockedByGesture:986 cancelLongPress:1007 clearUndoRepeat:1054 fitView:1059 armUndoRepeat:1063 cancelInflightForGesture:1084 beginGesture:1111 updateGesture:1142 endGesture:1193 fireTap:1200 handleTouchStartGesture:1206 handleTouchMoveGesture:1241 handleTouchEndGesture:1326 handlePointerDown:1373 handlePointerMove:1543 handlePointerUp:1658 handleDoubleClick:1740 handleCropKeys:1876 handlePolylineKeys:1901 handlePenKeys:1918 dropHandler:1936 for:1953
 frontend/src/components/cloud-infra-tool-group.tsx | typescript | 221 | Component:1 CloudInfraToolGroup:106 handler:113 getActiveTool:123 handleToolClick:132 as:140 as:146 handleRightClick:154 toggleMenu:160 activeTool:167 isActive:168 getDropdownPosition:170
 frontend/src/components/cloud-storage-dialog.css | - | 475 |
 frontend/src/components/cloud-storage-dialog.tsx | typescript | 498 | CloudDialogMode:21 CloudStorageDialogProps:23 CloudStorageDialog:32 handleKeyDown:49 loadFiles:94 handleSignIn:118 handleSignOut:137 handleSave:147 handleLoad:197 handleDelete:212 handleSearch:225 formatDate:233 formatSize:244
@@ -163,7 +163,7 @@ frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 38 | Component:1 HistoryPanel:12
 frontend/src/components/infra-tool-group.tsx | typescript | 137 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:76 activeTool:83 isActive:84 getDropdownPosition:86
 frontend/src/components/keyframe-panel.css | - | 127 |
-frontend/src/components/keyframe-panel.tsx | typescript | 508 | Component:1 PropKind:9 PropDef:10 animatablePropsFor:45 snapT:55 clamp:68 matchPreset:70 near:75 formatValue:83 KeyframePanel:93 dur:98 frac:99 keysFor:102 valueAt:109 upsertKey:121 moveKey:138 deleteKey:151 addKeyHere:172 elLabel:183 wouldCycle:191 setParent:203 addNull:209 isSel:219 patchSelKey:236 applyPreset:248 laneRectOf:257 timeFromLane:261 startDragKey:265 move:276 up:286 seekFromLane:295 vx:306 vy:307 startHandleDrag:308 move:314 up:325 seekFromRuler:332 onRulerDown:338 move:341 up:342 play:367 restart:368 onKeyDown:371
+frontend/src/components/keyframe-panel.tsx | typescript | 541 | Component:1 PropKind:9 PropDef:10 getPath:62 animatablePropsFor:69 snapT:87 clamp:100 matchPreset:102 near:107 formatValue:115 KeyframePanel:125 dur:130 frac:131 keysFor:134 valueAt:141 upsertKey:154 moveKey:171 deleteKey:184 addKeyHere:205 elLabel:216 wouldCycle:224 setParent:236 addNull:242 isSel:252 patchSelKey:269 applyPreset:281 laneRectOf:290 timeFromLane:294 startDragKey:298 move:309 up:319 seekFromLane:328 vx:339 vy:340 startHandleDrag:341 move:347 up:358 seekFromRuler:365 onRulerDown:371 move:374 up:375 play:400 restart:401 onKeyDown:404
 frontend/src/components/layer-context-menu.tsx | typescript | 99 | Component:1 MenuItem:3 Props:5 LayerContextMenu:13 layer:14
 frontend/src/components/layer-panel.css | - | 606 |
 frontend/src/components/layer-panel.tsx | typescript | 540 | Component:1 LayerPanel:7 toggleSelected:29 clearSelection:34 onSwipeMove:36 onSwipeUp:56 endSwipeTracking:68 startSwipe:76 swipeOffset:89 groupSelectedLayers:96 deleteSelectedLayers:105 handleLayerClick:114 handleToggleVisibility:118 handleToggleLock:126 handleDeleteLayer:135 handleDuplicateLayer:142 startEditing:147 saveRename:153 cancelEditing:162 handleRenameKeyDown:167 handlePointerDown:177 handlePointerUp:183 handleDragStart:190 handleDragEnd:199 handleDragOver:206 handleDragLeave:212 handleDrop:216 displayLayers:263 visit:272 depth:407
@@ -177,7 +177,7 @@ frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 d
 frontend/src/components/measure-overlay.css | - | 46 |
 frontend/src/components/measure-overlay.tsx | typescript | 78 | MeasureOverlay:11 toWorld:16 onDown:18 onMove:25 onUp:30 onKey:35 seg:44
 frontend/src/components/menu.css | - | 292 |
-frontend/src/components/menu.tsx | typescript | 1317 | Component:1 handleSaveRequest:81 handleNew:88 proceed:89 Menu:104 handleUnsavedCancel:118 handleUnsavedDiscard:123 handleUnsavedSave:130 propPanelOffset:140 onPaletteEscape:150 performSave:161 is:226 handleLoad:262 handleResetView:282 loadTemplateAction:287 handleTemplateSelect:327 handleOpenJson:336 handleLoadJsonText:378 handleExportHtml:394 handleExportRocket:406 handleDeployToRocket:439 onLeftMouseDown:490 onRightMouseDown:505 onMouseMove:519 onMouseUp:534 handleResize:543
+frontend/src/components/menu.tsx | typescript | 1321 | Component:1 handleSaveRequest:81 handleNew:88 proceed:89 Menu:104 handleUnsavedCancel:118 handleUnsavedDiscard:123 handleUnsavedSave:130 propPanelOffset:140 onPaletteEscape:150 performSave:161 is:226 handleLoad:262 handleResetView:282 loadTemplateAction:287 handleTemplateSelect:327 handleOpenJson:336 handleLoadJsonText:378 handleExportHtml:394 handleExportRocket:406 handleDeployToRocket:439 onLeftMouseDown:490 onRightMouseDown:505 onMouseMove:519 onMouseUp:534 handleResize:543
 frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
 frontend/src/components/mindmap-tool-group.tsx | typescript | 135 | Component:1 MindmapToolGroup:16 handler:23 getActiveMindmapTool:34 handleToolClick:48 as:56 as:61 handleRightClick:68 toggleMenu:74 as:76 activeTool:81 isActive:82 getDropdownPosition:84
@@ -367,7 +367,7 @@ frontend/src/game/game-runtime.ts | typescript | 419 | GameButton:25 Sprite:63{c
 frontend/src/game/game-templates.ts | typescript | 287 | GameTemplate:3
 frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 120 | ac:14 tone:31 sweep:46 noise:62 Sfx:78 playSfx:80 startMusic:99 stopMusic:111 setMuted:115
-frontend/src/help-docs/features/animation-doc.tsx | typescript | 1242 | AnimationDoc:8 to:835
+frontend/src/help-docs/features/animation-doc.tsx | typescript | 1257 | AnimationDoc:8 to:850
 frontend/src/help-docs/features/arcade-doc.tsx | typescript | 298 | ArcadeDoc:8 a:118
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 148 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 152 | BulkEditingDoc:3 entries:62 entries:63 or:97
@@ -375,7 +375,7 @@ frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 277 | Desig
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 203 | EffectsDoc:10 Tools:196
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 124 | EmbeddingDoc:3
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 516 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
-frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 392 | LogoToolkitDoc:9 the:165
+frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 394 | LogoToolkitDoc:9 the:167
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 377 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 224 | StickAnimationDoc:9
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
@@ -472,7 +472,7 @@ frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 Docu
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 readIndex:37 writeIndex:41 saveSnapshot:45 maybeSnapshotVersion:68 snapshotVersionNow:85 listVersions:96 restoreVersion:101 deleteVersion:113
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 7630 | LayoutDirection:15 OutlineNode:15 BooleanOp:16 Poly:16 ShapeFace:16 DistortKind:17 WarpPreset:38 Theme:47 ResolvedTheme:48 AppState:75 HistorySnapshot:550 BP:1509 AlignmentType:4237 DistributionType:4237 CharPatch:4810 CharPatchArg:4813 SelBBox:5767 LastTransform:6017 RegionPathfinderOp:6376 SelectSimilarMatch:6509 buildPathFromPoly:7043 polysOriginMin:7078 syncCompoundOperands:7085 buildCompoundPath:7096 WorldSub:7264 rdpAnchors:7267 normalizeWorldSubs:7295 makePathFromWorldSubs:7310 elementToWorldSubs:7331 startInkCleanupIfNeeded:7569
+frontend/src/store/app-store.ts | typescript | 7691 | LayoutDirection:15 OutlineNode:15 BooleanOp:16 Poly:16 ShapeFace:16 DistortKind:17 WarpPreset:38 Theme:47 ResolvedTheme:48 AppState:75 HistorySnapshot:553 BP:1512 AlignmentType:4240 DistributionType:4240 CharPatch:4813 CharPatchArg:4816 SelBBox:5770 LastTransform:6020 RegionPathfinderOp:6379 SelectSimilarMatch:6512 buildPathFromPoly:7046 polysOriginMin:7081 syncCompoundOperands:7088 buildCompoundPath:7099 WorldSub:7325 rdpAnchors:7328 normalizeWorldSubs:7356 makePathFromWorldSubs:7371 elementToWorldSubs:7392 startInkCleanupIfNeeded:7630
 frontend/src/store/dock-layout.ts | typescript | 147 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:52 hidePanel:63 setPanelOpen:73 dockPanel:80 dockPanelAt:90
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
 frontend/src/templates/data/designs/index.ts | typescript | 272 |
@@ -501,7 +501,7 @@ frontend/src/templates/data/presentations/team-intro.ts | typescript | 80 |
 frontend/src/templates/data/presentations/tech-architecture.ts | typescript | 96 |
 frontend/src/templates/registry.ts | typescript | 237 | TemplateRegistry:12
 frontend/src/templates/user-templates.ts | typescript | 114 | listUserTemplates:38 persist:42 saveCurrentAsTemplate:49 deleteUserTemplate:109
-frontend/src/types.ts | typescript | 813 | ElementType:2 SymbolDef:25 Artboard:28 GraphicStyle:32 Swatch:36 PatternSwatch:40 ToolType:42 PathAnchor:50 PathSubpath:68 AppMode:73 FillStyle:74 PatternType:78 PatternFill:86 MeshGradient:107 StrokeStyle:119 FontFamily:123 TextAlign:124 VerticalAlign:125 ArrowHead:126 RichTextSpan:128 GradientStop:143 GradientType:148 BlendMode:150 Point:172 EntranceAnimation:179 ExitAnimation:215 PaintFill:241 PaintStroke:243 TransformEffect:253 Extrude3D:273 DrawingElement:282 TableCellSelection:730 TableCellFormatType:738 TableCellFormat:740 TableBorderStyle:753 TableCellBorder:755 TableCellBorders:760 Layer:767 GridSettings:782 Guide:796 ViewState:802
+frontend/src/types.ts | typescript | 817 | ElementType:2 SymbolDef:25 Artboard:28 GraphicStyle:32 Swatch:36 PatternSwatch:40 ToolType:42 PathAnchor:50 PathSubpath:68 AppMode:73 FillStyle:74 PatternType:78 PatternFill:86 MeshGradient:107 StrokeStyle:119 FontFamily:123 TextAlign:124 VerticalAlign:125 ArrowHead:126 RichTextSpan:128 GradientStop:143 GradientType:148 BlendMode:150 Point:172 EntranceAnimation:179 ExitAnimation:215 PaintFill:241 PaintStroke:243 TransformEffect:253 Extrude3D:273 DrawingElement:282 TableCellSelection:734 TableCellFormatType:742 TableCellFormat:744 TableBorderStyle:757 TableCellBorder:759 TableCellBorders:764 Layer:771 GridSettings:786 Guide:800 ViewState:806
 frontend/src/types/brand-types.ts | typescript | 41 | BrandColors:5 BrandFonts:13 BrandKit:20
 frontend/src/types/motion-types.ts | typescript | 161 | AnimationTrigger:3 AnimationAction:11 BaseAnimation:22 PresetAnimation:35 PropertyAnimation:42 PathAnimation:51 RotateAnimation:60 AutoSpinAnimation:68 MorphAnimation:76 AnimationKeyframe:83 KeyframeAnimation:89 ElementAnimation:95 DrawingElementState:99 DisplayState:112 BezierEase:132 TimedKeyframe:140 PropertyTrack:149 Composition:156
 frontend/src/types/slide-types.ts | typescript | 206 | SlideTransitionType:7 SlideTransitionEasing:20 SlideTransition:34 Slide:52 DocType:77 SlideDocumentMetadata:95 GlobalSettings:105 SlideDocument:130
@@ -511,8 +511,8 @@ frontend/src/utils/anchor-points.ts | typescript | 232 | Point:4 AnchorPoint:9 g
 frontend/src/utils/animation-utils.ts | typescript | 125 | AnimatedTransform:4
 frontend/src/utils/animation/animation-engine.ts | typescript | 333 | AnimationEngine:21 generateAnimationId:331
 frontend/src/utils/animation/animation-types.ts | typescript | 300 | EasingFunction:10 createSpring:23 lerp:269 lerpColor:278
-frontend/src/utils/animation/composition-evaluator.test.ts | typescript | 228 | mkEl:9
-frontend/src/utils/animation/composition-evaluator.ts | typescript | 316 | isColorProperty:35 cubicBezierYForX:45 easeProgress:85 evaluateTrack:97 evaluateCompositionAt:133 Mat:163 Pose:182 resolveParentedPoses:209 applyCompositionOverrides:271 keyframeAnimationToTrack:301
+frontend/src/utils/animation/composition-evaluator.test.ts | typescript | 259 | mkEl:10
+frontend/src/utils/animation/composition-evaluator.ts | typescript | 351 | isColorProperty:35 cubicBezierYForX:45 easeProgress:85 evaluateTrack:97 evaluateCompositionAt:133 Mat:163 Pose:182 resolveParentedPoses:209 resolveNestedOverrides:271 applyCompositionOverrides:302 keyframeAnimationToTrack:336
 frontend/src/utils/animation/element-animator.ts | typescript | 5355 | saveTextSnapshot:29 restoreTextSnapshot:45 clearTextSnapshot:55 stopConflictingAnimations:62 stopAllElementAnimations:107 isElementAnimating:132 AnimatableProperty:138 AnimatableColorProperty:166 ElementAnimationTarget:170 ElementAnimationConfig:214 getElementProperty:228 animateElement:251 animateElements:370 StaggerConfig:392 calculateStaggerDelays:411 animateElementsStagger:510 animateFrom:557 animateFromTo:590 random:614 randomInt:621 randomPick:628 shuffle:635 charByChar:661 animateElementsFrom:780 interpolateKeyframes:826 animateElementKeyframes:878 stopElementAnimation:955 pauseElementAnimation:962 animateAlongPath:969 resumeElementAnimation:1058 fadeIn:1070 fadeOut:1083 scaleIn:1094 bounce:1135 pulse:1184 flash:1257 rubberBand:1273 shakeX:1324 shakeY:1366 headShake:1408 swing:1450 tada:1492 wobble:1547 jello:1605 heartBeat:1664 scaleOut:1723 slideInLeft:1748 slideInRight:1768 slideInUp:1788 slideInDown:1808 slideOutLeft:1828 slideOutRight:1842 slideOutUp:1853 slideOutDown:1867 backIn:1879 backInDown:1908 backInLeft:1912 backInRight:1916 backInUp:1920 backOut:1927 backOutDown:1944 backOutLeft:1948 backOutRight:1952 backOutUp:1956 bounceInEffect:1963 bounceIn:1991 bounceInDown:1995 bounceInLeft:1999 bounceInRight:2003 bounceInUp:2007 bounceOutEffect:2014 bounceOut:2031 bounceOutDown:2035 bounceOutLeft:2039 bounceOutRight:2043 bounceOutUp:2047 fadeInEffect:2055 fadeInDown:2079 fadeInDownBig:2083 fadeInLeft:2087 +124 more
 frontend/src/utils/animation/index.ts | typescript | 158 |
 frontend/src/utils/animation/morph-animator.ts | typescript | 49 | MorphAnimator:10{morphTo:14}
@@ -524,7 +524,7 @@ frontend/src/utils/animation/slide-transition-manager.ts | typescript | 377 | Tr
 frontend/src/utils/animation/state-manager.ts | typescript | 28 | ElementState:4 SlideState:5 AnimationStateManager:7{captureCurrentState:12 transitionTo:23}
 frontend/src/utils/animation/timeline.ts | typescript | 283 | AnimationFactory:8 TimelineStep:10 Timeline:39{add:50 parallel:61 delay:69 call:77 play:85 pause:110 stop:120 reset:140 progress:148 playing:156 paused:163 runNextStep:170 runAnimation:203 if:223} createTimeline:281
 frontend/src/utils/binding-logic.ts | typescript | 415 | checkBinding:16 Cand:64 refreshLinePoints:110 computeAnchorFractions:161 resolveBindingPoint:180 getOverlappingSiblingIndex:249 computeSpreadOffset:275 refreshBoundLine:311
-frontend/src/utils/canvas-renderer.ts | typescript | 1230 | omScratch:30 ensureLumFilter:40 renderOpacityMasked:53 ViewportBounds:91 RenderElementsParams:100 SelectionOverlayParams:121 ConnectionAnchorParams:138 computeViewportBounds:150 cullElementsForAnimation:165 decayLaserTrail:217 renderWorkspaceBackground:234 renderSlideBackground:252 renderSlideBoundaries:350 isColorDark:433 renderCanvasTexture:448 renderGrid:546 renderSelectionOverlays:956 renderTableColumnDropIndicator:1041 renderTableCellSelection:1085 renderConnectionAnchors:1130 renderLaserTrail:1189
+frontend/src/utils/canvas-renderer.ts | typescript | 1286 | omScratch:31 adjScratch:42 renderAdjustmentLayer:56 ensureLumFilter:93 renderOpacityMasked:106 ViewportBounds:144 RenderElementsParams:153 SelectionOverlayParams:174 ConnectionAnchorParams:191 computeViewportBounds:203 cullElementsForAnimation:218 decayLaserTrail:270 renderWorkspaceBackground:287 renderSlideBackground:305 renderSlideBoundaries:403 isColorDark:486 renderCanvasTexture:501 renderGrid:599 renderSelectionOverlays:1012 renderTableColumnDropIndicator:1097 renderTableCellSelection:1141 renderConnectionAnchors:1186 renderLaserTrail:1245
 frontend/src/utils/click-outside.ts | typescript | 23 | clickOutside:3 JSX:18 Directives:19
 frontend/src/utils/clip-mask.ts | typescript | 58 | ShapeGeometry:11 geometryToPath2D:14 buildClipPath2D:40 maskFillRule:55
 frontend/src/utils/color-adjust.ts | typescript | 69 | hexToHsl:12 hslToHex:29 shiftHexHue:51 adjustHexLightness:58 adjustHexSaturation:65
@@ -532,7 +532,7 @@ frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:
 frontend/src/utils/color-harmony.ts | typescript | 83 | HarmonyType:10 generateTints:19 generateHarmony:29 loadImage:41 extractImagePalette:56
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 448 | Command:24
-frontend/src/utils/context-menu-builder.ts | typescript | 1764 | MergedCellRegion:58 buildSelectByTypeMenu:74 buildSelectBySamePropertyMenu:153 getContextMenuItems:183 buildFormatMenuItems:1595 buildBorderMenuItems:1690
+frontend/src/utils/context-menu-builder.ts | typescript | 1765 | MergedCellRegion:58 buildSelectByTypeMenu:74 buildSelectBySamePropertyMenu:153 getContextMenuItems:183 buildFormatMenuItems:1596 buildBorderMenuItems:1691
 frontend/src/utils/curve-fit.ts | typescript | 38 | Pt:10 catmullRomAnchors:13
 frontend/src/utils/custom-fonts.ts | typescript | 176 | CustomFont:18 loadGoogleLink:34 activate:47 persist:67 initCustomFonts:77 addCustomFontFromFile:104 addGoogleFont:119 removeCustomFont:132 customFontOptions:139
 frontend/src/utils/dimension-geometry.test.ts | typescript | 54 | DimensionAnnotation:2
@@ -680,6 +680,7 @@ scripts/render-dsl.mjs | javascript | 161 | parseArgs:34 opts:35 fail:54 isUp:74
 scripts/repograph-refresh.sh | shell | 25 |
 scripts/test_relative_path.ts | typescript | 58 |
 tests/_mesh.spec.ts | typescript | 49 | w2s:34 key:43
+tests/adjustment-layer.spec.ts | typescript | 51 |
 tests/algorisys-logo.spec.ts | typescript | 188 | the:6 sleep:44 setCur:56 ease:57 moveToClient:58 moveTo:59 clickFx:60 findBtn:61 cue:68 ensureTool:77 panel:85 sleepC:86 estW:89 text:90 pathC:91 line:92
 tests/algorisys-poster.spec.ts | typescript | 289 | to:6 sleep:49 setCur:68 ease:70 moveToClient:71 moveTo:75 clickFx:76 findBtn:85 cue:92 ensureTool:105 place:112 think:115 estW:119 tctr:120 tleft:122 line:124 typeText:127 swoosh:137 at:138 drawHRMS:231 drawPay:232 drawSkill:233
 tests/align-distribute.spec.ts | typescript | 63 | S:10 getX:11
@@ -707,6 +708,7 @@ tests/clipping-mask.spec.ts | typescript | 70 |
 tests/code-block.spec.ts | typescript | 163 | hello:35 App:128
 tests/color-batch.spec.ts | typescript | 62 | hexToRgb:6 lum:22
 tests/composition-evaluator.spec.ts | typescript | 47 | composition:4
+tests/compound-edit.spec.ts | typescript | 66 | widthOf:18
 tests/compound-shapes.spec.ts | typescript | 85 | state:31
 tests/comprehensive-features.spec.ts | typescript | 238 |
 tests/curvature.spec.ts | typescript | 35 |
@@ -749,6 +751,7 @@ tests/isometric-cube.spec.ts | typescript | 34 |
 tests/isometric-flex.spec.ts | typescript | 35 |
 tests/keyframe-easing.spec.ts | typescript | 61 | midX:25
 tests/keyframe-effects.spec.ts | typescript | 58 | feather:25
+tests/keyframe-nested-effects.spec.ts | typescript | 36 |
 tests/keyframe-panel.spec.ts | typescript | 78 |
 tests/keyframe-parenting.spec.ts | typescript | 76 | childPose:29
 tests/knife-exit.spec.ts | typescript | 36 | active:3

@@ -5,7 +5,7 @@ import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel,
   toggleMinimap, toggleRulers, toggleKeyframePanel, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
-  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper,
+  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper, exitCompoundEdit,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
@@ -196,6 +196,11 @@ const App: Component = () => {
       if (e.key === 'Escape' && store.eyedropper.active) {
         e.preventDefault();
         cancelEyedropper();
+        return;
+      }
+      if (e.key === 'Escape' && store.compoundEdit) {
+        e.preventDefault();
+        exitCompoundEdit(true); // finish, rebuilding the compound from the edited sources
         return;
       }
       if (e.key === 'Escape' && store.appMode === 'presentation') {

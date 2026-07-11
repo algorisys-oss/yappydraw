@@ -192,6 +192,8 @@ interface AppState {
     activeArtboardId: string | null;
     /** Active symbol edit-in-place session (transient, not persisted). */
     symbolEdit: { symbolId: string; groupId: string; name: string; x: number; y: number } | null;
+    /** Active compound-shape edit-in-place session — operands exploded for editing (transient). */
+    compoundEdit: { groupId: string; op: BooleanOp; style: Partial<DrawingElement>; original: DrawingElement } | null;
     /** Align to the key (last-selected) object instead of the selection bbox. */
     alignToKeyObject: boolean;
     /** Eyedropper mode: next canvas click copies that object's style to these targets. */
@@ -461,6 +463,7 @@ const initialState: AppState = {
     meshEditActive: false,
     activeArtboardId: null,
     symbolEdit: null,
+    compoundEdit: null,
     alignToKeyObject: false,
     eyedropper: { active: false, targets: [] },
     isPropertyPanelMinimized: false,
@@ -7197,6 +7200,64 @@ export const expandCompoundShape = (id: string): void => {
     updateElement(id, { compoundOperands: undefined, compoundOp: undefined } as Partial<DrawingElement>, false);
     bumpDirtyRevision();
     showToast('Compound shape expanded', 'success');
+};
+
+/**
+ * Enter in-place editing of a compound shape: explode its retained operands into real,
+ * selectable top-level elements (grouped) so you can move/edit them; the boolean is
+ * re-evaluated when you finish. Mirrors the symbol edit-in-place flow.
+ */
+export const enterCompoundEdit = (id: string): void => {
+    if (store.compoundEdit) return; // one session at a time
+    const el = store.elements.find(e => e.id === id);
+    if (!el || !el.compoundOperands || el.compoundOperands.length < 2) return;
+    pushToHistory();
+    const operands = syncCompoundOperands(el); // world-positioned at the compound's current spot
+    const gid = generateId('grp' as any);
+    const batch = new Set<string>();
+    const additions = operands.map(o => {
+        const nid = generateId((o.type as any) || 'path', batch); batch.add(nid);
+        return { ...o, id: nid, groupIds: [...(o.groupIds || []), gid], compoundOperands: undefined, compoundOp: undefined, layerId: el.layerId } as DrawingElement;
+    });
+    setStore('elements', list => [...list.filter(e => e.id !== id), ...additions]);
+    setStore('selection', additions.map(a => a.id));
+    setStore('compoundEdit', { groupId: gid, op: el.compoundOp || 'union', style: compoundStyleOf(el), original: { ...el } });
+    bumpDirtyRevision();
+    showToast('Editing compound shape — Esc to finish', 'info');
+};
+
+/** Finish an in-place compound edit: rebuild the compound from the edited operands (save) or restore the original (cancel). */
+export const exitCompoundEdit = (save = true): void => {
+    const session = store.compoundEdit;
+    if (!session) return;
+    const editedEls = store.elements.filter(e => (e.groupIds || []).includes(session.groupId));
+    const ids = editedEls.map(e => e.id);
+
+    if (save && editedEls.length >= 2) {
+        const operands = editedEls.map(e => ({ ...e, groupIds: (e.groupIds || []).filter(g => g !== session.groupId) }));
+        const polys = runBooleanOp(operands, session.op);
+        const compound = polys.length ? buildCompoundPath(polys, session.style, session.op, operands) : null;
+        if (compound) {
+            setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), compound]);
+            setStore('selection', [compound.id]);
+            setStore('compoundEdit', null);
+            bumpDirtyRevision();
+            showToast('Compound updated', 'success');
+            return;
+        }
+        showToast('Compound: empty result — kept as separate shapes', 'info');
+    }
+
+    if (!save) {
+        // Cancel: drop the edited operands and restore the original compound unchanged.
+        setStore('elements', list => [...list.filter(e => !ids.includes(e.id)), { ...session.original }]);
+        setStore('selection', [session.original.id]);
+    } else {
+        // Save-but-unbuildable: leave the edited shapes as plain (ungrouped) elements.
+        setStore('elements', list => list.map(e => ids.includes(e.id) ? { ...e, groupIds: (e.groupIds || []).filter(g => g !== session.groupId) } : e));
+    }
+    setStore('compoundEdit', null);
+    bumpDirtyRevision();
 };
 
 /**

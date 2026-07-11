@@ -426,7 +426,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
         return;
     }
 
-    let elements = store.elements.filter(el => !el.isNullObject); // null objects are authoring gizmos
+    let elements = store.elements.filter(el => !el.isNullObject && !el.isAdjustmentLayer); // authoring gizmos (null objects, adjustment layers)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -573,7 +573,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
         return;
     }
 
-    let elements = store.elements.filter(el => !el.isNullObject); // null objects are authoring gizmos
+    let elements = store.elements.filter(el => !el.isNullObject && !el.isAdjustmentLayer); // authoring gizmos (null objects, adjustment layers)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -655,7 +655,7 @@ export const copyCanvasAsPng = async (scale: number) => {
 };
 
 export const exportToSvg = (onlySelected: boolean) => {
-    let elements = store.elements.filter(el => !el.isNullObject); // null objects are authoring gizmos
+    let elements = store.elements.filter(el => !el.isNullObject && !el.isAdjustmentLayer); // authoring gizmos (null objects, adjustment layers)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));

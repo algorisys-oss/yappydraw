@@ -3,6 +3,7 @@ import {
     evaluateCompositionAt,
     keyframeAnimationToTrack,
     resolveParentedPoses,
+    resolveNestedOverrides,
 } from "./composition-evaluator";
 import type { PropertyTrack, KeyframeAnimation } from "../../types/motion-types";
 
@@ -156,6 +157,36 @@ describe("keyframeAnimationToTrack adapter", () => {
         expect(track.keys.map(k => k.t)).toEqual([0.5, 1.5, 2.5]);
         // Evaluated midway through the window (t=1.5) → value 50
         expect(evaluateCompositionAt(1.5, [track]).get("elX")!.x).toBeCloseTo(50, 6);
+    });
+});
+
+describe("resolveNestedOverrides — dotted-path (nested effect) keys", () => {
+    it("merges dotted keys into a clone of the element's nested object", () => {
+        const el: any = { id: "e1", extrude: { depth: 10, angle: 30, bevel: 2 } };
+        const elMap = new Map([[el.id, el]]);
+        const overrides = new Map<string, any>([
+            ["e1", { "extrude.depth": 80, "extrude.angle": 45 }],
+        ]);
+        resolveNestedOverrides(overrides as any, elMap as any);
+        const entry: any = overrides.get("e1");
+        // dotted keys removed, one merged nested object present
+        expect(entry["extrude.depth"]).toBeUndefined();
+        expect(entry.extrude).toEqual({ depth: 80, angle: 45, bevel: 2 }); // bevel preserved from base
+        // the source element is not mutated
+        expect(el.extrude.depth).toBe(10);
+    });
+
+    it("creates the nested object when the element has none", () => {
+        const elMap = new Map<string, any>([["e2", { id: "e2" }]]);
+        const overrides = new Map<string, any>([["e2", { "warp.bend": 0.5 }]]);
+        resolveNestedOverrides(overrides as any, elMap as any);
+        expect(overrides.get("e2")).toEqual({ warp: { bend: 0.5 } });
+    });
+
+    it("leaves flat keys untouched", () => {
+        const overrides = new Map<string, any>([["e3", { x: 100, opacity: 50 }]]);
+        resolveNestedOverrides(overrides as any, new Map() as any);
+        expect(overrides.get("e3")).toEqual({ x: 100, opacity: 50 });
     });
 });
 

@@ -82,6 +82,21 @@ export const AnimationDoc: Component = () => {
                     over time. Example: <code>Yappy.addKeyframe(id, 'featherRadius', 0, 0)</code> then
                     <code> Yappy.addKeyframe(id, 'featherRadius', 2, 30)</code> blurs the shape in over 2s.
                 </p>
+                <p>
+                    <strong>3D &amp; warp.</strong> Nested effect params animate too, via dotted paths:
+                    <strong> Extrude Depth / Angle / Tilt / Bevel</strong> (when the shape has 3D Extrude)
+                    and <strong>Warp Bend</strong> (on a warp preset) appear as rows once the effect is on —
+                    e.g. <code>Yappy.addKeyframe(id, 'extrude.depth', 0, 0)</code> then
+                    <code> (id, 'extrude.depth', 2, 70)</code> grows a solid out of the flat shape.
+                </p>
+                <p>
+                    <strong>Adjustment layers.</strong> Add one from <em>Menu → View → Add Adjustment
+                    Layer</em> (or <code>Yappy.createAdjustmentLayer()</code>): a rectangular region that
+                    applies a CSS filter (blur / brightness / contrast / saturate / hue) to everything drawn
+                    <em> beneath</em> it — and its filter params are keyframable, so you can sweep a blur or a
+                    colour grade across your artwork over time. (It's an authoring gizmo, so it isn't drawn
+                    in PNG/SVG export yet.)
+                </p>
 
                 <h3>Editing keyframes</h3>
                 <table class="api-table">

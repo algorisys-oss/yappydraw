@@ -1022,6 +1022,10 @@ const Menu: Component = () => {
                                             <span class="shortcut">Alt+K</span>
                                         </div>
                                     </div>
+                                    <div class="menu-item" onClick={() => { (window as any).Yappy?.createAdjustmentLayer(); setIsMenuOpen(false); }}>
+                                        <Layers size={16} />
+                                        <span class="label">Add Adjustment Layer</span>
+                                    </div>
                                     <Show when={isPagedDocType(store.docType)}>
                                         <div class="menu-item" onClick={() => { toggleSlideNavigator(); setIsMenuOpen(false); }}>
                                             <Layout size={16} />

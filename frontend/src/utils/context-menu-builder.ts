@@ -28,7 +28,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, addDimension, removeDimensionsForTarget,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, addDimension, removeDimensionsForTarget,
     zoomToFit, zoomToFitSlide, updateGlobalSettings, detachSlideBackgroundImage, updateSlideBackground,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
@@ -1159,6 +1159,7 @@ export function getContextMenuItems(
                 items.push({
                     label: 'Compound Shape', icon: '❖',
                     submenu: [
+                        { label: 'Edit Contents', icon: '✎', onClick: () => enterCompoundEdit(cs.id) },
                         { label: 'Op: Unite', icon: '⬤', onClick: () => setCompoundShapeOp(cs.id, 'union') },
                         { label: 'Op: Minus Front', icon: '◐', onClick: () => setCompoundShapeOp(cs.id, 'subtract') },
                         { label: 'Op: Intersect', icon: '◑', onClick: () => setCompoundShapeOp(cs.id, 'intersect') },

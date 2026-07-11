@@ -29,7 +29,14 @@ const BASE_PROPS: PropDef[] = [
  * effect is enabled, so they're shown conditionally per the focused element.
  */
 const FEATHER_PROP: PropDef = { key: 'featherRadius', label: 'Feather', kind: 'number' };
-const IMAGE_BLUR_PROP: PropDef = { key: 'filterBlur', label: 'Blur', kind: 'number' };
+/** CSS-filter params — animatable on images/video and adjustment layers. */
+const FILTER_PROPS: PropDef[] = [
+    { key: 'filterBlur', label: 'Blur', kind: 'number' },
+    { key: 'filterBrightness', label: 'Brightness', kind: 'number' },
+    { key: 'filterContrast', label: 'Contrast', kind: 'number' },
+    { key: 'filterSaturate', label: 'Saturate', kind: 'number' },
+    { key: 'filterHueRotate', label: 'Hue Rotate', kind: 'number' },
+];
 const GLOW_PROPS: PropDef[] = [
     { key: 'glowBlur', label: 'Glow Radius', kind: 'number' },
     { key: 'glowColor', label: 'Glow Color', kind: 'color' },
@@ -41,13 +48,38 @@ const SHADOW_PROPS: PropDef[] = [
     { key: 'shadowColor', label: 'Shadow Color', kind: 'color' },
 ];
 
+/** Nested-object effect params, addressed by a dotted path (resolved in the evaluator). */
+const EXTRUDE_PROPS: PropDef[] = [
+    { key: 'extrude.depth', label: 'Extrude Depth', kind: 'number' },
+    { key: 'extrude.angle', label: 'Extrude Angle', kind: 'number' },
+    { key: 'extrude.rotX', label: 'Extrude Tilt X', kind: 'number' },
+    { key: 'extrude.rotY', label: 'Extrude Tilt Y', kind: 'number' },
+    { key: 'extrude.bevel', label: 'Extrude Bevel', kind: 'number' },
+];
+const WARP_BEND_PROP: PropDef = { key: 'warp.bend', label: 'Warp Bend', kind: 'number' };
+
+/** Read a property that may be a dotted path (e.g. "extrude.depth" → el.extrude?.depth). */
+function getPath(el: any, key: string): any {
+    if (!el) return undefined;
+    if (key.indexOf('.') < 0) return el[key];
+    return key.split('.').reduce((o, k) => (o == null ? undefined : o[k]), el);
+}
+
 /** The animatable channels for a specific element: base transform + its active effects. */
 function animatablePropsFor(el: any): PropDef[] {
     if (!el) return BASE_PROPS;
+    // Adjustment layers are pure filter regions — expose their CSS-filter params.
+    if (el.isAdjustmentLayer) return [
+        { key: 'x', label: 'Position X', kind: 'number' }, { key: 'y', label: 'Position Y', kind: 'number' },
+        { key: 'width', label: 'Width', kind: 'number' }, { key: 'height', label: 'Height', kind: 'number' },
+        { key: 'opacity', label: 'Opacity', kind: 'opacity' }, ...FILTER_PROPS,
+    ];
     const props = [...BASE_PROPS, FEATHER_PROP];
-    if (el.type === 'image' || el.type === 'video') props.push(IMAGE_BLUR_PROP);
+    if (el.type === 'image' || el.type === 'video') props.push(...FILTER_PROPS);
     if (el.glowEnabled) props.push(...GLOW_PROPS);
     if (el.shadowEnabled) props.push(...SHADOW_PROPS);
+    if (el.extrude) props.push(...EXTRUDE_PROPS);
+    if (el.warp && el.warp.preset) props.push(WARP_BEND_PROP);
     return props;
 }
 
@@ -110,7 +142,8 @@ const KeyframePanel: Component = () => {
         const el = focusEl();
         if (!el) return undefined;
         const ov = evaluateCompositionAt(store.storyTime, store.compositionTracks).get(el.id);
-        const v = ov && (p.key in ov) ? (ov as any)[p.key] : (el as any)[p.key];
+        // `ov` holds raw evaluated keys (dotted keys not yet nested), so `p.key in ov` works.
+        const v = ov && (p.key in ov) ? (ov as any)[p.key] : getPath(el, p.key);
         // Numeric effect params default to 0 when unset (0 = off) so they read + keyframe from 0.
         if (v === undefined && p.kind !== 'color') return 0;
         return v;
@@ -172,8 +205,8 @@ const KeyframePanel: Component = () => {
     const addKeyHere = (p: PropDef) => {
         const el = focusEl();
         if (!el) return;
-        let v = (el as any)[p.key];
-        // Numeric effect params (feather/glow/shadow…) are undefined when off — key from 0.
+        let v = getPath(el, p.key);
+        // Numeric effect params (feather/glow/shadow/extrude…) are undefined when off — key from 0.
         if ((v === undefined || v === null) && p.kind !== 'color') v = 0;
         if (v === undefined || v === null) return;
         upsertKey(p.key, snapT(store.storyTime), v);

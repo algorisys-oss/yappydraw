@@ -6,7 +6,7 @@ import { renderDimensions } from "../utils/dimension-renderer";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, applyEyedropperFrom, cancelEyedropper, deleteElements, setPenConstrain } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, applyEyedropperFrom, cancelEyedropper, deleteElements, setPenConstrain } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { screenToWorld } from "../utils/viewport-transforms";
@@ -1762,6 +1762,13 @@ const Canvas: Component = () => {
                 if (el.type === 'symbolInstance' && el.symbolId && hitTestElement(el, wx, wy, threshold, store.elements, elementMap)) {
                     e.preventDefault();
                     enterSymbolEdit(el.id);
+                    requestAnimationFrame(draw);
+                    return;
+                }
+                // Double-click a compound shape → edit its source shapes in place.
+                if (el.compoundOperands && el.compoundOperands.length && hitTestElement(el, wx, wy, threshold, store.elements, elementMap)) {
+                    e.preventDefault();
+                    enterCompoundEdit(el.id);
                     requestAnimationFrame(draw);
                     return;
                 }

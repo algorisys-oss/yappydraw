@@ -10,7 +10,7 @@ import {
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
-    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths,
+    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, exitCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
@@ -50,7 +50,7 @@ import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, T
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { PropertyTrack, TimedKeyframe } from "./types/motion-types";
 import type { EasingName } from "./utils/animation/animation-types";
-import { evaluateCompositionAt, resolveParentedPoses } from "./utils/animation/composition-evaluator";
+import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides } from "./utils/animation/composition-evaluator";
 import { dimensionGeometry, type DimensionMeasure } from "./utils/dimension-geometry";
 import { addDimension as storeAddDimension, removeDimension as storeRemoveDimension, removeDimensionsForTarget as storeRemoveDimensionsForTarget } from "./store/app-store";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
@@ -2072,6 +2072,10 @@ export const YappyAPI = {
     releaseCompound(id: string) { return releaseCompoundShape(id); },
     /** Expand (flatten) a compound shape to a plain path (drops the retained sources). */
     expandCompound(id: string) { expandCompoundShape(id); },
+    /** Enter in-place editing of a compound shape (explodes its sources for editing). */
+    editCompound(id: string) { enterCompoundEdit(id); },
+    /** Finish in-place compound editing — rebuild from the edited sources (save) or restore the original (cancel). */
+    finishCompoundEdit(save = true) { exitCompoundEdit(save); },
     /** Convert shapes to editable vector paths (in place). Returns the converted ids. */
     convertToPath(ids: string[]) { return convertToPath(ids); },
     /** Text → Outlines: replace text elements with editable vector glyph paths (async). Returns a promise of new path ids. */
@@ -2473,9 +2477,11 @@ export const YappyAPI = {
      *  (for inspection/testing). Reflects transform parenting when present — i.e. the same
      *  composed result the canvas renders. */
     evaluateComposition(t: number) {
-        return store.elements.some(e => e.transformParentId)
+        const overrides = store.elements.some(e => e.transformParentId)
             ? resolveParentedPoses(store.elements, t, store.compositionTracks)
             : evaluateCompositionAt(t, store.compositionTracks);
+        resolveNestedOverrides(overrides, new Map(store.elements.map(e => [e.id, e])));
+        return overrides;
     },
     /**
      * Create a **null object** — an invisible transform holder (renders as a crosshair
@@ -2493,6 +2499,21 @@ export const YappyAPI = {
     },
     /** Set (or clear, with null) an element's transform parent — it inherits the parent's animated transform. */
     setTransformParent(childId: string, parentId: string | null) { updateElement(childId, { transformParentId: parentId } as any, true); },
+
+    /**
+     * Create an **adjustment layer** — a rectangular region that applies a CSS filter
+     * (blur/brightness/contrast/saturate/…) to everything rendered BENEATH it. Set the
+     * filter fields (e.g. `filterBlur`, `filterBrightness`) via `updateElement`, or keyframe
+     * them on the timeline. Returns the id. (Effect shows on-canvas + in presentation; not
+     * yet applied in PNG/SVG export.)
+     */
+    createAdjustmentLayer(x?: number, y?: number, width = 320, height = 220, filters?: Record<string, number>) {
+        const cx = x ?? 80, cy = y ?? 80;
+        const id = this.createElement('rectangle', cx, cy, width, height, { backgroundColor: 'transparent', strokeColor: 'transparent' });
+        updateElement(id, { isAdjustmentLayer: true, name: 'Adjustment', filterBlur: 6, ...(filters || {}) } as any, false);
+        this.setSelected([id]);
+        return id;
+    },
 
     // --- Dimension annotations (precision-measurement Phase 5) ---
     // Persistent CAD-style dimension lines that attach to an element and auto-update

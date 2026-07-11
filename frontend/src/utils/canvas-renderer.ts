@@ -14,6 +14,7 @@ import { renderElement } from './render-element';
 import { hasTransformEffect, transformEffectRenderCopies } from './transform-effect';
 import { hasExtrude, extrudeOwnsFront, renderExtrudeBody } from './extrude';
 import { hasRevolve, renderRevolve } from './revolve';
+import { buildFilterString } from './image-filter-utils';
 import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
 import { RenderPipeline } from '../shapes/base/render-pipeline';
@@ -34,6 +35,58 @@ function omScratch(w: number, h: number) {
         _omScratch = { a, actx: a.getContext('2d')!, arc: rough.canvas(a), b, bctx: b.getContext('2d')!, brc: rough.canvas(b), w, h };
     }
     return _omScratch;
+}
+
+// Reusable full-canvas scratch for adjustment-layer snapshots (one per size).
+let _adjScratch: { c: HTMLCanvasElement; ctx: CanvasRenderingContext2D; w: number; h: number } | null = null;
+function adjScratch(w: number, h: number) {
+    if (!_adjScratch || _adjScratch.w !== w || _adjScratch.h !== h) {
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        _adjScratch = { c, ctx: c.getContext('2d')!, w, h };
+    }
+    return _adjScratch;
+}
+
+/**
+ * Adjustment layer: re-draw everything already painted BENEATH this element through its
+ * CSS filter, clipped to its bounds. Snapshots the current composite into a scratch canvas
+ * then draws it back filtered (in device space) within the region. A dashed gizmo marks it
+ * while authoring (hidden in presentation/embed).
+ */
+function renderAdjustmentLayer(ctx: CanvasRenderingContext2D, el: DrawingElement, scale: number, appMode?: string) {
+    const filterStr = buildFilterString(el);
+    if (filterStr !== 'none') {
+        const canvas = ctx.canvas;
+        const sc = adjScratch(canvas.width, canvas.height);
+        sc.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        sc.ctx.clearRect(0, 0, sc.w, sc.h);
+        sc.ctx.drawImage(canvas, 0, 0);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(el.x, el.y, el.width, el.height);
+        ctx.clip();
+        ctx.filter = filterStr;
+        const t = ctx.getTransform();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(sc.c, 0, 0);
+        ctx.setTransform(t);
+        ctx.filter = 'none';
+        ctx.restore();
+    }
+    if (appMode !== 'presentation' && appMode !== 'embed') {
+        ctx.save();
+        ctx.strokeStyle = '#6366f1';
+        ctx.globalAlpha = 0.7;
+        ctx.lineWidth = 1 / scale;
+        ctx.setLineDash([6 / scale, 4 / scale]);
+        ctx.strokeRect(el.x, el.y, el.width, el.height);
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = '#6366f1';
+        ctx.font = `${11 / scale}px system-ui, -apple-system, sans-serif`;
+        ctx.fillText('Adjustment', el.x + 5 / scale, el.y + 13 / scale);
+        ctx.restore();
+    }
 }
 
 let _lumFilterReady = false;
@@ -860,7 +913,10 @@ export function renderLayersAndElements(
                 }
             }
 
-            if ((renderedEl.type !== 'text' && renderedEl.type !== 'richtext') || editingId !== renderedEl.id) {
+            if (renderedEl.isAdjustmentLayer) {
+                // Adjustment layer: filter everything drawn beneath it (not a normal shape).
+                renderAdjustmentLayer(ctx, renderedEl, scale, appMode);
+            } else if ((renderedEl.type !== 'text' && renderedEl.type !== 'richtext') || editingId !== renderedEl.id) {
                 // For non-text elements being edited, set isEditing so the
                 // render pipeline skips text drawing (the textarea overlay shows it instead)
                 if (editingId === renderedEl.id) {

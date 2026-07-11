@@ -60,14 +60,16 @@ export const LogoToolkitDoc: Component = () => {
                 <ul>
                     <li><strong>Change the operation</strong> at any time — right-click the compound →
                         <strong> Compound Shape ▸ Op: …</strong> (the result re-evaluates live).</li>
+                    <li><strong>Edit the sources in place</strong> — double-click the compound (or Compound
+                        Shape ▸ Edit Contents) to explode it into its editable shapes; move/edit them and
+                        press <span class="kbd">Esc</span> to rebuild the compound.</li>
                     <li><strong>Release</strong> it back into the original editable shapes.</li>
                     <li><strong>Expand</strong> it to flatten to a plain path (same as Pathfinder).</li>
                 </ul>
                 <p class="tip-box">
                     Scripting: <code>Yappy.makeCompound(ids, 'union'|'subtract'|'intersect'|'exclude')</code>,
-                    <code> setCompoundOp(id, op)</code>, <code>releaseCompound(id)</code>, <code>expandCompound(id)</code>.
-                    <em> To edit a source shape, Release the compound, edit, then Make Compound again (in-place editing
-                    is a later addition).</em>
+                    <code> setCompoundOp(id, op)</code>, <code>releaseCompound(id)</code>, <code>expandCompound(id)</code>,
+                    <code> editCompound(id)</code> / <code>finishCompoundEdit(save)</code>.
                 </p>
             </section>
 

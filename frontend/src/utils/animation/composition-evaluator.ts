@@ -262,6 +262,37 @@ export function resolveParentedPoses(
 }
 
 /**
+ * Resolve dotted-path override keys (e.g. `"extrude.depth"`, `"warp.bend"`) into nested
+ * object overrides. The render spread is shallow (`{ ...el, ...animState }`), so a nested
+ * field must arrive as a COMPLETE object: clone the element's current nested value and set
+ * the sub-field(s) on it (multiple dotted keys sharing a root merge into one object).
+ * Mutates `overrides` in place.
+ */
+export function resolveNestedOverrides(
+    overrides: Map<string, Partial<DrawingElementState>>,
+    elMap: Map<string, DrawingElement>
+): void {
+    for (const [id, entry] of overrides) {
+        const dotted = Object.keys(entry).filter(k => k.includes('.'));
+        if (dotted.length === 0) continue;
+        const el = elMap.get(id);
+        const roots = new Map<string, Record<string, any>>();
+        for (const key of dotted) {
+            const dot = key.indexOf('.');
+            const root = key.slice(0, dot);
+            const sub = key.slice(dot + 1);
+            if (!roots.has(root)) {
+                const base = el && (el as any)[root] && typeof (el as any)[root] === 'object' ? { ...(el as any)[root] } : {};
+                roots.set(root, base);
+            }
+            roots.get(root)![sub] = (entry as any)[key];
+            delete (entry as any)[key];
+        }
+        for (const [root, obj] of roots) (entry as any)[root] = obj;
+    }
+}
+
+/**
  * Merge composition overrides into the existing render-time `animatedStates` map
  * (which already carries orbit/spin transforms). Mutates and returns `states`.
  * Composition tracks win over orbit/spin for any property they define, matching
@@ -281,6 +312,10 @@ export function applyCompositionOverrides(
         ? resolveParentedPoses(elements, t, tracks)
         : evaluateCompositionAt(t, tracks);
     if (overrides.size === 0) return states;
+
+    // Dotted-path (nested effect) overrides → complete nested objects.
+    const elMap = new Map(elements.map(e => [e.id, e]));
+    resolveNestedOverrides(overrides, elMap);
 
     // Only apply to elements that are actually present (culling-safe).
     const liveIds = new Set(elements.map(e => e.id));
