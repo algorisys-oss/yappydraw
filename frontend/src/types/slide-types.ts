@@ -143,6 +143,8 @@ export interface SlideDocument {
     patterns?: import('../types').PatternSwatch[];
     /** Persistent dimension annotations (precision-measurement Phase 5). */
     dimensionAnnotations?: import('../utils/dimension-geometry').DimensionAnnotation[];
+    /** After-Effects keyframe animation tracks (absolute-time PropertyTracks). */
+    compositionTracks?: import('./motion-types').PropertyTrack[];
     /** Arcade: JavaScript game script run by the in-editor Play mode and the HTML player.
      *  When the visual builder is used, this is regenerated from the behaviors. */
     gameScript?: string;

@@ -2140,6 +2140,7 @@ export const loadDocument = (doc: any) => {
         setStore("symbols", JSON.parse(JSON.stringify(doc.symbols || [])));
         setStore("artboards", JSON.parse(JSON.stringify(doc.artboards || [])));
         setStore("dimensionAnnotations", JSON.parse(JSON.stringify(doc.dimensionAnnotations || [])));
+        setStore("compositionTracks", JSON.parse(JSON.stringify(doc.compositionTracks || [])));
         setStore("graphicStyles", JSON.parse(JSON.stringify(doc.graphicStyles || [])));
         setStore("swatches", JSON.parse(JSON.stringify(doc.swatches || [])));
         setStore("patterns", JSON.parse(JSON.stringify(doc.patterns || [])));

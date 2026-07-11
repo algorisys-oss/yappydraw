@@ -51,6 +51,7 @@ import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types"
 import type { PropertyTrack, TimedKeyframe } from "./types/motion-types";
 import type { EasingName } from "./utils/animation/animation-types";
 import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides } from "./utils/animation/composition-evaluator";
+import { buildSlideDocument } from "./utils/document-io";
 import { dimensionGeometry, type DimensionMeasure } from "./utils/dimension-geometry";
 import { addDimension as storeAddDimension, removeDimension as storeRemoveDimension, removeDimensionsForTarget as storeRemoveDimensionsForTarget } from "./store/app-store";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
@@ -2197,6 +2198,8 @@ export const YappyAPI = {
     goToLastSlide() { return setActiveSlide(store.slides.length - 1); },
     setDocType(type: 'infinite' | 'slides' | 'design' | 'game') { setDocType(type); },
     loadDocument(doc: any) { loadDocument(doc); },
+    /** Snapshot the current drawing as a serializable document (the `.yappy` v4 format). */
+    getDocument(name = 'Untitled') { return buildSlideDocument(name); },
     resetToNewDocument(docType: 'infinite' | 'slides' | 'design' | 'game' = 'slides', pageSize?: { width: number, height: number }) { resetToNewDocument(docType, pageSize); },
     /** Create a new Canva-style design document. Pass a page-size preset id (e.g. 'instagram-post') or explicit {width, height}. */
     newDesign(size?: string | { width: number, height: number }) {

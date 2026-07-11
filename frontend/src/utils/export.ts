@@ -87,6 +87,31 @@ function overlapsRect(el: DrawingElement, rx: number, ry: number, rw: number, rh
  * the canvas render hook), so exports must replay that hook or effects vanish from the output.
  */
 function renderElWithEffects(rc: ReturnType<typeof rough.canvas>, ctx: CanvasRenderingContext2D, el: DrawingElement): void {
+    if (el.isAdjustmentLayer) {
+        // Filter everything already drawn beneath this region (no authoring gizmo in export).
+        const filterStr = buildFilterString(el);
+        if (filterStr !== 'none') {
+            const canvas = ctx.canvas;
+            const temp = document.createElement('canvas');
+            temp.width = canvas.width; temp.height = canvas.height;
+            const tctx = temp.getContext('2d');
+            if (tctx) {
+                tctx.drawImage(canvas, 0, 0);
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(el.x, el.y, el.width, el.height);
+                ctx.clip();
+                ctx.filter = filterStr;
+                const t = ctx.getTransform();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.drawImage(temp, 0, 0);
+                ctx.setTransform(t);
+                ctx.filter = 'none';
+                ctx.restore();
+            }
+        }
+        return;
+    }
     if (hasRevolve(el)) { renderRevolve(ctx, el); return; } // full lathe solid replaces the shape
     if (hasExtrude(el)) {
         renderExtrudeBody(ctx, el);
@@ -426,7 +451,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
         return;
     }
 
-    let elements = store.elements.filter(el => !el.isNullObject && !el.isAdjustmentLayer); // authoring gizmos (null objects, adjustment layers)
+    let elements = store.elements.filter(el => !el.isNullObject); // null objects are authoring gizmos (adjustment layers render their filter in export)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -573,7 +598,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
         return;
     }
 
-    let elements = store.elements.filter(el => !el.isNullObject && !el.isAdjustmentLayer); // authoring gizmos (null objects, adjustment layers)
+    let elements = store.elements.filter(el => !el.isNullObject); // null objects are authoring gizmos (adjustment layers render their filter in export)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -655,7 +680,7 @@ export const copyCanvasAsPng = async (scale: number) => {
 };
 
 export const exportToSvg = (onlySelected: boolean) => {
-    let elements = store.elements.filter(el => !el.isNullObject && !el.isAdjustmentLayer); // authoring gizmos (null objects, adjustment layers)
+    let elements = store.elements.filter(el => !el.isNullObject); // null objects are authoring gizmos (adjustment layers render their filter in export)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));

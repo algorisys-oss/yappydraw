@@ -57,6 +57,17 @@ const EXTRUDE_PROPS: PropDef[] = [
     { key: 'extrude.bevel', label: 'Extrude Bevel', kind: 'number' },
 ];
 const WARP_BEND_PROP: PropDef = { key: 'warp.bend', label: 'Warp Bend', kind: 'number' };
+const GRADIENT_ANGLE_PROP: PropDef = { key: 'gradientDirection', label: 'Gradient Angle', kind: 'number' };
+const STROKE_GRADIENT_ANGLE_PROP: PropDef = { key: 'strokeGradient.angle', label: 'Stroke Grad Angle', kind: 'number' };
+/** Live Transform-effect params (staggered copies) — nested, dotted-path. */
+const TRANSFORM_EFFECT_PROPS: PropDef[] = [
+    { key: 'transformEffect.copies', label: 'TX Copies', kind: 'number' },
+    { key: 'transformEffect.moveX', label: 'TX Move X', kind: 'number' },
+    { key: 'transformEffect.moveY', label: 'TX Move Y', kind: 'number' },
+    { key: 'transformEffect.scaleX', label: 'TX Scale X', kind: 'number' },
+    { key: 'transformEffect.scaleY', label: 'TX Scale Y', kind: 'number' },
+    { key: 'transformEffect.rotate', label: 'TX Rotate', kind: 'number' },
+];
 
 /** Read a property that may be a dotted path (e.g. "extrude.depth" → el.extrude?.depth). */
 function getPath(el: any, key: string): any {
@@ -80,6 +91,9 @@ function animatablePropsFor(el: any): PropDef[] {
     if (el.shadowEnabled) props.push(...SHADOW_PROPS);
     if (el.extrude) props.push(...EXTRUDE_PROPS);
     if (el.warp && el.warp.preset) props.push(WARP_BEND_PROP);
+    if (el.gradientType) props.push(GRADIENT_ANGLE_PROP);
+    if (el.strokeGradient) props.push(STROKE_GRADIENT_ANGLE_PROP);
+    if (el.transformEffect) props.push(...TRANSFORM_EFFECT_PROPS);
     return props;
 }
 
