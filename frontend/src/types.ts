@@ -503,6 +503,13 @@ export interface DrawingElement {
     /** Null object: an invisible transform holder used purely as an animation parent
      *  (renders as a small crosshair gizmo, excluded from export). */
     isNullObject?: boolean;
+    /** Non-destructive compound shape (Illustrator "Compound Shapes"). A `path` element
+     *  whose `pathSubpaths` are the live boolean result of these RETAINED source elements —
+     *  the sources stay editable (release to get them back) and the operation can be changed
+     *  after the fact. See `docs/compound-shapes-plan.md` / `makeCompoundShape`. */
+    compoundOperands?: DrawingElement[];
+    /** The boolean operation combining `compoundOperands` (default 'union'). */
+    compoundOp?: 'union' | 'subtract' | 'intersect' | 'exclude';
     isCollapsed?: boolean;
     // Editable vector path ('path' element): ordered anchors (relative to origin) +
     // closed flag. The SVG `d` for rendering/hit-test is derived from these.

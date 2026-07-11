@@ -28,7 +28,7 @@ import {
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
-    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, addDimension, removeDimensionsForTarget,
+    addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, addDimension, removeDimensionsForTarget,
     zoomToFit, zoomToFitSlide, updateGlobalSettings, detachSlideBackgroundImage, updateSlideBackground,
     toggleVideoPlayback, isVideoPlaying, bumpDirtyRevision
 } from '../store/app-store';
@@ -1140,6 +1140,34 @@ export function getContextMenuItems(
                     { label: 'Outline', icon: '◌', onClick: () => applyPathfinderRegion([...store.selection], 'outline') },
                 ],
             });
+            // Non-destructive compound shape (sources stay editable; op can change later).
+            items.push({
+                label: 'Make Compound Shape', icon: '❖',
+                submenu: [
+                    { label: 'Unite', icon: '⬤', onClick: () => makeCompoundShape([...store.selection], 'union') },
+                    { label: 'Minus Front', icon: '◐', onClick: () => makeCompoundShape([...store.selection], 'subtract') },
+                    { label: 'Intersect', icon: '◑', onClick: () => makeCompoundShape([...store.selection], 'intersect') },
+                    { label: 'Exclude', icon: '◓', onClick: () => makeCompoundShape([...store.selection], 'exclude') },
+                ],
+            });
+        }
+
+        // A selected compound shape: change its operation, release, or expand (non-destructive edits).
+        if (selectionCount === 1) {
+            const cs = store.elements.find(e => e.id === store.selection[0]);
+            if (cs && cs.compoundOperands && cs.compoundOperands.length) {
+                items.push({
+                    label: 'Compound Shape', icon: '❖',
+                    submenu: [
+                        { label: 'Op: Unite', icon: '⬤', onClick: () => setCompoundShapeOp(cs.id, 'union') },
+                        { label: 'Op: Minus Front', icon: '◐', onClick: () => setCompoundShapeOp(cs.id, 'subtract') },
+                        { label: 'Op: Intersect', icon: '◑', onClick: () => setCompoundShapeOp(cs.id, 'intersect') },
+                        { label: 'Op: Exclude', icon: '◓', onClick: () => setCompoundShapeOp(cs.id, 'exclude') },
+                        { label: 'Release', icon: '⊟', onClick: () => releaseCompoundShape(cs.id) },
+                        { label: 'Expand (flatten)', icon: '▣', onClick: () => expandCompoundShape(cs.id) },
+                    ],
+                });
+            }
         }
 
         // Dimension annotations (Phase 5): attach an auto-updating measurement line.

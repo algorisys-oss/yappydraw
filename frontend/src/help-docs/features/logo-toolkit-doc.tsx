@@ -50,6 +50,25 @@ export const LogoToolkitDoc: Component = () => {
                     <strong> Pathfinder</strong> (union / subtract / intersect / exclude) is also there.
                     (<code>Yappy.toggleShapeBuilder()</code>.)
                 </p>
+                <h3>Compound Shapes — non-destructive booleans</h3>
+                <p>
+                    <strong>Pathfinder</strong> flattens and consumes the source shapes. When you want to keep them
+                    editable, use <strong>Compound Shapes</strong> instead: right-click ≥2 shapes →
+                    <strong> Make Compound Shape ▸ Unite / Minus Front / Intersect / Exclude</strong>. The result is one
+                    object that <em>retains its sources</em>, so you can:
+                </p>
+                <ul>
+                    <li><strong>Change the operation</strong> at any time — right-click the compound →
+                        <strong> Compound Shape ▸ Op: …</strong> (the result re-evaluates live).</li>
+                    <li><strong>Release</strong> it back into the original editable shapes.</li>
+                    <li><strong>Expand</strong> it to flatten to a plain path (same as Pathfinder).</li>
+                </ul>
+                <p class="tip-box">
+                    Scripting: <code>Yappy.makeCompound(ids, 'union'|'subtract'|'intersect'|'exclude')</code>,
+                    <code> setCompoundOp(id, op)</code>, <code>releaseCompound(id)</code>, <code>expandCompound(id)</code>.
+                    <em> To edit a source shape, Release the compound, edit, then Make Compound again (in-place editing
+                    is a later addition).</em>
+                </p>
             </section>
 
             {/* Repeat & symmetry */}

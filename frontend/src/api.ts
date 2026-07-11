@@ -10,7 +10,7 @@ import {
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
-    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths,
+    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
@@ -2060,6 +2060,18 @@ export const YappyAPI = {
     pathfinder(ids: string[], op: 'union' | 'subtract' | 'intersect' | 'exclude') { return applyPathfinder(ids, op); },
     /** Pathfinder region ops over ≥2 element ids: 'divide' | 'trim' | 'merge' | 'crop' | 'outline'. Returns new path ids. */
     pathfinderRegion(ids: string[], op: 'divide' | 'trim' | 'merge' | 'crop' | 'outline') { return applyPathfinderRegion(ids, op); },
+    /**
+     * NON-DESTRUCTIVE compound shape over ≥2 element ids — like Pathfinder but the
+     * sources are RETAINED and editable: change the op later with `setCompoundOp`,
+     * `releaseCompound` to get the sources back, or `expandCompound` to flatten. Returns the id.
+     */
+    makeCompound(ids: string[], op: 'union' | 'subtract' | 'intersect' | 'exclude' = 'union') { return makeCompoundShape(ids, op); },
+    /** Change a compound shape's boolean operation in place (re-evaluates the retained sources). */
+    setCompoundOp(id: string, op: 'union' | 'subtract' | 'intersect' | 'exclude') { setCompoundShapeOp(id, op); },
+    /** Release a compound shape back into its editable source elements. Returns the restored ids. */
+    releaseCompound(id: string) { return releaseCompoundShape(id); },
+    /** Expand (flatten) a compound shape to a plain path (drops the retained sources). */
+    expandCompound(id: string) { expandCompoundShape(id); },
     /** Convert shapes to editable vector paths (in place). Returns the converted ids. */
     convertToPath(ids: string[]) { return convertToPath(ids); },
     /** Text → Outlines: replace text elements with editable vector glyph paths (async). Returns a promise of new path ids. */

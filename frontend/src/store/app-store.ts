@@ -7067,6 +7067,138 @@ function buildPathFromPoly(poly: Poly, style: Partial<DrawingElement>, smoothEps
     } as DrawingElement;
 }
 
+// ── Non-destructive compound shapes ─────────────────────────────────────────
+// A compound shape is a `path` element that RETAINS its source elements
+// (`compoundOperands`, world coords) + the boolean `compoundOp`, and whose
+// `pathSubpaths` are the evaluated result. Non-destructive: the operation can be
+// changed after the fact, the sources released back for editing, or expanded
+// (flattened) to a plain path. Renders/hit-tests/serializes as any path.
+
+/** World-space bbox min of a boolean result (for absorbing moves). */
+function polysOriginMin(polys: Poly[]): { x: number; y: number } | null {
+    let mnx = Infinity, mny = Infinity;
+    for (const poly of polys) for (const ring of poly) for (const [x, y] of ring) { mnx = Math.min(mnx, x); mny = Math.min(mny, y); }
+    return isFinite(mnx) ? { x: mnx, y: mny } : null;
+}
+
+/** If the compound was moved since its last eval, shift its (world) operands by the same delta. */
+function syncCompoundOperands(el: DrawingElement): DrawingElement[] {
+    const operands = el.compoundOperands || [];
+    const cur = runBooleanOp(operands, el.compoundOp || 'union');
+    const origin = polysOriginMin(cur);
+    if (!origin) return operands;
+    const dx = el.x - origin.x, dy = el.y - origin.y;
+    if (Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) return operands;
+    return operands.map(o => ({ ...o, x: o.x + dx, y: o.y + dy }));
+}
+
+/** Combine all result polys into ONE even-odd `path` element (with retained operands). */
+function buildCompoundPath(polys: Poly[], style: Partial<DrawingElement>, op: BooleanOp, operands: DrawingElement[], batchIds?: Set<string>): DrawingElement | null {
+    const parts: { subs: any[]; minX: number; minY: number }[] = [];
+    let gMinX = Infinity, gMinY = Infinity, gMaxX = -Infinity, gMaxY = -Infinity;
+    for (const poly of polys) {
+        const n = polyToPathSubpaths(poly);
+        if (!n) continue;
+        parts.push({ subs: n.subpaths, minX: n.minX, minY: n.minY });
+        gMinX = Math.min(gMinX, n.minX); gMinY = Math.min(gMinY, n.minY);
+        gMaxX = Math.max(gMaxX, n.minX + n.width); gMaxY = Math.max(gMaxY, n.minY + n.height);
+    }
+    if (!parts.length) return null;
+    const subpaths = parts.flatMap(p => p.subs.map(sp => ({
+        anchors: sp.anchors.map((a: any) => ({ ...a, x: a.x + (p.minX - gMinX), y: a.y + (p.minY - gMinY) })),
+        closed: true,
+    })));
+    // Mirror buildPathFromPoly: a single ring fills via pathAnchors; holes/disjoint via
+    // pathSubpaths (even-odd). A lone pathSubpaths entry does NOT fill on its own.
+    const single = subpaths.length === 1;
+    return {
+        ...store.defaultElementStyles,
+        id: generateId('path', batchIds),
+        type: 'path',
+        x: gMinX, y: gMinY, width: Math.max(1, gMaxX - gMinX), height: Math.max(1, gMaxY - gMinY),
+        pathAnchors: single ? subpaths[0].anchors : undefined,
+        pathClosed: single ? true : undefined,
+        pathSubpaths: single ? undefined : subpaths,
+        angle: 0, seed: Math.floor(Math.random() * 2 ** 31), roundness: null, locked: false, link: null,
+        layerId: store.activeLayerId,
+        ...style,
+        compoundOperands: operands,
+        compoundOp: op,
+    } as DrawingElement;
+}
+
+const compoundStyleOf = (el: DrawingElement): Partial<DrawingElement> => ({
+    strokeColor: el.strokeColor, backgroundColor: el.backgroundColor, fillStyle: el.fillStyle,
+    strokeWidth: el.strokeWidth, strokeStyle: el.strokeStyle, renderStyle: el.renderStyle,
+    opacity: el.opacity, roughness: el.roughness, layerId: el.layerId,
+});
+
+/**
+ * Make a non-destructive compound shape from ≥2 selected elements. Unlike Pathfinder
+ * (which flattens and discards the sources), this keeps the sources so the operation
+ * can be changed, released, or expanded later. Returns the new element id.
+ */
+export const makeCompoundShape = (ids: string[], op: BooleanOp = 'union'): string | null => {
+    const els = store.elements.filter(e => ids.includes(e.id));
+    if (els.length < 2) { showToast('Compound shape: select 2+ shapes', 'info'); return null; }
+    els.sort((a, b) => store.elements.indexOf(a) - store.elements.indexOf(b)); // back → front
+    const polys = runBooleanOp(els, op);
+    if (!polys.length) { showToast('Compound shape: empty result', 'info'); return null; }
+    const base = op === 'subtract' ? els[0] : els[els.length - 1];
+    const compound = buildCompoundPath(polys, compoundStyleOf(base), op, els.map(e => ({ ...e })));
+    if (!compound) return null;
+    pushToHistory();
+    replaceElementsPreservingOrder(ids, [compound]);
+    setStore('selection', [compound.id]);
+    bumpDirtyRevision();
+    showToast(`Compound shape: ${op}`, 'success');
+    return compound.id;
+};
+
+/** Change a compound shape's boolean operation in place (re-evaluates the retained sources). */
+export const setCompoundShapeOp = (id: string, op: BooleanOp): void => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || !el.compoundOperands || el.compoundOperands.length < 2) return;
+    const operands = syncCompoundOperands(el);
+    const polys = runBooleanOp(operands, op);
+    if (!polys.length) { showToast('Compound shape: empty result', 'info'); return; }
+    const rebuilt = buildCompoundPath(polys, compoundStyleOf(el), op, operands);
+    if (!rebuilt) return;
+    pushToHistory();
+    updateElement(id, {
+        x: rebuilt.x, y: rebuilt.y, width: rebuilt.width, height: rebuilt.height,
+        pathAnchors: rebuilt.pathAnchors, pathClosed: rebuilt.pathClosed, pathSubpaths: rebuilt.pathSubpaths,
+        compoundOperands: operands, compoundOp: op,
+    } as Partial<DrawingElement>, false);
+    bumpDirtyRevision();
+    showToast(`Compound: ${op}`, 'success');
+};
+
+/** Release a compound shape back into its editable source elements (removes the compound). */
+export const releaseCompoundShape = (id: string): string[] => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || !el.compoundOperands || !el.compoundOperands.length) return [];
+    const operands = syncCompoundOperands(el);
+    const batchIds = new Set<string>();
+    const restored = operands.map(o => ({ ...o, id: generateId(o.type as any, batchIds), compoundOperands: undefined, compoundOp: undefined }));
+    pushToHistory();
+    replaceElementsPreservingOrder([id], restored as DrawingElement[]);
+    setStore('selection', restored.map(r => r.id));
+    bumpDirtyRevision();
+    showToast('Compound shape released', 'success');
+    return restored.map(r => r.id);
+};
+
+/** Expand (flatten) a compound shape into a plain path — drops the retained sources. */
+export const expandCompoundShape = (id: string): void => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el || !el.compoundOperands) return;
+    pushToHistory();
+    updateElement(id, { compoundOperands: undefined, compoundOp: undefined } as Partial<DrawingElement>, false);
+    bumpDirtyRevision();
+    showToast('Compound shape expanded', 'success');
+};
+
 /**
  * Outline Stroke: replace each element with a filled `path` of its stroke outline
  * (Minkowski sum of the centerline with a disk of strokeWidth/2). The result is filled
