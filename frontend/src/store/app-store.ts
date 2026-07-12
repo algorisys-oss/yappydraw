@@ -24,7 +24,8 @@ import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
-import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType, PatternSwatch, TransformEffect, Extrude3D } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType, PatternSwatch, TransformEffect, Extrude3D, Turntable } from "../types";
+import { applyTurntable } from "../utils/turntable";
 import { transformCopy, effectiveCopies } from "../utils/transform-effect";
 import { extrudeGeometry } from "../utils/extrude";
 import { elementPathSample, sampleAt } from "../library/stick-figures/anim/path-follow";
@@ -6820,6 +6821,62 @@ export const clearExtrude = (ids: string[]) => {
     pushToHistory();
     setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ extrude: undefined }));
     bumpDirtyRevision();
+};
+
+// ── Live Turntable effect (Adobe Project Turntable — rotate a vector path in pseudo-3D) ──
+
+const DEFAULT_TURNTABLE: Turntable = { axis: 'y', yaw: 0, pitch: 0, depthModel: 'symmetry', depthScale: 0.6 };
+
+/** Apply / update the live Turntable effect. Non-path shapes are converted to a `path` first
+ *  (the effect only rotates path anchors). `history=false` skips undo + toast for live drags. */
+export const setTurntable = (ids: string[], tt?: Partial<Turntable>, history = true) => {
+    if (ids.length === 0) { if (history) showToast('Turntable: select an object', 'info'); return; }
+    // Convert any non-path selection to an editable path so it can be rotated.
+    const toConvert = store.elements.filter(e => ids.includes(e.id) && e.type !== 'path' && shapeToPath(e)).map(e => e.id);
+    if (history && toConvert.length) convertToPath(toConvert);
+    if (history) pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id) && e.type === 'path', (e: DrawingElement) => ({
+        turntable: { ...DEFAULT_TURNTABLE, ...e.turntable, ...tt, baked: false } as Turntable,
+    }));
+    bumpDirtyRevision();
+    if (history) showToast('Turntable applied', 'success');
+};
+
+/** Remove the Turntable effect, restoring the flat (un-rotated) path. */
+export const clearTurntable = (ids: string[]) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ turntable: undefined }));
+    bumpDirtyRevision();
+};
+
+/** Bake the current turntable angle into the path: replace anchors with the rotated geometry
+ *  and drop the effect, so the new viewpoint becomes a clean, editable vector (single undo). */
+export const bakeTurntable = (ids: string[]): string[] => {
+    const bakedById = new Map<string, PathSubpath[]>();
+    for (const el of store.elements) {
+        if (ids.includes(el.id)) {
+            const subs = applyTurntable(el);
+            if (subs && subs.length) bakedById.set(el.id, subs);
+        }
+    }
+    if (bakedById.size === 0) return [];
+    pushToHistory();
+    setStore('elements', list => list.map(el => {
+        const subs = bakedById.get(el.id);
+        if (!subs) return el;
+        const single = subs.length === 1;
+        return {
+            ...el, type: 'path', turntable: undefined,
+            pathSubpaths: single ? undefined : subs,
+            pathAnchors: single ? subs[0].anchors : undefined,
+            pathClosed: single ? subs[0].closed : undefined,
+        } as DrawingElement;
+    }));
+    bumpDirtyRevision();
+    const out = [...bakedById.keys()];
+    showToast(`Baked turntable on ${out.length}`, 'success');
+    return out;
 };
 
 /** Feather — soft-blur an object's edges to transparent (radius px; 0 removes). */

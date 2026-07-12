@@ -11,7 +11,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, exitCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection,
@@ -1626,6 +1626,17 @@ export const YappyAPI = {
     expandExtrude(ids?: string[]): string[] { return expandExtrude(ids ?? [...store.selection]); },
     /** Toggle the live 3D Revolve (lathe) effect — spins the shape's silhouette into a solid of revolution. */
     toggleRevolve(on?: boolean, ids?: string[]) { toggleRevolve(ids ?? [...store.selection], on); },
+    /**
+     * Live Turntable effect (Adobe Project Turntable) — rotate a vector path in pseudo-3D and
+     * keep it fully editable. Non-path shapes are converted to a path first. Non-destructive.
+     * @param tt `{ yaw (deg about vertical), pitch (deg tilt), depthModel ('flat'|'symmetry'),
+     *   depthScale (0..1.5 bulge), perspective (0=ortho..1) }`
+     */
+    turntable(tt?: Partial<import("./types").Turntable>, ids?: string[]) { setTurntable(ids ?? [...store.selection], tt); },
+    /** Remove the Turntable effect (restore the flat, un-rotated path). */
+    clearTurntable(ids?: string[]) { clearTurntable(ids ?? [...store.selection]); },
+    /** Bake the current turntable angle into an editable path (drops the effect). Returns baked ids. */
+    bakeTurntable(ids?: string[]): string[] { return bakeTurntable(ids ?? [...store.selection]); },
 
     /** Appearance stack: add an extra fill/stroke over the base shape (both render styles). */
     addAppearanceFill(fill?: any, ids?: string[]) { addAppearanceFill(ids ?? store.selection, fill); },

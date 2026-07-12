@@ -3,6 +3,7 @@ import { isWasmEnabled } from "../wasm/feature-flags";
 import { wasmGetShapeGeometry } from "../wasm/bridge/shape-paths-bridge";
 import { getPathSubpaths, subpathsToPathData } from "./math/path-utils";
 import { warpGeometry, getEffectiveGrid } from "./envelope-warp";
+import { applyTurntable } from "./turntable";
 
 export type ShapeGeometry =
     | { type: 'rect', x: number, y: number, w: number, h: number, r?: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
@@ -75,7 +76,9 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
             // Editable vector path: anchors are origin-relative; shift to the centered
             // geometry frame (origin = element centre). Multiple subpaths punch holes via
             // the even-odd fill rule.
-            const subs = getPathSubpaths(el);
+            // Live Turntable: rotate the anchors in pseudo-3D first, then render the result
+            // as an ordinary path so fill/stroke + sketch/architectural parity come for free.
+            const subs = applyTurntable(el) ?? getPathSubpaths(el);
             if (subs.length === 0) return null;
             const d = subpathsToPathData(subs, -mw, -mh);
             return d ? { type: 'path', path: d, evenOdd: subs.length > 1 } : null;

@@ -83,6 +83,36 @@ Yappy.clearExtrude();`}</code></pre>
             </section>
 
             <section class="doc-section">
+                <h2>Turntable (rotate in 3D)</h2>
+                <p>
+                    Spin a flat vector shape around as if it were a 3D object — Adobe's
+                    <em> Project Turntable</em> idea. Unlike 3D Extrude (which adds depth <em>behind</em> the
+                    shape), Turntable rotates the artwork <em>itself</em> about a vertical or horizontal axis,
+                    and at every angle the result stays a <strong>clean, editable path</strong>. It's
+                    <strong> non-destructive</strong> and renders in both <strong>Sketch</strong> and
+                    <strong> Architectural</strong> styles.
+                </p>
+                <p>
+                    <strong>Property panel → TURNTABLE (3D SPIN)</strong>: <em>+ Add Turntable</em> (a non-path
+                    shape is converted to a path first), then drag <strong>Yaw</strong> (spin about the vertical
+                    axis), <strong>Pitch</strong> (tilt), <strong>Depth</strong> and <strong>Persp</strong>.
+                    The <strong>Volume</strong> model chooses how depth is faked: <em>Flat</em> just foreshortens
+                    the sheet (always correct); <em>Symmetry</em> gives it a rounded, cylinder-like bulge so a
+                    turned figure or logo reads as solid. <strong>Bake</strong> commits the current angle into a
+                    real editable path (single undo); <strong>Remove</strong> restores the flat shape.
+                </p>
+                <pre><code>{`Yappy.turntable({ yaw: 35, pitch: 10, depthModel: 'symmetry', depthScale: 0.6 });
+Yappy.bakeTurntable();   // freeze this viewpoint as an editable path
+Yappy.clearTurntable();`}</code></pre>
+                <p class="tip-box">
+                    <strong>Best on symmetric art:</strong> the rounded look is inferred from a vertical mirror
+                    axis, so characters, bottles, and logos turn most convincingly. Occluded parts aren't
+                    re-invented yet (that's a later, AI-assisted phase) — Turntable today is a deterministic spin
+                    of the geometry you already have.
+                </p>
+            </section>
+
+            <section class="doc-section">
                 <h2>Transform Effect (live copies)</h2>
                 <p>
                     A <strong>non-destructive</strong> effect that draws many accumulating copies of an object —

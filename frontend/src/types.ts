@@ -279,6 +279,26 @@ export interface Extrude3D {
     bevel?: number;  // bevel/chamfer size in px on the front edge (0 = flat front)
 }
 
+/**
+ * Live "Turntable" effect (Adobe Project Turntable / Illustrator Mar-2026): spin a flat
+ * 2D vector path around a vertical (or horizontal) axis as if it were a 3D object, keeping
+ * the result a clean editable path at every angle. Non-destructive: a per-anchor depth `z`
+ * is derived from `depthModel`, each point is rotated by `yaw`/`pitch` and projected back
+ * to 2D at render time. `Bake` (`bakeTurntable`) commits the rotated path into `pathAnchors`
+ * /`pathSubpaths` and drops this field. Absent = untouched flat path (fully back-compatible).
+ * See `docs/turntable-plan.md`.
+ */
+export interface Turntable {
+    axis: 'y' | 'x' | 'free';      // spin about the vertical (default), horizontal, or both
+    yaw: number;                    // degrees about the vertical axis (the main slider)
+    pitch?: number;                 // degrees of tilt about the horizontal axis
+    depthModel: 'flat' | 'symmetry'; // how per-anchor z is derived (Phase 1: flat | symmetry)
+    depthScale?: number;            // symmetry bulge strength, px per unit half-width (default 0.6)
+    axisX?: number;                 // symmetry mirror axis, element-local x (default bbox centre)
+    perspective?: number;           // 0 = orthographic (default); >0 = perspective divide strength
+    baked?: boolean;                // once committed, anchors are replaced and this is cleared
+}
+
 export interface DrawingElement {
     id: string;
     type: ElementType;
@@ -478,6 +498,9 @@ export interface DrawingElement {
     extrude?: Extrude3D;
     // Live 3D Revolve (lathe) effect — spins the silhouette around its vertical axis into a solid.
     revolve3d?: { on?: boolean };
+    // Live Turntable effect — rotate this vector path in pseudo-3D, staying editable (see Turntable).
+    // Absent = flat path. Bakeable via bakeTurntable.
+    turntable?: Turntable;
     // General Free-Transform shear factors (NOT the perspectiveBlock-specific skewX/skewY
     // below, which warp that shape's 3D back face). Applied about the element centre as the
     // matrix [[1, shearX],[shearY, 1]] — shearX shifts x by shearX·y, shearY shifts y by shearY·x.

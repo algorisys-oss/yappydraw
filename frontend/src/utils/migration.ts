@@ -77,6 +77,7 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         ...(el.mindmapDir !== undefined && { mindmapDir: el.mindmapDir }),
         ...(el.pathAnchors !== undefined && { pathAnchors: el.pathAnchors }),
         ...(el.pathClosed !== undefined && { pathClosed: el.pathClosed }),
+        ...(el.pathSubpaths !== undefined && { pathSubpaths: el.pathSubpaths }),
         ...(el.constrained !== undefined && { constrained: el.constrained }),
         ...(el.autoResize !== undefined && { autoResize: el.autoResize }),
         ...(el.starPoints !== undefined && { starPoints: el.starPoints }),
@@ -96,6 +97,7 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         ...(el.transformEffect !== undefined && { transformEffect: el.transformEffect }),
         ...(el.extrude !== undefined && { extrude: el.extrude }),
         ...(el.revolve3d !== undefined && { revolve3d: el.revolve3d }),
+        ...(el.turntable !== undefined && { turntable: el.turntable }),
 
         // Shadows
         ...(el.shadowEnabled !== undefined && { shadowEnabled: el.shadowEnabled }),

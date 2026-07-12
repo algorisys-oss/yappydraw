@@ -2,7 +2,7 @@ import { type Component, Show, createMemo, For, createSignal, createEffect, Inde
 import { draggablePanel } from '../utils/draggable-panel';
 import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
 import { pageNoun, setPageSize } from "../store/app-store";
-import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude } from "../store/app-store";
+import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable } from "../store/app-store";
 import { WARP_PRESETS } from "../utils/envelope-warp";
 import { replaceImageOn } from "../utils/image-actions";
 import { slideTransitionManager } from "../utils/animation";
@@ -811,6 +811,53 @@ const ExtrudeEditor: Component<{ el: () => any }> = (props) => {
                     <div class="control-row" style={{ gap: '6px' }}>
                         <button style={btn} title="Bake the 3D into editable face elements" onClick={() => expandExtrude(ids())}>Expand</button>
                         <button style={btn} title="Remove the 3D extrude" onClick={() => clearExtrude(ids())}>Remove</button>
+                    </div>
+                </Show>
+            </div>
+        </Show>
+    );
+};
+
+/** Live Turntable editor (Adobe Project Turntable) — spin a vector path in pseudo-3D via
+ *  yaw/pitch sliders, choose the depth model (flat foreshorten vs. symmetry bulge), then
+ *  Bake the current angle into an editable path. Operates on the active element's `turntable`;
+ *  non-path shapes are auto-converted on Add. Self-gating (Add button when absent). */
+const TurntableEditor: Component<{ el: () => any }> = (props) => {
+    const tt = () => props.el()?.turntable as import("../types").Turntable | undefined;
+    const ids = () => [props.el()?.id].filter(Boolean) as string[];
+    const btn = { padding: '2px 8px', cursor: 'pointer', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', 'border-radius': '4px', 'font-size': '11px' } as any;
+    const live = (p: Partial<import("../types").Turntable>) => setTurntable(ids(), p, false);
+    const commit = (p: Partial<import("../types").Turntable>) => setTurntable(ids(), p, true);
+    const Row = (p: { label: string; min: number; max: number; step: number; val: () => number; on: (v: number) => void; onC: (v: number) => void; suffix?: string }) => (
+        <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '5px' }}>
+            <span style={{ 'font-size': '11px', 'min-width': '54px' }}>{p.label}</span>
+            <input type="range" style={{ flex: '1' }} min={p.min} max={p.max} step={p.step} value={p.val()}
+                onInput={e => p.on(parseFloat(e.currentTarget.value))} onChange={e => p.onC(parseFloat(e.currentTarget.value))} />
+            <span style={{ 'font-size': '11px', 'min-width': '34px', 'text-align': 'right' }}>{p.val()}{p.suffix ?? ''}</span>
+        </div>
+    );
+    return (
+        <Show when={ids().length === 1}>
+            <div class="property-group">
+                <div class="group-title"><span>TURNTABLE (3D SPIN)</span></div>
+                <Show when={tt()} fallback={
+                    <button style={btn} title="Rotate this shape in pseudo-3D, keeping it an editable vector" onClick={() => setTurntable(ids())}>+ Add Turntable</button>
+                }>
+                    {Row({ label: 'Yaw', min: -180, max: 180, step: 1, val: () => Math.round(tt()!.yaw ?? 0), on: v => live({ yaw: v }), onC: v => commit({ yaw: v }), suffix: '°' })}
+                    {Row({ label: 'Pitch', min: -80, max: 80, step: 1, val: () => Math.round(tt()!.pitch ?? 0), on: v => live({ pitch: v }), onC: v => commit({ pitch: v }), suffix: '°' })}
+                    {Row({ label: 'Depth', min: 0, max: 150, step: 5, val: () => Math.round((tt()!.depthScale ?? 0.6) * 100), on: v => live({ depthScale: v / 100 }), onC: v => commit({ depthScale: v / 100 }), suffix: '%' })}
+                    {Row({ label: 'Persp', min: 0, max: 100, step: 5, val: () => Math.round((tt()!.perspective ?? 0) * 100), on: v => live({ perspective: v / 100 }), onC: v => commit({ perspective: v / 100 }), suffix: '%' })}
+                    <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '5px' }}>
+                        <span style={{ 'font-size': '11px', 'min-width': '54px' }}>Volume</span>
+                        <select style={{ flex: '1', 'font-size': '11px' }} value={tt()!.depthModel ?? 'symmetry'}
+                            onChange={e => commit({ depthModel: e.currentTarget.value as any })}>
+                            <option value="flat">Flat (foreshorten)</option>
+                            <option value="symmetry">Symmetry (rounded)</option>
+                        </select>
+                    </div>
+                    <div class="control-row" style={{ gap: '6px' }}>
+                        <button style={btn} title="Bake the current angle into an editable path" onClick={() => bakeTurntable(ids())}>Bake</button>
+                        <button style={btn} title="Remove the turntable (restore the flat shape)" onClick={() => clearTurntable(ids())}>Remove</button>
                     </div>
                 </Show>
             </div>
@@ -2298,6 +2345,11 @@ const PropertyPanel: Component = () => {
                                 {/* Live 3D Extrude editor (Add button when absent; controls when present) */}
                                 <Show when={isElement() && targetData()}>
                                     <ExtrudeEditor el={() => targetData()} />
+                                </Show>
+
+                                {/* Live Turntable editor — rotate a vector path in pseudo-3D */}
+                                <Show when={isElement() && targetData()}>
+                                    <TurntableEditor el={() => targetData()} />
                                 </Show>
 
                                 {/* Glow & Feather live sliders */}
