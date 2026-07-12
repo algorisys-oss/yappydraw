@@ -1642,6 +1642,15 @@ export const YappyAPI = {
      *  keyframe track across `seconds` (default = story duration). Returns the animated ids.
      * @param opts `{ seconds, turns }` */
     spinTurntable360(opts?: { seconds?: number; turns?: number }, ids?: string[]): string[] { return spinTurntable360(ids ?? [...store.selection], opts); },
+    /** Turntable AI reconstruction (browser-direct, BYO-key): redraw the element at a target
+     *  3D viewpoint with a vision model and insert the result as a new editable path beside it.
+     *  Defaults the viewpoint to the element's live turntable angle. Async. */
+    async reconstructTurntableAI(target?: { yaw?: number; pitch?: number }, id?: string) {
+        const eid = id ?? store.selection[0];
+        if (!eid) return { success: false, error: 'No element selected' };
+        const m = await import('./ai/turntable-ai');
+        return m.reconstructTurntableAI(eid, target);
+    },
 
     /** Appearance stack: add an extra fill/stroke over the base shape (both render styles). */
     addAppearanceFill(fill?: any, ids?: string[]) { addAppearanceFill(ids ?? store.selection, fill); },

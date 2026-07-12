@@ -122,11 +122,22 @@ Yappy.clearTurntable();`}</code></pre>
                     channels in the animation / dope-sheet panel. Either way it scrubs, plays, and exports to
                     video/HTML like any other keyframed property. <code>Yappy.spinTurntable360()</code>.
                 </p>
+                <p>
+                    <strong>✨ Reconstruct with AI (experimental):</strong> for a true "redraw from this angle"
+                    result, set the Yaw/Pitch to the viewpoint you want and click <strong>✨ Reconstruct with
+                    AI</strong>. It sends a snapshot of the shape to your configured AI provider (set a key in
+                    <em> AI Settings</em> — same browser-direct, bring-your-own-key model as every other Yappy AI
+                    feature) and asks it to redraw the subject at that angle, <em>inventing</em> the newly-visible
+                    parts, then inserts the result as a <strong>new editable path</strong> beside the original
+                    (nothing is overwritten). Best on simple/symmetric art; results vary run to run, and with no
+                    key it just falls back to the deterministic <strong>Bake</strong>.
+                    <code>Yappy.reconstructTurntableAI(&#123; yaw: 40 &#125;)</code>.
+                </p>
                 <p class="tip-box">
-                    <strong>Best on symmetric art:</strong> the rounded look and back-face reveal are inferred
-                    from a vertical mirror axis, so characters, bottles, and logos turn most convincingly. The
-                    reveal is a deterministic mirror of what's already there — truly <em>re-imagining</em> hidden
-                    detail from a new viewpoint is a later, AI-assisted phase.
+                    <strong>Best on symmetric art:</strong> the deterministic rounded look and back-face reveal
+                    are inferred from a vertical mirror axis, so characters, bottles, and logos turn most
+                    convincingly. The reveal is a mirror of what's already there; the AI reconstruction above is
+                    the tier that actually re-imagines hidden detail from the new viewpoint.
                 </p>
             </section>
 

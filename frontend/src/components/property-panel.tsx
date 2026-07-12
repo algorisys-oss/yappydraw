@@ -870,6 +870,15 @@ const TurntableEditor: Component = () => {
                     <div class="control-row" style={{ gap: '6px', 'margin-bottom': '4px' }}>
                         <button style={{ ...btn, flex: '1' }} title="Auto-keyframe a full 360° spin across the timeline" onClick={() => spinTurntable360(ids())}>↻ Spin 360°</button>
                     </div>
+                    <Show when={!isGroup()}>
+                        <div class="control-row" style={{ gap: '6px', 'margin-bottom': '4px' }}>
+                            <button style={{ ...btn, flex: '1' }}
+                                title="Use AI to redraw this shape at the current angle, inventing the newly-visible parts (needs an AI key; inserts a new editable path)"
+                                onClick={async () => { const m = await import("../ai/turntable-ai"); m.reconstructTurntableAI(rep()!.id, { yaw: tt()!.yaw, pitch: tt()!.pitch }); }}>
+                                ✨ Reconstruct with AI
+                            </button>
+                        </div>
+                    </Show>
                     <div class="control-row" style={{ gap: '6px' }}>
                         <button style={btn} title="Bake the current angle into an editable path" onClick={() => bakeTurntable(ids())}>Bake</button>
                         <button style={btn} title="Remove the turntable (restore the flat shape)" onClick={() => clearTurntable(ids())}>Remove</button>
