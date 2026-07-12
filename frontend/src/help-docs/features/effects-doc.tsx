@@ -116,10 +116,11 @@ Yappy.turntable({ yaw: 40 }, [id1, id2, id3]);   // group rig: spin several toge
 Yappy.bakeTurntable();   // freeze this viewpoint as editable path(s)
 Yappy.clearTurntable();`}</code></pre>
                 <p>
-                    <strong>Animate the spin:</strong> once a shape has a turntable, <strong>Turntable Yaw</strong>
-                    (and <strong>Pitch</strong>) become keyframable channels in the animation / dope-sheet panel.
-                    Keyframe Yaw from 0° → 360° for a full rotating-turntable loop — it scrubs, plays, and
-                    exports to video/HTML like any other keyframed property.
+                    <strong>Animate the spin:</strong> click <strong>↻ Spin 360°</strong> in the panel to
+                    auto-keyframe a full rotation across the timeline (one click — no manual keyframing). For
+                    finer control, <strong>Turntable Yaw</strong> and <strong>Pitch</strong> are also keyframable
+                    channels in the animation / dope-sheet panel. Either way it scrubs, plays, and exports to
+                    video/HTML like any other keyframed property. <code>Yappy.spinTurntable360()</code>.
                 </p>
                 <p class="tip-box">
                     <strong>Best on symmetric art:</strong> the rounded look and back-face reveal are inferred

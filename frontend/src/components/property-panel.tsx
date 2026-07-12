@@ -2,7 +2,7 @@ import { type Component, Show, createMemo, For, createSignal, createEffect, Inde
 import { draggablePanel } from '../utils/draggable-panel';
 import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
 import { pageNoun, setPageSize } from "../store/app-store";
-import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, canTurntable } from "../store/app-store";
+import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, canTurntable, spinTurntable360 } from "../store/app-store";
 import { WARP_PRESETS } from "../utils/envelope-warp";
 import { replaceImageOn } from "../utils/image-actions";
 import { slideTransitionManager } from "../utils/animation";
@@ -867,6 +867,9 @@ const TurntableEditor: Component = () => {
                         </label>
                     </Show>
                     {Row({ label: 'Persp', min: 0, max: 100, step: 5, val: () => Math.round((tt()!.perspective ?? 0) * 100), on: v => live({ perspective: v / 100 }), onC: v => commit({ perspective: v / 100 }), suffix: '%' })}
+                    <div class="control-row" style={{ gap: '6px', 'margin-bottom': '4px' }}>
+                        <button style={{ ...btn, flex: '1' }} title="Auto-keyframe a full 360° spin across the timeline" onClick={() => spinTurntable360(ids())}>↻ Spin 360°</button>
+                    </div>
                     <div class="control-row" style={{ gap: '6px' }}>
                         <button style={btn} title="Bake the current angle into an editable path" onClick={() => bakeTurntable(ids())}>Bake</button>
                         <button style={btn} title="Remove the turntable (restore the flat shape)" onClick={() => clearTurntable(ids())}>Remove</button>

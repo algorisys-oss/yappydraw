@@ -11,7 +11,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, exitCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, spinTurntable360, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection,
@@ -1638,6 +1638,10 @@ export const YappyAPI = {
     clearTurntable(ids?: string[]) { clearTurntable(ids ?? [...store.selection]); },
     /** Bake the current turntable angle into an editable path (drops the effect). Returns baked ids. */
     bakeTurntable(ids?: string[]): string[] { return bakeTurntable(ids ?? [...store.selection]); },
+    /** One-click rotating-turntable animation: author a linear `turntable.yaw` 0→360°·turns
+     *  keyframe track across `seconds` (default = story duration). Returns the animated ids.
+     * @param opts `{ seconds, turns }` */
+    spinTurntable360(opts?: { seconds?: number; turns?: number }, ids?: string[]): string[] { return spinTurntable360(ids ?? [...store.selection], opts); },
 
     /** Appearance stack: add an extra fill/stroke over the base shape (both render styles). */
     addAppearanceFill(fill?: any, ids?: string[]) { addAppearanceFill(ids ?? store.selection, fill); },

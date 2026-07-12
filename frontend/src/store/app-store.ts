@@ -9,7 +9,7 @@ import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } fro
 import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/slide-types';
 import { isPagedDocType } from '../types/slide-types';
 import { idbDelete } from '../storage/idb-kv';
-import type { ElementAnimation, DisplayState, PropertyTrack } from "../types/motion-types";
+import type { ElementAnimation, DisplayState, PropertyTrack, BezierEase } from "../types/motion-types";
 import type { DimensionAnnotation, DimensionMeasure } from "../utils/dimension-geometry";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
@@ -6912,6 +6912,39 @@ export const bakeTurntable = (ids: string[]): string[] => {
     const out = [...bakedById.keys()];
     showToast(`Baked turntable on ${out.length}`, 'success');
     return out;
+};
+
+/** One-click rotating-turntable animation: ensure a turntable, then author a clean linear
+ *  `turntable.yaw` track from 0° to 360°·`turns` across `seconds` (default = the story
+ *  duration, so a looping playback spins continuously). Replaces any existing yaw track on
+ *  each target. Returns the animated ids. */
+export const spinTurntable360 = (ids: string[], opts?: { seconds?: number; turns?: number }): string[] => {
+    if (ids.length === 0) { showToast('Turntable: select an object', 'info'); return []; }
+    // Ensure each target is a path carrying a turntable (own history step, only if needed).
+    const needsSetup = store.elements.some(e => ids.includes(e.id) && !(e.type === 'path' && e.turntable));
+    if (needsSetup) setTurntable(ids, undefined, true);
+
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'path' && e.turntable);
+    if (targets.length === 0) { showToast('Turntable: needs a path shape', 'info'); return []; }
+
+    const seconds = Math.max(0.1, opts?.seconds ?? store.storyDuration ?? 6);
+    const end = 360 * Math.max(1, Math.round(opts?.turns ?? 1));
+    const linear: BezierEase = { ox: 0, oy: 0, ix: 1, iy: 1 };
+
+    pushToHistory();
+    setStore('compositionTracks', (tracks: PropertyTrack[]) => {
+        const next = tracks.map(tr => ({ ...tr, keys: [...tr.keys] }));
+        for (const el of targets) {
+            const property = 'turntable.yaw';
+            let track = next.find(tr => tr.elementId === el.id && tr.property === property);
+            if (!track) { track = { elementId: el.id, property, keys: [] }; next.push(track); }
+            track.keys = [{ t: 0, value: 0 }, { t: seconds, value: end, ease: linear }];
+        }
+        return next;
+    });
+    bumpDirtyRevision();
+    showToast(`Turntable spin: ${end}° over ${seconds}s`, 'success');
+    return targets.map(t => t.id);
 };
 
 /** Feather — soft-blur an object's edges to transparent (radius px; 0 removes). */
