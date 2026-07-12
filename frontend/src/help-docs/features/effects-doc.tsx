@@ -123,15 +123,24 @@ Yappy.clearTurntable();`}</code></pre>
                     video/HTML like any other keyframed property. <code>Yappy.spinTurntable360()</code>.
                 </p>
                 <p>
-                    <strong>✨ Reconstruct with AI (experimental):</strong> for a true "redraw from this angle"
-                    result, set the Yaw/Pitch to the viewpoint you want and click <strong>✨ Reconstruct with
-                    AI</strong>. It sends a snapshot of the shape to your configured AI provider (set a key in
-                    <em> AI Settings</em> — same browser-direct, bring-your-own-key model as every other Yappy AI
-                    feature) and asks it to redraw the subject at that angle, <em>inventing</em> the newly-visible
-                    parts, then inserts the result as a <strong>new editable path</strong> beside the original
-                    (nothing is overwritten). Best on simple/symmetric art; results vary run to run, and with no
-                    key it just falls back to the deterministic <strong>Bake</strong>.
-                    <code>Yappy.reconstructTurntableAI(&#123; yaw: 40 &#125;)</code>.
+                    <strong>AI reconstruction (experimental):</strong> for a true "redraw from this angle" result,
+                    set the Yaw/Pitch to the viewpoint you want, then use one of two buttons (single shape; needs
+                    an API key set in <em>AI Settings</em> — same browser-direct, bring-your-own-key model as every
+                    other Yappy AI feature). Both <em>invent</em> the newly-visible parts and insert the result as
+                    a <strong>new element</strong> beside the original (nothing is overwritten):
+                </p>
+                <ul>
+                    <li><strong>✨ AI Redraw</strong> — a vision model (Claude / OpenAI / Gemini) redraws the shape
+                        as clean editable <strong>vector paths</strong>. Cleaner and cheaper; best on
+                        simple/symmetric art. <code>Yappy.reconstructTurntableAI(&#123; yaw: 40 &#125;)</code>.</li>
+                    <li><strong>✨ AI Reimagine</strong> — an OpenAI image model repaints the shape at the new
+                        angle (better at inventing hidden detail), then it's <strong>auto-traced</strong> to
+                        colour vector paths. More faithful, but messier vectors and OpenAI-only.
+                        <code>Yappy.reconstructTurntableAI(&#123; yaw: 40, mode: 'image' &#125;)</code>.</li>
+                </ul>
+                <p>
+                    Results vary run to run; with no key either button just reports and you fall back to the
+                    deterministic <strong>Bake</strong>.
                 </p>
                 <p class="tip-box">
                     <strong>Best on symmetric art:</strong> the deterministic rounded look and back-face reveal

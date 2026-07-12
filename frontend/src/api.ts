@@ -1643,13 +1643,16 @@ export const YappyAPI = {
      * @param opts `{ seconds, turns }` */
     spinTurntable360(opts?: { seconds?: number; turns?: number }, ids?: string[]): string[] { return spinTurntable360(ids ?? [...store.selection], opts); },
     /** Turntable AI reconstruction (browser-direct, BYO-key): redraw the element at a target
-     *  3D viewpoint with a vision model and insert the result as a new editable path beside it.
-     *  Defaults the viewpoint to the element's live turntable angle. Async. */
-    async reconstructTurntableAI(target?: { yaw?: number; pitch?: number }, id?: string) {
+     *  3D viewpoint and insert the result as a new editable path beside it. Defaults the
+     *  viewpoint to the element's live turntable angle. Async.
+     *  @param opts `{ yaw, pitch, mode }` — mode `'vector'` (default: vision→SVG, any provider)
+     *    or `'image'` (OpenAI image reimagine → auto-trace; more faithful, messier vectors). */
+    async reconstructTurntableAI(opts?: { yaw?: number; pitch?: number; mode?: 'vector' | 'image' }, id?: string) {
         const eid = id ?? store.selection[0];
         if (!eid) return { success: false, error: 'No element selected' };
         const m = await import('./ai/turntable-ai');
-        return m.reconstructTurntableAI(eid, target);
+        const target = { yaw: opts?.yaw, pitch: opts?.pitch };
+        return opts?.mode === 'image' ? m.reconstructTurntableAIImage(eid, target) : m.reconstructTurntableAI(eid, target);
     },
 
     /** Appearance stack: add an extra fill/stroke over the base shape (both render styles). */

@@ -873,9 +873,14 @@ const TurntableEditor: Component = () => {
                     <Show when={!isGroup()}>
                         <div class="control-row" style={{ gap: '6px', 'margin-bottom': '4px' }}>
                             <button style={{ ...btn, flex: '1' }}
-                                title="Use AI to redraw this shape at the current angle, inventing the newly-visible parts (needs an AI key; inserts a new editable path)"
+                                title="Vector redraw at the current angle via a vision model (any provider) — cleaner & cheaper. Inserts a new editable path; needs an AI key."
                                 onClick={async () => { const m = await import("../ai/turntable-ai"); m.reconstructTurntableAI(rep()!.id, { yaw: tt()!.yaw, pitch: tt()!.pitch }); }}>
-                                ✨ Reconstruct with AI
+                                ✨ AI Redraw
+                            </button>
+                            <button style={{ ...btn, flex: '1' }}
+                                title="Photo reimagine at the current angle via an OpenAI image model, then auto-traced to vector — more faithful, messier paths. Needs an OpenAI key."
+                                onClick={async () => { const m = await import("../ai/turntable-ai"); m.reconstructTurntableAIImage(rep()!.id, { yaw: tt()!.yaw, pitch: tt()!.pitch }); }}>
+                                ✨ AI Reimagine
                             </button>
                         </div>
                     </Show>

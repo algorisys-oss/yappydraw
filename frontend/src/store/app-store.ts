@@ -6947,6 +6947,61 @@ export const spinTurntable360 = (ids: string[], opts?: { seconds?: number; turns
     return targets.map(t => t.id);
 };
 
+/** Trace a raster (an AI-reimagined dataURL) into filled colour paths placed BESIDE the source
+ *  element, sized to it — the vector half of Turntable's "AI image → trace" tier (Phase 3b).
+ *  Async (awaits the image load). Reuses the colour tracer + `makePathFromWorldSubs`; single undo. */
+export const traceRasterAsPaths = async (
+    sourceId: string, rasterDataURL: string, opts: { colors?: number; simplify?: number } = {},
+): Promise<string[]> => {
+    const src = store.elements.find(e => e.id === sourceId);
+    if (!src) return [];
+    const img = await new Promise<HTMLImageElement | null>(resolve => {
+        const im = new Image();
+        im.onload = () => resolve(im);
+        im.onerror = () => resolve(null);
+        im.src = rasterDataURL;
+    });
+    if (!img || !img.width) { showToast('Trace: could not load the AI image', 'error'); return []; }
+
+    const maxDim = 256;
+    const nw = img.naturalWidth || img.width, nh = img.naturalHeight || img.height;
+    const k = Math.min(1, maxDim / Math.max(nw, nh));
+    const tw = Math.max(1, Math.round(nw * k)), th = Math.max(1, Math.round(nh * k));
+    const canvas = document.createElement('canvas');
+    canvas.width = tw; canvas.height = th;
+    const cctx = canvas.getContext('2d');
+    if (!cctx) return [];
+    cctx.drawImage(img, 0, 0, tw, th);
+    const data = cctx.getImageData(0, 0, tw, th).data;
+
+    const ox = src.x + src.width + 40, oy = src.y;   // place beside the original
+    const layers = traceImageDataColor(data, tw, th, { colors: Math.max(2, opts.colors ?? 12), simplify: opts.simplify ?? 1.0 });
+    if (layers.length === 0) { showToast('Trace: nothing found in the AI image', 'info'); return []; }
+
+    const batchIds = new Set<string>();
+    const groupId = generateId('ttai');
+    const newPaths: DrawingElement[] = [];
+    for (const layer of layers) {
+        const worldSubs: WorldSub[] = layer.subpaths.map(sp => ({
+            closed: true,
+            anchors: sp.points.map(p => ({ x: ox + p.x * src.width, y: oy + p.y * src.height, kind: 'corner' as const })),
+        }));
+        const path = makePathFromWorldSubs(worldSubs, {
+            backgroundColor: layer.color, strokeColor: 'transparent', strokeWidth: 0,
+            fillStyle: 'solid', renderStyle: 'architectural',
+        }, batchIds);
+        if (path) { path.groupIds = [groupId]; newPaths.push(path); }
+    }
+    if (newPaths.length === 0) return [];
+    pushToHistory();
+    setStore('elements', list => [...list, ...newPaths]);
+    const ids = newPaths.map(p => p.id);
+    setStore('selection', ids);
+    bumpDirtyRevision();
+    showToast(`AI reconstruction traced (${ids.length} layer${ids.length > 1 ? 's' : ''})`, 'success');
+    return ids;
+};
+
 /** Feather — soft-blur an object's edges to transparent (radius px; 0 removes). */
 export const applyFeather = (ids: string[], radius: number) => {
     if (!ids.length) { showToast('Feather: select an object', 'info'); return; }

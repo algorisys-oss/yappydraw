@@ -12,7 +12,7 @@ import { batch } from 'solid-js';
 import { callLLM, type LLMResponse } from './ai-providers';
 import { loadAIConfig, getApiKey } from './ai-settings';
 import { parseDataURL } from './image-utils';
-import { store, setStore, pushToHistory, bumpDirtyRevision } from '../store/app-store';
+import { store, setStore, pushToHistory, bumpDirtyRevision, traceRasterAsPaths } from '../store/app-store';
 import { showToast } from '../components/toast';
 import { exportRegion } from '../utils/export';
 import { svgToElements } from '../utils/svg-import';
@@ -130,4 +130,70 @@ export async function reconstructTurntableAI(
     bumpDirtyRevision();
     showToast(`AI reconstruction inserted (${els.length} path${els.length > 1 ? 's' : ''})`, 'success');
     return { success: true, ids };
+}
+
+/** POST an image-edit to OpenAI images/edits; returns the b64 result or an error string. */
+async function postImageEdit(form: FormData, apiKey: string): Promise<{ b64: string | null; error?: string }> {
+    try {
+        const res = await fetch('https://api.openai.com/v1/images/edits', {
+            method: 'POST', headers: { Authorization: `Bearer ${apiKey}` }, body: form,
+        });
+        if (!res.ok) {
+            const txt = await res.text().catch(() => '');
+            let detail = ''; try { detail = JSON.parse(txt).error?.message || ''; } catch { detail = txt.slice(0, 200); }
+            return { b64: null, error: `OpenAI image error ${res.status}: ${detail}` };
+        }
+        const data = await res.json();
+        const b64 = data.data?.[0]?.b64_json;
+        return b64 ? { b64 } : { b64: null, error: 'OpenAI returned no image data' };
+    } catch (err: any) {
+        return { b64: null, error: `Network error calling OpenAI Images: ${err?.message || err}` };
+    }
+}
+
+/**
+ * Phase 3b — higher-fidelity reconstruction: ask an OpenAI image model to REIMAGINE the art at
+ * the target viewpoint (better at inventing occluded parts), then auto-trace the returned raster
+ * into filled colour paths beside the original. OpenAI-only; messier vectors than 3a but more
+ * pictorially faithful. Degrades to a toast when no OpenAI key.
+ */
+export async function reconstructTurntableAIImage(
+    id: string,
+    target?: { yaw?: number; pitch?: number },
+): Promise<ReconstructResult> {
+    const el = store.elements.find(e => e.id === id);
+    if (!el) return { success: false, error: 'Element not found' };
+    const apiKey = getApiKey('openai');
+    if (!apiKey) {
+        showToast('AI Reimagine needs an OpenAI API key (set it in AI Settings)', 'error');
+        return { success: false, error: 'No OpenAI key' };
+    }
+
+    const yaw = Math.round(target?.yaw ?? el.turntable?.yaw ?? 0);
+    const pitch = Math.round(target?.pitch ?? el.turntable?.pitch ?? 0);
+
+    const pad = Math.max(8, Math.round(Math.max(el.width, el.height) * 0.1));
+    const dataURL = exportRegion(el.x - pad, el.y - pad, el.width + pad * 2, el.height + pad * 2, 'tt-src', 2, false);
+    if (!dataURL) {
+        showToast('Could not rasterize the selection', 'error');
+        return { success: false, error: 'rasterize failed' };
+    }
+
+    showToast(`Reimagining at ${yaw}°…`, 'info');
+    const blob = await (await fetch(dataURL)).blob();
+    const form = new FormData();
+    form.append('model', 'gpt-image-1');
+    form.append('image', new File([blob], 'image.png', { type: 'image/png' }));
+    form.append('prompt',
+        `Redraw this subject as it would look rotated ${yaw}° about the vertical axis${pitch ? ` and tilted ${pitch}° about the horizontal axis` : ''}, turning the object in 3D toward that viewpoint. Invent any parts that become newly visible so it reads as a coherent solid object. Keep the same subject, flat illustration style, and colours, on a clean white or transparent background.`);
+    form.append('size', 'auto');
+
+    const { b64, error } = await postImageEdit(form, apiKey);
+    if (!b64) {
+        showToast(error || 'AI Reimagine failed', 'error');
+        return { success: false, error: error || 'no image' };
+    }
+
+    const ids = await traceRasterAsPaths(id, `data:image/png;base64,${b64}`, { colors: 12 });
+    return ids.length ? { success: true, ids } : { success: false, error: 'trace produced no paths' };
 }
