@@ -292,11 +292,20 @@ export interface Turntable {
     axis: 'y' | 'x' | 'free';      // spin about the vertical (default), horizontal, or both
     yaw: number;                    // degrees about the vertical axis (the main slider)
     pitch?: number;                 // degrees of tilt about the horizontal axis
-    depthModel: 'flat' | 'symmetry'; // how per-anchor z is derived (Phase 1: flat | symmetry)
+    depthModel: 'flat' | 'symmetry'; // how per-anchor z is derived (flat | symmetry bulge)
     depthScale?: number;            // symmetry bulge strength, px per unit half-width (default 0.6)
-    axisX?: number;                 // symmetry mirror axis, element-local x (default bbox centre)
+    axisX?: number;                 // symmetry mirror axis, element-local x (default: auto-detected)
     perspective?: number;           // 0 = orthographic (default); >0 = perspective divide strength
     baked?: boolean;                // once committed, anchors are replaced and this is cleared
+    // ── Phase 2 ──
+    reveal?: boolean;               // symmetry back-face: draw a mirrored back layer so the turn
+                                    //   reveals occluded parts (reads as a closed 3D volume)
+    cx?: number;                    // rotation-centre x, element-local (default: axisX ?? width/2).
+    cy?: number;                    // rotation-centre y, element-local (default: height/2).
+                                    //   For a GROUP turntable these hold the shared rig centre
+                                    //   expressed in each member's own frame, so members orbit
+                                    //   the common axis (position + shape) — not just spin in place.
+    group?: boolean;                // this element is one member of a multi-element turntable rig
 }
 
 export interface DrawingElement {

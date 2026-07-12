@@ -6827,19 +6827,43 @@ export const clearExtrude = (ids: string[]) => {
 
 const DEFAULT_TURNTABLE: Turntable = { axis: 'y', yaw: 0, pitch: 0, depthModel: 'symmetry', depthScale: 0.6 };
 
+/** Can this element carry a turntable? A `path`, or anything convertible to one. */
+export const canTurntable = (el: DrawingElement): boolean => el.type === 'path' || !!shapeToPath(el);
+
 /** Apply / update the live Turntable effect. Non-path shapes are converted to a `path` first
- *  (the effect only rotates path anchors). `history=false` skips undo + toast for live drags. */
+ *  (the effect only rotates path anchors). A 2+-element selection becomes ONE shared rig:
+ *  every member orbits a common axis (the selection-centre), so the group spins together.
+ *  `history=false` skips undo + toast for live drags. */
 export const setTurntable = (ids: string[], tt?: Partial<Turntable>, history = true) => {
     if (ids.length === 0) { if (history) showToast('Turntable: select an object', 'info'); return; }
     // Convert any non-path selection to an editable path so it can be rotated.
     const toConvert = store.elements.filter(e => ids.includes(e.id) && e.type !== 'path' && shapeToPath(e)).map(e => e.id);
     if (history && toConvert.length) convertToPath(toConvert);
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
+    if (targets.length === 0) { if (history) showToast('Turntable: needs a path shape', 'info'); return; }
     if (history) pushToHistory();
-    setStore('elements', (e: DrawingElement) => ids.includes(e.id) && e.type === 'path', (e: DrawingElement) => ({
-        turntable: { ...DEFAULT_TURNTABLE, ...e.turntable, ...tt, baked: false } as Turntable,
-    }));
+
+    const isGroup = targets.length > 1;
+    // Shared rig centre (world) = centre of the union bbox of all members.
+    let cxWorld = 0, cyWorld = 0;
+    if (isGroup) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const e of targets) { minX = Math.min(minX, e.x); minY = Math.min(minY, e.y); maxX = Math.max(maxX, e.x + e.width); maxY = Math.max(maxY, e.y + e.height); }
+        cxWorld = (minX + maxX) / 2; cyWorld = (minY + maxY) / 2;
+    }
+    const dfltModel = isGroup ? 'flat' : 'symmetry'; // per-member bulge across a group reads oddly
+
+    setStore('elements', (e: DrawingElement) => targets.some(t => t.id === e.id), (e: DrawingElement) => {
+        const base = { ...DEFAULT_TURNTABLE, depthModel: dfltModel, ...e.turntable, ...tt, baked: false } as Turntable;
+        if (isGroup) {
+            base.group = true;
+            // Pin the shared rig centre in THIS member's local frame, once (persists across drags).
+            if (base.cx === undefined) { base.cx = cxWorld - e.x; base.cy = cyWorld - e.y; }
+        }
+        return { turntable: base };
+    });
     bumpDirtyRevision();
-    if (history) showToast('Turntable applied', 'success');
+    if (history) showToast(isGroup ? `Turntable on ${targets.length} (shared rig)` : 'Turntable applied', 'success');
 };
 
 /** Remove the Turntable effect, restoring the flat (un-rotated) path. */
@@ -6865,12 +6889,23 @@ export const bakeTurntable = (ids: string[]): string[] => {
     setStore('elements', list => list.map(el => {
         const subs = bakedById.get(el.id);
         if (!subs) return el;
-        const single = subs.length === 1;
+        // Re-tighten bounds: rotation (esp. a group orbit) moves anchors off the old origin.
+        // Shift anchors so the bbox starts at (0,0) and push the offset onto el.x/y + w/h.
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const sp of subs) for (const a of sp.anchors) {
+            minX = Math.min(minX, a.x); minY = Math.min(minY, a.y);
+            maxX = Math.max(maxX, a.x); maxY = Math.max(maxY, a.y);
+        }
+        const dx = Number.isFinite(minX) ? minX : 0, dy = Number.isFinite(minY) ? minY : 0;
+        const shifted = subs.map(sp => ({ closed: sp.closed, anchors: sp.anchors.map(a => ({ ...a, x: a.x - dx, y: a.y - dy })) }));
+        const single = shifted.length === 1;
         return {
             ...el, type: 'path', turntable: undefined,
-            pathSubpaths: single ? undefined : subs,
-            pathAnchors: single ? subs[0].anchors : undefined,
-            pathClosed: single ? subs[0].closed : undefined,
+            x: el.x + dx, y: el.y + dy,
+            width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY),
+            pathSubpaths: single ? undefined : shifted,
+            pathAnchors: single ? shifted[0].anchors : undefined,
+            pathClosed: single ? shifted[0].closed : undefined,
         } as DrawingElement;
     }));
     bumpDirtyRevision();

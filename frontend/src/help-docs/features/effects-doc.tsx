@@ -93,22 +93,33 @@ Yappy.clearExtrude();`}</code></pre>
                     <strong> Architectural</strong> styles.
                 </p>
                 <p>
-                    <strong>Property panel → TURNTABLE (3D SPIN)</strong>: <em>+ Add Turntable</em> (a non-path
-                    shape is converted to a path first), then drag <strong>Yaw</strong> (spin about the vertical
-                    axis), <strong>Pitch</strong> (tilt), <strong>Depth</strong> and <strong>Persp</strong>.
-                    The <strong>Volume</strong> model chooses how depth is faked: <em>Flat</em> just foreshortens
-                    the sheet (always correct); <em>Symmetry</em> gives it a rounded, cylinder-like bulge so a
-                    turned figure or logo reads as solid. <strong>Bake</strong> commits the current angle into a
-                    real editable path (single undo); <strong>Remove</strong> restores the flat shape.
+                    <strong>Property panel → TURNTABLE (3D SPIN)</strong> (shown only for shapes that can become
+                    a path): <em>+ Add Turntable</em> (a non-path shape is converted to a path first), then drag
+                    <strong> Yaw</strong> (spin about the vertical axis), <strong>Pitch</strong> (tilt), and
+                    <strong> Persp</strong>. The <strong>Volume</strong> model chooses how depth is faked:
+                    <em> Flat</em> just foreshortens the sheet (always correct); <em>Symmetry</em> gives it a
+                    rounded, cylinder-like bulge — the mirror axis is <strong>auto-detected</strong> — so a
+                    turned figure or logo reads as solid. With Symmetry you also get a <strong>Depth</strong>
+                    slider and a <strong>Reveal back face</strong> toggle that draws the mirrored far side, so a
+                    strong turn shows the occluded back (a closed 3D volume). <strong>Bake</strong> commits the
+                    current angle into a real editable path (single undo); <strong>Remove</strong> restores the
+                    flat shape.
                 </p>
-                <pre><code>{`Yappy.turntable({ yaw: 35, pitch: 10, depthModel: 'symmetry', depthScale: 0.6 });
-Yappy.bakeTurntable();   // freeze this viewpoint as an editable path
+                <p>
+                    <strong>Group turntable:</strong> select <em>two or more</em> shapes and the panel switches to
+                    <strong> TURNTABLE — GROUP</strong>. The whole selection spins as one rig about a shared axis
+                    (the selection centre), so members <em>orbit</em> together (position + shape) rather than each
+                    spinning in place. Bake tightens each member's bounds to its new position.
+                </p>
+                <pre><code>{`Yappy.turntable({ yaw: 35, pitch: 10, depthModel: 'symmetry', depthScale: 0.6, reveal: true });
+Yappy.turntable({ yaw: 40 }, [id1, id2, id3]);   // group rig: spin several together
+Yappy.bakeTurntable();   // freeze this viewpoint as editable path(s)
 Yappy.clearTurntable();`}</code></pre>
                 <p class="tip-box">
-                    <strong>Best on symmetric art:</strong> the rounded look is inferred from a vertical mirror
-                    axis, so characters, bottles, and logos turn most convincingly. Occluded parts aren't
-                    re-invented yet (that's a later, AI-assisted phase) — Turntable today is a deterministic spin
-                    of the geometry you already have.
+                    <strong>Best on symmetric art:</strong> the rounded look and back-face reveal are inferred
+                    from a vertical mirror axis, so characters, bottles, and logos turn most convincingly. The
+                    reveal is a deterministic mirror of what's already there — truly <em>re-imagining</em> hidden
+                    detail from a new viewpoint is a later, AI-assisted phase.
                 </p>
             </section>
 
