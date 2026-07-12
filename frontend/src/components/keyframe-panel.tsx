@@ -56,6 +56,12 @@ const EXTRUDE_PROPS: PropDef[] = [
     { key: 'extrude.rotY', label: 'Extrude Tilt Y', kind: 'number' },
     { key: 'extrude.bevel', label: 'Extrude Bevel', kind: 'number' },
 ];
+/** Live Turntable params (pseudo-3D spin) — nested, dotted-path. Keyframe yaw for a
+ *  rotating-turntable animation; the evaluator merges these onto `el.turntable` per frame. */
+const TURNTABLE_PROPS: PropDef[] = [
+    { key: 'turntable.yaw', label: 'Turntable Yaw', kind: 'number' },
+    { key: 'turntable.pitch', label: 'Turntable Pitch', kind: 'number' },
+];
 const WARP_BEND_PROP: PropDef = { key: 'warp.bend', label: 'Warp Bend', kind: 'number' };
 const GRADIENT_ANGLE_PROP: PropDef = { key: 'gradientDirection', label: 'Gradient Angle', kind: 'number' };
 const STROKE_GRADIENT_ANGLE_PROP: PropDef = { key: 'strokeGradient.angle', label: 'Stroke Grad Angle', kind: 'number' };
@@ -90,6 +96,7 @@ function animatablePropsFor(el: any): PropDef[] {
     if (el.glowEnabled) props.push(...GLOW_PROPS);
     if (el.shadowEnabled) props.push(...SHADOW_PROPS);
     if (el.extrude) props.push(...EXTRUDE_PROPS);
+    if (el.turntable) props.push(...TURNTABLE_PROPS);
     if (el.warp && el.warp.preset) props.push(WARP_BEND_PROP);
     if (el.gradientType) props.push(GRADIENT_ANGLE_PROP);
     if (el.strokeGradient) props.push(STROKE_GRADIENT_ANGLE_PROP);

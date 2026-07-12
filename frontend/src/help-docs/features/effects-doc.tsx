@@ -115,6 +115,12 @@ Yappy.clearExtrude();`}</code></pre>
 Yappy.turntable({ yaw: 40 }, [id1, id2, id3]);   // group rig: spin several together
 Yappy.bakeTurntable();   // freeze this viewpoint as editable path(s)
 Yappy.clearTurntable();`}</code></pre>
+                <p>
+                    <strong>Animate the spin:</strong> once a shape has a turntable, <strong>Turntable Yaw</strong>
+                    (and <strong>Pitch</strong>) become keyframable channels in the animation / dope-sheet panel.
+                    Keyframe Yaw from 0° → 360° for a full rotating-turntable loop — it scrubs, plays, and
+                    exports to video/HTML like any other keyframed property.
+                </p>
                 <p class="tip-box">
                     <strong>Best on symmetric art:</strong> the rounded look and back-face reveal are inferred
                     from a vertical mirror axis, so characters, bottles, and logos turn most convincingly. The
