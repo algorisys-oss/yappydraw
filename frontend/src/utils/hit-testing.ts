@@ -350,9 +350,11 @@ export function hitTestPathElement(el: DrawingElement, lx: number, ly: number, t
     const local = { x: lx, y: ly };
     const tol = threshold + (el.strokeWidth || 1) / 2 + 2;
     const ox = -el.width / 2, oy = -el.height / 2;
-    const fillable = !!el.backgroundColor && el.backgroundColor !== 'transparent' && el.backgroundColor !== 'none';
     // Sample each subpath; stroke hit = on any polyline; fill hit = odd number of closed
-    // subpaths contain the point (even-odd rule, so holes register as outside).
+    // subpaths contain the point (even-odd rule, so holes register as outside). The
+    // interior counts even when the path is unfilled — closed shapes are click-selectable
+    // anywhere inside, matching rectangles/circles/etc. (otherwise an unfilled boolean/
+    // compound result is only grabbable by its outline, forcing a marquee to select it).
     let inside = false;
     const N = 96;
     for (const sp of subs) {
@@ -363,7 +365,7 @@ export function hitTestPathElement(el: DrawingElement, lx: number, ly: number, t
         const pts: { x: number; y: number }[] = [];
         for (let i = 0; i <= N; i++) { const pt = PathUtils.getPointOnPath(cmds, i / N); pts.push({ x: pt.x, y: pt.y }); }
         if (isPointOnPolyline(local, pts, tol)) return true;
-        if (fillable && sp.closed && isPointInPolygon(local, pts)) inside = !inside;
+        if (sp.closed && isPointInPolygon(local, pts)) inside = !inside;
     }
     return inside;
 }

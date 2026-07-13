@@ -160,7 +160,7 @@ frontend/src/components/google-fonts-dialog.tsx | typescript | 133 | Component:1
 frontend/src/components/graphic-styles-panel.css | - | 87 |
 frontend/src/components/graphic-styles-panel.tsx | typescript | 88 | Component:1 draw:17 GraphicStylesPanel:43 startRename:47 commitRename:48
 frontend/src/components/help-dialog.css | - | 184 |
-frontend/src/components/help-dialog.tsx | typescript | 304 | ShortcutEntry:5 ShortcutCategory:10 parseKeys:177 Props:196 HelpDialog:201 handleKeyDown:204
+frontend/src/components/help-dialog.tsx | typescript | 305 | ShortcutEntry:5 ShortcutCategory:10 parseKeys:178 Props:197 HelpDialog:202 handleKeyDown:205
 frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 38 | Component:1 HistoryPanel:12
 frontend/src/components/infra-tool-group.tsx | typescript | 137 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:76 activeTool:83 isActive:84 getDropdownPosition:86
@@ -568,7 +568,7 @@ frontend/src/utils/group-utils.ts | typescript | 81 | getGroupBoundingBox:6 isPo
 frontend/src/utils/handle-detection.ts | typescript | 577 | unrotatePoint:18 getSelectionBoundingBox:25 getDeleteHandlePosition:58 getHandleAtPosition:98 TEXT_MOVE_ELIGIBLE:572
 frontend/src/utils/hard-refresh.ts | typescript | 44 | hardRefresh:16
 frontend/src/utils/hierarchy.ts | typescript | 68 | getDescendants:44 isDescendantOf:65
-frontend/src/utils/hit-testing.ts | typescript | 425 | unrotatePoint:27 unshearPoint:35 hitTestElement:61 hitTestGeometry:91 hitTestPathElement:347 isPointInEraseHole:377
+frontend/src/utils/hit-testing.ts | typescript | 427 | unrotatePoint:27 unshearPoint:35 hitTestElement:61 hitTestGeometry:91 hitTestPathElement:347 isPointInEraseHole:379
 frontend/src/utils/id-generator.ts | typescript | 121 | generateId:54 scanMax:71
 frontend/src/utils/image-actions.ts | typescript | 47 | viewportCenter:18 addImagePlaceholder:26 replaceImageOn:39
 frontend/src/utils/image-cache.ts | typescript | 50 | setImageLoadCallback:6 getImage:10
@@ -604,7 +604,7 @@ frontend/src/utils/performance-monitor.ts | typescript | 49 | PerformanceMonitor
 frontend/src/utils/point-snapping.test.ts | typescript | 84 | el:4
 frontend/src/utils/point-snapping.ts | typescript | 108 | SnapPoint:15 SnapElement:17 PointSnapResult:25 bboxAnchors:35 pathAnchorsOf:46 getPointSnap:63
 frontend/src/utils/pointer-helpers.ts | typescript | 57 | PointerHelpers:15 PointerSignals:33
-frontend/src/utils/pointer-state.ts | typescript | 205 | PointerState:7 createPointerState:126
+frontend/src/utils/pointer-state.ts | typescript | 209 | PointerState:7 createPointerState:130
 frontend/src/utils/pool-containment.ts | typescript | 179 | getPoolLabelWidth:11 getLaneLabelWidth:14 getPoolLabelHeight:17 getLaneLabelHeight:20 computeLaneSizes:26 LaneRect:50 getPoolLaneRect:58 hitTestPoolLane:102 assignToPoolLane:145 unassignFromPool:149 shiftLaneIndicesOnRemove:154 shiftLaneIndicesOnInsert:168
 frontend/src/utils/pwa.ts | typescript | 45 | initPWA:20 applyPwaUpdate:43
 frontend/src/utils/recording-manager.ts | typescript | 155 | setupRecording:23
@@ -639,7 +639,7 @@ frontend/src/utils/tool-handlers/minor-handlers.ts | typescript | 1018 | trigger
 frontend/src/utils/tool-handlers/pen-handler.ts | typescript | 55 | penOnMove:14
 frontend/src/utils/tool-handlers/pen-path-handler.ts | typescript | 205 | snap:23 constrainHandleVec:34 writePenElement:47 resetPen:79 penOnDown:90 penOnMove:144 penOnUp:167 penFinalize:176 penUndo:193
 frontend/src/utils/tool-handlers/polyline-handler.ts | typescript | 208 | polylineOnDown:17 polylineOnMove:93 polylineOnUp:148 polylineFinalize:154 polylineUndo:190
-frontend/src/utils/tool-handlers/selection-handler.ts | typescript | 2748 | getMeasureRenderer:43 captureInitialPositions:53 scaleEraseStrokes:81 scalePathAnchors:104 scalePathSubpaths:117 cloneSubpaths:122 initMoveState:126 selectionOnDown:160 selectionOnMove:865 handleResize:1289 handleControlPointDrag:1547 handlePerspectiveBlockControl:1637 handlePolypointDrag:1706 EditSub:1729 editableSubpaths:1732 writeEditableSubpaths:1748 handlePathNodeDrag:1773 convertPathAnchor:1830 deletePathAnchor:1859 findClosestPathSegment:1876 canInsertPathAnchor:1911 insertPathAnchorAt:1919 handleSegmentDrag:1962 applyResize:1996 handle3DViewAngle:2188 handleMove:2234 selectionOnUp:2436
+frontend/src/utils/tool-handlers/selection-handler.ts | typescript | 2772 | getMeasureRenderer:43 captureInitialPositions:53 scaleEraseStrokes:81 scalePathAnchors:104 scalePathSubpaths:117 cloneSubpaths:122 initMoveState:126 selectionOnDown:160 selectionOnMove:869 handleResize:1293 handleControlPointDrag:1551 handlePerspectiveBlockControl:1641 handlePolypointDrag:1710 EditSub:1733 editableSubpaths:1736 writeEditableSubpaths:1752 handlePathNodeDrag:1777 convertPathAnchor:1834 deletePathAnchor:1863 findClosestPathSegment:1880 canInsertPathAnchor:1915 insertPathAnchorAt:1923 handleSegmentDrag:1966 applyResize:2000 handle3DViewAngle:2192 handleMove:2238 selectionOnUp:2448 any:2568 as:2568
 frontend/src/utils/tool-handlers/text-editing-handler.ts | typescript | 511 | TableEditingCell:20 EditingPropertyType:29 TextEditingContext:31 commitText:52 commitRichText:188 handleDoubleClick:247
 frontend/src/utils/transform-effect.ts | typescript | 93 | effectiveCopies:21 hasTransformEffect:27 transformCopy:41 transformEffectRenderCopies:83
 frontend/src/utils/transform-pivot.ts | typescript | 48 | selectionKey:23 setTransformPivot:28 clearTransformPivot:33 getCustomPivot:38 getElementPivot:46
@@ -825,6 +825,7 @@ tests/repeat-symmetry.spec.ts | typescript | 75 |
 tests/reshape.spec.ts | typescript | 36 |
 tests/review-fixes.spec.ts | typescript | 79 | st:3
 tests/rocket-workflow-export.spec.ts | typescript | 227 |
+tests/select-and-constrain.spec.ts | typescript | 69 |
 tests/sequence-diagram.spec.ts | typescript | 75 |
 tests/shape-builder.spec.ts | typescript | 72 |
 tests/slice.spec.ts | typescript | 14 |

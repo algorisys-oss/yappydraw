@@ -23,7 +23,7 @@ import { getSpacingGuides } from '../spacing';
 import { getPointSnap } from '../point-snapping';
 import { getIntersectionPoints } from '../path-intersection';
 import { shapeToPath } from '../shape-to-path';
-import { snapAngleRad } from '../angle-constrain';
+import { snapAngleRad, constrainToAngle } from '../angle-constrain';
 import { calculateAllAnimatedStates } from '../animation-utils';
 import { getGroupsSortedByPriority, isPointInGroupBounds } from '../group-utils';
 import { normalizePoints } from '../render-element';
@@ -773,7 +773,11 @@ export function selectionOnDown(
 
         if (e.shiftKey || e.ctrlKey || e.metaKey) {
             if (isAllSelected) {
-                setStore('selection', s => s.filter(id => !idsToSelect.includes(id)));
+                // Keep it selected for now so a modifier+DRAG moves it (Shift also
+                // constrains to an axis). If this turns out to be a click (no drag),
+                // pointer-up toggles it out. Without this, Shift+drag-to-move a
+                // selected element instantly deselected it and nothing moved.
+                pState.pendingShiftDeselect = idsToSelect;
             } else {
                 setStore('selection', s => [...new Set([...s, ...idsToSelect])]);
             }
@@ -2320,6 +2324,14 @@ function handleMove(
         dy = Math.round(dy / gridSize) * gridSize;
     }
 
+    // Shift constrains the move to a clean axis — horizontal / vertical / 45° — keeping
+    // the drag length. Great for logos & precise alignment (Illustrator/Figma parity).
+    if (e.shiftKey) {
+        const c = constrainToAngle(0, 0, dx, dy, 45);
+        dx = c.x;
+        dy = c.y;
+    }
+
     const skipHierarchy = !e.altKey;
 
     // Batch all position updates so reactive effects (e.g. refreshBoundLine in
@@ -2450,6 +2462,18 @@ export function selectionOnUp(
         pState.draggingHandle = null;
         convertPathAnchor(id, sub, i);
         return;
+    }
+
+    // Deferred modifier-toggle: a Shift/Ctrl/Cmd press on an already-selected element
+    // was kept selected so a drag could move it. If it didn't actually drag, it was a
+    // modifier-click → toggle those ids out of the selection now.
+    if (pState.pendingShiftDeselect) {
+        const ids = pState.pendingShiftDeselect;
+        pState.pendingShiftDeselect = undefined;
+        const moved = Math.hypot(x - pState.startX, y - pState.startY);
+        if (moved < 4 / store.viewState.scale) {
+            setStore('selection', s => s.filter(id => !ids.includes(id)));
+        }
     }
 
     if (pState.isSelecting) {

@@ -32,6 +32,10 @@ export interface PointerState {
     /** Cached path-intersection snap targets for the current drag (static elements
         don't move mid-drag, so compute once). Undefined = not yet computed. */
     intersectionSnapPoints?: { x: number; y: number }[];
+    /** Ids a modifier-click (Shift/Ctrl/Cmd) on an already-selected element WILL toggle
+        out of the selection — but only on pointer-up if it was a click, not a drag. Kept
+        selected during the press so a Shift+drag moves them (axis-constrained) instead. */
+    pendingShiftDeselect?: string[];
     laserTrailData: Array<{ x: number; y: number; timestamp: number }>;
     laserRafPending: boolean;
     lastLaserUpdateTime: number;

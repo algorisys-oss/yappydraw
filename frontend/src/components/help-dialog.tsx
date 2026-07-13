@@ -59,6 +59,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Delete', keys: 'Del' },
             { label: 'Duplicate', keys: 'Ctrl+D' },
             { label: 'Transform Again (step-and-repeat)', keys: 'Ctrl+Shift+D' },
+            { label: 'Constrain move to an axis (H / V / 45°)', keys: 'Shift+Drag element' },
             { label: 'Constrain angle to 15° (draw line / rotate / measure)', keys: 'Shift+Drag' },
             { label: 'Measure to neighbour (gaps + artboard edges)', keys: 'Alt+Hover' },
             { label: 'Select All', keys: 'Ctrl+A' },
