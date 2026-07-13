@@ -415,6 +415,7 @@ const initialState: AppState = {
         historyDepth: parseInt(localStorage.getItem('historyDepth') ?? '50', 10) || 50,
         bleed: parseFloat(localStorage.getItem('bleed') ?? '0') || 0,
         measurementUnit: ((localStorage.getItem('measurementUnit') as 'px' | 'mm' | 'in') || 'px'),
+        exportIncludeDimensions: (localStorage.getItem('exportIncludeDimensions') ?? '0') !== '0',
     },
     showCanvasProperties: false,
     outlineView: false,

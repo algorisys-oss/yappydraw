@@ -91,6 +91,21 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                 <option value="in">Inches (in)</option>
                             </select>
                         </div>
+
+                        <div class="settings-row">
+                            <label title="Bake dimension annotations into exported PNG / JPG / SVG / PDF files">Include Dimensions in Exports</label>
+                            <label class="settings-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={store.globalSettings.exportIncludeDimensions === true}
+                                    onChange={(e) => {
+                                        updateGlobalSettings({ exportIncludeDimensions: e.currentTarget.checked });
+                                        try { localStorage.setItem('exportIncludeDimensions', e.currentTarget.checked ? '1' : '0'); } catch { /* ignore */ }
+                                    }}
+                                />
+                                <span class="settings-toggle-slider"></span>
+                            </label>
+                        </div>
                     </div>
 
                     <div class="settings-section">

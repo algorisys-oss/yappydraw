@@ -20,8 +20,16 @@ import { transformEffectRenderCopies, hasTransformEffect } from "./transform-eff
 import { hasExtrude, extrudeOwnsFront, renderExtrudeBody } from "./extrude";
 import { hasRevolve, renderRevolve } from "./revolve";
 import { showToast } from "../components/toast";
+import { renderDimensions } from "./dimension-renderer";
+import { appendDimensionSvg } from "./dimension-svg";
 
 const SVGNS = 'http://www.w3.org/2000/svg';
+
+/** Bake dimension annotations onto a world-space export ctx — opt-in via Settings. */
+function paintDimensions(ctx: CanvasRenderingContext2D, elements: DrawingElement[], scale: number) {
+    if (!store.globalSettings.exportIncludeDimensions) return;
+    renderDimensions(ctx, store.dimensionAnnotations, elements, new Map(), scale, false, store.globalSettings.measurementUnit ?? 'px');
+}
 
 interface Bounds { minX: number; minY: number; maxX: number; maxY: number; }
 
@@ -487,6 +495,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     elements.forEach(el => {
         renderElWithEffects(rc, ctx, el);
     });
+    paintDimensions(ctx, elements, scale);
 
     // Download
     const link = document.createElement('a');
@@ -629,6 +638,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
     elements.forEach(el => {
         renderElWithEffects(rc, ctx, el);
     });
+    paintDimensions(ctx, elements, scale);
 
     const link = document.createElement('a');
     link.download = 'yappy_drawing.jpg';
@@ -665,6 +675,7 @@ export const copyCanvasAsPng = async (scale: number) => {
     elements.forEach(el => {
         renderElWithEffects(rc, ctx, el);
     });
+    paintDimensions(ctx, elements, scale);
 
     canvas.toBlob(async (blob) => {
         if (!blob) return;
@@ -1213,6 +1224,11 @@ export const exportToSvg = (onlySelected: boolean) => {
         }
     });
 
+    // Bake dimension annotations into the vector output (opt-in).
+    if (store.globalSettings.exportIncludeDimensions) {
+        appendDimensionSvg(g, store.dimensionAnnotations, elements, store.globalSettings.measurementUnit ?? 'px');
+    }
+
     const s = new XMLSerializer();
     const str = s.serializeToString(svg);
     const blob = new Blob([str], { type: 'image/svg+xml' });
@@ -1326,6 +1342,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
         elements.forEach(el => {
             renderElWithEffects(rc, ctx, el);
         });
+        paintDimensions(ctx, elements, scale);
 
         const orientation = width >= height ? 'landscape' : 'portrait';
         const pdf = new jsPDF({

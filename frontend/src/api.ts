@@ -2052,6 +2052,10 @@ export const YappyAPI = {
     /** Display unit for all measurement readouts (HUD / Measure / dimensions): 'px' | 'mm' | 'in'. */
     setMeasurementUnit(unit: 'px' | 'mm' | 'in') { updateGlobalSettings({ measurementUnit: unit }); try { localStorage.setItem('measurementUnit', unit); } catch { /* ignore */ } },
     getMeasurementUnit() { return store.globalSettings.measurementUnit ?? 'px'; },
+
+    /** Opt-in: bake dimension annotations into PNG/JPG/SVG/PDF exports (default off). */
+    setExportIncludeDimensions(on: boolean) { updateGlobalSettings({ exportIncludeDimensions: on }); try { localStorage.setItem('exportIncludeDimensions', on ? '1' : '0'); } catch { /* ignore */ } },
+    getExportIncludeDimensions() { return store.globalSettings.exportIncludeDimensions === true; },
     /** Flip stabilization on/off, remembering the last non-zero strength (Shift+S). */
     togglePenStabilization() { togglePenStabilization(); },
 

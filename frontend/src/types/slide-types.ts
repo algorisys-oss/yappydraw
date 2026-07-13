@@ -123,6 +123,7 @@ export interface GlobalSettings {
     historyDepth?: number;             // Max undo states retained (default 50)
     bleed?: number;                    // Print bleed margin (px) drawn around artboards; >0 also shows crop marks
     measurementUnit?: 'px' | 'mm' | 'in'; // Display unit for measurement readouts (HUD/Measure/dimensions). Default px.
+    exportIncludeDimensions?: boolean;    // Opt-in: bake dimension annotations into PNG/JPG/SVG/PDF exports. Default off.
 }
 
 /**

@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.96](0.8.96.md) — Bake dimension annotations into exports (opt-in): PNG/JPG/PDF raster + real vector SVG
 - [0.8.95](0.8.95.md) — Measurement polish: px/mm/in units, angular/radial (radius/diameter/angle) dimensions, rotation-aware bounds, and true-outline intersection snapping
 - [0.8.94](0.8.94.md) — Snap to path intersections (drop a corner where two outlines cross); completes the Precision & Measurement plan
 - [0.8.93](0.8.93.md) — Precision & measurement: measure-to-neighbour (Alt-hover), richer Measure readout (Δx/Δy triangle + W/H/area/perimeter), fixed-angle constraint (Shift→15°), and snap-to-point while dragging

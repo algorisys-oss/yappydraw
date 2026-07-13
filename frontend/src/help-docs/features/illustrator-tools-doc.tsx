@@ -511,7 +511,9 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                     circles/ellipses) and an <strong>Angle</strong> dimension that draws the element's
                     rotation as an arc. Scripting:
                     <code>Yappy.addDimension(id, 'width'|'height'|'radius'|'diameter'|'angle')</code>. They're
-                    saved with the document. <em>(Export inclusion still to come.)</em>
+                    saved with the document. Turn on <strong>Settings → Include Dimensions in Exports</strong>
+                    (opt-in) to bake them into exported <strong>PNG / JPG / SVG / PDF</strong> — SVG keeps them
+                    as real vector lines and text. Scripting: <code>Yappy.setExportIncludeDimensions(true)</code>.
                 </p>
                 <p>
                     <strong>Measurement units.</strong> Settings → <em>Measurement Units</em> switches every
