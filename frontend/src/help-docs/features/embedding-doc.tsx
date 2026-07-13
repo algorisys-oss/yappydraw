@@ -98,12 +98,70 @@ Yappy.getEmbedUrl('my-drawing', { theme: 'dark', slide: 2 })
 // Get iframe HTML snippet
 Yappy.getEmbedHtml('my-drawing', { width: 1024, height: 768 })`}</code></pre>
 
+            <h2>Interactive control (drive the full editor)</h2>
+            <p>
+                The <code>#/embed/</code> route above is a <em>read-only</em> viewer. To embed the{' '}
+                <strong>full, editable</strong> Yappy and script it from a host page, load the normal app URL
+                (not <code>#/embed/</code>) in an iframe and call the API. How you reach the API depends on
+                whether the host page and Yappy share an origin.
+            </p>
+
+            <h3>Same-origin — no setup</h3>
+            <p>
+                If your page and Yappy are served from the same origin, the whole API is already on the
+                iframe's window. Nothing to configure:
+            </p>
+            <pre><code>{`const y = document.querySelector('#yappy').contentWindow.Yappy;
+y.importDSL('graph TD; A-->B; B-->C');   // build a diagram from text
+const svg = y.exportSVG();               // read it back`}</code></pre>
+
+            <h3>Cross-origin — postMessage bridge</h3>
+            <p>
+                Browsers block <code>iframe.contentWindow.Yappy</code> across origins. Yappy ships a{' '}
+                <strong>postMessage control bridge</strong> for this case. It is <strong>off by default</strong>{' '}
+                and only answers pages the <em>operator</em> has allowlisted — a page that merely frames Yappy
+                cannot drive it.
+            </p>
+            <p><strong>1. Operator: allowlist the parent origin(s).</strong> Choose one (build-time wins unless the
+                runtime global is set):</p>
+            <pre><code>{`# Build-time env (baked into the bundle)
+VITE_EMBED_ALLOWED_ORIGINS="https://app.example.com,https://wiki.example.com"
+
+# …or a runtime global in Yappy's OWN index.html
+<script>window.YAPPY_EMBED_ALLOWED_ORIGINS = ['https://app.example.com'];</script>`}</code></pre>
+            <p class="tip-box">
+                Use a specific origin list, not <code>'*'</code>. The <code>'*'</code> wildcard disables the
+                origin check (any page that frames Yappy can drive the API) and logs a warning — only for
+                trusted internal deployments.
+            </p>
+            <p><strong>2. Host page: drive it with the client.</strong> Load the bundled helper (or copy{' '}
+                <code>public/yappy-embed-client.js</code> into your project):</p>
+            <pre><code>{`<iframe id="frame" src="https://your-yappy-host/" width="1000" height="700"></iframe>
+<script src="https://your-yappy-host/yappy-embed-client.js"></script>
+<script>
+  const yappy = createYappyEmbed(document.querySelector('#frame'), {
+    targetOrigin: 'https://your-yappy-host'   // Yappy's origin
+  });
+
+  await yappy.ready();                          // waits for the bridge
+  await yappy.call('importDSL', 'graph TD; A-->B; B-->C');
+  const svg = await yappy.call('exportSVG');    // every Yappy.* method works
+</script>`}</code></pre>
+            <p>
+                <code>call(method, ...args)</code> invokes any <code>window.Yappy</code> method and returns a
+                Promise of its result. Results travel over <code>postMessage</code>, so they must be
+                serializable (strings, plain objects, arrays) — element ids, SVG strings, and DSL results are
+                all fine.
+            </p>
+
             <h2>Embed Behavior</h2>
             <ul>
                 <li><strong>Pan/zoom</strong> via mouse wheel — enabled</li>
                 <li><strong>Auto-fit</strong> — content fits the iframe on load and window resize</li>
                 <li><strong>Read-only</strong> — all drawing and selection interactions are blocked</li>
                 <li><strong>"Open in Yappy"</strong> — watermark link opens the full editor in a new tab</li>
+                <li><strong>Full editor + API</strong> — load the normal app URL (not <code>#/embed/</code>) and
+                    use the same-origin or cross-origin control paths above</li>
             </ul>
 
             <h2>Platform Integration</h2>

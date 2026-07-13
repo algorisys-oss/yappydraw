@@ -258,7 +258,8 @@ const shapeDocuments: ShapeDoc[] = [
         name: 'Embedding',
         icon: '🔗',
         category: 'Features',
-        description: 'Embed drawings in Confluence, Notion, wikis, and other platforms',
+        description: 'Embed drawings in Confluence, Notion, wikis — and drive the full editor from a host page via the API / cross-origin postMessage bridge',
+        keywords: 'embed iframe embedding read-only viewer interactive control programmatic api window.Yappy cross-origin same-origin postMessage bridge createYappyEmbed yappy-embed-client allowlist VITE_EMBED_ALLOWED_ORIGINS importDSL exportSVG confluence notion wiki sharepoint wordpress integrate another project host page',
         content: EmbeddingDoc
     },
     {

@@ -62,6 +62,7 @@ frontend/public/robots.txt | - | 3 |
 frontend/public/sitemap.xml | - | 15 |
 frontend/public/terms-of-service.html | - | 200 |
 frontend/public/vite.svg | - | 1 |
+frontend/public/yappy-embed-client.js | javascript | 94 | createYappyEmbed:28 onMessage:35 post:48 AnonymousFunction05cbf74f0100:49 AnonymousFunction05cbf74f0200:56 pending:60 attempt:74 AnonymousFunction05cbf74f0300:75 AnonymousFunction05cbf74f0400:77 AnonymousFunction05cbf74f0500:79
 frontend/src/ai/ai-providers.ts | typescript | 231 | ImageContent:9 LLMRequest:16 LLMResponse:27 callLLM:37 callOpenAI:49
 frontend/src/ai/ai-settings.ts | typescript | 135 | AIProvider:6 AIProviderConfig:8 AIConfig:15 obfuscate:57 deobfuscate:61 getDefaultConfig:65 loadAIConfig:76 saveAIConfig:96 getApiKey:102 setApiKey:108 hasAnyApiKey:114 getImageModel:120 getActiveProviderConfig:127
 frontend/src/ai/canva-ai.ts | typescript | 445 | MagicWriteMode:15 magicWrite:28 ImageGenResult:77 openaiGenerateImage:79 insertImageElement:119 generateImage:150 applyAlphaMask:183 postImageEdit:212 magicEditImage:238 ExpandImageOptions:276 expandImage:288 RemoveBackgroundOptions:355 removeBackground:369
@@ -77,7 +78,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 3486 | Theme:3 HarmonyType:48 DimensionMeasure:55 ElementOptions:122 normalizeElementType:328 ElementType:533 as:533 Window:3478
+frontend/src/api.ts | typescript | 3490 | Theme:3 HarmonyType:49 DimensionMeasure:56 ElementOptions:123 normalizeElementType:329 ElementType:534 as:534 Window:3479
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1399 | Component:1 App:88 moves:108 onPenMove:109 hidePen:113 handleKeyUp:152 handleKeyDown:162 as:679 handleFullscreenChange:794 handleBeforeUnload:800 handlePaste:804 handleGlobalDragEnter:906 handleGlobalDragOver:921 showDropFallbackPrompt:940 cleanup:970 outsideClick:998 isImageFile:1010 first:1011 must:1024 extractDropData:1026 processExtractedDrop:1081 handleGlobalDrop:1198 handleDocumentDrop:1244
 frontend/src/assets/solid.svg | - | 1 |
@@ -353,6 +354,7 @@ frontend/src/dsl/ysl/index.ts | typescript | 98 | parseYSL:18 isYSLScript:61
 frontend/src/dsl/ysl/interpreter.ts | typescript | 542 | YSLValue:23 SourceLocation:24 InterpretResult:37 Interpreter:43
 frontend/src/dsl/ysl/lexer.ts | typescript | 386 | SourceLocation:9 TokenType:94 Token:120 tokenize:128 tokenizeLine:195 matchTwoChar:318 matchSingleChar:335 isDigit:360 isIdentStart:364 isIdentPart:368 shouldBeNegativeNumber:373
 frontend/src/dsl/ysl/parser.ts | typescript | 786 | Token:9 SourceLocation:10 Parser:24{constructor:28 parse:32 peek:41 peekType:45 advance:49 expect:55 match:66 loc:74 isAtEnd:78 skipNewlines:82 expectNewline:88 parseFrontmatter:100 parseBody:139 parseStatement:158 parseLetDecl:192 parseConstDecl:202 parsePoolDecl:214 parseLaneDecl:225 parseForLoop:239 parseIfStatement:252 parseFnDecl:284 parseTemplateDecl:306 parseUseTemplate:326 parseGroupBlock:345 parseAnimateBlock:359 parseEventHandler:374 parseNodeOrEdgeOrCall:389 parseEdgeDecl:424 parseNodeDecl:440 parseFnCallStmt:477 parseApiCall:493 parseInlineStyle:513 parseExpression:531 parseOr:535 parseAnd:546 parseEquality:557 parseComparison:568 parseAdditive:579 parseMultiplicative:590 parseUnary:601 parseRange:617 parseAtom:628 parseStringExpr:701 parseArrayLiteral:741 makeIdentOrInterpolated:758}
+frontend/src/embed-bridge.ts | typescript | 129 | parseEnvOrigins:36 parseRuntimeOrigins:42 resolveAllowedOrigins:49 initEmbedBridge:61
 frontend/src/examples/examples-page.css | - | 536 |
 frontend/src/examples/examples-page.tsx | typescript | 337 | Component:6 ExampleTemplate:10 getTemplateFromHash:95 ExamplesPage:101 handleHashChange:109 loadPreview:127 navigateToTemplate:156 openInEditor:163 filteredTemplates:168 currentTemplate:178 handleBackToApp:180 as:307
 frontend/src/game/behavior-editors.css | - | 18 |
@@ -374,7 +376,7 @@ frontend/src/help-docs/features/artboards-doc.tsx | typescript | 148 | Artboards
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 152 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 277 | DesignStudioDoc:9
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 277 | EffectsDoc:10 Tools:270
-frontend/src/help-docs/features/embedding-doc.tsx | typescript | 124 | EmbeddingDoc:3
+frontend/src/help-docs/features/embedding-doc.tsx | typescript | 182 | EmbeddingDoc:3
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 516 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 394 | LogoToolkitDoc:9 the:167
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 377 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161
@@ -384,7 +386,7 @@ frontend/src/help-docs/features/symbols-doc.tsx | typescript | 143 | SymbolsDoc:
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 245 | WorkspaceDoc:9 and:32 a:37
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 660 | YslTutorialDoc:8 members:564 Subject:579
 frontend/src/help-docs/help-page.css | - | 411 |
-frontend/src/help-docs/help-page.tsx | typescript | 393 | Component:6 ShapeDoc:11 Tools:130 vertical:134 getShapeFromHash:286 HelpPage:292 handleHashChange:298 navigateToShape:309 filteredShapes:314 currentDoc:325 handleBackToApp:327
+frontend/src/help-docs/help-page.tsx | typescript | 394 | Component:6 ShapeDoc:11 Tools:130 vertical:134 getShapeFromHash:287 HelpPage:293 handleHashChange:299 navigateToShape:310 filteredShapes:315 currentDoc:326 handleBackToApp:328
 frontend/src/help-docs/shapes/basic-shapes-doc.tsx | typescript | 323 | BasicShapesDoc:8 strings:296
 frontend/src/help-docs/shapes/bpmn-doc.tsx | typescript | 577 | BpmnDoc:8
 frontend/src/help-docs/shapes/connectors-doc.tsx | typescript | 311 | ConnectorsDoc:8

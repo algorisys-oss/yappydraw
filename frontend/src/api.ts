@@ -30,6 +30,7 @@ import {
     saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform, setStrokeDash
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
+import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
 import { PAGE_SIZE_PRESETS, getPagePreset } from "./config/page-size-presets";
 import { CANVAS_THEMES } from "./config/canvas-themes";
@@ -3482,5 +3483,8 @@ declare global {
 
 export const initAPI = () => {
     window.Yappy = YappyAPI;
+    // Expose the same API to trusted cross-origin parents over postMessage
+    // (see embed-bridge.ts). Off by default; operator-controlled allowlist.
+    initEmbedBridge(YappyAPI as unknown as Record<string, unknown>);
     console.log("Yappy API initialized. Use window.Yappy to interact.");
 };
