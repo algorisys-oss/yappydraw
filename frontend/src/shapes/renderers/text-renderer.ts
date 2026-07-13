@@ -91,17 +91,24 @@ export class TextRenderer extends ShapeRenderer {
             return;
         }
 
-        // Word wrap text within element width
+        // Word-wrap within the element width — UNLESS the element is autosize
+        // (click-placed text): then the box tracks the content, so lines break only
+        // on explicit newlines (Excalidraw/tldraw "click & type" behaviour). Drag-placed
+        // text is a fixed-width box (autoResize false) and wraps as before.
         const availableWidth = Math.max(el.width - padding * 2, 20);
         const paragraphs = (el.text || '').split('\n');
         const lines: string[] = [];
-        paragraphs.forEach(para => {
-            if (para === '') {
-                lines.push('');
-            } else {
-                lines.push(...wrapText(context.renderer, para, availableWidth));
-            }
-        });
+        if (el.autoResize) {
+            paragraphs.forEach(para => lines.push(para));
+        } else {
+            paragraphs.forEach(para => {
+                if (para === '') {
+                    lines.push('');
+                } else {
+                    lines.push(...wrapText(context.renderer, para, availableWidth));
+                }
+            });
+        }
 
         // Calculate vertical offset based on verticalAlign property
         // Total height = (N-1) * lineHeight + fontSize for the last line

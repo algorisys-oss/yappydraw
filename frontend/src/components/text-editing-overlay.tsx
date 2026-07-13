@@ -9,7 +9,7 @@ import { type Component, createEffect, Show } from "solid-js";
 import { Maximize2 } from "lucide-solid";
 import { store, setSelectedTool, updateElement } from "../store/app-store";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
-import { measureContainerText, measureWrappedTextHeight, resolveFontFamily } from "../utils/text-utils";
+import { measureContainerText, measureWrappedTextHeight, resolveFontFamily, getMeasurementContext, getFontString } from "../utils/text-utils";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
 import { normalizePoints } from "../utils/render-element";
@@ -60,9 +60,38 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 return;
             }
             if (el && (el.type === 'text' || el.type === 'richtext')) {
-                // Auto-grow height based on text content
                 const text = props.editText();
                 const fontSize = el.fontSize || (el.type === 'text' ? 20 : 28);
+
+                if (el.autoResize) {
+                    // Autosize (click-placed): grow BOTH width (longest line) and height
+                    // (line count) to fit content; nothing wraps. Mirrors the renderer +
+                    // commit measurement so the editor and canvas stay in lock-step.
+                    const mctx = getMeasurementContext();
+                    mctx.font = getFontString(el);
+                    mctx.letterSpacing = el.letterSpacing ? `${el.letterSpacing}px` : '0px';
+                    let maxW = 0;
+                    for (const line of text.split('\n')) maxW = Math.max(maxW, mctx.measureText(line).width);
+                    mctx.letterSpacing = '0px'; // shared context — reset so it doesn't leak
+                    const padding = 4;
+                    const newWidth = Math.max(maxW + padding * 2, fontSize);
+                    const lineCount = Math.max(1, text.split('\n').length);
+                    const newHeight = Math.max(lineCount * fontSize * 1.2, fontSize * 1.2);
+
+                    if (Math.abs(newWidth - el.width) > 1 || Math.abs(newHeight - el.height) > 1) {
+                        updateElement(el.id, { width: newWidth, height: newHeight });
+                    }
+                    const { scale: sc } = store.viewState;
+                    const containerDiv = textInputRef.parentElement as HTMLDivElement;
+                    if (containerDiv) {
+                        containerDiv.style.width = `${newWidth * sc}px`;
+                        containerDiv.style.height = `${newHeight * sc}px`;
+                    }
+                    textInputRef.style.padding = `${4 * sc}px 4px 0 4px`;
+                    return;
+                }
+
+                // Fixed-width box (drag-placed): auto-grow height only.
                 const existingWidth = el.width || 200;
                 const measuredHeight = measureWrappedTextHeight(text, existingWidth, fontSize, el.fontFamily, el.letterSpacing);
                 // Only grow, never shrink — preserve existing height to prevent text jumping
@@ -472,6 +501,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                             value={props.editText()}
                             onInput={(e) => props.setEditText(e.currentTarget.value)}
                             onBlur={handleTextBlur}
+                            wrap={el.autoResize ? 'off' : 'soft'}
                             style={{
                                 width: '100%',
                                 height: useTopLeftAnchor ? '100%' : undefined,
@@ -488,6 +518,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                     : '4px',
                                 resize: 'none',
                                 overflow: 'hidden',
+                                'white-space': el.autoResize ? 'pre' : undefined,
                                 'text-align': textAlign as any,
                                 'line-height': `${lineHeightPx}px`,
                                 filter: 'none',   // dark adjust now applied to `color` above

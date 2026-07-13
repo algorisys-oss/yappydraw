@@ -259,10 +259,13 @@ export class RenderPipeline {
         if (isComplexFill) {
             fill = undefined;
         }
-        // Architectural (clean) mode can't use RoughJS hatching, so we draw clean
-        // hatch lines in applyComplexFills instead — suppress the solid fill here so
-        // the hatch shows through. Sketch mode keeps the fill so RoughJS can hatch it.
-        if (el.renderStyle === 'architectural' && HATCH_FILL_STYLES.includes(el.fillStyle as string)) {
+        // Hatch fill styles (hachure/cross-hatch/zigzag/zigzag-line/dashed) are drawn
+        // by applyComplexFills' clean, shape-CLIPPED hatch in BOTH render modes — so
+        // suppress RoughJS's own fill here. RoughJS hatching is unclipped and its
+        // randomized line endpoints overshoot the outline (intermittent "lines bleed
+        // outside the shape" bug); the clipped hatch fixes that while the sketchy
+        // outline stroke is still drawn by RoughJS below.
+        if (HATCH_FILL_STYLES.includes(el.fillStyle as string)) {
             fill = undefined;
         }
 
@@ -300,9 +303,12 @@ export class RenderPipeline {
         const useImage = fillStyle === 'image' && !!el.backgroundImage;
         const useMesh = fillStyle === 'mesh' && !!el.meshGradient;
         const usePattern = fillStyle === 'pattern' && !!el.patternFill;
-        // Clean hatch lines for the sketchy fill styles, architectural mode only
-        // (sketch mode leaves these to RoughJS).
-        const useHatch = el.renderStyle === 'architectural' && HATCH_FILL_STYLES.includes(fillStyle as string)
+        // Clean, shape-clipped hatch lines for the sketchy fill styles — used in BOTH
+        // render modes now. Sketch mode used to leave these to RoughJS, whose unclipped
+        // hatching bled past the outline (intermittent, seed-dependent); routing the
+        // fill through this clipped path fixes that. The sketchy OUTLINE is still drawn
+        // by RoughJS in renderSketch — only the fill hatching is cleaned up.
+        const useHatch = HATCH_FILL_STYLES.includes(fillStyle as string)
             && !!el.backgroundColor && el.backgroundColor !== 'transparent';
 
         if (!useGradient && !useDots && !useImage && !useMesh && !usePattern && !useHatch) return;

@@ -380,7 +380,8 @@ export function laserOnUp(
 // ─── Text Tool ───────────────────────────────────────────────────────
 
 // Constants for text tool
-const TEXT_DEFAULT_WIDTH = 200;
+const TEXT_DEFAULT_WIDTH = 200; // click-placed fixed-width default (rich-text tool)
+const TEXT_AUTOSIZE_MIN_WIDTH = 24; // starting width for click-placed autosize text (grows with content)
 const TEXT_MIN_DRAG_WIDTH = 10;
 
 export function textOnDown(
@@ -444,18 +445,24 @@ export function textOnUp(
         return;
     }
 
+    const fontSize = el.fontSize || 20; // match text-renderer default
+    const lineHeight = fontSize * 1.2;
+
+    // Click (no meaningful drag) → AUTOSIZE text: the box grows with what you type,
+    // Enter adds a line, nothing wraps (Excalidraw/tldraw "click & type"). Drag →
+    // FIXED-WIDTH box (autoResize false) that word-wraps within the dragged width.
+    const isClick = el.width < TEXT_MIN_DRAG_WIDTH;
+    const autoResize = isClick;
+
     let finalWidth = el.width;
     let finalHeight = el.height;
     let finalX = el.x;
     let finalY = el.y;
 
-    const fontSize = el.fontSize || 20; // match text-renderer default
-    const lineHeight = fontSize * 1.2;
-
-    // If width is too small (click rather than drag), use default width
-    if (finalWidth < TEXT_MIN_DRAG_WIDTH) {
-        finalWidth = TEXT_DEFAULT_WIDTH;
-        finalX = pState.startX; // Reset to original click position
+    if (isClick) {
+        // Start minimal; the editing overlay / commit grows the box to fit the content.
+        finalWidth = TEXT_AUTOSIZE_MIN_WIDTH;
+        finalX = pState.startX; // reset to the original click position
     }
 
     // If height is too small, use default height (one line)
@@ -468,7 +475,8 @@ export function textOnUp(
         x: finalX,
         y: finalY,
         width: finalWidth,
-        height: finalHeight
+        height: finalHeight,
+        autoResize,
     }, false);
 
     // Open text editor - use batch to set all state atomically

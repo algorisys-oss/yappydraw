@@ -9,7 +9,7 @@ import type { DrawingElement, RichTextSpan } from '../../types';
 import { store, updateElement, deleteElements, isLayerVisible } from '../../store/app-store';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
-import { fitShapeToText, fitUmlClassToContent, measureContainerText, measureWrappedTextHeight, measureVerticalText } from '../text-utils';
+import { fitShapeToText, fitUmlClassToContent, measureContainerText, measureWrappedTextHeight, measureVerticalText, measureMaxLineWidth } from '../text-utils';
 import { CanvasRenderer } from '../../rendering/CanvasRenderer';
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestTableCell } from '../table-utils';
 import { spansToPlainText, plainTextToSpans } from '../rich-text-utils';
@@ -95,6 +95,14 @@ export function commitText(ctx: TextEditingContext): void {
                 // Vertical type: re-flow into columns and resize the box to fit.
                 const v = measureVerticalText({ ...el, text: newText });
                 updateElement(id, { text: newText, width: Math.round(v.width), height: Math.round(v.height) }, true);
+            } else if (el.autoResize) {
+                // Autosize (click-placed): box tracks content — width = longest line,
+                // height = number of explicit lines. No wrapping.
+                const fontSize = el.fontSize || 20;
+                const width = Math.max(measureMaxLineWidth({ ...el, text: newText }) + 8, fontSize);
+                const lineCount = Math.max(1, newText.split('\n').length);
+                const finalHeight = Math.max(lineCount * fontSize * 1.2, fontSize * 1.2);
+                updateElement(id, { text: newText, width, height: finalHeight }, true);
             } else {
                 const fontSize = el.fontSize || 28;
                 // Preserve existing width, recalculate height based on wrapped content
@@ -189,10 +197,19 @@ export function commitRichText(ctx: TextEditingContext): void {
     if (el.type === 'text' || el.type === 'richtext') {
         if (plainText) {
             const fontSize = el.fontSize || 20;
-            const existingWidth = el.width || 200;
-            const height = measureWrappedTextHeight(plainText, existingWidth, fontSize, el.fontFamily, el.letterSpacing);
-            const finalHeight = Math.max(height, fontSize * 1.2);
-            updateElement(id, { richText: spans, text: plainText, height: finalHeight }, true);
+            if (el.autoResize) {
+                // Autosize: width tracks the longest line (plain-text metric — close
+                // enough for rich spans), height tracks the explicit line count.
+                const width = Math.max(measureMaxLineWidth({ ...el, text: plainText }) + 8, fontSize);
+                const lineCount = Math.max(1, plainText.split('\n').length);
+                const finalHeight = Math.max(lineCount * fontSize * 1.2, fontSize * 1.2);
+                updateElement(id, { richText: spans, text: plainText, width, height: finalHeight }, true);
+            } else {
+                const existingWidth = el.width || 200;
+                const height = measureWrappedTextHeight(plainText, existingWidth, fontSize, el.fontFamily, el.letterSpacing);
+                const finalHeight = Math.max(height, fontSize * 1.2);
+                updateElement(id, { richText: spans, text: plainText, height: finalHeight }, true);
+            }
         } else {
             deleteElements([id]);
         }
