@@ -6,6 +6,14 @@ deviation rules, self-review, safety/traceability, and agent-loop discipline.
 Follow it for all development work; ignore any rule that is clearly not relevant
 to the task at hand.
 
+### Branch policy
+
+**Never commit development work directly on `main`.** All development happens on
+the `dev` branch or a dedicated feature branch (`feat/…`). `main` receives work
+only via fast-forward/merge from `dev` (or a feature branch) as part of the
+"ship it" release flow. Before starting new work, make sure you're on `dev` or a
+feature branch — not `main`.
+
 ## Navigating this codebase (read this first)
 
 Before grepping or reading broadly, use the repo map at `.repograph/index.txt`

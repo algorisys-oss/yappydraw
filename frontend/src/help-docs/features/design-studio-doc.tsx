@@ -175,6 +175,10 @@ Y.applyTextEffect('neon');          // applies to selection`}</code></pre>
                     <li><strong>Magic Edit</strong> — right-click an image → Magic Edit (AI)…: describe a change
                         ("remove the person on the left") and only that region is repainted.
                         <code>Y.magicEditImage('remove the car')</code></li>
+                    <li><strong>Replace Background</strong> — right-click an image → Replace Background (AI)…:
+                        describe a new backdrop ("a sunny beach", "a solid teal studio") and the background
+                        behind the subject is swapped while the foreground stays pixel-identical.
+                        <code>Y.replaceBackground('a sunny beach at sunset')</code></li>
                     <li><strong>Magic Expand</strong> — right-click an image → Magic Expand (AI): outpaint the
                         photo beyond its borders (all sides +25%, wider, taller, or custom guidance). The element
                         grows by the same margins so the subject stays put.

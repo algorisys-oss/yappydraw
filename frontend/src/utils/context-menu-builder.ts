@@ -1247,6 +1247,13 @@ export function getContextMenuItems(
                 onClick: () => { import('../ai/canva-ai').then(m => m.removeBackground(firstImageId())); },
             });
             items.push({
+                label: 'Replace Background (AI)…', icon: '✦',
+                onClick: () => {
+                    const description = prompt('Describe the new background (e.g. "a sunny beach", "a solid teal backdrop"):');
+                    if (description) import('../ai/canva-ai').then(m => m.replaceBackground(firstImageId(), description));
+                },
+            });
+            items.push({
                 label: 'Magic Edit (AI)…', icon: '✦',
                 onClick: () => {
                     const instruction = prompt('Describe the change (e.g. "remove the person on the left"):');

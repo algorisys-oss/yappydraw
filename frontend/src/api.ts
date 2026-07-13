@@ -2618,6 +2618,13 @@ export const YappyAPI = {
         const m = await import('./ai/canva-ai');
         return m.magicEditImage(id, instruction);
     },
+    /** Replace Background: swap the background behind the subject of the selected
+     *  (or given) image for a described scene, keeping the foreground untouched
+     *  (OpenAI image edits). */
+    async replaceBackground(description: string, id?: string) {
+        const m = await import('./ai/canva-ai');
+        return m.replaceBackground(id, description);
+    },
     /** Magic Expand: outpaint the selected (or given) image — margins are fractions
      *  of the source size (default 0.25 each side). The element grows to match. */
     async expandImage(opts?: { left?: number; right?: number; top?: number; bottom?: number; prompt?: string }, id?: string) {

@@ -9,7 +9,7 @@
 import { callLLM } from './ai-providers';
 import { getActiveProviderConfig, getApiKey, getImageModel } from './ai-settings';
 import { store, setStore, pushToHistory, updateElement, bumpDirtyRevision } from '../store/app-store';
-import { showToast } from '../components/toast';
+import { showToast, hideToast } from '../components/toast';
 import type { DrawingElement } from '../types';
 
 export type MagicWriteMode = 'rewrite' | 'shorten' | 'expand' | 'fix' | 'custom';
@@ -47,8 +47,9 @@ export async function magicWrite(
         ? (customInstruction || 'Improve this text.')
         : MODE_INSTRUCTIONS[mode];
 
-    showToast('Magic Write…', 'info');
+    showToast('Magic Write…', 'loading');
     let updated = 0;
+    let errored = false;
     for (const el of targets) {
         const res = await callLLM({
             provider, model, apiKey,
@@ -65,10 +66,12 @@ export async function magicWrite(
             updated++;
         } else if (!res.success) {
             showToast(res.error || 'Magic Write failed', 'error');
+            errored = true;
             break;
         }
     }
     if (updated > 0) showToast(`Magic Write updated ${updated} text element${updated === 1 ? '' : 's'}`, 'success');
+    else if (!errored) hideToast(); // nothing changed and no error — clear the in-progress toast
     return updated;
 }
 
@@ -151,7 +154,7 @@ export async function generateImage(prompt: string, opts: { size?: '1024x1024' |
     const size = opts.size || '1024x1024';
     const model = getImageModel('openai') || 'gpt-image-1';
     const dalleSize = size === '1536x1024' ? '1792x1024' : size === '1024x1536' ? '1024x1792' : '1024x1024';
-    showToast('Generating image…', 'info');
+    showToast('Generating image…', 'loading');
     let result = await openaiGenerateImage(prompt, model.startsWith('dall-e') ? dalleSize : size, model);
     if (!result.dataURL && model !== 'dall-e-3') {
         // Configured model unavailable on this account — fall back to dall-e-3
@@ -252,7 +255,7 @@ export async function magicEditImage(id?: string, instruction?: string): Promise
         return false;
     }
 
-    showToast('Magic Edit…', 'info');
+    showToast('Magic Edit…', 'loading');
     const blob = await (await fetch(el.dataURL)).blob();
     const form = new FormData();
     form.append('model', 'gpt-image-1');
@@ -270,6 +273,58 @@ export async function magicEditImage(id?: string, instruction?: string): Promise
     pushToHistory();
     updateElement(el.id, { dataURL: `data:image/png;base64,${b64}` });
     showToast('Magic Edit applied', 'success');
+    return true;
+}
+
+/**
+ * Replace Background — swap the background behind the main subject for a new
+ * scene described in natural language (e.g. "a sunny beach", "a solid teal
+ * studio backdrop"), keeping the foreground subject untouched. Replaces the
+ * element's image in place. Returns true on success.
+ */
+export async function replaceBackground(id?: string, description?: string): Promise<boolean> {
+    const targetId = id || store.selection[0];
+    const el = store.elements.find(e => e.id === targetId);
+    if (!el || el.type !== 'image' || !el.dataURL) {
+        showToast('Select an image element first', 'info');
+        return false;
+    }
+    if (!description?.trim()) {
+        showToast('Describe the new background first', 'info');
+        return false;
+    }
+    const apiKey = getApiKey('openai');
+    if (!apiKey) {
+        showToast('Add an OpenAI API key in AI Settings first', 'error');
+        return false;
+    }
+
+    showToast('Replacing background…', 'loading');
+    const blob = await (await fetch(el.dataURL)).blob();
+    const form = new FormData();
+    form.append('model', 'gpt-image-1');
+    form.append('image', new File([blob], 'image.png', { type: blob.type || 'image/png' }));
+    form.append('prompt',
+        `Replace the background behind the main foreground subject with: ${description.trim()}. ` +
+        'Keep the foreground subject pixel-identical to the input — do not restyle, repaint, ' +
+        'recolor, move, crop, or resize it. Change ONLY the background, blending the new ' +
+        'background naturally with realistic lighting and edges around the subject.');
+    form.append('size', 'auto');
+    form.append('input_fidelity', 'high');
+
+    let { b64, error } = await postImageEdit(form, apiKey);
+    // Some accounts/models reject input_fidelity — retry once without it.
+    if (!b64 && error?.includes('input_fidelity')) {
+        form.delete('input_fidelity');
+        ({ b64, error } = await postImageEdit(form, apiKey));
+    }
+    if (!b64) {
+        showToast(error || 'Replace Background failed', 'error');
+        return false;
+    }
+    pushToHistory();
+    updateElement(el.id, { dataURL: `data:image/png;base64,${b64}` });
+    showToast('Background replaced', 'success');
     return true;
 }
 
@@ -304,7 +359,7 @@ export async function expandImage(id?: string, opts: ExpandImageOptions = {}): P
     const bottom = Math.max(0, opts.bottom ?? 0.25);
     if (left + right + top + bottom === 0) return false;
 
-    showToast('Magic Expand…', 'info');
+    showToast('Magic Expand…', 'loading');
     try {
         const orig = await loadImg(el.dataURL);
         const ow = orig.naturalWidth, oh = orig.naturalHeight;
@@ -313,7 +368,7 @@ export async function expandImage(id?: string, opts: ExpandImageOptions = {}): P
         const canvas = document.createElement('canvas');
         canvas.width = nw; canvas.height = nh;
         const ctx = canvas.getContext('2d');
-        if (!ctx) return false;
+        if (!ctx) { showToast('Magic Expand failed: no canvas context', 'error'); return false; }
         ctx.drawImage(orig, Math.round(ow * left), Math.round(oh * top));
         const paddedBlob: Blob = await new Promise((resolve, reject) =>
             canvas.toBlob(b => b ? resolve(b) : reject(new Error('canvas.toBlob failed')), 'image/png'));
@@ -379,7 +434,7 @@ export async function removeBackground(id?: string, opts: RemoveBackgroundOption
         return false;
     }
 
-    showToast('Removing background…', 'info');
+    showToast('Removing background…', 'loading');
     try {
         const blob = await (await fetch(el.dataURL)).blob();
         const buildForm = (withFidelity: boolean) => {
