@@ -1121,9 +1121,30 @@ export function getContextMenuItems(
 
         items.push({ separator: true });
 
+        // Is the selection already grouped? `any` = at least one member is grouped
+        // (a mixed selection of a group + loose elements); `fully` = every member
+        // shares one common outer group id, i.e. the selection is exactly a single
+        // existing group (which is what you get when you click a grouped element —
+        // all its members select together).
+        const groupedEls = store.selection
+            .map(id => store.elements.find(e => e.id === id))
+            .filter((el): el is DrawingElement => !!(el?.groupIds && el.groupIds.length > 0));
+        const isAnyGrouped = groupedEls.length > 0;
+        const outerGroupIds = new Set(groupedEls.map(el => el.groupIds![el.groupIds!.length - 1]));
+        const isFullyGrouped = selectionCount > 1
+            && groupedEls.length === selectionCount
+            && outerGroupIds.size === 1;
+
         // Grouping
         if (selectionCount > 1) {
-            items.push({ label: 'Group', shortcut: 'Ctrl+G', onClick: groupSelected });
+            // When the whole selection is already one group, offer Ungroup here (not
+            // Group) — re-grouping an existing group just nests it, which the user
+            // rarely wants and reads as a bug ("I already grouped this").
+            if (isFullyGrouped) {
+                items.push({ label: 'Ungroup', shortcut: 'Ctrl+Shift+G', onClick: ungroupSelected });
+            } else {
+                items.push({ label: 'Group', shortcut: 'Ctrl+G', onClick: groupSelected });
+            }
             items.push({ label: 'Make Clipping Mask', shortcut: 'Ctrl+7', icon: '✂', onClick: () => makeClippingMask() });
             items.push({ label: 'Make Opacity Mask', icon: '◐', onClick: () => makeOpacityMask() });
             items.push({
@@ -1185,12 +1206,11 @@ export function getContextMenuItems(
             });
         }
 
-        const isAnyGrouped = store.selection.some(id => {
-            const el = store.elements.find(e => e.id === id);
-            return el?.groupIds && el.groupIds.length > 0;
-        });
-
-        if (isAnyGrouped) {
+        // Mixed selection (a group + loose elements, or several distinct groups):
+        // Group was shown up top to combine them, so offer Ungroup here too. When
+        // the selection is a single whole group, Ungroup already replaced Group
+        // above (isFullyGrouped) — don't duplicate it.
+        if (isAnyGrouped && !isFullyGrouped) {
             items.push({ label: 'Ungroup', shortcut: 'Ctrl+Shift+G', onClick: ungroupSelected });
         }
 

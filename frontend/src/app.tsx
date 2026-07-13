@@ -2,7 +2,7 @@ import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal 
 import { isMultiPageDocType } from './types/slide-types';
 import { isPanelOpen } from './store/dock-layout';
 import {
-  undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel,
+  undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel, toggleElementsPanel,
   toggleMinimap, toggleRulers, toggleKeyframePanel, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
   addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper, exitCompoundEdit,
@@ -437,6 +437,9 @@ const App: Component = () => {
         } else if (code === 'KeyP' || key === 'p') {
           e.preventDefault();
           togglePatternsPanel();
+        } else if (code === 'KeyE' || key === 'e') {
+          e.preventDefault();
+          toggleElementsPanel();
         } else if (key === '\\' || code === 'Backslash') {
           e.preventDefault();
           const anyVisible = store.showPropertyPanel || isPanelOpen('layers');

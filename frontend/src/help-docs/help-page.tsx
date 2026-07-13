@@ -42,6 +42,7 @@ const MasksAppearanceTraceDoc = lazy(() => import('./features/masks-appearance-t
 const SymbolsDoc = lazy(() => import('./features/symbols-doc'));
 const ArtboardsDoc = lazy(() => import('./features/artboards-doc'));
 const DesignStudioDoc = lazy(() => import('./features/design-studio-doc'));
+const ElementsSearchDoc = lazy(() => import('./features/elements-search-doc'));
 const StickLibraryDoc = lazy(() => import('./features/stick-library-doc'));
 const StickAnimationDoc = lazy(() => import('./features/stick-animation-doc'));
 const WorkspaceDoc = lazy(() => import('./features/workspace-doc'));
@@ -158,6 +159,15 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Design',
         description: 'Reusable masters + linked instances: the Symbols panel, edit-in-place, redefine and detach',
         content: SymbolsDoc
+    },
+    {
+        id: 'elements-search',
+        name: 'Element Search',
+        icon: '🔍',
+        category: 'Design',
+        description: 'Unified Canva-style search across icons, illustrations, shapes and photos — one blended grid, semantic keyword aliases, type chips, Alt+E, and the searchElements / insertElement API',
+        keywords: 'element elements search unified panel icon icons lucide illustration illustrations openmoji emoji shape shapes photo photos wikimedia blended grid chip chips all icons illustrations shapes photos alias aliases keyword semantic love heart money dollar coin wallet idea lightbulb bulb brain chat speech bubble secure lock shield goal target trophy find insert editable vector recolour recolor cc by-sa attribution openmoji.org orientation landscape portrait square browse frames font pairing Alt+E hotkey shortcut command palette searchElements insertElement toggleElementsPanel api scriptable window Yappy',
+        content: ElementsSearchDoc
     },
     {
         id: 'stick-library',

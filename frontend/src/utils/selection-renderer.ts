@@ -666,8 +666,13 @@ export function renderElementOverlays(
         }
 
         // --- Connector Handles ---
+        // Only when a SINGLE element is selected. Like the path-anchor block above,
+        // these are drawn once per selected element, so a multi-selection / group
+        // (e.g. an imported icon = many path parts) would paint N×4 quick-connect
+        // ports — a swarm of green arrows. Connecting is meaningful from one shape,
+        // not every child of a group, so gate on selectionLength === 1.
         const isPolylineShape = el.type === 'line' && el.curveType === 'elbow' && !el.startBinding && !el.endBinding;
-        if (((el.type !== 'line' && el.type !== 'arrow') || isPolylineShape) && selectedTool === 'selection') {
+        if (((el.type !== 'line' && el.type !== 'arrow') || isPolylineShape) && selectedTool === 'selection' && selectionLength === 1) {
             const connectorSize = 14 / scale;
             const connectorOffset = 32 / scale;
 

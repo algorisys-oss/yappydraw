@@ -231,7 +231,7 @@ const ElementsPanel: Component = () => {
         <>
             <div class="ep-search">
                 <Search size={13} />
-                <input type="text" placeholder="Search elements — icons, shapes, photos…" value={query()}
+                <input type="text" placeholder="Search elements — icons, illustrations, shapes, photos…" value={query()}
                     onInput={(e) => setQuery(e.currentTarget.value)} />
             </div>
 
@@ -279,6 +279,9 @@ const ElementsPanel: Component = () => {
                         </Show>
                         <Show when={kindFilter() === 'photo' && photoHits().length > 0}>
                             <div class="ep-attribution">Openly licensed via Wikimedia Commons — source link kept on each image.</div>
+                        </Show>
+                        <Show when={(kindFilter() === 'illustration' || kindFilter() === 'all') && results().some(h => h.kind === 'illustration')}>
+                            <div class="ep-attribution">Illustrations from OpenMoji (openmoji.org) — CC BY-SA 4.0.</div>
                         </Show>
                     </Show>
                 </div>

@@ -16,6 +16,8 @@ import { store } from '../../store/app-store';
 import { importSvgToCanvas } from '../../utils/svg-import';
 import { searchStockPhotos, insertStockPhoto, type StockPhoto } from '../../utils/stock-photos';
 import { YappyAPI } from '../../api';
+import { searchIllustrations } from './illustrations/registry';
+import { aliasesFor } from './aliases';
 
 export type AssetKind = 'icon' | 'illustration' | 'photo' | 'shape';
 
@@ -33,8 +35,8 @@ export interface AssetHit {
     insert: (at?: { x: number; y: number }) => void | Promise<void>;
 }
 
-/** Kinds that have a live provider today. Illustrations join in Phase 2. */
-export const ACTIVE_KINDS: AssetKind[] = ['icon', 'shape', 'photo'];
+/** Kinds that have a live provider. Order drives the type-filter chip order. */
+export const ACTIVE_KINDS: AssetKind[] = ['icon', 'illustration', 'shape', 'photo'];
 
 export const KIND_LABELS: Record<AssetKind, string> = {
     icon: 'Icons',
@@ -97,15 +99,40 @@ function insertIconEl(svg: string, at?: { x: number; y: number }) {
     importSvgToCanvas(svg, { x: o.x, y: o.y, targetWidth: SIZE });
 }
 
-/** Icon hits from the (already-loaded) lucide module, name/substring matched. */
+function insertIllustrationEl(svg: string, at?: { x: number; y: number }) {
+    const SIZE = 160;
+    const o = at ? { x: at.x - SIZE / 2, y: at.y - SIZE / 2 } : insertOrigin(SIZE);
+    importSvgToCanvas(svg, { x: o.x, y: o.y, targetWidth: SIZE });
+}
+
+/**
+ * Icon hits from the (already-loaded) lucide module. Matched by the query plus
+ * its keyword-alias expansions (love→heart, money→dollar…). Direct-query matches
+ * rank first; alias-only matches fill in behind them.
+ */
 function iconHits(q: string, lucide: any): AssetHit[] {
     if (!lucide) return [];
     const nq = normalize(q);
     if (!nq) return [];
+    const aliases = aliasesFor(nq);
     const names = Object.keys(lucide).filter(
         k => /^[A-Z][A-Za-z0-9]*$/.test(k) && typeof lucide[k] === 'function',
     );
-    const matched = names.filter(n => n.toLowerCase().includes(nq)).slice(0, MAX_ICONS);
+    const seen = new Set<string>();
+    const matched: string[] = [];
+    // Pass 1: direct query substring. Pass 2: alias tokens (deduped, ranked after).
+    for (const tokens of [[nq], aliases]) {
+        if (matched.length >= MAX_ICONS) break;
+        for (const name of names) {
+            if (seen.has(name)) continue;
+            const ln = name.toLowerCase();
+            if (tokens.some(t => t && ln.includes(t))) {
+                seen.add(name);
+                matched.push(name);
+                if (matched.length >= MAX_ICONS) break;
+            }
+        }
+    }
     const hits: AssetHit[] = [];
     for (const name of matched) {
         const svg = renderLucideSvg(lucide, name, 24);
@@ -116,6 +143,22 @@ function iconHits(q: string, lucide: any): AssetHit[] {
         });
     }
     return hits;
+}
+
+/**
+ * Illustration hits from the bundled OpenMoji subset. Matched by the query plus
+ * its alias expansions against illustration name + tags. Inserted as editable
+ * coloured vector paths (same path as icons → render-style parity for free).
+ */
+function illustrationHits(q: string): AssetHit[] {
+    const nq = normalize(q);
+    if (!nq) return [];
+    const tokens = [nq, ...aliasesFor(nq)];
+    return searchIllustrations(tokens).map(a => ({
+        kind: 'illustration' as const, id: `illustration:${a.id}`, label: a.name,
+        thumbSvg: a.svg,
+        insert: (at: { x: number; y: number } | undefined) => insertIllustrationEl(a.svg, at),
+    }));
 }
 
 /** Shape hits — label/type/alias match. */
@@ -132,9 +175,9 @@ function shapeHits(q: string, lucide: any): AssetHit[] {
         }));
 }
 
-/** Offline hits (shapes + icons), available synchronously. Illustrations: Phase 2. */
+/** Offline hits (shapes + illustrations + icons), available synchronously. */
 export function collectOfflineHits(q: string, lucide: any): AssetHit[] {
-    return [...shapeHits(q, lucide), ...iconHits(q, lucide)];
+    return [...shapeHits(q, lucide), ...illustrationHits(q), ...iconHits(q, lucide)];
 }
 
 /** Photo hits — async (Wikimedia Commons). Throws on network/API error. */
@@ -145,4 +188,34 @@ export async function searchPhotoHits(q: string): Promise<AssetHit[]> {
         thumbUrl: p.thumbnail, photo: p,
         insert: (at: { x: number; y: number } | undefined) => { void insertStockPhoto(p, at); },
     }));
+}
+
+export interface SearchElementsOptions {
+    /** Restrict to these kinds (default: all active kinds). */
+    kinds?: AssetKind[];
+    /** Include (async) photo results. Default true when 'photo' is in scope. */
+    includePhotos?: boolean;
+}
+
+/**
+ * One-call blended search across every provider — the scriptable entry point
+ * behind `YappyAPI.searchElements`. Loads the (lazy) lucide module for icon/shape
+ * thumbnails, gathers offline hits (icons/illustrations/shapes) and, unless
+ * disabled, appends photo hits. Photo-provider errors degrade to no photos rather
+ * than rejecting, so a script always gets the offline results.
+ */
+export async function searchElements(query: string, opts: SearchElementsOptions = {}): Promise<AssetHit[]> {
+    const q = (query || '').trim();
+    if (!q) return [];
+    const kinds = opts.kinds ?? ACTIVE_KINDS;
+    const wantPhotos = kinds.includes('photo') && opts.includePhotos !== false;
+
+    const lucide = await import('lucide-solid').catch(() => null);
+    const offline = collectOfflineHits(q, lucide).filter(h => kinds.includes(h.kind));
+
+    let photos: AssetHit[] = [];
+    if (wantPhotos) {
+        try { photos = await searchPhotoHits(q); } catch { photos = []; }
+    }
+    return [...offline, ...photos];
 }

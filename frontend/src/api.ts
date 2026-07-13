@@ -39,6 +39,7 @@ import { templateRegistry, getTemplateById, getTemplatesByCategory, searchTempla
 import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
 import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
 import { importSvgToCanvas } from "./utils/svg-import";
+import { searchElements, type AssetHit, type SearchElementsOptions } from "./library/elements/search";
 import { setRequestRecording } from "./utils/recording-manager";
 import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
@@ -2420,6 +2421,24 @@ export const YappyAPI = {
     },
     /** Show/hide the Elements library panel (shapes, frames, icon library). */
     toggleElementsPanel(visible?: boolean) { toggleElementsPanel(visible); },
+    /**
+     * Unified element search — fan a single query across icons (Lucide), bundled
+     * illustrations (OpenMoji), shapes and photos (Wikimedia), the same feed the
+     * Elements panel shows. Returns typed hits; call `insertElement(hit)` (or
+     * `hit.insert()`) to drop one onto the canvas. `opts.kinds` restricts the
+     * scope (e.g. `{ kinds: ['icon','illustration'] }`); photos are async and are
+     * skipped when 'photo' is out of scope or `includePhotos:false`.
+     */
+    searchElements(query: string, opts?: SearchElementsOptions): Promise<AssetHit[]> {
+        return searchElements(query, opts);
+    },
+    /**
+     * Insert a hit returned by `searchElements` onto the canvas. Omit `at` to
+     * center on the active page, or pass a world point (e.g. for drag-drop).
+     */
+    insertElement(hit: AssetHit, at?: { x: number; y: number }) {
+        return hit?.insert?.(at);
+    },
 
     // Stick-figure library (drawify-style editable figures)
     /** Insert a stick figure by id (e.g. "daily-waving") as one editable, recolourable

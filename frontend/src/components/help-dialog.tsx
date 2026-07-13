@@ -106,6 +106,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Rotate Canvas Left / Right (the , and . keys)', keys: 'Shift+, / Shift+.' },
             { label: 'Reset Canvas Rotation', keys: 'Shift+0' },
             { label: 'Toggle Properties', keys: 'Alt+Enter' },
+            { label: 'Toggle Elements (search icons, illustrations, shapes, photos)', keys: 'Alt+E' },
             { label: 'Toggle Layers', keys: 'Alt+L' },
             { label: 'Toggle Symbols Panel', keys: 'Alt+B' },
             { label: 'Toggle History Panel', keys: 'Alt+H' },
