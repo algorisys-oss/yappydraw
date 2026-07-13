@@ -457,10 +457,44 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                 </p>
                 <p>
                     <strong>Measure tool</strong> (View menu → <em>Measure</em>): drag a line across the
-                    canvas to read its <strong>distance</strong> and <strong>angle</strong>. Pair it with
+                    canvas to read its <strong>distance</strong> and <strong>angle</strong>. For a diagonal drag
+                    it also draws the <strong>right triangle</strong> with its <strong>Δx</strong> and
+                    <strong> Δy</strong> legs labelled, so you can read the horizontal and vertical spans at a
+                    glance. If you <em>select a single shape first</em>, the tool shows a card with that shape's
+                    <strong> W/H, area, and perimeter</strong> (circles/ellipses use true πab area and
+                    circumference; lines report their length). Pair it with
                     <strong> Rulers &amp; Guides</strong> (<span class="kbd">Alt</span>+<span class="kbd">R</span>),
                     <strong>Snap to Grid</strong> (<span class="kbd">Shift</span>+<span class="kbd">;</span>),
                     and the alignment/equal-spacing guides that appear while you drag for precise layout.
+                    Scripting: <code>Yappy.measureShape(id)</code> returns
+                    <code>{'{ width, height, area, perimeter }'}</code>. <span class="kbd">Esc</span> exits.
+                </p>
+                <p>
+                    <strong>Snap to point.</strong> With object snapping on, dragging an element makes its
+                    corners, edge midpoints, centre — and the anchor points of vector paths — <strong>snap
+                    onto another element's matching points</strong> when they line up on both axes. A small
+                    magenta diamond marks where it locked, so you can butt shapes corner-to-corner (or onto a
+                    path anchor) exactly, not just align a single edge. Hold <span class="kbd">Shift</span>
+                    while dragging to suspend snapping.
+                </p>
+                <p>
+                    <strong>Fixed-angle constraint</strong> (<span class="kbd">Shift</span>). Hold
+                    <span class="kbd">Shift</span> to lock to clean <strong>15° increments</strong> while you
+                    <strong> draw a line/arrow</strong>, <strong>rotate</strong> an element, or drag the
+                    <strong> Measure</strong> line — perfect horizontals, verticals, and 45° diagonals without
+                    guessing. The drag keeps its length; only the angle snaps. The rotation angle shows live in
+                    the transform badge, and the Measure line reports the locked angle.
+                </p>
+                <p>
+                    <strong>Measure to a neighbour</strong> (<span class="kbd">Alt</span>-hover). With one or
+                    more objects selected, hold <span class="kbd">Alt</span> and hover another object: red
+                    dimension lines show the exact <strong>pixel gaps</strong> between your selection and that
+                    object, plus the distance from the selection to each edge of its <strong>artboard</strong>
+                    (or page). It's a read-only inspection — nothing moves — and the lines vanish the moment you
+                    release <span class="kbd">Alt</span> or move off. This is the Illustrator/Figma
+                    "measure-the-gap" gesture. Scripting:
+                    <code>Yappy.measureBetween(idA, idB, includeArtboardEdges?)</code> returns the same gap
+                    segments (distance, orientation, kind). <em>(v1: axis-aligned bounding boxes.)</em>
                 </p>
                 <p>
                     <strong>Dimension annotations.</strong> Right-click a shape →

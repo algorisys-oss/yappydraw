@@ -60,6 +60,9 @@ import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides } f
 import { buildSlideDocument } from "./utils/document-io";
 import { dimensionGeometry, type DimensionMeasure } from "./utils/dimension-geometry";
 import { addDimension as storeAddDimension, removeDimension as storeRemoveDimension, removeDimensionsForTarget as storeRemoveDimensionsForTarget } from "./store/app-store";
+import { getMeasureSegments } from "./utils/measure-gap";
+import { shapeMetrics } from "./utils/measure-readout";
+import { isPagedDocType } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
 import type { LayoutDirection } from "./utils/mindmap-layout";
 import { parseOutline } from "./utils/mindmap-layout";
@@ -2605,6 +2608,42 @@ export const YappyAPI = {
         const el = store.elements.find(e => e.id === dim.targetId);
         if (!el) return null;
         return dimensionGeometry(dim, { x: el.x, y: el.y, width: el.width, height: el.height }).value;
+    },
+    /**
+     * Measure-to-neighbor (the scripted form of Alt-hover). Returns the pixel-gap
+     * dimension segments between two elements' bounding boxes: one per axis they're
+     * separated on (side-by-side → 1, diagonal → 2, overlapping → 0). When
+     * `includeArtboardEdges` is true, also appends element A's distance to each side
+     * of its enclosing artboard (or the active page for paged docs). Read-only.
+     */
+    measureBetween(idA: string, idB: string, includeArtboardEdges = false) {
+        const a = this.getElement(idA), b = this.getElement(idB);
+        if (!a || !b) return [];
+        const ra = { x: a.x, y: a.y, width: a.width, height: a.height };
+        const rb = { x: b.x, y: b.y, width: b.width, height: b.height };
+        let ab = null as { x: number; y: number; width: number; height: number } | null;
+        if (includeArtboardEdges) {
+            const cx = ra.x + ra.width / 2, cy = ra.y + ra.height / 2;
+            if (store.artboards?.length) {
+                const found = store.artboards.find(g => cx >= g.x && cx <= g.x + g.width && cy >= g.y && cy <= g.y + g.height);
+                if (found) ab = { x: found.x, y: found.y, width: found.width, height: found.height };
+            } else if (isPagedDocType(store.docType)) {
+                const slide = store.slides?.[store.activeSlideIndex];
+                if (slide) { const sp = slide.spatialPosition || { x: 0, y: 0 }; ab = { x: sp.x, y: sp.y, width: slide.dimensions.width, height: slide.dimensions.height }; }
+            }
+        }
+        return getMeasureSegments(ra, rb, ab);
+    },
+    /**
+     * Shape metrics (the Measure tool's single-selection readout, scripted):
+     * `{ width, height, area, perimeter }` for one element. Shape-aware for
+     * circles/ellipses (πab area, Ramanujan circumference) and lines/arrows
+     * (zero area, segment length); rectangle bbox otherwise. Read-only.
+     */
+    measureShape(id: string) {
+        const el = this.getElement(id);
+        if (!el) return null;
+        return shapeMetrics({ type: el.type, width: el.width, height: el.height });
     },
     /** Export the current scene as a self-contained HTML file (animated figures play in it). */
     async exportHtml(name = 'animation') { const m = await import('./utils/export-game'); return m.exportSceneAsHtml(name); },

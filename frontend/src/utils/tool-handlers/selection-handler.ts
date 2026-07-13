@@ -20,6 +20,8 @@ import { isPointInPolygon, rotatePoint } from '../geometry';
 import { getWarpGrid, defaultWarpGrid } from '../envelope-warp';
 import { getSnappingGuides } from '../object-snapping';
 import { getSpacingGuides } from '../spacing';
+import { getPointSnap } from '../point-snapping';
+import { snapAngleRad } from '../angle-constrain';
 import { calculateAllAnimatedStates } from '../animation-utils';
 import { getGroupsSortedByPriority, isPointInGroupBounds } from '../group-utils';
 import { normalizePoints } from '../render-element';
@@ -1351,7 +1353,9 @@ function handleResize(
     // Rotate — about the (possibly custom) reference point, not always the centre.
     if (pState.draggingHandle === 'rotate') {
         const pivot = getElementPivot(el, store.selection);
-        const newAngle = Math.atan2(y - pivot.y, x - pivot.x) + Math.PI / 2;
+        let newAngle = Math.atan2(y - pivot.y, x - pivot.x) + Math.PI / 2;
+        // Shift constrains rotation to clean 15° increments.
+        if (e.shiftKey) newAngle = snapAngleRad(newAngle, 15);
         const custom = getCustomPivot(store.selection);
         if (custom) {
             // Rotating about an off-centre pivot also orbits the element's centre:
@@ -2242,21 +2246,46 @@ function handleMove(
         const now = performance.now();
 
         if (now - pState.lastSnappingTime >= SNAPPING_THROTTLE_MS) {
-            const snap = getSnappingGuides(store.selection, store.elements, dx, dy, 5 / store.viewState.scale);
-            dx = snap.dx;
-            dy = snap.dy;
-            signals.setSnappingGuides(snap.guides);
+            const threshold = 5 / store.viewState.scale;
+            // Anchor-point snapping first: a corner/centre/path-anchor landing on a
+            // target anchor (both axes) is an intentional "snap to point" and wins
+            // over 1-D edge/centre alignment. Only when no point snaps do we fall
+            // back to axis + equal-spacing guides (unchanged behaviour).
+            //
+            // Feed getPointSnap the ORIGINAL (pre-drag) positions of the active
+            // elements: `updateElement` mutates the store every frame, so passing the
+            // live store would double-count (moved-position + full dx) and only snap
+            // on the first frame. Targets are static, so the live store is fine there.
+            const snapEls = store.elements.map(el => {
+                const ip = pState.initialPositions.get(el.id);
+                return ip ? { ...el, x: ip.x, y: ip.y, width: ip.width, height: ip.height } : el;
+            });
+            const ps = getPointSnap(store.selection, snapEls, dx, dy, threshold);
+            if (ps.snapped) {
+                dx = ps.dx;
+                dy = ps.dy;
+                signals.setPointSnap(ps.marker);
+                signals.setSnappingGuides([]);
+                signals.setSpacingGuides([]);
+            } else {
+                signals.setPointSnap(null);
+                const snap = getSnappingGuides(store.selection, store.elements, dx, dy, threshold);
+                dx = snap.dx;
+                dy = snap.dy;
+                signals.setSnappingGuides(snap.guides);
 
-            const spacing = getSpacingGuides(store.selection, store.elements, dx, dy, 5 / store.viewState.scale);
-            dx = spacing.dx;
-            dy = spacing.dy;
-            signals.setSpacingGuides(spacing.guides);
+                const spacing = getSpacingGuides(store.selection, store.elements, dx, dy, threshold);
+                dx = spacing.dx;
+                dy = spacing.dy;
+                signals.setSpacingGuides(spacing.guides);
+            }
 
             pState.lastSnappingTime = now;
         }
     } else {
         signals.setSnappingGuides([]);
         signals.setSpacingGuides([]);
+        signals.setPointSnap(null);
     }
 
     // Snap delta to grid if enabled and no object snapping guides
@@ -2689,4 +2718,5 @@ export function selectionOnUp(
     pState.initial3DStartX = undefined;
     pState.initial3DStartY = undefined;
     signals.setSnappingGuides([]);
+    signals.setPointSnap(null);
 }

@@ -8,6 +8,7 @@ import type { DrawingElement } from '../types';
 import { isPagedDocType } from '../types/slide-types';
 import type { SnappingGuide } from './object-snapping';
 import type { SpacingGuide } from './spacing';
+import type { MeasureSegment } from './measure-gap';
 import { isLayerVisible, store } from '../store/app-store';
 import { isElementHiddenByHierarchy } from './hierarchy';
 import { renderElement } from './render-element';
@@ -19,7 +20,7 @@ import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
 import { RenderPipeline } from '../shapes/base/render-pipeline';
 import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight, drawDeleteHandle } from './selection-renderer';
-import { renderSnappingGuides, renderSpacingGuides } from './snap-renderer';
+import { renderSnappingGuides, renderSpacingGuides, renderMeasureGaps, renderPointSnapMarker } from './snap-renderer';
 import rough from 'roughjs';
 
 // ── Opacity masks: the mask shape's luminance becomes the content's alpha ──────────────
@@ -180,6 +181,8 @@ export interface SelectionOverlayParams {
     suggestedBinding: { elementId: string; px: number; py: number; position?: string } | null;
     snappingGuides: SnappingGuide[];
     spacingGuides: SpacingGuide[];
+    pointSnap?: { x: number; y: number } | null;
+    measureGuides?: MeasureSegment[];
     tableCellSelection?: { startRow: number; startCol: number; endRow: number; endCol: number } | null;
     isDarkMode?: boolean;
     appMode?: string;
@@ -1013,7 +1016,7 @@ export function renderSelectionOverlays(
     ctx: CanvasRenderingContext2D,
     params: SelectionOverlayParams
 ): void {
-    const { elements, selection, scale, selectionBox, suggestedBinding, snappingGuides, spacingGuides, tableCellSelection } = params;
+    const { elements, selection, scale, selectionBox, suggestedBinding, snappingGuides, spacingGuides, pointSnap, measureGuides, tableCellSelection } = params;
 
     // Multi-selection bounding box + floating quick-delete button (skip the
     // delete button in read-only modes where the tap can't delete).
@@ -1075,6 +1078,8 @@ export function renderSelectionOverlays(
     // Snapping & spacing guides
     renderSnappingGuides(ctx, snappingGuides, scale);
     renderSpacingGuides(ctx, spacingGuides, scale);
+    if (pointSnap) renderPointSnapMarker(ctx, pointSnap, scale);
+    if (measureGuides && measureGuides.length) renderMeasureGaps(ctx, measureGuides, scale);
 
     // Table cell selection highlight
     if (tableCellSelection && selection.length === 1) {

@@ -30,6 +30,43 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* Small Δx / Δy leg labels on the right-triangle sides. */
+.measure-leg {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    padding: 1px 5px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: #e11d48;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid #e11d48;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+/* Single-selection W/H/area/perimeter card, anchored at the shape's top-left. */
+.measure-metrics {
+    position: absolute;
+    transform: translate(0, -100%) translateY(-8px);
+    padding: 5px 9px;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: nowrap;
+    color: var(--text-primary, #111);
+    background: var(--bg-panel, #fff);
+    border: 1px solid #e11d48;
+    border-radius: 7px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+    pointer-events: none;
+}
+
+.measure-metrics span {
+    color: var(--text-secondary, #888);
+    font-weight: 600;
+    margin-right: 2px;
+}
+
 .measure-hint {
     position: absolute;
     top: 64px;

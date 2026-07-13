@@ -45,6 +45,7 @@ export interface PointerSignals {
     setSnappingGuides: (v: SnappingGuide[]) => void;
     spacingGuides: () => SpacingGuide[];
     setSpacingGuides: (v: SpacingGuide[]) => void;
+    setPointSnap: (v: { x: number; y: number } | null) => void;
     reparentDropTarget: () => string | null;
     setReparentDropTarget: (v: string | null) => void;
     poolLaneDropTarget: () => { poolId: string; laneIndex: number } | null;

@@ -10,6 +10,7 @@ import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
 import { store, addElement, updateElement, deleteElements, setStore, setSelectedTool } from '../../store/app-store';
 import { snapPoint } from '../snap-helpers';
+import { constrainToAngle } from '../angle-constrain';
 import { generateId } from '../id-generator';
 import { defaultTableData, defaultColWidths, defaultRowHeights } from '../table-utils';
 import { getUIShapeDef } from '../../config/ui-shape-defs';
@@ -313,10 +314,23 @@ export function drawOnMove(
     y: number,
     pState: PointerState,
     helpers: PointerHelpers,
-    signals: PointerSignals
+    signals: PointerSignals,
+    constrainAngle = false
 ): void {
     let finalX = x;
     let finalY = y;
+
+    // Fixed-angle constraint (Shift): straight line/arrow tools snap to the nearest
+    // 15° increment from the start point, keeping the drag length. Takes precedence
+    // over grid snap (which would break the clean angle); connectors that bind below
+    // still win. Curved/orthogonal tools (elbow/organicBranch) are left alone.
+    const ANGLE_TOOLS = ['line', 'arrow', 'bezier'];
+    const angleConstrained = constrainAngle && ANGLE_TOOLS.includes(store.selectedTool);
+    if (angleConstrained) {
+        const c = constrainToAngle(pState.startX, pState.startY, x, y, 15);
+        finalX = c.x;
+        finalY = c.y;
+    }
 
     // Track raw mouse position before snapping (used for precise anchor fractions)
     pState.lastRawEndX = x;
@@ -338,7 +352,7 @@ export function drawOnMove(
         signals.setSuggestedBinding(null);
     }
 
-    if (!signals.suggestedBinding() && store.gridSettings.snapToGrid) {
+    if (!angleConstrained && !signals.suggestedBinding() && store.gridSettings.snapToGrid) {
         const snapped = snapPoint(x, y, store.gridSettings.gridSize);
         finalX = snapped.x;
         finalY = snapped.y;

@@ -56,6 +56,7 @@ import { registerColorDropCommit } from "../utils/color-drop";
 import { pushStabilizedSample } from "../utils/stroke-stabilizer";
 import { showToast } from "./toast";
 import { hitTestElement } from "../utils/hit-testing";
+import { getMeasureSegments, type MeasureSegment, type Rect } from "../utils/measure-gap";
 import { renderCropOverlay, hitTestCropHandle, applyCropDrag, constrainCropToAspect, getCropHandleCursor, finalizeCropRect, type CropHandle } from "../utils/image-crop-utils";
 import { perfMonitor } from "../utils/performance-monitor";
 import { fitShapeToText, fitUmlClassToContent } from "../utils/text-utils";
@@ -203,6 +204,10 @@ const Canvas: Component = () => {
     const [suggestedBinding, setSuggestedBinding] = createSignal<{ elementId: string; px: number; py: number; position?: string } | null>(null);
     const [snappingGuides, setSnappingGuides] = createSignal<SnappingGuide[]>([]);
     const [spacingGuides, setSpacingGuides] = createSignal<SpacingGuide[]>([]);
+    // Anchor-point snap marker (world point the dragged anchor locked onto) — transient.
+    const [pointSnap, setPointSnap] = createSignal<{ x: number; y: number } | null>(null);
+    // Measure-to-neighbor (Alt-hover) dimension lines — transient, no history.
+    const [measureGuides, setMeasureGuides] = createSignal<MeasureSegment[]>([]);
     const [reparentDropTarget, setReparentDropTarget] = createSignal<string | null>(null);
     const [poolLaneDropTarget, setPoolLaneDropTarget] = createSignal<{ poolId: string; laneIndex: number } | null>(null);
     const [tableColumnDrop, setTableColumnDrop] = createSignal<{ elementId: string; sourceCol: number; targetCol: number } | null>(null);
@@ -440,6 +445,8 @@ const Canvas: Component = () => {
             selectionBox: selectionBox(), lassoPoints: lassoPoints(),
             suggestedBinding: suggestedBinding(),
             snappingGuides: snappingGuides(), spacingGuides: spacingGuides(),
+            pointSnap: pointSnap(),
+            measureGuides: measureGuides(),
             tableCellSelection: tableCellSelectionSignal(),
             isDarkMode, appMode: store.appMode,
             reparentDropTarget: reparentDropTarget(),
@@ -525,6 +532,8 @@ const Canvas: Component = () => {
         store.cropModeElementId;
         store.cropRect;
         snappingGuides();
+        pointSnap();
+        measureGuides();
         // Redraw on reactive changes
         requestAnimationFrame(draw);
     });
@@ -672,6 +681,7 @@ const Canvas: Component = () => {
         suggestedBinding, setSuggestedBinding,
         snappingGuides, setSnappingGuides,
         spacingGuides, setSpacingGuides,
+        setPointSnap,
         reparentDropTarget, setReparentDropTarget,
         poolLaneDropTarget, setPoolLaneDropTarget,
         tableColumnDrop, setTableColumnDrop,
@@ -1540,6 +1550,51 @@ const Canvas: Component = () => {
         smartShape.arm(pState.currentId); // no-op unless a pen tool + enabled
     };
 
+    // ── Measure-to-neighbor (Alt-hover) helpers ──
+    // Axis-aligned bbox of the current selection (v1 ignores rotation, consistent
+    // with the transform HUD / dimension annotations).
+    const selectionRect = (): Rect | null => {
+        const els = store.elements.filter(el => store.selection.includes(el.id));
+        if (!els.length) return null;
+        const minX = Math.min(...els.map(el => el.x));
+        const minY = Math.min(...els.map(el => el.y));
+        const maxX = Math.max(...els.map(el => el.x + el.width));
+        const maxY = Math.max(...els.map(el => el.y + el.height));
+        return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+    };
+    // The artboard/page rect enclosing a point, for edge-distance measuring.
+    // Explicit artboards win; else the active slide for paged docs; else none.
+    const artboardForRect = (r: Rect): Rect | null => {
+        const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+        if (store.artboards && store.artboards.length) {
+            const ab = store.artboards.find(a => cx >= a.x && cx <= a.x + a.width && cy >= a.y && cy <= a.y + a.height);
+            return ab ? { x: ab.x, y: ab.y, width: ab.width, height: ab.height } : null;
+        }
+        if (isPagedDocType(store.docType)) {
+            const slide = store.slides?.[store.activeSlideIndex];
+            if (slide) {
+                const sp = slide.spatialPosition || { x: 0, y: 0 };
+                return { x: sp.x, y: sp.y, width: slide.dimensions.width, height: slide.dimensions.height };
+            }
+        }
+        return null;
+    };
+    const updateMeasureHover = (x: number, y: number) => {
+        const sel = selectionRect();
+        if (!sel) { if (measureGuides().length) setMeasureGuides([]); return; }
+        // Topmost visible, unlocked, non-selected element under the cursor.
+        let target: Rect | null = null;
+        for (let i = store.elements.length - 1; i >= 0; i--) {
+            const el = store.elements[i];
+            if (store.selection.includes(el.id) || el.locked) continue;
+            if (hitTestElement(el, x, y, 0, store.elements)) {
+                target = { x: el.x, y: el.y, width: el.width, height: el.height };
+                break;
+            }
+        }
+        setMeasureGuides(getMeasureSegments(sel, target, artboardForRect(sel)));
+    };
+
     const handlePointerMove = (e: PointerEvent) => {
         // Finger travelled — it's a drag/marquee, not a long-press. Stand down.
         if (longPressOrigin && (Math.abs(e.clientX - longPressOrigin.x) > LONG_PRESS_SLOP || Math.abs(e.clientY - longPressOrigin.y) > LONG_PRESS_SLOP)) {
@@ -1582,6 +1637,16 @@ const Canvas: Component = () => {
         }
 
         if (store.selectedTool === 'pan') { panOnMove(e, pState, pHelpers); return; }
+
+        // Measure-to-neighbor (Alt-hover): with something selected, hold Alt and
+        // hover another object to see the pixel gaps to it + the artboard edges.
+        // Idle hover only (no button held) so it never clashes with Alt+drag.
+        if (store.selectedTool === 'selection' && e.buttons === 0 && e.altKey && store.selection.length > 0) {
+            updateMeasureHover(x, y);
+            return;
+        } else if (measureGuides().length) {
+            setMeasureGuides([]);
+        }
 
         if ((store.selectedTool === 'selection' || store.selectedTool === 'lasso') && !pState.draggingFromConnector) {
             selectionOnMove(e, x, y, pState, pHelpers, pSignals, SNAPPING_THROTTLE_MS);
@@ -1644,7 +1709,7 @@ const Canvas: Component = () => {
             penOnMove(e, pState, pHelpers, PEN_UPDATE_THROTTLE_MS);
             smartShape.note(e.clientX, e.clientY);
         } else {
-            drawOnMove(x, y, pState, pHelpers, pSignals);
+            drawOnMove(x, y, pState, pHelpers, pSignals, e.shiftKey);
         }
 
         // Auto-Scroll Check
@@ -1848,6 +1913,14 @@ const Canvas: Component = () => {
         setImageLoadCallback(() => {
             draw();
         });
+
+        // Releasing Alt clears any measure-to-neighbor guides even if the pointer
+        // doesn't move (the pointer-move path handles the moving case).
+        const clearMeasureOnAltUp = (ev: KeyboardEvent) => {
+            if (ev.key === 'Alt' && measureGuides().length) setMeasureGuides([]);
+        };
+        window.addEventListener('keyup', clearMeasureOnAltUp);
+        onCleanup(() => window.removeEventListener('keyup', clearMeasureOnAltUp));
 
         // TouchEvent listeners for pen-drawing tools. iPad Safari's PointerEvent
         // delivery for Apple Pencil drops alternate strokes on rapid lift +
@@ -2094,6 +2167,7 @@ const Canvas: Component = () => {
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
                     onPointerCancel={handlePointerUp}
+                    onPointerLeave={() => { if (measureGuides().length) setMeasureGuides([]); }}
                     onDblClick={handleDoubleClick}
                     onContextMenu={(e) => {
                         e.preventDefault();
