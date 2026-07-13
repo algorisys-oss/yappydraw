@@ -80,6 +80,12 @@ Yappy.clearExtrude();`}</code></pre>
                     <strong> Convert to Outlines</strong> first, then apply 3D. (Real shapes — stars, circles,
                     paths — extrude directly.)
                 </p>
+                <p class="tip-box">
+                    <strong>Images:</strong> extruding a photo keeps its pixels — the bitmap is painted onto the
+                    (foreshortened) front face when you <strong>Tilt</strong> or <strong>Bevel</strong> it, and
+                    <strong> Expand</strong> emits a real image element for the front (plus the shaded side/back
+                    face paths), so the picture is never flattened to a solid colour.
+                </p>
             </section>
 
             <section class="doc-section">

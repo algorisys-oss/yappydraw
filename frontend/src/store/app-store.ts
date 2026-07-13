@@ -7122,7 +7122,22 @@ export const expandExtrude = (ids: string[]): string[] => {
         // back (furthest) → side → front (nearest, on top)
         mk(backPoly, g.backCol, false);
         for (const sp of side) mk(sp, g.wallCol, false);
-        mk(frontPoly, g.base, true);
+        if (el.type === 'image' && el.dataURL) {
+            // Image front: keep the bitmap (matching the live render) instead of a flat-colour
+            // path. Untilted (incl. bevel-only) → the original image geometry is the front face
+            // exactly; tilted → fit the bitmap to the foreshortened front bbox (axis-aligned).
+            const tiltedEx = !!(el.extrude!.rotX || el.extrude!.rotY);
+            const front: DrawingElement = tiltedEx
+                ? (() => {
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    for (const ring of frontPoly) for (const [x, y] of ring) { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); }
+                    return { ...el, id: generateId('image', batch), x: minX, y: minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY), angle: 0, extrude: undefined, warp: undefined, groupIds: [grp] };
+                })()
+                : { ...el, id: generateId('image', batch), extrude: undefined, warp: undefined, groupIds: [grp] };
+            additions.push(front);
+        } else {
+            mk(frontPoly, g.base, true);
+        }
     }
     if (!additions.length) { showToast('Expand: could not bake', 'info'); return []; }
     setStore('elements', list => [...list.filter(e => !removeIds.has(e.id)), ...additions]);

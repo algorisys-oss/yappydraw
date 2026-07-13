@@ -373,7 +373,7 @@ frontend/src/help-docs/features/arcade-doc.tsx | typescript | 298 | ArcadeDoc:8 
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 148 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 152 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 277 | DesignStudioDoc:9
-frontend/src/help-docs/features/effects-doc.tsx | typescript | 271 | EffectsDoc:10 Tools:264
+frontend/src/help-docs/features/effects-doc.tsx | typescript | 277 | EffectsDoc:10 Tools:270
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 124 | EmbeddingDoc:3
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 516 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 394 | LogoToolkitDoc:9 the:167
@@ -473,7 +473,7 @@ frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 Docu
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 readIndex:37 writeIndex:41 saveSnapshot:45 maybeSnapshotVersion:68 snapshotVersionNow:85 listVersions:96 restoreVersion:101 deleteVersion:113
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 7890 | LayoutDirection:15 OutlineNode:15 BooleanOp:16 Poly:16 ShapeFace:16 DistortKind:17 WarpPreset:39 Theme:48 ResolvedTheme:49 AppState:76 HistorySnapshot:554 BP:1513 AlignmentType:4260 DistributionType:4260 CharPatch:4833 CharPatchArg:4836 SelBBox:5790 LastTransform:6040 RegionPathfinderOp:6399 SelectSimilarMatch:6532 buildPathFromPoly:7245 polysOriginMin:7280 syncCompoundOperands:7287 buildCompoundPath:7298 WorldSub:7524 rdpAnchors:7527 normalizeWorldSubs:7555 makePathFromWorldSubs:7570 elementToWorldSubs:7591 startInkCleanupIfNeeded:7829
+frontend/src/store/app-store.ts | typescript | 7905 | LayoutDirection:15 OutlineNode:15 BooleanOp:16 Poly:16 ShapeFace:16 DistortKind:17 WarpPreset:39 Theme:48 ResolvedTheme:49 AppState:76 HistorySnapshot:554 BP:1513 AlignmentType:4260 DistributionType:4260 CharPatch:4833 CharPatchArg:4836 SelBBox:5790 LastTransform:6040 RegionPathfinderOp:6399 SelectSimilarMatch:6532 buildPathFromPoly:7260 polysOriginMin:7295 syncCompoundOperands:7302 buildCompoundPath:7313 WorldSub:7539 rdpAnchors:7542 normalizeWorldSubs:7570 makePathFromWorldSubs:7585 elementToWorldSubs:7606 startInkCleanupIfNeeded:7844
 frontend/src/store/dock-layout.ts | typescript | 147 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:52 hidePanel:63 setPanelOpen:73 dockPanel:80 dockPanelAt:90
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
 frontend/src/templates/data/designs/index.ts | typescript | 272 |
@@ -548,7 +548,7 @@ frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19
 frontend/src/utils/export-game.ts | typescript | 42 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
 frontend/src/utils/export.ts | typescript | 1460 | ShapeGeometry:13 Bounds:25 ensureExportImages:30 elementAABB:43 elementsBounds:67 overlapsRect:79 renderElWithEffects:89 buildAppearanceSvgGroup:128 buildUmlClassNode:187 umlArrowheadGlyph:279 connectorCurvePath:304 connectorPathEl:332 geometryToDs:350 renderPagedDocToCanvas:395
-frontend/src/utils/extrude.ts | typescript | 187 | Poly:12 Ring:12 MultiPoly:16 hasExtrude:18 isExtrudeTilted:24 extrudeOwnsFront:30 tilted:35 darken:43 lighten:58 insetRing:67 baseColor:79 extrudeGeometry:86 drawBody:101 drawFront:127 drawBevelFront:143 renderExtrudeBody:177
+frontend/src/utils/extrude.ts | typescript | 231 | Poly:12 Ring:12 MultiPoly:17 hasExtrude:19 isExtrudeTilted:25 extrudeOwnsFront:31 tilted:36 darken:44 lighten:59 insetRing:68 baseColor:80 extrudeGeometry:89 drawBody:106 tracePolys:132 drawImageFront:148 drawFront:171 drawBevelFront:185 renderExtrudeBody:221
 frontend/src/utils/geometry-scale.ts | typescript | 69 | scalePoints:13 scalePathAnchors:33 scalePathSubpaths:47 scaleEraseStrokes:53
 frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
 frontend/src/utils/geometry.ts | typescript | 433 | isPointInPolygon:5 distanceToSegment:19 cubicBezier:59 cubicBezierAngle:64 getBezierPoints:98 isPointOnBezier:111 isPointOnPolyline:117 isPointInEllipse:128 isPointNearEllipseStroke:142 rotatePoint:177 with:356
