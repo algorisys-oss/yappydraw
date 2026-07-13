@@ -21,6 +21,7 @@ import { getWarpGrid, defaultWarpGrid } from '../envelope-warp';
 import { getSnappingGuides } from '../object-snapping';
 import { getSpacingGuides } from '../spacing';
 import { getPointSnap } from '../point-snapping';
+import { getIntersectionPoints } from '../path-intersection';
 import { snapAngleRad } from '../angle-constrain';
 import { calculateAllAnimatedStates } from '../animation-utils';
 import { getGroupsSortedByPriority, isPointInGroupBounds } from '../group-utils';
@@ -2260,7 +2261,15 @@ function handleMove(
                 const ip = pState.initialPositions.get(el.id);
                 return ip ? { ...el, x: ip.x, y: ip.y, width: ip.width, height: ip.height } : el;
             });
-            const ps = getPointSnap(store.selection, snapEls, dx, dy, threshold);
+            // Path-intersection targets (Phase 4c): crossing points of the *static*
+            // (non-active, same-layer) outlines. They don't move during the drag, so
+            // compute once and cache for the gesture.
+            if (pState.intersectionSnapPoints === undefined) {
+                const layer = store.elements.find(e => store.selection.includes(e.id))?.layerId ?? null;
+                const statics = store.elements.filter(e => !store.selection.includes(e.id) && (e.layerId ?? null) === layer);
+                pState.intersectionSnapPoints = getIntersectionPoints(statics);
+            }
+            const ps = getPointSnap(store.selection, snapEls, dx, dy, threshold, pState.intersectionSnapPoints);
             if (ps.snapped) {
                 dx = ps.dx;
                 dy = ps.dy;
@@ -2719,4 +2728,5 @@ export function selectionOnUp(
     pState.initial3DStartY = undefined;
     signals.setSnappingGuides([]);
     signals.setPointSnap(null);
+    pState.intersectionSnapPoints = undefined;
 }

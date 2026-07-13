@@ -474,8 +474,10 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                     corners, edge midpoints, centre — and the anchor points of vector paths — <strong>snap
                     onto another element's matching points</strong> when they line up on both axes. A small
                     magenta diamond marks where it locked, so you can butt shapes corner-to-corner (or onto a
-                    path anchor) exactly, not just align a single edge. Hold <span class="kbd">Shift</span>
-                    while dragging to suspend snapping.
+                    path anchor) exactly, not just align a single edge. It also snaps to
+                    <strong> path intersections</strong> — the points where two other objects' outlines
+                    cross — so you can drop a corner right where two lines or edges meet. Hold
+                    <span class="kbd">Shift</span> while dragging to suspend snapping.
                 </p>
                 <p>
                     <strong>Fixed-angle constraint</strong> (<span class="kbd">Shift</span>). Hold

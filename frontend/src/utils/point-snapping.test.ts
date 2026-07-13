@@ -63,6 +63,17 @@ describe("getPointSnap", () => {
         expect(r.snapped).toBe(false);
     });
 
+    it("snaps to an extra target (path-intersection point) within threshold", () => {
+        const active = el('a', 100, 100);
+        // No other element anchors nearby; only an intersection point at (310,310).
+        const far = el('t', 900, 900);
+        const r = getPointSnap(['a'], [active, far], 207, 207, 5, [{ x: 310, y: 310 }]);
+        expect(r.snapped).toBe(true);
+        expect(r.marker).toEqual({ x: 310, y: 310 });
+        expect(r.dx).toBe(210);
+        expect(r.dy).toBe(210);
+    });
+
     it("picks the nearest pair when several are in range", () => {
         const active = el('a', 100, 100);
         const near = el('near', 198, 198);   // corner 2px away after drag

@@ -66,6 +66,7 @@ export function getPointSnap(
     dx: number,
     dy: number,
     threshold: number,
+    extraTargets: SnapPoint[] = [],
 ): PointSnapResult {
     const activeEls = allElements.filter(el => activeIds.includes(el.id));
     if (activeEls.length === 0) return { dx, dy, snapped: false, marker: null };
@@ -88,6 +89,8 @@ export function getPointSnap(
         if (activeIds.includes(el.id) || (el.layerId ?? null) !== (layerId ?? null)) continue;
         targets.push(...bboxAnchors(el), ...pathAnchorsOf(el));
     }
+    // Path-intersection points (Phase 4c): crossing points of other outlines, precomputed.
+    if (extraTargets.length) targets.push(...extraTargets);
     if (targets.length === 0) return { dx, dy, snapped: false, marker: null };
 
     let best: { d: number; ex: number; ey: number; marker: SnapPoint } | null = null;

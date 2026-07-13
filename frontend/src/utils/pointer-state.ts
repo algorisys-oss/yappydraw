@@ -29,6 +29,9 @@ export interface PointerState {
     shearInitialX: number;
     shearInitialY: number;
     lastSnappingTime: number;
+    /** Cached path-intersection snap targets for the current drag (static elements
+        don't move mid-drag, so compute once). Undefined = not yet computed. */
+    intersectionSnapPoints?: { x: number; y: number }[];
     laserTrailData: Array<{ x: number; y: number; timestamp: number }>;
     laserRafPending: boolean;
     lastLaserUpdateTime: number;
