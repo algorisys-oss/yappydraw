@@ -22,6 +22,7 @@ import { getSnappingGuides } from '../object-snapping';
 import { getSpacingGuides } from '../spacing';
 import { getPointSnap } from '../point-snapping';
 import { getIntersectionPoints } from '../path-intersection';
+import { shapeToPath } from '../shape-to-path';
 import { snapAngleRad } from '../angle-constrain';
 import { calculateAllAnimatedStates } from '../animation-utils';
 import { getGroupsSortedByPriority, isPointInGroupBounds } from '../group-utils';
@@ -2267,7 +2268,22 @@ function handleMove(
             if (pState.intersectionSnapPoints === undefined) {
                 const layer = store.elements.find(e => store.selection.includes(e.id))?.layerId ?? null;
                 const statics = store.elements.filter(e => !store.selection.includes(e.id) && (e.layerId ?? null) === layer);
-                pState.intersectionSnapPoints = getIntersectionPoints(statics);
+                // True outlines for concave/rotated shapes (triangle/star/diamond…): map
+                // shapeToPath's origin-relative anchors to world. null → default bbox edges.
+                const outlineOf = (el: any) => {
+                    if (el.type === 'circle' || el.type === 'line' || el.type === 'arrow' || el.type === 'path') return null;
+                    const sp = shapeToPath(el as any);
+                    if (!sp || sp.anchors.length < 2) return null;
+                    const c = Math.cos(el.angle ?? 0), s = Math.sin(el.angle ?? 0);
+                    const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
+                    return sp.anchors.map(an => {
+                        const wx = el.x + an.x, wy = el.y + an.y;              // origin-relative → world
+                        if (!el.angle) return { x: wx, y: wy };
+                        const dx = wx - cx, dy = wy - cy;                     // apply element rotation
+                        return { x: cx + dx * c - dy * s, y: cy + dx * s + dy * c };
+                    });
+                };
+                pState.intersectionSnapPoints = getIntersectionPoints(statics as any, outlineOf);
             }
             const ps = getPointSnap(store.selection, snapEls, dx, dy, threshold, pState.intersectionSnapPoints);
             if (ps.snapped) {

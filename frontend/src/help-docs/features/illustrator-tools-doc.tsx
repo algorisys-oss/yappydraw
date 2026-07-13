@@ -505,10 +505,19 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                     the Measure tool (a transient readout), a dimension <em>stays on the drawing</em> and
                     <strong> auto-updates</strong> as you move, resize, or animate the shape — width dimensions
                     sit below, height dimensions to the right. Remove them via
-                    <strong> Dimensions ▸ Remove Dimensions</strong>. Scripting:
-                    <code>Yappy.addDimension(id, 'width'|'height')</code>. They're saved with the document.
-                    <em> (Current pass: linear width/height on the axis-aligned box; angular/radial and
-                    export inclusion come later.)</em>
+                    <strong> Dimensions ▸ Remove Dimensions</strong>. Dimensions are now
+                    <strong> rotation-aware</strong> (they follow a rotated element's edges), and beyond
+                    width/height you can add <strong>Radius</strong> / <strong>Diameter</strong> (on
+                    circles/ellipses) and an <strong>Angle</strong> dimension that draws the element's
+                    rotation as an arc. Scripting:
+                    <code>Yappy.addDimension(id, 'width'|'height'|'radius'|'diameter'|'angle')</code>. They're
+                    saved with the document. <em>(Export inclusion still to come.)</em>
+                </p>
+                <p>
+                    <strong>Measurement units.</strong> Settings → <em>Measurement Units</em> switches every
+                    readout — the transform badge, the Measure tool, gap measuring, and dimension annotations —
+                    between <strong>px</strong>, <strong>mm</strong>, and <strong>in</strong> (96 px = 1 in).
+                    Scripting: <code>Yappy.setMeasurementUnit('px'|'mm'|'in')</code>.
                 </p>
             </section>
 

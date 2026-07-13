@@ -7,16 +7,18 @@
 
 import type { DrawingElement } from '../types';
 import { dimensionGeometry, dimensionLabel, type DimensionAnnotation, type DimBox, type Pt } from './dimension-geometry';
+import type { MeasurementUnit } from './units';
 
 const ACCENT = '#6366f1';
 
-/** Effective (possibly animated) bounding box for a dimension's target. */
+/** Effective (possibly animated) bounding box + rotation for a dimension's target. */
 function effectiveBox(el: DrawingElement, anim: any): DimBox {
     return {
         x: (anim?.x ?? el.x),
         y: (anim?.y ?? el.y),
         width: (anim?.width ?? el.width),
         height: (anim?.height ?? el.height),
+        angle: (anim?.angle ?? el.angle ?? 0),
     };
 }
 
@@ -39,6 +41,7 @@ export function renderDimensions(
     animatedStates: Map<string, any>,
     scale: number,
     isDarkMode: boolean,
+    unit: MeasurementUnit = 'px',
 ) {
     if (!dimensions || dimensions.length === 0) return;
     const byId = new Map(elements.map(e => [e.id, e]));
@@ -63,27 +66,41 @@ export function renderDimensions(
         const color = dim.color || ACCENT;
         ctx.strokeStyle = color;
         ctx.fillStyle = color;
-
-        // Extension lines (edge → just past the dimension line), with a small gap at the edge.
         const dir = (a: Pt, b: Pt): Pt => { const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1; return { x: dx / len, y: dy / len }; };
-        for (const [e, d] of [[g.e1, g.d1], [g.e2, g.d2]] as [Pt, Pt][]) {
-            const u = dir(e, d);
+
+        if (g.kind === 'angular') {
+            // Arc from +x to the element's rotation, with two radius spokes.
+            const c = g.center!, r = g.radius!;
             ctx.beginPath();
-            ctx.moveTo(e.x + u.x * gap, e.y + u.y * gap);
-            ctx.lineTo(d.x + u.x * ext, d.y + u.y * ext);
+            ctx.arc(c.x, c.y, r, g.startAngle!, g.endAngle!, g.endAngle! < g.startAngle!);
             ctx.stroke();
+            for (const ang of [g.startAngle!, g.endAngle!]) {
+                ctx.beginPath();
+                ctx.moveTo(c.x, c.y);
+                ctx.lineTo(c.x + Math.cos(ang) * r, c.y + Math.sin(ang) * r);
+                ctx.stroke();
+            }
+        } else {
+            // Linear/radial share a straight dimension line d1→d2.
+            if (g.extension) {
+                for (const [e, d] of [[g.e1!, g.d1!], [g.e2!, g.d2!]] as [Pt, Pt][]) {
+                    const u = dir(e, d);
+                    ctx.beginPath();
+                    ctx.moveTo(e.x + u.x * gap, e.y + u.y * gap);
+                    ctx.lineTo(d.x + u.x * ext, d.y + u.y * ext);
+                    ctx.stroke();
+                }
+            }
+            ctx.beginPath();
+            ctx.moveTo(g.d1!.x, g.d1!.y);
+            ctx.lineTo(g.d2!.x, g.d2!.y);
+            ctx.stroke();
+            arrowhead(ctx, g.d2!, g.d1!, arrow);
+            if (g.arrowsBothEnds) arrowhead(ctx, g.d1!, g.d2!, arrow);
         }
 
-        // Dimension line with arrowheads at both ends.
-        ctx.beginPath();
-        ctx.moveTo(g.d1.x, g.d1.y);
-        ctx.lineTo(g.d2.x, g.d2.y);
-        ctx.stroke();
-        arrowhead(ctx, g.d1, g.d2, arrow);
-        arrowhead(ctx, g.d2, g.d1, arrow);
-
         // Label with a readable background chip at the midpoint.
-        const text = dimensionLabel(dim, g.value);
+        const text = dimensionLabel(dim, g, unit);
         const tw = ctx.measureText(text).width;
         const bw = tw + pad * 2;
         const bh = fontPx + pad * 2;

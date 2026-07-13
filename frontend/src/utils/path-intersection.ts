@@ -25,8 +25,16 @@ interface IsectElement {
 
 const ELLIPSE_STEPS = 24;
 
+/** Optional per-element outline supplier: world-space points, or null to use the default. */
+export type OutlineOf = (el: IsectElement) => Pt[] | null;
+
+const closedPolylineSegs = (pts: Pt[]): Seg[] => {
+    if (pts.length < 2) return [];
+    return pts.map((a, i) => ({ a, b: pts[(i + 1) % pts.length] }));
+};
+
 /** World-space outline segments approximating an element. */
-export function elementSegments(el: IsectElement): Seg[] {
+export function elementSegments(el: IsectElement, outlineOf?: OutlineOf): Seg[] {
     const { x, y, width: w, height: h } = el;
 
     // Vector path: polyline through the anchors (per subpath), closed.
@@ -56,6 +64,12 @@ export function elementSegments(el: IsectElement): Seg[] {
     if (el.type === 'line' || el.type === 'arrow') {
         return [{ a: { x, y }, b: { x: x + w, y: y + h } }];
     }
+
+    // True outline when the caller supplies one (e.g. via shapeToPath) — this makes
+    // concave/rotated shapes (triangle, star, diamond…) cross on their real edges,
+    // not their bounding box.
+    const outline = outlineOf?.(el);
+    if (outline && outline.length >= 2) return closedPolylineSegs(outline);
 
     // Default: bounding-box rectangle edges.
     const tl = { x, y }, tr = { x: x + w, y }, br = { x: x + w, y: y + h }, bl = { x, y: y + h };
@@ -88,12 +102,12 @@ const bboxOverlap = (a: IsectElement, b: IsectElement) => {
  * broad-phase skips element pairs that can't possibly cross; near-duplicate points
  * are merged. Order is unspecified.
  */
-export function getIntersectionPoints(elements: IsectElement[]): Pt[] {
+export function getIntersectionPoints(elements: IsectElement[], outlineOf?: OutlineOf): Pt[] {
     const out: Pt[] = [];
     const segCache = new Map<string, Seg[]>();
     const segsOf = (el: IsectElement) => {
         let s = segCache.get(el.id);
-        if (!s) { s = elementSegments(el); segCache.set(el.id, s); }
+        if (!s) { s = elementSegments(el, outlineOf); segCache.set(el.id, s); }
         return s;
     };
 

@@ -122,6 +122,7 @@ export interface GlobalSettings {
     timelapseTargetDuration?: number;  // Target length (seconds) for the exported time-lapse video (default 30)
     historyDepth?: number;             // Max undo states retained (default 50)
     bleed?: number;                    // Print bleed margin (px) drawn around artboards; >0 also shows crop marks
+    measurementUnit?: 'px' | 'mm' | 'in'; // Display unit for measurement readouts (HUD/Measure/dimensions). Default px.
 }
 
 /**

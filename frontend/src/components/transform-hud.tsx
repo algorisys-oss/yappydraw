@@ -2,6 +2,7 @@ import { Show } from 'solid-js';
 import { store } from '../store/app-store';
 import { worldToScreen } from '../utils/viewport-transforms';
 import { getSelectionBoundingBox } from '../utils/handle-detection';
+import { pxToUnit } from '../utils/units';
 import './transform-hud.css';
 
 /**
@@ -32,14 +33,26 @@ export const TransformHud = () => {
         if (!bbox) return null;
 
         const vp = store.viewState as any;
-        // Project the (axis-aligned) selection box corners to screen so the badge sits
-        // under the visible selection even when the viewport is panned/zoomed/rotated.
-        const corners = [
-            worldToScreen(bbox.x, bbox.y, vp),
-            worldToScreen(bbox.x + bbox.width, bbox.y, vp),
-            worldToScreen(bbox.x + bbox.width, bbox.y + bbox.height, vp),
-            worldToScreen(bbox.x, bbox.y + bbox.height, vp),
-        ];
+        const single0 = store.selection.length === 1
+            ? store.elements.find(e => e.id === store.selection[0]) ?? null
+            : null;
+        // World corners: a single rotated element uses its ROTATED corners so the badge
+        // sits under its true visual bottom; otherwise the axis-aligned selection box.
+        let worldCorners: { x: number; y: number }[];
+        if (single0 && single0.angle) {
+            const cx = single0.x + single0.width / 2, cy = single0.y + single0.height / 2;
+            const c = Math.cos(single0.angle), s = Math.sin(single0.angle);
+            worldCorners = [
+                [single0.x, single0.y], [single0.x + single0.width, single0.y],
+                [single0.x + single0.width, single0.y + single0.height], [single0.x, single0.y + single0.height],
+            ].map(([px, py]) => { const dx = px - cx, dy = py - cy; return { x: cx + dx * c - dy * s, y: cy + dx * s + dy * c }; });
+        } else {
+            worldCorners = [
+                { x: bbox.x, y: bbox.y }, { x: bbox.x + bbox.width, y: bbox.y },
+                { x: bbox.x + bbox.width, y: bbox.y + bbox.height }, { x: bbox.x, y: bbox.y + bbox.height },
+            ];
+        }
+        const corners = worldCorners.map(p => worldToScreen(p.x, p.y, vp));
         const xs = corners.map(c => c.x);
         const ys = corners.map(c => c.y);
         const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
@@ -55,7 +68,9 @@ export const TransformHud = () => {
         const y = single ? single.y : bbox.y;
         const angle = single ? (single.angle ?? 0) : null;
 
-        return { cx, bottom, w, h, x, y, angle };
+        const unit = store.globalSettings.measurementUnit ?? 'px';
+        const conv = (n: number) => pxToUnit(n, unit);
+        return { cx, bottom, w: conv(w), h: conv(h), x: conv(x), y: conv(y), angle, unit };
     };
 
     return (
@@ -63,7 +78,7 @@ export const TransformHud = () => {
             {(i) => (
                 <div class="transform-hud-layer">
                     <div class="transform-hud" style={{ left: `${i().cx}px`, top: `${i().bottom}px` }}>
-                        <span class="thud-dim">{fmt(i().w)} × {fmt(i().h)}</span>
+                        <span class="thud-dim">{fmt(i().w)} × {fmt(i().h)}{i().unit !== 'px' ? ` ${i().unit}` : ''}</span>
                         <span class="thud-sub">
                             {fmt(i().x)}, {fmt(i().y)}
                             <Show when={i().angle != null && Math.abs(i().angle as number) > 0.05}>

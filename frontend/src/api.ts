@@ -2048,6 +2048,10 @@ export const YappyAPI = {
     /** Max number of undo states retained (default 50). Persisted across sessions. */
     setHistoryDepth(depth: number) { updateGlobalSettings({ historyDepth: Math.max(1, Math.round(depth)) }); },
     getHistoryDepth() { return store.globalSettings.historyDepth ?? 50; },
+
+    /** Display unit for all measurement readouts (HUD / Measure / dimensions): 'px' | 'mm' | 'in'. */
+    setMeasurementUnit(unit: 'px' | 'mm' | 'in') { updateGlobalSettings({ measurementUnit: unit }); try { localStorage.setItem('measurementUnit', unit); } catch { /* ignore */ } },
+    getMeasurementUnit() { return store.globalSettings.measurementUnit ?? 'px'; },
     /** Flip stabilization on/off, remembering the last non-zero strength (Shift+S). */
     togglePenStabilization() { togglePenStabilization(); },
 
@@ -2607,7 +2611,7 @@ export const YappyAPI = {
         if (!dim) return null;
         const el = store.elements.find(e => e.id === dim.targetId);
         if (!el) return null;
-        return dimensionGeometry(dim, { x: el.x, y: el.y, width: el.width, height: el.height }).value;
+        return dimensionGeometry(dim, { x: el.x, y: el.y, width: el.width, height: el.height, angle: el.angle ?? 0 }).value;
     },
     /**
      * Measure-to-neighbor (the scripted form of Alt-hover). Returns the pixel-gap

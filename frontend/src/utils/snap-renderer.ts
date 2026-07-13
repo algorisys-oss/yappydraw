@@ -7,6 +7,7 @@
 import type { SnappingGuide } from './object-snapping';
 import type { SpacingGuide } from './spacing';
 import type { MeasureSegment } from './measure-gap';
+import { formatValue, type MeasurementUnit } from './units';
 
 /**
  * Draw magenta dashed alignment guides (vertical/horizontal lines).
@@ -161,7 +162,8 @@ export function renderPointSnapMarker(
 export function renderMeasureGaps(
     ctx: CanvasRenderingContext2D,
     segments: MeasureSegment[],
-    scale: number
+    scale: number,
+    unit: MeasurementUnit = 'px'
 ): void {
     if (segments.length === 0) return;
 
@@ -178,7 +180,7 @@ export function renderMeasureGaps(
     const pad = 2 / scale;
 
     segments.forEach(seg => {
-        const label = Math.round(seg.distance).toString();
+        const label = formatValue(seg.distance, unit);
         const textW = ctx.measureText(label).width + pad * 4;
 
         if (seg.orientation === 'horizontal') {

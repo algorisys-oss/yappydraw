@@ -3,6 +3,7 @@ import { store, toggleMeasure } from '../store/app-store';
 import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
 import { measureLine, shapeMetrics } from '../utils/measure-readout';
 import { constrainToAngle } from '../utils/angle-constrain';
+import { formatValue, formatLength, formatArea, pxToUnit, unitDecimals } from '../utils/units';
 import './measure-overlay.css';
 
 /**
@@ -73,7 +74,12 @@ export const MeasureOverlay = () => {
         return { m: shapeMetrics(el), sx: p.x, sy: p.y };
     };
 
-    const fmt = (n: number) => n >= 1000 ? Math.round(n).toLocaleString() : n.toFixed(n < 10 ? 1 : 0);
+    const unit = () => store.globalSettings.measurementUnit ?? 'px';
+    // The measuring line keeps ≥1 decimal (it's the precision readout) even for px.
+    const distLabel = (px: number) => {
+        const u = unit();
+        return `${pxToUnit(px, u).toFixed(Math.max(1, unitDecimals(u)))} ${u}`;
+    };
 
     return (
         <Show when={store.measureActive}>
@@ -94,11 +100,11 @@ export const MeasureOverlay = () => {
                             </svg>
                             <Show when={s().dist > 1}>
                                 <div class="measure-label" style={{ left: `${s().mx}px`, top: `${s().my}px` }}>
-                                    {s().dist.toFixed(1)} px · {s().angle.toFixed(1)}°
+                                    {distLabel(s().dist)} · {s().angle.toFixed(1)}°
                                 </div>
                                 <Show when={s().dx > 1 && s().dy > 1}>
-                                    <div class="measure-leg" style={{ left: `${(s().a.x + s().c.x) / 2}px`, top: `${s().c.y}px` }}>Δx {fmt(s().dx)}</div>
-                                    <div class="measure-leg" style={{ left: `${s().c.x}px`, top: `${(s().c.y + s().b.y) / 2}px` }}>Δy {fmt(s().dy)}</div>
+                                    <div class="measure-leg" style={{ left: `${(s().a.x + s().c.x) / 2}px`, top: `${s().c.y}px` }}>Δx {formatValue(s().dx, unit())}</div>
+                                    <div class="measure-leg" style={{ left: `${s().c.x}px`, top: `${(s().c.y + s().b.y) / 2}px` }}>Δy {formatValue(s().dy, unit())}</div>
                                 </Show>
                             </Show>
                         </>
@@ -108,9 +114,9 @@ export const MeasureOverlay = () => {
                 <Show when={metrics()}>
                     {(mm) => (
                         <div class="measure-metrics" style={{ left: `${mm().sx}px`, top: `${mm().sy}px` }}>
-                            <div><span>W</span> {fmt(mm().m.width)} <span>H</span> {fmt(mm().m.height)}</div>
-                            <div><span>Area</span> {fmt(mm().m.area)} px²</div>
-                            <div><span>Perimeter</span> {fmt(mm().m.perimeter)} px</div>
+                            <div><span>W</span> {formatValue(mm().m.width, unit())} <span>H</span> {formatValue(mm().m.height, unit())} {unit()}</div>
+                            <div><span>Area</span> {formatArea(mm().m.area, unit())}</div>
+                            <div><span>Perimeter</span> {formatLength(mm().m.perimeter, unit())}</div>
                         </div>
                     )}
                 </Show>

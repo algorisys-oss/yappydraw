@@ -183,6 +183,7 @@ export interface SelectionOverlayParams {
     spacingGuides: SpacingGuide[];
     pointSnap?: { x: number; y: number } | null;
     measureGuides?: MeasureSegment[];
+    measureUnit?: import('./units').MeasurementUnit;
     tableCellSelection?: { startRow: number; startCol: number; endRow: number; endCol: number } | null;
     isDarkMode?: boolean;
     appMode?: string;
@@ -1016,7 +1017,7 @@ export function renderSelectionOverlays(
     ctx: CanvasRenderingContext2D,
     params: SelectionOverlayParams
 ): void {
-    const { elements, selection, scale, selectionBox, suggestedBinding, snappingGuides, spacingGuides, pointSnap, measureGuides, tableCellSelection } = params;
+    const { elements, selection, scale, selectionBox, suggestedBinding, snappingGuides, spacingGuides, pointSnap, measureGuides, measureUnit, tableCellSelection } = params;
 
     // Multi-selection bounding box + floating quick-delete button (skip the
     // delete button in read-only modes where the tap can't delete).
@@ -1079,7 +1080,7 @@ export function renderSelectionOverlays(
     renderSnappingGuides(ctx, snappingGuides, scale);
     renderSpacingGuides(ctx, spacingGuides, scale);
     if (pointSnap) renderPointSnapMarker(ctx, pointSnap, scale);
-    if (measureGuides && measureGuides.length) renderMeasureGaps(ctx, measureGuides, scale);
+    if (measureGuides && measureGuides.length) renderMeasureGaps(ctx, measureGuides, scale, measureUnit ?? 'px');
 
     // Table cell selection highlight
     if (tableCellSelection && selection.length === 1) {

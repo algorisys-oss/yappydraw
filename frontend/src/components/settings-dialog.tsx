@@ -75,6 +75,22 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                 <option value="architectural">Architectural</option>
                             </select>
                         </div>
+
+                        <div class="settings-row">
+                            <label title="Unit shown by the transform badge, Measure tool, and dimension annotations">Measurement Units</label>
+                            <select
+                                value={store.globalSettings.measurementUnit ?? 'px'}
+                                onChange={(e) => {
+                                    const u = e.currentTarget.value as 'px' | 'mm' | 'in';
+                                    updateGlobalSettings({ measurementUnit: u });
+                                    try { localStorage.setItem('measurementUnit', u); } catch { /* ignore */ }
+                                }}
+                            >
+                                <option value="px">Pixels (px)</option>
+                                <option value="mm">Millimetres (mm)</option>
+                                <option value="in">Inches (in)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="settings-section">

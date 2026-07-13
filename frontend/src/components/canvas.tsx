@@ -436,7 +436,7 @@ const Canvas: Component = () => {
         // Persistent dimension annotations (Phase 5): a world-space overlay that reads
         // each target's current (animated) bounds, so it auto-updates on move/resize/anim.
         if (store.dimensionAnnotations.length > 0) {
-            renderDimensions(ctx, store.dimensionAnnotations, store.elements, animatedStates, scale, isDarkMode);
+            renderDimensions(ctx, store.dimensionAnnotations, store.elements, animatedStates, scale, isDarkMode, store.globalSettings.measurementUnit ?? 'px');
         }
 
         // 6. Overlays
@@ -447,6 +447,7 @@ const Canvas: Component = () => {
             snappingGuides: snappingGuides(), spacingGuides: spacingGuides(),
             pointSnap: pointSnap(),
             measureGuides: measureGuides(),
+            measureUnit: store.globalSettings.measurementUnit ?? 'px',
             tableCellSelection: tableCellSelectionSignal(),
             isDarkMode, appMode: store.appMode,
             reparentDropTarget: reparentDropTarget(),

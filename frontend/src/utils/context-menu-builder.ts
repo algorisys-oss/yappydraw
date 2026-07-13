@@ -1195,12 +1195,19 @@ export function getContextMenuItems(
         // Dimension annotations (Phase 5): attach an auto-updating measurement line.
         if (selectionCount >= 1) {
             const tId = store.selection[0];
+            const tEl = store.elements.find(e => e.id === tId);
+            const isRound = tEl?.type === 'circle';
             const hasDims = store.dimensionAnnotations.some(d => d.targetId === tId);
             items.push({
                 label: 'Dimensions', icon: '↔',
                 submenu: [
                     { label: 'Add Width', icon: '↔', onClick: () => addDimension(tId, 'width') },
                     { label: 'Add Height', icon: '↕', onClick: () => addDimension(tId, 'height') },
+                    ...(isRound ? [
+                        { label: 'Add Radius', icon: '◔', onClick: () => addDimension(tId, 'radius') },
+                        { label: 'Add Diameter', icon: '○', onClick: () => addDimension(tId, 'diameter') },
+                    ] : []),
+                    { label: 'Add Angle', icon: '∠', onClick: () => addDimension(tId, 'angle') },
                     ...(hasDims ? [{ label: 'Remove Dimensions', icon: '✕', onClick: () => removeDimensionsForTarget(tId) }] : []),
                 ],
             });

@@ -414,6 +414,7 @@ const initialState: AppState = {
         timelapseTargetDuration: parseInt(localStorage.getItem('timelapseTargetDuration') ?? '30', 10) || 30,
         historyDepth: parseInt(localStorage.getItem('historyDepth') ?? '50', 10) || 50,
         bleed: parseFloat(localStorage.getItem('bleed') ?? '0') || 0,
+        measurementUnit: ((localStorage.getItem('measurementUnit') as 'px' | 'mm' | 'in') || 'px'),
     },
     showCanvasProperties: false,
     outlineView: false,
