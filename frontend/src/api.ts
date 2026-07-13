@@ -27,7 +27,7 @@ import {
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
-    saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform
+    saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform, setStrokeDash
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
@@ -1538,6 +1538,15 @@ export const YappyAPI = {
      */
     setElementTransform(id: string, patch: { x?: number; y?: number; width?: number; height?: number; angle?: number }) {
         setElementTransform(id, patch);
+    },
+
+    /**
+     * Set (or clear) a custom stroke dash pattern — on/off pixel lengths, e.g. `[12, 4, 3, 4]`.
+     * Overrides the `strokeStyle` preset ('solid'/'dashed'/'dotted'); pass an empty array or
+     * omit `pattern` to clear it. Defaults to the current selection. One undo entry.
+     */
+    setStrokeDash(pattern?: number[], ids?: string[]) {
+        setStrokeDash(ids ?? [...store.selection], pattern);
     },
 
     /**

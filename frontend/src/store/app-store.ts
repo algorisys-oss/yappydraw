@@ -6036,6 +6036,20 @@ export const setElementTransform = (
     bumpDirtyRevision();
 };
 
+/**
+ * Set (or clear) a custom stroke dash pattern on elements (on/off pixel lengths). An empty or
+ * undefined array clears it, falling back to the element's `strokeStyle` preset. One undo entry.
+ */
+export const setStrokeDash = (ids: string[], pattern?: number[]) => {
+    const targets = store.elements.filter(e => ids.includes(e.id));
+    if (!targets.length) return;
+    const clean = pattern ? pattern.filter(n => Number.isFinite(n) && n >= 0) : undefined;
+    const val = clean && clean.length ? clean : undefined;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ strokeDashArray: val }));
+    bumpDirtyRevision();
+};
+
 // Last rigid transform applied to a selection, replayed by transformAgain (Ctrl+Shift+D).
 // Recorded by duplicate (Ctrl+D) and arrow-key nudges.
 interface LastTransform { dx: number; dy: number; angle?: number; pivotX?: number; pivotY?: number; }

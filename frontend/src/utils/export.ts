@@ -1,6 +1,7 @@
 import { store } from "../store/app-store";
 import { isPagedDocType } from '../types/slide-types';
 import { renderElement } from "./render-element";
+import { resolveDash } from "./stroke-dash";
 import { renderSlideBackground } from "./canvas-renderer";
 import rough from 'roughjs/bin/rough';
 import { jsPDF } from "jspdf";
@@ -137,7 +138,6 @@ function buildAppearanceSvgGroup(el: any, rc: any, options: any, defs: SVGElemen
     const sketch = (el.renderStyle ?? 'sketch') === 'sketch';
     const g = document.createElementNS(SVGNS, 'g');
     g.setAttribute('transform', `translate(${el.x + el.width / 2}, ${el.y + el.height / 2})`);
-    const dashArr = (d?: string) => d === 'dashed' ? '10 10' : d === 'dotted' ? '2 8' : undefined;
     fills.forEach((f: any, fi: number) => {
         // Architectural pattern fills export as a real tiling <pattern>; sketch (rough.js)
         // can't reference a pattern, so it approximates with the foreground colour.
@@ -156,10 +156,11 @@ function buildAppearanceSvgGroup(el: any, rc: any, options: any, defs: SVGElemen
         }
     });
     for (const s of strokes) {
-        const da = dashArr(s.dash);
+        const daArr = resolveDash(s.dash, s.dashArray, [10, 10], [2, 8]);
+        const da = daArr ? daArr.join(' ') : undefined;
         for (const d of ds) {
             if (sketch) {
-                g.appendChild(rc.path(d, { ...options, stroke: s.color, strokeWidth: s.width, fill: 'none', strokeLineDash: da ? (s.dash === 'dotted' ? [2, 8] : [10, 10]) : undefined }));
+                g.appendChild(rc.path(d, { ...options, stroke: s.color, strokeWidth: s.width, fill: 'none', strokeLineDash: daArr }));
             } else {
                 const p = document.createElementNS(SVGNS, 'path');
                 p.setAttribute('d', d); p.setAttribute('fill', 'none'); p.setAttribute('stroke', s.color);
@@ -200,8 +201,7 @@ function buildUmlClassNode(el: DrawingElement): SVGGElement {
     box.setAttribute('width', `${el.width}`); box.setAttribute('height', `${el.height}`);
     box.setAttribute('fill', el.backgroundColor && el.backgroundColor !== 'transparent' ? el.backgroundColor : 'none');
     box.setAttribute('stroke', stroke); box.setAttribute('stroke-width', `${strokeWidth}`);
-    if (el.strokeStyle === 'dashed') box.setAttribute('stroke-dasharray', '10 10');
-    else if (el.strokeStyle === 'dotted') box.setAttribute('stroke-dasharray', '2 8');
+    { const eda = resolveDash(el.strokeStyle, el.strokeDashArray, [10, 10], [2, 8]); if (eda) box.setAttribute('stroke-dasharray', eda.join(' ')); }
     g.appendChild(box);
 
     const divider = (y: number) => {
@@ -336,8 +336,7 @@ function connectorPathEl(el: DrawingElement, d: string): SVGPathElement {
     p.setAttribute('stroke', el.strokeColor || '#000');
     p.setAttribute('stroke-width', `${el.strokeWidth || 2}`);
     p.setAttribute('stroke-linecap', 'round');
-    if (el.strokeStyle === 'dashed') p.setAttribute('stroke-dasharray', '10 10');
-    else if (el.strokeStyle === 'dotted') p.setAttribute('stroke-dasharray', '2 8');
+    { const eda = resolveDash(el.strokeStyle, el.strokeDashArray, [10, 10], [2, 8]); if (eda) p.setAttribute('stroke-dasharray', eda.join(' ')); }
     return p;
 }
 
@@ -753,7 +752,7 @@ export const exportToSvg = (onlySelected: boolean) => {
             strokeWidth: el.strokeWidth,
             fill: el.backgroundColor === 'transparent' ? undefined : el.backgroundColor,
             fillStyle: el.fillStyle,
-            strokeLineDash: el.strokeStyle === 'dashed' ? [10, 10] : (el.strokeStyle === 'dotted' ? [5, 10] : undefined),
+            strokeLineDash: resolveDash(el.strokeStyle, el.strokeDashArray, [10, 10], [5, 10]),
         };
 
         // Architectural rect/circle/diamond fall through to the clean-path branch below
@@ -1007,8 +1006,7 @@ export const exportToSvg = (onlySelected: boolean) => {
                             pathEl.setAttribute('stroke-width', `${el.strokeWidth}`);
                             pathEl.setAttribute('stroke-linejoin', el.strokeLineJoin || 'round');
                             pathEl.setAttribute('stroke-linecap', 'round');
-                            if (el.strokeStyle === 'dashed') pathEl.setAttribute('stroke-dasharray', '10 10');
-                            else if (el.strokeStyle === 'dotted') pathEl.setAttribute('stroke-dasharray', '2 8');
+                            { const eda = resolveDash(el.strokeStyle, el.strokeDashArray, [10, 10], [2, 8]); if (eda) pathEl.setAttribute('stroke-dasharray', eda.join(' ')); }
                         } else {
                             pathEl.setAttribute('stroke', 'none');
                         }

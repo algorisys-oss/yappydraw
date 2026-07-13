@@ -1,6 +1,7 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
 import { draggablePanel } from '../utils/draggable-panel';
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
+import { resolveDash, parseDashInput, dashToString } from "../utils/stroke-dash";
 import { pageNoun, setPageSize } from "../store/app-store";
 import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, canTurntable, spinTurntable360 } from "../store/app-store";
 import { WARP_PRESETS } from "../utils/envelope-warp";
@@ -400,6 +401,51 @@ const TransformControls: Component<{ elementId: string }> = (props) => {
     );
 };
 
+/** Custom stroke dash-pattern editor for a single element. Complements the Stroke Style preset
+ *  dropdown: type any on/off pixel sequence, pick a quick preset, or Clear back to the preset.
+ *  The live preview shows exactly what renders (`resolveDash`). Shown only when the element has a
+ *  visible stroke. Setting a custom array overrides the 'solid'/'dashed'/'dotted' preset. */
+const DASH_PRESETS: { label: string; pattern: number[] }[] = [
+    { label: 'Dash', pattern: [10, 6] },
+    { label: 'Dot', pattern: [2, 5] },
+    { label: 'Dash-dot', pattern: [12, 5, 2, 5] },
+    { label: 'Long', pattern: [20, 8] },
+];
+const StrokeDashControls: Component<{ elementId: string }> = (props) => {
+    const el = () => store.elements.find(e => e.id === props.elementId);
+    const hasStroke = () => { const e = el(); return !!e && e.strokeColor !== 'transparent' && (e.strokeWidth ?? 0) > 0; };
+    const preview = () => { const e = el(); return e ? (resolveDash(e.strokeStyle, e.strokeDashArray, [8, 8], [2, 4]) || []) : []; };
+    const set = (pattern?: number[]) => setStrokeDash([props.elementId], pattern);
+    const chip = { 'font-size': '10px', padding: '2px 7px', 'border-radius': '4px', cursor: 'pointer' } as any;
+    return (
+        <Show when={hasStroke()}>
+            <div class="property-group">
+                <div class="group-title">STROKE DASH</div>
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
+                    <input
+                        type="text"
+                        placeholder="e.g. 12, 4, 3, 4"
+                        value={dashToString(el()?.strokeDashArray)}
+                        title="Custom dash pattern — comma/space separated on/off pixel lengths. Blank = use the Stroke Style preset."
+                        style={{ flex: '1', 'font-size': '11px', 'min-width': '0' }}
+                        onChange={(e) => set(parseDashInput(e.currentTarget.value))}
+                    />
+                    <svg width="58" height="16" style={{ 'flex-shrink': 0, background: 'var(--bg-secondary)', 'border-radius': '3px' }}>
+                        <line x1="3" y1="8" x2="55" y2="8" stroke="var(--text-primary, #333)" stroke-width="2"
+                            stroke-dasharray={preview().join(' ') || undefined} />
+                    </svg>
+                </div>
+                <div class="control-row" style={{ gap: '4px', 'flex-wrap': 'wrap', 'margin-top': '4px' }}>
+                    <For each={DASH_PRESETS}>
+                        {(p) => (<button class="icon-btn" style={chip} title={`Dash pattern: ${p.pattern.join(', ')}`} onClick={() => set(p.pattern)}>{p.label}</button>)}
+                    </For>
+                    <button class="icon-btn" style={chip} title="Clear custom dashes (use the Stroke Style preset)" onClick={() => set(undefined)}>Clear</button>
+                </div>
+            </div>
+        </Show>
+    );
+};
+
 const ColorControl: Component<{ prop: PropertyConfig, value: any, onChange: (val: any) => void }> = (props) => {
     const hasOptions = () => props.prop.options && props.prop.options.length > 0;
     const [showPicker, setShowPicker] = createSignal(false);
@@ -563,9 +609,10 @@ const AppearanceEditor: Component<{ el: () => any }> = (props) => {
                 <div class="control-row" style={{ gap: '3px', 'align-items': 'center', 'flex-wrap': 'wrap' }}>
                     <input type="color" style={sw} value={s.color} onInput={e => editStroke(i(), { color: e.currentTarget.value })} title="Stroke colour" />
                     <input type="number" min="0" step="1" style={numS} value={s.width} onInput={e => editStroke(i(), { width: Number(e.currentTarget.value) })} title="Width" />
-                    <select style={{ 'font-size': '11px' }} value={s.dash || 'solid'} onChange={e => editStroke(i(), { dash: e.currentTarget.value })} title="Dash">
+                    <select style={{ 'font-size': '11px' }} value={s.dash || 'solid'} onChange={e => editStroke(i(), { dash: e.currentTarget.value })} title="Dash preset">
                         <option value="solid">—</option><option value="dashed">- -</option><option value="dotted">···</option>
                     </select>
+                    <input type="text" placeholder="dash" style={{ width: '56px', 'font-size': '11px' }} value={dashToString(s.dashArray)} onChange={e => editStroke(i(), { dashArray: parseDashInput(e.currentTarget.value) })} title="Custom dash pattern (e.g. 10, 4) — overrides the preset. Blank = use preset." />
                     <button style={btn} title="Show/Hide" onClick={() => editStroke(i(), { visible: s.visible === false })}>{s.visible === false ? '🚫' : '👁'}</button>
                     <button style={btn} title="Up" onClick={() => commit(fills(), move(strokes(), i(), -1))}>↑</button>
                     <button style={btn} title="Down" onClick={() => commit(fills(), move(strokes(), i(), 1))}>↓</button>
@@ -2140,6 +2187,7 @@ const PropertyPanel: Component = () => {
                                     <ImagePixelEffectActions elementId={targetElementId()} />
                                     <VideoActions elementId={targetElementId()} />
                                     <TransformControls elementId={targetElementId()} />
+                                    <StrokeDashControls elementId={targetElementId()} />
                                 </Show>
                                 <Show when={targetType() === 'slide'}>
                                     <SlideActions />

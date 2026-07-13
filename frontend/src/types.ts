@@ -240,7 +240,7 @@ export type ExitAnimation = 'none' |
 /** One extra fill in the appearance stack. */
 export interface PaintFill { color: string; opacity?: number; visible?: boolean; pattern?: PatternFill; }
 /** One extra stroke in the appearance stack. */
-export interface PaintStroke { color: string; width: number; opacity?: number; dash?: 'solid' | 'dashed' | 'dotted'; visible?: boolean; }
+export interface PaintStroke { color: string; width: number; opacity?: number; dash?: 'solid' | 'dashed' | 'dotted'; dashArray?: number[]; visible?: boolean; }
 
 /**
  * Live "Transform effect" (Illustrator's Effect ▸ Distort & Transform ▸ Transform):
@@ -325,6 +325,9 @@ export interface DrawingElement {
     fillStyle: FillStyle;
     strokeWidth: number;
     strokeStyle: StrokeStyle;
+    /** Custom dash pattern (on/off pixel lengths, e.g. [12,4,3,4]). Overrides `strokeStyle`'s
+     *  preset dash when present & non-empty. Empty/undefined → use the `strokeStyle` preset. */
+    strokeDashArray?: number[];
     roughness: number;
     opacity: number; // 0-100
     angle: number; // radians

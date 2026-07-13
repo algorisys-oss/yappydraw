@@ -81,6 +81,26 @@ Yappy.setElementTransform(id, { width: 240, height: 160 }); // resize
 Yappy.setElementTransform(id, { angle: Math.PI / 4 });      // rotate 45° (radians)`}</code></pre>
             </section>
 
+            {/* ─── CUSTOM STROKE DASHES ───────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Custom stroke dashes</h2>
+                <p>
+                    Beyond the <strong>Stroke Style</strong> preset (solid / dashed / dotted), the
+                    <strong> Stroke Dash</strong> group lets you type <em>any</em> dash pattern — a comma- or
+                    space-separated list of on/off pixel lengths. <code>12, 4</code> is a simple dash;
+                    <code> 12, 5, 2, 5</code> is a dash-dot. A live preview shows exactly what renders, and quick
+                    chips (Dash / Dot / Dash-dot / Long) fill common patterns. <strong>Clear</strong> reverts to the
+                    Stroke Style preset. Custom dashes render in both draw styles and export to SVG as
+                    <code> stroke-dasharray</code>.
+                </p>
+                <pre><code>{`Yappy.setStrokeDash([12, 4, 3, 4]);   // dash-dot on the selection
+Yappy.setStrokeDash([], ids);         // clear (revert to the Stroke Style preset)`}</code></pre>
+                <p class="tip-box">
+                    Appearance-stack strokes (Appearance panel) have their own compact <em>dash</em> field, so each
+                    stacked stroke can carry a different custom pattern.
+                </p>
+            </section>
+
             {/* ─── MEASURE ────────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Measure tool</h2>
@@ -209,6 +229,7 @@ Y.transformAgain();                                   // repeat the last move/sc
                         <tr><td><code>mirrorCopy(axis)</code></td><td>Mirrored duplicate (<code>'horizontal'</code>/<code>'vertical'</code>).</td></tr>
                         <tr><td><code>transformAgain()</code></td><td>Re-apply the last transform.</td></tr>
                         <tr><td><code>setElementTransform(id, &#123;x,y,width,height,angle&#125;)</code></td><td>Numeric position / size / rotation (angle in radians).</td></tr>
+                        <tr><td><code>setStrokeDash(pattern?, ids?)</code></td><td>Custom dash pattern (on/off px array); empty/omitted clears it.</td></tr>
                         <tr><td><code>loadDocument(doc)</code></td><td>Replace the document with a saved JSON snapshot.</td></tr>
                     </tbody>
                 </table>

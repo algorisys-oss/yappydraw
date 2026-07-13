@@ -2,6 +2,7 @@ import type { Options } from "roughjs/bin/core";
 import type { DrawingElement } from "../../types";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 import { geometryToDs } from "../../utils/geometry-to-ds";
+import { resolveDash } from "../../utils/stroke-dash";
 import { getFontString, measureContainerText } from "../../utils/text-utils";
 import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils";
 import type { RenderContext } from "./types";
@@ -212,13 +213,7 @@ export class RenderPipeline {
         renderer.lineCap = 'round';
         renderer.lineJoin = (el.strokeLineJoin as CanvasLineJoin) || 'round';
 
-        if (el.strokeStyle === 'dashed') {
-            renderer.setLineDash([8, 8]);
-        } else if (el.strokeStyle === 'dotted') {
-            renderer.setLineDash([2, 4]);
-        } else {
-            renderer.setLineDash([]);
-        }
+        renderer.setLineDash(resolveDash(el.strokeStyle, el.strokeDashArray, [8, 8], [2, 4]) ?? []);
     }
 
     /**
@@ -288,7 +283,7 @@ export class RenderPipeline {
             roughness: el.roughness ?? 1,
             seed: el.seed || 1,
             disableMultiStroke: el.roughness === 0,
-            strokeLineDash: el.strokeStyle === 'dashed' ? [8, 8] : el.strokeStyle === 'dotted' ? [2, 4] : undefined,
+            strokeLineDash: resolveDash(el.strokeStyle, el.strokeDashArray, [8, 8], [2, 4]),
         };
     }
 
@@ -659,7 +654,7 @@ export class RenderPipeline {
         const sketch = (el.renderStyle ?? 'sketch') === 'sketch';
         const { cx, cy } = this.applyTransformations(renderer, el, layerOpacity);
         renderer.translate(cx, cy);
-        const dash = (d?: string) => d === 'dashed' ? [8, 8] : d === 'dotted' ? [2, 4] : undefined;
+        const dash = (s: { dash?: string; dashArray?: number[] }) => resolveDash(s.dash, s.dashArray, [8, 8], [2, 4]);
 
         for (const f of fills) {
             renderer.save();
@@ -690,13 +685,13 @@ export class RenderPipeline {
             renderer.save();
             renderer.globalAlpha = renderer.globalAlpha * (s.opacity ?? 1);
             if (sketch) {
-                for (const d of ds) rc.path(d, { stroke: s.color, strokeWidth: s.width, fill: 'none', roughness: el.roughness ?? 1, seed: el.seed || 1, strokeLineDash: dash(s.dash) });
+                for (const d of ds) rc.path(d, { stroke: s.color, strokeWidth: s.width, fill: 'none', roughness: el.roughness ?? 1, seed: el.seed || 1, strokeLineDash: dash(s) });
             } else {
                 renderer.strokeStyle = s.color;
                 renderer.lineWidth = s.width;
                 renderer.lineCap = 'round';
                 renderer.lineJoin = 'round';
-                const dd = dash(s.dash);
+                const dd = dash(s);
                 renderer.setLineDash(dd || []);
                 for (const d of ds) renderer.strokePath(d);
                 renderer.setLineDash([]);
