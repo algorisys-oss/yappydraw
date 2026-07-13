@@ -114,6 +114,14 @@ const Menu: Component = () => {
     const [isMagicResizeOpen, setIsMagicResizeOpen] = createSignal(false);
     const [isVersionHistoryOpen, setIsVersionHistoryOpen] = createSignal(false);
     const [gameMenuOpen, setGameMenuOpen] = createSignal(false);
+    const [aiMenuOpen, setAiMenuOpen] = createSignal(false);
+    // Collapsible main-menu sections — keep the dropdown compact (Canva-style).
+    // New/Create defaults open (primary actions); the rest default collapsed.
+    const [newMenuOpen, setNewMenuOpen] = createSignal(true);
+    const [fileMenuOpen, setFileMenuOpen] = createSignal(true);
+    const [panelsMenuOpen, setPanelsMenuOpen] = createSignal(false);
+    const [toolbarsMenuOpen, setToolbarsMenuOpen] = createSignal(false);
+    const [settingsMenuOpen, setSettingsMenuOpen] = createSignal(false);
 
     const handleUnsavedCancel = () => {
         pendingUnsavedAction = null;
@@ -732,6 +740,13 @@ const Menu: Component = () => {
 
                             <Show when={isMenuOpen()}>
                                 <div class="menu-dropdown">
+                                    {/* New/Create tools grouped into one collapsible section. */}
+                                    <button class="menu-item menu-group" classList={{ expanded: newMenuOpen() }} onClick={() => setNewMenuOpen(o => !o)}>
+                                        <FilePlus size={16} />
+                                        <span class="label">New</span>
+                                        <ChevronDown size={14} class="menu-group-chevron" />
+                                    </button>
+                                    <Show when={newMenuOpen()}>
                                     <button class="menu-item" onClick={() => { handleNew('infinite'); setIsMenuOpen(false); }}>
                                         <Maximize size={16} />
                                         <span class="label">New Infinite Drawing</span>
@@ -793,25 +808,90 @@ const Menu: Component = () => {
                                             <span class="shortcut">Ctrl+Shift+I</span>
                                         </div>
                                     </button>
-                                    <button class="menu-item" onClick={() => { setIsAIPromptOpen(true); setIsMenuOpen(false); }}>
-                                        <Sparkles size={16} />
-                                        <span class="label">AI Drawing</span>
+                                    </Show>
+                                    <div class="menu-separator"></div>
+                                    {/* File tools (open / save / export / history / time-lapse) — placed right
+                                        after New so document I/O sits together at the top. */}
+                                    <button class="menu-item menu-group" classList={{ expanded: fileMenuOpen() }} onClick={() => setFileMenuOpen(o => !o)}>
+                                        <FolderOpen size={16} />
+                                        <span class="label">File</span>
+                                        <ChevronDown size={14} class="menu-group-chevron" />
+                                    </button>
+                                    <Show when={fileMenuOpen()}>
+                                    <button class="menu-item" onClick={() => { setLoadExportInitialTab('load'); setIsLoadExportOpen(true); setIsMenuOpen(false); }}>
+                                        <FolderOpen size={16} />
+                                        <span class="label">Load Sketch...</span>
                                         <div class="menu-item-right">
-                                            <span class="shortcut">Ctrl+Shift+A</span>
+                                            <span class="shortcut">Ctrl+Alt+O</span>
                                         </div>
                                     </button>
-                                    <button class="menu-item" onClick={() => { setIsAISlidesOpen(true); setIsMenuOpen(false); }}>
-                                        <Sparkles size={16} />
-                                        <span class="label">AI Presentation</span>
+                                    <button class="menu-item" onClick={() => { setLoadExportInitialTab('save'); setIsLoadExportOpen(true); setIsMenuOpen(false); }}>
+                                        <Download size={16} />
+                                        <span class="label">Export / Save...</span>
+                                        <div class="menu-item-right">
+                                            <span class="shortcut">Ctrl+Alt+S</span>
+                                        </div>
                                     </button>
-                                    <button class="menu-item" onClick={() => {
-                                        setIsMenuOpen(false);
-                                        const brief = prompt('Describe the design (e.g. "sale poster for a coffee shop, warm tones"):');
-                                        if (brief) import('../ai/design-generator').then(m => m.generateDesign(brief));
-                                    }}>
-                                        <Sparkles size={16} />
-                                        <span class="label">AI Design…</span>
+                                    <button class="menu-item" onClick={() => { setIsExportOpen(true); setIsMenuOpen(false); }}>
+                                        <Video size={16} />
+                                        <span class="label">Export</span>
+                                        <div class="menu-item-right">
+                                            <span class="shortcut">Ctrl+Shift+E</span>
+                                        </div>
                                     </button>
+                                    <button class="menu-item" onClick={() => { setIsVersionHistoryOpen(true); setIsMenuOpen(false); }}>
+                                        <History size={16} />
+                                        <span class="label">Version History…</span>
+                                    </button>
+                                    <div class="menu-item" onClick={() => { toggleTimelapse(); setIsMenuOpen(false); }}>
+                                        <Film size={16} />
+                                        <span class="label">{store.timelapseRecording ? 'Stop Time-lapse' : 'Record Time-lapse'}</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.timelapseRecording}><Check size={14} class="check-icon" /></Show>
+                                            <span class="shortcut">Ctrl+Shift+T</span>
+                                        </div>
+                                    </div>
+                                    <button class="menu-item" disabled={!store.activeTimelapseId || store.timelapseRecording} onClick={() => { setTimelapsePlayerOpen(true); setIsMenuOpen(false); }}>
+                                        <CirclePlay size={16} />
+                                        <span class="label">Play Time-lapse</span>
+                                    </button>
+                                    </Show>
+                                    <div class="menu-separator"></div>
+                                    {/* AI tools grouped into one collapsible section (mirrors the Game group). */}
+                                    <button class="menu-item menu-group" classList={{ expanded: aiMenuOpen() }} onClick={() => setAiMenuOpen(o => !o)}>
+                                        <Sparkles size={16} />
+                                        <span class="label">AI</span>
+                                        <ChevronDown size={14} class="menu-group-chevron" />
+                                    </button>
+                                    <Show when={aiMenuOpen()}>
+                                        <button class="menu-item menu-sub" onClick={() => { setIsAIPromptOpen(true); setIsMenuOpen(false); }}>
+                                            <Sparkles size={15} />
+                                            <span class="label">AI Drawing</span>
+                                            <div class="menu-item-right">
+                                                <span class="shortcut">Ctrl+Shift+A</span>
+                                            </div>
+                                        </button>
+                                        <button class="menu-item menu-sub" onClick={() => { setIsAISlidesOpen(true); setIsMenuOpen(false); }}>
+                                            <Sparkles size={15} />
+                                            <span class="label">AI Presentation</span>
+                                        </button>
+                                        <button class="menu-item menu-sub" onClick={() => {
+                                            setIsMenuOpen(false);
+                                            const brief = prompt('Describe the design (e.g. "sale poster for a coffee shop, warm tones"):');
+                                            if (brief) import('../ai/design-generator').then(m => m.generateDesign(brief));
+                                        }}>
+                                            <Sparkles size={15} />
+                                            <span class="label">AI Design…</span>
+                                        </button>
+                                        <button class="menu-item menu-sub" onClick={() => {
+                                            setIsMenuOpen(false);
+                                            const imgPrompt = prompt('Describe the image to generate:');
+                                            if (imgPrompt) import('../ai/canva-ai').then(m => m.generateImage(imgPrompt));
+                                        }}>
+                                            <Sparkles size={15} />
+                                            <span class="label">AI Image…</span>
+                                        </button>
+                                    </Show>
                                     <div class="menu-separator"></div>
                                     {/* Game tools grouped into one collapsible section (Build has a Simple/Graph/Blueprint switcher inside). */}
                                     <button class="menu-item menu-group" classList={{ expanded: gameMenuOpen() }} onClick={() => setGameMenuOpen(o => !o)}>
@@ -857,55 +937,13 @@ const Menu: Component = () => {
                                             <span class="label">Code</span>
                                         </button>
                                     </Show>
-                                    <button class="menu-item" onClick={() => {
-                                        setIsMenuOpen(false);
-                                        const imgPrompt = prompt('Describe the image to generate:');
-                                        if (imgPrompt) import('../ai/canva-ai').then(m => m.generateImage(imgPrompt));
-                                    }}>
-                                        <Sparkles size={16} />
-                                        <span class="label">AI Image…</span>
-                                    </button>
                                     <div class="menu-separator"></div>
-                                    <button class="menu-item" onClick={() => { setLoadExportInitialTab('load'); setIsLoadExportOpen(true); setIsMenuOpen(false); }}>
-                                        <FolderOpen size={16} />
-                                        <span class="label">Load Sketch...</span>
-                                        <div class="menu-item-right">
-                                            <span class="shortcut">Ctrl+Alt+O</span>
-                                        </div>
+                                    <button class="menu-item menu-group" classList={{ expanded: panelsMenuOpen() }} onClick={() => setPanelsMenuOpen(o => !o)}>
+                                        <Layout size={16} />
+                                        <span class="label">Panels</span>
+                                        <ChevronDown size={14} class="menu-group-chevron" />
                                     </button>
-                                    <button class="menu-item" onClick={() => { setLoadExportInitialTab('save'); setIsLoadExportOpen(true); setIsMenuOpen(false); }}>
-                                        <Download size={16} />
-                                        <span class="label">Export / Save...</span>
-                                        <div class="menu-item-right">
-                                            <span class="shortcut">Ctrl+Alt+S</span>
-                                        </div>
-                                    </button>
-                                    <button class="menu-item" onClick={() => { setIsExportOpen(true); setIsMenuOpen(false); }}>
-                                        <Video size={16} />
-                                        <span class="label">Export</span>
-                                        <div class="menu-item-right">
-                                            <span class="shortcut">Ctrl+Shift+E</span>
-                                        </div>
-                                    </button>
-                                    <button class="menu-item" onClick={() => { setIsVersionHistoryOpen(true); setIsMenuOpen(false); }}>
-                                        <History size={16} />
-                                        <span class="label">Version History…</span>
-                                    </button>
-                                    <div class="menu-separator"></div>
-                                    <div class="menu-item" onClick={() => { toggleTimelapse(); setIsMenuOpen(false); }}>
-                                        <Film size={16} />
-                                        <span class="label">{store.timelapseRecording ? 'Stop Time-lapse' : 'Record Time-lapse'}</span>
-                                        <div class="menu-item-right">
-                                            <Show when={store.timelapseRecording}><Check size={14} class="check-icon" /></Show>
-                                            <span class="shortcut">Ctrl+Shift+T</span>
-                                        </div>
-                                    </div>
-                                    <button class="menu-item" disabled={!store.activeTimelapseId || store.timelapseRecording} onClick={() => { setTimelapsePlayerOpen(true); setIsMenuOpen(false); }}>
-                                        <CirclePlay size={16} />
-                                        <span class="label">Play Time-lapse</span>
-                                    </button>
-                                    <div class="menu-separator"></div>
-                                    <div class="menu-header">Panels</div>
+                                    <Show when={panelsMenuOpen()}>
                                     <div class="menu-item" onClick={() => { togglePropertyPanel(); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
                                         <span class="label">Properties Panel</span>
@@ -1035,9 +1073,15 @@ const Menu: Component = () => {
                                             </div>
                                         </div>
                                     </Show>
+                                    </Show>
 
                                     <div class="menu-separator"></div>
-                                    <div class="menu-header">Toolbars</div>
+                                    <button class="menu-item menu-group" classList={{ expanded: toolbarsMenuOpen() }} onClick={() => setToolbarsMenuOpen(o => !o)}>
+                                        <Layout size={16} />
+                                        <span class="label">Toolbars</span>
+                                        <ChevronDown size={14} class="menu-group-chevron" />
+                                    </button>
+                                    <Show when={toolbarsMenuOpen()}>
                                     <div class="menu-item" onClick={() => { toggleMainToolbar(); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
                                         <span class="label">Drawing Toolbar</span>
@@ -1070,9 +1114,15 @@ const Menu: Component = () => {
                                             </div>
                                         </div>
                                     </Show>
+                                    </Show>
 
                                     <div class="menu-separator"></div>
-                                    <div class="menu-header">Settings</div>
+                                    <button class="menu-item menu-group" classList={{ expanded: settingsMenuOpen() }} onClick={() => setSettingsMenuOpen(o => !o)}>
+                                        <Settings size={16} />
+                                        <span class="label">Settings</span>
+                                        <ChevronDown size={14} class="menu-group-chevron" />
+                                    </button>
+                                    <Show when={settingsMenuOpen()}>
                                     <div class="menu-item" onClick={() => {
                                         setStore("selection", []);
                                         setShowCanvasProperties(true);
@@ -1090,6 +1140,7 @@ const Menu: Component = () => {
                                         <Key size={16} />
                                         <span class="label">AI Settings</span>
                                     </div>
+                                    </Show>
                                     <div class="menu-separator"></div>
                                     <div style={{ padding: '4px 12px', "font-size": '12px', color: 'var(--text-secondary)' }}>
                                         Found a bug? <a href="https://github.com/algorisys-oss/" target="_blank" rel="noopener noreferrer">Report</a>
