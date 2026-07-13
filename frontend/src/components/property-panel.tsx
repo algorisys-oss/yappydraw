@@ -575,50 +575,55 @@ const AppearanceEditor: Component<{ el: () => any }> = (props) => {
     return (
         <div class="property-group">
             <div class="group-title"><span>APPEARANCE</span></div>
-            <For each={fills()}>{(f: any, i) => {
+            {/* `<Index>` (not `<For>`): editFill/editStroke rebuild every fill/stroke object each
+                tick, so a reference-keyed `<For>` would dispose & recreate each row's DOM on every
+                onInput — which destroys the open native `<input type="color">` popup mid-drag (the
+                "can't drag the colour picker" bug, same root cause as recolor fix #114). Index keys
+                by position and reuses the DOM nodes, so the native picker survives a live drag. */}
+            <Index each={fills()}>{(f: any, i) => {
                 // Per-fill pattern picker: "Solid" + built-in motifs + library swatches.
                 const PAT_NONE = '__solid__';
-                const patValue = () => !f.pattern ? PAT_NONE : (f.pattern.type === 'custom' ? '__custom__' : `motif:${f.pattern.type}`);
+                const patValue = () => !f().pattern ? PAT_NONE : (f().pattern.type === 'custom' ? '__custom__' : `motif:${f().pattern.type}`);
                 const onPatChange = (v: string) => {
-                    if (v === PAT_NONE) { editFill(i(), { pattern: undefined }); return; }
+                    if (v === PAT_NONE) { editFill(i, { pattern: undefined }); return; }
                     if (v === '__custom__') return; // display-only marker for an applied custom tile
-                    if (v.startsWith('motif:')) { editFill(i(), { pattern: defaultPatternFill(f.color || '#000000', v.slice(6) as any) }); return; }
+                    if (v.startsWith('motif:')) { editFill(i, { pattern: defaultPatternFill(f().color || '#000000', v.slice(6) as any) }); return; }
                     const swObj = store.patterns.find(p => p.id === v);
-                    if (swObj) editFill(i(), { pattern: { ...swObj.fill } });
+                    if (swObj) editFill(i, { pattern: { ...swObj.fill } });
                 };
                 return (
                     <div class="control-row" style={{ gap: '3px', 'align-items': 'center', 'flex-wrap': 'wrap' }}>
-                        <input type="color" style={sw} value={f.color} onInput={e => editFill(i(), { color: e.currentTarget.value })} title="Fill colour (also the pattern's foreground)" />
+                        <input type="color" style={sw} value={f().color} onInput={e => editFill(i, { color: e.currentTarget.value })} title="Fill colour (also the pattern's foreground)" />
                         <select style={{ 'font-size': '11px', 'max-width': '92px' }} value={patValue()} onChange={e => onPatChange(e.currentTarget.value)} title="Fill type / pattern">
                             <option value={PAT_NONE}>Solid</option>
-                            <Show when={f.pattern?.type === 'custom'}><option value="__custom__">Custom tile</option></Show>
+                            <Show when={f().pattern?.type === 'custom'}><option value="__custom__">Custom tile</option></Show>
                             <For each={PATTERN_PRESETS}>{(p) => <option value={`motif:${p.type}`}>{p.label}</option>}</For>
                             <Show when={store.patterns.length > 0}>
                                 <For each={store.patterns}>{(p) => <option value={p.id}>★ {p.name}</option>}</For>
                             </Show>
                         </select>
-                        <input type="number" min="0" max="1" step="0.1" style={numS} value={f.opacity ?? 1} onInput={e => editFill(i(), { opacity: Number(e.currentTarget.value) })} title="Opacity" />
-                        <button style={btn} title="Show/Hide" onClick={() => editFill(i(), { visible: f.visible === false })}>{f.visible === false ? '🚫' : '👁'}</button>
-                        <button style={btn} title="Up" onClick={() => commit(move(fills(), i(), -1), strokes())}>↑</button>
-                        <button style={btn} title="Down" onClick={() => commit(move(fills(), i(), 1), strokes())}>↓</button>
-                        <button style={btn} title="Remove" onClick={() => commit(fills().filter((_: any, k: number) => k !== i()), strokes())}>×</button>
+                        <input type="number" min="0" max="1" step="0.1" style={numS} value={f().opacity ?? 1} onInput={e => editFill(i, { opacity: Number(e.currentTarget.value) })} title="Opacity" />
+                        <button style={btn} title="Show/Hide" onClick={() => editFill(i, { visible: f().visible === false })}>{f().visible === false ? '🚫' : '👁'}</button>
+                        <button style={btn} title="Up" onClick={() => commit(move(fills(), i, -1), strokes())}>↑</button>
+                        <button style={btn} title="Down" onClick={() => commit(move(fills(), i, 1), strokes())}>↓</button>
+                        <button style={btn} title="Remove" onClick={() => commit(fills().filter((_: any, k: number) => k !== i), strokes())}>×</button>
                     </div>
                 );
-            }}</For>
-            <For each={strokes()}>{(s: any, i) => (
+            }}</Index>
+            <Index each={strokes()}>{(s: any, i) => (
                 <div class="control-row" style={{ gap: '3px', 'align-items': 'center', 'flex-wrap': 'wrap' }}>
-                    <input type="color" style={sw} value={s.color} onInput={e => editStroke(i(), { color: e.currentTarget.value })} title="Stroke colour" />
-                    <input type="number" min="0" step="1" style={numS} value={s.width} onInput={e => editStroke(i(), { width: Number(e.currentTarget.value) })} title="Width" />
-                    <select style={{ 'font-size': '11px' }} value={s.dash || 'solid'} onChange={e => editStroke(i(), { dash: e.currentTarget.value })} title="Dash preset">
+                    <input type="color" style={sw} value={s().color} onInput={e => editStroke(i, { color: e.currentTarget.value })} title="Stroke colour" />
+                    <input type="number" min="0" step="1" style={numS} value={s().width} onInput={e => editStroke(i, { width: Number(e.currentTarget.value) })} title="Width" />
+                    <select style={{ 'font-size': '11px' }} value={s().dash || 'solid'} onChange={e => editStroke(i, { dash: e.currentTarget.value })} title="Dash preset">
                         <option value="solid">—</option><option value="dashed">- -</option><option value="dotted">···</option>
                     </select>
-                    <input type="text" placeholder="dash" style={{ width: '56px', 'font-size': '11px' }} value={dashToString(s.dashArray)} onChange={e => editStroke(i(), { dashArray: parseDashInput(e.currentTarget.value) })} title="Custom dash pattern (e.g. 10, 4) — overrides the preset. Blank = use preset." />
-                    <button style={btn} title="Show/Hide" onClick={() => editStroke(i(), { visible: s.visible === false })}>{s.visible === false ? '🚫' : '👁'}</button>
-                    <button style={btn} title="Up" onClick={() => commit(fills(), move(strokes(), i(), -1))}>↑</button>
-                    <button style={btn} title="Down" onClick={() => commit(fills(), move(strokes(), i(), 1))}>↓</button>
-                    <button style={btn} title="Remove" onClick={() => commit(fills(), strokes().filter((_: any, k: number) => k !== i()))}>×</button>
+                    <input type="text" placeholder="dash" style={{ width: '56px', 'font-size': '11px' }} value={dashToString(s().dashArray)} onChange={e => editStroke(i, { dashArray: parseDashInput(e.currentTarget.value) })} title="Custom dash pattern (e.g. 10, 4) — overrides the preset. Blank = use preset." />
+                    <button style={btn} title="Show/Hide" onClick={() => editStroke(i, { visible: s().visible === false })}>{s().visible === false ? '🚫' : '👁'}</button>
+                    <button style={btn} title="Up" onClick={() => commit(fills(), move(strokes(), i, -1))}>↑</button>
+                    <button style={btn} title="Down" onClick={() => commit(fills(), move(strokes(), i, 1))}>↓</button>
+                    <button style={btn} title="Remove" onClick={() => commit(fills(), strokes().filter((_: any, k: number) => k !== i))}>×</button>
                 </div>
-            )}</For>
+            )}</Index>
             <div class="control-row" style={{ gap: '6px', 'margin-top': '4px' }}>
                 <button style={btn} onClick={() => addAppearanceFill([props.el()?.id].filter(Boolean), { color: props.el()?.backgroundColor && props.el().backgroundColor !== 'transparent' ? props.el().backgroundColor : '#3b82f6', opacity: 0.5 })}>+ Fill</button>
                 <button style={btn} onClick={() => addAppearanceStroke([props.el()?.id].filter(Boolean), { color: props.el()?.strokeColor && props.el().strokeColor !== 'transparent' ? props.el().strokeColor : '#ef4444', width: 4 })}>+ Stroke</button>

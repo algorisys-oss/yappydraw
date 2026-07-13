@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.92](0.8.92.md) — Fix native colour picker not dragging in the Appearance fill/stroke rows (`<For>`→`<Index>` so the popup's DOM survives a live drag)
 - [0.8.88](0.8.88.md) — Element search Phases 2–3: bundled OpenMoji illustrations + semantic keyword aliases + scriptable searchElements/insertElement API + Alt+E; connector-swarm & group/ungroup context-menu fixes
 - [0.8.87](0.8.87.md) — Unified element search Phase 1: one "Search elements" box across icons/shapes/photos in a blended grid (+ alias map)
 - [0.8.86](0.8.86.md) — One-click Replace Background (AI) + persistent in-progress spinner
