@@ -12,10 +12,14 @@ Before grepping or reading broadly, use the repo map at `.repograph/index.txt`
 (terse `path | lang | lines | symbol:line …`, ~91x smaller than the source). Scan
 it to find the exact `path:line` for a symbol/file, then open only those files.
 `.repograph/map.md` is the human-readable variant. Refresh after code changes with
-`npm run repograph` (or `bash scripts/repograph-refresh.sh`). The map generator is
-the `repograph` devDependency, so it works after `npm install`; the refresh no-ops
-if it isn't installed. A `.githooks/pre-commit` hook auto-refreshes the map when a
-commit touches in-scope source dirs (enable per clone: `git config core.hooksPath .githooks`).
+`npm run repograph` (or `bash scripts/repograph-refresh.sh`). The map generator is an
+**optional, on-demand** dev tool (NOT a devDependency — keeping it out of the dependency
+tree so it can never break a production/static-deploy `npm install`, which it once did via
+its git-clone `prepare` hook). Install it locally with `npm run repograph:install`
+(`github:algorisys-oss/repograph`, installed with `--no-save`). The refresh no-ops if it
+isn't installed, so committed `.repograph/*` maps are still readable without it. A
+`.githooks/pre-commit` hook auto-refreshes the map when a commit touches in-scope source
+dirs (enable per clone: `git config core.hooksPath .githooks`).
 
 ### Reference codebases (read-only, for design inspiration)
 
