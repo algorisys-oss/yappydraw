@@ -132,6 +132,7 @@ const ElementsPanel: Component = () => {
         if (k === 'icon') return offline.filter(h => h.kind === 'icon');
         if (k === 'shape') return offline.filter(h => h.kind === 'shape');
         if (k === 'illustration') return offline.filter(h => h.kind === 'illustration');
+        if (k === 'template') return offline.filter(h => h.kind === 'template');
         return [...offline, ...photos];
     });
 
@@ -222,6 +223,14 @@ const ElementsPanel: Component = () => {
                 </button>
             );
         }
+        if (h.kind === 'template') {
+            return (
+                <button class="ep-cell ep-cell-template" title={`${h.label} — click to load this template`} onClick={() => insertHit(h)}>
+                    <span class="ep-tpl-preview" innerHTML={h.thumbSvg || ''} />
+                    <span class="ep-cell-caption">{h.label}</span>
+                </button>
+            );
+        }
         return (
             <button class="ep-cell" title={h.label} onClick={() => insertHit(h)} innerHTML={h.thumbSvg || ''} />
         );
@@ -231,7 +240,7 @@ const ElementsPanel: Component = () => {
         <>
             <div class="ep-search">
                 <Search size={13} />
-                <input type="text" placeholder="Search elements — icons, illustrations, shapes, photos…" value={query()}
+                <input type="text" placeholder="Search elements — icons, illustrations, shapes, photos, templates…" value={query()}
                     onInput={(e) => setQuery(e.currentTarget.value)} />
             </div>
 

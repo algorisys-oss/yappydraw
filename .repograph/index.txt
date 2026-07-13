@@ -78,7 +78,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 3516 | Theme:3 AssetHit:42 SearchElementsOptions:42 HarmonyType:50 DimensionMeasure:57 ElementOptions:124 normalizeElementType:330 ElementType:535 as:535 Window:3505
+frontend/src/api.ts | typescript | 3520 | Theme:3 HarmonyType:54 DimensionMeasure:61 ElementOptions:128 normalizeElementType:334 ElementType:539 as:539 Window:3509
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1402 | Component:1 App:88 moves:108 onPenMove:109 hidePen:113 handleKeyUp:152 handleKeyDown:162 as:682 handleFullscreenChange:797 handleBeforeUnload:803 handlePaste:807 handleGlobalDragEnter:909 handleGlobalDragOver:924 showDropFallbackPrompt:943 cleanup:973 outsideClick:1001 isImageFile:1013 first:1014 must:1027 extractDropData:1029 processExtractedDrop:1084 handleGlobalDrop:1201 handleDocumentDrop:1247
 frontend/src/assets/solid.svg | - | 1 |
@@ -137,8 +137,8 @@ frontend/src/components/ds-ops-panel.tsx | typescript | 397 | Component:8 DsOper
 frontend/src/components/ds-tool-group.tsx | typescript | 134 | Component:1 DsToolGroup:19 handler:26 getActiveTool:36 handleToolClick:45 as:53 as:59 handleRightClick:67 toggleMenu:73 activeTool:80 isActive:81 getDropdownPosition:83
 frontend/src/components/dsl-import-dialog.css | - | 241 |
 frontend/src/components/dsl-import-dialog.tsx | typescript | 240 | Component:7 DSLImportDialogProps:16 DSLImportDialog:34 handleKeyDown:44 handleImport:90 canImport:123 nodeCount:128 edgeCount:129
-frontend/src/components/elements-panel.css | - | 157 |
-frontend/src/components/elements-panel.tsx | typescript | 342 | Component:1 FontPairing:4 AssetKind:8 KindFilter:32 insertOrigin:35 previewFamily:47 ensurePreviewFont:59 ElementsPanel:68 insertHit:138 insertIcon:148 insertShape:156 insertFrame:163 chips:238 above:315
+frontend/src/components/elements-panel.css | - | 168 |
+frontend/src/components/elements-panel.tsx | typescript | 351 | Component:1 FontPairing:4 AssetKind:8 KindFilter:32 insertOrigin:35 previewFamily:47 ensurePreviewFont:59 ElementsPanel:68 insertHit:139 insertIcon:149 insertShape:157 insertFrame:164 chips:247 above:324
 frontend/src/components/embed-viewer.css | - | 81 |
 frontend/src/components/embed-viewer.tsx | typescript | 170 | EmbedOptions:12 parseEmbedOptions:20 EmbedViewer:36 fitToView:41 handleResize:123 openUrl:129
 frontend/src/components/export-dialog.css | - | 147 |
@@ -376,7 +376,7 @@ frontend/src/help-docs/features/artboards-doc.tsx | typescript | 148 | Artboards
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 152 | BulkEditingDoc:3 entries:62 entries:63 or:97
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 289 | DesignStudioDoc:9 at:113
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 277 | EffectsDoc:10 Tools:270
-frontend/src/help-docs/features/elements-search-doc.tsx | typescript | 113 | chips:5 ElementsSearchDoc:11 chips:40
+frontend/src/help-docs/features/elements-search-doc.tsx | typescript | 119 | chips:5 ElementsSearchDoc:11 chips:41
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 204 | EmbeddingDoc:3
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 516 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 394 | LogoToolkitDoc:9 the:167
@@ -407,7 +407,7 @@ frontend/src/library/elements/aliases.ts | typescript | 198 | aliasesFor:196
 frontend/src/library/elements/illustrations/LICENSE.md | - | 17 |
 frontend/src/library/elements/illustrations/assets.ts | typescript | 987 | Illustration:8
 frontend/src/library/elements/illustrations/registry.ts | typescript | 27 | Illustration:6 searchIllustrations:18
-frontend/src/library/elements/search.ts | typescript | 221 | StockPhoto:17 AssetKind:22 AssetHit:24 insertOrigin:51 renderLucideSvg:63 ShapeDef:76 insertShapeEl:89 insertIconEl:96 insertIllustrationEl:102 iconHits:113 illustrationHits:153 shapeHits:165 collectOfflineHits:179 searchPhotoHits:184 SearchElementsOptions:193 searchElements:207
+frontend/src/library/elements/search.ts | typescript | 319 | StockPhoto:17 AssetKind:25 AssetHit:27 insertOrigin:58 renderLucideSvg:70 ShapeDef:83 insertShapeEl:96 insertIconEl:103 insertIllustrationEl:109 iconHits:120 illustrationHits:160 shapeHits:172 templatePreviewSvg:192
 frontend/src/library/stick-figures/anim/clips.ts | typescript | 249 | ClipPose:6 MotionClip:6 RigPose:6 footAt:22 runFootAt:154 poseAt:244
 frontend/src/library/stick-figures/anim/path-follow.ts | typescript | 92 | PathSample:8 isPathLike:18 sampleAnchors:27 localPolyline:47 elementPathSample:65 PathPoint:79 sampleAt:82
 frontend/src/library/stick-figures/anim/rig.ts | typescript | 209 | JointId:13 Bone:18 Vec:27 StickRig:59 StickRigData:72 ClipPose:89 MotionClip:98 solveTwoBone:111 RigPose:122 evaluateRig:133 headAttach:184 rigPoseToSvg:194
@@ -483,8 +483,9 @@ frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 read
 frontend/src/store/app-store.test.ts | typescript | 66 |
 frontend/src/store/app-store.ts | typescript | 7920 | LayoutDirection:15 OutlineNode:15 BooleanOp:16 Poly:16 ShapeFace:16 DistortKind:17 WarpPreset:39 Theme:48 ResolvedTheme:49 AppState:76 HistorySnapshot:554 BP:1513 AlignmentType:4260 DistributionType:4260 CharPatch:4833 CharPatchArg:4836 SelBBox:5790 LastTransform:6055 RegionPathfinderOp:6414 SelectSimilarMatch:6547 buildPathFromPoly:7275 polysOriginMin:7310 syncCompoundOperands:7317 buildCompoundPath:7328 WorldSub:7554 rdpAnchors:7557 normalizeWorldSubs:7585 makePathFromWorldSubs:7600 elementToWorldSubs:7621 startInkCleanupIfNeeded:7859
 frontend/src/store/dock-layout.ts | typescript | 147 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:52 hidePanel:63 setPanelOpen:73 dockPanel:80 dockPanelAt:90
+frontend/src/templates/data/designs/cards.ts | typescript | 127 |
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
-frontend/src/templates/data/designs/index.ts | typescript | 272 |
+frontend/src/templates/data/designs/index.ts | typescript | 274 |
 frontend/src/templates/data/designs/pack.ts | typescript | 445 |
 frontend/src/templates/data/diagrams/flowchart.ts | typescript | 214 |
 frontend/src/templates/data/diagrams/index.ts | typescript | 8 |
@@ -736,7 +737,7 @@ tests/dimension-annotations.spec.ts | typescript | 48 |
 tests/docType-redraw.spec.ts | typescript | 36 | countMagenta:9
 tests/dsl.spec.ts | typescript | 904 |
 tests/element-management.spec.ts | typescript | 419 |
-tests/element-search-illustrations.spec.ts | typescript | 83 | Window:6
+tests/element-search-illustrations.spec.ts | typescript | 109 | Window:6
 tests/export_shortcut.spec.ts | typescript | 33 |
 tests/eyedropper.spec.ts | typescript | 37 |
 tests/flappy.spec.ts | typescript | 36 | Window:3

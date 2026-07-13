@@ -39,7 +39,11 @@ import { templateRegistry, getTemplateById, getTemplatesByCategory, searchTempla
 import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
 import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
 import { importSvgToCanvas } from "./utils/svg-import";
-import { searchElements, type AssetHit, type SearchElementsOptions } from "./library/elements/search";
+// Type-only import: the element-search module statically pulls in the bundled
+// illustration library (~229 KB) + template data, so it must stay OUT of the eager
+// api.ts graph. `searchElements` below loads it on demand (same lazy chunk the
+// Elements panel uses), keeping it off the app's startup path.
+import type { AssetHit, SearchElementsOptions } from "./library/elements/search";
 import { setRequestRecording } from "./utils/recording-manager";
 import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
@@ -2430,7 +2434,7 @@ export const YappyAPI = {
      * skipped when 'photo' is out of scope or `includePhotos:false`.
      */
     searchElements(query: string, opts?: SearchElementsOptions): Promise<AssetHit[]> {
-        return searchElements(query, opts);
+        return import("./library/elements/search").then(m => m.searchElements(query, opts));
     },
     /**
      * Insert a hit returned by `searchElements` onto the canvas. Omit `at` to

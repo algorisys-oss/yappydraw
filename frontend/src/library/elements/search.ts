@@ -18,8 +18,11 @@ import { searchStockPhotos, insertStockPhoto, type StockPhoto } from '../../util
 import { YappyAPI } from '../../api';
 import { searchIllustrations } from './illustrations/registry';
 import { aliasesFor } from './aliases';
+import { searchTemplates } from '../../templates/registry';
+import { showToast } from '../../components/toast';
+import Swal from 'sweetalert2';
 
-export type AssetKind = 'icon' | 'illustration' | 'photo' | 'shape';
+export type AssetKind = 'icon' | 'illustration' | 'photo' | 'shape' | 'template';
 
 export interface AssetHit {
     kind: AssetKind;
@@ -36,16 +39,20 @@ export interface AssetHit {
 }
 
 /** Kinds that have a live provider. Order drives the type-filter chip order. */
-export const ACTIVE_KINDS: AssetKind[] = ['icon', 'illustration', 'shape', 'photo'];
+export const ACTIVE_KINDS: AssetKind[] = ['icon', 'illustration', 'shape', 'photo', 'template'];
 
 export const KIND_LABELS: Record<AssetKind, string> = {
     icon: 'Icons',
     illustration: 'Illustrations',
     photo: 'Photos',
     shape: 'Shapes',
+    template: 'Templates',
 };
 
 const MAX_ICONS = 96;
+const MAX_TEMPLATES = 12;
+/** Cap on how many page elements are drawn into a template thumbnail. */
+const MAX_PREVIEW_ELS = 30;
 
 /** Insert position: centered on the active page (or a sensible fallback). */
 function insertOrigin(size: number): { x: number; y: number } {
@@ -175,9 +182,100 @@ function shapeHits(q: string, lucide: any): AssetHit[] {
         }));
 }
 
-/** Offline hits (shapes + illustrations + icons), available synchronously. */
+/**
+ * A small SVG thumbnail of a design/presentation template's first page — the page
+ * background (solid or gradient) plus its elements drawn as simplified marks
+ * (rects, ellipses, and text-as-bars). Colours come from our own template data
+ * (not user input), so they're inlined directly. Fidelity beats the plain colour
+ * swatch the standalone template browser shows, at negligible cost.
+ */
+function templatePreviewSvg(tpl: any): string {
+    const page = tpl.pages?.[0] || tpl.slides?.[0];
+    const size = tpl.pageSize || { width: 1080, height: 1080 };
+    const W = size.width, H = size.height;
+    const from = page?.gradientStops?.[0]?.color || page?.backgroundColor || '#e2e8f0';
+    const stopsArr = page?.gradientStops;
+    const to = (stopsArr && stopsArr[stopsArr.length - 1]?.color) || from;
+
+    const defs: string[] = [];
+    let bgFill = from;
+    if (from !== to) {
+        defs.push(`<linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient>`);
+        bgFill = 'url(#tg)';
+    }
+
+    const parts: string[] = [`<rect x="0" y="0" width="${W}" height="${H}" fill="${bgFill}"/>`];
+    const els: any[] = Array.isArray(page?.elements) ? page.elements.slice(0, MAX_PREVIEW_ELS) : [];
+    for (const el of els) {
+        const x = el.x ?? 0, y = el.y ?? 0, w = el.width ?? 0, h = el.height ?? 0;
+        if (!w || !h) continue;
+        const op = (el.opacity ?? 100) / 100;
+        if (el.type === 'text') {
+            const c = el.textColor || '#334155';
+            parts.push(`<rect x="${x}" y="${y + h * 0.2}" width="${w}" height="${Math.max(2, h * 0.6)}" rx="${Math.min(w, h) * 0.08}" fill="${c}" opacity="${0.5 * op}"/>`);
+            continue;
+        }
+        const fill = el.backgroundColor && el.backgroundColor !== 'transparent'
+            ? el.backgroundColor
+            : el.gradientStops?.[0]?.color;
+        if (!fill) continue;
+        if (el.type === 'circle' || el.type === 'ellipse') {
+            parts.push(`<ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w / 2}" ry="${h / 2}" fill="${fill}" opacity="${op}"/>`);
+        } else {
+            parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${el.borderRadius ?? 0}" fill="${fill}" opacity="${op}"/>`);
+        }
+    }
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">${defs.length ? `<defs>${defs.join('')}</defs>` : ''}${parts.join('')}</svg>`;
+}
+
+/** Load a whole template — a destructive action, so confirm first if the doc is dirty. */
+async function applyTemplateHit(id: string, name: string) {
+    if (store.isDirty) {
+        const res = await Swal.fire({
+            title: 'Load this template?',
+            text: 'Your current design has unsaved changes. Loading a template replaces the whole document.',
+            icon: 'warning', showCancelButton: true,
+            confirmButtonText: 'Load template', cancelButtonText: 'Cancel',
+        });
+        if (!res.isConfirmed) return;
+    }
+    const ok = (YappyAPI as any).applyTemplate(id);
+    showToast(ok ? `“${name}” loaded` : 'Open this template from the Templates browser', ok ? 'success' : 'info');
+}
+
+/**
+ * Template hits — wraps the existing `searchTemplates` (name/description/tags),
+ * expanded with the alias tokens. DSL-only templates are skipped (they need the
+ * import dialog, not a one-click load). Capped so a common word like “star”
+ * doesn't bury single-element results under a pile of posters; the Templates chip
+ * is the focused entry point.
+ */
+function templateHits(q: string): AssetHit[] {
+    const nq = normalize(q);
+    if (!nq) return [];
+    const tokens = [q.trim(), ...aliasesFor(nq)];
+    const seen = new Set<string>();
+    const out: AssetHit[] = [];
+    for (const token of tokens) {
+        if (!token) continue;
+        for (const tpl of searchTemplates(token) as any[]) {
+            const id = tpl?.metadata?.id;
+            if (!id || seen.has(id) || tpl.dslContent) continue;
+            seen.add(id);
+            out.push({
+                kind: 'template', id: `template:${id}`, label: tpl.metadata.name,
+                thumbSvg: templatePreviewSvg(tpl),
+                insert: () => { void applyTemplateHit(id, tpl.metadata.name); },
+            });
+            if (out.length >= MAX_TEMPLATES) return out;
+        }
+    }
+    return out;
+}
+
+/** Offline hits (shapes + illustrations + icons + templates), available synchronously. */
 export function collectOfflineHits(q: string, lucide: any): AssetHit[] {
-    return [...shapeHits(q, lucide), ...illustrationHits(q), ...iconHits(q, lucide)];
+    return [...shapeHits(q, lucide), ...illustrationHits(q), ...iconHits(q, lucide), ...templateHits(q)];
 }
 
 /** Photo hits — async (Wikimedia Commons). Throws on network/API error. */

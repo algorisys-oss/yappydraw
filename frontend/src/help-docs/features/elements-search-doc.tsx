@@ -14,10 +14,11 @@ const ElementsSearchDoc: Component = () => {
             <header class="doc-header">
                 <h1>Element Search</h1>
                 <p class="doc-intro">
-                    Type one word and get <strong>everything</strong> — icons, illustrations, shapes and photos —
-                    in a single blended grid. Yappy's Elements panel searches across every asset library at once
-                    and understands natural words (search <em>“money”</em> and you get the dollar icon and the
-                    money-bag illustration, not just filename matches).
+                    Type one word and get <strong>everything</strong> — icons, illustrations, shapes, photos
+                    and whole <strong>templates</strong> — in a single blended grid. Yappy's Elements panel
+                    searches across every asset library at once and understands natural words (search
+                    <em> “money”</em> and you get the dollar icon and the money-bag illustration, not just
+                    filename matches).
                 </p>
             </header>
 
@@ -37,8 +38,8 @@ const ElementsSearchDoc: Component = () => {
                 <p>
                     Type in the search box and results stream into one grid. Offline assets (icons, illustrations,
                     shapes) appear instantly; photos are fetched from Wikimedia Commons a moment later. Use the
-                    <strong> type chips</strong> — <strong>All · Icons · Illustrations · Shapes · Photos</strong> —
-                    to narrow the feed to one kind. When Photos is active, extra orientation chips
+                    <strong> type chips</strong> — <strong>All · Icons · Illustrations · Shapes · Photos ·
+                    Templates</strong> — to narrow the feed to one kind. When Photos is active, extra orientation chips
                     (Landscape / Portrait / Square) appear.
                 </p>
                 <p class="tip-box">
@@ -61,6 +62,11 @@ const ElementsSearchDoc: Component = () => {
                         arrow… (also aliased: <em>box → rectangle</em>, <em>bubble → speech</em>).</li>
                     <li><strong>Photos</strong> — openly licensed images from Wikimedia Commons. Click to insert or
                         drag onto the canvas (drop onto a frame to fill it).</li>
+                    <li><strong>Templates</strong> — whole ready-made designs (posters, cards, social posts,
+                        resumes…), including a greeting-card family (birthday, thank-you, congrats, party
+                        invite, anniversary, new baby). Each result shows a mini page preview. Clicking a
+                        template <strong>loads it as the document</strong> — since that replaces the current
+                        design, you're asked to confirm first if you have unsaved changes.</li>
                 </ul>
                 <p>
                     With no query, the panel shows a <strong>browse view</strong> instead: quick shapes, photo
