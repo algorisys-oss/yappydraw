@@ -1,11 +1,14 @@
-import { type Component, For, Show, createSignal, createMemo, createResource, Suspense } from 'solid-js';
-import { render } from 'solid-js/web';
+import { type Component, For, Show, createSignal, createMemo, createResource, createEffect, onCleanup, Suspense } from 'solid-js';
 import { store } from '../store/app-store';
 import { isPanelOpen } from '../store/dock-layout';
-import { importSvgToCanvas } from '../utils/svg-import';
 import { FONT_PAIRINGS, applyFontPairing, type FontPairing } from '../brand/font-pairing';
-import { searchStockPhotos, insertStockPhoto, STOCK_PHOTO_MIME, type StockPhoto } from '../utils/stock-photos';
+import { insertStockPhoto, STOCK_PHOTO_MIME } from '../utils/stock-photos';
+import {
+    collectOfflineHits, searchPhotoHits, renderLucideSvg,
+    ACTIVE_KINDS, KIND_LABELS, type AssetKind, type AssetHit,
+} from '../library/elements/search';
 import { YappyAPI } from '../api';
+import { importSvgToCanvas } from '../utils/svg-import';
 import { showToast } from './toast';
 import {
     Search,
@@ -13,7 +16,7 @@ import {
 } from 'lucide-solid';
 import './elements-panel.css';
 
-/** Icons shown before the user searches (a useful, popular subset). */
+/** Icons shown in the browse view before the user searches (a popular subset). */
 const FEATURED_ICONS = [
     'Heart', 'Star', 'Smile', 'ThumbsUp', 'Check', 'X', 'Plus', 'Minus',
     'ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Home', 'User', 'Users',
@@ -25,9 +28,8 @@ const FEATURED_ICONS = [
     'Lock', 'Settings', 'Wrench', 'Scissors', 'Paintbrush', 'Palette', 'Pen',
 ];
 
-const MAX_RESULTS = 96;
-
-type PanelTab = 'elements' | 'fonts' | 'photos';
+/** Chips: 'all' plus every kind that has a live provider. */
+type KindFilter = 'all' | AssetKind;
 
 /** Insert position: centered on the active page (or near viewport origin). */
 function insertOrigin(size: number): { x: number, y: number } {
@@ -64,23 +66,14 @@ const ensurePreviewFont = (family: string) => {
 };
 
 const ElementsPanel: Component = () => {
-    const [tab, setTab] = createSignal<PanelTab>('elements');
     const [query, setQuery] = createSignal('');
-    const [photoQuery, setPhotoQuery] = createSignal('');
-    const [photos, setPhotos] = createSignal<StockPhoto[]>([]);
+    const [kindFilter, setKindFilter] = createSignal<KindFilter>('all');
+    const [photoHits, setPhotoHits] = createSignal<AssetHit[]>([]);
     const [photosLoading, setPhotosLoading] = createSignal(false);
     const [photosError, setPhotosError] = createSignal('');
     const [photoOrientation, setPhotoOrientation] = createSignal<'all' | 'landscape' | 'portrait' | 'square'>('all');
 
-    const visiblePhotos = createMemo(() => {
-        const o = photoOrientation();
-        if (o === 'all') return photos();
-        return photos().filter(p => {
-            const r = p.width / p.height;
-            if (o === 'square') return r >= 0.9 && r <= 1.1;
-            return o === 'landscape' ? r > 1.1 : r < 0.9;
-        });
-    });
+    const searching = createMemo(() => query().trim().length > 0);
 
     // The full lucide-solid module is heavy — load it only when the panel opens.
     const [lucide] = createResource(() => isPanelOpen('elements'), async (open) => {
@@ -88,34 +81,72 @@ const ElementsPanel: Component = () => {
         return await import('lucide-solid');
     });
 
+    // Offline hits (shapes + icons) recompute synchronously as the query changes.
+    const offlineHits = createMemo<AssetHit[]>(() => {
+        const q = query().trim();
+        if (!q || !lucide()) return [];
+        return collectOfflineHits(q, lucide());
+    });
+
+    // Photos are async and rate-limited-ish — debounce the fetch after typing stops.
+    let photoTimer: number | undefined;
+    let photoSeq = 0;
+    createEffect(() => {
+        const q = query().trim();
+        if (photoTimer) clearTimeout(photoTimer);
+        if (q.length < 2) { setPhotoHits([]); setPhotosLoading(false); setPhotosError(''); return; }
+        setPhotosLoading(true); setPhotosError('');
+        const seq = ++photoSeq;
+        photoTimer = window.setTimeout(async () => {
+            try {
+                const hits = await searchPhotoHits(q);
+                if (seq === photoSeq) setPhotoHits(hits);
+            } catch (e: any) {
+                if (seq === photoSeq) { setPhotoHits([]); setPhotosError(e?.message || 'Photo search failed'); }
+            } finally {
+                if (seq === photoSeq) setPhotosLoading(false);
+            }
+        }, 400);
+    });
+    onCleanup(() => { if (photoTimer) clearTimeout(photoTimer); });
+
+    /** Photo hits, narrowed by the orientation chips (only shown for photos). */
+    const visiblePhotoHits = createMemo(() => {
+        const o = photoOrientation();
+        const hits = photoHits();
+        if (o === 'all') return hits;
+        return hits.filter(h => {
+            const p = h.photo; if (!p) return false;
+            const r = p.width / p.height;
+            if (o === 'square') return r >= 0.9 && r <= 1.1;
+            return o === 'landscape' ? r > 1.1 : r < 0.9;
+        });
+    });
+
+    /** Merged, kind-filtered result list. */
+    const results = createMemo<AssetHit[]>(() => {
+        const k = kindFilter();
+        const offline = offlineHits();
+        const photos = visiblePhotoHits();
+        if (k === 'photo') return photos;
+        if (k === 'icon') return offline.filter(h => h.kind === 'icon');
+        if (k === 'shape') return offline.filter(h => h.kind === 'shape');
+        if (k === 'illustration') return offline.filter(h => h.kind === 'illustration');
+        return [...offline, ...photos];
+    });
+
+    const insertHit = (hit: AssetHit) => { void hit.insert(); };
+
+    // ── Browse view (empty query) helpers ──
     const iconNames = createMemo(() => {
         const mod = lucide();
         if (!mod) return [] as string[];
         return Object.keys(mod).filter(k => /^[A-Z][A-Za-z0-9]*$/.test(k) && typeof (mod as any)[k] === 'function');
     });
-
-    const visibleIcons = createMemo(() => {
-        const names = iconNames();
-        if (names.length === 0) return [] as string[];
-        const q = query().trim().toLowerCase().replace(/[\s-_]+/g, '');
-        if (!q) return FEATURED_ICONS.filter(n => names.includes(n));
-        return names.filter(n => n.toLowerCase().includes(q)).slice(0, MAX_RESULTS);
-    });
-
-    /** Render a lucide component off-screen to get its SVG markup. */
-    const iconToSvgText = (name: string): string | null => {
-        const mod = lucide();
-        const IconComp = mod && (mod as any)[name];
-        if (!IconComp) return null;
-        const host = document.createElement('div');
-        const dispose = render(() => IconComp({ size: 24 }), host);
-        const svg = host.querySelector('svg')?.outerHTML || null;
-        dispose();
-        return svg;
-    };
+    const featured = createMemo(() => FEATURED_ICONS.filter(n => iconNames().includes(n)));
 
     const insertIcon = (name: string) => {
-        const svg = iconToSvgText(name);
+        const svg = renderLucideSvg(lucide(), name, 24);
         if (!svg) { showToast('Could not load icon', 'error'); return; }
         const SIZE = 120;
         const { x, y } = insertOrigin(SIZE);
@@ -138,30 +169,6 @@ const ElementsPanel: Component = () => {
         showToast('Frame added — drop a photo onto it to fill', 'info');
     };
 
-    const FRAMES: { type: string; label: string; icon: any }[] = [
-        { type: 'rectangle', label: 'Rect', icon: Square },
-        { type: 'circle', label: 'Circle', icon: CircleIcon },
-        { type: 'triangle', label: 'Triangle', icon: Triangle },
-        { type: 'star', label: 'Star', icon: Star },
-        { type: 'heart', label: 'Heart', icon: Heart },
-        { type: 'hexagon', label: 'Hexagon', icon: Hexagon },
-    ];
-
-    const runPhotoSearch = async () => {
-        const q = photoQuery().trim();
-        if (!q) return;
-        setPhotosLoading(true);
-        setPhotosError('');
-        try {
-            setPhotos(await searchStockPhotos(q));
-        } catch (e: any) {
-            setPhotos([]);
-            setPhotosError(e?.message || 'Photo search failed');
-        } finally {
-            setPhotosLoading(false);
-        }
-    };
-
     const SHAPES: { type: string; label: string; icon: any }[] = [
         { type: 'rectangle', label: 'Rectangle', icon: Square },
         { type: 'circle', label: 'Circle', icon: CircleIcon },
@@ -171,6 +178,15 @@ const ElementsPanel: Component = () => {
         { type: 'hexagon', label: 'Hexagon', icon: Hexagon },
         { type: 'speechBubble', label: 'Speech', icon: MessageSquare },
         { type: 'arrowRight', label: 'Arrow', icon: ArrowRight },
+    ];
+
+    const FRAMES: { type: string; label: string; icon: any }[] = [
+        { type: 'rectangle', label: 'Rect', icon: Square },
+        { type: 'circle', label: 'Circle', icon: CircleIcon },
+        { type: 'triangle', label: 'Triangle', icon: Triangle },
+        { type: 'star', label: 'Star', icon: Star },
+        { type: 'heart', label: 'Heart', icon: Heart },
+        { type: 'hexagon', label: 'Hexagon', icon: Hexagon },
     ];
 
     const FontPairRow: Component<{ pair: FontPairing }> = (props) => {
@@ -189,85 +205,49 @@ const ElementsPanel: Component = () => {
         );
     };
 
+    /** One result cell — svg thumb (icon/shape/illustration) or img thumb (photo). */
+    const ResultCell: Component<{ hit: AssetHit }> = (props) => {
+        const h = props.hit;
+        if (h.thumbUrl && h.photo) {
+            return (
+                <button class="ep-cell ep-cell-photo" title={`${h.label}${h.photo.creator ? ` — ${h.photo.creator}` : ''} (click to insert, or drag onto the canvas)`}
+                    draggable={true}
+                    onDragStart={(e) => {
+                        e.dataTransfer?.setData(STOCK_PHOTO_MIME, JSON.stringify(h.photo));
+                        e.dataTransfer?.setData('text/plain', h.thumbUrl!);
+                        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
+                    }}
+                    onClick={() => { void insertStockPhoto(h.photo!); }}>
+                    <img src={h.thumbUrl} alt={h.label} loading="lazy" />
+                </button>
+            );
+        }
+        return (
+            <button class="ep-cell" title={h.label} onClick={() => insertHit(h)} innerHTML={h.thumbSvg || ''} />
+        );
+    };
+
     return (
         <>
-                <div class="ep-tabs">
-                    <button class={`ep-tab ${tab() === 'elements' ? 'active' : ''}`} onClick={() => setTab('elements')}>Elements</button>
-                    <button class={`ep-tab ${tab() === 'fonts' ? 'active' : ''}`} onClick={() => setTab('fonts')}>Fonts</button>
-                    <button class={`ep-tab ${tab() === 'photos' ? 'active' : ''}`} onClick={() => setTab('photos')}>Photos</button>
+            <div class="ep-search">
+                <Search size={13} />
+                <input type="text" placeholder="Search elements — icons, shapes, photos…" value={query()}
+                    onInput={(e) => setQuery(e.currentTarget.value)} />
+            </div>
+
+            {/* ── Results view (query present): blended feed + type chips ── */}
+            <Show when={searching()}>
+                <div class="ep-photo-filters">
+                    <For each={['all', ...ACTIVE_KINDS] as KindFilter[]}>
+                        {(k) => (
+                            <button class={`ep-chip ${kindFilter() === k ? 'active' : ''}`}
+                                onClick={() => setKindFilter(k)}>
+                                {k === 'all' ? 'All' : KIND_LABELS[k]}
+                            </button>
+                        )}
+                    </For>
                 </div>
-
-                {/* ── Elements: shapes, frames, icons ── */}
-                <Show when={tab() === 'elements'}>
-                    <div class="ep-search">
-                        <Search size={13} />
-                        <input type="text" placeholder="Search icons…" value={query()}
-                            onInput={(e) => setQuery(e.currentTarget.value)} />
-                    </div>
-                    <div class="elements-panel-body">
-                        <div class="ep-section">Shapes</div>
-                        <div class="ep-grid ep-grid-shapes">
-                            <For each={SHAPES}>
-                                {(s) => (
-                                    <button class="ep-cell ep-cell-shape" title={`Insert ${s.label}`} onClick={() => insertShape(s.type)}>
-                                        <s.icon size={20} />
-                                        <span class="ep-shape-label">{s.label}</span>
-                                    </button>
-                                )}
-                            </For>
-                        </div>
-                        <div class="ep-section">Frames (drop a photo in)</div>
-                        <div class="ep-grid ep-grid-shapes">
-                            <For each={FRAMES}>
-                                {(f) => (
-                                    <button class="ep-cell ep-cell-shape ep-cell-frame" title={`Insert ${f.label} frame — drop a photo onto it to fill`} onClick={() => insertFrame(f.type)}>
-                                        <f.icon size={20} stroke-dasharray="3 2" />
-                                        <span class="ep-shape-label">{f.label}</span>
-                                    </button>
-                                )}
-                            </For>
-                        </div>
-                        <div class="ep-section">Icons</div>
-                        <Suspense fallback={<div class="ep-loading">Loading icons…</div>}>
-                            <Show when={lucide()} fallback={<div class="ep-loading">Loading icons…</div>}>
-                                <div class="ep-grid">
-                                    <For each={visibleIcons()}>
-                                        {(name) => {
-                                            const IconComp = (lucide() as any)[name];
-                                            return (
-                                                <button class="ep-cell" title={name} onClick={() => insertIcon(name)}>
-                                                    <IconComp size={20} />
-                                                </button>
-                                            );
-                                        }}
-                                    </For>
-                                </div>
-                                <Show when={query() && visibleIcons().length === 0}>
-                                    <div class="ep-loading">No icons match “{query()}”</div>
-                                </Show>
-                            </Show>
-                        </Suspense>
-                    </div>
-                </Show>
-
-                {/* ── Fonts: curated heading/body pairings ── */}
-                <Show when={tab() === 'fonts'}>
-                    <div class="elements-panel-body">
-                        <div class="ep-section">Font pairs — click to apply to all text</div>
-                        <For each={FONT_PAIRINGS}>
-                            {(pair) => <FontPairRow pair={pair} />}
-                        </For>
-                    </div>
-                </Show>
-
-                {/* ── Photos: openly-licensed stock search (Wikimedia Commons) ── */}
-                <Show when={tab() === 'photos'}>
-                    <div class="ep-search">
-                        <Search size={13} />
-                        <input type="text" placeholder="Search photos… (Enter)" value={photoQuery()}
-                            onInput={(e) => setPhotoQuery(e.currentTarget.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') runPhotoSearch(); }} />
-                    </div>
+                <Show when={kindFilter() === 'photo'}>
                     <div class="ep-photo-filters">
                         <For each={[
                             { id: 'all' as const, label: 'All' },
@@ -283,36 +263,75 @@ const ElementsPanel: Component = () => {
                             )}
                         </For>
                     </div>
-                    <div class="elements-panel-body">
-                        <Show when={!photosLoading()} fallback={<div class="ep-loading">Searching…</div>}>
-                            <Show when={visiblePhotos().length > 0} fallback={
-                                <div class="ep-loading">
-                                    {photosError()
-                                        || (photos().length > 0 ? `No ${photoOrientation()} photos in these results — try another search or filter.`
-                                        : 'Openly-licensed photos via Wikimedia Commons. Type a search and press Enter.')}
-                                </div>
-                            }>
-                                <div class="ep-photo-grid">
-                                    <For each={visiblePhotos()}>
-                                        {(p) => (
-                                            <button class="ep-photo" title={`${p.title}${p.creator ? ` — ${p.creator}` : ''} (click to insert, or drag onto the canvas)`}
-                                                draggable={true}
-                                                onDragStart={(e) => {
-                                                    e.dataTransfer?.setData(STOCK_PHOTO_MIME, JSON.stringify(p));
-                                                    e.dataTransfer?.setData('text/plain', p.thumbnail);
-                                                    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'copy';
-                                                }}
-                                                onClick={() => insertStockPhoto(p)}>
-                                                <img src={p.thumbnail} alt={p.title} loading="lazy" />
-                                            </button>
-                                        )}
-                                    </For>
-                                </div>
-                                <div class="ep-attribution">Openly licensed via Wikimedia Commons — source link kept on each image.</div>
-                            </Show>
-                        </Show>
-                    </div>
                 </Show>
+                <div class="elements-panel-body">
+                    <Show when={lucide()} fallback={<div class="ep-loading">Loading…</div>}>
+                        <Show when={results().length > 0}>
+                            <div class="ep-grid ep-results-grid">
+                                <For each={results()}>{(hit) => <ResultCell hit={hit} />}</For>
+                            </div>
+                        </Show>
+                        <Show when={photosLoading() && kindFilter() !== 'icon' && kindFilter() !== 'shape'}>
+                            <div class="ep-loading">Searching photos…</div>
+                        </Show>
+                        <Show when={!photosLoading() && results().length === 0}>
+                            <div class="ep-loading">{photosError() || `No results for “${query().trim()}”`}</div>
+                        </Show>
+                        <Show when={kindFilter() === 'photo' && photoHits().length > 0}>
+                            <div class="ep-attribution">Openly licensed via Wikimedia Commons — source link kept on each image.</div>
+                        </Show>
+                    </Show>
+                </div>
+            </Show>
+
+            {/* ── Browse view (empty query): shapes, frames, featured icons, fonts ── */}
+            <Show when={!searching()}>
+                <div class="elements-panel-body">
+                    <div class="ep-section">Shapes</div>
+                    <div class="ep-grid ep-grid-shapes">
+                        <For each={SHAPES}>
+                            {(s) => (
+                                <button class="ep-cell ep-cell-shape" title={`Insert ${s.label}`} onClick={() => insertShape(s.type)}>
+                                    <s.icon size={20} />
+                                    <span class="ep-shape-label">{s.label}</span>
+                                </button>
+                            )}
+                        </For>
+                    </div>
+                    <div class="ep-section">Frames (drop a photo in)</div>
+                    <div class="ep-grid ep-grid-shapes">
+                        <For each={FRAMES}>
+                            {(f) => (
+                                <button class="ep-cell ep-cell-shape ep-cell-frame" title={`Insert ${f.label} frame — drop a photo onto it to fill`} onClick={() => insertFrame(f.type)}>
+                                    <f.icon size={20} stroke-dasharray="3 2" />
+                                    <span class="ep-shape-label">{f.label}</span>
+                                </button>
+                            )}
+                        </For>
+                    </div>
+                    <div class="ep-section">Icons — type above to search all</div>
+                    <Suspense fallback={<div class="ep-loading">Loading icons…</div>}>
+                        <Show when={lucide()} fallback={<div class="ep-loading">Loading icons…</div>}>
+                            <div class="ep-grid">
+                                <For each={featured()}>
+                                    {(name) => {
+                                        const IconComp = (lucide() as any)[name];
+                                        return (
+                                            <button class="ep-cell" title={name} onClick={() => insertIcon(name)}>
+                                                <IconComp size={20} />
+                                            </button>
+                                        );
+                                    }}
+                                </For>
+                            </div>
+                        </Show>
+                    </Suspense>
+                    <div class="ep-section">Font pairs — click to apply to all text</div>
+                    <For each={FONT_PAIRINGS}>
+                        {(pair) => <FontPairRow pair={pair} />}
+                    </For>
+                </div>
+            </Show>
         </>
     );
 };

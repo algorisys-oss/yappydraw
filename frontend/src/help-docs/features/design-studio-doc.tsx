@@ -109,26 +109,34 @@ Y.applyBrandKit(kit.id, { fonts: false }); // colors only`}</code></pre>
             <section class="doc-section">
                 <h2>Elements library & SVG import</h2>
                 <p>
-                    <strong>Menu → Elements</strong> opens a three-tab panel:
+                    <strong>Menu → Elements</strong> opens the panel. A single <strong>search box</strong> at the
+                    top fans one query across every asset type at once — <strong>type a word and get icons,
+                    shapes, and photos together</strong> in one blended grid, filterable with the
+                    <strong> All / Icons / Shapes / Photos</strong> chips. Search understands aliases, so
+                    <code> love</code> finds the heart, <code>chat</code> the speech bubble, and <code>box</code>
+                    the rectangle — you don't have to know the exact asset name.
                 </p>
                 <ul>
-                    <li><strong>Elements</strong> — quick shapes, <strong>frames</strong> in six shapes
-                        (rectangle, circle, triangle, star, heart, hexagon — dashed placeholders; drop a photo
-                        onto one to fill it, cover-fit), and a searchable <strong>icon library</strong>
-                        (Lucide). Icons insert as fully editable vector paths.</li>
-                    <li><strong>Fonts</strong> — curated heading/body <strong>font pairings</strong> (Modern,
-                        Editorial, Bold Statement…), previewed in their own faces. Clicking a pair refonts every
-                        text element (40px+/bold → heading font, rest → body) and sets the body font as the
-                        default for new text. Google fonts load automatically.
-                        <code>Y.applyFontPairing('editorial')</code></li>
-                    <li><strong>Photos</strong> — search openly-licensed <strong>stock photos</strong> (Wikimedia
-                        Commons, no API key), with <strong>All / Landscape / Portrait / Square</strong> orientation
-                        filters. Click a result to insert it on the active page, or <strong>drag it onto the
-                        canvas</strong> — onto a frame or shape to fill it, onto an image to replace it, or onto
-                        empty space to place it at the drop point. The source link and attribution are kept on
-                        the element.
+                    <li><strong>Icons</strong> — the full <strong>Lucide</strong> library, matched by name.
+                        Icons insert as fully editable vector paths (not a font glyph).</li>
+                    <li><strong>Shapes</strong> — quick primitives (rectangle, circle, triangle, star, heart,
+                        hexagon, diamond, speech bubble, arrow), each searchable by name or alias.</li>
+                    <li><strong>Photos</strong> — openly-licensed <strong>stock photos</strong> (Wikimedia
+                        Commons, no API key), streamed in as you type, with <strong>All / Landscape / Portrait /
+                        Square</strong> orientation filters when the Photos chip is active. Click a result to
+                        insert it on the active page, or <strong>drag it onto the canvas</strong> — onto a frame
+                        or shape to fill it, onto an image to replace it, or onto empty space to place it at the
+                        drop point. The source link and attribution are kept on the element.
                         <code>Y.searchStockPhotos('mountain')</code> → <code>Y.insertStockPhoto(photo)</code></li>
                 </ul>
+                <p>
+                    When the search box is empty the panel shows a <strong>browse view</strong>: quick shapes,
+                    six-shape <strong>frames</strong> (dashed placeholders — drop a photo onto one to fill it,
+                    cover-fit), featured icons, and curated heading/body <strong>font pairings</strong> (Modern,
+                    Editorial, Bold Statement…, previewed in their own faces). Clicking a pair refonts every text
+                    element (40px+/bold → heading font, rest → body) and sets the body font as the default for
+                    new text. <code>Y.applyFontPairing('editorial')</code>
+                </p>
                 <p>
                     Dropping an <strong>.svg file</strong> onto the canvas imports it as editable vector paths
                     (not a raster image): full path grammar, groups, transforms, and basic shapes are supported;

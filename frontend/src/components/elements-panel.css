@@ -50,6 +50,8 @@
 
 .ep-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
 .ep-grid-shapes { grid-template-columns: repeat(4, 1fr); }
+/* Blended results: fewer columns so photo thumbs read at a useful size. */
+.ep-results-grid { grid-template-columns: repeat(4, 1fr); gap: 5px; }
 
 .ep-cell {
     display: flex; align-items: center; justify-content: center;
@@ -62,6 +64,12 @@
 .ep-shape-label { font-size: 9.5px; color: var(--text-secondary); text-align: center; line-height: 1; }
 
 .ep-cell-frame svg { color: var(--text-secondary); }
+
+/* Photo result cell — image fills the square tile. */
+.ep-cell-photo { padding: 0; overflow: hidden; border-color: var(--border-color); background: var(--bg-secondary); }
+.ep-cell-photo img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 5px; }
+/* SVG result cells (icons/shapes/illustrations) size their glyph to the tile. */
+.ep-results-grid .ep-cell svg { width: 24px; height: 24px; }
 
 .ep-loading { padding: 14px 4px; font-size: 12px; color: var(--text-secondary); text-align: center; }
 
