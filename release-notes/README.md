@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.84](0.8.84.md) — Embedding doc: restrict who can frame Yappy (frame-ancestors / X-Frame-Options)
 - [0.8.83](0.8.83.md) — Embed & drive the full editor from another project via a secure cross-origin postMessage bridge (+ host-side client)
 - [0.8.82](0.8.82.md) — Custom stroke dash patterns (any on/off pixel array) + setStrokeDash API
 - [0.8.81](0.8.81.md) — Numeric Transform panel (X/Y/W/H/rotation fields) + setElementTransform angle

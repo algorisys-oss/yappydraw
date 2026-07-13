@@ -154,6 +154,28 @@ VITE_EMBED_ALLOWED_ORIGINS="https://app.example.com,https://wiki.example.com"
                 all fine.
             </p>
 
+            <h3>Restricting who can embed Yappy at all</h3>
+            <p>
+                The allowlist above controls <em>who can drive</em> the API — a separate concern from{' '}
+                <em>who can put Yappy in an iframe</em> in the first place. By default any site can frame
+                Yappy (the control bridge stays off, so that's harmless, but the read-only viewer is still
+                embeddable anywhere). To restrict framing itself, set a response header on the server that
+                serves Yappy — this is <strong>deploy-server config, not an app setting</strong>:
+            </p>
+            <pre><code>{`# Allow only these parents to frame Yappy (recommended)
+Content-Security-Policy: frame-ancestors 'self' https://app.example.com https://wiki.example.com;
+
+# Block ALL framing (disables embedding entirely)
+Content-Security-Policy: frame-ancestors 'none';
+X-Frame-Options: DENY`}</code></pre>
+            <p class="tip-box">
+                Prefer <code>frame-ancestors</code> (CSP) — it supports multiple origins and is the modern
+                replacement for <code>X-Frame-Options</code> (which only understands <code>DENY</code> /{' '}
+                <code>SAMEORIGIN</code>). Keep the framing allowlist and the control allowlist
+                (<code>VITE_EMBED_ALLOWED_ORIGINS</code>) in sync so the pages you let embed Yappy are also the
+                ones you let drive it.
+            </p>
+
             <h2>Embed Behavior</h2>
             <ul>
                 <li><strong>Pan/zoom</strong> via mouse wheel — enabled</li>
