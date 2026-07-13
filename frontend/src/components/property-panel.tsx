@@ -346,6 +346,60 @@ const AlignmentControls: Component = () => {
     );
 };
 
+/** Numeric Transform panel — X/Y position, W/H size, and rotation for a single selected
+ *  element (Illustrator's Transform panel). Position/size go through `setElementTransform`
+ *  (which rescales points/anchors/font-size); angle is stored in radians. Each committed edit
+ *  is one undo entry. Inputs commit on Enter/blur (onChange) so typing isn't fought by the
+ *  live value, which still updates the field when the element is moved on-canvas. */
+const TransformControls: Component<{ elementId: string }> = (props) => {
+    const el = () => store.elements.find(e => e.id === props.elementId);
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    const apply = (patch: { x?: number; y?: number; width?: number; height?: number; angle?: number }) => {
+        pushToHistory();
+        setElementTransform(props.elementId, patch);
+    };
+    const applyAngle = (deg: number) => {
+        if (!Number.isFinite(deg)) return;
+        apply({ angle: (((deg % 360) + 360) % 360) * Math.PI / 180 });
+    };
+    const num = (get: () => number, set: (v: number) => void, title: string, step = 1) => (
+        <input
+            type="number"
+            step={step}
+            value={get()}
+            title={title}
+            style={{ width: '100%', 'font-size': '11px', 'min-width': '0' }}
+            onChange={(e) => { const v = Number(e.currentTarget.value); if (Number.isFinite(v) && e.currentTarget.value.trim() !== '') set(v); }}
+        />
+    );
+    const lbl = { 'min-width': '12px', 'font-size': '11px', color: 'var(--text-secondary)' } as any;
+    return (
+        <Show when={el()}>
+            <div class="property-group">
+                <div class="group-title">TRANSFORM</div>
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
+                    <label style={lbl}>X</label>
+                    {num(() => r2(el()!.x), v => apply({ x: v }), 'X position')}
+                    <label style={lbl}>Y</label>
+                    {num(() => r2(el()!.y), v => apply({ y: v }), 'Y position')}
+                </div>
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
+                    <label style={lbl}>W</label>
+                    {num(() => r2(Math.abs(el()!.width)), v => apply({ width: Math.max(1, v) }), 'Width')}
+                    <label style={lbl}>H</label>
+                    {num(() => r2(Math.abs(el()!.height)), v => apply({ height: Math.max(1, v) }), 'Height')}
+                </div>
+                <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
+                    <label style={lbl} title="Rotation">∠</label>
+                    {num(() => Math.round((el()!.angle || 0) * 180 / Math.PI), applyAngle, 'Rotation (degrees)')}
+                    <span style={{ 'font-size': '11px', color: 'var(--text-secondary)' }}>°</span>
+                    <div style={{ flex: '1' }} />
+                </div>
+            </div>
+        </Show>
+    );
+};
+
 const ColorControl: Component<{ prop: PropertyConfig, value: any, onChange: (val: any) => void }> = (props) => {
     const hasOptions = () => props.prop.options && props.prop.options.length > 0;
     const [showPicker, setShowPicker] = createSignal(false);
@@ -2085,6 +2139,7 @@ const PropertyPanel: Component = () => {
                                     <MindmapActions elementId={targetElementId()} />
                                     <ImagePixelEffectActions elementId={targetElementId()} />
                                     <VideoActions elementId={targetElementId()} />
+                                    <TransformControls elementId={targetElementId()} />
                                 </Show>
                                 <Show when={targetType() === 'slide'}>
                                     <SlideActions />

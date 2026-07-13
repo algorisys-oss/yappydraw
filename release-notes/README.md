@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.81](0.8.81.md) — Numeric Transform panel (X/Y/W/H/rotation fields) + setElementTransform angle
 - [0.8.80](0.8.80.md) — 3D Extrude keeps image pixels when tilted / beveled / expanded (was flattening to a solid colour)
 - [0.8.58](0.8.58.md) — Dockable panels Phase D: History & Swatches migrated onto the dock (edge-dock / float / persist), via a setPanelOpen bridge
 - [0.8.57](0.8.57.md) — Dockable panels: drag-to-dock + tear-out + reorder (Align/Arrange panels); fix invisible "ghost" line/arrow/pen elements from stray clicks

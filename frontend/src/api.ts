@@ -1531,10 +1531,12 @@ export const YappyAPI = {
     },
 
     /**
-     * Free Transform: set an element's position and/or size numerically. width/height
-     * scale the element's relative geometry (pen points, path anchors) like a handle drag.
+     * Free Transform: set an element's position, size, and/or rotation numerically.
+     * width/height scale the element's relative geometry (pen points, path anchors) like a
+     * handle drag; `angle` is the rotation in **radians**. Mirrors the property panel's
+     * TRANSFORM section. Does not record undo history — wrap in your own if needed.
      */
-    setElementTransform(id: string, patch: { x?: number; y?: number; width?: number; height?: number }) {
+    setElementTransform(id: string, patch: { x?: number; y?: number; width?: number; height?: number; angle?: number }) {
         setElementTransform(id, patch);
     },
 

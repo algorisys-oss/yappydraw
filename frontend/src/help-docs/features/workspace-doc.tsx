@@ -65,6 +65,22 @@ const WorkspaceDoc: Component = () => {
                 </p>
             </section>
 
+            {/* ─── TRANSFORM PANEL ────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Transform — numeric position, size &amp; rotation</h2>
+                <p>
+                    Select a single object → the <strong>Transform</strong> group in the Properties panel shows
+                    editable <strong>X</strong>/<strong>Y</strong> (position), <strong>W</strong>/<strong>H</strong>
+                    (size), and <strong>∠</strong> (rotation, in degrees). Type a value and press <strong>Enter</strong>
+                    (or click away) to apply — each edit is a single undo step, and the fields track the object live as
+                    you drag or rotate it on canvas. Resizing rescales the object's geometry (pen points, path anchors,
+                    text size) exactly like a handle drag.
+                </p>
+                <pre><code>{`Yappy.setElementTransform(id, { x: 120, y: 80 });      // move
+Yappy.setElementTransform(id, { width: 240, height: 160 }); // resize
+Yappy.setElementTransform(id, { angle: Math.PI / 4 });      // rotate 45° (radians)`}</code></pre>
+            </section>
+
             {/* ─── MEASURE ────────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Measure tool</h2>
@@ -192,6 +208,7 @@ Y.transformAgain();                                   // repeat the last move/sc
                         <tr><td><code>gridRepeat(rows, cols, opts?)</code></td><td>Copies in a grid.</td></tr>
                         <tr><td><code>mirrorCopy(axis)</code></td><td>Mirrored duplicate (<code>'horizontal'</code>/<code>'vertical'</code>).</td></tr>
                         <tr><td><code>transformAgain()</code></td><td>Re-apply the last transform.</td></tr>
+                        <tr><td><code>setElementTransform(id, &#123;x,y,width,height,angle&#125;)</code></td><td>Numeric position / size / rotation (angle in radians).</td></tr>
                         <tr><td><code>loadDocument(doc)</code></td><td>Replace the document with a saved JSON snapshot.</td></tr>
                     </tbody>
                 </table>

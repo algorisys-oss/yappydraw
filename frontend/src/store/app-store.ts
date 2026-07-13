@@ -6003,13 +6003,14 @@ export const mirrorAcrossSymmetry = () => {
  */
 export const setElementTransform = (
     id: string,
-    patch: { x?: number; y?: number; width?: number; height?: number }
+    patch: { x?: number; y?: number; width?: number; height?: number; angle?: number }
 ) => {
     const el = store.elements.find(e => e.id === id);
     if (!el) return;
     const updates: Partial<DrawingElement> = {};
     if (patch.x !== undefined && Number.isFinite(patch.x)) updates.x = patch.x;
     if (patch.y !== undefined && Number.isFinite(patch.y)) updates.y = patch.y;
+    if (patch.angle !== undefined && Number.isFinite(patch.angle)) updates.angle = patch.angle;
 
     const wantsResize =
         (patch.width !== undefined && Number.isFinite(patch.width)) ||
