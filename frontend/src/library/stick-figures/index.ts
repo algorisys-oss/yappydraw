@@ -25,8 +25,9 @@ export { STICK_ASSETS } from './assets';
 export { CLIPS, CLIP_LIST, getClip, poseAt } from './anim/clips';
 export { rigPoseToSvg, defaultRig, evaluateRig, RIG_W, RIG_H } from './anim/rig';
 
-/** Default on-canvas width for a dropped figure (world units). */
-export const STICK_DEFAULT_WIDTH = 130;
+/** Default on-canvas width for a dropped figure (world units). Height ≈ 1.86×
+ *  this (viewBox 140×260), so ~110 lands a figure at roughly 110×204. */
+export const STICK_DEFAULT_WIDTH = 110;
 
 /** Default outline (stroke) weight of a freshly-dropped figure, in px. */
 export const STICK_STROKE_PX = 4;

@@ -82,6 +82,11 @@ const StickAnimationDoc: Component = () => {
                         <strong>Bake a pose when you need a still.</strong> Click <strong>Bake</strong> to freeze the
                         current frame into an ordinary editable figure (grouped bezier paths). Ungroup it to tweak a
                         limb, or drop it into a diagram. The original animation is replaced by the baked frame.
+                        <br />
+                        To <strong>reshape a part</strong>: ungroup the figure and select a single part — its path
+                        node handles (small squares) appear and become draggable. Or use the <strong>Reshape</strong>
+                        tool to bend whichever part you grab without ungrouping. (Node handles only show for a
+                        single selected path, so nothing draggable appears while the whole group is selected.)
                     </li>
                 </ol>
                 <p class="tip-box">

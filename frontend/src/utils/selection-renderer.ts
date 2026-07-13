@@ -657,7 +657,11 @@ export function renderElementOverlays(
         }
 
         // --- Editable vector path: anchors + Bézier handles (selected paths) ---
-        if (el.type === 'path' && selectedTool === 'selection') {
+        // Only when a SINGLE path is selected — node hit-testing/dragging is gated on
+        // `selection.length === 1` (see handle-detection.ts), so drawing the squares for
+        // a multi-selection (e.g. a grouped/baked stick figure = many path parts) shows
+        // handles that can't be grabbed. Match the two so squares appear iff editable.
+        if (el.type === 'path' && selectedTool === 'selection' && selectionLength === 1) {
             renderPathAnchors(ctx, el, scale, false);
         }
 
