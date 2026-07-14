@@ -265,10 +265,12 @@ export const invitation = makeDesign(
 
 import { packTemplates } from './pack';
 import { cardTemplates } from './cards';
+import { stickAnimationTemplates } from './stick-animation-demo';
 
 export const allDesignTemplates: DesignTemplate[] = [
     instaAnnouncement, instaQuote, instaStoryEvent, fbCover, xSaleBanner,
     youtubeThumb, businessCard, eventPoster, resume, flyerSale, certificate, invitation,
     ...packTemplates,
     ...cardTemplates,
+    ...stickAnimationTemplates,
 ];

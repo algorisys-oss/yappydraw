@@ -51,8 +51,8 @@
     z-index: 2;
 }
 
-.tt-controls .tt-font {
-    pointer-events: auto; cursor: pointer; height: 30px; max-width: 110px; padding: 0 4px;
+.tt-fontpicker { pointer-events: auto; }
+.tt-controls .fp-trigger {
+    height: 30px; min-width: 90px; max-width: 110px; padding: 0 6px;
     font-size: 12px; background: var(--bg-secondary, #f3f4f6);
-    border: 1px solid var(--border-color, #ddd); border-radius: 6px; color: var(--text-primary, #111);
 }

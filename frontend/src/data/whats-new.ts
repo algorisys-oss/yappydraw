@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.103', date: '2026-07-14', items: [
+        'Export your animated page as a real MP4 — Export → MP4 Video renders the page itself (exact bounds, animations playing) for the duration you pick. Plays everywhere.',
+        'The Font dropdown is now searchable, keyboard-friendly (↑↓ + Enter) and always stays on screen — and arrow keys no longer move your element while picking a font.',
+        'Try the new “Stick-Figure Animation Demo” template — search “animation” in Templates or Elements.',
+    ] },
     { version: '0.8.102', date: '2026-07-14', items: [
         "Click the version number (bottom-right) to see “What's new” — a running list of recent updates.",
     ] },

@@ -382,8 +382,11 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                         letter (discontiguous). On tablets, <strong>pinch&nbsp;to&nbsp;scale</strong> and
                         <strong>two-finger&nbsp;twist</strong> work too. <strong>Exit</strong> by clicking outside the
                         element, pressing <span class="kbd">Esc</span>, or <strong>Done&nbsp;✕</strong>.</li>
-                    <li><strong>Custom &amp; Google fonts</strong>: in the Font picker (property panel or the Touch Type
-                        dropdown) choose <strong>＋ Add font…</strong> to upload a <code>.ttf/.otf/.woff/.woff2</code>,
+                    <li><strong>Custom &amp; Google fonts</strong>: the <strong>Font</strong> dropdown (property panel
+                        and the Touch Type controls) is searchable — type to filter, <span class="kbd">↑</span>/<span class="kbd">↓</span> +
+                        <span class="kbd">Enter</span> to apply, each row previewed in its own face — and it stays on
+                        screen no matter how many fonts you've added. From it choose <strong>＋ Add font…</strong> to
+                        upload a <code>.ttf/.otf/.woff/.woff2</code>,
                         or <strong>🔍 Google Fonts…</strong> to search a curated list of popular Google Fonts. The
                         picker docks to the right with the canvas still visible: each click — or
                         <span class="kbd">↑</span>/<span class="kbd">↓</span> + <span class="kbd">Enter</span> from

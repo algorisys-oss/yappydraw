@@ -3,6 +3,8 @@ import { store, toggleTouchType, setCharTransforms, touchTypeText } from '../sto
 import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
 import { getMeasurementContext, getFontString } from '../utils/text-utils';
 import { customFonts, addCustomFontFromFile } from '../utils/custom-fonts';
+import FontPicker from './font-picker';
+import GoogleFontsDialog from './google-fonts-dialog';
 import type { DrawingElement } from '../types';
 import './touch-type-overlay.css';
 
@@ -16,7 +18,6 @@ const BUILTIN_FONTS = [
     { value: 'monospace', label: 'Source Code' },
     { value: 'code', label: 'JetBrains' },
 ];
-const ADD_FONT = '__add_font__';
 const CONNECTORS = new Set(['line', 'arrow', 'organicBranch', 'bezier']);
 
 /**
@@ -122,6 +123,7 @@ export const TouchTypeOverlay = () => {
     const glyphFont = () => { const el = target(); const i = firstSel(); return (i >= 0 && el?.charTransforms?.[i]?.font) || el?.fontFamily || 'hand-drawn'; };
 
     let fontFileInput: HTMLInputElement | undefined;
+    const [googleFontsOpen, setGoogleFontsOpen] = createSignal(false);
     const onFontFile = async (e: Event) => {
         const input = e.currentTarget as HTMLInputElement;
         const file = input.files?.[0]; input.value = '';
@@ -280,19 +282,15 @@ export const TouchTypeOverlay = () => {
                             <input class="tt-color" type="color" title="Glyph colour" value={glyphColor()}
                                 onPointerDown={(e) => { e.stopPropagation(); snapColor(); }}
                                 onInput={(e) => setColorLive(e.currentTarget.value)} />
-                            <select class="tt-font" title="Glyph font" value={glyphFont()}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onChange={(e) => {
-                                    const v = e.currentTarget.value;
-                                    if (v === ADD_FONT) { e.currentTarget.value = glyphFont(); fontFileInput?.click(); }
-                                    else setFont(v);
-                                }}>
-                                <For each={BUILTIN_FONTS}>{(f) => <option value={f.value}>{f.label}</option>}</For>
-                                <Show when={customFonts().length > 0}>
-                                    <For each={customFonts()}>{(f) => <option value={f.key}>{f.label}</option>}</For>
-                                </Show>
-                                <option value={ADD_FONT}>＋ Add font…</option>
-                            </select>
+                            <span class="tt-fontpicker" onPointerDown={(e) => e.stopPropagation()}>
+                                <FontPicker
+                                    options={[...BUILTIN_FONTS, ...customFonts().map(f => ({ value: f.key, label: f.label }))]}
+                                    value={glyphFont()}
+                                    onPick={setFont}
+                                    onGoogleFonts={() => setGoogleFontsOpen(true)}
+                                    onAddFont={() => fontFileInput?.click()}
+                                />
+                            </span>
                             <input ref={el => fontFileInput = el} type="file" accept=".ttf,.otf,.woff,.woff2"
                                 style={{ display: 'none' }} onChange={onFontFile} />
                         </div>
@@ -302,6 +300,8 @@ export const TouchTypeOverlay = () => {
                     Touch Type — click a letter · Shift-click a range · Ctrl/⌘-click to add any letter · or drag a box · then drag / [ ] / , . to move, scale, rotate ·
                     <button class="tt-done" onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); toggleTouchType(false); }}>Done ✕</button>
                 </div>
+                <GoogleFontsDialog isOpen={googleFontsOpen()} onClose={() => setGoogleFontsOpen(false)}
+                    onPick={(key) => setFont(key)} />
             </div>
         </Show>
     );

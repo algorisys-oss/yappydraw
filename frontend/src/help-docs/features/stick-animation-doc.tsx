@@ -1,7 +1,8 @@
 /**
  * Animated Stick Figures — help doc + step-by-step tutorial.
- * Procedural skeletal figures (walk/wave/talk/point/jump/idle) that animate on the
- * canvas, with controls to switch motion, pause, flip, and bake to editable paths.
+ * Procedural skeletal figures (10 clips: idle/walk/run/wave/talk/point/clap/jump/
+ * dance/cheer) that animate on the canvas, with controls to switch motion, pause,
+ * flip, and bake to editable paths.
  */
 
 import type { Component } from 'solid-js';
@@ -48,7 +49,7 @@ const StickAnimationDoc: Component = () => {
                     </li>
                     <li>
                         <strong>Switch to the Animated tab.</strong> In the chip row, click <strong>🎞 Animated</strong>.
-                        You'll see the six motions as preview cells.
+                        You'll see all ten motions as preview cells.
                     </li>
                     <li>
                         <strong>Add a motion.</strong> Click <strong>Walk</strong> (or any motion). A figure appears on
@@ -116,7 +117,7 @@ const StickAnimationDoc: Component = () => {
                 </ol>
                 <p class="tip-box">
                     Two figures + two paths crossing = a little scene. Add speech bubbles and props to set the stage.
-                    API: <code>attachFigureToPath(figureId, pathId, {'{ dur }'})</code>, <code>detachFigurePath(id)</code>.
+                    API: <code>attachFigureToPath(figureId, pathId, {'{ dur, loop, autoFace }'})</code>, <code>detachFigurePath(id)</code>.
                 </p>
             </section>
 
@@ -148,7 +149,7 @@ const StickAnimationDoc: Component = () => {
                 <h2>Automate it (API)</h2>
                 <pre><code>{`const Y = window.Yappy;
 Y.listStickFigureClips();                       // [{id:'walk',name:'Walk'}, …]
-const a = Y.insertAnimatedFigure('walk', { x: 200, y: 200, width: 160, facing: 1 });
+const a = Y.insertAnimatedFigure('walk', { x: 200, y: 200, width: 160, facing: 1, speed: 1 });
 const b = Y.insertAnimatedFigure('talk', { x: 520, y: 200, facing: -1 });
 Y.setAnimatedFigureClip('wave', [a]);           // switch clip
 Y.flipAnimatedFigure([b]);                       // face the other way
@@ -178,8 +179,8 @@ Y.bakeAnimatedFigure(a);                          // freeze current frame → ed
                     <li><strong>Reorder a step</strong> — drag a block left/right to change the order of actions.</li>
                     <li><strong>Resize a step</strong> — drag the right edge of a block to change how long that motion
                         runs (snaps to ½&nbsp;second).</li>
-                    <li><strong>Sync to slides</strong> — on a slides/pages document, the screen button restarts the
-                        scene from the start whenever you change slide, so each slide plays its animation fresh.</li>
+                    <li><strong>Sync to slides</strong> — on a slides/pages document, toggle the monitor-play button
+                        (“Restart the scene when the slide/page changes”) so each slide plays its animation fresh.</li>
                 </ul>
                 <p class="tip-box">
                     The scene length is set automatically by the longest figure. API:
@@ -191,16 +192,22 @@ Y.bakeAnimatedFigure(a);                          // freeze current frame → ed
             <section class="doc-section">
                 <h2>Export your animation as a video</h2>
                 <p>
-                    To share a moving animation, <strong>record it to video</strong>. With an animated figure
-                    selected, click <strong>Record video</strong> in the panel — it captures the live canvas (all
-                    figures, sequences and path-follow, exactly as they play) and then <strong>Stop &amp; save
-                    recording</strong> downloads a <code>.webm</code> file. (A red recording indicator shows while
-                    it runs.)
+                    On a page document (a design/post or slides), <strong>Export → MP4 Video</strong> renders
+                    <em> the page itself</em> — exact page bounds at the page's own resolution, animations playing,
+                    no workspace around it — for the duration you choose, then downloads an H.264 <code>.mp4</code>
+                    (or <code>.webm</code>). Your zoom/pan doesn't matter; the export is framed to the page.
+                    API: <code>exportVideo(seconds?, 'mp4' | 'webm')</code>.
+                </p>
+                <p>
+                    Alternatively, <strong>record the live canvas</strong>: with an animated figure selected, click
+                    <strong> Record video</strong> in the panel — it captures whatever is on screen (all figures,
+                    sequences and path-follow, exactly as they play) and <strong>Stop &amp; save recording</strong>
+                    downloads the file. (A red recording indicator shows while it runs.)
                 </p>
                 <p class="tip-box">
-                    Recording captures whatever is on screen, so pan/zoom to frame your scene first. Also available
-                    from Export → Video, and via the API: <code>recordAnimation(seconds?)</code> /
-                    <code> stopRecording()</code>.
+                    Live recording captures whatever is on screen, so pan/zoom to frame your scene first. API:
+                    <code> recordAnimation(seconds?)</code> / <code>stopRecording()</code>. On an infinite-canvas
+                    doc, Export → Video also uses live capture (there are no page bounds to frame to).
                 </p>
                 <p>
                     Prefer a shareable webpage? <strong>Export → HTML</strong> writes a self-contained

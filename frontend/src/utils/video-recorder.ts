@@ -11,9 +11,11 @@ export class VideoRecorder {
     private stream: MediaStream | null = null;
     private canvas: HTMLCanvasElement;
     private onStopCallback: (() => void) | null = null;
+    private baseName: string;
 
-    constructor(canvas: HTMLCanvasElement) {
+    constructor(canvas: HTMLCanvasElement, baseName = 'yappy-recording') {
         this.canvas = canvas;
+        this.baseName = baseName;
     }
 
     public start(format: VideoFormat = 'webm'): boolean {
@@ -23,12 +25,17 @@ export class VideoRecorder {
 
             let mimeType = 'video/webm;codecs=vp9';
             if (format === 'mp4') {
-                // Not all browsers support MP4 recording directly, fallback logic
-                if (MediaRecorder.isTypeSupported('video/mp4')) {
-                    mimeType = 'video/mp4';
-                } else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264')) {
-                    mimeType = 'video/webm;codecs=h264'; // Close enough for most
-                }
+                // Codec must be pinned to H.264: bare 'video/mp4' lets Chrome pick
+                // VP9, and a VP9-in-.mp4 file won't play in most consumers of mp4
+                // (Windows Media Player, QuickTime/macOS preview, WhatsApp, video
+                // editors) — it looks like a broken recording.
+                const candidates = [
+                    'video/mp4;codecs=avc1.42E01E', // H.264 baseline — plays everywhere
+                    'video/mp4;codecs=avc1',
+                    'video/mp4',
+                    'video/webm;codecs=h264',       // last resort: right codec, webm container
+                ];
+                mimeType = candidates.find(c => MediaRecorder.isTypeSupported(c)) ?? mimeType;
             }
 
             if (!MediaRecorder.isTypeSupported(mimeType)) {
@@ -36,7 +43,12 @@ export class VideoRecorder {
                 mimeType = ''; // Let browser choose default
             }
 
-            this.mediaRecorder = new MediaRecorder(this.stream, mimeType ? { mimeType } : undefined);
+            // Default bitrate (~1-2.5 Mbps) smears line art during motion; canvas
+            // recordings are sharp-edged screen content and need more headroom.
+            this.mediaRecorder = new MediaRecorder(this.stream, {
+                ...(mimeType ? { mimeType } : {}),
+                videoBitsPerSecond: 8_000_000,
+            });
             this.chunks = [];
 
             this.mediaRecorder.ondataavailable = (e) => {
@@ -82,7 +94,7 @@ export class VideoRecorder {
         // Determine extension
         const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        a.download = `yappy-recording-${timestamp}.${ext}`;
+        a.download = `${this.baseName}-${timestamp}.${ext}`;
 
         document.body.appendChild(a);
         a.click();

@@ -276,10 +276,19 @@ const App: Component = () => {
 
       // 2. Ignore other hotkeys when typing in input fields, textareas, or contenteditable elements
       const target = e.target as HTMLElement;
+      // NOTE: this listener is registered with capture:true, so component-level
+      // stopPropagation() cannot shield widgets from it — anything that owns its
+      // own keyboard interaction must be exempted HERE. Focus inside the font
+      // picker (trigger or popup), the Google Fonts panel, or any dialog means
+      // arrows/keys belong to that widget, not to canvas hotkeys like the
+      // arrow-nudge (clicking a font row focuses a BUTTON, which the tag check
+      // alone would miss).
       const isInputFocused =
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
+        target.tagName === 'SELECT' ||
+        target.isContentEditable ||
+        !!target.closest?.('.fp-trigger, .fp-popup, .gf-modal, [role="dialog"]');
 
       if (isInputFocused) {
         // Let the browser handle standard text editing shortcuts (Ctrl+A, C, V, Z, etc.)

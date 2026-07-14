@@ -9,6 +9,7 @@ import { replaceImageOn } from "../utils/image-actions";
 import { slideTransitionManager } from "../utils/animation";
 import { customFontOptions, addCustomFontFromFile } from "../utils/custom-fonts";
 import GoogleFontsDialog from "./google-fonts-dialog";
+import FontPicker from "./font-picker";
 import type { Slide } from "../types/slide-types";
 import { isPagedDocType } from "../types/slide-types";
 import { findPagePreset, getPagePreset } from "../config/page-size-presets";
@@ -1874,28 +1875,33 @@ const PropertyPanel: Component = () => {
                 return (
                     <div class="control-row">
                         <label>{prop.label}</label>
-                        <select
-                            value={isMixed(selectVal()) ? '__mixed__' : (selectVal() ?? prop.defaultValue)}
-                            onChange={(e) => {
-                                const val = e.currentTarget.value;
-                                if (val === '__mixed__') return;
-                                if (val === '__add_font__') { e.currentTarget.value = String(selectVal() ?? prop.defaultValue ?? ''); fontFileInput?.click(); return; }
-                                if (val === '__google_fonts__') { e.currentTarget.value = String(selectVal() ?? prop.defaultValue ?? ''); setGoogleFontsOpen(true); return; }
-                                applyVal(val);
-                            }}
-                        >
-                            <Show when={isMixed(selectVal())}>
-                                <option value="__mixed__" disabled>(Mixed)</option>
-                            </Show>
-                            <For each={filteredOptions()}>
-                                {(opt) => <option value={opt.value ?? ''}>{opt.label}</option>}
-                            </For>
-                            <Show when={isFontPicker}>
-                                <option value="__google_fonts__">🔍 Google Fonts…</option>
-                                <option value="__add_font__">＋ Add font…</option>
-                            </Show>
-                        </select>
-                        <Show when={isFontPicker}>
+                        <Show when={isFontPicker} fallback={
+                            <select
+                                value={isMixed(selectVal()) ? '__mixed__' : (selectVal() ?? prop.defaultValue)}
+                                onChange={(e) => {
+                                    const val = e.currentTarget.value;
+                                    if (val === '__mixed__') return;
+                                    applyVal(val);
+                                }}
+                            >
+                                <Show when={isMixed(selectVal())}>
+                                    <option value="__mixed__" disabled>(Mixed)</option>
+                                </Show>
+                                <For each={filteredOptions()}>
+                                    {(opt) => <option value={opt.value ?? ''}>{opt.label}</option>}
+                                </For>
+                            </select>
+                        }>
+                            {/* The font list grows with user-added Google fonts; a native
+                                select popup can spill off-screen, so fonts get a custom
+                                viewport-clamped, searchable dropdown. */}
+                            <FontPicker
+                                options={filteredOptions() as { label: string; value: string | number }[]}
+                                value={isMixed(selectVal()) ? '__mixed__' : String(selectVal() ?? prop.defaultValue ?? '')}
+                                onPick={applyVal}
+                                onGoogleFonts={() => setGoogleFontsOpen(true)}
+                                onAddFont={() => fontFileInput?.click()}
+                            />
                             <input ref={el => fontFileInput = el} type="file" accept=".ttf,.otf,.woff,.woff2"
                                 style={{ display: 'none' }}
                                 onChange={async (e) => {

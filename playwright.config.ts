@@ -17,6 +17,16 @@ export default defineConfig({
     use: {
         baseURL: process.env.YAPPY_URL,
         trace: 'off',
+        // Pre-seed the "tour seen" flag: the first-visit onboarding tour
+        // (components/onboarding-tour.tsx) is a modal overlay that would
+        // otherwise intercept pointer events in every click-driven spec.
+        storageState: {
+            cookies: [],
+            origins: [{
+                origin: new URL(process.env.YAPPY_URL).origin,
+                localStorage: [{ name: 'yappy:tour:seen', value: '1' }],
+            }],
+        },
     },
     // Start a Vite dev server on 5173 unless one is already listening there
     // (reuseExistingServer). Frontend-only — backend `/api` calls aren't needed

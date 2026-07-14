@@ -2516,6 +2516,13 @@ export const YappyAPI = {
     },
     /** Stop an in-progress canvas recording (saves + downloads the file). */
     stopRecording() { setRequestRecording({ start: false }); },
+    /** Export the ACTIVE page as a video (offline render — framed to the page, at its
+     *  own resolution, animations included; no workspace chrome). Downloads when done.
+     *  `seconds` defaults to 5; format defaults to 'mp4' (H.264). */
+    async exportVideo(seconds = 5, format: 'webm' | 'mp4' = 'mp4') {
+        const m = await import('./utils/recording-manager');
+        return m.exportPageVideo({ seconds, format });
+    },
     /** Show/hide the Scene Timeline (play & scrub all animated figures together). */
     toggleSceneTimeline(visible?: boolean) { toggleSceneTimeline(visible); },
     /** Show/hide the Keyframes dope-sheet (After-Effects–class per-property timeline for the selected element). */

@@ -67,7 +67,7 @@ import RecordingOverlay from "./recording-overlay";
 import TimelapseOverlay from "./timelapse-overlay";
 import TimelapsePlayer from "./timelapse-player";
 import VideoOverlay from "./video-overlay";
-import { setupRecording } from "../utils/recording-manager";
+import { setupRecording, pageVideoExporting } from "../utils/recording-manager";
 import { setupTimelapse } from "../utils/timelapse-manager";
 export { requestRecording, setRequestRecording } from "../utils/recording-manager";
 import ScrollBackButton from "./scroll-back-button";
@@ -155,9 +155,10 @@ const Canvas: Component = () => {
         if (store.appMode === 'presentation') {
             animationEngine.setForceTicker(true);
         } else {
-            // Keep the ticker alive for flow (marching-ants) AND any playing stick-rig
-            // figure — the stickRig renderer re-poses from the clock each repaint.
-            const needsTicker = store.elements.some(el =>
+            // Keep the ticker alive for flow (marching-ants), any playing stick-rig
+            // figure (the stickRig renderer re-poses from the clock each repaint),
+            // and while an offline page-video export needs the clock.
+            const needsTicker = pageVideoExporting() || store.elements.some(el =>
                 el.flowAnimation || (el.type === 'stickRig' && el.stickRig?.playing !== false));
             animationEngine.setForceTicker(needsTicker);
         }

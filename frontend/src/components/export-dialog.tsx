@@ -17,7 +17,9 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
     const [hasBackground, setHasBackground] = createSignal(true);
     const [onlySelected, setOnlySelected] = createSignal(store.selection.length > 0);
     const [currentPageOnly, setCurrentPageOnly] = createSignal(false);
+    const [videoSeconds, setVideoSeconds] = createSignal(5);
     const isPaged = () => isPagedDocType(store.docType) && store.slides.length > 0;
+    const isVideo = () => format() === 'webm' || format() === 'mp4';
 
     // Reset "only selected" to match the CURRENT selection each time the dialog OPENS.
     // (untrack the selection read so this runs on the open-transition only, not on every
@@ -66,7 +68,15 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
             exportToPptx(scale(), hasBackground(), onlySelected());
         } else if (format() === 'webm' || format() === 'mp4') {
             const videoFormat = format() as 'webm' | 'mp4';
-            setRequestRecording({ start: true, format: videoFormat });
+            if (isPaged()) {
+                // Offline page-scoped export: renders JUST the page for N seconds
+                // (animations included) — not a live capture of the screen.
+                const { exportPageVideo } = await import('../utils/recording-manager');
+                exportPageVideo({ seconds: videoSeconds(), format: videoFormat });
+            } else {
+                // Infinite canvas has no page bounds — record the live canvas.
+                setRequestRecording({ start: true, format: videoFormat });
+            }
         }
         props.onClose();
     };
@@ -108,7 +118,7 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                                 </label>
                                 <label class="radio-label">
                                     <input type="radio" name="format" checked={format() === 'webm'} onChange={() => setFormat('webm')} />
-                                    WebM Monitor
+                                    WebM Video
                                 </label>
                                 <label class="radio-label">
                                     <input type="radio" name="format" checked={format() === 'mp4'} onChange={() => setFormat('mp4')} />
@@ -140,6 +150,20 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                                     />
                                     Current {pageNoun()} Only (exact {pageNoun().toLowerCase()} bounds)
                                 </label>
+                            </div>
+                        </Show>
+
+                        <Show when={isVideo()}>
+                            <div class="option-group">
+                                <Show when={isPaged()} fallback={
+                                    <span class="hint">Records the live canvas — use the recording indicator's Stop, or it keeps going until stopped.</span>
+                                }>
+                                    <label>Duration (seconds)</label>
+                                    <input type="number" min="1" max="120" step="1" value={videoSeconds()}
+                                        style={{ width: '80px' }}
+                                        onChange={(e) => setVideoSeconds(Math.max(1, Math.min(120, parseInt(e.currentTarget.value) || 5)))} />
+                                    <span class="hint">Exports the current {pageNoun().toLowerCase()} exactly — animations play, no workspace around it.</span>
+                                </Show>
                             </div>
                         </Show>
 
