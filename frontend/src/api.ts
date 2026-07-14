@@ -2523,6 +2523,12 @@ export const YappyAPI = {
         const m = await import('./utils/recording-manager');
         return m.exportPageVideo({ seconds, format });
     },
+    /** Export the ACTIVE page as an infinitely-looping animated GIF (offline render,
+     *  framed to the page, long side capped at 960). `fps` defaults to 12. */
+    async exportGif(seconds = 5, fps = 12) {
+        const m = await import('./utils/recording-manager');
+        return m.exportPageGif({ seconds, fps });
+    },
     /** Show/hide the Scene Timeline (play & scrub all animated figures together). */
     toggleSceneTimeline(visible?: boolean) { toggleSceneTimeline(visible); },
     /** Show/hide the Keyframes dope-sheet (After-Effects–class per-property timeline for the selected element). */

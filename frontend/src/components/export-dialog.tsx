@@ -12,14 +12,14 @@ interface ExportDialogProps {
 }
 
 const ExportDialog: Component<ExportDialogProps> = (props) => {
-    const [format, setFormat] = createSignal<'png' | 'jpg' | 'svg' | 'pdf' | 'pptx' | 'webm' | 'mp4'>('png');
+    const [format, setFormat] = createSignal<'png' | 'jpg' | 'svg' | 'pdf' | 'pptx' | 'webm' | 'mp4' | 'gif'>('png');
     const [scale, setScale] = createSignal<number>(2);
     const [hasBackground, setHasBackground] = createSignal(true);
     const [onlySelected, setOnlySelected] = createSignal(store.selection.length > 0);
     const [currentPageOnly, setCurrentPageOnly] = createSignal(false);
     const [videoSeconds, setVideoSeconds] = createSignal(5);
     const isPaged = () => isPagedDocType(store.docType) && store.slides.length > 0;
-    const isVideo = () => format() === 'webm' || format() === 'mp4';
+    const isVideo = () => format() === 'webm' || format() === 'mp4' || format() === 'gif';
 
     // Reset "only selected" to match the CURRENT selection each time the dialog OPENS.
     // (untrack the selection read so this runs on the open-transition only, not on every
@@ -66,6 +66,9 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
             exportToPdf(scale(), hasBackground(), onlySelected());
         } else if (format() === 'pptx') {
             exportToPptx(scale(), hasBackground(), onlySelected());
+        } else if (format() === 'gif') {
+            const { exportPageGif } = await import('../utils/recording-manager');
+            exportPageGif({ seconds: videoSeconds() });
         } else if (format() === 'webm' || format() === 'mp4') {
             const videoFormat = format() as 'webm' | 'mp4';
             if (isPaged()) {
@@ -124,6 +127,12 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                                     <input type="radio" name="format" checked={format() === 'mp4'} onChange={() => setFormat('mp4')} />
                                     MP4 Video
                                 </label>
+                                <Show when={isPaged()}>
+                                    <label class="radio-label">
+                                        <input type="radio" name="format" checked={format() === 'gif'} onChange={() => setFormat('gif')} />
+                                        Animated GIF
+                                    </label>
+                                </Show>
                             </div>
                         </div>
 

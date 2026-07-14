@@ -199,6 +199,11 @@ Y.bakeAnimatedFigure(a);                          // freeze current frame → ed
                     API: <code>exportVideo(seconds?, 'mp4' | 'webm')</code>.
                 </p>
                 <p>
+                    Prefer a GIF (auto-plays anywhere, loops forever)? <strong>Export → Animated GIF</strong> does
+                    the same page-framed render as a looping <code>.gif</code> (12&nbsp;fps, long side capped at
+                    960px — GIFs get huge beyond that). API: <code>exportGif(seconds?, fps?)</code>.
+                </p>
+                <p>
                     Alternatively, <strong>record the live canvas</strong>: with an animated figure selected, click
                     <strong> Record video</strong> in the panel — it captures whatever is on screen (all figures,
                     sequences and path-follow, exactly as they play) and <strong>Stop &amp; save recording</strong>

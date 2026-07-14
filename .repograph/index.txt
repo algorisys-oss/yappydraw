@@ -78,7 +78,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 3578 | Theme:3 HarmonyType:54 DimensionMeasure:61 ElementOptions:131 normalizeElementType:337 ElementType:542 as:542 Window:3567
+frontend/src/api.ts | typescript | 3584 | Theme:3 HarmonyType:54 DimensionMeasure:61 ElementOptions:131 normalizeElementType:337 ElementType:542 as:542 Window:3573
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1418 | Component:1 App:89 moves:114 onPenMove:115 hidePen:119 handleKeyUp:158 handleKeyDown:168 as:697 handleFullscreenChange:812 handleBeforeUnload:818 handlePaste:822 handleGlobalDragEnter:924 handleGlobalDragOver:939 showDropFallbackPrompt:958 cleanup:988 outsideClick:1016 isImageFile:1028 first:1029 must:1042 extractDropData:1044 processExtractedDrop:1099 handleGlobalDrop:1216 handleDocumentDrop:1262
 frontend/src/assets/solid.svg | - | 1 |
@@ -142,7 +142,7 @@ frontend/src/components/elements-panel.tsx | typescript | 351 | Component:1 Font
 frontend/src/components/embed-viewer.css | - | 81 |
 frontend/src/components/embed-viewer.tsx | typescript | 170 | EmbedOptions:12 parseEmbedOptions:20 EmbedViewer:36 fitToView:41 handleResize:123 openUrl:129
 frontend/src/components/export-dialog.css | - | 147 |
-frontend/src/components/export-dialog.tsx | typescript | 203 | Component:1 ExportDialogProps:9 ExportDialog:14 isPaged:21 isVideo:22 handleKeyDown:37 handleExport:48
+frontend/src/components/export-dialog.tsx | typescript | 212 | Component:1 ExportDialogProps:9 ExportDialog:14 isPaged:21 isVideo:22 handleKeyDown:37 handleExport:48
 frontend/src/components/file-open-dialog.css | - | 158 |
 frontend/src/components/file-open-dialog.tsx | typescript | 192 | Component:1 FileOpenDialogProps:8 FileOpenDialog:14 fetchFiles:22 handleDelete:45 handleKeyDown:61 handleMouseMove:97
 frontend/src/components/font-picker.css | - | 118 |
@@ -313,7 +313,7 @@ frontend/src/config/properties.ts | typescript | 1891 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 87 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 90 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -377,6 +377,7 @@ frontend/src/game/game-runtime.ts | typescript | 419 | GameButton:25 Sprite:63{c
 frontend/src/game/game-templates.ts | typescript | 287 | GameTemplate:3
 frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 120 | ac:14 tone:31 sweep:46 noise:62 Sfx:78 playSfx:80 startMusic:99 stopMusic:111 setMuted:115
+frontend/src/gifenc.d.ts | typescript | 25 | quantize:3 GIFEncoder:24
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1268 | AnimationDoc:8 to:861
 frontend/src/help-docs/features/arcade-doc.tsx | typescript | 298 | ArcadeDoc:8 a:118
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 148 | ArtboardsDoc:9
@@ -388,7 +389,7 @@ frontend/src/help-docs/features/embedding-doc.tsx | typescript | 204 | Embedding
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 566 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27 to:386
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 394 | LogoToolkitDoc:9 the:167
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 377 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161
-frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 236 | StickAnimationDoc:10
+frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 241 | StickAnimationDoc:10
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 143 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 272 | WorkspaceDoc:9 and:59 a:64
@@ -615,7 +616,7 @@ frontend/src/utils/pointer-helpers.ts | typescript | 57 | PointerHelpers:15 Poin
 frontend/src/utils/pointer-state.ts | typescript | 209 | PointerState:7 createPointerState:130
 frontend/src/utils/pool-containment.ts | typescript | 179 | getPoolLabelWidth:11 getLaneLabelWidth:14 getPoolLabelHeight:17 getLaneLabelHeight:20 computeLaneSizes:26 LaneRect:50 getPoolLaneRect:58 hitTestPoolLane:102 assignToPoolLane:145 unassignFromPool:149 shiftLaneIndicesOnRemove:154 shiftLaneIndicesOnInsert:168
 frontend/src/utils/pwa.ts | typescript | 45 | initPWA:20 applyPwaUpdate:43
-frontend/src/utils/recording-manager.ts | typescript | 253 | VideoFormat:9 exportPageVideo:35 setupRecording:121
+frontend/src/utils/recording-manager.ts | typescript | 328 | VideoFormat:9 makePageFrameRenderer:32 exportPageVideo:104 exportPageGif:146 setupRecording:196
 frontend/src/utils/render-element.ts | typescript | 227 | cubicBezier:24 cubicBezierAngle:30 renderNullGizmo:103 renderVariableWidthStroke:192 adjustColor:223
 frontend/src/utils/reparent.ts | typescript | 186 | confirmAndReparent:17
 frontend/src/utils/revolve.ts | typescript | 85 | Ring:11 hasRevolve:14 baseColor:18 shade:23 horizontalSpan:32 renderRevolve:51
@@ -777,6 +778,7 @@ tests/game-graph.spec.ts | typescript | 181 | Window:7
 tests/game-mode-bar.spec.ts | typescript | 34 | Window:4
 tests/generate-samples.spec.ts | typescript | 122 | saveState:13
 tests/generative-shapes.spec.ts | typescript | 31 |
+tests/gif-export-check.spec.ts | typescript | 22 |
 tests/global.d.ts | typescript | 241 | Window:2
 tests/gradient-mesh.spec.ts | typescript | 52 | S:12
 tests/graph-tool.spec.ts | typescript | 18 |
@@ -867,6 +869,7 @@ tests/table.spec.ts | typescript | 310 |
 tests/text-effects.spec.ts | typescript | 74 | Window:6
 tests/text-outlines.spec.ts | typescript | 53 |
 tests/tier1-effects.spec.ts | typescript | 109 | darkMarks:72
+tests/timelapse-check.spec.ts | typescript | 39 |
 tests/timelapse-top-cut.spec.ts | typescript | 58 |
 tests/toolbar-persist.spec.ts | typescript | 16 |
 tests/toolbar-pos.spec.ts | typescript | 12 |
