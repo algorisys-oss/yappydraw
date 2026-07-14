@@ -502,6 +502,13 @@ const ToolbarContainer: Component<{
         return store.elements.find(e => e.id === store.selection[0]);
     });
 
+    // While a slider (e.g. Font Size) is dragged, editing font size live-resizes a
+    // text element's box. The floating toolbar anchors to the element's world
+    // width/position, so it would jitter every frame. Freeze the world-space anchor
+    // for the duration of the drag (pan/zoom still track — we freeze world coords,
+    // not screen). Cleared on pointer/touch release.
+    const [posFreeze, setPosFreeze] = createSignal<{ x: number; y: number; width: number } | null>(null);
+
     let containerRef: HTMLDivElement | undefined;
 
     // Click outside collapses the expanded toolbar
@@ -568,15 +575,31 @@ const ToolbarContainer: Component<{
 
     const handlePropertyStart = () => {
         pushToHistory();
+        // Freeze the toolbar anchor so a live box-resize (font-size drag) doesn't
+        // make it jitter. Release on the next pointer/touch up.
+        const el = element();
+        if (el) {
+            setPosFreeze({ x: el.x, y: el.y, width: el.width });
+            const release = () => {
+                setPosFreeze(null);
+                window.removeEventListener('pointerup', release);
+                window.removeEventListener('touchend', release);
+                window.removeEventListener('mouseup', release);
+            };
+            window.addEventListener('pointerup', release);
+            window.addEventListener('touchend', release);
+            window.addEventListener('mouseup', release);
+        }
     };
 
     return (
         <Show when={element()}>
             {(el) => {
                 const x = () => {
+                    const frozen = posFreeze();
                     const baseState = getElementPreviewBaseState(el().id);
-                    const elX = baseState ? baseState.x : el().x;
-                    const elW = baseState ? baseState.width : el().width;
+                    const elX = frozen ? frozen.x : baseState ? baseState.x : el().x;
+                    const elW = frozen ? frozen.width : baseState ? baseState.width : el().width;
 
                     if (props.isExpanded()) {
                         const toolbarWidth = containerRef?.offsetWidth ?? 300;
@@ -599,8 +622,9 @@ const ToolbarContainer: Component<{
                 };
 
                 const y = () => {
+                    const frozen = posFreeze();
                     const baseState = getElementPreviewBaseState(el().id);
-                    const elY = baseState ? baseState.y : el().y;
+                    const elY = frozen ? frozen.y : baseState ? baseState.y : el().y;
                     const toolbarHeight = props.isExpanded() ? 50 : 32;
                     const margin = props.isExpanded() ? 20 : 12;
                     const calculated = worldToScreen(0, elY, store.viewState).y - toolbarHeight - margin;

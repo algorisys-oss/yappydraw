@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.98](0.8.98.md) — Text box re-fits to the glyphs when the font grows (selection box no longer tiny); no quick-toolbar flicker while dragging Font Size; font size range up to 800; font-load repaint
 - [0.8.97](0.8.97.md) — Shift+drag axis-constrained move (H/V/45°); unfilled boolean/compound results are click-selectable in their interior
 - [0.8.96](0.8.96.md) — Bake dimension annotations into exports (opt-in): PNG/JPG/PDF raster + real vector SVG
 - [0.8.95](0.8.95.md) — Measurement polish: px/mm/in units, angular/radial (radius/diameter/angle) dimensions, rotation-aware bounds, and true-outline intersection snapping

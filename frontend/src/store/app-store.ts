@@ -1081,6 +1081,40 @@ export const updateGlobalTickerState = () => {
     animationEngine.setForceTicker(hasFlow);
 };
 
+/**
+ * When a font-affecting property (size/family/spacing/weight/style) changes on a
+ * standalone text/richtext element, the element's box must re-fit the glyphs —
+ * otherwise the selection/hit rect stays at the old size while the text renders
+ * huge, making it hard to select and breaking resize. Mirrors the sizing logic in
+ * commitText (utils/tool-handlers/text-editing-handler.ts). Only runs when the
+ * caller hasn't already supplied an explicit width/height in the same patch (e.g.
+ * setElementTransform, which sizes the box itself).
+ */
+const FONT_METRIC_KEYS = ['fontSize', 'fontFamily', 'letterSpacing', 'fontWeight', 'fontStyle'] as const;
+const autoSizeTextUpdates = (el: DrawingElement, updates: Partial<DrawingElement>): Partial<DrawingElement> => {
+    if (el.type !== 'text' && el.type !== 'richtext') return updates;
+    if ('width' in updates || 'height' in updates) return updates;
+    if (!FONT_METRIC_KEYS.some(k => k in updates)) return updates;
+    const merged = { ...el, ...updates } as DrawingElement;
+    const text = merged.text || '';
+    if (!text) return updates;
+    const fontSize = merged.fontSize || 28;
+    if (merged.verticalText) {
+        const v = measureVerticalText(merged);
+        return { ...updates, width: Math.round(v.width), height: Math.round(v.height) };
+    }
+    if (merged.autoResize) {
+        const width = Math.max(measureMaxLineWidth(merged) + 8, fontSize);
+        const lineCount = Math.max(1, text.split('\n').length);
+        const height = Math.max(lineCount * fontSize * 1.2, fontSize * 1.2);
+        return { ...updates, width, height };
+    }
+    // Fixed-width (drag-placed): keep width, re-flow height for the new metrics.
+    const width = el.width || 200;
+    const height = Math.max(measureWrappedTextHeight(text, width, fontSize, merged.fontFamily, merged.letterSpacing), fontSize * 1.2);
+    return { ...updates, height };
+};
+
 export const updateElement = (id: string, updates: Partial<DrawingElement>, recordHistory = false) => {
     if (recordHistory) pushToHistory();
 
@@ -1096,6 +1130,13 @@ export const updateElement = (id: string, updates: Partial<DrawingElement>, reco
     // the swatch id is being set in the same patch, i.e. applySwatch).
     if ('backgroundColor' in updates && !('fillSwatchId' in updates)) updates = { ...updates, fillSwatchId: undefined };
     if ('strokeColor' in updates && !('strokeSwatchId' in updates)) updates = { ...updates, strokeSwatchId: undefined };
+
+    // Re-fit a text element's box when its font metrics change (keeps the
+    // selection/hit rect matched to the rendered glyphs).
+    if (FONT_METRIC_KEYS.some(k => k in updates)) {
+        const el = store.elements.find(e => e.id === id);
+        if (el) updates = autoSizeTextUpdates(el, updates);
+    }
 
     setStore("elements", (el) => el.id === id, updates);
     // Bump the coarse "something changed" counter so the canvas's big redraw

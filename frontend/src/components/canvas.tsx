@@ -1915,6 +1915,18 @@ const Canvas: Component = () => {
             draw();
         });
 
+        // Redraw when web/custom fonts finish loading. Without this, text using a
+        // Google/custom font renders in the fallback face until the next unrelated
+        // redraw — so a just-selected font (or a persisted one after reload) looks
+        // like it "didn't apply" / lagged. FontFaceSet fires `loadingdone` once the
+        // batch of pending faces resolves.
+        const onFontsLoaded = () => requestAnimationFrame(draw);
+        const fontSet = (document as any).fonts;
+        if (fontSet?.addEventListener) {
+            fontSet.addEventListener('loadingdone', onFontsLoaded);
+            onCleanup(() => fontSet.removeEventListener('loadingdone', onFontsLoaded));
+        }
+
         // Releasing Alt clears any measure-to-neighbor guides even if the pointer
         // doesn't move (the pointer-move path handles the moving case).
         const clearMeasureOnAltUp = (ev: KeyboardEvent) => {
