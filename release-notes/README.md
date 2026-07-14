@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.101](0.8.101.md) — Fix: elements/images/text no longer vanish when dragged past the page edge on design/slide docs (AABB-overlap visibility + always-render-selected instead of centre-point culling)
 - [0.8.100](0.8.100.md) — First-visit guided onboarding tour (spotlight walkthrough; replay from Help or `Yappy.startTour()`); AA-contrast in light & dark
 - [0.8.99](0.8.99.md) — Magenta equal-spacing guides always clear on pointer-up (no longer stuck on canvas after a drag / click-outside)
 - [0.8.98](0.8.98.md) — Text box re-fits to the glyphs when the font grows (selection box no longer tiny); no quick-toolbar flicker while dragging Font Size; font size range up to 800; font-load repaint

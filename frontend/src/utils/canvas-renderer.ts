@@ -892,15 +892,25 @@ export function renderLayersAndElements(
                 }
             }
 
-            // Strict slide isolation
+            // Slide isolation: only draw elements that belong to / touch the active
+            // slide. Use AABB *overlap* (not just the centre point) so an element being
+            // dragged past the page edge stays visible while any part is still on the
+            // page — previously it vanished the instant its centre crossed the edge, even
+            // though its box (and the user's cursor) were still over the page. A currently
+            // selected element always renders, so a drag never makes it disappear mid-move.
+            // (Per-slide *ownership* for save/export still uses the centre test — see
+            // getElementsOnSlide / export.ts — so this only affects on-canvas visibility.)
             if (isPagedDocType(docType) && !isMasterLayer) {
                 const activeSlide = slides[activeSlideIndex];
                 if (activeSlide) {
                     const { x: sX, y: sY } = activeSlide.spatialPosition;
                     const { width: sW, height: sH } = activeSlide.dimensions;
-                    const cx = renderedEl.x + renderedEl.width / 2;
-                    const cy = renderedEl.y + renderedEl.height / 2;
-                    if (!(cx >= sX && cx <= sX + sW && cy >= sY && cy <= sY + sH)) return;
+                    const ex1 = Math.min(renderedEl.x, renderedEl.x + renderedEl.width);
+                    const ex2 = Math.max(renderedEl.x, renderedEl.x + renderedEl.width);
+                    const ey1 = Math.min(renderedEl.y, renderedEl.y + renderedEl.height);
+                    const ey2 = Math.max(renderedEl.y, renderedEl.y + renderedEl.height);
+                    const overlapsSlide = ex1 < sX + sW && ex2 > sX && ey1 < sY + sH && ey2 > sY;
+                    if (!overlapsSlide && !selection.includes(el.id)) return;
                 }
             }
 
