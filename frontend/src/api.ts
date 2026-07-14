@@ -2236,6 +2236,8 @@ export const YappyAPI = {
     toggleZenMode(visible?: boolean) { toggleZenMode(visible); },
     /** Start (or replay) the first-visit onboarding tour. */
     startTour() { void import('./components/onboarding-tour').then(m => m.startTour()); },
+    /** Open the "What's new" popup (recent user-facing changes). */
+    showWhatsNew() { void import('./components/whats-new-dialog').then(m => m.openWhatsNew()); },
     toggleSlideNavigator(visible?: boolean) { toggleSlideNavigator(visible); },
     toggleMainToolbar(visible?: boolean) { toggleMainToolbar(visible); },
     toggleUtilityToolbar(visible?: boolean) { toggleUtilityToolbar(visible); },

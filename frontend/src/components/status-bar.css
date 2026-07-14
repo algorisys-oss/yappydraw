@@ -189,3 +189,15 @@
         font-size: 12px;
     }
 }
+
+/* "What's new" indicator dot on the version button */
+.version-btn { position: relative; }
+.version-news-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-left: 4px;
+    border-radius: 50%;
+    background: var(--primary-color, #3b82f6);
+    vertical-align: middle;
+}

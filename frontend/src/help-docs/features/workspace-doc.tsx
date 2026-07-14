@@ -33,6 +33,18 @@ const WorkspaceDoc: Component = () => {
                 </p>
             </section>
 
+            {/* ─── WHAT'S NEW ─────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>What's new</h2>
+                <p>
+                    Click the <strong>version number</strong> in the bottom-right status bar to open the
+                    <strong> What's new</strong> popup — a running list of recent updates in plain language. A small dot
+                    appears on the version when there are changes since you last looked. The popup also has a
+                    <strong> Reload latest</strong> button that clears the cache and reloads the newest build (handy on
+                    iPad/iOS). Open it from a script with <code>window.Yappy.showWhatsNew()</code>.
+                </p>
+            </section>
+
             {/* ─── SMART TOOLBAR ──────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Smart toolbar</h2>

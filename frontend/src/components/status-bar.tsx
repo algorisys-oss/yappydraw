@@ -1,12 +1,11 @@
-import { type Component, Show, For } from "solid-js";
+import { type Component, Show, For, createSignal } from "solid-js";
 import { isMultiPageDocType } from '../types/slide-types';
 import { store, setViewState, undo, redo, togglePresentationMode, resetRotation, pageNoun } from "../store/app-store";
 import { drawingId } from "./menu";
 import { Plus, Minus, Undo2, Redo2, Play } from "lucide-solid";
 import { screenToWorld } from "../utils/viewport-transforms";
 import pkg from '../../../package.json';
-import { showToast } from "./toast";
-import { hardRefresh } from "../utils/hard-refresh";
+import WhatsNewDialog, { hasUnseenWhatsNew, openWhatsNew } from "./whats-new-dialog";
 import "./status-bar.css";
 
 /** Contextual modifier hint: key combo + action description */
@@ -109,6 +108,8 @@ const TOOL_LABELS: Record<string, string> = {
 };
 
 const StatusBar: Component = () => {
+    const [hasNews, setHasNews] = createSignal(hasUnseenWhatsNew(pkg.version));
+
     const handleZoomIn = () => {
         const newScale = Math.min(store.viewState.scale * 1.1, 10);
         zoomToCenter(newScale);
@@ -273,19 +274,24 @@ const StatusBar: Component = () => {
                 </button>
             </div>
 
-            {/* Version — tap to hard-refresh (clears caches + reloads the latest
-                build). The "hard reload" iPad/iOS Safari doesn't otherwise offer. */}
+            {/* Version — tap to see what's new (the popup also carries the
+                hard-refresh action). A dot appears when there are updates since
+                the user last looked. */}
             <div class="status-section">
                 <button
                     class="status-btn version-btn"
                     style={{ opacity: 0.75, "font-size": "inherit", "font-family": "inherit", width: "auto", padding: "0 4px" }}
-                    title="Tap to reload the latest version (clears cache)"
-                    aria-label="Reload latest version"
-                    onClick={async () => { showToast('Refreshing to latest version…', 'info', 1500); await hardRefresh(); }}
+                    title="What's new"
+                    aria-label="What's new"
+                    onClick={() => { openWhatsNew(); setHasNews(false); }}
                 >
                     v{pkg.version}
+                    <Show when={hasNews()}>
+                        <span class="version-news-dot" aria-hidden="true" />
+                    </Show>
                 </button>
             </div>
+            <WhatsNewDialog />
 
             {/* Legal */}
             <div class="status-section status-attribution">

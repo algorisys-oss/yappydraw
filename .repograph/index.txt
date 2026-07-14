@@ -78,7 +78,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 3569 | Theme:3 HarmonyType:54 DimensionMeasure:61 ElementOptions:131 normalizeElementType:337 ElementType:542 as:542 Window:3558
+frontend/src/api.ts | typescript | 3571 | Theme:3 HarmonyType:54 DimensionMeasure:61 ElementOptions:131 normalizeElementType:337 ElementType:542 as:542 Window:3560
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1409 | Component:1 App:89 moves:114 onPenMove:115 hidePen:119 handleKeyUp:158 handleKeyDown:168 as:688 handleFullscreenChange:803 handleBeforeUnload:809 handlePaste:813 handleGlobalDragEnter:915 handleGlobalDragOver:930 showDropFallbackPrompt:949 cleanup:979 outsideClick:1007 isImageFile:1019 first:1020 must:1033 extractDropData:1035 processExtractedDrop:1090 handleGlobalDrop:1207 handleDocumentDrop:1253
 frontend/src/assets/solid.svg | - | 1 |
@@ -246,8 +246,8 @@ frontend/src/components/slide-transition-picker.css | - | 130 |
 frontend/src/components/slide-transition-picker.tsx | typescript | 123 | SlideTransitionPickerProps:9 SlideTransitionPicker:15 slide:16 transition:17 handleKeyDown:20 handleTypeChange:35 handleDurationChange:40 handleEasingChange:47 handlePreview:52
 frontend/src/components/state-panel.css | - | 162 |
 frontend/src/components/state-panel.tsx | typescript | 110 | Component:1 StatePanel:6 handleAdd:10 handleReset:19 handlePlayAll:25 handleStopPlayback:43
-frontend/src/components/status-bar.css | - | 191 |
-frontend/src/components/status-bar.tsx | typescript | 312 | Component:1 Hint:13 isMindmapNode:24 getContextHints:31 StatusBar:111 handleZoomIn:112 handleZoomOut:117 zoomToCenter:122 resetZoom:131 rotationDeg:136 toolLabel:138
+frontend/src/components/status-bar.css | - | 203 |
+frontend/src/components/status-bar.tsx | typescript | 318 | Component:1 Hint:12 isMindmapNode:23 getContextHints:30 StatusBar:110 handleZoomIn:113 handleZoomOut:118 zoomToCenter:123 resetZoom:132 rotationDeg:137 toolLabel:139
 frontend/src/components/status-tool-group.tsx | typescript | 162 | Component:1 StatusToolGroup:47 handler:54 getActiveTool:64 handleToolClick:73 as:81 as:87 handleRightClick:95 toggleMenu:101 activeTool:108 isActive:109 getDropdownPosition:111
 frontend/src/components/stick-figure-panel.css | - | 208 |
 frontend/src/components/stick-figure-panel.tsx | typescript | 332 | Component:1 StickAsset:16 ActiveCat:20 ActiveVariant:21 clipThumb:24 StickFigurePanel:35 byId:40 dropCentered:58 onGridKey:61 setOutline:74 setAccent:75 addToSymbols:78 dropAnimated:88 bakeSelected:89 writeSeq:93 addStep:94 editStep:95 removeStep:96 walkPath:102
@@ -295,6 +295,8 @@ frontend/src/components/video-overlay.tsx | typescript | 204 | Component:1 onDra
 frontend/src/components/video-url-dialog.css | - | 183 |
 frontend/src/components/video-url-dialog.tsx | typescript | 137 | Component:1 VideoProvider:4 VideoUrlDialogProps:8 VideoUrlDialog:15 handleSubmit:57 handleKeyDown:63
 frontend/src/components/welcome-screen.tsx | typescript | 114 | Component:1 WelcomeScreen:10 isVisible:11 handler:25
+frontend/src/components/whats-new-dialog.css | - | 142 |
+frontend/src/components/whats-new-dialog.tsx | typescript | 106 | Component:7 openWhatsNew:21 closeWhatsNew:22 lastSeenVersion:24 markWhatsNewSeen:27 hasUnseenWhatsNew:35 WhatsNewDialog:41 onKey:48
 frontend/src/components/width-tool-overlay.css | - | 39 |
 frontend/src/components/width-tool-overlay.tsx | typescript | 92 | WidthToolOverlay:14 active:19 toWorld:20 candidatePaths:22 onDown:28 onMove:44 onUp:45 onKey:62 guide:71
 frontend/src/components/wireframe-tool-group.tsx | typescript | 268 | Component:1 UIShapeCategory:5 as:67 WireframeToolGroup:84 handler:91 getActiveTool:101 handleToolClick:114 handleRightClick:136 toggleMenu:142 activeTool:149 isActive:150 getDropdownPosition:152 as:219
@@ -309,6 +311,7 @@ frontend/src/config/properties.ts | typescript | 1891 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
+frontend/src/data/whats-new.ts | typescript | 82 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -386,7 +389,7 @@ frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 37
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 229 | StickAnimationDoc:9
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 143 | SymbolsDoc:9
-frontend/src/help-docs/features/workspace-doc.tsx | typescript | 260 | WorkspaceDoc:9 and:47 a:52
+frontend/src/help-docs/features/workspace-doc.tsx | typescript | 272 | WorkspaceDoc:9 and:59 a:64
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 660 | YslTutorialDoc:8 members:564 Subject:579
 frontend/src/help-docs/help-page.css | - | 411 |
 frontend/src/help-docs/help-page.tsx | typescript | 404 | Component:6 ShapeDoc:11 Tools:131 vertical:135 chips:168 a:204 getShapeFromHash:297 HelpPage:303 handleHashChange:309 navigateToShape:320 filteredShapes:325 currentDoc:336 handleBackToApp:338
