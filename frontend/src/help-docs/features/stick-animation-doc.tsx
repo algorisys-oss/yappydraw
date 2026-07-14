@@ -218,7 +218,9 @@ Y.bakeAnimatedFigure(a);                          // freeze current frame → ed
                     Prefer a shareable webpage? <strong>Export → HTML</strong> writes a self-contained
                     <code>.html</code> file that <strong>plays the animation</strong> when opened in any browser — the
                     figures walk, wave and follow their paths just like on the canvas.
-                    (API: <code>exportHtml(name?)</code>.)
+                    (API: <code>exportHtml(name?)</code>.) The player is interactive: presentations advance with
+                    <strong> → / Space</strong> (back with ←, Home/End jump to first/last slide) or the on-screen
+                    arrows, and an infinite-canvas export opens auto-framed to your content.
                 </p>
             </section>
 

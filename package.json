@@ -1,6 +1,6 @@
 {
   "name": "yappy",
-  "version": "0.8.104",
+  "version": "0.8.105",
   "type": "module",
   "scripts": {
     "dev": "vite",

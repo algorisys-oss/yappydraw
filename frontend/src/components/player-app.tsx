@@ -1,8 +1,8 @@
-import { createSignal, onMount, Show } from "solid-js";
+import { createSignal, onMount, onCleanup, Show } from "solid-js";
 import { isPagedDocType } from '../types/slide-types';
 import type { Component } from "solid-js";
 import Canvas from "./canvas";
-import { loadDocument, setStore, store } from "../store/app-store";
+import { loadDocument, setStore, store, zoomToFit, advancePresentation, retreatPresentation, setActiveSlide } from "../store/app-store";
 import { registerShapes } from "../shapes/register-shapes";
 import { PresentationControls } from "./presentation-controls";
 import type { SlideDocument } from "../types/slide-types";
@@ -83,6 +83,10 @@ const PlayerApp: Component = () => {
                     if (isPagedDocType(store.docType) && store.slides.length > 0) {
                         slideBuildManager.init(store.activeSlideIndex);
                         slideBuildManager.playInitial();
+                    } else {
+                        // Infinite canvas: the doc carries no viewport, so pan 0,0
+                        // may show nothing — frame the actual content on open.
+                        zoomToFit();
                     }
                 }, 300);
             } catch (e) {
@@ -92,6 +96,31 @@ const PlayerApp: Component = () => {
         } else {
             showToast("No presentation data found", "error");
         }
+
+        // Keyboard navigation — the main app's hotkey handler (app.tsx) isn't
+        // mounted in the player, so bind the presentation keys here. Skipped
+        // while a game runs (the game runtime owns the arrows/space) and while
+        // typing in a field.
+        const onKey = (e: KeyboardEvent) => {
+            if (store.gameActive) return;
+            const t = e.target as HTMLElement;
+            if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+                e.preventDefault();
+                advancePresentation();
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+                e.preventDefault();
+                retreatPresentation();
+            } else if (e.key === 'Home' && isPagedDocType(store.docType)) {
+                e.preventDefault();
+                setActiveSlide(0);
+            } else if (e.key === 'End' && isPagedDocType(store.docType)) {
+                e.preventDefault();
+                setActiveSlide(Math.max(0, store.slides.length - 1));
+            }
+        };
+        window.addEventListener('keydown', onKey);
+        onCleanup(() => window.removeEventListener('keydown', onKey));
     });
 
     return (

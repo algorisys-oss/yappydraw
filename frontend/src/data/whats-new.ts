@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.105', date: '2026-07-14', items: [
+        'Exported HTML presentations now respond to the keyboard — → / Space to advance, ← to go back, Home/End to jump.',
+        'Infinite-canvas HTML exports open perfectly framed to your content (no more hunting for your drawing).',
+    ] },
     { version: '0.8.104', date: '2026-07-14', items: [
         'Export your animated page as a looping GIF — Export → Animated GIF. Same page-perfect framing as the MP4 export, plays anywhere, loops forever.',
     ] },
