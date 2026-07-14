@@ -2234,6 +2234,8 @@ export const YappyAPI = {
     /** Remove all guides. */
     clearGuides() { clearGuides(); },
     toggleZenMode(visible?: boolean) { toggleZenMode(visible); },
+    /** Start (or replay) the first-visit onboarding tour. */
+    startTour() { void import('./components/onboarding-tour').then(m => m.startTour()); },
     toggleSlideNavigator(visible?: boolean) { toggleSlideNavigator(visible); },
     toggleMainToolbar(visible?: boolean) { toggleMainToolbar(visible); },
     toggleUtilityToolbar(visible?: boolean) { toggleUtilityToolbar(visible); },

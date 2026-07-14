@@ -18,6 +18,21 @@ const WorkspaceDoc: Component = () => {
                 </p>
             </header>
 
+            {/* ─── GUIDED TOUR ────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Guided tour</h2>
+                <p>
+                    On your <strong>first visit</strong> a short <strong>spotlight tour</strong> highlights the main
+                    areas — toolbar, canvas, Properties panel, and the settings/help cluster. Step through with
+                    <strong> Next</strong>/<strong>Back</strong> (or <strong>→</strong>/<strong>←</strong>), or
+                    <strong> Skip</strong> (<strong>Esc</strong>) anytime. It only auto-runs once.
+                </p>
+                <p class="tip-box">
+                    Replay it whenever you like from <strong>Help (?) → “Take the tour”</strong>, or from a script with
+                    <code>window.Yappy.startTour()</code>.
+                </p>
+            </section>
+
             {/* ─── SMART TOOLBAR ──────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Smart toolbar</h2>

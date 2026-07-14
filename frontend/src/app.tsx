@@ -70,6 +70,7 @@ const PresentationControls = lazy(() => import('./components/presentation-contro
 const CanvasToolbar = lazy(() => import('./components/canvas-toolbar').then(m => ({ default: m.CanvasToolbar })));
 const DsOpsPanel = lazy(() => import('./components/ds-ops-panel'));
 import { WelcomeScreen } from './components/welcome-screen';
+import { OnboardingTour, maybeAutoStartTour } from './components/onboarding-tour';
 import Menu, {
   handleNew, setShowHelp, setShowSettings,
   isDialogOpen, isSaveOpen, isLoadExportOpen, showHelp,
@@ -98,6 +99,11 @@ const App: Component = () => {
   onMount(() => {
     // Desktop (Tauri) shell: wire native menu + file Open/Save. No-op on web.
     void import('./desktop/desktop-bridge').then(m => m.initDesktop());
+  });
+
+  onMount(() => {
+    // First-visit product tour (once; replayable from Help). No-op if already seen.
+    maybeAutoStartTour();
   });
 
   onMount(() => {
@@ -1388,6 +1394,7 @@ const App: Component = () => {
           <QuickToolbar />
         </Show>
         <Toast />
+        <OnboardingTour />
         <ColorDropHud />
         <Show when={penPos()}>
           {(p) => (

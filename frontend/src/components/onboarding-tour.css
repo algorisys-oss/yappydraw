@@ -1,0 +1,158 @@
+/* First-visit onboarding tour — theme-aware (uses Yappy CSS vars). */
+
+.tour-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 4000; /* above panels, toolbar, welcome screen */
+    pointer-events: none;
+}
+
+.tour-mask {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto; /* block interaction with the app while the tour runs */
+}
+
+.tour-spotlight-ring {
+    position: absolute;
+    border: 2px solid var(--primary-color, #3b82f6);
+    border-radius: 10px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color, #3b82f6) 25%, transparent);
+    pointer-events: none;
+    animation: tour-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tour-pulse {
+    0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color, #3b82f6) 25%, transparent); }
+    50%      { box-shadow: 0 0 0 8px color-mix(in srgb, var(--primary-color, #3b82f6) 15%, transparent); }
+}
+
+.tour-tooltip {
+    position: absolute;
+    width: 340px;
+    max-width: calc(100vw - 32px);
+    background: var(--bg-panel, #1e1e1e);
+    color: var(--text-primary, #f2f2f2);
+    border: 1px solid var(--border-color, #444);
+    border-radius: 12px;
+    padding: 18px 18px 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    pointer-events: auto;
+    animation: tour-appear 0.18s ease-out;
+}
+
+@keyframes tour-appear {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.tour-tooltip-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.tour-step-count {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-secondary, #999);
+}
+
+.tour-skip {
+    padding: 4px 8px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-secondary, #999);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+}
+.tour-skip:hover { background: var(--bg-secondary, #333); color: var(--text-primary, #fff); }
+
+.tour-title {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary, #fff);
+}
+
+.tour-content {
+    margin: 0 0 16px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--text-secondary, #bbb);
+}
+
+.tour-nav {
+    display: flex;
+    gap: 10px;
+}
+
+.tour-btn {
+    flex: 1;
+    padding: 9px 14px;
+    border: none;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.1s, opacity 0.1s;
+}
+
+/* Fixed blue (not --primary-color) so white text always clears WCAG AA in BOTH
+   themes: the dark theme's --primary-color is #60a5fa, on which white is only
+   ~2.2:1. White on #2563eb ≈ 4.5:1, on #1d4ed8 ≈ 6.3:1 — and darkening on hover
+   reads correctly on light and dark alike. */
+.tour-btn-primary { background: #2563eb; color: #fff; }
+.tour-btn-primary:hover { background: #1d4ed8; }
+
+.tour-btn-secondary {
+    background: var(--bg-secondary, #333);
+    color: var(--text-primary, #ddd);
+    border: 1px solid var(--border-color, #444);
+}
+/* Hover shifts the fill toward the text colour → darkens in light, lightens in
+   dark (a brightness() filter would lighten in both, wrong for light theme). */
+.tour-btn-secondary:hover { background: color-mix(in srgb, var(--bg-secondary, #333) 88%, var(--text-primary, #ddd)); }
+.tour-btn-secondary:disabled { opacity: 0.45; cursor: default; }
+.tour-btn-secondary:disabled:hover { background: var(--bg-secondary, #333); }
+
+.tour-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color, #333);
+}
+
+.tour-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    background: var(--border-color, #555);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.1s, transform 0.1s;
+}
+.tour-dot:hover { transform: scale(1.25); }
+.tour-dot.active { background: var(--primary-color, #3b82f6); }
+
+/* Phones: dock the card to the bottom-centre so it never lands off-screen. */
+@media (max-width: 768px) {
+    .tour-tooltip {
+        left: 50% !important;
+        top: auto !important;
+        bottom: 20px;
+        transform: translateX(-50%);
+        width: calc(100vw - 24px);
+    }
+    .tour-title { font-size: 16px; }
+    .tour-content { font-size: 13px; }
+}

@@ -1,6 +1,7 @@
 import { Show, For, onCleanup, createEffect } from "solid-js";
-import { X, ExternalLink, Github, Youtube, Bug, LayoutTemplate } from "lucide-solid";
+import { X, ExternalLink, Github, Youtube, Bug, LayoutTemplate, Compass } from "lucide-solid";
 import "./help-dialog.css";
+import { startTour } from "./onboarding-tour";
 
 interface ShortcutEntry {
     label: string;
@@ -226,6 +227,14 @@ export default function HelpDialog(props: Props) {
 
                     <div class="help-modal-body">
                         <div class="social-links">
+                            <button
+                                type="button"
+                                class="social-btn"
+                                onClick={() => { props.onClose(); startTour(); }}
+                            >
+                                <Compass size={16} />
+                                Take the tour
+                            </button>
                             <a
                                 href="#/help"
                                 class="social-btn"
