@@ -2767,6 +2767,7 @@ export function selectionOnUp(
     pState.initial3DStartX = undefined;
     pState.initial3DStartY = undefined;
     signals.setSnappingGuides([]);
+    signals.setSpacingGuides([]);   // else the magenta spacing badges linger after a drag that ended on a spacing match
     signals.setPointSnap(null);
     pState.intersectionSnapPoints = undefined;
 }
