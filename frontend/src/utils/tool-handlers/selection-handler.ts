@@ -2079,6 +2079,12 @@ function applyResize(
                 const isHorizontalOnly = pState.draggingHandle === 'lm' || pState.draggingHandle === 'rm';
 
                 if (isHorizontalOnly) {
+                    // Dragging a side handle means "I want this width" — so an auto-width box becomes
+                    // fixed-width, as in Figma. Without this the width wouldn't stick: the renderer
+                    // keeps refusing to wrap and commitText re-hugs the box on the next edit. It also
+                    // makes the wrapped-height measurement below true rather than contradicting the
+                    // (non-wrapping) renderer.
+                    if (singleEl.autoResize) updates.autoResize = false;
                     // Horizontal resize: recalculate height based on wrapped text
                     const calculatedHeight = measureWrappedTextHeight(singleEl.text, newWidth, fontSize, singleEl.fontFamily, singleEl.letterSpacing);
                     updates.height = Math.max(calculatedHeight, fontSize * 1.2);

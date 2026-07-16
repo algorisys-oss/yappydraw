@@ -347,6 +347,33 @@ export const DrawingToolsDoc: Component = () => {
                 </p>
             </section>
 
+            {/* Text sizing */}
+            <section class="doc-section">
+                <h2>Text sizing — auto width vs fixed width</h2>
+                <p>
+                    A text box has two sizing modes, shown as the <strong>Auto Resize</strong> toggle in the
+                    Properties panel (Text group):
+                </p>
+                <ul>
+                    <li>
+                        <strong>Auto Resize on — auto width.</strong> The box hugs the text and never wraps; it
+                        grows and shrinks as you type. Only your own line breaks split lines. This is what you
+                        get when you <strong>click</strong> with the Text tool.
+                    </li>
+                    <li>
+                        <strong>Auto Resize off — fixed width.</strong> The width you set is held, the text wraps
+                        inside it, and the height re-flows to fit. This is what you get when you
+                        <strong> drag out a box</strong> with the Text tool.
+                    </li>
+                </ul>
+                <p class="tip-box">
+                    <strong>Dragging the left or right handle switches an auto-width box to fixed width</strong>
+                    — the width you drag to is the width you keep, and the text wraps into it (as in Figma). Use
+                    the Auto Resize toggle to go back: the box snaps in to hug the text again. Corner and
+                    top/bottom handles resize the box freely and never change the font size.
+                </p>
+            </section>
+
             {/* Text on Path */}
             <section class="doc-section">
                 <h2>Text on Path (Curved Text)</h2>

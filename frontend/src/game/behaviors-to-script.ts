@@ -51,8 +51,8 @@ export function emitAction(a: Action, me: string, other: string, dt: string, ele
             return `_bounce(${me}, ${other});`;
         case 'gravity':
             return a.on
-                ? `{ _grav.add(${me}.id); const _v = _V(${me}); _setV(${me}, _v.vx, _v.vy); }`
-                : `_grav.delete(${me}.id);`;
+                ? `{ _grav.add(${me}.id); ${a.strength != null ? `_gravG.set(${me}.id, ${num(a.strength)});` : `_gravG.delete(${me}.id);`} const _v = _V(${me}); _setV(${me}, _v.vx, _v.vy); }`
+                : `{ _grav.delete(${me}.id); _gravG.delete(${me}.id); }`;
         case 'jump':
             // Gravity sprites can only jump while grounded (a real platformer hop,
             // not a floaty mid-air repeat); non-gravity sprites jump unconditionally.
@@ -76,6 +76,8 @@ export function emitAction(a: Action, me: string, other: string, dt: string, ele
             return `_setV(${me}, ${ov?.vx ?? num(a.vx)}, ${ov?.vy ?? num(a.vy)});`;
         case 'moveToXY':
             return `${me}.centerAt(${ov?.x ?? num(a.x)}, ${ov?.y ?? num(a.y)});`;
+        case 'tether':
+            return `_tether(${me}, ${ov?.ax ?? num(a.ax)}, ${ov?.ay ?? num(a.ay)}, S(${q(a.target)}));`;
         case 'moveTo': {
             const pos = a.at === 'randomTop' ? `{ x: X + Math.random() * (W - ${me}.width), y: Y }`
                 : a.at === 'randomEdge' ? `{ x: X + Math.random() * (W - ${me}.width), y: Y + Math.random() * (H - ${me}.height) }`
@@ -213,6 +215,12 @@ export function generateGameScript(elements: DrawingElement[], sceneBehaviors: B
     L.push('  }');
     L.push('  _setV(sp, vx, vy);');
     L.push('}');
+    L.push('function _tether(band, ax, ay, target) { // draw `band` as a thin bar from (ax,ay) to target\'s centre');
+    L.push('  if (!band || !target || !target.alive) return;');
+    L.push('  const tx = target.x + target.width / 2, ty = target.y + target.height / 2;');
+    L.push('  const dx = tx - ax, dy = ty - ay, len = Math.hypot(dx, dy) || 1, TH = 5;');
+    L.push('  band.set({ x: (ax + tx) / 2 - len / 2, y: (ay + ty) / 2 - TH / 2, width: len, height: TH, angle: Math.atan2(dy, dx) });');
+    L.push('}');
     L.push('const _vars = {};                       // named numbers (lives, health, …)');
     L.push('const _vh = {};                         // on-screen labels for shown variables');
     L.push('function _showVar(name) {');
@@ -229,6 +237,7 @@ export function generateGameScript(elements: DrawingElement[], sceneBehaviors: B
     L.push('const _on = (m, fn) => { (_msg[m] || (_msg[m] = [])).push(fn); };');
     L.push('const _emit = (m) => { (_msg[m] || []).forEach(fn => { try { fn(); } catch (e) {} }); };');
     L.push('const _grav = new Set();                // sprites affected by gravity');
+    L.push('const _gravG = new Map();               // per-sprite gravity override (px/sec/sec)');
     L.push('const _ground = new Set();              // gravity sprites resting on a platform this frame');
     L.push('const GRAV = 2200;                      // gravity strength (px/sec/sec)');
     L.push('const JUMP = { slow: 680, medium: 860, fast: 1040 };');
@@ -327,7 +336,7 @@ export function generateGameScript(elements: DrawingElement[], sceneBehaviors: B
     // ── onTick: integrate velocity, keyHold, hit, leaveScreen, tick ──
     L.push('game.onTick((dt, t) => {');
     L.push('  for (let _i = _pending.length - 1; _i >= 0; _i--) { _pending[_i].t -= dt; if (_pending[_i].t <= 0) { const _f = _pending.splice(_i, 1)[0].fn; try { _f(); } catch (e) {} } }');
-    L.push('  for (const [id, v] of _vel) { if (_grav.has(id)) { _ground.delete(id); v.vy += GRAV * dt; } const sp = game.find(id); if (sp && sp.alive) sp.moveBy(v.vx * dt, v.vy * dt); }');
+    L.push('  for (const [id, v] of _vel) { if (_grav.has(id)) { _ground.delete(id); v.vy += (_gravG.get(id) ?? GRAV) * dt; } const sp = game.find(id); if (sp && sp.alive) sp.moveBy(v.vx * dt, v.vy * dt); }');
 
     for (const s of sprites) {
         const me = `S(${q(s.tag)})`;

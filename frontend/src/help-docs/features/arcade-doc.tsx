@@ -53,6 +53,12 @@ const ArcadeDoc: Component = () => {
                         data (drag a Math result into vx). Together they make aim/drag games possible — the
                         <strong>Slingshot · Blueprint</strong> sample uses them to follow the pointer while you
                         drag and launch the bird on release.</li>
+                    <li><strong>Tether (connectors):</strong> the <em>tether (bar to target)</em> action draws a
+                        sprite as a thin bar from a fixed point to another sprite's centre, re-fitting every
+                        moment — good for elastic bands, ropes, laser beams, or links. The
+                        <strong>Slingshot · Blueprint</strong> sample uses two tethered bands from the fork tips
+                        to the bird (they stretch as you pull back and hide once it launches), and it now guards
+                        the pigs with a little wall of smashable blocks.</li>
                     <li><strong>Variables</strong> (the <em>Vars</em> tab) hold numbers like lives, health, or
                         ammo. Declare them with a starting value in one place; rules change them with
                         <em>set/change variable</em>, react with <em>when a variable reaches…</em>, and gate

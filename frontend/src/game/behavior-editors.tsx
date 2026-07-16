@@ -93,6 +93,11 @@ export const ActionParams: Component<{ action: Action; sprites: string[]; states
                 <span class="be-unit">x</span><input class="be-num" type="number" value={a().x} onInput={e => set({ x: Number(e.currentTarget.value) })} />
                 <span class="be-unit">y</span><input class="be-num" type="number" value={a().y} onInput={e => set({ y: Number(e.currentTarget.value) })} />
             </Show>
+            <Show when={a().kind === 'tether'}>
+                <span class="be-unit">x</span><input class="be-num" type="number" value={a().ax} onInput={e => set({ ax: Number(e.currentTarget.value) })} />
+                <span class="be-unit">y</span><input class="be-num" type="number" value={a().ay} onInput={e => set({ ay: Number(e.currentTarget.value) })} />
+                <select class="be-sel" value={a().target} onChange={e => set({ target: e.currentTarget.value })}><option value="">(pick target)</option><For each={p.sprites}>{n => <option value={n}>{n}</option>}</For></select>
+            </Show>
             <Show when={a().kind === 'spawn'}>
                 <select class="be-sel" value={a().sprite} onChange={e => set({ sprite: e.currentTarget.value })}><option value="">(pick sprite)</option><For each={p.sprites}>{n => <option value={n}>{n}</option>}</For></select>
                 <select class="be-sel" value={a().at} onChange={e => set({ at: e.currentTarget.value })}><For each={SPAWN_AT}>{s => <option value={s.v}>{s.label}</option>}</For></select>

@@ -46,6 +46,7 @@ export const ACTIONS: { v: Action['kind']; label: string }[] = [
     { v: 'show', label: 'show' }, { v: 'hide', label: 'hide' },
     { v: 'setText', label: 'set text' }, { v: 'moveTo', label: 'jump to' },
     { v: 'setVelocity', label: 'set velocity (vx, vy)' }, { v: 'moveToXY', label: 'move to point (x, y)' },
+    { v: 'tether', label: 'tether (bar to target)' },
     { v: 'spawn', label: 'spawn a copy' },
     { v: 'destroy', label: 'destroy' }, { v: 'score', label: 'change score' },
     { v: 'setVar', label: 'set variable' }, { v: 'changeVar', label: 'change variable' }, { v: 'showVar', label: 'show variable' },
@@ -80,6 +81,7 @@ export const defaultAction = (kind: Action['kind']): Action => {
         case 'moveTo': return { kind, at: 'randomTop' };
         case 'setVelocity': return { kind, vx: 0, vy: 0 };
         case 'moveToXY': return { kind, x: 0, y: 0 };
+        case 'tether': return { kind, ax: 0, ay: 0, target: '' };
         case 'spawn': return { kind, sprite: '', at: 'randomTop' };
         case 'destroy': return { kind, target: 'this' };
         case 'score': return { kind, delta: 1 };

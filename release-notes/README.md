@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.106](0.8.106.md) — Excalidraw import/export (+ open Yappy format spec); text auto-size reachable & sticky; mindmap Tab/Enter inherit the parent's fonts/style; Slingshot overhaul (Y-fork + elastic bands via new `tether` action, destructible blocks, per-sprite gravity, grab margin); fix random middle-click paste on Linux; Alt+Enter opens Canvas properties; Behaviors panel no longer buried under the slide-navigator
 - [0.8.102](0.8.102.md) — "What's new" popup: click the version number for a plain-language list of recent updates (+ "new" dot, Reload-latest button, `Yappy.showWhatsNew()`)
 - [0.8.101](0.8.101.md) — Fix: elements/images/text no longer vanish when dragged past the page edge on design/slide docs (AABB-overlap visibility + always-render-selected instead of centre-point culling)
 - [0.8.100](0.8.100.md) — First-visit guided onboarding tour (spotlight walkthrough; replay from Help or `Yappy.startTour()`); AA-contrast in light & dark

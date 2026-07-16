@@ -5,7 +5,8 @@ import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleKeyframePanel, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
-    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript
+    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript,
+    isPropertyPanelVisible
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import { isPanelOpen } from "../store/dock-layout"; // History/Swatches migrated to the dock (Phase D)
@@ -145,7 +146,9 @@ const Menu: Component = () => {
     const [isPalettePickerOpen, setIsPalettePickerOpen] = createSignal(isPalettePinned());
     // The Properties panel docks to the right edge (~280px). Shift the fixed top-right
     // palette + theme controls left of it while it's open so they don't overlap its header.
-    const propPanelOffset = () => (store.showPropertyPanel && !store.isPropertyPanelMinimized) ? 290 : 0;
+    // Keyed off actual visibility, not store.showPropertyPanel: the panel renders nothing
+    // without a target, and shifting then reads as the buttons sliding for no reason.
+    const propPanelOffset = () => (isPropertyPanelVisible() && !store.isPropertyPanelMinimized) ? 290 : 0;
     let palettePickerRef: HTMLDivElement | undefined;
 
     createEffect(() => {
@@ -366,6 +369,15 @@ const Menu: Component = () => {
 
             const json = JSON.parse(jsonString);
 
+            // Excalidraw file → import its elements onto the current drawing (doesn't replace the doc).
+            if (json?.type === 'excalidraw' || file.name.endsWith('.excalidraw')) {
+                const ids = YappyAPI.importExcalidraw(json);
+                showToast(ids.length ? `Imported ${ids.length} element${ids.length > 1 ? 's' : ''} from Excalidraw` : 'No importable elements in that Excalidraw file', ids.length ? 'success' : 'error');
+                setIsMenuOpen(false);
+                (e.target as HTMLInputElement).value = '';
+                return;
+            }
+
             // Ensure data is in SlideDocument format (migrate if v2)
             const doc = isSlideDocument(json) ? json : migrateToSlideFormat(json);
             loadDocument(doc);
@@ -408,6 +420,27 @@ const Menu: Component = () => {
         } catch (e) {
             console.error(e);
             showToast('Failed to export HTML', 'error');
+        }
+    };
+
+    const handleExportExcalidraw = () => {
+        try {
+            const { json, downgraded } = YappyAPI.exportExcalidraw();
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${drawingId()}.excalidraw`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            const note = downgraded ? ` (${downgraded} Yappy-only shape${downgraded > 1 ? 's' : ''} exported as outlines)` : '';
+            showToast(`Exported to Excalidraw${note}`, 'success');
+            setIsLoadExportOpen(false);
+        } catch (e) {
+            console.error(e);
+            showToast('Failed to export to Excalidraw', 'error');
         }
     };
 
@@ -575,7 +608,7 @@ const Menu: Component = () => {
                 type="file"
                 ref={fileInputRef}
                 style={{ display: 'none' }}
-                accept=".json,.yappy"
+                accept=".json,.yappy,.excalidraw"
                 onChange={handleOpenJson}
             />
 
@@ -616,6 +649,7 @@ const Menu: Component = () => {
                     onSaveDiskJson={() => { setIsLoadExportOpen(false); handleSaveRequest('disk-json'); }}
                     onExportImage={() => { setIsLoadExportOpen(false); setIsExportOpen(true); }}
                     onExportHtml={handleExportHtml}
+                    onExportExcalidraw={handleExportExcalidraw}
                     onExportRocket={handleExportRocket}
                     onDeployRocket={handleDeployToRocket}
                     onLoadCloud={() => { setIsLoadExportOpen(false); setCloudDialogMode('load'); setIsCloudDialogOpen(true); }}

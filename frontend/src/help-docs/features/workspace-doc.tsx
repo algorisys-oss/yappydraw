@@ -45,6 +45,22 @@ const WorkspaceDoc: Component = () => {
                 </p>
             </section>
 
+            {/* ─── PROPERTIES PANEL ───────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Properties panel</h2>
+                <p>
+                    Press <strong>Alt+Enter</strong> (or the sliders button in the bottom-left cluster) to toggle the
+                    <strong> Properties</strong> panel, which docks to the right edge. It shows the controls for whatever
+                    is selected — fill, stroke, size, text, effects, animation — or the defaults for the active drawing
+                    tool when nothing is selected.
+                </p>
+                <p class="tip-box">
+                    With <strong>nothing selected</strong> and the Select tool active, Alt+Enter opens
+                    <strong> Canvas properties</strong> (background, grid, texture, page size) — the same thing you get
+                    from <em>right-click → Canvas Settings</em>. Clicking an empty spot on the canvas dismisses it.
+                </p>
+            </section>
+
             {/* ─── SMART TOOLBAR ──────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Smart toolbar</h2>
@@ -209,6 +225,20 @@ Yappy.setStrokeDash([], ids);         // clear (revert to the Stroke Style prese
                 <p class="tip-box">
                     Choose <strong>SVG</strong> for logos, icons and anything you'll scale or re-edit;
                     <strong> PNG</strong> (2×) for crisp raster output; <strong>PDF</strong> for print.
+                </p>
+                <h3>Excalidraw import &amp; export</h3>
+                <p>
+                    Yappy round-trips with <strong>Excalidraw</strong>. <strong>Export to Excalidraw</strong> (in the
+                    Save/Export panel) writes a <code>.excalidraw</code> file you can open in Excalidraw — rectangles,
+                    ellipses, diamonds, lines, arrows, text, images and pen strokes map across directly; Yappy-only
+                    shapes (UML, BPMN, icons, …) are exported as their outline so they still look right. To
+                    <strong> import</strong>, just open a <code>.excalidraw</code> file from the menu — its elements are
+                    added to your current drawing. From a script: <code>window.Yappy.exportExcalidraw()</code> and
+                    <code> window.Yappy.importExcalidraw(json)</code>.
+                </p>
+                <p>
+                    The native Yappy document format is an open, documented JSON (see
+                    <code> docs/yappy-format-spec.md</code>) so other tools can read and write Yappy files too.
                 </p>
             </section>
 

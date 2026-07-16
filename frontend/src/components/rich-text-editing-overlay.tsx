@@ -324,6 +324,13 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                     // Stop propagation to prevent global hotkeys from interfering
                                     e.stopImmediatePropagation();
                                 });
+                                // Block middle-click (button 1) so an accidental scroll-wheel press
+                                // can't trigger the X11 PRIMARY-selection paste on Linux (it would
+                                // inject the last-highlighted text — or arbitrary HTML — into the
+                                // rich text). Ctrl/Cmd+V and right-click→Paste are untouched.
+                                const blockMiddle = (e: MouseEvent) => { if (e.button === 1) e.preventDefault(); };
+                                el.addEventListener('mousedown', blockMiddle);
+                                el.addEventListener('auxclick', blockMiddle);
                             }}
                             contentEditable
                             class="rt-editor"

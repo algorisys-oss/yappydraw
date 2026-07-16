@@ -497,6 +497,13 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                     // Stop propagation for all keys to prevent global hotkeys from interfering
                                     e.stopImmediatePropagation();
                                 });
+                                // Block middle-click (button 1) so an accidental scroll-wheel press
+                                // can't trigger the X11 PRIMARY-selection paste on Linux — that was
+                                // silently dumping whatever text was last highlighted into the label.
+                                // Ctrl/Cmd+V and right-click→Paste are untouched.
+                                const blockMiddle = (e: MouseEvent) => { if (e.button === 1) e.preventDefault(); };
+                                el.addEventListener('mousedown', blockMiddle);
+                                el.addEventListener('auxclick', blockMiddle);
                             }}
                             value={props.editText()}
                             onInput={(e) => props.setEditText(e.currentTarget.value)}

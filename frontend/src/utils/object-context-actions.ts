@@ -439,7 +439,12 @@ export const getStyleSnapshot = (el: DrawingElement): Partial<DrawingElement> =>
     opacity: el.opacity,
     fontFamily: el.fontFamily,
     fontSize: el.fontSize,
+    fontWeight: el.fontWeight,
+    fontStyle: el.fontStyle,
     textAlign: el.textAlign,
+    verticalAlign: el.verticalAlign,
+    letterSpacing: el.letterSpacing,
+    textColor: el.textColor,
     roundness: el.roundness,
     // Gradient Properties
     gradientStart: el.gradientStart,

@@ -2,7 +2,7 @@ import { type Component, Show, createMemo, For, createSignal, createEffect, Inde
 import { draggablePanel } from '../utils/draggable-panel';
 import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
 import { resolveDash, parseDashInput, dashToString } from "../utils/stroke-dash";
-import { pageNoun, setPageSize } from "../store/app-store";
+import { pageNoun, setPageSize, propertyPanelTarget } from "../store/app-store";
 import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, canTurntable, spinTurntable360 } from "../store/app-store";
 import { WARP_PRESETS } from "../utils/envelope-warp";
 import { replaceImageOn } from "../utils/image-actions";
@@ -1229,42 +1229,7 @@ const GradientEditor: Component<{ target: any, onChange: (key: string, val: any,
 const PropertyPanel: Component = () => {
 
     // Derived state for the active target (selection or defaults)
-    const activeTarget = createMemo(() => {
-        if (store.selection.length === 1) {
-            const el = store.elements.find(e => e.id === store.selection[0]);
-            if (el) {
-                return { type: 'element' as const, data: el };
-            }
-            // If element is missing (stale selection), fall through to defaults
-        } else if (store.selection.length > 1) {
-            return { type: 'multi' as const, data: null };
-        }
-
-        // Only show Canvas properties if explicitly requested
-        if (store.showCanvasProperties) {
-            return { type: 'canvas' as const, data: null };
-        }
-
-        // Slide context - when in slide mode with no selection
-        if (isPagedDocType(store.docType)) {
-            const activeSlide = store.slides[store.activeSlideIndex];
-            if (activeSlide) {
-                return { type: 'slide' as const, data: activeSlide as Slide };
-            }
-        }
-
-        // Eraser tool: show only the eraser-specific controls (width).
-        if (store.selectedTool === 'eraser') {
-            return { type: 'eraser' as const, data: null };
-        }
-
-        // Show defaults for the current tool
-        const tool = store.selectedTool;
-        if (tool === 'selection' || tool === 'pan') {
-            return null;
-        }
-        return { type: 'defaults' as const, data: null };
-    });
+    const activeTarget = createMemo(() => propertyPanelTarget());
 
     const activeProperties = createMemo(() => {
         const target = activeTarget();

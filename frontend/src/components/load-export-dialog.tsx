@@ -18,6 +18,7 @@ interface LoadExportDialogProps {
     onSaveDiskJson: () => void;
     onExportImage: () => void;
     onExportHtml: () => void;
+    onExportExcalidraw: () => void;
     onExportRocket?: () => void;
     onDeployRocket?: () => void;
     onLoadCloud?: () => void;
@@ -239,6 +240,17 @@ const LoadExportDialog: Component<LoadExportDialogProps> = (props) => {
                                         <p>Save as a standalone presentation file</p>
                                     </div>
                                     <button class="action-trigger secondary">Export HTML</button>
+                                </div>
+
+                                <div class="option-card compact" onClick={props.onExportExcalidraw}>
+                                    <div class="option-icon image">
+                                        <FileText size={24} />
+                                    </div>
+                                    <div class="option-info">
+                                        <h4>Export to Excalidraw</h4>
+                                        <p>Open in Excalidraw (.excalidraw). Yappy-only shapes become outlines.</p>
+                                    </div>
+                                    <button class="action-trigger secondary">Export .excalidraw</button>
                                 </div>
 
                                 <Show when={features.enableRocketExport}>

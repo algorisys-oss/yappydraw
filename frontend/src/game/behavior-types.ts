@@ -43,7 +43,9 @@ export type Action =
     | { kind: 'glide'; dir: Dir8; speed: Speed }
     | { kind: 'bounce' }
     /** Physics: make this sprite fall (or stop falling). */
-    | { kind: 'gravity'; on: boolean }
+    /** Gravity for this sprite. `strength` (px/s²) overrides the global default for THIS sprite —
+     *  e.g. a lighter/heavier feel — omit to use the shared default. */
+    | { kind: 'gravity'; on: boolean; strength?: number }
     /** Physics: an upward impulse (jump height by level). */
     | { kind: 'jump'; strength: Speed }
     /** Physics: rest on top of the sprite it's touching (platform landing). */
@@ -61,6 +63,10 @@ export type Action =
     /** Move this sprite's CENTER to an absolute world point. Data-wireable (x, y) —
      *  e.g. follow the pointer while aiming. */
     | { kind: 'moveToXY'; x: number; y: number }
+    /** Render this sprite as a thin bar spanning from a fixed anchor point (ax, ay) to the CENTRE
+     *  of the `target` sprite, re-fitted each tick. A general connector: sling bands, ropes, laser
+     *  beams, links. Data-wireable (ax, ay). */
+    | { kind: 'tether'; ax: number; ay: number; target: string }
     | { kind: 'spawn'; sprite: string; at: SpawnAt }
     | { kind: 'destroy'; target: 'this' | string }
     | { kind: 'score'; delta: number }

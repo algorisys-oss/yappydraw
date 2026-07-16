@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.106', date: '2026-07-16', items: [
+        'Import & export Excalidraw — open a .excalidraw file to bring its shapes in, or Save/Export → Export to Excalidraw to open your work there.',
+        'Text boxes: the Auto Resize toggle now shows for text — hug the text (auto width) or drag a side handle to lock the width and let it wrap.',
+        'Mind maps: press Tab or Enter and the new node inherits the parent’s font, size, colour and fill — no more re-styling every node.',
+        'The Slingshot game got a real slingshot: a Y-fork with stretchy elastic bands, a wall of smashable blocks, and an easier-to-grab bird.',
+        'Fixed: on Linux, an accidental middle-click no longer pastes random highlighted text into your labels.',
+    ] },
     { version: '0.8.105', date: '2026-07-14', items: [
         'Exported HTML presentations now respond to the keyboard — → / Space to advance, ← to go back, Home/End to jump.',
         'Infinite-canvas HTML exports open perfectly framed to your content (no more hunting for your drawing).',

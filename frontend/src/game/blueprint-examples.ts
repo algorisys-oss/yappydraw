@@ -206,15 +206,35 @@ function graphBuilder() {
  */
 export function slingshotSample(X: number, Y: number, W: number, H: number) {
     const GROUND = Y + H - 40;
-    const AX = X + 130, AY = GROUND - 120;   // sling pouch anchor
-    const POWER = 7;
+    // Matched to the code-authored Slingshot (game-templates.ts) so the two feel the same:
+    // same pouch anchor, launch power, and (via per-sprite gravity) the same fall.
+    const AX = X + 150, AY = GROUND - 100;   // sling pouch anchor
+    const POWER = 10.5;
+    const GRAV = 1600;                       // lighter than the global 2200 default
     const pigTags = ['Pig1', 'Pig2', 'Pig3'];
+    const blockTags = ['Block1', 'Block2', 'Block3', 'Block4'];   // destructible hurdles
+    const BW = 30, BH = 48, BX = X + W - 340;   // block wall, just left of the pigs
 
+    const WOOD = '#6d4c41', BAND = '#4e342e';
+    const tipLX = AX - 28, tipLY = AY - 49;   // left fork-tip (band anchor)
+    const tipRX = AX + 28, tipRY = AY - 49;   // right fork-tip
     const elements: DrawingElement[] = [
         el('rectangle', X, Y, W, H, 'Sky', '#bfe9ff'),
         el('rectangle', X, GROUND, W, Y + H - GROUND, 'Ground', '#7cb342'),
-        el('rectangle', AX - 6, AY, 12, GROUND - AY, 'Post', '#6d4c41'),
+        // Slingshot = a Y-fork: a centre trunk plus two angled prongs, with the bird in the crook.
+        el('rectangle', AX - 6, AY, 12, GROUND - AY, 'Post', WOOD),
+        { ...el('rectangle', AX - 22, AY - 52, 10, 60, 'ForkL', WOOD), angle: -0.42 },
+        { ...el('rectangle', AX + 12, AY - 52, 10, 60, 'ForkR', WOOD), angle: 0.42 },
+        // Elastic bands: each own graph re-fits it from a fork tip to the bird every tick (until
+        // launch). Placed before the bird so it renders on top of them.
+        el('rectangle', tipLX, tipLY, 6, 40, 'Band1', BAND),
+        el('rectangle', tipRX, tipRY, 6, 40, 'Band2', BAND),
         el('circle', AX - 20, AY - 20, 40, 40, 'Bird', '#e53935'),
+        // A little 2×2 wall of wooden blocks guarding the pigs — smash through them.
+        el('rectangle', BX, GROUND - BH, BW, BH, 'Block1', '#a1887f'),
+        el('rectangle', BX, GROUND - BH * 2, BW, BH, 'Block2', '#8d6e63'),
+        el('rectangle', BX + BW + 6, GROUND - BH, BW, BH, 'Block3', '#8d6e63'),
+        el('rectangle', BX + BW + 6, GROUND - BH * 2, BW, BH, 'Block4', '#a1887f'),
         el('circle', X + W - 250, GROUND - 46, 46, 46, 'Pig1', '#5bbf3a'),
         el('circle', X + W - 160, GROUND - 46, 46, 46, 'Pig2', '#5bbf3a'),
         el('circle', X + W - 90, GROUND - 130, 46, 46, 'Pig3', '#5bbf3a'),
@@ -232,11 +252,12 @@ export function slingshotSample(X: number, Y: number, W: number, H: number) {
     const Pdown = g.N('pointer', { axis: 'down' });
     const Gaim = g.N('getVar', { varName: 'aiming' });
 
-    // start → sit the bird in the pouch, aiming off
+    // start → sit the bird in the pouch, aiming off, not yet launched (so the bands show)
     const Estart = g.N('event', { trigger: { kind: 'start' } });
     const Aplace = g.N('action', { action: { kind: 'moveToXY', x: AX, y: AY } });
     const Aaim0s = g.N('action', { action: { kind: 'setVar', name: 'aiming', value: 0 } });
-    g.E(Estart, 'out', Aplace); g.E(Aplace, 'out', Aaim0s);
+    const Alnch0s = g.N('action', { action: { kind: 'setVar', name: 'launched', value: 0 } });
+    g.E(Estart, 'out', Aplace); g.E(Aplace, 'out', Aaim0s); g.E(Aaim0s, 'out', Alnch0s);
 
     // tap the bird → start aiming
     const Etap = g.N('event', { trigger: { kind: 'tap' } });
@@ -259,10 +280,11 @@ export function slingshotSample(X: number, Y: number, W: number, H: number) {
     const Mvys = g.N('math', { mathOp: '-' }); g.E(Lay, 'val', Mvys, 'a'); g.E(Py, 'val', Mvys, 'b');
     const Mvy = g.N('math', { mathOp: '*' }); g.E(Mvys, 'val', Mvy, 'a'); g.E(Lpow, 'val', Mvy, 'b');
     const Avel = g.N('action', { action: { kind: 'setVelocity', vx: 0, vy: 0 } }); g.E(Mvx, 'val', Avel, 'vx'); g.E(Mvy, 'val', Avel, 'vy');
-    const Agrav = g.N('action', { action: { kind: 'gravity', on: true } });
+    const Agrav = g.N('action', { action: { kind: 'gravity', on: true, strength: GRAV } });
     const Aaim0 = g.N('action', { action: { kind: 'setVar', name: 'aiming', value: 0 } });
+    const Alnch1 = g.N('action', { action: { kind: 'setVar', name: 'launched', value: 1 } });   // hides the bands
     const Asnd = g.N('action', { action: { kind: 'playSound', sound: 'powerup' } });
-    g.E(B2, 'false', Avel); g.E(Avel, 'out', Agrav); g.E(Agrav, 'out', Aaim0); g.E(Aaim0, 'out', Asnd);
+    g.E(B2, 'false', Avel); g.E(Avel, 'out', Agrav); g.E(Agrav, 'out', Aaim0); g.E(Aaim0, 'out', Alnch1); g.E(Alnch1, 'out', Asnd);
 
     // hit a pig → pop it, score, tick the counter
     for (const pt of pigTags) {
@@ -274,20 +296,53 @@ export function slingshotSample(X: number, Y: number, W: number, H: number) {
         g.E(Eh, 'out', Ad); g.E(Ad, 'out', As); g.E(As, 'out', Ac); g.E(Ac, 'out', Ae);
     }
 
+    // hit a block → smash it (score, but it doesn't count toward the pig total)
+    for (const bt of blockTags) {
+        const Eh = g.N('event', { trigger: { kind: 'hit', target: bt } });
+        const Ad = g.N('action', { action: { kind: 'destroy', target: bt } });
+        const As = g.N('action', { action: { kind: 'score', delta: 250 } });
+        const Ae = g.N('action', { action: { kind: 'playSound', sound: 'hit' } });
+        g.E(Eh, 'out', Ad); g.E(Ad, 'out', As); g.E(As, 'out', Ae);
+    }
+
     // flew off screen → reset to the sling for the next shot
     const Elv = g.N('event', { trigger: { kind: 'leaveScreen' } });
     const Astop = g.N('action', { action: { kind: 'setVelocity', vx: 0, vy: 0 } });
     const Agoff = g.N('action', { action: { kind: 'gravity', on: false } });
     const Arsp = g.N('action', { action: { kind: 'moveToXY', x: AX, y: AY } });
-    g.E(Elv, 'out', Astop); g.E(Astop, 'out', Agoff); g.E(Agoff, 'out', Arsp);
+    const Arlnch0 = g.N('action', { action: { kind: 'setVar', name: 'launched', value: 0 } });   // bands show again
+    g.E(Elv, 'out', Astop); g.E(Astop, 'out', Agoff); g.E(Agoff, 'out', Arsp); g.E(Arsp, 'out', Arlnch0);
 
     const birdGraph: Blueprint = { nodes: g.nodes, edges: g.edges };
+
+    // —— Band graphs: each tick, while not launched, re-fit the band from its fork tip to the bird;
+    //    after launch, hide it. Anchored at a fixed fork tip via the tether action's ax/ay.
+    const bandGraph = (ax: number, ay: number): Blueprint => {
+        const b = graphBuilder();
+        const Et = b.N('event', { trigger: { kind: 'tick' } });
+        const Br = b.N('branch', { condition: { name: 'launched', compare: 'atMost', value: 0 } });
+        const At = b.N('action', { action: { kind: 'tether', ax, ay, target: 'Bird' } });
+        const Ash = b.N('action', { action: { kind: 'show' } });
+        const Ah = b.N('action', { action: { kind: 'hide' } });
+        b.E(Et, 'out', Br);
+        b.E(Br, 'true', At); b.E(At, 'out', Ash);
+        b.E(Br, 'false', Ah);
+        return { nodes: b.nodes, edges: b.edges };
+    };
     const sceneGraph = graphFromRules([
         { trigger: { kind: 'start' }, actions: [{ kind: 'setVar', name: 'pigs', value: pigTags.length }, { kind: 'showVar', name: 'pigs' }] },
         { trigger: { kind: 'varReaches', name: 'pigs', value: 0, compare: 'atMost' }, actions: [{ kind: 'playSound', sound: 'win' }, { kind: 'win', message: "POPPED 'EM ALL!" }] },
     ]);
 
-    return { elements, blueprints: { '': sceneGraph, Bird: birdGraph } as Record<string, Blueprint> };
+    return {
+        elements,
+        blueprints: {
+            '': sceneGraph,
+            Bird: birdGraph,
+            Band1: bandGraph(tipLX, tipLY),
+            Band2: bandGraph(tipRX, tipRY),
+        } as Record<string, Blueprint>,
+    };
 }
 
 export function buildBlueprintSlingshotExample(): void {

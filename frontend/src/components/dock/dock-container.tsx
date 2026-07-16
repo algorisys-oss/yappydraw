@@ -163,7 +163,7 @@ export const DockContainer: Component = () => {
             <For each={floating()}>{(id) => {
                 const st = () => panelState(id);
                 return (
-                    <div class="dock-floating" style={{ left: `${st().floatX ?? 140}px`, top: `${st().floatY ?? 120}px` }}>
+                    <div class="dock-floating" style={{ left: `${st().floatX ?? 260}px`, top: `${st().floatY ?? 120}px` }}>
                         <PanelChrome id={id} floating />
                     </div>
                 );

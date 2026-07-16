@@ -48,12 +48,20 @@ export function isPanelOpen(id: string): boolean {
     return panelState(id).mode !== 'hidden';
 }
 
+// Default open position for a floating panel that has no saved position yet. floatX clears the
+// slide-navigator, a `position: fixed` 240px-wide left column (z-index 1000) whose list area
+// intercepts pointer events over anything beneath it — floating panels are only z-index 45, so a
+// panel opened further left (the old 140) had its left edge buried and unclickable on paged/game
+// docs where the navigator is shown. 260 = 240px navigator + a small gap.
+const DEFAULT_FLOAT_X = 260;
+const DEFAULT_FLOAT_Y = 120;
+
 /** Show a panel (docked or floating). Toggling an already-open panel hides it. */
 export function togglePanel(id: string, mode: 'floating' | 'docked' = 'floating') {
     const cur = panelState(id);
     if (cur.mode !== 'hidden') return hidePanel(id);
     setDockLayout('panels', id, (p) => ({
-        floatX: 140, floatY: 120, ...(p || {}),
+        floatX: DEFAULT_FLOAT_X, floatY: DEFAULT_FLOAT_Y, ...(p || {}),
         mode,
         ...(mode === 'docked' && !p?.zone ? { zone: 'right' as DockZone } : {}),
     }));

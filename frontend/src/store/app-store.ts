@@ -740,15 +740,17 @@ export const addChildNode = (parentId: string, opts: { recordHistory?: boolean; 
 
     const newElement: DrawingElement = {
         ...store.defaultElementStyles,
-        // Inherit styles from parent, with depth-based tapering
-        strokeColor: branch.color,
-        backgroundColor: parent.backgroundColor,
-        fillStyle: parent.fillStyle,
-        strokeWidth: branch.strokeWidth,
-        roughness: parent.roughness,
-        renderStyle: parent.renderStyle,
-        opacity: branch.opacity,
+        // Inherit the parent's full visual style — fonts, text alignment/colour, fill, roundness,
+        // shadow, gradient, appearance stack — so a new node matches the one it grew from. The cast
+        // re-asserts the required style fields (snapshot returns them Partial); parent is a real
+        // element, so they are all defined.
+        ...(getStyleSnapshot(parent) as DrawingElement),
         strokeStyle: parent.strokeStyle || 'solid',
+        // …then re-apply the depth-based branch tapering, which deliberately overrides the
+        // inherited stroke colour/width/opacity to keep the mindmap's visual hierarchy.
+        strokeColor: branch.color,
+        strokeWidth: branch.strokeWidth,
+        opacity: branch.opacity,
 
         id: newId,
         type: (parent.type === 'line' || parent.type === 'arrow') ? 'rectangle' : parent.type,
@@ -763,7 +765,6 @@ export const addChildNode = (parentId: string, opts: { recordHistory?: boolean; 
         isCollapsed: false,
         angle: 0,
         seed: Math.floor(Math.random() * 2 ** 31),
-        roundness: null,
         locked: false,
         link: null,
         ...typeSpecificProps,
@@ -899,15 +900,14 @@ export const addSiblingNode = (siblingId: string, opts: { animate?: boolean } = 
 
     const newElement: DrawingElement = {
         ...store.defaultElementStyles,
-        // Inherit styles from sibling, with depth-based tapering
-        strokeColor: branch.color,
-        backgroundColor: sibling.backgroundColor,
-        fillStyle: sibling.fillStyle,
-        strokeWidth: branch.strokeWidth,
-        roughness: sibling.roughness,
-        renderStyle: sibling.renderStyle,
-        opacity: branch.opacity,
+        // Inherit the sibling's full visual style (fonts, text, fill, roundness, shadow, …) so a
+        // new sibling matches its peers. Cast re-asserts required fields (see addChildNode).
+        ...(getStyleSnapshot(sibling) as DrawingElement),
         strokeStyle: sibling.strokeStyle || 'solid',
+        // …then re-apply depth-based branch tapering (stroke colour/width/opacity per hierarchy).
+        strokeColor: branch.color,
+        strokeWidth: branch.strokeWidth,
+        opacity: branch.opacity,
 
         id: newId,
         type: sibling.type,
@@ -921,7 +921,6 @@ export const addSiblingNode = (siblingId: string, opts: { animate?: boolean } = 
         isCollapsed: false,
         angle: 0,
         seed: Math.floor(Math.random() * 2 ** 31),
-        roundness: null,
         locked: false,
         link: null,
         ...siblingTypeProps,
@@ -1091,10 +1090,21 @@ export const updateGlobalTickerState = () => {
  * setElementTransform, which sizes the box itself).
  */
 const FONT_METRIC_KEYS = ['fontSize', 'fontFamily', 'letterSpacing', 'fontWeight', 'fontStyle'] as const;
+/**
+ * Does this patch require re-fitting a text box? True when it changes font metrics or flips the
+ * auto-size mode (switching to auto-width must shrink the box onto the text, since the renderer
+ * stops wrapping and a stale box would otherwise overflow) — but never when the caller already
+ * supplied an explicit size (e.g. setElementTransform, which sizes the box itself).
+ * Single source of truth: updateElement uses this as its cheap gate before the O(n) element
+ * lookup, and autoSizeTextUpdates re-checks it. Keep the two from drifting apart.
+ */
+const needsTextRefit = (updates: Partial<DrawingElement>) =>
+    !('width' in updates) && !('height' in updates) &&
+    (FONT_METRIC_KEYS.some(k => k in updates) || 'autoResize' in updates);
+
 const autoSizeTextUpdates = (el: DrawingElement, updates: Partial<DrawingElement>): Partial<DrawingElement> => {
     if (el.type !== 'text' && el.type !== 'richtext') return updates;
-    if ('width' in updates || 'height' in updates) return updates;
-    if (!FONT_METRIC_KEYS.some(k => k in updates)) return updates;
+    if (!needsTextRefit(updates)) return updates;
     const merged = { ...el, ...updates } as DrawingElement;
     const text = merged.text || '';
     if (!text) return updates;
@@ -1131,9 +1141,9 @@ export const updateElement = (id: string, updates: Partial<DrawingElement>, reco
     if ('backgroundColor' in updates && !('fillSwatchId' in updates)) updates = { ...updates, fillSwatchId: undefined };
     if ('strokeColor' in updates && !('strokeSwatchId' in updates)) updates = { ...updates, strokeSwatchId: undefined };
 
-    // Re-fit a text element's box when its font metrics change (keeps the
-    // selection/hit rect matched to the rendered glyphs).
-    if (FONT_METRIC_KEYS.some(k => k in updates)) {
+    // Re-fit a text element's box when its font metrics change or its auto-size mode flips
+    // (keeps the selection/hit rect matched to the rendered glyphs).
+    if (needsTextRefit(updates)) {
         const el = store.elements.find(e => e.id === id);
         if (el) updates = autoSizeTextUpdates(el, updates);
     }
@@ -3989,13 +3999,72 @@ export const setEraserWidth = (width: number) => {
 export const setIsPreviewing = (value: boolean) => setStore('isPreviewing', value);
 
 // Panel Management
+
+/**
+ * What the Properties panel would show right now, or null if it has nothing to show
+ * (Select/Pan tool, empty selection, no canvas/slide context). Lives here rather than in
+ * property-panel.tsx so that consumers which only need *whether* the panel appears —
+ * e.g. the top-right controls in menu.tsx, which shift left to clear its header — stay in
+ * sync with what the panel itself renders.
+ */
+export const propertyPanelTarget = () => {
+    if (store.selection.length === 1) {
+        const el = store.elements.find(e => e.id === store.selection[0]);
+        if (el) {
+            return { type: 'element' as const, data: el };
+        }
+        // If element is missing (stale selection), fall through to defaults
+    } else if (store.selection.length > 1) {
+        return { type: 'multi' as const, data: null };
+    }
+
+    // Only show Canvas properties if explicitly requested
+    if (store.showCanvasProperties) {
+        return { type: 'canvas' as const, data: null };
+    }
+
+    // Slide context - when in slide mode with no selection
+    if (isPagedDocType(store.docType)) {
+        const activeSlide = store.slides[store.activeSlideIndex];
+        if (activeSlide) {
+            return { type: 'slide' as const, data: activeSlide as Slide };
+        }
+    }
+
+    // Eraser tool: show only the eraser-specific controls (width).
+    if (store.selectedTool === 'eraser') {
+        return { type: 'eraser' as const, data: null };
+    }
+
+    // Show defaults for the current tool
+    const tool = store.selectedTool;
+    if (tool === 'selection' || tool === 'pan') {
+        return null;
+    }
+    return { type: 'defaults' as const, data: null };
+};
+
+/** Whether the Properties panel is actually on screen (flag set AND something to show). */
+export const isPropertyPanelVisible = () =>
+    store.showPropertyPanel && (store.isPropertyPanelMinimized || propertyPanelTarget() !== null);
+
 export const togglePropertyPanel = (visible?: boolean) => {
     // If currently minimized and we are toggling on (or toggling), expand it
     if (store.isPropertyPanelMinimized && (visible === undefined || visible === true)) {
         setStore("isPropertyPanelMinimized", false);
         setStore("showPropertyPanel", true);
     } else {
-        setStore("showPropertyPanel", visible ?? !store.showPropertyPanel);
+        const next = visible ?? !store.showPropertyPanel;
+        if (next && propertyPanelTarget() === null) {
+            // Nothing selected and no tool defaults to show: the panel would render nothing and
+            // the toggle would look like a no-op. Fall back to Canvas properties so there is
+            // always something to see. Cleared on close, and by clicking empty canvas
+            // (selection-handler) so a later deselect doesn't resurrect it.
+            setStore("showCanvasProperties", true);
+        } else if (!next) {
+            setStore("showCanvasProperties", false);
+        }
+        setStore("showPropertyPanel", next);
     }
 };
 

@@ -25,6 +25,14 @@ const q = (s: string): string => JSON.stringify(s ?? '');
 const num = (n: number): string => (Number.isFinite(n) ? String(n) : '0');
 const cmpOp = (c: Compare): string => c === 'atMost' ? '<=' : c === 'equals' ? '===' : '>=';
 
+/**
+ * Slop (px) added around a sprite's box when hit-testing a `tap`. A bare AABB makes small
+ * sprites nearly ungrabbable — the Slingshot bird is only 40×40, so a few-px miss produced no
+ * launch and no feedback, reading as "the game is broken." This gives every sprite tap a
+ * forgiving grab margin (helps touch input too) without meaningfully affecting large sprites.
+ */
+const TAP_GRAB_PAD = 18;
+
 /** Statements grouped by where they attach in the generated script. */
 export interface BPFragments {
     start: string[];
@@ -198,9 +206,10 @@ export function compileBlueprintFragments(bp: Blueprint | null | undefined, elem
                 frag.tick.push(`  if (game.key(${q(t.button)})) { ${meDecl}${isSprite ? 'if (_me) ' : ''}{\n${chain(first, 'dt', 'null', '    ')}\n  } }`);
                 break;
             case 'tap':
-                // Scene tap = any pointer-down; sprite tap = pointer inside the sprite.
+                // Scene tap = any pointer-down; sprite tap = pointer inside the sprite (plus a
+                // TAP_GRAB_PAD grab margin so small sprites aren't near-impossible to hit).
                 frag.tap.push(isSprite
-                    ? `${meDecl}if (_me && px >= _me.x && px <= _me.x + _me.width && py >= _me.y && py <= _me.y + _me.height) {\n${chain(first, '0.12', 'null', '  ')}\n}`
+                    ? `${meDecl}if (_me && px >= _me.x - ${TAP_GRAB_PAD} && px <= _me.x + _me.width + ${TAP_GRAB_PAD} && py >= _me.y - ${TAP_GRAB_PAD} && py <= _me.y + _me.height + ${TAP_GRAB_PAD}) {\n${chain(first, '0.12', 'null', '  ')}\n}`
                     : chain(first, '0.12', 'null', '  '));
                 break;
             case 'tick':

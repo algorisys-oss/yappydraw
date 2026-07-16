@@ -277,8 +277,8 @@ export const MindmapDoc: Component = () => {
                 </p>
                 <ul>
                     <li>Each main branch can have its own color theme</li>
-                    <li>Child nodes inherit parent colors by default</li>
-                    <li>Override individual node colors as needed</li>
+                    <li>New nodes added with <span class="kbd">Tab</span> (child) or <span class="kbd">Enter</span> (sibling) inherit the source node's full style — font, size, bold/italic, text alignment and colour, fill, and corner rounding — so a branch stays visually consistent as you build it. (Stroke colour and width still follow the depth-based branch tapering.)</li>
+                    <li>Override individual node styles afterwards as needed</li>
                 </ul>
 
                 <h3>Visual Hierarchy</h3>

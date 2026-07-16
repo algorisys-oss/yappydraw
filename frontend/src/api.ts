@@ -32,6 +32,7 @@ import {
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
+import { toExcalidraw, fromExcalidraw } from "./utils/excalidraw-io";
 import { PAGE_SIZE_PRESETS, getPagePreset } from "./config/page-size-presets";
 import { CANVAS_THEMES } from "./config/canvas-themes";
 import { magicResize } from "./utils/magic-resize";
@@ -274,6 +275,13 @@ interface ElementOptions {
     points?: Point[] | number[];
     status?: 'pending' | 'loaded' | 'error';
     dataURL?: string;
+    /**
+     * Box-fits-content mode. On a shape with `containerText`, the shape grows to fit its label.
+     * On `text`/`richtext` it selects the sizing model: `true` = auto width (the box hugs the
+     * text and never wraps), `false` = fixed width (the given `width` is held and the height
+     * re-flows as the text wraps). Dragging a left/right handle sets it to `false`, and the
+     * Properties panel exposes it as "Auto Resize".
+     */
     autoResize?: boolean;
     constrained?: boolean;
 
@@ -1570,6 +1578,37 @@ export const YappyAPI = {
     /** Serialize the drawing (or selection) to an SVG string. Also triggers a download. */
     exportSVG(onlySelected = false): string | undefined {
         return exportToSvg(onlySelected);
+    },
+
+    /**
+     * Serialize the drawing (or selection) to an Excalidraw `.excalidraw` file (v2). Primitives map
+     * directly; `path` and Yappy-only shapes downgrade to line polygons. Returns
+     * `{ json, downgraded }` — `downgraded` is how many shapes lost semantic fidelity.
+     */
+    exportExcalidraw(onlySelected = false): { json: string; downgraded: number } {
+        const els = onlySelected && store.selection.length
+            ? store.elements.filter(e => store.selection.includes(e.id))
+            : store.elements;
+        const { file, downgraded } = toExcalidraw(els);
+        return { json: JSON.stringify(file, null, 2), downgraded };
+    },
+
+    /**
+     * Import an Excalidraw file (object or JSON string) as Yappy elements on the active layer. Ids
+     * are regenerated and bindings/groups rewritten. Returns the new element ids. `opts.offset`
+     * shifts the import; `opts.select` (default true) selects the imported elements.
+     */
+    importExcalidraw(data: string | object, opts: { offset?: { x: number; y: number }; select?: boolean } = {}): string[] {
+        const json = typeof data === 'string' ? JSON.parse(data) : data;
+        const batch = new Set<string>();
+        const genId = (t: ElementType) => { const id = generateId(t, batch); batch.add(id); return id; };
+        const { elements } = fromExcalidraw(json, genId, store.activeLayerId, { offset: opts.offset });
+        if (elements.length) {
+            pushToHistory();  // one history entry for the whole import
+            setStore("elements", (els) => [...els, ...elements]);
+            if (opts.select !== false) this.setSelected(elements.map(e => e.id));
+        }
+        return elements.map(e => e.id);
     },
 
     /**
