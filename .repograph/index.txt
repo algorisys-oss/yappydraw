@@ -78,7 +78,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 3623 | Theme:3 HarmonyType:55 DimensionMeasure:62 ElementOptions:132 normalizeElementType:345 ElementType:550 as:550 Window:3612
+frontend/src/api.ts | typescript | 3627 | Theme:3 HarmonyType:55 DimensionMeasure:62 ElementOptions:132 normalizeElementType:345 ElementType:554 as:554 Window:3616
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1418 | Component:1 App:89 moves:114 onPenMove:115 hidePen:119 handleKeyUp:158 handleKeyDown:168 as:697 handleFullscreenChange:812 handleBeforeUnload:818 handlePaste:822 handleGlobalDragEnter:924 handleGlobalDragOver:939 showDropFallbackPrompt:958 cleanup:988 outsideClick:1016 isImageFile:1028 first:1029 must:1042 extractDropData:1044 processExtractedDrop:1099 handleGlobalDrop:1216 handleDocumentDrop:1262
 frontend/src/assets/solid.svg | - | 1 |
@@ -313,7 +313,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 101 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 104 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -805,6 +805,7 @@ tests/knife-exit.spec.ts | typescript | 36 | active:3
 tests/knife-scissors.spec.ts | typescript | 36 |
 tests/layer-background.spec.ts | typescript | 40 |
 tests/layers.spec.ts | typescript | 260 |
+tests/line-arrowhead-default.spec.ts | typescript | 53 | Window:9 boot:11
 tests/live-paint-select.spec.ts | typescript | 22 |
 tests/live-paint.spec.ts | typescript | 45 | lpFills:4
 tests/magic-wand-distort.spec.ts | typescript | 36 |

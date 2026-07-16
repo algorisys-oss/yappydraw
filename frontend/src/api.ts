@@ -391,7 +391,11 @@ export const YappyAPI = {
             textAlign: options?.textAlign ?? defaults.textAlign ?? 'left',
             verticalAlign: options?.verticalAlign ?? 'middle',
             startArrowhead: options?.startArrowhead ?? defaults.startArrowhead ?? null,
-            endArrowhead: options?.endArrowhead ?? defaults.endArrowhead ?? 'arrow',
+            // Only the arrow tool/type carries an arrowhead by default. Plain lines,
+            // bezier curves and every non-connector shape default to none — otherwise
+            // createLine()/createRectGrid() sprout stray chevrons on construction/
+            // scaffold geometry (the separate arrow tool is what adds a head).
+            endArrowhead: options?.endArrowhead ?? defaults.endArrowhead ?? (type === 'arrow' ? 'arrow' : null),
             locked: options?.locked ?? false,
             link: options?.link ?? null,
             tag: options?.tag ?? null,
