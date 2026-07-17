@@ -1,6 +1,8 @@
-import { type Component, Show, createEffect, onCleanup, createSignal, For } from 'solid-js';
+import { type Component, Show, createEffect, onCleanup, onMount, createSignal, For } from 'solid-js';
 import { store, setStore } from '../store/app-store';
 import { YappyMascot } from './mascot';
+import { listDrawings, openDrawing, type DrawingMeta } from '../storage/drawings-store';
+import { setShowDrawingsGallery } from './drawings-gallery-signal';
 
 /**
  * Welcome screen — shown on an empty canvas. A single bold call to action over a
@@ -26,6 +28,13 @@ export const WelcomeScreen: Component = () => {
         window.addEventListener('resize', handler);
         onCleanup(() => window.removeEventListener('resize', handler));
     });
+
+    // "Jump back in" — recent saved drawings (returning users land on their library).
+    const [recents, setRecents] = createSignal<DrawingMeta[]>([]);
+    onMount(async () => {
+        try { setRecents((await listDrawings()).slice(0, 6)); } catch { /* gallery is best-effort */ }
+    });
+    const openRecent = async (d: DrawingMeta) => { await openDrawing(d.id); };
 
     const features = [
         '100+ shapes, icons & connectors',
@@ -97,6 +106,50 @@ export const WelcomeScreen: Component = () => {
                                 </div>
                             )}
                         </For>
+                    </div>
+                </Show>
+
+                {/* Jump back in — recent saved drawings (interactive: re-enable pointer events) */}
+                <Show when={recents().length > 0}>
+                    <div style={{
+                        'margin-top': '28px', 'pointer-events': 'auto', 'max-width': '680px', width: '100%',
+                        opacity: '0', animation: 'wsFadeUp 0.6s ease-out 0.5s forwards',
+                    }}>
+                        <div style={{
+                            display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '10px',
+                            'margin-bottom': '12px', 'font-size': '0.8rem', color: 'var(--text-secondary, #6b7280)',
+                        }}>
+                            <span style={{ 'font-weight': '600' }}>Jump back in</span>
+                            <button onClick={() => setShowDrawingsGallery(true)} style={{
+                                'font-size': '0.78rem', color: 'var(--accent-color, #6366f1)', background: 'transparent',
+                                border: 'none', cursor: 'pointer', 'font-weight': '600',
+                            }}>My Drawings →</button>
+                        </div>
+                        <div style={{ display: 'flex', 'flex-wrap': 'wrap', gap: '12px', 'justify-content': 'center' }}>
+                            <For each={recents()}>
+                                {(d) => (
+                                    <button onClick={() => openRecent(d)} title={`Open "${d.name}"`} style={{
+                                        width: '120px', padding: '0', border: '1px solid var(--border-color, #e5e7eb)',
+                                        'border-radius': '10px', overflow: 'hidden', background: 'var(--bg-secondary, #f9fafb)',
+                                        cursor: 'pointer', 'text-align': 'left', 'font-family': 'inherit',
+                                    }}>
+                                        <div style={{
+                                            'aspect-ratio': '4 / 3', background: 'var(--bg-surface, #fff)',
+                                            display: 'flex', 'align-items': 'center', 'justify-content': 'center',
+                                            'border-bottom': '1px solid var(--border-color, #e5e7eb)',
+                                        }}>
+                                            <Show when={d.thumb} fallback={<span style={{ color: 'var(--text-secondary, #9ca3af)', 'font-size': '0.7rem' }}>No preview</span>}>
+                                                <img src={d.thumb} alt="" loading="lazy" style={{ width: '100%', height: '100%', 'object-fit': 'contain' }} />
+                                            </Show>
+                                        </div>
+                                        <div style={{
+                                            padding: '6px 8px', 'font-size': '0.75rem', 'font-weight': '600',
+                                            color: 'var(--text-primary, #111827)', 'white-space': 'nowrap', overflow: 'hidden', 'text-overflow': 'ellipsis',
+                                        }}>{d.name}</div>
+                                    </button>
+                                )}
+                            </For>
+                        </div>
                     </div>
                 </Show>
 

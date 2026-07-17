@@ -19,8 +19,9 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
     {
         title: 'File',
         shortcuts: [
-            { label: 'Open Drawing', keys: 'Ctrl+Alt+O' },
-            { label: 'Save Drawing', keys: 'Ctrl+Alt+S' },
+            { label: 'Save to My Drawings', keys: 'Ctrl+S' },
+            { label: 'Open Drawing (Export/Load dialog)', keys: 'Ctrl+Alt+O' },
+            { label: 'Save Drawing (Export/Save dialog)', keys: 'Ctrl+Alt+S' },
             { label: 'Export / Share', keys: 'Ctrl+Shift+E' },
             { label: 'Record Time-lapse (toggle)', keys: 'Ctrl+Shift+T' },
             { label: 'Command Palette', keys: 'Ctrl+K' },

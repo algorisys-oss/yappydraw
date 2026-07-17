@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.108', date: '2026-07-17', items: [
+        'New "My Drawings" gallery — save drawings right in your browser and reopen, rename, duplicate or delete them anytime, no account needed. Open it from the menu, the command palette, or "Jump back in" on the welcome screen.',
+        'Press Ctrl/Cmd+S to save the current canvas straight to My Drawings (the full Export/Save dialog is still on Ctrl+Alt+S).',
+        'Your saved drawings are kept durably on your device, so they survive browser cleanups — install the app or export a .yappy file for extra-safe backups.',
+    ] },
     { version: '0.8.107', date: '2026-07-16', items: [
         'Cleaner construction guides: inserting a Rectangular Grid (or scripting plain lines) no longer adds stray arrowheads — lines are plain, the arrow tool is what adds a head.',
     ] },

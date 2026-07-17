@@ -18,7 +18,8 @@ import {
 import { togglePanel, resetDockLayout } from "../store/dock-layout";
 import { flipSelected, lockSelected } from "./object-context-actions";
 import { openRepeatDialog } from "../components/repeat-dialog";
-import { setIsDSLImportOpen } from "../components/menu";
+import { setIsDSLImportOpen, quickSaveToGallery } from "../components/menu";
+import { setShowDrawingsGallery } from "../components/drawings-gallery-signal";
 import type { ToolType } from "../types";
 
 export interface Command {
@@ -399,6 +400,8 @@ export const getCommands = (): Command[] => {
 
         // DSL Import
         { id: 'file-import-dsl', label: 'Import Diagram from Text', category: 'File', action: () => setIsDSLImportOpen(true), shortcut: 'Ctrl+Shift+I' },
+        { id: 'file-save-gallery', label: 'Save to My Drawings', category: 'File', action: () => { void quickSaveToGallery(); }, shortcut: 'Ctrl+S' },
+        { id: 'file-open-gallery', label: 'My Drawings (open gallery)', category: 'File', action: () => setShowDrawingsGallery(true) },
     ];
 
     // Register all shapes/tools from catalog

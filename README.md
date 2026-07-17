@@ -463,12 +463,6 @@ yappy/
 └── vite.config.ts         # Vite configuration
 ```
 
-## Contributing
-
-Contributions welcome. Fork, branch, and open a PR.
-
-## License
-
 ## WASM Acceleration (Opt-in)
 
 YappyDraw includes optional WebAssembly modules (via AssemblyScript) for accelerating performance-critical operations like geometry calculations, hit testing, and path routing. **WASM is disabled by default** — the app runs on JS+Canvas as always.
@@ -492,18 +486,37 @@ To compile manually: `cd frontend/src/wasm/assemblyscript && npx asc --target re
 
 ---
 
-**Dual Licensed**
+## Contributing
+
+Contributions welcome. Fork, branch, and open a PR.
+
+## License
+
+**Dual licensed: AGPL-3.0, or a commercial license.**
 
 YappyDraw is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).
 
-You are free to use, modify, and distribute this software for **personal and non-commercial purposes** under the terms of the AGPL-3.0. Any modified versions must also be released under the AGPL-3.0, and if you run a modified version as a network service, you must make the source code available to its users.
+The AGPL-3.0 permits **any use, including commercial and enterprise use**, at no cost. What it asks in return is reciprocity:
 
-### Commercial & SaaS Use
+- **Same-license derivatives** — modified versions must themselves be AGPL-3.0.
+- **Source on distribution** — if you distribute YappyDraw or a modified version, you must make the corresponding source available under the AGPL-3.0.
+- **Source over the network (section 13)** — if you run a *modified* version as a network service, you must offer its source to that service's users. This clause is what separates the AGPL from the GPL, and it applies whether or not you charge for the service.
+- **Notices preserved** — copyright, license, and warranty notices must stay intact.
 
-If you wish to use YappyDraw in a **commercial product, proprietary application, or SaaS offering** without the AGPL-3.0 obligations (including source disclosure), you must obtain a **commercial license** from the Algorisys Open Source Team.
+You do **not** need a commercial license merely to use YappyDraw in a business. Running it unmodified — as an app, or inside something you don't distribute — triggers no source obligation at all.
 
-For commercial licensing inquiries, please contact us via [GitHub](https://github.com/algorisys-oss/yappydraw).
+### Commercial license
+
+The AGPL's reciprocity is a poor fit for some products: a proprietary application you ship to customers, a closed-source SaaS built on a modified YappyDraw, or any case where publishing your source isn't an option. For those, a **commercial license** from the Algorisys Open Source Team waives the AGPL-3.0 obligations listed above.
+
+You want a commercial license if you plan to:
+
+- Ship YappyDraw inside a **closed-source product** you distribute.
+- Run a **modified** YappyDraw as a **SaaS** without publishing your modifications.
+- Combine it with code under terms incompatible with the AGPL-3.0.
+
+For commercial licensing inquiries, contact us via [GitHub](https://github.com/algorisys-oss/yappydraw).
 
 ### Attribution
 
-Regardless of license type, all usage of YappyDraw must retain visible attribution to the **Algorisys Open Source Team** and a link to the [original repository](https://github.com/algorisys-oss/yappydraw).
+The AGPL-3.0 requires that copyright and license notices be preserved (sections 4 and 5). Beyond that, we ask — as a courtesy rather than a license condition — that work built on YappyDraw credit the **Algorisys Open Source Team** and link back to the [original repository](https://github.com/algorisys-oss/yappydraw). Attribution terms under a commercial license are agreed separately.

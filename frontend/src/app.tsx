@@ -75,7 +75,7 @@ import Menu, {
   handleNew, setShowHelp, setShowSettings,
   isDialogOpen, isSaveOpen, isLoadExportOpen, showHelp,
   setIsLoadExportOpen, setLoadExportInitialTab,
-  isAIPromptOpen, setIsAIPromptOpen
+  isAIPromptOpen, setIsAIPromptOpen, quickSaveToGallery
 } from './components/menu';
 import StatusBar from './components/status-bar';
 import { initAPI } from './api';
@@ -221,6 +221,12 @@ const App: Component = () => {
           e.preventDefault();
           setLoadExportInitialTab('save');
           setIsLoadExportOpen(true);
+          return;
+        } else if (key === 's') {
+          // Ctrl/Cmd+S → quick-save to the local "My Drawings" gallery
+          // (Ctrl+Alt+S remains the full Export/Save dialog above).
+          e.preventDefault();
+          void quickSaveToGallery();
           return;
         } else if (key === 'k') {
           e.preventDefault();

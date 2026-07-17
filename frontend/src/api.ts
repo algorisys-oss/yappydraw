@@ -2406,6 +2406,26 @@ export const YappyAPI = {
     /** Delete a version snapshot by id. */
     async deleteVersion(id: string) { const m = await import('./storage/version-history'); return m.deleteVersion(id); },
 
+    // "My drawings" gallery — local multi-document library (IndexedDB, offline-first).
+    /** Save the LIVE editor into the gallery (updates the open entry, or creates one). */
+    async saveToGallery(name?: string) { const m = await import('./storage/drawings-store'); return m.saveCurrentToGallery(name ? { name } : {}); },
+    /** Save the live editor as a NEW gallery drawing (never overwrites the open one). */
+    async saveToGalleryAsNew(name?: string) { const m = await import('./storage/drawings-store'); return m.saveCurrentToGallery({ name, forceNew: true }); },
+    /** List saved-drawing metadata (newest first, no bodies loaded). */
+    async listDrawings() { const m = await import('./storage/drawings-store'); return m.listDrawings(); },
+    /** Open a saved drawing into the editor by id. */
+    async openDrawing(id: string) { const m = await import('./storage/drawings-store'); return m.openDrawing(id); },
+    /** Rename a saved drawing. */
+    async renameDrawing(id: string, name: string) { const m = await import('./storage/drawings-store'); return m.renameDrawing(id, name); },
+    /** Duplicate a saved drawing; returns the new entry's metadata. */
+    async duplicateDrawing(id: string) { const m = await import('./storage/drawings-store'); return m.duplicateDrawing(id); },
+    /** Delete a saved drawing by id. */
+    async deleteDrawing(id: string) { const m = await import('./storage/drawings-store'); return m.deleteDrawing(id); },
+    /** Ask the browser to make local storage durable (dodges best-effort/ITP eviction). */
+    async requestPersistentStorage() { const m = await import('./storage/persistent-storage'); return m.requestPersistentStorage(); },
+    /** Best-effort local storage usage/quota estimate (null if unsupported). */
+    async storageEstimate() { const m = await import('./storage/persistent-storage'); return m.getStorageEstimate(); },
+
     // Templates
     /** List template metadata, optionally filtered by category (e.g. 'designs', 'my-templates'). */
     getTemplates(category?: string) {

@@ -20,7 +20,13 @@
     line-height: 1.25;
     white-space: nowrap;
     color: #fff;
+    /* Slightly translucent so connector handles / content directly under the
+       badge (it anchors at the selection's bottom-center) stay visible.
+       Solid fallback first; color-mix refines it where supported. */
     background: var(--accent-color, #6366f1);
+    background: color-mix(in srgb, var(--accent-color, #6366f1) 82%, transparent);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     border-radius: 5px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     pointer-events: none;

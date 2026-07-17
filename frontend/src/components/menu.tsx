@@ -34,8 +34,10 @@ const VersionHistoryDialog = lazy(() => import("./version-history-dialog"));
 const GameScriptDialog = lazy(() => import("./game-script-dialog"));
 const NewGameDialog = lazy(() => import("./new-game-dialog"));
 const MyGamesDialog = lazy(() => import("./my-games-dialog"));
+const DrawingsGalleryDialog = lazy(() => import("./drawings-gallery-dialog"));
 import { setShowNewGame } from "./new-game-signal";
 import { setShowMyGames } from "./my-games-signal";
+import { setShowDrawingsGallery } from "./drawings-gallery-signal";
 const CloudStorageDialogLazy = lazy(() => import("./cloud-storage-dialog").then(m => ({ default: m.CloudStorageDialog as any })));
 const DSLImportDialog = lazy(() => import("./dsl-import-dialog"));
 const UnsavedChangesDialog = lazy(() => import("./unsaved-changes-dialog"));
@@ -83,6 +85,24 @@ export const handleSaveRequest = (intent: 'workspace' | 'disk' | 'disk-json') =>
     if (typeof sharedSetSaveIntent === 'function') {
         sharedSetSaveIntent(intent);
         setIsSaveOpen(true);
+    }
+};
+
+/**
+ * One-click "Save to My Drawings" — snapshots the live canvas into the local
+ * gallery (updates the open entry, or creates one). Shared by the menu item,
+ * Ctrl/Cmd+S, and the command palette. Lazy-imports the store so nothing heavy
+ * loads until the user actually saves.
+ */
+export const quickSaveToGallery = async () => {
+    if (store.elements.length === 0) { showToast('Nothing on the canvas to save yet', 'info'); return; }
+    try {
+        const m = await import('../storage/drawings-store');
+        const meta = await m.saveCurrentToGallery();
+        showToast(`Saved “${meta.name}” to My Drawings`, 'success');
+    } catch (e) {
+        console.error('[menu] quick save failed:', e);
+        showToast('Could not save to My Drawings', 'error');
     }
 };
 
@@ -701,6 +721,8 @@ const Menu: Component = () => {
 
                 <MyGamesDialog />
 
+                <DrawingsGalleryDialog />
+
                 <DesignSizeDialog
                     title="Magic Resize"
                     isOpen={isMagicResizeOpen()}
@@ -872,6 +894,17 @@ const Menu: Component = () => {
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+Shift+E</span>
                                         </div>
+                                    </button>
+                                    <button class="menu-item" onClick={() => { void quickSaveToGallery(); setIsMenuOpen(false); }}>
+                                        <FolderOpen size={16} />
+                                        <span class="label">Save to My Drawings</span>
+                                        <div class="menu-item-right">
+                                            <span class="shortcut">Ctrl+S</span>
+                                        </div>
+                                    </button>
+                                    <button class="menu-item" onClick={() => { setShowDrawingsGallery(true); setIsMenuOpen(false); }}>
+                                        <FolderOpen size={16} />
+                                        <span class="label">My Drawings…</span>
                                     </button>
                                     <button class="menu-item" onClick={() => { setIsVersionHistoryOpen(true); setIsMenuOpen(false); }}>
                                         <History size={16} />
