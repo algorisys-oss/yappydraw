@@ -661,10 +661,8 @@ const Menu: Component = () => {
                     isOpen={isLoadExportOpen()}
                     initialTab={loadExportInitialTab()}
                     onClose={() => setIsLoadExportOpen(false)}
-                    onLoadWorkspace={() => { setIsLoadExportOpen(false); setIsDialogOpen(true); }}
                     onLoadDisk={() => { setIsLoadExportOpen(false); fileInputRef?.click(); }}
                     onLoadJson={handleLoadJsonText}
-                    onSaveWorkspace={() => { setIsLoadExportOpen(false); handleSaveRequest('workspace'); }}
                     onSaveDisk={() => { setIsLoadExportOpen(false); handleSaveRequest('disk'); }}
                     onSaveDiskJson={() => { setIsLoadExportOpen(false); handleSaveRequest('disk-json'); }}
                     onExportImage={() => { setIsLoadExportOpen(false); setIsExportOpen(true); }}

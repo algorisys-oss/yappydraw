@@ -39,6 +39,14 @@ export default defineConfig({
       maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       globPatterns: ['**/*.{js,css,html,svg,png,ttf,wasm}'],
       navigateFallback: 'index.html',
+      // The OAuth popup returns to /oauth-callback.html?state=…&code=…&iss=…
+      // As a *navigation* request with a query string, workbox can't match it
+      // against the (query-less) precache key, so it fell through to
+      // navigateFallback and served the index.html app shell instead — the
+      // callback <script> never ran and the sign-in popup hung on "Connecting…".
+      // Exclude the callback (matched against url.pathname) so it hits the
+      // network/precache and the real static page loads.
+      navigateFallbackDenylist: [/oauth-callback\.html/],
       runtimeCaching: [
         {
           // Google Fonts stylesheets + font files: cache-first so display

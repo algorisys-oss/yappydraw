@@ -1,6 +1,6 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import {
-    X, Upload, Download, FolderOpen, Save, FileText, ClipboardPaste,
+    X, Upload, Download, FileText, ClipboardPaste,
     Image as ImageIcon, HelpCircle, AlertTriangle, Cloud, Rocket
 } from "lucide-solid";
 import "./load-export-dialog.css";
@@ -10,10 +10,8 @@ interface LoadExportDialogProps {
     isOpen: boolean;
     initialTab: 'load' | 'save';
     onClose: () => void;
-    onLoadWorkspace: () => void;
     onLoadDisk: () => void;
     onLoadJson: (json: string) => void;
-    onSaveWorkspace: () => void;
     onSaveDisk: () => void;
     onSaveDiskJson: () => void;
     onExportImage: () => void;
@@ -147,19 +145,6 @@ const LoadExportDialog: Component<LoadExportDialogProps> = (props) => {
                                             <button class="action-trigger">Open from Drive</button>
                                         </div>
                                     </Show>
-
-                                    <Show when={features.enableWorkspacePersistence}>
-                                        <div class="option-card" onClick={props.onLoadWorkspace}>
-                                            <div class="option-icon workspace">
-                                                <FolderOpen size={32} />
-                                            </div>
-                                            <div class="option-info">
-                                                <h4>Open from Workspace</h4>
-                                                <p>Load a drawing saved in your local workspace</p>
-                                            </div>
-                                            <button class="action-trigger">Open Workspace</button>
-                                        </div>
-                                    </Show>
                                 </div>
                             </Show>
 
@@ -286,19 +271,6 @@ const LoadExportDialog: Component<LoadExportDialogProps> = (props) => {
                                             <p>Save your drawing to Google Drive</p>
                                         </div>
                                         <button class="action-trigger secondary">Save to Drive</button>
-                                    </div>
-                                </Show>
-
-                                <Show when={features.enableWorkspacePersistence}>
-                                    <div class="option-card compact" onClick={props.onSaveWorkspace}>
-                                        <div class="option-icon workspace">
-                                            <Save size={24} />
-                                        </div>
-                                        <div class="option-info">
-                                            <h4>Save to Workspace</h4>
-                                            <p>Save drawing to your internal browser storage</p>
-                                        </div>
-                                        <button class="action-trigger secondary">Save Workspace</button>
                                     </div>
                                 </Show>
                             </div>

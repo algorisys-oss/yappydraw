@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.109', date: '2026-07-18', items: [
+        'Fixed Google Drive sign-in — after signing in, the popup no longer gets stuck on "Connecting…"; it now finishes and connects your Drive.',
+        'Tidied the Load/Save panel — the old "Workspace" options are gone; use "My Drawings" (or Ctrl/Cmd+S) to keep and reopen drawings in your browser.',
+    ] },
     { version: '0.8.108', date: '2026-07-17', items: [
         'New "My Drawings" gallery — save drawings right in your browser and reopen, rename, duplicate or delete them anytime, no account needed. Open it from the menu, the command palette, or "Jump back in" on the welcome screen.',
         'Press Ctrl/Cmd+S to save the current canvas straight to My Drawings (the full Export/Save dialog is still on Ctrl+Alt+S).',
