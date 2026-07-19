@@ -16,11 +16,13 @@
 
 /**
  * One line of dialogue. `kind` selects the balloon from the comic vocabulary
- * (Comic Chat §5.1): normal speech, a thought cloud, or a whispered aside.
+ * (Comic Chat §5.1): normal speech, a thought cloud, a whispered aside, or a
+ * narration caption (§8) — the box a comic uses for "MEANWHILE..." and scene-setting.
+ * A narration line has no speaker and puts nobody in the panel.
  * The paper's fourth type — the jagged shout balloon — was unimplemented there too;
  * ALL CAPS already poses the speaker with a megaphone, which reads clearly enough.
  */
-export type BalloonKind = 'speech' | 'thought' | 'whisper';
+export type BalloonKind = 'speech' | 'thought' | 'whisper' | 'narration';
 
 export interface Utterance { speaker: string; text: string; kind?: BalloonKind; }
 
@@ -78,12 +80,19 @@ export function parseScript(input: string | Utterance[]): Utterance[] {
         return input
             .filter(u => u && typeof u.speaker === 'string' && typeof u.text === 'string')
             .map(u => ({ speaker: u.speaker.trim(), text: u.text.trim(), ...(u.kind ? { kind: u.kind } : {}) }))
-            .filter(u => u.speaker && u.text);
+            .filter(u => u.text && (u.speaker || u.kind === 'narration'));
     }
     const out: Utterance[] = [];
     for (const raw of String(input).split(/\r?\n/)) {
         const line = raw.trim();
         if (!line) continue;
+        // Narration caption: "* Later that day" or "[Later that day]". No speaker, so
+        // it adds a caption without casting anyone into the panel.
+        const narration = line.startsWith('*')
+            ? line.slice(1).trim()
+            : (line.startsWith('[') && line.endsWith(']') ? line.slice(1, -1).trim() : null);
+        if (narration) { if (narration) out.push({ speaker: '', text: narration, kind: 'narration' }); continue; }
+
         const i = line.indexOf(':');
         if (i <= 0) continue;
         let speaker = line.slice(0, i).trim();
@@ -125,6 +134,7 @@ export function splitIntoPanels(
     let speakersHere: string[] = [];
 
     for (const u of utterances) {
+        if (!u.speaker) { current.push(u); continue; }   // caption joins the current panel
         const alreadySpoke = speakersHere.includes(u.speaker);
         const wouldExceedCast = !alreadySpoke && speakersHere.length >= maxCharacters;
         if (current.length > 0 && (alreadySpoke || wouldExceedCast)) {
@@ -143,6 +153,7 @@ export function splitIntoPanels(
 export function castSpeakers(utterances: Utterance[]): string[] {
     const seen: string[] = [];
     for (const u of utterances) {
+        if (!u.speaker) continue;                     // narration casts nobody
         if (!seen.includes(u.speaker)) seen.push(u.speaker);
         if (seen.length >= MAX_CHARACTERS) break;
     }
@@ -262,6 +273,7 @@ export function layoutPanel(input: LayoutInput): PanelLayout {
     // tall narrow column. Figures are centred in their slot.
     const widestBubble = new Map<string, number>();
     utterances.forEach((u, i) => {
+        if (!u.speaker) return;                        // captions belong to no slot
         const w = bubbleSizes[i]?.width ?? 0;
         widestBubble.set(u.speaker, Math.max(widestBubble.get(u.speaker) ?? 0, w));
     });
@@ -294,16 +306,24 @@ export function layoutPanel(input: LayoutInput): PanelLayout {
     for (let i = 0; i < utterances.length; i++) {
         const u = utterances[i];
         const size = bubbleSizes[i] ?? { width: 160, height: 80 };
+        const isNarration = u.kind === 'narration';
         const speakerCx = centreX.get(u.speaker) ?? (minX + panelWidth / 2);
 
-        // Horizontal: centre over the speaker, then clamp into the panel so the tail
-        // stays within the bubble's usable band.
-        let bx = speakerCx - size.width / 2;
-        bx = Math.max(minX - size.width * 0.25, Math.min(bx, maxX - size.width * 0.75));
-        // Guarantee the speaker's centre falls inside the tail band.
-        const minBx = speakerCx - (TAIL_MAX / 100) * size.width;
-        const maxBx = speakerCx - (TAIL_MIN / 100) * size.width;
-        bx = Math.max(minBx, Math.min(bx, maxBx));
+        let bx: number;
+        if (isNarration) {
+            // Captions belong to the panel, not to a person: pin to the left edge, as
+            // comics do, and never point a tail anywhere.
+            bx = minX;
+        } else {
+            // Horizontal: centre over the speaker, then clamp into the panel so the tail
+            // stays within the bubble's usable band.
+            bx = speakerCx - size.width / 2;
+            bx = Math.max(minX - size.width * 0.25, Math.min(bx, maxX - size.width * 0.75));
+            // Guarantee the speaker's centre falls inside the tail band.
+            const minBx = speakerCx - (TAIL_MAX / 100) * size.width;
+            const maxBx = speakerCx - (TAIL_MIN / 100) * size.width;
+            bx = Math.max(minBx, Math.min(bx, maxBx));
+        }
 
         // Vertical placement enforces comic reading order (§5.2): balloons read
         // top-down, and left-to-right among balloons at the same height. So relative to
@@ -321,7 +341,7 @@ export function layoutPanel(input: LayoutInput): PanelLayout {
             else by = Math.max(by, p.y + p.height + BALLOON_GAP);
         }
 
-        const tail = ((speakerCx - bx) / size.width) * 100;
+        const tail = isNarration ? TAIL_MIN : ((speakerCx - bx) / size.width) * 100;
         placed.push({
             speaker: u.speaker,
             text: u.text,

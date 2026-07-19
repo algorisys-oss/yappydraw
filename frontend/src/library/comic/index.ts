@@ -193,8 +193,9 @@ export function planComicPanel(
     // Lay out on the widest figure so spacing is even regardless of pose.
     const figureWidth = Math.max(...speakers.map(s => figureWidths[s]), 24);
 
-    // Only the utterances whose speaker made it into the cast get a balloon.
-    const shown = utterances.filter(u => speakers.includes(u.speaker));
+    // Only the utterances whose speaker made it into the cast get a balloon — plus
+    // narration captions, which have no speaker but still belong to the panel.
+    const shown = utterances.filter(u => !u.speaker || speakers.includes(u.speaker));
 
     const layout = layoutPanel({
         utterances: shown,
@@ -319,10 +320,11 @@ function buildPanelElements(
     // tail, a thought cloud, or a whispered aside drawn with a dashed outline.
     for (const b of layout.bubbles) {
         const isThought = b.kind === 'thought';
+        const isNarration = b.kind === 'narration';
         elements.push({
             ...store.defaultElementStyles,
-            id: newId(isThought ? 'thoughtBubble' : 'speechBubble'),
-            type: isThought ? 'thoughtBubble' : 'speechBubble',
+            id: newId(isNarration ? 'rectangle' : isThought ? 'thoughtBubble' : 'speechBubble'),
+            type: isNarration ? 'rectangle' : isThought ? 'thoughtBubble' : 'speechBubble',
             x: b.x,
             y: b.y,
             width: b.width,
@@ -333,10 +335,10 @@ function buildPanelElements(
             containerText: b.text,
             fontSize,
             fontStyle: b.kind === 'whisper' ? 'italic' : undefined,
-            textAlign: 'center',
+            textAlign: isNarration ? 'left' : 'center',
             verticalAlign: 'middle',
-            // The thought cloud has no tail, so the tail position is meaningless for it.
-            ...(isThought ? {} : { tailPosition: Math.round(b.tailPosition) }),
+            // Neither a caption box nor a thought cloud has a tail.
+            ...(isThought || isNarration ? {} : { tailPosition: Math.round(b.tailPosition) }),
             seed: 1,
             layerId: store.activeLayerId,
             groupIds: [panelGroupId],

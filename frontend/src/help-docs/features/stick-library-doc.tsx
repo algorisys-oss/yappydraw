@@ -181,6 +181,21 @@ Ann (whispers): me neither`}</code></pre>
                     bracket stays part of the name, so <code>Ann (CEO):</code> still works.
                 </p>
 
+                <h3>Narration captions</h3>
+                <p>
+                    Start a line with <code>*</code> or wrap it in <code>[ ]</code> for a caption
+                    box — the “MEANWHILE…” panel comics use to set the scene:
+                </p>
+                <pre><code>{`* Friday, 5pm
+Ann: Did we ship it?
+[MEANWHILE...]
+Ben: ON IT`}</code></pre>
+                <p>
+                    A caption belongs to the panel rather than to a person: it puts nobody in the
+                    scene, doesn’t start a new panel on its own, and sits at the panel’s top-left
+                    where it reads first.
+                </p>
+
                 <h3>Setting the mood yourself</h3>
                 <p>
                     The words only suggest a pose. When you know better, set an emotion for a

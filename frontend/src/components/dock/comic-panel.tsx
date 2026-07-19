@@ -114,8 +114,9 @@ const DockComicPanel: Component = () => {
                 <div style={{ 'font-size': '10.5px', opacity: '0.6', 'margin-top': '3px' }}>
                     Write <code>Name: what they say</code>. The pose comes from the words —
                     a greeting waves, CAPS shouts, “:-(” is sad, “maybe” thinks.
-                    Use <code>Name (thinks):</code> for a thought cloud or
-                    <code> Name (whispers):</code> for a dashed aside.
+                    Use <code>Name (thinks):</code> for a thought cloud,
+                    <code> Name (whispers):</code> for a dashed aside, or start a line with
+                    <code> *</code> for a caption box.
                 </div>
             </div>
 

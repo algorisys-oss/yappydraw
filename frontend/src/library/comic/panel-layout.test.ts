@@ -85,6 +85,47 @@ describe("balloon kinds (Comic Chat §5.1)", () => {
     });
 });
 
+describe("narration captions (Comic Chat §8)", () => {
+    it("reads * and [ ] captions", () => {
+        expect(parseScript("* Later that day")).toEqual([
+            { speaker: "", text: "Later that day", kind: "narration" },
+        ]);
+        expect(parseScript("[Meanwhile]")[0].kind).toBe("narration");
+    });
+
+    it("casts nobody", () => {
+        const u = parseScript("* Later\nAnn: hi");
+        expect(castSpeakers(u)).toEqual(["Ann"]);
+    });
+
+    it("joins the current panel instead of forcing a break", () => {
+        const panels = splitIntoPanels(parseScript("Ann: hi\n* Later\nBen: hey"));
+        expect(panels.length).toBe(1);
+        expect(panels[0].length).toBe(3);
+    });
+
+    it("does not count toward the cast limit", () => {
+        const u = parseScript("* A\n* B\n* C\n* D\n* E\nAnn: hi");
+        expect(castSpeakers(u)).toEqual(["Ann"]);
+        expect(splitIntoPanels(u).length).toBe(1);
+    });
+
+    it("pins the caption to the panel's left edge and gives it no tail", () => {
+        const u = parseScript("* Later that day\nAnn: hi");
+        const out = layoutPanel({
+            utterances: u, order: ["Ann"], poses: { Ann: "daily-waving" },
+            bubbleSizes: [{ width: 150, height: 40 }, { width: 120, height: 60 }],
+            figureWidth: 110, figureHeights: { Ann: 400 }, originX: 0, originY: 0,
+        });
+        const caption = out.bubbles.find(b => b.kind === "narration")!;
+        expect(caption.x).toBe(0);                  // panel's left edge (originX)
+        expect(out.characters.length).toBe(1);      // caption added no figure
+        // and the caption reads first — the speech balloon sits below it
+        const speech = out.bubbles.find(b => b.kind === "speech")!;
+        expect(speech.y).toBeGreaterThanOrEqual(caption.y + caption.height - 0.01);
+    });
+});
+
 describe("castSpeakers", () => {
     it("returns distinct speakers in first-appearance order", () => {
         expect(castSpeakers(parseScript(SCRIPT))).toEqual(["Alice", "Bob"]);
