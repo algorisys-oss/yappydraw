@@ -1,19 +1,31 @@
 // Vite plugin for AssemblyScript compilation
 // Watches assembly/**/*.ts, runs `asc` compiler, outputs .wasm to build/
 
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
+import fs from 'fs';
 import path from 'path';
 import type { Plugin } from 'vite';
 
 const AS_DIR = path.resolve(__dirname, 'assemblyscript');
 const BUILD_DIR = path.resolve(__dirname, 'build');
+// The AssemblyScript compiler entry in the repo-root node_modules.
+const ASC_JS = path.resolve(__dirname, '../../../node_modules/assemblyscript/bin/asc.js');
 
 function compileAssemblyScript(target: 'debug' | 'release' = 'debug'): boolean {
   try {
-    execSync(`npx asc --target ${target}`, {
-      cwd: AS_DIR,
-      stdio: 'pipe',
-    });
+    if (fs.existsSync(ASC_JS)) {
+      // Run the compiler with whatever runtime is already running Vite
+      // (process.execPath is bun under `bun run dev`, node under node). Shelling
+      // out to `npx` breaks in bun-only environments where npx/node aren't on
+      // PATH — which is exactly what "npx: not found" was.
+      execFileSync(process.execPath, [ASC_JS, '--target', target], {
+        cwd: AS_DIR,
+        stdio: 'pipe',
+      });
+    } else {
+      // Fallback for installs without a repo-root node_modules layout.
+      execSync(`npx asc --target ${target}`, { cwd: AS_DIR, stdio: 'pipe' });
+    }
     return true;
   } catch (err: any) {
     const stderr = err.stderr?.toString() || err.message;

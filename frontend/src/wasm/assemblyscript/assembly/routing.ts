@@ -24,6 +24,11 @@ const MAX_ITERATIONS: i32 = 800;
 const TURN_PENALTY: f64 = 100.0;
 const OBSTACLE_PENALTY: f64 = 500.0;
 const OBSTACLE_FIELDS: i32 = 6;       // x, y, w, h, isStartEl, isEndEl
+// Soft cost for running along another connector's body. MUST match
+// CONNECTOR_PENALTY in utils/routing.ts (JS twin).
+const CONNECTOR_PENALTY: f64 = 400.0;
+const SEGMENT_FIELDS: i32 = 4;        // x1, y1, x2, y2
+const SEGMENT_TOL: f64 = 2.0;
 
 // ─── Static arrays (module-level, allocated once) ───
 
@@ -183,6 +188,53 @@ function isObstacleSegment(
   return false;
 }
 
+/**
+ * True when the candidate segment runs COLLINEARLY on top of any connector body
+ * segment (same axis, same line within SEGMENT_TOL, overlapping extents).
+ * Plain crossings are intentionally not flagged. Mirrors segmentsCollinearOverlap()
+ * in utils/routing.ts — keep the two in sync.
+ */
+function overlapsConnector(
+  cx: f64, cy: f64, nx: f64, ny: f64,
+  segBuf: Float64Array, segCount: i32
+): bool {
+  const candH: bool = Math.abs(cy - ny) < 0.1;
+  const candV: bool = Math.abs(cx - nx) < 0.1;
+  if (!candH && !candV) return false;
+
+  for (let i: i32 = 0; i < segCount; i++) {
+    const base = i * SEGMENT_FIELDS;
+    const sx1 = unchecked(segBuf[base]);
+    const sy1 = unchecked(segBuf[base + 1]);
+    const sx2 = unchecked(segBuf[base + 2]);
+    const sy2 = unchecked(segBuf[base + 3]);
+
+    const segH: bool = Math.abs(sy1 - sy2) < 0.1;
+    const segV: bool = Math.abs(sx1 - sx2) < 0.1;
+
+    if (candH && segH) {
+      if (Math.abs(cy - sy1) > SEGMENT_TOL) continue;
+      const a1 = cx < nx ? cx : nx;
+      const a2 = cx < nx ? nx : cx;
+      const b1 = sx1 < sx2 ? sx1 : sx2;
+      const b2 = sx1 < sx2 ? sx2 : sx1;
+      const lo = a2 < b2 ? a2 : b2;
+      const hi = a1 > b1 ? a1 : b1;
+      if (lo - hi > SEGMENT_TOL) return true;
+    } else if (candV && segV) {
+      if (Math.abs(cx - sx1) > SEGMENT_TOL) continue;
+      const a1 = cy < ny ? cy : ny;
+      const a2 = cy < ny ? ny : cy;
+      const b1 = sy1 < sy2 ? sy1 : sy2;
+      const b2 = sy1 < sy2 ? sy2 : sy1;
+      const lo = a2 < b2 ? a2 : b2;
+      const hi = a1 > b1 ? a1 : b1;
+      if (lo - hi > SEGMENT_TOL) return true;
+    }
+  }
+  return false;
+}
+
 // ─── Direction constraint helpers ───
 
 // For start position: only allow moving in that direction from start
@@ -271,7 +323,8 @@ export function calculateSmartElbowRoute(
   startGx: i32, startGy: i32,
   endGx: i32, endGy: i32,
   startPosEnum: i32, endPosEnum: i32,
-  obstBufPtr: usize, obstCount: i32
+  obstBufPtr: usize, obstCount: i32,
+  segBufPtr: usize, segCount: i32
 ): i32 {
   // Bounds check
   if (gridW <= 0 || gridH <= 0 || gridW > MAX_GRID || gridH > MAX_GRID) return 0;
@@ -281,6 +334,7 @@ export function calculateSmartElbowRoute(
   const xGrid = changetype<Float64Array>(xGridPtr);
   const yGrid = changetype<Float64Array>(yGridPtr);
   const obstBuf = changetype<Float64Array>(obstBufPtr);
+  const segBuf = changetype<Float64Array>(segBufPtr);
 
   // Increment generation for lazy reset
   currentGen++;
@@ -392,7 +446,10 @@ export function calculateSmartElbowRoute(
       const dist = Math.abs(nextX - curX) + Math.abs(nextY - curY);
       const turnPen: f64 = (curDir != DIR_NONE && curDir != ndir) ? TURN_PENALTY : 0.0;
       const obstPen: f64 = isInsideAny(nextX, nextY, obstBuf, obstCount) ? OBSTACLE_PENALTY : 0.0;
-      const newG = curG + dist + turnPen + obstPen;
+      // Soft-avoid running along another connector's body (collinear overlap).
+      const connPen: f64 = (segCount > 0 &&
+        overlapsConnector(curX, curY, nextX, nextY, segBuf, segCount)) ? CONNECTOR_PENALTY : 0.0;
+      const newG = curG + dist + turnPen + obstPen + connPen;
 
       // Check if this path to neighbor is better
       const existingG = getG(nIdx);

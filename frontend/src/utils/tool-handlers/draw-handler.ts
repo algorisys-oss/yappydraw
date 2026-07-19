@@ -15,7 +15,7 @@ import { generateId } from '../id-generator';
 import { defaultTableData, defaultColWidths, defaultRowHeights } from '../table-utils';
 import { getUIShapeDef } from '../../config/ui-shape-defs';
 import { hitTestPoolLane, assignToPoolLane } from '../pool-containment';
-import { computeAnchorFractions } from '../binding-logic';
+import { computeAnchorFractions, expandToPortGroups } from '../binding-logic';
 import { createStrokeStabilizer, finishStabilizer } from '../stroke-stabilizer';
 
 // Freehand pen tools that support the pulled-string stabilizer. (The ephemeral
@@ -455,25 +455,12 @@ export function drawOnUp(
         if (pState.currentId) {
             const updatedEl = store.elements.find(e => e.id === pState.currentId);
             if (updatedEl && updatedEl.startBinding && updatedEl.endBinding) {
-                helpers.refreshBoundLine(pState.currentId);
-
-                // Refresh sibling connectors so they re-spread
-                const startTarget = store.elements.find(e => e.id === updatedEl.startBinding!.elementId);
-                if (startTarget?.boundElements) {
-                    for (const b of startTarget.boundElements) {
-                        if (b.id !== pState.currentId) {
-                            const sibling = store.elements.find(e => e.id === b.id);
-                            if (sibling?.startBinding && sibling?.endBinding) {
-                                const sameShapePair =
-                                    (sibling.startBinding.elementId === updatedEl.startBinding!.elementId &&
-                                     sibling.endBinding.elementId === updatedEl.endBinding!.elementId) ||
-                                    (sibling.startBinding.elementId === updatedEl.endBinding!.elementId &&
-                                     sibling.endBinding.elementId === updatedEl.startBinding!.elementId);
-                                if (sameShapePair) helpers.refreshBoundLine(b.id);
-                            }
-                        }
-                    }
-                }
+                // Refresh the new connector AND every peer sharing either of its nodes.
+                // Adding a connector changes the port-group size on both sides, so all
+                // peers must re-lay-out. (The old same-shape-pair filter was correct for
+                // the pair-local spread this replaced, but misses hub fan-in peers.)
+                expandToPortGroups([pState.currentId], store.elements)
+                    .forEach(id => helpers.refreshBoundLine(id));
             } else if (updatedEl && el.curveType === 'elbow') {
                 const pts = helpers.refreshLinePoints(updatedEl);
                 if (pts) {

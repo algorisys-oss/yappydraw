@@ -8,6 +8,7 @@ import type { DrawingElement } from '../types';
 import { findClosestAnchor, getAnchorPoints } from './anchor-points';
 import { intersectElementWithLine } from './geometry';
 import { calculateSmartElbowRoute } from './routing';
+import { allocatePort } from './connector-routing';
 
 /**
  * Find which shape element (if any) is near a given point, suitable for binding a line endpoint.
@@ -136,7 +137,8 @@ export function refreshLinePoints(
             startEl,
             endEl,
             line.startBinding?.position,
-            line.endBinding?.position
+            line.endBinding?.position,
+            line   // selfLine: enables soft-avoidance of other connectors' bodies
         );
 
         // Convert world points to relative points for storage. Connector points are
@@ -152,6 +154,43 @@ export function refreshLinePoints(
     }
 
     return undefined;
+}
+
+const PORT_GROUP_CONNECTOR_TYPES = new Set(['line', 'arrow', 'bezier', 'organicBranch']);
+
+/**
+ * Expand a set of connector ids to every connector that shares a bound node with them
+ * — the "port group".
+ *
+ * Port allocation is a GROUP function: a connector's port depends on how many other
+ * endpoints share that node side and how they sort. So whenever one member is
+ * re-laid-out, every peer on those nodes must be too, or peers keep ports computed
+ * for a stale group size/order and two connectors can land on the SAME point. (The
+ * spread this replaced was pair-local, so refreshing only the moved element's own
+ * connectors used to be sufficient — it no longer is.)
+ *
+ * Returns ids sorted ascending. That order matters for connector-vs-connector
+ * avoidance: a connector only avoids lower-id ones, so refreshing in id order means
+ * each route reads its dependencies' fresh geometry rather than last frame's.
+ */
+export function expandToPortGroups(lineIds: string[], elements: DrawingElement[]): string[] {
+    const nodeIds = new Set<string>();
+    for (const id of lineIds) {
+        const line = elements.find(e => e.id === id);
+        if (!line) continue;
+        if (line.startBinding?.elementId) nodeIds.add(line.startBinding.elementId);
+        if (line.endBinding?.elementId) nodeIds.add(line.endBinding.elementId);
+    }
+    if (nodeIds.size === 0) return [...lineIds].sort();
+
+    const out = new Set(lineIds);
+    for (const el of elements) {
+        if (!PORT_GROUP_CONNECTOR_TYPES.has(el.type)) continue;
+        const s = el.startBinding?.elementId;
+        const e = el.endBinding?.elementId;
+        if ((s && nodeIds.has(s)) || (e && nodeIds.has(e))) out.add(el.id);
+    }
+    return [...out].sort();
 }
 
 /**
@@ -240,62 +279,6 @@ function resolveBindingPoint(
     return point;
 }
 
-// ── Sibling spread: offset connectors sharing the same anchors ───────
-
-const CONNECTOR_TYPES = new Set(['line', 'arrow', 'bezier', 'organicBranch']);
-const SPREAD_SPACING = 16;
-
-/** Find connectors sharing the exact same anchor positions (these overlap visually) */
-function getOverlappingSiblingIndex(
-    lineId: string,
-    startElId: string,
-    endElId: string,
-    startPos: string | undefined,
-    endPos: string | undefined,
-    elements: DrawingElement[]
-): { index: number; total: number } {
-    const siblings = elements.filter(el => {
-        if (!el.startBinding || !el.endBinding) return false;
-        if (!CONNECTOR_TYPES.has(el.type)) return false;
-        const sId = el.startBinding.elementId;
-        const eId = el.endBinding.elementId;
-        const sPos = el.startBinding.position;
-        const ePos = el.endBinding.position;
-        return ((sId === startElId && eId === endElId && sPos === startPos && ePos === endPos) ||
-                (sId === endElId && eId === startElId && sPos === endPos && ePos === startPos));
-    });
-
-    if (siblings.length <= 1) return { index: 0, total: 1 };
-
-    siblings.sort((a, b) => a.id.localeCompare(b.id));
-    const index = siblings.findIndex(s => s.id === lineId);
-    return { index: Math.max(0, index), total: siblings.length };
-}
-
-function computeSpreadOffset(
-    index: number,
-    total: number,
-    startPos: string | undefined,
-    sX: number, sY: number,
-    eX: number, eY: number
-): { dx: number; dy: number } {
-    if (total <= 1) return { dx: 0, dy: 0 };
-
-    const offset = (index - (total - 1) / 2) * SPREAD_SPACING;
-
-    if (startPos === 'left' || startPos === 'right') {
-        return { dx: 0, dy: offset };
-    } else if (startPos === 'top' || startPos === 'bottom') {
-        return { dx: offset, dy: 0 };
-    }
-
-    // Fallback: perpendicular to start→end vector
-    const vx = eX - sX;
-    const vy = eY - sY;
-    const len = Math.sqrt(vx * vx + vy * vy) || 1;
-    return { dx: (-vy / len) * offset, dy: (vx / len) * offset };
-}
-
 /**
  * Update a bound line's geometry when its connected shape(s) have moved.
  * Resolves stored anchor positions to actual coordinates. A stored anchor is kept
@@ -341,23 +324,20 @@ export function refreshBoundLine(
         if (p) { eX = p.x; eY = p.y; changed = true; }
     }
 
-    // Spread connectors that share the exact same anchor positions
-    if (line.startBinding && line.endBinding &&
-        line.startBinding.elementId !== line.endBinding.elementId) {
-        const { index, total } = getOverlappingSiblingIndex(
-            line.id, line.startBinding.elementId, line.endBinding.elementId,
-            line.startBinding.position, line.endBinding.position, elements
-        );
-        if (total > 1) {
-            const spread = computeSpreadOffset(
-                index, total, line.startBinding.position, sX, sY, eX, eY
-            );
-            sX += spread.dx;
-            sY += spread.dy;
-            eX += spread.dx;
-            eY += spread.dy;
-            changed = true;
-        }
+    // Port allocation ("routing channels"): when >= 2 connector endpoints share a
+    // node side — hub fan-in from different neighbours, OR a bundle between the same
+    // pair (duplicates / bidirectional A<->B) — distribute them into evenly spaced,
+    // crossing-minimised ports instead of stacking on a single anchor. Applied
+    // transiently (no persisted fractions); returns null for a lone endpoint, which
+    // keeps its plain anchor. This supersedes the old sibling-spread. See
+    // connector-routing.ts.
+    if (startEl && line.startBinding) {
+        const pp = allocatePort(line, startEl, 'start', elements);
+        if (pp) { sX = pp.x; sY = pp.y; changed = true; }
+    }
+    if (endEl && line.endBinding) {
+        const pp = allocatePort(line, endEl, 'end', elements);
+        if (pp) { eX = pp.x; eY = pp.y; changed = true; }
     }
 
     if (changed) {

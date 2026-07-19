@@ -17,6 +17,7 @@ import { getDescendants } from '../hierarchy';
 import { snapPoint } from '../snap-helpers';
 import { confirmAndReparent } from '../reparent';
 import { isPointInPolygon, rotatePoint } from '../geometry';
+import { expandToPortGroups } from '../binding-logic';
 import { getWarpGrid, defaultWarpGrid } from '../envelope-warp';
 import { getSnappingGuides } from '../object-snapping';
 import { getSpacingGuides } from '../spacing';
@@ -2381,17 +2382,20 @@ function handleMove(
         // Refresh bound lines AFTER all positions are updated.
         // Skip lines that are also in the selection — they've already been translated
         // by the same delta, so their relative binding geometry is preserved.
+        const toRefresh: string[] = [];
         pState.initialPositions.forEach((_, selId) => {
             if (skipHierarchy && !store.selection.includes(selId) && !poolContainedIds.has(selId)) return;
             const el = store.elements.find(e => e.id === selId);
             if (el?.boundElements) {
                 el.boundElements.forEach(b => {
-                    if (!pState.initialPositions.has(b.id)) {
-                        helpers.refreshBoundLine(b.id);
-                    }
+                    if (!pState.initialPositions.has(b.id)) toRefresh.push(b.id);
                 });
             }
         });
+        // Expand to the full port group: ports depend on every endpoint sharing a node
+        // side, so peers bound to the far shapes must be recomputed too — otherwise they
+        // keep ports sized for a stale group and can end up on the same point.
+        expandToPortGroups(toRefresh, store.elements).forEach(id => helpers.refreshBoundLine(id));
     });
 
     // Detect reparent drop target during drag

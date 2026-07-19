@@ -4,12 +4,16 @@
 
 import type { DrawingElement, Point } from '../../types';
 import { getWasmExports } from './wasm-loader';
+import { collectConnectorSegments, routeBounds } from '../../utils/connector-obstacles';
 import {
   getPointBufferPtr,
   getResultBufferPtr,
   getElementBufferPtr,
   getPointBuffer,
   getElementBuffer,
+  getSegmentBufferPtr,
+  getSegmentBuffer,
+  MAX_SEGMENT_COUNT,
 } from './memory-pool';
 
 // Position enum matching assembly/routing.ts
@@ -23,6 +27,7 @@ const MARGIN = 15;
 const GRID_OFFSET = 20;
 const MAX_GRID = 256;
 const OBSTACLE_FIELDS = 6; // x, y, w, h, isStartEl, isEndEl
+const SEGMENT_FIELDS = 4;  // x1, y1, x2, y2
 
 function posToEnum(pos?: string): number {
   if (pos === 'top') return POS_TOP;
@@ -45,13 +50,15 @@ export function wasmCalculateSmartElbowRoute(
   endElement?: DrawingElement,
   startPos?: string,
   endPos?: string,
+  selfLine?: DrawingElement,
 ): Point[] | null {
   const w = getWasmExports();
   if (!w) return null;
 
   const pointBuf = getPointBuffer();
   const elemBuf = getElementBuffer();
-  if (!pointBuf || !elemBuf) return null;
+  const segBuf = getSegmentBuffer();
+  if (!pointBuf || !elemBuf || !segBuf) return null;
 
   // --- Filter obstacles (same logic as JS) ---
   const minX = Math.min(start.x, end.x) - 100;
@@ -70,6 +77,12 @@ export function wasmCalculateSmartElbowRoute(
   // No obstacles → let JS use simple elbow
   if (obstacles.length === 0) return null;
 
+  // Bodies of already-routed lower-priority connectors to avoid running along.
+  // Same helper the JS router uses, so both paths see an identical obstacle set.
+  const connectorSegs = selfLine
+    ? collectConnectorSegments(selfLine, allElements, routeBounds(start, end)).slice(0, MAX_SEGMENT_COUNT)
+    : [];
+
   // --- Build sparse grid ---
   const xSet = new Set<number>([start.x, end.x]);
   const ySet = new Set<number>([start.y, end.y]);
@@ -82,6 +95,16 @@ export function wasmCalculateSmartElbowRoute(
     ySet.add(el.y + el.height + MARGIN);
     xSet.add(el.x + el.width / 2);
     ySet.add(el.y + el.height / 2);
+  }
+
+  // Grid lines along (and one lane either side of) each connector body — mirrors
+  // the JS router so WASM and JS produce identical routes.
+  for (let i = 0; i < connectorSegs.length; i++) {
+    const s = connectorSegs[i];
+    xSet.add(s.x1); xSet.add(s.x2);
+    ySet.add(s.y1); ySet.add(s.y2);
+    if (Math.abs(s.y1 - s.y2) < 0.1) { ySet.add(s.y1 - MARGIN); ySet.add(s.y1 + MARGIN); }
+    if (Math.abs(s.x1 - s.x2) < 0.1) { xSet.add(s.x1 - MARGIN); xSet.add(s.x1 + MARGIN); }
   }
 
   // Entry/exit buffer points
@@ -135,6 +158,21 @@ export function wasmCalculateSmartElbowRoute(
     obstView[base + 5] = (endElement && el.id === endElement.id) ? 1.0 : 0.0;
   }
 
+  // Write connector body segments: [x1, y1, x2, y2] per segment
+  const segPtr = getSegmentBufferPtr();
+  const segCount = Math.min(connectorSegs.length, MAX_SEGMENT_COUNT);
+  if (segCount > 0) {
+    const segView = new Float64Array(mem.buffer, segPtr, segCount * SEGMENT_FIELDS);
+    for (let i = 0; i < segCount; i++) {
+      const s = connectorSegs[i];
+      const base = i * SEGMENT_FIELDS;
+      segView[base]     = s.x1;
+      segView[base + 1] = s.y1;
+      segView[base + 2] = s.x2;
+      segView[base + 3] = s.y2;
+    }
+  }
+
   // --- Call WASM A* ---
   const pathLen: number = (w as any).calculateSmartElbowRoute(
     xGridPtr, yGridPtr,
@@ -143,6 +181,7 @@ export function wasmCalculateSmartElbowRoute(
     endGx, endGy,
     posToEnum(startPos), posToEnum(endPos),
     obstPtr, obstacles.length,
+    segPtr, segCount,
   );
 
   if (pathLen <= 0) return null;

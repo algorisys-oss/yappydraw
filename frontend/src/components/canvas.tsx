@@ -542,13 +542,27 @@ const Canvas: Component = () => {
 
     // Auto-refresh bound lines if bound elements move or hierarchy changes
     createEffect(() => {
+        const pending: string[] = [];
         store.elements.forEach(el => {
             if (el.boundElements && el.boundElements.length > 0) {
                 // Reactive trigger: track moving node's geometry
                 el.x; el.y; el.width; el.height;
                 untrack(() => {
-                    el.boundElements?.forEach(b => refreshBoundLine(b.id));
+                    el.boundElements?.forEach(b => pending.push(b.id));
                 });
+            }
+        });
+        untrack(() => {
+            // Refresh once per connector, in ascending id order. Connector-vs-connector
+            // avoidance only looks at LOWER ids, so processing in id order makes each
+            // pass a fixpoint of the current shape positions — routes stop depending on
+            // which node happened to be visited first, and de-duping avoids the
+            // re-entrant refresh storm that repeated passes would cause.
+            const seen = new Set<string>();
+            for (const id of pending.sort()) {
+                if (seen.has(id)) continue;
+                seen.add(id);
+                refreshBoundLine(id);
             }
         });
     });

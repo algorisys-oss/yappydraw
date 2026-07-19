@@ -13,6 +13,12 @@ const MAX_ELEMENTS = 2048;
 /** Fields per element in batch buffers: [x, y, w, h, angle, typeEnum] */
 const ELEMENT_FIELDS = 6;
 
+/** Maximum connector body segments passed to the router as soft obstacles */
+const MAX_SEGMENTS = 2048;
+
+/** Fields per connector segment: [x1, y1, x2, y2] */
+const SEGMENT_FIELDS = 4;
+
 /**
  * Pre-allocated typed array views into WASM memory.
  * These are lazily created on first use after WASM loads.
@@ -20,11 +26,13 @@ const ELEMENT_FIELDS = 6;
 let pointBuffer: Float64Array | null = null;
 let resultBuffer: Float64Array | null = null;
 let elementBuffer: Float64Array | null = null;
+let segmentBuffer: Float64Array | null = null;
 
 // Pointers into WASM memory (set during init)
 let pointBufferPtr = 0;
 let resultBufferPtr = 0;
 let elementBufferPtr = 0;
+let segmentBufferPtr = 0;
 
 /** Point type matching YappyDraw's convention */
 interface Point {
@@ -41,24 +49,26 @@ export function initMemoryPool(): boolean {
   if (!exports) return false;
 
   try {
-    const mem = exports.memory;
-
-    // Allocate point buffer: MAX_POINTS * 2 floats (x,y) * 8 bytes
+    // Allocate EVERY buffer first. Each __new can trigger memory.grow, which
+    // detaches mem.buffer and invalidates any Float64Array view already created
+    // over it — so views must only be built once all allocations are done.
     const pointBytes = MAX_POINTS * 2 * 8;
     pointBufferPtr = exports.__new(pointBytes, 0);
     exports.__pin(pointBufferPtr);
-    pointBuffer = new Float64Array(mem.buffer, pointBufferPtr, MAX_POINTS * 2);
 
-    // Allocate result buffer (same size as point buffer)
     resultBufferPtr = exports.__new(pointBytes, 0);
     exports.__pin(resultBufferPtr);
-    resultBuffer = new Float64Array(mem.buffer, resultBufferPtr, MAX_POINTS * 2);
 
-    // Allocate element buffer: MAX_ELEMENTS * ELEMENT_FIELDS * 8 bytes
     const elemBytes = MAX_ELEMENTS * ELEMENT_FIELDS * 8;
     elementBufferPtr = exports.__new(elemBytes, 0);
     exports.__pin(elementBufferPtr);
-    elementBuffer = new Float64Array(mem.buffer, elementBufferPtr, MAX_ELEMENTS * ELEMENT_FIELDS);
+
+    const segBytes = MAX_SEGMENTS * SEGMENT_FIELDS * 8;
+    segmentBufferPtr = exports.__new(segBytes, 0);
+    exports.__pin(segmentBufferPtr);
+
+    // Now that the heap has stopped growing, build all views over the final buffer.
+    refreshViews();
 
     return true;
   } catch (err) {
@@ -66,6 +76,7 @@ export function initMemoryPool(): boolean {
     pointBuffer = null;
     resultBuffer = null;
     elementBuffer = null;
+    segmentBuffer = null;
     return false;
   }
 }
@@ -128,6 +139,19 @@ export function getElementBuffer(): Float64Array | null {
   return elementBuffer;
 }
 
+/** Get the WASM pointer for the connector-segment buffer */
+export function getSegmentBufferPtr(): number {
+  return segmentBufferPtr;
+}
+
+/** Get the raw connector-segment buffer view */
+export function getSegmentBuffer(): Float64Array | null {
+  return segmentBuffer;
+}
+
+/** Max connector segments the shared buffer can hold */
+export const MAX_SEGMENT_COUNT = MAX_SEGMENTS;
+
 /** Refresh typed array views after WASM memory grows */
 export function refreshViews(): void {
   const exports = getWasmExports();
@@ -142,5 +166,8 @@ export function refreshViews(): void {
   }
   if (elementBufferPtr) {
     elementBuffer = new Float64Array(mem.buffer, elementBufferPtr, MAX_ELEMENTS * ELEMENT_FIELDS);
+  }
+  if (segmentBufferPtr) {
+    segmentBuffer = new Float64Array(mem.buffer, segmentBufferPtr, MAX_SEGMENTS * SEGMENT_FIELDS);
   }
 }

@@ -1,6 +1,16 @@
 import type { DrawingElement, Point } from "../types";
 import { isWasmEnabled } from "../wasm/feature-flags";
 import { wasmCalculateSmartElbowRoute } from "../wasm/bridge/routing-bridge";
+import { CONNECTOR_PENALTY, collectConnectorSegments, routeBounds, segmentsCollinearOverlap } from "./connector-obstacles";
+
+// Connector-body obstacles live in their own module to avoid a routing <-> bridge
+// import cycle; re-exported here so existing importers keep working.
+export {
+    CONNECTOR_PENALTY,
+    collectConnectorSegments,
+    segmentsCollinearOverlap,
+    type Seg,
+} from "./connector-obstacles";
 
 /**
  * Calculates a simple orthogonal path (elbow) between two points.
@@ -120,12 +130,13 @@ export const calculateSmartElbowRoute = (
     startElement?: DrawingElement,
     endElement?: DrawingElement,
     startPos?: string,
-    endPos?: string
+    endPos?: string,
+    selfLine?: DrawingElement
 ): Point[] => {
     // WASM fast path: grid construction in JS, A* in WASM
     if (isWasmEnabled('routing')) {
         const wasmResult = wasmCalculateSmartElbowRoute(
-            start, end, allElements, startElement, endElement, startPos, endPos
+            start, end, allElements, startElement, endElement, startPos, endPos, selfLine
         );
         if (wasmResult) return wasmResult;
         // Fall through to JS if WASM returned null (no path or no obstacles)
@@ -151,9 +162,29 @@ export const calculateSmartElbowRoute = (
         return calculateElbowRoute(start, end, startPos, endPos);
     }
 
+    // Bodies of already-routed lower-priority connectors to avoid running along.
+    // Clipped to the route's neighbourhood and capped, so a busy document can't
+    // explode the A* grid (which would silently degrade routing to a naive elbow).
+    const connectorSegs = selfLine
+        ? collectConnectorSegments(selfLine, allElements, routeBounds(start, end))
+        : [];
+
     // 1. Build a sparse grid
     const xCoords = new Set<number>([start.x, end.x]);
     const yCoords = new Set<number>([start.y, end.y]);
+
+    // Grid lines along (and one lane either side of) each connector body, so the
+    // router has an adjacent lane to escape onto instead of overlapping.
+    connectorSegs.forEach(s => {
+        xCoords.add(s.x1); xCoords.add(s.x2);
+        yCoords.add(s.y1); yCoords.add(s.y2);
+        if (Math.abs(s.y1 - s.y2) < 0.1) {          // horizontal → offer lanes above/below
+            yCoords.add(s.y1 - MARGIN); yCoords.add(s.y1 + MARGIN);
+        }
+        if (Math.abs(s.x1 - s.x2) < 0.1) {          // vertical → offer lanes left/right
+            xCoords.add(s.x1 - MARGIN); xCoords.add(s.x1 + MARGIN);
+        }
+    });
 
     // Add buffer points for every obstacle
     obstacles.forEach(el => {
@@ -289,7 +320,13 @@ export const calculateSmartElbowRoute = (
             // Prefer points outside obstacles
             const obstacleAvoidancePenalty = isInsideAny(xNext, yNext) ? 500 : 0;
 
-            const newG = current.g + dist + turnPenalty + obstacleAvoidancePenalty;
+            // Soft-avoid running along another connector's body (collinear overlap).
+            // Soft, so routing still succeeds when congestion leaves no clear lane.
+            const connectorPenalty = connectorSegs.length > 0 &&
+                connectorSegs.some(s => segmentsCollinearOverlap(xPrev, yPrev, xNext, yNext, s))
+                ? CONNECTOR_PENALTY : 0;
+
+            const newG = current.g + dist + turnPenalty + obstacleAvoidancePenalty + connectorPenalty;
 
             const existing = openSet.find(n => n.gx === nx && n.gy === ny);
             if (existing) {

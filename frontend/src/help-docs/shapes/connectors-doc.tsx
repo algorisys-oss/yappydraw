@@ -173,6 +173,39 @@ export const ConnectorsDoc: Component = () => {
                         </tr>
                     </tbody>
                 </table>
+
+                <h3>Automatic spacing &amp; avoidance</h3>
+                <p>
+                    Connectors space themselves out automatically — there is nothing to turn on:
+                </p>
+                <ul>
+                    <li>
+                        <strong>Fan-in spreads into ports.</strong> When several connectors meet the
+                        same side of a shape, they land on evenly spaced points along that edge
+                        instead of stacking on one spot, ordered so the lines don't cross.
+                    </li>
+                    <li>
+                        <strong>Bundles separate.</strong> Two connectors between the same pair of
+                        shapes — or one in each direction — get their own lanes, so both arrowheads
+                        stay visible.
+                    </li>
+                    <li>
+                        <strong>Ports follow your shapes.</strong> Move a shape to the other side and
+                        the endpoints hop to the edge facing it. On circles, diamonds and other
+                        non-rectangular shapes the points sit on the real outline.
+                    </li>
+                    <li>
+                        <strong>Elbow connectors avoid each other.</strong> An orthogonal connector
+                        steers onto a neighbouring lane rather than running along the top of another
+                        connector. Lines still cross where a diagram needs them to — only overlapping
+                        <em>along</em> each other is avoided.
+                    </li>
+                </ul>
+                <p class="doc-note">
+                    Spacing is applied while drawing and while dragging; it never changes your saved
+                    anchor points, so nothing is baked into the file. A lone connector is unaffected
+                    and attaches at the usual anchor.
+                </p>
             </section>
 
             {/* Styling Options */}

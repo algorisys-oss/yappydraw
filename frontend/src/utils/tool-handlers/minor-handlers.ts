@@ -15,7 +15,7 @@ import { getHandleAtPosition } from '../handle-detection';
 import { generateId } from '../id-generator';
 import { animateElement } from '../animation/element-animator';
 import { normalizePoints } from '../render-element';
-import { computeAnchorFractions } from '../binding-logic';
+import { computeAnchorFractions, expandToPortGroups } from '../binding-logic';
 
 // ─── OpenBox Click-to-Open Animation ─────────────────────────────────
 
@@ -949,25 +949,10 @@ export function connectorHandleOnUp(
         // Finalize: refresh bound line to snap endpoints to actual anchor positions
         const updatedEl = store.elements.find(e => e.id === pState.currentId);
         if (updatedEl && updatedEl.startBinding && updatedEl.endBinding) {
-            helpers.refreshBoundLine(pState.currentId);
-
-            // Refresh sibling connectors so they re-spread
-            const startTarget = store.elements.find(e => e.id === updatedEl.startBinding!.elementId);
-            if (startTarget?.boundElements) {
-                for (const b of startTarget.boundElements) {
-                    if (b.id !== pState.currentId) {
-                        const sibling = store.elements.find(e => e.id === b.id);
-                        if (sibling?.startBinding && sibling?.endBinding) {
-                            const sameShapePair =
-                                (sibling.startBinding.elementId === updatedEl.startBinding!.elementId &&
-                                 sibling.endBinding.elementId === updatedEl.endBinding!.elementId) ||
-                                (sibling.startBinding.elementId === updatedEl.endBinding!.elementId &&
-                                 sibling.endBinding.elementId === updatedEl.startBinding!.elementId);
-                            if (sameShapePair) helpers.refreshBoundLine(b.id);
-                        }
-                    }
-                }
-            }
+            // Refresh the new connector AND every peer sharing either of its nodes —
+            // adding a connector changes the port-group size on both sides.
+            expandToPortGroups([pState.currentId], store.elements)
+                .forEach(id => helpers.refreshBoundLine(id));
         }
 
         // Auto-initialize center control point (visible by default when selected)

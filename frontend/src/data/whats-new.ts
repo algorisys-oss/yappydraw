@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.110', date: '2026-07-19', items: [
+        'Connectors space themselves out — when several arrows meet the same side of a shape they now fan into evenly spaced points instead of piling onto one spot, arranged so the lines don\'t cross.',
+        'Two arrows between the same pair of shapes (or one each way) get their own lanes, so both arrowheads stay visible.',
+        'Elbow connectors steer around each other instead of running along the top of another connector — lines still cross where your diagram needs them to.',
+        'Endpoints follow your shapes: move a shape to the other side and the arrow hops to the edge facing it, landing on the real outline of circles and diamonds.',
+    ] },
     { version: '0.8.109', date: '2026-07-18', items: [
         'Fixed Google Drive sign-in — after signing in, the popup no longer gets stuck on "Connecting…"; it now finishes and connects your Drive.',
         'Tidied the Load/Save panel — the old "Workspace" options are gone; use "My Drawings" (or Ctrl/Cmd+S) to keep and reopen drawings in your browser.',
