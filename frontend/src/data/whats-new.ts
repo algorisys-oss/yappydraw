@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.111', date: '2026-07-19', items: [
+        'Turn a script into a comic panel — type a few lines of dialogue and YappyDraw draws it: stick figures posed from what they say, facing each other, with speech balloons above them in the right reading order.',
+        'The pose comes from the words: a greeting waves, ALL CAPS shouts, ":-(" looks sad, "lol" laughs, "maybe" thinks, "you" points.',
+        'Everything stays editable — the panel is one group you can move, and you can drag any figure or balloon afterwards.',
+    ] },
     { version: '0.8.110', date: '2026-07-19', items: [
         'Connectors space themselves out — when several arrows meet the same side of a shape they now fan into evenly spaced points instead of piling onto one spot, arranged so the lines don\'t cross.',
         'Two arrows between the same pair of shapes (or one each way) get their own lanes, so both arrowheads stay visible.',

@@ -49,6 +49,7 @@ import { setRequestRecording } from "./utils/recording-manager";
 import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
     attachFigureToPath, detachFigurePath, setFigureSequence } from "./library/stick-figures";
+import { createComicPanel } from "./library/comic";
 import { TEXT_EFFECT_PRESETS, getTextEffectPreset } from "./config/text-effect-presets";
 import { FONT_PAIRINGS, applyFontPairing } from "./brand/font-pairing";
 import { searchStockPhotos, insertStockPhoto } from "./utils/stock-photos";
@@ -2520,6 +2521,34 @@ export const YappyAPI = {
      */
     insertElement(hit: AssetHit, at?: { x: number; y: number }) {
         return hit?.insert?.(at);
+    },
+
+    // Comic panels (script → posed figures + speech balloons)
+    /**
+     * Generate a comic panel from a screenplay-style script.
+     *
+     *   api.createComicPanel("Alice: Hi Bob!\nBob: I think we should ship it.")
+     *
+     * Each `Name: line` row becomes one speech balloon. Poses are chosen from the text
+     * (greeting → waving, ALL CAPS → shouting, "maybe" → thinking, ":-(" → sad, …),
+     * characters are ordered so conversational partners stand together and turn toward
+     * each other, and balloons are stacked above the figures in reading order with each
+     * tail aimed at its speaker. Up to 4 speakers per panel.
+     *
+     * Also accepts a structured array: `[{ speaker: 'Alice', text: 'Hi Bob!' }]`.
+     * Pick figures per speaker with `variants: { Alice: 'female', Sam: 'boy' }`.
+     * Returns the panel's group id (the whole panel moves as one), or null if the
+     * script has no usable dialogue.
+     */
+    createComicPanel(
+        script: string | Array<{ speaker: string; text: string }>,
+        opts?: {
+            x?: number; y?: number; figureHeight?: number; frame?: boolean;
+            monochrome?: boolean; fontSize?: number;
+            variants?: Record<string, 'male' | 'female' | 'boy' | 'girl'>;
+        },
+    ) {
+        return createComicPanel(script, opts);
     },
 
     // Stick-figure library (drawify-style editable figures)

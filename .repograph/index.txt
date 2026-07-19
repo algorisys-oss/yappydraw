@@ -78,7 +78,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 3647 | Theme:3 HarmonyType:55 DimensionMeasure:62 ElementOptions:132 normalizeElementType:345 ElementType:554 as:554 Window:3636
+frontend/src/api.ts | typescript | 3676 | Theme:3 HarmonyType:56 DimensionMeasure:63 ElementOptions:133 normalizeElementType:346 ElementType:555 as:555 Window:3665
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1424 | Component:1 App:89 moves:114 onPenMove:115 hidePen:119 handleKeyUp:158 handleKeyDown:168 as:703 handleFullscreenChange:818 handleBeforeUnload:824 handlePaste:828 handleGlobalDragEnter:930 handleGlobalDragOver:945 showDropFallbackPrompt:964 cleanup:994 outsideClick:1022 isImageFile:1034 first:1035 must:1048 extractDropData:1050 processExtractedDrop:1105 handleGlobalDrop:1222 handleDocumentDrop:1268
 frontend/src/assets/solid.svg | - | 1 |
@@ -316,7 +316,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 119 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 124 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -393,7 +393,7 @@ frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 566 | T
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 394 | LogoToolkitDoc:9 the:167
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 377 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 243 | StickAnimationDoc:10
-frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 145 | StickLibraryDoc:9
+frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 181 | StickLibraryDoc:9
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 143 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 302 | WorkspaceDoc:9 and:75 a:80
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 660 | YslTutorialDoc:8 members:564 Subject:579
@@ -414,6 +414,11 @@ frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 315 | VectorPa
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 297 | WireframingDoc:8
 frontend/src/index.css | - | 509 |
 frontend/src/index.tsx | typescript | 119 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84
+frontend/src/library/comic/index.ts | typescript | 311 | PanelLayout:13 Utterance:13 ComicPanelOptions:25 buildFigureElements:59 measureBubble:103 planComicPanel:128 createComicPanel:205
+frontend/src/library/comic/panel-layout.test.ts | typescript | 175 | Utterance:4
+frontend/src/library/comic/panel-layout.ts | typescript | 309 | Utterance:17 Box:19 CharacterPlacement:21 BubblePlacement:30 PanelLayout:37 parseScript:67 castSpeakers:90 inferPairs:107 orderingCost:127 orderCharacters:164 LayoutInput:176 layoutPanel:204
+frontend/src/library/comic/pose-rules.test.ts | typescript | 75 |
+frontend/src/library/comic/pose-rules.ts | typescript | 153 | Match:23 PoseRule:30 poseForLine:134 explainPose:148
 frontend/src/library/elements/aliases.ts | typescript | 198 | aliasesFor:196
 frontend/src/library/elements/illustrations/LICENSE.md | - | 17 |
 frontend/src/library/elements/illustrations/assets.ts | typescript | 987 | Illustration:8

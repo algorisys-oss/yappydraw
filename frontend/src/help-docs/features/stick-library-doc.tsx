@@ -138,6 +138,42 @@ Y.toggleStickFigurePanel(true);         // open the panel`}</code></pre>
                     <code> toggleStickFigurePanel(visible?)</code>.
                 </p>
             </section>
+
+            {/* ─── Comic panels ───────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Turn a script into a comic panel</h2>
+                <p>
+                    Write a few lines of dialogue and YappyDraw draws the panel for you —
+                    figures posed from what they say, arranged so they face each other, with
+                    speech balloons above them in the right reading order.
+                </p>
+                <pre><code>{`const Y = window.Yappy;
+Y.createComicPanel(\`Alice: Hi Bob!
+Bob: I think we should ship it.
+Alice: ARE YOU SURE?\`);
+
+// options
+Y.createComicPanel(script, {
+  x: 100, y: 100,        // omit to centre on the page
+  figureHeight: 260,     // how tall the figures are (default 210)
+  frame: false,          // no panel border
+  monochrome: true,      // outline-only figures
+  fontSize: 20,          // balloon text size
+  variants: { Alice: 'female', Sam: 'boy' },   // pick a figure per speaker
+});`}</code></pre>
+                <p>
+                    Each <code>Name: line</code> row becomes one balloon. The pose comes from the
+                    words themselves: a greeting waves, ALL CAPS or <code>!!!</code> shouts,
+                    <code> :-(</code> looks sad, <code>lol</code> laughs, “maybe” thinks,
+                    “you” points, a bare “?” shrugs — anything else stands neutral. When two cues
+                    compete the stronger one wins, so “HI THERE!!!” shouts rather than waves.
+                </p>
+                <p class="tip-box">
+                    Up to 4 speakers per panel, one pose each. The whole panel is grouped, so it
+                    moves — and undoes — as a single unit. Spacing is worked out when the panel is
+                    created; nothing is locked, so you can drag any figure or balloon afterwards.
+                </p>
+            </section>
         </div>
     );
 };
