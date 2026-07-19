@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import {
-    parseScript, castSpeakers, inferPairs, orderCharacters, orderingCost, layoutPanel,
+    parseScript, castSpeakers, inferPairs, orderCharacters, orderingCost, layoutPanel, splitIntoPanels,
     MAX_CHARACTERS, type Utterance,
 } from "./panel-layout";
 
@@ -48,6 +48,46 @@ describe("castSpeakers", () => {
     it("caps at MAX_CHARACTERS", () => {
         const many = parseScript(["A: 1", "B: 2", "C: 3", "D: 4", "E: 5"].join("\n"));
         expect(castSpeakers(many).length).toBe(MAX_CHARACTERS);
+    });
+});
+
+describe("splitIntoPanels (Comic Chat §6.1 panel breaks)", () => {
+    it("breaks when a speaker takes a second turn", () => {
+        const panels = splitIntoPanels(parseScript(SCRIPT));
+        expect(panels.map(p => p.map(u => u.speaker))).toEqual([
+            ["Alice", "Bob"],   // Alice's 2nd line can't share a panel with her 1st
+            ["Alice"],
+        ]);
+    });
+
+    it("keeps an alternating dialogue as two-person panels", () => {
+        const s = parseScript(["A: 1", "B: 2", "A: 3", "B: 4", "A: 5", "B: 6"].join("\n"));
+        const panels = splitIntoPanels(s);
+        expect(panels.length).toBe(3);
+        for (const p of panels) expect(p.map(u => u.speaker)).toEqual(["A", "B"]);
+    });
+
+    it("breaks before exceeding the cast limit", () => {
+        const s = parseScript(["A: 1", "B: 2", "C: 3", "D: 4", "E: 5"].join("\n"));
+        const panels = splitIntoPanels(s, 4);
+        expect(panels[0].length).toBe(4);          // A B C D
+        expect(panels[1].map(u => u.speaker)).toEqual(["E"]);
+    });
+
+    it("keeps a monologue as one line per panel", () => {
+        const panels = splitIntoPanels(parseScript(["A: 1", "A: 2", "A: 3"].join("\n")));
+        expect(panels.length).toBe(3);
+    });
+
+    it("returns nothing for an empty script and is deterministic", () => {
+        expect(splitIntoPanels([])).toEqual([]);
+        const s = parseScript(SCRIPT);
+        expect(splitIntoPanels(s)).toEqual(splitIntoPanels(s));
+    });
+
+    it("never loses or reorders an utterance", () => {
+        const s = parseScript(["A: 1", "B: 2", "A: 3", "C: 4", "A: 5"].join("\n"));
+        expect(splitIntoPanels(s).flat()).toEqual(s);
     });
 });
 

@@ -4480,6 +4480,11 @@ export const toggleStickFigurePanel = (visible?: boolean) => {
     setPanelOpen('stickFigure', visible);
 };
 
+/** Comic Studio — script → comic panel/strip. */
+export const toggleComicPanel = (visible?: boolean) => {
+    setPanelOpen('comic', visible);
+};
+
 export const toggleSceneTimeline = (visible?: boolean) => {
     const next = visible ?? !store.showSceneTimeline;
     setStore('showSceneTimeline', next);

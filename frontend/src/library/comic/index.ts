@@ -7,9 +7,9 @@ import { getStickAsset } from '../stick-figures/registry';
 import { STICK_STROKE_PX, STICK_DEFAULT_WIDTH, roleFromFill } from '../stick-figures';
 import { stickColorMode } from '../stick-figures/prefs';
 import { getMeasurementRenderer, measureContainerText } from '../../utils/text-utils';
-import { poseForLine } from './pose-rules';
+import { poseForLine, poseForEmotion } from './pose-rules';
 import {
-    parseScript, castSpeakers, inferPairs, orderCharacters, layoutPanel,
+    parseScript, castSpeakers, inferPairs, orderCharacters, layoutPanel, splitIntoPanels,
     type Utterance, type PanelLayout,
 } from './panel-layout';
 
@@ -44,6 +44,20 @@ export interface ComicPanelOptions {
      * would guess at people from their position in the script, so callers opt in.
      */
     variants?: Record<string, 'male' | 'female' | 'boy' | 'girl'>;
+    /**
+     * Emotion override per speaker, e.g. `{ Bob: 'angry' }` — see EMOTIONS in
+     * pose-rules.ts. Overrides what the text rules would have chosen, which is the
+     * point of Comic Chat's emotion wheel: the user knows the mood, the parser guesses.
+     * Omit (or use 'auto') to keep the inferred pose.
+     */
+    emotions?: Record<string, string>;
+}
+
+export interface ComicStripOptions extends ComicPanelOptions {
+    /** Panels per row before wrapping. Default min(panels, 3). */
+    columns?: number;
+    /** Gap between panels, px. Default 32. */
+    panelGap?: number;
 }
 
 /** Default figure height — comfortable next to balloons at the default font size. */
@@ -147,7 +161,9 @@ export function planComicPanel(
         const variant = opts.variants?.[s];
         // Male keeps the base asset id; other variants suffix it (assets.ts:29).
         const suffix = variant && variant !== 'male' ? `-${variant}` : '';
-        poses[s] = poseForLine(first.text) + suffix;
+        // An explicit emotion wins over whatever the text rules inferred.
+        const base = poseForEmotion(opts.emotions?.[s]) ?? poseForLine(first.text);
+        poses[s] = base + suffix;
     });
 
     const order = orderCharacters(speakers, inferPairs(utterances, speakers));
@@ -223,13 +239,39 @@ export function createComicPanel(
 
     const planned = planComicPanel(script, { ...opts, x: originX, y: originY });
     if (!planned) return null;
-    const { layout } = planned;
 
     // generateId derives the next number by scanning the STORE, so ids generated before
     // the batch is committed would all collide. Thread a batch set through every call.
     const batchIds = new Set<string>();
     const newId = (type: string) => { const id = generateId(type, batchIds); batchIds.add(id); return id; };
 
+    const { elements, groupId: panelGroupId } = buildPanelElements(planned, opts, newId);
+
+    if (elements.length === 0) return null;
+
+    // One history entry for the whole panel.
+    pushToHistory();
+    batch(() => {
+        setStore('elements', prev => [...prev, ...elements]);
+        setStore('selection', elements.map(e => e.id));
+    });
+    bumpDirtyRevision();
+
+    return panelGroupId;
+}
+
+type IdFactory = (type: string) => string;
+
+/**
+ * Build (but do not commit) every element of one planned panel. Shared by the single
+ * panel and the strip generators, so a whole strip is still ONE undo step.
+ */
+function buildPanelElements(
+    planned: NonNullable<ReturnType<typeof planComicPanel>>,
+    opts: ComicPanelOptions,
+    newId: IdFactory,
+): { elements: DrawingElement[]; groupId: string } {
+    const { layout } = planned;
     const panelGroupId = newId('group');
     const fontSize = opts.fontSize ?? 16;
     const elements: DrawingElement[] = [];
@@ -297,9 +339,83 @@ export function createComicPanel(
         } as DrawingElement);
     }
 
+    return { elements, groupId: panelGroupId };
+}
+
+/**
+ * Generate a multi-panel comic strip from a longer script.
+ *
+ *   createComicStrip("Alice: Hi Bob!\nBob: Hey!\nAlice: Ship it?\nBob: YES")
+ *
+ * The script is split into panels using Comic Chat's §6.1 rules — chiefly "one
+ * balloon per character per panel", so a speaker taking another turn starts the next
+ * panel. Panels are laid out left-to-right and wrap into rows like a comic page.
+ * Everything is committed in one batch, so the strip is a single undo step, and each
+ * panel keeps its own group inside the strip group.
+ *
+ * Returns the strip's group id, or null when the script has no usable dialogue.
+ */
+export function createComicStrip(
+    script: string | Utterance[],
+    opts: ComicStripOptions = {},
+): string | null {
+    const utterances = parseScript(script);
+    if (utterances.length === 0) return null;
+
+    const panels = splitIntoPanels(utterances);
+    if (panels.length === 0) return null;
+
+    const gap = opts.panelGap ?? 32;
+    const columns = Math.max(1, opts.columns ?? Math.min(panels.length, 3));
+
+    // Plan every panel at the origin first so we know how big each one is before
+    // deciding where it goes.
+    const plans = panels.map(p => planComicPanel(p, { ...opts, x: 0, y: 0 })).filter(Boolean);
+    if (plans.length === 0) return null;
+
+    // Uniform cells keep the strip on a tidy grid regardless of per-panel size.
+    const cellW = Math.max(...plans.map(p => p!.layout.frame.width));
+    const cellH = Math.max(...plans.map(p => p!.layout.frame.height));
+    const rows = Math.ceil(plans.length / columns);
+    const stripW = columns * cellW + (columns - 1) * gap;
+    const stripH = rows * cellH + (rows - 1) * gap;
+
+    let originX = opts.x, originY = opts.y;
+    if (originX === undefined || originY === undefined) {
+        const page = store.slides[store.activeSlideIndex];
+        if (page) {
+            originX = originX ?? Math.round(page.spatialPosition.x + (page.dimensions.width - stripW) / 2);
+            originY = originY ?? Math.round(page.spatialPosition.y + (page.dimensions.height - stripH) / 2);
+        }
+        originX = originX ?? 200;
+        originY = originY ?? 200;
+    }
+
+    const batchIds = new Set<string>();
+    const newId = (type: string) => { const id = generateId(type, batchIds); batchIds.add(id); return id; };
+    const stripGroupId = newId('group');
+    const elements: DrawingElement[] = [];
+
+    panels.forEach((panel, i) => {
+        const col = i % columns, row = Math.floor(i / columns);
+        // planComicPanel places the frame at origin - padding, so offset by that same
+        // delta to make the frames (not the content) land on the grid.
+        const probe = plans[i];
+        if (!probe) return;
+        const padX = probe.layout.frame.x, padY = probe.layout.frame.y;
+        const x = originX! + col * (cellW + gap) - padX;
+        const y = originY! + row * (cellH + gap) - padY;
+
+        const planned = planComicPanel(panel, { ...opts, x, y });
+        if (!planned) return;
+        const { elements: els } = buildPanelElements(planned, opts, newId);
+        // Nest each panel's group inside the strip group.
+        for (const e of els) e.groupIds = [...(e.groupIds || []), stripGroupId];
+        elements.push(...els);
+    });
+
     if (elements.length === 0) return null;
 
-    // One history entry for the whole panel.
     pushToHistory();
     batch(() => {
         setStore('elements', prev => [...prev, ...elements]);
@@ -307,5 +423,5 @@ export function createComicPanel(
     });
     bumpDirtyRevision();
 
-    return panelGroupId;
+    return stripGroupId;
 }

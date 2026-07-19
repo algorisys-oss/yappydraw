@@ -8,6 +8,7 @@ import { lazy } from "solid-js";
 import DockEffectsPanel from "./effects-panel";
 import DockAlignPanel from "./align-panel";
 import DockArrangePanel from "./arrange-panel";
+import DockComicPanel from "./comic-panel";
 
 // Migrated existing panels (Phase D) — registered body-only; chrome comes from PanelChrome.
 const HistoryPanel = lazy(() => import("../history-panel"));
@@ -45,6 +46,7 @@ export const PANEL_REGISTRY: PanelDef[] = [
     { id: 'state', title: 'Display States', component: StatePanel },
     { id: 'behaviors', title: 'Behaviors', component: BehaviorsPanel },
     { id: 'stickFigure', title: 'Stick Figures', component: StickFigurePanel },
+    { id: 'comic', title: 'Comic Studio', component: DockComicPanel },
     { id: 'vectorTools', title: 'Vector Tools', component: VectorToolsPanel },
     { id: 'layers', title: 'Layers', component: LayerPanel },
 ];

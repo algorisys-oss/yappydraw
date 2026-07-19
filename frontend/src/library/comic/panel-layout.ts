@@ -86,6 +86,41 @@ export function parseScript(input: string | Utterance[]): Utterance[] {
     return out;
 }
 
+/**
+ * Split a script into panels (Comic Chat §6.1 panel breaks).
+ *
+ * The rule that does most of the work is "at most one balloon per character per
+ * panel" — a speaker taking a second turn is exactly what starts a new panel, which
+ * is why an alternating dialogue naturally becomes a strip of two-person panels.
+ * We also break before a panel would hold more than `maxCharacters` speakers.
+ *
+ * The paper additionally breaks on a 15% random chance for pacing variety; we omit
+ * that deliberately — a drawing tool should regenerate the same strip from the same
+ * script, and every other layout function here is deterministic.
+ */
+export function splitIntoPanels(
+    utterances: Utterance[],
+    maxCharacters: number = MAX_CHARACTERS,
+): Utterance[][] {
+    const panels: Utterance[][] = [];
+    let current: Utterance[] = [];
+    let speakersHere: string[] = [];
+
+    for (const u of utterances) {
+        const alreadySpoke = speakersHere.includes(u.speaker);
+        const wouldExceedCast = !alreadySpoke && speakersHere.length >= maxCharacters;
+        if (current.length > 0 && (alreadySpoke || wouldExceedCast)) {
+            panels.push(current);
+            current = [];
+            speakersHere = [];
+        }
+        current.push(u);
+        if (!speakersHere.includes(u.speaker)) speakersHere.push(u.speaker);
+    }
+    if (current.length) panels.push(current);
+    return panels;
+}
+
 /** Distinct speakers in first-appearance order, capped at MAX_CHARACTERS. */
 export function castSpeakers(utterances: Utterance[]): string[] {
     const seen: string[] = [];

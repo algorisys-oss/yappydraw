@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.112', date: '2026-07-19', items: [
+        'New Comic Studio panel — write a few lines of dialogue and draw a comic without touching code. Open it from the Window/Panels menu or the command palette.',
+        'As you type, it tells you who it found, the pose each character will strike and how many panels your script becomes.',
+        'Longer conversations turn into a multi-panel strip automatically, laid out left-to-right.',
+        'Set the mood yourself — pick an emotion (happy, angry, shouting, thinking…) or a figure for any character to override what the words suggested.',
+    ] },
     { version: '0.8.111', date: '2026-07-19', items: [
         'Turn a script into a comic panel — type a few lines of dialogue and YappyDraw draws it: stick figures posed from what they say, facing each other, with speech balloons above them in the right reading order.',
         'The pose comes from the words: a greeting waves, ALL CAPS shouts, ":-(" looks sad, "lol" laughs, "maybe" thinks, "you" points.',

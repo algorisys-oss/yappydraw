@@ -49,7 +49,7 @@ import { setRequestRecording } from "./utils/recording-manager";
 import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
     attachFigureToPath, detachFigurePath, setFigureSequence } from "./library/stick-figures";
-import { createComicPanel } from "./library/comic";
+import { createComicPanel, createComicStrip } from "./library/comic";
 import { TEXT_EFFECT_PRESETS, getTextEffectPreset } from "./config/text-effect-presets";
 import { FONT_PAIRINGS, applyFontPairing } from "./brand/font-pairing";
 import { searchStockPhotos, insertStockPhoto } from "./utils/stock-photos";
@@ -2549,6 +2549,28 @@ export const YappyAPI = {
         },
     ) {
         return createComicPanel(script, opts);
+    },
+
+    /**
+     * Generate a multi-panel comic strip from a longer script.
+     *
+     *   api.createComicStrip("Alice: Hi Bob!\nBob: Hey!\nAlice: Ship it?\nBob: YES!")
+     *
+     * The script is split into panels the way Comic Chat did it — chiefly "one balloon
+     * per character per panel", so a speaker taking another turn starts the next panel.
+     * Panels lay out left-to-right and wrap into rows. Takes every createComicPanel
+     * option plus `columns` (panels per row, default up to 3) and `panelGap` (default 32).
+     * Returns the strip's group id, or null if the script has no usable dialogue.
+     */
+    createComicStrip(
+        script: string | Array<{ speaker: string; text: string }>,
+        opts?: {
+            x?: number; y?: number; figureHeight?: number; frame?: boolean;
+            monochrome?: boolean; fontSize?: number; columns?: number; panelGap?: number;
+            variants?: Record<string, 'male' | 'female' | 'boy' | 'girl'>;
+        },
+    ) {
+        return createComicStrip(script, opts);
     },
 
     // Stick-figure library (drawify-style editable figures)

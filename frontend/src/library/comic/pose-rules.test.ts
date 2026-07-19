@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { poseForLine, explainPose, isAllCaps, NEUTRAL_POSE } from "./pose-rules";
+import { poseForLine, explainPose, isAllCaps, poseForEmotion, EMOTIONS, NEUTRAL_POSE } from "./pose-rules";
 
 describe("isAllCaps", () => {
     it("needs >1 uppercase and no lowercase", () => {
@@ -71,5 +71,32 @@ describe("conflict resolution (priority, not blending)", () => {
     it("word matching respects boundaries", () => {
         // "think" must not fire inside "thinking cap"? it should — but "rethink" must not
         expect(poseForLine("We need to rethink the plan")).toBe(NEUTRAL_POSE);
+    });
+});
+
+describe("emotion palette (manual override)", () => {
+    it("maps every emotion to a real pose, except 'auto'", () => {
+        for (const em of EMOTIONS) {
+            if (em.id === "auto") { expect(em.pose).toBe(""); continue; }
+            expect(em.pose.length).toBeGreaterThan(0);
+            expect(poseForEmotion(em.id)).toBe(em.pose);
+        }
+    });
+
+    it("returns null for auto / unknown / missing, so callers fall back to the rules", () => {
+        expect(poseForEmotion("auto")).toBeNull();
+        expect(poseForEmotion(undefined)).toBeNull();
+        expect(poseForEmotion("nonsense")).toBeNull();
+    });
+
+    it("overrides what the text would have inferred", () => {
+        // "Hi Bob!" infers waving; asking for 'angry' must win
+        expect(poseForLine("Hi Bob!")).toBe("daily-waving");
+        expect(poseForEmotion("angry")).toBe("office-stressed");
+    });
+
+    it("has unique ids and labels", () => {
+        expect(new Set(EMOTIONS.map(e => e.id)).size).toBe(EMOTIONS.length);
+        expect(new Set(EMOTIONS.map(e => e.label)).size).toBe(EMOTIONS.length);
     });
 });

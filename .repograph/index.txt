@@ -78,7 +78,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 3676 | Theme:3 HarmonyType:56 DimensionMeasure:63 ElementOptions:133 normalizeElementType:346 ElementType:555 as:555 Window:3665
+frontend/src/api.ts | typescript | 3698 | Theme:3 HarmonyType:56 DimensionMeasure:63 ElementOptions:133 normalizeElementType:346 ElementType:555 as:555 Window:3687
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1424 | Component:1 App:89 moves:114 onPenMove:115 hidePen:119 handleKeyUp:158 handleKeyDown:168 as:703 handleFullscreenChange:818 handleBeforeUnload:824 handlePaste:828 handleGlobalDragEnter:930 handleGlobalDragOver:945 showDropFallbackPrompt:964 cleanup:994 outsideClick:1022 isImageFile:1034 first:1035 must:1048 extractDropData:1050 processExtractedDrop:1105 handleGlobalDrop:1222 handleDocumentDrop:1268
 frontend/src/assets/solid.svg | - | 1 |
@@ -129,10 +129,11 @@ frontend/src/components/design-size-dialog.css | - | 114 |
 frontend/src/components/design-size-dialog.tsx | typescript | 96 | Component:1 PageSizePreset:4 DesignSizeDialogProps:8 DesignSizeDialog:21 pick:26 pickCustom:31 previewStyle:40
 frontend/src/components/dock/align-panel.tsx | typescript | 47 | Component:6 DockAlignPanel:14 count:15 enough:16
 frontend/src/components/dock/arrange-panel.tsx | typescript | 32 | Component:6 DockArrangePanel:11 sel:12 has:13
+frontend/src/components/dock/comic-panel.tsx | typescript | 230 | Component:9 Variant:21 poseLabel:26 DockComicPanel:32 btn:56 opts:64 generate:73 setEmotion:86 setVariant:94 first:133 active:163
 frontend/src/components/dock/dock-container.tsx | typescript | 183 | Component:12 DockZone:17 edgeAt:33 insertIndexAt:42 def:57 st:58 onTitleDown:60 move:70 up:83 ids:132 width:133 onResize:134 move:137 up:141 DockContainer:157 floating:158 st:164
 frontend/src/components/dock/dock.css | - | 149 |
 frontend/src/components/dock/effects-panel.tsx | typescript | 34 | Component:7 DockEffectsPanel:10 sel:11 has:12
-frontend/src/components/dock/panel-registry.ts | typescript | 54 | PanelDef:27 panelDef:52
+frontend/src/components/dock/panel-registry.ts | typescript | 56 | PanelDef:28 panelDef:54
 frontend/src/components/drawings-gallery-dialog.css | - | 140 |
 frontend/src/components/drawings-gallery-dialog.tsx | typescript | 172 | Component:1 DrawingMeta:6 timeAgo:16 DrawingsGalleryDialog:24 isOpen:25 close:26 refresh:35 refreshHint:40 handleOpen:50 handleSaveCurrent:56 handleNewDrawing:64 startRename:73 commitRename:77 handleDuplicate:83 handleDelete:89
 frontend/src/components/drawings-gallery-signal.ts | typescript | 5 |
@@ -184,7 +185,7 @@ frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 d
 frontend/src/components/measure-overlay.css | - | 83 |
 frontend/src/components/measure-overlay.tsx | typescript | 128 | MeasureOverlay:16 toWorld:21 onDown:23 onMove:30 onUp:40 onKey:45 seg:54 metrics:69 unit:77 distLabel:79
 frontend/src/components/menu.css | - | 292 |
-frontend/src/components/menu.tsx | typescript | 1437 | Component:1 handleSaveRequest:84 quickSaveToGallery:97 handleNew:109 proceed:110 Menu:125 handleUnsavedCancel:147 handleUnsavedDiscard:152 handleUnsavedSave:159 propPanelOffset:171 onPaletteEscape:181 performSave:192 is:257 handleLoad:293 handleResetView:313 loadTemplateAction:318 handleTemplateSelect:358 handleOpenJson:367 handleLoadJsonText:418 handleExportHtml:434 handleExportExcalidraw:446 handleExportRocket:467 handleDeployToRocket:500 onLeftMouseDown:551 onRightMouseDown:566 onMouseMove:580 onMouseUp:595 handleResize:604
+frontend/src/components/menu.tsx | typescript | 1445 | Component:1 handleSaveRequest:85 quickSaveToGallery:98 handleNew:110 proceed:111 Menu:126 handleUnsavedCancel:148 handleUnsavedDiscard:153 handleUnsavedSave:160 propPanelOffset:172 onPaletteEscape:182 performSave:193 is:258 handleLoad:294 handleResetView:314 loadTemplateAction:319 handleTemplateSelect:359 handleOpenJson:368 handleLoadJsonText:419 handleExportHtml:435 handleExportExcalidraw:447 handleExportRocket:468 handleDeployToRocket:501 onLeftMouseDown:552 onRightMouseDown:567 onMouseMove:581 onMouseUp:596 handleResize:605
 frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
 frontend/src/components/mindmap-tool-group.tsx | typescript | 135 | Component:1 MindmapToolGroup:16 handler:23 getActiveMindmapTool:34 handleToolClick:48 as:56 as:61 handleRightClick:68 toggleMenu:74 as:76 activeTool:81 isActive:82 getDropdownPosition:84
@@ -316,7 +317,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 124 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 130 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -393,7 +394,7 @@ frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 566 | T
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 394 | LogoToolkitDoc:9 the:167
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 377 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 243 | StickAnimationDoc:10
-frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 181 | StickLibraryDoc:9
+frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 216 | StickLibraryDoc:9 your:152
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 143 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 302 | WorkspaceDoc:9 and:75 a:80
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 660 | YslTutorialDoc:8 members:564 Subject:579
@@ -414,11 +415,11 @@ frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 315 | VectorPa
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 297 | WireframingDoc:8
 frontend/src/index.css | - | 509 |
 frontend/src/index.tsx | typescript | 119 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84
-frontend/src/library/comic/index.ts | typescript | 311 | PanelLayout:13 Utterance:13 ComicPanelOptions:25 buildFigureElements:59 measureBubble:103 planComicPanel:128 createComicPanel:205
-frontend/src/library/comic/panel-layout.test.ts | typescript | 175 | Utterance:4
-frontend/src/library/comic/panel-layout.ts | typescript | 309 | Utterance:17 Box:19 CharacterPlacement:21 BubblePlacement:30 PanelLayout:37 parseScript:67 castSpeakers:90 inferPairs:107 orderingCost:127 orderCharacters:164 LayoutInput:176 layoutPanel:204
-frontend/src/library/comic/pose-rules.test.ts | typescript | 75 |
-frontend/src/library/comic/pose-rules.ts | typescript | 153 | Match:23 PoseRule:30 poseForLine:134 explainPose:148
+frontend/src/library/comic/index.ts | typescript | 427 | PanelLayout:13 Utterance:13 ComicPanelOptions:25 ComicStripOptions:56 buildFigureElements:73 measureBubble:117 planComicPanel:142 createComicPanel:221 IdFactory:263 buildPanelElements:269 createComicStrip:358
+frontend/src/library/comic/panel-layout.test.ts | typescript | 215 | Utterance:4
+frontend/src/library/comic/panel-layout.ts | typescript | 344 | Utterance:17 Box:19 CharacterPlacement:21 BubblePlacement:30 PanelLayout:37 parseScript:67 splitIntoPanels:101 castSpeakers:125 inferPairs:142 orderingCost:162 orderCharacters:199 LayoutInput:211 layoutPanel:239
+frontend/src/library/comic/pose-rules.test.ts | typescript | 102 |
+frontend/src/library/comic/pose-rules.ts | typescript | 191 | Match:23 PoseRule:30 EmotionId:72 poseForEmotion:75 poseForLine:172 explainPose:186
 frontend/src/library/elements/aliases.ts | typescript | 198 | aliasesFor:196
 frontend/src/library/elements/illustrations/LICENSE.md | - | 17 |
 frontend/src/library/elements/illustrations/assets.ts | typescript | 987 | Illustration:8
@@ -499,7 +500,7 @@ frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 Docu
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 readIndex:37 writeIndex:41 saveSnapshot:45 maybeSnapshotVersion:68 snapshotVersionNow:85 listVersions:96 restoreVersion:101 deleteVersion:113
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 8032 | LayoutDirection:15 OutlineNode:15 BooleanOp:16 Poly:16 ShapeFace:16 DistortKind:17 WarpPreset:39 Theme:48 ResolvedTheme:49 AppState:76 HistorySnapshot:556 BP:1566 AlignmentType:4372 DistributionType:4372 CharPatch:4945 CharPatchArg:4948 SelBBox:5902 LastTransform:6167 RegionPathfinderOp:6526 SelectSimilarMatch:6659 buildPathFromPoly:7387 polysOriginMin:7422 syncCompoundOperands:7429 buildCompoundPath:7440 WorldSub:7666 rdpAnchors:7669 normalizeWorldSubs:7697 makePathFromWorldSubs:7712 elementToWorldSubs:7733 startInkCleanupIfNeeded:7971
+frontend/src/store/app-store.ts | typescript | 8037 | LayoutDirection:15 OutlineNode:15 BooleanOp:16 Poly:16 ShapeFace:16 DistortKind:17 WarpPreset:39 Theme:48 ResolvedTheme:49 AppState:76 HistorySnapshot:556 BP:1566 AlignmentType:4372 DistributionType:4372 CharPatch:4950 CharPatchArg:4953 SelBBox:5907 LastTransform:6172 RegionPathfinderOp:6531 SelectSimilarMatch:6664 buildPathFromPoly:7392 polysOriginMin:7427 syncCompoundOperands:7434 buildCompoundPath:7445 WorldSub:7671 rdpAnchors:7674 normalizeWorldSubs:7702 makePathFromWorldSubs:7717 elementToWorldSubs:7738 startInkCleanupIfNeeded:7976
 frontend/src/store/dock-layout.ts | typescript | 155 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:60 hidePanel:71 setPanelOpen:81 dockPanel:88 dockPanelAt:98
 frontend/src/templates/data/designs/cards.ts | typescript | 127 |
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
@@ -562,7 +563,7 @@ frontend/src/utils/color-adjust.ts | typescript | 69 | hexToHsl:12 hslToHex:29 s
 frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:28
 frontend/src/utils/color-harmony.ts | typescript | 83 | HarmonyType:10 generateTints:19 generateHarmony:29 loadImage:41 extractImagePalette:56
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
-frontend/src/utils/command-registry.ts | typescript | 452 | Command:25
+frontend/src/utils/command-registry.ts | typescript | 453 | Command:25
 frontend/src/utils/connector-obstacles.ts | typescript | 132 | Seg:14 Bounds:34
 frontend/src/utils/connector-routing.test.ts | typescript | 212 | node:7 conn:12
 frontend/src/utils/connector-routing.ts | typescript | 203 | Pt:26 Side:27 sideFacing:41 sidePoint:60 oppositePoint:77 projectOntoSide:93 Member:108 allocatePort:121

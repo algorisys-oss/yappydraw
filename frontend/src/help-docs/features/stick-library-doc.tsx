@@ -147,6 +147,13 @@ Y.toggleStickFigurePanel(true);         // open the panel`}</code></pre>
                     figures posed from what they say, arranged so they face each other, with
                     speech balloons above them in the right reading order.
                 </p>
+                <p class="tip-box">
+                    Open <strong>Comic Studio</strong> from the Window/Panels menu (or the command
+                    palette) to do all of this without touching code: type your script and the panel
+                    shows who it found, the pose each will strike and how many panels it will make.
+                    Pick a figure (Man/Woman/Boy/Girl) and an <strong>emotion</strong> per speaker to
+                    override what the words suggested, then hit Generate.
+                </p>
                 <pre><code>{`const Y = window.Yappy;
 Y.createComicPanel(\`Alice: Hi Bob!
 Bob: I think we should ship it.
@@ -161,6 +168,18 @@ Y.createComicPanel(script, {
   fontSize: 20,          // balloon text size
   variants: { Alice: 'female', Sam: 'boy' },   // pick a figure per speaker
 });`}</code></pre>
+                <h3>Setting the mood yourself</h3>
+                <p>
+                    The words only suggest a pose. When you know better, set an emotion for a
+                    speaker — Neutral, Happy, Laughing, Sad, Angry, Shouting, Thinking, Unsure,
+                    Waving, Pointing, Idea, Presenting, Love or Asking — in Comic Studio, or via
+                    the API:
+                </p>
+                <pre><code>{`Y.createComicPanel(script, { emotions: { Bob: 'angry', Ann: 'laughing' } });`}</code></pre>
+                <p>
+                    “Auto” hands the choice back to the words.
+                </p>
+
                 <p>
                     Each <code>Name: line</code> row becomes one balloon. The pose comes from the
                     words themselves: a greeting waves, ALL CAPS or <code>!!!</code> shouts,
@@ -172,6 +191,22 @@ Y.createComicPanel(script, {
                     Up to 4 speakers per panel, one pose each. The whole panel is grouped, so it
                     moves — and undoes — as a single unit. Spacing is worked out when the panel is
                     created; nothing is locked, so you can drag any figure or balloon afterwards.
+                </p>
+
+                <h3>Longer scripts become a strip</h3>
+                <p>
+                    Give a longer conversation to <code>createComicStrip</code> and it breaks into
+                    multiple panels laid out left-to-right, wrapping into rows:
+                </p>
+                <pre><code>{`Y.createComicStrip(\`Ann: Hi Ben!
+Ben: Hey! Did you ship it?
+Ann: I think so
+Ben: ARE YOU SURE?\`, { columns: 3, panelGap: 32 });`}</code></pre>
+                <p>
+                    A speaker only gets one balloon per panel, so when someone takes another turn
+                    the strip moves to the next panel — an alternating back-and-forth naturally
+                    becomes a row of two-person panels. The strip is one group (each panel a group
+                    inside it), so you can move the whole thing or pull a single panel out.
                 </p>
             </section>
         </div>

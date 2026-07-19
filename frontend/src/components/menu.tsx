@@ -3,7 +3,7 @@ import { showToast } from "./toast";
 import { storage } from "../storage/file-system-storage";
 import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
-    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleKeyframePanel, toggleStatePanel, toggleSlideToolbar,
+    togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleComicPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleKeyframePanel, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript,
     isPropertyPanelVisible
@@ -15,6 +15,7 @@ import {
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
     Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, PersonStanding, Gamepad2, Workflow, ChevronDown, Code, Network
+, Clapperboard
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
@@ -1061,6 +1062,13 @@ const Menu: Component = () => {
                                         <span class="label">Stick Figures</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('stickFigure')}><Check size={14} class="check-icon" /></Show>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { toggleComicPanel(); setIsMenuOpen(false); }}>
+                                        <Clapperboard size={16} />
+                                        <span class="label">Comic Studio</span>
+                                        <div class="menu-item-right">
+                                            <Show when={isPanelOpen('comic')}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleBrandKitPanel(); setIsMenuOpen(false); }}>

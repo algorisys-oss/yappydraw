@@ -41,6 +41,44 @@ export interface PoseRule {
 export const NEUTRAL_POSE = 'daily-standing';
 
 /**
+ * The emotion palette — a manual override for the rule table.
+ *
+ * Comic Chat's key UI idea (§4.1) was that a system can't reliably infer how someone
+ * feels, so it let the user say: the emotion wheel set emotion by angle and intensity
+ * by radius, overriding the automatic choice. This is the same idea in the shape that
+ * suits a narrow dock panel — a small palette of emotions, each mapped to a pose we
+ * actually have art for. Choosing one for a speaker overrides `poseForLine`.
+ *
+ * Kept deliberately short: an emotion nobody can draw is worse than no option at all.
+ */
+export const EMOTIONS = [
+    { id: 'auto', label: 'Auto', pose: '' },   // no override — use the rule table
+    { id: 'neutral', label: 'Neutral', pose: 'daily-standing' },
+    { id: 'happy', label: 'Happy', pose: 'office-thumbsup' },
+    { id: 'laughing', label: 'Laughing', pose: 'social-celebrating' },
+    { id: 'sad', label: 'Sad', pose: 'daily-sad' },
+    { id: 'angry', label: 'Angry', pose: 'office-stressed' },
+    { id: 'shouting', label: 'Shouting', pose: 'office-megaphone' },
+    { id: 'thinking', label: 'Thinking', pose: 'daily-thinking' },
+    { id: 'unsure', label: 'Unsure', pose: 'daily-shrug' },
+    { id: 'greeting', label: 'Waving', pose: 'daily-waving' },
+    { id: 'pointing', label: 'Pointing', pose: 'daily-pointing' },
+    { id: 'idea', label: 'Idea', pose: 'office-idea' },
+    { id: 'presenting', label: 'Presenting', pose: 'office-presenting' },
+    { id: 'love', label: 'Love', pose: 'social-love' },
+    { id: 'asking', label: 'Asking', pose: 'meeting-raise-hand' },
+] as const;
+
+export type EmotionId = typeof EMOTIONS[number]['id'];
+
+/** Pose for an emotion, or null for 'auto' / anything unknown (caller falls back to the rules). */
+export function poseForEmotion(id: string | undefined): string | null {
+    if (!id || id === 'auto') return null;
+    const found = EMOTIONS.find(e => e.id === id);
+    return found && found.pose ? found.pose : null;
+}
+
+/**
  * The table. Strengths follow Comic Chat's spirit: unmistakable signals (shouting,
  * laughter, explicit emoticons) outrank positional cues (a greeting or pronoun at
  * the start of a sentence), which outrank weak generic cues (a trailing "?").
