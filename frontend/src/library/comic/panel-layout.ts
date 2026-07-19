@@ -14,7 +14,15 @@
  * so the same script always produces the same panel.
  */
 
-export interface Utterance { speaker: string; text: string; }
+/**
+ * One line of dialogue. `kind` selects the balloon from the comic vocabulary
+ * (Comic Chat §5.1): normal speech, a thought cloud, or a whispered aside.
+ * The paper's fourth type — the jagged shout balloon — was unimplemented there too;
+ * ALL CAPS already poses the speaker with a megaphone, which reads clearly enough.
+ */
+export type BalloonKind = 'speech' | 'thought' | 'whisper';
+
+export interface Utterance { speaker: string; text: string; kind?: BalloonKind; }
 
 export interface Box { x: number; y: number; width: number; height: number; }
 
@@ -30,6 +38,7 @@ export interface CharacterPlacement {
 export interface BubblePlacement extends Box {
     speaker: string;
     text: string;
+    kind: BalloonKind;
     /** Percent along the bubble's bottom edge where the tail tip sits (10-90). */
     tailPosition: number;
 }
@@ -68,7 +77,7 @@ export function parseScript(input: string | Utterance[]): Utterance[] {
     if (Array.isArray(input)) {
         return input
             .filter(u => u && typeof u.speaker === 'string' && typeof u.text === 'string')
-            .map(u => ({ speaker: u.speaker.trim(), text: u.text.trim() }))
+            .map(u => ({ speaker: u.speaker.trim(), text: u.text.trim(), ...(u.kind ? { kind: u.kind } : {}) }))
             .filter(u => u.speaker && u.text);
     }
     const out: Utterance[] = [];
@@ -77,11 +86,20 @@ export function parseScript(input: string | Utterance[]): Utterance[] {
         if (!line) continue;
         const i = line.indexOf(':');
         if (i <= 0) continue;
-        const speaker = line.slice(0, i).trim();
+        let speaker = line.slice(0, i).trim();
         const text = line.slice(i + 1).trim();
+
+        // "Ann (thinks): ..." / "Ann (whispers): ..." selects the balloon type.
+        let kind: BalloonKind = 'speech';
+        const paren = speaker.match(/^(.*?)\s*\((.+)\)$/);
+        if (paren) {
+            const mode = paren[2].trim().toLowerCase();
+            if (/^think(s|ing)?$|^thought$/.test(mode)) { kind = 'thought'; speaker = paren[1].trim(); }
+            else if (/^whisper(s|ing)?$/.test(mode)) { kind = 'whisper'; speaker = paren[1].trim(); }
+        }
         // A "speaker" with spaces-and-then-some is almost certainly prose with a colon.
         if (!speaker || !text || speaker.length > 24) continue;
-        out.push({ speaker, text });
+        out.push(kind === 'speech' ? { speaker, text } : { speaker, text, kind });
     }
     return out;
 }
@@ -307,6 +325,7 @@ export function layoutPanel(input: LayoutInput): PanelLayout {
         placed.push({
             speaker: u.speaker,
             text: u.text,
+            kind: u.kind ?? 'speech',
             x: bx,
             y: by,
             width: size.width,

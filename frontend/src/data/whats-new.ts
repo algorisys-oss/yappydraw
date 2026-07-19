@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.113', date: '2026-07-19', items: [
+        'Comics can think and whisper — write "Ben (thinks): ..." for a thought cloud, or "Ann (whispers): ..." for a dashed aside.',
+    ] },
     { version: '0.8.112', date: '2026-07-19', items: [
         'New Comic Studio panel — write a few lines of dialogue and draw a comic without touching code. Open it from the Window/Panels menu or the command palette.',
         'As you type, it tells you who it found, the pose each character will strike and how many panels your script becomes.',

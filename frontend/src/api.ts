@@ -2535,8 +2535,14 @@ export const YappyAPI = {
      * each other, and balloons are stacked above the figures in reading order with each
      * tail aimed at its speaker. Up to 4 speakers per panel.
      *
+     * Add a cue in brackets to change the balloon: `Ben (thinks):` draws a thought
+     * cloud and `Ann (whispers):` a dashed aside. An unrecognised bracket stays part
+     * of the name, so `Ann (CEO):` still works.
+     *
      * Also accepts a structured array: `[{ speaker: 'Alice', text: 'Hi Bob!' }]`.
-     * Pick figures per speaker with `variants: { Alice: 'female', Sam: 'boy' }`.
+     * Pick figures per speaker with `variants: { Alice: 'female', Sam: 'boy' }`, and
+     * override the inferred pose with `emotions: { Bob: 'angry' }` (see EMOTIONS in
+     * library/comic/pose-rules.ts; 'auto' returns the choice to the words).
      * Returns the panel's group id (the whole panel moves as one), or null if the
      * script has no usable dialogue.
      */
@@ -2546,6 +2552,7 @@ export const YappyAPI = {
             x?: number; y?: number; figureHeight?: number; frame?: boolean;
             monochrome?: boolean; fontSize?: number;
             variants?: Record<string, 'male' | 'female' | 'boy' | 'girl'>;
+            emotions?: Record<string, string>;
         },
     ) {
         return createComicPanel(script, opts);
@@ -2568,6 +2575,7 @@ export const YappyAPI = {
             x?: number; y?: number; figureHeight?: number; frame?: boolean;
             monochrome?: boolean; fontSize?: number; columns?: number; panelGap?: number;
             variants?: Record<string, 'male' | 'female' | 'boy' | 'girl'>;
+            emotions?: Record<string, string>;
         },
     ) {
         return createComicStrip(script, opts);

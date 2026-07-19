@@ -168,6 +168,19 @@ Y.createComicPanel(script, {
   fontSize: 20,          // balloon text size
   variants: { Alice: 'female', Sam: 'boy' },   // pick a figure per speaker
 });`}</code></pre>
+                <h3>Thoughts and whispers</h3>
+                <p>
+                    Add a cue in brackets after the name to change the balloon:
+                </p>
+                <pre><code>{`Ann: Did we ship it?
+Ben (thinks): I have no idea
+Ann (whispers): me neither`}</code></pre>
+                <p>
+                    <code>(thinks)</code> draws a thought cloud, <code>(whispers)</code> a dashed
+                    aside in italics; anything else is a normal speech balloon. An unrecognised
+                    bracket stays part of the name, so <code>Ann (CEO):</code> still works.
+                </p>
+
                 <h3>Setting the mood yourself</h3>
                 <p>
                     The words only suggest a pose. When you know better, set an emotion for a

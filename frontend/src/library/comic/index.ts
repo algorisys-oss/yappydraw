@@ -315,24 +315,28 @@ function buildPanelElements(
         elements.push(...parts);
     }
 
-    // Balloons.
+    // Balloons — the comic vocabulary (Comic Chat §5.1): a solid speech balloon with a
+    // tail, a thought cloud, or a whispered aside drawn with a dashed outline.
     for (const b of layout.bubbles) {
+        const isThought = b.kind === 'thought';
         elements.push({
             ...store.defaultElementStyles,
-            id: newId('speechBubble'),
-            type: 'speechBubble',
+            id: newId(isThought ? 'thoughtBubble' : 'speechBubble'),
+            type: isThought ? 'thoughtBubble' : 'speechBubble',
             x: b.x,
             y: b.y,
             width: b.width,
             height: b.height,
             backgroundColor: '#ffffff',
             fillStyle: 'solid',
-            strokeStyle: 'solid',
+            strokeStyle: b.kind === 'whisper' ? 'dashed' : 'solid',
             containerText: b.text,
             fontSize,
+            fontStyle: b.kind === 'whisper' ? 'italic' : undefined,
             textAlign: 'center',
             verticalAlign: 'middle',
-            tailPosition: Math.round(b.tailPosition),
+            // The thought cloud has no tail, so the tail position is meaningless for it.
+            ...(isThought ? {} : { tailPosition: Math.round(b.tailPosition) }),
             seed: 1,
             layerId: store.activeLayerId,
             groupIds: [panelGroupId],

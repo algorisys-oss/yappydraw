@@ -16,7 +16,7 @@ import { showToast } from "../toast";
 const SAMPLE = `Alice: Hi Bob!
 Bob: I think we should ship it.
 Alice: ARE YOU SURE?
-Bob: lol maybe not`;
+Bob (thinks): lol maybe not`;
 
 type Variant = 'male' | 'female' | 'boy' | 'girl';
 const VARIANT_LABEL: Record<Variant, string> = { male: 'Man', female: 'Woman', boy: 'Boy', girl: 'Girl' };
@@ -114,6 +114,8 @@ const DockComicPanel: Component = () => {
                 <div style={{ 'font-size': '10.5px', opacity: '0.6', 'margin-top': '3px' }}>
                     Write <code>Name: what they say</code>. The pose comes from the words —
                     a greeting waves, CAPS shouts, “:-(” is sad, “maybe” thinks.
+                    Use <code>Name (thinks):</code> for a thought cloud or
+                    <code> Name (whispers):</code> for a dashed aside.
                 </div>
             </div>
 

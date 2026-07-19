@@ -40,6 +40,51 @@ describe("parseScript", () => {
     });
 });
 
+describe("balloon kinds (Comic Chat §5.1)", () => {
+    it("reads a thought cue and strips it from the speaker name", () => {
+        expect(parseScript("Ann (thinks): maybe not")).toEqual([
+            { speaker: "Ann", text: "maybe not", kind: "thought" },
+        ]);
+        expect(parseScript("Ann (thinking): hm")[0].kind).toBe("thought");
+        expect(parseScript("Ann (thought): hm")[0].kind).toBe("thought");
+    });
+
+    it("reads a whisper cue", () => {
+        expect(parseScript("Ben (whispers): don't tell")).toEqual([
+            { speaker: "Ben", text: "don't tell", kind: "whisper" },
+        ]);
+        expect(parseScript("Ben (whispering): shh")[0].kind).toBe("whisper");
+    });
+
+    it("leaves plain speech without a kind", () => {
+        expect(parseScript("Ann: hello")[0].kind).toBeUndefined();
+    });
+
+    it("keeps an unrecognised parenthetical as part of the name", () => {
+        const u = parseScript("Ann (CEO): hello")[0];
+        expect(u.speaker).toBe("Ann (CEO)");
+        expect(u.kind).toBeUndefined();
+    });
+
+    it("treats a thinking speaker as the same character for panel breaks", () => {
+        // "Ann" and "Ann (thinks)" are one person, so this is a second turn → new panel
+        const panels = splitIntoPanels(parseScript("Ann: hi\nAnn (thinks): hm"));
+        expect(panels.length).toBe(2);
+    });
+
+    it("carries the kind through to the balloon placement", () => {
+        const u = parseScript("Ann: hi\nBen (thinks): hm");
+        const out = layoutPanel({
+            utterances: u, order: ["Ann", "Ben"],
+            poses: { Ann: "daily-waving", Ben: "daily-thinking" },
+            bubbleSizes: [{ width: 120, height: 60 }, { width: 120, height: 60 }],
+            figureWidth: 110, figureHeights: { Ann: 400, Ben: 400 },
+            originX: 0, originY: 0,
+        });
+        expect(out.bubbles.map(b => b.kind)).toEqual(["speech", "thought"]);
+    });
+});
+
 describe("castSpeakers", () => {
     it("returns distinct speakers in first-appearance order", () => {
         expect(castSpeakers(parseScript(SCRIPT))).toEqual(["Alice", "Bob"]);
