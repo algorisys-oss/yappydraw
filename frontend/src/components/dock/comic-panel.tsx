@@ -116,7 +116,8 @@ const DockComicPanel: Component = () => {
                     a greeting waves, CAPS shouts, “:-(” is sad, “maybe” thinks.
                     Use <code>Name (thinks):</code> for a thought cloud,
                     <code> Name (whispers):</code> for a dashed aside, or start a line with
-                    <code> *</code> for a caption box.
+                    <code> *</code> for a caption box. An emotion works inline too —
+                    <code> Ann (angry):</code> — and applies to that line only.
                 </div>
             </div>
 

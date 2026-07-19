@@ -207,6 +207,21 @@ Ben: ON IT`}</code></pre>
                 <p>
                     “Auto” hands the choice back to the words.
                 </p>
+                <p>
+                    For a mood that changes as the story goes, put the emotion in the script
+                    instead — it applies to that line only, so a character can be cheerful in one
+                    panel and furious in the next:
+                </p>
+                <pre><code>{`Ann (happy): the build is green
+Ben: nice
+Ann (angry): the build is green
+Ben: oh`}</code></pre>
+                <p>
+                    Cues combine, so <code>Ann (angry, whispers):</code> works. An inline cue beats
+                    the panel’s emotion picker, which beats what the words suggested. If any part of
+                    the bracket isn’t recognised the whole thing stays part of the name, so
+                    <code> Ann (CEO):</code> is safe.
+                </p>
 
                 <p>
                     Each <code>Name: line</code> row becomes one balloon. The pose comes from the

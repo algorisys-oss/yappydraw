@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.115', date: '2026-07-19', items: [
+        'Set a mood per line in comics — write "Ann (angry): ..." and that line only is angry, so a character can be cheerful in one panel and furious in the next.',
+        'Cues combine: "Ann (angry, whispers): ..." gives an angry whisper.',
+    ] },
     { version: '0.8.114', date: '2026-07-19', items: [
         'Comic captions — start a line with * (or wrap it in brackets) for a "MEANWHILE..." box that sets the scene without putting anyone in the panel.',
     ] },

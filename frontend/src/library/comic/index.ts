@@ -161,8 +161,13 @@ export function planComicPanel(
         const variant = opts.variants?.[s];
         // Male keeps the base asset id; other variants suffix it (assets.ts:29).
         const suffix = variant && variant !== 'male' ? `-${variant}` : '';
-        // An explicit emotion wins over whatever the text rules inferred.
-        const base = poseForEmotion(opts.emotions?.[s]) ?? poseForLine(first.text);
+        // Precedence: an inline cue in the script ("Ann (angry):") beats the panel-wide
+        // `emotions` map, which in turn beats whatever the text rules inferred. Because
+        // each panel is planned from its OWN utterances, an inline cue is naturally
+        // per-panel — a character can be cheerful in one panel and furious in the next.
+        const base = poseForEmotion(first.emotion)
+            ?? poseForEmotion(opts.emotions?.[s])
+            ?? poseForLine(first.text);
         poses[s] = base + suffix;
     });
 

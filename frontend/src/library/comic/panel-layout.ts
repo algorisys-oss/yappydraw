@@ -24,7 +24,14 @@
  */
 export type BalloonKind = 'speech' | 'thought' | 'whisper' | 'narration';
 
-export interface Utterance { speaker: string; text: string; kind?: BalloonKind; }
+export interface Utterance {
+    speaker: string;
+    text: string;
+    kind?: BalloonKind;
+    /** Emotion cue written inline in the script, e.g. "Ann (angry): ...". Per LINE, so a
+     *  character's mood can change from one panel to the next. */
+    emotion?: string;
+}
 
 export interface Box { x: number; y: number; width: number; height: number; }
 
@@ -62,6 +69,8 @@ const PANEL_PADDING = 28;
 /** Bubble tail must stay inside this band of the bubble width (matches the shape geometry). */
 const TAIL_MIN = 10, TAIL_MAX = 90;
 
+import { isEmotionToken } from './pose-rules';
+
 // ─── Script parsing ──────────────────────────────────────────────────────
 
 /**
@@ -79,7 +88,10 @@ export function parseScript(input: string | Utterance[]): Utterance[] {
     if (Array.isArray(input)) {
         return input
             .filter(u => u && typeof u.speaker === 'string' && typeof u.text === 'string')
-            .map(u => ({ speaker: u.speaker.trim(), text: u.text.trim(), ...(u.kind ? { kind: u.kind } : {}) }))
+            .map(u => ({
+                speaker: u.speaker.trim(), text: u.text.trim(),
+                ...(u.kind ? { kind: u.kind } : {}), ...(u.emotion ? { emotion: u.emotion } : {}),
+            }))
             .filter(u => u.text && (u.speaker || u.kind === 'narration'));
     }
     const out: Utterance[] = [];
@@ -98,17 +110,36 @@ export function parseScript(input: string | Utterance[]): Utterance[] {
         let speaker = line.slice(0, i).trim();
         const text = line.slice(i + 1).trim();
 
-        // "Ann (thinks): ..." / "Ann (whispers): ..." selects the balloon type.
+        // Bracket cues after the name: a balloon type and/or an emotion, comma separated —
+        // "Ann (thinks)", "Ann (angry)", "Ann (angry, whispers)". Every token must be
+        // recognised, otherwise the brackets are left alone so "Ann (CEO):" still works.
         let kind: BalloonKind = 'speech';
+        let emotion: string | undefined;
         const paren = speaker.match(/^(.*?)\s*\((.+)\)$/);
         if (paren) {
-            const mode = paren[2].trim().toLowerCase();
-            if (/^think(s|ing)?$|^thought$/.test(mode)) { kind = 'thought'; speaker = paren[1].trim(); }
-            else if (/^whisper(s|ing)?$/.test(mode)) { kind = 'whisper'; speaker = paren[1].trim(); }
+            let k: BalloonKind | null = null;
+            let em: string | null = null;
+            const tokens = paren[2].split(',').map(t => t.trim()).filter(Boolean);
+            const ok = tokens.length > 0 && tokens.every(tok => {
+                const t = tok.toLowerCase();
+                if (/^think(s|ing)?$|^thought$/.test(t)) { k = 'thought'; return true; }
+                if (/^whisper(s|ing)?$/.test(t)) { k = 'whisper'; return true; }
+                const e = isEmotionToken(t);
+                if (e) { em = e; return true; }
+                return false;
+            });
+            if (ok) {
+                if (k) kind = k;
+                if (em) emotion = em;
+                speaker = paren[1].trim();
+            }
         }
         // A "speaker" with spaces-and-then-some is almost certainly prose with a colon.
         if (!speaker || !text || speaker.length > 24) continue;
-        out.push(kind === 'speech' ? { speaker, text } : { speaker, text, kind });
+        const entry: Utterance = { speaker, text };
+        if (kind !== 'speech') entry.kind = kind;
+        if (emotion) entry.emotion = emotion;
+        out.push(entry);
     }
     return out;
 }

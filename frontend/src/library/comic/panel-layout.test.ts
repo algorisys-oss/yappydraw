@@ -126,6 +126,45 @@ describe("narration captions (Comic Chat §8)", () => {
     });
 });
 
+describe("inline emotion cues (per-line, so per-panel)", () => {
+    it("reads an emotion cue and strips it from the name", () => {
+        expect(parseScript("Ann (angry): fine")).toEqual([
+            { speaker: "Ann", text: "fine", emotion: "angry" },
+        ]);
+    });
+
+    it("accepts the label as well as the id, case-insensitively", () => {
+        expect(parseScript("Ann (Laughing): ha")[0].emotion).toBe("laughing");
+        expect(parseScript("Ann (SHOUTING): hey")[0].emotion).toBe("shouting");
+    });
+
+    it("combines an emotion with a balloon type", () => {
+        const u = parseScript("Ann (angry, whispers): fine")[0];
+        expect(u.emotion).toBe("angry");
+        expect(u.kind).toBe("whisper");
+    });
+
+    it("keeps an unrecognised bracket as part of the name", () => {
+        const u = parseScript("Ann (CEO): hello")[0];
+        expect(u.speaker).toBe("Ann (CEO)");
+        expect(u.emotion).toBeUndefined();
+    });
+
+    it("rejects the whole bracket if any token is unknown", () => {
+        // partial recognition would silently drop the unknown half
+        const u = parseScript("Ann (angry, CEO): hello")[0];
+        expect(u.speaker).toBe("Ann (angry, CEO)");
+        expect(u.emotion).toBeUndefined();
+    });
+
+    it("lets the same speaker carry different emotions in different panels", () => {
+        const panels = splitIntoPanels(parseScript("Ann (happy): hi\nBen: hey\nAnn (angry): no"));
+        expect(panels.length).toBe(2);
+        expect(panels[0][0].emotion).toBe("happy");
+        expect(panels[1][0].emotion).toBe("angry");
+    });
+});
+
 describe("castSpeakers", () => {
     it("returns distinct speakers in first-appearance order", () => {
         expect(castSpeakers(parseScript(SCRIPT))).toEqual(["Alice", "Bob"]);

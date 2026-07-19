@@ -71,6 +71,13 @@ export const EMOTIONS = [
 
 export type EmotionId = typeof EMOTIONS[number]['id'];
 
+/** Is this token a known emotion (id or label, case-insensitive)? */
+export function isEmotionToken(token: string): string | null {
+    const t = token.trim().toLowerCase();
+    const hit = EMOTIONS.find(e => e.id === t || e.label.toLowerCase() === t);
+    return hit && hit.id !== 'auto' ? hit.id : null;
+}
+
 /** Pose for an emotion, or null for 'auto' / anything unknown (caller falls back to the rules). */
 export function poseForEmotion(id: string | undefined): string | null {
     if (!id || id === 'auto') return null;
