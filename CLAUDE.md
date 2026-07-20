@@ -68,6 +68,7 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
 2. **Bump the version** in `package.json` (patch unless I say otherwise).
 3. **Write a release note** — ALWAYS create `release-notes/<version>.md` for the version being shipped (e.g. `release-notes/0.5.2.md`). Use the template in `release-notes/README.md`: date, highlights, features, fixes, internal/test changes, and any breaking changes / migration notes. One file per version; never skip this step. If older shipped versions are missing notes, backfill them as applicable. **Also add a matching entry (newest first) to `frontend/src/data/whats-new.ts`** — the in-app "What's new" popup (opened by clicking the version number). Keep that copy user-facing (what it does FOR them), skipping purely internal/test-only releases.
 4. **Refresh the repo map** (`npm run repograph`) and verify the build passes (`npm run build`).
-5. **Commit and keep `main` in sync** — commit on the working branch, then make sure local `main` and the remote (`origin`) `main` are in sync and **push** (fast-forward/merge as appropriate).
-6. **Publish to the OSS repo** with `./scripts/publish-oss.sh --push` (publishes a cleaned client-only copy to the `algorisys-oss/yappydraw` remote). Use a dry-run first if anything looks off.
+5. **Commit and tag** — commit on the working branch, then create an annotated tag for the version: `git tag -a v<version> -m "v<version> — <short headline>"` (e.g. `v0.8.124`). One tag per shipped version, `v`-prefixed, matching `package.json`.
+6. **Keep `main` in sync and push** — make sure local `main` and the remote (`origin`) `main` are in sync and **push**, including the tag: `git push origin main --tags` (fast-forward/merge as appropriate). Push the working branch too.
+7. **Publish to the OSS repo** with `./scripts/publish-oss.sh --push` (publishes a cleaned client-only copy to the `algorisys-oss/yappydraw` remote). Use a dry-run first if anything looks off.
 
