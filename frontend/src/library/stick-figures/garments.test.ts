@@ -96,3 +96,60 @@ describe("buildFigure garments", () => {
         expect(svg.indexOf('data-sf-role="garment"')).toBeLessThan(svg.indexOf('data-sf-role="body"'));
     });
 });
+
+import { upperBody, TOP_STYLES, NECK_STYLES } from "./garments";
+
+describe("upperBody", () => {
+    it("resolves a torso and arms for EVERY pose in the library", () => {
+        const bad: string[] = [];
+        for (const p of POSES) {
+            const ub = upperBody(p.bones, p.hip);
+            if (!ub) { bad.push(`${p.id}: none`); continue; }
+            if (ub.torso.length < 2) bad.push(`${p.id}: torso ${ub.torso.length}`);
+            if (ub.arms.length < 1 || ub.arms.length > 3) bad.push(`${p.id}: ${ub.arms.length} arms`);
+        }
+        expect(bad).toEqual([]);
+    });
+
+    it("picks the torso by proximity to the hip, not by ending there", () => {
+        // A speaker behind a podium runs the torso PAST the hip, so an "ends at the hip"
+        // rule finds nothing.
+        const speaker = POSES.find(p => p.id === "meeting-speaker")!;
+        const ub = upperBody(speaker.bones, speaker.hip)!;
+        expect(ub.torso[0]).toEqual([70, 56] as any);
+        expect(ub.arms).toHaveLength(2);
+    });
+
+    it("handles crossed arms, which touch neither shoulder", () => {
+        // Arms are whatever is left after legs and torso — an "arms attach to the torso"
+        // rule finds zero arms here.
+        const guard = POSES.find(p => p.id === "service-security")!;
+        expect(upperBody(guard.bones, guard.hip)!.arms).toHaveLength(2);
+    });
+});
+
+describe("tops and neckwear", () => {
+    const stand = POSES.find(p => p.id === "daily-standing")!;
+
+    it("emits finite geometry for every top and neckwear combination", () => {
+        const ub = upperBody(stand.bones, stand.hip)!;
+        for (const t of TOP_STYLES) {
+            for (const n of NECK_STYLES) {
+                const prims = garmentGeometry([], stand.hip as any, { top: t.id, neck: n.id, upper: ub, unit: 84 });
+                if (t.id === "none" && n.id === "none") { expect(prims).toEqual([]); continue; }
+                expect(prims.length).toBeGreaterThan(0);
+                for (const p of prims) expect(String((p as any).d ?? "").includes("NaN")).toBe(false);
+            }
+        }
+    });
+
+    it("needs the upper body — legs alone dress nobody's chest", () => {
+        expect(garmentGeometry([], stand.hip as any, { top: "jacket", unit: 84 })).toEqual([]);
+    });
+
+    it("tags torso and arm bones so a dropped figure can be re-dressed", () => {
+        const svg = buildFigure(stand, "male");
+        expect(svg).toContain('data-sf-part="torso"');
+        expect(svg).toContain('data-sf-part="arm"');
+    });
+});

@@ -12,7 +12,7 @@ import { store } from '../../store/app-store';
 import { effectiveTime } from '../../utils/animation/animation-engine';
 import { getClip, poseAt, WALK_STRIDE } from '../../library/stick-figures/anim/clips';
 import { elementPathSample, sampleAt } from '../../library/stick-figures/anim/path-follow';
-import { RIG_W, RIG_H, RIG_LEG_UNIT, headAttach, legPolylines, type JointId, type RigPose } from '../../library/stick-figures/anim/rig';
+import { RIG_W, RIG_H, RIG_LEG_UNIT, headAttach, legPolylines, upperPolylines, type JointId, type RigPose } from '../../library/stick-figures/anim/rig';
 import { garmentGeometry } from '../../library/stick-figures/garments';
 import {
     faceGeometry, hairGeometry, asFaceStyle, asHairStyle,
@@ -133,9 +133,16 @@ export class StickRigRenderer extends ShapeRenderer {
         // Garments follow the legs, mapped into the element box like the bones are.
         const legs = legPolylines(pose).map(chain => chain.map(p => X({ x: p[0], y: p[1] })));
         const pelvis = X(pose.joints.get('pelvis')!);
+        const up = upperPolylines(pose);
         const garments = garmentGeometry(legs, pelvis, {
             trousers: data.trousers, trouserColor: data.trouserColor,
             shoes: data.shoes, shoeColor: data.shoeColor,
+            top: data.top, topColor: data.topColor,
+            neck: data.neck, neckColor: data.neckColor,
+            upper: {
+                torso: up.torso.map(p => X({ x: p[0], y: p[1] })),
+                arms: up.arms.map(a => a.map(p => X({ x: p[0], y: p[1] }))),
+            },
             unit: RIG_LEG_UNIT * sx, facing,
         });
 

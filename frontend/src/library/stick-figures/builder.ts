@@ -19,7 +19,8 @@
  */
 import { faceHairSvg, faceStateAttrs, asFaceStyle, asHairStyle, type FaceOpts, type FaceStyle, type HairStyle } from './face';
 import {
-    garmentSvg, garmentStateAttrs, legChains, asTrouserStyle, asShoeStyle, LEG_UNIT,
+    garmentSvg, garmentStateAttrs, legChains, upperBody,
+    asTrouserStyle, asShoeStyle, asTopStyle, asNeckStyle, LEG_UNIT,
     type GarmentOpts, type TrouserStyle,
 } from './garments';
 
@@ -108,12 +109,20 @@ export const bones = (d: string, hip?: readonly [number, number]) => {
     // ends at the hip but starts at the neck.
     const chainPts = hip ? legChains(d, hip).flat() : [];
     const onLeg = (p: number[]) => chainPts.some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 1);
+    const ub = hip ? upperBody(d, hip) : null;
+    const key = (p: number[][]) => p.map(q => `${q[0]},${q[1]}`).join(' ');
+    const torsoKey = ub ? key(ub.torso) : null;
+    const armKeys = new Set((ub?.arms ?? []).map(key));
     return d.split(/(?=M)/).map(seg => seg.trim()).filter(Boolean)
         .map(seg => {
             const pts = subToPoints(seg);
-            const isLeg = pts.length > 0 && onLeg(pts[0]);
+            const k = key(pts);
+            const part = pts.length === 0 ? ''
+                : onLeg(pts[0]) ? 'leg'
+                : k === torsoKey ? 'torso'
+                : armKeys.has(k) ? 'arm' : '';
             const curved = curveLimb(pts);
-            return curved ? `<path d="${curved}" data-sf-role="body"${isLeg ? ' data-sf-part="leg"' : ''}/>` : '';
+            return curved ? `<path d="${curved}" data-sf-role="body"${part ? ` data-sf-part="${part}"` : ''}/>` : '';
         })
         .filter(Boolean).join('');
 };
@@ -169,6 +178,11 @@ export function buildFigure(
         trouserColor: opts.trouserColor,
         shoes: asShoeStyle(opts.shoes, 'none'),
         shoeColor: opts.shoeColor,
+        top: asTopStyle(opts.top, 'none'),
+        topColor: opts.topColor,
+        neck: asNeckStyle(opts.neck, 'none'),
+        neckColor: opts.neckColor,
+        upper: upperBody(pose.bones, pose.hip) ?? undefined,
         unit: LEG_UNIT,
     };
     const legs = legChains(pose.bones, pose.hip);

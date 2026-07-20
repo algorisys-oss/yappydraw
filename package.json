@@ -1,6 +1,6 @@
 {
   "name": "yappy",
-  "version": "0.8.120",
+  "version": "0.8.121",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {

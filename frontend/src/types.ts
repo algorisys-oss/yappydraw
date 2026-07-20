@@ -376,6 +376,10 @@ export interface DrawingElement {
         trouserColor?: string;
         shoes?: string;
         shoeColor?: string;
+        top?: string;
+        topColor?: string;
+        neck?: string;
+        neckColor?: string;
     };
 
     // Specific to Linear (Line, Arrow, Pencil)

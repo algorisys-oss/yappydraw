@@ -18,9 +18,9 @@ import {
     type FaceOpts, type FaceStyle, type HairStyle,
 } from './face';
 import {
-    garmentSvg, asTrouserStyle, asShoeStyle,
-    DEFAULT_TROUSER_COLOR, DEFAULT_SHOE_COLOR, LEG_UNIT,
-    type TrouserStyle, type ShoeStyle,
+    garmentSvg, asTrouserStyle, asShoeStyle, asTopStyle, asNeckStyle,
+    DEFAULT_TROUSER_COLOR, DEFAULT_SHOE_COLOR, DEFAULT_TOP_COLOR, DEFAULT_NECK_COLOR, LEG_UNIT,
+    type TrouserStyle, type ShoeStyle, type TopStyle, type NeckStyle,
 } from './garments';
 export * from './garments';
 export * from './prims';
@@ -89,6 +89,10 @@ export interface InsertStickOptions {
     trouserColor?: string;
     shoes?: ShoeStyle | 'auto';
     shoeColor?: string;
+    top?: TopStyle | 'auto';
+    topColor?: string;
+    neck?: NeckStyle | 'auto';
+    neckColor?: string;
 }
 
 /**
@@ -118,6 +122,10 @@ export function prepareStickFigureElements(assetId: string, opts: InsertStickOpt
         trouserColor: opts.trouserColor ?? pref.trouserColor,
         shoes: opts.shoes ?? pref.shoes,
         shoeColor: opts.shoeColor ?? pref.shoeColor,
+        top: opts.top ?? pref.top,
+        topColor: opts.topColor ?? pref.topColor,
+        neck: opts.neck ?? pref.neck,
+        neckColor: opts.neckColor ?? pref.neckColor,
     });
 
     const els = svgToElements(svg, {
@@ -263,6 +271,16 @@ function legsOfFigure(scope: DrawingElement[], head: DrawingElement): Array<Arra
         .filter(p => p.length >= 2);
 }
 
+/** Torso + arm polylines of a dropped figure, for tops and neckwear. */
+function upperOfFigure(scope: DrawingElement[], head: DrawingElement) {
+    const groups = new Set(head.groupIds || []);
+    const inFigure = (e: DrawingElement) =>
+        groups.size === 0 || (e.groupIds || []).some(g => groups.has(g));
+    const torso = scope.filter(e => e.sfPart === 'torso' && inFigure(e)).map(polylineOf).find(p => p.length >= 2);
+    const arms = scope.filter(e => e.sfPart === 'arm' && inFigure(e)).map(polylineOf).filter(p => p.length >= 2);
+    return torso ? { torso, arms } : undefined;
+}
+
 /** The hip of that figure — the topmost point shared by its legs. */
 function hipOfFigure(scope: DrawingElement[], head: DrawingElement): [number, number] | null {
     const legs = legsOfFigure(scope, head);
@@ -338,7 +356,7 @@ export function restyleStickFace(ids: string[], choice: FaceHairChoice): number 
             // Garments are rebuilt from the LEG parts, which carry their own world
             // geometry — no rotation baking needed, they are already where they are.
             + garmentSvg(legsOfFigure(scope, head), hipOfFigure(scope, head) ?? [cx, cy],
-                { ...next, unit: (r / 22) * LEG_UNIT })
+                { ...next, unit: (r / 22) * LEG_UNIT, upper: upperOfFigure(scope, head) })
             + (spin ? '</g>' : '') + `</svg>`;
         const parts = svgToElements(markup, { x: 0, y: 0 });
         const ref = parts.find(e => e.sfRole === 'head');
@@ -442,11 +460,15 @@ export interface FaceHairChoice {
     hair?: HairStyle | 'auto';
     hairColor?: string;
     headFill?: boolean;
-    /** Trousers / shoes. Like face and hair, `'auto'` means "leave as-is". */
+    /** Clothing. Like face and hair, `'auto'` means "leave as-is". */
     trousers?: TrouserStyle | 'auto';
     trouserColor?: string;
     shoes?: ShoeStyle | 'auto';
     shoeColor?: string;
+    top?: TopStyle | 'auto';
+    topColor?: string;
+    neck?: NeckStyle | 'auto';
+    neckColor?: string;
 }
 
 /** The face/hair a head part currently wears, as stored on the element. */
@@ -459,6 +481,10 @@ export interface StickFaceState {
     trouserColor: string;
     shoes: ShoeStyle;
     shoeColor: string;
+    top: TopStyle;
+    topColor: string;
+    neck: NeckStyle;
+    neckColor: string;
 }
 
 /** Everything off — what a figure predating a given feature is treated as wearing. */
@@ -466,11 +492,15 @@ export const BARE_STATE: StickFaceState = {
     face: 'none', hair: 'none', hairColor: DEFAULT_HAIR_COLOR, headFill: false,
     trousers: 'none', trouserColor: DEFAULT_TROUSER_COLOR,
     shoes: 'none', shoeColor: DEFAULT_SHOE_COLOR,
+    top: 'none', topColor: DEFAULT_TOP_COLOR,
+    neck: 'none', neckColor: DEFAULT_NECK_COLOR,
 };
 
 const FACE_ATTR = 'data-sf-face', HAIR_ATTR = 'data-sf-hair', HAIR_COLOR_ATTR = 'data-sf-hair-color';
 const TROUSER_ATTR = 'data-sf-trousers', TROUSER_COLOR_ATTR = 'data-sf-trouser-color';
 const SHOE_ATTR = 'data-sf-shoes', SHOE_COLOR_ATTR = 'data-sf-shoe-color';
+const TOP_ATTR = 'data-sf-top', TOP_COLOR_ATTR = 'data-sf-top-color';
+const NECK_ATTR = 'data-sf-neck', NECK_COLOR_ATTR = 'data-sf-neck-color';
 
 /** Read the face/hair state stamped on a head `<circle>` in an asset SVG. */
 function readHeadState(el: Element): StickFaceState {
@@ -483,6 +513,10 @@ function readHeadState(el: Element): StickFaceState {
         trouserColor: el.getAttribute(TROUSER_COLOR_ATTR) || DEFAULT_TROUSER_COLOR,
         shoes: asShoeStyle(el.getAttribute(SHOE_ATTR), 'none'),
         shoeColor: el.getAttribute(SHOE_COLOR_ATTR) || DEFAULT_SHOE_COLOR,
+        top: asTopStyle(el.getAttribute(TOP_ATTR), 'none'),
+        topColor: el.getAttribute(TOP_COLOR_ATTR) || DEFAULT_TOP_COLOR,
+        neck: asNeckStyle(el.getAttribute(NECK_ATTR), 'none'),
+        neckColor: el.getAttribute(NECK_COLOR_ATTR) || DEFAULT_NECK_COLOR,
     };
 }
 
@@ -497,6 +531,10 @@ function mergeChoice(cur: StickFaceState, c: FaceHairChoice): StickFaceState {
         trouserColor: c.trouserColor ?? cur.trouserColor,
         shoes: !c.shoes || c.shoes === 'auto' ? cur.shoes : asShoeStyle(c.shoes),
         shoeColor: c.shoeColor ?? cur.shoeColor,
+        top: !c.top || c.top === 'auto' ? cur.top : asTopStyle(c.top),
+        topColor: c.topColor ?? cur.topColor,
+        neck: !c.neck || c.neck === 'auto' ? cur.neck : asNeckStyle(c.neck),
+        neckColor: c.neckColor ?? cur.neckColor,
     };
 }
 
@@ -504,8 +542,10 @@ function mergeChoice(cur: StickFaceState, c: FaceHairChoice): StickFaceState {
 const isNoopChoice = (c: FaceHairChoice): boolean =>
     (!c.face || c.face === 'auto') && (!c.hair || c.hair === 'auto')
     && (!c.trousers || c.trousers === 'auto') && (!c.shoes || c.shoes === 'auto')
+    && (!c.top || c.top === 'auto') && (!c.neck || c.neck === 'auto')
     && c.hairColor === undefined && c.headFill === undefined
-    && c.trouserColor === undefined && c.shoeColor === undefined;
+    && c.trouserColor === undefined && c.shoeColor === undefined
+    && c.topColor === undefined && c.neckColor === undefined;
 
 /**
  * The anchor points of a path `d` string — the endpoint of every command.
@@ -531,6 +571,15 @@ function legsFromSvg(root: Element): { legs: Array<Array<[number, number]>>; hip
         .map(n => pathAnchorPoints(n.getAttribute('d') || ''))
         .filter(p => p.length >= 2);
     return { legs, hip: legs.length ? legs[0][0] : null };
+}
+
+/** Torso + arm polylines from an asset SVG, for tops and neckwear. */
+function upperFromSvg(root: Element) {
+    const pick = (part: string) => Array.from(root.querySelectorAll(`[data-sf-part="${part}"]`))
+        .map(n => pathAnchorPoints(n.getAttribute('d') || ''))
+        .filter(p => p.length >= 2);
+    const torso = pick('torso')[0];
+    return torso ? { torso, arms: pick('arm') } : undefined;
 }
 
 /** Parse `markup` in its own document and import the nodes into `doc`. */
@@ -567,6 +616,7 @@ export function applyFaceHair(svg: string, choice: FaceHairChoice = {}): string 
         // Garments are per-FIGURE, derived from the leg bones rather than the head, and
         // must be inserted ahead of everything so the skeleton draws over them.
         const { legs, hip } = legsFromSvg(root);
+        const upper = upperFromSvg(root);
         root.querySelectorAll('[data-sf-role="head"]').forEach(h => {
             const cx = parseFloat(h.getAttribute('cx') || '');
             const cy = parseFloat(h.getAttribute('cy') || '');
@@ -593,7 +643,7 @@ export function applyFaceHair(svg: string, choice: FaceHairChoice = {}): string 
         if (heads.length === 1 && legs.length && hip) {
             const state = readHeadState(heads[0]);
             const r = parseFloat(heads[0].getAttribute('r') || '22') || 22;
-            const g = garmentSvg(legs, hip, { ...state, unit: (r / 22) * LEG_UNIT });
+            const g = garmentSvg(legs, hip, { ...state, unit: (r / 22) * LEG_UNIT, upper });
             if (g) {
                 const nodes = svgFragment(doc, g);
                 const first = root.firstChild;
@@ -652,6 +702,7 @@ export interface InsertAnimatedOptions {
     x?: number; y?: number; width?: number; facing?: 1 | -1; speed?: number;
     face?: FaceStyle; hair?: HairStyle; hairColor?: string; headFill?: boolean;
     trousers?: TrouserStyle; trouserColor?: string; shoes?: ShoeStyle; shoeColor?: string;
+    top?: TopStyle; topColor?: string; neck?: NeckStyle; neckColor?: string;
 }
 
 /**
@@ -691,6 +742,10 @@ export function insertAnimatedFigure(clip = 'walk', opts: InsertAnimatedOptions 
             trouserColor: opts.trouserColor ?? pref.trouserColor,
             shoes: asShoeStyle(opts.shoes ?? (pref.shoes === 'auto' ? 'none' : pref.shoes), 'none'),
             shoeColor: opts.shoeColor ?? pref.shoeColor,
+            top: asTopStyle(opts.top ?? (pref.top === 'auto' ? 'none' : pref.top), 'none'),
+            topColor: opts.topColor ?? pref.topColor,
+            neck: asNeckStyle(opts.neck ?? (pref.neck === 'auto' ? 'none' : pref.neck), 'none'),
+            neckColor: opts.neckColor ?? pref.neckColor,
         },
     } as unknown as DrawingElement;
     pushToHistory();
@@ -753,6 +808,10 @@ function rigState(d: any): StickFaceState {
         trouserColor: d.trouserColor || DEFAULT_TROUSER_COLOR,
         shoes: asShoeStyle(d.shoes, 'none'),
         shoeColor: d.shoeColor || DEFAULT_SHOE_COLOR,
+        top: asTopStyle(d.top, 'none'),
+        topColor: d.topColor || DEFAULT_TOP_COLOR,
+        neck: asNeckStyle(d.neck, 'none'),
+        neckColor: d.neckColor || DEFAULT_NECK_COLOR,
     };
 }
 
@@ -888,6 +947,10 @@ export function bakeAnimatedFigure(id: string): string[] {
         trouserColor: (data as any).trouserColor,
         shoes: asShoeStyle((data as any).shoes, 'none'),
         shoeColor: (data as any).shoeColor,
+        top: asTopStyle((data as any).top, 'none'),
+        topColor: (data as any).topColor,
+        neck: asNeckStyle((data as any).neck, 'none'),
+        neckColor: (data as any).neckColor,
     });
     const els = svgToElements(svg, { x: el.x, y: el.y, targetWidth: el.width });
     if (!els.length) return [];

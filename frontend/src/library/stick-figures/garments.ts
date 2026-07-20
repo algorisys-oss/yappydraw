@@ -34,6 +34,11 @@ export type TrouserStyle =
 
 export type ShoeStyle = 'none' | 'shoes' | 'boots' | 'sneakers' | 'heels' | 'front';
 
+export type TopStyle =
+    | 'none' | 'tshirt' | 'longSleeve' | 'vest' | 'jacket' | 'hoodie';
+
+export type NeckStyle = 'none' | 'tie' | 'bowtie' | 'scarf';
+
 export const TROUSER_STYLES: { id: TrouserStyle; name: string }[] = [
     { id: 'none', name: 'None' },
     { id: 'straight', name: 'Straight' },
@@ -54,8 +59,31 @@ export const SHOE_STYLES: { id: ShoeStyle; name: string }[] = [
     { id: 'front', name: 'Front-facing' },
 ];
 
+export const TOP_STYLES: { id: TopStyle; name: string }[] = [
+    { id: 'none', name: 'None' },
+    { id: 'tshirt', name: 'T-shirt' },
+    { id: 'longSleeve', name: 'Long sleeve' },
+    { id: 'vest', name: 'Vest' },
+    { id: 'jacket', name: 'Jacket' },
+    { id: 'hoodie', name: 'Hoodie' },
+];
+
+export const NECK_STYLES: { id: NeckStyle; name: string }[] = [
+    { id: 'none', name: 'None' },
+    { id: 'tie', name: 'Tie' },
+    { id: 'bowtie', name: 'Bow tie' },
+    { id: 'scarf', name: 'Scarf' },
+];
+
 const TROUSER_IDS = new Set<string>(TROUSER_STYLES.map(s => s.id));
 const SHOE_IDS = new Set<string>(SHOE_STYLES.map(s => s.id));
+const TOP_IDS = new Set<string>(TOP_STYLES.map(s => s.id));
+const NECK_IDS = new Set<string>(NECK_STYLES.map(s => s.id));
+
+export const asTopStyle = (v: unknown, fallback: TopStyle = 'none'): TopStyle =>
+    typeof v === 'string' && TOP_IDS.has(v) ? v as TopStyle : fallback;
+export const asNeckStyle = (v: unknown, fallback: NeckStyle = 'none'): NeckStyle =>
+    typeof v === 'string' && NECK_IDS.has(v) ? v as NeckStyle : fallback;
 
 export const asTrouserStyle = (v: unknown, fallback: TrouserStyle = 'none'): TrouserStyle =>
     typeof v === 'string' && TROUSER_IDS.has(v) ? v as TrouserStyle : fallback;
@@ -65,6 +93,8 @@ export const asShoeStyle = (v: unknown, fallback: ShoeStyle = 'none'): ShoeStyle
 /** Default fills. Trousers denim-blue, shoes near-black. */
 export const DEFAULT_TROUSER_COLOR = '#3b5b8c';
 export const DEFAULT_SHOE_COLOR = '#2b2118';
+export const DEFAULT_TOP_COLOR = '#c2410c';
+export const DEFAULT_NECK_COLOR = '#b91c1c';
 
 /** The rest-length hip→ankle in the 140×260 authoring frame. */
 export const LEG_UNIT = 84;
@@ -74,6 +104,12 @@ export interface GarmentOpts {
     trouserColor?: string;
     shoes?: ShoeStyle;
     shoeColor?: string;
+    top?: TopStyle;
+    topColor?: string;
+    neck?: NeckStyle;
+    neckColor?: string;
+    /** Torso + arms, for tops and neckwear. Omit and only the legs are dressed. */
+    upper?: UpperBody;
     /** Rest-length hip→ankle for this figure. Defaults to the authoring frame's 84. */
     unit?: number;
     /** 1 = facing right, -1 = facing left. Points the toes. */
@@ -123,6 +159,49 @@ export function legChains(bones: string, hip: readonly [number, number], tol = 6
     return chains;
 }
 
+/** Distance from `p` to segment `a`–`b`. */
+function distSeg(p: Pt, a: Pt, b: Pt): number {
+    const vx = b[0] - a[0], vy = b[1] - a[1];
+    const L = vx * vx + vy * vy || 1;
+    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / L));
+    return Math.hypot(p[0] - (a[0] + vx * t), p[1] - (a[1] + vy * t));
+}
+const distToPoly = (p: Pt, poly: Pt[]) =>
+    Math.min(...poly.slice(1).map((_, i) => distSeg(p, poly[i], poly[i + 1])));
+
+export interface UpperBody {
+    /** Neck → hip. */
+    torso: Pt[];
+    /** Everything else that isn't a leg — one or two arms. */
+    arms: Pt[][];
+}
+
+/**
+ * The torso and arm polylines of a skeleton, given the hip.
+ *
+ * The torso is the non-leg subpath passing CLOSEST TO THE HIP — not the one ending
+ * there, because a figure standing behind a podium runs its torso past the hip.
+ * Arms are then simply everything left over: an "arms attach to the torso" rule looks
+ * right but fails on crossed arms (a security guard's arms touch neither shoulder) and
+ * on poses whose shoulder sits a few units off the torso line. `bones` only ever holds
+ * torso + arms + legs — props live in their own field — so subtraction is safe.
+ *
+ * Verified against every pose in the library by `garments.test.ts`.
+ */
+export function upperBody(bones: string, hip: readonly [number, number]): UpperBody | null {
+    const parts = bones.split(/(?=M)/).map(x => x.trim()).filter(Boolean)
+        .map(subToPoints).filter(p => p.length >= 2);
+    const legKeys = new Set(legChains(bones, hip).flat().map(p => `${p[0]},${p[1]}`));
+    const nonLeg = parts.filter(p => !legKeys.has(`${p[0][0]},${p[0][1]}`));
+    if (!nonLeg.length) return null;
+    let torso = nonLeg[0], best = Infinity;
+    for (const p of nonLeg) {
+        const d = distToPoly(hip as Pt, p);
+        if (d < best) { best = d; torso = p; }
+    }
+    return { torso, arms: nonLeg.filter(p => p !== torso) };
+}
+
 // ─── Width profiles ─────────────────────────────────────────────────────────
 
 /** Half-width at arc fraction `t`, in units of `unit`, per trouser style. */
@@ -170,9 +249,16 @@ function shoePrims(leg: Pt[], style: ShoeStyle, unit: number, facing: 1 | -1, fi
 
     // Seen head-on rather than in profile — the right choice for the library's
     // front-facing poses, where a side-view shoe reads as a foot turned sideways.
+    // A TRAPEZOID (narrow at the ankle, flaring to a flat sole) reads as a shoe;
+    // an ellipse just reads as a blob.
     if (style === 'front') {
-        const rx = unit * 0.105, ry = unit * 0.072;
-        return [{ k: 'oval', x: ankle[0], y: ankle[1] + ry * 0.55, rx, ry, w, fill }];
+        const top = unit * 0.062, bot = unit * 0.098, h = unit * 0.085;
+        const ax = ankle[0], ay = ankle[1] - h * 0.15;
+        return [{
+            k: 'path',
+            d: polyD([[ax - top, ay], [ax + top, ay], [ax + bot, ay + h], [ax - bot, ay + h]]),
+            w, fill,
+        }];
     }
 
     const spec = {
@@ -230,6 +316,136 @@ function shoePrims(leg: Pt[], style: ShoeStyle, unit: number, facing: 1 | -1, fi
     return out;
 }
 
+// ─── Tops & neckwear ────────────────────────────────────────────────────────
+
+/**
+ * Torso half-widths as fractions of `unit`, at the shoulder and at the hem, plus how
+ * far down the torso the hem falls and how much of each arm the sleeve covers.
+ */
+const TOP_SPEC: Record<Exclude<TopStyle, 'none'>,
+    { shoulder: number; hem: number; length: number; sleeve: number; placket?: boolean; hood?: boolean }> = {
+    tshirt: { shoulder: 0.150, hem: 0.140, length: 0.92, sleeve: 0.40 },
+    longSleeve: { shoulder: 0.145, hem: 0.135, length: 0.95, sleeve: 1 },
+    vest: { shoulder: 0.135, hem: 0.128, length: 0.90, sleeve: 0, placket: true },
+    jacket: { shoulder: 0.175, hem: 0.165, length: 1.0, sleeve: 1, placket: true },
+    hoodie: { shoulder: 0.180, hem: 0.165, length: 0.97, sleeve: 1, hood: true },
+};
+
+/** Sleeve half-width — clearly slimmer than the torso so it reads as an arm. */
+const SLEEVE_HALF = 0.098;
+
+function topPrims(ub: UpperBody, unit: number, style: TopStyle, fill: string, w: number): Prim[] {
+    if (style === 'none') return [];
+    const spec = TOP_SPEC[style];
+    const out: Prim[] = [];
+
+    // The body of the top covers the torso from the shoulders down to its hem. The
+    // torso polyline runs neck → hip, so we skip the neck portion and stop at `length`.
+    // The hem should reach the hip and the collar should clear the neck, so the top runs
+    // roughly the lower three-quarters of the neck→hip polyline. Cutting it short leaves
+    // a box floating on the chest rather than a shirt.
+    const startT = 0.26;
+    const full = truncate(resample(ub.torso, 12), spec.length);
+    const body = full.slice(Math.round(startT * (full.length - 1)));
+    if (body.length >= 2) {
+        const half = (t: number) => unit * (spec.shoulder + (spec.hem - spec.shoulder) * t);
+        out.push({ k: 'path', d: polyD(offsetOutline(body, half)), w, fill });
+        if (spec.placket) {
+            // A centre line — what makes a jacket read as open rather than a jumper.
+            out.push({ k: 'poly', pts: [body[0], body[body.length - 1]], w: w * 0.9 });
+        }
+        if (spec.hood) {
+            // A hood slumped behind the shoulders.
+            const top = body[0];
+            out.push({ k: 'ring', x: top[0], y: top[1] - unit * 0.02, r: unit * 0.15, w: w * 0.9, fill });
+        }
+    }
+
+    // Sleeves run down each arm; a t-shirt stops just past the elbow.
+    if (spec.sleeve > 0) {
+        for (const arm of ub.arms) {
+            if (polyLength(arm) < unit * 0.12) continue;
+            const path = spec.sleeve < 1 ? truncate(arm, spec.sleeve) : resample(arm, 12);
+            out.push({
+                k: 'path',
+                d: polyD(offsetOutline(path, () => unit * SLEEVE_HALF)),
+                w, fill,
+            });
+        }
+    }
+    return out;
+}
+
+/** A tie / bow tie / scarf hanging at the neck end of the torso. */
+function neckPrims(ub: UpperBody, unit: number, style: NeckStyle, fill: string, w: number): Prim[] {
+    if (style === 'none') return [];
+    const torso = resample(ub.torso, 12);
+    // The collar sits a little below the neck; direction follows the torso so a leaning
+    // figure's tie leans with it.
+    const collar = torso[Math.round(torso.length * 0.22)];
+    const below = torso[Math.round(torso.length * 0.4)] || torso[torso.length - 1];
+    let dx = below[0] - collar[0], dy = below[1] - collar[1];
+    const m = Math.hypot(dx, dy) || 1;
+    dx /= m; dy /= m;
+    const nx = -dy, ny = dx;                    // across the chest
+
+    if (style === 'bowtie') {
+        const hw = unit * 0.115, hh = unit * 0.062;
+        const c: Pt = [collar[0], collar[1]];
+        return [{
+            k: 'path',
+            d: polyD([
+                [c[0] - nx * hw + dx * hh, c[1] - ny * hw + dy * hh],
+                [c[0] - nx * hw - dx * hh, c[1] - ny * hw - dy * hh],
+                [c[0] + nx * hw + dx * hh, c[1] + ny * hw + dy * hh],
+                [c[0] + nx * hw - dx * hh, c[1] + ny * hw - dy * hh],
+            ]),
+            w: w * 0.9, fill,
+        }];
+    }
+    if (style === 'scarf') {
+        const hw = unit * 0.115;
+        return [
+            { k: 'poly', pts: [[collar[0] - nx * hw, collar[1] - ny * hw], [collar[0] + nx * hw, collar[1] + ny * hw]], w: w * 3.2 },
+            {
+                k: 'path',
+                d: polyD(offsetOutline(
+                    [[collar[0] + nx * hw * 0.6, collar[1] + ny * hw * 0.6],
+                     [collar[0] + nx * hw * 0.8 + dx * unit * 0.3, collar[1] + ny * hw * 0.8 + dy * unit * 0.3]],
+                    () => unit * 0.035)),
+                w: w * 0.8, fill,
+            },
+        ];
+    }
+    // A tie: a small knot with a tapering blade below it.
+    const knotH = unit * 0.072, knotW = unit * 0.058;
+    const bladeLen = unit * 0.36, bladeW = unit * 0.150;
+    const tip: Pt = [collar[0] + dx * bladeLen, collar[1] + dy * bladeLen];
+    return [
+        {
+            k: 'path',
+            d: polyD([
+                [collar[0] - nx * knotW, collar[1] - ny * knotW],
+                [collar[0] + nx * knotW, collar[1] + ny * knotW],
+                [collar[0] + nx * knotW + dx * knotH, collar[1] + ny * knotW + dy * knotH],
+                [collar[0] - nx * knotW + dx * knotH, collar[1] - ny * knotW + dy * knotH],
+            ]),
+            w: w * 0.85, fill,
+        },
+        {
+            k: 'path',
+            d: polyD([
+                [collar[0] - nx * knotW * 0.8 + dx * knotH, collar[1] - ny * knotW * 0.8 + dy * knotH],
+                [collar[0] + nx * knotW * 0.8 + dx * knotH, collar[1] + ny * knotW * 0.8 + dy * knotH],
+                [tip[0] + nx * bladeW * 0.5, tip[1] + ny * bladeW * 0.5],
+                [tip[0], tip[1] + dy * unit * 0.05],
+                [tip[0] - nx * bladeW * 0.5, tip[1] - ny * bladeW * 0.5],
+            ]),
+            w: w * 0.85, fill,
+        },
+    ];
+}
+
 // ─── Public geometry ────────────────────────────────────────────────────────
 
 /** Stroke weight for garment outlines at scale `unit`. */
@@ -245,7 +461,9 @@ export function garmentGeometry(legs: Pt[][], hip: Pt, o: GarmentOpts = {}): Pri
     const unit = o.unit && o.unit > 0 ? o.unit : LEG_UNIT;
     const trousers = asTrouserStyle(o.trousers, 'none');
     const shoes = asShoeStyle(o.shoes, 'none');
-    if (trousers === 'none' && shoes === 'none') return [];
+    const top = asTopStyle(o.top, 'none');
+    const neck = asNeckStyle(o.neck, 'none');
+    if (trousers === 'none' && shoes === 'none' && top === 'none' && neck === 'none') return [];
 
     const w = garmentWidth(unit);
     const tFill = o.trouserColor || DEFAULT_TROUSER_COLOR;
@@ -268,6 +486,12 @@ export function garmentGeometry(legs: Pt[][], hip: Pt, o: GarmentOpts = {}): Pri
     if (shoes !== 'none') {
         for (const leg of legs) out.push(...shoePrims(leg, shoes, unit, facing, sFill, w));
     }
+
+    // Tops last: the shirt hem overlaps the trouser waist, which is the right way round.
+    if (o.upper && (top !== 'none' || neck !== 'none')) {
+        out.push(...topPrims(o.upper, unit, top, o.topColor || DEFAULT_TOP_COLOR, w));
+        out.push(...neckPrims(o.upper, unit, neck, o.neckColor || DEFAULT_NECK_COLOR, w));
+    }
     return out;
 }
 
@@ -279,7 +503,11 @@ export function garmentStateAttrs(o: GarmentOpts = {}): string {
     return ` data-sf-trousers="${asTrouserStyle(o.trousers, 'none')}"`
         + ` data-sf-trouser-color="${o.trouserColor || DEFAULT_TROUSER_COLOR}"`
         + ` data-sf-shoes="${asShoeStyle(o.shoes, 'none')}"`
-        + ` data-sf-shoe-color="${o.shoeColor || DEFAULT_SHOE_COLOR}"`;
+        + ` data-sf-shoe-color="${o.shoeColor || DEFAULT_SHOE_COLOR}"`
+        + ` data-sf-top="${asTopStyle(o.top, 'none')}"`
+        + ` data-sf-top-color="${o.topColor || DEFAULT_TOP_COLOR}"`
+        + ` data-sf-neck="${asNeckStyle(o.neck, 'none')}"`
+        + ` data-sf-neck-color="${o.neckColor || DEFAULT_NECK_COLOR}"`;
 }
 
 /** Garments as role-tagged SVG markup. Emitted BEFORE the bones so lines sit on top. */

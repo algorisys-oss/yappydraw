@@ -6,8 +6,9 @@
 import { createSignal } from 'solid-js';
 import { asFaceStyle, asHairStyle, DEFAULT_HAIR_COLOR, type FaceStyle, type HairStyle } from './face';
 import {
-    asTrouserStyle, asShoeStyle, DEFAULT_TROUSER_COLOR, DEFAULT_SHOE_COLOR,
-    type TrouserStyle, type ShoeStyle,
+    asTrouserStyle, asShoeStyle, asTopStyle, asNeckStyle,
+    DEFAULT_TROUSER_COLOR, DEFAULT_SHOE_COLOR, DEFAULT_TOP_COLOR, DEFAULT_NECK_COLOR,
+    type TrouserStyle, type ShoeStyle, type TopStyle, type NeckStyle,
 } from './garments';
 
 const FAV_KEY = 'yappy.stickFigures.favorites';
@@ -67,6 +68,10 @@ export interface StickFacePref {
     trouserColor: string;
     shoes: ShoeStyle | 'auto';
     shoeColor: string;
+    top: TopStyle | 'auto';
+    topColor: string;
+    neck: NeckStyle | 'auto';
+    neckColor: string;
 }
 
 const FACE_DEFAULT: StickFacePref = {
@@ -75,6 +80,8 @@ const FACE_DEFAULT: StickFacePref = {
     // variants" — i.e. exactly how the library looked before garments existed.
     trousers: 'auto', trouserColor: DEFAULT_TROUSER_COLOR,
     shoes: 'auto', shoeColor: DEFAULT_SHOE_COLOR,
+    top: 'auto', topColor: DEFAULT_TOP_COLOR,
+    neck: 'auto', neckColor: DEFAULT_NECK_COLOR,
 };
 
 /** Normalise a persisted (possibly stale) preference blob. */
@@ -89,6 +96,10 @@ function normFacePref(v: Partial<StickFacePref> | null): StickFacePref {
         trouserColor: typeof v.trouserColor === 'string' ? v.trouserColor : DEFAULT_TROUSER_COLOR,
         shoes: v.shoes === 'auto' || v.shoes === undefined ? 'auto' : asShoeStyle(v.shoes),
         shoeColor: typeof v.shoeColor === 'string' ? v.shoeColor : DEFAULT_SHOE_COLOR,
+        top: v.top === 'auto' || v.top === undefined ? 'auto' : asTopStyle(v.top),
+        topColor: typeof v.topColor === 'string' ? v.topColor : DEFAULT_TOP_COLOR,
+        neck: v.neck === 'auto' || v.neck === undefined ? 'auto' : asNeckStyle(v.neck),
+        neckColor: typeof v.neckColor === 'string' ? v.neckColor : DEFAULT_NECK_COLOR,
     };
 }
 

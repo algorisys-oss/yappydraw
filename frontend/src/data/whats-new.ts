@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.121', date: '2026-07-20', items: [
+        'Stick figures can wear tops and ties — T-shirt, long sleeve, vest, jacket or hoodie, plus a tie, bow tie or scarf.',
+        'Sleeves follow the arms and the tie follows the torso, so clothing moves with the pose just like trousers do.',
+        'Front-facing shoes redrawn so they read as shoes head-on, and joggers lost the stray cuff line.',
+    ] },
     { version: '0.8.120', date: '2026-07-20', items: [
         'Stick figures can wear trousers and shoes — 8 trouser styles and 6 shoe styles, each with its own colour.',
         'The clothing follows the pose: a seated figure\'s trousers bend at the knee, a cyclist\'s follow the pedalling leg, and animated figures keep theirs through a walk cycle.',

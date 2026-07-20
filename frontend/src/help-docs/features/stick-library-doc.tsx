@@ -105,6 +105,14 @@ const StickLibraryDoc: Component = () => {
                     (Man → Short, Woman → Fringe, Boy → Spiky, Girl → Pigtails). Pick a style explicitly and it wins
                     everywhere.
                 </p>
+                <h3>Clothing</h3>
+                <ul>
+                    <li><strong>Tops</strong> — 6 styles: T-shirt, Long sleeve, Vest, Jacket, Hoodie, and None.
+                        Sleeves follow the arms, so a waving figure's sleeve waves with it.</li>
+                    <li><strong>Neckwear</strong> — Tie, Bow tie, Scarf, and None. A tie hangs from the collar
+                        along the torso, so it leans when the figure leans.</li>
+                </ul>
+
                 <h3>Trousers &amp; shoes</h3>
                 <ul>
                     <li><strong>Trousers</strong> — 8 styles: Straight, Baggy, Skinny, Shorts, Joggers, Skirt,
@@ -115,7 +123,8 @@ const StickLibraryDoc: Component = () => {
                     <li><strong>Colours</strong> — trousers and shoes each have their own.</li>
                 </ul>
                 <p>
-                    Clothing is generated from the figure's <strong>legs</strong>, so it follows whatever pose the
+                    Clothing is generated from the figure's own <strong>limbs</strong> — trousers and shoes from
+                    the legs, tops and neckwear from the torso and arms — so it follows whatever pose the
                     figure is in — a seated figure's trousers bend at the knee, a cyclist's follow the pedalling
                     leg, and a walking figure's stride with it. Nobody has to author a seated variant.
                 </p>
@@ -207,6 +216,9 @@ Y.setStickFace({ face: 'happy', hair: 'bun', hairColor: '#2b2118' }, ids);
 Y.listStickTrousers();                  // 8 trouser styles
 Y.listStickShoes();                     // 6 shoe styles
 Y.setStickFace({ trousers: 'baggy', shoes: 'sneakers', trouserColor: '#374151' }, ids);
+Y.listStickTops();                      // 6 tops
+Y.listStickNeckwear();                  // tie / bowtie / scarf
+Y.setStickFace({ top: 'jacket', neck: 'tie', topColor: '#0f766e' }, ids);
 Y.setStickFace({ face: 'angry' });      // omitted fields are left alone; defaults to the selection
 Y.getStickFace(ids);                    // {face, hair, hairColor, headFill}
 // …or set it at drop time:
@@ -218,6 +230,7 @@ Y.toggleStickFigurePanel(true);         // open the panel`}</code></pre>
                     <code> setStickFace(opts, ids?)</code>, <code>getStickFace(ids?)</code>,
                     <code> listStickFaces()</code>, <code>listStickHairStyles()</code>,
                     <code> listStickTrousers()</code>, <code>listStickShoes()</code>,
+                    <code> listStickTops()</code>, <code>listStickNeckwear()</code>,
                     <code> listStickFigures(category?)</code>, <code>listStickFigureCategories()</code>,
                     <code> toggleStickFigurePanel(visible?)</code>.
                 </p>

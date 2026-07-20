@@ -11,7 +11,7 @@
  */
 
 import { faceHairSvg, faceStateAttrs, type FaceOpts, type FaceStyle, type HairStyle } from '../face';
-import { garmentSvg, garmentStateAttrs, type GarmentOpts, type TrouserStyle, type ShoeStyle } from '../garments';
+import { garmentSvg, garmentStateAttrs, type GarmentOpts, type TrouserStyle, type ShoeStyle, type TopStyle, type NeckStyle } from '../garments';
 
 export type JointId =
     | 'pelvis' | 'shoulder' | 'head'
@@ -96,6 +96,10 @@ export interface StickRigData {
     trouserColor?: string;
     shoes?: ShoeStyle;
     shoeColor?: string;
+    top?: TopStyle;
+    topColor?: string;
+    neck?: NeckStyle;
+    neckColor?: string;
 }
 
 /** Canonical rig frame — matches the 140×260 authoring box. */
@@ -222,6 +226,23 @@ export function legPolylines(pose: RigPose): Array<Array<[number, number]>> {
     ];
 }
 
+/** Torso + arm polylines of a pose, for tops and neckwear. */
+export function upperPolylines(pose: RigPose): { torso: Array<[number, number]>; arms: Array<Array<[number, number]>> } {
+    const at = (id: JointId): [number, number] => {
+        const p = pose.joints.get(id)!;
+        return [p.x, p.y];
+    };
+    // Neck → hip, matching the static library's torso direction (the tie hangs from the
+    // start of this polyline, so the order matters).
+    return {
+        torso: [at('head'), at('shoulder'), at('pelvis')],
+        arms: [
+            [at('shoulder'), at('upperArmL'), at('foreArmL')],
+            [at('shoulder'), at('upperArmR'), at('foreArmR')],
+        ],
+    };
+}
+
 /** Render a pose to an SVG string (garments + bones + head + face/hair), role-tagged. */
 export function rigPoseToSvg(
     rig: StickRig, pose: RigPose, w = 140, h = 260,
@@ -236,6 +257,7 @@ export function rigPoseToSvg(
     // Garments first — the black bone lines must draw on top of them.
     const garments = garmentSvg(legPolylines(pose), [pelvis.x, pelvis.y], {
         ...garment, unit: RIG_LEG_UNIT * rig.scale, facing: rig.facing,
+        upper: upperPolylines(pose),
     });
     const inner = garments +
         bone(`M${P('pelvis')}L${P('shoulder')}`) +                       // spine

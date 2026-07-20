@@ -49,7 +49,7 @@ import { setRequestRecording } from "./utils/recording-manager";
 import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
     attachFigureToPath, detachFigurePath, setFigureSequence, setFigurePathDuration, setAnimatedFigureSpeed,
-    FACE_STYLES, HAIR_STYLES, TROUSER_STYLES, SHOE_STYLES, restyleStickFace, stickFaceStateOf,
+    FACE_STYLES, HAIR_STYLES, TROUSER_STYLES, SHOE_STYLES, TOP_STYLES, NECK_STYLES, restyleStickFace, stickFaceStateOf,
     setAnimatedFigureFace, animatedFigureFaceState } from "./library/stick-figures";
 import { createComicPanel, createComicStrip } from "./library/comic";
 import { TEXT_EFFECT_PRESETS, getTextEffectPreset } from "./config/text-effect-presets";
@@ -2586,7 +2586,7 @@ export const YappyAPI = {
     // Stick-figure library (drawify-style editable figures)
     /** Insert a stick figure by id (e.g. "daily-waving") as one editable, recolourable
      *  group. Omit x/y to center on the active page. Returns the new element ids. */
-    insertStickFigure(assetId: string, opts?: { x?: number; y?: number; targetWidth?: number; face?: string; hair?: string; hairColor?: string; headFill?: boolean; trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string }) {
+    insertStickFigure(assetId: string, opts?: { x?: number; y?: number; targetWidth?: number; face?: string; hair?: string; hairColor?: string; headFill?: boolean; trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string; top?: string; topColor?: string; neck?: string; neckColor?: string }) {
         return insertStickFigure(assetId, opts as any);
     },
     /** List stick-figure assets (id/name/category/tags), optionally filtered by category. */
@@ -2618,6 +2618,10 @@ export const YappyAPI = {
     listStickTrousers() { return TROUSER_STYLES.map(t => ({ id: t.id, name: t.name })); },
     /** List the available shoe styles (id + name), e.g. shoes / boots / sneakers. */
     listStickShoes() { return SHOE_STYLES.map(sh => ({ id: sh.id, name: sh.name })); },
+    /** List the available tops (id + name), e.g. tshirt / jacket / hoodie. */
+    listStickTops() { return TOP_STYLES.map(t => ({ id: t.id, name: t.name })); },
+    /** List the available neckwear (id + name): tie / bowtie / scarf. */
+    listStickNeckwear() { return NECK_STYLES.map(n => ({ id: n.id, name: n.name })); },
     /**
      * Set the face / hair of the given (or selected) figures — dropped library
      * figures AND animated rigs. Omitted fields are left alone, so you can change
@@ -2635,6 +2639,7 @@ export const YappyAPI = {
         opts: {
             face?: string; hair?: string; hairColor?: string; headFill?: boolean;
             trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string;
+            top?: string; topColor?: string; neck?: string; neckColor?: string;
         },
         ids?: string[],
     ) {
@@ -2651,7 +2656,7 @@ export const YappyAPI = {
     /** List motion clip ids/names (idle/walk/wave/talk/point/jump). */
     listStickFigureClips() { return CLIP_LIST.map(c => ({ id: c.id, name: c.name })); },
     /** Insert an animated stick figure playing `clip`. Omit x/y to center on the page. */
-    insertAnimatedFigure(clip = 'walk', opts?: { x?: number; y?: number; width?: number; facing?: 1 | -1; speed?: number; face?: string; hair?: string; hairColor?: string; headFill?: boolean; trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string }) {
+    insertAnimatedFigure(clip = 'walk', opts?: { x?: number; y?: number; width?: number; facing?: 1 | -1; speed?: number; face?: string; hair?: string; hairColor?: string; headFill?: boolean; trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string; top?: string; topColor?: string; neck?: string; neckColor?: string }) {
         return insertAnimatedFigure(clip, opts as any);
     },
     /** Change the motion clip of the given (or selected) animated figures. */
