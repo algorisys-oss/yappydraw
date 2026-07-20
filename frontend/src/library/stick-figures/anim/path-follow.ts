@@ -58,6 +58,18 @@ function localPolyline(el: DrawingElement): Array<[number, number]> {
         if (typeof p[0] === 'object') for (const pt of p) out.push([pt.x, pt.y]);
         else for (let i = 0; i < p.length - 1; i += 2) out.push([p[i], p[i + 1]]);
     }
+    // A plain line/arrow carries NO `points` — it is defined entirely by its box, so
+    // the route is corner-to-corner. Without this a figure attached to a freshly drawn
+    // line silently refuses to move (the panel offers "Walk this path" regardless,
+    // because `isPathLike` accepts the type).
+    if (out.length < 2 && ['line', 'arrow', 'bezier', 'elbow'].includes(el.type)) {
+        const cps = (el as any).controlPoints as { x: number; y: number }[] | undefined;
+        out.length = 0;
+        out.push([0, 0]);
+        // Bezier/elbow control points are absolute; bring them into element space.
+        if (cps?.length) for (const c of cps) out.push([c.x - el.x, c.y - el.y]);
+        out.push([el.width, el.height]);
+    }
     return out;
 }
 

@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.117', date: '2026-07-20', items: [
+        'Animated figures have a Speed slider — speed them up or slow them down, including while they walk a path.',
+        'Walking a route? "Lap time" sets how long one trip takes, so you can pace a scene exactly.',
+        'Ten new motions for everyday scenes: Sit, Type, Squat, Lift weights, Stretch, Kick, Cook, Sweep, Drink and Think — twenty in all.',
+        'Fixed: "Walk this path" did nothing when your route was a plain line — the figure now sets off properly.',
+    ] },
     { version: '0.8.116', date: '2026-07-20', items: [
         'Stick figures have faces — pick from 12 expressions (happy, sad, angry, surprised, tired, excited, confused, wink…) and 10 hair styles, with a hair colour of your choice.',
         'Change a figure\'s mood any time: select it and use Face & hair in the Properties panel. It still works after you\'ve moved, scaled or ungrouped the figure.',

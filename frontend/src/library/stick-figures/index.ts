@@ -589,6 +589,22 @@ export function animatedFigureFaceState(ids: string[]): StickFaceState | null {
     };
 }
 
+/**
+ * Set the playback rate of the selected/given animated figures. 1 = authored
+ * speed. Applies to in-place clips, action sequences AND path-following, so one
+ * control means the same thing everywhere.
+ */
+export function setAnimatedFigureSpeed(ids: string[], speed: number): number {
+    const rigs = store.elements.filter(e => ids.includes(e.id) && e.type === 'stickRig');
+    if (!rigs.length) return 0;
+    const v = Math.min(8, Math.max(0.05, speed));
+    batch(() => {
+        for (const e of rigs) updateElement(e.id, { stickRig: { ...(e.stickRig as any), speed: v } });
+    });
+    bumpDirtyRevision();
+    return rigs.length;
+}
+
 /** Change the motion clip of the selected/given animated figures. */
 export function setAnimatedFigureClip(ids: string[], clip: string): void {
     const rigs = store.elements.filter(e => ids.includes(e.id) && e.type === 'stickRig');

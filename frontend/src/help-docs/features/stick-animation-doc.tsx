@@ -24,7 +24,8 @@ const StickAnimationDoc: Component = () => {
             {/* ─── WHAT ─────────────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>The motions</h2>
-                <p>Ten built-in motion clips, each loops smoothly:</p>
+                <p>Twenty built-in motion clips, each loops smoothly.</p>
+                <p><strong>Movement &amp; expression</strong></p>
                 <ul>
                     <li><strong>Idle</strong> — a subtle breathing stand.</li>
                     <li><strong>Walk</strong> / <strong>Run</strong> — foot-planted cycles (no skating); Run leans in
@@ -37,6 +38,25 @@ const StickAnimationDoc: Component = () => {
                     <li><strong>Dance</strong> — hip sway with alternating arms.</li>
                     <li><strong>Cheer</strong> — both arms up, pumping.</li>
                 </ul>
+                <p><strong>Daily actions</strong></p>
+                <ul>
+                    <li><strong>Sit</strong> — seated and breathing, hands on the thighs. Add a chair or bench
+                        behind it from the Props category.</li>
+                    <li><strong>Type</strong> — seated at a desk, hands tapping. Pair it with the laptop prop.</li>
+                    <li><strong>Squat</strong> — a full squat cycle, hips back, feet planted.</li>
+                    <li><strong>Lift weights</strong> — a bicep curl, both arms together.</li>
+                    <li><strong>Stretch</strong> — reach overhead and ease back down.</li>
+                    <li><strong>Kick</strong> — one leg swings forward and back.</li>
+                    <li><strong>Cook</strong> — leaning over the hob, one hand stirring in circles.</li>
+                    <li><strong>Sweep</strong> — both hands on a broom, pushing forward and back.</li>
+                    <li><strong>Drink</strong> — raise a cup to the mouth, tip, lower.</li>
+                    <li><strong>Think</strong> — hand at the chin, slow head tilt.</li>
+                </ul>
+                <p class="tip-box">
+                    The rig is drawn in <strong>side profile</strong>, so every clip is authored to read from the
+                    side — that's why Sit, Cook and Type look right next to a prop facing the same way. Use
+                    <strong> Flip</strong> to turn a figure around.
+                </p>
             </section>
 
             {/* ─── TUTORIAL ─────────────────────────────────────────────── */}
@@ -113,11 +133,15 @@ const StickAnimationDoc: Component = () => {
                     <li><strong>Click “Walk this path”</strong> in the Animated figure controls. The figure snaps onto
                         the path and walks it end to end, looping, facing the way it's going.</li>
                     <li><strong>Adjust</strong> — reshape the path and the figure re-routes; use <strong>Stop following
-                        path</strong> to release it. (Speed follows the path length; a longer path takes longer.)</li>
+                        path</strong> to release it.</li>
+                    <li><strong>Set the pace</strong> — <strong>Lap time</strong> is how many seconds one trip along
+                        the route takes at 1×, and the <strong>Speed</strong> slider scales it. Reshaping the path
+                        keeps the same lap time, so a longer route simply means a faster walk.</li>
                 </ol>
                 <p class="tip-box">
                     Two figures + two paths crossing = a little scene. Add speech bubbles and props to set the stage.
-                    API: <code>attachFigureToPath(figureId, pathId, {'{ dur, loop, autoFace }'})</code>, <code>detachFigurePath(id)</code>.
+                    API: <code>attachFigureToPath(figureId, pathId, {'{ dur, loop, autoFace }'})</code>,
+                    <code> setFigurePathDuration(dur, id?)</code>, <code>detachFigurePath(id)</code>.
                 </p>
             </section>
 
@@ -156,6 +180,10 @@ Y.flipAnimatedFigure([b]);                       // face the other way
 Y.setAnimatedFigurePlaying(false, [a]);          // pause just this one
 Y.bakeAnimatedFigure(a);                          // freeze current frame → editable paths
 
+// Speed
+Y.setAnimatedFigureSpeed(2, [a]);                 // 2x — clips, sequences AND path-following
+Y.setFigurePathDuration(8, a);                    // 8s for one lap of the route, at 1x
+
 // Faces & hair (same call as for dropped library figures)
 Y.setStickFace({ face: 'excited', hair: 'spiky' }, [a]);
 Y.insertAnimatedFigure('walk', { face: 'happy', hair: 'long', headFill: true });`}</code></pre>
@@ -163,6 +191,7 @@ Y.insertAnimatedFigure('walk', { face: 'happy', hair: 'long', headFill: true });
                     API: <code>listStickFigureClips()</code>, <code>insertAnimatedFigure(clip, opts?)</code>,
                     <code> setAnimatedFigureClip(clip, ids?)</code>, <code>setAnimatedFigurePlaying(playing?, ids?)</code>,
                     <code> flipAnimatedFigure(ids?)</code>, <code>bakeAnimatedFigure(id?)</code>,
+                    <code> setAnimatedFigureSpeed(speed, ids?)</code>, <code>setFigurePathDuration(dur, id?)</code>,
                     <code> setStickFace(opts, ids?)</code>, <code>getStickFace(ids?)</code>.
                 </p>
             </section>

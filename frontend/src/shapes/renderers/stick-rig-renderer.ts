@@ -68,8 +68,11 @@ export class StickRigRenderer extends ShapeRenderer {
         if (pathEl) {
             const s = elementPathSample(pathEl);
             if (s) {
-                const dur = data.path.dur || 4;
-                const prog = data.path.loop !== false ? ((t / dur) % 1 + 1) % 1 : Math.min(1, t / dur);
+                // `dur` is seconds for one lap AT SPEED 1, so the Speed control means
+                // the same thing here as it does for an in-place clip.
+                const dur = Math.max(0.1, data.path.dur || 4);
+                const travel = (data.playing !== false ? t * (data.speed ?? 1) : (data.previewPhase ?? 0) * dur) / dur;
+                const prog = data.path.loop !== false ? ((travel % 1) + 1) % 1 : Math.min(1, Math.max(0, travel));
                 const at = sampleAt(s, prog);
                 if (data.path.autoFace !== false) facing = at.tx >= 0 ? 1 : -1;
                 const strideWorld = Math.max(1, WALK_STRIDE * sx);   // ground per cycle, world units

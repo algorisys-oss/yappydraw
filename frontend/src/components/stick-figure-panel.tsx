@@ -12,7 +12,7 @@ import {
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying,
     flipAnimatedFigure, bakeAnimatedFigure, selectionHasAnimatedFigure,
     attachFigureToPath, detachFigurePath, pathFollowCandidate, selectedFigurePath,
-    setFigureSequence,
+    setFigureSequence, setAnimatedFigureSpeed, setFigurePathDuration,
     STICK_FIGURE_MIME, type StickAsset, type StickCategory, type StickVariant,
 } from '../library/stick-figures';
 import StickFaceControls from './stick-face-controls';
@@ -105,6 +105,17 @@ const StickFigurePanel: Component = () => {
     const addStep = () => writeSeq([...sequence(), { clip: selRig()?.clip || 'walk', dur: 2 }]);
     const editStep = (i: number, patch: Partial<{ clip: string; dur: number }>) => writeSeq(sequence().map((s, j) => j === i ? { ...s, ...patch } : s));
     const removeStep = (i: number) => writeSeq(sequence().filter((_, j) => j !== i));
+
+    /** Playback rate of the selected figure (1 = authored speed). */
+    const speed = createMemo(() => Math.round(((selRig()?.speed ?? 1)) * 100) / 100);
+    const setSpeed = (v: number) => { if (Number.isFinite(v)) setAnimatedFigureSpeed(store.selection, v); };
+
+    /** Seconds for one lap of the route, at 1× — only meaningful while following a path. */
+    const pathDur = createMemo(() => (selRig()?.path as any)?.dur ?? 4);
+    const setLap = (v: number) => {
+        const id = selFigureId();
+        if (id && Number.isFinite(v)) setFigurePathDuration(id, v);
+    };
 
     /** (figure, path) pair available in the selection to attach. */
     const pathCandidate = createMemo(() => pathFollowCandidate(store.selection));
@@ -242,6 +253,20 @@ const StickFigurePanel: Component = () => {
                                 <Layers size={13} /> Bake
                             </button>
                         </div>
+                        {/* Playback speed — applies to clips, sequences and path-following alike */}
+                        <div class="sp-speed">
+                            <label class="sp-speed-label" for="sp-speed-range">Speed</label>
+                            <input id="sp-speed-range" class="sp-speed-range" type="range"
+                                min="0.25" max="3" step="0.05" value={speed()}
+                                onInput={(e) => setSpeed(parseFloat(e.currentTarget.value))} />
+                            <input class="sp-speed-num" type="number" min="0.05" max="8" step="0.05"
+                                value={speed()}
+                                onInput={(e) => setSpeed(parseFloat(e.currentTarget.value))} />
+                            <span class="sp-speed-x">×</span>
+                            <button class="sp-speed-reset" title="Back to normal speed"
+                                onClick={() => setSpeed(1)}>Reset</button>
+                        </div>
+
                         {/* Walk-along-a-path */}
                         <Show when={pathCandidate() && !followingPath()}>
                             <button class="sp-symbol-btn sp-path-btn" title="The figure walks along the selected path" onClick={walkPath}>
@@ -249,6 +274,15 @@ const StickFigurePanel: Component = () => {
                             </button>
                         </Show>
                         <Show when={followingPath()}>
+                            {/* How long one lap of the route takes at speed 1× */}
+                            <div class="sp-speed">
+                                <label class="sp-speed-label" for="sp-lap-num">Lap time</label>
+                                <input id="sp-lap-num" class="sp-speed-num" type="number" min="0.5" max="120" step="0.5"
+                                    value={pathDur()}
+                                    onInput={(e) => setLap(parseFloat(e.currentTarget.value))} />
+                                <span class="sp-speed-x">s</span>
+                                <span class="sp-speed-note">at 1×</span>
+                            </div>
                             <button class="sp-symbol-btn sp-path-btn" title="Stop following the path" onClick={() => detachFigurePath(followingPath()!.figureId)}>
                                 <Route size={13} /> Stop following path
                             </button>

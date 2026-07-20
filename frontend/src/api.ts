@@ -48,7 +48,7 @@ import type { AssetHit, SearchElementsOptions } from "./library/elements/search"
 import { setRequestRecording } from "./utils/recording-manager";
 import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
-    attachFigureToPath, detachFigurePath, setFigureSequence,
+    attachFigureToPath, detachFigurePath, setFigureSequence, setFigurePathDuration, setAnimatedFigureSpeed,
     FACE_STYLES, HAIR_STYLES, restyleStickFace, stickFaceStateOf,
     setAnimatedFigureFace, animatedFigureFaceState } from "./library/stick-figures";
 import { createComicPanel, createComicStrip } from "./library/comic";
@@ -2648,6 +2648,13 @@ export const YappyAPI = {
     setAnimatedFigureClip(clip: string, ids?: string[]) { setAnimatedFigureClip(ids ?? [...store.selection], clip); },
     /** Play/pause the given (or selected) animated figures (toggles if `playing` omitted). */
     setAnimatedFigurePlaying(playing?: boolean, ids?: string[]) { setAnimatedFigurePlaying(ids ?? [...store.selection], playing); },
+    /** Set the playback rate of the given (or selected) animated figures. 1 = authored
+     *  speed; clamped to 0.05–8. Applies to in-place clips, action sequences AND
+     *  path-following, so `speed` means the same thing everywhere. */
+    setAnimatedFigureSpeed(speed: number, ids?: string[]) { return setAnimatedFigureSpeed(ids ?? [...store.selection], speed); },
+    /** Seconds for one lap of the route, at speed 1×, for a path-following figure.
+     *  Combine with `setAnimatedFigureSpeed` to scale it without re-timing the route. */
+    setFigurePathDuration(dur: number, id?: string) { setFigurePathDuration(id ?? store.selection[0], dur); },
     /** Flip the facing (left/right) of the given (or selected) animated figures. */
     flipAnimatedFigure(ids?: string[]) { flipAnimatedFigure(ids ?? [...store.selection]); },
     /** Bake the current frame of an animated figure to editable path elements. */
