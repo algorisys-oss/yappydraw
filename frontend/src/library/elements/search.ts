@@ -19,6 +19,7 @@ import { YappyAPI } from '../../api';
 import { searchIllustrations } from './illustrations/registry';
 import { aliasesFor } from './aliases';
 import { searchTemplates } from '../../templates/registry';
+import { templatePreviewSvg } from '../../templates/template-preview';
 import { showToast } from '../../components/toast';
 import Swal from 'sweetalert2';
 
@@ -51,8 +52,6 @@ export const KIND_LABELS: Record<AssetKind, string> = {
 
 const MAX_ICONS = 96;
 const MAX_TEMPLATES = 12;
-/** Cap on how many page elements are drawn into a template thumbnail. */
-const MAX_PREVIEW_ELS = 30;
 
 /** Insert position: centered on the active page (or a sensible fallback). */
 function insertOrigin(size: number): { x: number; y: number } {
@@ -182,52 +181,6 @@ function shapeHits(q: string, lucide: any): AssetHit[] {
         }));
 }
 
-/**
- * A small SVG thumbnail of a design/presentation template's first page — the page
- * background (solid or gradient) plus its elements drawn as simplified marks
- * (rects, ellipses, and text-as-bars). Colours come from our own template data
- * (not user input), so they're inlined directly. Fidelity beats the plain colour
- * swatch the standalone template browser shows, at negligible cost.
- */
-function templatePreviewSvg(tpl: any): string {
-    const page = tpl.pages?.[0] || tpl.slides?.[0];
-    const size = tpl.pageSize || { width: 1080, height: 1080 };
-    const W = size.width, H = size.height;
-    const from = page?.gradientStops?.[0]?.color || page?.backgroundColor || '#e2e8f0';
-    const stopsArr = page?.gradientStops;
-    const to = (stopsArr && stopsArr[stopsArr.length - 1]?.color) || from;
-
-    const defs: string[] = [];
-    let bgFill = from;
-    if (from !== to) {
-        defs.push(`<linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient>`);
-        bgFill = 'url(#tg)';
-    }
-
-    const parts: string[] = [`<rect x="0" y="0" width="${W}" height="${H}" fill="${bgFill}"/>`];
-    const els: any[] = Array.isArray(page?.elements) ? page.elements.slice(0, MAX_PREVIEW_ELS) : [];
-    for (const el of els) {
-        const x = el.x ?? 0, y = el.y ?? 0, w = el.width ?? 0, h = el.height ?? 0;
-        if (!w || !h) continue;
-        const op = (el.opacity ?? 100) / 100;
-        if (el.type === 'text') {
-            const c = el.textColor || '#334155';
-            parts.push(`<rect x="${x}" y="${y + h * 0.2}" width="${w}" height="${Math.max(2, h * 0.6)}" rx="${Math.min(w, h) * 0.08}" fill="${c}" opacity="${0.5 * op}"/>`);
-            continue;
-        }
-        const fill = el.backgroundColor && el.backgroundColor !== 'transparent'
-            ? el.backgroundColor
-            : el.gradientStops?.[0]?.color;
-        if (!fill) continue;
-        if (el.type === 'circle' || el.type === 'ellipse') {
-            parts.push(`<ellipse cx="${x + w / 2}" cy="${y + h / 2}" rx="${w / 2}" ry="${h / 2}" fill="${fill}" opacity="${op}"/>`);
-        } else {
-            parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${el.borderRadius ?? 0}" fill="${fill}" opacity="${op}"/>`);
-        }
-    }
-    return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">${defs.length ? `<defs>${defs.join('')}</defs>` : ''}${parts.join('')}</svg>`;
-}
-
 /** Load a whole template — a destructive action, so confirm first if the doc is dirty. */
 async function applyTemplateHit(id: string, name: string) {
     if (store.isDirty) {
@@ -264,7 +217,7 @@ function templateHits(q: string): AssetHit[] {
             seen.add(id);
             out.push({
                 kind: 'template', id: `template:${id}`, label: tpl.metadata.name,
-                thumbSvg: templatePreviewSvg(tpl),
+                thumbSvg: templatePreviewSvg(tpl) || undefined,
                 insert: () => { void applyTemplateHit(id, tpl.metadata.name); },
             });
             if (out.length >= MAX_TEMPLATES) return out;

@@ -40,6 +40,37 @@ const getRoundedRectPath = (x: number, y: number, w: number, h: number, r: numbe
     return `M ${x + r} ${y} L ${x + w - r} ${y} Q ${x + w} ${y} ${x + w} ${y + r} L ${x + w} ${y + h - r} Q ${x + w} ${y + h} ${x + w - r} ${y + h} L ${x + r} ${y + h} Q ${x} ${y + h} ${x} ${y + h - r} L ${x} ${y + r} Q ${x} ${y} ${x + r} ${y}`;
 };
 
+/**
+ * Corner radius in px, mirroring the shape renderers' own `getRadius()`.
+ * Fills are clipped to `getShapeGeometry()`, so this MUST stay in sync with
+ * `rectangle-renderer.ts` / `diamond-renderer.ts` — otherwise gradient, image,
+ * mesh, pattern and hachure fills escape the rounded outline at the corners.
+ * `fallback` is the legacy `roundness` ratio (rect 0.15, diamond 0.2).
+ */
+const cornerRadius = (el: DrawingElement, fallback: number): number => {
+    const min = Math.min(Math.abs(el.width), Math.abs(el.height));
+    const br = (el as any).borderRadius;
+    if (br !== undefined) return min * (br / 100);
+    return (el as any).roundness ? min * fallback : 0;
+};
+
+/** Same vertex math as `DiamondRenderer.getRoundedDiamondPath` (origin-centred). */
+const getRoundedDiamondPath = (x: number, y: number, w: number, h: number, r: number) => {
+    const w2 = w / 2;
+    const h2 = h / 2;
+    const cx = x + w2;
+    const cy = y + h2;
+    const len = Math.hypot(w2, h2);
+    const ratio = Math.min(r, len / 2) / len;
+    const dx = w2 * ratio;
+    const dy = h2 * ratio;
+
+    return `M ${cx - dx} ${y + dy} Q ${cx} ${y} ${cx + dx} ${y + dy}`
+        + ` L ${x + w - dx} ${cy - dy} Q ${x + w} ${cy} ${x + w - dx} ${cy + dy}`
+        + ` L ${cx + dx} ${y + h - dy} Q ${cx} ${y + h} ${cx - dx} ${y + h - dy}`
+        + ` L ${x + dx} ${cy + dy} Q ${x} ${cy} ${x + dx} ${cy - dy} Z`;
+};
+
 export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
     const geo = getBaseShapeGeometry(el);
     // Envelope / mesh warp deforms the sampled outline (non-affine) → a warped path
@@ -57,8 +88,11 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         return { type: 'points', points: el.points as { x: number; y: number }[] };
     }
 
-    // WASM fast path: polygon shapes computed in WASM
-    if (isWasmEnabled('shapePaths')) {
+    // WASM fast path: polygon shapes computed in WASM. It only returns sharp-cornered
+    // point lists (the bridge never sees borderRadius/roundness), so a rounded diamond
+    // must fall through to the JS path below or its fill would ignore the rounding.
+    const isRoundedDiamond = el.type === 'diamond' && cornerRadius(el, 0.2) > 0;
+    if (isWasmEnabled('shapePaths') && !isRoundedDiamond) {
         const wasmResult = wasmGetShapeGeometry(el);
         if (wasmResult) return wasmResult;
         // Fall through to JS for unsupported shapes
@@ -100,7 +134,7 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         case 'umlArtifact':
         case 'umlObject':
         case 'umlPort':
-            return { type: 'rect', x: x, y: y, w: w, h: h, r: el.roundness ? 10 : 0 };
+            return { type: 'rect', x: x, y: y, w: w, h: h, r: cornerRadius(el, 0.15) };
 
         case 'umlAction':
             return { type: 'rect', x: x, y: y, w: w, h: h, r: Math.min(Math.abs(h) / 2, Math.abs(w) / 2, 18) };
@@ -165,8 +199,13 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         case 'triangle':
             return { type: 'points', points: [{ x: 0, y: -mh }, { x: -mw, y: mh }, { x: mw, y: mh }] };
 
-        case 'diamond':
+        case 'diamond': {
+            // A `points` geometry can't express rounded corners — emit a path so fills
+            // clip to the same curve the outline draws.
+            const r = cornerRadius(el, 0.2);
+            if (r > 0) return { type: 'path', path: getRoundedDiamondPath(x, y, w, h, r) };
             return { type: 'points', points: [{ x: 0, y: -mh }, { x: mw, y: 0 }, { x: 0, y: mh }, { x: -mw, y: 0 }] };
+        }
 
         case 'hexagon': {
             const points: { x: number, y: number }[] = [];

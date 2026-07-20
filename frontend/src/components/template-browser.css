@@ -186,6 +186,14 @@
     gap: 20px;
     overflow-y: auto;
     flex: 1;
+    /* `flex: 1` gives the grid a DEFINITE height, and `.template-card`'s
+       `overflow: hidden` drops each card's automatic minimum size to 0 — so once a
+       category has more rows than fit, auto rows shrink to fill instead of
+       overflowing into the scroll area, and every card collapses to a sliver with
+       its name and description clipped away. (That's what the Designs tab did.)
+       `min-content` pins each row to its cards' real height and lets the grid
+       scroll, which is what `overflow-y: auto` was there for. */
+    grid-auto-rows: min-content;
 }
 
 .template-card {
@@ -362,30 +370,31 @@
     display: none;
 }
 
+/* Holds a preview SVG of the slide's real content, so no inner padding. */
 .template-mini-slide {
-    flex: 0 0 40px;
-    height: 26px;
+    flex: 0 0 48px;
+    height: 28px;
     border-radius: 3px;
     border: 1.5px solid;
-    padding: 4px 5px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+    overflow: hidden;
     transition: transform 0.15s;
+}
+
+.template-mini-slide > svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.template-strip-more {
+    align-self: center;
+    font-size: 11px;
+    color: var(--text-secondary);
+    flex: 0 0 auto;
 }
 
 .template-card-presentation:hover .template-mini-slide {
     transform: scaleY(1.1);
-}
-
-.template-mini-line {
-    height: 2px;
-    border-radius: 1px;
-    width: 80%;
-}
-
-.template-mini-line.short {
-    width: 55%;
 }
 
 .template-name-row {
@@ -451,6 +460,11 @@
 }
 .template-save-btn:hover { border-color: var(--accent-color, #6366f1); color: var(--accent-color, #6366f1); }
 
+/* Like the dsl and presentation variants, size to content rather than to the row. */
+.template-card-design {
+    height: auto;
+}
+
 .template-design-preview {
     height: 96px;
     display: flex;
@@ -462,6 +476,26 @@
 .template-design-page {
     border-radius: 3px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    background: #fff;
+    overflow: hidden;
+}
+.template-design-page > svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Diagram templates: a generated preview standing in for a stored thumbnail. */
+.template-svg-preview {
+    width: 100%;
+    height: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+.template-svg-preview > svg {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 .template-delete-btn {
     border: none;

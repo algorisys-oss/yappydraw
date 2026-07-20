@@ -271,8 +271,8 @@ frontend/src/components/symbols-panel.css | - | 222 |
 frontend/src/components/symbols-panel.tsx | typescript | 171 | Component:1 instanceCount:16 draw:23 SymbolsPanel:59 place:63 startRename:70 commitRename:71 redefine:76 remove:81
 frontend/src/components/symmetry-overlay.tsx | typescript | 63 | SymmetryOverlay:9 worldToScreenX:12 worldToScreenY:13 screenToWorldX:14 screenToWorldY:15 onMove:17 onUp:22 screen:36
 frontend/src/components/technical-tool-group.tsx | typescript | 141 | Component:1 TechnicalToolGroup:26 handler:33 getActiveTool:43 handleToolClick:52 as:60 as:66 handleRightClick:74 toggleMenu:80 activeTool:87 isActive:88 getDropdownPosition:90
-frontend/src/components/template-browser.css | - | 475 |
-frontend/src/components/template-browser.tsx | typescript | 306 | Component:1 isPresentationTemplate:10 isDesignTemplate:15 isUserTemplate:20 TemplateBrowserProps:24 TemplateBrowser:30 sizeMatch:59 rank:74 handleSelect:80 handleSaveCurrent:85 handleDeleteUser:99 designPreviewStyle:109
+frontend/src/components/template-browser.css | - | 509 |
+frontend/src/components/template-browser.tsx | typescript | 322 | Component:1 isPresentationTemplate:11 isDesignTemplate:16 isUserTemplate:21 TemplateBrowserProps:28 TemplateBrowser:34 sizeMatch:63 rank:78 handleSelect:84 handleSaveCurrent:89 handleDeleteUser:103 designPreviewStyle:117
 frontend/src/components/text-editing-overlay.tsx | typescript | 541 | section:4 Component:8 TextEditingOverlayProps:20 TextEditingOverlay:34 activeTextElement:37 handleTextBlur:43 section:165 sections:328 blockMiddle:504
 frontend/src/components/text-editor-modal.css | - | 138 |
 frontend/src/components/text-editor-modal.tsx | typescript | 247 | Component:7 TextEditorModalProps:15 TextEditorModal:32 updateActiveFormats:41 syncSpans:52 execFormat:59 handleDone:66 handleKeyDown:79 handleDocClick:91 getFontStyle:126
@@ -319,7 +319,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 175 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 180 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -388,7 +388,7 @@ frontend/src/help-docs/features/animation-doc.tsx | typescript | 1268 | Animatio
 frontend/src/help-docs/features/arcade-doc.tsx | typescript | 304 | ArcadeDoc:8 a:124
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 148 | ArtboardsDoc:9
 frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 152 | BulkEditingDoc:3 entries:62 entries:63 or:97
-frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 289 | DesignStudioDoc:9 at:113
+frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 299 | DesignStudioDoc:9 at:123
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 277 | EffectsDoc:10 Tools:270
 frontend/src/help-docs/features/elements-search-doc.tsx | typescript | 119 | chips:5 ElementsSearchDoc:11 chips:41
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 204 | EmbeddingDoc:3
@@ -428,7 +428,7 @@ frontend/src/library/elements/aliases.ts | typescript | 198 | aliasesFor:196
 frontend/src/library/elements/illustrations/LICENSE.md | - | 17 |
 frontend/src/library/elements/illustrations/assets.ts | typescript | 987 | Illustration:8
 frontend/src/library/elements/illustrations/registry.ts | typescript | 27 | Illustration:6 searchIllustrations:18
-frontend/src/library/elements/search.ts | typescript | 319 | StockPhoto:17 AssetKind:25 AssetHit:27 insertOrigin:58 renderLucideSvg:70 ShapeDef:83 insertShapeEl:96 insertIconEl:103 insertIllustrationEl:109 iconHits:120 illustrationHits:160 shapeHits:172 templatePreviewSvg:192
+frontend/src/library/elements/search.ts | typescript | 272 | StockPhoto:17 AssetKind:26 AssetHit:28 insertOrigin:57 renderLucideSvg:69 ShapeDef:82 insertShapeEl:95 insertIconEl:102 insertIllustrationEl:108 iconHits:119 illustrationHits:159 shapeHits:171 applyTemplateHit:185 templateHits:206 collectOfflineHits:230 searchPhotoHits:235 SearchElementsOptions:244 searchElements:258
 frontend/src/library/stick-figures/anim/clips.ts | typescript | 466 | ClipPose:6 MotionClip:6 RigPose:6 footAt:22 runFootAt:154 poseAt:461
 frontend/src/library/stick-figures/anim/path-follow.ts | typescript | 104 | PathSample:8 isPathLike:18 sampleAnchors:27 localPolyline:47 elementPathSample:77 PathPoint:91 sampleAt:94
 frontend/src/library/stick-figures/anim/rig.ts | typescript | 272 | FaceOpts:13 FaceStyle:13 HairStyle:13 GarmentOpts:14 NeckStyle:14 ShoeStyle:14 TopStyle:14 TrouserStyle:14 JointId:16 Bone:21 Vec:30 StickRig:62 StickRigData:75 ClipPose:109 MotionClip:118 solveTwoBone:131 RigPose:142 evaluateRig:153 headAttach:204 legPolylines:217 upperPolylines:230 rigPoseToSvg:247
@@ -538,6 +538,7 @@ frontend/src/templates/data/presentations/startup.ts | typescript | 105 |
 frontend/src/templates/data/presentations/team-intro.ts | typescript | 80 |
 frontend/src/templates/data/presentations/tech-architecture.ts | typescript | 96 |
 frontend/src/templates/registry.ts | typescript | 237 | TemplateRegistry:12
+frontend/src/templates/template-preview.ts | typescript | 190 | Box:48 markFor:51 boundsOf:110 pageBackground:131 templatePreviewSvg:151
 frontend/src/templates/user-templates.ts | typescript | 114 | listUserTemplates:38 persist:42 saveCurrentAsTemplate:49 deleteUserTemplate:109
 frontend/src/types.ts | typescript | 880 | ElementType:2 SymbolDef:25 Artboard:28 GraphicStyle:32 Swatch:36 PatternSwatch:40 ToolType:42 PathAnchor:50 PathSubpath:68 AppMode:73 FillStyle:74 PatternType:78 PatternFill:86 MeshGradient:107 StrokeStyle:119 FontFamily:123 TextAlign:124 VerticalAlign:125 ArrowHead:126 RichTextSpan:128 GradientStop:143 GradientType:148 BlendMode:150 Point:172 EntranceAnimation:179 ExitAnimation:215 PaintFill:241 PaintStroke:243 TransformEffect:253 Extrude3D:273 Turntable:291 DrawingElement:311 TableCellSelection:797 TableCellFormatType:805 TableCellFormat:807 TableBorderStyle:820 TableCellBorder:822 TableCellBorders:827 Layer:834 GridSettings:849 Guide:863 ViewState:869
 frontend/src/types/brand-types.ts | typescript | 41 | BrandColors:5 BrandFonts:13 BrandKit:20
@@ -648,7 +649,7 @@ frontend/src/utils/rough-cache.ts | typescript | 189 | CacheEntry:8 beginElement
 frontend/src/utils/routing.test.ts | typescript | 135 | Seg:7 node:10 elbow:15
 frontend/src/utils/routing.ts | typescript | 350 | Seg:12 Node:228
 frontend/src/utils/selection-renderer.ts | typescript | 1021 | isLabelDraggable:24 drawDeleteHandle:37 ElementOverlayOptions:60 renderPathAnchors:82 renderElementOverlays:132
-frontend/src/utils/shape-geometry.ts | typescript | 1814 | ShapeGeometry:8 LidConfig:774 LidWithPosition:939
+frontend/src/utils/shape-geometry.ts | typescript | 1853 | ShapeGeometry:8 LidConfig:813 LidWithPosition:978
 frontend/src/utils/shape-recognition.ts | typescript | 157 | Pt:16 RecognizedShape:18 dist:28 perpDist:32 rdp:39 meanEdgeDist:56 recognizeStrokeShape:75
 frontend/src/utils/shape-to-path.ts | typescript | 111 | rdp:19 normalizePoints:41 shapeToPath:53
 frontend/src/utils/slide-element-factory.ts | typescript | 972 | genId:20 resolvePalette:25 textEl:44 rectEl:76 gradientRectEl:99 cardEl:125 shapeEl:156 createTitleSlideElements:183 createContentSlideElements:231 createTwoColumnElements:286 createQuoteElements:349 createSectionBreakElements:397 createClosingElements:438 createImageTextElements:480 createMetricsSlideElements:523 createTimelineSlideElements:594 createCardGridSlideElements:656 createComparisonSlideElements:787 AISlideContent:897 createSlideElements:919 offsetElements:966

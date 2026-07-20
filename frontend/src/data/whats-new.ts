@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.123', date: '2026-07-20', items: [
+        'Template cards now show what\'s actually inside them. Diagrams show the diagram, designs show the page, and a presentation shows its first few slides — so you can pick by looking instead of by reading the name.',
+        'Fixed: rounding the corners of a square or diamond left its fill spilling outside the outline. Gradients, patterns and hatch fills now stay inside the rounded shape.',
+        'Fixed: cards on the Designs tab were squashed into thin strips with their names cut off.',
+    ] },
     { version: '0.8.122', date: '2026-07-20', items: [
         'Fixed: a stick figure with folded arms wearing a jacket looked like it had a giant bow across its chest. Sleeves now tuck under the top, so folded arms read properly — and every top looks a little cleaner at the shoulder.',
     ] },

@@ -1,6 +1,7 @@
 import { type Component, createSignal, createMemo, createEffect, on, For, Show } from 'solid-js';
 import { getActiveCategories, getTemplatesByCategory, searchTemplates, refreshUserTemplates } from '../templates/registry';
 import { saveCurrentAsTemplate, deleteUserTemplate } from '../templates/user-templates';
+import { templatePreviewSvg } from '../templates/template-preview';
 import { showToast } from './toast';
 import { store } from '../store/app-store';
 import type { Template, TemplateCategory, PresentationTemplate, DesignTemplate } from '../types/template-types';
@@ -20,6 +21,9 @@ function isDesignTemplate(t: Template): t is DesignTemplate & Template {
 function isUserTemplate(t: Template): boolean {
     return !!(t as any).doc?.version;
 }
+
+/** Mini-slides shown in a presentation card's strip before it collapses to "+N". */
+const MAX_STRIP_SLIDES = 4;
 
 interface TemplateBrowserProps {
     isOpen: boolean;
@@ -105,18 +109,16 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
         showToast('Template deleted', 'info');
     };
 
-    /** Mini page preview style for design templates (aspect-ratio clamped). */
+    /**
+     * Mini page frame for design templates — the box the preview SVG is drawn into,
+     * shaped to the template's own aspect ratio so a story and a square post read
+     * differently before you even look at the content.
+     */
     const designPreviewStyle = (dt: DesignTemplate) => {
         const ratio = dt.pageSize.width / dt.pageSize.height;
-        const w = ratio >= 1 ? 72 : Math.max(30, 72 * ratio);
-        const h = ratio >= 1 ? Math.max(30, 72 / ratio) : 72;
-        const page = dt.pages[0];
-        const from = page?.gradientStops?.[0]?.color || page?.backgroundColor || '#e2e8f0';
-        const to = page?.gradientStops?.[page.gradientStops.length - 1]?.color || from;
-        return {
-            width: `${w}px`, height: `${h}px`,
-            background: from === to ? from : `linear-gradient(135deg, ${from}, ${to})`,
-        };
+        const w = ratio >= 1 ? 96 : Math.max(40, 96 * ratio);
+        const h = ratio >= 1 ? Math.max(40, 96 / ratio) : 96;
+        return { width: `${w}px`, height: `${h}px` };
     };
 
     return (
@@ -197,7 +199,11 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
                                     return (
                                         <div class="template-card template-card-design" onClick={() => handleSelect(template)}>
                                             <div class="template-design-preview">
-                                                <div class="template-design-page" style={designPreviewStyle(dt)} />
+                                                <div
+                                                    class="template-design-page"
+                                                    style={designPreviewStyle(dt)}
+                                                    innerHTML={templatePreviewSvg(dt) || ''}
+                                                />
                                             </div>
                                             <div class="template-info">
                                                 <div class="template-name-row">
@@ -220,21 +226,24 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
                                     const pal = pt.palette;
                                     return (
                                         <div class="template-card template-card-presentation" onClick={() => handleSelect(template)}>
+                                            {/* Each mini-slide previews its real content. Capped so a
+                                                40-slide deck doesn't render 40 unreadable slivers. */}
                                             <div class="template-slide-strip">
-                                                <For each={pt.slides}>
-                                                    {(slide) => (
+                                                <For each={pt.slides.slice(0, MAX_STRIP_SLIDES)}>
+                                                    {(slide, i) => (
                                                         <div
                                                             class="template-mini-slide"
                                                             style={{
                                                                 background: slide.backgroundColor || pal?.background || '#ffffff',
                                                                 'border-color': pal?.primary || '#ccc',
                                                             }}
-                                                        >
-                                                            <div class="template-mini-line" style={{ background: pal?.primary || '#333' }} />
-                                                            <div class="template-mini-line short" style={{ background: (pal?.text || '#666') + '66' }} />
-                                                        </div>
+                                                            innerHTML={templatePreviewSvg(pt, i()) || ''}
+                                                        />
                                                     )}
                                                 </For>
+                                                <Show when={pt.slides.length > MAX_STRIP_SLIDES}>
+                                                    <span class="template-strip-more">+{pt.slides.length - MAX_STRIP_SLIDES}</span>
+                                                </Show>
                                             </div>
                                             <div class="template-info">
                                                 <div class="template-name-row">
@@ -267,17 +276,24 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
                                     );
                                 }
 
+                                // Diagram templates: no stored thumbnail, so draw one from
+                                // their own elements rather than showing a generic icon.
+                                const preview = template.metadata.thumbnail ? null : templatePreviewSvg(template);
                                 return (
                                     <div class="template-card" onClick={() => handleSelect(template)}>
                                         <div class="template-thumbnail">
                                             <Show when={template.metadata.thumbnail} fallback={
-                                                <div class="template-placeholder">
-                                                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                                                        <path d="M3 9h18" />
-                                                        <path d="M9 21V9" />
-                                                    </svg>
-                                                </div>
+                                                <Show when={preview} fallback={
+                                                    <div class="template-placeholder">
+                                                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                                                            <path d="M3 9h18" />
+                                                            <path d="M9 21V9" />
+                                                        </svg>
+                                                    </div>
+                                                }>
+                                                    <div class="template-svg-preview" innerHTML={preview!} />
+                                                </Show>
                                             }>
                                                 <img src={template.metadata.thumbnail} alt={template.metadata.name} />
                                             </Show>

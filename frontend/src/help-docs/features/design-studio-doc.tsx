@@ -73,6 +73,16 @@ Y.exportPageToPng(0, 2);                 // export page 1 at 2x`}</code></pre>
                     <strong> Save Current as Template</strong> (in the template browser header) snapshots the whole
                     document into <strong>My Templates</strong>; delete via the × on a card.
                 </p>
+                <p>
+                    Every card shows a <strong>real preview of the template's content</strong>, drawn from the
+                    template's own elements — diagram cards show the diagram, design cards show the first page at
+                    its true aspect ratio, and a presentation card's strip previews each of its first four slides
+                    (with <em>+N</em> for the rest). Previews are simplified marks rather than a full render, so
+                    text appears as bars and sketch styling isn't applied — enough to tell layouts apart at
+                    thumbnail size. <strong>Text Diagram</strong> templates are YSL/Mermaid source, so they show a
+                    language badge instead of a preview, and <strong>My Templates</strong> cards use the real
+                    thumbnail captured when you saved them.
+                </p>
                 <pre><code>{`Y.getTemplates('designs');          // list design templates
 Y.searchTemplates('poster');         // search by name/tag/description
 Y.applyTemplate('design-poster-event');
