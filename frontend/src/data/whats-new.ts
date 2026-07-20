@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.124', date: '2026-07-20', items: [
+        'Templates you save yourself now show a preview instead of a blank icon — including ones you saved before this update.',
+    ] },
     { version: '0.8.123', date: '2026-07-20', items: [
         'Template cards now show what\'s actually inside them. Diagrams show the diagram, designs show the page, and a presentation shows its first few slides — so you can pick by looking instead of by reading the name.',
         'Fixed: rounding the corners of a square or diamond left its fill spilling outside the outline. Gradients, patterns and hatch fills now stay inside the rounded shape.',

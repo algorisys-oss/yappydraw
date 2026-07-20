@@ -9,6 +9,7 @@ import type { UserTemplate } from '../types/template-types';
 import type { SlideDocument } from '../types/slide-types';
 import { store, saveActiveSlide } from '../store/app-store';
 import { exportPageToPng } from '../utils/export';
+import { templatePreviewDataUrl } from './template-preview';
 import { isPagedDocType } from '../types/slide-types';
 import { idbSet, idbMigrateFromLocalStorage } from '../storage/idb-kv';
 
@@ -74,13 +75,22 @@ export function saveCurrentAsTemplate(name: string, description = ''): UserTempl
         gameVars: store.gameVars?.length ? deep(store.gameVars) : undefined,
     };
 
-    // Small thumbnail from the active page (paged docs only)
+    // Small thumbnail from the active page. `exportPageToPng` is a true render, so it's
+    // the preferred capture — but it needs a page, and the default doc type isn't paged.
+    // Without a fallback every template saved from a plain drawing showed the generic
+    // placeholder icon in the browser forever, so fall back to the simplified-marks
+    // preview drawn from the elements themselves.
     let thumbnail: string | undefined;
     if (isPagedDocType(store.docType) && store.slides.length > 0) {
         try {
             const active = store.slides[store.activeSlideIndex] || store.slides[0];
             const thumbScale = Math.min(1, 320 / Math.max(1, active.dimensions.width));
             thumbnail = exportPageToPng(store.activeSlideIndex, thumbScale, false);
+        } catch { /* thumbnail is optional */ }
+    }
+    if (!thumbnail) {
+        try {
+            thumbnail = templatePreviewDataUrl({ data: { elements: doc.elements } }) || undefined;
         } catch { /* thumbnail is optional */ }
     }
 

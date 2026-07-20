@@ -148,7 +148,7 @@ function pageBackground(page: any, box: Box): { defs: string; rect: string } {
  * Scales to its container (`width/height = 100%`), so the caller sizes it via CSS.
  * Returns null when the template has nothing previewable.
  */
-export function templatePreviewSvg(tpl: any, pageIndex = 0): string | null {
+export function templatePreviewSvg(tpl: any, pageIndex = 0, sizePx?: number): string | null {
     if (!tpl || tpl.dslContent || tpl.doc) return null;
 
     // Design page (fixed pageSize) → presentation slide (16:9) → diagram elements.
@@ -182,9 +182,30 @@ export function templatePreviewSvg(tpl: any, pageIndex = 0): string | null {
     const parts: string[] = [bg.rect];
     for (const el of els.slice(0, MAX_PREVIEW_ELS)) parts.push(...markFor(el));
 
-    return `<svg viewBox="${box.x} ${box.y} ${box.w} ${box.h}" width="100%" height="100%"`
+    // Inline in the DOM: size to the container via CSS. Standalone (an <img> src or a
+    // stored thumbnail): an SVG with percentage dimensions has no intrinsic size to
+    // scale from, so bound the long edge in real pixels instead.
+    let dims = 'width="100%" height="100%"';
+    if (sizePx) {
+        const scale = sizePx / Math.max(box.w, box.h);
+        dims = `width="${Math.round(box.w * scale)}" height="${Math.round(box.h * scale)}"`;
+    }
+
+    return `<svg viewBox="${box.x} ${box.y} ${box.w} ${box.h}" ${dims}`
         + ` preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`
         + (bg.defs ? `<defs>${bg.defs}</defs>` : '')
         + parts.join('')
         + `</svg>`;
+}
+
+/**
+ * The same preview as a `data:` URL, for the places a thumbnail is stored as a string
+ * and rendered with `<img src>` (user templates). SVG rather than a raster capture
+ * because it's a few hundred bytes and doesn't need a canvas — but note it's the
+ * simplified-marks preview, so prefer a real `exportPageToPng` capture where one is
+ * available and use this as the fallback.
+ */
+export function templatePreviewDataUrl(tpl: any, sizePx = 320): string | null {
+    const svg = templatePreviewSvg(tpl, 0, sizePx);
+    return svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` : null;
 }

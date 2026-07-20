@@ -169,16 +169,25 @@ const TemplateBrowser: Component<TemplateBrowserProps> = (props) => {
                         <For each={templates()}>
                             {(template) => {
                                 if (isUserTemplate(template)) {
+                                    // Templates saved before thumbnails covered non-paged docs have
+                                    // none stored — draw one from the snapshot's own elements.
+                                    const legacy = template.metadata.thumbnail
+                                        ? null
+                                        : templatePreviewSvg({ data: { elements: (template as any).doc?.elements } });
                                     return (
                                         <div class="template-card" onClick={() => handleSelect(template)}>
                                             <div class="template-thumbnail">
                                                 <Show when={template.metadata.thumbnail} fallback={
-                                                    <div class="template-placeholder">
-                                                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                                                            <path d="M3 9h18" />
-                                                        </svg>
-                                                    </div>
+                                                    <Show when={legacy} fallback={
+                                                        <div class="template-placeholder">
+                                                            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                                                <path d="M3 9h18" />
+                                                            </svg>
+                                                        </div>
+                                                    }>
+                                                        <div class="template-svg-preview" innerHTML={legacy!} />
+                                                    </Show>
                                                 }>
                                                     <img src={template.metadata.thumbnail} alt={template.metadata.name} />
                                                 </Show>
