@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.122', date: '2026-07-20', items: [
+        'Fixed: a stick figure with folded arms wearing a jacket looked like it had a giant bow across its chest. Sleeves now tuck under the top, so folded arms read properly — and every top looks a little cleaner at the shoulder.',
+    ] },
     { version: '0.8.121', date: '2026-07-20', items: [
         'Stick figures can wear tops and ties — T-shirt, long sleeve, vest, jacket or hoodie, plus a tie, bow tie or scarf.',
         'Sleeves follow the arms and the tie follows the torso, so clothing moves with the pose just like trousers do.',

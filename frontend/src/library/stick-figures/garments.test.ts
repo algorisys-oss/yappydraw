@@ -153,3 +153,20 @@ describe("tops and neckwear", () => {
         expect(svg).toContain('data-sf-part="arm"');
     });
 });
+
+describe("sleeve z-order", () => {
+    it("draws sleeves BEFORE the torso body", () => {
+        // Crossed arms are two diagonals across the chest. Sleeved and drawn on top they
+        // merge into a filled bow over the whole torso; tucked underneath, the jacket
+        // covers the crossing and only the outer stubs show — which is how folded arms
+        // actually read.
+        const guard = POSES.find(p => p.id === "service-security")!;
+        const ub = upperBody(guard.bones, guard.hip)!;
+        const prims = garmentGeometry([], guard.hip as any, { top: "jacket", upper: ub, unit: 84 });
+        // Two sleeves, then the body, then the placket line.
+        expect(prims.length).toBeGreaterThanOrEqual(4);
+        const placket = prims.findIndex(p => p.k === "poly");
+        const bodyIdx = placket - 1;                       // the body immediately precedes it
+        expect(bodyIdx).toBeGreaterThanOrEqual(ub.arms.length);
+    });
+});

@@ -339,11 +339,29 @@ function topPrims(ub: UpperBody, unit: number, style: TopStyle, fill: string, w:
     const spec = TOP_SPEC[style];
     const out: Prim[] = [];
 
+    // Sleeves FIRST, so the torso draws over them.
+    //
+    // This ordering is what makes crossed arms work. A guard's arms are authored as two
+    // diagonals across the chest; sleeved and drawn on top, they merge into a filled bow
+    // over the whole torso. Tucked underneath, only the parts outside the jacket show —
+    // which is how crossed arms actually read. It also removes the seam line sleeves
+    // otherwise draw across the shoulder on ordinary poses.
+    if (spec.sleeve > 0) {
+        for (const arm of ub.arms) {
+            if (polyLength(arm) < unit * 0.12) continue;
+            const path = spec.sleeve < 1 ? truncate(arm, spec.sleeve) : resample(arm, 12);
+            out.push({
+                k: 'path',
+                d: polyD(offsetOutline(path, () => unit * SLEEVE_HALF)),
+                w, fill,
+            });
+        }
+    }
+
     // The body of the top covers the torso from the shoulders down to its hem. The
-    // torso polyline runs neck → hip, so we skip the neck portion and stop at `length`.
-    // The hem should reach the hip and the collar should clear the neck, so the top runs
-    // roughly the lower three-quarters of the neck→hip polyline. Cutting it short leaves
-    // a box floating on the chest rather than a shirt.
+    // hem should reach the hip and the collar should clear the neck, so it runs roughly
+    // the lower three-quarters of the neck→hip polyline. Cutting it short leaves a box
+    // floating on the chest rather than a shirt.
     const startT = 0.26;
     const full = truncate(resample(ub.torso, 12), spec.length);
     const body = full.slice(Math.round(startT * (full.length - 1)));
@@ -358,19 +376,6 @@ function topPrims(ub: UpperBody, unit: number, style: TopStyle, fill: string, w:
             // A hood slumped behind the shoulders.
             const top = body[0];
             out.push({ k: 'ring', x: top[0], y: top[1] - unit * 0.02, r: unit * 0.15, w: w * 0.9, fill });
-        }
-    }
-
-    // Sleeves run down each arm; a t-shirt stops just past the elbow.
-    if (spec.sleeve > 0) {
-        for (const arm of ub.arms) {
-            if (polyLength(arm) < unit * 0.12) continue;
-            const path = spec.sleeve < 1 ? truncate(arm, spec.sleeve) : resample(arm, 12);
-            out.push({
-                k: 'path',
-                d: polyD(offsetOutline(path, () => unit * SLEEVE_HALF)),
-                w, fill,
-            });
         }
     }
     return out;
