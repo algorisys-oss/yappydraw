@@ -11,6 +11,7 @@
  */
 
 import { faceHairSvg, faceStateAttrs, type FaceOpts, type FaceStyle, type HairStyle } from '../face';
+import { garmentSvg, garmentStateAttrs, type GarmentOpts, type TrouserStyle, type ShoeStyle } from '../garments';
 
 export type JointId =
     | 'pelvis' | 'shoulder' | 'head'
@@ -90,6 +91,11 @@ export interface StickRigData {
     hairColor?: string;
     /** Fill the head white so the face reads over busy artwork. */
     headFill?: boolean;
+    /** Trousers drawn under the leg bones (see ../garments.ts). */
+    trousers?: TrouserStyle;
+    trouserColor?: string;
+    shoes?: ShoeStyle;
+    shoeColor?: string;
 }
 
 /** Canonical rig frame — matches the 140×260 authoring box. */
@@ -200,21 +206,45 @@ export function headAttach(pose: RigPose): Vec {
     return { x: hd.x + (dx / len) * pose.headR, y: hd.y + (dy / len) * pose.headR };
 }
 
-/** Render a pose to an SVG string (bones + head + face/hair), role-tagged for recolour/bake. */
-export function rigPoseToSvg(rig: StickRig, pose: RigPose, w = 140, h = 260, face: FaceOpts = {}): string {
+/** Rest-length hip→ankle for the rig, the unit garment widths are expressed in. */
+export const RIG_LEG_UNIT = 84;
+
+/** The two leg polylines of a pose, in the order garments expect (hip → knee → foot). */
+export function legPolylines(pose: RigPose): Array<Array<[number, number]>> {
+    const at = (id: JointId): [number, number] => {
+        const p = pose.joints.get(id)!;
+        return [p.x, p.y];
+    };
+    // Note the joint ids hold the KNEE and FOOT positions once IK has run.
+    return [
+        [at('pelvis'), at('thighL'), at('shinL')],
+        [at('pelvis'), at('thighR'), at('shinR')],
+    ];
+}
+
+/** Render a pose to an SVG string (garments + bones + head + face/hair), role-tagged. */
+export function rigPoseToSvg(
+    rig: StickRig, pose: RigPose, w = 140, h = 260,
+    face: FaceOpts = {}, garment: GarmentOpts = {},
+): string {
     const j = pose.joints;
     const fmt = (p: Vec) => `${Math.round(p.x * 10) / 10} ${Math.round(p.y * 10) / 10}`;
     const P = (id: JointId) => fmt(j.get(id)!);
     const sw = rig.style.strokeWidth;
     const bone = (d: string) => `<path d="${d}" data-sf-role="body"/>`;
-    const inner =
+    const pelvis = pose.joints.get('pelvis')!;
+    // Garments first — the black bone lines must draw on top of them.
+    const garments = garmentSvg(legPolylines(pose), [pelvis.x, pelvis.y], {
+        ...garment, unit: RIG_LEG_UNIT * rig.scale, facing: rig.facing,
+    });
+    const inner = garments +
         bone(`M${P('pelvis')}L${P('shoulder')}`) +                       // spine
         bone(`M${P('shoulder')}L${fmt(headAttach(pose))}`) +              // neck (stops at head edge)
         bone(`M${P('shoulder')}L${P('upperArmL')}L${P('foreArmL')}`) +    // left arm
         bone(`M${P('shoulder')}L${P('upperArmR')}L${P('foreArmR')}`) +    // right arm
         bone(`M${P('pelvis')}L${P('thighL')}L${P('shinL')}`) +            // left leg
         bone(`M${P('pelvis')}L${P('thighR')}L${P('shinR')}`) +            // right leg
-        `<circle cx="${Math.round(pose.head.x * 10) / 10}" cy="${Math.round(pose.head.y * 10) / 10}" r="${Math.round(pose.headR)}"${face.headFill ? ' fill="#ffffff"' : ''} data-sf-role="head"${faceStateAttrs(face)}/>` +
+        `<circle cx="${Math.round(pose.head.x * 10) / 10}" cy="${Math.round(pose.head.y * 10) / 10}" r="${Math.round(pose.headR)}"${face.headFill ? ' fill="#ffffff"' : ''} data-sf-role="head"${faceStateAttrs(face)}${garmentStateAttrs(garment)}/>` +
         faceHairSvg(pose.head.x, pose.head.y, pose.headR, { ...face, facing: rig.facing });
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" fill="none" stroke="${rig.style.stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
 }

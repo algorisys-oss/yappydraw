@@ -5,6 +5,10 @@
  */
 import { createSignal } from 'solid-js';
 import { asFaceStyle, asHairStyle, DEFAULT_HAIR_COLOR, type FaceStyle, type HairStyle } from './face';
+import {
+    asTrouserStyle, asShoeStyle, DEFAULT_TROUSER_COLOR, DEFAULT_SHOE_COLOR,
+    type TrouserStyle, type ShoeStyle,
+} from './garments';
 
 const FAV_KEY = 'yappy.stickFigures.favorites';
 const RECENT_KEY = 'yappy.stickFigures.recents';
@@ -59,10 +63,18 @@ export interface StickFacePref {
     hair: HairStyle | 'auto';
     hairColor: string;
     headFill: boolean;
+    trousers: TrouserStyle | 'auto';
+    trouserColor: string;
+    shoes: ShoeStyle | 'auto';
+    shoeColor: string;
 }
 
 const FACE_DEFAULT: StickFacePref = {
     face: 'auto', hair: 'auto', hairColor: DEFAULT_HAIR_COLOR, headFill: false,
+    // 'auto' keeps the variant default, which is "no trousers, skirt for the feminine
+    // variants" — i.e. exactly how the library looked before garments existed.
+    trousers: 'auto', trouserColor: DEFAULT_TROUSER_COLOR,
+    shoes: 'auto', shoeColor: DEFAULT_SHOE_COLOR,
 };
 
 /** Normalise a persisted (possibly stale) preference blob. */
@@ -73,6 +85,10 @@ function normFacePref(v: Partial<StickFacePref> | null): StickFacePref {
         hair: v.hair === 'auto' || v.hair === undefined ? 'auto' : asHairStyle(v.hair),
         hairColor: typeof v.hairColor === 'string' ? v.hairColor : DEFAULT_HAIR_COLOR,
         headFill: !!v.headFill,
+        trousers: v.trousers === 'auto' || v.trousers === undefined ? 'auto' : asTrouserStyle(v.trousers),
+        trouserColor: typeof v.trouserColor === 'string' ? v.trouserColor : DEFAULT_TROUSER_COLOR,
+        shoes: v.shoes === 'auto' || v.shoes === undefined ? 'auto' : asShoeStyle(v.shoes),
+        shoeColor: typeof v.shoeColor === 'string' ? v.shoeColor : DEFAULT_SHOE_COLOR,
     };
 }
 

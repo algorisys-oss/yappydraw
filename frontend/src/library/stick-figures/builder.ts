@@ -18,6 +18,10 @@
  * editable handles.
  */
 import { faceHairSvg, faceStateAttrs, asFaceStyle, asHairStyle, type FaceOpts, type FaceStyle, type HairStyle } from './face';
+import {
+    garmentSvg, garmentStateAttrs, legChains, asTrouserStyle, asShoeStyle, LEG_UNIT,
+    type GarmentOpts, type TrouserStyle,
+} from './garments';
 
 export const W = 140, H = 260;
 export const STROKE = '#1f2937';
@@ -28,6 +32,17 @@ export const VARIANTS: Variant[] = ['male', 'female', 'boy', 'girl'];
 /** Hair style each character variant wears unless the caller overrides it. */
 export const VARIANT_HAIR: Record<Variant, HairStyle> = {
     male: 'short', female: 'fringe', boy: 'spiky', girl: 'pigtails',
+};
+
+/**
+ * Trousers each variant wears by default. Deliberately matches what the library looked
+ * like BEFORE garments existed: the feminine variants had a skirt, everyone else was
+ * bare-legged. Trousers are opt-in, so no existing figure, template or comic changes
+ * appearance — the skirt just now comes from the shared garment system instead of a
+ * one-off helper.
+ */
+export const VARIANT_TROUSERS: Record<Variant, TrouserStyle> = {
+    male: 'none', female: 'skirt', boy: 'none', girl: 'skirt',
 };
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -81,17 +96,27 @@ function curveLimb(points: number[][], bow = 0.05): string {
  * figure every limb is independently selectable, stylable, and already a bezier
  * curve with handles. All tagged `body` for role recolour.
  */
-export const bones = (d: string) =>
-    d.split(/(?=M)/).map(seg => seg.trim()).filter(Boolean)
-        .map(seg => curveLimb(subToPoints(seg)))
-        .filter(Boolean)
-        .map(seg => `<path d="${seg}" data-sf-role="body"/>`).join('');
-
-/** A skirt (trapezoid) hanging from the hip, covering the upper thighs. */
-function skirt(hx: number, hy: number): string {
-    const wTop = 13, wBot = 25, len = 36;
-    return `<path d="M${r1(hx - wTop)} ${r1(hy - 2)} L${r1(hx + wTop)} ${r1(hy - 2)} L${r1(hx + wBot)} ${r1(hy + len)} L${r1(hx - wBot)} ${r1(hy + len)} Z" fill="#ffffff" data-sf-role="body" stroke-width="6"/>`;
-}
+export const bones = (d: string, hip?: readonly [number, number]) => {
+    // Leg subpaths are tagged so a dropped figure can have its trousers restyled later:
+    // garments are derived from the LEG polylines the way a face is derived from the
+    // head circle, and once the figure is flattened to paths that is the only way back.
+    //
+    // A subpath counts as a leg when its FIRST point lies on a leg chain. Matching the
+    // chain's start alone isn't enough: seated poses author a leg as thigh + shin, and
+    // the shin subpath starts at the KNEE, so it would be left untagged and lose its
+    // trouser. Checking the first point only (never the last) keeps the torso out — it
+    // ends at the hip but starts at the neck.
+    const chainPts = hip ? legChains(d, hip).flat() : [];
+    const onLeg = (p: number[]) => chainPts.some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 1);
+    return d.split(/(?=M)/).map(seg => seg.trim()).filter(Boolean)
+        .map(seg => {
+            const pts = subToPoints(seg);
+            const isLeg = pts.length > 0 && onLeg(pts[0]);
+            const curved = curveLimb(pts);
+            return curved ? `<path d="${curved}" data-sf-role="body"${isLeg ? ' data-sf-part="leg"' : ''}/>` : '';
+        })
+        .filter(Boolean).join('');
+};
 
 /** A pose: neutral source geometry that variants are generated from. */
 export interface Pose {
@@ -118,7 +143,7 @@ export interface Pose {
 }
 
 /** Inner markup (no `<svg>` wrapper) for a pose in a variant — for composing scenes. */
-export function figureInner(pose: Pose, variant: Variant = 'male', opts: FaceOpts = {}): string {
+export function figureInner(pose: Pose, variant: Variant = 'male', opts: FaceOpts & GarmentOpts = {}): string {
     return buildFigure(pose, variant, opts).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
 }
 
@@ -128,15 +153,28 @@ export function figureInner(pose: Pose, variant: Variant = 'male', opts: FaceOpt
  * `opts` overrides the face/hair the variant would otherwise wear — the pose's
  * own `face` (or `neutral`) and {@link VARIANT_HAIR}.
  */
-export function buildFigure(pose: Pose, variant: Variant = 'male', opts: FaceOpts = {}): string {
+export function buildFigure(
+    pose: Pose,
+    variant: Variant = 'male',
+    opts: FaceOpts & GarmentOpts = {},
+): string {
     const [cx, cy, r] = pose.head;
-    const feminine = variant === 'female' || variant === 'girl';
     const child = variant === 'boy' || variant === 'girl';
     const rr = child ? r * 1.28 : r;
 
-    // Body = skeleton + props + (skirt over the thighs for feminine variants).
-    let bodyInner = bones(pose.bones) + (pose.props || '');
-    if (feminine) bodyInner += skirt(pose.hip[0], pose.hip[1]);
+    // Garments are derived from the pose's OWN leg polylines, so they bend with it.
+    // Emitted before the skeleton so the black bone lines draw on top.
+    const garment: GarmentOpts = {
+        trousers: asTrouserStyle(opts.trousers ?? VARIANT_TROUSERS[variant], 'none'),
+        trouserColor: opts.trouserColor,
+        shoes: asShoeStyle(opts.shoes, 'none'),
+        shoeColor: opts.shoeColor,
+        unit: LEG_UNIT,
+    };
+    const legs = legChains(pose.bones, pose.hip);
+    const garments = garmentSvg(legs, pose.hip, garment);
+
+    let bodyInner = garments + bones(pose.bones, pose.hip) + (pose.props || '');
     // Child: vertically compress the body about the neck so the head reads bigger.
     const body = child
         ? `<g transform="translate(0 ${r1(cy + r)}) scale(1 0.82) translate(0 ${r1(-(cy + r))})">${bodyInner}</g>`
@@ -149,7 +187,8 @@ export function buildFigure(pose: Pose, variant: Variant = 'male', opts: FaceOpt
         hairColor: opts.hairColor,
         headFill: opts.headFill,
     };
-    const headGroup = head(cx, cy, rr, !!opts.headFill, faceStateAttrs(face)) + faceHairSvg(cx, cy, rr, face);
+    const headGroup = head(cx, cy, rr, !!opts.headFill, faceStateAttrs(face) + garmentStateAttrs(garment))
+        + faceHairSvg(cx, cy, rr, face);
 
     return doc(body + headGroup);
 }

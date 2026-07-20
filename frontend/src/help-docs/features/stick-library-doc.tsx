@@ -70,7 +70,7 @@ const StickLibraryDoc: Component = () => {
 
             {/* ─── FACES & HAIR ───────────────────────────────────────── */}
             <section class="doc-section">
-                <h2>Faces &amp; hair</h2>
+                <h2>Appearance — face, hair, trousers &amp; shoes</h2>
                 <p>
                     Every figure wears an <strong>expression</strong> and a <strong>hair style</strong>. The
                     <strong> Face &amp; hair</strong> section sits at the bottom of the Stick Figures panel — and also
@@ -105,11 +105,31 @@ const StickLibraryDoc: Component = () => {
                     (Man → Short, Woman → Fringe, Boy → Spiky, Girl → Pigtails). Pick a style explicitly and it wins
                     everywhere.
                 </p>
+                <h3>Trousers &amp; shoes</h3>
+                <ul>
+                    <li><strong>Trousers</strong> — 8 styles: Straight, Baggy, Skinny, Shorts, Joggers, Skirt,
+                        Long skirt, and None.</li>
+                    <li><strong>Shoes</strong> — 6 styles: Shoes, Boots, Sneakers, Heels, Front-facing, and None.
+                        Most are drawn in profile; <strong>Front-facing</strong> suits the library's head-on poses,
+                        where a side-view shoe reads as a foot turned sideways.</li>
+                    <li><strong>Colours</strong> — trousers and shoes each have their own.</li>
+                </ul>
+                <p>
+                    Clothing is generated from the figure's <strong>legs</strong>, so it follows whatever pose the
+                    figure is in — a seated figure's trousers bend at the knee, a cyclist's follow the pedalling
+                    leg, and a walking figure's stride with it. Nobody has to author a seated variant.
+                </p>
+                <p>
+                    Figures arrive dressed exactly as they always have: the Woman and Girl variants wear a skirt,
+                    everyone else is bare-legged. Trousers are opt-in, so nothing you already made has changed.
+                </p>
+
                 <p class="tip-box">
                     <strong>Known limitations.</strong> Faces are drawn front-on, so a strongly side-on pose still shows
                     two eyes (animated figures nudge the face toward the direction they face). Expressions are picked
                     from the list — there is no free-hand face editor — but because every mark is a real vector path you
-                    can ungroup a figure and nudge an eyebrow by hand.
+                    can ungroup a figure and nudge an eyebrow by hand. Trousers on a pose that draws only one visible
+                    leg (Cycling) clothe that leg only, which is usually what you want.
                 </p>
             </section>
 
@@ -184,6 +204,9 @@ Y.recolorStickFigure({ outline: '#7c3aed', accent: '#ec4899', hair: '#2b2118' },
 Y.listStickFaces();                     // [{id:'happy', name:'Happy'}, …] — 12 expressions
 Y.listStickHairStyles();                // [{id:'bun', name:'Bun'}, …] — 10 styles
 Y.setStickFace({ face: 'happy', hair: 'bun', hairColor: '#2b2118' }, ids);
+Y.listStickTrousers();                  // 8 trouser styles
+Y.listStickShoes();                     // 6 shoe styles
+Y.setStickFace({ trousers: 'baggy', shoes: 'sneakers', trouserColor: '#374151' }, ids);
 Y.setStickFace({ face: 'angry' });      // omitted fields are left alone; defaults to the selection
 Y.getStickFace(ids);                    // {face, hair, hairColor, headFill}
 // …or set it at drop time:
@@ -194,6 +217,7 @@ Y.toggleStickFigurePanel(true);         // open the panel`}</code></pre>
                     API: <code>insertStickFigure(id, opts?)</code>, <code>recolorStickFigure(colors, ids?)</code>,
                     <code> setStickFace(opts, ids?)</code>, <code>getStickFace(ids?)</code>,
                     <code> listStickFaces()</code>, <code>listStickHairStyles()</code>,
+                    <code> listStickTrousers()</code>, <code>listStickShoes()</code>,
                     <code> listStickFigures(category?)</code>, <code>listStickFigureCategories()</code>,
                     <code> toggleStickFigurePanel(visible?)</code>.
                 </p>

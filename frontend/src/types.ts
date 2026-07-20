@@ -347,6 +347,10 @@ export interface DrawingElement {
     /** On a `face` / `hair` part: the id of the head part it belongs to. Lets a
      *  restyle replace exactly the right marks in a multi-figure scene. */
     sfHeadId?: string;
+    /** Finer-grained stick-figure part tag, currently `'leg'` on the leg bones. Garments
+     *  are derived from the leg polylines, so this is how a flattened figure gets its
+     *  trousers restyled. */
+    sfPart?: string;
     /** Animated stick-figure rig payload (element type 'stickRig'). The figure is drawn
      *  procedurally from a motion clip + the global clock; stroke/width come from this element. */
     stickRig?: {
@@ -367,6 +371,11 @@ export interface DrawingElement {
         hairColor?: string;
         /** Fill the head white so the face reads over busy artwork. */
         headFill?: boolean;
+        /** Trousers drawn under the leg bones (see library/stick-figures/garments.ts). */
+        trousers?: string;
+        trouserColor?: string;
+        shoes?: string;
+        shoeColor?: string;
     };
 
     // Specific to Linear (Line, Arrow, Pencil)

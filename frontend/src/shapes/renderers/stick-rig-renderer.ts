@@ -12,7 +12,8 @@ import { store } from '../../store/app-store';
 import { effectiveTime } from '../../utils/animation/animation-engine';
 import { getClip, poseAt, WALK_STRIDE } from '../../library/stick-figures/anim/clips';
 import { elementPathSample, sampleAt } from '../../library/stick-figures/anim/path-follow';
-import { RIG_W, RIG_H, headAttach, type JointId, type RigPose } from '../../library/stick-figures/anim/rig';
+import { RIG_W, RIG_H, RIG_LEG_UNIT, headAttach, legPolylines, type JointId, type RigPose } from '../../library/stick-figures/anim/rig';
+import { garmentGeometry } from '../../library/stick-figures/garments';
 import {
     faceGeometry, hairGeometry, asFaceStyle, asHairStyle,
     type FacePrim,
@@ -22,7 +23,8 @@ interface BoxPose {
     /** Bone polylines in absolute canvas coords. */
     bones: Array<Array<[number, number]>>;
     head: { cx: number; cy: number; rx: number; ry: number };
-    /** Hair marks (drawn under the face), then face marks — absolute canvas coords. */
+    /** Garments (drawn UNDER the bones), then hair, then face — absolute canvas coords. */
+    garments: FacePrim[];
     hair: FacePrim[];
     face: FacePrim[];
 }
@@ -128,9 +130,19 @@ export class StickRigRenderer extends ShapeRenderer {
             headFill: !!data.headFill,
             facing,
         };
+        // Garments follow the legs, mapped into the element box like the bones are.
+        const legs = legPolylines(pose).map(chain => chain.map(p => X({ x: p[0], y: p[1] })));
+        const pelvis = X(pose.joints.get('pelvis')!);
+        const garments = garmentGeometry(legs, pelvis, {
+            trousers: data.trousers, trouserColor: data.trouserColor,
+            shoes: data.shoes, shoeColor: data.shoeColor,
+            unit: RIG_LEG_UNIT * sx, facing,
+        });
+
         return {
             bones,
             head,
+            garments,
             hair: hairGeometry(head.cx, head.cy, hr, faceOpts),
             face: faceGeometry(head.cx, head.cy, hr, faceOpts),
         };
@@ -209,10 +221,13 @@ export class StickRigRenderer extends ShapeRenderer {
 
     protected renderArchitectural(context: RenderContext, _cx: number, _cy: number): void {
         const { renderer, element: el, isDarkMode } = context;
-        const { bones, head, hair, face } = this.computePose(el);
+        const { bones, head, garments, hair, face } = this.computePose(el);
         RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
         const stroke = typeof renderer.strokeStyle === 'string' ? renderer.strokeStyle : (el.strokeColor || '#1f2937');
         const bodyWidth = renderer.lineWidth;
+        // Clothing goes down first so the skeleton draws over it.
+        this.drawPrimsArchitectural(renderer, garments, stroke);
+        renderer.lineWidth = bodyWidth;
         for (const poly of bones) {
             renderer.beginPath();
             renderer.moveTo(poly[0][0], poly[0][1]);
@@ -233,7 +248,9 @@ export class StickRigRenderer extends ShapeRenderer {
         const { rc, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
         const strokeOpts = { ...options, fill: 'none' };
-        const { bones, head, hair, face } = this.computePose(el);
+        const { bones, head, garments, hair, face } = this.computePose(el);
+        const strokeCol = (options as any).stroke || el.strokeColor || '#1f2937';
+        this.drawPrimsSketch(rc, garments, strokeOpts, strokeCol);
         for (const poly of bones) {
             for (let i = 1; i < poly.length; i++) {
                 rc.line(poly[i - 1][0], poly[i - 1][1], poly[i][0], poly[i][1], strokeOpts);
@@ -241,9 +258,8 @@ export class StickRigRenderer extends ShapeRenderer {
         }
         rc.circle(head.cx, head.cy, head.rx * 2,
             el.stickRig?.headFill ? { ...options, fill: '#ffffff', fillStyle: 'solid' } : options);
-        const stroke = (options as any).stroke || el.strokeColor || '#1f2937';
-        this.drawPrimsSketch(rc, hair, strokeOpts, stroke);
-        this.drawPrimsSketch(rc, face, strokeOpts, stroke);
+        this.drawPrimsSketch(rc, hair, strokeOpts, strokeCol);
+        this.drawPrimsSketch(rc, face, strokeOpts, strokeCol);
     }
 
     protected definePath(renderer: IRenderer, el: any): void {

@@ -17,6 +17,8 @@
  * Everything here is pure: no DOM, no store, no Solid.
  */
 
+import { r1, P, primToSvg, type Prim } from './prims';
+
 // ─── Style vocabulary ───────────────────────────────────────────────────────
 
 export type FaceStyle =
@@ -89,22 +91,11 @@ export interface FaceOpts {
 }
 
 // ─── Drawing primitives ─────────────────────────────────────────────────────
+//
+// The primitive union and its SVG emitter live in ./prims.ts, shared with the
+// limb-derived geometry in ./garments.ts — one renderer draws both.
 
-/**
- * A face/hair mark in *absolute* coordinates. `w` is an absolute stroke width;
- * `fill` present means the mark is filled (and, unless `fill` is the only paint,
- * also stroked).
- */
-export type FacePrim =
-    | { k: 'dot'; x: number; y: number; r: number }
-    | { k: 'ring'; x: number; y: number; r: number; w: number; fill?: string }
-    | { k: 'oval'; x: number; y: number; rx: number; ry: number; w: number; fill?: string }
-    | { k: 'arc'; x: number; y: number; r: number; a0: number; a1: number; w: number }
-    | { k: 'poly'; pts: [number, number][]; w: number }
-    | { k: 'path'; d: string; w: number; fill?: string };
-
-const r1 = (n: number) => Math.round(n * 10) / 10;
-const P = Math.PI;
+export type { Prim, FacePrim } from './prims';
 
 /** Stroke weight for face marks at head radius `r` (r=22 → ≈3.5). */
 const faceWidth = (r: number) => Math.max(0.6, r * 0.16);
@@ -137,7 +128,7 @@ const FACE_RECIPE: Record<Exclude<FaceStyle, 'none'>, { eyes: EyeKind; brows: Br
 };
 
 /** One eye at `(ex, ey)` in the requested form. */
-function eyePrims(kind: EyeKind, ex: number, ey: number, r: number, w: number, side: -1 | 1): FacePrim[] {
+function eyePrims(kind: EyeKind, ex: number, ey: number, r: number, w: number, side: -1 | 1): Prim[] {
     switch (kind) {
         case 'dot':
             return [{ k: 'dot', x: ex, y: ey, r: r * EYE_DOT }];
@@ -163,11 +154,11 @@ function eyePrims(kind: EyeKind, ex: number, ey: number, r: number, w: number, s
 }
 
 /** Both brows in the requested form. */
-function browPrims(kind: BrowKind, cx: number, cy: number, r: number, w: number): FacePrim[] {
+function browPrims(kind: BrowKind, cx: number, cy: number, r: number, w: number): Prim[] {
     if (kind === 'none') return [];
     const by = cy + r * BROW_Y;
     const outer = r * 0.54, inner = r * 0.18;
-    const slant = (dir: -1 | 1, drop: number): FacePrim =>
+    const slant = (dir: -1 | 1, drop: number): Prim =>
         // dir = -1 → left brow. `drop` > 0 tilts the INNER end downward (angry).
         ({ k: 'poly', pts: [[cx + dir * outer, by - drop], [cx + dir * inner, by + drop]], w });
     switch (kind) {
@@ -189,7 +180,7 @@ function browPrims(kind: BrowKind, cx: number, cy: number, r: number, w: number)
 }
 
 /** The mouth in the requested form. */
-function mouthPrims(kind: MouthKind, cx: number, cy: number, r: number, w: number): FacePrim[] {
+function mouthPrims(kind: MouthKind, cx: number, cy: number, r: number, w: number): Prim[] {
     if (kind === 'none') return [];
     const my = cy + r * MOUTH_Y;
     switch (kind) {
@@ -220,7 +211,7 @@ function mouthPrims(kind: MouthKind, cx: number, cy: number, r: number, w: numbe
  * Face marks (eyes + brows + mouth) for a head circle at `(cx, cy)` radius `r`.
  * Returns [] for `face: 'none'` (or an unknown style).
  */
-export function faceGeometry(cx: number, cy: number, r: number, o: FaceOpts = {}): FacePrim[] {
+export function faceGeometry(cx: number, cy: number, r: number, o: FaceOpts = {}): Prim[] {
     const style = asFaceStyle(o.face, 'none');
     if (style === 'none' || r <= 0) return [];
     const recipe = FACE_RECIPE[style];
@@ -275,7 +266,7 @@ function capPath(cx: number, cy: number, r: number, a0: number, a1: number, rise
  * Hair marks for a head circle at `(cx, cy)` radius `r`. Solid styles carry a
  * `fill` (the hair colour); outline styles are stroke-only.
  */
-export function hairGeometry(cx: number, cy: number, r: number, o: FaceOpts = {}): FacePrim[] {
+export function hairGeometry(cx: number, cy: number, r: number, o: FaceOpts = {}): Prim[] {
     const style = asHairStyle(o.hair, 'none');
     if (style === 'none' || r <= 0) return [];
     const w = hairWidth(r);
@@ -395,7 +386,7 @@ export function hairGeometry(cx: number, cy: number, r: number, o: FaceOpts = {}
 
         // A chin-length bob: solid cap plus two blunt sides curving to the jaw.
         case 'bob': {
-            const side = (d: -1 | 1): FacePrim => ({
+            const side = (d: -1 | 1): Prim => ({
                 k: 'path',
                 d: `M${r1(cx + d * r * 0.99)} ${r1(cy - r * 0.16)}`
                     + `Q${r1(cx + d * r * 1.16)} ${r1(cy + r * 0.55)} ${r1(cx + d * r * 0.86)} ${r1(cy + r * 0.98)}`
@@ -410,8 +401,8 @@ export function hairGeometry(cx: number, cy: number, r: number, o: FaceOpts = {}
 
         // Two long plaits, each drawn as a chain of beads down past the shoulder.
         case 'braids': {
-            const plait = (side: -1 | 1): FacePrim[] => {
-                const out: FacePrim[] = [];
+            const plait = (side: -1 | 1): Prim[] => {
+                const out: Prim[] = [];
                 for (let i = 0; i < 4; i++) {
                     out.push({
                         k: 'ring',
@@ -474,7 +465,7 @@ export function hairGeometry(cx: number, cy: number, r: number, o: FaceOpts = {}
 }
 
 /** The classic fringe + two side locks (stroke-only) shared by several styles. */
-function fringePrims(cx: number, cy: number, r: number, w: number): FacePrim[] {
+function fringePrims(cx: number, cy: number, r: number, w: number): Prim[] {
     const top = cy - r;
     return [
         { k: 'path', d: `M${r1(cx - r + r * 0.14)} ${r1(cy - r * 0.14)}Q${r1(cx)} ${r1(top - r * 0.32)} ${r1(cx + r - r * 0.14)} ${r1(cy - r * 0.14)}`, w },
@@ -484,34 +475,6 @@ function fringePrims(cx: number, cy: number, r: number, w: number): FacePrim[] {
 }
 
 // ─── SVG emitter ────────────────────────────────────────────────────────────
-
-/** Absolute-arc `d` string for an arc primitive. */
-function arcD(x: number, y: number, r: number, a0: number, a1: number): string {
-    const x0 = x + Math.cos(a0) * r, y0 = y + Math.sin(a0) * r;
-    const x1 = x + Math.cos(a1) * r, y1 = y + Math.sin(a1) * r;
-    const large = Math.abs(a1 - a0) > P ? 1 : 0;
-    return `M${r1(x0)} ${r1(y0)}A${r1(r)} ${r1(r)} 0 ${large} 1 ${r1(x1)} ${r1(y1)}`;
-}
-
-/** One primitive as SVG markup (role/paint applied by the caller's `<g>`). */
-function primToSvg(p: FacePrim): string {
-    switch (p.k) {
-        // A solid disc drawn with the STROKE (half-radius circle, full-radius pen)
-        // so a pupil recolours with the outline instead of needing its own fill.
-        case 'dot':
-            return `<circle cx="${r1(p.x)}" cy="${r1(p.y)}" r="${r1(p.r / 2)}" stroke-width="${r1(p.r)}"/>`;
-        case 'ring':
-            return `<circle cx="${r1(p.x)}" cy="${r1(p.y)}" r="${r1(p.r)}" stroke-width="${r1(p.w)}"${p.fill ? ` fill="${p.fill}"` : ''}/>`;
-        case 'oval':
-            return `<ellipse cx="${r1(p.x)}" cy="${r1(p.y)}" rx="${r1(p.rx)}" ry="${r1(p.ry)}" stroke-width="${r1(p.w)}"${p.fill ? ` fill="${p.fill}"` : ''}/>`;
-        case 'arc':
-            return `<path d="${arcD(p.x, p.y, p.r, p.a0, p.a1)}" stroke-width="${r1(p.w)}"/>`;
-        case 'poly':
-            return `<path d="M${p.pts.map(([x, y]) => `${r1(x)} ${r1(y)}`).join('L')}" stroke-width="${r1(p.w)}"/>`;
-        case 'path':
-            return `<path d="${p.d}" stroke-width="${r1(p.w)}"${p.fill ? ` fill="${p.fill}"` : ''}/>`;
-    }
-}
 
 /**
  * Face + hair as role-tagged SVG markup for a head circle at `(cx, cy, r)`.

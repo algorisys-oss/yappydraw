@@ -16,6 +16,9 @@ import { type Component, For, Show, createMemo } from 'solid-js';
 import { store } from '../store/app-store';
 import {
     FACE_STYLES, HAIR_STYLES, faceHairSvg, DEFAULT_HAIR_COLOR,
+    TROUSER_STYLES, SHOE_STYLES, garmentGeometry, primToSvg,
+    DEFAULT_TROUSER_COLOR, DEFAULT_SHOE_COLOR,
+    type TrouserStyle, type ShoeStyle,
     stickFacePref, setStickFacePref,
     restyleStickFace, stickFaceStateOf, selectionHasStickFigure,
     setAnimatedFigureFace, animatedFigureFaceState, selectionHasAnimatedFigure,
@@ -25,12 +28,28 @@ import './stick-face-controls.css';
 
 /** Hair colours that read well against the default dark outline. */
 const HAIR_SWATCHES = ['#8b5e3c', '#2b2118', '#e0b040', '#c2410c', '#9ca3af', '#7c3aed'];
+/** Trouser colours — denim, charcoal, khaki, olive, rust, plum. */
+const TROUSER_SWATCHES = ['#3b5b8c', '#374151', '#a8977a', '#4d5f3c', '#b45309', '#6d28d9'];
 
 /** A head-only thumbnail wearing one face/hair combination. */
 const thumb = (face: FaceStyle, hair: HairStyle, hairColor: string): string =>
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor"`
     + ` stroke-width="5" stroke-linecap="round" stroke-linejoin="round">`
     + `<circle cx="50" cy="54" r="30"/>${faceHairSvg(50, 54, 30, { face, hair, hairColor })}</svg>`;
+
+/**
+ * A legs-only thumbnail wearing one trouser/shoe combination. Garments derive from a
+ * limb polyline, so the preview draws the same standing pair of legs the geometry would
+ * see — no head needed, which keeps the button readable at 28px.
+ */
+const legThumb = (trousers: TrouserStyle, shoes: ShoeStyle, tColor: string): string => {
+    const legs: Array<Array<[number, number]>> = [[[50, 18], [32, 92]], [[50, 18], [68, 92]]];
+    const prims = garmentGeometry(legs, [50, 18], { trousers, shoes, trouserColor: tColor, unit: 84, facing: 1 });
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 112" fill="none" stroke="currentColor"`
+        + ` stroke-width="6" stroke-linecap="round" stroke-linejoin="round">`
+        + prims.map(primToSvg).join('')
+        + `<path d="M50 18L32 92"/><path d="M50 18L68 92"/><path d="M50 0L50 18"/></svg>`;
+};
 
 const StickFaceControls: Component = () => {
     const pref = () => stickFacePref();
@@ -53,6 +72,10 @@ const StickFaceControls: Component = () => {
             hair: p.hair === 'auto' ? null : p.hair,
             hairColor: p.hairColor,
             headFill: p.headFill,
+            trousers: p.trousers === 'auto' ? null : p.trousers,
+            trouserColor: p.trouserColor,
+            shoes: p.shoes === 'auto' ? null : p.shoes,
+            shoeColor: p.shoeColor,
         };
     });
 
@@ -66,7 +89,7 @@ const StickFaceControls: Component = () => {
     return (
         <div class="sf-face">
             <div class="sf-face-head">
-                <span>Face &amp; hair</span>
+                <span>Appearance</span>
                 <span class="sf-face-scope">
                     {hasTarget() ? 'editing selection' : 'applies to new figures'}
                 </span>
@@ -109,6 +132,49 @@ const StickFaceControls: Component = () => {
                             onClick={() => apply({ hairColor: c })} />}
                     </For>
                 </div>
+            </div>
+
+            <div class="sf-face-label">Trousers</div>
+            <div class="sf-face-grid">
+                <For each={TROUSER_STYLES}>
+                    {(t) => (
+                        <button class={`sf-face-btn ${current().trousers === t.id ? 'active' : ''}`}
+                            title={t.name} onClick={() => apply({ trousers: t.id })}>
+                            <span class="sf-face-thumb" innerHTML={legThumb(t.id, 'none', current().trouserColor)} />
+                        </button>
+                    )}
+                </For>
+            </div>
+
+            <div class="sf-face-label">Shoes</div>
+            <div class="sf-face-grid">
+                <For each={SHOE_STYLES}>
+                    {(sh) => (
+                        <button class={`sf-face-btn ${current().shoes === sh.id ? 'active' : ''}`}
+                            title={sh.name} onClick={() => apply({ shoes: sh.id })}>
+                            <span class="sf-face-thumb" innerHTML={legThumb('none', sh.id, current().trouserColor)} />
+                        </button>
+                    )}
+                </For>
+            </div>
+
+            <div class="sf-face-row">
+                <label class="sf-face-color" title="Trouser colour">
+                    Trousers
+                    <input type="color" value={current().trouserColor || DEFAULT_TROUSER_COLOR}
+                        onInput={(e) => apply({ trouserColor: e.currentTarget.value })} />
+                </label>
+                <div class="sf-face-swatches">
+                    <For each={TROUSER_SWATCHES}>
+                        {(c) => <button class="sf-face-sw" style={{ background: c }} title={c}
+                            onClick={() => apply({ trouserColor: c })} />}
+                    </For>
+                </div>
+                <label class="sf-face-color" title="Shoe colour">
+                    Shoes
+                    <input type="color" value={current().shoeColor || DEFAULT_SHOE_COLOR}
+                        onInput={(e) => apply({ shoeColor: e.currentTarget.value })} />
+                </label>
             </div>
 
             <label class="sf-face-check" title="Fill the head white so the face reads over busy artwork">

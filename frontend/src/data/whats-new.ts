@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.120', date: '2026-07-20', items: [
+        'Stick figures can wear trousers and shoes — 8 trouser styles and 6 shoe styles, each with its own colour.',
+        'The clothing follows the pose: a seated figure\'s trousers bend at the knee, a cyclist\'s follow the pedalling leg, and animated figures keep theirs through a walk cycle.',
+        'Find it under Appearance in the Properties panel, alongside expression and hair.',
+        'Existing figures are unchanged — trousers are opt-in, and the Woman and Girl variants keep their skirt.',
+    ] },
     { version: '0.8.119', date: '2026-07-20', items: [
         'Comic characters now each have their own hair, so you can tell them apart at a glance — and it stays the same in every panel.',
         'Eight new hair styles for every figure: Swoosh, Mohawk, Afro, Bob, Braids, Top knot, Balding and Cap (18 in all).',

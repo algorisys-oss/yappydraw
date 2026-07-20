@@ -326,9 +326,9 @@ function styleOf(node: Element, parent: SvgStyle): SvgStyle {
 
 const SKIP_TAGS = new Set(['defs', 'symbol', 'clippath', 'mask', 'marker', 'pattern', 'lineargradient', 'radialgradient', 'style', 'metadata', 'title', 'desc', 'text', 'use', 'image', 'filter', 'script', 'foreignobject']);
 
-interface Drawable { subs: Sub[]; style: SvgStyle; strokeScale: number; role?: string }
+interface Drawable { subs: Sub[]; style: SvgStyle; strokeScale: number; role?: string; part?: string }
 
-function collectDrawables(node: Element, matrix: Matrix, style: SvgStyle, out: Drawable[], role?: string): void {
+function collectDrawables(node: Element, matrix: Matrix, style: SvgStyle, out: Drawable[], role?: string, part?: string): void {
     const tag = node.tagName.toLowerCase();
     if (SKIP_TAGS.has(tag)) return;
     if (node.getAttribute('display') === 'none') return;
@@ -338,6 +338,8 @@ function collectDrawables(node: Element, matrix: Matrix, style: SvgStyle, out: D
     // Semantic part role (used by the stick-figure library for per-part recolour);
     // inherits down the tree so a `<g data-sf-role>` tags all its children.
     const r = node.getAttribute('data-sf-role') ?? role;
+    // Finer-grained tag (e.g. which body parts are legs) — inherits the same way.
+    const pt = node.getAttribute('data-sf-part') ?? part;
 
     const subs = nodeToSubs(node);
     if (subs.length > 0) {
@@ -359,11 +361,11 @@ function collectDrawables(node: Element, matrix: Matrix, style: SvgStyle, out: D
             }),
         }));
         const strokeScale = Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])) || 1;
-        out.push({ subs: txSubs, style: s, strokeScale, role: r });
+        out.push({ subs: txSubs, style: s, strokeScale, role: r, part: pt });
     }
 
     for (const child of Array.from(node.children)) {
-        collectDrawables(child, m, s, out, r);
+        collectDrawables(child, m, s, out, r, pt);
     }
 }
 
@@ -470,6 +472,7 @@ export function svgToElements(svgText: string, opts: SvgImportOptions = {}): Dra
             seed: Math.floor(Math.random() * 2 ** 31),
             roundness: null,
             ...(d.role ? { sfRole: d.role } : {}),
+            ...(d.part ? { sfPart: d.part } : {}),
             ...(opts.overrides || {}),
         } as DrawingElement);
     }
