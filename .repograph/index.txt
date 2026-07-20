@@ -319,7 +319,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 152 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 157 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -396,7 +396,7 @@ frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 566 | T
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 394 | LogoToolkitDoc:9 the:167
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 377 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 296 | StickAnimationDoc:10
-frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 321 | StickLibraryDoc:9 your:214
+frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 329 | StickLibraryDoc:9 your:214
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 143 | SymbolsDoc:9
 frontend/src/help-docs/features/workspace-doc.tsx | typescript | 302 | WorkspaceDoc:9 and:75 a:80
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 660 | YslTutorialDoc:8 members:564 Subject:579
@@ -417,11 +417,11 @@ frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 315 | VectorPa
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 297 | WireframingDoc:8
 frontend/src/index.css | - | 509 |
 frontend/src/index.tsx | typescript | 119 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84
-frontend/src/library/comic/index.ts | typescript | 438 | PanelLayout:13 Utterance:13 ComicPanelOptions:25 ComicStripOptions:56 buildFigureElements:73 measureBubble:117 planComicPanel:142 createComicPanel:227 IdFactory:269 buildPanelElements:275 createComicStrip:369
+frontend/src/library/comic/index.ts | typescript | 446 | PanelLayout:10 Utterance:10 ComicPanelOptions:22 ComicStripOptions:53 buildFigureElements:77 measureBubble:116 planComicPanel:141 createComicPanel:234 IdFactory:276 buildPanelElements:282 createComicStrip:377
 frontend/src/library/comic/panel-layout.test.ts | typescript | 340 | Utterance:4
 frontend/src/library/comic/panel-layout.ts | typescript | 414 | BalloonKind:25 Utterance:27 Box:36 CharacterPlacement:38 BubblePlacement:47 PanelLayout:55 parseScript:87 splitIntoPanels:159 castSpeakers:184 inferPairs:202 orderingCost:222 orderCharacters:259 LayoutInput:271 layoutPanel:299
-frontend/src/library/comic/pose-rules.test.ts | typescript | 102 |
-frontend/src/library/comic/pose-rules.ts | typescript | 198 | Match:23 PoseRule:30 EmotionId:72 isEmotionToken:75 poseForEmotion:82 poseForLine:179 explainPose:193
+frontend/src/library/comic/pose-rules.test.ts | typescript | 127 |
+frontend/src/library/comic/pose-rules.ts | typescript | 212 | Match:23 PoseRule:30 EmotionId:72 isEmotionToken:75 poseForEmotion:82 faceForEmotion:96 poseForLine:193 explainPose:207
 frontend/src/library/elements/aliases.ts | typescript | 198 | aliasesFor:196
 frontend/src/library/elements/illustrations/LICENSE.md | - | 17 |
 frontend/src/library/elements/illustrations/assets.ts | typescript | 987 | Illustration:8
@@ -433,7 +433,7 @@ frontend/src/library/stick-figures/anim/rig.ts | typescript | 220 | FaceOpts:13 
 frontend/src/library/stick-figures/assets.ts | typescript | 47 | Variant:11 buildVariantAssets:22
 frontend/src/library/stick-figures/builder.ts | typescript | 155 | FaceOpts:20 FaceStyle:20 HairStyle:20 Variant:25 doc:36 subToPoints:47 curveLimb:54 skirt:91 Pose:97 figureInner:121 buildFigure:131
 frontend/src/library/stick-figures/face.ts | typescript | 424 | FaceStyle:22 HairStyle:26 FaceOpts:71 FacePrim:89 EyeKind:112 BrowKind:113 MouthKind:114 eyePrims:131 browPrims:157 mouthPrims:183 faceGeometry:214 capPath:247 hairGeometry:265 fringePrims:360 arcD:372 primToSvg:380 faceHairSvg:408 faceStateAttrs:421
-frontend/src/library/stick-figures/index.ts | typescript | 738 | FaceOpts:18 FaceStyle:18 HairStyle:18 StickPartRole:41 parseHex:45 roleFromFill:57 InsertStickOptions:68 insertStickFigure:91 StickRecolor:139 recolorStickFigure:150 expandToFigures:180 placeOnHead:194 headOf:210 restyleStickFace:235 stickFaceStateOf:314 selectionHasStickFigure:320 toMonochromeSvg:333 FaceHairChoice:359 StickFaceState:367 readHeadState:377 mergeChoice:387 svgFragment:402 applyFaceHair:420 headStatesOf:451 linkFaceParts:469 InsertAnimatedOptions:492 insertAnimatedFigure:502 setAnimatedFigurePlaying:542 setAnimatedFigureFace:559 animatedFigureFaceState:580 setAnimatedFigureSpeed:597 setAnimatedFigureClip:609 attachFigureToPath:618 detachFigurePath:630 setFigurePathDuration:639 pathFollowCandidate:650 selectedFigurePath:659 setFigureSequence:665 getFigureSequence:674 flipAnimatedFigure:680 selectionHasAnimatedFigure:692 bakeAnimatedFigure:701
+frontend/src/library/stick-figures/index.ts | typescript | 757 | FaceOpts:18 FaceStyle:18 HairStyle:18 StickPartRole:41 parseHex:45 roleFromFill:57 InsertStickOptions:68 prepareStickFigureElements:95 insertStickFigure:138 StickRecolor:158 recolorStickFigure:169 expandToFigures:199 placeOnHead:213 headOf:229 restyleStickFace:254 stickFaceStateOf:333 selectionHasStickFigure:339 toMonochromeSvg:352 FaceHairChoice:378 StickFaceState:386 readHeadState:396 mergeChoice:406 svgFragment:421 applyFaceHair:439 headStatesOf:470 linkFaceParts:488 InsertAnimatedOptions:511 insertAnimatedFigure:521 setAnimatedFigurePlaying:561 setAnimatedFigureFace:578 animatedFigureFaceState:599 setAnimatedFigureSpeed:616 setAnimatedFigureClip:628 attachFigureToPath:637 detachFigurePath:649 setFigurePathDuration:658 pathFollowCandidate:669 selectedFigurePath:678 setFigureSequence:684 getFigureSequence:693 flipAnimatedFigure:699 selectionHasAnimatedFigure:711 bakeAnimatedFigure:720
 frontend/src/library/stick-figures/poses.ts | typescript | 287 | Pose:9
 frontend/src/library/stick-figures/prefs.ts | typescript | 87 | FaceStyle:7 HairStyle:7 load:15 save:19 toggleStickFavorite:27 pushStickRecent:36 StickColorMode:42 setStickColorMode:45 StickFacePref:57 normFacePref:69 setStickFacePref:84
 frontend/src/library/stick-figures/props.ts | typescript | 48 | pdoc:11 PropDef:15
@@ -877,7 +877,7 @@ tests/solid-block.spec.ts | typescript | 38 |
 tests/spacing-guides.spec.ts | typescript | 81 |
 tests/stick-anim-demo-check.spec.ts | typescript | 46 | Window:6
 tests/stick-animation-speed.spec.ts | typescript | 143 | Window:10
-tests/stick-face.spec.ts | typescript | 167 | Window:13
+tests/stick-face.spec.ts | typescript | 215 | Window:13
 tests/stick-rig-smoke.spec.ts | typescript | 86 | Window:6
 tests/stroke-gradient-batch3.spec.ts | typescript | 76 |
 tests/svg-import-elements.spec.ts | typescript | 98 | Window:6

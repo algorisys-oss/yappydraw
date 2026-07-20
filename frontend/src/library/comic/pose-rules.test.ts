@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { poseForLine, explainPose, isAllCaps, poseForEmotion, EMOTIONS, NEUTRAL_POSE } from "./pose-rules";
+import { poseForLine, explainPose, isAllCaps, poseForEmotion, faceForEmotion, EMOTIONS, NEUTRAL_POSE } from "./pose-rules";
 
 describe("isAllCaps", () => {
     it("needs >1 uppercase and no lowercase", () => {
@@ -98,5 +98,30 @@ describe("emotion palette (manual override)", () => {
     it("has unique ids and labels", () => {
         expect(new Set(EMOTIONS.map(e => e.id)).size).toBe(EMOTIONS.length);
         expect(new Set(EMOTIONS.map(e => e.label)).size).toBe(EMOTIONS.length);
+    });
+});
+
+describe("faceForEmotion", () => {
+    it("gives every non-auto emotion an expression", () => {
+        for (const e of EMOTIONS) {
+            if (e.id === "auto") continue;
+            expect(faceForEmotion(e.id)).toBeTruthy();
+        }
+    });
+
+    it("returns null for auto / unknown / missing, so the pose keeps its authored face", () => {
+        expect(faceForEmotion("auto")).toBeNull();
+        expect(faceForEmotion(undefined)).toBeNull();
+        expect(faceForEmotion("nonsense")).toBeNull();
+    });
+
+    it("sets the face independently of the pose's own default", () => {
+        // The whole reason this exists: 'angry' maps to the office-stressed POSE, which
+        // was authored with a *scared* face. The cue has to override it.
+        expect(poseForEmotion("angry")).toBe("office-stressed");
+        expect(faceForEmotion("angry")).toBe("angry");
+        expect(faceForEmotion("happy")).toBe("happy");
+        expect(faceForEmotion("sad")).toBe("sad");
+        expect(faceForEmotion("thinking")).toBe("confused");
     });
 });

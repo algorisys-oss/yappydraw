@@ -52,21 +52,21 @@ export const NEUTRAL_POSE = 'daily-standing';
  * Kept deliberately short: an emotion nobody can draw is worse than no option at all.
  */
 export const EMOTIONS = [
-    { id: 'auto', label: 'Auto', pose: '' },   // no override — use the rule table
-    { id: 'neutral', label: 'Neutral', pose: 'daily-standing' },
-    { id: 'happy', label: 'Happy', pose: 'office-thumbsup' },
-    { id: 'laughing', label: 'Laughing', pose: 'social-celebrating' },
-    { id: 'sad', label: 'Sad', pose: 'daily-sad' },
-    { id: 'angry', label: 'Angry', pose: 'office-stressed' },
-    { id: 'shouting', label: 'Shouting', pose: 'office-megaphone' },
-    { id: 'thinking', label: 'Thinking', pose: 'daily-thinking' },
-    { id: 'unsure', label: 'Unsure', pose: 'daily-shrug' },
-    { id: 'greeting', label: 'Waving', pose: 'daily-waving' },
-    { id: 'pointing', label: 'Pointing', pose: 'daily-pointing' },
-    { id: 'idea', label: 'Idea', pose: 'office-idea' },
-    { id: 'presenting', label: 'Presenting', pose: 'office-presenting' },
-    { id: 'love', label: 'Love', pose: 'social-love' },
-    { id: 'asking', label: 'Asking', pose: 'meeting-raise-hand' },
+    { id: 'auto', label: 'Auto', pose: '', face: '' },   // no override — use the rule table
+    { id: 'neutral', label: 'Neutral', pose: 'daily-standing', face: 'neutral' },
+    { id: 'happy', label: 'Happy', pose: 'office-thumbsup', face: 'happy' },
+    { id: 'laughing', label: 'Laughing', pose: 'social-celebrating', face: 'excited' },
+    { id: 'sad', label: 'Sad', pose: 'daily-sad', face: 'sad' },
+    { id: 'angry', label: 'Angry', pose: 'office-stressed', face: 'angry' },
+    { id: 'shouting', label: 'Shouting', pose: 'office-megaphone', face: 'surprised' },
+    { id: 'thinking', label: 'Thinking', pose: 'daily-thinking', face: 'confused' },
+    { id: 'unsure', label: 'Unsure', pose: 'daily-shrug', face: 'confused' },
+    { id: 'greeting', label: 'Waving', pose: 'daily-waving', face: 'happy' },
+    { id: 'pointing', label: 'Pointing', pose: 'daily-pointing', face: 'neutral' },
+    { id: 'idea', label: 'Idea', pose: 'office-idea', face: 'excited' },
+    { id: 'presenting', label: 'Presenting', pose: 'office-presenting', face: 'neutral' },
+    { id: 'love', label: 'Love', pose: 'social-love', face: 'happy' },
+    { id: 'asking', label: 'Asking', pose: 'meeting-raise-hand', face: 'confused' },
 ] as const;
 
 export type EmotionId = typeof EMOTIONS[number]['id'];
@@ -83,6 +83,20 @@ export function poseForEmotion(id: string | undefined): string | null {
     if (!id || id === 'auto') return null;
     const found = EMOTIONS.find(e => e.id === id);
     return found && found.pose ? found.pose : null;
+}
+
+/**
+ * Expression for an emotion, or null for 'auto' / anything unknown.
+ *
+ * The pose alone can't carry the mood: several emotions share body language that reads
+ * quite differently on the face (Angry maps to the `office-stressed` pose, whose own
+ * default expression is *scared*), so an explicit cue has to set BOTH. When this
+ * returns null the figure keeps whatever expression its pose was authored with.
+ */
+export function faceForEmotion(id: string | undefined): string | null {
+    if (!id || id === 'auto') return null;
+    const found = EMOTIONS.find(e => e.id === id);
+    return found && found.face ? found.face : null;
 }
 
 /**

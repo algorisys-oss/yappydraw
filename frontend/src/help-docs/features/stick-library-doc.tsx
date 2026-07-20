@@ -284,6 +284,14 @@ Ben: oh`}</code></pre>
                     the bracket isn’t recognised the whole thing stays part of the name, so
                     <code> Ann (CEO):</code> is safe.
                 </p>
+                <p>
+                    An emotion sets the <strong>face as well as the body</strong> — <code>(angry)</code>
+                    gives an angry expression, not just tense body language. Poses chosen by the
+                    words keep the expression they were drawn with, so “lol” still arrives grinning.
+                    Comic figures are ordinary stick figures, so you can select one afterwards and
+                    change its expression or hair from <strong>Face &amp; hair</strong> in the
+                    Properties panel like any other.
+                </p>
 
                 <p>
                     Each <code>Name: line</code> row becomes one balloon. The pose comes from the

@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.118', date: '2026-07-20', items: [
+        'Comic emotions now show on the face — write "Ann (angry): ..." and Ann actually looks angry, not just tense.',
+        'Comic characters are normal stick figures: select one and change its expression or hair from the Properties panel.',
+        'Fixed: changing a comic figure\'s expression used to wipe its hair, and monochrome comics kept coloured hair.',
+    ] },
     { version: '0.8.117', date: '2026-07-20', items: [
         'Animated figures have a Speed slider — speed them up or slow them down, including while they walk a path.',
         'Walking a route? "Lap time" sets how long one trip takes, so you can pace a scene exactly.',

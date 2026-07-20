@@ -81,14 +81,18 @@ export interface InsertStickOptions {
 }
 
 /**
- * Insert a stick-figure asset by id. Returns the new element ids (already selected
- * and grouped into one object). Returns [] for an unknown id.
+ * Turn a stick-figure asset into ready-to-commit elements: face/hair applied, roles
+ * tagged, outline weight normalised, monochrome honoured, and face/hair parts linked
+ * to their head so they can be restyled later.
  *
- * The whole figure lands as a single undo step: the elements are added, their
- * outline normalised to {@link STICK_STROKE_PX}, each part tagged with its
- * {@link StickPartRole}, and all parts joined into one group.
+ * Pure with respect to the store — it neither pushes history nor adds anything — so
+ * generators that must land as ONE undo step (the comic panel builder) can compose it
+ * instead of re-implementing it. That duplication is exactly how the comic generator
+ * missed faces when they shipped, so prefer this over copying the loop again.
+ *
+ * Elements come back UNGROUPED; the caller decides the grouping.
  */
-export function insertStickFigure(assetId: string, opts: InsertStickOptions = {}): string[] {
+export function prepareStickFigureElements(assetId: string, opts: InsertStickOptions = {}): DrawingElement[] {
     const asset = getStickAsset(assetId);
     if (!asset) return [];
 
@@ -113,15 +117,30 @@ export function insertStickFigure(assetId: string, opts: InsertStickOptions = {}
     const maxSW = Math.max(...els.map(e => e.strokeWidth || 0));
     const f = maxSW > 0 ? STICK_STROKE_PX / maxSW : 1;
     const mono = opts.monochrome ?? (stickColorMode() === 'mono');
-    const gid = generateId('group');
     for (const e of els) {
         if (e.strokeWidth) e.strokeWidth = Math.max(0.4, Math.round(e.strokeWidth * f * 100) / 100);
         if (!e.sfRole) e.sfRole = roleFromFill(e.backgroundColor);
         // Monochrome tier: drop accent (and solid-hair) fills so the figure is pure outline.
         if (mono && (e.sfRole === 'accent' || e.sfRole === 'hair')) e.backgroundColor = 'transparent';
-        e.groupIds = [...(e.groupIds || []), gid];
     }
     linkFaceParts(els, headStatesOf(svg));
+    return els;
+}
+
+/**
+ * Insert a stick-figure asset by id. Returns the new element ids (already selected
+ * and grouped into one object). Returns [] for an unknown id.
+ *
+ * The whole figure lands as a single undo step: the elements are added, their
+ * outline normalised to {@link STICK_STROKE_PX}, each part tagged with its
+ * {@link StickPartRole}, and all parts joined into one group.
+ */
+export function insertStickFigure(assetId: string, opts: InsertStickOptions = {}): string[] {
+    const els = prepareStickFigureElements(assetId, opts);
+    if (els.length === 0) return [];
+
+    const gid = generateId('group');
+    for (const e of els) e.groupIds = [...(e.groupIds || []), gid];
 
     pushToHistory();
     batch(() => {

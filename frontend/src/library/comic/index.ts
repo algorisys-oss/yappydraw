@@ -2,12 +2,9 @@ import { batch } from 'solid-js';
 import type { DrawingElement } from '../../types';
 import { store, setStore, pushToHistory, bumpDirtyRevision } from '../../store/app-store';
 import { generateId } from '../../utils/id-generator';
-import { svgToElements } from '../../utils/svg-import';
-import { getStickAsset } from '../stick-figures/registry';
-import { STICK_STROKE_PX, STICK_DEFAULT_WIDTH, roleFromFill } from '../stick-figures';
-import { stickColorMode } from '../stick-figures/prefs';
+import { STICK_DEFAULT_WIDTH, prepareStickFigureElements } from '../stick-figures';
 import { getMeasurementRenderer, measureContainerText } from '../../utils/text-utils';
-import { poseForLine, poseForEmotion } from './pose-rules';
+import { poseForLine, poseForEmotion, faceForEmotion } from './pose-rules';
 import {
     parseScript, castSpeakers, inferPairs, orderCharacters, layoutPanel, splitIntoPanels,
     type Utterance, type PanelLayout,
@@ -66,9 +63,16 @@ const DEFAULT_FIGURE_HEIGHT = 210;
 
 /**
  * Build (but do not commit) the elements for one stick figure at a box, mirrored when
- * `flip` is set. This mirrors `insertStickFigure` (library/stick-figures/index.ts:81)
- * minus its per-figure `pushToHistory` — a generator must be ONE undo step, so the
- * caller commits every element of the panel in a single batch.
+ * `flip` is set.
+ *
+ * The figure itself comes from the shared `prepareStickFigureElements`
+ * (library/stick-figures/index.ts) rather than a local copy of the insert loop — the
+ * copy that used to live here silently missed faces, hair linking and monochrome hair
+ * when those shipped. Everything below is the part that is genuinely comic-specific:
+ * mirroring, the document render style, and the panel group.
+ *
+ * `face` is the expression the emotion cue asked for; omit it to keep whatever the pose
+ * was authored with.
  */
 function buildFigureElements(
     assetId: string,
@@ -76,16 +80,14 @@ function buildFigureElements(
     flip: boolean,
     monochrome: boolean,
     groupId: string,
+    face?: string,
 ): DrawingElement[] {
-    const asset = getStickAsset(assetId);
-    if (!asset) return [];
-
-    const els = svgToElements(asset.svg, { x: box.x, y: box.y, targetWidth: box.width });
+    const els = prepareStickFigureElements(assetId, {
+        x: box.x, y: box.y, targetWidth: box.width,
+        monochrome,
+        face: face as any,
+    });
     if (els.length === 0) return [];
-
-    const maxSW = Math.max(...els.map(e => e.strokeWidth || 0));
-    const f = maxSW > 0 ? STICK_STROKE_PX / maxSW : 1;
-    const mono = monochrome ?? (stickColorMode() === 'mono');
 
     // Mirror about the figure's own centre so it turns in place. flipX is honoured
     // generically by the render pipeline (shapes/base/render-pipeline.ts:188).
@@ -96,9 +98,6 @@ function buildFigureElements(
     const renderStyle = store.defaultElementStyles.renderStyle ?? 'sketch';
 
     for (const e of els) {
-        if (e.strokeWidth) e.strokeWidth = Math.max(0.4, Math.round(e.strokeWidth * f * 100) / 100);
-        if (!e.sfRole) e.sfRole = roleFromFill(e.backgroundColor);
-        if (mono && e.sfRole === 'accent') e.backgroundColor = 'transparent';
         e.renderStyle = renderStyle;
         if (flip) {
             // Mirror the part itself, then reflect its position across the figure's
@@ -146,6 +145,8 @@ export function planComicPanel(
     layout: PanelLayout;
     utterances: Utterance[];
     poses: Record<string, string>;
+    /** Expression per speaker, when an emotion cue asked for one. */
+    faces: Record<string, string>;
     figures: Record<string, DrawingElement[]>;
     figureWidths: Record<string, number>;
 } | null {
@@ -156,6 +157,7 @@ export function planComicPanel(
     // One pose per speaker per panel — matching Comic Chat's one-balloon-per-character
     // rule. We pose from a speaker's FIRST line, which sets their attitude for the panel.
     const poses: Record<string, string> = {};
+    const faces: Record<string, string> = {};
     speakers.forEach(s => {
         const first = utterances.find(u => u.speaker === s)!;
         const variant = opts.variants?.[s];
@@ -169,6 +171,11 @@ export function planComicPanel(
             ?? poseForEmotion(opts.emotions?.[s])
             ?? poseForLine(first.text);
         poses[s] = base + suffix;
+        // The SAME precedence decides the expression. Only an explicit cue sets it; a
+        // pose chosen by the text rules keeps the face it was authored with, so
+        // "lol" still arrives grinning without the emotion table having to guess.
+        const face = faceForEmotion(first.emotion) ?? faceForEmotion(opts.emotions?.[s]);
+        if (face) faces[s] = face;
     });
 
     const order = orderCharacters(speakers, inferPairs(utterances, speakers));
@@ -184,12 +191,12 @@ export function planComicPanel(
     const figureWidths: Record<string, number> = {};
     for (const s of speakers) {
         const probe = buildFigureElements(
-            poses[s], { x: 0, y: 0, width: STICK_DEFAULT_WIDTH }, false, opts.monochrome ?? false, 'probe',
+            poses[s], { x: 0, y: 0, width: STICK_DEFAULT_WIDTH }, false, opts.monochrome ?? false, 'probe', faces[s],
         );
         const probeH = heightOf(probe) || STICK_DEFAULT_WIDTH * 2;
         const width = Math.max(24, Math.round(STICK_DEFAULT_WIDTH * (targetHeight / probeH)));
         const built = buildFigureElements(
-            poses[s], { x: 0, y: 0, width }, false, opts.monochrome ?? false, 'probe',
+            poses[s], { x: 0, y: 0, width }, false, opts.monochrome ?? false, 'probe', faces[s],
         );
         figures[s] = built;
         figureWidths[s] = width;
@@ -213,7 +220,7 @@ export function planComicPanel(
         originY: opts.y ?? 0,
     });
 
-    return { layout, utterances: shown, poses, figures, figureWidths };
+    return { layout, utterances: shown, poses, faces, figures, figureWidths };
 }
 
 /**
@@ -311,6 +318,7 @@ function buildPanelElements(
         const slotX = c.box.x + (c.box.width - w) / 2;
         const parts = buildFigureElements(
             c.pose, { x: slotX, y: c.box.y, width: w }, c.flip, opts.monochrome ?? false, figureGroupId,
+            planned.faces[c.speaker],
         );
         for (const p of parts) {
             p.id = newId(p.type);
