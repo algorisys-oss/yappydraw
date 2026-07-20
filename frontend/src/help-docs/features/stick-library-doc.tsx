@@ -68,20 +68,65 @@ const StickLibraryDoc: Component = () => {
                 </p>
             </section>
 
+            {/* ─── FACES & HAIR ───────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Faces &amp; hair</h2>
+                <p>
+                    Every figure wears an <strong>expression</strong> and a <strong>hair style</strong>. The
+                    <strong> Face &amp; hair</strong> section sits at the bottom of the Stick Figures panel — and also
+                    appears in the <strong>Properties</strong> panel whenever a figure is selected, so you never have to
+                    go looking for it.
+                </p>
+                <ul>
+                    <li><strong>Expression</strong> — 12 styles: Neutral, Happy, Sad, Angry, Surprised, Tired, Excited,
+                        Proud, Confused, Scared, Wink, and None (a blank head).</li>
+                    <li><strong>Hair</strong> — 10 styles: Short, Curly, Spiky, Fringe, Long, Bun, Ponytail, Pigtails,
+                        Side swept, and None.</li>
+                    <li><strong>Hair colour</strong> — applies to the solid styles (Short, Curly, Bun, Pigtails, Side
+                        swept). The outline styles follow the figure's stroke colour instead.</li>
+                    <li><strong>Solid head</strong> — fills the head white so eyes and mouth stay readable over busy
+                        artwork or a coloured background. Off by default, which keeps heads see-through.</li>
+                </ul>
+                <p>
+                    With <strong>nothing selected</strong> the picker sets what the <em>next</em> figure you add will
+                    wear (and the thumbnails update to match). With a figure <strong>selected</strong> it restyles that
+                    figure immediately — including animated figures, which change expression mid-animation.
+                </p>
+                <p>
+                    The face is generated from the head circle alone, so a restyle still works after you have moved,
+                    scaled, rotated or even <strong>ungrouped</strong> a figure. Changing the expression leaves the hair
+                    alone, and vice versa.
+                </p>
+                <p>
+                    Each pose ships with a sensible default — <em>Sad</em> wears a sad face, <em>Jumping for joy</em> an
+                    excited one, <em>Thinking</em> a confused one — and the character variants pick their own hair
+                    (Man → Short, Woman → Fringe, Boy → Spiky, Girl → Pigtails). Pick a style explicitly and it wins
+                    everywhere.
+                </p>
+                <p class="tip-box">
+                    <strong>Known limitations.</strong> Faces are drawn front-on, so a strongly side-on pose still shows
+                    two eyes (animated figures nudge the face toward the direction they face). Expressions are picked
+                    from the list — there is no free-hand face editor — but because every mark is a real vector path you
+                    can ungroup a figure and nudge an eyebrow by hand.
+                </p>
+            </section>
+
             {/* ─── RECOLOUR / EDIT ────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Recolour by part (one click)</h2>
                 <p>
                     Every part of a figure is tagged with a semantic <strong>role</strong> — <em>body</em> and
-                    <em> head</em> (the outline), <em>accent</em> (colourful props like a laptop screen, briefcase or
-                    delivery box) and <em>prop</em> (neutral structure like a podium or whiteboard). Select a figure
+                    <em> head</em> (the outline), <em>face</em> (eyes, brows, mouth), <em>hair</em>,
+                    <em> accent</em> (colourful props like a laptop screen, briefcase or delivery box) and
+                    <em> prop</em> (neutral structure like a podium or whiteboard). Select a figure
                     and the panel shows a <strong>Recolour selected figure</strong> section:
                 </p>
                 <ul>
                     <li><strong>Outline</strong> — recolours the whole figure's stroke in one click (pick a swatch or
-                        the colour well).</li>
+                        the colour well). Eyes and mouth follow the outline, so the face never goes out of step.</li>
                     <li><strong>Accent</strong> — recolours just the colourful props, leaving the outline and neutral
                         parts untouched.</li>
+                    <li><strong>Hair</strong> — recolours the solid hair styles only.</li>
                 </ul>
                 <p>
                     For finer control, because figures are real vectors you can also <strong>ungroup</strong>
@@ -101,7 +146,8 @@ const StickLibraryDoc: Component = () => {
                 <h2>Browse faster</h2>
                 <ul>
                     <li><strong>Colour / Mono</strong> toggle (next to search) — drop figures with their flat colour
-                        accents, or in pure monochrome (outline only). Your choice is remembered.</li>
+                        accents, or in pure monochrome (outline only — solid hair loses its fill too). Your choice is
+                        remembered.</li>
                     <li><strong>★ Favourites</strong> — tap the star on any figure to save it; the Favourites chip
                         gathers them.</li>
                     <li><strong>Recent</strong> — figures you add are listed under the Recent chip so you can re-drop
@@ -130,12 +176,28 @@ Y.listStickFigureCategories();          // [{id:'daily', name:'Daily & Emotions'
 Y.listStickFigures('office');           // figures in a category
 const ids = Y.insertStickFigure('daily-waving');   // add centered; returns each part's id
 Y.insertStickFigure('service-delivery', { x: 400, y: 200, targetWidth: 160 });
-Y.recolorStickFigure({ outline: '#7c3aed', accent: '#ec4899' }, ids); // recolour by role
+Y.recolorStickFigure({ outline: '#7c3aed', accent: '#ec4899', hair: '#2b2118' }, ids);
+
+// Faces & hair
+Y.listStickFaces();                     // [{id:'happy', name:'Happy'}, …] — 12 expressions
+Y.listStickHairStyles();                // [{id:'bun', name:'Bun'}, …] — 10 styles
+Y.setStickFace({ face: 'happy', hair: 'bun', hairColor: '#2b2118' }, ids);
+Y.setStickFace({ face: 'angry' });      // omitted fields are left alone; defaults to the selection
+Y.getStickFace(ids);                    // {face, hair, hairColor, headFill}
+// …or set it at drop time:
+Y.insertStickFigure('daily-waving', { face: 'wink', hair: 'ponytail', headFill: true });
+
 Y.toggleStickFigurePanel(true);         // open the panel`}</code></pre>
                 <p class="tip-box">
                     API: <code>insertStickFigure(id, opts?)</code>, <code>recolorStickFigure(colors, ids?)</code>,
+                    <code> setStickFace(opts, ids?)</code>, <code>getStickFace(ids?)</code>,
+                    <code> listStickFaces()</code>, <code>listStickHairStyles()</code>,
                     <code> listStickFigures(category?)</code>, <code>listStickFigureCategories()</code>,
                     <code> toggleStickFigurePanel(visible?)</code>.
+                </p>
+                <p class="tip-box">
+                    <code>setStickFace</code> works on dropped figures <em>and</em> animated ones, so you can drive a
+                    whole cast's expressions from a script.
                 </p>
             </section>
 

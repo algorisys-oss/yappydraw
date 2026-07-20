@@ -7,6 +7,7 @@
  * coloured `props`. Set `variants:false` for seated / behind-object poses.
  */
 import { STROKE, type Pose } from './builder';
+import type { FaceStyle } from './face';
 
 // Shared prop snippets kept inline per pose below; STROKE reused for dark accents.
 
@@ -251,3 +252,36 @@ export const POSES: Pose[] = [
       head: [70, 34, 22], hip: [70, 150],
       bones: 'M70 56L70 150M70 150L54 226M70 150L86 226M52 98L92 112M90 98L50 112' },
 ];
+
+/**
+ * Poses that wear something other than the default `neutral` expression. Applied
+ * as a post-pass so the pose array above stays a flat, readable literal. The user
+ * can still override any of these per-figure from the panel / Properties.
+ */
+const POSE_FACES: Record<string, FaceStyle> = {
+    'daily-jumping': 'excited',
+    'daily-sad': 'sad',
+    'daily-thinking': 'confused',
+    'daily-shrug': 'confused',
+    'daily-stretching': 'tired',
+    'office-thumbsup': 'happy',
+    'office-idea': 'excited',
+    'office-stressed': 'scared',
+    'office-handshake': 'happy',
+    'office-megaphone': 'excited',
+    'meeting-applaud': 'happy',
+    'travel-map': 'confused',
+    'social-celebrating': 'excited',
+    'social-dancing': 'happy',
+    'social-love': 'happy',
+    'social-highfive': 'happy',
+    'social-hug': 'happy',
+    'social-toast': 'happy',
+    'social-meditate': 'proud',
+    'service-support': 'happy',
+    'service-waiter': 'happy',
+};
+for (const p of POSES) {
+    const f = POSE_FACES[p.id];
+    if (f) p.face = f;
+}

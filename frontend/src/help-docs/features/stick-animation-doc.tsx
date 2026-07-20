@@ -154,11 +154,35 @@ const b = Y.insertAnimatedFigure('talk', { x: 520, y: 200, facing: -1 });
 Y.setAnimatedFigureClip('wave', [a]);           // switch clip
 Y.flipAnimatedFigure([b]);                       // face the other way
 Y.setAnimatedFigurePlaying(false, [a]);          // pause just this one
-Y.bakeAnimatedFigure(a);                          // freeze current frame → editable paths`}</code></pre>
+Y.bakeAnimatedFigure(a);                          // freeze current frame → editable paths
+
+// Faces & hair (same call as for dropped library figures)
+Y.setStickFace({ face: 'excited', hair: 'spiky' }, [a]);
+Y.insertAnimatedFigure('walk', { face: 'happy', hair: 'long', headFill: true });`}</code></pre>
                 <p class="tip-box">
                     API: <code>listStickFigureClips()</code>, <code>insertAnimatedFigure(clip, opts?)</code>,
                     <code> setAnimatedFigureClip(clip, ids?)</code>, <code>setAnimatedFigurePlaying(playing?, ids?)</code>,
-                    <code> flipAnimatedFigure(ids?)</code>, <code>bakeAnimatedFigure(id?)</code>.
+                    <code> flipAnimatedFigure(ids?)</code>, <code>bakeAnimatedFigure(id?)</code>,
+                    <code> setStickFace(opts, ids?)</code>, <code>getStickFace(ids?)</code>.
+                </p>
+            </section>
+
+            {/* ─── FACES ────────────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Give it a face</h2>
+                <p>
+                    An animated figure wears an expression and hair just like a library figure. Select it and use the
+                    <strong> Face &amp; hair</strong> section (bottom of the Stick Figures panel, and in
+                    <strong> Properties</strong>) to pick from 12 expressions and 10 hair styles.
+                </p>
+                <p>
+                    Nothing has to be regenerated — the face is drawn from the head's live position every frame, so it
+                    keeps up with the motion, follows the figure when you <strong>Flip</strong> it, and comes along when
+                    you <strong>Bake</strong> the frame to editable paths.
+                </p>
+                <p class="tip-box">
+                    Chain it with a sequence for simple acting: Walk with a <em>neutral</em> face, then switch to
+                    <em> surprised</em> from a script at the moment something happens.
                 </p>
             </section>
 

@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.116', date: '2026-07-20', items: [
+        'Stick figures have faces — pick from 12 expressions (happy, sad, angry, surprised, tired, excited, confused, wink…) and 10 hair styles, with a hair colour of your choice.',
+        'Change a figure\'s mood any time: select it and use Face & hair in the Properties panel. It still works after you\'ve moved, scaled or ungrouped the figure.',
+        'Animated figures get faces too, and keep them when you bake a frame to editable paths.',
+        'Turn on "Solid head" to fill the head white so eyes and mouth stay readable over busy artwork.',
+    ] },
     { version: '0.8.115', date: '2026-07-19', items: [
         'Set a mood per line in comics — write "Ann (angry): ..." and that line only is angry, so a character can be cheerful in one panel and furious in the next.',
         'Cues combine: "Ann (angry, whispers): ..." gives an angry whisper.',

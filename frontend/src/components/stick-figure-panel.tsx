@@ -5,9 +5,9 @@ import { Search, Component as ComponentIcon, Star, Clock, Play, Pause, Film, Lay
 import { setRequestRecording } from '../utils/recording-manager';
 import {
     STICK_CATEGORIES, filterStickAssets, searchStickAssets, getStickAsset,
-    insertStickFigure, recolorStickFigure, selectionHasStickFigure,
+    insertStickFigure, recolorStickFigure, selectionHasStickFigure, restyleStickFace,
     stickFavorites, isStickFavorite, toggleStickFavorite, stickRecents,
-    stickColorMode, setStickColorMode, toMonochromeSvg,
+    stickColorMode, setStickColorMode, toMonochromeSvg, applyFaceHair, stickFacePref,
     CLIP_LIST, poseAt, rigPoseToSvg, defaultRig,
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying,
     flipAnimatedFigure, bakeAnimatedFigure, selectionHasAnimatedFigure,
@@ -15,6 +15,7 @@ import {
     setFigureSequence,
     STICK_FIGURE_MIME, type StickAsset, type StickCategory, type StickVariant,
 } from '../library/stick-figures';
+import StickFaceControls from './stick-face-controls';
 import './stick-figure-panel.css';
 
 type ActiveCat = StickCategory | 'all' | 'favorites' | 'recents' | 'animated';
@@ -26,6 +27,7 @@ const clipThumb = (clipId: string): string => rigPoseToSvg(defaultRig(), poseAt(
 /** Quick recolour presets (outline colour). */
 const OUTLINE_SWATCHES = ['#1f2937', '#0f172a', '#334155', '#7c3aed', '#dc2626', '#0891b2', '#15803d', '#b45309'];
 const ACCENT_SWATCHES = ['#3b82f6', '#ef4444', '#f59e0b', '#22c55e', '#8b5cf6', '#ec4899', '#14b8a6', '#eab308'];
+const HAIR_SWATCHES = ['#8b5e3c', '#2b2118', '#e0b040', '#c2410c', '#9ca3af', '#7c3aed', '#0891b2', '#be123c'];
 
 const VARIANT_CHIPS: { id: ActiveVariant; label: string }[] = [
     { id: 'male', label: 'Man' }, { id: 'female', label: 'Woman' },
@@ -57,6 +59,13 @@ const StickFigurePanel: Component = () => {
     /** Click → drop centered on the active page as one editable group. */
     const dropCentered = (asset: StickAsset) => insertStickFigure(asset.id);
 
+    /** Thumbnail markup: exactly what the figure will look like when dropped. */
+    const previewSvg = (asset: StickAsset): string => {
+        const p = stickFacePref();
+        const svg = applyFaceHair(asset.svg, { face: p.face, hair: p.hair, hairColor: p.hairColor, headFill: p.headFill });
+        return stickColorMode() === 'mono' ? toMonochromeSvg(svg) : svg;
+    };
+
     /** Keyboard roving focus across the 3-column grid. */
     const onGridKey = (e: KeyboardEvent) => {
         const cells = Array.from((e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('.sp-cell'));
@@ -73,6 +82,8 @@ const StickFigurePanel: Component = () => {
     const canRecolor = createMemo(() => selectionHasStickFigure(store.selection));
     const setOutline = (c: string) => recolorStickFigure(store.selection, { outline: c });
     const setAccent = (c: string) => recolorStickFigure(store.selection, { accent: c });
+    /** Hair colour goes through the restyle path so the head's stored state stays true. */
+    const setHair = (c: string) => { restyleStickFace(store.selection, { hairColor: c }); };
 
     /** Register the selected figure as a reusable Symbol. */
     const addToSymbols = () => {
@@ -194,8 +205,8 @@ const StickFigurePanel: Component = () => {
                                             onClick={(e) => { e.stopPropagation(); toggleStickFavorite(asset.id); }}>
                                             <Star size={12} />
                                         </button>
-                                        {/* Our own trusted inline SVG string (mono preview follows the toggle) */}
-                                        <div class="sp-thumb" innerHTML={stickColorMode() === 'mono' ? toMonochromeSvg(asset.svg) : asset.svg} />
+                                        {/* Our own trusted inline SVG string (mono + face/hair prefs applied) */}
+                                        <div class="sp-thumb" innerHTML={previewSvg(asset)} />
                                         <span class="sp-label">{asset.name}</span>
                                     </div>
                                 )}
@@ -204,6 +215,9 @@ const StickFigurePanel: Component = () => {
                     </Show>
                 </div>
                 </Show>
+
+                {/* Face & hair — sets what new figures wear, and restyles the selection */}
+                <StickFaceControls />
 
                 {/* ── Animated figure controls (selected stickRig) ── */}
                 <Show when={canAnimate()}>
@@ -317,6 +331,17 @@ const StickFigurePanel: Component = () => {
                             <div class="sp-swatches">
                                 <For each={ACCENT_SWATCHES}>
                                     {(c) => <button class="sp-sw" style={{ background: c }} title={`Accent ${c}`} onClick={() => setAccent(c)} />}
+                                </For>
+                            </div>
+                        </div>
+                        <div class="sp-recolor-row">
+                            <label class="sp-recolor-label">Hair
+                                <input type="color" class="sp-color" value="#8b5e3c"
+                                    onInput={(e) => setHair(e.currentTarget.value)} />
+                            </label>
+                            <div class="sp-swatches">
+                                <For each={HAIR_SWATCHES}>
+                                    {(c) => <button class="sp-sw" style={{ background: c }} title={`Hair ${c}`} onClick={() => setHair(c)} />}
                                 </For>
                             </div>
                         </div>

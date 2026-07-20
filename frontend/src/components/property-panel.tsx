@@ -39,6 +39,8 @@ import { ColorPickerPro } from "./color-picker-pro";
 import { CANVAS_THEMES, matchCanvasTheme } from "../config/canvas-themes";
 import { playSequence } from "../utils/animation/orchestrator";
 import { AnimationPanel } from "./animation-panel";
+import StickFaceControls from "./stick-face-controls";
+import { selectionHasStickFigure, selectionHasAnimatedFigure } from "../library/stick-figures";
 import { resizeTableData, defaultColWidths, defaultRowHeights, defaultTableData } from "../utils/table-utils";
 import {
     pixelRevealLTR, pixelDissolve, pixelWaveCenter, pixelScanLines,
@@ -208,6 +210,21 @@ const MindmapActions: Component<{ elementId: string }> = (props) => {
                     <button class="icon-btn" onClick={() => reorderMindmap(props.elementId, 'radial')} title="Radial"><Target size={18} /></button>
                 </div>
             </div>
+        </Show>
+    );
+};
+
+/**
+ * Face & hair for a selected stick figure — dropped library figures and animated
+ * rigs alike. The picker itself is shared with the Stick Figures panel; this just
+ * gates it on the selection actually containing a figure.
+ */
+const StickFaceActions: Component = () => {
+    const isFigure = createMemo(() =>
+        selectionHasStickFigure(store.selection) || selectionHasAnimatedFigure(store.selection));
+    return (
+        <Show when={isFigure()}>
+            <StickFaceControls />
         </Show>
     );
 };
@@ -2160,6 +2177,7 @@ const PropertyPanel: Component = () => {
                                 </Show>
                                 <Show when={isElement()}>
                                     <MindmapActions elementId={targetElementId()} />
+                                    <StickFaceActions />
                                     <ImagePixelEffectActions elementId={targetElementId()} />
                                     <VideoActions elementId={targetElementId()} />
                                     <TransformControls elementId={targetElementId()} />

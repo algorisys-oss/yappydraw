@@ -13,11 +13,18 @@ import { effectiveTime } from '../../utils/animation/animation-engine';
 import { getClip, poseAt, WALK_STRIDE } from '../../library/stick-figures/anim/clips';
 import { elementPathSample, sampleAt } from '../../library/stick-figures/anim/path-follow';
 import { RIG_W, RIG_H, headAttach, type JointId, type RigPose } from '../../library/stick-figures/anim/rig';
+import {
+    faceGeometry, hairGeometry, asFaceStyle, asHairStyle,
+    type FacePrim,
+} from '../../library/stick-figures/face';
 
 interface BoxPose {
     /** Bone polylines in absolute canvas coords. */
     bones: Array<Array<[number, number]>>;
     head: { cx: number; cy: number; rx: number; ry: number };
+    /** Hair marks (drawn under the face), then face marks — absolute canvas coords. */
+    hair: FacePrim[];
+    face: FacePrim[];
 }
 
 /** Linear blend between two canonical poses (for smooth sequence transitions). */
@@ -107,16 +114,102 @@ export class StickRigRenderer extends ShapeRenderer {
         // Neck (CHAINS[1] = shoulder→head) stops at the head-circle edge, not its
         // centre — otherwise the segment inside the head reads as a radius line.
         bones[1] = [X(pose.joints.get('shoulder')!), X(headAttach(pose))];
+        const head = { cx: originX + pose.head.x * sx, cy: originY + pose.head.y * sy, rx: pose.headR * sx, ry: pose.headR * sy };
+        // Face/hair are generated for a circular head; a non-uniformly scaled box
+        // uses the mean radius so the marks stay centred and proportional.
+        const hr = (head.rx + head.ry) / 2;
+        const faceOpts = {
+            face: asFaceStyle(data.face, 'neutral'),
+            hair: asHairStyle(data.hair, 'none'),
+            hairColor: data.hairColor,
+            headFill: !!data.headFill,
+            facing,
+        };
         return {
             bones,
-            head: { cx: originX + pose.head.x * sx, cy: originY + pose.head.y * sy, rx: pose.headR * sx, ry: pose.headR * sy },
+            head,
+            hair: hairGeometry(head.cx, head.cy, hr, faceOpts),
+            face: faceGeometry(head.cx, head.cy, hr, faceOpts),
         };
+    }
+
+    /** Draw face/hair marks on the clean canvas path. */
+    private drawPrimsArchitectural(renderer: IRenderer, prims: FacePrim[], stroke: string): void {
+        for (const p of prims) {
+            if (p.k !== 'dot') renderer.lineWidth = p.w;
+            switch (p.k) {
+                case 'dot':
+                    renderer.beginPath();
+                    renderer.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    renderer.fillStyle = stroke;
+                    renderer.fill();
+                    break;
+                case 'ring':
+                    renderer.beginPath();
+                    renderer.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    if (p.fill) { renderer.fillStyle = p.fill; renderer.fill(); }
+                    renderer.stroke();
+                    break;
+                case 'oval':
+                    renderer.beginPath();
+                    renderer.ellipse(p.x, p.y, p.rx, p.ry, 0, 0, Math.PI * 2);
+                    if (p.fill) { renderer.fillStyle = p.fill; renderer.fill(); }
+                    renderer.stroke();
+                    break;
+                case 'arc':
+                    renderer.beginPath();
+                    renderer.arc(p.x, p.y, p.r, p.a0, p.a1);
+                    renderer.stroke();
+                    break;
+                case 'poly':
+                    renderer.beginPath();
+                    renderer.moveTo(p.pts[0][0], p.pts[0][1]);
+                    for (let i = 1; i < p.pts.length; i++) renderer.lineTo(p.pts[i][0], p.pts[i][1]);
+                    renderer.stroke();
+                    break;
+                // An SVG-path geometry is a self-contained Path2D: it must be filled
+                // AND stroked through fillPath/strokePath, not beginPath()+fill().
+                case 'path':
+                    if (p.fill) { renderer.fillStyle = p.fill; renderer.fillPath(p.d); }
+                    renderer.strokePath(p.d);
+                    break;
+            }
+        }
+    }
+
+    /** Draw face/hair marks in sketch (rough.js) style. */
+    private drawPrimsSketch(rc: any, prims: FacePrim[], base: any, stroke: string): void {
+        for (const p of prims) {
+            const o = { ...base, strokeWidth: p.k === 'dot' ? 0.5 : Math.max(0.5, p.w), fill: undefined, fillStyle: 'solid' };
+            switch (p.k) {
+                case 'dot':
+                    rc.circle(p.x, p.y, p.r * 2, { ...o, fill: stroke, fillStyle: 'solid', strokeWidth: 0.5, stroke });
+                    break;
+                case 'ring':
+                    rc.circle(p.x, p.y, p.r * 2, p.fill ? { ...o, fill: p.fill } : o);
+                    break;
+                case 'oval':
+                    rc.ellipse(p.x, p.y, p.rx * 2, p.ry * 2, p.fill ? { ...o, fill: p.fill } : o);
+                    break;
+                case 'arc':
+                    rc.arc(p.x, p.y, p.r * 2, p.r * 2, p.a0, p.a1, false, o);
+                    break;
+                case 'poly':
+                    rc.linearPath(p.pts, o);
+                    break;
+                case 'path':
+                    rc.path(p.d, p.fill ? { ...o, fill: p.fill } : o);
+                    break;
+            }
+        }
     }
 
     protected renderArchitectural(context: RenderContext, _cx: number, _cy: number): void {
         const { renderer, element: el, isDarkMode } = context;
-        const { bones, head } = this.computePose(el);
+        const { bones, head, hair, face } = this.computePose(el);
         RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+        const stroke = typeof renderer.strokeStyle === 'string' ? renderer.strokeStyle : (el.strokeColor || '#1f2937');
+        const bodyWidth = renderer.lineWidth;
         for (const poly of bones) {
             renderer.beginPath();
             renderer.moveTo(poly[0][0], poly[0][1]);
@@ -125,20 +218,29 @@ export class StickRigRenderer extends ShapeRenderer {
         }
         renderer.beginPath();
         renderer.ellipse(head.cx, head.cy, head.rx, head.ry, 0, 0, Math.PI * 2);
+        if (el.stickRig?.headFill) { renderer.fillStyle = '#ffffff'; renderer.fill(); }
         renderer.stroke();
+        // Hair sits under the face; both use their own (thinner) pen weights.
+        this.drawPrimsArchitectural(renderer, hair, stroke);
+        this.drawPrimsArchitectural(renderer, face, stroke);
+        renderer.lineWidth = bodyWidth;
     }
 
     protected renderSketch(context: RenderContext, _cx: number, _cy: number): void {
         const { rc, element: el, isDarkMode } = context;
         const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
         const strokeOpts = { ...options, fill: 'none' };
-        const { bones, head } = this.computePose(el);
+        const { bones, head, hair, face } = this.computePose(el);
         for (const poly of bones) {
             for (let i = 1; i < poly.length; i++) {
                 rc.line(poly[i - 1][0], poly[i - 1][1], poly[i][0], poly[i][1], strokeOpts);
             }
         }
-        rc.circle(head.cx, head.cy, head.rx * 2, options);
+        rc.circle(head.cx, head.cy, head.rx * 2,
+            el.stickRig?.headFill ? { ...options, fill: '#ffffff', fillStyle: 'solid' } : options);
+        const stroke = (options as any).stroke || el.strokeColor || '#1f2937';
+        this.drawPrimsSketch(rc, hair, strokeOpts, stroke);
+        this.drawPrimsSketch(rc, face, strokeOpts, stroke);
     }
 
     protected definePath(renderer: IRenderer, el: any): void {

@@ -10,6 +10,8 @@
  * y pointing DOWN. Angles are radians measured from +x; `dir(π/2)` points down.
  */
 
+import { faceHairSvg, faceStateAttrs, type FaceOpts, type FaceStyle, type HairStyle } from '../face';
+
 export type JointId =
     | 'pelvis' | 'shoulder' | 'head'
     | 'upperArmL' | 'foreArmL' | 'upperArmR' | 'foreArmR'
@@ -80,6 +82,14 @@ export interface StickRigData {
     playing?: boolean;
     /** Frozen phase [0,1) shown when not playing (default 0). */
     previewPhase?: number;
+    /** Expression drawn on the head (see ../face.ts). Default `neutral`. */
+    face?: FaceStyle;
+    /** Hair style drawn on the head. Default `none`. */
+    hair?: HairStyle;
+    /** Fill for solid hair styles. */
+    hairColor?: string;
+    /** Fill the head white so the face reads over busy artwork. */
+    headFill?: boolean;
 }
 
 /** Canonical rig frame — matches the 140×260 authoring box. */
@@ -190,8 +200,8 @@ export function headAttach(pose: RigPose): Vec {
     return { x: hd.x + (dx / len) * pose.headR, y: hd.y + (dy / len) * pose.headR };
 }
 
-/** Render a pose to an SVG string (bones + head), role-tagged for recolour/bake. */
-export function rigPoseToSvg(rig: StickRig, pose: RigPose, w = 140, h = 260): string {
+/** Render a pose to an SVG string (bones + head + face/hair), role-tagged for recolour/bake. */
+export function rigPoseToSvg(rig: StickRig, pose: RigPose, w = 140, h = 260, face: FaceOpts = {}): string {
     const j = pose.joints;
     const fmt = (p: Vec) => `${Math.round(p.x * 10) / 10} ${Math.round(p.y * 10) / 10}`;
     const P = (id: JointId) => fmt(j.get(id)!);
@@ -204,6 +214,7 @@ export function rigPoseToSvg(rig: StickRig, pose: RigPose, w = 140, h = 260): st
         bone(`M${P('shoulder')}L${P('upperArmR')}L${P('foreArmR')}`) +    // right arm
         bone(`M${P('pelvis')}L${P('thighL')}L${P('shinL')}`) +            // left leg
         bone(`M${P('pelvis')}L${P('thighR')}L${P('shinR')}`) +            // right leg
-        `<circle cx="${Math.round(pose.head.x * 10) / 10}" cy="${Math.round(pose.head.y * 10) / 10}" r="${Math.round(pose.headR)}" data-sf-role="head"/>`;
+        `<circle cx="${Math.round(pose.head.x * 10) / 10}" cy="${Math.round(pose.head.y * 10) / 10}" r="${Math.round(pose.headR)}"${face.headFill ? ' fill="#ffffff"' : ''} data-sf-role="head"${faceStateAttrs(face)}/>` +
+        faceHairSvg(pose.head.x, pose.head.y, pose.headR, { ...face, facing: rig.facing });
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" fill="none" stroke="${rig.style.stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
 }

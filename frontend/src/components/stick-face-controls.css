@@ -1,0 +1,62 @@
+/* Face & hair picker (stick figures) — used in the Stick Figures panel and in
+   the Properties panel, so it styles itself rather than inheriting either. */
+
+.sf-face {
+    padding: 8px 12px 10px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sf-face-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    font-size: 11px; font-weight: 600; color: var(--text-primary);
+}
+.sf-face-scope { font-size: 9.5px; font-weight: 400; color: var(--text-secondary); }
+
+.sf-face-label { font-size: 10px; color: var(--text-secondary); }
+
+.sf-face-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 3px;
+}
+
+.sf-face-btn {
+    display: flex; align-items: center; justify-content: center;
+    padding: 1px; aspect-ratio: 1;
+    border: 1px solid var(--border-color); border-radius: 5px;
+    background: transparent; color: var(--text-primary);
+    cursor: pointer;
+}
+.sf-face-btn:hover { border-color: var(--accent-color, #6366f1); }
+.sf-face-btn.active {
+    border-color: var(--accent-color, #6366f1);
+    box-shadow: 0 0 0 1px var(--accent-color, #6366f1) inset;
+}
+.sf-face-thumb { display: block; width: 100%; }
+.sf-face-thumb svg { display: block; width: 100%; height: auto; }
+
+.sf-face-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sf-face-color {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10.5px; color: var(--text-secondary);
+}
+.sf-face-color input[type='color'] {
+    width: 22px; height: 18px; padding: 0; border: 1px solid var(--border-color);
+    border-radius: 4px; background: transparent; cursor: pointer;
+}
+.sf-face-swatches { display: flex; gap: 3px; }
+.sf-face-sw {
+    width: 14px; height: 14px; border-radius: 3px;
+    border: 1px solid var(--border-color); cursor: pointer; padding: 0;
+}
+.sf-face-sw:hover { transform: scale(1.12); }
+
+.sf-face-check {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10.5px; color: var(--text-secondary); cursor: pointer;
+}
+
+.sf-face-hint { font-size: 9.5px; line-height: 1.4; color: var(--text-secondary); }

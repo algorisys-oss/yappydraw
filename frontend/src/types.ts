@@ -337,9 +337,16 @@ export interface DrawingElement {
     locked: boolean;
     link: string | null;
     tag?: string | null;
-    /** Semantic part role for stick-figure-library imports: 'body' | 'head' | 'accent' | 'prop'.
-     *  Enables one-click per-part recolour (outline vs accent) of a dropped figure. */
+    /** Semantic part role for stick-figure-library imports:
+     *  'body' | 'head' | 'accent' | 'prop' | 'face' | 'hair'.
+     *  Enables one-click per-part recolour (outline vs accent vs hair) of a dropped figure. */
     sfRole?: string;
+    /** On a `head` part: the face/hair it currently wears, so it can be restyled
+     *  later from the Properties panel (the face is regenerated from the head's bbox). */
+    sfFace?: { face: string; hair: string; hairColor: string; headFill: boolean };
+    /** On a `face` / `hair` part: the id of the head part it belongs to. Lets a
+     *  restyle replace exactly the right marks in a multi-figure scene. */
+    sfHeadId?: string;
     /** Animated stick-figure rig payload (element type 'stickRig'). The figure is drawn
      *  procedurally from a motion clip + the global clock; stroke/width come from this element. */
     stickRig?: {
@@ -352,6 +359,14 @@ export interface DrawingElement {
         path?: { pathId: string; dur: number; loop?: boolean; autoFace?: boolean };
         /** Timed action sequence (loops): each step plays `clip` for `dur` seconds. Overrides `clip`. */
         sequence?: { clip: string; dur: number }[];
+        /** Expression drawn on the head each frame (see library/stick-figures/face.ts). */
+        face?: string;
+        /** Hair style drawn on the head each frame. */
+        hair?: string;
+        /** Fill for solid hair styles. */
+        hairColor?: string;
+        /** Fill the head white so the face reads over busy artwork. */
+        headFill?: boolean;
     };
 
     // Specific to Linear (Line, Arrow, Pencil)

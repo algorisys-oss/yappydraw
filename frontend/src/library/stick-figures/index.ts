@@ -12,7 +12,11 @@ import { svgToElements } from '../../utils/svg-import';
 import { store, setStore, updateElement, pushToHistory, bumpDirtyRevision } from '../../store/app-store';
 import { generateId } from '../../utils/id-generator';
 import { getStickAsset } from './registry';
-import { stickColorMode, pushStickRecent } from './prefs';
+import { stickColorMode, pushStickRecent, stickFacePref } from './prefs';
+import {
+    faceHairSvg, asFaceStyle, asHairStyle, DEFAULT_HAIR_COLOR,
+    type FaceOpts, type FaceStyle, type HairStyle,
+} from './face';
 import { defaultRig, rigPoseToSvg, RIG_W, RIG_H } from './anim/rig';
 import { getClip, poseAt } from './anim/clips';
 import { isPathLike } from './anim/path-follow';
@@ -21,6 +25,7 @@ import type { DrawingElement } from '../../types';
 export * from './types';
 export * from './registry';
 export * from './prefs';
+export * from './face';
 export { STICK_ASSETS } from './assets';
 export { CLIPS, CLIP_LIST, getClip, poseAt } from './anim/clips';
 export { rigPoseToSvg, defaultRig, evaluateRig, RIG_W, RIG_H } from './anim/rig';
@@ -33,8 +38,8 @@ export const STICK_DEFAULT_WIDTH = 110;
 export const STICK_STROKE_PX = 4;
 
 /** Semantic part roles carried on `DrawingElement.sfRole`. */
-export type StickPartRole = 'body' | 'head' | 'accent' | 'prop';
-export const STICK_PART_ROLES: StickPartRole[] = ['body', 'head', 'accent', 'prop'];
+export type StickPartRole = 'body' | 'head' | 'accent' | 'prop' | 'face' | 'hair';
+export const STICK_PART_ROLES: StickPartRole[] = ['body', 'head', 'accent', 'prop', 'face', 'hair'];
 
 /** Parse a #rrggbb hex to {r,g,b} (0-255), or null. */
 function parseHex(hex: string): { r: number; g: number; b: number } | null {
@@ -68,6 +73,11 @@ export interface InsertStickOptions {
     targetWidth?: number;
     /** Drop with accent fills stripped (pure monochrome). Defaults to the panel's colour mode. */
     monochrome?: boolean;
+    /** Face / hair overrides. Omit to use the panel's current face preference. */
+    face?: FaceStyle | 'auto';
+    hair?: HairStyle | 'auto';
+    hairColor?: string;
+    headFill?: boolean;
 }
 
 /**
@@ -82,7 +92,16 @@ export function insertStickFigure(assetId: string, opts: InsertStickOptions = {}
     const asset = getStickAsset(assetId);
     if (!asset) return [];
 
-    const els = svgToElements(asset.svg, {
+    // Face / hair: explicit options win, otherwise the panel's current preference.
+    const pref = stickFacePref();
+    const svg = applyFaceHair(asset.svg, {
+        face: opts.face ?? pref.face,
+        hair: opts.hair ?? pref.hair,
+        hairColor: opts.hairColor ?? pref.hairColor,
+        headFill: opts.headFill ?? pref.headFill,
+    });
+
+    const els = svgToElements(svg, {
         x: opts.x,
         y: opts.y,
         targetWidth: opts.targetWidth ?? STICK_DEFAULT_WIDTH,
@@ -98,10 +117,11 @@ export function insertStickFigure(assetId: string, opts: InsertStickOptions = {}
     for (const e of els) {
         if (e.strokeWidth) e.strokeWidth = Math.max(0.4, Math.round(e.strokeWidth * f * 100) / 100);
         if (!e.sfRole) e.sfRole = roleFromFill(e.backgroundColor);
-        // Monochrome tier: drop accent fills so the figure is pure outline.
-        if (mono && e.sfRole === 'accent') e.backgroundColor = 'transparent';
+        // Monochrome tier: drop accent (and solid-hair) fills so the figure is pure outline.
+        if (mono && (e.sfRole === 'accent' || e.sfRole === 'hair')) e.backgroundColor = 'transparent';
         e.groupIds = [...(e.groupIds || []), gid];
     }
+    linkFaceParts(els, headStatesOf(svg));
 
     pushToHistory();
     batch(() => {
@@ -114,10 +134,12 @@ export function insertStickFigure(assetId: string, opts: InsertStickOptions = {}
 }
 
 /** Colours to apply per role. `outline` recolours every part's stroke; `accent`
- *  recolours the fill of accent parts (colourful props) only. */
+ *  recolours the fill of accent parts (colourful props); `hair` recolours the
+ *  fill of solid hair parts. */
 export interface StickRecolor {
     outline?: string;
     accent?: string;
+    hair?: string;
 }
 
 /**
@@ -140,11 +162,158 @@ export function recolorStickFigure(ids: string[], colors: StickRecolor): number 
             if (colors.accent && e.sfRole === 'accent') {
                 patch.backgroundColor = colors.accent;
             }
+            // Only solid hair parts have a fill to recolour; outline hair keeps none.
+            if (colors.hair && e.sfRole === 'hair' && e.backgroundColor && e.backgroundColor !== 'transparent') {
+                patch.backgroundColor = colors.hair;
+            }
             if (Object.keys(patch).length) { updateElement(e.id, patch); changed++; }
         }
     });
     if (changed) bumpDirtyRevision();
     return changed;
+}
+
+/**
+ * Expand a selection to whole figures: every element sharing a group with one of
+ * `ids`, so restyling works whether the user clicked the group or one loose part.
+ */
+function expandToFigures(ids: string[]): DrawingElement[] {
+    const idSet = new Set(ids);
+    const groups = new Set<string>();
+    for (const e of store.elements) {
+        if (idSet.has(e.id)) for (const g of e.groupIds || []) groups.add(g);
+    }
+    return store.elements.filter(e =>
+        idSet.has(e.id) || (e.groupIds || []).some(g => groups.has(g)));
+}
+
+/** Authoring ratio of body stroke to head radius (stroke-width 7, r 22). */
+const SVG_STROKE_PER_R = 7 / 22;
+
+/** Scale + translate freshly-imported parts onto a head's real world position. */
+function placeOnHead(els: DrawingElement[], s: number, tx: number, ty: number, wScale: number): void {
+    const anchors = (list: any[]) => list.forEach(a => {
+        a.x *= s; a.y *= s;
+        if (a.inX !== undefined) { a.inX *= s; a.inY = (a.inY ?? 0) * s; }
+        if (a.outX !== undefined) { a.outX *= s; a.outY = (a.outY ?? 0) * s; }
+    });
+    for (const e of els) {
+        e.x = e.x * s + tx; e.y = e.y * s + ty;
+        e.width *= s; e.height *= s;
+        if (e.strokeWidth) e.strokeWidth = Math.max(0.4, Math.round(e.strokeWidth * s * wScale * 100) / 100);
+        if (e.pathAnchors) anchors(e.pathAnchors as any[]);
+        if (e.pathSubpaths) (e.pathSubpaths as any[]).forEach(sp => anchors(sp.anchors));
+    }
+}
+
+/** The head a face/hair part belongs to (explicit link, else nearest centre). */
+function headOf(part: DrawingElement, heads: DrawingElement[]): DrawingElement | undefined {
+    if (part.sfHeadId) {
+        const linked = heads.find(h => h.id === part.sfHeadId);
+        if (linked) return linked;
+    }
+    const p = centerOf(part);
+    let best: DrawingElement | undefined, bd = Infinity;
+    for (const h of heads) {
+        const q = centerOf(h);
+        const d = (q.x - p.x) ** 2 + (q.y - p.y) ** 2;
+        if (d < bd) { bd = d; best = h; }
+    }
+    return best;
+}
+
+/**
+ * Restyle the face / hair of already-dropped figures, in place.
+ *
+ * The face is regenerated from each head part's *current* bounding box, so this
+ * keeps working after the figure has been moved, scaled or ungrouped — the head
+ * circle is the only thing it needs. Old face/hair parts are removed and the new
+ * ones inherit the head's group and layer, as one undo step.
+ *
+ * Returns the number of figures (heads) restyled.
+ */
+export function restyleStickFace(ids: string[], choice: FaceHairChoice): number {
+    if (isNoopChoice(choice)) return 0;
+    const scope = expandToFigures(ids);
+    const heads = scope.filter(e => e.sfRole === 'head');
+    if (heads.length === 0) return 0;
+
+    const removed = new Set<string>();
+    const added: DrawingElement[] = [];
+    const headPatches: { id: string; state: StickFaceState }[] = [];
+
+    for (const head of heads) {
+        const r = (head.width + head.height) / 4;
+        if (!(r > 0)) continue;
+        const cx = head.x + head.width / 2, cy = head.y + head.height / 2;
+        const next = mergeChoice(
+            (head.sfFace as StickFaceState | undefined) ?? { face: 'none', hair: 'none', hairColor: DEFAULT_HAIR_COLOR, headFill: false },
+            choice);
+
+        // Drop this head's existing face/hair parts.
+        for (const e of scope) {
+            if (e.sfRole !== 'face' && e.sfRole !== 'hair') continue;
+            if (headOf(e, heads)?.id === head.id) removed.add(e.id);
+        }
+
+        // Rebuild in world coordinates. The head circle rides along purely as a
+        // registration mark: svg-import normalises to the content bbox, so we use
+        // the imported head to recover the exact scale + offset, then discard it.
+        //
+        // A rotated figure needs its face rotated ABOUT THE HEAD, not about each
+        // mark's own centre — so bake the rotation into the geometry here and leave
+        // the resulting parts at angle 0. (The head circle itself is rotation-
+        // invariant, which is why its bbox is still a reliable registration mark.)
+        const deg = ((head.angle || 0) * 180) / Math.PI;
+        const spin = deg ? `<g transform="rotate(${r1(deg)} ${r1(cx)} ${r1(cy)})">` : '';
+        const markup = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="${head.strokeColor || '#1f2937'}"`
+            + ` stroke-width="7" stroke-linecap="round" stroke-linejoin="round">`
+            + `<circle cx="${cx}" cy="${cy}" r="${r}" data-sf-role="head"/>`
+            + spin + faceHairSvg(cx, cy, r, next) + (spin ? '</g>' : '') + `</svg>`;
+        const parts = svgToElements(markup, { x: 0, y: 0 });
+        const ref = parts.find(e => e.sfRole === 'head');
+        if (!ref || !(ref.width > 0)) continue;
+        const s = head.width / ref.width;
+        placeOnHead(parts, s, head.x - ref.x * s, head.y - ref.y * s,
+            head.strokeWidth ? head.strokeWidth / (r * SVG_STROKE_PER_R) : 1);
+
+        const mono = stickColorMode() === 'mono';
+        for (const e of parts) {
+            if (e === ref) continue;
+            e.groupIds = [...(head.groupIds || [])];
+            e.layerId = head.layerId;
+            e.opacity = head.opacity;
+            e.sfHeadId = head.id;
+            // Inherit the figure's look, or a sketch figure would grow a clean-line face.
+            e.renderStyle = head.renderStyle;
+            e.roughness = head.roughness;
+            e.strokeStyle = head.strokeStyle;
+            if (mono && e.sfRole === 'hair') e.backgroundColor = 'transparent';
+            added.push(e);
+        }
+        headPatches.push({ id: head.id, state: next });
+    }
+
+    if (added.length === 0 && removed.size === 0) return 0;
+    pushToHistory();
+    batch(() => {
+        setStore('elements', prev => [...prev.filter(e => !removed.has(e.id)), ...added]);
+        for (const p of headPatches) {
+            updateElement(p.id, {
+                sfFace: p.state,
+                ...(p.state.headFill ? { backgroundColor: '#ffffff' } : {}),
+            });
+        }
+        setStore('selection', sel => sel.filter(id => !removed.has(id)).concat(added.map(e => e.id)));
+    });
+    bumpDirtyRevision();
+    return headPatches.length;
+}
+
+/** The face/hair state of the first head part in `ids` (for showing current values). */
+export function stickFaceStateOf(ids: string[]): StickFaceState | null {
+    const head = expandToFigures(ids).find(e => e.sfRole === 'head' && e.sfFace);
+    return head ? { ...(head.sfFace as StickFaceState) } : null;
 }
 
 /** True if `ids` includes at least one stick-figure part (has an `sfRole`). */
@@ -169,14 +338,149 @@ export function toMonochromeSvg(svg: string): string {
         doc.querySelectorAll<SVGElement>('[fill]').forEach(el => {
             const fill = el.getAttribute('fill');
             if (!fill || fill === 'none') return;
-            const role = el.getAttribute('data-sf-role');
-            const isAccent = role === 'accent' || (!role && roleFromFill(fill) === 'accent');
+            // Roles inherit from an ancestor `<g data-sf-role>` (hair, props…).
+            const role = el.closest('[data-sf-role]')?.getAttribute('data-sf-role') ?? null;
+            const isAccent = role === 'accent' || role === 'hair' || (!role && roleFromFill(fill) === 'accent');
             if (isAccent) el.setAttribute('fill', 'none');
         });
         const out = doc.documentElement.outerHTML;
         _monoCache.set(svg, out);
         return out;
     } catch { return svg; }
+}
+
+// ─── Faces & hair ───────────────────────────────────────────────────────────
+
+/**
+ * A face/hair choice. `'auto'` (the default) means "keep whatever the figure
+ * already wears" — the pose's own expression and the variant's hairstyle — so a
+ * caller can change hair without disturbing the expression, and vice versa.
+ */
+export interface FaceHairChoice {
+    face?: FaceStyle | 'auto';
+    hair?: HairStyle | 'auto';
+    hairColor?: string;
+    headFill?: boolean;
+}
+
+/** The face/hair a head part currently wears, as stored on the element. */
+export interface StickFaceState {
+    face: FaceStyle;
+    hair: HairStyle;
+    hairColor: string;
+    headFill: boolean;
+}
+
+const FACE_ATTR = 'data-sf-face', HAIR_ATTR = 'data-sf-hair', HAIR_COLOR_ATTR = 'data-sf-hair-color';
+
+/** Read the face/hair state stamped on a head `<circle>` in an asset SVG. */
+function readHeadState(el: Element): StickFaceState {
+    return {
+        face: asFaceStyle(el.getAttribute(FACE_ATTR), 'none'),
+        hair: asHairStyle(el.getAttribute(HAIR_ATTR), 'none'),
+        hairColor: el.getAttribute(HAIR_COLOR_ATTR) || DEFAULT_HAIR_COLOR,
+        headFill: (el.getAttribute('fill') || 'none') !== 'none',
+    };
+}
+
+/** Resolve a choice against a head's current state. */
+function mergeChoice(cur: StickFaceState, c: FaceHairChoice): StickFaceState {
+    return {
+        face: !c.face || c.face === 'auto' ? cur.face : asFaceStyle(c.face),
+        hair: !c.hair || c.hair === 'auto' ? cur.hair : asHairStyle(c.hair),
+        hairColor: c.hairColor ?? cur.hairColor,
+        headFill: c.headFill ?? cur.headFill,
+    };
+}
+
+/** True if the choice would leave every head exactly as it is. */
+const isNoopChoice = (c: FaceHairChoice): boolean =>
+    (!c.face || c.face === 'auto') && (!c.hair || c.hair === 'auto')
+    && c.hairColor === undefined && c.headFill === undefined;
+
+/** Parse `markup` in its own document and import the nodes into `doc`. */
+function svgFragment(doc: Document, markup: string): Node[] {
+    const wrap = new DOMParser().parseFromString(
+        `<svg xmlns="http://www.w3.org/2000/svg">${markup}</svg>`, 'image/svg+xml');
+    if (wrap.querySelector('parsererror')) return [];
+    return Array.from(wrap.documentElement.childNodes).map(n => doc.importNode(n, true));
+}
+
+const _faceCache = new Map<string, string>();
+
+/**
+ * Restyle the face/hair of every figure in an asset SVG.
+ *
+ * Works on anything carrying a `data-sf-role="head"` circle — a single pose, a
+ * multi-figure scene, or a baked animation frame — because the face is derived
+ * from the head circle alone. Existing face/hair groups are removed and
+ * regenerated (so it is idempotent: re-applying never accumulates marks), and
+ * the head is re-stamped with its new state. Cached per (svg, choice).
+ */
+export function applyFaceHair(svg: string, choice: FaceHairChoice = {}): string {
+    if (isNoopChoice(choice)) return svg;
+    const key = `${svg}|${choice.face ?? 'auto'}|${choice.hair ?? 'auto'}|${choice.hairColor ?? ''}|${choice.headFill === undefined ? '-' : +choice.headFill}`;
+    const hit = _faceCache.get(key);
+    if (hit) return hit;
+    try {
+        const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+        if (doc.querySelector('parsererror')) return svg;
+        const root = doc.documentElement;
+        root.querySelectorAll('[data-sf-role="face"], [data-sf-role="hair"]').forEach(n => n.remove());
+        root.querySelectorAll('[data-sf-role="head"]').forEach(h => {
+            const cx = parseFloat(h.getAttribute('cx') || '');
+            const cy = parseFloat(h.getAttribute('cy') || '');
+            const r = parseFloat(h.getAttribute('r') || '');
+            if (!Number.isFinite(cx) || !Number.isFinite(cy) || !Number.isFinite(r)) return;
+            const next = mergeChoice(readHeadState(h), choice);
+            h.setAttribute(FACE_ATTR, next.face);
+            h.setAttribute(HAIR_ATTR, next.hair);
+            h.setAttribute(HAIR_COLOR_ATTR, next.hairColor);
+            if (next.headFill) h.setAttribute('fill', '#ffffff'); else h.removeAttribute('fill');
+            const nodes = svgFragment(doc, faceHairSvg(cx, cy, r, next));
+            const anchor = h.nextSibling;
+            for (const n of nodes) h.parentNode?.insertBefore(n, anchor);
+        });
+        const out = root.outerHTML;
+        _faceCache.set(key, out);
+        return out;
+    } catch { return svg; }
+}
+
+/** The head states in an asset SVG, in document order (matches import order). */
+function headStatesOf(svg: string): StickFaceState[] {
+    try {
+        const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+        if (doc.querySelector('parsererror')) return [];
+        return Array.from(doc.documentElement.querySelectorAll('[data-sf-role="head"]')).map(readHeadState);
+    } catch { return []; }
+}
+
+/** Centre of an element's bounding box. */
+const centerOf = (e: DrawingElement) => ({ x: e.x + e.width / 2, y: e.y + e.height / 2 });
+
+const r1 = (n: number) => Math.round(n * 10) / 10;
+
+/**
+ * Point each face/hair part at the head it belongs to (nearest head centre), and
+ * record each head's face/hair state on the head element. Both are what make a
+ * dropped figure restyleable later.
+ */
+function linkFaceParts(els: DrawingElement[], states: StickFaceState[]): void {
+    const heads = els.filter(e => e.sfRole === 'head');
+    if (heads.length === 0) return;
+    heads.forEach((h, i) => { if (states[i]) h.sfFace = { ...states[i] }; });
+    for (const e of els) {
+        if (e.sfRole !== 'face' && e.sfRole !== 'hair') continue;
+        const p = centerOf(e);
+        let best = heads[0], bd = Infinity;
+        for (const h of heads) {
+            const q = centerOf(h);
+            const d = (q.x - p.x) ** 2 + (q.y - p.y) ** 2;
+            if (d < bd) { bd = d; best = h; }
+        }
+        e.sfHeadId = best.id;
+    }
 }
 
 // ─── Animated figures (stickRig element) ────────────────────────────────────
@@ -187,6 +491,7 @@ let _rigCounter = 0;
 
 export interface InsertAnimatedOptions {
     x?: number; y?: number; width?: number; facing?: 1 | -1; speed?: number;
+    face?: FaceStyle; hair?: HairStyle; hairColor?: string; headFill?: boolean;
 }
 
 /**
@@ -195,6 +500,7 @@ export interface InsertAnimatedOptions {
  * props. Returns the new element id.
  */
 export function insertAnimatedFigure(clip = 'walk', opts: InsertAnimatedOptions = {}): string {
+    const pref = stickFacePref();
     const width = opts.width ?? STICK_DEFAULT_WIDTH;
     const height = width * RIG_ASPECT;
     let x = opts.x, y = opts.y;
@@ -214,7 +520,14 @@ export function insertAnimatedFigure(clip = 'walk', opts: InsertAnimatedOptions 
         renderStyle: 'architectural', locked: false, link: null,
         layerId: store.activeLayerId || 'default-layer',
         seed: Math.floor(Math.random() * 2 ** 31), roundness: null,
-        stickRig: { clip, facing: opts.facing ?? 1, speed: opts.speed ?? 1, playing: true },
+        stickRig: {
+            clip, facing: opts.facing ?? 1, speed: opts.speed ?? 1, playing: true,
+            // An animated figure gets the same default face as a dropped one.
+            face: asFaceStyle(opts.face ?? (pref.face === 'auto' ? 'neutral' : pref.face), 'neutral'),
+            hair: asHairStyle(opts.hair ?? (pref.hair === 'auto' ? 'short' : pref.hair), 'short'),
+            hairColor: opts.hairColor ?? pref.hairColor,
+            headFill: opts.headFill ?? pref.headFill,
+        },
     } as unknown as DrawingElement;
     pushToHistory();
     batch(() => {
@@ -236,6 +549,44 @@ export function setAnimatedFigurePlaying(ids: string[], playing?: boolean): void
         }
     });
     bumpDirtyRevision();
+}
+
+/**
+ * Change the face / hair of the selected/given animated figures. Unlike dropped
+ * figures nothing has to be regenerated — the renderer draws the face from the
+ * live head position each frame, so this is a plain payload patch.
+ */
+export function setAnimatedFigureFace(ids: string[], choice: FaceHairChoice): number {
+    const rigs = store.elements.filter(e => ids.includes(e.id) && e.type === 'stickRig');
+    if (!rigs.length || isNoopChoice(choice)) return 0;
+    pushToHistory();
+    batch(() => {
+        for (const e of rigs) {
+            const d = (e.stickRig || {}) as any;
+            const next = mergeChoice({
+                face: asFaceStyle(d.face, 'neutral'),
+                hair: asHairStyle(d.hair, 'none'),
+                hairColor: d.hairColor || DEFAULT_HAIR_COLOR,
+                headFill: !!d.headFill,
+            }, choice);
+            updateElement(e.id, { stickRig: { ...d, ...next } });
+        }
+    });
+    bumpDirtyRevision();
+    return rigs.length;
+}
+
+/** The face/hair of the first selected animated figure (for showing current values). */
+export function animatedFigureFaceState(ids: string[]): StickFaceState | null {
+    const el = store.elements.find(e => ids.includes(e.id) && e.type === 'stickRig');
+    if (!el) return null;
+    const d = (el.stickRig || {}) as any;
+    return {
+        face: asFaceStyle(d.face, 'neutral'),
+        hair: asHairStyle(d.hair, 'none'),
+        hairColor: d.hairColor || DEFAULT_HAIR_COLOR,
+        headFill: !!d.headFill,
+    };
 }
 
 /** Change the motion clip of the selected/given animated figures. */
@@ -342,7 +693,14 @@ export function bakeAnimatedFigure(id: string): string[] {
     const rig = defaultRig();
     rig.facing = data.facing ?? 1;
     rig.style = { stroke: el.strokeColor || '#1f2937', strokeWidth: 6 };
-    const svg = rigPoseToSvg(rig, poseAt(data.clip || 'idle', phase, rig.facing));
+    // The face/hair the rig is wearing bakes with it.
+    const face: FaceOpts = {
+        face: asFaceStyle(data.face, 'neutral'),
+        hair: asHairStyle(data.hair, 'none'),
+        hairColor: (data as any).hairColor,
+        headFill: (data as any).headFill,
+    };
+    const svg = rigPoseToSvg(rig, poseAt(data.clip || 'idle', phase, rig.facing), RIG_W, RIG_H, face);
     const els = svgToElements(svg, { x: el.x, y: el.y, targetWidth: el.width });
     if (!els.length) return [];
     const maxSW = Math.max(...els.map(e => e.strokeWidth || 0));
@@ -353,6 +711,7 @@ export function bakeAnimatedFigure(id: string): string[] {
         if (!e.sfRole) e.sfRole = roleFromFill(e.backgroundColor);
         e.groupIds = [...(e.groupIds || []), gid];
     }
+    linkFaceParts(els, headStatesOf(svg));
     pushToHistory();
     batch(() => {
         setStore('elements', prev => [...prev.filter(e => e.id !== id), ...els]);

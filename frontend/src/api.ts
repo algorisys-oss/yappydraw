@@ -48,7 +48,9 @@ import type { AssetHit, SearchElementsOptions } from "./library/elements/search"
 import { setRequestRecording } from "./utils/recording-manager";
 import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
-    attachFigureToPath, detachFigurePath, setFigureSequence } from "./library/stick-figures";
+    attachFigureToPath, detachFigurePath, setFigureSequence,
+    FACE_STYLES, HAIR_STYLES, restyleStickFace, stickFaceStateOf,
+    setAnimatedFigureFace, animatedFigureFaceState } from "./library/stick-figures";
 import { createComicPanel, createComicStrip } from "./library/comic";
 import { TEXT_EFFECT_PRESETS, getTextEffectPreset } from "./config/text-effect-presets";
 import { FONT_PAIRINGS, applyFontPairing } from "./brand/font-pairing";
@@ -2584,8 +2586,8 @@ export const YappyAPI = {
     // Stick-figure library (drawify-style editable figures)
     /** Insert a stick figure by id (e.g. "daily-waving") as one editable, recolourable
      *  group. Omit x/y to center on the active page. Returns the new element ids. */
-    insertStickFigure(assetId: string, opts?: { x?: number; y?: number; targetWidth?: number }) {
-        return insertStickFigure(assetId, opts);
+    insertStickFigure(assetId: string, opts?: { x?: number; y?: number; targetWidth?: number; face?: string; hair?: string; hairColor?: string; headFill?: boolean }) {
+        return insertStickFigure(assetId, opts as any);
     },
     /** List stick-figure assets (id/name/category/tags), optionally filtered by category. */
     listStickFigures(category?: string) {
@@ -2601,18 +2603,46 @@ export const YappyAPI = {
     /** Recolour stick-figure parts by semantic role among `ids` (default: current
      *  selection). `outline` recolours every part's stroke; `accent` recolours the
      *  fill of accent (colourful prop) parts. Returns the number of parts changed. */
-    recolorStickFigure(colors: { outline?: string; accent?: string }, ids?: string[]) {
+    recolorStickFigure(colors: { outline?: string; accent?: string; hair?: string }, ids?: string[]) {
         return recolorStickFigure(ids ?? [...store.selection], colors);
     },
     /** Show/hide the Stick Figures library panel. */
     toggleStickFigurePanel(visible?: boolean) { toggleStickFigurePanel(visible); },
 
+    // Faces & hair
+    /** List the available expressions (id + name), e.g. happy / sad / angry / surprised. */
+    listStickFaces() { return FACE_STYLES.map(f => ({ id: f.id, name: f.name })); },
+    /** List the available hair styles (id + name), e.g. short / bun / pigtails. */
+    listStickHairStyles() { return HAIR_STYLES.map(h => ({ id: h.id, name: h.name })); },
+    /**
+     * Set the face / hair of the given (or selected) figures — dropped library
+     * figures AND animated rigs. Omitted fields are left alone, so you can change
+     * hair without touching the expression. Returns the number of figures changed.
+     *
+     * Dropped figures regenerate their face from the head part's current bounding
+     * box, so this works after a figure has been moved, scaled or ungrouped.
+     *
+     * `setStickFace({ face: 'happy', hair: 'bun', hairColor: '#2b2118' })`
+     */
+    setStickFace(
+        opts: { face?: string; hair?: string; hairColor?: string; headFill?: boolean },
+        ids?: string[],
+    ) {
+        const target = ids ?? [...store.selection];
+        return restyleStickFace(target, opts as any) + setAnimatedFigureFace(target, opts as any);
+    },
+    /** The face/hair the first selected (or given) figure currently wears, or null. */
+    getStickFace(ids?: string[]) {
+        const target = ids ?? [...store.selection];
+        return stickFaceStateOf(target) ?? animatedFigureFaceState(target);
+    },
+
     // Animated stick figures (procedural rig)
     /** List motion clip ids/names (idle/walk/wave/talk/point/jump). */
     listStickFigureClips() { return CLIP_LIST.map(c => ({ id: c.id, name: c.name })); },
     /** Insert an animated stick figure playing `clip`. Omit x/y to center on the page. */
-    insertAnimatedFigure(clip = 'walk', opts?: { x?: number; y?: number; width?: number; facing?: 1 | -1; speed?: number }) {
-        return insertAnimatedFigure(clip, opts);
+    insertAnimatedFigure(clip = 'walk', opts?: { x?: number; y?: number; width?: number; facing?: 1 | -1; speed?: number; face?: string; hair?: string; hairColor?: string; headFill?: boolean }) {
+        return insertAnimatedFigure(clip, opts as any);
     },
     /** Change the motion clip of the given (or selected) animated figures. */
     setAnimatedFigureClip(clip: string, ids?: string[]) { setAnimatedFigureClip(ids ?? [...store.selection], clip); },
