@@ -80,10 +80,12 @@ const StickLibraryDoc: Component = () => {
                 <ul>
                     <li><strong>Expression</strong> — 12 styles: Neutral, Happy, Sad, Angry, Surprised, Tired, Excited,
                         Proud, Confused, Scared, Wink, and None (a blank head).</li>
-                    <li><strong>Hair</strong> — 10 styles: Short, Curly, Spiky, Fringe, Long, Bun, Ponytail, Pigtails,
-                        Side swept, and None.</li>
-                    <li><strong>Hair colour</strong> — applies to the solid styles (Short, Curly, Bun, Pigtails, Side
-                        swept). The outline styles follow the figure's stroke colour instead.</li>
+                    <li><strong>Hair</strong> — 18 styles: Short, Curly, Spiky, Fringe, Long, Bun, Ponytail,
+                        Pigtails, Side swept, Swoosh, Mohawk, Afro, Bob, Braids, Top knot, Balding, Cap,
+                        and None.</li>
+                    <li><strong>Hair colour</strong> — applies to the solid styles (Short, Curly, Bun, Pigtails,
+                        Side swept, Swoosh, Mohawk, Afro, Bob, Braids, Top knot, Cap). The outline styles
+                        (Fringe, Long, Spiky, Balding) follow the figure's stroke colour instead.</li>
                     <li><strong>Solid head</strong> — fills the head white so eyes and mouth stay readable over busy
                         artwork or a coloured background. Off by default, which keeps heads see-through.</li>
                 </ul>
@@ -292,6 +294,24 @@ Ben: oh`}</code></pre>
                     change its expression or hair from <strong>Face &amp; hair</strong> in the
                     Properties panel like any other.
                 </p>
+
+                <h3>Telling characters apart</h3>
+                <p>
+                    Every character in a comic gets their <strong>own hair style and colour</strong>, so
+                    readers can tell them apart before they read a word — and it stays{' '}
+                    <strong>the same in every panel</strong>, even in panels where some of the cast
+                    doesn't appear. Hair is assigned by order of first appearance in the script, and
+                    neighbouring characters differ in <em>shape</em> as well as colour, so a monochrome
+                    or printed strip still reads.
+                </p>
+                <p>
+                    Override it per character, or turn it off entirely:
+                </p>
+                <pre><code>{`Y.createComicStrip(script, {
+  hair:       { Ann: 'bun', Ben: 'mohawk' },   // style per speaker
+  hairColors: { Ann: '#2b2118' },              // colour per speaker
+});
+Y.createComicStrip(script, { distinctHair: false });  // everyone the same`}</code></pre>
 
                 <p>
                     Each <code>Name: line</code> row becomes one balloon. The pose comes from the

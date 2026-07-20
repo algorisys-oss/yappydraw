@@ -5,6 +5,7 @@ import { generateId } from '../../utils/id-generator';
 import { STICK_DEFAULT_WIDTH, prepareStickFigureElements } from '../stick-figures';
 import { getMeasurementRenderer, measureContainerText } from '../../utils/text-utils';
 import { poseForLine, poseForEmotion, faceForEmotion } from './pose-rules';
+import { assignCastHair, scriptCast } from './cast-style';
 import {
     parseScript, castSpeakers, inferPairs, orderCharacters, layoutPanel, splitIntoPanels,
     type Utterance, type PanelLayout,
@@ -48,6 +49,15 @@ export interface ComicPanelOptions {
      * Omit (or use 'auto') to keep the inferred pose.
      */
     emotions?: Record<string, string>;
+    /**
+     * Give each character their own hair so readers can tell them apart at a glance,
+     * and keep it identical in every panel. Default true. See ./cast-style.ts.
+     */
+    distinctHair?: boolean;
+    /** Hair style per speaker, e.g. `{ Ann: 'bun' }` — overrides the automatic palette. */
+    hair?: Record<string, string>;
+    /** Hair colour per speaker, e.g. `{ Ann: '#2b2118' }` — overrides the automatic palette. */
+    hairColors?: Record<string, string>;
 }
 
 export interface ComicStripOptions extends ComicPanelOptions {
@@ -81,11 +91,14 @@ function buildFigureElements(
     monochrome: boolean,
     groupId: string,
     face?: string,
+    hair?: { hair: string; hairColor: string },
 ): DrawingElement[] {
     const els = prepareStickFigureElements(assetId, {
         x: box.x, y: box.y, targetWidth: box.width,
         monochrome,
         face: face as any,
+        hair: hair?.hair as any,
+        hairColor: hair?.hairColor,
     });
     if (els.length === 0) return [];
 
@@ -147,6 +160,8 @@ export function planComicPanel(
     poses: Record<string, string>;
     /** Expression per speaker, when an emotion cue asked for one. */
     faces: Record<string, string>;
+    /** Hair style + colour per speaker. */
+    hairs: Record<string, { hair: string; hairColor: string }>;
     figures: Record<string, DrawingElement[]>;
     figureWidths: Record<string, number>;
 } | null {
@@ -156,6 +171,14 @@ export function planComicPanel(
     const speakers = castSpeakers(utterances);
     // One pose per speaker per panel — matching Comic Chat's one-balloon-per-character
     // rule. We pose from a speaker's FIRST line, which sets their attitude for the panel.
+    // Hair identifies a character, so it is assigned from the cast's order of first
+    // appearance — see cast-style.ts for why a panel-local assignment would drift.
+    // A caller that already knows the whole script (createComicStrip) passes its global
+    // assignment in via `opts.hair`/`opts.hairColors`, which win here.
+    const hairs = opts.distinctHair === false
+        ? {}
+        : assignCastHair(scriptCast(utterances), { hair: opts.hair, hairColors: opts.hairColors });
+
     const poses: Record<string, string> = {};
     const faces: Record<string, string> = {};
     speakers.forEach(s => {
@@ -191,12 +214,14 @@ export function planComicPanel(
     const figureWidths: Record<string, number> = {};
     for (const s of speakers) {
         const probe = buildFigureElements(
-            poses[s], { x: 0, y: 0, width: STICK_DEFAULT_WIDTH }, false, opts.monochrome ?? false, 'probe', faces[s],
+            poses[s], { x: 0, y: 0, width: STICK_DEFAULT_WIDTH }, false, opts.monochrome ?? false, 'probe',
+            faces[s], hairs[s],
         );
         const probeH = heightOf(probe) || STICK_DEFAULT_WIDTH * 2;
         const width = Math.max(24, Math.round(STICK_DEFAULT_WIDTH * (targetHeight / probeH)));
         const built = buildFigureElements(
-            poses[s], { x: 0, y: 0, width }, false, opts.monochrome ?? false, 'probe', faces[s],
+            poses[s], { x: 0, y: 0, width }, false, opts.monochrome ?? false, 'probe',
+            faces[s], hairs[s],
         );
         figures[s] = built;
         figureWidths[s] = width;
@@ -220,7 +245,7 @@ export function planComicPanel(
         originY: opts.y ?? 0,
     });
 
-    return { layout, utterances: shown, poses, faces, figures, figureWidths };
+    return { layout, utterances: shown, poses, faces, hairs, figures, figureWidths };
 }
 
 /**
@@ -318,7 +343,7 @@ function buildPanelElements(
         const slotX = c.box.x + (c.box.width - w) / 2;
         const parts = buildFigureElements(
             c.pose, { x: slotX, y: c.box.y, width: w }, c.flip, opts.monochrome ?? false, figureGroupId,
-            planned.faces[c.speaker],
+            planned.faces[c.speaker], planned.hairs[c.speaker],
         );
         for (const p of parts) {
             p.id = newId(p.type);
@@ -384,12 +409,25 @@ export function createComicStrip(
     const panels = splitIntoPanels(utterances);
     if (panels.length === 0) return null;
 
+    // Assign hair ONCE from the whole script's cast and pass it to every panel as an
+    // explicit override. Each panel is planned independently, so left to itself a panel
+    // would assign from its OWN speakers — and a character would change hair in any
+    // panel where a colleague is absent. See cast-style.ts.
+    const castHair = opts.distinctHair === false
+        ? {}
+        : assignCastHair(scriptCast(utterances), { hair: opts.hair, hairColors: opts.hairColors });
+    const stripOpts: ComicStripOptions = {
+        ...opts,
+        hair: { ...Object.fromEntries(Object.entries(castHair).map(([k, v]) => [k, v.hair])), ...opts.hair },
+        hairColors: { ...Object.fromEntries(Object.entries(castHair).map(([k, v]) => [k, v.hairColor])), ...opts.hairColors },
+    };
+
     const gap = opts.panelGap ?? 32;
     const columns = Math.max(1, opts.columns ?? Math.min(panels.length, 3));
 
     // Plan every panel at the origin first so we know how big each one is before
     // deciding where it goes.
-    const plans = panels.map(p => planComicPanel(p, { ...opts, x: 0, y: 0 })).filter(Boolean);
+    const plans = panels.map(p => planComicPanel(p, { ...stripOpts, x: 0, y: 0 })).filter(Boolean);
     if (plans.length === 0) return null;
 
     // Uniform cells keep the strip on a tidy grid regardless of per-panel size.
@@ -425,9 +463,9 @@ export function createComicStrip(
         const x = originX! + col * (cellW + gap) - padX;
         const y = originY! + row * (cellH + gap) - padY;
 
-        const planned = planComicPanel(panel, { ...opts, x, y });
+        const planned = planComicPanel(panel, { ...stripOpts, x, y });
         if (!planned) return;
-        const { elements: els } = buildPanelElements(planned, opts, newId);
+        const { elements: els } = buildPanelElements(planned, stripOpts, newId);
         // Nest each panel's group inside the strip group.
         for (const e of els) e.groupIds = [...(e.groupIds || []), stripGroupId];
         elements.push(...els);

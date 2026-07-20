@@ -25,7 +25,8 @@ export type FaceStyle =
 
 export type HairStyle =
     | 'none' | 'short' | 'curly' | 'spiky' | 'fringe' | 'long'
-    | 'bun' | 'ponytail' | 'pigtails' | 'sideSwept';
+    | 'bun' | 'ponytail' | 'pigtails' | 'sideSwept'
+    | 'swoosh' | 'mohawk' | 'afro' | 'bob' | 'braids' | 'topKnot' | 'balding' | 'cap';
 
 export const FACE_STYLES: { id: FaceStyle; name: string }[] = [
     { id: 'none', name: 'None' },
@@ -53,6 +54,14 @@ export const HAIR_STYLES: { id: HairStyle; name: string }[] = [
     { id: 'ponytail', name: 'Ponytail' },
     { id: 'pigtails', name: 'Pigtails' },
     { id: 'sideSwept', name: 'Side swept' },
+    { id: 'swoosh', name: 'Swoosh' },
+    { id: 'mohawk', name: 'Mohawk' },
+    { id: 'afro', name: 'Afro' },
+    { id: 'bob', name: 'Bob' },
+    { id: 'braids', name: 'Braids' },
+    { id: 'topKnot', name: 'Top knot' },
+    { id: 'balding', name: 'Balding' },
+    { id: 'cap', name: 'Cap' },
 ];
 
 const FACE_IDS = new Set<string>(FACE_STYLES.map(s => s.id));
@@ -253,9 +262,13 @@ function capPath(cx: number, cy: number, r: number, a0: number, a1: number, rise
     // Circle through (±xc, yc) and (0, −h), centred at (cx, cy + m).
     const m = (h * h - xc * xc - yc * yc) / (2 * (-yc - h));
     const R = Math.max(xc, h + m);
+    // The closing skull arc must be the one that passes over the CROWN. For a cap
+    // spanning more than 180° (an afro wrapping past the ears) that is the *major* arc,
+    // and leaving large-arc at 0 sends it under the chin instead — which fills the face.
+    const largeInner = a1 - a0 > P ? 1 : 0;
     // Outer edge left→right the long way over the crown, then back along the skull.
     return `M${r1(x0)} ${r1(y0)}A${r1(R)} ${r1(R)} 0 1 1 ${r1(x1)} ${r1(y1)}`
-        + `A${r1(r)} ${r1(r)} 0 0 0 ${r1(x0)} ${r1(y0)}Z`;
+        + `A${r1(r)} ${r1(r)} 0 ${largeInner} 0 ${r1(x0)} ${r1(y0)}Z`;
 }
 
 /**
@@ -339,6 +352,110 @@ export function hairGeometry(cx: number, cy: number, r: number, o: FaceOpts = {}
                 { k: 'ring', x: cx - r * 1.22, y: cy - r * 0.02, r: r * 0.24, w: w * 0.7, fill },
                 { k: 'ring', x: cx + r * 1.22, y: cy - r * 0.02, r: r * 0.24, w: w * 0.7, fill },
             ];
+
+        // A big anime-style crest sweeping back from the brow into a point.
+        case 'swoosh': {
+            const dir = o.facing === -1 ? -1 : 1;
+            const front = dir === 1 ? P * 1.96 : P * 1.04;   // temple on the facing side
+            const back = dir === 1 ? P * 1.04 : P * 1.96;
+            const [fx, fy] = onHead(cx, cy, r, front);
+            const [bx, by] = onHead(cx, cy, r, back);
+            const tipX = cx - dir * r * 1.15, tipY = cy - r * 1.62;
+            // Close along the skull the SHORT way over the crown, or the fill swallows
+            // the whole head instead of sitting on top of it.
+            const sweep = dir === 1 ? 1 : 0;
+            return [{
+                k: 'path',
+                d: `M${r1(fx)} ${r1(fy)}`
+                    + `Q${r1(cx + dir * r * 0.5)} ${r1(cy - r * 1.55)} ${r1(tipX)} ${r1(tipY)}`
+                    + `Q${r1(cx - dir * r * 0.15)} ${r1(cy - r * 1.05)} ${r1(bx)} ${r1(by)}`
+                    + `A${r1(r)} ${r1(r)} 0 0 ${sweep} ${r1(fx)} ${r1(fy)}Z`,
+                w: w * 0.6, fill,
+            }];
+        }
+
+        // A single central crest — narrow, so it reads as a mohawk and not a party hat.
+        case 'mohawk': {
+            const [ax, ay] = onHead(cx, cy, r, P * 1.36);
+            const [bx, by] = onHead(cx, cy, r, P * 1.64);
+            return [{
+                k: 'path',
+                d: `M${r1(ax)} ${r1(ay)}`
+                    + `Q${r1(cx - r * 0.34)} ${r1(cy - r * 1.5)} ${r1(cx - r * 0.05)} ${r1(cy - r * 1.52)}`
+                    + `Q${r1(cx + r * 0.3)} ${r1(cy - r * 1.5)} ${r1(bx)} ${r1(by)}`
+                    + `A${r1(r)} ${r1(r)} 0 0 0 ${r1(ax)} ${r1(ay)}Z`,
+                w: w * 0.7, fill,
+            }];
+        }
+
+        // A round halo. It must be a CRESCENT hugging the skull, not a disc — a filled
+        // circle centred on the head paints straight over the face.
+        case 'afro':
+            return [{ k: 'path', d: capPath(cx, cy, r, P * 0.9, P * 2.1, 0.62), w: w * 0.6, fill }];
+
+        // A chin-length bob: solid cap plus two blunt sides curving to the jaw.
+        case 'bob': {
+            const side = (d: -1 | 1): FacePrim => ({
+                k: 'path',
+                d: `M${r1(cx + d * r * 0.99)} ${r1(cy - r * 0.16)}`
+                    + `Q${r1(cx + d * r * 1.16)} ${r1(cy + r * 0.55)} ${r1(cx + d * r * 0.86)} ${r1(cy + r * 0.98)}`
+                    + `Q${r1(cx + d * r * 0.5)} ${r1(cy + r * 0.72)} ${r1(cx + d * r * 0.55)} ${r1(cy - r * 0.1)}Z`,
+                w: w * 0.6, fill,
+            });
+            return [
+                { k: 'path', d: capPath(cx, cy, r, P * 1.0, P * 2.0, 0.24), w: w * 0.6, fill },
+                side(-1), side(1),
+            ];
+        }
+
+        // Two long plaits, each drawn as a chain of beads down past the shoulder.
+        case 'braids': {
+            const plait = (side: -1 | 1): FacePrim[] => {
+                const out: FacePrim[] = [];
+                for (let i = 0; i < 4; i++) {
+                    out.push({
+                        k: 'ring',
+                        x: cx + side * (r * 0.95 + i * r * 0.05),
+                        y: cy + r * (0.35 + i * 0.42),
+                        r: r * 0.19, w: w * 0.55, fill,
+                    });
+                }
+                return out;
+            };
+            return [...fringePrims(cx, cy, r, w), ...plait(-1), ...plait(1)];
+        }
+
+        // A tight cap with a small knot on the crown.
+        case 'topKnot':
+            return [
+                { k: 'path', d: capPath(cx, cy, r, P * 1.1, P * 1.9, 0.16), w: w * 0.6, fill },
+                { k: 'ring', x: cx, y: cy - r * 1.32, r: r * 0.22, w: w * 0.7, fill },
+                { k: 'poly', pts: [[cx, cy - r * 1.1], [cx, cy - r * 0.98]], w: w * 0.7 },
+            ];
+
+        // A receding hairline: two side pieces, nothing on top.
+        case 'balding':
+            return [
+                { k: 'path', d: `M${r1(cx - r * 1.0)} ${r1(cy - r * 0.05)}Q${r1(cx - r * 0.92)} ${r1(cy - r * 0.72)} ${r1(cx - r * 0.5)} ${r1(cy - r * 0.86)}`, w: w * 0.9 },
+                { k: 'path', d: `M${r1(cx + r * 1.0)} ${r1(cy - r * 0.05)}Q${r1(cx + r * 0.92)} ${r1(cy - r * 0.72)} ${r1(cx + r * 0.5)} ${r1(cy - r * 0.86)}`, w: w * 0.9 },
+            ];
+
+        // A baseball cap: solid crown plus a proper brim on the facing side.
+        case 'cap': {
+            const dir = o.facing === -1 ? -1 : 1;
+            const [px, py] = onHead(cx, cy, r, dir === 1 ? P * 1.94 : P * 1.06);
+            return [
+                { k: 'path', d: capPath(cx, cy, r, P * 1.06, P * 1.94, 0.3), w: w * 0.6, fill },
+                {
+                    k: 'path',
+                    d: `M${r1(cx + dir * r * 0.42)} ${r1(cy - r * 0.66)}`
+                        + `Q${r1(cx + dir * r * 1.5)} ${r1(cy - r * 0.78)} ${r1(cx + dir * r * 1.72)} ${r1(cy - r * 0.3)}`
+                        + `Q${r1(cx + dir * r * 1.3)} ${r1(cy - r * 0.12)} ${r1(px)} ${r1(py)}`
+                        + `Q${r1(cx + dir * r * 0.7)} ${r1(cy - r * 0.4)} ${r1(cx + dir * r * 0.42)} ${r1(cy - r * 0.66)}Z`,
+                    w: w * 0.6, fill,
+                },
+            ];
+        }
 
         // A solid fringe swept across the forehead to one side — it must clear the
         // eyes, so the inner edge stays well above `EYE_Y`.

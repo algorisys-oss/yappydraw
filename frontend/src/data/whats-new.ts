@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.119', date: '2026-07-20', items: [
+        'Comic characters now each have their own hair, so you can tell them apart at a glance — and it stays the same in every panel.',
+        'Eight new hair styles for every figure: Swoosh, Mohawk, Afro, Bob, Braids, Top knot, Balding and Cap (18 in all).',
+    ] },
     { version: '0.8.118', date: '2026-07-20', items: [
         'Comic emotions now show on the face — write "Ann (angry): ..." and Ann actually looks angry, not just tense.',
         'Comic characters are normal stick figures: select one and change its expression or hair from the Properties panel.',
