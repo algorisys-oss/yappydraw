@@ -55,6 +55,7 @@ import { screenToWorld } from './utils/viewport-transforms';
 import { parseOutline } from './utils/mindmap-layout';
 import { updateElement, deleteArtboard, swapFillStroke, selectAll } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
+const CropBar = lazy(() => import('./components/crop-bar'));
 const DockContainer = lazy(() => import('./components/dock/dock-container'));
 const SceneTimeline = lazy(() => import('./components/scene-timeline'));
 const KeyframePanel = lazy(() => import('./components/keyframe-panel'));
@@ -1345,6 +1346,7 @@ const App: Component = () => {
         <Show when={store.showRulers && store.appMode !== 'presentation' && !store.zenMode}>
           <RulerOverlay />
         </Show>
+        <CropBar />
         <RepeatDialog />
         <SymmetryOverlay />
         <MeshOverlay />

@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.139](0.8.139.md) — Re-cropping works (widen a crop, un-crop); on-screen Apply/Cancel so crop is usable on a tablet
 - [0.8.138](0.8.138.md) — Floating panels were WHITE in dark mode: 24 CSS tokens were referenced but never defined; contrast sweep widened from 9 to 27 surfaces
 - [0.8.137](0.8.137.md) — Crop fix now reaches the actual UI (0.8.136 fixed an API path the editor never used)
 - [0.8.136](0.8.136.md) — Crop no longer distorts images; saved swatches visible & removable in the palette; image insert returns to Select; Layers panel contrast

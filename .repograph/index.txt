@@ -80,7 +80,7 @@ frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildV
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
 frontend/src/api.ts | typescript | 3800 | Theme:3 HarmonyType:60 DimensionMeasure:67 ElementOptions:137 normalizeElementType:350 ElementType:559 as:559 Window:3789
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1433 | Component:1 App:89 moves:114 onPenMove:115 hidePen:119 handleKeyUp:158 handleKeyDown:168 as:712 handleFullscreenChange:827 handleBeforeUnload:833 handlePaste:837 handleGlobalDragEnter:939 handleGlobalDragOver:954 showDropFallbackPrompt:973 cleanup:1003 outsideClick:1031 isImageFile:1043 first:1044 must:1057 extractDropData:1059 processExtractedDrop:1114 handleGlobalDrop:1231 handleDocumentDrop:1277
+frontend/src/app.tsx | typescript | 1435 | Component:1 App:90 moves:115 onPenMove:116 hidePen:120 handleKeyUp:159 handleKeyDown:169 as:713 handleFullscreenChange:828 handleBeforeUnload:834 handlePaste:838 handleGlobalDragEnter:940 handleGlobalDragOver:955 showDropFallbackPrompt:974 cleanup:1004 outsideClick:1032 isImageFile:1044 first:1045 must:1058 extractDropData:1060 processExtractedDrop:1115 handleGlobalDrop:1232 handleDocumentDrop:1278
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -120,6 +120,7 @@ frontend/src/components/connector-tool-group.css | - | 20 |
 frontend/src/components/connector-tool-group.tsx | typescript | 136 | Component:1 ConnectorType:8 ConnectorToolGroup:18 handler:25 getCurrentTool:35 isConnectorToolActive:39 handleSelectConnector:47 handleRightClick:69 toggleMenu:75 getDropdownPosition:82
 frontend/src/components/context-menu.css | - | 74 |
 frontend/src/components/context-menu.tsx | typescript | 197 | Component:1 MenuItem:4 ContextMenuProps:18 ContextMenu:27 handleClickOutside:60 handleKeyDown:67 handleItemClick:88 handleMouseEnter:100 handleMouseLeave:109
+frontend/src/components/crop-bar.tsx | typescript | 68 | Component:11 CropBar:15 btn:21
 frontend/src/components/curve-tool-overlay.css | - | 25 |
 frontend/src/components/curve-tool-overlay.tsx | typescript | 78 | CurveToolOverlay:14 active:18 toWorld:19 finish:22 onDown:28 onMove:39 onKey:43 previewD:54 dots:62
 frontend/src/components/cut-overlay.css | - | 55 |
@@ -320,7 +321,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 243 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 247 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -510,7 +511,7 @@ frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 Docu
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 readIndex:37 writeIndex:41 saveSnapshot:45 maybeSnapshotVersion:68 snapshotVersionNow:85 listVersions:96 restoreVersion:101 deleteVersion:113
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 8141 | LayoutDirection:16 OutlineNode:16 BooleanOp:17 Poly:17 ShapeFace:17 DistortKind:18 WarpPreset:40 Theme:50 ResolvedTheme:51 DefaultToolChoice:84 PointerStyle:95 AppState:105 HistorySnapshot:593 BP:1645 AlignmentType:4476 DistributionType:4476 CharPatch:5054 CharPatchArg:5057 SelBBox:6011 LastTransform:6276 RegionPathfinderOp:6635 SelectSimilarMatch:6768 buildPathFromPoly:7496 polysOriginMin:7531 syncCompoundOperands:7538 buildCompoundPath:7549 WorldSub:7775 rdpAnchors:7778 normalizeWorldSubs:7806 makePathFromWorldSubs:7821 elementToWorldSubs:7842 startInkCleanupIfNeeded:8080
+frontend/src/store/app-store.ts | typescript | 8176 | LayoutDirection:16 OutlineNode:16 BooleanOp:17 Poly:17 ShapeFace:17 DistortKind:18 WarpPreset:40 Theme:50 ResolvedTheme:51 DefaultToolChoice:84 PointerStyle:95 AppState:105 HistorySnapshot:596 BP:1680 AlignmentType:4511 DistributionType:4511 CharPatch:5089 CharPatchArg:5092 SelBBox:6046 LastTransform:6311 RegionPathfinderOp:6670 SelectSimilarMatch:6803 buildPathFromPoly:7531 polysOriginMin:7566 syncCompoundOperands:7573 buildCompoundPath:7584 WorldSub:7810 rdpAnchors:7813 normalizeWorldSubs:7841 makePathFromWorldSubs:7856 elementToWorldSubs:7877 startInkCleanupIfNeeded:8115
 frontend/src/store/dock-layout.ts | typescript | 155 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:60 hidePanel:71 setPanelOpen:81 dockPanel:88 dockPanelAt:98
 frontend/src/templates/data/designs/cards.ts | typescript | 127 |
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
@@ -821,7 +822,7 @@ tests/history-panel.spec.ts | typescript | 37 |
 tests/hotkeys.spec.ts | typescript | 222 |
 tests/html-player-check.spec.ts | typescript | 113 | Page:1 Window:7 inkedPixels:11 exportDoc:26
 tests/idb-storage.spec.ts | typescript | 97 | Window:6
-tests/image-and-swatches.spec.ts | typescript | 133 |
+tests/image-and-swatches.spec.ts | typescript | 216 | snap:107 snap:156
 tests/image-trace.spec.ts | typescript | 89 |
 tests/input-tablet-batch2.spec.ts | typescript | 81 | touch:70
 tests/isometric-cube.spec.ts | typescript | 34 |

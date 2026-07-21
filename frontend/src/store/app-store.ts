@@ -306,6 +306,8 @@ interface AppState {
     // Image Crop Mode
     cropModeElementId: string | null;
     cropRect: { x: number; y: number; width: number; height: number } | null;
+    /** Geometry captured when crop mode opened, so Escape can put it back. */
+    cropRestore: { x: number; y: number; width: number; height: number; crop: any } | null;
     /** Locked crop aspect ratio (w/h) while dragging; null = freeform. */
     cropAspect: number | null;
 
@@ -561,6 +563,7 @@ const initialState: AppState = {
     },
     cropModeElementId: null,
     cropRect: null,
+    cropRestore: null,
     cropAspect: null,
     gameActive: false,
     gameScript: '',
@@ -1526,12 +1529,38 @@ export const enterCropMode = (elementId: string) => {
     const el = store.elements.find(e => e.id === elementId);
     if (!el || el.type !== 'image' || !el.dataURL) return;
 
-    // The crop rect is in element-local coordinates (0,0 = top-left of the
-    // element) and always starts as the whole frame — because the frame already
-    // shows exactly the current crop. Re-cropping therefore selects a region of
-    // what you can see, and exitCropMode maps that back into source pixels
-    // relative to the existing crop window.
-    const cropRect = { x: 0, y: 0, width: el.width, height: el.height };
+    // Remember the exact geometry so Escape restores it.
+    setStore('cropRestore', { x: el.x, y: el.y, width: el.width, height: el.height, crop: el.crop ?? null });
+
+    // For an already-cropped image, temporarily show the WHOLE picture while
+    // cropping. Without this the overlay (which draws the full image into the
+    // element's frame) squeezes the entire picture into the cropped frame, and
+    // the crop rect — clamped to that frame — can only ever shrink further. You
+    // could never widen a crop back out.
+    let cropRect = { x: 0, y: 0, width: el.width, height: el.height };
+    const img = getImage(el.dataURL);
+    // Snapshot first: `el` is a live store proxy, so reading el.crop AFTER the
+    // updateElement below (which sets crop: null) throws.
+    const prev = el.crop ? { ...el.crop } : null;
+    const elX = el.x, elY = el.y, elW = el.width, elH = el.height;
+    if (prev && img && prev.width > 0 && prev.height > 0) {
+        const pxPerSrc = elW / prev.width;      // display px per source px
+        const pyPerSrc = elH / prev.height;
+        // Expand the frame around the current crop so the visible region stays put.
+        updateElement(elementId, {
+            x: elX - prev.x * pxPerSrc,
+            y: elY - prev.y * pyPerSrc,
+            width: img.naturalWidth * pxPerSrc,
+            height: img.naturalHeight * pyPerSrc,
+            crop: null,
+        }, false);
+        cropRect = {
+            x: prev.x * pxPerSrc,
+            y: prev.y * pyPerSrc,
+            width: prev.width * pxPerSrc,
+            height: prev.height * pyPerSrc,
+        };
+    }
 
     setStore('cropModeElementId', elementId);
     setStore('cropRect', cropRect);
@@ -1574,8 +1603,14 @@ export const exitCropMode = (apply: boolean) => {
             });
         }
     }
+    if (!apply && store.cropModeElementId && store.cropRestore) {
+        // Undo the temporary "show the whole image" expansion.
+        const r = store.cropRestore;
+        updateElement(store.cropModeElementId, { x: r.x, y: r.y, width: r.width, height: r.height, crop: r.crop }, false);
+    }
     setStore('cropModeElementId', null);
     setStore('cropRect', null);
+    setStore('cropRestore', null);
     setStore('cropAspect', null);
 };
 
