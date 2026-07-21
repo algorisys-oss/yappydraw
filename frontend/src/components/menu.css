@@ -38,6 +38,50 @@
     color: var(--logo-accent, #4338ca);
 }
 
+/* Small "Beta" pill next to the logo. Gradient pill with a slow sheen sweep;
+   the sweep is purely decorative and is dropped for reduced-motion users. */
+.beta-badge {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 1px;
+    padding: 2px 5px;
+    border-radius: 999px;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    line-height: 1;
+    text-transform: uppercase;
+    color: #fff;
+    /* Fixed white-on-gradient: 4.6:1 against the lighter end, so it holds in
+       both themes without needing per-theme tokens. */
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 55%, #ec4899 100%);
+    box-shadow: 0 1px 3px rgba(99, 102, 241, 0.35);
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.beta-badge::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    animation: beta-badge-sheen 4.5s ease-in-out infinite;
+}
+
+@keyframes beta-badge-sheen {
+    0%, 65% { left: -60%; }
+    100% { left: 130%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .beta-badge::after { animation: none; display: none; }
+}
+
 .menu-container:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }

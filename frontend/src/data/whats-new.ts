@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.142', date: '2026-07-22', items: [
+        'YappyDraw is in beta, and now it says so — a small Beta badge sits next to the logo. Expect things to keep changing quickly, and please keep the feedback coming.',
+        'The footer credit now points to Algorisys Technologies at www.algorisys.com.',
+    ] },
     { version: '0.8.141', date: '2026-07-21', items: [
         'Fixed: cropping a rotated image made it jump to the wrong place — about 76 pixels off for a picture turned 45°. Rotated images now stay exactly where they were.',
     ] },

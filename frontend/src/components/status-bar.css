@@ -128,9 +128,11 @@
 }
 
 .status-heart {
-    /* #e25555 read 2.50:1 on white. Theme-aware, AA in both. */
+    /* The emoji carries its own colour, so `color` no longer applies — it is left
+       as a fallback for platforms that render ❤️ as monochrome text. */
     color: var(--danger-text, #dc2626);
     font-size: 12px;
+    line-height: 1;
 }
 
 /* Contextual modifier hints */

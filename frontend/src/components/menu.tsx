@@ -813,8 +813,9 @@ const Menu: Component = () => {
                             <div class="drag-handle sm">
                                 <div class="drag-dots"></div>
                             </div>
-                            <div class="text-logo" title="YappyDraw">
+                            <div class="text-logo" title="YappyDraw — beta">
                                 <span class="text-logo-yappy">Yappy</span><span class="text-logo-draw">Draw</span>
+                                <span class="beta-badge" title="YappyDraw is in beta — expect rapid changes">Beta</span>
                             </div>
                             <button class={`menu-btn ${isMenuOpen() ? 'active' : ''}`} title="Menu" onClick={() => setIsMenuOpen(!isMenuOpen())}>
                                 <MenuIcon size={18} />

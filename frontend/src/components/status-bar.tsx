@@ -306,9 +306,9 @@ const StatusBar: Component = () => {
 
             {/* Attribution */}
             <div class="status-section status-attribution" style={{ 'border-right': 'none' }}>
-                Developed with <span class="status-heart">&hearts;</span> by{' '}
-                <a href="https://github.com/algorisys-oss/" target="_blank" rel="noopener noreferrer">
-                    Algorisys Open Source Team
+                Developed with <span class="status-heart">❤️</span> by{' '}
+                <a href="https://www.algorisys.com" target="_blank" rel="noopener noreferrer">
+                    Algorisys Technologies
                 </a>
             </div>
         </div>
