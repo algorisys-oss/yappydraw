@@ -4,7 +4,7 @@
  * can fill later; any image (or placeholder) can be replaced in place, keeping id/position/size.
  */
 import type { DrawingElement } from "../types";
-import { store, addElement, updateElement, setStore } from "../store/app-store";
+import { store, addElement, updateElement, setStore, setSelectedTool } from "../store/app-store";
 import { generateId } from "./id-generator";
 import { openImagePicker } from "./image-io";
 
@@ -32,6 +32,9 @@ export function addImagePlaceholder(x?: number, y?: number, w = 260, h = 180): s
         seed: Math.floor(Math.random() * 2 ** 31), layerId: store.activeLayerId,
     } as DrawingElement);
     setStore('selection', [id]);
+    // Same reasoning as the upload path: leave the user with a selected frame,
+    // not an armed Image tool.
+    setSelectedTool('selection');
     return id;
 }
 

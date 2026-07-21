@@ -50,14 +50,14 @@ const DockComicPanel: Component = () => {
     } as any;
     const field = {
         width: '100%', padding: '5px 6px', 'font-size': '12px',
-        background: 'var(--bg-secondary)', color: 'var(--text-color, inherit)',
+        background: 'var(--bg-secondary)', color: 'var(--text-primary, inherit)',
         border: '1px solid var(--border-color)', 'border-radius': '5px',
     } as any;
     const btn = (primary: boolean) => ({
         flex: '1', padding: '7px 8px', 'font-size': '12px', cursor: 'pointer',
         display: 'inline-flex', 'align-items': 'center', 'justify-content': 'center', gap: '5px',
         background: primary ? 'var(--accent-color, #3b82f6)' : 'var(--bg-secondary)',
-        color: primary ? '#fff' : 'var(--text-color, inherit)',
+        color: primary ? '#fff' : 'var(--text-primary, inherit)',
         border: '1px solid var(--border-color)', 'border-radius': '5px',
     }) as any;
 
@@ -155,7 +155,7 @@ const DockComicPanel: Component = () => {
                                                     flex: '1', padding: '3px 0', 'font-size': '10.5px', cursor: 'pointer',
                                                     'border-radius': '4px', border: '1px solid var(--border-color)',
                                                     background: variants()[s] === v ? 'var(--accent-color, #3b82f6)' : 'transparent',
-                                                    color: variants()[s] === v ? '#fff' : 'var(--text-color, inherit)',
+                                                    color: variants()[s] === v ? '#fff' : 'var(--text-primary, inherit)',
                                                 }}
                                             >{VARIANT_LABEL[v]}</button>
                                         )}</For>
@@ -175,7 +175,7 @@ const DockComicPanel: Component = () => {
                                                         padding: '2px 6px', 'font-size': '10px', cursor: 'pointer',
                                                         'border-radius': '9px', border: '1px solid var(--border-color)',
                                                         background: active() ? 'var(--accent-color, #3b82f6)' : 'transparent',
-                                                        color: active() ? '#fff' : 'var(--text-color, inherit)',
+                                                        color: active() ? '#fff' : 'var(--text-primary, inherit)',
                                                         opacity: active() ? '1' : '0.8',
                                                     }}
                                                 >{em.label}</button>

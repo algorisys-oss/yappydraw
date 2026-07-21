@@ -13,7 +13,7 @@ const DockEffectsPanel: Component = () => {
     const btn = {
         display: 'block', width: '100%', 'text-align': 'left', padding: '6px 8px', margin: '3px 0',
         cursor: 'pointer', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)',
-        'border-radius': '5px', 'font-size': '12px', color: 'var(--text-color, inherit)',
+        'border-radius': '5px', 'font-size': '12px', color: 'var(--text-primary, inherit)',
     } as any;
     return (
         <div style={{ padding: '8px' }}>

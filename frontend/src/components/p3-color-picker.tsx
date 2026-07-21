@@ -1,7 +1,7 @@
 import { type Component, For, createSignal, Show } from 'solid-js';
 import { isPagedDocType } from '../types/slide-types';
 import { Pin, PinOff } from 'lucide-solid';
-import { store, updateElement, pushToHistory, updateSlideBackground, updateDefaultStyles, createSwatch } from '../store/app-store';
+import { store, updateElement, pushToHistory, updateSlideBackground, updateDefaultStyles, createSwatch, deleteSwatch } from '../store/app-store';
 import { AdvancedP3Picker } from './advanced-p3-picker';
 import { COLOR_PALETTES, getColorPalette } from '../config/color-palettes';
 import { startColorDrop, moveColorDrop, commitColorDrop } from '../utils/color-drop';
@@ -147,7 +147,16 @@ export const ColorPalettePicker: Component = () => {
                             Back
                         </button>
                     </div>
-                    <AdvancedP3Picker onSelect={applyAsset} onSaveSwatch={(c) => createSwatch(c)} />
+                    <AdvancedP3Picker
+                        onSelect={applyAsset}
+                        onSaveSwatch={(c) => {
+                            createSwatch(c);
+                            // Return to the palette so the new swatch is visible
+                            // immediately — a success toast for something you
+                            // cannot see reads as a failure.
+                            setShowAdvanced(false);
+                        }}
+                    />
                 </div>
             }>
                 <div style={{ padding: '8px' }}>
@@ -267,6 +276,74 @@ export const ColorPalettePicker: Component = () => {
                             </button>
                         </Show>
                     </div>
+
+                    {/* Colours saved from the OKLCH picker. Without this the
+                        "+ Swatch" button reported success into a panel the user
+                        wasn't looking at — the swatch was really stored, but the
+                        palette they pressed the button in never changed, which
+                        reads exactly like nothing happened. */}
+                    <Show when={store.swatches.length > 0}>
+                        <div style={{ 'border-top': '1px solid var(--border-color)', 'padding-top': '8px' }}>
+                            <div style={{ 'font-size': '10px', 'font-weight': 'bold', color: 'var(--text-secondary)', 'margin-bottom': '6px' }}>
+                                SAVED
+                            </div>
+                            <div style={{ display: 'grid', 'grid-template-columns': 'repeat(5, 1fr)', gap: '8px' }}>
+                                <For each={store.swatches}>
+                                    {(sw) => (
+                                        // Wrapper so the remove button can sit on the chip.
+                                        // Saved colours are often experiments, so getting rid
+                                        // of one shouldn't mean opening another panel.
+                                        <div style={{ position: 'relative', width: '24px', height: '24px' }}>
+                                            <div
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    applyAsset(sw.color, e.shiftKey ? 'fill' : 'stroke');
+                                                }}
+                                                title={`${sw.name} — Click: set stroke • Shift+click: set fill`}
+                                                style={{
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    background: sw.color,
+                                                    'border-radius': '6px',
+                                                    cursor: 'pointer',
+                                                    border: '1px solid rgba(0,0,0,0.18)',
+                                                    'box-shadow': '0 0 0 1px rgba(255,255,255,0.10)',
+                                                }}
+                                            />
+                                            <button
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                                onClick={(e) => { e.stopPropagation(); deleteSwatch(sw.id); }}
+                                                title={`Remove ${sw.name}`}
+                                                aria-label="Remove swatch"
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '-6px',
+                                                    right: '-6px',
+                                                    width: '15px',
+                                                    height: '15px',
+                                                    padding: '0',
+                                                    display: 'flex',
+                                                    'align-items': 'center',
+                                                    'justify-content': 'center',
+                                                    'font-size': '11px',
+                                                    'line-height': '1',
+                                                    'border-radius': '50%',
+                                                    border: '1px solid var(--border-color)',
+                                                    background: 'var(--bg-panel)',
+                                                    color: 'var(--text-primary)',
+                                                    cursor: 'pointer',
+                                                    'box-shadow': '0 1px 3px rgba(0,0,0,0.3)',
+                                                }}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    )}
+                                </For>
+                            </div>
+                        </div>
+                    </Show>
                 </div>
             </Show>
         </div>

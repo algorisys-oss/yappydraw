@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.136](0.8.136.md) — Crop no longer distorts images; saved swatches visible & removable in the palette; image insert returns to Select; Layers panel contrast
 - [0.8.135](0.8.135.md) — Focus theme finally differs from Dark (darkens the page itself, paged docs only); OKLCH picker can save a swatch
 - [0.8.134](0.8.134.md) — Whole-app WCAG AA contrast audit: 635 findings across 11 selectors fixed in light, dark and focus; permanent audit test
 - [0.8.133](0.8.133.md) — WCAG AA contrast for every filled primary button in both themes (19 were failing); P3 wide-gamut is now the default palette

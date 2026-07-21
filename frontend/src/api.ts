@@ -28,6 +28,7 @@ import {
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
     saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform, setStrokeDash,
+    enterCropMode, exitCropMode, updateCropRect, setCropAspect,
     setDefaultTool as setDefaultToolAction
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
@@ -1561,6 +1562,17 @@ export const YappyAPI = {
      * handle drag; `angle` is the rotation in **radians**. Mirrors the property panel's
      * TRANSFORM section. Does not record undo history — wrap in your own if needed.
      */
+    /** Start cropping an image element. The crop rect is in ELEMENT-LOCAL coordinates
+     *  (0,0 = the element's top-left) and starts as the whole frame, because the frame
+     *  already shows the current crop. */
+    enterCropMode(id: string) { enterCropMode(id); },
+    /** Move/resize the in-progress crop rect (element-local coordinates). */
+    updateCropRect(rect: { x: number; y: number; width: number; height: number }) { updateCropRect(rect); },
+    /** Finish cropping. `apply` commits: the crop is converted to source pixels and the
+     *  element's frame shrinks to the cropped region, so the image is never stretched. */
+    exitCropMode(apply = true) { exitCropMode(apply); },
+    /** Lock the crop to an aspect ratio (width/height), or null for freeform. */
+    setCropAspect(ratio: number | null) { setCropAspect(ratio); },
     setElementTransform(id: string, patch: { x?: number; y?: number; width?: number; height?: number; angle?: number }) {
         setElementTransform(id, patch);
     },

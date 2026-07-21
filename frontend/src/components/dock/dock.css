@@ -89,7 +89,7 @@
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.02em;
-    color: var(--text-color, #0f172a);
+    color: var(--text-primary, #0f172a);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -116,12 +116,12 @@
 }
 .dock-panel-actions button:hover {
     background: var(--bg-hover, rgba(100, 116, 139, 0.14));
-    color: var(--text-color, #0f172a);
+    color: var(--text-primary, #0f172a);
 }
 
 .dock-panel-body {
     overflow-y: auto;
-    color: var(--text-color, inherit);
+    color: var(--text-primary, inherit);
 }
 .dock-floating .dock-panel-body { max-height: 60vh; }
 /* Brief placeholder while a lazy panel body loads (first open) — keeps the panel from

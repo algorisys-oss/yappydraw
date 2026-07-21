@@ -1526,21 +1526,12 @@ export const enterCropMode = (elementId: string) => {
     const el = store.elements.find(e => e.id === elementId);
     if (!el || el.type !== 'image' || !el.dataURL) return;
 
-    // Initialize crop rect in element-local coordinates (0,0 = top-left of element)
+    // The crop rect is in element-local coordinates (0,0 = top-left of the
+    // element) and always starts as the whole frame — because the frame already
+    // shows exactly the current crop. Re-cropping therefore selects a region of
+    // what you can see, and exitCropMode maps that back into source pixels
+    // relative to the existing crop window.
     const cropRect = { x: 0, y: 0, width: el.width, height: el.height };
-
-    if (el.crop) {
-        // Convert stored source-pixel crop to element-local coordinates
-        const img = getImage(el.dataURL);
-        if (img) {
-            const sx = el.width / img.naturalWidth;
-            const sy = el.height / img.naturalHeight;
-            cropRect.x = el.crop.x * sx;
-            cropRect.y = el.crop.y * sy;
-            cropRect.width = el.crop.width * sx;
-            cropRect.height = el.crop.height * sy;
-        }
-    }
 
     setStore('cropModeElementId', elementId);
     setStore('cropRect', cropRect);
@@ -1549,8 +1540,33 @@ export const enterCropMode = (elementId: string) => {
 
 export const exitCropMode = (apply: boolean) => {
     if (apply && store.cropModeElementId && store.cropRect) {
-        pushToHistory();
-        updateElement(store.cropModeElementId, { crop: { ...store.cropRect } });
+        const el = store.elements.find(e => e.id === store.cropModeElementId);
+        const img = el?.dataURL ? getImage(el.dataURL) : null;
+        const r = store.cropRect;
+        if (el && img && el.width > 0 && el.height > 0 && r.width > 0 && r.height > 0) {
+            // The frame currently shows this source region (whole image if uncropped).
+            const cur = el.crop ?? { x: 0, y: 0, width: img.naturalWidth, height: img.naturalHeight };
+            // element-local → source pixels, relative to what is on screen now.
+            const sx = cur.width / el.width;
+            const sy = cur.height / el.height;
+            pushToHistory();
+            updateElement(el.id, {
+                crop: {
+                    x: cur.x + r.x * sx,
+                    y: cur.y + r.y * sy,
+                    width: r.width * sx,
+                    height: r.height * sy,
+                },
+                // Shrink the FRAME to the cropped region too. Without this the
+                // renderer stretches the new source rect back over the old frame,
+                // so cropping a wide strip out of a tall photo distorted it —
+                // the reported "aspect ratio changes after crop".
+                x: el.x + r.x,
+                y: el.y + r.y,
+                width: r.width,
+                height: r.height,
+            });
+        }
     }
     setStore('cropModeElementId', null);
     setStore('cropRect', null);

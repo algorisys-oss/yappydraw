@@ -17,7 +17,7 @@ const DockAlignPanel: Component = () => {
     const cell = {
         display: 'inline-flex', 'align-items': 'center', 'justify-content': 'center',
         width: '100%', height: '30px', cursor: 'pointer', background: 'var(--bg-secondary)',
-        border: '1px solid var(--border-color)', 'border-radius': '5px', color: 'var(--text-color, inherit)',
+        border: '1px solid var(--border-color)', 'border-radius': '5px', color: 'var(--text-primary, inherit)',
     } as any;
     const aligns: { type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom'; icon: any; title: string }[] = [
         { type: 'left', icon: AlignStartVertical, title: 'Align left' },

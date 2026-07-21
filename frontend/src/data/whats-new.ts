@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.136', date: '2026-07-21', items: [
+        'Fixed: cropping an image stretched it — the picture kept the old frame\'s shape instead of the shape you cropped. Crops were also landing on the wrong part of the picture.',
+        'Colours you save from the OKLCH picker now appear right there in the palette under SAVED, with an × to remove ones you were only trying out.',
+        'After inserting an image you get the Select tool, so you can move and resize it straight away instead of the file picker opening again.',
+        'The Layers panel title was almost unreadable in dark mode, and the selected layer\'s name and drag handle were too faint. All fixed.',
+    ] },
     { version: '0.8.135', date: '2026-07-21', items: [
         'Focus theme now does something Dark doesn\'t: it darkens the page you\'re drawing on, not just the app around it. Exports, thumbnails and presentations stay exactly as authored.',
         'Focus is offered only on presentations and design pages — on an infinite canvas it was identical to Dark, so the theme button now skips it there.',

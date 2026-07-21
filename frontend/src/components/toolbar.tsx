@@ -316,8 +316,9 @@ const Toolbar: Component = () => {
                             }
                         }
 
+                        const newImageId = generateId('image');
                         addElement({
-                            id: generateId('image'),
+                            id: newImageId,
                             type: 'image',
                             x: 100,
                             y: 100,
@@ -340,6 +341,12 @@ const Toolbar: Component = () => {
                             mimeType: 'image/webp',
                             layerId: store.activeLayerId
                         });
+                        // Hand the user a placed, selected image rather than
+                        // leaving the Image tool armed — the next click would
+                        // otherwise reopen the file picker instead of letting
+                        // them move or resize what they just inserted.
+                        setStore('selection', [newImageId]);
+                        setSelectedTool('selection');
                     }
                 };
             }
