@@ -81,8 +81,9 @@ export const [isUnsavedDialogOpen, setIsUnsavedDialogOpen] = createSignal(false)
 let pendingUnsavedAction: (() => void) | null = null;
 
 // Exported handlers for App.tsx integration
-let sharedSetSaveIntent: (intent: 'workspace' | 'disk' | 'disk-json') => void = () => { };
-export const handleSaveRequest = (intent: 'workspace' | 'disk' | 'disk-json') => {
+export type SaveIntent = 'workspace' | 'disk' | 'disk-json' | 'gallery';
+let sharedSetSaveIntent: (intent: SaveIntent) => void = () => { };
+export const handleSaveRequest = (intent: SaveIntent) => {
     if (typeof sharedSetSaveIntent === 'function') {
         sharedSetSaveIntent(intent);
         setIsSaveOpen(true);
@@ -95,8 +96,23 @@ export const handleSaveRequest = (intent: 'workspace' | 'disk' | 'disk-json') =>
  * Ctrl/Cmd+S, and the command palette. Lazy-imports the store so nothing heavy
  * loads until the user actually saves.
  */
+/**
+ * True while the document has never been given a real name. 'Untitled' is the
+ * placeholder `drawingId` starts at and what `handleNew` resets to, so it means
+ * "unnamed", not "a drawing the user decided to call Untitled".
+ */
+const isUnnamedDrawing = () => {
+    const n = drawingId().trim();
+    return n === '' || n.toLowerCase() === 'untitled';
+};
+
 export const quickSaveToGallery = async () => {
     if (store.elements.length === 0) { showToast('Nothing on the canvas to save yet', 'info'); return; }
+    // An unnamed drawing gets the Save dialog rather than being filed away as
+    // "Untitled" — a name the user never chose and which every other unnamed
+    // drawing would collide with in the gallery. Once named, later Ctrl+S saves
+    // silently over that name and never asks again.
+    if (isUnnamedDrawing()) { handleSaveRequest('gallery'); return; }
     try {
         const m = await import('../storage/drawings-store');
         const meta = await m.saveCurrentToGallery();
@@ -129,7 +145,7 @@ const Menu: Component = () => {
     const [isUtilityMenuOpen, setIsUtilityMenuOpen] = createSignal(false);
     let fileInputRef: HTMLInputElement | undefined;
 
-    const [saveIntent, setSaveIntent] = createSignal<'workspace' | 'disk' | 'disk-json'>('workspace');
+    const [saveIntent, setSaveIntent] = createSignal<SaveIntent>('workspace');
     sharedSetSaveIntent = setSaveIntent;
     const [isTemplateBrowserOpen, setIsTemplateBrowserOpen] = createSignal(false);
     const [isDesignSizeOpen, setIsDesignSizeOpen] = createSignal(false);
@@ -194,6 +210,17 @@ const Menu: Component = () => {
         try {
             showToast('Saving...', 'loading', 0);
             setDrawingId(filename);
+
+            // Gallery saves go through the drawings store, which snapshots the
+            // live editor itself (thumbnail, active-entry tracking, index) —
+            // building a SlideDocument here would duplicate that work and skip
+            // the parts only it does.
+            if (saveIntent() === 'gallery') {
+                const m = await import('../storage/drawings-store');
+                const meta = await m.saveCurrentToGallery({ name: filename });
+                showToast(`Saved “${meta.name}” to My Drawings`, 'success');
+                return;
+            }
 
             // 1. Ensure current slide data is synced to slides array
             saveActiveSlide();

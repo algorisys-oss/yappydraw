@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.128](0.8.128.md) — Default Tool + Canvas Pointer settings; Ctrl+S asks for a name; My Drawings keeps every drawing (was overwriting after File → New)
 - [0.8.127](0.8.127.md) — Smart shapes recognise your stroke reliably, mouse included (corner counting rewritten); open strokes stay as ink unless they're a line
 - [0.8.126](0.8.126.md) — Smart shapes (hold to correct) keep your pen tool active instead of switching to Select
 - [0.8.125](0.8.125.md) — Shape text is centred by default; the Properties panel no longer opens by itself when you pick a tool

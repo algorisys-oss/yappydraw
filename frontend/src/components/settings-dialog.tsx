@@ -1,6 +1,6 @@
 import { type Component, Show, createEffect, onCleanup, createSignal } from "solid-js";
 import { X } from "lucide-solid";
-import { store, updateDefaultStyles, resetDefaultStyles, updateGlobalSettings } from "../store/app-store";
+import { store, updateDefaultStyles, resetDefaultStyles, updateGlobalSettings, setDefaultTool } from "../store/app-store";
 import { features } from "../config/features";
 import { cloudStorageManager } from "../storage/cloud";
 import type { AuthState } from "../storage/cloud/types";
@@ -110,6 +110,30 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
 
                     <div class="settings-section">
                         <p class="settings-section-title">Pen &amp; Input</p>
+
+                        <div class="settings-row">
+                            <label title="Which tool is active when Yappy opens. Switches to it now, too.">Default Tool</label>
+                            <select
+                                value={store.globalSettings.defaultTool ?? 'inkbrush'}
+                                onChange={(e) => setDefaultTool(e.currentTarget.value as 'inkbrush' | 'fineliner' | 'selection')}
+                            >
+                                <option value="inkbrush">Ink Brush</option>
+                                <option value="fineliner">Fineliner</option>
+                                <option value="selection">Select</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-row">
+                            <label title="Cursor shown over the canvas while a drawing tool is active. Select and Pan keep their own cursors.">Canvas Pointer</label>
+                            <select
+                                value={store.globalSettings.pointerStyle ?? 'crosshair'}
+                                onChange={(e) => updateGlobalSettings({ pointerStyle: e.currentTarget.value as 'crosshair' | 'circle' | 'arrow' })}
+                            >
+                                <option value="crosshair">Crosshair (+)</option>
+                                <option value="circle">Concentric circle</option>
+                                <option value="arrow">Arrow</option>
+                            </select>
+                        </div>
 
                         <div class="settings-row">
                             <label title="Hold a pen stroke still for a moment to snap it to a clean shape">Smart Shapes (hold to correct)</label>

@@ -9,6 +9,7 @@ import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } fro
 import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/slide-types';
 import { isPagedDocType } from '../types/slide-types';
 import { idbDelete } from '../storage/idb-kv';
+import { setActiveDrawingId } from '../storage/active-drawing';
 import type { ElementAnimation, DisplayState, PropertyTrack, BezierEase } from "../types/motion-types";
 import type { DimensionAnnotation, DimensionMeasure } from "../utils/dimension-geometry";
 import { showToast } from "../components/toast";
@@ -72,6 +73,33 @@ try {
         localStorage.setItem('theme-canonical-v1', '1');
     }
 } catch { /* ignore */ }
+
+/**
+ * Tool the app opens with. Validated against the allowed set rather than cast,
+ * because it seeds `selectedTool` directly — a stale or hand-edited localStorage
+ * value would otherwise start the app in a tool that no longer exists.
+ */
+const DEFAULT_TOOL_CHOICES = ['inkbrush', 'fineliner', 'selection'] as const;
+export type DefaultToolChoice = (typeof DEFAULT_TOOL_CHOICES)[number];
+
+export const readDefaultTool = (): DefaultToolChoice => {
+    try {
+        const v = localStorage.getItem('defaultTool') as DefaultToolChoice | null;
+        if (v && (DEFAULT_TOOL_CHOICES as readonly string[]).includes(v)) return v;
+    } catch { /* ignore */ }
+    return 'inkbrush';
+};
+
+const POINTER_STYLES = ['crosshair', 'circle', 'arrow'] as const;
+export type PointerStyle = (typeof POINTER_STYLES)[number];
+
+export const readPointerStyle = (): PointerStyle => {
+    try {
+        const v = localStorage.getItem('pointerStyle') as PointerStyle | null;
+        if (v && (POINTER_STYLES as readonly string[]).includes(v)) return v;
+    } catch { /* ignore */ }
+    return 'crosshair';
+};
 
 interface AppState {
     // Current Active Slide properties (for performance and compatibility)
@@ -325,7 +353,7 @@ const initialState: AppState = {
 
     canvasTexture: 'none',
     isPreviewing: false,
-    selectedTool: 'selection',
+    selectedTool: readDefaultTool(),
     toolLocked: false, // When true, tool stays active after drawing (double-click to lock)
     selectedUmlType: 'umlClass',
     selectedBpmnType: 'bpmnStartEvent',
@@ -400,6 +428,8 @@ const initialState: AppState = {
         showQuickToolbar: true, // Default to showing the toolbar
         colorPalette: (localStorage.getItem('colorPalette') || 'default'),
         smartShape: (localStorage.getItem('smartShape') ?? '1') !== '0',
+        defaultTool: readDefaultTool(),
+        pointerStyle: readPointerStyle(),
         penPressure: (localStorage.getItem('penPressure') ?? '1') !== '0',
         penStabilization: (() => { const v = parseFloat(localStorage.getItem('penStabilization') ?? '0'); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0; })(),
         // Default OFF for now — the balanced auto-reflow needs more work (lays out
@@ -479,7 +509,10 @@ const initialState: AppState = {
     appMode: 'design',
     showCommandPalette: false,
     commandPaletteFilter: null,
-    selectedPenType: 'fineliner',
+    // Kept in step with the startup tool: the pen group's toolbar button renders
+    // THIS, not `selectedTool`, so seeding one without the other shows Fineliner
+    // as the active pen while the Ink Brush is the tool actually in hand.
+    selectedPenType: (() => { const t = readDefaultTool(); return t === 'selection' ? 'fineliner' : t; })(),
     selectedTextType: 'text',
     selectedConnectorType: 'arrow',
     selectedShapeType: 'rectangle',
@@ -1325,6 +1358,20 @@ export const setSelectedTool = (tool: ToolType) => {
     // right-click on a tool group — and stays open once the user has docked it.
 };
 
+/**
+ * Change the tool the app opens with, and switch to it right away so the
+ * toolbar reflects the choice instead of waiting for a reload.
+ *
+ * Switching means moving `selectedPenType` too when the choice is a pen: the
+ * pen group's toolbar button renders that signal, so updating only
+ * `selectedTool` leaves the wrong pen showing as active.
+ */
+export const setDefaultTool = (tool: DefaultToolChoice) => {
+    updateGlobalSettings({ defaultTool: tool });
+    if (tool !== 'selection') setStore('selectedPenType', tool);
+    setSelectedTool(tool);
+};
+
 export const setToolLocked = (locked: boolean) => {
     setStore('toolLocked', locked);
 };
@@ -1389,6 +1436,12 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.penPressure !== undefined) {
         try { localStorage.setItem('penPressure', updates.penPressure ? '1' : '0'); } catch { /* ignore */ }
+    }
+    if (updates.defaultTool !== undefined) {
+        try { localStorage.setItem('defaultTool', updates.defaultTool); } catch { /* ignore */ }
+    }
+    if (updates.pointerStyle !== undefined) {
+        try { localStorage.setItem('pointerStyle', updates.pointerStyle); } catch { /* ignore */ }
     }
     if (updates.penStabilization !== undefined) {
         try { localStorage.setItem('penStabilization', String(updates.penStabilization)); } catch { /* ignore */ }
@@ -2124,6 +2177,12 @@ export const detachSlideBackgroundImage = (slideIndex: number = store.activeSlid
 };
 
 export const loadDocument = (doc: any) => {
+    // Whatever is being loaded is NOT the gallery entry that was open.
+    // `openDrawing` re-attaches straight after calling this; every other path
+    // (File → New, open from disk / JSON / cloud, template restore) must not
+    // stay pointed at the old entry, or the next save overwrites and renames
+    // it — which is why the gallery only ever kept the most recent drawing.
+    setActiveDrawingId(null);
     batch(() => {
         // Version Migration Logic
         let elements: DrawingElement[] = [];
@@ -2215,6 +2274,8 @@ export const loadDocument = (doc: any) => {
             gs.toolbarVertical = lsBool('toolbarVertical', gs.toolbarVertical);
             const tw = localStorage.getItem('toolbarWrap'); if (tw !== null) (gs as any).toolbarWrap = tw === 'true' ? true : tw === 'false' ? false : Number(tw);
             gs.smartShape = lsBool('smartShape', gs.smartShape);
+            gs.defaultTool = readDefaultTool();
+            gs.pointerStyle = readPointerStyle();
             gs.penPressure = lsBool('penPressure', gs.penPressure);
             const ps = localStorage.getItem('penStabilization'); if (ps !== null) gs.penStabilization = Number(ps);
         } catch { /* ignore */ }

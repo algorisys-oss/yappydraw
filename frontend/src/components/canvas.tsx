@@ -281,6 +281,39 @@ const Canvas: Component = () => {
     // Cursor Management
     const [cursor, setCursor] = createSignal<string>('default');
 
+    // ── Canvas pointer style (Settings → Pen & Input) ──
+    // A concentric-circle cursor, as an inline SVG data URI. Drawn as a CSS
+    // cursor rather than a DOM element that tracks the pointer: that keeps it
+    // scoped to the canvas (no ring floating over panels), costs nothing per
+    // frame, and can't lag behind the pointer. White strokes over dark ones so
+    // it stays legible on any background, hotspot dead centre.
+    const CIRCLE_CURSOR_SVG = encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26">`
+        + `<g fill="none"><circle cx="13" cy="13" r="10.5" stroke="rgba(0,0,0,.85)" stroke-width="3"/>`
+        + `<circle cx="13" cy="13" r="10.5" stroke="rgba(255,255,255,.95)" stroke-width="1.5"/>`
+        + `<circle cx="13" cy="13" r="3.5" stroke="rgba(0,0,0,.85)" stroke-width="3"/>`
+        + `<circle cx="13" cy="13" r="3.5" stroke="rgba(255,255,255,.95)" stroke-width="1.5"/></g></svg>`
+    );
+    // `crosshair` is the keyword fallback for browsers that reject the data URI
+    // (and for the moment before it decodes) — never leave the canvas cursorless.
+    const CIRCLE_CURSOR = `url("data:image/svg+xml,${CIRCLE_CURSOR_SVG}") 13 13, crosshair`;
+
+    // Tools whose cursor is meaningful on its own: Select needs the arrow (and
+    // the contextual move/resize cursors the selection handler sets), pan needs
+    // the grab hand. The pointer-style preference is about aiming a drawing
+    // tool, so it deliberately doesn't touch these.
+    const POINTER_STYLE_EXEMPT = ['selection', 'lasso', 'pan'];
+
+    const canvasCursor = () => {
+        const c = cursor();
+        // Only ever replace the idle cursor. Anything else was set deliberately
+        // by a handler (resize, move, grab, crop) and outranks a global default.
+        if (c !== 'default') return c;
+        if (POINTER_STYLE_EXEMPT.includes(store.selectedTool)) return c;
+        const style = store.globalSettings.pointerStyle ?? 'crosshair';
+        return style === 'circle' ? CIRCLE_CURSOR : style === 'arrow' ? 'default' : 'crosshair';
+    };
+
     // Context Menu State
     const [contextMenuOpen, setContextMenuOpen] = createSignal(false);
     const [contextMenuPos, setContextMenuPos] = createSignal({ x: 0, y: 0 });
@@ -2226,7 +2259,7 @@ const Canvas: Component = () => {
                     style={{
                         display: "block",
                         "touch-action": "none",
-                        cursor: store.eyedropper.active ? 'crosshair' : cursor(),
+                        cursor: store.eyedropper.active ? 'crosshair' : canvasCursor(),
                         "user-select": "none",
                         "-webkit-user-select": "none",
                         "-webkit-touch-callout": "none",

@@ -3,7 +3,7 @@ import { store, setSelectedTool, addElement, setStore, togglePenStabilization, u
 import { generateId } from "../utils/id-generator";
 import { addImagePlaceholder } from "../utils/image-actions";
 import type { ToolType } from "../types";
-import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw, Command, Shapes, PersonStanding } from "lucide-solid";
+import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw, Command, Shapes, PersonStanding, Brush } from "lucide-solid";
 import { isPanelOpen } from "../store/dock-layout";
 
 const BRUSH_TOOLS: ToolType[] = ['fineliner', 'inkbrush', 'marker'];
@@ -49,10 +49,20 @@ const utilityTools: { type: ToolType; icon: Component<{ size?: number; color?: s
     { type: 'ink', icon: Highlighter, label: 'Ink Overlay (Alt+I)' },
 ];
 
-// Brainstorm mode: minimal flat toolbar for quick ideation
-const brainstormTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string; setSubType?: () => void }[] = [
+// Icon per pen so the brainstorm toolbar's single pen button shows which pen is
+// actually in hand, the way the full toolbar's pen group does.
+const PEN_ICONS: Record<string, Component<{ size?: number; color?: string }>> = {
+    fineliner: Pen,
+    inkbrush: Brush,
+    marker: Highlighter,
+};
+
+// Brainstorm mode: minimal flat toolbar for quick ideation.
+// `penGroup` marks the one button that stands in for the whole pen group — it
+// tracks whichever pen is selected rather than naming a fixed tool type.
+const brainstormTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string; setSubType?: () => void; penGroup?: boolean }[] = [
     { type: 'selection', icon: MousePointer2, label: 'Selection (V)', hotkey: '1' },
-    { type: 'fineliner', icon: Pen, label: 'Brush / Fine Liner (7)', hotkey: '7' },
+    { type: 'fineliner', icon: Pen, label: 'Brush / Fine Liner (7)', hotkey: '7', penGroup: true },
     { type: 'line', icon: Minus, label: 'Line' },
     { type: 'arrow', icon: MoveUpRight, label: 'Arrow (5)', hotkey: '5' },
     { type: 'rectangle', icon: Square, label: 'Rectangle (2)', hotkey: '2' },
@@ -430,18 +440,27 @@ const Toolbar: Component = () => {
             {brainstormMode() ? (
                 /* ── Brainstorm Mode: flat minimal toolbar ── */
                 <For each={brainstormTools}>
-                    {(tool) => (
-                        <button
-                            class={`toolbar-btn ${store.selectedTool === tool.type ? 'active' : ''}`}
-                            onClick={() => handleToolClick(tool.type)}
-                            onContextMenu={handleRightClick}
-                            onDblClick={handleRightClick}
-                            title={tool.label}
-                        >
-                            <tool.icon size={16} />
-                            {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
-                        </button>
-                    )}
+                    {(tool) => {
+                        // The pen button represents whichever pen is selected, not a
+                        // fixed tool. Pinned to 'fineliner' it never lit up while the
+                        // Ink Brush was active — including at startup, where Ink Brush
+                        // is the default tool — and clicking it silently demoted the
+                        // user's chosen pen back to the Fineliner.
+                        const type = () => (tool.penGroup ? (store.selectedPenType as ToolType) : tool.type);
+                        const Icon = () => (tool.penGroup ? PEN_ICONS[store.selectedPenType] ?? tool.icon : tool.icon);
+                        return (
+                            <button
+                                class={`toolbar-btn ${store.selectedTool === type() ? 'active' : ''}`}
+                                onClick={() => handleToolClick(type())}
+                                onContextMenu={handleRightClick}
+                                onDblClick={handleRightClick}
+                                title={tool.label}
+                            >
+                                {(() => { const I = Icon(); return <I size={16} />; })()}
+                                {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
+                            </button>
+                        );
+                    }}
                 </For>
             ) : (
                 /* ── Full Mode: all tool groups ── */

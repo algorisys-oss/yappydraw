@@ -111,6 +111,8 @@ export interface GlobalSettings {
     showQuickToolbar?: boolean; // Toggle floating quick toolbar
     colorPalette?: string;      // ID of the active color palette (see config/color-palettes.ts)
     smartShape?: boolean;       // Hold-to-correct: dwell at end of a pen stroke snaps it to a clean shape (default on)
+    defaultTool?: 'inkbrush' | 'fineliner' | 'selection'; // Tool active when the app opens (default inkbrush)
+    pointerStyle?: 'crosshair' | 'circle' | 'arrow';      // Canvas cursor while a drawing tool is active (default crosshair)
     penPressure?: boolean;      // Use Apple Pencil force / pointer pressure for variable stroke width (default on)
     penStabilization?: number;  // Pulled-string "lazy brush" strength 0..1 for freehand inking (0 = off, default)
     mindmapAutoLayout?: boolean;       // Auto-reflow mindmap trees on every add/collapse/delete/reparent (default on)

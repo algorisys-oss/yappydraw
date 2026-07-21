@@ -212,6 +212,57 @@ Yappy.setStrokeDash([], ids);         // clear (revert to the Stroke Style prese
                 </p>
             </section>
 
+            {/* ─── SAVING ─────────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Saving to My Drawings</h2>
+                <p>
+                    <span class="kbd">Ctrl</span>+<span class="kbd">S</span> saves the current drawing to
+                    <strong> My Drawings</strong>, the local library in your browser. The first time you save an
+                    untitled drawing you're asked for a <strong>name</strong>; after that the same shortcut saves
+                    silently over that name, so you can hit it as often as you like while you work.
+                </p>
+                <p>
+                    Each drawing keeps its own entry. <strong>File → New</strong> starts a fresh document, so the
+                    next save creates a new entry rather than replacing the one you just made — but re-saving a
+                    drawing you have open updates it in place instead of piling up copies. Open, rename and delete
+                    entries from <strong>File → My Drawings…</strong>.
+                </p>
+                <p class="tip-box">
+                    My Drawings lives in this browser's storage — convenient, but not a backup. For anything you
+                    care about keeping, also use <strong>Export / Save…</strong>
+                    (<span class="kbd">Ctrl</span>+<span class="kbd">Alt</span>+<span class="kbd">S</span>) to write a
+                    <code> .yappy</code> file, or save to the cloud.
+                </p>
+            </section>
+
+            {/* ─── SETTINGS ───────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Settings — Pen &amp; Input</h2>
+                <p>
+                    Open <strong>Settings</strong> from the gear button in the bottom-left cluster or the menu.
+                    Two options control how the canvas greets you:
+                </p>
+                <ul>
+                    <li>
+                        <strong>Default Tool</strong> — which tool is active when Yappy opens:
+                        <strong> Ink Brush</strong> (the default), <strong>Fineliner</strong> or <strong>Select</strong>.
+                        Changing it switches you to that tool right away, so the toolbar matches, and it sticks for
+                        next time.
+                    </li>
+                    <li>
+                        <strong>Canvas Pointer</strong> — the cursor shown over the canvas while a drawing tool is
+                        active: <strong>Crosshair (+)</strong> (the default, easiest to aim),
+                        <strong> Concentric circle</strong>, or <strong>Arrow</strong>. Select and Pan keep their own
+                        cursors, and hovering a resize or rotate handle always shows that handle's cursor.
+                    </li>
+                </ul>
+                <p>
+                    Both are per-browser preferences, remembered across sessions, and scriptable:
+                    <code> Yappy.setDefaultTool('fineliner')</code> and
+                    <code> Yappy.setPointerStyle('circle')</code>.
+                </p>
+            </section>
+
             {/* ─── EXPORT ─────────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Export</h2>

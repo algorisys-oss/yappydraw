@@ -27,7 +27,8 @@ import {
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
-    saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform, setStrokeDash
+    saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform, setStrokeDash,
+    setDefaultTool as setDefaultToolAction
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
@@ -2084,6 +2085,15 @@ export const YappyAPI = {
     /** Smart shapes: dwell at the end of a pen stroke to snap it to a clean shape. */
     setSmartShape(enabled: boolean) { updateGlobalSettings({ smartShape: enabled }); },
     isSmartShapeEnabled() { return store.globalSettings.smartShape !== false; },
+    /**
+     * Tool the app opens with: 'inkbrush' (default) | 'fineliner' | 'selection'.
+     * Also switches to it immediately, so the toolbar matches.
+     */
+    setDefaultTool(tool: 'inkbrush' | 'fineliner' | 'selection') { setDefaultToolAction(tool); },
+    getDefaultTool() { return store.globalSettings.defaultTool ?? 'inkbrush'; },
+    /** Canvas cursor while a drawing tool is active: 'crosshair' (default) | 'circle' | 'arrow'. */
+    setPointerStyle(style: 'crosshair' | 'circle' | 'arrow') { updateGlobalSettings({ pointerStyle: style }); },
+    getPointerStyle() { return store.globalSettings.pointerStyle ?? 'crosshair'; },
     /** Pressure-driven width on the brush pen (Apple Pencil force / pointer pressure). */
     setPenPressure(enabled: boolean) { updateGlobalSettings({ penPressure: enabled }); },
     isPenPressureEnabled() { return store.globalSettings.penPressure !== false; },

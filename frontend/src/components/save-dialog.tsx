@@ -13,10 +13,16 @@ interface SaveDialogProps {
 const SaveDialog: Component<SaveDialogProps> = (props) => {
     onEscapeKey(() => props.isOpen, () => props.onClose());
     const [filename, setFilename] = createSignal("");
+    let inputRef: HTMLInputElement | undefined;
 
     createEffect(() => {
         if (props.isOpen) {
             setFilename(props.initialFilename || "untitled");
+            // Pre-select the placeholder so typing replaces it. Without this the
+            // caret lands after "Untitled" and naming a new drawing starts with
+            // clearing a word you never chose. Deferred a frame — the input is
+            // mounted by the same Show that this effect reacts to.
+            requestAnimationFrame(() => inputRef?.select());
         }
     });
 
@@ -51,6 +57,7 @@ const SaveDialog: Component<SaveDialogProps> = (props) => {
                             <div class="input-group">
                                 <label>Filename</label>
                                 <input
+                                    ref={inputRef}
                                     type="text"
                                     class="filename-input"
                                     value={filename()}

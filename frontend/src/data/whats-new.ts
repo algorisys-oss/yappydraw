@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.128', date: '2026-07-21', items: [
+        'Fixed: My Drawings only kept your most recent drawing. Saving, starting a new drawing and saving again quietly replaced the first one — each drawing now gets its own entry. (Drawings already lost to this can\'t be recovered, sorry.)',
+        'Fixed: saving and then choosing New still asked whether to save or discard, for work you had just saved.',
+        'Ctrl+S on a new drawing now asks you to name it, instead of filing everything away as "Untitled". After that it saves silently over that name.',
+        'Two new options under Settings → Pen & Input: which tool Yappy opens with (now the Ink Brush), and what the cursor looks like over the canvas (now a crosshair — a concentric circle and the old arrow are also available).',
+    ] },
     { version: '0.8.127', date: '2026-07-21', items: [
         'Smart Shapes now recognises your stroke almost every time, instead of working on one attempt and quietly ignoring the next. It copes with a mouse or trackpad: wobbly edges, a corner you didn\'t quite close, or running past where you started are all fine.',
         'A stroke you left open — an arc, or half a box — stays as freehand ink rather than being closed up into a shape you didn\'t draw.',

@@ -17,9 +17,9 @@
  * 7-day-ITP eviction.
  */
 
-import { createSignal } from 'solid-js';
 import { idbGet, idbSet, idbDelete } from './idb-kv';
-import { buildCurrentDocument } from './auto-save';
+import { activeDrawingId, setActiveDrawingId } from './active-drawing';
+import { buildCurrentDocument, clearAutoSave } from './auto-save';
 import { captureDocThumbnail } from './doc-thumbnails';
 import { requestPersistentStorage } from './persistent-storage';
 import { loadDocument } from '../store/app-store';
@@ -28,7 +28,6 @@ import type { SlideDocument } from '../types/slide-types';
 
 const INDEX_KEY = 'yappy:drawings:index';
 const DRAWING_KEY = (id: string) => `yappy:drawing:${id}`;
-const ACTIVE_KEY = 'yappy:drawings:active';
 
 export interface DrawingMeta {
     id: string;
@@ -45,18 +44,10 @@ export interface DrawingMeta {
 }
 
 // ── active-entry tracking (which gallery drawing is live) ───────────────────
-function readActive(): string | null {
-    try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; }
-}
-const [activeDrawingId, _setActiveDrawingId] = createSignal<string | null>(readActive());
-export { activeDrawingId };
-export function setActiveDrawingId(id: string | null): void {
-    _setActiveDrawingId(id);
-    try {
-        if (id) localStorage.setItem(ACTIVE_KEY, id);
-        else localStorage.removeItem(ACTIVE_KEY);
-    } catch { /* ignore */ }
-}
+// Lives in its own leaf module so app-store can clear it on load/new without
+// importing this one (which imports app-store). Re-exported here so existing
+// callers are unaffected.
+export { activeDrawingId, setActiveDrawingId };
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 function newId(): string {
@@ -139,6 +130,11 @@ export async function saveCurrentToGallery(opts: { name?: string; forceNew?: boo
     const id = opts.forceNew ? undefined : (activeDrawingId() ?? undefined);
     const meta = await saveDrawingDoc(doc, { id, name, thumb });
     setActiveDrawingId(meta.id);
+    // The document is now safely on disk, so it is no longer "unsaved". Without
+    // this the next File → New still raised the unsaved-changes dialog right
+    // after an explicit save. Also drops the crash-recovery slot, the same way
+    // a workspace save does — it can only be staler than what we just wrote.
+    clearAutoSave();
     return meta;
 }
 
