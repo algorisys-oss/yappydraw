@@ -314,9 +314,24 @@ export function renderSlideBackground(
     y: number,
     w: number,
     h: number,
-    _theme: string | boolean
+    _theme: string | boolean,
+    /**
+     * Focus mode: darken the PAGE SURFACE itself, not just the workspace around
+     * it. This is the one thing that distinguishes Focus from Dark — the
+     * workspace is already darkened for both, and a page is otherwise WYSIWYG
+     * white in every theme.
+     *
+     * Opt-in, and off by default, because every other caller must stay WYSIWYG:
+     * exports, thumbnails, video recording and time-lapse all render through
+     * here, and a PNG or MP4 that came out dark because of an editor preference
+     * would be a bug. Only the live editing canvas passes true.
+     */
+    focusDim = false
 ): void {
     const type = slide.fillStyle || 'solid';
+    // Reuses the same lightness-swap the dark theme applies to element colours,
+    // so a white page becomes the same dark surface elements are drawn against.
+    const dim = (c: string) => (focusDim ? RenderPipeline.adjustColor(c, true) : c);
 
     // Slide backgrounds are WYSIWYG — always use white as the fallback
     // regardless of theme.  Theme only affects the workspace area around slides.
@@ -325,7 +340,7 @@ export function renderSlideBackground(
     if (type === 'solid') {
         let color = slide.backgroundColor || defaultBg;
         if (color === 'transparent') color = defaultBg;
-        ctx.fillStyle = color;
+        ctx.fillStyle = dim(color);
         ctx.fillRect(x, y, w, h);
     } else if (['linear', 'radial', 'conic'].includes(type)) {
         const stops = slide.gradientStops || [];
@@ -334,7 +349,7 @@ export function renderSlideBackground(
         if (stops.length === 0) {
             let color = slide.backgroundColor || defaultBg;
             if (color === 'transparent') color = defaultBg;
-            ctx.fillStyle = color;
+            ctx.fillStyle = dim(color);
             ctx.fillRect(x, y, w, h);
             return;
         }
@@ -359,16 +374,18 @@ export function renderSlideBackground(
         }
 
         stops.forEach((s: any) => {
-            grad.addColorStop(s.offset, s.color);
+            grad.addColorStop(s.offset, dim(s.color));
         });
         ctx.fillStyle = grad;
         ctx.fillRect(x, y, w, h);
     } else if (['hachure', 'cross-hatch', 'zigzag', 'dots', 'dashed', 'zigzag-line'].includes(type)) {
         const bgColor = slide.backgroundColor || defaultBg;
-        ctx.fillStyle = bgColor;
+        ctx.fillStyle = dim(bgColor);
         ctx.fillRect(x, y, w, h);
 
-        const strokeColor = slide.strokeColor || "#000000";
+        // Hatching is drawn in the page's stroke colour; left un-dimmed it would
+        // be black-on-dark and vanish.
+        const strokeColor = dim(slide.strokeColor || "#000000");
 
         rc.rectangle(x, y, w, h, {
             fill: strokeColor,
@@ -413,7 +430,9 @@ export function renderSlideBoundaries(
     scale: number,
     panX: number,
     panY: number,
-    theme: string | boolean
+    theme: string | boolean,
+    /** See renderSlideBackground — live editing canvas only, never exports. */
+    focusDim = false
 ): void {
     ctx.save();
     ctx.translate(panX, panY);
@@ -435,7 +454,7 @@ export function renderSlideBoundaries(
             ctx.restore();
 
             // Slide surface
-            renderSlideBackground(ctx, rc, activeSlide, sX, sY, sW, sH, theme);
+            renderSlideBackground(ctx, rc, activeSlide, sX, sY, sW, sH, theme, focusDim);
         }
     } else if (docType === 'infinite') {
         // Background is handled by renderWorkspaceBackground for infinite mode

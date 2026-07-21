@@ -1362,7 +1362,7 @@ const Menu: Component = () => {
                                 <button
                                     class="menu-btn"
                                     onClick={toggleTheme}
-                                    title={`Toggle Theme — currently ${store.theme} (Light → Dark → Focus → System)`}
+                                    title={`Toggle Theme — currently ${store.theme} (${isPagedDocType(store.docType) ? 'Light → Dark → Focus → System' : 'Light → Dark → System'})`}
                                 >
                                     {store.theme === 'light' ? <Moon size={16} />
                                         : store.theme === 'dark' ? <Focus size={16} />

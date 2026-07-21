@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.135', date: '2026-07-21', items: [
+        'Focus theme now does something Dark doesn\'t: it darkens the page you\'re drawing on, not just the app around it. Exports, thumbnails and presentations stay exactly as authored.',
+        'Focus is offered only on presentations and design pages — on an infinite canvas it was identical to Dark, so the theme button now skips it there.',
+        'The OKLCH colour picker gained a "+ Swatch" button, so a colour you mix can be saved without painting a shape first and adding it from the Swatches panel.',
+    ] },
     { version: '0.8.134', date: '2026-07-21', items: [
         'Small text throughout the app is now properly legible: keyboard-shortcut badges, status-bar hints, menu shortcuts, the version number and footer links were all too faint to meet accessibility standards, in every theme.',
         'Nothing moved or changed shape — only colours and transparency. Light, dark and focus themes now pass WCAG AA contrast everywhere we can measure it.',

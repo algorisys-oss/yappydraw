@@ -2288,8 +2288,7 @@ export const loadDocument = (doc: any) => {
         // Reset canvas background to default before theme applies
         setStore("canvasBackgroundColor", '#ffffff');
 
-        // Apply theme from document if present, otherwise keep current theme
-        // (setTheme adjusts canvasBackgroundColor for focus theme automatically)
+        // Apply theme from document if present, otherwise keep current theme.
         if (gs.theme) {
             setTheme(gs.theme);
         }
@@ -3557,10 +3556,23 @@ export const setTheme = (theme: Theme) => {
     document.documentElement.setAttribute('data-theme', resolved);
 };
 
+/**
+ * Cycle light → dark → (focus) → system.
+ *
+ * Focus is offered only on paged documents. Its whole distinction from Dark is
+ * darkening the PAGE surface, and an infinite canvas has no page — its drawing
+ * surface is already darkened by Dark itself. On an infinite canvas the two
+ * themes are pixel-identical apart from this button's own icon, so offering
+ * both there is offering the same thing twice.
+ */
 export const toggleTheme = () => {
-    const order: Theme[] = ['light', 'dark', 'focus', 'system'];
+    const order: Theme[] = isPagedDocType(store.docType)
+        ? ['light', 'dark', 'focus', 'system']
+        : ['light', 'dark', 'system'];
+    // A doc opened while Focus was active isn't in the shortened cycle; step to
+    // dark rather than wrapping to the start, so the control still advances.
     const idx = order.indexOf(store.theme);
-    const next = order[(idx + 1) % order.length];
+    const next = idx === -1 ? 'dark' : order[(idx + 1) % order.length];
     setTheme(next);
 };
 

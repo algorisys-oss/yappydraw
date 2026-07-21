@@ -395,7 +395,12 @@ const Canvas: Component = () => {
 
         // 3. Render backgrounds & grids
         renderWorkspaceBackground(ctx, canvasRef, store.resolvedTheme, store.docType, store.canvasBackgroundColor);
-        renderSlideBoundaries(ctx, rc, store.slides, store.docType, store.activeSlideIndex, scale, panX, panY, store.resolvedTheme);
+        // Focus theme darkens the page surface itself — the one thing that sets
+        // it apart from Dark, which only darkens the workspace around the page.
+        // Not while presenting: an audience should see the deck as authored, and
+        // Focus is an authoring aid.
+        const focusDim = store.resolvedTheme === 'focus' && store.appMode !== 'presentation';
+        renderSlideBoundaries(ctx, rc, store.slides, store.docType, store.activeSlideIndex, scale, panX, panY, store.resolvedTheme, focusDim);
         renderCanvasTexture(ctx, canvasRef, store.canvasTexture, scale, panX, panY, isDarkMode, store.canvasBackgroundColor);
 
         // 4. Enter world-space for elements

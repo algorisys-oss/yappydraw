@@ -1,7 +1,7 @@
 import { type Component, For, createSignal, Show } from 'solid-js';
 import { isPagedDocType } from '../types/slide-types';
 import { Pin, PinOff } from 'lucide-solid';
-import { store, updateElement, pushToHistory, updateSlideBackground, updateDefaultStyles } from '../store/app-store';
+import { store, updateElement, pushToHistory, updateSlideBackground, updateDefaultStyles, createSwatch } from '../store/app-store';
 import { AdvancedP3Picker } from './advanced-p3-picker';
 import { COLOR_PALETTES, getColorPalette } from '../config/color-palettes';
 import { startColorDrop, moveColorDrop, commitColorDrop } from '../utils/color-drop';
@@ -147,7 +147,7 @@ export const ColorPalettePicker: Component = () => {
                             Back
                         </button>
                     </div>
-                    <AdvancedP3Picker onSelect={applyAsset} />
+                    <AdvancedP3Picker onSelect={applyAsset} onSaveSwatch={(c) => createSwatch(c)} />
                 </div>
             }>
                 <div style={{ padding: '8px' }}>

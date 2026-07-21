@@ -1,9 +1,11 @@
-import { type Component, createSignal, createEffect } from 'solid-js';
+import { type Component, createSignal, createEffect, Show } from 'solid-js';
 import { oklchToP3, formatOKLCH, isInP3Gamut, type OKLCH } from '../utils/color-utils';
 
 interface Props {
     initialColor?: string;
     onSelect: (color: string) => void;
+    /** Save the picked colour to the document's swatches. */
+    onSaveSwatch?: (color: string) => void;
 }
 
 export const AdvancedP3Picker: Component<Props> = (props) => {
@@ -179,9 +181,32 @@ export const AdvancedP3Picker: Component<Props> = (props) => {
                     'border-radius': '4px',
                     border: '1px solid rgba(0,0,0,0.1)'
                 }} />
-                <div>
+                <div style={{ flex: 1, 'min-width': 0 }}>
                     <div>{formatOKLCH(oklch())}</div>
                 </div>
+                {/* Picking a colour only applies it; without this the only way to
+                    keep it was to select the shape you just painted and press Add
+                    in the Swatches panel. */}
+                <Show when={props.onSaveSwatch}>
+                    <button
+                        onClick={() => props.onSaveSwatch!(formatOKLCH(oklch()))}
+                        title="Save this colour as a swatch"
+                        style={{
+                            padding: '4px 8px',
+                            'font-size': '11px',
+                            'font-family': 'inherit',
+                            background: 'var(--btn-bg)',
+                            color: 'var(--text-primary)',
+                            border: '1px solid var(--border-color)',
+                            'border-radius': '6px',
+                            cursor: 'pointer',
+                            'white-space': 'nowrap',
+                            'flex-shrink': 0,
+                        }}
+                    >
+                        + Swatch
+                    </button>
+                </Show>
             </div>
         </div>
     );
