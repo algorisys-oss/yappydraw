@@ -870,6 +870,7 @@ tests/quick-wins-batch1.spec.ts | typescript | 83 |
 tests/quick-wins-video2.spec.ts | typescript | 111 | countRed:93
 tests/recolor-live.spec.ts | typescript | 18 |
 tests/recolor.spec.ts | typescript | 36 | S:10
+tests/recording-capture.spec.ts | typescript | 228 | Page:1 GifInfo:23 parseGif:25 expectValidLoopingGif:37 boot:47 drawSomething:53 present:59 dismissToasts:67
 tests/repeat-symmetry.spec.ts | typescript | 75 |
 tests/reshape.spec.ts | typescript | 36 |
 tests/review-fixes.spec.ts | typescript | 79 | st:3
