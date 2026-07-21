@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.132](0.8.132.md) — Toasts no longer cover or block the presentation toolbar; help-doc API references audited
 - [0.8.131](0.8.131.md) — Committed regression suite for video/GIF capture (asserts the downloaded bytes; verified to fail against the bugs it guards)
 - [0.8.130](0.8.130.md) — Looping GIF capture (start/stop) from the presentation toolbar; GIF frame-rate control; failed captures no longer disable the feature
 - [0.8.129](0.8.129.md) — Record button in both presentation toolbars (MP4 of a whole run); Ctrl+Shift+E no longer ambushes you on Esc; Animation recording docs corrected

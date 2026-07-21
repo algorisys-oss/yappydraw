@@ -1,6 +1,9 @@
 .toast {
     position: fixed;
-    bottom: 24px;
+    /* Raised by whatever is docked at the bottom-centre. The presentation
+       toolbars live at bottom:40px with the same centring, so an un-offset
+       toast lands squarely on their buttons. */
+    bottom: var(--toast-bottom, 24px);
     left: 50%;
     transform: translateX(-50%);
     background: var(--bg-panel);
@@ -19,6 +22,12 @@
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     min-width: 300px;
     max-width: 90vw;
+    /* A transient notification must never swallow a click. It sits above
+       everything (z-index 10010) and is 300px wide in the middle of the
+       screen, so without this it eats presses meant for whatever it covers —
+       and it disappears on its own, leaving no trace of why the click was
+       lost. The close button opts back in below. */
+    pointer-events: none;
 }
 
 .toast-success {
@@ -56,6 +65,8 @@
 }
 
 .toast-close {
+    /* Opts back in: the toast itself is click-through (see .toast). */
+    pointer-events: auto;
     background: none;
     border: none;
     cursor: pointer;

@@ -212,7 +212,7 @@ frontend/src/components/perspective-grid-overlay.css | - | 31 |
 frontend/src/components/perspective-grid-overlay.tsx | typescript | 84 | PerspectiveGridOverlay:12 active:14 g:15 toWorld:16 w2s:17 grab:19 onMove:20 onUp:27 onKey:32 lines:38 hasSel:58
 frontend/src/components/player-app.css | - | 47 |
 frontend/src/components/player-app.tsx | typescript | 154 | Window:18 PlayerApp:23 onKey:104
-frontend/src/components/presentation-capture.tsx | typescript | 101 | Component:12 elapsed:21 size:25 btn:30 toggleGif:45
+frontend/src/components/presentation-capture.tsx | typescript | 113 | Component:12 elapsed:33 size:37 btn:42 toggleGif:57
 frontend/src/components/presentation-controls.tsx | typescript | 240 | Component:1 PresentationControls:8 resetHideTimeout:12 handleNext:43 handlePrev:48
 frontend/src/components/property-panel.css | - | 832 |
 frontend/src/components/property-panel.tsx | typescript | 2568 | Component:1 PropertyConfig:28 isMixed:52 templates:75 handleClickOutside:77 handlePresent:132 StickFaceActions:222 calls:236 SlideActions:312 handlePreviewTransition:313 AlignmentControls:329 gapVal:331 el:374 r2:375 apply:376 applyAngle:380 num:384 any:423 el:433 hasStroke:434 preview:435 set:436 hasOptions:468 activePaletteId:473 activePalette:474 paletteSwatches:476 swatches:478 ap:578 fills:579 strokes:580 commit:581 editFill:587 editStroke:588 move:589 patValue:604 onPatChange:605 sg:652 stops:653 setSG:654 editStop:655 mesh:683 ids:684 row:703 col:704 pat:739 ids:740 transparentBg:744 isCustom:745 el:830 id:831 set:832 snap:833 feather:834 glowOn:835 glowBlur:836 glowColor:837 warp:874 ids:875 bend:877 preset:878 reapply:879 ex:909 ids:910 Row:914 TurntableEditor:951 els:952 capable:953 ids:954 isGroup:955 rep:956 tt:957 Row:961 fx:1025 ids:1026 num:1031 scalePct:1032 Row:1034 updateStops:1104 handleBarMouseDown:1109 handleThumbMouseDown:1126 +32 more
@@ -282,7 +282,7 @@ frontend/src/components/timelapse-overlay.css | - | 75 |
 frontend/src/components/timelapse-overlay.tsx | typescript | 30 | Component:1 TimelapseOverlay:12
 frontend/src/components/timelapse-player.css | - | 165 |
 frontend/src/components/timelapse-player.tsx | typescript | 173 | Component:1 TimelapsePlayer:18 reset:28 load:37 close:87 togglePlay:89 doExport:95
-frontend/src/components/toast.css | - | 109 |
+frontend/src/components/toast.css | - | 120 |
 frontend/src/components/toast.tsx | typescript | 55 | ToastType:5 showToast:15 hideToast:31 Toast:36
 frontend/src/components/toolbar.css | - | 254 |
 frontend/src/components/toolbar.tsx | typescript | 589 | Component:1 VideoProvider:26 Toolbar:79 clampIntoView:86 wrapWidth:121 onResizeDown:126 toggleBrainstormMode:137 onPointerDown:143 onPointerMove:156 onPointerUp:170 handleResize:189 handleToolClick:204 handleVideoInsert:214 handleRightClick:262 handleImageUpload:268 type:449 Icon:450
@@ -320,7 +320,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 213 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 216 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -870,7 +870,7 @@ tests/quick-wins-batch1.spec.ts | typescript | 83 |
 tests/quick-wins-video2.spec.ts | typescript | 111 | countRed:93
 tests/recolor-live.spec.ts | typescript | 18 |
 tests/recolor.spec.ts | typescript | 36 | S:10
-tests/recording-capture.spec.ts | typescript | 228 | Page:1 GifInfo:23 parseGif:25 expectValidLoopingGif:37 boot:47 drawSomething:53 present:59 dismissToasts:67
+tests/recording-capture.spec.ts | typescript | 260 | Page:1 GifInfo:23 parseGif:25 expectValidLoopingGif:37 boot:47 drawSomething:53 present:59 dismissToasts:67
 tests/repeat-symmetry.spec.ts | typescript | 75 |
 tests/reshape.spec.ts | typescript | 36 |
 tests/review-fixes.spec.ts | typescript | 79 | st:3

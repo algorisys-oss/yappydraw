@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.132', date: '2026-07-21', items: [
+        'Fixed: pop-up messages sat on top of the presentation toolbar — hiding the buttons underneath and swallowing clicks meant for them. They now float above the toolbar, and clicks pass straight through.',
+    ] },
     { version: '0.8.130', date: '2026-07-21', items: [
         'Capture a looping GIF straight from the presentation toolbar — press the film button to start, press it again to stop. Ideal for a README, a wiki page or a chat message, where a GIF plays inline with no player.',
         'It shows the elapsed time and file size while it runs, so you can see what a long capture costs before you download it.',

@@ -9,7 +9,7 @@
  * controls here, once, is what stops that recurring.
  */
 
-import { type Component, Show } from 'solid-js';
+import { type Component, Show, onMount, onCleanup } from 'solid-js';
 import { Video, Square, Film } from 'lucide-solid';
 import { store } from '../store/app-store';
 import {
@@ -17,7 +17,19 @@ import {
     gifCapturing, gifElapsedMs, gifBytes,
 } from '../utils/recording-manager';
 
+// Height to lift toasts by while a presentation toolbar is docked at the
+// bottom-centre: toolbar top edge (40px + ~50px tall) plus breathing room.
+const TOOLBAR_CLEARANCE = '110px';
+
 export const PresentationCaptureButtons: Component<{ onInteract?: () => void }> = (props) => {
+    // Push toasts above the toolbar for as long as it's on screen. This lives
+    // here because this component renders inside BOTH presentation toolbars and
+    // unmounts with their auto-hide — so the offset tracks visibility for free,
+    // and the two toolbars cannot drift apart on it the way their capture
+    // buttons once did.
+    onMount(() => document.documentElement.style.setProperty('--toast-bottom', TOOLBAR_CLEARANCE));
+    onCleanup(() => document.documentElement.style.removeProperty('--toast-bottom'));
+
     const elapsed = () => {
         const s = Math.floor(gifElapsedMs() / 1000);
         return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
