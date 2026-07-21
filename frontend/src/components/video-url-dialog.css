@@ -169,12 +169,12 @@
 
 .video-dialog-btn-submit {
     border: none;
-    background: var(--primary-color);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
 }
 
 .video-dialog-btn-submit:hover:not(:disabled) {
-    opacity: 0.9;
+    background: var(--btn-primary-bg-hover);
 }
 
 .video-dialog-btn-submit:disabled {

@@ -96,16 +96,14 @@
 
 .unsaved-btn-save {
     border: none;
-    background: var(--primary-color);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
 }
 
 .unsaved-btn-save:hover {
-    background: var(--primary-color);
-    opacity: 0.9;
+    background: var(--btn-primary-bg-hover);
 }
 
 .unsaved-btn-save:active {
-    background: var(--primary-color);
-    opacity: 0.85;
+    background: var(--btn-primary-bg-hover);
 }

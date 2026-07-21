@@ -107,14 +107,13 @@
     padding: 8px 16px;
     border-radius: 6px;
     border: none;
-    background: var(--primary-color);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
 }
 
 .confirm-btn:hover {
-    background: var(--primary-color);
-    opacity: 0.9;
+    background: var(--btn-primary-bg-hover);
 }

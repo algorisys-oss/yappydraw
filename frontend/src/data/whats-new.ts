@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.133', date: '2026-07-21', items: [
+        'Buttons like Done, Save and Export are now properly legible in both light and dark themes. Their text was below the accessibility standard for contrast, and hovering made it worse rather than better.',
+        'The colour palette now starts on P3 Wide-Gamut, so colours are richer on modern displays. Browsers that can\'t show P3 keep the standard palette automatically.',
+    ] },
     { version: '0.8.132', date: '2026-07-21', items: [
         'Fixed: pop-up messages sat on top of the presentation toolbar — hiding the buttons underneath and swallowing clicks meant for them. They now float above the toolbar, and clicks pass straight through.',
     ] },

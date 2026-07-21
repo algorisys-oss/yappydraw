@@ -172,12 +172,12 @@
     padding: 6px 18px;
     border: none;
     border-radius: 6px;
-    background: var(--primary-color);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
     cursor: pointer;
     font-size: 0.85rem;
 }
 
 .rocket-settings-done-btn:hover {
-    opacity: 0.9;
+    background: var(--btn-primary-bg-hover);
 }

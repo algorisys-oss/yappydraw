@@ -45,6 +45,7 @@ import { generateId } from "../utils/id-generator"; // New Import
 import { refreshBoundLine } from "../utils/binding-logic";
 import { abortDsAlgorithm } from "../utils/ds-operations";
 import { getImage } from "../utils/image-cache";
+import { defaultPaletteId } from "../config/color-palettes";
 
 export type Theme = 'light' | 'dark' | 'focus' | 'system';
 export type ResolvedTheme = 'light' | 'dark' | 'focus';
@@ -426,7 +427,10 @@ const initialState: AppState = {
         reducedMotion: false,
         renderStyle: 'architectural',
         showQuickToolbar: true, // Default to showing the toolbar
-        colorPalette: (localStorage.getItem('colorPalette') || 'default'),
+        // P3 by default, falling back to sRGB where the browser can't render it
+        // (see defaultPaletteId — an unparseable canvas fillStyle is silently
+        // ignored, so an unsupported palette draws in the wrong colour).
+        colorPalette: (localStorage.getItem('colorPalette') || defaultPaletteId()),
         smartShape: (localStorage.getItem('smartShape') ?? '1') !== '0',
         defaultTool: readDefaultTool(),
         pointerStyle: readPointerStyle(),

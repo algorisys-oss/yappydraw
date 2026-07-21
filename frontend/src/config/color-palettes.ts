@@ -102,8 +102,36 @@ export const COLOR_PALETTES: ColorPalette[] = [
     },
 ];
 
-export const DEFAULT_PALETTE_ID = 'default';
+/**
+ * Whether the browser understands `color(display-p3 …)`, which every swatch in
+ * the P3 palette uses.
+ *
+ * This matters more than it looks: assigning an unparseable value to
+ * `ctx.fillStyle` is silently IGNORED by the canvas spec — it keeps the previous
+ * style rather than throwing or falling back. So on a browser without P3
+ * support, shapes would quietly draw in whatever colour happened to be set last.
+ * Supported since Safari 15, Chrome 111 and Firefox 113; older engines get the
+ * sRGB palette instead.
+ */
+export function supportsDisplayP3(): boolean {
+    try {
+        return typeof CSS !== 'undefined'
+            && typeof CSS.supports === 'function'
+            && CSS.supports('color', 'color(display-p3 1 0 0)');
+    } catch {
+        return false;
+    }
+}
+
+/** Palette used when the user hasn't chosen one. P3 where it renders. */
+export function defaultPaletteId(): string {
+    return supportsDisplayP3() ? 'p3' : 'default';
+}
+
+export const DEFAULT_PALETTE_ID = 'p3';
 
 export function getColorPalette(id: string | undefined): ColorPalette {
-    return COLOR_PALETTES.find(p => p.id === id) ?? COLOR_PALETTES[0];
+    return COLOR_PALETTES.find(p => p.id === id)
+        ?? COLOR_PALETTES.find(p => p.id === defaultPaletteId())
+        ?? COLOR_PALETTES[0];
 }

@@ -68,8 +68,8 @@
 }
 
 .dropdown-item.active {
-    background: var(--primary-color);
-    color: #ffffff;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
 }
 
 .tool-label {

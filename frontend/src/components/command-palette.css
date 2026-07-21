@@ -58,8 +58,8 @@
 }
 
 .command-palette-item.selected {
-    background: var(--primary-color);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
 }
 
 .command-palette-item-info {
@@ -75,7 +75,11 @@
 }
 
 .command-palette-item.selected .command-palette-item-category {
-    opacity: 0.8;
+    /* Full strength on the highlighted row. Fading toward a saturated fill is
+       what costs contrast: 0.6 → 0.8 was already a partial concession and still
+       measured 3.89:1 in light mode. The 11px uppercase treatment carries the
+       hierarchy on its own, so the opacity isn't needed here. */
+    opacity: 1;
 }
 
 .command-palette-item-label {

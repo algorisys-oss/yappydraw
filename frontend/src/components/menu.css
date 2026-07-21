@@ -118,14 +118,14 @@
 }
 
 .menu-btn.primary {
-    background: var(--primary-color);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
     width: auto;
     padding: 0 12px;
 }
 
 .menu-btn.primary:hover {
-    opacity: 0.9;
+    background: var(--btn-primary-bg-hover);
 }
 
 /* Dropdown Menu */

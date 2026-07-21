@@ -57,8 +57,8 @@
 .vt-row svg { flex: 0 0 auto; }
 .vt-row span { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-row:hover { background: var(--bg-secondary); }
-.vt-on { background: var(--primary-color); border-color: var(--primary-color); color: #fff; }
-.vt-on:hover { background: var(--primary-color); filter: brightness(0.94); }
+.vt-on { background: var(--btn-primary-bg); border-color: var(--btn-primary-bg); color: var(--btn-primary-fg); }
+.vt-on:hover { background: var(--btn-primary-bg-hover); }
 .vt-row-caret { opacity: 0.6; }
 
 .vt-flyout { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px 0 4px 22px; }

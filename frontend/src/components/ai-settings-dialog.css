@@ -91,15 +91,15 @@
 }
 
 .ai-settings-provider-btn.active {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    border-color: var(--btn-primary-bg);
 }
 
 .ai-settings-provider-btn.active:hover {
-    background: var(--primary-color);
-    color: white;
-    opacity: 0.9;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    background: var(--btn-primary-bg-hover);
 }
 
 .ai-settings-row {
@@ -192,14 +192,14 @@
     padding: 6px 18px;
     border: none;
     border-radius: 6px;
-    background: var(--primary-color);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
     cursor: pointer;
     font-size: 0.85rem;
 }
 
 .ai-settings-done-btn:hover {
-    background: var(--primary-color);
-    color: white;
-    opacity: 0.9;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    background: var(--btn-primary-bg-hover);
 }

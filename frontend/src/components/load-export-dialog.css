@@ -186,15 +186,15 @@
     padding: 10px;
     border-radius: 8px;
     border: 1px solid var(--primary-color);
-    background: var(--primary-color);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .action-trigger:hover {
-    filter: brightness(1.1);
+    background: var(--btn-primary-bg-hover);
 }
 
 .action-trigger.secondary {
@@ -204,15 +204,15 @@
 }
 
 .option-card:hover .action-trigger.secondary {
-    border-color: var(--primary-color);
-    background: var(--primary-color);
-    color: white;
+    border-color: var(--btn-primary-bg);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
 }
 
 .option-card:hover .action-trigger:not(.secondary) {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    border-color: var(--btn-primary-bg);
 }
 
 /* Footer */

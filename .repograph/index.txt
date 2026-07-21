@@ -113,7 +113,7 @@ frontend/src/components/cloud-storage-dialog.tsx | typescript | 498 | CloudDialo
 frontend/src/components/color-drop-hud.tsx | typescript | 29 | Component:1 ColorDropHud:8
 frontend/src/components/color-picker-pro.css | - | 120 |
 frontend/src/components/color-picker-pro.tsx | typescript | 257 | Component:1 clamp01:15 hsvToRgb:16 rgbToHsv:28 hsvToHex:40 hexToRgb:44 Props:51 ColorPickerPro:60 emit:81 setMode2:82 commitRecent:84 drag:92 run:96 up:102 triVerts:114 bary:125 onTriDown:171 run:173 up:191 eyedrop:197 applyHex:204
-frontend/src/components/command-palette.css | - | 127 |
+frontend/src/components/command-palette.css | - | 131 |
 frontend/src/components/command-palette.tsx | typescript | 105 | Component:1 CommandPalette:6 filter:11 results:12 handleKeyDown:22 placeholder:43 to:45
 frontend/src/components/connection-rel-tool-group.tsx | typescript | 205 | Component:1 ConnectionRelToolGroup:90 handler:97 getActiveTool:107 handleToolClick:116 as:124 as:130 handleRightClick:138 toggleMenu:144 activeTool:151 isActive:152 getDropdownPosition:154
 frontend/src/components/connector-tool-group.css | - | 20 |
@@ -145,7 +145,7 @@ frontend/src/components/elements-panel.css | - | 168 |
 frontend/src/components/elements-panel.tsx | typescript | 351 | Component:1 FontPairing:4 AssetKind:8 KindFilter:32 insertOrigin:35 previewFamily:47 ensurePreviewFont:59 ElementsPanel:68 insertHit:139 insertIcon:149 insertShape:157 insertFrame:164 chips:247 above:324
 frontend/src/components/embed-viewer.css | - | 81 |
 frontend/src/components/embed-viewer.tsx | typescript | 170 | EmbedOptions:12 parseEmbedOptions:20 EmbedViewer:36 fitToView:41 handleResize:123 openUrl:129
-frontend/src/components/export-dialog.css | - | 147 |
+frontend/src/components/export-dialog.css | - | 146 |
 frontend/src/components/export-dialog.tsx | typescript | 232 | Component:1 ExportDialogProps:9 ExportDialog:14 isPaged:23 isVideo:24 handleKeyDown:39 handleExport:50
 frontend/src/components/file-open-dialog.css | - | 158 |
 frontend/src/components/file-open-dialog.tsx | typescript | 192 | Component:1 FileOpenDialogProps:8 FileOpenDialog:14 fetchFiles:22 handleDelete:45 handleKeyDown:61 handleMouseMove:97
@@ -232,12 +232,12 @@ frontend/src/components/rich-text-editing-overlay.tsx | typescript | 359 | Compo
 frontend/src/components/rocket-settings-dialog.css | - | 183 |
 frontend/src/components/rocket-settings-dialog.tsx | typescript | 182 | Component:5 RocketConfig:7 RocketSettingsDialogProps:13 RocketSettingsDialog:18 handleKeyDown:38 handleDone:49 handleTest:59
 frontend/src/components/ruler-overlay.tsx | typescript | 235 | niceStep:9 DragState:17 RulerOverlay:30 theme:37 palette:38 worldToScreenX:45 worldToScreenY:46 screenToWorldX:47 screenToWorldY:48 drawRuler:50 onWindowPointerMove:128 onWindowPointerUp:134 startCreate:143 startMove:150 onResize:157 screen:178
-frontend/src/components/save-dialog.css | - | 120 |
+frontend/src/components/save-dialog.css | - | 119 |
 frontend/src/components/save-dialog.tsx | typescript | 82 | Component:1 SaveDialogProps:6 SaveDialog:13 handleSave:29 handleKeyDown:36
 frontend/src/components/scene-timeline.css | - | 73 |
 frontend/src/components/scene-timeline.tsx | typescript | 197 | Component:1 clipColor:14 clipName:15 FigTrack:17 SceneTimeline:19 reorderStep:35 move:43 up:55 resizeStep:61 move:68 up:73 dur:112 pct:113 play:115 restart:116 seekFromEvent:119 onRulerDown:125 move:128 up:129 selectFigure:134
 frontend/src/components/scroll-back-button.tsx | typescript | 136 | Component:8 ScrollBackButtonProps:12 ScrollBackButton:16 handleScrollBack:65
-frontend/src/components/settings-dialog.css | - | 207 |
+frontend/src/components/settings-dialog.css | - | 217 |
 frontend/src/components/settings-dialog.tsx | typescript | 469 | Component:1 SettingsDialogProps:10 SettingsDialog:26 handleKeyDown:29 defaults:40 CloudSettingsContent:397 handleSignIn:410 handleSignOut:422
 frontend/src/components/shape-builder-overlay.css | - | 71 |
 frontend/src/components/shape-builder-overlay.tsx | typescript | 163 | ShapeFace:5 ShapeBuilderOverlay:18 del:23 active:28 toWorld:29 computeTouched:32 onDown:51 onMove:62 onUp:68 onCancel:85 onKey:91 strokeScreen:102 touchedPath:105 touchedBoxes:125
@@ -293,7 +293,7 @@ frontend/src/components/transform-hud.tsx | typescript | 95 | fmt:22 TransformHu
 frontend/src/components/type-on-path-overlay.css | - | 23 |
 frontend/src/components/type-on-path-overlay.tsx | typescript | 72 | text:13 TypeOnPathOverlay:16 active:18 toWorld:19 pick:21 onMove:33 onDown:34 onKey:46 box:52
 frontend/src/components/uml-tool-group.tsx | typescript | 145 | Component:1 UmlToolGroup:30 handler:37 getActiveUmlTool:47 handleToolClick:56 as:64 as:70 handleRightClick:78 toggleMenu:84 activeTool:91 isActive:92 getDropdownPosition:94
-frontend/src/components/unsaved-changes-dialog.css | - | 111 |
+frontend/src/components/unsaved-changes-dialog.css | - | 109 |
 frontend/src/components/unsaved-changes-dialog.tsx | typescript | 55 | Component:1 UnsavedChangesDialogProps:6 UnsavedChangesDialog:13 handleKeyDown:15
 frontend/src/components/vector-tools-panel.css | - | 70 |
 frontend/src/components/vector-tools-panel.tsx | typescript | 141 | Component:1 tool:19 Tool:24 VectorToolsPanel:26 center:30 selTexts:39 modeRun:42
@@ -310,7 +310,7 @@ frontend/src/components/width-tool-overlay.css | - | 39 |
 frontend/src/components/width-tool-overlay.tsx | typescript | 92 | WidthToolOverlay:14 active:19 toWorld:20 candidatePaths:22 onDown:28 onMove:44 onUp:45 onKey:62 guide:71
 frontend/src/components/wireframe-tool-group.tsx | typescript | 268 | Component:1 UIShapeCategory:5 as:67 WireframeToolGroup:84 handler:91 getActiveTool:101 handleToolClick:114 handleRightClick:136 toggleMenu:142 activeTool:149 isActive:150 getDropdownPosition:152 as:219
 frontend/src/config/canvas-themes.ts | typescript | 34 | CanvasTexture:9 CanvasTheme:11 matchCanvasTheme:32
-frontend/src/config/color-palettes.ts | typescript | 109 | ColorPaletteEntry:1 ColorPalette:6 getColorPalette:107
+frontend/src/config/color-palettes.ts | typescript | 137 | ColorPaletteEntry:1 ColorPalette:6 supportsDisplayP3:116 defaultPaletteId:127 getColorPalette:133
 frontend/src/config/features.ts | typescript | 35 |
 frontend/src/config/gradient-presets.ts | typescript | 479 | GradientPreset:6 getGradientPreset:463 getPresetsByCategory:470 getGradientCategories:477
 frontend/src/config/image-filter-presets.ts | typescript | 45 | ImageFilterPreset:1 getImageFilterPreset:43
@@ -320,7 +320,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 216 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 220 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -416,7 +416,7 @@ frontend/src/help-docs/shapes/table-doc.tsx | typescript | 748 | TableDoc:7 with
 frontend/src/help-docs/shapes/uml-doc.tsx | typescript | 455 | UmlDoc:8 diagrams:14 with:34 or:49 box:95
 frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 315 | VectorPathsDoc:9
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 297 | WireframingDoc:8
-frontend/src/index.css | - | 509 |
+frontend/src/index.css | - | 529 |
 frontend/src/index.tsx | typescript | 119 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84
 frontend/src/library/comic/cast-style.test.ts | typescript | 71 |
 frontend/src/library/comic/cast-style.ts | typescript | 96 | CastStyle:23 CastHairOptions:57 assignCastHair:70 scriptCast:90
@@ -510,7 +510,7 @@ frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 Docu
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 readIndex:37 writeIndex:41 saveSnapshot:45 maybeSnapshotVersion:68 snapshotVersionNow:85 listVersions:96 restoreVersion:101 deleteVersion:113
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 8103 | LayoutDirection:16 OutlineNode:16 BooleanOp:17 Poly:17 ShapeFace:17 DistortKind:18 WarpPreset:40 Theme:49 ResolvedTheme:50 DefaultToolChoice:83 PointerStyle:94 AppState:104 HistorySnapshot:589 BP:1619 AlignmentType:4438 DistributionType:4438 CharPatch:5016 CharPatchArg:5019 SelBBox:5973 LastTransform:6238 RegionPathfinderOp:6597 SelectSimilarMatch:6730 buildPathFromPoly:7458 polysOriginMin:7493 syncCompoundOperands:7500 buildCompoundPath:7511 WorldSub:7737 rdpAnchors:7740 normalizeWorldSubs:7768 makePathFromWorldSubs:7783 elementToWorldSubs:7804 startInkCleanupIfNeeded:8042
+frontend/src/store/app-store.ts | typescript | 8107 | LayoutDirection:16 OutlineNode:16 BooleanOp:17 Poly:17 ShapeFace:17 DistortKind:18 WarpPreset:40 Theme:50 ResolvedTheme:51 DefaultToolChoice:84 PointerStyle:95 AppState:105 HistorySnapshot:593 BP:1623 AlignmentType:4442 DistributionType:4442 CharPatch:5020 CharPatchArg:5023 SelBBox:5977 LastTransform:6242 RegionPathfinderOp:6601 SelectSimilarMatch:6734 buildPathFromPoly:7462 polysOriginMin:7497 syncCompoundOperands:7504 buildCompoundPath:7515 WorldSub:7741 rdpAnchors:7744 normalizeWorldSubs:7772 makePathFromWorldSubs:7787 elementToWorldSubs:7808 startInkCleanupIfNeeded:8046
 frontend/src/store/dock-layout.ts | typescript | 155 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:60 hidePanel:71 setPanelOpen:81 dockPanel:88 dockPanelAt:98
 frontend/src/templates/data/designs/cards.ts | typescript | 127 |
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
@@ -778,6 +778,7 @@ tests/composition-evaluator.spec.ts | typescript | 47 | composition:4
 tests/compound-edit.spec.ts | typescript | 66 | widthOf:18
 tests/compound-shapes.spec.ts | typescript | 85 | state:31
 tests/comprehensive-features.spec.ts | typescript | 238 |
+tests/contrast.spec.ts | typescript | 90 | Page:1 relLuminance:16 contrast:20 sample:27
 tests/curvature.spec.ts | typescript | 35 |
 tests/data-structures.spec.ts | typescript | 188 |
 tests/default-style.spec.ts | typescript | 17 |

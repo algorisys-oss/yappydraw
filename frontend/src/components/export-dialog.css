@@ -97,9 +97,9 @@
 }
 
 .scale-btn.active {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    border-color: var(--btn-primary-bg);
 }
 
 .checkbox-label {
@@ -132,8 +132,8 @@
 }
 
 .export-confirm-btn {
-    background: var(--primary-color);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
     border: none;
     padding: 8px 20px;
     border-radius: 6px;
@@ -142,6 +142,5 @@
 }
 
 .export-confirm-btn:hover {
-    background-color: var(--primary-color);
-    opacity: 0.9;
+    background-color: var(--btn-primary-bg-hover);
 }

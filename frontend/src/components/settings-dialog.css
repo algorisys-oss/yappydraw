@@ -150,14 +150,24 @@
     padding: 6px 18px;
     border: none;
     border-radius: 6px;
-    background: var(--primary-color);
-    color: white;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
     cursor: pointer;
     font-size: 0.85rem;
 }
 
+/* Was `opacity: 0.9`, which fades the whole element toward the panel behind
+   it — in light mode that lightened the blue fill while the white label stayed
+   white, so hovering LOWERED contrast (3.68 → 3.21). Swapping the fill instead
+   keeps the label solid and raises contrast on hover, which is what a hover
+   affordance should do. */
 .settings-close-btn:hover {
-    opacity: 0.9;
+    background: var(--btn-primary-bg-hover);
+}
+
+.settings-close-btn:focus-visible {
+    outline: 2px solid var(--btn-primary-bg);
+    outline-offset: 2px;
 }
 
 /* Toggle switch */
