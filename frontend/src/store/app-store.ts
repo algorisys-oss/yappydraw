@@ -1608,10 +1608,19 @@ export const exitCropMode = (apply: boolean) => {
         const r = store.cropRestore;
         updateElement(store.cropModeElementId, { x: r.x, y: r.y, width: r.width, height: r.height, crop: r.crop }, false);
     }
+    const wasCropping = store.cropModeElementId;
     setStore('cropModeElementId', null);
     setStore('cropRect', null);
     setStore('cropRestore', null);
     setStore('cropAspect', null);
+    // Leave the Crop tool once the edit is finished. Staying armed meant the
+    // next click on the image dropped straight back into crop mode — and since
+    // crop mode shows the whole picture again, that looks exactly like the crop
+    // being undone. Select the element instead so it can be moved or resized.
+    if (wasCropping && store.selectedTool === 'crop') {
+        setStore('selection', [wasCropping]);
+        setSelectedTool('selection');
+    }
 };
 
 /**

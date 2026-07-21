@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.140', date: '2026-07-21', items: [
+        'Fixed: after cropping, clicking the image again re-opened crop and showed the whole original picture — which looked like your crop had been thrown away. Finishing a crop now hands you the Select tool with the image selected.',
+    ] },
     { version: '0.8.139', date: '2026-07-21', items: [
         'Cropping the same image twice now works properly. Re-entering crop shows the whole picture again, so you can widen a crop back out or remove it entirely — previously you could only ever cut further in.',
         'Crop now has Apply and Cancel buttons on screen. On a tablet there was no way to cancel at all (it needed the Esc key) and applying meant tapping somewhere unmarked.',
