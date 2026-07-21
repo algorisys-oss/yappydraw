@@ -830,11 +830,21 @@ const Canvas: Component = () => {
             });
         }
 
-        // End the stroke and present the corrected shape selected for editing.
-        if (touchDrivingPenStroke) smartShapeSuppress = true;
+        // End the stroke and leave the corrected shape selected, so the quick
+        // toolbar / Properties panel target it and you can restyle immediately.
+        // The pen tool stays ACTIVE on purpose: hold-to-correct is used mid-flow
+        // while sketching, and switching to Select would cost a tool round-trip
+        // before every following stroke. Handle dragging and marquee are gated
+        // on the Select tool, so a live selection is inert while a pen is active
+        // — the next stroke simply draws and replaces it.
+        // Suppress unconditionally, not just for touch: the pen tool used to be
+        // swapped for Select here, which is what stopped the still-in-contact
+        // stylus from re-opening a stroke via the heal-on-move path. With the
+        // tool kept, this flag is the only thing holding that trailing contact
+        // back until the pen actually lifts. Cleared on the next pointerdown.
+        smartShapeSuppress = true;
         resetActiveStroke();
         setStore('selection', [id]);
-        setSelectedTool('selection');
         draw();
     };
 
@@ -1435,10 +1445,13 @@ const Canvas: Component = () => {
         // ongoing pen stroke is filtered. iPadOS also does its own system-level
         // palm rejection when Apple Pencil is paired, so this is a safety net,
         // not the primary defense.
+        // A fresh pointerdown of any kind starts a new stroke, so it clears the
+        // post-snap suppression. Mouse included: a mouse-driven smart-shape snap
+        // now sets the flag too, and nothing else would ever clear it.
+        smartShapeSuppress = false;
         if (e.pointerType === 'pen') {
             pState.activePenPointerId = e.pointerId;
             pState.lastPenInputAt = Date.now();
-            smartShapeSuppress = false; // a fresh pen-down starts a new stroke
         } else if (e.pointerType === 'touch') {
             if (isPalmTouch(pState, e, Date.now())) return;
         }

@@ -267,7 +267,12 @@ export const DrawingToolsDoc: Component = () => {
                     Draw a shape freehand with any pen tool (Pencil, Fineliner, Ink Brush, Marker)
                     and <strong>hold the pen still for about half a second</strong> before lifting.
                     The freehand stroke instantly snaps to a clean geometric shape and is selected so
-                    you can resize, fill, or connect it like any other shape.
+                    you can fill or restyle it straight away.
+                </p>
+                <p>
+                    Your <strong>pen tool stays active</strong> after a snap — keep drawing without a
+                    trip back to the toolbar. Switch to <strong>Select</strong> (<span class="kbd">V</span>)
+                    when you want to move, resize or connect the corrected shape.
                 </p>
                 <ul>
                     <li>A roughly straight stroke becomes a <strong>line</strong>.</li>

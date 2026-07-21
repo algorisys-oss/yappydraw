@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.126](0.8.126.md) — Smart shapes (hold to correct) keep your pen tool active instead of switching to Select
 - [0.8.125](0.8.125.md) — Shape text is centred by default; the Properties panel no longer opens by itself when you pick a tool
 - [0.8.106](0.8.106.md) — Excalidraw import/export (+ open Yappy format spec); text auto-size reachable & sticky; mindmap Tab/Enter inherit the parent's fonts/style; Slingshot overhaul (Y-fork + elastic bands via new `tether` action, destructible blocks, per-sprite gravity, grab margin); fix random middle-click paste on Linux; Alt+Enter opens Canvas properties; Behaviors panel no longer buried under the slide-navigator
 - [0.8.102](0.8.102.md) — "What's new" popup: click the version number for a plain-language list of recent updates (+ "new" dot, Reload-latest button, `Yappy.showWhatsNew()`)
