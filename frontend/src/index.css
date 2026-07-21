@@ -35,6 +35,14 @@
   --btn-primary-bg-hover: #1d4ed8;
   --btn-primary-fg: #ffffff;
   --danger-color: #ef4444;
+  /* Danger used as TEXT rather than a fill: --danger-color is only 3.8:1 on
+     white, fine for an icon or a border, short of AA for a label. */
+  --danger-text: #dc2626;
+  /* Brand accent for the wordmark, per theme — one value cannot clear 4.5:1
+     against both a white and a #1e1e1e panel. */
+  --logo-accent: #4338ca;
+  --link-color: #4338ca;
+  --link-color-hover: #3730a3;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
 
   color-scheme: light dark;
@@ -67,6 +75,10 @@
   --btn-primary-bg-hover: #93c5fd;
   --btn-primary-fg: #0b1220;
   --danger-color: #f87171;
+  --danger-text: #f87171;
+  --logo-accent: #818cf8;
+  --link-color: #818cf8;
+  --link-color-hover: #a5b4fc;
   /* Lighter red for dark mode */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -100,6 +112,10 @@
   --btn-primary-bg-hover: #93c5fd;
   --btn-primary-fg: #0b1220;
   --danger-color: #f87171;
+  --danger-text: #f87171;
+  --logo-accent: #818cf8;
+  --link-color: #818cf8;
+  --link-color-hover: #a5b4fc;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
@@ -226,12 +242,14 @@ input[type="checkbox"]:focus-visible {
 
 a {
   font-weight: 500;
-  color: #646cff;
+  /* #646cff measured 4.07-4.09:1 against every theme's panel — just under AA,
+     and no single hue clears 4.5:1 on both white and #1e1e1e. Per-theme token. */
+  color: var(--link-color, #4338ca);
   text-decoration: inherit;
 }
 
 a:hover {
-  color: #535bf2;
+  color: var(--link-color-hover, #3730a3);
 }
 
 body {

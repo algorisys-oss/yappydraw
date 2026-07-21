@@ -112,7 +112,8 @@
 
 .status-attribution {
     font-size: 10px;
-    opacity: 0.7;
+    /* was opacity: .7 — 2.76:1. The colour is already muted; fading it again
+       only cost legibility. */
 }
 
 .status-attribution a {
@@ -127,7 +128,8 @@
 }
 
 .status-heart {
-    color: #e25555;
+    /* #e25555 read 2.50:1 on white. Theme-aware, AA in both. */
+    color: var(--danger-text, #dc2626);
     font-size: 12px;
 }
 
@@ -135,7 +137,6 @@
 .status-hints {
     gap: 8px;
     font-size: 10px;
-    opacity: 0.8;
     border-right: none !important;
 }
 

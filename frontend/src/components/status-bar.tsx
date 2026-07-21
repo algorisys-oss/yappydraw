@@ -280,7 +280,7 @@ const StatusBar: Component = () => {
             <div class="status-section">
                 <button
                     class="status-btn version-btn"
-                    style={{ opacity: 0.75, "font-size": "inherit", "font-family": "inherit", width: "auto", padding: "0 4px" }}
+                    style={{ "font-size": "inherit", "font-family": "inherit", width: "auto", padding: "0 4px" }}
                     title="What's new"
                     aria-label="What's new"
                     onClick={() => { openWhatsNew(); setHasNews(false); }}

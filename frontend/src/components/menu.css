@@ -34,7 +34,8 @@
 }
 
 .text-logo-draw {
-    color: var(--logo-accent, #4f6df5);
+    /* #4f6df5 is 3.84:1 on the dark panel. Per-theme accent instead. */
+    color: var(--logo-accent, #4338ca);
 }
 
 .menu-container:hover {
@@ -230,7 +231,6 @@
 .menu-item .shortcut {
     font-size: 11px;
     color: var(--text-secondary);
-    opacity: 0.6;
     white-space: nowrap;
     min-width: 40px;
     text-align: right;

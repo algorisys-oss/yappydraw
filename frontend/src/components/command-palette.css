@@ -89,17 +89,25 @@
 
 .command-palette-item-shortcut {
     font-size: 12px;
-    opacity: 0.5;
-    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+    /* Outlined rather than filled — the 5% wash darkened the chip just enough
+       to put its own label at 4.32:1 in light mode. Also matches the selected
+       row's chip, which had to drop its fill for the same reason. */
+    background: transparent;
     padding: 2px 6px;
     border-radius: 4px;
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .command-palette-item.selected .command-palette-item-shortcut {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: white;
+    /* Outlined, not filled: a white wash over the row's accent lightened the
+       chip enough to put its own label at 3.63:1 in light mode, and no alpha
+       above 0 clears AA there. The border carries the shape instead. */
+    background: transparent;
+    border-color: currentColor;
+    /* Follow the row's own foreground — hardcoded white is invisible on the
+       light accent the dark themes use for a selected row. */
+    color: inherit;
 }
 
 .command-palette-no-results {

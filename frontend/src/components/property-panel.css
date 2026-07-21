@@ -212,7 +212,7 @@
 
 .group-chevron {
     font-size: 10px;
-    opacity: 0.6;
+    color: var(--text-secondary);
 }
 
 .control-row {
@@ -690,7 +690,7 @@ input[type="text"] {
     padding: 2px 8px;
     border-radius: 99px;
     background: #f1f5f9;
-    color: #64748b;
+    color: #475569; /* #64748b was 4.34:1 on this chip */
     border: 1px solid #e2e8f0;
     text-transform: uppercase;
     letter-spacing: 0.05em;

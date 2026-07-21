@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.134', date: '2026-07-21', items: [
+        'Small text throughout the app is now properly legible: keyboard-shortcut badges, status-bar hints, menu shortcuts, the version number and footer links were all too faint to meet accessibility standards, in every theme.',
+        'Nothing moved or changed shape — only colours and transparency. Light, dark and focus themes now pass WCAG AA contrast everywhere we can measure it.',
+    ] },
     { version: '0.8.133', date: '2026-07-21', items: [
         'Buttons like Done, Save and Export are now properly legible in both light and dark themes. Their text was below the accessibility standard for contrast, and hovering made it worse rather than better.',
         'The colour palette now starts on P3 Wide-Gamut, so colours are richer on modern displays. Browsers that can\'t show P3 keep the standard palette automatically.',

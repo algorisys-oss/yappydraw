@@ -221,7 +221,8 @@
     font-size: 8px;
     line-height: 1;
     color: var(--text-secondary);
-    opacity: 0.45;
+    /* No opacity: fading toward the backdrop dropped this 8px badge to 1.83:1.
+       --text-secondary is already the muted role and reads at 4.83/6.57. */
     pointer-events: none;
     font-family: system-ui, sans-serif;
 }

@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.134](0.8.134.md) — Whole-app WCAG AA contrast audit: 635 findings across 11 selectors fixed in light, dark and focus; permanent audit test
 - [0.8.133](0.8.133.md) — WCAG AA contrast for every filled primary button in both themes (19 were failing); P3 wide-gamut is now the default palette
 - [0.8.132](0.8.132.md) — Toasts no longer cover or block the presentation toolbar; help-doc API references audited
 - [0.8.131](0.8.131.md) — Committed regression suite for video/GIF capture (asserts the downloaded bytes; verified to fail against the bugs it guards)
