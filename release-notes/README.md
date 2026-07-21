@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.137](0.8.137.md) — Crop fix now reaches the actual UI (0.8.136 fixed an API path the editor never used)
 - [0.8.136](0.8.136.md) — Crop no longer distorts images; saved swatches visible & removable in the palette; image insert returns to Select; Layers panel contrast
 - [0.8.135](0.8.135.md) — Focus theme finally differs from Dark (darkens the page itself, paged docs only); OKLCH picker can save a swatch
 - [0.8.134](0.8.134.md) — Whole-app WCAG AA contrast audit: 635 findings across 11 selectors fixed in light, dark and focus; permanent audit test

@@ -1543,7 +1543,13 @@ export const exitCropMode = (apply: boolean) => {
         const el = store.elements.find(e => e.id === store.cropModeElementId);
         const img = el?.dataURL ? getImage(el.dataURL) : null;
         const r = store.cropRect;
-        if (el && img && el.width > 0 && el.height > 0 && r.width > 0 && r.height > 0) {
+        // A crop covering the whole frame means "no crop" — clear it rather than
+        // storing a full-size rect (matches the old finalizeCropRect behaviour).
+        const coversAll = el && r.x <= 0.5 && r.y <= 0.5
+            && Math.abs(r.width - el.width) < 1 && Math.abs(r.height - el.height) < 1;
+        if (el && coversAll) {
+            if (el.crop) { pushToHistory(); updateElement(el.id, { crop: null }); }
+        } else if (el && img && el.width > 0 && el.height > 0 && r.width > 0 && r.height > 0) {
             // The frame currently shows this source region (whole image if uncropped).
             const cur = el.crop ?? { x: 0, y: 0, width: img.naturalWidth, height: img.naturalHeight };
             // element-local → source pixels, relative to what is on screen now.

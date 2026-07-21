@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.137', date: '2026-07-21', items: [
+        'Cropping in the editor really is fixed now. The previous release fixed the same bug in a code path the editor doesn\'t use, so pressing Enter to apply a crop still stretched the picture.',
+    ] },
     { version: '0.8.136', date: '2026-07-21', items: [
         'Fixed: cropping an image stretched it — the picture kept the old frame\'s shape instead of the shape you cropped. Crops were also landing on the wrong part of the picture.',
         'Colours you save from the OKLCH picker now appear right there in the palette under SAVED, with an × to remove ones you were only trying out.',

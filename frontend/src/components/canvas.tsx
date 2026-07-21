@@ -57,7 +57,7 @@ import { pushStabilizedSample } from "../utils/stroke-stabilizer";
 import { showToast } from "./toast";
 import { hitTestElement } from "../utils/hit-testing";
 import { getMeasureSegments, type MeasureSegment, type Rect } from "../utils/measure-gap";
-import { renderCropOverlay, hitTestCropHandle, applyCropDrag, constrainCropToAspect, getCropHandleCursor, finalizeCropRect, type CropHandle } from "../utils/image-crop-utils";
+import { renderCropOverlay, hitTestCropHandle, applyCropDrag, constrainCropToAspect, getCropHandleCursor, type CropHandle } from "../utils/image-crop-utils";
 import { perfMonitor } from "../utils/performance-monitor";
 import { fitShapeToText, fitUmlClassToContent } from "../utils/text-utils";
 import { plainTextToSpans } from "../utils/rich-text-utils";
@@ -1519,13 +1519,12 @@ const Canvas: Component = () => {
                     cropDragStartRect = { ...store.cropRect };
                     return;
                 }
-                // Clicked outside crop area — apply and exit
-                const finalCrop = finalizeCropRect(store.cropRect, cropEl);
-                exitCropMode(false);
-                if (finalCrop) {
-                    pushToHistory();
-                    updateElement(cropEl.id, { crop: finalCrop });
-                }
+                // Clicked outside crop area — apply and exit.
+                // exitCropMode(true) is the single apply path: it converts the
+                // rect to source pixels AND shrinks the frame to match, so the
+                // image keeps its shape. Doing the conversion inline here (as
+                // this did) silently skipped the resize.
+                exitCropMode(true);
                 requestAnimationFrame(draw);
                 return;
             }
@@ -2029,15 +2028,7 @@ const Canvas: Component = () => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
-                const cropEl = store.elements.find(el => el.id === store.cropModeElementId);
-                if (cropEl && store.cropRect) {
-                    const finalCrop = finalizeCropRect(store.cropRect, cropEl);
-                    exitCropMode(false);
-                    if (finalCrop) {
-                        pushToHistory();
-                        updateElement(cropEl.id, { crop: finalCrop });
-                    }
-                }
+                exitCropMode(true);   // single apply path — see the click-outside case
                 requestAnimationFrame(draw);
             } else if (e.key === 'Escape') {
                 e.preventDefault();
