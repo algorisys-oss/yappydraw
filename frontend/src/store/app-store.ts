@@ -1525,6 +1525,18 @@ export const setPathEditing = (isActive: boolean, elementId: string | null = nul
 };
 
 // --- Image Crop Actions ---
+/**
+ * Rotate a local-space offset into world space. Crop rects are expressed in the
+ * element's own unrotated frame, so any repositioning derived from them has to
+ * be turned by the element's angle — otherwise a rotated image jumps when
+ * cropped (76px at 45 degrees for a 400x200 image).
+ */
+const rotateOffset = (dx: number, dy: number, angle: number) => {
+    if (!angle) return { dx, dy };
+    const c = Math.cos(angle), s = Math.sin(angle);
+    return { dx: dx * c - dy * s, dy: dx * s + dy * c };
+};
+
 export const enterCropMode = (elementId: string) => {
     const el = store.elements.find(e => e.id === elementId);
     if (!el || el.type !== 'image' || !el.dataURL) return;
@@ -1547,11 +1559,19 @@ export const enterCropMode = (elementId: string) => {
         const pxPerSrc = elW / prev.width;      // display px per source px
         const pyPerSrc = elH / prev.height;
         // Expand the frame around the current crop so the visible region stays put.
+        const fullW = img.naturalWidth * pxPerSrc;
+        const fullH = img.naturalHeight * pyPerSrc;
+        // Where the still-visible region sits inside the new, larger frame.
+        const visCx = prev.x * pxPerSrc + elW / 2;
+        const visCy = prev.y * pyPerSrc + elH / 2;
+        const off = rotateOffset(fullW / 2 - visCx, fullH / 2 - visCy, el.angle || 0);
+        const newCx = elX + elW / 2 + off.dx;
+        const newCy = elY + elH / 2 + off.dy;
         updateElement(elementId, {
-            x: elX - prev.x * pxPerSrc,
-            y: elY - prev.y * pyPerSrc,
-            width: img.naturalWidth * pxPerSrc,
-            height: img.naturalHeight * pyPerSrc,
+            x: newCx - fullW / 2,
+            y: newCy - fullH / 2,
+            width: fullW,
+            height: fullH,
             crop: null,
         }, false);
         cropRect = {
@@ -1584,6 +1604,19 @@ export const exitCropMode = (apply: boolean) => {
             // element-local → source pixels, relative to what is on screen now.
             const sx = cur.width / el.width;
             const sy = cur.height / el.height;
+            // Shrink the FRAME to the cropped region too. Without this the
+            // renderer stretches the new source rect back over the old frame,
+            // so cropping a wide strip out of a tall photo distorted it — the
+            // reported "aspect ratio changes after crop". The new position is
+            // derived through the element's angle so a ROTATED image doesn't
+            // jump: r is in the element's own unrotated frame.
+            const off = rotateOffset(
+                r.x + r.width / 2 - el.width / 2,
+                r.y + r.height / 2 - el.height / 2,
+                el.angle || 0,
+            );
+            const newCx = el.x + el.width / 2 + off.dx;
+            const newCy = el.y + el.height / 2 + off.dy;
             pushToHistory();
             updateElement(el.id, {
                 crop: {
@@ -1592,12 +1625,8 @@ export const exitCropMode = (apply: boolean) => {
                     width: r.width * sx,
                     height: r.height * sy,
                 },
-                // Shrink the FRAME to the cropped region too. Without this the
-                // renderer stretches the new source rect back over the old frame,
-                // so cropping a wide strip out of a tall photo distorted it —
-                // the reported "aspect ratio changes after crop".
-                x: el.x + r.x,
-                y: el.y + r.y,
+                x: newCx - r.width / 2,
+                y: newCy - r.height / 2,
                 width: r.width,
                 height: r.height,
             });

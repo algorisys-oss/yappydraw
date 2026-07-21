@@ -321,7 +321,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 250 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 253 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -511,7 +511,7 @@ frontend/src/storage/storage-interface.ts | typescript | 45 | DrawingData:9 Docu
 frontend/src/storage/timelapse-store.ts | typescript | 131 | TimelapseFrame:24 TimelapseManifest:33 openDb:44 tx:70 putFrame:86 getFrame:90 deleteFrame:94 saveManifest:100 getManifest:104 listRecordings:108 deleteRecording:114 pruneToDocIds:126
 frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 readIndex:37 writeIndex:41 saveSnapshot:45 maybeSnapshotVersion:68 snapshotVersionNow:85 listVersions:96 restoreVersion:101 deleteVersion:113
 frontend/src/store/app-store.test.ts | typescript | 66 |
-frontend/src/store/app-store.ts | typescript | 8185 | LayoutDirection:16 OutlineNode:16 BooleanOp:17 Poly:17 ShapeFace:17 DistortKind:18 WarpPreset:40 Theme:50 ResolvedTheme:51 DefaultToolChoice:84 PointerStyle:95 AppState:105 HistorySnapshot:596 BP:1689 AlignmentType:4520 DistributionType:4520 CharPatch:5098 CharPatchArg:5101 SelBBox:6055 LastTransform:6320 RegionPathfinderOp:6679 SelectSimilarMatch:6812 buildPathFromPoly:7540 polysOriginMin:7575 syncCompoundOperands:7582 buildCompoundPath:7593 WorldSub:7819 rdpAnchors:7822 normalizeWorldSubs:7850 makePathFromWorldSubs:7865 elementToWorldSubs:7886 startInkCleanupIfNeeded:8124
+frontend/src/store/app-store.ts | typescript | 8214 | LayoutDirection:16 OutlineNode:16 BooleanOp:17 Poly:17 ShapeFace:17 DistortKind:18 WarpPreset:40 Theme:50 ResolvedTheme:51 DefaultToolChoice:84 PointerStyle:95 AppState:105 HistorySnapshot:596 BP:1718 AlignmentType:4549 DistributionType:4549 CharPatch:5127 CharPatchArg:5130 SelBBox:6084 LastTransform:6349 RegionPathfinderOp:6708 SelectSimilarMatch:6841 buildPathFromPoly:7569 polysOriginMin:7604 syncCompoundOperands:7611 buildCompoundPath:7622 WorldSub:7848 rdpAnchors:7851 normalizeWorldSubs:7879 makePathFromWorldSubs:7894 elementToWorldSubs:7915 startInkCleanupIfNeeded:8153
 frontend/src/store/dock-layout.ts | typescript | 155 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:60 hidePanel:71 setPanelOpen:81 dockPanel:88 dockPanelAt:98
 frontend/src/templates/data/designs/cards.ts | typescript | 127 |
 frontend/src/templates/data/designs/helpers.ts | typescript | 101 | t:23 r:44 grad:58 circle:72 makeDesign:93
@@ -822,7 +822,7 @@ tests/history-panel.spec.ts | typescript | 37 |
 tests/hotkeys.spec.ts | typescript | 222 |
 tests/html-player-check.spec.ts | typescript | 113 | Page:1 Window:7 inkedPixels:11 exportDoc:26
 tests/idb-storage.spec.ts | typescript | 97 | Window:6
-tests/image-and-swatches.spec.ts | typescript | 247 | snap:107 snap:156
+tests/image-and-swatches.spec.ts | typescript | 323 | snap:107 snap:156 geom:252
 tests/image-trace.spec.ts | typescript | 89 |
 tests/input-tablet-batch2.spec.ts | typescript | 81 | touch:70
 tests/isometric-cube.spec.ts | typescript | 34 |

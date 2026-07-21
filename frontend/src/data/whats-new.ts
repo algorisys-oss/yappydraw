@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.141', date: '2026-07-21', items: [
+        'Fixed: cropping a rotated image made it jump to the wrong place — about 76 pixels off for a picture turned 45°. Rotated images now stay exactly where they were.',
+    ] },
     { version: '0.8.140', date: '2026-07-21', items: [
         'Fixed: after cropping, clicking the image again re-opened crop and showed the whole original picture — which looked like your crop had been thrown away. Finishing a crop now hands you the Select tool with the image selected.',
     ] },
