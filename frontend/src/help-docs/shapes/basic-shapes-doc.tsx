@@ -245,6 +245,16 @@ export const BasicShapesDoc: Component = () => {
                         </tr>
                     </tbody>
                 </table>
+
+                <h3>Text labels</h3>
+                <p>
+                    Double-click a shape (or select it and start typing) to give it a label. Text is
+                    <strong> centred by default</strong> — both horizontally and vertically — which is what you want for
+                    almost every diagram box. Change it per shape with the alignment buttons in the Properties panel or
+                    the smart toolbar, or set <code>textAlign</code> to <code>'left'</code> / <code>'right'</code> from
+                    the API. Code blocks and UML attribute/method sections stay left-aligned, and table cells keep their
+                    own per-cell alignment.
+                </p>
             </section>
 
             {/* Keyboard Shortcuts */}

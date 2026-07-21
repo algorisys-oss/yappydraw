@@ -59,6 +59,13 @@ const WorkspaceDoc: Component = () => {
                     <strong> Canvas properties</strong> (background, grid, texture, page size) — the same thing you get
                     from <em>right-click → Canvas Settings</em>. Clicking an empty spot on the canvas dismisses it.
                 </p>
+                <p>
+                    The panel <strong>never opens by itself</strong>. Picking a drawing tool leaves it exactly as you
+                    left it, so a long brainstorming session isn't interrupted by a panel sliding in on every tool
+                    switch. Open it deliberately with Alt+Enter, the sliders button, or by
+                    <strong> right-clicking a tool group</strong> in the toolbar (which opens the panel on that tool's
+                    defaults) — and once it's open it stays docked while you work.
+                </p>
             </section>
 
             {/* ─── SMART TOOLBAR ──────────────────────────────────────── */}

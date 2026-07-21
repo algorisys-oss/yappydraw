@@ -358,7 +358,7 @@ const initialState: AppState = {
             fontFamily: 'hand-drawn',
             fontWeight: false,
             fontStyle: false,
-            textAlign: 'left',
+            textAlign: 'center',
             verticalAlign: 'middle',
             startArrowhead: null,
             endArrowhead: null,
@@ -1318,11 +1318,11 @@ export const setSelectedTool = (tool: ToolType) => {
         updateDefaultStyles({ autoResize: false });
     }
 
-    // Auto-show property panel when a drawing tool is selected
-    const NON_DRAWING_TOOLS = ['selection', 'lasso', 'pan', 'eraser'];
-    if (!NON_DRAWING_TOOLS.includes(tool) && !store.showPropertyPanel) {
-        setStore('showPropertyPanel', true);
-    }
+    // NOTE: picking a drawing tool deliberately does NOT open the Properties panel.
+    // During long brainstorming sessions the panel popping up on every tool switch
+    // steals canvas space and attention. It opens only on an explicit request —
+    // the toolbar Properties button / shortcut (togglePropertyPanel) or a
+    // right-click on a tool group — and stays open once the user has docked it.
 };
 
 export const setToolLocked = (locked: boolean) => {

@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.125', date: '2026-07-21', items: [
+        'Text you type into a shape is now centred by default, so boxes look right without reaching for the alignment buttons. Your existing drawings are unchanged, and you can still set left or right per shape.',
+        'The Properties panel no longer slides open every time you pick a tool. Open it when you want it (Alt+Enter, the sliders button, or right-click a tool group) and it stays where you put it — handy during a long brainstorming session.',
+    ] },
     { version: '0.8.124', date: '2026-07-20', items: [
         'Templates you save yourself now show a preview instead of a blank icon — including ones you saved before this update.',
     ] },
