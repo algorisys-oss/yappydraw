@@ -266,13 +266,14 @@ export const DrawingToolsDoc: Component = () => {
                 <p>
                     Draw a shape freehand with any pen tool (Pencil, Fineliner, Ink Brush, Marker)
                     and <strong>hold the pen still for about half a second</strong> before lifting.
-                    The freehand stroke instantly snaps to a clean geometric shape and is selected so
-                    you can fill or restyle it straight away.
+                    The freehand stroke instantly snaps to a clean geometric shape.
                 </p>
                 <p>
-                    Your <strong>pen tool stays active</strong> after a snap — keep drawing without a
-                    trip back to the toolbar. Switch to <strong>Select</strong> (<span class="kbd">V</span>)
-                    when you want to move, resize or connect the corrected shape.
+                    Your <strong>pen tool stays active</strong> and nothing is left selected, so you
+                    can carry straight on drawing without a trip back to the toolbar or a set of
+                    selection handles sitting on top of your work. Switch to <strong>Select</strong>
+                    (<span class="kbd">V</span>) and click the shape when you want to move, resize,
+                    fill or connect it.
                 </p>
                 <ul>
                     <li>A roughly straight stroke becomes a <strong>line</strong>.</li>
@@ -281,8 +282,15 @@ export const DrawingToolsDoc: Component = () => {
                     <li>A three-cornered stroke becomes a <strong>triangle</strong>.</li>
                 </ul>
                 <p>
-                    If the stroke is ambiguous it is left as freehand ink, so holding still never
-                    forces a wrong shape. Toggle the feature with <span class="kbd">Shift</span>+<span class="kbd">Q</span>,
+                    It is built to cope with a <strong>mouse or trackpad</strong>, not just a stylus:
+                    wobbly edges, a corner you didn't quite close, and running past your own starting
+                    point are all recognised normally. Draw roughly — you don't need a steady hand.
+                </p>
+                <p>
+                    If the stroke is genuinely ambiguous it is left as freehand ink, so holding still
+                    never forces a wrong shape. Open strokes are only ever turned into a line: an arc
+                    or a half-drawn box stays as ink rather than being closed up for you.
+                    Toggle the feature with <span class="kbd">Shift</span>+<span class="kbd">Q</span>,
                     from the Command Palette, or in <strong>Settings → Pen &amp; Input</strong>.
                 </p>
             </section>

@@ -830,13 +830,12 @@ const Canvas: Component = () => {
             });
         }
 
-        // End the stroke and leave the corrected shape selected, so the quick
-        // toolbar / Properties panel target it and you can restyle immediately.
-        // The pen tool stays ACTIVE on purpose: hold-to-correct is used mid-flow
-        // while sketching, and switching to Select would cost a tool round-trip
-        // before every following stroke. Handle dragging and marquee are gated
-        // on the Select tool, so a live selection is inert while a pen is active
-        // — the next stroke simply draws and replaces it.
+        // End the stroke and leave NOTHING selected. The pen tool stays active
+        // (hold-to-correct is used mid-flow while sketching, and switching to
+        // Select would cost a tool round-trip before every following stroke), so
+        // a leftover selection is pure visual noise: its handles hover over the
+        // drawing you are still working on, and with a pen tool active they
+        // aren't even interactive. Press V to select the shape if you want it.
         // Suppress unconditionally, not just for touch: the pen tool used to be
         // swapped for Select here, which is what stopped the still-in-contact
         // stylus from re-opening a stroke via the heal-on-move path. With the
@@ -844,7 +843,7 @@ const Canvas: Component = () => {
         // back until the pen actually lifts. Cleared on the next pointerdown.
         smartShapeSuppress = true;
         resetActiveStroke();
-        setStore('selection', [id]);
+        setStore('selection', []);
         draw();
     };
 

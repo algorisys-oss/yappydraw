@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.127', date: '2026-07-21', items: [
+        'Smart Shapes now recognises your stroke almost every time, instead of working on one attempt and quietly ignoring the next. It copes with a mouse or trackpad: wobbly edges, a corner you didn\'t quite close, or running past where you started are all fine.',
+        'A stroke you left open — an arc, or half a box — stays as freehand ink rather than being closed up into a shape you didn\'t draw.',
+        'After a shape snaps, nothing is left selected — no selection handles sitting on top of the drawing you\'re still working on. Press V and click the shape when you want to edit it.',
+    ] },
     { version: '0.8.126', date: '2026-07-21', items: [
         'Hold a freehand stroke still to snap it to a clean shape — and keep drawing. Smart Shapes no longer switches you to the Select tool, so your pen stays in your hand through a whole sketch. Press V when you actually want to move or resize something.',
     ] },
