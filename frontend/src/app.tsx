@@ -239,6 +239,15 @@ const App: Component = () => {
           return;
         } else if (key === 'e' && e.shiftKey) {
           e.preventDefault();
+          // The Export dialog lives inside <Menu>, which isn't mounted during a
+          // presentation — so opening it here used to set the flag with nothing
+          // on screen, and the dialog then ambushed the user when they pressed
+          // Esc and the menu remounted. Say what to do instead of silently
+          // arming a dialog for later.
+          if (store.appMode === 'presentation') {
+            showToast('Exit the presentation (Esc) to export — or use the Record button to capture it as MP4', 'info');
+            return;
+          }
           setIsExportOpen(true);
           return;
         } else if (key === 'a' && e.shiftKey) {

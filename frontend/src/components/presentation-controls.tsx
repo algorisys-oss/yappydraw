@@ -1,7 +1,8 @@
 import { type Component, Show, createSignal, onMount, onCleanup, createMemo } from 'solid-js';
 import { store, togglePresentationMode, advancePresentation, retreatPresentation, setSelectedTool } from '../store/app-store';
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
-import { ChevronLeft, ChevronRight, X, MousePointer2, Zap, Highlighter, Brush, Eraser } from 'lucide-solid';
+import { ChevronLeft, ChevronRight, X, MousePointer2, Zap, Highlighter, Brush, Eraser, Video, Square } from 'lucide-solid';
+import { setRequestRecording } from '../utils/recording-manager';
 
 export const PresentationControls: Component = () => {
     const [isVisible, setIsVisible] = createSignal(true);
@@ -11,7 +12,10 @@ export const PresentationControls: Component = () => {
         setIsVisible(true);
         window.clearTimeout(hideTimeout);
         hideTimeout = window.setTimeout(() => {
-            if (store.appMode === 'presentation') setIsVisible(false);
+            // Never auto-hide while recording — the Stop button has to stay
+            // reachable. Safe to leave on screen: the recorder captures the
+            // canvas surface, so this HUD is not in the video either way.
+            if (store.appMode === 'presentation' && !store.isRecording) setIsVisible(false);
         }, 3000);
     };
 
@@ -197,6 +201,35 @@ export const PresentationControls: Component = () => {
                         title="Eraser"
                     >
                         <Eraser size={18} />
+                    </button>
+
+                    {/* Record the presentation to a video file.
+                        Live capture rather than a page export: a presentation runs
+                        across slides, and the page export only ever renders the one
+                        that's active — so recording is the only way to capture the
+                        whole run, transitions and all. It grabs the canvas surface,
+                        so this HUD and the REC badge stay out of the file. */}
+                    <button
+                        onClick={() => {
+                            setRequestRecording(store.isRecording ? { start: false } : { start: true, format: 'mp4' });
+                            resetHideTimeout();
+                        }}
+                        style={{
+                            background: store.isRecording ? 'rgba(239, 68, 68, 0.12)' : 'none',
+                            border: 'none',
+                            color: store.isRecording ? '#ef4444' : '#64748b',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            padding: '8px',
+                            'border-radius': '8px',
+                            transition: 'all 0.2s'
+                        }}
+                        title={store.isRecording ? 'Stop recording & download MP4' : 'Record this presentation as MP4'}
+                        aria-label={store.isRecording ? 'Stop recording' : 'Record presentation'}
+                    >
+                        {store.isRecording
+                            ? <Square size={18} fill="currentColor" strokeWidth={0} />
+                            : <Video size={18} />}
                     </button>
                 </div>
 

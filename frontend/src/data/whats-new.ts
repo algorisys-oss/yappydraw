@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.129', date: '2026-07-21', items: [
+        'Record your presentation as a video without leaving it. Press F5 to present, then hit the camera button in the toolbar at the bottom — it turns red, and pressing it again saves an MP4. Slides, animations, laser pointer and your ink annotations are all captured; the toolbars never are.',
+        'This is the only way to capture a whole deck — the page export can only render one page at a time, and on an infinite canvas it can\'t run at all.',
+        'Fixed: Ctrl+Shift+E seemed to do nothing while presenting, then sprang the Export dialog on you when you pressed Esc.',
+        'The Animation help page now explains video and GIF export properly — it previously described settings that don\'t exist and didn\'t mention MP4 at all.',
+    ] },
     { version: '0.8.128', date: '2026-07-21', items: [
         'Fixed: My Drawings only kept your most recent drawing. Saving, starting a new drawing and saving again quietly replaced the first one — each drawing now gets its own entry. (Drawings already lost to this can\'t be recovered, sorry.)',
         'Fixed: saving and then choosing New still asked whether to save or discard, for work you had just saved.',

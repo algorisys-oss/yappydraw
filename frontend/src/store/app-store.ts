@@ -4296,6 +4296,11 @@ export const togglePresentationMode = async (visible?: boolean, fromSlide?: numb
 
         if (newState) {
             setStore('selection', []); // Clear selection
+            // Dialogs hosted by <Menu> unmount for the duration of the
+            // presentation. Drop the open flag rather than let it survive:
+            // a dialog left open when presenting would otherwise reappear on
+            // exit, long after the user forgot about it.
+            setStore('showExportDialog', false);
 
             // Snapshot DS element text for auto-reset on exit
             dsTextSnapshots.clear();

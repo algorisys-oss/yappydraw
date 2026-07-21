@@ -44,7 +44,7 @@ export const AnimationDoc: Component = () => {
                     </div>
                     <div class="feature-card">
                         <h4>Recording</h4>
-                        <p>Export animations to WebM video or GIF format</p>
+                        <p>Export animations as MP4, WebM or animated GIF</p>
                     </div>
                 </div>
             </section>
@@ -929,38 +929,125 @@ Yappy.animateElementKeyframes(elementId, 'opacity', [
 
             {/* Recording & Export */}
             <section class="doc-section">
-                <h2>Recording & Export</h2>
-                <p>Export your animations as video files:</p>
+                <h2>Recording &amp; Export (MP4, WebM, GIF)</h2>
+                <p>
+                    Open <strong>Menu → Export</strong> (<span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+
+                    <span class="kbd">E</span>), pick <strong>MP4 Video</strong>, <strong>WebM Video</strong> or
+                    <strong> Animated GIF</strong>, set the <strong>Duration</strong> in seconds, and export. The file
+                    downloads when it's done.
+                </p>
 
-                <h3>Supported Formats</h3>
-                <ul>
-                    <li><strong>WebM</strong> - High quality video with transparency support</li>
-                    <li><strong>GIF</strong> - Universal compatibility, larger file size</li>
-                </ul>
-
-                <h3>Recording Options</h3>
+                <h3>Two different things happen, depending on the document</h3>
+                <p>
+                    This is the part worth knowing before you record — the same buttons behave differently on a
+                    presentation/design page than on the infinite canvas.
+                </p>
                 <table class="api-table">
                     <thead>
                         <tr>
-                            <th>Option</th>
-                            <th>Description</th>
+                            <th>Document</th>
+                            <th>What you get</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>Resolution</strong></td>
-                            <td>Choose output dimensions (720p, 1080p, etc.)</td>
+                            <td><strong>Presentation or Design</strong><br />(pages)</td>
+                            <td>
+                                An <strong>offline render of the page</strong> — exactly the page bounds at its own
+                                resolution, animations playing, with no workspace grey, no neighbouring pages, and no
+                                dependence on your current zoom or pan. You don't have to play anything: the export
+                                drives the animation clock itself. Runs for the duration you set, then stops.
+                            </td>
                         </tr>
                         <tr>
-                            <td><strong>Frame Rate</strong></td>
-                            <td>Frames per second (24, 30, 60)</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Background</strong></td>
-                            <td>Transparent or solid color</td>
+                            <td><strong>Infinite canvas</strong></td>
+                            <td>
+                                A <strong>live screen capture</strong> of the canvas as you see it — your zoom, pan and
+                                anything you do while it runs. It keeps going until you stop it (see below), so the
+                                Duration field doesn't apply. GIF isn't offered here, because there are no page bounds
+                                to frame it to.
+                            </td>
                         </tr>
                     </tbody>
                 </table>
+                <p class="tip-box">
+                    For a clean animation file, export from a <strong>presentation or design page</strong>. Use live
+                    capture when you want the recording to show what you're <em>doing</em> — a walkthrough, a demo, or
+                    the whole presentation played end to end.
+                </p>
+
+                <h3>Live screen capture</h3>
+                <p>
+                    Start it from <strong>Menu → Export → MP4/WebM</strong> on an infinite-canvas document, or from a
+                    script with <code>Yappy.recordAnimation()</code>. A red <strong>REC</strong> badge with a timer
+                    appears at the top of the canvas — press its <strong>Stop</strong> button to finish and download.
+                </p>
+                <p>
+                    It records the <strong>canvas surface only</strong>, at 60fps. Toolbars, panels, dialogs and the
+                    REC badge are normal page UI and never appear in the recording, so you get a clean picture of the
+                    drawing even while you work around it.
+                </p>
+                <h4>Recording a whole presentation</h4>
+                <p>
+                    Press <span class="kbd">F5</span> to present, then hit the <strong>Record</strong> button
+                    (a video camera) in the presentation toolbar at the bottom of the screen. It turns into a red
+                    <strong> Stop</strong> square — press it again to finish and download the MP4. Because it captures
+                    the canvas as you drive it, everything you do lands in the file: slide transitions, build steps,
+                    animations, laser pointer and ink annotations.
+                </p>
+                <p class="tip-box">
+                    Recording is the <em>only</em> way to capture a whole deck. The page export renders a single page,
+                    so it can't follow you across slides. The presentation toolbar stops auto-hiding while recording so
+                    the Stop button is always reachable.
+                </p>
+                <p>
+                    From a script you can also give it a fixed length, which stops and saves automatically:
+                </p>
+                <pre class="code-block"><code>{`Yappy.startRecording('mp4');       // runs until you Stop it
+Yappy.startRecording('mp4', 15);   // auto-stops after 15 seconds
+Yappy.stopRecording();             // stop + download now`}</code></pre>
+
+                <h3>Page export from a script</h3>
+                <pre class="code-block"><code>{`await Yappy.exportVideo(8, 'mp4');   // 8s MP4 of the ACTIVE page
+await Yappy.exportVideo(8, 'webm');
+await Yappy.exportGif(5, 24);        // 5s GIF at 24 fps`}</code></pre>
+
+                <h3>Formats &amp; limits</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Format</th>
+                            <th>Use it for</th>
+                            <th>Limits</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>MP4</strong> (H.264)</td>
+                            <td>Sharing anywhere — messaging apps, video editors, Windows/macOS players</td>
+                            <td>Up to 120s; long side capped at 1920px</td>
+                        </tr>
+                        <tr>
+                            <td><strong>WebM</strong> (VP9)</td>
+                            <td>The web; smaller files at the same quality</td>
+                            <td>Up to 120s; long side capped at 1920px</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Animated GIF</strong></td>
+                            <td>Loops forever; drops into docs, chat and README files with no player</td>
+                            <td>
+                                Up to 30s; long side capped at 960px (GIFs get enormous beyond that); 256 colours.
+                                12 fps from the dialog — pass your own to <code>Yappy.exportGif(seconds, fps)</code>
+                                for smoother motion.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    Recording a <strong>time-lapse</strong> of your drawing process is a separate feature —
+                    see <em>Menu → Record Time-lapse</em> (<span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+
+                    <span class="kbd">T</span>), not this export.
+                </p>
             </section>
 
             {/* API Reference */}
