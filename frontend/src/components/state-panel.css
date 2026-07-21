@@ -64,8 +64,9 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: #3b82f6;
-    color: white;
+    /* #3b82f6 + white is 3.68:1 — the contrast-checked button tokens instead. */
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
     border: none;
     border-radius: 6px;
     font-size: 12px;
@@ -157,6 +158,7 @@
     padding: 32px 16px;
     text-align: center;
     font-size: 12px;
-    opacity: 0.5;
+    /* was opacity .5 — the muted colour already carries the tone. */
+    color: var(--text-secondary);
     line-height: 1.5;
 }

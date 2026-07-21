@@ -259,7 +259,7 @@
    Following the row's own foreground keeps it legible in both themes. */
 .layer-item.active .drag-handle {
     color: inherit;
-    opacity: 0.85;
+    opacity: 1;
 }
 
 .drag-handle {

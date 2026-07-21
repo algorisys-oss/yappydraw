@@ -240,6 +240,11 @@
     opacity: 1;
 }
 
+/* The hotkey badge sits on this tinted fill; --text-secondary on it is 3.96:1. */
+.toolbar-btn.active .hotkey-badge {
+    color: var(--text-primary);
+}
+
 .toolbar-btn.active {
     background-color: var(--primary-light);
     /* Use theme variable */

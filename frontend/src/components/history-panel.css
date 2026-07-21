@@ -65,4 +65,4 @@
 .hp-row.current .hp-dot { background: var(--primary-color, #3b82f6); }
 
 .hp-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hp-count { font-size: 10px; color: var(--text-secondary); flex: 0 0 auto; }
+.hp-count { font-size: 10px; color: var(--text-primary); flex: 0 0 auto; }

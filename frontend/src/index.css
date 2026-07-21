@@ -44,6 +44,36 @@
   --link-color: #4338ca;
   --link-color-hover: #3730a3;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  /* ── Aliases for tokens components already reference ────────────────────
+     These 20-odd names are used across ~60 files but were defined NOWHERE, so
+     every `var(--x, fallback)` silently took its fallback. Harmless in light
+     mode, where those fallbacks were light-mode values — and the reason
+     floating dock panels rendered WHITE in dark mode (`var(--bg-primary,#fff)`).
+     Light values match the previous fallbacks exactly, so light mode is
+     unchanged; the dark blocks give them real themed values. */
+  --bg-primary: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f3f4f6;
+  --bg-tertiary: #f9fafb;
+  --bg-input: #ffffff;
+  --bg-hover: #f3f4f6;
+  --hover-bg: rgba(0, 0, 0, 0.06);
+  --surface-color: #ffffff;
+  --toolbar-bg: #ffffff;
+  --panel-bg: rgba(255, 255, 255, 0.95);
+  --panel-border: #e5e7eb;
+  --text-muted: #64748b;
+  --accent-color: #6366f1;
+  --accent: #6366f1;
+  --accent-primary: #6366f1;
+  --accent-hover: #4f46e5;
+  --primary-hover: #2563eb;
+  --primary-light: #dbeafe;
+  --flow-color: #22d3ee;
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --scrollbar-thumb: rgba(120, 120, 135, 0.45);
+  --scrollbar-thumb-hover: rgba(120, 120, 135, 0.7);
 
   color-scheme: light dark;
   color: var(--text-primary);
@@ -81,6 +111,30 @@
   --link-color-hover: #a5b4fc;
   /* Lighter red for dark mode */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  /* Themed values for the alias tokens (see the :root block). */
+  --bg-primary: #1e1e1e;
+  --bg-surface: #1e1e1e;
+  --bg-subtle: #2d2d2d;
+  --bg-tertiary: #2d2d2d;
+  --bg-input: #2d2d2d;
+  --bg-hover: #3d3d3d;
+  --hover-bg: rgba(255, 255, 255, 0.08);
+  --surface-color: #1e1e1e;
+  --toolbar-bg: #1e1e1e;
+  --panel-bg: rgba(32, 32, 36, 0.92);
+  --panel-border: #404040;
+  --text-muted: #9ca3af;
+  --accent-color: #818cf8;
+  --accent: #818cf8;
+  --accent-primary: #818cf8;
+  --accent-hover: #a5b4fc;
+  --primary-hover: #3b82f6;
+  --primary-light: #1e3a5f;
+  --flow-color: #22d3ee;
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.5);
+  --scrollbar-thumb: rgba(160, 160, 175, 0.45);
+  --scrollbar-thumb-hover: rgba(160, 160, 175, 0.7);
 }
 
 /* Bind the OS `color-scheme` to the *app* theme (data-theme is always set, even
@@ -117,6 +171,30 @@
   --link-color: #818cf8;
   --link-color-hover: #a5b4fc;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  /* Themed values for the alias tokens (see the :root block). */
+  --bg-primary: #1e1e1e;
+  --bg-surface: #1e1e1e;
+  --bg-subtle: #2d2d2d;
+  --bg-tertiary: #2d2d2d;
+  --bg-input: #2d2d2d;
+  --bg-hover: #3d3d3d;
+  --hover-bg: rgba(255, 255, 255, 0.08);
+  --surface-color: #1e1e1e;
+  --toolbar-bg: #1e1e1e;
+  --panel-bg: rgba(32, 32, 36, 0.92);
+  --panel-border: #404040;
+  --text-muted: #9ca3af;
+  --accent-color: #818cf8;
+  --accent: #818cf8;
+  --accent-primary: #818cf8;
+  --accent-hover: #a5b4fc;
+  --primary-hover: #3b82f6;
+  --primary-light: #1e3a5f;
+  --flow-color: #22d3ee;
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.5);
+  --scrollbar-thumb: rgba(160, 160, 175, 0.45);
+  --scrollbar-thumb-hover: rgba(160, 160, 175, 0.7);
 }
 
 html, body {

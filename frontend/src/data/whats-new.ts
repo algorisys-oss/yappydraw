@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.138', date: '2026-07-21', items: [
+        'Fixed: floating panels — Swatches, History, Symbols, Stick Figures, Brand Kit and others — were drawn WHITE in dark and focus mode, with pale grey text on them. They are properly dark now.',
+        'The cause was 24 colour names the styles referenced that were never actually defined, so they quietly fell back to light-mode values everywhere.',
+        'Small text in those panels, the stick-figure chips, the History counts and the States panel all meet the accessibility contrast standard now too.',
+    ] },
     { version: '0.8.137', date: '2026-07-21', items: [
         'Cropping in the editor really is fixed now. The previous release fixed the same bug in a code path the editor doesn\'t use, so pressing Enter to apply a crop still stretched the picture.',
     ] },
