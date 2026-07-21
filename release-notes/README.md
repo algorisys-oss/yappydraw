@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.130](0.8.130.md) — Looping GIF capture (start/stop) from the presentation toolbar; GIF frame-rate control; failed captures no longer disable the feature
 - [0.8.129](0.8.129.md) — Record button in both presentation toolbars (MP4 of a whole run); Ctrl+Shift+E no longer ambushes you on Esc; Animation recording docs corrected
 - [0.8.128](0.8.128.md) — Default Tool + Canvas Pointer settings; Ctrl+S asks for a name; My Drawings keeps every drawing (was overwriting after File → New)
 - [0.8.127](0.8.127.md) — Smart shapes recognise your stroke reliably, mouse included (corner counting rewritten); open strokes stay as ink unless they're a line

@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.130', date: '2026-07-21', items: [
+        'Capture a looping GIF straight from the presentation toolbar — press the film button to start, press it again to stop. Ideal for a README, a wiki page or a chat message, where a GIF plays inline with no player.',
+        'It shows the elapsed time and file size while it runs, so you can see what a long capture costs before you download it.',
+        'Stop it the moment your animation returns to where it started and the loop joins invisibly — something a fixed-length timer can never get right.',
+        'GIF exports now let you choose the frame rate instead of always using 12.',
+    ] },
     { version: '0.8.129', date: '2026-07-21', items: [
         'Record your presentation as a video without leaving it. Press F5 to present, then hit the camera button in the toolbar at the bottom — it turns red, and pressing it again saves an MP4. Slides, animations, laser pointer and your ink annotations are all captured; the toolbars never are.',
         'This is the only way to capture a whole deck — the page export can only render one page at a time, and on an infinite canvas it can\'t run at all.',

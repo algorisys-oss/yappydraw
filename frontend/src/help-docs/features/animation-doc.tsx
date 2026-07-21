@@ -964,8 +964,9 @@ Yappy.animateElementKeyframes(elementId, 'opacity', [
                             <td>
                                 A <strong>live screen capture</strong> of the canvas as you see it — your zoom, pan and
                                 anything you do while it runs. It keeps going until you stop it (see below), so the
-                                Duration field doesn't apply. GIF isn't offered here, because there are no page bounds
-                                to frame it to.
+                                Duration field doesn't apply. The Export dialog offers no GIF here — there are no page
+                                bounds to frame one to — but the presentation toolbar's film button captures the
+                                viewport as a GIF just fine.
                             </td>
                         </tr>
                     </tbody>
@@ -1003,9 +1004,31 @@ Yappy.animateElementKeyframes(elementId, 'opacity', [
                 <p>
                     From a script you can also give it a fixed length, which stops and saves automatically:
                 </p>
-                <pre class="code-block"><code>{`Yappy.startRecording('mp4');       // runs until you Stop it
-Yappy.startRecording('mp4', 15);   // auto-stops after 15 seconds
+                <pre class="code-block"><code>{`Yappy.recordAnimation();           // runs until you Stop it
+Yappy.recordAnimation(15, 'mp4');  // auto-stops after 15 seconds
 Yappy.stopRecording();             // stop + download now`}</code></pre>
+
+                <h3>Capturing a looping GIF</h3>
+                <p>
+                    Next to Record is a <strong>film</strong> button that captures a looping GIF the same way:
+                    press it to start, press it again to stop and download. While it runs it shows the elapsed
+                    time and the file size as it grows — <code>0:04 · 210 KB</code> — because a GIF stores every
+                    frame whole, so length costs bytes directly.
+                </p>
+                <p>
+                    It's start/stop rather than a fixed length on purpose. Animations fire on clicks, build steps
+                    and conditions, so there's usually no duration to pick in advance — and stopping by hand is
+                    what gives a clean loop: press Stop the moment the motion returns to where it began, and the
+                    join is invisible. Captures auto-stop at 60 seconds as a backstop.
+                </p>
+                <p class="tip-box">
+                    A GIF loops forever with no play button, scrubber or sound — which is exactly why it suits a
+                    README, a wiki page or a chat message. For anything longer or more detailed, record the MP4
+                    instead: most social sites re-encode uploaded GIFs to video anyway.
+                </p>
+                <pre class="code-block"><code>{`Yappy.startGifCapture();     // open-ended; auto-stops at 60s
+Yappy.stopGifCapture();      // stop + download
+Yappy.captureGif(5, 12);     // fixed 5s at 12fps, for unattended scripts`}</code></pre>
 
                 <h3>Page export from a script</h3>
                 <pre class="code-block"><code>{`await Yappy.exportVideo(8, 'mp4');   // 8s MP4 of the ACTIVE page
@@ -1036,9 +1059,9 @@ await Yappy.exportGif(5, 24);        // 5s GIF at 24 fps`}</code></pre>
                             <td><strong>Animated GIF</strong></td>
                             <td>Loops forever; drops into docs, chat and README files with no player</td>
                             <td>
-                                Up to 30s; long side capped at 960px (GIFs get enormous beyond that); 256 colours.
-                                12 fps from the dialog — pass your own to <code>Yappy.exportGif(seconds, fps)</code>
-                                for smoother motion.
+                                Page export up to 30s; live capture up to 60s. Long side capped at 960px (GIFs get
+                                enormous beyond that); 256 colours. Frame rate is set in the export dialog
+                                (default 12 — 20–24 suits fast motion).
                             </td>
                         </tr>
                     </tbody>

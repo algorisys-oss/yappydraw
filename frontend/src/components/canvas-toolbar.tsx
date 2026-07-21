@@ -1,7 +1,8 @@
 import { type Component, Show, createSignal, onMount, onCleanup } from 'solid-js';
 import { store, togglePresentationMode, setSelectedTool } from '../store/app-store';
-import { MousePointer2, Zap, Highlighter, Brush, Eraser, X, Video, Square } from 'lucide-solid';
-import { setRequestRecording } from '../utils/recording-manager';
+import { MousePointer2, Zap, Highlighter, Brush, Eraser, X } from 'lucide-solid';
+import { gifCapturing } from '../utils/recording-manager';
+import { PresentationCaptureButtons } from './presentation-capture';
 
 export const CanvasToolbar: Component = () => {
     const [isVisible, setIsVisible] = createSignal(true);
@@ -11,10 +12,11 @@ export const CanvasToolbar: Component = () => {
         setIsVisible(true);
         window.clearTimeout(hideTimeout);
         hideTimeout = window.setTimeout(() => {
-            // Never auto-hide while recording — the Stop button has to stay
-            // reachable. Safe to leave on screen: the recorder captures the
-            // canvas surface, so this toolbar is not in the video either way.
-            if (store.appMode === 'presentation' && !store.isRecording) setIsVisible(false);
+            // Never auto-hide mid-capture — Stop has to stay reachable while
+            // recording, and the GIF countdown is the only progress signal.
+            // Safe to leave on screen: capture reads the canvas surface, so this
+            // toolbar is not in the output either way.
+            if (store.appMode === 'presentation' && !store.isRecording && !gifCapturing()) setIsVisible(false);
         }, 3000);
     };
 
@@ -101,28 +103,10 @@ export const CanvasToolbar: Component = () => {
                         <Eraser size={18} />
                     </button>
 
-                    {/* Record to MP4. On an infinite canvas this is the ONLY way to
-                        get a video: the offline page export needs page bounds to
-                        frame itself to, and there are none here. Captures the canvas
-                        surface, so this toolbar and the REC badge stay out of the
-                        file. */}
-                    <button
-                        onClick={() => {
-                            setRequestRecording(store.isRecording ? { start: false } : { start: true, format: 'mp4' });
-                            resetHideTimeout();
-                        }}
-                        style={{
-                            ...toolBtnStyle('__recording__', '#ef4444'),
-                            background: store.isRecording ? 'rgba(239, 68, 68, 0.12)' : 'none',
-                            color: store.isRecording ? '#ef4444' : '#64748b',
-                        }}
-                        title={store.isRecording ? 'Stop recording & download MP4' : 'Record canvas as MP4'}
-                        aria-label={store.isRecording ? 'Stop recording' : 'Record canvas'}
-                    >
-                        {store.isRecording
-                            ? <Square size={18} fill="currentColor" strokeWidth={0} />
-                            : <Video size={18} />}
-                    </button>
+                    {/* Capture controls. On an infinite canvas these are the ONLY
+                        route to a video or GIF: the offline page export needs page
+                        bounds to frame itself to, and there are none here. */}
+                    <PresentationCaptureButtons onInteract={resetHideTimeout} />
 
                     <div style={{ width: '1px', height: '24px', background: 'rgba(0,0,0,0.1)', margin: '0 4px' }} />
 

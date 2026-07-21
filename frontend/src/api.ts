@@ -46,7 +46,7 @@ import { importSvgToCanvas } from "./utils/svg-import";
 // api.ts graph. `searchElements` below loads it on demand (same lazy chunk the
 // Elements panel uses), keeping it off the app's startup path.
 import type { AssetHit, SearchElementsOptions } from "./library/elements/search";
-import { setRequestRecording } from "./utils/recording-manager";
+import { setRequestRecording, gifCapturing as gifCapturingSignal } from "./utils/recording-manager";
 import { insertStickFigure, recolorStickFigure, getStickAssetsByCategory, getAllStickAssets, STICK_CATEGORIES,
     insertAnimatedFigure, setAnimatedFigureClip, setAnimatedFigurePlaying, flipAnimatedFigure, bakeAnimatedFigure, CLIP_LIST,
     attachFigureToPath, detachFigurePath, setFigureSequence, setFigurePathDuration, setAnimatedFigureSpeed,
@@ -2713,6 +2713,26 @@ export const YappyAPI = {
         const m = await import('./utils/recording-manager');
         return m.exportPageGif({ seconds, fps });
     },
+    /** Capture the LIVE canvas to a looping GIF for a fixed number of seconds, then
+     *  download it. Unlike `exportGif` (which renders one page offline) this records
+     *  what's on screen — slide changes, ink and laser pointer included — so it's the
+     *  one that works while presenting and on an infinite canvas. Fixed-length by
+     *  design: a GIF loops forever with no controls, so the duration has to be chosen
+     *  up front to land a clean seam. `seconds` 1–30, `fps` 5–30 (default 12). */
+    async captureGif(seconds = 5, fps = 12) {
+        const m = await import('./utils/recording-manager');
+        return m.recordCanvasGif({ seconds, fps });
+    },
+    /** Start an open-ended live GIF capture; call `stopGifCapture()` to finish and
+     *  download. Resolves once the file is written. Auto-stops at 60s. */
+    async startGifCapture(fps = 12) {
+        const m = await import('./utils/recording-manager');
+        return m.startCanvasGif({ fps });
+    },
+    /** Stop the running live GIF capture and download the file. */
+    async stopGifCapture() { const m = await import('./utils/recording-manager'); m.stopCanvasGif(); },
+    /** True while a live GIF capture is running. */
+    isCapturingGif() { return gifCapturingSignal(); },
     /** Show/hide the Scene Timeline (play & scrub all animated figures together). */
     toggleSceneTimeline(visible?: boolean) { toggleSceneTimeline(visible); },
     /** Show/hide the Keyframes dope-sheet (After-Effects–class per-property timeline for the selected element). */

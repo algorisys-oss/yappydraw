@@ -15,6 +15,8 @@ import { projectMasterPosition } from "./slide-utils";
 import { calculateAllAnimatedStates } from "./animation-utils";
 import { applyCompositionOverrides } from "./animation/composition-evaluator";
 import { effectiveTime } from "./animation/animation-engine";
+import { worldToScreen } from "./viewport-transforms";
+import { isPagedDocType } from "../types/slide-types";
 
 // Export controls for Menu/Dialog access
 export const [requestRecording, setRequestRecording] = createSignal<{ start: boolean, format?: 'webm' | 'mp4' } | null>(null);
@@ -23,6 +25,187 @@ export const [requestRecording, setRequestRecording] = createSignal<{ start: boo
 // predicate includes this so the animation clock keeps advancing even when
 // nothing on the live canvas would otherwise need it.
 export const [pageVideoExporting, setPageVideoExporting] = createSignal(false);
+
+// ── Live-canvas GIF capture ────────────────────────────────────────────────
+// Start/stop, not a fixed duration. Animations here fire on clicks, build steps
+// and conditions, so there is no length to know up front — a timer either cuts
+// off the payoff or burns frames waiting for it. Stopping by hand also lands a
+// better loop seam than a timer can: a person can stop the moment the motion
+// returns to where it began, which is exactly what makes a GIF loop cleanly.
+export const [gifCapturing, setGifCapturing] = createSignal(false);
+export const [gifElapsedMs, setGifElapsedMs] = createSignal(0);
+/** Bytes written so far — the cost of a long capture, visible while it accrues. */
+export const [gifBytes, setGifBytes] = createSignal(0);
+
+// Backstop so a forgotten capture can't quietly produce a huge file. Memory is
+// NOT the constraint: frames are encoded and appended as they arrive and raw
+// frames are never retained, so a capture costs about its own output size
+// (~40KB/s at 960px). This cap is about what is reasonable to post.
+const GIF_MAX_SECONDS = 60;
+
+let stopGifRequested = false;
+
+/** Ask the running capture to finish and download. No-op when idle. */
+export function stopCanvasGif(): void { stopGifRequested = true; }
+
+// The on-screen canvas, registered by setupRecording. GIF capture samples THIS
+// rather than re-rendering offline: in presentation mode the whole point is to
+// capture the run as the presenter drives it, including slide changes, ink and
+// the laser pointer — none of which an offline page render knows about.
+let getLiveCanvas: (() => HTMLCanvasElement | undefined) | null = null;
+
+/**
+ * Region of the live canvas worth keeping. Presentation zooms a page to fit,
+ * which leaves workspace letterboxing around it; capturing the raw canvas would
+ * bake those bars into the GIF. On an infinite canvas there is no page, so the
+ * viewport itself is the frame.
+ */
+function liveCaptureRect(canvas: HTMLCanvasElement): { sx: number; sy: number; sw: number; sh: number } {
+    const full = { sx: 0, sy: 0, sw: canvas.width, sh: canvas.height };
+    if (!isPagedDocType(store.docType)) return full;
+    const slide = store.slides[store.activeSlideIndex];
+    if (!slide?.dimensions?.width || !slide?.dimensions?.height) return full;
+
+    const { x, y } = worldToScreen(slide.spatialPosition.x, slide.spatialPosition.y, store.viewState);
+    const w = slide.dimensions.width * store.viewState.scale;
+    const h = slide.dimensions.height * store.viewState.scale;
+    // Clamp into the canvas: a page can hang off-screen if the user zoomed or
+    // panned away from the fitted view, and getImageData on an out-of-bounds
+    // rect yields transparent pixels rather than an error — a silently blank GIF.
+    const sx = Math.max(0, Math.round(x));
+    const sy = Math.max(0, Math.round(y));
+    const sw = Math.min(canvas.width - sx, Math.round(w));
+    const sh = Math.min(canvas.height - sy, Math.round(h));
+    if (sw < 16 || sh < 16) return full;
+    return { sx, sy, sw, sh };
+}
+
+/**
+ * Capture the LIVE canvas to an infinitely-looping GIF, running until
+ * `stopCanvasGif()` is called (or the safety cap is reached), then download it.
+ *
+ * Resolves with true once the file is written, so a caller wanting a fixed
+ * length can start it and schedule its own stop.
+ */
+export async function startCanvasGif(opts: { fps?: number; name?: string; maxSeconds?: number } = {}): Promise<boolean> {
+    const fps = Math.max(5, Math.min(30, opts.fps ?? 12));
+    const maxMs = Math.max(1, Math.min(GIF_MAX_SECONDS, opts.maxSeconds ?? GIF_MAX_SECONDS)) * 1000;
+    if (gifCapturing()) { showToast('A GIF capture is already running', 'info'); return false; }
+    // Fall back to the DOM if the getter is missing. It normally isn't — but a
+    // hot module reload can leave the registration on a stale copy of this
+    // module while the toolbar imports the new one, and "the button silently
+    // does nothing" is a miserable way to find that out.
+    const src = getLiveCanvas?.() ?? document.querySelector('canvas') ?? null;
+    if (!src) { showToast('Canvas not ready for capture — reload the page and try again', 'error'); return false; }
+
+    const { sx, sy, sw, sh } = liveCaptureRect(src);
+    // Long side capped: GIFs store every frame whole, so pixels cost far more
+    // here than in a video container.
+    const k = Math.min(1, 960 / Math.max(sw, sh));
+    const off = document.createElement('canvas');
+    off.width = Math.max(2, Math.round(sw * k));
+    off.height = Math.max(2, Math.round(sh * k));
+    const ctx = off.getContext('2d', { willReadFrequently: true });
+    if (!ctx) { showToast('Could not start GIF capture', 'error'); return false; }
+
+    const { GIFEncoder, quantize, applyPalette } = await import('gifenc');
+    const gif = GIFEncoder();
+    const delay = Math.round(1000 / fps);
+    const t0 = performance.now();
+    let nextT = 0;
+    let first = true;
+
+    stopGifRequested = false;
+    setGifCapturing(true);
+    setGifElapsedMs(0);
+    setGifBytes(0);
+    showToast('Capturing GIF — press Stop when you\'re done', 'info');
+
+    return await new Promise<boolean>((resolve) => {
+        let frames = 0;
+
+        const clear = () => {
+            setGifCapturing(false);
+            setGifElapsedMs(0);
+            setGifBytes(0);
+            stopGifRequested = false;
+        };
+
+        // Any throw in here used to kill the capture silently AND strand the
+        // capturing flag — which left the buttons disabled, so every later click
+        // did nothing too. One failure became a permanently dead feature with no
+        // message. Failing loudly and always clearing state is the point.
+        const fail = (err: unknown) => {
+            console.error('[recording-manager] GIF capture failed:', err);
+            clear();
+            const msg = (err as Error)?.name === 'SecurityError'
+                // Reading pixels off a canvas that has drawn a cross-origin
+                // image is blocked by the browser. Nothing we can do from here
+                // — but say which problem it is, because "GIF failed" sends
+                // people looking in the wrong place.
+                ? 'GIF capture blocked: an image in this drawing comes from another site. Re-insert it as an uploaded file and try again.'
+                : `GIF capture failed: ${(err as Error)?.message ?? 'unknown error'}`;
+            showToast(msg, 'error');
+            resolve(false);
+        };
+
+        const finish = (hitCap: boolean) => {
+            try {
+                if (frames === 0) { fail(new Error('no frames were captured')); return; }
+                gif.finish();
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                const blob = new Blob([gif.bytesView() as BlobPart], { type: 'image/gif' });
+                const secs = Math.round((performance.now() - t0) / 100) / 10;
+                downloadBlob(blob, `${opts.name ?? 'yappy-capture'}-${timestamp}.gif`);
+                clear();
+                showToast(
+                    hitCap
+                        ? `Reached the ${GIF_MAX_SECONDS}s limit — GIF saved (${frames} frames, ${Math.round(blob.size / 1024)} KB)`
+                        : `GIF saved — ${secs}s, ${frames} frames, ${Math.round(blob.size / 1024)} KB`,
+                    hitCap ? 'info' : 'success');
+                resolve(true);
+            } catch (err) { fail(err); }
+        };
+
+        const frame = () => {
+            try {
+                const elapsed = performance.now() - t0;
+                setGifElapsedMs(elapsed);
+                if (elapsed >= nextT) {
+                    ctx.clearRect(0, 0, off.width, off.height);
+                    ctx.drawImage(src, sx, sy, sw, sh, 0, 0, off.width, off.height);
+                    const { data } = ctx.getImageData(0, 0, off.width, off.height);
+                    const palette = quantize(data, 256);
+                    const index = applyPalette(data, palette);
+                    // repeat: 0 on the first frame writes the loop block → loops forever.
+                    gif.writeFrame(index, off.width, off.height, { palette, delay, repeat: first ? 0 : undefined });
+                    first = false;
+                    frames++;
+                    nextT += delay;
+                    // A view over the buffer written so far — cheap, and the only
+                    // honest way to show the file growing as it is captured.
+                    setGifBytes(gif.bytesView().byteLength);
+                }
+                if (stopGifRequested) finish(false);
+                else if (elapsed >= maxMs) finish(true);
+                else requestAnimationFrame(frame);
+            } catch (err) { fail(err); }
+        };
+        requestAnimationFrame(frame);
+    });
+}
+
+/**
+ * Convenience for scripts: capture for a fixed number of seconds. The UI is
+ * start/stop — animations fire on clicks and conditions, so a length is rarely
+ * knowable up front — but an unattended script has no one to press Stop.
+ */
+export async function recordCanvasGif(opts: { seconds?: number; fps?: number; name?: string } = {}): Promise<boolean> {
+    const seconds = Math.max(1, Math.min(GIF_MAX_SECONDS, opts.seconds ?? 5));
+    const done = startCanvasGif({ fps: opts.fps, name: opts.name, maxSeconds: seconds });
+    window.setTimeout(stopCanvasGif, seconds * 1000);
+    return done;
+}
 
 /** Offscreen page renderer shared by the video and GIF exports: a hidden
  *  canvas sized to the active page (long side capped at `maxSide`) plus a
@@ -197,6 +380,13 @@ export function setupRecording(getCanvasRef: () => HTMLCanvasElement | undefined
     handleStopRecording: () => void;
 } {
     let videoRecorder: VideoRecorder | null = null;
+
+    // Publish the on-screen canvas so the live GIF capture can sample it without
+    // reaching into the DOM for whichever <canvas> happens to be first. The
+    // getter is stored rather than the element: the ref isn't assigned yet when
+    // setup runs, and it is not reactive, so reading it lazily is the only way
+    // to be sure of getting the mounted canvas.
+    getLiveCanvas = getCanvasRef;
 
     // Effect: respond to requestRecording signal (start OR stop)
     createEffect(() => {

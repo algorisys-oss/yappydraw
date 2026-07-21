@@ -18,6 +18,8 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
     const [onlySelected, setOnlySelected] = createSignal(store.selection.length > 0);
     const [currentPageOnly, setCurrentPageOnly] = createSignal(false);
     const [videoSeconds, setVideoSeconds] = createSignal(5);
+    // Matches exportPageGif's own default and its 5–30 clamp.
+    const [gifFps, setGifFps] = createSignal(12);
     const isPaged = () => isPagedDocType(store.docType) && store.slides.length > 0;
     const isVideo = () => format() === 'webm' || format() === 'mp4' || format() === 'gif';
 
@@ -68,7 +70,7 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
             exportToPptx(scale(), hasBackground(), onlySelected());
         } else if (format() === 'gif') {
             const { exportPageGif } = await import('../utils/recording-manager');
-            exportPageGif({ seconds: videoSeconds() });
+            exportPageGif({ seconds: videoSeconds(), fps: gifFps() });
         } else if (format() === 'webm' || format() === 'mp4') {
             const videoFormat = format() as 'webm' | 'mp4';
             if (isPaged()) {
@@ -173,6 +175,24 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
                                         onChange={(e) => setVideoSeconds(Math.max(1, Math.min(120, parseInt(e.currentTarget.value) || 5)))} />
                                     <span class="hint">Exports the current {pageNoun().toLowerCase()} exactly — animations play, no workspace around it.</span>
                                 </Show>
+                            </div>
+                        </Show>
+
+                        {/* GIF frame rate. Its own control because the trade-off is
+                            GIF-specific: every frame is a full 256-colour image in
+                            the file, so fps multiplies size directly — unlike the
+                            video encoders, which are fixed at 60fps capture and
+                            compress between frames. */}
+                        <Show when={format() === 'gif' && isPaged()}>
+                            <div class="option-group">
+                                <label>Frame rate (fps)</label>
+                                <input type="number" min="5" max="30" step="1" value={gifFps()}
+                                    style={{ width: '80px' }}
+                                    onChange={(e) => setGifFps(Math.max(5, Math.min(30, parseInt(e.currentTarget.value) || 12)))} />
+                                <span class="hint">
+                                    Higher is smoother but bigger — every frame is stored whole. 12 suits most
+                                    animations; 20–24 is worth it for fast motion. Roughly {Math.round(videoSeconds() * gifFps())} frames.
+                                </span>
                             </div>
                         </Show>
 
