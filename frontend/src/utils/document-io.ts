@@ -25,6 +25,7 @@ export function buildSlideDocument(name = 'Untitled'): SlideDocument {
         artboards: JSON.parse(JSON.stringify(store.artboards)),
         dimensionAnnotations: store.dimensionAnnotations?.length ? JSON.parse(JSON.stringify(store.dimensionAnnotations)) : undefined,
         compositionTracks: store.compositionTracks?.length ? JSON.parse(JSON.stringify(store.compositionTracks)) : undefined,
+        animTimeline: store.animTimeline ? JSON.parse(JSON.stringify(store.animTimeline)) : undefined,
         gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode),
         sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
         gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined,

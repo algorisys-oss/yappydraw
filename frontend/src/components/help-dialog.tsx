@@ -135,6 +135,20 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
         ]
     },
     {
+        title: 'Animation Timeline (animation docs)',
+        shortcuts: [
+            { label: 'Insert Frame (lengthen span)', keys: 'F5' },
+            { label: 'Insert Keyframe (duplicate cel)', keys: 'F6' },
+            { label: 'Insert Blank Keyframe', keys: 'F7' },
+            { label: 'Remove Frame', keys: 'Shift+F5' },
+            { label: 'Clear Keyframe', keys: 'Shift+F6' },
+            { label: 'Convert to Movie Clip / Graphic', keys: 'F8 / Shift+F8' },
+            { label: 'Play / Pause', keys: 'Enter' },
+            { label: 'Step Frame Back / Forward', keys: ', / .' },
+            { label: 'Jump to First / Last Frame', keys: 'Home / End' },
+        ]
+    },
+    {
         title: 'Layers & Slides',
         shortcuts: [
             { label: 'Switch Layer', keys: 'Alt+1-9' },

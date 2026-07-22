@@ -14,6 +14,7 @@ import { renderElement } from "./render-element";
 import { projectMasterPosition } from "./slide-utils";
 import { calculateAllAnimatedStates } from "./animation-utils";
 import { applyCompositionOverrides } from "./animation/composition-evaluator";
+import { evaluateTimelineAt } from "./animation/frame-timeline-evaluator";
 import { effectiveTime } from "./animation/animation-engine";
 import { worldToScreen } from "./viewport-transforms";
 import { isPagedDocType } from "../types/slide-types";
@@ -228,6 +229,7 @@ function makePageFrameRenderer(maxSide: number, forGif = false) {
     const rc = rough.canvas(off);
     const isDark = store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus';
 
+    let baseT: number | null = null; // first draw() call = export time zero
     const draw = (tMs: number) => {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, off.width, off.height);
@@ -241,12 +243,31 @@ function makePageFrameRenderer(maxSide: number, forGif = false) {
             applyCompositionOverrides(anim, store.elements, tMs / 1000, store.compositionTracks);
         }
 
+        // Animation mode: quantize elapsed export time to the timeline's fps and
+        // resolve that frame's cel + tween poses. Driving the store playhead too
+        // keeps nested movie-clip rendering (which reads it) frame-exact.
+        let animVisible: Set<string> | null = null;
+        if (baseT === null) baseT = tMs;
+        if (store.docType === 'animation' && store.animTimeline) {
+            const tl = store.animTimeline;
+            const f = Math.floor(((tMs - baseT) / 1000) * tl.fps) % tl.frameCount;
+            if (store.animCurrentFrame !== f) setStore('animCurrentFrame', f);
+            const ev = evaluateTimelineAt(f, tl, store.elements);
+            animVisible = ev.visible;
+            for (const id in ev.overrides) {
+                const existing = anim.get(id);
+                if (existing) Object.assign(existing, ev.overrides[id]);
+                else anim.set(id, { ...ev.overrides[id] } as any);
+            }
+        }
+
         const sortedLayers = [...store.layers].sort((a, b) => a.order - b.order);
         const margin = 200; // cheap page-overlap cull (post-override AABB)
         sortedLayers.forEach(layer => {
             if (!isLayerVisible(layer.id)) return;
             const layerOpacity = layer?.opacity ?? 1;
             store.elements.filter(el => el.layerId === layer.id).forEach(el => {
+                if (animVisible && !animVisible.has(el.id)) return;
                 let renderEl = el;
                 if (layer.isMaster) {
                     const projected = projectMasterPosition(el, slide, store.slides);
@@ -285,7 +306,10 @@ const downloadBlob = (blob: Blob, filename: string) => {
  * current zoom/pan — which is what "export my animated post as MP4" means.
  */
 export async function exportPageVideo(opts: { seconds?: number; format?: VideoFormat; name?: string } = {}): Promise<boolean> {
-    const seconds = Math.max(1, Math.min(120, opts.seconds ?? 5));
+    // Animation docs default to one full timeline pass (frameCount / fps).
+    const animDefault = store.docType === 'animation' && store.animTimeline
+        ? store.animTimeline.frameCount / store.animTimeline.fps : 5;
+    const seconds = Math.max(1, Math.min(120, opts.seconds ?? animDefault));
     const format = opts.format ?? 'mp4';
     if (pageVideoExporting()) { showToast('A video export is already running', 'info'); return false; }
     const fr = makePageFrameRenderer(1920);
@@ -327,8 +351,10 @@ export async function exportPageVideo(opts: { seconds?: number; format?: VideoFo
  * 960 — GIFs get enormous beyond that.
  */
 export async function exportPageGif(opts: { seconds?: number; fps?: number; name?: string } = {}): Promise<boolean> {
-    const seconds = Math.max(1, Math.min(30, opts.seconds ?? 5));
-    const fps = Math.max(5, Math.min(30, opts.fps ?? 12));
+    // Animation docs default to one full timeline pass at the timeline's rate.
+    const tl = store.docType === 'animation' ? store.animTimeline : null;
+    const seconds = Math.max(1, Math.min(30, opts.seconds ?? (tl ? tl.frameCount / tl.fps : 5)));
+    const fps = Math.max(5, Math.min(30, opts.fps ?? (tl ? tl.fps : 12)));
     if (pageVideoExporting()) { showToast('A video export is already running', 'info'); return false; }
     const fr = makePageFrameRenderer(960, true);
     if (!fr) { showToast('GIF export needs a page/slide document', 'error'); return false; }

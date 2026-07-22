@@ -1,5 +1,6 @@
 import type { DrawingElement, Layer, GridSettings, FillStyle, GradientStop } from '../types';
 import type { DisplayState } from './motion-types';
+import { createDefaultAnimTimeline } from './anim-types';
 
 /**
  * Available slide transition types
@@ -72,15 +73,17 @@ export interface Slide {
  * - 'infinite': free-form infinite canvas
  * - 'slides': paged presentation (16:9 slides, transitions, present mode)
  * - 'design': paged Canva-style design document (fixed-size pages, size presets)
+ * - 'game': single fixed Stage + Arcade runtime
+ * - 'animation': single fixed Stage + frame-based timeline (Animate-class)
  * 'slides' and 'design' share the same paged substrate (Slide frames).
  */
-export type DocType = 'infinite' | 'slides' | 'design' | 'game';
+export type DocType = 'infinite' | 'slides' | 'design' | 'game' | 'animation';
 
 /**
  * True for document types built on a paged Slide "stage" frame (slides, design,
- * game). Controls page rendering, page-exact export, and the Play stage.
+ * game, animation). Controls page rendering, page-exact export, and the Play stage.
  */
-export const isPagedDocType = (t?: string | null): boolean => t === 'slides' || t === 'design' || t === 'game';
+export const isPagedDocType = (t?: string | null): boolean => t === 'slides' || t === 'design' || t === 'game' || t === 'animation';
 
 /**
  * True for MULTI-PAGE / presentation documents (slides + design) — the ones with a
@@ -149,6 +152,8 @@ export interface SlideDocument {
     dimensionAnnotations?: import('../utils/dimension-geometry').DimensionAnnotation[];
     /** After-Effects keyframe animation tracks (absolute-time PropertyTracks). */
     compositionTracks?: import('./motion-types').PropertyTrack[];
+    /** Animation mode: the frame-based timeline (docType 'animation' only). */
+    animTimeline?: import('./anim-types').AnimTimeline;
     /** Arcade: JavaScript game script run by the in-editor Play mode and the HTML player.
      *  When the visual builder is used, this is regenerated from the behaviors. */
     gameScript?: string;
@@ -180,7 +185,7 @@ export const createDefaultSlide = (id?: string, name?: string, x: number = 0, y:
 /**
  * Create a new empty slide document
  */
-export const createSlideDocument = (name?: string, docType: DocType = 'slides', pageSize?: { width: number, height: number }): SlideDocument => ({
+export const createSlideDocument = (name?: string, docType: DocType = 'slides', pageSize?: { width: number, height: number }, anim?: { fps?: number, frameCount?: number }): SlideDocument => ({
     version: 4,
     metadata: {
         name,
@@ -198,7 +203,10 @@ export const createSlideDocument = (name?: string, docType: DocType = 'slides', 
         order: 0,
         backgroundColor: 'transparent'
     }],
-    slides: [createDefaultSlide(undefined, docType === 'game' ? 'Stage' : docType === 'design' ? 'Page 1' : 'Slide 1', 0, 0, pageSize)],
+    ...(docType === 'animation' && {
+        animTimeline: createDefaultAnimTimeline(['default-layer'], anim?.fps, anim?.frameCount)
+    }),
+    slides: [createDefaultSlide(undefined, docType === 'game' || docType === 'animation' ? 'Stage' : docType === 'design' ? 'Page 1' : 'Slide 1', 0, 0, pageSize)],
     globalSettings: {},
     gridSettings: {
         enabled: false,

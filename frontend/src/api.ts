@@ -63,6 +63,9 @@ import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types"
 import type { PropertyTrack, TimedKeyframe } from "./types/motion-types";
 import type { EasingName } from "./utils/animation/animation-types";
 import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides } from "./utils/animation/composition-evaluator";
+import { evaluateTimelineAt } from "./utils/animation/frame-timeline-evaluator";
+import * as animOps from "./store/anim-ops";
+import * as animPlayback from "./utils/animation/anim-playback";
 import { buildSlideDocument } from "./utils/document-io";
 import { dimensionGeometry, type DimensionMeasure } from "./utils/dimension-geometry";
 import { addDimension as storeAddDimension, removeDimension as storeRemoveDimension, removeDimensionsForTarget as storeRemoveDimensionsForTarget } from "./store/app-store";
@@ -1793,7 +1796,7 @@ export const YappyAPI = {
     },
 
     /** Symbols: turn the selection into a reusable symbol (+ one instance). Returns symbol id. */
-    createSymbol(name?: string, ids?: string[]) { return createSymbol(ids ?? store.selection, name); },
+    createSymbol(name?: string, ids?: string[], kind?: 'graphic' | 'movieclip') { return createSymbol(ids ?? store.selection, name, kind); },
     /** Place a new instance of a symbol on the canvas. */
     placeInstance(symbolId: string, x?: number, y?: number) { return placeInstance(symbolId, x, y); },
     /** Toggle the Symbol Sprayer for a symbol (defaults to first). Pass nothing to turn off. */
@@ -2324,11 +2327,11 @@ export const YappyAPI = {
     retreatPresentation() { return retreatPresentation(); },
     goToFirstSlide() { return setActiveSlide(0); },
     goToLastSlide() { return setActiveSlide(store.slides.length - 1); },
-    setDocType(type: 'infinite' | 'slides' | 'design' | 'game') { setDocType(type); },
+    setDocType(type: import('./types/slide-types').DocType) { setDocType(type); },
     loadDocument(doc: any) { loadDocument(doc); },
     /** Snapshot the current drawing as a serializable document (the `.yappy` v4 format). */
     getDocument(name = 'Untitled') { return buildSlideDocument(name); },
-    resetToNewDocument(docType: 'infinite' | 'slides' | 'design' | 'game' = 'slides', pageSize?: { width: number, height: number }) { resetToNewDocument(docType, pageSize); },
+    resetToNewDocument(docType: import('./types/slide-types').DocType = 'slides', pageSize?: { width: number, height: number }, anim?: { fps?: number, frameCount?: number }) { resetToNewDocument(docType, pageSize, anim); },
     /** Create a new Canva-style design document. Pass a page-size preset id (e.g. 'instagram-post') or explicit {width, height}. */
     newDesign(size?: string | { width: number, height: number }) {
         const resolved = typeof size === 'string' ? getPagePreset(size) : size;
@@ -2823,6 +2826,66 @@ export const YappyAPI = {
         updateElement(id, { isAdjustmentLayer: true, name: 'Adjustment', filterBlur: 6, ...(filters || {}) } as any, false);
         this.setSelected([id]);
         return id;
+    },
+
+    // --- Animation mode (Animate-class FRAME timeline, docType 'animation') ---
+    // Distinct from the seconds-based composition above: integer frames at a
+    // document fps, keyframes own element ids (the "cel" model), motion tweens
+    // between matching elements, movie-clip symbols with nested timelines.
+    // Layer/frame default to the active layer and the current playhead frame.
+    anim: {
+        /** Create a fresh animation document (fixed Stage + frame timeline). */
+        newDocument(opts?: { width?: number; height?: number; fps?: number; frames?: number }) {
+            const size = opts?.width && opts?.height ? { width: opts.width, height: opts.height } : undefined;
+            resetToNewDocument('animation', size, { fps: opts?.fps, frameCount: opts?.frames });
+        },
+        /** The document's frame timeline (null outside animation mode). */
+        timeline() { return store.animTimeline; },
+        currentFrame(): number { return store.animCurrentFrame; },
+        gotoFrame(frame: number) { animOps.gotoFrame(frame); },
+        stepFrame(delta: number) { animOps.stepFrame(delta); },
+        play() { animPlayback.playAnimation(); },
+        pause() { animPlayback.pauseAnimation(); },
+        stop() { animPlayback.stopAnimation(); },
+        isPlaying(): boolean { return store.animPlaying; },
+        setFps(fps: number) { animOps.setAnimFps(fps); },
+        setFrameCount(frames: number) { animOps.setAnimFrameCount(frames); },
+        /** F5 — lengthen the span under `frame`. */
+        insertFrame(layerId?: string, frame?: number) { animOps.insertFrame(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame); },
+        /** F6 — split the span, duplicating the previous cel (fresh ids, shared contentId). Returns the new element ids. */
+        insertKeyframe(layerId?: string, frame?: number): string[] { return animOps.insertKeyframe(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame); },
+        /** F7 — blank cel. */
+        insertBlankKeyframe(layerId?: string, frame?: number) { animOps.insertBlankKeyframe(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame); },
+        /** Shift+F6 — merge the keyframe back into the previous span. */
+        clearKeyframe(layerId?: string, frame?: number) { animOps.clearKeyframe(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame); },
+        /** Shift+F5 — delete one frame cell. */
+        removeFrames(layerId?: string, frame?: number) { animOps.removeFrames(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame); },
+        moveKeyframe(layerId: string, fromFrame: number, toFrame: number) { animOps.moveKeyframe(layerId, fromFrame, toFrame); },
+        /** Motion-tween the span leaving `frame`'s keyframe ('none' removes it). */
+        setTween(kind: 'none' | 'motion', layerId?: string, frame?: number) { animOps.setTween(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame, kind); },
+        setFrameEasing(easing: EasingName, layerId?: string, frame?: number) { animOps.setFrameEase(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame, undefined, easing); },
+        setFrameLabel(label: string, layerId?: string, frame?: number) { animOps.setFrameLabel(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame, label); },
+        setOnion(enabled: boolean, before?: number, after?: number) {
+            setStore('animOnion', o => ({ enabled, before: before ?? o.before, after: after ?? o.after }));
+        },
+        toggleTimeline(visible?: boolean) { setStore('showAnimTimeline', v => visible ?? !v); },
+        /** Element ids visible at the current playhead (the cel model's filter). */
+        visibleIds(): string[] { return [...(animOps.animVisibleIds() ?? [])]; },
+        /** Evaluate the timeline at `frame` (default playhead) → { visible, overrides } for inspection/testing. */
+        evaluate(frame?: number) {
+            const tl = store.animTimeline;
+            if (!tl) return null;
+            const ev = evaluateTimelineAt(frame ?? store.animCurrentFrame, tl, store.elements);
+            return { visible: [...ev.visible], overrides: ev.overrides };
+        },
+        /** Load a built-in animation template ('bouncing-ball' | 'rocket-launch' | 'yappy-intro'). */
+        async loadExample(name: 'bouncing-ball' | 'rocket-launch' | 'yappy-intro') {
+            const m = await import('./templates/data/animations');
+            const doc = name === 'bouncing-ball' ? m.buildBouncingBallDoc()
+                : name === 'rocket-launch' ? m.buildRocketLaunchDoc()
+                : m.buildYappyIntroDoc();
+            loadDocument(doc);
+        },
     },
 
     // --- Dimension annotations (precision-measurement Phase 5) ---

@@ -34,9 +34,11 @@ const TemplateBrowser = lazy(() => import("./template-browser"));
 const VersionHistoryDialog = lazy(() => import("./version-history-dialog"));
 const GameScriptDialog = lazy(() => import("./game-script-dialog"));
 const NewGameDialog = lazy(() => import("./new-game-dialog"));
+const NewAnimationDialog = lazy(() => import("./new-animation-dialog"));
 const MyGamesDialog = lazy(() => import("./my-games-dialog"));
 const DrawingsGalleryDialog = lazy(() => import("./drawings-gallery-dialog"));
 import { setShowNewGame } from "./new-game-signal";
+import { setShowNewAnimation } from "./new-animation-signal";
 import { setShowMyGames } from "./my-games-signal";
 import { setShowDrawingsGallery } from "./drawings-gallery-signal";
 const CloudStorageDialogLazy = lazy(() => import("./cloud-storage-dialog").then(m => ({ default: m.CloudStorageDialog as any })));
@@ -123,9 +125,9 @@ export const quickSaveToGallery = async () => {
     }
 };
 
-export const handleNew = (docType: 'infinite' | 'slides' | 'design' | 'game' = 'slides', pageSize?: { width: number, height: number }, after?: () => void) => {
+export const handleNew = (docType: import('../types/slide-types').DocType = 'slides', pageSize?: { width: number, height: number }, after?: () => void, anim?: { fps?: number, frameCount?: number }) => {
     const proceed = () => {
-        resetToNewDocument(docType, pageSize);
+        resetToNewDocument(docType, pageSize, anim);
         setDrawingId('Untitled');
         after?.();
     };
@@ -745,6 +747,8 @@ const Menu: Component = () => {
 
                 <NewGameDialog />
 
+                <NewAnimationDialog />
+
                 <MyGamesDialog />
 
                 <DrawingsGalleryDialog />
@@ -841,6 +845,10 @@ const Menu: Component = () => {
                                     <button class="menu-item" onClick={() => { setIsDesignSizeOpen(true); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
                                         <span class="label">New Design…</span>
+                                    </button>
+                                    <button class="menu-item" onClick={() => { setShowNewAnimation(true); setIsMenuOpen(false); }}>
+                                        <Clapperboard size={16} />
+                                        <span class="label">New Animation…</span>
                                     </button>
                                     <button class="menu-item" onClick={() => { YappyAPI.createMindMap(); setIsMenuOpen(false); }}>
                                         <Network size={16} />

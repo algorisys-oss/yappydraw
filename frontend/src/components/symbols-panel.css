@@ -138,6 +138,21 @@
     border-radius: 7px;
 }
 
+/* Movie-clip badge (top-left of the thumb, mirrors .sp-count) */
+.sp-kind {
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: #fff;
+    background: #8b5cf6;
+    border-radius: 8px;
+}
+
 .sp-name {
     width: 100%;
     margin-top: 4px;

@@ -156,7 +156,7 @@ interface AutoSaveMeta {
     sizeBytes: number;
     viewState?: { scale: number; panX: number; panY: number };
     activeSlideIndex?: number;
-    docType?: 'infinite' | 'slides' | 'design' | 'game';
+    docType?: import('../types/slide-types').DocType;
     slideCount?: number;
 }
 
@@ -189,6 +189,7 @@ export function buildCurrentDocument(): SlideDocument {
         artboards: JSON.parse(JSON.stringify(store.artboards ?? [])),
         dimensionAnnotations: store.dimensionAnnotations?.length ? JSON.parse(JSON.stringify(store.dimensionAnnotations)) : undefined,
         compositionTracks: store.compositionTracks?.length ? JSON.parse(JSON.stringify(store.compositionTracks)) : undefined,
+        animTimeline: store.animTimeline ? JSON.parse(JSON.stringify(store.animTimeline)) : undefined,
         gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode),
         gameAuthoringMode: store.gameAuthoringMode === 'code' ? 'code' : undefined,
         sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,

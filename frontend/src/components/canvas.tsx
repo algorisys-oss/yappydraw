@@ -2,6 +2,9 @@ import { type Component, onMount, createEffect, onCleanup, createSignal, Show, u
 import { isPagedDocType } from '../types/slide-types';
 import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { applyCompositionOverrides } from "../utils/animation/composition-evaluator";
+import { evaluateTimelineAt } from "../utils/animation/frame-timeline-evaluator";
+import { animVisibleIds, reconcileTimelineElements } from "../store/anim-ops";
+import { renderOnionSkins } from "../utils/onion-skin";
 import { renderDimensions } from "../utils/dimension-renderer";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
@@ -387,6 +390,26 @@ const Canvas: Component = () => {
             const compTime = scrubbing ? store.storyTime : currentTime / 1000;
             applyCompositionOverrides(animatedStates, elementsToAnimate, compTime, store.compositionTracks);
         }
+        // Animation mode (frame timeline): resolve the current frame's cel — which
+        // elements exist right now, plus motion-tween pose overrides. Overrides
+        // merge INTO animatedStates (same contract as the composition spine);
+        // visibility becomes a render filter below. The in-progress drawing
+        // element stays visible even before the reconciler assigns it to a cel.
+        let animVisible: Set<string> | null = null;
+        if (store.docType === 'animation' && store.animTimeline) {
+            const ev = evaluateTimelineAt(store.animCurrentFrame, store.animTimeline, store.elements);
+            animVisible = ev.visible;
+            for (const id in ev.overrides) {
+                const existing = animatedStates.get(id);
+                if (existing) Object.assign(existing, ev.overrides[id]);
+                // Partial override objects are the composition-spine contract too
+                // (applyCompositionOverrides stores partials into this same map).
+                else animatedStates.set(id, { ...ev.overrides[id] } as any);
+            }
+        }
+        const sceneElements = animVisible
+            ? store.elements.filter(e => animVisible!.has(e.id) || e.id === pState.currentId)
+            : store.elements;
 
         // 2. Clear canvas & decay laser
         ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -457,9 +480,35 @@ const Canvas: Component = () => {
             focusBranchIds = fSet;
         }
 
+        // Onion skin (Animation mode, paused only): ghost neighboring frames
+        // UNDER the current cel — red past, green future.
+        if (animVisible && store.animOnion.enabled && !store.animPlaying && store.animTimeline) {
+            renderOnionSkins(ctx, {
+                canvas: canvasRef,
+                timeline: store.animTimeline,
+                elements: store.elements,
+                currentFrame: store.animCurrentFrame,
+                before: store.animOnion.before,
+                after: store.animOnion.after,
+                renderOpts: {
+                    layers: store.layers, slides: store.slides,
+                    docType: store.docType, activeSlideIndex: store.activeSlideIndex,
+                    selection: [], selectedTool: store.selectedTool,
+                    activeLayerId: store.activeLayerId,
+                    viewportBounds: vp, scale, isDarkMode,
+                    currentDrawingId: null,
+                    hoveredConnector: null,
+                    editingId: null,
+                    canInteractWithElement,
+                    appMode: store.appMode,
+                    focusBranchIds: null,
+                },
+            });
+        }
+
         // Render layers & elements
         const totalRendered = renderLayersAndElements(ctx, rc, {
-            elements: store.elements, layers: store.layers, slides: store.slides,
+            elements: sceneElements, layers: store.layers, slides: store.slides,
             docType: store.docType, activeSlideIndex: store.activeSlideIndex,
             selection: store.selection, selectedTool: store.selectedTool,
             activeLayerId: store.activeLayerId,
@@ -568,6 +617,11 @@ const Canvas: Component = () => {
         store.theme;
         store.activeSlideIndex; // Track slide switches for redraw (e.g., after duplicateSlide)
         store.focusBranchId;
+        // Animation mode: playhead scrub/play + timeline edits + onion settings
+        store.animCurrentFrame;
+        store.animTimeline;
+        store.animPlaying; // ghosts hide during playback, return on pause
+        store.animOnion.enabled; store.animOnion.before; store.animOnion.after;
         // Crop mode
         store.cropModeElementId;
         store.cropRect;
@@ -576,6 +630,18 @@ const Canvas: Component = () => {
         measureGuides();
         // Redraw on reactive changes
         requestAnimationFrame(draw);
+    });
+
+    // Animation mode bookkeeping: an element created by ANY code path (draw,
+    // paste, duplicate, API…) joins the active cel of its layer's row; refs to
+    // deleted elements are pruned. Untracked call — reconciling reads the
+    // playhead, but moving the playhead must NOT re-assign elements.
+    createEffect(() => {
+        if (store.docType !== 'animation' || !store.animTimeline) return;
+        store.elements.length;
+        store.dirtyRevision;
+        store.undoStackLength;
+        untrack(() => reconcileTimelineElements());
     });
 
     // Auto-refresh bound lines if bound elements move or hierarchy changes
@@ -683,6 +749,9 @@ const Canvas: Component = () => {
 
     const canInteractWithElement = (el: DrawingElement): boolean => {
         if (el.locked) return false;
+        // Animation mode: elements on other frames' cels don't exist right now.
+        const vis = animVisibleIds();
+        if (vis && !vis.has(el.id) && el.id !== pState.currentId) return false;
         return !isLayerLocked(el.layerId);
     };
 

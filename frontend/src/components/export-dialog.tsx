@@ -30,6 +30,16 @@ const ExportDialog: Component<ExportDialogProps> = (props) => {
     createEffect(() => {
         if (props.isOpen) {
             setOnlySelected(untrack(() => store.selection.length) > 0);
+            // Animation docs: default to GIF at the timeline's own length and rate
+            // (frameCount/fps), so "Export" means "export my animation" verbatim.
+            untrack(() => {
+                const tl = store.animTimeline;
+                if (store.docType === 'animation' && tl) {
+                    setFormat(f => (f === 'png' ? 'gif' : f));
+                    setVideoSeconds(Math.max(1, Math.round((tl.frameCount / tl.fps) * 10) / 10));
+                    setGifFps(Math.min(30, tl.fps));
+                }
+            });
         }
     });
 

@@ -7,7 +7,7 @@ import { renderElement } from '../utils/render-element';
 import { screenToWorld } from '../utils/viewport-transforms';
 import rough from 'roughjs';
 import type { SymbolDef } from '../types';
-import { Plus, Trash2, RefreshCw, SprayCan } from 'lucide-solid';
+import { Plus, Trash2, RefreshCw, SprayCan, Film } from 'lucide-solid';
 import './symbols-panel.css';
 
 const THUMB = 56; // px
@@ -97,6 +97,16 @@ const SymbolsPanel: Component = () => {
                         >
                             <Plus size={15} /> Create symbol
                         </button>
+                        <Show when={store.docType === 'animation'}>
+                            <button
+                                class="sp-icon-btn"
+                                title="Create a movie clip from selection — a symbol with its own frame timeline (F8). Double-click an instance to edit its timeline."
+                                disabled={store.selection.length === 0}
+                                onClick={() => createSymbol([...store.selection], undefined, 'movieclip')}
+                            >
+                                <Film size={15} /> Movie clip
+                            </button>
+                        </Show>
                     </div>
                     <Show
                         when={store.symbols.length > 0}
@@ -119,6 +129,9 @@ const SymbolsPanel: Component = () => {
                                         >
                                             <SymbolThumb sym={sym} />
                                             <span class="sp-count">{instanceCount(sym.id)}</span>
+                                            <Show when={sym.kind === 'movieclip'}>
+                                                <span class="sp-kind" title="Movie clip — has its own frame timeline"><Film size={11} /></span>
+                                            </Show>
                                         </div>
                                         <Show
                                             when={editingId() === sym.id}

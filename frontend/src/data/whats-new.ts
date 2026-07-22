@@ -13,6 +13,15 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.143', date: '2026-07-22', items: [
+        'NEW: Animation Studio — a whole new document type in the spirit of Flash / Adobe Animate. Menu → New → New Animation gives you a fixed stage and a frame timeline: draw on a frame, press F6 to make the next keyframe, and you are animating.',
+        'Motion tweens with easing: make two keyframes, right-click the span, Create Motion Tween — position, size, rotation, opacity and colours glide between them.',
+        'Onion skinning: ghost the neighbouring frames in red (before) and green (after) while you draw the next pose — the classic animator\'s tool.',
+        'Movie clips: turn a selection into a symbol with its OWN looping timeline (F8). One frame on your main timeline can hold a flame that flickers forever. Double-click an instance to edit the clip in place.',
+        'Play with Enter, step frames with , and . — and Export defaults to a GIF of exactly one loop, sized for sharing.',
+        'Three ready-made samples in Templates → Animations: Bouncing Ball, Rocket Launch, and a 1080×1080 YappyDraw intro card made for social media. Load one, press play, pull it apart.',
+        'The in-app help has a full step-by-step tutorial: your first bouncing ball in five minutes.',
+    ] },
     { version: '0.8.142', date: '2026-07-22', items: [
         'YappyDraw is in beta, and now it says so — a small Beta badge sits next to the logo. Expect things to keep changing quickly, and please keep the feedback coming.',
         'The footer credit now points to Algorisys Technologies at www.algorisys.com.',

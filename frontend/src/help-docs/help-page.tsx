@@ -32,6 +32,7 @@ const SketchnoteDoc = lazy(() => import('./shapes/sketchnote-doc'));
 const MindmapDoc = lazy(() => import('./shapes/mindmap-doc'));
 const TableDoc = lazy(() => import('./shapes/table-doc'));
 const AnimationDoc = lazy(() => import('./features/animation-doc'));
+const AnimateDoc = lazy(() => import('./features/animate-doc'));
 const EmbeddingDoc = lazy(() => import('./features/embedding-doc'));
 const YslTutorialDoc = lazy(() => import('./features/ysl-tutorial-doc'));
 const BulkEditingDoc = lazy(() => import('./features/bulk-editing-doc'));
@@ -253,6 +254,15 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Features',
         description: 'Animate elements with presets, keyframes, and spring physics',
         content: AnimationDoc
+    },
+    {
+        id: 'animate',
+        name: 'Animation Studio',
+        icon: '🎬',
+        category: 'Features',
+        description: 'Animate-class frame timeline: Stage + layers, keyframes/cels (F5/F6/F7), motion tweens with easing, onion skinning, movie-clip symbols with nested timelines, GIF/MP4 export',
+        keywords: 'animation animate flash frame frames timeline keyframe keyframes cel cels blank keyframe span insert frame F5 F6 F7 F8 shift tween motion tween easing ease onion skin skinning ghost playhead scrub fps frame rate loop play pause stop stage movie clip movieclip symbol nested timeline instance loop once single frame first frame frame-by-frame stop motion export gif mp4 webm video convert to symbol label frame label tutorial step by step how to bouncing ball rocket launch intro template templates sample samples squash stretch edit animated object change properties resize timeline panel',
+        content: AnimateDoc
     },
     {
         id: 'arcade',

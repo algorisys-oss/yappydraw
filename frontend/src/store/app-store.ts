@@ -11,6 +11,9 @@ import { isPagedDocType } from '../types/slide-types';
 import { idbDelete } from '../storage/idb-kv';
 import { setActiveDrawingId } from '../storage/active-drawing';
 import type { ElementAnimation, DisplayState, PropertyTrack, BezierEase } from "../types/motion-types";
+import type { AnimTimeline, OnionSettings } from "../types/anim-types";
+import { createDefaultAnimTimeline } from "../types/anim-types";
+import { evaluateTimelineAt } from "../utils/animation/frame-timeline-evaluator";
 import type { DimensionAnnotation, DimensionMeasure } from "../utils/dimension-geometry";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
@@ -220,8 +223,10 @@ interface AppState {
     meshEditActive: boolean;
     /** Artboard currently selected on-canvas for move/resize/delete (transient, not persisted). */
     activeArtboardId: string | null;
-    /** Active symbol edit-in-place session (transient, not persisted). */
-    symbolEdit: { symbolId: string; groupId: string; name: string; x: number; y: number } | null;
+    /** Active symbol edit-in-place session (transient, not persisted).
+     *  `clipEdit` marks a movie-clip session: the DOC frame timeline is stashed
+     *  and swapped for the clip's own, so the timeline panel edits the clip. */
+    symbolEdit: { symbolId: string; groupId: string; name: string; x: number; y: number; clipEdit?: boolean } | null;
     /** Active compound-shape edit-in-place session — operands exploded for editing (transient). */
     compoundEdit: { groupId: string; op: BooleanOp; style: Partial<DrawingElement>; original: DrawingElement } | null;
     /** Align to the key (last-selected) object instead of the selection bbox. */
@@ -332,6 +337,20 @@ interface AppState {
     showBlueprint: boolean;
     /** The Code (game script) view is open. */
     showGameScript: boolean;
+
+    // Animation mode (frame-based timeline, docType 'animation')
+    /** The document's frame timeline; non-null iff docType === 'animation'. Persisted in SlideDocument.animTimeline. */
+    animTimeline: AnimTimeline | null;
+    /** Integer playhead frame (0-based). Drives frame-timeline evaluation at render time. */
+    animCurrentFrame: number;
+    animPlaying: boolean;
+    animLoop: boolean;
+    /** Onion-skin ghost settings (transient, not persisted). */
+    animOnion: OnionSettings;
+    /** Frames selected in the timeline grid (drives the Frame properties section). */
+    animFrameSelection: { layerId: string; frames: number[] } | null;
+    /** The bottom timeline panel is open (auto-true when entering an animation doc). */
+    showAnimTimeline: boolean;
 
     // Video Playback
     activeVideoElementIds: string[];
@@ -575,6 +594,15 @@ const initialState: AppState = {
     showGameGraph: false,
     showBlueprint: false,
     showGameScript: false,
+
+    animTimeline: null,
+    animCurrentFrame: 0,
+    animPlaying: false,
+    animLoop: true,
+    animOnion: { enabled: false, before: 2, after: 2 },
+    animFrameSelection: null,
+    showAnimTimeline: false,
+
     activeVideoElementIds: [],
     dirtyRevision: 0,
 };
@@ -608,6 +636,7 @@ interface HistorySnapshot {
     docType: DocType;
     compositionTracks: PropertyTrack[];
     dimensionAnnotations: DimensionAnnotation[];
+    animTimeline: AnimTimeline | null;
 }
 const undoStack: HistorySnapshot[] = [];
 const redoStack: HistorySnapshot[] = [];
@@ -632,12 +661,19 @@ const redoStack: HistorySnapshot[] = [];
 // O(total points) — the old `JSON.parse(JSON.stringify(...))` deep clone was
 // 50-100ms per push on iPad with many strokes, long enough to block the main
 // thread and drop the next stroke's `pointerdown` during fast writing.
+// Frame timelines hold ids only, so a full clone (down to each keyframe's
+// elementIds array) is cheap and decouples the snapshot from keyframe edits.
+const cloneAnimTimeline = (tl: AnimTimeline): AnimTimeline => ({
+    ...tl,
+    layers: tl.layers.map(l => ({ ...l, keyframes: l.keyframes.map(k => ({ ...k, elementIds: [...k.elementIds] })) })),
+});
+
 const captureSnapshot = (): HistorySnapshot => ({
     elements: store.elements.map(e => ({ ...e })),
     layers: store.layers.map(l => ({ ...l })),
     slides: store.slides.map(s => ({ ...s })),
     states: store.states.map(s => ({ ...s })),
-    symbols: store.symbols.map(s => ({ ...s, elements: s.elements.map(e => ({ ...e })) })),
+    symbols: store.symbols.map(s => ({ ...s, elements: s.elements.map(e => ({ ...e })), ...(s.timeline && { timeline: cloneAnimTimeline(s.timeline) }) })),
     artboards: store.artboards.map(a => ({ ...a })),
     graphicStyles: store.graphicStyles.map(g => ({ ...g, style: { ...g.style } })),
     swatches: store.swatches.map(s => ({ ...s })),
@@ -647,6 +683,7 @@ const captureSnapshot = (): HistorySnapshot => ({
     docType: store.docType,
     compositionTracks: store.compositionTracks.map(t => ({ ...t, keys: t.keys.map(k => ({ ...k })) })),
     dimensionAnnotations: store.dimensionAnnotations.map(d => ({ ...d })),
+    animTimeline: store.animTimeline ? cloneAnimTimeline(store.animTimeline) : null,
 });
 
 const restoreSnapshot = (snapshot: HistorySnapshot) => {
@@ -664,6 +701,7 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("docType", snapshot.docType);
     setStore("compositionTracks", snapshot.compositionTracks || []);
     setStore("dimensionAnnotations", snapshot.dimensionAnnotations || []);
+    setStore("animTimeline", snapshot.animTimeline ?? null);
     setStore("selection", []); // Clear selection to avoid stale IDs
 };
 
@@ -1052,7 +1090,13 @@ export const setShowCanvasProperties = (visible: boolean) => {
  * context menu (the latter gives keyboard-less tablets a "Select all" path).
  */
 export const selectAll = () => {
-    setStore('selection', store.elements.map(el => el.id));
+    let els = store.elements;
+    // Animation mode: only the current frame's cel contents exist right now.
+    if (store.docType === 'animation' && store.animTimeline) {
+        const vis = evaluateTimelineAt(store.animCurrentFrame, store.animTimeline, []).visible;
+        els = els.filter(e => vis.has(e.id));
+    }
+    setStore('selection', els.map(el => el.id));
 };
 
 export const deleteElements = (ids: string[]) => {
@@ -2398,6 +2442,21 @@ export const loadDocument = (doc: any) => {
         setStore("showSlideToolbar", true);
         setStore("showUtilityToolbar", false);
 
+        // Animation mode: restore the frame timeline (healing a missing one so an
+        // 'animation' doc always has rows for its layers), reset the playhead.
+        if (loadedDocType === 'animation') {
+            const tl: AnimTimeline = doc.animTimeline
+                ? JSON.parse(JSON.stringify(doc.animTimeline))
+                : createDefaultAnimTimeline(layers.map((l: Layer) => l.id));
+            setStore("animTimeline", tl);
+        } else {
+            setStore("animTimeline", null);
+        }
+        setStore("animCurrentFrame", 0);
+        setStore("animPlaying", false);
+        setStore("animFrameSelection", null);
+        setStore("showAnimTimeline", loadedDocType === 'animation');
+
         setStore("activeSlideIndex", 0);
         setStore("selection", []);
         setStore("gameScript", typeof doc.gameScript === 'string' ? doc.gameScript : '');
@@ -2603,8 +2662,8 @@ export const clearHistory = () => {
     setStore("redoStackLength", 0);
 };
 
-export const resetToNewDocument = (docType: DocType = 'slides', pageSize?: { width: number, height: number }) => {
-    const doc = createSlideDocument('Untitled', docType, pageSize);
+export const resetToNewDocument = (docType: DocType = 'slides', pageSize?: { width: number, height: number }, anim?: { fps?: number, frameCount?: number }) => {
+    const doc = createSlideDocument('Untitled', docType, pageSize, anim);
     loadDocument(doc);
     // Clear auto-save data (inline to avoid circular import with storage/auto-save)
     try { localStorage.removeItem('yappy:autosave'); localStorage.removeItem('yappy:autosave:meta'); } catch {}
@@ -2616,8 +2675,9 @@ export const resetToNewDocument = (docType: DocType = 'slides', pageSize?: { wid
     // Default to 100% zoom for new documents, centered on the first slide.
     // Design pages are often taller/wider than the window (stories, posters,
     // A4) — fit the page in view instead so the user sees the whole frame.
+    // The animation Stage is a fixed frame too: fit it so it's fully visible.
     setTimeout(() => {
-        if (docType === 'design') {
+        if (docType === 'design' || docType === 'animation') {
             zoomToFitSlide();
             return;
         }
@@ -2634,7 +2694,7 @@ export const resetToNewDocument = (docType: DocType = 'slides', pageSize?: { wid
             setStore('viewState', { scale: 1, panX: 0, panY: 0 });
         }
     }, 120);
-    showToast(`New ${docType === 'slides' ? 'presentation' : docType === 'design' ? 'design' : 'sketch'} created`, 'info');
+    showToast(`New ${docType === 'slides' ? 'presentation' : docType === 'design' ? 'design' : docType === 'animation' ? 'animation' : 'sketch'} created`, 'info');
 };
 
 export const duplicateElement = (id: string) => {
@@ -3061,7 +3121,7 @@ export const pasteOnAllArtboards = (): number => {
  * origin), store it as a reusable definition, and replace the selection with one instance.
  * Editing the symbol (redefineSymbol) updates every instance live.
  */
-export const createSymbol = (ids: string[], name?: string): string | null => {
+export const createSymbol = (ids: string[], name?: string, kind?: 'graphic' | 'movieclip'): string | null => {
     const els = store.elements.filter(e => ids.includes(e.id));
     if (els.length === 0) { showToast('Symbol: select objects', 'info'); return null; }
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -3070,7 +3130,23 @@ export const createSymbol = (ids: string[], name?: string): string | null => {
     // Normalize element copies to a 0,0 origin (strip group/mask refs).
     const norm = els.map(e => { const { groupIds, clipMaskId, isClipMask, ...rest } = e as any; return { ...rest, x: e.x - minX, y: e.y - minY } as DrawingElement; });
     const symId = generateId('sym' as any);
-    const sym: SymbolDef = { id: symId, name: name || `Symbol ${store.symbols.length + 1}`, width: w, height: h, elements: norm };
+    const sym: SymbolDef = {
+        id: symId, name: name || `Symbol ${store.symbols.length + 1}`, width: w, height: h, elements: norm,
+        // A movie clip carries its own frame timeline; starts as one cel holding
+        // everything, at the document's fps. Author it via edit-in-place.
+        ...(kind === 'movieclip' && {
+            kind: 'movieclip' as const,
+            timeline: {
+                fps: store.animTimeline?.fps ?? 24,
+                frameCount: store.animTimeline?.frameCount ?? 24,
+                layers: [{
+                    layerId: 'clip',
+                    keyframes: [{ frame: 0, elementIds: norm.map(e => e.id) }],
+                    endFrame: (store.animTimeline?.frameCount ?? 24) - 1,
+                }],
+            },
+        }),
+    };
     const inst: DrawingElement = {
         ...store.defaultElementStyles,
         id: generateId('symi' as any), type: 'symbolInstance', symbolId: symId,
@@ -3090,6 +3166,9 @@ export const createSymbol = (ids: string[], name?: string): string | null => {
 export const placeInstance = (symbolId: string, x?: number, y?: number): string | null => {
     const sym = store.symbols.find(s => s.id === symbolId);
     if (!sym) return null;
+    // A symbol can't contain itself (the edit-in-place session would bake the
+    // instance into the definition and recurse forever).
+    if (store.symbolEdit?.symbolId === symbolId) { showToast('A symbol cannot be placed inside itself', 'error'); return null; }
     const inst: DrawingElement = {
         ...store.defaultElementStyles,
         id: generateId('symi' as any), type: 'symbolInstance', symbolId,
@@ -3153,6 +3232,11 @@ export const detachInstance = (ids: string[]) => {
  * place; on exit the edits are written back to the symbol (updating every
  * instance) and the instance is restored.
  */
+/** Movie-clip edit session context: the stashed DOC timeline to restore on exit
+ *  + the ids that existed before the session (excluded from clip reconciling). */
+let clipEditStash: { docTimeline: AnimTimeline; preIds: Set<string> } | null = null;
+export const getClipEditStash = () => clipEditStash;
+
 export const enterSymbolEdit = (instanceId: string) => {
     if (store.symbolEdit) return; // one session at a time
     const inst = store.elements.find(e => e.id === instanceId && e.type === 'symbolInstance' && e.symbolId);
@@ -3164,17 +3248,42 @@ export const enterSymbolEdit = (instanceId: string) => {
     const gid = generateId('grp' as any);
     const batch = new Set<string>();
     const additions: DrawingElement[] = [];
+    const idMap = new Map<string, string>(); // def child id → session copy id
     for (const child of sym.elements) {
         const id = generateId(child.type as any, batch); batch.add(id);
+        idMap.set(child.id, id);
         const copy: any = { ...child, id, x: inst.x + child.x * sx, y: inst.y + child.y * sy, width: child.width * sx, height: child.height * sy, groupIds: [gid], layerId: inst.layerId };
         if (child.points) copy.points = scalePoints(child.points, sx, sy);
         if (child.pathAnchors) copy.pathAnchors = scalePathAnchors(child.pathAnchors as any, sx, sy);
         if (child.pathSubpaths) copy.pathSubpaths = scalePathSubpaths(child.pathSubpaths as any, sx, sy);
         additions.push(copy);
     }
+    // Movie clip in an animation doc: stash the DOC timeline and swap in the
+    // clip's own (ids remapped to the session copies) — the timeline panel,
+    // hotkeys and playback now edit/preview the clip in isolation.
+    const isClipEdit = sym.kind === 'movieclip' && !!sym.timeline && store.docType === 'animation' && !!store.animTimeline;
+    if (isClipEdit) {
+        // Deep-clone the stash: setStore MERGES objects into the existing raw
+        // node, so stashing the live proxy would silently track the lifted
+        // clip's data instead of snapshotting the document timeline.
+        clipEditStash = { docTimeline: cloneAnimTimeline(store.animTimeline!), preIds: new Set(store.elements.map(e => e.id)) };
+        const lifted: AnimTimeline = {
+            fps: sym.timeline!.fps,
+            frameCount: sym.timeline!.frameCount,
+            layers: sym.timeline!.layers.map((r, i) => ({
+                // First row maps onto the instance's document layer so the panel shows it.
+                layerId: i === 0 ? inst.layerId : r.layerId,
+                endFrame: r.endFrame,
+                keyframes: r.keyframes.map(k => ({ ...k, elementIds: k.elementIds.map(id => idMap.get(id)).filter((v): v is string => !!v) })),
+            })),
+        };
+        setStore('animTimeline', lifted);
+        setStore('animCurrentFrame', 0);
+        setStore('animPlaying', false);
+    }
     setStore('elements', list => [...list.filter(e => e.id !== inst.id), ...additions]);
     setStore('selection', additions.map(a => a.id));
-    setStore('symbolEdit', { symbolId: sym.id, groupId: gid, name: sym.name, x: inst.x, y: inst.y });
+    setStore('symbolEdit', { symbolId: sym.id, groupId: gid, name: sym.name, x: inst.x, y: inst.y, ...(isClipEdit && { clipEdit: true }) });
     bumpDirtyRevision();
     showToast(`Editing symbol “${sym.name}”`, 'info');
 };
@@ -3187,6 +3296,33 @@ export const exitSymbolEdit = (save = true) => {
     const ids = store.elements.filter(e => (e.groupIds || []).includes(session.groupId)).map(e => e.id);
     if (save && ids.length) {
         redefineSymbol(session.symbolId, ids); // pushes its own history + updates instances
+    }
+    // Movie-clip session: persist the edited clip timeline (redefineSymbol kept
+    // the session element ids in the def, so keyframe refs carry over 1:1),
+    // then restore the stashed DOC timeline.
+    if (session.clipEdit && clipEditStash) {
+        if (save && ids.length && store.animTimeline) {
+            const idSet = new Set(ids);
+            const edited = store.animTimeline;
+            setStore('symbols', s => s.id === session.symbolId, () => ({
+                timeline: {
+                    fps: edited.fps,
+                    frameCount: edited.frameCount,
+                    layers: edited.layers
+                        .map((r, i) => ({
+                            layerId: `clip-${i}`,
+                            endFrame: r.endFrame,
+                            keyframes: r.keyframes.map(k => ({ ...k, elementIds: k.elementIds.filter(id => idSet.has(id)) })),
+                        }))
+                        // Drop rows that ended up referencing nothing (unless it's the only row).
+                        .filter((r, _i, all) => all.length === 1 || r.keyframes.some(k => k.elementIds.length > 0)),
+                },
+            }));
+        }
+        setStore('animTimeline', clipEditStash.docTimeline);
+        setStore('animCurrentFrame', 0);
+        setStore('animPlaying', false);
+        clipEditStash = null;
     }
     const newInst: DrawingElement = {
         ...store.defaultElementStyles,
@@ -3793,6 +3929,13 @@ export const addLayer = (name?: string, parentId?: string) => {
     };
     setStore('layers', [...store.layers, newLayer]);
     setStore('activeLayerId', newId);
+    // Animation mode: every layer has a paired timeline row (starts as one blank cel).
+    if (store.animTimeline) {
+        setStore('animTimeline', tl => tl && ({
+            ...tl,
+            layers: [...tl.layers, { layerId: newId, keyframes: [{ frame: 0, elementIds: [] }], endFrame: tl.frameCount - 1 }],
+        }));
+    }
     return newId;
 };
 
@@ -3808,6 +3951,20 @@ export const deleteLayer = (id: string) => {
 
     // Check if layer has elements
     const elementsOnLayer = store.elements.filter(el => el.layerId === id);
+
+    // Animation mode: a layer IS its frames — deleting it always deletes its cels'
+    // content (Animate semantics; the "move elements" option would orphan them
+    // outside every keyframe). The paired timeline row goes with it.
+    if (store.animTimeline) {
+        pushToHistory();
+        setStore('elements', store.elements.filter(el => el.layerId !== id));
+        setStore('animTimeline', tl => tl && ({ ...tl, layers: tl.layers.filter(l => l.layerId !== id) }));
+        setStore('layers', store.layers.filter(l => l.id !== id));
+        if (store.activeLayerId === id) {
+            setStore('activeLayerId', store.layers[0]?.id || 'default-layer');
+        }
+        return;
+    }
 
     if (elementsOnLayer.length > 0) {
         // Ask user what to do with elements

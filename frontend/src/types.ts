@@ -21,8 +21,11 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
     | 'stickRig'
     | 'video' | 'symbolInstance';
 
-/** A reusable symbol definition: a normalized (origin-0) snapshot of elements. */
-export interface SymbolDef { id: string; name: string; width: number; height: number; elements: DrawingElement[]; }
+/** A reusable symbol definition: a normalized (origin-0) snapshot of elements.
+ *  `kind` absent = 'graphic' (a static symbol, the original behavior). A 'movieclip'
+ *  carries its own frame `timeline` (Animation mode) whose keyframes reference ids
+ *  inside `elements`; instances play it independently of the document timeline. */
+export interface SymbolDef { id: string; name: string; width: number; height: number; elements: DrawingElement[]; kind?: 'graphic' | 'movieclip'; timeline?: import('./types/anim-types').AnimTimeline; }
 
 /** A named rectangular export region on the infinite canvas. */
 export interface Artboard { id: string; name: string; x: number; y: number; width: number; height: number; background?: string; }
@@ -528,6 +531,16 @@ export interface DrawingElement {
     clipMaskId?: string | null;
     maskType?: 'clip' | 'opacity';
     symbolId?: string; // for type 'symbolInstance' — id of the SymbolDef it instances
+    /** Animation mode, movieclip instances only: how the clip's own timeline plays
+     *  relative to the document playhead. 'loop' (default) wraps, 'once' clamps at
+     *  the last frame, 'single' shows only `firstFrame`. */
+    loopMode?: 'loop' | 'once' | 'single';
+    /** Animation mode, movieclip instances only: the clip-local frame playback starts at (default 0). */
+    firstFrame?: number;
+    /** Animation mode: stable identity ACROSS keyframes of the same timeline row.
+     *  F6 (Insert Keyframe) duplicates elements with fresh ids but copies contentId,
+     *  so a motion tween knows which element in the next keyframe continues this one. */
+    contentId?: string;
     // Appearance stack — extra fills/strokes drawn OVER the base shape, bottom-to-top.
     // Absent = just the base backgroundColor/strokeColor (fully back-compatible).
     appearance?: { fills?: PaintFill[]; strokes?: PaintStroke[] };

@@ -67,6 +67,10 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         ...(el.dataURL !== undefined && { dataURL: el.dataURL }),
         ...(el.mimeType !== undefined && { mimeType: el.mimeType }),
         ...(el.groupIds !== undefined && { groupIds: el.groupIds }),
+        ...(el.symbolId !== undefined && { symbolId: el.symbolId }),
+        ...(el.loopMode !== undefined && { loopMode: el.loopMode }),
+        ...(el.firstFrame !== undefined && { firstFrame: el.firstFrame }),
+        ...(el.contentId !== undefined && { contentId: el.contentId }),
         ...(el.boundElements !== undefined && { boundElements: el.boundElements }),
         ...(el.isSelected !== undefined && { isSelected: el.isSelected }),
         ...(el.startBinding !== undefined && { startBinding: el.startBinding }),
@@ -211,7 +215,6 @@ export const migrateDrawingData = (data: any): {
 };
 
 import type { SlideDocument, Slide, GlobalSettings } from '../types/slide-types';
-import { generateId } from './id-generator';
 
 /**
  * Check if data is already in the v3+ slide format (v3 or v4)
@@ -233,8 +236,10 @@ export const migrateToSlideFormat = (data: any): SlideDocument => {
     const migrated = migrateDrawingData(data);
 
     // Create a single slide from the legacy data (Spatial Viewport)
+    // Random id (same scheme as createDefaultSlide) — keeps this module free of
+    // store imports so pure consumers (templates, tests) can use normalizeElement.
     const slide: Slide = {
-        id: generateId('slide'),
+        id: `slide-${crypto.randomUUID()}`,
         name: 'Slide 1',
         spatialPosition: { x: 0, y: 0 },
         dimensions: { width: 1920, height: 1080 }, // Default for migrated slides

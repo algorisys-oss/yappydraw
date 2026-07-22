@@ -62,6 +62,8 @@ const KeyframePanel = lazy(() => import('./components/keyframe-panel'));
 const GameGraph = lazy(() => import('./components/game-graph'));
 const BlueprintGraph = lazy(() => import('./components/blueprint-graph'));
 const GameModeBar = lazy(() => import('./components/game-mode-bar'));
+const AnimationModeBar = lazy(() => import('./components/animation-mode-bar'));
+const AnimationTimeline = lazy(() => import('./components/animation-timeline'));
 const CommandPalette = lazy(() => import('./components/command-palette'));
 const Toast = lazy(() => import('./components/toast'));
 const QuickToolbar = lazy(() => import('./components/quick-toolbar').then(m => ({ default: m.QuickToolbar })));
@@ -83,6 +85,9 @@ import { initAPI } from './api';
 import { SlidersHorizontal, Settings } from 'lucide-solid';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
+import { insertFrame, insertKeyframe, insertBlankKeyframe, clearKeyframe, removeFrames, stepFrame, gotoFrame } from './store/anim-ops';
+import { createSymbol } from './store/app-store';
+import { toggleAnimPlayback } from './utils/animation/anim-playback';
 import { initAutoSave, forceAutoSave, loadAutoSave } from './storage/auto-save';
 import { initCloudStorage } from './storage/cloud';
 
@@ -176,6 +181,22 @@ const App: Component = () => {
         store.showExportDialog ||
         isAIPromptOpen()
       ) {
+        return;
+      }
+
+      // Animation mode: the F-keys belong to the frame timeline (Animate muscle
+      // memory — F5 span, F6 keyframe, F7 blank; Shift removes/clears). Guarded
+      // BEFORE the Present handler so F5 never leaves the timeline (or reloads
+      // the browser).
+      if (store.docType === 'animation' && store.animTimeline && (e.key === 'F5' || e.key === 'F6' || e.key === 'F7' || e.key === 'F8')) {
+        e.preventDefault();
+        const layerId = store.animFrameSelection?.layerId ?? store.activeLayerId;
+        const frame = store.animFrameSelection?.frames[0] ?? store.animCurrentFrame;
+        if (e.key === 'F5') { if (e.shiftKey) removeFrames(layerId, frame); else insertFrame(layerId, frame); }
+        else if (e.key === 'F6') { if (e.shiftKey) clearKeyframe(layerId, frame); else insertKeyframe(layerId, frame); }
+        else if (e.key === 'F7') insertBlankKeyframe(layerId, frame);
+        // F8 = Convert to Symbol (movie clip; Shift+F8 = static graphic)
+        else if (store.selection.length > 0) createSymbol([...store.selection], undefined, e.shiftKey ? 'graphic' : 'movieclip');
         return;
       }
 
@@ -309,6 +330,16 @@ const App: Component = () => {
       if (isInputFocused) {
         // Let the browser handle standard text editing shortcuts (Ctrl+A, C, V, Z, etc.)
         return;
+      }
+
+      // 2 animation. Frame-timeline transport (Animate muscle memory):
+      // Enter = play/pause, , / . = step a frame, Home/End = jump to start/end.
+      if (store.docType === 'animation' && store.animTimeline && !isCtrlOrMeta && !e.altKey && !e.shiftKey) {
+        if (e.key === 'Enter') { e.preventDefault(); toggleAnimPlayback(); return; }
+        if (code === 'Comma') { e.preventDefault(); stepFrame(-1); return; }
+        if (code === 'Period') { e.preventDefault(); stepFrame(1); return; }
+        if (e.key === 'Home') { e.preventDefault(); gotoFrame(0); return; }
+        if (e.key === 'End') { e.preventDefault(); gotoFrame(store.animTimeline.frameCount - 1); return; }
       }
 
       // 2a. CANVAS (VIEW) ROTATION — Shift+, / Shift+. spin the canvas about its
@@ -1324,11 +1355,17 @@ const App: Component = () => {
           <Show when={!store.zenMode}>
             <DockContainer />
             <PropertyPanel />
-            <SceneTimeline />
-            <KeyframePanel />
+            {/* Frame timeline (Animation mode) replaces the seconds-based playheads —
+                mounting both would mean two competing time drivers. */}
+            <Show when={store.docType !== 'animation'}>
+              <SceneTimeline />
+              <KeyframePanel />
+            </Show>
             <GameGraph />
             <BlueprintGraph />
             <GameModeBar />
+            <AnimationModeBar />
+            <AnimationTimeline />
             <StatusBar />
           </Show>
           <Show when={store.zenMode}>

@@ -490,14 +490,17 @@ button:focus-visible {
   cursor: grabbing;
 }
 
-/* Floating utility cluster (Settings / Properties toggle / Help) */
+/* Floating utility cluster (Settings / Properties toggle / Help).
+   --anim-timeline-h (set by the Animation-mode timeline panel) lifts the
+   cluster above that bottom-docked panel instead of floating on top of it. */
 .floating-tools-cluster {
   position: fixed;
-  bottom: 34px;
+  bottom: calc(34px + var(--anim-timeline-h, 0px));
   left: 12px;
   display: flex;
   gap: 8px;
   z-index: 1000;
+  transition: bottom 0.15s ease;
 }
 
 .floating-settings-btn {

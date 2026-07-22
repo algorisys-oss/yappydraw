@@ -1,0 +1,77 @@
+/* Floating animation transport, bottom-center of the stage (visible when the
+   timeline panel is closed; mirrors game-mode-bar's placement). */
+.anim-mode-bar {
+    position: fixed;
+    bottom: 40px; /* clear of the 28px status bar */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    max-width: calc(100vw - 32px);
+    color: var(--text-primary);
+}
+.amb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+.amb-btn:hover { border-color: var(--accent-color, #6366f1); color: var(--accent-color, #6366f1); }
+.amb-btn.active { border-color: var(--accent-color, #6366f1); color: var(--accent-color, #6366f1); background: rgba(99, 102, 241, 0.12); }
+.amb-play {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #fff;
+    padding: 6px 12px;
+}
+.amb-play:hover { background: #15803d; color: #fff; }
+.amb-frame {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    padding: 0 2px;
+}
+.amb-step {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+.amb-step:hover { color: var(--accent-color, #6366f1); }
+.amb-fps {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+.amb-fps input {
+    width: 42px;
+    padding: 4px 5px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 12px;
+    text-align: center;
+}

@@ -3,6 +3,7 @@ import * as diagramTemplates from './data/diagrams';
 import * as dslExamples from './data/dsl-examples';
 import * as presentations from './data/presentations';
 import { allDesignTemplates } from './data/designs';
+import { allAnimationTemplates } from './data/animations';
 import { listUserTemplates } from './user-templates';
 
 /**
@@ -75,6 +76,9 @@ class TemplateRegistry {
      * Register all default templates
      */
     private registerDefaultTemplates() {
+        // Register animation templates (frame-timeline documents)
+        allAnimationTemplates.forEach(t => this.registerTemplate(t));
+
         // Register diagram templates
         this.registerTemplate(diagramTemplates.flowchartTemplate);
         this.registerTemplate(diagramTemplates.mindmapTemplate);

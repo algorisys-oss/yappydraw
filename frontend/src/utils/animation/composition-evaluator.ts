@@ -81,8 +81,9 @@ function cubicBezierYForX(p1x: number, p1y: number, p2x: number, p2y: number, x:
     return ((ay * u + by) * u + cy) * u;
 }
 
-/** Map a raw 0..1 progress through a keyframe's easing (bezier handles win over named). */
-function easeProgress(k: TimedKeyframe, progress: number): number {
+/** Map a raw 0..1 progress through a keyframe's easing (bezier handles win over named).
+ *  Structural param so both TimedKeyframe (seconds) and AnimKeyframe (frames) share it. */
+export function easeProgress(k: Pick<TimedKeyframe, 'ease' | 'easing'>, progress: number): number {
     const ease: BezierEase | undefined = k.ease;
     if (ease) {
         return cubicBezierYForX(ease.ox, ease.oy, ease.ix, ease.iy, progress);

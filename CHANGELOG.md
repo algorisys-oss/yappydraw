@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.143] - 2026-07-22 — Animation Studio: Animate-class frame timeline
+
+### Added — Animation Studio (Animate-class frame timeline) [2026-07-22]
+- **New `animation` document type** (Menu → New → New Animation…): fixed Stage + bottom frame-timeline panel. Frame-based model (`AnimTimeline`/`AnimLayer`/`AnimKeyframe` in `types/anim-types.ts`): keyframes own element ids (the "cel" model — drawing lands on the current frame's keyframe via a reconciler), spans hold, blank keyframes, frame labels.
+- **Timeline panel** (`components/animation-timeline.tsx`): DOM layer rows (rename/visibility/lock/delete) + a canvas-rendered frame grid (ruler, keyframe dots, span bars, tween arrows, playhead), scrubbing, drag-to-move keyframes, right-click frame menu, transport header (play/stop, fps, length, loop, onion controls, frame + movieclip-instance properties). Floating transport bar (`animation-mode-bar.tsx`) when the panel is closed.
+- **Hotkeys** (animation docs): F5/F6/F7 insert frame/keyframe/blank, Shift+F5/F6 remove/clear, F8/Shift+F8 convert to movie clip/graphic, Enter play/pause, `,`/`.` step, Home/End jump.
+- **Motion tweens**: F6 duplicates the previous cel with a shared `contentId`; matched elements lerp x/y/size/angle/opacity/colors through the pure `frame-timeline-evaluator` (reuses `easeProgress`/bezier + named easings). Per-span easing picker.
+- **Onion skinning** (`utils/onion-skin.ts`): red/green ghosts of neighboring frames, rendered through the real scene renderer into a tinted offscreen — identical in sketch and architectural styles.
+- **Movie-clip symbols**: `SymbolDef.kind`/`timeline`; instances play their own nested timeline as a pure function of the document playhead (`clipLocalFrame` — loop / play-once / single-frame + first-frame offset), authored via the existing edit-in-place session (the doc timeline is stashed and swapped for the clip's).
+- **Export**: GIF/MP4/WebM are frame-exact (`makePageFrameRenderer` quantizes to the timeline fps); export dialog defaults to one full timeline pass for animation docs.
+- **API**: `Yappy.anim.*` (newDocument, gotoFrame, play/pause/stop, insert/clear/remove frames & keyframes, setTween/easing/label, setFps/frameCount, evaluate, visibleIds) + `createSymbol(name, ids, kind)`.
+- Persistence: `SlideDocument.animTimeline` (additive on v4), autosave, undo/redo (timeline + symbol-timeline aware snapshots).
+- Tests: `frame-timeline-evaluator.test.ts` + `frame-timeline-ops.test.ts` + `anim-types.test.ts` (73 unit tests), `tests/animation-timeline.spec.ts` (8 e2e: cel model, tween, playback, grid UI/hotkeys, onion pixels, undo/round-trip, movie-clip edit-in-place, both render styles).
+- UX: the floating Settings/Properties/Help cluster lifts itself above the timeline panel (`--anim-timeline-h` CSS var published via ResizeObserver) instead of overlapping the layer column.
+- **Animation templates** (Templates → Animations): three ready-made frame-timeline documents that double as social-media showcases — *Bouncing Ball* (squash & stretch tweens), *Rocket Launch* (looping movie-clip flame + cel-swap star twinkle), *YappyDraw Intro* (1080×1080 branded card with staggered bounce-in shapes). Built in `templates/data/animations.ts` as full doc-carrying templates with first-frame previews; also loadable via `Yappy.anim.loadExample(name)`. e2e: `tests/animation-templates.spec.ts` (5).
+- Timeline panel polish: sits ABOVE the status bar (28px) so the bottom layer row is never hidden, and the top edge is a **drag-to-resize** handle (height cap persisted in localStorage) for documents with many layers.
+- Fix (latent): `normalizeElement` now passes through `symbolId`/`loopMode`/`firstFrame`/`contentId` — legacy-doc migration used to strip symbol instances' definition link. `utils/migration.ts` no longer imports the store (pure module, bun-testable).
+- Test infra: `tests/api.spec.ts` now uses the Playwright baseURL instead of a hardcoded `localhost:5173` (a different app on that port made all 6 tests time out at boot).
+- Files: `frontend/src/types/anim-types.ts`, `utils/animation/frame-timeline-{evaluator,ops}.ts`, `utils/animation/anim-playback.ts`, `utils/onion-skin.ts`, `store/anim-ops.ts`, `components/animation-{timeline,mode-bar}.{tsx,css}`, `components/new-animation-{dialog.tsx,signal.ts}`, `help-docs/features/animate-doc.tsx`; touched `types.ts`, `types/slide-types.ts`, `store/app-store.ts`, `components/canvas.tsx`, `app.tsx`, `menu.tsx`, `symbols-panel.tsx`, `shapes/renderers/symbol-instance-renderer.ts`, `utils/{document-io,recording-manager}.ts`, `storage/auto-save.ts`, `components/{export-dialog,help-dialog}.tsx`, `api.ts`.
+
 ## [0.6.0] - 2026-07-05 — Arcade: build games on the canvas
 
 ### Added

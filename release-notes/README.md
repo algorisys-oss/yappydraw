@@ -27,6 +27,8 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.143](0.8.143.md) — Animation Studio: Animate-class frame timeline (keyframes, tweens, onion skin, movie clips, GIF export) + 3 sample templates
+- [0.8.142](0.8.142.md) — Beta badge on the wordmark; footer credit points to Algorisys Technologies
 - [0.8.141](0.8.141.md) — Cropping a rotated image no longer makes it jump (76px at 45°); undo/redo for crop confirmed
 - [0.8.140](0.8.140.md) — Finishing a crop leaves the Crop tool, so clicking the image no longer looks like it undid the crop
 - [0.8.139](0.8.139.md) — Re-cropping works (widen a crop, un-crop); on-screen Apply/Cancel so crop is usable on a tablet
