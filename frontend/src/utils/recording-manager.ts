@@ -14,7 +14,7 @@ import { renderElement } from "./render-element";
 import { projectMasterPosition } from "./slide-utils";
 import { calculateAllAnimatedStates } from "./animation-utils";
 import { applyCompositionOverrides } from "./animation/composition-evaluator";
-import { evaluateTimelineAt } from "./animation/frame-timeline-evaluator";
+import { evaluateTimelineAt, evaluateCameraAt } from "./animation/frame-timeline-evaluator";
 import { effectiveTime } from "./animation/animation-engine";
 import { worldToScreen } from "./viewport-transforms";
 import { isPagedDocType } from "../types/slide-types";
@@ -258,6 +258,13 @@ function makePageFrameRenderer(maxSide: number, forGif = false) {
                 const existing = anim.get(id);
                 if (existing) Object.assign(existing, ev.overrides[id]);
                 else anim.set(id, { ...ev.overrides[id] } as any);
+            }
+            // Camera layer: zoom/pan the stage content in the exported frames too.
+            const cam = tl.camera?.length ? evaluateCameraAt(f, tl) : null;
+            if (cam) {
+                ctx.translate(spatialX + sW / 2, spatialY + sH / 2);
+                ctx.scale(cam.zoom, cam.zoom);
+                ctx.translate(-(spatialX + cam.x), -(spatialY + cam.y));
             }
         }
 

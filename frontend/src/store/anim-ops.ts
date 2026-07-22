@@ -16,7 +16,7 @@ import type { EasingName } from '../utils/animation/animation-types';
 import {
     opInsertFrame, opInsertKeyframe, opInsertBlankKeyframe, opClearKeyframe,
     opRemoveFrames, opMoveKeyframe, opUpdateKeyframe, opReconcile,
-    opAddAudio, opRemoveAudio, opMoveAudio,
+    opAddAudio, opRemoveAudio, opMoveAudio, opSetCameraKey, opClearCameraKey,
 } from '../utils/animation/frame-timeline-ops';
 import type { AnimAudioClip } from '../types/anim-types';
 import { evaluateTimelineAt } from '../utils/animation/frame-timeline-evaluator';
@@ -154,6 +154,10 @@ export const setFrameGuide = (layerId: string, frame: number, guideId: string | 
 export const setFrameLabel = (layerId: string, frame: number, label: string) =>
     apply(timeline() && opUpdateKeyframe(timeline()!, layerId, frame, { label: label || undefined }));
 
+/** Playback control fired when the playhead reaches this keyframe (null clears). */
+export const setFrameAction = (layerId: string, frame: number, action: import('../types/anim-types').FrameAction | null) =>
+    apply(timeline() && opUpdateKeyframe(timeline()!, layerId, frame, { action: action ?? undefined }));
+
 // ---------------------------------------------------------------------------
 // Audio row
 // ---------------------------------------------------------------------------
@@ -174,6 +178,42 @@ export const removeAudioClip = (id: string) =>
 
 export const moveAudioClip = (id: string, frame: number) =>
     apply(timeline() && opMoveAudio(timeline()!, id, frame));
+
+// ---------------------------------------------------------------------------
+// Camera keys
+// ---------------------------------------------------------------------------
+
+/** Add/replace a camera key (stage-local center + zoom) at `frame` (default playhead). */
+export const setCameraKey = (key: { x: number; y: number; zoom: number; frame?: number; easing?: EasingName }) => {
+    const tl = timeline();
+    if (!tl) return;
+    apply(opSetCameraKey(tl, {
+        frame: key.frame ?? store.animCurrentFrame,
+        x: key.x, y: key.y, zoom: Math.max(0.1, key.zoom),
+        ...(key.easing && { easing: key.easing }),
+    }));
+};
+
+export const clearCameraKey = (frame?: number) =>
+    apply(timeline() && opClearCameraKey(timeline()!, frame ?? store.animCurrentFrame));
+
+/** Capture the CURRENT editor view as the camera key at the playhead: the
+ *  camera center = the stage point at the screen center, zoom relative to the
+ *  stage width filling the window. */
+export const setCameraKeyFromView = () => {
+    const slide = store.slides[store.activeSlideIndex];
+    const tl = timeline();
+    if (!slide || !tl) return;
+    const { scale, panX, panY } = store.viewState;
+    const cxWorld = (window.innerWidth / 2 - panX) / scale;
+    const cyWorld = (window.innerHeight / 2 - panY) / scale;
+    const visibleW = window.innerWidth / scale;
+    setCameraKey({
+        x: cxWorld - slide.spatialPosition.x,
+        y: cyWorld - slide.spatialPosition.y,
+        zoom: slide.dimensions.width / visibleW,
+    });
+};
 
 // ---------------------------------------------------------------------------
 // Timeline settings

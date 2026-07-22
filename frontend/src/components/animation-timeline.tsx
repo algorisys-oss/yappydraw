@@ -17,8 +17,8 @@ import { store, setStore, setActiveLayer, updateLayer, addLayer, deleteLayer, se
 import {
     gotoFrame, stepFrame, setAnimFps, setAnimFrameCount, ensureAnimRows,
     insertFrame, insertKeyframe, insertBlankKeyframe, clearKeyframe, removeFrames,
-    moveKeyframe, setTween, setFrameLabel, setFrameEase, setFrameGuide,
-    addAudioClip, removeAudioClip, moveAudioClip,
+    moveKeyframe, setTween, setFrameLabel, setFrameEase, setFrameGuide, setFrameAction,
+    addAudioClip, removeAudioClip, moveAudioClip, setCameraKeyFromView, clearCameraKey,
     addAnimScene, setActiveAnimScene, deleteAnimScene,
 } from '../store/anim-ops';
 import { SFX, playSfx } from '../game/sound-engine';
@@ -204,6 +204,13 @@ const AnimationTimeline: Component = () => {
                 ctx.arc(cx, cy, 3.4, 0, Math.PI * 2);
                 if (kf.elementIds.length > 0) { ctx.fillStyle = c.dot; ctx.fill(); }
                 else { ctx.strokeStyle = c.hollow; ctx.lineWidth = 1.4; ctx.stroke(); }
+                // Frame action glyph (Animate's little "a" above the dot)
+                if (kf.action) {
+                    ctx.fillStyle = c.label;
+                    ctx.font = 'bold 9px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('a', x + CELL_W / 2, y + 8);
+                }
                 // Label flag
                 if (kf.label) {
                     ctx.fillStyle = c.label;
@@ -435,6 +442,22 @@ const AnimationTimeline: Component = () => {
                     if (label !== null) setFrameLabel(m.layerId, m.frame, label.trim());
                 }
             },
+            {
+                label: 'Frame Action', disabled: !isKf, submenu: [
+                    { label: 'None', checked: !activeKf?.action, onClick: () => setFrameAction(m.layerId, m.frame, null) },
+                    { label: 'Stop', checked: activeKf?.action?.kind === 'stop', onClick: () => setFrameAction(m.layerId, m.frame, { kind: 'stop' }) },
+                    { label: 'Loop to Frame 1', checked: activeKf?.action?.kind === 'goto' && activeKf.action.frame === 0, onClick: () => setFrameAction(m.layerId, m.frame, { kind: 'goto', frame: 0 }) },
+                    {
+                        label: 'Go to Frame…', onClick: () => {
+                            const v = prompt('Go to frame (1-based):', '1');
+                            if (v === null) return;
+                            const f = Math.max(1, Number(v) || 1) - 1;
+                            setFrameAction(m.layerId, m.frame, { kind: 'goto', frame: f });
+                        }
+                    },
+                    { label: 'Next Scene', checked: activeKf?.action?.kind === 'nextScene', onClick: () => setFrameAction(m.layerId, m.frame, { kind: 'nextScene' }) },
+                ]
+            },
             { separator: true },
             { label: 'Clear Keyframe', shortcut: 'Shift+F6', disabled: !isKf, onClick: () => clearKeyframe(m.layerId, m.frame) },
             { label: 'Remove Frame', shortcut: 'Shift+F5', onClick: () => removeFrames(m.layerId, m.frame) },
@@ -663,6 +686,11 @@ const AnimationTimeline: Component = () => {
                         onClick={() => setStore('animLoop', v => !v)}><Repeat size={12} /></button>
                     <button class="atl-btn" classList={{ active: store.animOnion.enabled }} title="Onion skin"
                         onClick={() => setStore('animOnion', 'enabled', v => !v)}>Onion</button>
+                    <button class="atl-btn" title="Camera: capture the current view as a camera keyframe at the playhead (plays back as a zoom/pan move)"
+                        onClick={() => { setCameraKeyFromView(); showToast('Camera keyframe set from the current view', 'success'); }}>📷</button>
+                    <Show when={tl()!.camera?.some(k => k.frame === store.animCurrentFrame)}>
+                        <button class="atl-btn" title="Remove the camera keyframe at the playhead" onClick={() => clearCameraKey()}>📷✕</button>
+                    </Show>
                     <Show when={store.animOnion.enabled}>
                         <label class="atl-num" title="Ghost frames before">
                             <input type="number" min="0" max="10" value={store.animOnion.before}

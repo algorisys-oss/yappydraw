@@ -2,7 +2,7 @@ import { type Component, onMount, createEffect, onCleanup, createSignal, Show, u
 import { isPagedDocType } from '../types/slide-types';
 import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { applyCompositionOverrides } from "../utils/animation/composition-evaluator";
-import { evaluateTimelineAt } from "../utils/animation/frame-timeline-evaluator";
+import { evaluateTimelineAt, evaluateCameraAt } from "../utils/animation/frame-timeline-evaluator";
 import { animVisibleIds, reconcileTimelineElements } from "../store/anim-ops";
 import { renderOnionSkins } from "../utils/onion-skin";
 import { renderDimensions } from "../utils/dimension-renderer";
@@ -504,6 +504,21 @@ const Canvas: Component = () => {
                     focusBranchIds: null,
                 },
             });
+        }
+
+        // Camera layer (Animation mode, during playback): zoom/pan the stage
+        // content through the keyframed camera — the Ken Burns move. Editing
+        // while paused keeps the free view.
+        if (animVisible && store.animPlaying && store.animTimeline?.camera?.length) {
+            const cam = evaluateCameraAt(store.animCurrentFrame, store.animTimeline);
+            const slide = store.slides[store.activeSlideIndex];
+            if (cam && slide) {
+                const scx = slide.spatialPosition.x + slide.dimensions.width / 2;
+                const scy = slide.spatialPosition.y + slide.dimensions.height / 2;
+                ctx.translate(scx, scy);
+                ctx.scale(cam.zoom, cam.zoom);
+                ctx.translate(-(slide.spatialPosition.x + cam.x), -(slide.spatialPosition.y + cam.y));
+            }
         }
 
         // Render layers & elements

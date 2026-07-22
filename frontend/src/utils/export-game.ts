@@ -37,6 +37,11 @@ export async function exportSceneAsHtml(name: string): Promise<void> {
         gameVars: store.gameVars?.length ? clone(store.gameVars) : undefined,
         blueprints: store.blueprints && Object.keys(store.blueprints).length ? clone(store.blueprints) : undefined,
         gameAuthoringMode: store.gameAuthoringMode === 'code' ? 'code' : undefined,
+        // Animation mode: the frame timeline(s) ride into the player.
+        animTimeline: store.animTimeline ? clone(store.animTimeline) : undefined,
+        animScenes: store.animTimeline && Object.keys(store.animScenes).length
+            ? clone({ ...store.animScenes, [store.slides[store.activeSlideIndex]?.id ?? '']: store.animTimeline })
+            : undefined,
     } as SlideDocument;
     await exportToHtml(doc, name);
 }

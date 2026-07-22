@@ -45,3 +45,28 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 .player-play-game:hover { background: #15803d; }
+
+/* Animation-document transport (bottom-center, auto-faded like the slide controls) */
+.player-anim-controls {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 50;
+    opacity: 0.35;
+    transition: opacity 0.15s;
+}
+.player-anim-controls:hover { opacity: 1; }
+.player-anim-controls button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(15, 23, 42, 0.75);
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+}
+.player-anim-controls button:hover { background: rgba(15, 23, 42, 0.95); }

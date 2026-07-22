@@ -2888,6 +2888,15 @@ export const YappyAPI = {
         moveSound(id: string, frame: number) { animOps.moveAudioClip(id, frame); },
         /** The audio row's clips. */
         sounds() { return store.animTimeline?.audio ?? []; },
+        /** Frame action fired when playback reaches the keyframe: {kind:'stop'} | {kind:'goto',frame,play?} | {kind:'nextScene'} (null clears). */
+        setFrameAction(action: import('./types/anim-types').FrameAction | null, layerId?: string, frame?: number) {
+            animOps.setFrameAction(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame, action);
+        },
+        /** Camera keyframes (stage-local center + zoom, 1 = full stage): plays back as a zoom/pan move. */
+        setCameraKey(key: { x: number; y: number; zoom: number; frame?: number; easing?: EasingName }) { animOps.setCameraKey(key); },
+        setCameraKeyFromView() { animOps.setCameraKeyFromView(); },
+        clearCameraKey(frame?: number) { animOps.clearCameraKey(frame); },
+        camera() { return store.animTimeline?.camera ?? []; },
         /** Scenes (each slide is a scene with its own timeline). */
         addScene() { animOps.addAnimScene(); },
         setScene(index: number) { animOps.setActiveAnimScene(index); },

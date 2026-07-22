@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.145](0.8.145.md) — Animation Studio finale: frame actions (stop/goto/next-scene), self-contained HTML player, keyframed camera — roadmap complete
 - [0.8.144](0.8.144.md) — Animation Studio: shape morphs, ease-curve editor, motion guides, stick-figure pose keyframes, audio row muxed into video, scenes
 - [0.8.143](0.8.143.md) — Animation Studio: Animate-class frame timeline (keyframes, tweens, onion skin, movie clips, GIF export) + 3 sample templates
 - [0.8.142](0.8.142.md) — Beta badge on the wordmark; footer credit points to Algorisys Technologies

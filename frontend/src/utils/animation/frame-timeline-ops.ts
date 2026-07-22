@@ -7,7 +7,7 @@
  */
 
 import type { DrawingElement } from '../../types';
-import type { AnimTimeline, AnimLayer, AnimKeyframe, AnimAudioClip } from '../../types/anim-types';
+import type { AnimTimeline, AnimLayer, AnimKeyframe, AnimAudioClip, AnimCameraKey } from '../../types/anim-types';
 import { activeKeyframeIndex } from './frame-timeline-evaluator';
 
 const rowIndex = (tl: AnimTimeline, layerId: string): number =>
@@ -207,6 +207,23 @@ export const opMoveAudio = (tl: AnimTimeline, id: string, frame: number): AnimTi
     const f = Math.min(Math.max(0, Math.round(frame)), tl.frameCount - 1);
     if (f === clip.frame) return null;
     return { ...tl, audio: tl.audio!.map(a => (a.id === id ? { ...a, frame: f } : a)).sort((a, b) => a.frame - b.frame) };
+};
+
+// ---------------------------------------------------------------------------
+// Camera keys
+// ---------------------------------------------------------------------------
+
+/** Add or replace the camera key at its frame (kept sorted). */
+export const opSetCameraKey = (tl: AnimTimeline, key: AnimCameraKey): AnimTimeline => ({
+    ...tl,
+    camera: [...(tl.camera ?? []).filter(k => k.frame !== key.frame), key].sort((a, b) => a.frame - b.frame),
+});
+
+/** Remove the camera key at `frame` (null when absent; empty list → no camera). */
+export const opClearCameraKey = (tl: AnimTimeline, frame: number): AnimTimeline | null => {
+    if (!tl.camera?.some(k => k.frame === frame)) return null;
+    const camera = tl.camera.filter(k => k.frame !== frame);
+    return { ...tl, camera: camera.length ? camera : undefined };
 };
 
 /**

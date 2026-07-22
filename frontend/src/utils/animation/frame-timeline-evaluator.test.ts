@@ -262,6 +262,26 @@ describe("pose tweens (stick figures)", () => {
     });
 });
 
+describe("evaluateCameraAt", () => {
+    const { evaluateCameraAt } = require("./frame-timeline-evaluator");
+    const cam = (camera: any) => ({ fps: 24, frameCount: 24, layers: [], camera });
+
+    it("lerps between keys and holds outside the range", () => {
+        const t = cam([
+            { frame: 0, x: 100, y: 100, zoom: 1, easing: 'linear' },
+            { frame: 10, x: 300, y: 200, zoom: 2 },
+        ]);
+        expect(evaluateCameraAt(5, t)).toEqual({ x: 200, y: 150, zoom: 1.5 });
+        expect(evaluateCameraAt(0, t)).toEqual({ x: 100, y: 100, zoom: 1 });
+        expect(evaluateCameraAt(20, t)).toEqual({ x: 300, y: 200, zoom: 2 });
+    });
+
+    it("null without camera keys; single key holds everywhere", () => {
+        expect(evaluateCameraAt(5, cam(undefined))).toBeNull();
+        expect(evaluateCameraAt(5, cam([{ frame: 8, x: 50, y: 60, zoom: 1.2 }]))).toEqual({ x: 50, y: 60, zoom: 1.2 });
+    });
+});
+
 describe("samplePolyline", () => {
     const pts = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }];
     it("walks by arc length with tangents", () => {

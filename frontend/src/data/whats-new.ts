@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.145', date: '2026-07-22', items: [
+        'Your animations are now INTERACTIVE. Right-click a keyframe → Frame Action: Stop holds a pose, Loop to Frame 1 makes sections repeat, Next Scene chains your acts into a film — just like Flash\'s stop() and gotoAndPlay(), little "a" marker and all.',
+        'Export HTML gives you a living animation, not a video: a single self-contained web page that plays the real thing — full quality at any size, looping, frame actions running, sound playing — with tap-to-pause controls. Share the file anywhere.',
+        'A camera! Frame a shot by zooming the canvas, press 📷, move to a later frame, frame another shot, 📷 again — playback and exports glide between your shots. Documentary-style pans and dramatic zoom-ins in two clicks.',
+        'That completes the Animation Studio roadmap: timeline, tweens, morphing, ease curves, motion guides, character posing, sound, scenes, interactivity, and a camera — all in your browser, all free.',
+    ] },
     { version: '0.8.144', date: '2026-07-22', items: [
         'Animation Studio grew five big features in one release. Shape tweens: right-click a span → Create Shape Tween and a square MORPHS into a circle, a star into a heart — outlines flow between your keyframes.',
         'A real ease-curve editor: presets like Overshoot and Anticipate, plus two draggable bezier handles for any curve you can imagine. Drag above the box for overshoot, below for a wind-up.',

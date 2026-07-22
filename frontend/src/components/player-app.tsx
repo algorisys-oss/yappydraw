@@ -8,6 +8,7 @@ import { PresentationControls } from "./presentation-controls";
 import type { SlideDocument } from "../types/slide-types";
 import { showToast } from "./toast";
 import { slideBuildManager } from "../utils/animation/slide-build-manager";
+import { playAnimation, pauseAnimation, stopAnimation } from "../utils/animation/anim-playback";
 import { startGame } from "../game/game-runtime";
 import GameOverlay from "./game-overlay";
 import Toast from "./toast";
@@ -80,7 +81,11 @@ const PlayerApp: Component = () => {
                 // Trigger first-slide animations after Canvas fully mounts
                 // Need sufficient delay for SolidJS to render <Show> → Canvas → onMount chain
                 setTimeout(() => {
-                    if (isPagedDocType(store.docType) && store.slides.length > 0) {
+                    if (store.docType === 'animation' && store.animTimeline) {
+                        // Animation documents auto-play their frame timeline, looping.
+                        setStore('animLoop', true);
+                        playAnimation();
+                    } else if (isPagedDocType(store.docType) && store.slides.length > 0) {
                         slideBuildManager.init(store.activeSlideIndex);
                         slideBuildManager.playInitial();
                     } else {
@@ -130,10 +135,20 @@ const PlayerApp: Component = () => {
                     <Canvas />
                 </div>
 
-                {/* Presentation Controls Overlay (hidden while a game runs) */}
-                <Show when={!store.gameActive}>
-                    <div class="player-controls">
-                        <PresentationControls />
+                {/* Animation documents: a minimal transport instead of slide navigation */}
+                <Show when={store.docType === 'animation'} fallback={
+                    <Show when={!store.gameActive}>
+                        <div class="player-controls">
+                            <PresentationControls />
+                        </div>
+                    </Show>
+                }>
+                    <div class="player-anim-controls">
+                        <button title="Restart" onClick={() => { stopAnimation(); playAnimation(); }}>⏮</button>
+                        <button title={store.animPlaying ? 'Pause' : 'Play'}
+                            onClick={() => (store.animPlaying ? pauseAnimation() : playAnimation())}>
+                            {store.animPlaying ? '❚❚' : '▶'}
+                        </button>
                     </div>
                 </Show>
 

@@ -14,6 +14,14 @@ import type { EasingName } from '../utils/animation/animation-types';
 /** Kind of tween on the span LEAVING a keyframe. 'shape' is reserved (Phase 2). */
 export type TweenKind = 'none' | 'motion' | 'shape';
 
+/** A frame action fires when PLAYBACK reaches its keyframe (scrubbing never
+ *  fires actions): stop the playhead, jump to a frame (optionally parking
+ *  there), or advance to the next scene. Runs in the editor and the HTML player. */
+export type FrameAction =
+    | { kind: 'stop' }
+    | { kind: 'goto'; frame: number; play?: boolean }
+    | { kind: 'nextScene' };
+
 /** One keyframe cell on a layer's frame row. */
 export interface AnimKeyframe {
     frame: number;              // 0-based frame index; sorted ascending per layer
@@ -27,6 +35,8 @@ export interface AnimKeyframe {
     guideId?: string;
     /** Rotate tweened elements to face along the guide path's direction. */
     guideOrient?: boolean;
+    /** Playback control that fires when the playhead REACHES this keyframe. */
+    action?: FrameAction;
 }
 
 /** Frame data for one timeline row — paired 1:1 with an existing Layer by id. */
@@ -50,12 +60,25 @@ export interface AnimAudioClip {
     gain?: number;              // 0..1 volume (default 1)
 }
 
+/** A camera keyframe: where the virtual camera looks on the STAGE (stage-local
+ *  center coords) and how far in it is zoomed (1 = the full stage). Tweens
+ *  between keys during playback/export — the Ken-Burns / camera-layer effect. */
+export interface AnimCameraKey {
+    frame: number;
+    x: number;                  // camera center, stage-local coords
+    y: number;
+    zoom: number;               // 1 = full stage; 2 = 2× closer
+    easing?: EasingName;        // easing of the move LEAVING this key
+    ease?: BezierEase;
+}
+
 /** The document's frame timeline (docType 'animation'; persisted in SlideDocument.animTimeline). */
 export interface AnimTimeline {
     fps: number;                // playback rate (frames per second)
     frameCount: number;         // timeline length in frames (ruler extent)
     layers: AnimLayer[];        // one row per Layer; render order comes from Layer.order
     audio?: AnimAudioClip[];    // the audio row's sounds (sorted by frame)
+    camera?: AnimCameraKey[];   // camera keyframes (sorted by frame)
 }
 
 /** Onion-skin ghost settings (transient UI state, not persisted). */

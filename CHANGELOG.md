@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.145] - 2026-07-22 — Animation Studio finale: frame actions, HTML player, camera
+
+### Added — Camera layer (P8) [2026-07-22]
+- **Keyframed camera** — `AnimTimeline.camera: AnimCameraKey[]` (stage-local center + zoom, eased per key): the 📷 button captures the current editor view as a key at the playhead; playback and video export glide the stage content between shots (paused editing keeps the free view). Pure `evaluateCameraAt` + unit tests; applied as an outer world transform in canvas playback, the frame-exact export renderer, and (via the shared canvas) the HTML player. API: `Yappy.anim.setCameraKey/setCameraKeyFromView/clearCameraKey/camera`.
+- e2e: keys tween, zoomed playback paints measurably more of the subject than the free view, keys round-trip.
+
+### Added — Frame actions + HTML5 player (P7) [2026-07-22]
+- **Frame actions** — `AnimKeyframe.action`: Stop / Go to Frame (loop sections) / Next Scene, set from the keyframe context menu (small "a" glyph above the dot, Animate-style). Fired by the playback loop when the playhead crosses the keyframe (loop-wrap aware; scan covers skipped frames); scrubbing never fires them. `goto` rebases the playback clock and reschedules audio from the target; `nextScene` chains scenes into an act-by-act film. API: `Yappy.anim.setFrameAction`.
+- **HTML5 player for animations** — Menu → Export HTML now ships the frame timeline (`animTimeline`/`animScenes` added to `exportSceneAsHtml`), and the standalone player auto-plays animation documents with looping + a minimal restart/pause transport (real renderer, frame actions and the audio row all work — it's the animation itself, not a video). Player bundle regenerated.
+- e2e: stop parks the playhead, goto loops a section (sampled over multiple passes), action round-trips through the doc format.
+
 ## [0.8.144] - 2026-07-22 — Animation Studio: morphs, curves, guides, poses, sound, scenes
 
 ### Added — Scenes (P6) [2026-07-22]

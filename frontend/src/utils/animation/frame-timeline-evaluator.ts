@@ -275,6 +275,21 @@ export function clipLocalFrame(
     return local % n;
 }
 
+/** Camera pose at `frame`: lerped between camera keys (eased on the leaving
+ *  key), held outside the key range. Null when the timeline has no camera. */
+export function evaluateCameraAt(frame: number, timeline: AnimTimeline): { x: number; y: number; zoom: number } | null {
+    const keys = timeline.camera;
+    if (!keys || keys.length === 0) return null;
+    if (frame <= keys[0].frame || keys.length === 1) return { x: keys[0].x, y: keys[0].y, zoom: keys[0].zoom };
+    const last = keys[keys.length - 1];
+    if (frame >= last.frame) return { x: last.x, y: last.y, zoom: last.zoom };
+    let i = 0;
+    while (i + 1 < keys.length && keys[i + 1].frame <= frame) i++;
+    const a = keys[i], b = keys[i + 1];
+    const p = easeProgress(a, (frame - a.frame) / (b.frame - a.frame));
+    return { x: lerp(a.x, b.x, p), y: lerp(a.y, b.y, p), zoom: lerp(a.zoom, b.zoom, p) };
+}
+
 /** Evaluate a movieclip symbol's own timeline at a clip-local frame. */
 export function evaluateSymbolTimelineAt(localFrame: number, sym: SymbolDef): TimelineEval {
     if (!sym.timeline) return { visible: new Set(sym.elements.map(e => e.id)), overrides: {}, placement: new Map() };

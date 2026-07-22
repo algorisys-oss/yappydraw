@@ -275,6 +275,45 @@ const AnimateDoc: Component = () => {
             </section>
 
             <section class="doc-section">
+                <h2>Camera — keyframed zooms and pans</h2>
+                <p>
+                    The <strong>📷</strong> button captures the <em>current editor view</em> as a camera
+                    keyframe at the playhead: frame the shot by panning/zooming the canvas, scrub to a
+                    frame, click 📷, move to another frame, frame a new shot, 📷 again. During
+                    <strong> playback and export</strong> the stage content glides between those shots —
+                    the Ken Burns / camera-layer move. While paused you keep your free editing view
+                    (📷✕ removes the key at the playhead). Scriptable:
+                    <code> Yappy.anim.setCameraKey(&#123; frame, x, y, zoom &#125;)</code>
+                    (stage coords; zoom 1 = the full stage).
+                </p>
+            </section>
+
+            <section class="doc-section">
+                <h2>Frame actions &amp; the HTML player</h2>
+                <p>
+                    Right-click a keyframe → <strong>Frame Action</strong> to control playback the way
+                    Flash's <code>stop()</code> / <code>gotoAndPlay()</code> did (a small
+                    <strong> a</strong> appears above the dot):
+                </p>
+                <ul>
+                    <li><strong>Stop</strong> — playback parks on that frame (an intro that holds its
+                        end pose).</li>
+                    <li><strong>Loop to Frame 1</strong> / <strong>Go to Frame…</strong> — jump the
+                        playhead, creating loop sections inside a longer timeline.</li>
+                    <li><strong>Next Scene</strong> — chain scenes into a film that plays act by act.</li>
+                    <li>Actions fire during <em>playback</em> (editor and HTML player alike) — scrubbing
+                        never triggers them. API: <code>Yappy.anim.setFrameAction(&#123; kind: 'goto',
+                        frame: 0 &#125;)</code>.</li>
+                </ul>
+                <p>
+                    <strong>Menu → Export HTML</strong> produces a self-contained web page that plays the
+                    animation for real — not a video: it ships the actual renderer, so it loops at full
+                    quality, runs frame actions, plays the audio row, and shows minimal restart/pause
+                    controls. Share the file anywhere a browser runs.
+                </p>
+            </section>
+
+            <section class="doc-section">
                 <h2>Export</h2>
                 <p>
                     <strong>Export</strong> (timeline header, or Ctrl+Shift+E) defaults to a GIF of exactly
