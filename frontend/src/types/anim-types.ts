@@ -22,6 +22,11 @@ export interface AnimKeyframe {
     ease?: BezierEase;          // per-span bezier (same convention as TimedKeyframe.ease)
     easing?: EasingName;        // fallback named easing when `ease` is absent
     label?: string;             // frame label (shown as a flag in the grid)
+    /** Motion guide: id of a line/path element whose curve the tweened elements
+     *  follow (centers ride the path from its start to its end across the span). */
+    guideId?: string;
+    /** Rotate tweened elements to face along the guide path's direction. */
+    guideOrient?: boolean;
 }
 
 /** Frame data for one timeline row — paired 1:1 with an existing Layer by id. */
@@ -31,11 +36,26 @@ export interface AnimLayer {
     endFrame: number;           // inclusive last frame with content on this row (F5 extends)
 }
 
+/** A sound on the audio row: starts at `frame`, plays to its natural end.
+ *  Either a built-in synth SFX (`sfx`, from game/sound-engine) or an imported
+ *  audio file (`dataURL`). Plays during timeline playback and is muxed into
+ *  video exports (GIFs are silent). */
+export interface AnimAudioClip {
+    id: string;
+    frame: number;              // start frame (0-based)
+    name: string;               // display label on the audio row
+    sfx?: string;               // built-in SFX id ('coin' | 'jump' | …)
+    dataURL?: string;           // imported audio file as a data: URL
+    durationSec?: number;       // decoded duration (drives the strip width)
+    gain?: number;              // 0..1 volume (default 1)
+}
+
 /** The document's frame timeline (docType 'animation'; persisted in SlideDocument.animTimeline). */
 export interface AnimTimeline {
     fps: number;                // playback rate (frames per second)
     frameCount: number;         // timeline length in frames (ruler extent)
     layers: AnimLayer[];        // one row per Layer; render order comes from Layer.order
+    audio?: AnimAudioClip[];    // the audio row's sounds (sorted by frame)
 }
 
 /** Onion-skin ghost settings (transient UI state, not persisted). */

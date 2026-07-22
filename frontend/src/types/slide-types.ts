@@ -152,8 +152,11 @@ export interface SlideDocument {
     dimensionAnnotations?: import('../utils/dimension-geometry').DimensionAnnotation[];
     /** After-Effects keyframe animation tracks (absolute-time PropertyTracks). */
     compositionTracks?: import('./motion-types').PropertyTrack[];
-    /** Animation mode: the frame-based timeline (docType 'animation' only). */
+    /** Animation mode: the ACTIVE scene's frame timeline (docType 'animation' only). */
     animTimeline?: import('./anim-types').AnimTimeline;
+    /** Animation mode, multi-scene: EVERY scene's timeline keyed by its slide id
+     *  (each slide = one scene). Single-scene docs may omit this. */
+    animScenes?: Record<string, import('./anim-types').AnimTimeline>;
     /** Arcade: JavaScript game script run by the in-editor Play mode and the HTML player.
      *  When the visual builder is used, this is regenerated from the behaviors. */
     gameScript?: string;

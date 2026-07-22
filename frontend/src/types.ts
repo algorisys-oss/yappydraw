@@ -362,6 +362,9 @@ export interface DrawingElement {
         facing?: 1 | -1;
         playing?: boolean;
         previewPhase?: number;
+        /** TRANSIENT (render-override only, set by the frame-timeline evaluator during a
+         *  pose tween): blend this pose toward another clip's pose by fraction `f`. */
+        blendTo?: { clip: string; phase: number; f: number };
         /** Walk-along-a-path: the figure traverses element `pathId` over `dur` seconds. */
         path?: { pathId: string; dur: number; loop?: boolean; autoFace?: boolean };
         /** Timed action sequence (loops): each step plays `clip` for `dur` seconds. Overrides `clip`. */

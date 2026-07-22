@@ -18,18 +18,27 @@ export class VideoRecorder {
         this.baseName = baseName;
     }
 
-    public start(format: VideoFormat = 'webm'): boolean {
+    public start(format: VideoFormat = 'webm', audioStream?: MediaStream): boolean {
         try {
-            // 60 FPS capture
-            this.stream = this.canvas.captureStream(60);
+            // 60 FPS capture (+ optional audio tracks muxed in — animation-mode sound row)
+            const videoStream = this.canvas.captureStream(60);
+            this.stream = audioStream?.getAudioTracks().length
+                ? new MediaStream([...videoStream.getVideoTracks(), ...audioStream.getAudioTracks()])
+                : videoStream;
+            const hasAudio = this.stream.getAudioTracks().length > 0;
 
-            let mimeType = 'video/webm;codecs=vp9';
+            let mimeType = hasAudio ? 'video/webm;codecs=vp9,opus' : 'video/webm;codecs=vp9';
             if (format === 'mp4') {
                 // Codec must be pinned to H.264: bare 'video/mp4' lets Chrome pick
                 // VP9, and a VP9-in-.mp4 file won't play in most consumers of mp4
                 // (Windows Media Player, QuickTime/macOS preview, WhatsApp, video
                 // editors) — it looks like a broken recording.
-                const candidates = [
+                const candidates = hasAudio ? [
+                    'video/mp4;codecs=avc1.42E01E,mp4a.40.2', // H.264 + AAC
+                    'video/mp4;codecs=avc1.42E01E',
+                    'video/mp4',
+                    'video/webm;codecs=h264,opus',
+                ] : [
                     'video/mp4;codecs=avc1.42E01E', // H.264 baseline — plays everywhere
                     'video/mp4;codecs=avc1',
                     'video/mp4',

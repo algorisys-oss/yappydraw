@@ -315,8 +315,15 @@ export async function exportPageVideo(opts: { seconds?: number; format?: VideoFo
     const fr = makePageFrameRenderer(1920);
     if (!fr) { showToast('Video export needs a page/slide document', 'error'); return false; }
 
+    // Animation-mode audio row → muxed into the recording (scheduled at export start).
+    let exportAudio: { stream: MediaStream; close(): void } | null = null;
+    if (store.docType === 'animation' && store.animTimeline?.audio?.length) {
+        const { buildExportAudioStream } = await import('./animation/anim-audio');
+        exportAudio = await buildExportAudioStream(store.animTimeline.audio, store.animTimeline.fps).catch(() => null);
+    }
+
     const recorder = new VideoRecorder(fr.off, opts.name ?? 'yappy-animation');
-    if (!recorder.start(format)) { showToast('Failed to start video export', 'error'); return false; }
+    if (!recorder.start(format, exportAudio?.stream)) { exportAudio?.close(); showToast('Failed to start video export', 'error'); return false; }
     setPageVideoExporting(true);
     showToast(`Exporting ${seconds}s ${format.toUpperCase()} of this ${store.docType === 'design' ? 'page' : 'slide'}…`, 'info');
 
@@ -333,6 +340,7 @@ export async function exportPageVideo(opts: { seconds?: number; format?: VideoFo
                 requestAnimationFrame(frame);
             } else {
                 recorder.stop(() => {
+                    exportAudio?.close();
                     setPageVideoExporting(false);
                     showToast('Video exported!', 'success');
                     resolve(true);

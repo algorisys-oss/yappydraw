@@ -190,6 +190,9 @@ export function buildCurrentDocument(): SlideDocument {
         dimensionAnnotations: store.dimensionAnnotations?.length ? JSON.parse(JSON.stringify(store.dimensionAnnotations)) : undefined,
         compositionTracks: store.compositionTracks?.length ? JSON.parse(JSON.stringify(store.compositionTracks)) : undefined,
         animTimeline: store.animTimeline ? JSON.parse(JSON.stringify(store.animTimeline)) : undefined,
+        animScenes: store.animTimeline && Object.keys(store.animScenes).length
+            ? JSON.parse(JSON.stringify({ ...store.animScenes, [store.slides[store.activeSlideIndex]?.id ?? '']: store.animTimeline }))
+            : undefined,
         gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode),
         gameAuthoringMode: store.gameAuthoringMode === 'code' ? 'code' : undefined,
         sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,

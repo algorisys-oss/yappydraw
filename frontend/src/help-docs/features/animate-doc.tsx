@@ -169,6 +169,58 @@ const AnimateDoc: Component = () => {
                     keyframes. F6 copies carry a shared identity (<code>contentId</code>), which is how the
                     tween knows which object continues into the next keyframe; unmatched objects simply hold.
                 </p>
+                <h3>Ease curves (custom bezier)</h3>
+                <p>
+                    Beyond the named easings, the <strong>curve</strong> button (timeline header, when a
+                    tweened frame is selected) opens a bezier editor: presets (In, Out, In-Out,
+                    <em> Overshoot</em>, <em>Anticipate</em>) plus two draggable handles for any curve you
+                    like — drag a handle above 1 for overshoot, below 0 for wind-up. A custom curve
+                    overrides the named easing; <strong>Clear</strong> falls back to it. Scriptable:
+                    <code> Yappy.anim.setFrameEaseCurve(&#123; ox, oy, ix, iy &#125;)</code>.
+                </p>
+                <h3>Motion guides (follow a path)</h3>
+                <p>
+                    Make a tween ride a curve instead of a straight line: draw a <strong>line, polyline,
+                    pen path or freehand stroke</strong> as the route, select it, then select the tweened
+                    keyframe and click <strong>guide: use selection</strong> in the header. Across the span
+                    the object's <em>center</em> travels the path from its start to its end (easing applies
+                    along the path); tick <strong>orient</strong> to rotate it into the direction of travel —
+                    a plane banking through a loop. <strong>guide ✕</strong> detaches. Tip: park the guide
+                    path on its own hidden layer — hidden layers don't render or export, but guides still
+                    steer. API: <code>Yappy.anim.setFrameGuide(pathId, orient)</code>.
+                </p>
+                <h3>Shape tweens (morphing)</h3>
+                <p>
+                    A <strong>shape tween</strong> does everything a motion tween does <em>and morphs the
+                    outline</em> — a square flows into a circle, a star into a heart. Same recipe: F6 a later
+                    keyframe, change the copy's <em>shape</em> (e.g. select it and use Convert to Shape, or
+                    delete-and-draw a different shape then give it the same spot), then right-click the span →
+                    <strong> Create Shape Tween</strong> (green arrow in the grid; the header select also
+                    switches between motion/shape). The outline is resampled and twist-aligned so the morph
+                    doesn't spin. Notes: mid-morph frames render with clean outlines (both render styles);
+                    strokes/lines, text and clip instances fall back to plain motion tweening.
+                </p>
+            </section>
+
+            <section class="doc-section">
+                <h2>Pose keyframes — animate stick figures (bones &amp; IK)</h2>
+                <p>
+                    Drop an <strong>animated stick figure</strong> on the stage (Stick Figures panel) and
+                    it becomes poseable per keyframe: select it and the timeline header shows a
+                    <strong> Pose</strong> section — a motion-clip picker (walk, run, wave, jump…), a
+                    <strong> cycle-phase slider</strong> (the exact instant of the clip this cel holds) and a
+                    <strong> flip</strong> button.
+                </p>
+                <ul>
+                    <li><strong>Same clip on both keyframes</strong> → the tween glides the phase through
+                        the cycle: legs stride, feet plant via IK, arms swing — a walk unfolds exactly
+                        between your two cels, frame-exact on scrub, playback and export.</li>
+                    <li><strong>Different clips</strong> → the tween <em>blends the skeleton</em> from one
+                        pose to the other (idle melting into a wave), joint by joint.</li>
+                    <li>Setting a pose pins the figure (<em>playing: false</em>) so cels hold still poses;
+                        position/size tween as usual, so a figure can walk-cycle <em>while</em> a motion
+                        guide carries it along a path.</li>
+                </ul>
             </section>
 
             <section class="doc-section">
@@ -184,6 +236,41 @@ const AnimateDoc: Component = () => {
                         timeline can hold a looping clip. With an instance selected, the timeline header shows
                         <strong> loop / play once / single frame</strong> and a first-frame offset — so several
                         instances of one clip can run out of phase.</li>
+                </ul>
+            </section>
+
+            <section class="doc-section">
+                <h2>Scenes — multiple stages in one document</h2>
+                <p>
+                    The <strong>scene picker</strong> at the far left of the timeline header splits a film
+                    into acts: each scene is its own stage with its <em>own</em> timeline, layers'
+                    frames, tweens and sounds. <strong>+</strong> adds a scene (blank stage, same
+                    fps/length), the dropdown switches (the camera glides to that stage), and the trash
+                    deletes a scene together with its contents. Only the active scene's artwork is
+                    visible and editable; everything round-trips through save/load. API:
+                    <code> Yappy.anim.addScene() / setScene(i) / deleteScene(i) / sceneCount()</code>.
+                </p>
+            </section>
+
+            <section class="doc-section">
+                <h2>Sound — the audio row</h2>
+                <p>
+                    Between the ruler and the layers sits the <strong>♪ Audio</strong> row. Right-click it
+                    (or click the <strong>+</strong> next to "♪ Audio" in the layer column) to
+                    <strong> Add Sound</strong> — nine built-in synth effects (coin, jump, hit, powerup,
+                    explosion, blip, win, lose, click; they preview as you pick) — or
+                    <strong> Import Audio File…</strong> for your own music/voice (up to 4&nbsp;MB; it's
+                    stored inside the document, so the animation stays self-contained).
+                </p>
+                <ul>
+                    <li>Each sound starts at its frame — <strong>drag the amber block</strong> to move it;
+                        right-click a block to remove it.</li>
+                    <li>Sounds play during <strong>playback</strong> (Enter) at the right frames, and loop
+                        with the loop toggle. Scrubbing stays silent.</li>
+                    <li><strong>MP4/WebM exports include the audio</strong>, mixed at the exact frame
+                        offsets. GIFs are silent by nature.</li>
+                    <li>API: <code>Yappy.anim.addSound('coin', frame)</code>, <code>sounds()</code>,
+                        <code>moveSound(id, frame)</code>, <code>removeSound(id)</code>.</li>
                 </ul>
             </section>
 

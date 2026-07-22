@@ -7,7 +7,7 @@
  */
 
 import type { DrawingElement } from '../../types';
-import type { AnimTimeline, AnimLayer, AnimKeyframe } from '../../types/anim-types';
+import type { AnimTimeline, AnimLayer, AnimKeyframe, AnimAudioClip } from '../../types/anim-types';
 import { activeKeyframeIndex } from './frame-timeline-evaluator';
 
 const rowIndex = (tl: AnimTimeline, layerId: string): number =>
@@ -182,6 +182,31 @@ export const opUpdateKeyframe = (tl: AnimTimeline, layerId: string, frame: numbe
     if (ki === -1) return null;
     const keyframes = row.keyframes.map((k, i) => (i === ki ? { ...k, ...patch } : k));
     return withRow(tl, li, { ...row, keyframes });
+};
+
+// ---------------------------------------------------------------------------
+// Audio row
+// ---------------------------------------------------------------------------
+
+/** Add a sound at `frame` (kept sorted). */
+export const opAddAudio = (tl: AnimTimeline, clip: AnimAudioClip): AnimTimeline => ({
+    ...tl,
+    audio: [...(tl.audio ?? []), clip].sort((a, b) => a.frame - b.frame),
+});
+
+/** Remove a sound by id (null when absent). */
+export const opRemoveAudio = (tl: AnimTimeline, id: string): AnimTimeline | null => {
+    if (!tl.audio?.some(a => a.id === id)) return null;
+    return { ...tl, audio: tl.audio.filter(a => a.id !== id) };
+};
+
+/** Move a sound's start frame (clamped to the ruler; null when absent/no-op). */
+export const opMoveAudio = (tl: AnimTimeline, id: string, frame: number): AnimTimeline | null => {
+    const clip = tl.audio?.find(a => a.id === id);
+    if (!clip) return null;
+    const f = Math.min(Math.max(0, Math.round(frame)), tl.frameCount - 1);
+    if (f === clip.frame) return null;
+    return { ...tl, audio: tl.audio!.map(a => (a.id === id ? { ...a, frame: f } : a)).sort((a, b) => a.frame - b.frame) };
 };
 
 /**

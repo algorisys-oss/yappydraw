@@ -7,7 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.8.143] - 2026-07-22 — Animation Studio: Animate-class frame timeline
+## [0.8.144] - 2026-07-22 — Animation Studio: morphs, curves, guides, poses, sound, scenes
+
+### Added — Scenes (P6) [2026-07-22]
+- **Multiple scenes per animation** — each slide is a scene with its own stage + timeline. Scene picker (+/switch/delete) in the timeline header; only the active scene's artwork is visible/editable; add copies fps/length; delete removes the stage's contents. Persisted as `SlideDocument.animScenes` (all scenes keyed by slide id; active also in `animTimeline` for back-compat), in undo snapshots and autosave. API: `Yappy.anim.addScene/setScene/deleteScene/sceneCount`.
+- Two Solid-store bugs found by the e2e (same family as the clip-edit stash): scene stashes must hold **clones** (a stashed proxy aliases later merges into the active node) and `animScenes` writes need **`reconcile()`** (plain setStore merge never deletes record keys). Also: identity-keyed caches don't work on reconciled proxies (identity never changes) — the reconciler's cross-scene exclusion set is computed fresh; scene ops flush pending element adoption before stashing so a just-drawn shape can't migrate into the new scene.
+
+### Added — Audio row (P5) [2026-07-22]
+- **Sound on the timeline** — `AnimTimeline.audio: AnimAudioClip[]`: an ♪ Audio row between ruler and layers. Add the nine built-in synth SFX or import an audio file (≤4 MB, stored as dataURL in the document, decoded duration drives the block width). Drag blocks to move; right-click to add/remove; persists/undoes with the timeline.
+- **Playback**: `anim-playback` schedules the row on Play (SFX via setTimeout→synth, files via WebAudio buffer sources), cancels on pause/stop, reschedules on loop wrap. Scrubbing stays silent.
+- **Export muxing**: `buildExportAudioStream` renders every clip at its frame offset into a `MediaStreamDestination`; `VideoRecorder.start` gains an optional audio stream (mimeTypes widen to `vp9,opus` / `avc1+mp4a` when audio present). GIFs remain silent.
+- Refactor: sound-engine's `tone/sweep/noise` take an optional routing target (ctx/out/when), and `sfxInto` renders any SFX recipe into an arbitrary graph — game behavior unchanged (defaults preserved).
+- Fix (found by e2e): audio clip ids now use `crypto.randomUUID` — `generateId` derives uniqueness from scanning elements, so two non-element clips collided on one id.
+- Tests: 3 pure ops unit tests (sorted add, remove, clamped move) + an e2e (add/move/remove, doc round-trip, playback smoke). API: `Yappy.anim.addSound/sounds/moveSound/removeSound`.
+
+### Added — Pose keyframes for stick figures (P4, bones/IK) [2026-07-22]
+- **Pose tweens** — a stick-figure element's pose (motion clip + cycle phase + facing) is captured per cel and interpolated across tween spans by the pure evaluator: same clip → the phase glides through the cycle (limbs + foot IK animate); different clips → cross-clip skeleton blend via a transient `stickRig.blendTo` override resolved by `lerpRigPose` (moved from the renderer into pure `anim/rig.ts` and exported). Overrides always pin `playing: false`, so scrub/playback/export agree frame-exactly.
+- **Pose UI** — with a figure selected, the timeline header shows clip picker + cycle-phase slider + flip; setting a pose pins the figure on that cel.
+- Tests: 3 unit (phase glide, cross-clip blendTo, lerpRigPose joint math) + a Playwright e2e (data + drawn-pose pixel difference between frames). Spec boots got 90s cold-dev-server headroom (fixes the recurring first-run flake).
+
+### Added — Ease curve editor + motion guides (P3) [2026-07-22]
+- **Ease curve editor** — the timeline header's `curve` button opens a bezier popover for the selected tween span: presets (In/Out/In-Out/Overshoot/Anticipate) + two draggable handles (y beyond [0,1] for overshoot/wind-up), mirroring the keyframe-panel's editor. A custom curve overrides the named easing; drags stream through `setFrameEase(..., recordHistory=false)` with one history entry per gesture. API: `Yappy.anim.setFrameEaseCurve`.
+- **Motion guides** — `AnimKeyframe.guideId`/`guideOrient`: a tween's elements ride a line/polyline/pen/freehand path (center follows arc-length from start to end, easing applies along the path; `orient` rotates into the direction of travel). Pure `guidePolyline` + `samplePolyline` in the evaluator (WeakMap-cached), correctly handling top-left-relative point types AND point-less plain lines (endpoints implied by the frame). UI: `guide: use selection` / `orient` / `guide ✕` in the frame properties; hidden-layer guides steer without rendering. API: `Yappy.anim.setFrameGuide`.
+- Tests: 5 evaluator unit tests (path centering, orient tangent, missing-guide fallback, polyline sampling/degenerates) + a Playwright e2e (guide midpoint + custom-curve lag).
+
+### Added — Shape tweens (P2) [2026-07-22]
+- **`tween: 'shape'`** — a shape tween does everything a motion tween does AND morphs the outline between the two cels: endpoints are converted to outlines (`MorphUtils.getPointsFromElement`), resampled to 64 points, twist-aligned, and interpolated per frame in the pure evaluator; the intermediate renders through `ShapeRenderer.renderCustomPoints` (fill + stroke, both render styles). Point-native types (draw/line/arrow/text/clip instances) gracefully degrade to plain motion tweens. Endpoint outlines are cached per element pair (WeakMap; store edits invalidate by reference).
+- UI: right-click → **Create Shape Tween**, green span arrows (indigo = motion), and the frame-properties control is now a none/motion/shape select. API: `Yappy.anim.setTween('shape', …)`.
+- Removed per-frame `console.log`s from `renderCustomPoints` (now on a hot path).
+- Tests: 3 evaluator unit tests (morph output, pose+morph combo, degrade rule) + a Playwright e2e (square→circle morph renders pixels mid-span).
 
 ### Added — Animation Studio (Animate-class frame timeline) [2026-07-22]
 - **New `animation` document type** (Menu → New → New Animation…): fixed Stage + bottom frame-timeline panel. Frame-based model (`AnimTimeline`/`AnimLayer`/`AnimKeyframe` in `types/anim-types.ts`): keyframes own element ids (the "cel" model — drawing lands on the current frame's keyframe via a reconciler), spans hold, blank keyframes, frame labels.

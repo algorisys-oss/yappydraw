@@ -1,5 +1,5 @@
 import { batch } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createStore, reconcile } from "solid-js/store";
 // Dockable-panel system (Phase D): migrated panels are toggled through the dock store so the
 // existing toolbar/menu/hotkey/API entry points keep working. dock-layout has no app-store import,
 // so this one-way edge introduces no cycle.
@@ -339,8 +339,12 @@ interface AppState {
     showGameScript: boolean;
 
     // Animation mode (frame-based timeline, docType 'animation')
-    /** The document's frame timeline; non-null iff docType === 'animation'. Persisted in SlideDocument.animTimeline. */
+    /** The ACTIVE scene's frame timeline; non-null iff docType === 'animation'. Persisted in SlideDocument.animTimeline. */
     animTimeline: AnimTimeline | null;
+    /** INACTIVE scenes' timelines, keyed by their slide id (each slide = one scene).
+     *  The active scene's timeline lives in `animTimeline`; switching scenes stashes
+     *  and swaps. Persisted (all scenes) in SlideDocument.animScenes. */
+    animScenes: Record<string, AnimTimeline>;
     /** Integer playhead frame (0-based). Drives frame-timeline evaluation at render time. */
     animCurrentFrame: number;
     animPlaying: boolean;
@@ -596,6 +600,7 @@ const initialState: AppState = {
     showGameScript: false,
 
     animTimeline: null,
+    animScenes: {},
     animCurrentFrame: 0,
     animPlaying: false,
     animLoop: true,
@@ -637,6 +642,7 @@ interface HistorySnapshot {
     compositionTracks: PropertyTrack[];
     dimensionAnnotations: DimensionAnnotation[];
     animTimeline: AnimTimeline | null;
+    animScenes: Record<string, AnimTimeline>;
 }
 const undoStack: HistorySnapshot[] = [];
 const redoStack: HistorySnapshot[] = [];
@@ -663,9 +669,12 @@ const redoStack: HistorySnapshot[] = [];
 // thread and drop the next stroke's `pointerdown` during fast writing.
 // Frame timelines hold ids only, so a full clone (down to each keyframe's
 // elementIds array) is cheap and decouples the snapshot from keyframe edits.
-const cloneAnimTimeline = (tl: AnimTimeline): AnimTimeline => ({
+// Exported: scene/clip stashes MUST hold clones — a stashed store proxy would
+// silently track later setStore merges into the same raw node.
+export const cloneAnimTimeline = (tl: AnimTimeline): AnimTimeline => ({
     ...tl,
     layers: tl.layers.map(l => ({ ...l, keyframes: l.keyframes.map(k => ({ ...k, elementIds: [...k.elementIds] })) })),
+    ...(tl.audio && { audio: tl.audio.map(a => ({ ...a })) }),
 });
 
 const captureSnapshot = (): HistorySnapshot => ({
@@ -684,6 +693,7 @@ const captureSnapshot = (): HistorySnapshot => ({
     compositionTracks: store.compositionTracks.map(t => ({ ...t, keys: t.keys.map(k => ({ ...k })) })),
     dimensionAnnotations: store.dimensionAnnotations.map(d => ({ ...d })),
     animTimeline: store.animTimeline ? cloneAnimTimeline(store.animTimeline) : null,
+    animScenes: Object.fromEntries(Object.entries(store.animScenes).map(([id, tl]) => [id, cloneAnimTimeline(tl)])),
 });
 
 const restoreSnapshot = (snapshot: HistorySnapshot) => {
@@ -702,6 +712,8 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("compositionTracks", snapshot.compositionTracks || []);
     setStore("dimensionAnnotations", snapshot.dimensionAnnotations || []);
     setStore("animTimeline", snapshot.animTimeline ?? null);
+    // reconcile: plain setStore MERGES records — deleted scene keys would survive.
+    setStore("animScenes", reconcile(snapshot.animScenes ?? {}));
     setStore("selection", []); // Clear selection to avoid stale IDs
 };
 
@@ -2442,15 +2454,21 @@ export const loadDocument = (doc: any) => {
         setStore("showSlideToolbar", true);
         setStore("showUtilityToolbar", false);
 
-        // Animation mode: restore the frame timeline (healing a missing one so an
-        // 'animation' doc always has rows for its layers), reset the playhead.
+        // Animation mode: restore the frame timeline(s) (healing a missing one so
+        // an 'animation' doc always has rows for its layers), reset the playhead.
+        // Multi-scene docs carry every scene keyed by slide id in `animScenes`;
+        // the first slide's scene becomes active, the rest go to the stash.
         if (loadedDocType === 'animation') {
-            const tl: AnimTimeline = doc.animTimeline
-                ? JSON.parse(JSON.stringify(doc.animTimeline))
-                : createDefaultAnimTimeline(layers.map((l: Layer) => l.id));
-            setStore("animTimeline", tl);
+            const scenes: Record<string, AnimTimeline> = doc.animScenes ? JSON.parse(JSON.stringify(doc.animScenes)) : {};
+            const firstId = slides[0]?.id;
+            const active: AnimTimeline = (firstId && scenes[firstId])
+                || (doc.animTimeline ? JSON.parse(JSON.stringify(doc.animTimeline)) : createDefaultAnimTimeline(layers.map((l: Layer) => l.id)));
+            if (firstId) delete scenes[firstId];
+            setStore("animTimeline", active);
+            setStore("animScenes", reconcile(scenes));
         } else {
             setStore("animTimeline", null);
+            setStore("animScenes", reconcile({}));
         }
         setStore("animCurrentFrame", 0);
         setStore("animPlaying", false);

@@ -13,6 +13,15 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.144', date: '2026-07-22', items: [
+        'Animation Studio grew five big features in one release. Shape tweens: right-click a span → Create Shape Tween and a square MORPHS into a circle, a star into a heart — outlines flow between your keyframes.',
+        'A real ease-curve editor: presets like Overshoot and Anticipate, plus two draggable bezier handles for any curve you can imagine. Drag above the box for overshoot, below for a wind-up.',
+        'Motion guides: draw a path, select it, click "guide: use selection" — the tween now rides your curve instead of a straight line, with an optional orient that banks into turns.',
+        'Pose your stick figures frame by frame: pick a motion clip and the exact cycle instant per keyframe. Same clip on both ends and the walk unfolds between them (feet planted by IK); different clips and the skeleton blends from one pose to the other.',
+        'Sound! An ♪ Audio row on the timeline: nine built-in retro sound effects or your own imported audio, placed on exact frames. It plays back in the editor and is mixed into MP4/WebM exports.',
+        'Scenes: split a film into acts — each scene has its own stage and timeline, with a picker in the timeline header.',
+        'Plus: the timeline sits above the status bar and resizes by dragging its top edge, and the settings buttons stay out of its way.',
+    ] },
     { version: '0.8.143', date: '2026-07-22', items: [
         'NEW: Animation Studio — a whole new document type in the spirit of Flash / Adobe Animate. Menu → New → New Animation gives you a fixed stage and a frame timeline: draw on a frame, press F6 to make the next keyframe, and you are animating.',
         'Motion tweens with easing: make two keyframes, right-click the span, Create Motion Tween — position, size, rotation, opacity and colours glide between them.',

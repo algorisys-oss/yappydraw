@@ -101,6 +101,8 @@
     color: var(--text-primary);
     font-size: 11px;
 }
+.atl-pose-phase { width: 90px; accent-color: var(--accent-color, #6366f1); }
+
 .atl-label-input {
     width: 80px;
     padding: 3px 6px;
@@ -138,6 +140,18 @@
     color: var(--text-secondary);
     border-bottom: 1px solid var(--border-color);
 }
+.atl-audio-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 20px; /* matches the grid's AUDIO_H row */
+    padding: 0 6px 0 10px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #b45309;
+    border-bottom: 1px solid var(--border-color);
+}
+
 .atl-layer-row {
     display: flex;
     align-items: center;
@@ -181,6 +195,43 @@
 }
 .atl-icon:hover { background: var(--bg-secondary); color: var(--text-primary); }
 .atl-danger:hover { color: #ef4444; }
+
+/* Ease-curve editor popover (floats above the panel header, right side) */
+.atl-ease {
+    position: absolute;
+    right: 90px;
+    bottom: calc(100% + 8px);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 10px;
+    z-index: 5;
+}
+.atl-ease-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+}
+.atl-ease-presets {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+    margin-bottom: 8px;
+    max-width: 220px;
+}
+.atl-ease-graph { display: block; margin: 0 auto; }
+.atl-ease-box { fill: var(--bg-secondary); stroke: var(--border-color); }
+.atl-ease-ref { stroke: var(--border-color); stroke-dasharray: 3 3; }
+.atl-ease-stem { stroke: var(--accent-color, #6366f1); stroke-width: 1; opacity: 0.5; }
+.atl-ease-curve { fill: none; stroke: var(--accent-color, #6366f1); stroke-width: 2; }
+.atl-ease-handle { fill: var(--accent-color, #6366f1); cursor: grab; }
+.atl-ease-handle:hover { fill: #818cf8; }
 
 .atl-gridwrap {
     flex: 1;

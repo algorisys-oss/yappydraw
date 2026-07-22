@@ -2861,9 +2861,13 @@ export const YappyAPI = {
         /** Shift+F5 — delete one frame cell. */
         removeFrames(layerId?: string, frame?: number) { animOps.removeFrames(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame); },
         moveKeyframe(layerId: string, fromFrame: number, toFrame: number) { animOps.moveKeyframe(layerId, fromFrame, toFrame); },
-        /** Motion-tween the span leaving `frame`'s keyframe ('none' removes it). */
-        setTween(kind: 'none' | 'motion', layerId?: string, frame?: number) { animOps.setTween(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame, kind); },
+        /** Tween the span leaving `frame`'s keyframe: 'motion' (pose), 'shape' (pose + outline morph), 'none' removes. */
+        setTween(kind: 'none' | 'motion' | 'shape', layerId?: string, frame?: number) { animOps.setTween(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame, kind); },
         setFrameEasing(easing: EasingName, layerId?: string, frame?: number) { animOps.setFrameEase(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame, undefined, easing); },
+        /** Custom bezier ease for the span (overrides the named easing). */
+        setFrameEaseCurve(ease: import('./types/motion-types').BezierEase, layerId?: string, frame?: number) { animOps.setFrameEase(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame, ease); },
+        /** Make the span's tween follow a line/path element's curve (null clears; orient rotates along it). */
+        setFrameGuide(guideId: string | null, orient?: boolean, layerId?: string, frame?: number) { animOps.setFrameGuide(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame, guideId, orient); },
         setFrameLabel(label: string, layerId?: string, frame?: number) { animOps.setFrameLabel(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame, label); },
         setOnion(enabled: boolean, before?: number, after?: number) {
             setStore('animOnion', o => ({ enabled, before: before ?? o.before, after: after ?? o.after }));
@@ -2878,6 +2882,17 @@ export const YappyAPI = {
             const ev = evaluateTimelineAt(frame ?? store.animCurrentFrame, tl, store.elements);
             return { visible: [...ev.visible], overrides: ev.overrides };
         },
+        /** Add a built-in synth sound ('coin'|'jump'|'hit'|'powerup'|'explosion'|'blip'|'win'|'lose'|'click') on the audio row. Returns the clip id. */
+        addSound(sfx: string, frame?: number): string | null { return animOps.addAudioClip({ name: sfx, sfx, frame }); },
+        removeSound(id: string) { animOps.removeAudioClip(id); },
+        moveSound(id: string, frame: number) { animOps.moveAudioClip(id, frame); },
+        /** The audio row's clips. */
+        sounds() { return store.animTimeline?.audio ?? []; },
+        /** Scenes (each slide is a scene with its own timeline). */
+        addScene() { animOps.addAnimScene(); },
+        setScene(index: number) { animOps.setActiveAnimScene(index); },
+        deleteScene(index: number) { animOps.deleteAnimScene(index); },
+        sceneCount(): number { return store.slides.length; },
         /** Load a built-in animation template ('bouncing-ball' | 'rocket-launch' | 'yappy-intro'). */
         async loadExample(name: 'bouncing-ball' | 'rocket-launch' | 'yappy-intro') {
             const m = await import('./templates/data/animations');

@@ -143,8 +143,6 @@ export abstract class ShapeRenderer {
     protected renderCustomPoints(context: RenderContext) {
         const { renderer, element: el, isDarkMode, layerOpacity } = context;
 
-        console.log('[renderCustomPoints] Rendering custom points:', el.id, el.points?.length);
-
         // Don't apply transformations - points are already in absolute canvas coordinates
         renderer.save();
         renderer.globalAlpha = layerOpacity * (el.opacity ?? 1);
@@ -162,16 +160,6 @@ export abstract class ShapeRenderer {
             x: p.x + cx,
             y: p.y + cy
         }));
-
-        if (absolutePoints.length >= 3) {
-            console.log('[renderCustomPoints] First 3 absolute points:', [
-                { x: absolutePoints[0].x, y: absolutePoints[0].y },
-                { x: absolutePoints[1].x, y: absolutePoints[1].y },
-                { x: absolutePoints[2].x, y: absolutePoints[2].y }
-            ]);
-        }
-        console.log('[renderCustomPoints] Element center:', { cx, cy });
-
 
         // Apply opacity
         renderer.save();

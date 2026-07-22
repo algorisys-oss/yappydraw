@@ -26,6 +26,10 @@ export function buildSlideDocument(name = 'Untitled'): SlideDocument {
         dimensionAnnotations: store.dimensionAnnotations?.length ? JSON.parse(JSON.stringify(store.dimensionAnnotations)) : undefined,
         compositionTracks: store.compositionTracks?.length ? JSON.parse(JSON.stringify(store.compositionTracks)) : undefined,
         animTimeline: store.animTimeline ? JSON.parse(JSON.stringify(store.animTimeline)) : undefined,
+        // Multi-scene: every scene keyed by slide id (active one folded back in).
+        animScenes: store.animTimeline && Object.keys(store.animScenes).length
+            ? JSON.parse(JSON.stringify({ ...store.animScenes, [store.slides[store.activeSlideIndex]?.id ?? '']: store.animTimeline }))
+            : undefined,
         gameScript: effectiveGameScript(store.elements, store.sceneBehaviors ?? [], store.gameScript, store.gameVars ?? [], store.blueprints, store.gameAuthoringMode),
         sceneBehaviors: store.sceneBehaviors?.length ? JSON.parse(JSON.stringify(store.sceneBehaviors)) : undefined,
         gameVars: store.gameVars?.length ? JSON.parse(JSON.stringify(store.gameVars)) : undefined,

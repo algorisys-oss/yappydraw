@@ -12,7 +12,7 @@ import { store } from '../../store/app-store';
 import { effectiveTime } from '../../utils/animation/animation-engine';
 import { getClip, poseAt, WALK_STRIDE } from '../../library/stick-figures/anim/clips';
 import { elementPathSample, sampleAt } from '../../library/stick-figures/anim/path-follow';
-import { RIG_W, RIG_H, RIG_LEG_UNIT, headAttach, legPolylines, upperPolylines, type JointId, type RigPose } from '../../library/stick-figures/anim/rig';
+import { RIG_W, RIG_H, RIG_LEG_UNIT, headAttach, legPolylines, upperPolylines, lerpRigPose, type JointId, type RigPose } from '../../library/stick-figures/anim/rig';
 import { garmentGeometry } from '../../library/stick-figures/garments';
 import {
     faceGeometry, hairGeometry, asFaceStyle, asHairStyle,
@@ -27,17 +27,6 @@ interface BoxPose {
     garments: FacePrim[];
     hair: FacePrim[];
     face: FacePrim[];
-}
-
-/** Linear blend between two canonical poses (for smooth sequence transitions). */
-function lerpRigPose(a: RigPose, b: RigPose, f: number): RigPose {
-    const L = (u: number, v: number) => u + (v - u) * f;
-    const joints = new Map<JointId, { x: number; y: number }>();
-    for (const [k, p] of a.joints) {
-        const q = b.joints.get(k) || p;
-        joints.set(k, { x: L(p.x, q.x), y: L(p.y, q.y) });
-    }
-    return { joints, head: { x: L(a.head.x, b.head.x), y: L(a.head.y, b.head.y) }, headR: L(a.headR, b.headR) };
 }
 
 /** Cross-fade duration between sequence steps (seconds). */
@@ -113,7 +102,12 @@ export class StickRigRenderer extends ShapeRenderer {
                 : (data.previewPhase ?? 0);
         }
 
-        const pose: RigPose = blended ?? poseAt(clipId, phase ?? 0, facing);
+        let pose: RigPose = blended ?? poseAt(clipId, phase ?? 0, facing);
+        // Pose-tween cross-clip blend (Animation mode): a transient override field
+        // set by the frame-timeline evaluator — blend toward another clip's pose.
+        if (data.blendTo) {
+            pose = lerpRigPose(pose, poseAt(data.blendTo.clip, data.blendTo.phase, facing), data.blendTo.f);
+        }
         const X = (p: { x: number; y: number }) => [originX + p.x * sx, originY + p.y * sy] as [number, number];
         const bones = CHAINS.map(chain => chain.map(id => X(pose.joints.get(id)!)));
         // Neck (CHAINS[1] = shoulder→head) stops at the head-circle edge, not its

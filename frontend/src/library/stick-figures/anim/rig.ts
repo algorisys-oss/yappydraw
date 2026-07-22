@@ -146,6 +146,17 @@ export interface RigPose {
     headR: number;
 }
 
+/** Linear blend between two resolved poses (sequence cross-fades, pose tweens). */
+export function lerpRigPose(a: RigPose, b: RigPose, f: number): RigPose {
+    const L = (u: number, v: number) => u + (v - u) * f;
+    const joints = new Map<JointId, Vec>();
+    for (const [k, p] of a.joints) {
+        const q = b.joints.get(k) || p;
+        joints.set(k, { x: L(p.x, q.x), y: L(p.y, q.y) });
+    }
+    return { joints, head: { x: L(a.head.x, b.head.x), y: L(a.head.y, b.head.y) }, headR: L(a.headR, b.headR) };
+}
+
 /**
  * Forward-kinematics evaluation of a rig under a clip pose. Returns world joint
  * positions. Legs with a foot target are solved by IK so the foot lands exactly there.

@@ -27,14 +27,25 @@ function ac(): AudioContext | null {
     return ctx;
 }
 
+/** Optional routing target so the same recipes can render into another graph
+ *  (e.g. the Animation-mode video-export recorder). Defaults to the module's
+ *  own context + master. */
+type Route = { c: AudioContext; out: AudioNode; when: number };
+const route = (r?: Route): Route | null => {
+    if (r) return r;
+    const c = ac();
+    return c && master ? { c, out: master, when: c.currentTime } : null;
+};
+
 /** A single enveloped oscillator note. */
-function tone(freq: number, start: number, dur: number, type: OscillatorType = 'square', vol = 1): void {
-    const c = ac(); if (!c || !master) return;
+function tone(freq: number, start: number, dur: number, type: OscillatorType = 'square', vol = 1, r?: Route): void {
+    const rt = route(r); if (!rt) return;
     try {
+        const { c, out } = rt;
         const o = c.createOscillator(); const g = c.createGain();
         o.type = type; o.frequency.value = freq;
-        o.connect(g); g.connect(master);
-        const t = c.currentTime + start;
+        o.connect(g); g.connect(out);
+        const t = rt.when + start;
         g.gain.setValueAtTime(0.0001, t);
         g.gain.linearRampToValueAtTime(vol, t + 0.006);
         g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
@@ -43,15 +54,16 @@ function tone(freq: number, start: number, dur: number, type: OscillatorType = '
 }
 
 /** A pitch sweep (f0 → f1). */
-function sweep(f0: number, f1: number, dur: number, type: OscillatorType = 'square', vol = 1): void {
-    const c = ac(); if (!c || !master) return;
+function sweep(f0: number, f1: number, dur: number, type: OscillatorType = 'square', vol = 1, r?: Route): void {
+    const rt = route(r); if (!rt) return;
     try {
+        const { c, out } = rt;
         const o = c.createOscillator(); const g = c.createGain();
         o.type = type;
-        const t = c.currentTime;
+        const t = rt.when;
         o.frequency.setValueAtTime(f0, t);
         o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
-        o.connect(g); g.connect(master);
+        o.connect(g); g.connect(out);
         g.gain.setValueAtTime(vol, t);
         g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
         o.start(t); o.stop(t + dur + 0.03);
@@ -59,9 +71,10 @@ function sweep(f0: number, f1: number, dur: number, type: OscillatorType = 'squa
 }
 
 /** A short filtered noise burst (hits / explosions). */
-function noise(dur: number, vol = 1, cutoff = 1200): void {
-    const c = ac(); if (!c || !master) return;
+function noise(dur: number, vol = 1, cutoff = 1200, r?: Route): void {
+    const rt = route(r); if (!rt) return;
     try {
+        const { c, out } = rt;
         const n = Math.floor(c.sampleRate * dur);
         const buf = c.createBuffer(1, n, c.sampleRate);
         const d = buf.getChannelData(0);
@@ -69,26 +82,30 @@ function noise(dur: number, vol = 1, cutoff = 1200): void {
         const src = c.createBufferSource(); src.buffer = buf;
         const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cutoff;
         const g = c.createGain(); g.gain.value = vol;
-        src.connect(f); f.connect(g); g.connect(master);
-        src.start();
+        src.connect(f); f.connect(g); g.connect(out);
+        src.start(rt.when);
     } catch { /* ignore */ }
 }
 
 export const SFX = ['coin', 'jump', 'hit', 'powerup', 'explosion', 'blip', 'win', 'lose', 'click'] as const;
 export type Sfx = typeof SFX[number];
 
-export function playSfx(name: string): void {
+export function playSfx(name: string): void { sfxInto(name); }
+
+/** Render an SFX recipe — into the module's own output by default, or into an
+ *  arbitrary (ctx, node) at absolute time `when` (video-export muxing). */
+export function sfxInto(name: string, r?: Route): void {
     switch (name) {
-        case 'coin': tone(988, 0, 0.07, 'square', 0.5); tone(1319, 0.07, 0.12, 'square', 0.5); break;
-        case 'jump': sweep(240, 680, 0.14, 'square', 0.4); break;
-        case 'hit': sweep(320, 70, 0.14, 'square', 0.5); noise(0.08, 0.25, 900); break;
-        case 'powerup': tone(523, 0, 0.07, 'square', 0.4); tone(659, 0.07, 0.07, 'square', 0.4); tone(784, 0.14, 0.07, 'square', 0.4); tone(1047, 0.21, 0.14, 'square', 0.4); break;
-        case 'explosion': noise(0.45, 0.6, 700); sweep(180, 40, 0.4, 'sawtooth', 0.3); break;
-        case 'blip': tone(820, 0, 0.05, 'square', 0.4); break;
-        case 'win': [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.11, 0.16, 'square', 0.4)); break;
-        case 'lose': [392, 330, 262, 196].forEach((f, i) => tone(f, i * 0.13, 0.2, 'triangle', 0.45)); break;
-        case 'click': tone(1000, 0, 0.03, 'triangle', 0.35); break;
-        default: tone(660, 0, 0.06, 'square', 0.4);
+        case 'coin': tone(988, 0, 0.07, 'square', 0.5, r); tone(1319, 0.07, 0.12, 'square', 0.5, r); break;
+        case 'jump': sweep(240, 680, 0.14, 'square', 0.4, r); break;
+        case 'hit': sweep(320, 70, 0.14, 'square', 0.5, r); noise(0.08, 0.25, 900, r); break;
+        case 'powerup': tone(523, 0, 0.07, 'square', 0.4, r); tone(659, 0.07, 0.07, 'square', 0.4, r); tone(784, 0.14, 0.07, 'square', 0.4, r); tone(1047, 0.21, 0.14, 'square', 0.4, r); break;
+        case 'explosion': noise(0.45, 0.6, 700, r); sweep(180, 40, 0.4, 'sawtooth', 0.3, r); break;
+        case 'blip': tone(820, 0, 0.05, 'square', 0.4, r); break;
+        case 'win': [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.11, 0.16, 'square', 0.4, r)); break;
+        case 'lose': [392, 330, 262, 196].forEach((f, i) => tone(f, i * 0.13, 0.2, 'triangle', 0.45, r)); break;
+        case 'click': tone(1000, 0, 0.03, 'triangle', 0.35, r); break;
+        default: tone(660, 0, 0.06, 'square', 0.4, r);
     }
 }
 

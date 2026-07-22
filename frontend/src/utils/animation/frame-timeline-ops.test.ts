@@ -214,6 +214,33 @@ describe("opUpdateKeyframe", () => {
     });
 });
 
+describe("audio row ops", () => {
+    const { opAddAudio, opRemoveAudio, opMoveAudio } = require("./frame-timeline-ops");
+    const base = tl([layer("L", [{ frame: 0, elementIds: [] }], 23)], 24);
+
+    it("adds sorted by frame", () => {
+        let t = opAddAudio(base, { id: "a1", frame: 10, name: "coin", sfx: "coin" });
+        t = opAddAudio(t, { id: "a2", frame: 2, name: "jump", sfx: "jump" });
+        expect(t.audio.map((a: any) => a.id)).toEqual(["a2", "a1"]);
+    });
+
+    it("removes by id, null when absent", () => {
+        const t = opAddAudio(base, { id: "a1", frame: 5, name: "hit", sfx: "hit" });
+        expect(opRemoveAudio(t, "a1")!.audio).toEqual([]);
+        expect(opRemoveAudio(t, "nope")).toBeNull();
+    });
+
+    it("moves with clamping and keeps sort order", () => {
+        let t = opAddAudio(base, { id: "a1", frame: 5, name: "hit", sfx: "hit" });
+        t = opAddAudio(t, { id: "a2", frame: 8, name: "win", sfx: "win" });
+        const moved = opMoveAudio(t, "a2", 999)!;
+        expect(moved.audio.find((a: any) => a.id === "a2").frame).toBe(23); // clamped to ruler end
+        expect(opMoveAudio(t, "a1", 5)).toBeNull(); // no-op
+        const re = opMoveAudio(t, "a2", 1)!;
+        expect(re.audio.map((a: any) => a.id)).toEqual(["a2", "a1"]);
+    });
+});
+
 describe("opReconcile", () => {
     it("assigns orphan elements to the active cel of their layer's row", () => {
         const base = tl([layer("L", [

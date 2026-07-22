@@ -17,26 +17,41 @@ import { store, setStore, setActiveLayer, updateLayer, addLayer, deleteLayer, se
 import {
     gotoFrame, stepFrame, setAnimFps, setAnimFrameCount, ensureAnimRows,
     insertFrame, insertKeyframe, insertBlankKeyframe, clearKeyframe, removeFrames,
-    moveKeyframe, setTween, setFrameLabel, setFrameEase,
+    moveKeyframe, setTween, setFrameLabel, setFrameEase, setFrameGuide,
+    addAudioClip, removeAudioClip, moveAudioClip,
+    addAnimScene, setActiveAnimScene, deleteAnimScene,
 } from '../store/anim-ops';
+import { SFX, playSfx } from '../game/sound-engine';
+import { pushToHistory } from '../store/app-store';
 import type { EasingName } from '../utils/animation/animation-types';
+import type { BezierEase } from '../types/motion-types';
 import { playAnimation, pauseAnimation, stopAnimation } from '../utils/animation/anim-playback';
 import { activeKeyframeIndex } from '../utils/animation/frame-timeline-evaluator';
 import type { AnimLayer } from '../types/anim-types';
 import type { Layer } from '../types';
 import ContextMenu, { type MenuItem } from './context-menu';
 import { showToast } from './toast';
+import { CLIP_LIST } from '../library/stick-figures/anim/clips';
 import './animation-timeline.css';
 
 const CELL_W = 12;
 const ROW_H = 26;
 const RULER_H = 22;
+const AUDIO_H = 20; // the audio row, between the ruler and the layer rows
+
+/** Rough synth-SFX durations (seconds) — drives the audio block width. */
+const SFX_DUR: Record<string, number> = {
+    coin: 0.2, jump: 0.15, hit: 0.15, powerup: 0.35, explosion: 0.45,
+    blip: 0.06, win: 0.6, lose: 0.75, click: 0.05,
+};
 
 const AnimationTimeline: Component = () => {
     let gridWrap: HTMLDivElement | undefined;
     let gridCanvas: HTMLCanvasElement | undefined;
     let panelRef: HTMLDivElement | undefined;
     const [ctxMenu, setCtxMenu] = createSignal<{ x: number; y: number; layerId: string; frame: number } | null>(null);
+    const [audioMenu, setAudioMenu] = createSignal<{ x: number; y: number; frame: number; clipId: string | null } | null>(null);
+    const [dragAudio, setDragAudio] = createSignal<{ id: string; to: number } | null>(null);
     const [dragKf, setDragKf] = createSignal<{ layerId: string; from: number; to: number } | null>(null);
     const [renamingId, setRenamingId] = createSignal<string | null>(null);
     /** User-resizable body height (drag the panel's top edge; persisted). */
@@ -82,12 +97,12 @@ const AnimationTimeline: Component = () => {
         return dark ? {
             bg: '#17171e', line: 'rgba(255,255,255,0.07)', line5: 'rgba(255,255,255,0.14)',
             rulerText: '#9ca3af', span: 'rgba(99,102,241,0.16)', spanEdge: 'rgba(99,102,241,0.4)',
-            dot: '#e5e7eb', hollow: '#9ca3af', tween: '#a5b4fc', playhead: '#ef4444',
+            dot: '#e5e7eb', hollow: '#9ca3af', tween: '#a5b4fc', tweenShape: '#4ade80', playhead: '#ef4444',
             sel: 'rgba(99,102,241,0.30)', label: '#fbbf24', off: 'rgba(255,255,255,0.03)',
         } : {
             bg: '#fafafa', line: 'rgba(0,0,0,0.07)', line5: 'rgba(0,0,0,0.16)',
             rulerText: '#6b7280', span: 'rgba(99,102,241,0.12)', spanEdge: 'rgba(99,102,241,0.35)',
-            dot: '#1f2937', hollow: '#6b7280', tween: '#6366f1', playhead: '#dc2626',
+            dot: '#1f2937', hollow: '#6b7280', tween: '#6366f1', tweenShape: '#16a34a', playhead: '#dc2626',
             sel: 'rgba(99,102,241,0.25)', label: '#d97706', off: 'rgba(0,0,0,0.03)',
         };
     };
@@ -98,7 +113,7 @@ const AnimationTimeline: Component = () => {
         const layers = displayLayers();
         const c = colors();
         const w = t.frameCount * CELL_W + 2;
-        const h = RULER_H + layers.length * ROW_H;
+        const h = RULER_H + AUDIO_H + layers.length * ROW_H;
         const dpr = window.devicePixelRatio || 1;
         if (gridCanvas.width !== w * dpr || gridCanvas.height !== h * dpr) {
             gridCanvas.width = w * dpr;
@@ -114,9 +129,36 @@ const AnimationTimeline: Component = () => {
         const drag = dragKf();
         const sel = store.animFrameSelection;
 
+        // Audio row (between ruler and layer rows): amber sound blocks
+        {
+            const ay = RULER_H;
+            ctx.fillStyle = c.off;
+            ctx.fillRect(0, ay, w, AUDIO_H);
+            const dragA = dragAudio();
+            for (const clip of (t.audio ?? [])) {
+                const f = dragA?.id === clip.id ? dragA.to : clip.frame;
+                const durSec = clip.durationSec ?? (clip.sfx ? (SFX_DUR[clip.sfx] ?? 0.2) : 0.5);
+                const bw = Math.max(CELL_W * 1.5, durSec * t.fps * CELL_W);
+                const bx = f * CELL_W;
+                ctx.fillStyle = 'rgba(245, 158, 11, 0.35)';
+                ctx.fillRect(bx, ay + 2, bw, AUDIO_H - 4);
+                ctx.strokeStyle = '#f59e0b';
+                ctx.strokeRect(bx + 0.5, ay + 2.5, bw - 1, AUDIO_H - 5);
+                ctx.fillStyle = c.rulerText;
+                ctx.font = '9px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(bx, ay, bw, AUDIO_H);
+                ctx.clip();
+                ctx.fillText(`♪ ${clip.name}`, bx + 3, ay + 13);
+                ctx.restore();
+            }
+        }
+
         // Row backgrounds + spans + keyframes
         layers.forEach((layer, li) => {
-            const y = RULER_H + li * ROW_H;
+            const y = RULER_H + AUDIO_H + li * ROW_H;
             const row = rowFor(layer.id);
             if (!layer.visible) { ctx.fillStyle = c.off; ctx.fillRect(0, y, w, ROW_H); }
             if (!row) return;
@@ -140,10 +182,10 @@ const AnimationTimeline: Component = () => {
                     ctx.fillStyle = c.spanEdge;
                     ctx.fillRect((spanEnd + 1) * CELL_W - 2, y + 4, 2, ROW_H - 8);
                 }
-                // Tween arrow across the span
+                // Tween arrow across the span (indigo = motion, green = shape morph)
                 if (kf.tween && next) {
                     const y0 = y + ROW_H / 2;
-                    ctx.strokeStyle = c.tween;
+                    ctx.strokeStyle = kf.tween === 'shape' ? c.tweenShape : c.tween;
                     ctx.lineWidth = 1.5;
                     ctx.beginPath();
                     ctx.moveTo(kf.frame * CELL_W + CELL_W, y0);
@@ -220,6 +262,7 @@ const AnimationTimeline: Component = () => {
         store.animCurrentFrame;
         store.animFrameSelection;
         dragKf();
+        dragAudio();
         store.layers.forEach(l => { l.visible; l.order; });
         store.layers.length;
         store.resolvedTheme;
@@ -237,16 +280,30 @@ const AnimationTimeline: Component = () => {
     });
 
     // ---------------------------------------------------------- interactions
-    const hit = (e: PointerEvent | MouseEvent): { frame: number; layerId: string | null; onRuler: boolean } => {
+    const hit = (e: PointerEvent | MouseEvent): { frame: number; layerId: string | null; onRuler: boolean; onAudio: boolean } => {
         const rect = gridCanvas!.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const t = tl()!;
         const frame = Math.min(Math.max(0, Math.floor(x / CELL_W)), t.frameCount - 1);
-        if (y < RULER_H) return { frame, layerId: null, onRuler: true };
-        const li = Math.floor((y - RULER_H) / ROW_H);
+        if (y < RULER_H) return { frame, layerId: null, onRuler: true, onAudio: false };
+        if (y < RULER_H + AUDIO_H) return { frame, layerId: null, onRuler: false, onAudio: true };
+        const li = Math.floor((y - RULER_H - AUDIO_H) / ROW_H);
         const layer = displayLayers()[li];
-        return { frame, layerId: layer?.id ?? null, onRuler: false };
+        return { frame, layerId: layer?.id ?? null, onRuler: false, onAudio: false };
+    };
+
+    /** The audio clip whose block covers `frame` (topmost = latest-starting). */
+    const audioClipAt = (frame: number) => {
+        const t = tl();
+        if (!t?.audio) return null;
+        for (let i = t.audio.length - 1; i >= 0; i--) {
+            const clip = t.audio[i];
+            const durSec = clip.durationSec ?? (clip.sfx ? (SFX_DUR[clip.sfx] ?? 0.2) : 0.5);
+            const span = Math.max(1.5, durSec * t.fps);
+            if (frame >= clip.frame && frame <= clip.frame + span) return clip;
+        }
+        return null;
     };
 
     const onGridPointerDown = (e: PointerEvent) => {
@@ -256,6 +313,26 @@ const AnimationTimeline: Component = () => {
         const h0 = hit(e);
         e.preventDefault();
         gridCanvas.setPointerCapture(e.pointerId);
+
+        // Audio row: drag a sound block to move its start frame.
+        if (h0.onAudio) {
+            const clip = audioClipAt(h0.frame);
+            if (!clip) return;
+            const move = (ev: PointerEvent) => {
+                const f = hit(ev).frame;
+                setDragAudio(f !== clip.frame ? { id: clip.id, to: f } : null);
+            };
+            const up = () => {
+                gridCanvas!.removeEventListener('pointermove', move);
+                gridCanvas!.removeEventListener('pointerup', up);
+                const d = dragAudio();
+                setDragAudio(null);
+                if (d) moveAudioClip(d.id, d.to);
+            };
+            gridCanvas.addEventListener('pointermove', move);
+            gridCanvas.addEventListener('pointerup', up);
+            return;
+        }
 
         if (h0.onRuler) {
             pauseAnimation();
@@ -310,6 +387,10 @@ const AnimationTimeline: Component = () => {
     const onGridContextMenu = (e: MouseEvent) => {
         e.preventDefault();
         const h0 = hit(e);
+        if (h0.onAudio) {
+            setAudioMenu({ x: e.clientX, y: e.clientY, frame: h0.frame, clipId: audioClipAt(h0.frame)?.id ?? null });
+            return;
+        }
         if (!h0.layerId) return;
         setActiveLayer(h0.layerId);
         gotoFrame(h0.frame);
@@ -343,8 +424,9 @@ const AnimationTimeline: Component = () => {
             { label: 'Insert Blank Keyframe', shortcut: 'F7', onClick: () => insertBlankKeyframe(m.layerId, m.frame) },
             { separator: true },
             hasTween
-                ? { label: 'Remove Motion Tween', onClick: () => activeKf && setTween(m.layerId, activeKf.frame, 'none') }
+                ? { label: `Remove ${activeKf!.tween === 'shape' ? 'Shape' : 'Motion'} Tween`, onClick: () => activeKf && setTween(m.layerId, activeKf.frame, 'none') }
                 : { label: 'Create Motion Tween', disabled: !activeKf, onClick: () => activeKf && createTween(m.layerId, activeKf.frame) },
+            ...(!hasTween ? [{ label: 'Create Shape Tween', disabled: !activeKf, onClick: () => activeKf && setTween(m.layerId, activeKf.frame, 'shape') }] : []),
             { separator: true },
             {
                 label: 'Insert Label…', disabled: !isKf, onClick: () => {
@@ -383,6 +465,53 @@ const AnimationTimeline: Component = () => {
         document.documentElement.style.removeProperty('--anim-timeline-h');
     });
 
+    // ------------------------------------------------------------ audio row
+    let audioFileInput: HTMLInputElement | undefined;
+
+    /** Import an audio file → data URL + decoded duration → clip at `frame`. */
+    const importAudioAt = (frame: number) => {
+        if (!audioFileInput) return;
+        audioFileInput.onchange = async () => {
+            const file = audioFileInput!.files?.[0];
+            audioFileInput!.value = '';
+            if (!file) return;
+            if (file.size > 4 * 1024 * 1024) { showToast('Audio file too large (4 MB max — it is stored inside the document)', 'error'); return; }
+            const dataURL = await new Promise<string>((res, rej) => {
+                const r = new FileReader();
+                r.onload = () => res(String(r.result));
+                r.onerror = rej;
+                r.readAsDataURL(file);
+            });
+            let durationSec: number | undefined;
+            try {
+                const AC = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
+                const actx = new AC();
+                const buf = await actx.decodeAudioData(await (await fetch(dataURL)).arrayBuffer());
+                durationSec = buf.duration;
+                void actx.close();
+            } catch { /* unknown duration — block gets the default width */ }
+            addAudioClip({ name: file.name.replace(/\.[a-z0-9]+$/i, ''), dataURL, durationSec, frame });
+        };
+        audioFileInput.click();
+    };
+
+    const audioMenuItems = (): MenuItem[] => {
+        const m = audioMenu();
+        if (!m) return [];
+        return [
+            ...(m.clipId ? [
+                { label: 'Remove Sound', onClick: () => removeAudioClip(m.clipId!) },
+                { separator: true } as MenuItem,
+            ] : []),
+            {
+                label: 'Add Sound', submenu: SFX.map(s => ({
+                    label: s, onClick: () => { playSfx(s); addAudioClip({ name: s, sfx: s, durationSec: SFX_DUR[s], frame: m.frame }); },
+                })),
+            },
+            { label: 'Import Audio File…', onClick: () => importAudioAt(m.frame) },
+        ];
+    };
+
     // ------------------------------------------------- frame properties bar
     /** The keyframe governing the selected frame (its span contains it). */
     const selectedKf = () => {
@@ -398,6 +527,62 @@ const AnimationTimeline: Component = () => {
     const EASINGS: EasingName[] = ['linear', 'easeInQuad', 'easeOutQuad', 'easeInOutQuad',
         'easeInCubic', 'easeOutCubic', 'easeInOutCubic', 'easeInExpo', 'easeOutExpo', 'easeInOutExpo', 'easeOutBounce'];
 
+    // ------------------------------------------------ ease curve editor
+    const LINEAR_EASE: BezierEase = { ox: 0, oy: 0, ix: 1, iy: 1 };
+    const EASE_PRESETS: { key: string; label: string; ease: BezierEase }[] = [
+        { key: 'linear', label: 'Linear', ease: { ox: 0, oy: 0, ix: 1, iy: 1 } },
+        { key: 'in', label: 'In', ease: { ox: 0.42, oy: 0, ix: 1, iy: 1 } },
+        { key: 'out', label: 'Out', ease: { ox: 0, oy: 0, ix: 0.58, iy: 1 } },
+        { key: 'inout', label: 'In-Out', ease: { ox: 0.42, oy: 0, ix: 0.58, iy: 1 } },
+        { key: 'overshoot', label: 'Overshoot', ease: { ox: 0.34, oy: 1.3, ix: 0.64, iy: 1 } },
+        { key: 'anticipate', label: 'Anticipate', ease: { ox: 0.36, oy: -0.3, ix: 0.66, iy: 1 } },
+    ];
+    const [showEase, setShowEase] = createSignal(false);
+    let easeSvg: SVGSVGElement | undefined;
+    const GPAD = 0.12;
+    const vx = (n: number) => GPAD * 100 + n * (100 - 2 * GPAD * 100);
+    const vy = (n: number) => GPAD * 100 + (1 - n) * (100 - 2 * GPAD * 100);
+    const clampN = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+    const curEase = (): BezierEase => selectedKf()?.kf.ease ?? LINEAR_EASE;
+    const dragEaseHandle = (e: PointerEvent, which: 'o' | 'i') => {
+        e.stopPropagation();
+        e.preventDefault();
+        const s = selectedKf();
+        if (!easeSvg || !s) return;
+        const rect = easeSvg.getBoundingClientRect();
+        pushToHistory(); // one entry per drag gesture; streamed updates below skip history
+        const move = (ev: PointerEvent) => {
+            const nx = clampN(((ev.clientX - rect.left) / rect.width - GPAD) / (1 - 2 * GPAD), 0, 1);
+            const ny = clampN(1 - ((ev.clientY - rect.top) / rect.height - GPAD) / (1 - 2 * GPAD), -0.5, 1.5);
+            const cur = curEase();
+            const ease: BezierEase = which === 'o' ? { ...cur, ox: nx, oy: ny } : { ...cur, ix: nx, iy: ny };
+            setFrameEase(s.layerId, s.kf.frame, ease, undefined, false);
+        };
+        const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+    };
+
+    // ------------------------------------------------ motion guide picker
+    /** The single selected element, when it can serve as a guide path. */
+    const guideCandidate = () => {
+        if (store.selection.length !== 1) return null;
+        const el = store.elements.find(e => e.id === store.selection[0]);
+        return el && ['line', 'arrow', 'polyline', 'draw', 'ink', 'bezier', 'path', 'curve'].includes(el.type) ? el : null;
+    };
+
+    // ------------------------------------------------ stick-figure pose (bones/IK)
+    /** The single selected element, when it's a poseable stick figure. */
+    const selectedFigure = () => {
+        if (store.selection.length !== 1) return null;
+        const el = store.elements.find(e => e.id === store.selection[0]);
+        return el?.type === 'stickRig' ? el : null;
+    };
+    /** Pin the figure's pose on this cel: clip + phase, playback frozen. */
+    const setFigurePose = (el: import('../types').DrawingElement, patch: { clip?: string; previewPhase?: number; facing?: 1 | -1 }) => {
+        updateElement(el.id, { stickRig: { ...(el.stickRig ?? { clip: 'idle' }), playing: false, ...patch } } as any);
+    };
+
     /** The selected element, when it's a single movie-clip instance. */
     const selectedClipInst = () => {
         if (store.selection.length !== 1) return null;
@@ -412,7 +597,50 @@ const AnimationTimeline: Component = () => {
         <Show when={open()}>
             <div class="atl-panel" ref={panelRef} style={{ '--atl-body-max': `${bodyMax()}px` }}>
                 <div class="atl-resize" classList={{ dragging: resizing() }} title="Drag to resize the timeline" onPointerDown={onResizeDown} />
+                {/* Ease-curve editor popover (per-span bezier; overrides the named easing) */}
+                <Show when={showEase() && selectedKf() && (selectedKf()!.kf.tween === 'motion' || selectedKf()!.kf.tween === 'shape')}>
+                    <div class="atl-ease" onPointerDown={(e) => e.stopPropagation()}>
+                        <div class="atl-ease-head">Ease curve — span from keyframe {selectedKf()!.kf.frame + 1}
+                            <button class="atl-icon" title="Close" onClick={() => setShowEase(false)}><X size={12} /></button>
+                        </div>
+                        <div class="atl-ease-presets">
+                            <For each={EASE_PRESETS}>
+                                {(p) => (
+                                    <button class="atl-btn" title={p.label}
+                                        onClick={() => setFrameEase(selectedKf()!.layerId, selectedKf()!.kf.frame, { ...p.ease })}>
+                                        {p.label}
+                                    </button>
+                                )}
+                            </For>
+                            <button class="atl-btn" title="Remove the custom curve (fall back to the named easing)"
+                                onClick={() => setFrameEase(selectedKf()!.layerId, selectedKf()!.kf.frame, undefined, selectedKf()!.kf.easing)}>Clear</button>
+                        </div>
+                        <svg class="atl-ease-graph" ref={easeSvg} viewBox="0 0 100 100" width="160" height="160">
+                            <rect class="atl-ease-box" x={vx(0)} y={vy(1)} width={vx(1) - vx(0)} height={vy(0) - vy(1)} />
+                            <line class="atl-ease-ref" x1={vx(0)} y1={vy(0)} x2={vx(1)} y2={vy(1)} />
+                            <line class="atl-ease-stem" x1={vx(0)} y1={vy(0)} x2={vx(curEase().ox)} y2={vy(curEase().oy)} />
+                            <line class="atl-ease-stem" x1={vx(1)} y1={vy(1)} x2={vx(curEase().ix)} y2={vy(curEase().iy)} />
+                            <path class="atl-ease-curve"
+                                d={`M ${vx(0)} ${vy(0)} C ${vx(curEase().ox)} ${vy(curEase().oy)}, ${vx(curEase().ix)} ${vy(curEase().iy)}, ${vx(1)} ${vy(1)}`} />
+                            <circle class="atl-ease-handle" cx={vx(curEase().ox)} cy={vy(curEase().oy)} r="4.5"
+                                onPointerDown={(e) => dragEaseHandle(e, 'o')} />
+                            <circle class="atl-ease-handle" cx={vx(curEase().ix)} cy={vy(curEase().iy)} r="4.5"
+                                onPointerDown={(e) => dragEaseHandle(e, 'i')} />
+                        </svg>
+                    </div>
+                </Show>
                 <div class="atl-header">
+                    {/* Scenes: each slide is a scene with its own timeline */}
+                    <select class="atl-select" title="Scene (each has its own stage + timeline)"
+                        value={store.activeSlideIndex}
+                        onChange={(e) => setActiveAnimScene(Number(e.currentTarget.value))}>
+                        <For each={store.slides}>{(s, i) => <option value={i()}>{s.name}</option>}</For>
+                    </select>
+                    <button class="atl-icon" title="New scene" onClick={addAnimScene}><Plus size={13} /></button>
+                    <Show when={store.slides.length > 1}>
+                        <button class="atl-icon atl-danger" title="Delete this scene (and its contents)"
+                            onClick={() => deleteAnimScene(store.activeSlideIndex)}><Trash2 size={12} /></button>
+                    </Show>
                     <button class="atl-btn" title="Stop (rewind to frame 1)" onClick={stopAnimation}><Square size={12} /></button>
                     <button class="atl-btn atl-play" title={store.animPlaying ? 'Pause (Enter)' : 'Play (Enter)'}
                         onClick={() => (store.animPlaying ? pauseAnimation() : playAnimation())}>
@@ -446,6 +674,26 @@ const AnimationTimeline: Component = () => {
                         </label>
                     </Show>
                     <div class="atl-spacer" />
+                    {/* Stick-figure pose (bones/IK): pin clip + cycle phase on this cel;
+                        tweens glide the phase or blend across clips. */}
+                    <Show when={selectedFigure()}>
+                        {(fig) => (
+                            <span class="atl-frameprops">
+                                <span class="atl-fp-title">Pose</span>
+                                <select class="atl-select" title="Motion clip for this keyframe's pose"
+                                    value={fig().stickRig?.clip ?? 'idle'}
+                                    onChange={(e) => setFigurePose(fig(), { clip: e.currentTarget.value })}>
+                                    <For each={CLIP_LIST}>{(c) => <option value={c.id}>{c.name}</option>}</For>
+                                </select>
+                                <input type="range" min="0" max="0.99" step="0.01" class="atl-pose-phase"
+                                    title="Cycle phase — the exact moment of the clip this cel holds"
+                                    value={fig().stickRig?.previewPhase ?? 0}
+                                    onInput={(e) => setFigurePose(fig(), { previewPhase: Number(e.currentTarget.value) })} />
+                                <button class="atl-btn" title="Flip the figure's facing"
+                                    onClick={() => setFigurePose(fig(), { facing: (fig().stickRig?.facing ?? 1) === 1 ? -1 : 1 })}>flip</button>
+                            </span>
+                        )}
+                    </Show>
                     {/* Movie-clip instance properties (single clip instance selected) */}
                     <Show when={selectedClipInst()}>
                         {(inst) => (
@@ -469,16 +717,39 @@ const AnimationTimeline: Component = () => {
                         {(s) => (
                             <span class="atl-frameprops">
                                 <span class="atl-fp-title">Keyframe {s().kf.frame + 1}</span>
-                                <label class="atl-num" title="Motion-tween the span leaving this keyframe">
-                                    <input type="checkbox" checked={s().kf.tween === 'motion'}
-                                        onChange={(e) => e.currentTarget.checked ? createTween(s().layerId, s().kf.frame) : setTween(s().layerId, s().kf.frame, 'none')} />
-                                    Tween
-                                </label>
-                                <Show when={s().kf.tween === 'motion'}>
-                                    <select class="atl-select" title="Tween easing" value={s().kf.easing ?? 'linear'}
+                                <select class="atl-select" title="Tween the span leaving this keyframe (shape = morph the outline too)"
+                                    value={s().kf.tween ?? 'none'}
+                                    onChange={(e) => {
+                                        const v = e.currentTarget.value as 'none' | 'motion' | 'shape';
+                                        if (v === 'motion') createTween(s().layerId, s().kf.frame);
+                                        else setTween(s().layerId, s().kf.frame, v);
+                                    }}>
+                                    <option value="none">no tween</option>
+                                    <option value="motion">motion tween</option>
+                                    <option value="shape">shape tween</option>
+                                </select>
+                                <Show when={s().kf.tween === 'motion' || s().kf.tween === 'shape'}>
+                                    <select class="atl-select" title="Tween easing (a custom curve overrides this)" value={s().kf.easing ?? 'linear'}
                                         onChange={(e) => setFrameEase(s().layerId, s().kf.frame, undefined, e.currentTarget.value as EasingName)}>
                                         <For each={EASINGS}>{(name) => <option value={name}>{name}</option>}</For>
                                     </select>
+                                    <button class="atl-btn" classList={{ active: !!s().kf.ease || showEase() }}
+                                        title="Custom ease curve (drag the bezier handles)"
+                                        onClick={() => setShowEase(v => !v)}>curve</button>
+                                    <Show when={s().kf.guideId} fallback={
+                                        <Show when={guideCandidate()}>
+                                            <button class="atl-btn" title="Make the tween follow the selected line/path (its start → end)"
+                                                onClick={() => setFrameGuide(s().layerId, s().kf.frame, guideCandidate()!.id)}>guide: use selection</button>
+                                        </Show>
+                                    }>
+                                        <label class="atl-num" title="Rotate along the guide path's direction">
+                                            <input type="checkbox" checked={!!s().kf.guideOrient}
+                                                onChange={(e) => setFrameGuide(s().layerId, s().kf.frame, s().kf.guideId!, e.currentTarget.checked)} />
+                                            orient
+                                        </label>
+                                        <button class="atl-btn" title="Stop following the guide path"
+                                            onClick={() => setFrameGuide(s().layerId, s().kf.frame, null)}>guide ✕</button>
+                                    </Show>
                                 </Show>
                                 <Show when={s().exact}>
                                     <input class="atl-label-input" placeholder="label" value={s().kf.label ?? ''}
@@ -495,6 +766,14 @@ const AnimationTimeline: Component = () => {
                         <div class="atl-layers-head">
                             <span>Layers</span>
                             <button class="atl-icon" title="New layer" onClick={() => addLayer()}><Plus size={13} /></button>
+                        </div>
+                        {/* Aligns with the grid's audio row; the + opens the sound menu at the playhead. */}
+                        <div class="atl-audio-head">
+                            <span>♪ Audio</span>
+                            <button class="atl-icon" title="Add a sound at the playhead (or right-click the audio row)"
+                                onClick={(e) => setAudioMenu({ x: e.clientX, y: e.clientY, frame: store.animCurrentFrame, clipId: null })}>
+                                <Plus size={12} />
+                            </button>
                         </div>
                         <For each={displayLayers()}>
                             {(layer) => (
@@ -528,8 +807,12 @@ const AnimationTimeline: Component = () => {
                     </div>
                 </div>
             </div>
+            <input type="file" accept="audio/*" style={{ display: 'none' }} ref={audioFileInput} />
             <Show when={ctxMenu()}>
                 <ContextMenu x={ctxMenu()!.x} y={ctxMenu()!.y} items={menuItems()} onClose={() => setCtxMenu(null)} />
+            </Show>
+            <Show when={audioMenu()}>
+                <ContextMenu x={audioMenu()!.x} y={audioMenu()!.y} items={audioMenuItems()} onClose={() => setAudioMenu(null)} />
             </Show>
         </Show>
     );

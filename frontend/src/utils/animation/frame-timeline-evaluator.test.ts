@@ -4,6 +4,7 @@ import {
     activeKeyframeIndex,
     clipLocalFrame,
     evaluateSymbolTimelineAt,
+    samplePolyline,
 } from "./frame-timeline-evaluator";
 import type { AnimTimeline, AnimLayer } from "../../types/anim-types";
 
@@ -146,6 +147,135 @@ describe("evaluateTimelineAt — motion tweens", () => {
             { frame: 10, elementIds: ["k2"] },
         ], 10)]);
         expect(Object.keys(evaluateTimelineAt(5, t, elements).overrides).length).toBe(0);
+    });
+});
+
+describe("evaluateTimelineAt — shape tweens", () => {
+    const rect = el("s1", { x: 100, y: 100, width: 100, height: 100, type: 'rectangle', contentId: "m" });
+    const circ = el("s2", { x: 100, y: 100, width: 100, height: 100, type: 'circle', contentId: "m" });
+    const elements = [rect, circ];
+    const timeline = tl([layer("L", [
+        { frame: 0, elementIds: ["s1"], tween: 'shape', easing: 'linear' },
+        { frame: 10, elementIds: ["s2"] },
+    ], 10)]);
+
+    it("emits interpolated outline points mid-span, distinct from both endpoints", () => {
+        const at2 = evaluateTimelineAt(2, timeline, elements).overrides["s1"];
+        const at8 = evaluateTimelineAt(8, timeline, elements).overrides["s1"];
+        expect(at2.points).toBeDefined();
+        expect(at2.points!.length).toBe(64);
+        expect(at8.points!.length).toBe(64);
+        // The outline actually morphs over the span
+        const d = at2.points!.reduce((s, p, i) => s + Math.hypot(p.x - at8.points![i].x, p.y - at8.points![i].y), 0);
+        expect(d).toBeGreaterThan(1);
+    });
+
+    it("still lerps pose alongside the morph", () => {
+        const moved = el("s3", { x: 300, y: 100, width: 100, height: 100, type: 'circle', contentId: "m2" });
+        const from = el("s0", { x: 100, y: 100, width: 100, height: 100, type: 'rectangle', contentId: "m2" });
+        const t = tl([layer("L", [
+            { frame: 0, elementIds: ["s0"], tween: 'shape', easing: 'linear' },
+            { frame: 10, elementIds: ["s3"] },
+        ], 10)]);
+        const mid = evaluateTimelineAt(5, t, [from, moved]).overrides["s0"];
+        expect(mid.x).toBeCloseTo(200, 0);
+        expect(mid.points).toBeDefined();
+    });
+
+    it("degrades to a plain motion tween for point-native types (draw, line…)", () => {
+        const a = el("d1", { type: 'draw', x: 0, contentId: "d" });
+        const b = el("d2", { type: 'draw', x: 100, contentId: "d" });
+        const t = tl([layer("L", [
+            { frame: 0, elementIds: ["d1"], tween: 'shape', easing: 'linear' },
+            { frame: 10, elementIds: ["d2"] },
+        ], 10)]);
+        const mid = evaluateTimelineAt(5, t, [a, b]).overrides["d1"];
+        expect(mid.points).toBeUndefined();
+        expect(mid.x).toBeCloseTo(50, 0);
+    });
+});
+
+describe("motion guides", () => {
+    // A straight horizontal guide line from (100,300) to (500,300):
+    const guide = el("g1", { type: 'line', x: 100, y: 300, width: 400, height: 0, points: [{ x: 0, y: 0 }, { x: 400, y: 0 }] });
+    const from = el("m1", { x: 0, y: 0, width: 40, height: 40, contentId: "gm" });
+    const to = el("m2", { x: 900, y: 900, width: 40, height: 40, contentId: "gm" });
+    const timeline = (orient = false) => tl([layer("L", [
+        { frame: 0, elementIds: ["m1"], tween: 'motion', easing: 'linear', guideId: "g1", guideOrient: orient },
+        { frame: 10, elementIds: ["m2"] },
+    ], 10)]);
+
+    it("centers the element on the guide path instead of lerping straight", () => {
+        const mid = evaluateTimelineAt(5, timeline(), [guide, from, to]).overrides["m1"];
+        expect(mid.x!).toBeCloseTo(300 - 20, 0); // path midpoint (300,300), centered
+        expect(mid.y!).toBeCloseTo(300 - 20, 0);
+        const nearEnd = evaluateTimelineAt(9, timeline(), [guide, from, to]).overrides["m1"];
+        expect(nearEnd.x!).toBeCloseTo(100 + 0.9 * 400 - 20, 0);
+    });
+
+    it("orient rotates along the path tangent", () => {
+        const mid = evaluateTimelineAt(5, timeline(true), [guide, from, to]).overrides["m1"];
+        expect(mid.angle!).toBeCloseTo(0, 3); // horizontal line → 0 rad
+        const noOrient = evaluateTimelineAt(5, timeline(false), [guide, from, to]).overrides["m1"];
+        expect(noOrient.angle).toBeUndefined();
+    });
+
+    it("missing guide element falls back to the plain lerp", () => {
+        const mid = evaluateTimelineAt(5, timeline(), [from, to]).overrides["m1"];
+        expect(mid.x!).toBeCloseTo(450, 0); // straight lerp 0→900
+    });
+});
+
+describe("pose tweens (stick figures)", () => {
+    const figA = el("f1", { type: 'stickRig', contentId: "fig", stickRig: { clip: 'walk', playing: false, previewPhase: 0.2 } });
+    const figB = el("f2", { type: 'stickRig', contentId: "fig", stickRig: { clip: 'walk', playing: false, previewPhase: 0.8 } });
+    const mkTl = (b: any) => tl([layer("L", [
+        { frame: 0, elementIds: ["f1"], tween: 'motion', easing: 'linear' },
+        { frame: 10, elementIds: [b.id] },
+    ], 10)]);
+
+    it("same clip: the cycle phase glides between the cels, pinned", () => {
+        const mid = evaluateTimelineAt(5, mkTl(figB), [figA, figB]).overrides["f1"] as any;
+        expect(mid.stickRig).toBeDefined();
+        expect(mid.stickRig.previewPhase).toBeCloseTo(0.5, 5);
+        expect(mid.stickRig.playing).toBe(false);
+        expect(mid.stickRig.blendTo).toBeUndefined();
+    });
+
+    it("different clips: emits a cross-clip blend for the renderer", () => {
+        const figWave = el("f3", { type: 'stickRig', contentId: "fig", stickRig: { clip: 'wave', playing: false, previewPhase: 0.4 } });
+        const mid = evaluateTimelineAt(5, mkTl(figWave), [figA, figWave]).overrides["f1"] as any;
+        expect(mid.stickRig.blendTo).toEqual({ clip: 'wave', phase: 0.4, f: 0.5 });
+        expect(mid.stickRig.clip).toBe('walk');
+        expect(mid.stickRig.playing).toBe(false);
+    });
+
+    it("lerpRigPose blends resolved joint positions", async () => {
+        const { lerpRigPose } = await import("../../library/stick-figures/anim/rig");
+        const { poseAt } = await import("../../library/stick-figures/anim/clips");
+        const a = poseAt('idle', 0, 1);
+        const b = poseAt('wave', 0.5, 1);
+        const mid = lerpRigPose(a, b, 0.5);
+        const ja = a.joints.get('foreArmR')!, jb = b.joints.get('foreArmR')!, jm = mid.joints.get('foreArmR')!;
+        expect(jm.x).toBeCloseTo((ja.x + jb.x) / 2, 5);
+        expect(jm.y).toBeCloseTo((ja.y + jb.y) / 2, 5);
+    });
+});
+
+describe("samplePolyline", () => {
+    const pts = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }];
+    it("walks by arc length with tangents", () => {
+        expect(samplePolyline(pts, 0)).toEqual({ x: 0, y: 0, angle: 0 });
+        expect(samplePolyline(pts, 0.5).x).toBeCloseTo(100, 5);
+        expect(samplePolyline(pts, 0.5).y).toBeCloseTo(0, 5);
+        const end = samplePolyline(pts, 1);
+        expect(end.x).toBeCloseTo(100, 5);
+        expect(end.y).toBeCloseTo(100, 5);
+        expect(samplePolyline(pts, 0.75).angle).toBeCloseTo(Math.PI / 2, 5);
+    });
+    it("handles degenerate inputs", () => {
+        expect(samplePolyline([], 0.5)).toEqual({ x: 0, y: 0, angle: 0 });
+        expect(samplePolyline([{ x: 5, y: 6 }], 0.5)).toEqual({ x: 5, y: 6, angle: 0 });
     });
 });
 
