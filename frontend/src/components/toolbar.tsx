@@ -1,9 +1,9 @@
 import { type Component, For, Show, createSignal, onMount, onCleanup } from "solid-js";
-import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleStickFigurePanel } from "../store/app-store";
+import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleStickFigurePanel, toggleShapeBuilder } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import { addImagePlaceholder } from "../utils/image-actions";
 import type { ToolType } from "../types";
-import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw, Command, Shapes, PersonStanding, Brush } from "lucide-solid";
+import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw, Command, Shapes, PersonStanding, Brush, Combine } from "lucide-solid";
 import { isPanelOpen } from "../store/dock-layout";
 
 const BRUSH_TOOLS: ToolType[] = ['fineliner', 'inkbrush', 'marker'];
@@ -412,6 +412,19 @@ const Toolbar: Component = () => {
                 aria-label="Toggle vector tools palette"
             >
                 <Shapes size={16} />
+            </button>
+
+            {/* Shape Builder — promoted out of the Vector Tools list. For logo and
+                illustration work this is the tool you reach for most: drag across
+                overlapping regions to merge them, Alt+drag to delete one. */}
+            <button
+                class={`toolbar-btn ${store.shapeBuilderActive ? 'active' : ''}`}
+                onClick={() => toggleShapeBuilder()}
+                title="Shape Builder (Shift+M) — drag across regions to merge, Alt+drag to delete"
+                aria-label="Toggle Shape Builder"
+                aria-pressed={store.shapeBuilderActive}
+            >
+                <Combine size={16} />
             </button>
 
             {/* Stick-figure library — drawify-style editable people, drag onto the canvas */}

@@ -30,6 +30,66 @@ export const IllustratorToolsDoc: Component = () => {
                 </p>
             </header>
 
+            {/* Combining shapes — the inner loop of logo work */}
+            <section class="doc-section">
+                <h2>⬤ Combining shapes — Unite, Subtract, Intersect, Exclude</h2>
+                <p>
+                    Building a logo or icon is mostly <em>combining</em> shapes, so these live
+                    where your hands already are rather than behind a menu. Select two or more
+                    shapes and a small strip appears <strong>right above the selection</strong>:
+                </p>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Operation</th><th>Shortcut</th><th>What it does</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Unite</strong></td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>U</kbd></td><td>Merge everything into one shape</td></tr>
+                        <tr><td><strong>Subtract</strong></td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>D</kbd></td><td>Minus front — cut the top shape out of the one below</td></tr>
+                        <tr><td><strong>Intersect</strong></td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd></td><td>Keep only the overlap</td></tr>
+                        <tr><td><strong>Exclude</strong></td><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>X</kbd></td><td>Keep everything <em>except</em> the overlap</td></tr>
+                    </tbody>
+                </table>
+                <p>
+                    Inkscape users: the familiar <kbd>Ctrl</kbd>+<kbd>+</kbd>/<kbd>−</kbd>/<kbd>*</kbd>/<kbd>^</kbd>{' '}
+                    can&rsquo;t be used here — the browser reserves those for page zoom — so the
+                    same four operations are on <kbd>Ctrl</kbd>+<kbd>Alt</kbd> instead.
+                </p>
+
+                <h3>❖ Keep editable — non-destructive combining</h3>
+                <p>
+                    The <strong>❖</strong> toggle at the end of the strip switches from a
+                    destructive combine to a <strong>compound shape</strong>: the originals are
+                    kept inside it, so you can change the operation or release it later instead of
+                    undoing back through your work. Illustrator hides this behind Alt-clicking a
+                    Pathfinder button; here it&rsquo;s a visible switch that remembers your choice.
+                </p>
+                <p>
+                    Right-click → <em>Pathfinder</em> still has the region operations —{' '}
+                    <strong>Divide, Trim, Merge, Crop, Outline</strong> — which are occasional,
+                    deliberate choices rather than inner-loop ones.
+                </p>
+
+                <h3>⬣ Shape Builder — combine by hand</h3>
+                <p>
+                    For anything beyond a single operation, <strong>Shape Builder</strong>{' '}
+                    (<kbd>Shift</kbd>+<kbd>M</kbd>, or the icon in the main toolbar) is usually
+                    faster than picking operations one at a time: select your shapes, then{' '}
+                    <strong>drag across regions to merge them</strong>, or{' '}
+                    <kbd>Alt</kbd>+drag across a region to delete it. It&rsquo;s the quickest way to
+                    carve a finished silhouette out of a pile of overlapping circles and rectangles.
+                </p>
+                <div class="code-block">
+                    <pre>{`// the same operations from the API
+Yappy.pathfinder([idA, idB], 'union');        // 'subtract' | 'intersect' | 'exclude'
+Yappy.pathfinderRegion([idA, idB], 'divide'); // 'trim' | 'merge' | 'crop' | 'outline'
+
+// non-destructive: sources survive, operation can change later
+Yappy.makeCompound([idA, idB], 'subtract');
+Yappy.setCompoundOp(id, 'intersect');
+Yappy.releaseCompound(id);`}</pre>
+                </div>
+            </section>
+
             {/* Tablet & touch */}
             <section class="doc-section">
                 <h2>📱 On a tablet (iPad / touch)</h2>

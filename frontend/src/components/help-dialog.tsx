@@ -98,6 +98,11 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Nudge — coarse (10px) / fine (0.1px)', keys: 'Shift+Arrow / Ctrl+Arrow' },
             { label: 'Star/Polygon point count', keys: 'Up/Down (when selected)' },
             { label: 'Swap Fill / Stroke', keys: 'Shift+X' },
+            { label: 'Combine: Unite selected shapes', keys: 'Ctrl+Alt+U' },
+            { label: 'Combine: Subtract (minus front)', keys: 'Ctrl+Alt+D' },
+            { label: 'Combine: Intersect (keep overlap)', keys: 'Ctrl+Alt+I' },
+            { label: 'Combine: Exclude (drop overlap)', keys: 'Ctrl+Alt+X' },
+            { label: 'Shape Builder (drag to merge, Alt+drag to delete)', keys: 'Shift+M' },
             { label: 'Math in number fields (200-50%, *2…)', keys: 'type + Enter' },
             { label: 'Focus Branch', keys: 'Shift+F' },
         ]

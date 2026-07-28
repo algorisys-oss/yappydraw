@@ -168,7 +168,14 @@ export class PathUtils {
      */
     static parsePath(d: string): PathCommand[] {
         const commands: PathCommand[] = [];
-        const tokens = d.match(/[a-zA-Z]|[-+]?[0-9]*\.?[0-9]+/g);
+        // The exponent group is load-bearing. Without it, `7.105427357601002e-15` tokenises
+        // as the number `7.105427357601002`, then `e` as a COMMAND, then `-15` as another
+        // number — which desynchronises every coordinate after it and turns the path into
+        // NaN. Boolean results are where such values come from (near-cancelling coordinates
+        // like 1e-15 are routine), so a shape worked until you ran a path operation on it
+        // and then became unselectable and impossible to combine. Scientific notation is
+        // also legal in SVG path data, so imported files hit the same trap.
+        const tokens = d.match(/[a-zA-Z]|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?/g);
         if (!tokens) return [];
 
         let currentX = 0;
@@ -314,7 +321,15 @@ export class PathUtils {
 
         for (const cmd of commands) {
             if (accumulatedLength + cmd.length >= targetLength || cmd === commands[commands.length - 1]) {
-                const segmentT = Math.max(0, Math.min(1, (targetLength - accumulatedLength) / cmd.length));
+                // Hardening, not a live bug: a zero-length segment makes this 0/0 = NaN,
+                // and NaN survives `Math.max(0, Math.min(1, NaN))` untouched. Boolean
+                // results do contain coincident anchors (differing by ~1e-14), so the
+                // zero-length segments are real — they just happen not to land exactly on
+                // a sample boundary today. One `?:` is cheaper than the class of bug it
+                // prevents; see the tokeniser above for what that failure looks like.
+                const segmentT = cmd.length > 0
+                    ? Math.max(0, Math.min(1, (targetLength - accumulatedLength) / cmd.length))
+                    : 0;
                 return this.interpolateSegment(cmd, segmentT);
             }
             accumulatedLength += cmd.length;

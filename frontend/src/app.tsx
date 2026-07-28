@@ -24,6 +24,7 @@ import { SymmetryOverlay } from './components/symmetry-overlay';
 import { MeshOverlay } from './components/mesh-overlay';
 import { ArtboardOverlay } from './components/artboard-overlay';
 import { MeasureOverlay } from './components/measure-overlay';
+import { BooleanOpsToolbar, runBooleanOp, canRunBooleanOp } from './components/boolean-ops-toolbar';
 import { TransformHud } from './components/transform-hud';
 import { ShapeBuilderOverlay } from './components/shape-builder-overlay';
 import { CutOverlay } from './components/cut-overlay';
@@ -53,7 +54,7 @@ import { parseClipboardTableData, defaultColWidths, defaultRowHeights, getNextCe
 import { generateId } from './utils/id-generator';
 import { screenToWorld } from './utils/viewport-transforms';
 import { parseOutline } from './utils/mindmap-layout';
-import { updateElement, deleteArtboard, swapFillStroke, selectAll } from './store/app-store';
+import { updateElement, deleteArtboard, swapFillStroke, selectAll, toggleShapeBuilder } from './store/app-store';
 const PropertyPanel = lazy(() => import('./components/property-panel'));
 const CropBar = lazy(() => import('./components/crop-bar'));
 const DockContainer = lazy(() => import('./components/dock/dock-container'));
@@ -239,6 +240,21 @@ const App: Component = () => {
 
       // 1. Critical Global Shortcuts (Work even if focused on inputs)
       if (isCtrlOrMeta) {
+        // Boolean ops on the selection (Ctrl+Alt+U/D/I/X). Checked FIRST because the
+        // plain Ctrl+D (duplicate) and Ctrl+X (cut) handlers further down don't test
+        // altKey — same ordering reason Ctrl+Alt+S is tested before Ctrl+S below.
+        // Inkscape's canonical Ctrl +/-/*/^ can't be used: the browser owns them for
+        // page zoom, and Ctrl+K is already the command palette.
+        if (e.altKey && (key === 'u' || key === 'd' || key === 'i' || key === 'x')) {
+          const op = key === 'u' ? 'union' : key === 'd' ? 'subtract' : key === 'i' ? 'intersect' : 'exclude';
+          if (canRunBooleanOp()) {
+            e.preventDefault();
+            runBooleanOp(op as 'union' | 'subtract' | 'intersect' | 'exclude');
+            return;
+          }
+          // Nothing combinable selected: fall through so Ctrl+Alt+X etc. keep whatever
+          // meaning they already had rather than silently swallowing the key.
+        }
         if (key === 's' && e.altKey) {
           e.preventDefault();
           setLoadExportInitialTab('save');
@@ -804,6 +820,12 @@ const App: Component = () => {
             spacePanning = true;
             if (store.selectedTool !== 'pan') setSelectedTool('pan');
           }
+        } else if (e.shiftKey && key === 'm') {
+          // Shape Builder (Illustrator Shift+M). The fastest way to combine shapes by
+          // hand — drag across regions to merge, Alt+drag to delete one — and until now
+          // it was buried first in a 25-item Vector Tools list.
+          e.preventDefault();
+          toggleShapeBuilder();
         } else if (e.shiftKey && key === 'x') {
           // Swap fill ⇄ stroke on the selection (Illustrator Shift+X).
           if (store.selection.length > 0) { e.preventDefault(); swapFillStroke(); }
@@ -1394,6 +1416,7 @@ const App: Component = () => {
         <MeshOverlay />
         <ArtboardOverlay />
         <MeasureOverlay />
+        <BooleanOpsToolbar />
         <TransformHud />
         <ShapeBuilderOverlay />
         <CutOverlay />

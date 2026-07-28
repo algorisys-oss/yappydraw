@@ -133,8 +133,8 @@ const shapeDocuments: ShapeDoc[] = [
         name: 'Illustrator-class Tools',
         icon: '🪄',
         category: 'Design',
-        description: 'Magic Wand, Distort & Transform (Liquify), Knife & Scissors, generative shapes (spiral/arc/grids), Vertical Type, and the Symbol Sprayer — with API examples',
-        keywords: 'lens flare spiral arc rectangular grid polar grid magic wand select similar distort transform pucker bloat twirl zigzag crystallize roughen liquify knife scissors curvature reshape blob brush path eraser puppet warp perspective grid touch type vertical type slice graph chart symbolism sprayer width tool live paint shape builder pathfinder offset stroke outline type on path vector tools palette google fonts font picker add font custom font ttf otf woff letter spacing preview applied',
+        description: 'Combine shapes (Unite/Subtract/Intersect/Exclude), Shape Builder, Magic Wand, Liquify, Knife & Scissors, generative shapes, and the Symbol Sprayer — with API examples',
+        keywords: 'unite union subtract minus front intersect exclude boolean combine merge shapes pathfinder compound shape non-destructive keep editable contextual toolbar lens flare spiral arc rectangular grid polar grid magic wand select similar distort transform pucker bloat twirl zigzag crystallize roughen liquify knife scissors curvature reshape blob brush path eraser puppet warp perspective grid touch type vertical type slice graph chart symbolism sprayer width tool live paint shape builder pathfinder offset stroke outline type on path vector tools palette google fonts font picker add font custom font ttf otf woff letter spacing preview applied',
         content: IllustratorToolsDoc
     },
     {

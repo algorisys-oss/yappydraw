@@ -5374,7 +5374,16 @@ export const toggleVectorToolsPanel = (visible?: boolean) => {
 
 export const toggleMeasure = (active?: boolean) => setStore('measureActive', v => active ?? !v);
 
-export const toggleShapeBuilder = (active?: boolean) => setStore('shapeBuilderActive', v => active ?? !v);
+export const toggleShapeBuilder = (active?: boolean) => {
+    setStore('shapeBuilderActive', v => active ?? !v);
+    // The overlay only engages with ≥2 shapes selected, so switching the tool on with a
+    // smaller selection used to drop you into a mode that did nothing and said nothing.
+    // Easy to shrug off when the tool was buried in the Vector Tools list; not once it
+    // has a button in the main toolbar and a one-key shortcut.
+    if (store.shapeBuilderActive && store.selection.length < 2) {
+        showToast('Shape Builder: select two or more overlapping shapes, then drag across the regions to merge them (Alt+drag to delete)', 'info', 4000);
+    }
+};
 
 export const toggleCutTool = (active?: boolean) => setStore('cutToolActive', v => active ?? !v);
 
@@ -7007,6 +7016,37 @@ export const reorderMindmap = (rootId: string, direction: LayoutDirection) => {
 };
 
 /**
+ * Explain an empty pathfinder result instead of just reporting one.
+ *
+ * "Pathfinder: empty result" is technically true and practically useless — it reads as a
+ * failure when the operation is usually behaving correctly (an intersection of shapes
+ * that don't overlap really is empty). Every one of these cases has an obvious fix, so
+ * say which one applies.
+ */
+const emptyResultReason = (els: DrawingElement[], op: BooleanOp): string => {
+    // Lines and arrows flatten to zero polygons — there's no area to combine. The
+    // engine needs two inputs WITH area, so even one stray line in an otherwise fine
+    // selection is enough to empty the result; say which objects are the problem.
+    const areaLess = els.filter(e => elementToMultiPolygon(e).length === 0);
+    if (areaLess.length) {
+        const kinds = [...new Set(areaLess.map(e => e.type))].join(', ');
+        return areaLess.length === els.length
+            ? `Pathfinder needs filled shapes — ${kinds} have no area. Outline the strokes first (Object → Outline Stroke).`
+            : `Pathfinder ignored ${areaLess.length} object(s) with no area (${kinds}) and had too few shapes left to combine.`;
+    }
+    switch (op) {
+        case 'intersect':
+            return "Intersect: those shapes don't overlap, so there's no shared area to keep";
+        case 'subtract':
+            return 'Subtract: the front shape covers the one behind completely — nothing left to keep';
+        case 'exclude':
+            return 'Exclude: those shapes overlap exactly, so everything cancels out';
+        default:
+            return 'Pathfinder: nothing to combine — the selection has no filled area';
+    }
+};
+
+/**
  * Pathfinder boolean op (union/subtract/intersect/exclude) over ≥2 selected elements.
  * Flattens each to polygons, runs the op (subtract = backmost minus the rest, in
  * z-order), replaces the inputs with the result `path`(s), and selects them.
@@ -7019,7 +7059,7 @@ export const applyPathfinder = (ids: string[], op: BooleanOp): string[] => {
     els.sort((a, b) => store.elements.indexOf(a) - store.elements.indexOf(b));
 
     const polys = runBooleanOp(els, op);
-    if (polys.length === 0) { showToast('Pathfinder: empty result', 'info'); return []; }
+    if (polys.length === 0) { showToast(emptyResultReason(els, op), 'info', 4000); return []; }
 
     // Illustrator convention: the result inherits the FRONTMOST object's appearance
     // for union/intersect/exclude. For "minus front" (subtract) the backmost shape is the

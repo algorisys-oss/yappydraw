@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.154', date: '2026-07-29', items: [
+        'Combining shapes is now a single click. Select two or more and a small toolbar appears right above them with Unite, Subtract, Intersect and Exclude — plus Divide, Trim, Merge, Crop and Outline underneath. No more hunting through the right-click menu.',
+        'Keyboard shortcuts for the four main operations (Ctrl+Alt+U / D / I / X), and Shape Builder now has its own button and Shift+M shortcut — for logo work it is often the fastest way to carve a shape out of overlapping circles and rectangles.',
+        'A "keep editable" toggle combines shapes without destroying the originals, so you can change or undo the operation later instead of starting over.',
+        'Fixed an important one: any shape you had already run a path operation on could stop responding to clicks (you had to drag a box around it) and would refuse to combine with anything else. Both came from the same maths bug in how paths were read back, and both are fixed.',
+    ] },
     { version: '0.8.153', date: '2026-07-28', items: [
         'Equations can now morph into one another. Write two versions of a formula and the symbols they share glide into their new places while the rest fades — so a derivation reads as one continuous idea instead of a series of separate slides.',
         'Fixed a long-standing annoyance: dragging the playhead on the Scene Timeline while paused did not actually update the canvas. Animations played correctly but scrubbing showed a stale frame, which made fades in particular look like they were not working at all.',

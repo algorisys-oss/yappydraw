@@ -1,0 +1,134 @@
+/**
+ * Contextual boolean-ops strip.
+ *
+ * Uses Yappy's real theme variables (`--bg-panel`, `--text-primary`, `--border-color`,
+ * `--primary-color`) so it follows light/dark. The first version invented names like
+ * `--panel-bg` and `--text-color`; every one silently fell through to its light-mode
+ * fallback, which is why the labels vanished against a dark canvas.
+ *
+ * The op glyphs are inline SVG (see `OpIcon`) rather than CSS shapes — knock-outs there
+ * come from even-odd fill and masks, so they don't depend on matching a background.
+ */
+
+.bool-ops-toolbar {
+    position: fixed;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 10px;
+    background: var(--bg-panel, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.18);
+    /* Fade in so it doesn't pop while you're still dragging out a selection. */
+    animation: bool-ops-in 120ms ease-out;
+}
+
+@keyframes bool-ops-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.bool-op-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 5px 6px 4px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-primary, #0f172a);
+    cursor: pointer;
+    min-width: 52px;
+}
+
+/* Tinted rather than a grey step: --bg-secondary is #f9fafb against a #ffffff panel,
+   a 1% difference that reads as "the button went white" instead of as feedback. A
+   primary-colour wash is unambiguous on both a white and a #1e1e1e panel. */
+.bool-op-btn:hover {
+    background: color-mix(in srgb, var(--primary-color, #2563eb) 14%, transparent);
+    color: var(--primary-color, #2563eb);
+}
+.bool-op-btn:hover .bool-op-icon { color: var(--primary-color, #2563eb); }
+.bool-op-btn:hover .bool-op-label { color: var(--primary-color, #2563eb); }
+.bool-op-btn:active { transform: translateY(1px); }
+.bool-op-btn:focus-visible { outline: 2px solid var(--primary-color, #2563eb); outline-offset: 1px; }
+
+.bool-op-icon {
+    display: block;
+    /* `currentColor` in the SVG inherits this, so the glyphs follow the theme. */
+    color: var(--text-primary, #0f172a);
+}
+
+.bool-op-label {
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    color: var(--text-secondary, #475569);
+    white-space: nowrap;
+}
+
+/* ── Keep-editable toggle ──────────────────────────────────────────────── */
+.bool-op-keep {
+    margin-left: 2px;
+    padding: 6px 7px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-secondary, #475569);
+    opacity: 0.6;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    align-self: stretch;
+    border-left: 1px solid var(--border-color, #e2e8f0);
+}
+
+.bool-op-keep:hover { background: color-mix(in srgb, var(--primary-color, #2563eb) 14%, transparent); opacity: 0.9; }
+.bool-op-keep:focus-visible { outline: 2px solid var(--primary-color, #2563eb); outline-offset: 1px; }
+
+.bool-op-keep.on {
+    opacity: 1;
+    color: var(--primary-color, #2563eb);
+    background: color-mix(in srgb, var(--primary-color, #2563eb) 14%, transparent);
+}
+
+
+/* ── Rows ──────────────────────────────────────────────────────────────── */
+.bool-ops-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+/* Region ops: quieter than the shape modes above them — they're the occasional
+   choice, so they shouldn't compete with the four you reach for constantly. */
+.bool-ops-row-region {
+    justify-content: space-between;
+    padding-top: 3px;
+    border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+.bool-region-btn {
+    flex: 1;
+    padding: 4px 2px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary, #6b7280);
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.bool-region-btn:hover {
+    background: color-mix(in srgb, var(--primary-color, #2563eb) 14%, transparent);
+    color: var(--primary-color, #2563eb);
+}
+
+.bool-region-btn:active { transform: translateY(1px); }
+.bool-region-btn:focus-visible { outline: 2px solid var(--primary-color, #2563eb); outline-offset: 1px; }
