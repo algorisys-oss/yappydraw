@@ -14,9 +14,9 @@ import {
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, spinTurntable360, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
-    applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection,
+    applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection, addTextureOverlay,
     addPatternSwatchFromSelection, savePatternSwatchFromElement, applyPatternSwatch, updatePatternSwatch, renamePatternSwatch, deletePatternSwatch,
-    createSymbol, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
+    createSymbol, saveSelectionToAssetLibrary, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
@@ -26,7 +26,7 @@ import {
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
-    toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition,
+    toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel,
     saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform, setStrokeDash,
     enterCropMode, exitCropMode, updateCropRect, setCropAspect,
     setDefaultTool as setDefaultToolAction
@@ -116,8 +116,10 @@ import {
 } from "./utils/animation/pixel-effect-animator";
 import {
     copyToClipboard, cutToClipboard, pasteFromClipboard,
-    copyStyle, pasteStyle, flipSelected
+    copyStyle, pasteStyle, flipSelected, pasteYappyElements
 } from "./utils/object-context-actions";
+import { listAssets, getAssetElements, renameAsset, deleteAsset } from "./storage/asset-library";
+import { isPanelOpen } from "./store/dock-layout";
 import { generateId } from "./utils/id-generator";
 import { detectVideoProvider, getEmbedURL, getPosterURL } from "./utils/video-utils";
 import { forceAutoSave, clearAutoSave } from "./storage/auto-save";
@@ -1500,6 +1502,19 @@ export const YappyAPI = {
         return store.elements.find(e => e.id === id);
     },
 
+    /** All elements on the current page, in z-order (back → front). Shallow copy of
+     *  the array, so callers can sort/filter without disturbing the store. */
+    getElements() {
+        return [...store.elements];
+    },
+
+    /** Whether a dockable panel is currently open, e.g. 'symbols', 'layers', 'behaviors',
+     *  'recolor', 'patterns', 'history'. Panel visibility lives in the persisted dock
+     *  layout — the legacy `state.showXPanel` booleans are dead flags and always false. */
+    isPanelOpen(id: string): boolean {
+        return isPanelOpen(id);
+    },
+
     updateElement(id: string, updates: Partial<DrawingElement>) {
         updateElement(id, updates, true);
     },
@@ -1764,15 +1779,20 @@ export const YappyAPI = {
     toggleMeshEdit(active?: boolean) { toggleMeshEdit(active); },
 
     /** Pattern fill: apply a seamless vector pattern motif (stripes/grid/dots/
-     *  checker/crosshatch), seeded from the element's colour. Both render styles. */
+     *  checker/crosshatch/noise/grunge), seeded from the element's colour. Both render styles. */
     applyPatternFill(type?: import("./types").PatternType, ids?: string[]) { applyPatternFill(ids ?? store.selection, type ?? 'stripes'); },
-    /** Update pattern-fill props (type, color, background, scale, spacing, strokeWidth, angle). */
+    /** Update pattern-fill props (type, color, background, scale, spacing, strokeWidth, angle, seed). */
     setPatternFill(patch: Partial<import("./types").PatternFill>, ids?: string[]) { setPatternFill(ids ?? store.selection, patch); },
     /** Remove the pattern fill (revert to a solid fill). */
     clearPatternFill(ids?: string[]) { clearPatternFill(ids ?? store.selection); },
     /** Make Pattern from Selection: capture the selected artwork into a tile and
      *  spawn a preview rectangle filled with that custom pattern. Returns its id. */
     createPatternFromSelection(ids?: string[]) { return createPatternFromSelection(ids ?? store.selection); },
+    /** Texture Overlay: a full-composition rectangle of procedural grain ('noise' =
+     *  film grain, 'grunge' = soft blotches), pre-set to multiply blend at low opacity —
+     *  the one-click version of "lay a texture over the art". Covers the active
+     *  artboard, else the page, else the artwork bbox. Returns the new element id. */
+    addTextureOverlay(kind?: 'noise' | 'grunge', opts?: { opacity?: number; color?: string; scale?: number }) { return addTextureOverlay(kind ?? 'noise', opts ?? {}); },
 
     // ── Pattern swatch library (document-level reusable patterns) ──
     /** Capture the selected artwork into a reusable pattern swatch (no preview rect). */
@@ -1803,6 +1823,25 @@ export const YappyAPI = {
     toggleSymbolSprayer(symbolId?: string) { toggleSymbolSprayer(symbolId); },
     /** Batch-spray instances of a symbol at world points (size jitter by default). */
     spraySymbols(symbolId: string, points: { x: number; y: number }[], opts?: { scaleJitter?: number; rotateJitter?: number }) { return spraySymbolInstances(symbolId, points, opts); },
+
+    // ── Asset library (cross-document, IndexedDB) ──
+    /** Save the selection to the asset library — reusable in EVERY document, unlike a
+     *  symbol (which is document-scoped). Resolves to the stored metadata, or null. */
+    saveToAssetLibrary(name?: string, ids?: string[]) { return saveSelectionToAssetLibrary(ids ?? store.selection, name); },
+    /** List saved library assets (metadata only), newest first. */
+    listAssets() { return listAssets(); },
+    /** Insert a library asset into the current document as plain editable elements
+     *  (fresh ids, centred in the viewport). Resolves true when it landed. */
+    async insertAsset(assetId: string) {
+        const els = await getAssetElements(assetId);
+        if (!els || els.length === 0) return false;
+        pasteYappyElements({ elements: els });
+        return true;
+    },
+    /** Rename a library asset. */
+    renameAsset(assetId: string, name: string) { return renameAsset(assetId, name); },
+    /** Delete a library asset (does not touch anything already inserted). */
+    deleteAsset(assetId: string) { return deleteAsset(assetId); },
     /** Redefine a symbol from a set of elements — updates every instance live. */
     redefineSymbol(symbolId: string, fromIds: string[]) { redefineSymbol(symbolId, fromIds); },
     /** Detach (break link): replace selected instances with editable copies. */
@@ -2314,6 +2353,8 @@ export const YappyAPI = {
     toggleUtilityToolbar(visible?: boolean) { toggleUtilityToolbar(visible); },
     toggleSlideToolbar(visible?: boolean) { toggleSlideToolbar(visible); },
     setSlideToolbarPosition(x: number, y: number) { setSlideToolbarPosition(x, y); },
+    /** Show/hide the Vector Tools palette (dock-hosted). */
+    toggleVectorToolsPanel(visible?: boolean) { toggleVectorToolsPanel(visible); },
 
     // Slides
     addSlide() { addSlide(); },

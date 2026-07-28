@@ -171,12 +171,24 @@ export const VectorPathsDoc: Component = () => {
                 <table class="api-table">
                     <thead><tr><th>Op</th><th>What it does</th></tr></thead>
                     <tbody>
-                        <tr><td><strong>Simplify</strong></td><td>Reduces a path's anchor count while preserving its shape (great after Pathfinder/Outline produce dense corners)</td></tr>
+                        <tr><td><strong>Simplify</strong> <span class="kbd">Ctrl</span>+<span class="kbd">L</span></td><td>Reduces a path's anchor count while preserving its shape (great after Pathfinder/Outline produce dense corners)</td></tr>
+                        <tr><td><strong>Smooth</strong></td><td>Rounds off janky corners without dropping anchors — the counterpart to Simplify</td></tr>
                         <tr><td><strong>Join Paths</strong></td><td>Connects 2+ open paths into one by chaining nearest endpoints; auto-closes if the free ends meet</td></tr>
                         <tr><td><strong>Make Compound Path</strong></td><td>Combines 2+ selected shapes into one path; overlapping areas become <em>holes</em> (even-odd) — the way a donut or the letter “O” is built</td></tr>
                         <tr><td><strong>Release Compound Path</strong></td><td>Splits a compound path back into separate, individually editable paths</td></tr>
                     </tbody>
                 </table>
+                <p class="tip-box">
+                    <strong>Simplify and Smooth work straight off a freehand stroke.</strong> If what you selected
+                    isn’t a path yet — a pencil/fineliner stroke, a star, a cloud — it is converted to an editable path
+                    first, as part of the same action. That means one <span class="kbd">Ctrl</span>+
+                    <span class="kbd">Z</span> undoes the whole thing, not just half of it. So the natural loop is:
+                    scribble a hill with the freehand tool, press <span class="kbd">Ctrl</span>+<span class="kbd">L</span>,
+                    and you get a clean, node-editable curve that keeps the hand-drawn wobble.
+                </p>
+                <pre><code>{`const Y = window.Yappy;
+Y.simplifyPath();          // selection; auto-converts non-paths first
+Y.smoothPath();            // same, but rounds corners instead of dropping anchors`}</code></pre>
             </section>
 
             {/* Export */}

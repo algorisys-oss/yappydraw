@@ -120,6 +120,32 @@
       #splash .spokes,
       #splash .dots i { animation: none; }
     }
+
+    /* Shown by the boot failsafe below when the app never mounts. Without it a
+       failed boot leaves the mascot bouncing forever with no way out. */
+    #splash-stuck {
+      display: none;
+      max-width: 340px;
+      text-align: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #334155;
+    }
+    #splash.splash--stuck .dots { display: none; }
+    #splash.splash--stuck #splash-stuck { display: block; }
+    #splash-stuck button {
+      margin-top: 12px;
+      padding: 7px 16px;
+      font: inherit;
+      font-weight: 600;
+      color: #fff;
+      background: #4c8dff;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #splash-stuck .hint { margin-top: 8px; font-size: 11px; color: #64748b; }
   </style>
 </head>
 
@@ -230,8 +256,29 @@
     <!-- ===== END MASCOT ===== -->
     <div class="wordmark">Yappy<b>Draw</b></div>
     <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div id="splash-stuck" role="alert">
+      <strong>This is taking longer than it should.</strong>
+      <div>The editor didn't finish loading. Reloading usually fixes it — your work is saved locally and will still be here.</div>
+      <button type="button" onclick="location.reload()">Reload</button>
+      <div class="hint">If it keeps happening, open the browser console — a startup error will be logged there.</div>
+    </div>
   </div>
   <div id="root"></div>
+  <script>
+    /*
+      Boot failsafe. `index.tsx` fades the splash out once the app mounts, but that
+      code only runs if the module graph loaded AND the initial render returned —
+      a throwing module, a chunk that 404s after a deploy, or an exception during
+      the first render all leave the mascot on screen forever with no way out.
+      This lives in the HTML precisely so no JS failure can take it down with it.
+      `index.tsx` clears the timer as part of dismissing the splash.
+    */
+    window.__yappyBootFailsafe = setTimeout(function () {
+      var s = document.getElementById('splash');
+      if (!s || s.classList.contains('splash--done')) return;
+      s.classList.add('splash--stuck');
+    }, 15000);
+  </script>
   <script type="module" src="/src/index.tsx"></script>
   <!-- GoatCounter Analytics - privacy-friendly, no cookies -->
   <script data-goatcounter="https://yappydraw.goatcounter.com/count"

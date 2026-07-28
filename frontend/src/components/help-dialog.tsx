@@ -80,6 +80,8 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Flip Vertical', keys: 'Shift+V' },
             { label: 'Mirror Copy / Repeat (Radial·Grid)', keys: 'Right-click → Repeat & Mirror' },
             { label: 'Create Outlines (text → vector)', keys: 'Ctrl+Shift+O' },
+            { label: 'Simplify Path (auto-converts shapes/strokes)', keys: 'Ctrl+L' },
+            { label: 'Smooth Path', keys: 'Right-click → Path → Smooth' },
             { label: 'Lock / Unlock', keys: 'Ctrl+Shift+L' },
             { label: 'Unlock Aspect Ratio', keys: 'Shift+Drag' },
             { label: 'Pen / Vector Path: add point / drag to curve', keys: 'P or Toolbar (pen-nib)' },

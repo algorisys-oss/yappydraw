@@ -14,21 +14,28 @@
     flex-direction: column;
     align-items: center;
     gap: 1px;
-    padding: 3px 8px;
+    /* 1px border + 2px padding = the same outer size the solid badge had. */
+    padding: 2px 7px;
     font-size: 11px;
     font-weight: 600;
     line-height: 1.25;
     white-space: nowrap;
-    color: #fff;
-    /* Slightly translucent so connector handles / content directly under the
-       badge (it anchors at the selection's bottom-center) stay visible.
-       Solid fallback first; color-mix refines it where supported. */
-    background: var(--accent-color, #6366f1);
-    background: color-mix(in srgb, var(--accent-color, #6366f1) 82%, transparent);
+    /* Accent-coloured text rather than white: it stays legible against the canvas
+       once the fill is mostly gone, and it adapts to the theme (the dark theme's
+       accent is a lighter indigo). */
+    color: var(--accent-color, #6366f1);
+    /* Near-transparent: the badge anchors at the selection's bottom-center, right on
+       top of the quick-connect handle and any artwork there, so it has to be seen
+       through. A faint panel-tinted wash plus a small backdrop blur is what keeps the
+       digits readable over busy art — a fully transparent fill loses the numbers over
+       anything detailed. Solid fallback first; color-mix refines it where supported. */
+    background: rgba(255, 255, 255, 0.28);
+    background: color-mix(in srgb, var(--bg-panel, #ffffff) 28%, transparent);
+    border: 1px solid var(--accent-color, #6366f1);
+    border-color: color-mix(in srgb, var(--accent-color, #6366f1) 50%, transparent);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
     border-radius: 5px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     pointer-events: none;
 }
 
@@ -39,6 +46,8 @@
 .thud-sub {
     font-size: 10px;
     font-weight: 500;
-    opacity: 0.85;
+    /* The secondary line was dimmed against a solid fill; on the transparent badge
+       it needs more of its colour to stay readable. */
+    opacity: 0.75;
     font-variant-numeric: tabular-nums;
 }

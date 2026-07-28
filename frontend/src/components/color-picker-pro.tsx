@@ -1,5 +1,6 @@
 import { type Component, createSignal, createEffect, onMount, Show, For } from 'solid-js';
 import { Pipette, Square as SquareIcon, Triangle as TriangleIcon } from 'lucide-solid';
+import { readJsonArray } from '../utils/safe-storage';
 import './color-picker-pro.css';
 
 /**
@@ -64,7 +65,7 @@ export const ColorPickerPro: Component<Props> = (props) => {
     const [s, setS] = createSignal(1);
     const [v, setV] = createSignal(1);
     const [recents, setRecents] = createSignal<string[]>(
-        JSON.parse(localStorage.getItem(RECENTS_KEY) || '[]'));
+        readJsonArray<string>(RECENTS_KEY));
     let dragging = false;
     let triCanvas: HTMLCanvasElement | undefined;
 

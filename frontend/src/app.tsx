@@ -86,7 +86,7 @@ import { SlidersHorizontal, Settings } from 'lucide-solid';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
 import { insertFrame, insertKeyframe, insertBlankKeyframe, clearKeyframe, removeFrames, stepFrame, gotoFrame } from './store/anim-ops';
-import { createSymbol } from './store/app-store';
+import { createSymbol, simplifyPath } from './store/app-store';
 import { toggleAnimPlayback } from './utils/animation/anim-playback';
 import { initAutoSave, forceAutoSave, loadAutoSave } from './storage/auto-save';
 import { initCloudStorage } from './storage/cloud';
@@ -541,6 +541,11 @@ const App: Component = () => {
         } else if (key === 'm') {
           e.preventDefault();
           addSlide();
+        } else if (key === 'l' && !e.shiftKey && store.selection.length > 0) {
+          // Ctrl+L = Simplify (Inkscape parity). Guarded on !shiftKey so the
+          // existing Ctrl+Shift+L lock/unlock below still wins.
+          e.preventDefault();
+          simplifyPath([...store.selection]);
         } else if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key) && store.selection.length > 0) {
           // Ctrl/Cmd + Arrow = fine nudge (0.1px), Illustrator's small-increment.
           e.preventDefault();

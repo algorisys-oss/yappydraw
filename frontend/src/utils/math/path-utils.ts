@@ -83,8 +83,88 @@ interface PathCommand {
 
 export class PathUtils {
     /**
+     * Flatten an SVG elliptical arc (`A rx ry x-rot large-arc sweep x y`) into cubic
+     * segments, ≤90° each (SVG spec F.6.5 endpoint→centre parameterization).
+     *
+     * There is no arc primitive in `PathCommand` on purpose: emitting `C` keeps every
+     * downstream consumer — length, point-at-t, tangent, outline sampling — working
+     * unchanged. Returns [] for a degenerate arc (zero-length or zero-radius); the
+     * caller falls back to a straight line, which is what the spec mandates.
+     */
+    private static arcToCubics(
+        x1: number, y1: number,
+        rxIn: number, ryIn: number, rotDeg: number,
+        largeArc: boolean, sweep: boolean,
+        x2: number, y2: number,
+    ): { c1: { x: number; y: number }; c2: { x: number; y: number }; end: { x: number; y: number } }[] {
+        if ((x1 === x2 && y1 === y2) || !isFinite(rxIn) || !isFinite(ryIn)) return [];
+        let rx = Math.abs(rxIn), ry = Math.abs(ryIn);
+        if (rx === 0 || ry === 0) return [];
+
+        const phi = (rotDeg * Math.PI) / 180;
+        const cosP = Math.cos(phi), sinP = Math.sin(phi);
+        const dx2 = (x1 - x2) / 2, dy2 = (y1 - y2) / 2;
+        const x1p = cosP * dx2 + sinP * dy2;
+        const y1p = -sinP * dx2 + cosP * dy2;
+
+        // Scale the radii up if they're too small to span the endpoints (spec F.6.6).
+        const lambda = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+        if (lambda > 1) { const s = Math.sqrt(lambda); rx *= s; ry *= s; }
+
+        const sign = largeArc !== sweep ? 1 : -1;
+        const num = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p;
+        const den = rx * rx * y1p * y1p + ry * ry * x1p * x1p;
+        const co = den === 0 ? 0 : sign * Math.sqrt(Math.max(0, num / den));
+        const cxp = co * ((rx * y1p) / ry);
+        const cyp = co * ((-ry * x1p) / rx);
+        const cx = cosP * cxp - sinP * cyp + (x1 + x2) / 2;
+        const cy = sinP * cxp + cosP * cyp + (y1 + y2) / 2;
+
+        const angleBetween = (ux: number, uy: number, vx: number, vy: number): number => {
+            const len = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+            if (len === 0) return 0;
+            let a = Math.acos(Math.max(-1, Math.min(1, (ux * vx + uy * vy) / len)));
+            if (ux * vy - uy * vx < 0) a = -a;
+            return a;
+        };
+        const ux = (x1p - cxp) / rx, uy = (y1p - cyp) / ry;
+        const vx = (-x1p - cxp) / rx, vy = (-y1p - cyp) / ry;
+        const theta1 = angleBetween(1, 0, ux, uy);
+        let dTheta = angleBetween(ux, uy, vx, vy);
+        if (!sweep && dTheta > 0) dTheta -= 2 * Math.PI;
+        else if (sweep && dTheta < 0) dTheta += 2 * Math.PI;
+        if (dTheta === 0) return [];
+
+        const pointAt = (th: number) => ({
+            x: cx + rx * Math.cos(th) * cosP - ry * Math.sin(th) * sinP,
+            y: cy + rx * Math.cos(th) * sinP + ry * Math.sin(th) * cosP,
+        });
+        const slopeAt = (th: number) => ({
+            x: -rx * Math.sin(th) * cosP - ry * Math.cos(th) * sinP,
+            y: -rx * Math.sin(th) * sinP + ry * Math.cos(th) * cosP,
+        });
+
+        const segCount = Math.max(1, Math.ceil(Math.abs(dTheta) / (Math.PI / 2)));
+        const delta = dTheta / segCount;
+        const k = (4 / 3) * Math.tan(delta / 4);   // cubic approximation of a circular arc
+
+        const out: { c1: { x: number; y: number }; c2: { x: number; y: number }; end: { x: number; y: number } }[] = [];
+        for (let s = 0; s < segCount; s++) {
+            const th0 = theta1 + s * delta, th1 = th0 + delta;
+            const p0 = pointAt(th0), p1 = pointAt(th1);
+            const d0 = slopeAt(th0), d1 = slopeAt(th1);
+            out.push({
+                c1: { x: p0.x + k * d0.x, y: p0.y + k * d0.y },
+                c2: { x: p1.x - k * d1.x, y: p1.y - k * d1.y },
+                end: p1,
+            });
+        }
+        return out;
+    }
+
+    /**
      * Parse an SVG path string into computable segments
-     * Supports: M, L, Q, C (Absolute coordinates only for simplicity)
+     * Supports: M, L, Q, C, A (Absolute coordinates only for simplicity)
      */
     static parsePath(d: string): PathCommand[] {
         const commands: PathCommand[] = [];
@@ -157,6 +237,46 @@ export class PathUtils {
                         points: [{ x: c1x, y: c1y }, { x: c2x, y: c2y }, { x, y }],
                         length
                     });
+                    currentX = x;
+                    currentY = y;
+                    break;
+                }
+                case 'A': {
+                    // Arcs were previously skipped entirely (no case + no token consumption),
+                    // so every arc-based shape — cloud, database, lightbulb, magnet,
+                    // magnifyingGlass, pin, puzzlePiece, storageBlob, umlRequiredInterface —
+                    // parsed to an EMPTY command list. That silently disabled Convert to
+                    // Path / Simplify / Smooth / Offset / text-on-path for all of them.
+                    const rx = parseFloat(tokens[i++]);
+                    const ry = parseFloat(tokens[i++]);
+                    const rot = parseFloat(tokens[i++]);
+                    const largeArc = parseFloat(tokens[i++]) !== 0;
+                    const sweep = parseFloat(tokens[i++]) !== 0;
+                    const x = parseFloat(tokens[i++]);
+                    const y = parseFloat(tokens[i++]);
+                    if (!isFinite(x) || !isFinite(y)) break;   // truncated arc — skip it, keep parsing
+
+                    const cubics = PathUtils.arcToCubics(currentX, currentY, rx, ry, rot, largeArc, sweep, x, y);
+                    if (cubics.length === 0) {
+                        // Degenerate arc → straight line (SVG spec behaviour).
+                        const length = Math.hypot(x - currentX, y - currentY);
+                        if (length > 0) {
+                            commands.push({ type: 'L', start: { x: currentX, y: currentY }, points: [{ x, y }], length });
+                        }
+                    } else {
+                        for (const seg of cubics) {
+                            commands.push({
+                                type: 'C',
+                                start: { x: currentX, y: currentY },
+                                points: [seg.c1, seg.c2, seg.end],
+                                length: this.estimateCubicBezierLength(
+                                    currentX, currentY, seg.c1.x, seg.c1.y, seg.c2.x, seg.c2.y, seg.end.x, seg.end.y,
+                                ),
+                            });
+                            currentX = seg.end.x;
+                            currentY = seg.end.y;
+                        }
+                    }
                     currentX = x;
                     currentY = y;
                     break;

@@ -42,6 +42,7 @@ import { AnimationPanel } from "./animation-panel";
 import StickFaceControls from "./stick-face-controls";
 import { selectionHasStickFigure, selectionHasAnimatedFigure } from "../library/stick-figures";
 import { resizeTableData, defaultColWidths, defaultRowHeights, defaultTableData } from "../utils/table-utils";
+import { readJsonArray } from "../utils/safe-storage";
 import {
     pixelRevealLTR, pixelDissolve, pixelWaveCenter, pixelScanLines,
     pixelGlitch, pixelBlockReveal, pixelSpiral, pixelCurtainV, pixelRandomScatter, pixelRain
@@ -743,6 +744,9 @@ const PatternEditor: Component<{ el: () => any }> = (props) => {
     const set = (patch: Partial<import("../types").PatternFill>, history = true) => setPatternFill(ids(), patch, history);
     const transparentBg = () => !pat()?.background || pat()?.background === 'transparent';
     const isCustom = () => pat()?.type === 'custom';
+    // Procedural grain: sizes its own tile, so Spacing is meaningless and
+    // strokeWidth reads as the grain size instead of a line thickness.
+    const isTexture = () => pat()?.type === 'noise' || pat()?.type === 'grunge';
     return (
         <Show when={pat()}>
             <div class="property-group">
@@ -794,18 +798,31 @@ const PatternEditor: Component<{ el: () => any }> = (props) => {
                         onChange={e => set({ scale: parseFloat(e.currentTarget.value) })} title="Overall pattern zoom" />
                 </div>
                 <Show when={!isCustom()}>
+                    <Show when={!isTexture()}>
+                        <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
+                            <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Spacing</span>
+                            <input type="range" style={{ flex: '1' }} min="4" max="48" step="1" value={pat()!.spacing ?? 12}
+                                onInput={e => set({ spacing: parseFloat(e.currentTarget.value) }, false)}
+                                onChange={e => set({ spacing: parseFloat(e.currentTarget.value) })} title="Spacing between motif repeats" />
+                        </div>
+                    </Show>
                     <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
-                        <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Spacing</span>
-                        <input type="range" style={{ flex: '1' }} min="4" max="48" step="1" value={pat()!.spacing ?? 12}
-                            onInput={e => set({ spacing: parseFloat(e.currentTarget.value) }, false)}
-                            onChange={e => set({ spacing: parseFloat(e.currentTarget.value) })} title="Spacing between motif repeats" />
-                    </div>
-                    <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
-                        <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Thick</span>
+                        <span style={{ 'font-size': '11px', 'min-width': '42px' }}>{isTexture() ? 'Grain' : 'Thick'}</span>
                         <input type="range" style={{ flex: '1' }} min="0.5" max="12" step="0.5" value={pat()!.strokeWidth ?? 2}
                             onInput={e => set({ strokeWidth: parseFloat(e.currentTarget.value) }, false)}
-                            onChange={e => set({ strokeWidth: parseFloat(e.currentTarget.value) })} title="Line thickness / dot size" />
+                            onChange={e => set({ strokeWidth: parseFloat(e.currentTarget.value) })}
+                            title={isTexture() ? 'Grain size' : 'Line thickness / dot size'} />
                     </div>
+                    <Show when={isTexture()}>
+                        {/* Re-roll the grain. The seed is stored, so the texture is otherwise
+                            identical on every redraw, reload and export. */}
+                        <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
+                            <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Seed</span>
+                            <button style={{ ...btn, flex: '1' }}
+                                onClick={() => set({ seed: Math.floor(Math.random() * 100000) })}
+                                title="Generate a different grain">Randomize</button>
+                        </div>
+                    </Show>
                 </Show>
                 <div class="control-row" style={{ gap: '6px', 'align-items': 'center' }}>
                     <span style={{ 'font-size': '11px', 'min-width': '42px' }}>Angle</span>
@@ -2078,7 +2095,7 @@ const PropertyPanel: Component = () => {
 
     // Collapsible groups
     const [collapsedGroups, setCollapsedGroups] = createSignal<Set<string>>(
-        new Set(JSON.parse(localStorage.getItem('collapsed-prop-groups') || '[]'))
+        new Set(readJsonArray<string>('collapsed-prop-groups'))
     );
     const toggleGroup = (group: string) => {
         const next = new Set(collapsedGroups());

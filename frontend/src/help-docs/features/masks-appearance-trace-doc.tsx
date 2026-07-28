@@ -255,7 +255,8 @@ Y.setMeshSize(4, 4, [id]);                    // grow the grid (colours preserve
                 <h2>Pattern Fills</h2>
                 <p>
                     Fill a shape with a <strong>seamless repeating motif</strong> — stripes, grid, dots,
-                    checker or crosshatch — painted in a foreground colour over an optional background. The
+                    checker, crosshatch, or the two procedural textures <strong>noise</strong> and
+                    <strong> grunge</strong> — painted in a foreground colour over an optional background. The
                     pattern tiles in place and is clipped to the shape outline, rendering identically in both
                     <strong> Sketch</strong> and <strong>Architectural</strong> styles. SVG export emits a real
                     <code>&lt;pattern&gt;</code> so it stays vector.
@@ -271,13 +272,43 @@ Y.setMeshSize(4, 4, [id]);                    // grow the grid (colours preserve
                 <h3>Example</h3>
                 <pre><code>{`const Y = window.Yappy; Y.clear();
 const id = Y.createRectangle(160, 140, 280, 200, { strokeColor:'#222', backgroundColor:'#fff' });
-Y.applyPatternFill('crosshatch', [id]);                 // stripes | grid | dots | checker | crosshatch
+Y.applyPatternFill('crosshatch', [id]);   // stripes | grid | dots | checker | crosshatch | noise | grunge
 Y.setPatternFill({ color:'#1d4ed8', scale:1.4, angle:30 }, [id]);`}</code></pre>
                 <p class="tip-box">
                     <code>applyPatternFill(type)</code>, <code>setPatternFill(&#123; type, color, background, scale,
-                    spacing, strokeWidth, angle &#125;)</code> and <code>clearPatternFill()</code> all default to the
-                    current selection. Patterns are stored on the element (<code>patternFill</code>) and survive
+                    spacing, strokeWidth, angle, seed &#125;)</code> and <code>clearPatternFill()</code> all default to
+                    the current selection. Patterns are stored on the element (<code>patternFill</code>) and survive
                     save/load.
+                </p>
+
+                <h3>Texture overlays (noise &amp; grunge)</h3>
+                <p>
+                    Large flat colour areas can read as flat and lifeless. The two procedural texture motifs break
+                    them up: <strong>Noise</strong> is fine film grain, <strong>Grunge</strong> is softer, blotchier
+                    fBm noise. They ignore <em>Spacing</em> and read <em>Thick</em>ness as the <strong>grain size
+                    </strong>; <em>Scale</em> zooms the whole tile. Each texture is seeded once when you create it, so
+                    the grain is identical on every redraw, reload and export — never a shimmer between frames.
+                </p>
+                <p>
+                    For the usual "lay a texture over the whole picture" move, use
+                    <strong> Vector Tools → Insert → Noise Texture</strong> (or <strong>Grunge Texture</strong>). That
+                    drops a rectangle over the entire composition — the active artboard, else the page, else the
+                    bounding box of your artwork — already set to <strong>Multiply</strong> blend at
+                    <strong> 14% opacity</strong>, which is roughly where texture stops looking like an object and
+                    starts looking like paper. Tune <em>Opacity</em> and <em>Blend Mode</em> in Properties; delete the
+                    rectangle to remove it.
+                </p>
+                <pre><code>{`const Y = window.Yappy;
+Y.addTextureOverlay('noise');                       // full-bleed grain, multiply @ 14%
+Y.addTextureOverlay('grunge', { opacity: 22, color: '#3b2a1f', scale: 1.6 });
+
+// or texture one shape only:
+const id = Y.createRectangle(0, 0, 400, 300, { backgroundColor:'#c8663c', fillStyle:'solid' });
+Y.applyPatternFill('grunge', [id]);
+Y.setPatternFill({ strokeWidth: 3, seed: 42 }, [id]);   // grain size + a different grain`}</code></pre>
+                <p class="tip-box">
+                    Because the texture is a normal shape, everything else still applies: clip it with a mask, put it
+                    inside a group, animate its opacity, or stack noise over grunge for a rougher paper feel.
                 </p>
 
                 <h3>Make Pattern from Selection</h3>

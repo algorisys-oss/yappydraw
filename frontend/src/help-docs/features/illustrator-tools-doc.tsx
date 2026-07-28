@@ -203,12 +203,24 @@ Yappy.createArc(300, 300, 120, 0, 270);
 Yappy.createRectGrid(100, 100, 240, 180, 4, 6);
 
 // polar grid: centre, radius, rings, spokes
-Yappy.createPolarGrid(300, 300, 140, 4, 12);`}</code></pre>
+Yappy.createPolarGrid(300, 300, 140, 4, 12);
+
+// full-composition texture overlay: 'noise' (film grain) or 'grunge' (soft blotches)
+Yappy.addTextureOverlay('noise');
+Yappy.addTextureOverlay('grunge', { opacity: 20, color: '#2b1d14', scale: 1.5 });`}</code></pre>
                 <p class="tip-box">
                     Grids return one <strong>group</strong> so they move as a unit — double-click to enter the
                     group and edit individual lines, or ungroup (<span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">G</span>).
                     A spiral pairs nicely with <strong>Width</strong>-style tapering via the inkbrush, and an
                     arc is the basis for <strong>Type on a Path</strong>.
+                </p>
+                <p class="tip-box">
+                    <strong>Noise Texture</strong> / <strong>Grunge Texture</strong> (Vector Tools → Insert) cover the
+                    active artboard — else the page, else your artwork’s bounding box — with a procedural grain
+                    rectangle already set to <em>Multiply</em> at 14% opacity. It’s the one-click version of importing
+                    a grungy photo, stretching it over the picture and dialling the opacity down, and it keeps large
+                    flat colour areas from reading as dead. See <strong>Masks, Appearance &amp; Trace → Pattern
+                    Fills</strong> for the per-shape controls.
                 </p>
             </section>
 
@@ -551,6 +563,7 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                         <tr><td>Puppet Warp</td><td>Command Palette → Puppet Warp</td></tr>
                         <tr><td>Perspective Grid (Shift+P)</td><td>Command Palette → Perspective Grid</td></tr>
                         <tr><td>Flare</td><td>Insert → Lens Flare</td></tr>
+                        <tr><td>Grain / texture overlay</td><td>Vector Tools → Insert → Noise Texture / Grunge Texture</td></tr>
                         <tr><td>Touch Type (Shift+T)</td><td>Right-click text → Touch Type</td></tr>
                         <tr><td>Slice (Shift+K)</td><td>Command Palette → Slice</td></tr>
                         <tr><td>Graph tools (J)</td><td>Chart shapes → Edit Chart Data…</td></tr>

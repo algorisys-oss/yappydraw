@@ -13,6 +13,18 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.147', date: '2026-07-28', items: [
+        'Fixed the occasional hang on the loading screen. If the editor ever failed to start you would just sit and watch the bicycle bounce forever — now anything that goes wrong at startup gives you a clear message and a Reload button instead.',
+        'The usual culprit turned out to be one bad saved preference: a single corrupted setting could stop the whole app from opening. Bad settings are now thrown away automatically rather than blocking startup, so it cannot happen twice.',
+        'Help and Examples pages that failed to load after an update used to say "Loading..." forever. They now offer Reload and Try again.',
+    ] },
+    { version: '0.8.146', date: '2026-07-28', items: [
+        'Big flat areas of colour no longer look dead: Vector Tools → Insert → Noise Texture (or Grunge) lays a fine grain over your whole picture, already set to the subtle multiply-at-low-opacity look artists use. Dial it up or down in Properties, or press Randomize for a different grain.',
+        'Scribble a hill with the pencil, press Ctrl+L, and it becomes a clean editable curve that keeps the hand-drawn wobble. Simplify (and Smooth) now work straight off a freehand stroke or any shape — no "convert to path" step first, and one undo takes it all back.',
+        'An asset library that follows you between drawings: draw a good tree, rock or cloud once, save it from the Symbols panel, and it is one click away in every future document. Inserted copies are fully editable and independent, so you can recolour and resize them freely.',
+        'Nine shapes — cloud, database, lightbulb, magnet, magnifying glass, pin, puzzle piece, storage blob and the UML required-interface — could never be converted into editable paths. Now they can, which also unlocks Simplify, Smooth, Offset Path and text-on-path for them.',
+        'The size/position badge under a selection is see-through now, so the handles and artwork it sits on top of stay visible.',
+    ] },
     { version: '0.8.145', date: '2026-07-22', items: [
         'Your animations are now INTERACTIVE. Right-click a keyframe → Frame Action: Stop holds a pose, Loop to Frame 1 makes sections repeat, Next Scene chains your acts into a film — just like Flash\'s stop() and gotoAndPlay(), little "a" marker and all.',
         'Export HTML gives you a living animation, not a video: a single self-contained web page that plays the real thing — full quality at any size, looping, frame actions running, sound playing — with tap-to-pause controls. Share the file anywhere.',

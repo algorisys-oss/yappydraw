@@ -36,6 +36,7 @@ import { elementPathSample, sampleAt } from "../library/stick-figures/anim/path-
 import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos, parseHex, rgbToHex } from "../utils/mesh-gradient";
 import { defaultPatternFill } from "../utils/pattern-fill";
 import { captureElementsToDataURL } from "../utils/pattern-capture";
+import { saveAsset, downscaleDataUrl, type AssetMeta } from "../storage/asset-library";
 import { isSolidColor, shiftHexHue, adjustHexLightness, adjustHexSaturation } from "../utils/color-adjust";
 import { getStyleSnapshot } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
@@ -485,7 +486,7 @@ const initialState: AppState = {
     penConstrain: false,
     showPropertyPanel: false,
     showLayerPanel: false,
-    showSymbolsPanel: false,
+    showSymbolsPanel: false, // dead flag — Symbols panel state now lives in the persisted dock layout (use isPanelOpen('symbols'))
     showGraphicStylesPanel: false,
     showSwatchesPanel: false,
     showBrandKitPanel: false,
@@ -500,7 +501,7 @@ const initialState: AppState = {
     storySyncSlides: false,
     compositionTracks: [],
     dimensionAnnotations: [],
-    showRecolorPanel: false,
+    showRecolorPanel: false, // dead flag — Recolor panel state now lives in the persisted dock layout (use isPanelOpen('recolor'))
     showVectorToolsPanel: false, // dead flag — Vector Tools panel state now lives in the persisted dock layout
     measureActive: false,
     shapeBuilderActive: false,
@@ -594,7 +595,7 @@ const initialState: AppState = {
     sceneBehaviors: [],
     gameVars: [],
     blueprints: {},
-    showBehaviorsPanel: false,
+    showBehaviorsPanel: false, // dead flag — Behaviors panel state now lives in the persisted dock layout (use isPanelOpen('behaviors'))
     showGameGraph: false,
     showBlueprint: false,
     showGameScript: false,
@@ -3180,6 +3181,106 @@ export const createSymbol = (ids: string[], name?: string, kind?: 'graphic' | 'm
     return symId;
 };
 
+/**
+ * Expand one symbol instance into detached, positioned copies of the symbol's elements.
+ * Pure — returns new elements and touches nothing. Nested instances are expanded too,
+ * with a depth cap so a self-referential definition can't recurse forever.
+ *
+ * Shared by Detach Instance and by the asset library: an asset MUST be self-contained,
+ * because a stored `symbolId` refers to a definition that only exists in the document it
+ * was saved from — inserted anywhere else it would render as a grey placeholder.
+ */
+const expandInstance = (inst: DrawingElement, batch: Set<string>, depth = 0): DrawingElement[] => {
+    const sym = store.symbols.find(s => s.id === inst.symbolId);
+    if (!sym || depth > 8) return [];
+    const sx = sym.width ? inst.width / sym.width : 1;
+    const sy = sym.height ? inst.height / sym.height : 1;
+    const gid = generateId('grp' as any);
+    const out: DrawingElement[] = [];
+    for (const child of sym.elements) {
+        const id = generateId(child.type as any, batch); batch.add(id);
+        const copy: any = {
+            ...child, id,
+            x: inst.x + child.x * sx, y: inst.y + child.y * sy,
+            width: child.width * sx, height: child.height * sy,
+            groupIds: [gid],
+        };
+        if (child.points) copy.points = scalePoints(child.points, sx, sy);
+        if (child.pathAnchors) copy.pathAnchors = scalePathAnchors(child.pathAnchors as any, sx, sy);
+        if (child.pathSubpaths) copy.pathSubpaths = scalePathSubpaths(child.pathSubpaths as any, sx, sy);
+        if (copy.type === 'symbolInstance' && copy.symbolId) {
+            out.push(...expandInstance(copy as DrawingElement, batch, depth + 1));
+        } else {
+            out.push(copy);
+        }
+    }
+    return out;
+};
+
+/**
+ * Save the selection to the cross-document Asset Library (see `storage/asset-library`).
+ *
+ * Unlike `createSymbol` this does NOT touch the canvas: the selection stays exactly as
+ * it is and a normalized copy goes on the shelf. Symbols are per-document because an
+ * instance links back to its definition; a library asset is a detached snapshot, so it
+ * can cross documents safely.
+ */
+export const saveSelectionToAssetLibrary = async (ids: string[], name?: string): Promise<AssetMeta | null> => {
+    const selected = store.elements.filter(e => ids.includes(e.id));
+    if (selected.length === 0) { showToast('Library: select objects first', 'info'); return null; }
+
+    // Flatten any symbol instances — see expandInstance. An instance stored as-is would
+    // point at a definition that doesn't exist in whatever document it's inserted into.
+    const batch = new Set<string>();
+    const els: DrawingElement[] = [];
+    for (const e of selected) {
+        if (e.type === 'symbolInstance' && e.symbolId) {
+            const expanded = expandInstance(e, batch);
+            // A missing definition leaves nothing to save — keep the instance out rather
+            // than storing a reference that can never resolve.
+            if (expanded.length) els.push(...expanded);
+        } else {
+            els.push(e);
+        }
+    }
+    if (els.length === 0) { showToast('Library: nothing to save', 'info'); return null; }
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const e of els) {
+        minX = Math.min(minX, e.x, e.x + e.width);
+        minY = Math.min(minY, e.y, e.y + e.height);
+        maxX = Math.max(maxX, e.x, e.x + e.width);
+        maxY = Math.max(maxY, e.y, e.y + e.height);
+    }
+    if (!Number.isFinite(minX)) { showToast('Library: selection has no size', 'error'); return null; }
+    const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
+
+    // Normalize to a 0,0 origin and drop clip-mask links — the mask partner may not be
+    // part of the selection, and a dangling reference would break on re-insert.
+    const norm = els.map(e => {
+        const { clipMaskId, isClipMask, ...rest } = e as any;
+        return { ...rest, x: e.x - minX, y: e.y - minY } as DrawingElement;
+    });
+
+    // Bounded thumbnail: the raw capture is the selection's natural size at 2×, and
+    // thumbs live in the index that every listing reads in full.
+    let thumb: string | undefined;
+    try {
+        const full = captureElementsToDataURL(els, minX, minY, w, h, store.theme !== 'light');
+        if (full) thumb = await downscaleDataUrl(full);
+    } catch { /* preview is best-effort — never block the save */ }
+
+    try {
+        const meta = await saveAsset(name || `Asset ${new Date().toLocaleDateString()}`, norm, w, h, { thumb });
+        showToast(meta ? `Saved "${meta.name}" to library` : 'Library: save failed', meta ? 'success' : 'error');
+        return meta;
+    } catch (e) {
+        console.error('[asset-library] save failed:', e);
+        showToast('Library: save failed', 'error');
+        return null;
+    }
+};
+
 /** Place a new instance of a symbol at (x, y). */
 export const placeInstance = (symbolId: string, x?: number, y?: number): string | null => {
     const sym = store.symbols.find(s => s.id === symbolId);
@@ -3224,19 +3325,11 @@ export const detachInstance = (ids: string[]) => {
     const remove = new Set<string>();
     const batch = new Set<string>();
     for (const inst of insts) {
-        const sym = store.symbols.find(s => s.id === inst.symbolId);
-        if (!sym) continue;
+        // Shared with the asset library so the scaling rules can't drift apart.
+        const expanded = expandInstance(inst, batch);
+        if (expanded.length === 0) continue;      // definition missing — leave it alone
         remove.add(inst.id);
-        const sx = sym.width ? inst.width / sym.width : 1, sy = sym.height ? inst.height / sym.height : 1;
-        const gid = generateId('grp' as any);
-        for (const child of sym.elements) {
-            const id = generateId(child.type as any, batch); batch.add(id);
-            const copy: any = { ...child, id, x: inst.x + child.x * sx, y: inst.y + child.y * sy, width: child.width * sx, height: child.height * sy, groupIds: [gid] };
-            if (child.points) copy.points = scalePoints(child.points, sx, sy);
-            if (child.pathAnchors) copy.pathAnchors = scalePathAnchors(child.pathAnchors as any, sx, sy);
-            if (child.pathSubpaths) copy.pathSubpaths = scalePathSubpaths(child.pathSubpaths as any, sx, sy);
-            additions.push(copy);
-        }
+        additions.push(...expanded);
     }
     setStore('elements', list => [...list.filter(e => !remove.has(e.id)), ...additions]);
     setStore('selection', additions.map(a => a.id));
@@ -3518,6 +3611,83 @@ export const createPatternFromSelection = (ids: string[]): string | null => {
     setStore('selection', [rect.id]);
     bumpDirtyRevision();
     showToast('Pattern created from selection', 'success');
+    return rect.id;
+};
+
+/**
+ * Bounds to cover with a full-bleed overlay: the active artboard, else the current
+ * page (paged docs), else the artwork bounding box, else the document dimensions.
+ */
+const compositionBounds = (): { x: number; y: number; width: number; height: number } => {
+    const ab = store.artboards.find(a => a.id === store.activeArtboardId)
+        ?? (store.artboards.length === 1 ? store.artboards[0] : undefined);
+    if (ab && ab.width > 0 && ab.height > 0) return { x: ab.x, y: ab.y, width: ab.width, height: ab.height };
+
+    if (isPagedDocType(store.docType)) {
+        const slide: any = store.slides[store.activeSlideIndex];
+        const d = slide?.dimensions;
+        if (d && d.width > 0 && d.height > 0) {
+            const sp = slide.spatialPosition ?? { x: 0, y: 0 };
+            return { x: sp.x, y: sp.y, width: d.width, height: d.height };
+        }
+    }
+
+    const els = store.elements;
+    if (els.length > 0) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const e of els) {
+            minX = Math.min(minX, e.x, e.x + e.width);
+            minY = Math.min(minY, e.y, e.y + e.height);
+            maxX = Math.max(maxX, e.x, e.x + e.width);
+            maxY = Math.max(maxY, e.y, e.y + e.height);
+        }
+        if (Number.isFinite(minX) && maxX > minX && maxY > minY) {
+            const pad = 8; // spill slightly past the art so edges aren't left bare
+            return { x: minX - pad, y: minY - pad, width: (maxX - minX) + pad * 2, height: (maxY - minY) + pad * 2 };
+        }
+    }
+
+    const w = store.dimensions?.width || 1920, h = store.dimensions?.height || 1080;
+    return { x: 0, y: 0, width: w, height: h };
+};
+
+/**
+ * Texture Overlay — drop a full-composition rectangle of procedural grain on top of
+ * everything, pre-set to the values that actually read as texture rather than as an
+ * object: multiply blend at low opacity, no stroke. This is the "import a grungy
+ * texture, lay it over the art, lower the opacity, set multiply" move from flat-colour
+ * illustration workflows, minus the texture hunt.
+ */
+export const addTextureOverlay = (
+    kind: 'noise' | 'grunge' = 'noise',
+    opts: { opacity?: number; color?: string; scale?: number } = {},
+): string | null => {
+    const b = compositionBounds();
+    if (!(b.width > 0 && b.height > 0)) { showToast('Texture: nothing to cover', 'info'); return null; }
+
+    const pf = defaultPatternFill(opts.color || '#000000', kind);
+    if (opts.scale !== undefined) pf.scale = Math.max(0.1, Math.min(8, opts.scale));
+
+    const rect: DrawingElement = {
+        ...store.defaultElementStyles,
+        id: generateId('rect' as any), type: 'rectangle',
+        x: b.x, y: b.y, width: b.width, height: b.height,
+        angle: 0, seed: 1, roundness: null, locked: false, link: null,
+        layerId: store.activeLayerId,
+        fillStyle: 'pattern',
+        patternFill: pf,
+        backgroundColor: 'transparent',
+        strokeColor: 'transparent',
+        strokeWidth: 0,
+        blendMode: 'multiply',
+        opacity: Math.max(1, Math.min(100, opts.opacity ?? 14)),
+    } as DrawingElement;
+
+    pushToHistory();
+    setStore('elements', list => [...list, rect]);   // always on top
+    setStore('selection', [rect.id]);
+    bumpDirtyRevision();
+    showToast(`${kind === 'grunge' ? 'Grunge' : 'Noise'} texture added — tune opacity in Properties`, 'success');
     return rect.id;
 };
 
@@ -7079,7 +7249,7 @@ export const applyDistort = (ids: string[], kind: DistortKind, amount = 0.25): s
  * and connector bindings preserved). Skips elements that are already paths or have no
  * convertible geometry. Returns the converted ids.
  */
-export const convertToPath = (ids: string[]): string[] => {
+export const convertToPath = (ids: string[], opts: { silent?: boolean } = {}): string[] => {
     const anchorsById = new Map<string, ReturnType<typeof shapeToPath>>();
     for (const el of store.elements) {
         if (ids.includes(el.id) && el.type !== 'path') {
@@ -7089,15 +7259,20 @@ export const convertToPath = (ids: string[]): string[] => {
     }
     if (anchorsById.size === 0) return [];
 
-    pushToHistory();
+    // `silent` = called as the first half of a bigger op (e.g. Simplify auto-converting
+    // a pencil stroke). The caller owns the history entry, the selection and the toast,
+    // so this must not push a second undo step or steal the selection.
+    if (!opts.silent) pushToHistory();
     setStore('elements', list => list.map(el => {
         const r = anchorsById.get(el.id);
         if (!r) return el;
         return { ...el, type: 'path', pathAnchors: r.anchors, pathClosed: r.closed, points: undefined, controlPoints: undefined } as DrawingElement;
     }));
     const out = [...anchorsById.keys()];
-    setStore('selection', out);
-    showToast(`Converted ${out.length} to path`, 'success');
+    if (!opts.silent) {
+        setStore('selection', out);
+        showToast(`Converted ${out.length} to path`, 'success');
+    }
     return out;
 };
 
@@ -8101,10 +8276,20 @@ function elementToWorldSubs(el: DrawingElement): WorldSub[] {
  * the shape within a small tolerance. Useful after booleans/outline produce dense corners.
  */
 export const simplifyPath = (ids: string[]): string[] => {
-    const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
-    if (targets.length === 0) { showToast('Simplify: select a path', 'info'); return []; }
+    // A pencil/fineliner stroke is a points element, not a `path`, so Simplify used to
+    // silently no-op on the thing people most want to simplify. Convert anything
+    // convertible in place first (one history entry for the whole op) — this matches
+    // Inkscape's Ctrl+L, which simplifies the freehand stroke directly.
+    const pending = store.elements
+        .filter(e => ids.includes(e.id) && e.type !== 'path' && !!shapeToPath(e))
+        .map(e => e.id);
+    const alreadyPaths = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
+    if (alreadyPaths.length === 0 && pending.length === 0) { showToast('Simplify: select a path or shape', 'info'); return []; }
     let changed = false;
     pushToHistory();
+    if (pending.length) convertToPath(pending, { silent: true });
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
+    if (targets.length === 0) { showToast('Simplify: select a path or shape', 'info'); return []; }
     setStore('elements', list => list.map(el => {
         if (!targets.find(t => t.id === el.id)) return el;
         const eps = Math.max(1.2, Math.hypot(el.width, el.height) * 0.012);
@@ -8154,11 +8339,18 @@ const smoothAnchors = (anchors: PathAnchor[], closed: boolean, strength: number,
 };
 
 export const smoothPath = (ids: string[], strength = 0.5, iterations = 2): string[] => {
-    const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
-    if (targets.length === 0) { showToast('Smooth: select a path', 'info'); return []; }
+    // Same auto-convert as Simplify — smoothing a freehand stroke is the common case.
+    const pending = store.elements
+        .filter(e => ids.includes(e.id) && e.type !== 'path' && !!shapeToPath(e))
+        .map(e => e.id);
+    const alreadyPaths = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
+    if (alreadyPaths.length === 0 && pending.length === 0) { showToast('Smooth: select a path or shape', 'info'); return []; }
     const s = Math.max(0, Math.min(1, strength));
     const its = Math.max(1, Math.min(20, Math.round(iterations)));
     pushToHistory();
+    if (pending.length) convertToPath(pending, { silent: true });
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
+    if (targets.length === 0) { showToast('Smooth: select a path or shape', 'info'); return []; }
     setStore('elements', list => list.map(el => {
         if (!targets.find(t => t.id === el.id)) return el;
         const subs = getPathSubpaths(el).map(sp => ({ closed: sp.closed, anchors: smoothAnchors(sp.anchors, sp.closed, s, its) }));

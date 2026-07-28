@@ -235,3 +235,81 @@
     background: color-mix(in srgb, var(--danger-color, #ef4444) 16%, transparent);
     color: var(--danger-color, #ef4444);
 }
+
+/* ── Asset library section (cross-document artwork) ───────────────────────── */
+.sp-section {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.sp-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.sp-section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-secondary, #6b7280);
+}
+
+.sp-section-head .sp-icon-btn {
+    width: auto;
+    gap: 4px;
+    padding: 3px 8px;
+    font-size: 12px;
+    border: 1px solid var(--border-color);
+}
+
+/* Library cards mirror the symbol-card look but carry their own classes so
+   `.sp-card` / `.sp-thumb` keep counting symbols only. */
+.sp-lib-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    background: var(--bg-secondary);
+}
+
+.sp-lib-thumb {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sp-lib-thumb:hover {
+    border-color: var(--primary-color, #3b82f6);
+}
+
+/* Library thumbs are stored PNG previews, so fit them inside the 56px tile. */
+.sp-thumb-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 3px;
+    pointer-events: none;
+}
+
+/* Fallback when an asset has no captured preview — show the element count. */
+.sp-noprev {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary, #6b7280);
+}

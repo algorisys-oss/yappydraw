@@ -102,6 +102,59 @@ Y.placeInstance(symId, 420, 100);`}</code></pre>
                 </p>
             </section>
 
+            {/* ─── ASSET LIBRARY ──────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Asset library (reuse across documents)</h2>
+                <p>
+                    Symbols live <em>inside</em> one document — an instance is a link to its master, so the two have to
+                    travel together in the same file. The <strong>Asset library</strong> is the other half of that
+                    story: a personal shelf of artwork that persists across every document you open in this browser.
+                    Draw a good tree, a rock, a cloud or a prop once, save it, and it is one click away in your next
+                    project.
+                </p>
+                <p>
+                    Find it at the bottom of the <strong>Symbols</strong> panel. Select some artwork and press
+                    <strong> Save</strong>, give it a name, and it appears as a thumbnail. Click a thumbnail (or its
+                    <strong> +</strong>) to insert it into the current document, centred in your viewport.
+                    Double-click a name to rename; 🗑 removes it from the shelf.
+                </p>
+                <p class="tip-box">
+                    <strong>Assets are snapshots, not instances.</strong> Inserted artwork arrives as ordinary, fully
+                    editable shapes with fresh ids and <em>no</em> link back to the library — so recolouring or
+                    reshaping one copy never disturbs the saved original or any other copy. That is exactly what you
+                    want for scenery you intend to vary; use a <strong>symbol</strong> when you instead want every copy
+                    to update together.
+                </p>
+                <p>
+                    The library is stored in this browser profile (IndexedDB), alongside your saved drawings. Like the
+                    drawings gallery it is convenience storage rather than a backup — export a <code>.yappy</code> file
+                    for anything you can’t afford to lose, and note that a different browser or machine starts with an
+                    empty shelf.
+                </p>
+                <pre><code>{`const Y = window.Yappy;
+
+// save the current selection to the shelf
+const meta = await Y.saveToAssetLibrary('Pine tree');   // { id, name, width, height, … }
+
+// later, in ANY document:
+const assets = await Y.listAssets();                    // newest first
+await Y.insertAsset(assets[0].id);                      // → plain editable elements
+
+await Y.renameAsset(meta.id, 'Pine tree (tall)');
+await Y.deleteAsset(meta.id);`}</code></pre>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Method</th><th>What it does</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>saveToAssetLibrary(name?, ids?)</code></td><td>Save artwork to the cross-document shelf (default: selection). Async.</td></tr>
+                        <tr><td><code>listAssets()</code></td><td>Saved assets, newest first (metadata only). Async.</td></tr>
+                        <tr><td><code>insertAsset(assetId)</code></td><td>Insert as plain editable elements, centred in view. Async; false if missing.</td></tr>
+                        <tr><td><code>renameAsset(id, name)</code> / <code>deleteAsset(id)</code></td><td>Manage the shelf. Deleting never touches artwork already inserted.</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
             {/* ─── SCRIPTING (API) ────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Scripting (API)</h2>

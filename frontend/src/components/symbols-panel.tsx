@@ -2,12 +2,16 @@ import { type Component, For, Show, createSignal, onMount, createEffect } from '
 import {
     store, placeInstance, renameSymbol, deleteSymbol,
     redefineSymbol, createSymbol, selectInstancesOf, toggleSymbolSprayer,
+    saveSelectionToAssetLibrary,
 } from '../store/app-store';
 import { renderElement } from '../utils/render-element';
 import { screenToWorld } from '../utils/viewport-transforms';
+import { pasteYappyElements } from '../utils/object-context-actions';
+import { listAssets, getAssetElements, renameAsset, deleteAsset, type AssetMeta } from '../storage/asset-library';
+import { showToast } from './toast';
 import rough from 'roughjs';
 import type { SymbolDef } from '../types';
-import { Plus, Trash2, RefreshCw, SprayCan, Film } from 'lucide-solid';
+import { Plus, Trash2, RefreshCw, SprayCan, Film, Library, Download } from 'lucide-solid';
 import './symbols-panel.css';
 
 const THUMB = 56; // px
@@ -54,6 +58,130 @@ const SymbolThumb: Component<{ sym: SymbolDef }> = (props) => {
     createEffect(() => { props.sym.elements; props.sym.width; props.sym.height; store.theme; draw(); });
 
     return <canvas ref={canvasRef} style={{ width: `${THUMB}px`, height: `${THUMB}px` }} />;
+};
+
+/**
+ * Asset Library section — reusable artwork kept outside the document (IndexedDB), so a
+ * tree drawn in one project is one click away in the next. Distinct from the symbols
+ * above it: assets insert as plain editable elements with no link back to the library.
+ */
+const AssetLibrarySection: Component = () => {
+    const [assets, setAssets] = createSignal<AssetMeta[]>([]);
+    const [loading, setLoading] = createSignal(true);
+    const [editingId, setEditingId] = createSignal<string | null>(null);
+    const [editingName, setEditingName] = createSignal('');
+
+    const refresh = async () => {
+        try { setAssets(await listAssets()); }
+        catch (e) { console.error('[asset-library] list failed:', e); setAssets([]); }
+        finally { setLoading(false); }
+    };
+    onMount(refresh);
+
+    const saveSelection = async () => {
+        if (store.selection.length === 0) return;
+        const suggested = `Asset ${assets().length + 1}`;
+        const name = window.prompt('Save selection to the asset library as:', suggested);
+        if (name === null) return;                       // cancelled
+        const meta = await saveSelectionToAssetLibrary([...store.selection], name);
+        if (meta) await refresh();
+    };
+
+    const insert = async (a: AssetMeta) => {
+        const els = await getAssetElements(a.id);
+        if (!els || els.length === 0) { showToast(`"${a.name}" could not be loaded`, 'error'); return; }
+        // Reuse the paste path: fresh ids, remapped bindings/groups, centred in view.
+        pasteYappyElements({ elements: els });
+    };
+
+    const startRename = (a: AssetMeta) => { setEditingId(a.id); setEditingName(a.name); };
+    const commitRename = async (id: string) => {
+        const name = editingName();
+        setEditingId(null); setEditingName('');
+        await renameAsset(id, name);
+        await refresh();
+    };
+
+    const remove = async (a: AssetMeta) => {
+        if (!window.confirm(`Remove "${a.name}" from the asset library? This can't be undone.`)) return;
+        await deleteAsset(a.id);
+        await refresh();
+    };
+
+    return (
+        <div class="sp-section">
+            <div class="sp-section-head">
+                <span class="sp-section-title"><Library size={13} /> Asset library</span>
+                <button
+                    class="sp-icon-btn"
+                    title="Save the selection to the asset library — available in every document"
+                    disabled={store.selection.length === 0}
+                    onClick={() => { void saveSelection(); }}
+                >
+                    <Download size={14} /> Save
+                </button>
+            </div>
+            <Show
+                when={!loading() && assets().length > 0}
+                fallback={
+                    <div class="sp-empty">
+                        <Show when={!loading()} fallback={<>Loading…</>}>
+                            Nothing saved yet.<br />
+                            Select artwork and click Save to reuse it in any document.
+                        </Show>
+                    </div>
+                }
+            >
+                {/* Distinct card/thumb classes: `.sp-card` / `.sp-thumb` are how callers
+                    (and specs) count SYMBOLS, and library cards must not inflate that. */}
+                <div class="sp-grid">
+                    <For each={assets()}>
+                        {(a) => (
+                            <div class="sp-lib-card">
+                                <div
+                                    class="sp-lib-thumb"
+                                    title={`${a.name} — click to insert`}
+                                    onClick={() => { void insert(a); }}
+                                >
+                                    <Show when={a.thumb} fallback={<span class="sp-noprev">{a.elementCount}</span>}>
+                                        <img class="sp-thumb-img" src={a.thumb} alt={a.name} />
+                                    </Show>
+                                </div>
+                                <Show
+                                    when={editingId() === a.id}
+                                    fallback={
+                                        <div class="sp-name" title={a.name} onDblClick={() => startRename(a)}>
+                                            {a.name}
+                                        </div>
+                                    }
+                                >
+                                    <input
+                                        class="sp-name-input"
+                                        value={editingName()}
+                                        autofocus
+                                        onInput={(e) => setEditingName(e.currentTarget.value)}
+                                        onBlur={() => { void commitRename(a.id); }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') { void commitRename(a.id); }
+                                            else if (e.key === 'Escape') { setEditingId(null); setEditingName(''); }
+                                        }}
+                                    />
+                                </Show>
+                                <div class="sp-actions">
+                                    <button class="sp-act" title="Insert into this document" onClick={() => { void insert(a); }}>
+                                        <Plus size={13} />
+                                    </button>
+                                    <button class="sp-act sp-danger" title="Remove from library" onClick={() => { void remove(a); }}>
+                                        <Trash2 size={13} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </For>
+                </div>
+            </Show>
+        </div>
+    );
 };
 
 const SymbolsPanel: Component = () => {
@@ -177,6 +305,7 @@ const SymbolsPanel: Component = () => {
                             </For>
                         </div>
                     </Show>
+                    <AssetLibrarySection />
                 </div>
     );
 };
