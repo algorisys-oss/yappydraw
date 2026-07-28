@@ -69,6 +69,7 @@ import { batch } from "solid-js";
 import { showToast } from "./components/toast";
 import {
     resolveAxes, toPixel, toCoords, toFn, toVectorFn, samplePoints, sampleParametric, tickValues,
+    logTickValues, formatTick,
     type AxesSpec, type AxesOptions, type PlotFn, type VectorFn, type VectorFieldOptions,
 } from "./utils/plot";
 import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides } from "./utils/animation/composition-evaluator";
@@ -3063,27 +3064,49 @@ export const YappyAPI = {
             const labelColor = options.labelColor ?? '#64748b';
             const fontSize = options.fontSize ?? 14;
             const step = options.step ?? 1;
+            const showTicks = options.ticks ?? true;
+            const showLabels = options.labels ?? true;
+            const minor = options.minorTicks ?? true;
             const ids: string[] = [];
-            const P = (x: number, y: number) => toPixel({ ...base, elementIds: [] }, x, y);
+            const spec: AxesSpec = { ...base, elementIds: [] };
+            const P = (x: number, y: number) => toPixel(spec, x, y);
 
-            const x0 = P(base.xMin, 0), x1 = P(base.xMax, 0);
+            // Where each axis LINE sits. A linear axis crosses at 0 when 0 is in range;
+            // otherwise (and always on a log axis, which has no zero) it runs along the
+            // low edge, so the axes frame the data instead of floating off-screen.
+            const xAxisY = base.yScale !== 'log' && base.yMin <= 0 && base.yMax >= 0 ? 0 : base.yMin;
+            const yAxisX = base.xScale !== 'log' && base.xMin <= 0 && base.xMax >= 0 ? 0 : base.xMin;
+
+            const x0 = P(base.xMin, xAxisY), x1 = P(base.xMax, xAxisY);
             ids.push(YappyAPI.createLine(x0.x, x0.y, x1.x, x1.y, { strokeColor: color, strokeWidth: 2 }));
-            const y0 = P(0, base.yMin), y1 = P(0, base.yMax);
+            const y0 = P(yAxisX, base.yMin), y1 = P(yAxisX, base.yMax);
             ids.push(YappyAPI.createLine(y0.x, y0.y, y1.x, y1.y, { strokeColor: color, strokeWidth: 2 }));
 
-            if (options.ticks ?? true) {
-                for (const v of tickValues(base.xMin, base.xMax, step)) {
-                    const p = P(v, 0);
-                    ids.push(YappyAPI.createLine(p.x, p.y - 5, p.x, p.y + 5, { strokeColor: color }));
-                    if (options.labels ?? true) {
-                        ids.push(YappyAPI.createText(p.x - fontSize * 0.4, p.y + 9, String(v), { fontSize, strokeColor: labelColor }));
+            if (showTicks) {
+                // X ticks
+                const xt = base.xScale === 'log'
+                    ? logTickValues(base.xMin, base.xMax, minor)
+                    : tickValues(base.xMin, base.xMax, step).map(value => ({ value, major: true }));
+                for (const { value, major } of xt) {
+                    const p = P(value, xAxisY);
+                    const len = major ? 5 : 3;
+                    ids.push(YappyAPI.createLine(p.x, p.y - len, p.x, p.y + len, { strokeColor: color }));
+                    if (showLabels && major) {
+                        const text = formatTick(value);
+                        ids.push(YappyAPI.createText(p.x - text.length * fontSize * 0.25, p.y + 9, text, { fontSize, strokeColor: labelColor }));
                     }
                 }
-                for (const v of tickValues(base.yMin, base.yMax, step)) {
-                    const p = P(0, v);
-                    ids.push(YappyAPI.createLine(p.x - 5, p.y, p.x + 5, p.y, { strokeColor: color }));
-                    if (options.labels ?? true) {
-                        ids.push(YappyAPI.createText(p.x - fontSize * 1.6, p.y - fontSize * 0.5, String(v), { fontSize, strokeColor: labelColor }));
+                // Y ticks
+                const yt = base.yScale === 'log'
+                    ? logTickValues(base.yMin, base.yMax, minor)
+                    : tickValues(base.yMin, base.yMax, step).map(value => ({ value, major: true }));
+                for (const { value, major } of yt) {
+                    const p = P(yAxisX, value);
+                    const len = major ? 5 : 3;
+                    ids.push(YappyAPI.createLine(p.x - len, p.y, p.x + len, p.y, { strokeColor: color }));
+                    if (showLabels && major) {
+                        const text = formatTick(value);
+                        ids.push(YappyAPI.createText(p.x - fontSize * 0.6 - text.length * fontSize * 0.5, p.y - fontSize * 0.5, text, { fontSize, strokeColor: labelColor }));
                     }
                 }
             }

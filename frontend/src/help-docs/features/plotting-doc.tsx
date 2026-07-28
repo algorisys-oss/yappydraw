@@ -98,7 +98,10 @@ Yappy.texParts(eq.groupId);     // every glyph, in order`}</pre>
                         <tr><td><code>xMin</code>, <code>xMax</code></td><td>−4, 4</td><td>Horizontal range in coordinates</td></tr>
                         <tr><td><code>yMin</code>, <code>yMax</code></td><td>−3, 3</td><td>Vertical range in coordinates</td></tr>
                         <tr><td><code>step</code></td><td>1</td><td>Units between tick marks</td></tr>
+                        <tr><td><code>scale</code></td><td>'linear'</td><td><code>'linear'</code> or <code>'log'</code> — sets both axes</td></tr>
+                        <tr><td><code>xScale</code>, <code>yScale</code></td><td>—</td><td>Per-axis override; <code>{'{'} yScale: 'log' {'}'}</code> gives a semi-log plot</td></tr>
                         <tr><td><code>ticks</code>, <code>labels</code></td><td>true</td><td>Draw tick marks / numeric labels</td></tr>
+                        <tr><td><code>minorTicks</code></td><td>true</td><td>Log axes: mark the unlabelled 2…9 inside each decade</td></tr>
                         <tr><td><code>color</code>, <code>labelColor</code>, <code>fontSize</code></td><td>slate, slate, 14</td><td>Styling</td></tr>
                     </tbody>
                 </table>
@@ -109,6 +112,37 @@ Yappy.plot.point(ax, Math.PI / 2, 1);   // coords → pixels (manim's c2p)
 Yappy.plot.coords(ax, 450, 250);        // pixels → coords (the inverse)
 ax.elementIds;                          // ids of the lines/ticks/labels drawn`}</pre>
                 </div>
+            </section>
+
+            {/* ─── LOG AXES ───────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Logarithmic axes</h2>
+                <p>
+                    Set <code>scale: 'log'</code> for a log-log plot, or one of{' '}
+                    <code>xScale</code>&thinsp;/&thinsp;<code>yScale</code> for a semi-log one. On a
+                    log axis <code>sx</code>&thinsp;/&thinsp;<code>sy</code> means{' '}
+                    <strong>pixels per decade</strong> rather than per unit, ticks are placed one per
+                    decade (with the unlabelled 2…9 inside each), and curves are sampled{' '}
+                    <em>geometrically</em> — uniform sampling would crowd nearly every point into the
+                    last decade and draw the first ones from two or three samples.
+                </p>
+                <div class="code-block">
+                    <pre>{`// log-log: y = x and y = x² become straight lines of slope 1 and 2
+const ax = Yappy.plot.axes({ xMin: 1, xMax: 1000, yMin: 1, yMax: 1000, scale: 'log' });
+Yappy.plot.graph(ax, x => x);
+Yappy.plot.graph(ax, x => x * x);
+
+// semi-log: exponential growth becomes a straight line
+const semi = Yappy.plot.axes({ xMin: 0, xMax: 5, yMin: 1, yMax: 1e5, yScale: 'log' });
+Yappy.plot.graph(semi, x => Math.pow(10, x));`}</pre>
+                </div>
+                <p>
+                    A log axis has no zero, so its axis line runs along the low edge rather than
+                    through the origin, and its range must be positive — a zero or negative bound is
+                    clamped to a small positive value instead of producing <code>NaN</code>.{' '}
+                    <code>point()</code> and <code>coords()</code> account for the scaling, so never do
+                    the arithmetic yourself.
+                </p>
             </section>
 
             {/* ─── GRAPHS ─────────────────────────────────────────────── */}
@@ -253,8 +287,8 @@ Yappy.playScene(true);`}</pre>
                         does not move the elements already on canvas — create fresh axes instead.
                     </li>
                     <li>
-                        No logarithmic axes or 3D axes yet. Polar grids and vector fields are supported;
-                        3D would need a scene graph and camera, which is a larger piece of work.
+                        No 3D axes yet — that would need a scene graph and camera, which is a larger
+                        piece of work. Log axes, polar grids and vector fields are supported.
                     </li>
                 </ul>
             </section>

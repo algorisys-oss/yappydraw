@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.152', date: '2026-07-28', items: [
+        'Charts can now use logarithmic scales — on either axis or both. Handy when your data spans orders of magnitude: exponential growth and power laws show up as clean straight lines instead of a curve pinned against the edge of the chart.',
+    ] },
     { version: '0.8.151', date: '2026-07-28', items: [
         'Proper mathematical equations at last. You can now typeset LaTeX — fractions stacked over a bar, integrals with limits, matrices, square-root signs — and it arrives as real vector artwork you can resize, recolour and animate like any other shape.',
         'Every symbol in an equation is individually selectable, so you can highlight just the pi, or fade in one term at a time while you explain it.',

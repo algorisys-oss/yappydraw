@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.152](0.8.152.md) — Logarithmic axes (log-log and semi-log); manim-parity audit rewritten to probe behaviour rather than method names
 - [0.8.151](0.8.151.md) — `Yappy.tex` typesets real LaTeX as vectors with per-symbol addressing; expression tracks (`setExpression`), vector fields, polar grids; SVG importer now resolves `<use>`/`<defs>`
 - [0.8.150](0.8.150.md) — `Yappy.scene` (manim-style `play`/`wait` sequencing) and `Yappy.plot` (axes, function graphs, parametric curves); API-authored scenes no longer capped at 4s or frozen on Play
 - [0.8.149](0.8.149.md) — Dependency audit clean: 8 vulnerabilities (1 critical) → 0, via an `ejs@6` override that removes the whole vulnerable chain
