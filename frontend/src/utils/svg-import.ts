@@ -324,11 +324,40 @@ function styleOf(node: Element, parent: SvgStyle): SvgStyle {
 
 // ─── Import ─────────────────────────────────────────────────
 
-const SKIP_TAGS = new Set(['defs', 'symbol', 'clippath', 'mask', 'marker', 'pattern', 'lineargradient', 'radialgradient', 'style', 'metadata', 'title', 'desc', 'text', 'use', 'image', 'filter', 'script', 'foreignobject']);
+/**
+ * Never drawn where they sit. `defs` and `symbol` hold *templates* — their content is
+ * rendered only when a `<use>` points at it (see `resolveUse`), otherwise every glyph in
+ * a sprite sheet would be dumped at the origin.
+ */
+const SKIP_TAGS = new Set(['defs', 'symbol', 'clippath', 'mask', 'marker', 'pattern', 'lineargradient', 'radialgradient', 'style', 'metadata', 'title', 'desc', 'text', 'image', 'filter', 'script', 'foreignobject']);
 
-interface Drawable { subs: Sub[]; style: SvgStyle; strokeScale: number; role?: string; part?: string }
+interface Drawable { subs: Sub[]; style: SvgStyle; strokeScale: number; role?: string; part?: string; texPart?: string }
 
-function collectDrawables(node: Element, matrix: Matrix, style: SvgStyle, out: Drawable[], role?: string, part?: string): void {
+/** Depth cap for `<use>` chains — a self- or mutually-referencing `<use>` would otherwise spin forever. */
+const MAX_USE_DEPTH = 12;
+
+interface CollectCtx {
+    /** id → element, for resolving `<use href="#id">`. Built once per document. */
+    ids: Map<string, Element>;
+    /** `<use>` nesting depth, for the cycle guard. */
+    depth: number;
+    /** Ids currently being expanded, so `<use>` → its own ancestor is caught immediately. */
+    expanding: Set<string>;
+}
+
+/** `<use href="#x">` / legacy `xlink:href`. Returns the referenced element, if any. */
+function useTarget(node: Element, ctx: CollectCtx): { id: string; el: Element } | null {
+    const raw = node.getAttribute('href') ?? node.getAttribute('xlink:href')
+        ?? node.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+    if (!raw) return null;
+    const ref = raw.trim();
+    if (!ref.startsWith('#')) return null;      // external refs aren't fetched
+    const id = ref.slice(1);
+    const el = ctx.ids.get(id);
+    return el ? { id, el } : null;
+}
+
+function collectDrawables(node: Element, matrix: Matrix, style: SvgStyle, out: Drawable[], ctx: CollectCtx, role?: string, part?: string, texPart?: string): void {
     const tag = node.tagName.toLowerCase();
     if (SKIP_TAGS.has(tag)) return;
     if (node.getAttribute('display') === 'none') return;
@@ -340,6 +369,36 @@ function collectDrawables(node: Element, matrix: Matrix, style: SvgStyle, out: D
     const r = node.getAttribute('data-sf-role') ?? role;
     // Finer-grained tag (e.g. which body parts are legs) — inherits the same way.
     const pt = node.getAttribute('data-sf-part') ?? part;
+    // Which equation symbol this belongs to (stamped by `Yappy.tex`); inherits the same way.
+    const tp = node.getAttribute('data-tex-part') ?? texPart;
+
+    // `<use>`: splice the referenced subtree in here, offset by the use's x/y.
+    if (tag === 'use') {
+        if (ctx.depth >= MAX_USE_DEPTH) return;
+        const target = useTarget(node, ctx);
+        if (!target || ctx.expanding.has(target.id)) return;   // missing or cyclic
+        const ux = parseFloat(node.getAttribute('x') ?? '0') || 0;
+        const uy = parseFloat(node.getAttribute('y') ?? '0') || 0;
+        const um = mul(m, [1, 0, 0, 1, ux, uy] as Matrix);
+        ctx.expanding.add(target.id);
+        ctx.depth++;
+        // A `<symbol>`/`<svg>` target acts as a group; anything else renders directly.
+        // Either way its own SKIP_TAGS status is bypassed — being referenced is the
+        // whole point — so descend into its children rather than calling on itself.
+        const targetTag = target.el.tagName.toLowerCase();
+        if (targetTag === 'symbol' || targetTag === 'svg') {
+            const tm = mul(um, parseTransform(target.el.getAttribute('transform')));
+            const ts = styleOf(target.el, s);
+            for (const child of Array.from(target.el.children)) {
+                collectDrawables(child, tm, ts, out, ctx, r, pt, tp);
+            }
+        } else {
+            collectDrawables(target.el, um, s, out, ctx, r, pt, tp);
+        }
+        ctx.depth--;
+        ctx.expanding.delete(target.id);
+        return;
+    }
 
     const subs = nodeToSubs(node);
     if (subs.length > 0) {
@@ -361,11 +420,11 @@ function collectDrawables(node: Element, matrix: Matrix, style: SvgStyle, out: D
             }),
         }));
         const strokeScale = Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])) || 1;
-        out.push({ subs: txSubs, style: s, strokeScale, role: r, part: pt });
+        out.push({ subs: txSubs, style: s, strokeScale, role: r, part: pt, texPart: tp });
     }
 
     for (const child of Array.from(node.children)) {
-        collectDrawables(child, m, s, out, r, pt);
+        collectDrawables(child, m, s, out, ctx, r, pt, tp);
     }
 }
 
@@ -398,7 +457,14 @@ export function svgToElements(svgText: string, opts: SvgImportOptions = {}): Dra
 
     const drawables: Drawable[] = [];
     const rootStyle: SvgStyle = { fill: '#000000', stroke: 'none', strokeWidth: 1, opacity: 1 };
-    collectDrawables(root, IDENTITY, styleOf(root, rootStyle), drawables);
+    // Index every id in the document — including inside <defs>/<symbol>, which is where
+    // <use> targets almost always live (MathJax and icon sprites are built this way).
+    const ids = new Map<string, Element>();
+    for (const el of Array.from(doc.querySelectorAll('[id]'))) {
+        const id = el.getAttribute('id');
+        if (id && !ids.has(id)) ids.set(id, el);
+    }
+    collectDrawables(root, IDENTITY, styleOf(root, rootStyle), drawables, { ids, depth: 0, expanding: new Set() });
     if (drawables.length === 0) return [];
 
     // Global bbox across all drawables
@@ -473,6 +539,7 @@ export function svgToElements(svgText: string, opts: SvgImportOptions = {}): Dra
             roundness: null,
             ...(d.role ? { sfRole: d.role } : {}),
             ...(d.part ? { sfPart: d.part } : {}),
+            ...(d.texPart ? { texPart: d.texPart } : {}),
             ...(opts.overrides || {}),
         } as DrawingElement);
     }

@@ -95,7 +95,47 @@ export function easeProgress(k: Pick<TimedKeyframe, 'ease' | 'easing'>, progress
  * Evaluate a single track at absolute time `t`, returning the property's value.
  * Holds at the first/last keyframe outside the track's range (AE default).
  */
+/**
+ * Compiled expression cache, keyed by source. `new Function` is not cheap and the
+ * evaluator runs every frame, so a track's body is compiled once. A body that throws
+ * (or fails to compile) is cached as `null` and skipped from then on, so one bad
+ * expression can't spam the console at 60 fps.
+ */
+const exprCache = new Map<string, ((t: number) => unknown) | null>();
+
+function compileExpr(src: string): ((t: number) => unknown) | null {
+    if (exprCache.has(src)) return exprCache.get(src)!;
+    let fn: ((t: number) => unknown) | null = null;
+    try {
+        // eslint-disable-next-line no-new-func
+        fn = new Function('t', `"use strict"; return (${src});`) as (t: number) => unknown;
+    } catch (err) {
+        console.warn(`[composition] bad expression track "${src}":`, err);
+        fn = null;
+    }
+    exprCache.set(src, fn);
+    return fn;
+}
+
+/** Evaluate an expression track at `t`. Returns undefined if it fails, so the property is left alone. */
+function evaluateExpr(src: string, t: number): number | string | undefined {
+    const fn = compileExpr(src);
+    if (!fn) return undefined;
+    let out: unknown;
+    try {
+        out = fn(t);
+    } catch {
+        exprCache.set(src, null);       // throws at runtime → stop retrying every frame
+        return undefined;
+    }
+    if (typeof out === 'number') return Number.isFinite(out) ? out : undefined;
+    if (typeof out === 'string') return out;
+    return undefined;
+}
+
 function evaluateTrack(track: PropertyTrack, t: number): number | string | undefined {
+    // An expression track computes its value from the clock instead of interpolating.
+    if (track.expr) return evaluateExpr(track.expr, t);
     const keys = track.keys;
     if (!keys || keys.length === 0) return undefined;
     if (keys.length === 1 || t <= keys[0].t) return keys[0].value;

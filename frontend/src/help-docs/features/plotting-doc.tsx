@@ -1,7 +1,7 @@
 /**
- * Math plotting — help doc.
- * `Yappy.plot`: coordinate systems (axes), function graphs, parametric curves,
- * and combining them with the scene script for manim-style explainers.
+ * Maths & plotting — help doc.
+ * `Yappy.tex` (LaTeX → vector paths, per-symbol addressing) and `Yappy.plot`
+ * (axes, function graphs, parametric curves, vector fields, polar grids).
  */
 
 import type { Component } from 'solid-js';
@@ -10,15 +10,63 @@ const PlottingDoc: Component = () => {
     return (
         <div class="doc-container">
             <header class="doc-header">
-                <h1>Math Plotting</h1>
+                <h1>Maths &amp; Plotting</h1>
                 <p class="doc-intro">
-                    <code>Yappy.plot</code> draws <strong>coordinate systems</strong> and{' '}
-                    <strong>function graphs</strong> — the pieces you need for maths, physics and ML
-                    explainers. It is the equivalent of manim&rsquo;s <code>Axes</code> and{' '}
-                    <code>axes.get_graph(f)</code>. Pair it with <code>Yappy.scene</code> (see the{' '}
-                    <strong>Animation</strong> doc) to animate what you plot.
+                    <code>Yappy.tex</code> typesets <strong>LaTeX equations</strong> as vector artwork, and{' '}
+                    <code>Yappy.plot</code> draws <strong>coordinate systems</strong>,{' '}
+                    <strong>function graphs</strong> and <strong>vector fields</strong> — the pieces you
+                    need for maths, physics and ML explainers. Together they are the equivalent of
+                    manim&rsquo;s <code>Tex</code>, <code>Axes</code> and <code>axes.get_graph(f)</code>.
+                    Pair them with <code>Yappy.scene</code> (see the <strong>Animation</strong> doc) to
+                    animate what you draw.
                 </p>
             </header>
+
+            {/* ─── LATEX ──────────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Equations (<code>Yappy.tex</code>)</h2>
+                <p>
+                    Typeset real TeX — fraction bars, integrals with limits, matrices, aligned
+                    derivations — as <strong>vector paths</strong>. Each glyph is an ordinary path
+                    element, so an equation scales, restyles, animates and exports like any other
+                    artwork. (Before this, equations had to be faked in Unicode: <code>L = x²</code>{' '}
+                    worked, <code>∂L/∂w</code> as a proper stacked fraction did not.)
+                </p>
+                <p>
+                    <code>tex()</code> is <strong>async</strong> — MathJax is about 1&nbsp;MB and is
+                    loaded lazily on first use, then cached, so it never slows down app startup.
+                </p>
+                <div class="code-block">
+                    <pre>{`const eq = await Yappy.tex(200, 200, 'e^{i\\\\pi} + 1 = 0', { fontSize: 48 });
+eq.ids      // one path per glyph, in reading order
+eq.parts    // [{ index, char: 'e' }, … , { char: 'π' }, …]
+eq.groupId  // ties the glyphs together
+
+// address a single symbol — manim's equation[R"\\pi"]
+Yappy.texPart(eq.groupId, 'π').forEach(id =>
+    Yappy.updateElement(id, { backgroundColor: '#dc2626' }));
+
+Yappy.texPart(eq.groupId, 0);   // …or by index
+Yappy.texParts(eq.groupId);     // every glyph, in order`}</pre>
+                </div>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>fontSize</code></td><td>32</td><td>Cap height of the equation, in px</td></tr>
+                        <tr><td><code>display</code></td><td>true</td><td>Display (centred) vs inline style</td></tr>
+                        <tr><td><code>group</code></td><td>true</td><td>Group the glyphs so the equation drags as one object</td></tr>
+                        <tr><td><code>backgroundColor</code></td><td>slate-900</td><td>Glyph colour — they are <em>filled</em> shapes, not stroked text</td></tr>
+                    </tbody>
+                </table>
+                <p>
+                    Symbols are keyed by the character they <strong>render as</strong> (<code>'π'</code>,{' '}
+                    <code>'='</code>, <code>'w'</code>) or by index — not by LaTeX source, which MathJax
+                    does not map back. Invalid TeX shows a toast and creates nothing rather than failing
+                    silently.
+                </p>
+            </section>
 
             {/* ─── WHY ────────────────────────────────────────────────── */}
             <section class="doc-section">
@@ -117,6 +165,41 @@ Yappy.plot.parametric(ax, t => Math.sin(3 * t), t => Math.sin(2 * t), {
                 </div>
             </section>
 
+            {/* ─── VECTOR FIELDS ──────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Vector fields &amp; polar grids</h2>
+                <p>
+                    <code>plot.vectorField(axes, fn, options)</code> draws an arrow at each grid point
+                    pointing along <code>fn(x,&nbsp;y)</code> — gradient flow, phase portraits, force
+                    diagrams. Arrow lengths are <strong>normalised</strong> so the longest vector on the
+                    grid is <code>maxLength</code> units; without that, one large vector flattens
+                    everything else into invisible stubs.
+                </p>
+                <div class="code-block">
+                    <pre>{`// rotational field — fn returns [dx, dy]
+Yappy.plot.vectorField(ax, (x, y) => [-y, x], { step: 0.5 });
+
+// gradient of x² + y², as two scalar functions (string form works too)
+Yappy.plot.vectorField(ax, '2*x', '2*y', { step: 1, strokeColor: '#0ea5e9' });
+
+// polar grid + a cardioid r = 1 + cos θ
+Yappy.plot.polarGrid(ax, { ringStep: 1, spokes: 12 });
+Yappy.plot.parametric(ax,
+    t => (1 + Math.cos(t)) * Math.cos(t),
+    t => (1 + Math.cos(t)) * Math.sin(t), { samples: 400 });`}</pre>
+                </div>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>step</code></td><td>1</td><td>Grid spacing in coordinate units</td></tr>
+                        <tr><td><code>maxLength</code></td><td>step × 0.8</td><td>Length of the longest arrow (others scale down proportionally)</td></tr>
+                        <tr><td><code>ringStep</code>, <code>spokes</code></td><td>1, 12</td><td><code>polarGrid</code>: ring spacing and number of radial lines</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
             {/* ─── ANIMATING ──────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Animating a plot</h2>
@@ -151,9 +234,14 @@ Yappy.playScene(true);`}</pre>
                 <h2>Known limitations</h2>
                 <ul>
                     <li>
-                        <strong>No LaTeX yet.</strong> Axis labels and captions are plain text, so equations
-                        must be written in Unicode (<code>L = x²</code>). Fraction bars, integrals with limits
-                        and matrices are not available.
+                        <strong>Axis labels are plain text.</strong> <code>Yappy.tex</code> typesets real
+                        equations, but tick labels themselves are not TeX — place a <code>tex()</code>
+                        equation next to the axis if you need notation there.
+                    </li>
+                    <li>
+                        <strong>Equation symbols are keyed by rendered character</strong>, not LaTeX source.
+                        Structural marks with no glyph — fraction bars, radical vinculums — have no
+                        <code>data-c</code>, so they are not individually addressable.
                     </li>
                     <li>
                         <strong>Curves are dense polylines</strong>, not fitted beziers — at the default 240
@@ -165,7 +253,8 @@ Yappy.playScene(true);`}</pre>
                         does not move the elements already on canvas — create fresh axes instead.
                     </li>
                     <li>
-                        No polar or logarithmic axes, 3D axes, or vector fields yet.
+                        No logarithmic axes or 3D axes yet. Polar grids and vector fields are supported;
+                        3D would need a scene graph and camera, which is a larger piece of work.
                     </li>
                 </ul>
             </section>

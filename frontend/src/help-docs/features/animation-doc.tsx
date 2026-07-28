@@ -166,6 +166,29 @@ Yappy.playScene(true);                                   // watch it`}</pre>
                     valid names rather than quietly flattening your motion.
                 </p>
 
+                <h3>Expression tracks — a property driven by the clock</h3>
+                <p>
+                    Keyframes describe motion between fixed points. Some motion is easier to{' '}
+                    <em>state</em> than to key: an orbit, a bob, a spin, a readout that tracks a value.{' '}
+                    <code>Yappy.setExpression</code> drives a property from a formula in <code>t</code>{' '}
+                    (seconds) instead — the practical equivalent of manim&rsquo;s{' '}
+                    <code>ValueTracker</code> plus <code>always_redraw</code>.
+                </p>
+                <div class="code-block">
+                    <pre>{`Yappy.setExpression(dot, 'y', '300 + 120 * Math.sin(t * 3)');  // bobbing
+Yappy.setExpression(dot, 'angle', 't * Math.PI');               // spinning
+Yappy.setExpression(dot, 'opacity', '50 + 50 * Math.cos(t)');   // pulsing
+
+Yappy.clearExpression(dot, 'y');`}</pre>
+                </div>
+                <p>
+                    The formula is stored as a <strong>string</strong>, not a function, so a composition
+                    stays serialisable — it survives save/load and the embed bridge. An expression
+                    replaces any keyframes on that property. If it throws or returns a non-finite number
+                    the property is simply left alone, and it is not retried, so a typo cannot spam the
+                    console sixty times a second.
+                </p>
+
                 <h3>Easing &amp; the graph editor</h3>
                 <p>
                     Click a keyframe diamond to select it — an <strong>Easing</strong> popover opens for the

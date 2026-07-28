@@ -357,6 +357,14 @@ export interface DrawingElement {
      *  are derived from the leg polylines, so this is how a flattened figure gets its
      *  trousers restyled. */
     sfPart?: string;
+    /** Which symbol of a typeset equation this path came from (e.g. `'\\pi'`, `'='`, `'2'`).
+     *  Set by `Yappy.tex`, which stamps `data-tex-part` on MathJax's token groups before
+     *  import; `Yappy.texPart(id, token)` looks elements up by it so a single symbol can be
+     *  recoloured, highlighted or morphed on its own. */
+    texPart?: string;
+    /** Group id of the equation a `texPart` belongs to, so parts of two equations on the
+     *  same canvas stay distinguishable. */
+    texGroupId?: string;
     /** Animated stick-figure rig payload (element type 'stickRig'). The figure is drawn
      *  procedurally from a motion clip + the global clock; stroke/width come from this element. */
     stickRig?: {

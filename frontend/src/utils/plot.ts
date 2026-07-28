@@ -51,12 +51,64 @@ export interface AxesOptions {
 
 export type PlotFn = (x: number) => number;
 
-/** Accepts a real function or a string body in `x` (so it can cross postMessage). */
+/** A vector field: (x, y) → [dx, dy] in coordinate units. */
+export type VectorFn = (x: number, y: number) => [number, number];
+
+export interface VectorFieldOptions {
+    /** Grid spacing in coordinate units. Default 1. */
+    step?: number;
+    /** Length of the LONGEST arrow, in coordinate units; the rest scale proportionally. */
+    maxLength?: number;
+}
+
+/**
+ * Normalise the two call shapes into one vector function:
+ *   `toVectorFn(fn)`           — fn returns [dx, dy]
+ *   `toVectorFn(fxSrc, fySrc)` — two scalar functions/strings in x and y
+ * String bodies get `x` and `y` in scope so fields can be driven over the embed bridge.
+ */
+export function toVectorFn(fx: VectorFn | PlotFn | string, fy?: VectorFn | PlotFn | string): VectorFn {
+    // Same two string shapes as `toFn`: an expression body, or a whole arrow function.
+    const compile = (src: VectorFn | PlotFn | string) => {
+        if (typeof src === 'function') return src as (x: number, y: number) => unknown;
+        // eslint-disable-next-line no-new-func
+        const c = new Function('x', 'y', `"use strict"; return (${src});`) as (x: number, y: number) => unknown;
+        return (x: number, y: number) => {
+            const out = c(x, y);
+            return typeof out === 'function' ? (out as (x: number, y: number) => unknown)(x, y) : out;
+        };
+    };
+
+    if (fy === undefined) {
+        const f = compile(fx);
+        return (x, y) => {
+            const v = f(x, y);
+            return Array.isArray(v) ? [Number(v[0]), Number(v[1])] : [NaN, NaN];
+        };
+    }
+    const a = compile(fx);
+    const b = compile(fy);
+    return (x, y) => [Number(a(x, y)), Number(b(x, y))];
+}
+
+/**
+ * Accepts a real function or a string (so plots can cross postMessage, where functions
+ * can't go). Both string shapes work, because both are natural to write:
+ *
+ *   `'Math.sin(x)'`   — an expression body in the parameter
+ *   `'x => Math.sin(x)'` — a whole arrow function
+ *
+ * The second compiles to a function that *returns a function*; calling through once
+ * collapses that, so the caller doesn't have to care which form was used.
+ */
 export function toFn(fn: PlotFn | string, param = 'x'): PlotFn {
     if (typeof fn === 'function') return fn;
     // eslint-disable-next-line no-new-func
-    const compiled = new Function(param, `"use strict"; return (${fn});`) as PlotFn;
-    return compiled;
+    const compiled = new Function(param, `"use strict"; return (${fn});`) as (v: number) => unknown;
+    return (v: number) => {
+        const out = compiled(v);
+        return typeof out === 'function' ? (out as PlotFn)(v) : (out as number);
+    };
 }
 
 /** Coordinates → pixels. manim's `axes.c2p(x, y)`. */

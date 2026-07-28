@@ -63,9 +63,13 @@ import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types"
 import type { PropertyTrack, TimedKeyframe } from "./types/motion-types";
 import type { EasingName } from "./utils/animation/animation-types";
 import { SceneScript, type PlayTargets, type PlayOptions, type PlaySpec } from "./utils/animation/scene-script";
+import { renderTex, type TexPart } from "./utils/tex";
+import { svgToElements } from "./utils/svg-import";
+import { batch } from "solid-js";
+import { showToast } from "./components/toast";
 import {
-    resolveAxes, toPixel, toCoords, toFn, samplePoints, sampleParametric, tickValues,
-    type AxesSpec, type AxesOptions, type PlotFn,
+    resolveAxes, toPixel, toCoords, toFn, toVectorFn, samplePoints, sampleParametric, tickValues,
+    type AxesSpec, type AxesOptions, type PlotFn, type VectorFn, type VectorFieldOptions,
 } from "./utils/plot";
 import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides } from "./utils/animation/composition-evaluator";
 import { evaluateTimelineAt } from "./utils/animation/frame-timeline-evaluator";
@@ -2916,6 +2920,127 @@ export const YappyAPI = {
         reset(): void { sceneScript.reset(); },
     },
 
+    /**
+     * Drive a property from an **expression** in `t` (seconds) instead of keyframes —
+     * the continuous, clock-driven case that keyframes can't express. This is the
+     * practical 80% of manim's `ValueTracker` + `always_redraw`.
+     *
+     * `expr` is a JS expression body with `t` in scope, stored as a *string* so the
+     * composition stays JSON-serialisable (it survives save/load and the embed bridge).
+     * It replaces any keyframes on that (element, property) pair.
+     *
+     * ```js
+     * Yappy.setExpression(dot, 'y', '300 + 120 * Math.sin(t * 3)');   // bobbing
+     * Yappy.setExpression(dot, 'angle', 't * Math.PI');                // spinning
+     * Yappy.clearExpression(dot, 'y');
+     * ```
+     * A body that throws or returns a non-finite number is skipped (the property keeps
+     * its own value) and is not retried, so a typo can't spam the console every frame.
+     */
+    setExpression(elementId: string, property: string, expr: string) {
+        setStore('compositionTracks', (tracks: PropertyTrack[]) => {
+            const next = tracks.filter(tr => !(tr.elementId === elementId && tr.property === property));
+            next.push({ elementId, property, keys: [], expr });
+            return next;
+        });
+    },
+    /** Remove an expression track (and any keys) for one property. */
+    clearExpression(elementId: string, property: string) {
+        setStore('compositionTracks', (tracks: PropertyTrack[]) =>
+            tracks.filter(tr => !(tr.elementId === elementId && tr.property === property)));
+    },
+
+    // --- LaTeX typesetting ------------------------------------------------------
+    /**
+     * Typeset a LaTeX equation as **vector paths** — real maths notation (fraction bars,
+     * integrals with limits, matrices, aligned derivations), not Unicode approximations.
+     *
+     * Async: MathJax (~1 MB) is loaded lazily on the first call and cached, so it never
+     * touches the startup bundle. Returns the ids of the glyph paths, or `[]` on failure.
+     *
+     * ```js
+     * const eq = await Yappy.tex(200, 200, 'e^{i\\pi} + 1 = 0', { fontSize: 48 });
+     * Yappy.texPart(eq.groupId, 'π');   // just the pi -> ids, e.g. to recolour it
+     * Yappy.scene.play(eq.ids[0], { opacity: 0 });
+     * ```
+     * Each glyph is an ordinary path element, so it animates, restyles and exports like
+     * any other artwork. Symbols are addressable by their *rendered character* (`'π'`,
+     * `'='`) or index — not by LaTeX source, which MathJax does not map back.
+     */
+    async tex(
+        x: number,
+        y: number,
+        latex: string,
+        options?: ElementOptions & { display?: boolean; fontSize?: number; group?: boolean },
+    ): Promise<{ groupId: string; ids: string[]; parts: TexPart[] }> {
+        const empty = { groupId: '', ids: [] as string[], parts: [] as TexPart[] };
+        let rendered: Awaited<ReturnType<typeof renderTex>>;
+        try {
+            rendered = await renderTex(latex, { display: options?.display ?? true });
+        } catch (err) {
+            console.error(err);
+            showToast(String((err as Error)?.message ?? 'Could not typeset that LaTeX'), 'error');
+            return empty;
+        }
+        // fontSize maps to a target width: MathJax's viewBox is in ex units, so scaling by
+        // the equation's own advance width keeps relative glyph sizes exact.
+        const fontSize = options?.fontSize ?? 32;
+        const exWidth = parseFloat(/width="([\d.]+)ex"/.exec(rendered.svg)?.[1] ?? '10');
+        const targetWidth = exWidth * fontSize * 0.5;
+
+        // Build the elements directly rather than via `importSvgToCanvas`: that shows an
+        // "Imported N vector shapes" toast, which is right for a user dropping an SVG and
+        // wrong for typesetting an equation.
+        const groupId = generateId('texgrp');
+        const built = svgToElements(rendered.svg, {
+            x, y, targetWidth,
+            overrides: {
+                ...(options ?? {}),
+                // MathJax paints glyphs with `currentColor`, which the importer resolves to
+                // black. Honour an explicit colour, else use the default text colour.
+                backgroundColor: options?.backgroundColor ?? options?.strokeColor ?? '#0f172a',
+                strokeColor: 'transparent',
+            } as Partial<DrawingElement>,
+        });
+        if (built.length === 0) return empty;
+
+        const tagged = built.map(el => ({ ...el, texGroupId: groupId }));
+        const ids = tagged.map(el => el.id);
+        pushToHistory();
+        batch(() => {
+            setStore('elements', (prev: DrawingElement[]) => [...prev, ...tagged]);
+            setStore('selection', ids);
+        });
+        bumpDirtyRevision();
+
+        const parts: TexPart[] = rendered.parts
+            .filter(p => p.index < ids.length)
+            .map(p => ({ ...p, elementId: ids[p.index] }));
+        // Grouped by default so the equation drags as one object; `ids`/`texPart` still
+        // address the individual glyphs for recolouring and animation.
+        if (options?.group !== false && ids.length > 1) groupSelected();
+        return { groupId, ids, parts };
+    },
+    /**
+     * Ids of the glyphs of a typeset equation matching `token` — a rendered character
+     * (`'π'`, `'='`, `'2'`) or a 0-based index. Returns every match, so `texPart(eq, 'x')`
+     * gives all the x's. This is the addressing manim spells `equation[R"\pi"]`.
+     */
+    texPart(groupId: string, token: string | number): string[] {
+        const members = store.elements.filter(e => (e as { texGroupId?: string }).texGroupId === groupId);
+        if (typeof token === 'number') {
+            const hit = members[token];
+            return hit ? [hit.id] : [];
+        }
+        return members.filter(e => (e as { texPart?: string }).texPart === token).map(e => e.id);
+    },
+    /** Every glyph of a typeset equation, in reading order — for inspection and indexing. */
+    texParts(groupId: string): { elementId: string; char: string }[] {
+        return store.elements
+            .filter(e => (e as { texGroupId?: string }).texGroupId === groupId)
+            .map(e => ({ elementId: e.id, char: (e as { texPart?: string }).texPart ?? '' }));
+    },
+
     // --- Plotting (coordinate systems + function graphs) ------------------------
     /**
      * Coordinate systems and function graphs — manim's `Axes` / `axes.get_graph(f)`.
@@ -2999,6 +3124,94 @@ export const YappyAPI = {
                 options?.samples ?? 240,
             );
             return plotRuns(runs, options);
+        },
+        /**
+         * Draw a **vector field** — an arrow at each point of a grid, pointing along
+         * `fn(x, y)`. Used for gradient flow, phase portraits and force diagrams.
+         *
+         * `fn` returns `[dx, dy]` in coordinate units, or you may pass two separate
+         * scalar functions/strings in `x` and `y`. Arrow length is normalised so the
+         * longest vector on the grid is `maxLength` units — otherwise one large vector
+         * flattens everything else into invisible stubs.
+         *
+         * ```js
+         * // rotational field
+         * Yappy.plot.vectorField(ax, (x, y) => [-y, x], { step: 0.5 });
+         * // gradient of x² + y² (string form)
+         * Yappy.plot.vectorField(ax, '2*x', '2*y');
+         * ```
+         * Returns the arrow element ids.
+         */
+        vectorField(
+            axes: AxesSpec,
+            fx: VectorFn | string,
+            fy?: VectorFn | string | (ElementOptions & VectorFieldOptions),
+            options?: ElementOptions & VectorFieldOptions,
+        ): string[] {
+            // Overload: (axes, vecFn, options) or (axes, fxStr, fyStr, options)
+            const twoFn = typeof fy === 'function' || typeof fy === 'string';
+            const opts = (twoFn ? options : fy as (ElementOptions & VectorFieldOptions)) ?? {};
+            const field = toVectorFn(fx, twoFn ? (fy as VectorFn | string) : undefined);
+
+            const step = opts.step ?? 1;
+            const samples: { px: number; py: number; dx: number; dy: number; mag: number }[] = [];
+            let maxMag = 0;
+            for (let gx = Math.ceil(axes.xMin / step) * step; gx <= axes.xMax + 1e-9; gx += step) {
+                for (let gy = Math.ceil(axes.yMin / step) * step; gy <= axes.yMax + 1e-9; gy += step) {
+                    let v: [number, number];
+                    try { v = field(gx, gy); } catch { continue; }
+                    if (!v || !Number.isFinite(v[0]) || !Number.isFinite(v[1])) continue;
+                    const mag = Math.hypot(v[0], v[1]);
+                    if (mag === 0) continue;
+                    maxMag = Math.max(maxMag, mag);
+                    const p = toPixel(axes, gx, gy);
+                    samples.push({ px: p.x, py: p.y, dx: v[0], dy: v[1], mag });
+                }
+            }
+            if (samples.length === 0 || maxMag === 0) return [];
+
+            // Normalise so the strongest arrow is `maxLength` units long.
+            const maxLength = opts.maxLength ?? step * 0.8;
+            const ids: string[] = [];
+            for (const s of samples) {
+                const scale = (maxLength * (s.mag / maxMag)) / s.mag;
+                // y flips: +y is up in coordinate space, down in pixels.
+                const ex = s.px + s.dx * scale * axes.sx;
+                const ey = s.py - s.dy * scale * axes.sy;
+                if (Math.hypot(ex - s.px, ey - s.py) < 0.5) continue;   // too short to see
+                const id = YappyAPI.createArrow(s.px, s.py, ex, ey, {
+                    strokeColor: '#64748b', strokeWidth: 1.5, ...opts,
+                });
+                if (id) ids.push(id);
+            }
+            return ids;
+        },
+        /**
+         * Draw a **polar grid** on the same axes: concentric circles every `ringStep`
+         * units plus `spokes` radial lines. Complements `parametric` for polar curves
+         * like `r = 1 + cos(θ)`. Returns the element ids.
+         */
+        polarGrid(
+            axes: AxesSpec,
+            options?: ElementOptions & { ringStep?: number; spokes?: number; maxRadius?: number },
+        ): string[] {
+            const ringStep = options?.ringStep ?? 1;
+            const spokes = options?.spokes ?? 12;
+            const maxR = options?.maxRadius
+                ?? Math.min(Math.abs(axes.xMax), Math.abs(axes.xMin), Math.abs(axes.yMax), Math.abs(axes.yMin));
+            const style: ElementOptions = { strokeColor: '#cbd5e1', strokeWidth: 1, backgroundColor: 'transparent', ...options };
+            const ids: string[] = [];
+            for (let r = ringStep; r <= maxR + 1e-9; r += ringStep) {
+                const id = YappyAPI.plot.parametric(axes, (t: number) => r * Math.cos(t), (t: number) => r * Math.sin(t), { ...style, samples: 180 });
+                if (id) ids.push(id);
+            }
+            for (let i = 0; i < spokes; i++) {
+                const a = (i / spokes) * Math.PI * 2;
+                const p0 = toPixel(axes, 0, 0);
+                const p1 = toPixel(axes, maxR * Math.cos(a), maxR * Math.sin(a));
+                ids.push(YappyAPI.createLine(p0.x, p0.y, p1.x, p1.y, style));
+            }
+            return ids;
         },
     },
 

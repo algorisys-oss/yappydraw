@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.151', date: '2026-07-28', items: [
+        'Proper mathematical equations at last. You can now typeset LaTeX — fractions stacked over a bar, integrals with limits, matrices, square-root signs — and it arrives as real vector artwork you can resize, recolour and animate like any other shape.',
+        'Every symbol in an equation is individually selectable, so you can highlight just the pi, or fade in one term at a time while you explain it.',
+        'New plotting tools for vector fields (arrow grids for gradient flow or phase portraits) and polar grids for curves like the cardioid.',
+        'Properties can now follow a formula rather than fixed keyframes — say "bob up and down forever" or "keep spinning" in one line instead of keyframing every cycle.',
+        'Fixed: SVG files that reuse a shape internally (very common in icon sets and Illustrator exports) used to import as an empty canvas. They now come in correctly.',
+    ] },
     { version: '0.8.150', date: '2026-07-28', items: [
         'You can now build maths and science animations by script. A new scene API lets you write an animation as a list of steps — "move this, wait a second, fade that in" — and each step simply starts where the previous one ended, so you never work out timings yourself.',
         'New plotting tools draw proper graphs: pick a coordinate system, then plot any function or parametric curve in one line. Tick marks and number labels are drawn for you, and awkward spots like the gap in 1/x are handled properly instead of drawing a stray line across the chart.',

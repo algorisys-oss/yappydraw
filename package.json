@@ -1,6 +1,6 @@
 {
   "name": "yappy",
-  "version": "0.8.150",
+  "version": "0.8.151",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
@@ -12,6 +12,7 @@
     "gifenc": "^1.0.3",
     "jspdf": "^4.0.0",
     "lucide-solid": "^0.562.0",
+    "mathjax-full": "^3.2.1",
     "opentype.js": "^1.3.4",
     "polygon-clipping": "^0.15.7",
     "pptxgenjs": "^4.0.1",

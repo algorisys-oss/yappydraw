@@ -150,6 +150,16 @@ export interface PropertyTrack {
     elementId: string;
     property: string;              // 'x' | 'y' | 'width' | 'height' | 'opacity' | 'angle' | 'backgroundColor' | 'strokeColor' | ...
     keys: TimedKeyframe[];         // sorted ascending by `t`; minimum 1
+    /**
+     * Expression track: a JS body in `t` (seconds) evaluated every frame, e.g.
+     * `'200 + 120 * Math.sin(t * 2)'`. When present it REPLACES `keys` — the property
+     * is computed rather than interpolated, which is how a value can depend on the
+     * clock continuously (manim's `ValueTracker` + `always_redraw`).
+     *
+     * Held as a string, not a closure, so a composition stays JSON-serialisable and
+     * survives save/load and the embed bridge.
+     */
+    expr?: string;
 }
 
 /** A document/slide-level absolute-time composition (the AE-mode source of truth). */

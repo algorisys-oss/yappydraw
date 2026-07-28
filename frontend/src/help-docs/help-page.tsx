@@ -258,11 +258,11 @@ const shapeDocuments: ShapeDoc[] = [
     },
     {
         id: 'plotting',
-        name: 'Math Plotting',
+        name: 'Maths & Plotting',
         icon: '📈',
         category: 'Features',
-        description: 'Coordinate systems, function graphs and parametric curves for maths/ML explainers',
-        keywords: 'plot plotting graph function curve axes axis coordinate system number line parametric lissajous math maths mathematics sine cosine sin cos tan exponential parabola manim c2p sample samples domain pole asymptote tick ticks label labels gradient descent explainer scene script play wait animate equation',
+        description: 'LaTeX equations as vectors, plus axes, function graphs, vector fields and polar grids',
+        keywords: 'latex tex mathjax equation equations formula math maths mathematics typeset fraction integral matrix matrices sqrt radical subscript superscript greek pi sigma partial derivative symbol per-symbol texpart plot plotting graph function curve axes axis coordinate system number line parametric lissajous cardioid polar grid vector field arrows gradient descent phase portrait sine cosine sin cos tan exponential parabola manim c2p sample samples domain pole asymptote tick label explainer scene script play wait animate expression valuetracker updater',
         content: PlottingDoc
     },
     {
