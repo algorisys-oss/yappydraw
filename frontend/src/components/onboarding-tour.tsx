@@ -81,23 +81,45 @@ export function startTour(): void {
     setActive(true);
 }
 
+/**
+ * Persist "this user has been offered the tour". Falls back to an in-memory flag
+ * when localStorage is unavailable (private mode, blocked cookies) so the tour at
+ * least can't re-fire within the session.
+ */
+let seenThisSession = false;
+function markTourSeen(): void {
+    seenThisSession = true;
+    try { localStorage.setItem(TOUR_KEY, '1'); } catch { /* ignore */ }
+}
+
 export function endTour(markSeen = true): void {
     setActive(false);
-    if (markSeen) {
-        try { localStorage.setItem(TOUR_KEY, '1'); } catch { /* ignore */ }
-    }
+    if (markSeen) markTourSeen();
 }
 
 export function hasSeenTour(): boolean {
+    if (seenThisSession) return true;
     try { return localStorage.getItem(TOUR_KEY) === '1'; } catch { return false; }
 }
 
-/** Auto-start the tour on the first ever visit (editor only). Call once from App. */
+/**
+ * Auto-start the tour on the first ever visit (editor only). Call once from App.
+ *
+ * The seen-flag is written when the tour *opens*, not when it finishes: the auto-tour
+ * is a one-shot offer, so any exit path — Skip, Esc, finishing, or simply reloading /
+ * closing the tab mid-tour — must leave it dismissed for good. Writing it only in
+ * `endTour` meant an abandoned tour came back on the next load. Replaying from
+ * Help (?) → "Take the tour" calls `startTour()` directly and is unaffected.
+ */
 export function maybeAutoStartTour(): void {
     if (hasSeenTour()) return;
     if (store.appMode === 'presentation') return;
     // Let the landmark components mount + lay out before we measure them.
-    setTimeout(() => { if (!hasSeenTour() && store.appMode !== 'presentation') startTour(); }, 900);
+    setTimeout(() => {
+        if (hasSeenTour() || store.appMode === 'presentation') return;
+        markTourSeen();
+        startTour();
+    }, 900);
 }
 
 const TOOLTIP_W = 340;

@@ -62,6 +62,11 @@ import type { ElementType, DrawingElement, FillStyle, StrokeStyle, FontFamily, T
 import type { Slide, SlideTransition, SlideDocument } from "./types/slide-types";
 import type { PropertyTrack, TimedKeyframe } from "./types/motion-types";
 import type { EasingName } from "./utils/animation/animation-types";
+import { SceneScript, type PlayTargets, type PlayOptions, type PlaySpec } from "./utils/animation/scene-script";
+import {
+    resolveAxes, toPixel, toCoords, toFn, samplePoints, sampleParametric, tickValues,
+    type AxesSpec, type AxesOptions, type PlotFn,
+} from "./utils/plot";
 import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides } from "./utils/animation/composition-evaluator";
 import { evaluateTimelineAt } from "./utils/animation/frame-timeline-evaluator";
 import * as animOps from "./store/anim-ops";
@@ -359,6 +364,39 @@ function normalizeElementType(type: ElementType): ElementType {
         return alias;
     }
     return type;
+}
+
+/**
+ * The scene-script playhead backing `Yappy.scene`. One per document; `reset()` rewinds
+ * it. The host adapter is what keeps `scene-script.ts` free of store imports.
+ */
+const sceneScript = new SceneScript({
+    getProperty(id, property) {
+        const el = store.elements.find(e => e.id === id);
+        if (!el) return 0;
+        if (property === 'opacity') return el.opacity ?? 100;
+        const v = (el as unknown as Record<string, unknown>)[property];
+        return (typeof v === 'number' || typeof v === 'string') ? v : 0;
+    },
+    addKeyframe(id, property, t, value, easing) { YappyAPI.addKeyframe(id, property, t, value, easing); },
+    commit(id, updates) { updateElement(id, updates as Partial<DrawingElement>, false); },
+    clearComposition() { setStore('compositionTracks', []); },
+});
+
+/**
+ * Turn sampled pixel runs into ONE element: a single path when the curve is
+ * continuous, a multi-path when poles split it. Returns null when nothing was finite
+ * (e.g. plotting `1/x` over a range that is entirely a pole).
+ */
+function plotRuns(runs: { x: number; y: number }[][], options?: ElementOptions): string | null {
+    const style: ElementOptions = { strokeColor: '#2563eb', strokeWidth: 2, backgroundColor: 'transparent', ...options };
+    // Dense corner anchors: at the default 240 samples the polyline reads as a smooth
+    // curve, and it stays cheap to hit-test and edit compared with fitted beziers.
+    const anchors = (pts: { x: number; y: number }[]): PathAnchor[] =>
+        pts.map(p => ({ x: p.x, y: p.y, kind: 'corner' }));
+    if (runs.length === 0) return null;
+    if (runs.length === 1) return YappyAPI.createPath(anchors(runs[0]), style);
+    return YappyAPI.createMultiPath(runs.map(pts => ({ anchors: anchors(pts), closed: false })), style);
 }
 
 export const YappyAPI = {
@@ -2839,6 +2877,131 @@ export const YappyAPI = {
         resolveNestedOverrides(overrides, new Map(store.elements.map(e => [e.id, e])));
         return overrides;
     },
+
+    // --- Scene script (manim-style sequencing over the composition engine) ------
+    /**
+     * Author an animation as a linear script instead of by absolute times.
+     *
+     * Each `play(...)` starts where the previous one ended and advances an internal
+     * playhead — the same model as manim's `self.play(...)` / `self.wait(...)`. It
+     * writes ordinary composition keyframes, so the Scene Timeline, Keyframes panel,
+     * `evaluateComposition` and video export all work on the result unchanged.
+     *
+     * ```js
+     * const dot = Yappy.createCircle(100, 300, 24, 24, { backgroundColor: '#ef4444' });
+     * Yappy.scene.reset();
+     * Yappy.scene.play(dot, { x: 600 }, { duration: 2 });   // 0s → 2s
+     * Yappy.scene.wait(1);                                   // hold to 3s
+     * Yappy.scene.play(dot, { opacity: 0 }, { duration: 0.5 });
+     * Yappy.playScene(true);
+     * ```
+     * Open the Scene Timeline (`toggleSceneTimeline(true)`) to watch or scrub it.
+     */
+    scene: {
+        /** Animate `to` from the current values, starting at the playhead. Returns the new playhead. */
+        play(id: string, to: PlayTargets, options?: PlayOptions): number { return sceneScript.play(id, to, options); },
+        /** Several elements over the same span (manim `AnimationGroup`). */
+        playAll(specs: PlaySpec[], options?: PlayOptions): number { return sceneScript.playAll(specs, options); },
+        /** One animation across many elements, offset by `lag` seconds (manim `LaggedStart`). */
+        playLagged(ids: string[], to: PlayTargets, options?: PlayOptions & { lag?: number }): number {
+            return sceneScript.playLagged(ids, to, options);
+        },
+        /** Hold the playhead — the gap reads as a hold, since a track keeps its last value. */
+        wait(seconds?: number): number { return sceneScript.wait(seconds); },
+        /** Current playhead position in seconds — also the scene's length so far. */
+        at(): number { return sceneScript.at(); },
+        /** Move the playhead without animating (to interleave hand-written keyframes). */
+        seek(seconds: number): number { return sceneScript.seek(seconds); },
+        /** Clear every composition track and rewind the playhead to 0. */
+        reset(): void { sceneScript.reset(); },
+    },
+
+    // --- Plotting (coordinate systems + function graphs) ------------------------
+    /**
+     * Coordinate systems and function graphs — manim's `Axes` / `axes.get_graph(f)`.
+     *
+     * `axes()` returns a plain `AxesSpec` (no closures, so it crosses the embed bridge
+     * and can be saved), which the other calls take as their first argument.
+     *
+     * ```js
+     * const ax = Yappy.plot.axes({ xMin: -4, xMax: 4, yMin: -2, yMax: 2 });
+     * Yappy.plot.graph(ax, Math.sin, { strokeColor: '#2563eb' });
+     * Yappy.plot.graph(ax, 'Math.cos(x)', { strokeColor: '#ef4444' });  // string form
+     * const p = Yappy.plot.point(ax, Math.PI / 2, 1);                   // → pixel {x, y}
+     * ```
+     */
+    plot: {
+        /** Draw a coordinate system (axis lines, ticks, labels). Returns its `AxesSpec`. */
+        axes(options: AxesOptions = {}): AxesSpec {
+            const base = resolveAxes(options);
+            const color = options.color ?? '#94a3b8';
+            const labelColor = options.labelColor ?? '#64748b';
+            const fontSize = options.fontSize ?? 14;
+            const step = options.step ?? 1;
+            const ids: string[] = [];
+            const P = (x: number, y: number) => toPixel({ ...base, elementIds: [] }, x, y);
+
+            const x0 = P(base.xMin, 0), x1 = P(base.xMax, 0);
+            ids.push(YappyAPI.createLine(x0.x, x0.y, x1.x, x1.y, { strokeColor: color, strokeWidth: 2 }));
+            const y0 = P(0, base.yMin), y1 = P(0, base.yMax);
+            ids.push(YappyAPI.createLine(y0.x, y0.y, y1.x, y1.y, { strokeColor: color, strokeWidth: 2 }));
+
+            if (options.ticks ?? true) {
+                for (const v of tickValues(base.xMin, base.xMax, step)) {
+                    const p = P(v, 0);
+                    ids.push(YappyAPI.createLine(p.x, p.y - 5, p.x, p.y + 5, { strokeColor: color }));
+                    if (options.labels ?? true) {
+                        ids.push(YappyAPI.createText(p.x - fontSize * 0.4, p.y + 9, String(v), { fontSize, strokeColor: labelColor }));
+                    }
+                }
+                for (const v of tickValues(base.yMin, base.yMax, step)) {
+                    const p = P(0, v);
+                    ids.push(YappyAPI.createLine(p.x - 5, p.y, p.x + 5, p.y, { strokeColor: color }));
+                    if (options.labels ?? true) {
+                        ids.push(YappyAPI.createText(p.x - fontSize * 1.6, p.y - fontSize * 0.5, String(v), { fontSize, strokeColor: labelColor }));
+                    }
+                }
+            }
+            return { ...base, elementIds: ids };
+        },
+        /** Coordinates → pixels (manim's `c2p`). */
+        point(axes: AxesSpec, x: number, y: number) { return toPixel(axes, x, y); },
+        /** Pixels → coordinates. */
+        coords(axes: AxesSpec, px: number, py: number) { return toCoords(axes, px, py); },
+        /**
+         * Plot `y = f(x)` across the axes' x-range (or `[from, to]`). `fn` may be a
+         * function or a string body in `x`. Poles and domain errors split the curve
+         * rather than drawing a spike. Returns the path element id (null if nothing
+         * was finite).
+         */
+        graph(
+            axes: AxesSpec,
+            fn: PlotFn | string,
+            options?: ElementOptions & { from?: number; to?: number; samples?: number },
+        ): string | null {
+            const runs = samplePoints(
+                axes, toFn(fn),
+                options?.from ?? axes.xMin, options?.to ?? axes.xMax,
+                options?.samples ?? 240,
+            );
+            return plotRuns(runs, options);
+        },
+        /** Plot a parametric curve `(fx(t), fy(t))` over `[from, to]`. */
+        parametric(
+            axes: AxesSpec,
+            fx: PlotFn | string,
+            fy: PlotFn | string,
+            options?: ElementOptions & { from?: number; to?: number; samples?: number },
+        ): string | null {
+            const runs = sampleParametric(
+                axes, toFn(fx, 't'), toFn(fy, 't'),
+                options?.from ?? 0, options?.to ?? Math.PI * 2,
+                options?.samples ?? 240,
+            );
+            return plotRuns(runs, options);
+        },
+    },
+
     /**
      * Create a **null object** — an invisible transform holder (renders as a crosshair
      * gizmo, excluded from export) used purely as an animation parent. Set another

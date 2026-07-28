@@ -32,6 +32,7 @@ const SketchnoteDoc = lazy(() => import('./shapes/sketchnote-doc'));
 const MindmapDoc = lazy(() => import('./shapes/mindmap-doc'));
 const TableDoc = lazy(() => import('./shapes/table-doc'));
 const AnimationDoc = lazy(() => import('./features/animation-doc'));
+const PlottingDoc = lazy(() => import('./features/plotting-doc'));
 const AnimateDoc = lazy(() => import('./features/animate-doc'));
 const EmbeddingDoc = lazy(() => import('./features/embedding-doc'));
 const YslTutorialDoc = lazy(() => import('./features/ysl-tutorial-doc'));
@@ -254,6 +255,15 @@ const shapeDocuments: ShapeDoc[] = [
         category: 'Features',
         description: 'Animate elements with presets, keyframes, and spring physics',
         content: AnimationDoc
+    },
+    {
+        id: 'plotting',
+        name: 'Math Plotting',
+        icon: '📈',
+        category: 'Features',
+        description: 'Coordinate systems, function graphs and parametric curves for maths/ML explainers',
+        keywords: 'plot plotting graph function curve axes axis coordinate system number line parametric lissajous math maths mathematics sine cosine sin cos tan exponential parabola manim c2p sample samples domain pole asymptote tick ticks label labels gradient descent explainer scene script play wait animate equation',
+        content: PlottingDoc
     },
     {
         id: 'animate',

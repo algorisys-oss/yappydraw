@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.150', date: '2026-07-28', items: [
+        'You can now build maths and science animations by script. A new scene API lets you write an animation as a list of steps — "move this, wait a second, fade that in" — and each step simply starts where the previous one ended, so you never work out timings yourself.',
+        'New plotting tools draw proper graphs: pick a coordinate system, then plot any function or parametric curve in one line. Tick marks and number labels are drawn for you, and awkward spots like the gap in 1/x are handled properly instead of drawing a stray line across the chart.',
+        'Fixed: a scripted animation longer than four seconds used to stop dead at four seconds, and pressing Play sometimes left the playhead sitting still. Both now behave.',
+        'Fixed: the welcome tour could reappear after you had already dismissed it. Skip it once and it stays gone — you can always replay it from Help (?).',
+    ] },
     { version: '0.8.149', date: '2026-07-28', items: [
         'Security housekeeping: every known vulnerability in the libraries YappyDraw is built on is now patched, including a critical one that shipped in the app itself. Nothing changes in how the app works — it is just built on safer foundations.',
     ] },

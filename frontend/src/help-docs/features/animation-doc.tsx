@@ -125,6 +125,47 @@ Yappy.seekScene(1);                         // scrub to 1s (x = 250, opacity ≈
 Yappy.evaluateComposition(1);               // → Map(id → { x, opacity })`}</pre>
                 </div>
 
+                <h3>Scene script — sequencing without doing the time maths</h3>
+                <p>
+                    Writing keyframes directly means computing every absolute time yourself.{' '}
+                    <code>Yappy.scene</code> is a <strong>playhead</strong> over the same tracks: each{' '}
+                    <code>play()</code> starts where the previous one ended, exactly like manim&rsquo;s{' '}
+                    <code>self.play()</code> / <code>self.wait()</code>. It produces ordinary composition
+                    keyframes, so the timeline, the Keyframes panel, scrubbing and video export all work on
+                    the result unchanged.
+                </p>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Call</th><th>What it does</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>scene.play(id, to, opts)</code></td><td>Animate one element to <code>to</code>; advances the playhead by <code>duration</code> (default 1&nbsp;s)</td></tr>
+                        <tr><td><code>scene.playAll(specs, opts)</code></td><td>Several elements over the <em>same</em> span (manim <code>AnimationGroup</code>)</td></tr>
+                        <tr><td><code>scene.playLagged(ids, to, opts)</code></td><td>One animation across many elements, offset by <code>lag</code> seconds (manim <code>LaggedStart</code>)</td></tr>
+                        <tr><td><code>scene.wait(s)</code></td><td>Hold — the gap reads as a hold, since a track keeps its last value</td></tr>
+                        <tr><td><code>scene.at()</code></td><td>Playhead position, i.e. the scene&rsquo;s length so far</td></tr>
+                        <tr><td><code>scene.seek(s)</code></td><td>Move the playhead without animating (to interleave hand-written keys)</td></tr>
+                        <tr><td><code>scene.reset()</code></td><td>Clear every track and rewind to 0</td></tr>
+                    </tbody>
+                </table>
+                <div class="code-block">
+                    <pre>{`const dot = Yappy.createCircle(100, 300, 24, 24, { backgroundColor: '#ef4444' });
+Yappy.scene.reset();
+Yappy.scene.play(dot, { x: 600 }, { duration: 2 });     // 0s → 2s
+Yappy.scene.wait(1);                                     // hold to 3s
+Yappy.scene.play(dot, { opacity: 0 }, { duration: 0.5 }); // 3s → 3.5s
+Yappy.scene.at();                                        // → 3.5
+
+Yappy.toggleSceneTimeline(true);
+Yappy.playScene(true);                                   // watch it`}</pre>
+                </div>
+                <p>
+                    <strong>Easing names are checked.</strong> The default is <code>easeInOutCubic</code>.
+                    An unrecognised name (<code>'easeInOut'</code> is a common guess and is <em>not</em> a real
+                    name) falls back to linear — <code>scene.play</code> logs one console warning listing the
+                    valid names rather than quietly flattening your motion.
+                </p>
+
                 <h3>Easing &amp; the graph editor</h3>
                 <p>
                     Click a keyframe diamond to select it — an <strong>Easing</strong> popover opens for the

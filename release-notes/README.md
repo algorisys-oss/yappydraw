@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.150](0.8.150.md) — `Yappy.scene` (manim-style `play`/`wait` sequencing) and `Yappy.plot` (axes, function graphs, parametric curves); API-authored scenes no longer capped at 4s or frozen on Play
 - [0.8.149](0.8.149.md) — Dependency audit clean: 8 vulnerabilities (1 critical) → 0, via an `ejs@6` override that removes the whole vulnerable chain
 - [0.8.148](0.8.148.md) — Beta badge was failing WCAG AA (3.53:1); fixed, plus the contrast audit that was blind to gradients
 - [0.8.147](0.8.147.md) — The intermittent "stuck loading" screen is fixed: four layers of boot recovery, so a startup failure always ends in a Reload button

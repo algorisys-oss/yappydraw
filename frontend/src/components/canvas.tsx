@@ -160,8 +160,14 @@ const Canvas: Component = () => {
         } else {
             // Keep the ticker alive for flow (marching-ants), any playing stick-rig
             // figure (the stickRig renderer re-poses from the clock each repaint),
-            // and while an offline page-video export needs the clock.
-            const needsTicker = pageVideoExporting() || store.elements.some(el =>
+            // while an offline page-video export needs the clock, and while the
+            // Scene Timeline is playing.
+            //
+            // `storyPlaying` matters even with nothing else animating: the timeline's
+            // play controller advances its playhead from this clock, so a scene made
+            // purely of composition keyframes (every API-authored scene — no stick
+            // figures on canvas) would render correctly but never move.
+            const needsTicker = pageVideoExporting() || store.storyPlaying || store.elements.some(el =>
                 el.flowAnimation || (el.type === 'stickRig' && el.stickRig?.playing !== false));
             animationEngine.setForceTicker(needsTicker);
         }

@@ -75,9 +75,18 @@ const SceneTimeline: Component = () => {
         window.addEventListener('pointerup', up);
     };
 
-    /** Auto scene duration = longest track (min 4s). */
+    /**
+     * Auto scene duration = longest thing on the scene (min 4s).
+     *
+     * Both clocks feed this: animated-figure clips AND absolute-time composition
+     * keyframes. Counting only the figure clips meant an API-authored scene (which
+     * has no figures at all) was pinned to the 4s floor, so any composition longer
+     * than that was silently unplayable past 4s — the playhead just stopped.
+     */
     createEffect(() => {
-        const dur = Math.max(4, ...tracks().map(t => t.total));
+        const clipEnd = Math.max(0, ...tracks().map(t => t.total));
+        const keyEnd = Math.max(0, ...store.compositionTracks.flatMap(t => t.keys.map(k => k.t)));
+        const dur = Math.max(4, clipEnd, keyEnd);
         untrack(() => { if (Math.abs(dur - store.storyDuration) > 0.05) setStore('storyDuration', dur); });
     });
 
