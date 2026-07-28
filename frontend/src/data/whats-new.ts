@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.149', date: '2026-07-28', items: [
+        'Security housekeeping: every known vulnerability in the libraries YappyDraw is built on is now patched, including a critical one that shipped in the app itself. Nothing changes in how the app works — it is just built on safer foundations.',
+    ] },
     { version: '0.8.148', date: '2026-07-28', items: [
         'The BETA badge next to the logo was genuinely hard to read — white text on a gradient that only reached 3.5:1 contrast where it should be 4.5:1. The gradient is now a shade deeper, so the label is legible without changing its look.',
     ] },
