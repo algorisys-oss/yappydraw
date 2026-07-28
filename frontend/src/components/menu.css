@@ -54,9 +54,13 @@
     line-height: 1;
     text-transform: uppercase;
     color: #fff;
-    /* Fixed white-on-gradient: 4.6:1 against the lighter end, so it holds in
-       both themes without needing per-theme tokens. */
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 55%, #ec4899 100%);
+    /* White-on-gradient, one shade deeper than the original 500-level stops so it
+       actually clears WCAG AA at this 8px size. Measured against white text:
+       #4f46e5 = 6.29:1, #9333ea = 5.38:1, #db2777 = 4.60:1 — every stop ≥ 4.5, so
+       it holds wherever the gradient lands and in both themes. (The previous stops
+       were 4.47 / 3.96 / 3.53:1; the old comment claiming 4.6:1 was measuring the
+       wrong end.) */
+    background: linear-gradient(135deg, #4f46e5 0%, #9333ea 55%, #db2777 100%);
     box-shadow: 0 1px 3px rgba(99, 102, 241, 0.35);
     flex-shrink: 0;
     user-select: none;

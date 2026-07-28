@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.148', date: '2026-07-28', items: [
+        'The BETA badge next to the logo was genuinely hard to read — white text on a gradient that only reached 3.5:1 contrast where it should be 4.5:1. The gradient is now a shade deeper, so the label is legible without changing its look.',
+    ] },
     { version: '0.8.147', date: '2026-07-28', items: [
         'Fixed the occasional hang on the loading screen. If the editor ever failed to start you would just sit and watch the bicycle bounce forever — now anything that goes wrong at startup gives you a clear message and a Reload button instead.',
         'The usual culprit turned out to be one bad saved preference: a single corrupted setting could stop the whole app from opening. Bad settings are now thrown away automatically rather than blocking startup, so it cannot happen twice.',

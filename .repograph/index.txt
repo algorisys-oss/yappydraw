@@ -78,7 +78,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 3928 | Theme:3 HarmonyType:60 DimensionMeasure:70 ElementOptions:142 normalizeElementType:355 ElementType:564 as:564 Window:3917
+frontend/src/api.ts | typescript | 3930 | Theme:3 HarmonyType:60 DimensionMeasure:70 ElementOptions:142 normalizeElementType:355 ElementType:564 as:564 Window:3919
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1477 | Component:1 App:95 moves:120 onPenMove:121 hidePen:125 handleKeyUp:164 handleKeyDown:174 as:749 handleFullscreenChange:864 handleBeforeUnload:870 handlePaste:874 handleGlobalDragEnter:976 handleGlobalDragOver:991 showDropFallbackPrompt:1010 cleanup:1040 outsideClick:1068 isImageFile:1080 first:1081 must:1094 extractDropData:1096 processExtractedDrop:1151 handleGlobalDrop:1268 handleDocumentDrop:1314
 frontend/src/assets/solid.svg | - | 1 |
@@ -189,7 +189,7 @@ frontend/src/components/math-number-input.css | - | 55 |
 frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 display:32 round:36 clamp:37 commit:43 liveCommit:54 bump:63 step:71
 frontend/src/components/measure-overlay.css | - | 83 |
 frontend/src/components/measure-overlay.tsx | typescript | 128 | MeasureOverlay:16 toWorld:21 onDown:23 onMove:30 onUp:40 onKey:45 seg:54 metrics:69 unit:77 distLabel:79
-frontend/src/components/menu.css | - | 336 |
+frontend/src/components/menu.css | - | 340 |
 frontend/src/components/menu.tsx | typescript | 1481 | Component:1 SaveIntent:86 handleSaveRequest:88 isUnnamedDrawing:106 quickSaveToGallery:111 proceed:129 Menu:144 handleUnsavedCancel:166 handleUnsavedDiscard:171 handleUnsavedSave:178 propPanelOffset:190 onPaletteEscape:200 performSave:211 is:287 handleLoad:323 handleResetView:343 loadTemplateAction:348 handleTemplateSelect:388 handleOpenJson:397 handleLoadJsonText:448 handleExportHtml:464 handleExportExcalidraw:476 handleExportRocket:497 handleDeployToRocket:530 onLeftMouseDown:581 onRightMouseDown:596 onMouseMove:610 onMouseUp:625 handleResize:634
 frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
@@ -327,7 +327,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 293 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 296 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -803,7 +803,7 @@ tests/composition-evaluator.spec.ts | typescript | 47 | composition:4
 tests/compound-edit.spec.ts | typescript | 66 | widthOf:18
 tests/compound-shapes.spec.ts | typescript | 85 | state:31
 tests/comprehensive-features.spec.ts | typescript | 238 |
-tests/contrast.spec.ts | typescript | 284 | Page:1 relLuminance:16 contrast:20 sample:27 Surface:174
+tests/contrast.spec.ts | typescript | 308 | Page:1 relLuminance:16 contrast:20 sample:27 Surface:198
 tests/curvature.spec.ts | typescript | 35 |
 tests/data-structures.spec.ts | typescript | 188 |
 tests/default-style.spec.ts | typescript | 17 |
@@ -843,7 +843,7 @@ tests/graph-tool.spec.ts | typescript | 18 |
 tests/graphic-styles.spec.ts | typescript | 45 | S:10
 tests/help-docs.spec.ts | typescript | 23 |
 tests/history-panel.spec.ts | typescript | 37 |
-tests/hotkeys.spec.ts | typescript | 222 |
+tests/hotkeys.spec.ts | typescript | 226 |
 tests/html-player-check.spec.ts | typescript | 113 | Page:1 Window:7 inkedPixels:11 exportDoc:26
 tests/idb-storage.spec.ts | typescript | 97 | Window:6
 tests/image-and-swatches.spec.ts | typescript | 323 | snap:107 snap:156 geom:252
@@ -924,7 +924,7 @@ tests/swatch-bleed-batch.spec.ts | typescript | 69 | countBleedGreen:50
 tests/swatch-id.spec.ts | typescript | 44 | S:32
 tests/swatch-repair.spec.ts | typescript | 22 | S:7
 tests/swatches.spec.ts | typescript | 53 | S:10
-tests/symbol-edit.spec.ts | typescript | 74 | S:13
+tests/symbol-edit.spec.ts | typescript | 82 | S:13
 tests/symbol-sprayer.spec.ts | typescript | 21 |
 tests/symbolism.spec.ts | typescript | 24 |
 tests/symbols-panel.spec.ts | typescript | 69 | S:14
@@ -942,7 +942,7 @@ tests/toolbar-persist.spec.ts | typescript | 16 |
 tests/toolbar-pos.spec.ts | typescript | 12 |
 tests/touch-type.spec.ts | typescript | 16 |
 tests/types/motion-types.spec.ts | typescript | 90 |
-tests/ui-panels.spec.ts | typescript | 248 |
+tests/ui-panels.spec.ts | typescript | 247 |
 tests/uml-tools.spec.ts | typescript | 169 |
 tests/upa-texture-simplify-library.spec.ts | typescript | 285 | of:115
 tests/vector-tools-panel.spec.ts | typescript | 76 | count:45

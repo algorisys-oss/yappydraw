@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.148](0.8.148.md) — Beta badge was failing WCAG AA (3.53:1); fixed, plus the contrast audit that was blind to gradients
 - [0.8.147](0.8.147.md) — The intermittent "stuck loading" screen is fixed: four layers of boot recovery, so a startup failure always ends in a Reload button
 - [0.8.146](0.8.146.md) — Noise/grunge texture overlays, Ctrl+L Simplify that auto-converts strokes, cross-document asset library; SVG arcs finally parsed (9 shapes regain Convert to Path)
 - [0.8.145](0.8.145.md) — Animation Studio finale: frame actions (stop/goto/next-scene), self-contained HTML player, keyframed camera — roadmap complete
