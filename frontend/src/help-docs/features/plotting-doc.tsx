@@ -66,6 +66,42 @@ Yappy.texParts(eq.groupId);     // every glyph, in order`}</pre>
                     does not map back. Invalid TeX shows a toast and creates nothing rather than failing
                     silently.
                 </p>
+
+                <h3>Morphing one equation into another</h3>
+                <p>
+                    <code>Yappy.texTransform(from, to)</code> is manim&rsquo;s{' '}
+                    <code>TransformMatchingTex</code>: symbols that appear in both equations{' '}
+                    <strong>glide to their new positions</strong> while the rest cross-fades. It is the
+                    move that makes a derivation read as one continuous idea rather than a slideshow.
+                </p>
+                <div class="code-block">
+                    <pre>{`const a = await Yappy.tex(200, 200, 'a^2 + b^2 = c^2', { fontSize: 54 });
+const b = await Yappy.tex(200, 200, 'c = \\sqrt{a^2 + b^2}', { fontSize: 54 });
+
+Yappy.texTransform(a.groupId, b.groupId, { duration: 1.5 });
+// → { matched: 7, faded: 1, introduced: 2 }
+
+Yappy.toggleSceneTimeline(true);
+Yappy.playScene(true);`}</pre>
+                </div>
+                <p>
+                    Create the target equation first — it is held invisible until the morph runs, and
+                    is what you are left with afterwards, so morphs chain. Glyphs pair by rendered
+                    character in reading order, so repeated symbols match left-to-right (the first{' '}
+                    <code>x</code> with the first <code>x</code>). It schedules on the{' '}
+                    <code>Yappy.scene</code> playhead and advances it, so it sequences with{' '}
+                    <code>scene.play</code>/<code>wait</code> like any other step.
+                </p>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>duration</code></td><td>1</td><td>Seconds the morph takes</td></tr>
+                        <tr><td><code>easing</code></td><td>—</td><td>Named easing for the glide</td></tr>
+                        <tr><td><code>fadeRatio</code></td><td>0.5</td><td>Fraction of the duration the fades occupy, so the glide reads as the main event</td></tr>
+                    </tbody>
+                </table>
             </section>
 
             {/* ─── WHY ────────────────────────────────────────────────── */}

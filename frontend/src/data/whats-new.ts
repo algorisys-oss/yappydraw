@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.153', date: '2026-07-28', items: [
+        'Equations can now morph into one another. Write two versions of a formula and the symbols they share glide into their new places while the rest fades — so a derivation reads as one continuous idea instead of a series of separate slides.',
+        'Fixed a long-standing annoyance: dragging the playhead on the Scene Timeline while paused did not actually update the canvas. Animations played correctly but scrubbing showed a stale frame, which made fades in particular look like they were not working at all.',
+    ] },
     { version: '0.8.152', date: '2026-07-28', items: [
         'Charts can now use logarithmic scales — on either axis or both. Handy when your data spans orders of magnitude: exponential growth and power laws show up as clean straight lines instead of a curve pinned against the edge of the chart.',
     ] },

@@ -95,6 +95,11 @@ export const generateId = (type: string, batchIds?: Set<string>): string => {
     // invisible to the element scan — without this a new group after reload re-uses the same
     // id and cross-wires two groups. Scan the tags too.
     scanMax(store.elements.filter(e => (e as any).livePaintGroupId).map(e => ({ id: (e as any).livePaintGroupId })));
+    // Same story for equation group ids (`Yappy.tex`): `texGroupId` is a tag, not an
+    // element `.id`, so without this the second equation on a canvas re-uses the first's
+    // group — `texPart()` then returns glyphs from both, and `texTransform()` sees one
+    // merged equation instead of a source and a target.
+    scanMax(store.elements.filter(e => (e as any).texGroupId).map(e => ({ id: (e as any).texGroupId })));
     // Group / clip / trace ids live in element.groupIds[] (not as an element `.id`), so the
     // element scan above can't see them. Without this every new group re-uses grup-1 and
     // cross-wires separate groups — e.g. two flares select together. Scan the tags too.

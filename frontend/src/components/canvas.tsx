@@ -588,6 +588,13 @@ const Canvas: Component = () => {
 
     createEffect(() => {
         effectiveTime(); // Track global animation clock
+        // The AE composition playhead. Scrubbing while PAUSED moves `storyTime` without
+        // ticking the animation clock, so without these two deps the canvas kept showing
+        // whatever frame it last painted: `seekScene(t)` returned correct values from
+        // `evaluateComposition` while the canvas silently disagreed with them. Same class
+        // of bug as the `setDocType` note below — a state change that redraws nothing.
+        store.storyTime;
+        store.compositionTracks;
         store.appMode; // Track mode changes explicitly
         store.isPreviewing; // Track preview state
         store.theme; // Track theme changes

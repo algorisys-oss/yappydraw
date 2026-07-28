@@ -3035,6 +3035,101 @@ export const YappyAPI = {
         }
         return members.filter(e => (e as { texPart?: string }).texPart === token).map(e => e.id);
     },
+    /**
+     * Morph one typeset equation into another, matching symbols that appear in both —
+     * manim's `TransformMatchingTex`. The single most recognisable maths-explainer move:
+     * shared terms glide to their new positions while the rest cross-fades.
+     *
+     * Glyphs are paired by **rendered character**, in reading order, so repeated symbols
+     * pair left-to-right (the first `x` of the source with the first `x` of the target).
+     * Unmatched source glyphs fade out; unmatched target glyphs fade in.
+     *
+     * Schedules on the `Yappy.scene` playhead and advances it, so it sequences with
+     * `scene.play`/`wait` like any other step. Create the target equation first — it is
+     * held invisible until the morph runs.
+     *
+     * ```js
+     * const a = await Yappy.tex(100, 100, 'a^2 + b^2 = c^2');
+     * const b = await Yappy.tex(100, 100, 'c = \\sqrt{a^2 + b^2}');
+     * Yappy.texTransform(a.groupId, b.groupId, { duration: 1.5 });
+     * Yappy.playScene(true);
+     * ```
+     * Returns `{ matched, faded, introduced }` counts for inspection.
+     */
+    texTransform(
+        fromGroupId: string,
+        toGroupId: string,
+        options?: { duration?: number; easing?: EasingName; fadeRatio?: number },
+    ): { matched: number; faded: number; introduced: number } {
+        const duration = options?.duration ?? 1;
+        const easing = options?.easing;
+        const glyphs = (gid: string) => store.elements
+            .filter(e => (e as { texGroupId?: string }).texGroupId === gid)
+            .map(e => ({ el: e, char: (e as { texPart?: string }).texPart ?? '' }));
+
+        const src = glyphs(fromGroupId);
+        const dst = glyphs(toGroupId);
+        if (src.length === 0 || dst.length === 0) return { matched: 0, faded: 0, introduced: 0 };
+
+        // Pair by character, in reading order — a queue per character so the Nth 'x' on
+        // the left matches the Nth 'x' on the right rather than an arbitrary one.
+        const pools = new Map<string, DrawingElement[]>();
+        for (const d of dst) {
+            if (!d.char) continue;
+            const q = pools.get(d.char) ?? [];
+            q.push(d.el);
+            pools.set(d.char, q);
+        }
+        const pairs: { from: DrawingElement; to: DrawingElement }[] = [];
+        const unmatchedSrc: DrawingElement[] = [];
+        for (const s of src) {
+            const q = s.char ? pools.get(s.char) : undefined;
+            const hit = q && q.length ? q.shift()! : null;
+            if (hit) pairs.push({ from: s.el, to: hit });
+            else unmatchedSrc.push(s.el);
+        }
+        const matchedTargets = new Set(pairs.map(p => p.to.id));
+        const unmatchedDst = dst.map(d => d.el).filter(e => !matchedTargets.has(e.id));
+
+        const start = sceneScript.at();
+        // Target starts hidden; matched targets stay hidden until the swap.
+        for (const d of dst) updateElement(d.el.id, { opacity: 0 }, false);
+
+        // Matched: glide the SOURCE glyph onto the target's pose, then swap the two
+        // instantly at the end. They are coincident by then, so the swap is invisible —
+        // and it leaves the target equation as the real result, ready to be morphed again.
+        for (const { from, to } of pairs) {
+            YappyAPI.addKeyframe(from.id, 'x', start, from.x, easing);
+            YappyAPI.addKeyframe(from.id, 'y', start, from.y, easing);
+            YappyAPI.addKeyframe(from.id, 'width', start, from.width, easing);
+            YappyAPI.addKeyframe(from.id, 'height', start, from.height, easing);
+            YappyAPI.addKeyframe(from.id, 'x', start + duration, to.x, easing);
+            YappyAPI.addKeyframe(from.id, 'y', start + duration, to.y, easing);
+            YappyAPI.addKeyframe(from.id, 'width', start + duration, to.width, easing);
+            YappyAPI.addKeyframe(from.id, 'height', start + duration, to.height, easing);
+            // Hard swap: hold each opacity, then step at the end (no crossfade ghosting).
+            YappyAPI.addKeyframe(from.id, 'opacity', start, 100, easing);
+            YappyAPI.addKeyframe(from.id, 'opacity', start + duration, 100, easing);
+            YappyAPI.addKeyframe(from.id, 'opacity', start + duration + 0.001, 0, easing);
+            YappyAPI.addKeyframe(to.id, 'opacity', start + duration, 0, easing);
+            YappyAPI.addKeyframe(to.id, 'opacity', start + duration + 0.001, 100, easing);
+        }
+
+        // Unmatched fade out early / in late, so the morph reads as the main event.
+        const fade = Math.max(0.01, duration * (options?.fadeRatio ?? 0.5));
+        for (const el of unmatchedSrc) {
+            YappyAPI.addKeyframe(el.id, 'opacity', start, el.opacity ?? 100, easing);
+            YappyAPI.addKeyframe(el.id, 'opacity', start + fade, 0, easing);
+        }
+        for (const el of unmatchedDst) {
+            YappyAPI.addKeyframe(el.id, 'opacity', start, 0, easing);
+            YappyAPI.addKeyframe(el.id, 'opacity', start + duration - fade, 0, easing);
+            YappyAPI.addKeyframe(el.id, 'opacity', start + duration, 100, easing);
+        }
+
+        sceneScript.seek(start + duration);
+        return { matched: pairs.length, faded: unmatchedSrc.length, introduced: unmatchedDst.length };
+    },
     /** Every glyph of a typeset equation, in reading order — for inspection and indexing. */
     texParts(groupId: string): { elementId: string; char: string }[] {
         return store.elements
