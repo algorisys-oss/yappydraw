@@ -20,17 +20,37 @@
 import { type Component, Show, For, createMemo, createSignal } from 'solid-js';
 import { store, applyPathfinder, applyPathfinderRegion, makeCompoundShape, currentViewport } from '../store/app-store';
 import { worldToScreen } from '../utils/viewport-transforms';
+import { elementToMultiPolygon } from '../utils/path-boolean';
 import './boolean-ops-toolbar.css';
 
 type BoolOp = 'union' | 'subtract' | 'intersect' | 'exclude';
 type RegionOp = 'divide' | 'trim' | 'merge' | 'crop' | 'outline';
 
-/** Element types a boolean op can meaningfully consume. */
-const COMBINABLE = new Set([
-    'rectangle', 'circle', 'ellipse', 'diamond', 'triangle', 'hexagon', 'octagon',
-    'parallelogram', 'star', 'path', 'polygon', 'heart', 'cloud', 'cross', 'capsule',
-    'checkmark', 'burst', 'ribbon', 'compound',
-]);
+/**
+ * Can a boolean op consume this element? Asked of the geometry, not of a type list.
+ *
+ * This started as a hardcoded allowlist of ~19 type names, which was quietly wrong:
+ * there are 70+ element types with area (pentagon, septagon, rightTriangle, cylinder,
+ * speechBubble, solidBlock…), and anything missing from the list silently disabled the
+ * whole toolbar — the shapes looked ordinary and nothing explained the absence.
+ *
+ * Flattening to polygons is the exact precondition the boolean engine itself uses, so
+ * this can't drift out of step with it: every shape with area qualifies, and lines,
+ * arrows and other zero-area marks are excluded for the same reason the engine rejects
+ * them.
+ */
+function hasCombinableArea(el: { id: string }): boolean {
+    try {
+        return elementToMultiPolygon(el as never).length > 0;
+    } catch {
+        return false;
+    }
+}
+
+/** Above this many selected elements, skip the geometry probe and go by count —
+ *  flattening hundreds of paths on every selection change isn't worth it, and the
+ *  operation reports its own error if the selection turns out to be unusable. */
+const PROBE_LIMIT = 60;
 
 const OPS: { op: BoolOp; label: string; hint: string; keys: string }[] = [
     { op: 'union', label: 'Unite', hint: 'Merge into one shape', keys: 'Ctrl+Alt+U' },
@@ -63,9 +83,9 @@ const REGION_OPS: { op: RegionOp; label: string; hint: string }[] = [
  * being broken. Combining the shapes and leaving the line alone is what you meant.
  */
 function combinableIds(): string[] {
-    return store.elements
-        .filter(e => store.selection.includes(e.id) && COMBINABLE.has(e.type))
-        .map(e => e.id);
+    const sel = store.elements.filter(e => store.selection.includes(e.id));
+    if (sel.length > PROBE_LIMIT) return sel.map(e => e.id);
+    return sel.filter(hasCombinableArea).map(e => e.id);
 }
 
 /** Run a region op on the combinable part of the selection. */
@@ -147,8 +167,7 @@ export function runBooleanOp(op: BoolOp): void {
  */
 export function canRunBooleanOp(): boolean {
     if (store.selection.length < 2) return false;
-    const sel = store.elements.filter(e => store.selection.includes(e.id));
-    return sel.filter(e => COMBINABLE.has(e.type)).length >= 2;
+    return combinableIds().length >= 2;
 }
 
 const TOOLBAR_W = 268;

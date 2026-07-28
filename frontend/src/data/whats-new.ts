@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.155', date: '2026-07-29', items: [
+        'Fixed: the combine toolbar only appeared for a handful of shape types. Pentagons, cylinders, speech bubbles, right triangles and many others were silently left out, so selecting two of them showed nothing at all. It now works with every shape that has a fill.',
+    ] },
     { version: '0.8.154', date: '2026-07-29', items: [
         'Combining shapes is now a single click. Select two or more and a small toolbar appears right above them with Unite, Subtract, Intersect and Exclude — plus Divide, Trim, Merge, Crop and Outline underneath. No more hunting through the right-click menu.',
         'Keyboard shortcuts for the four main operations (Ctrl+Alt+U / D / I / X), and Shape Builder now has its own button and Shift+M shortcut — for logo work it is often the fastest way to carve a shape out of overlapping circles and rectangles.',

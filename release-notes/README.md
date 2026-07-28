@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.155](0.8.155.md) — Combine toolbar now recognises every shape type with area, not a hardcoded list of 19
 - [0.8.154](0.8.154.md) — One-click boolean ops (contextual toolbar + Ctrl+Alt shortcuts, Shape Builder promoted); fixes the exponent-parsing NaN that made edited shapes unselectable and uncombinable
 - [0.8.153](0.8.153.md) — `texTransform` morphs one equation into another (manim TransformMatchingTex); scrubbing while paused finally repaints the canvas
 - [0.8.152](0.8.152.md) — Logarithmic axes (log-log and semi-log); manim-parity audit rewritten to probe behaviour rather than method names

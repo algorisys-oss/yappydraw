@@ -108,7 +108,7 @@ frontend/src/components/blob-brush-overlay.tsx | typescript | 73 | BlobBrushOver
 frontend/src/components/blueprint-graph.css | - | 152 |
 frontend/src/components/blueprint-graph.tsx | typescript | 515 | Component:16 BPNode:26 pinOutY:41 pinColor:42 pinLabel:43 dataOutY:64 execInY:66 dataInY:68 execInLabel:70 BlueprintGraph:72 isSprite:82 nodeById:92 posOf:93 srcPinY:95 writeNodes:102 writeEdges:103 patchNode:104 deleteNode:105 connect:110 connectData:116 addNode:122 onWheel:148 onSurfaceDown:159 toSurface:164 onSurfaceMove:169 onSurfaceUp:174 startWire:180 resolveWire:185 startNodeDrag:209 moveNodeDrag:216 endNodeDrag:221 setEventKind:228 patchTrigger:229 setActKind:230 patchAction:231 patchCond:232 setSeqCount:234 play:240 onKey:248 from:310 isData:311 x1:312 y1:313 x2:314 y2:315 a:323
 frontend/src/components/boolean-ops-toolbar.css | - | 134 |
-frontend/src/components/boolean-ops-toolbar.tsx | typescript | 263 | Component:20 BoolOp:25 RegionOp:26 combinableIds:65 runRegionOp:72 runBooleanOp:134 canRunBooleanOp:148 BooleanOpsToolbar:159
+frontend/src/components/boolean-ops-toolbar.tsx | typescript | 282 | Component:20 BoolOp:26 RegionOp:27 list:30 names:32 hasCombinableArea:42 combinableIds:85 runRegionOp:92 runBooleanOp:154 canRunBooleanOp:168 BooleanOpsToolbar:178
 frontend/src/components/bpmn-tool-group.tsx | typescript | 249 | Component:1 BpmnToolGroup:137 handler:144 getActiveTool:154 handleToolClick:163 as:171 as:177 handleRightClick:185 toggleMenu:191 activeTool:198 isActive:199 getDropdownPosition:201
 frontend/src/components/brand-kit-panel.css | - | 88 |
 frontend/src/components/brand-kit-panel.tsx | typescript | 171 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
@@ -330,7 +330,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 325 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 328 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -797,7 +797,7 @@ tests/blend.spec.ts | typescript | 41 | S:10 hex:37
 tests/blob-brush.spec.ts | typescript | 24 | paths:3
 tests/blueprint-games.spec.ts | typescript | 305 | Window:4 boot:6
 tests/blueprint-graph.spec.ts | typescript | 449 | Window:7
-tests/boolean-ops-ux.spec.ts | typescript | 244 | object:13 twoOverlappingRects:14
+tests/boolean-ops-ux.spec.ts | typescript | 275 | object:13 twoOverlappingRects:14 names:247
 tests/boot-resilience.spec.ts | typescript | 123 | splashVisible:13
 tests/bpmn.spec.ts | typescript | 327 | markers:152
 tests/brand-kit.spec.ts | typescript | 97 | Window:6
