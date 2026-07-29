@@ -170,25 +170,81 @@ export const LogoToolkitDoc: Component = () => {
                 </p>
             </section>
 
-            {/* Symmetry guide */}
+            {/* Symmetry */}
             <section class="doc-section">
-                <h2>Symmetry Guide</h2>
+                <h2>Symmetry</h2>
                 <p>
-                    A persistent reflection axis for building symmetric marks. Toggle it with
-                    <span class="kbd">Alt</span>+<span class="kbd">Y</span> (or the Command Palette) — a dashed
-                    line appears at the centre of your view. <strong>Drag the line</strong> to reposition it,
-                    and switch between a vertical (left↔right) or horizontal (up↕down) axis from the Command
-                    Palette (<em>Symmetry Guide: Switch Axis</em>).
+                    <strong>Live symmetry: whatever you draw is mirrored as you draw it.</strong> The copies
+                    track your stroke while the pointer is still down, so you see the whole mark forming rather
+                    than half of it. Every drawing tool is covered — freehand, pen and polyline as well as
+                    rectangles, ellipses, connectors and the rest.
                 </p>
                 <p>
-                    Draw one half of your mark, select it, then run <strong>Mirror Across Symmetry Guide</strong>
-                    (Command Palette, or right-click → <em>Repeat &amp; Mirror</em>) to drop a reflected copy on
-                    the other side. Unlike <em>Mirror Copy</em> (which reflects across the selection's own edge),
-                    this reflects across the shared guide — so every half you mirror lines up on the same axis.
+                    Turn it on from the <strong>footer buttons</strong> (mirror left/right, mirror up/down, and
+                    a crosshair to move the axis), with <span class="kbd">Alt</span>+<span class="kbd">Y</span>,
+                    from the Command Palette, or in the <em>Symmetry</em> section of the Canvas panel. Dashed
+                    axes appear at the centre of your view.
+                </p>
+
+                <h3>Modes</h3>
+                <table class="api-table">
+                    <thead><tr><th>Mode</th><th>What you get</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Vertical</strong></td><td>Mirrors left ↔ right across a vertical axis. 2 copies.</td></tr>
+                        <tr><td><strong>Horizontal</strong></td><td>Mirrors up ↕ down across a horizontal axis. 2 copies.</td></tr>
+                        <tr><td><strong>Both</strong></td><td>4-way quadrant — vertical + horizontal + 180°. 4 copies.</td></tr>
+                        <tr><td><strong>Radial</strong></td><td>Mandala: 2–24 spokes evenly around the centre.</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Setting the axis / centre point</h3>
+                <p>
+                    Press <span class="kbd">Alt</span>+<span class="kbd">Shift</span>+<span class="kbd">Y</span>
+                    (or <em>Move axis</em> in the Canvas panel) to show the centre handle, then drag it wherever
+                    you want the mirror line or mandala centre. Replication is suspended while you're moving the
+                    axis, so you can reposition without leaving stray copies. Press it again when you're done.
+                </p>
+                <p>
+                    <strong>Angle</strong> tilts the mirror lines (−90°…90°) or offsets the radial spokes, so
+                    symmetry doesn't have to be screen-aligned. <strong>Spokes</strong> sets the mandala count.
+                </p>
+
+                <h3>Working with the result</h3>
+                <p>
+                    Every instance of a mark is <strong>grouped with the original</strong>, so it moves, styles
+                    and undoes as one object. To un-link them, ungroup as normal.
+                </p>
+                <p>
+                    For marks drawn <em>before</em> you switched symmetry on, select them and run
+                    <strong> Mirror Across Symmetry Axis</strong> (Command Palette, or right-click →
+                    <em> Repeat &amp; Mirror</em>). Unlike <em>Mirror Copy</em> (which reflects across the
+                    selection's own edge), this reflects across the shared axis — so every half lines up.
                 </p>
                 <p class="tip-box">
-                    The guide is a construction aid: it doesn't auto-mirror while you draw — you mirror on
-                    demand, which keeps you in control of when each half is duplicated.
+                    A stroke you abandon takes its mirror copies with it — a stray click that produces no shape
+                    doesn't leave mirrored copies of nothing behind.
+                </p>
+            </section>
+
+            {/* Fill mode */}
+            <section class="doc-section">
+                <h2>Fill Mode</h2>
+                <p>
+                    The <strong>paint-bucket button in the footer</strong> toggles fill mode. With it on, a
+                    freehand stroke (Pencil, Ink Brush, Marker) commits as a <strong>solid filled
+                    silhouette</strong> in its own colour instead of a line — the Alchemy-style way of blocking
+                    in shapes fast, where you scribble a rough outline and get a filled mass.
+                </p>
+                <p>
+                    The stroke is still drawn on top of the fill, so thin necks and the brush's taper stay
+                    readable. It combines with symmetry: every mirrored copy is filled too, which is the quick
+                    route to a symmetrical silhouette or a mandala of solid petals.
+                </p>
+                <p>
+                    The setting persists across sessions and is saved with the document, alongside the
+                    symmetry mode, axis position, spoke count, tilt and the move-axis state — reopen a
+                    drawing and it comes back set up the way you left it. Turn fill mode off to go back to
+                    normal line strokes; existing marks are unaffected.
                 </p>
             </section>
 

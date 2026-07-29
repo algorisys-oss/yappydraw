@@ -11,7 +11,7 @@ import {
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
   setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation,
-  transformAgain, recordTransform, convertTextToOutlines, toggleSymmetryGuide
+  transformAgain, recordTransform, convertTextToOutlines, toggleSymmetry, setSymmetryCenter, toggleSymmetryEditing
 } from './store/app-store';
 import { showToast } from './components/toast';
 import { initPWA } from './utils/pwa';
@@ -482,13 +482,17 @@ const App: Component = () => {
           toggleKeyframePanel();
         } else if (code === 'KeyY' || key === 'y') {
           e.preventDefault();
-          // Toggle the symmetry guide; when turning on, drop the axis at the
-          // viewport centre so it's where the user is looking.
-          const s = store.viewState;
-          const cx = (window.innerWidth / 2 - s.panX) / s.scale;
-          const cy = (window.innerHeight / 2 - s.panY) / s.scale;
-          const next = !store.symmetry.enabled;
-          toggleSymmetryGuide(next, store.symmetry.axis === 'vertical' ? cx : cy);
+          // Alt+Shift+Y toggles "move the axis"; plain Alt+Y toggles symmetry and,
+          // when turning on, drops the centre where the user is looking.
+          if (e.shiftKey) {
+            toggleSymmetryEditing();
+          } else {
+            const s = store.viewState;
+            const cx = (window.innerWidth / 2 - s.panX) / s.scale;
+            const cy = (window.innerHeight / 2 - s.panY) / s.scale;
+            if (store.symmetry.mode === 'off') setSymmetryCenter(cx, cy);
+            toggleSymmetry();
+          }
         } else if (code === 'KeyZ' || key === 'z') {
           e.preventDefault();
           const nextZen = !store.zenMode;

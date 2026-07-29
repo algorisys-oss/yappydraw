@@ -6,7 +6,8 @@ import {
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection, toggleVectorToolsPanel, toggleElementsPanel,
     groupSelected, ungroupSelected, bringToFront, sendToBack,
     mirrorCopy, transformAgain, convertTextToOutlines,
-    toggleSymmetryGuide, setSymmetryAxis, mirrorAcrossSymmetry,
+    toggleSymmetry, toggleSymmetryAxis, setSymmetryMode, toggleSymmetryEditing,
+    setSymmetryCenter, mirrorAcrossSymmetry,
     moveElementZIndex, undo, redo, deleteElements, toggleTheme,
     setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode,
     updateGlobalSettings, togglePenStabilization,
@@ -331,15 +332,19 @@ export const getCommands = (): Command[] => {
         { id: 'action-mirror-h', label: 'Mirror Copy (horizontal)', category: 'Actions', action: () => mirrorCopy('horizontal') },
         { id: 'action-mirror-v', label: 'Mirror Copy (vertical)', category: 'Actions', action: () => mirrorCopy('vertical') },
         { id: 'action-repeat', label: 'Repeat (Radial / Grid)…', category: 'Actions', action: () => openRepeatDialog() },
-        { id: 'action-symmetry-toggle', label: 'Toggle Symmetry Guide', category: 'Actions', shortcut: 'Alt+Y', action: () => {
+        { id: 'action-symmetry-toggle', label: 'Toggle Symmetry', category: 'Actions', shortcut: 'Alt+Y', action: () => {
             const s = store.viewState;
             const cx = (window.innerWidth / 2 - s.panX) / s.scale;
             const cy = (window.innerHeight / 2 - s.panY) / s.scale;
-            const next = !store.symmetry.enabled;
-            toggleSymmetryGuide(next, store.symmetry.axis === 'vertical' ? cx : cy);
+            if (store.symmetry.mode === 'off') setSymmetryCenter(cx, cy);
+            toggleSymmetry();
         } },
-        { id: 'action-symmetry-axis', label: 'Symmetry Guide: Switch Axis (V/H)', category: 'Actions', action: () => setSymmetryAxis(store.symmetry.axis === 'vertical' ? 'horizontal' : 'vertical') },
-        { id: 'action-symmetry-mirror', label: 'Mirror Across Symmetry Guide', category: 'Actions', action: () => mirrorAcrossSymmetry() },
+        { id: 'action-symmetry-vertical', label: 'Symmetry: Toggle Vertical Axis', category: 'Actions', action: () => toggleSymmetryAxis('vertical') },
+        { id: 'action-symmetry-horizontal', label: 'Symmetry: Toggle Horizontal Axis', category: 'Actions', action: () => toggleSymmetryAxis('horizontal') },
+        { id: 'action-symmetry-radial', label: 'Symmetry: Radial (Mandala)', category: 'Actions', action: () => setSymmetryMode('radial') },
+        { id: 'action-symmetry-off', label: 'Symmetry: Off', category: 'Actions', action: () => setSymmetryMode('off') },
+        { id: 'action-symmetry-move', label: 'Symmetry: Move Axis (toggle edit)', category: 'Actions', shortcut: 'Alt+Shift+Y', action: () => toggleSymmetryEditing() },
+        { id: 'action-symmetry-mirror', label: 'Mirror Across Symmetry Axis', category: 'Actions', action: () => mirrorAcrossSymmetry() },
         { id: 'action-transform-again', label: 'Transform Again', category: 'Actions', action: () => transformAgain(), shortcut: 'Ctrl+Shift+D' },
         { id: 'action-lock', label: 'Lock / Unlock', category: 'Actions', action: () => {
             const isLocked = store.selection.some(id => store.elements.find(e => e.id === id)?.locked);

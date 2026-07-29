@@ -9,7 +9,7 @@ import { renderDimensions } from "../utils/dimension-renderer";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, applyEyedropperFrom, cancelEyedropper, deleteElements, setPenConstrain } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, applyEyedropperFrom, cancelEyedropper, deleteElements, setPenConstrain, syncLiveSymmetry } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { screenToWorld } from "../utils/viewport-transforms";
@@ -1873,6 +1873,12 @@ const Canvas: Component = () => {
         } else {
             drawOnMove(x, y, pState, pHelpers, pSignals, e.shiftKey);
         }
+
+        // Live symmetry: keep the mirrored copies in step with the growing stroke, so
+        // the whole mark is visible while drawing instead of appearing on release.
+        // Hooked here rather than in the handlers because freehand and the geometric
+        // tools take different move paths above.
+        syncLiveSymmetry(pState.currentId);
 
         // Auto-Scroll Check
         handleAutoScroll(e, pState);

@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.156', date: '2026-07-29', items: [
+        'Symmetry drawing is here. Turn it on and whatever you draw is mirrored live — left/right, up/down, a 4-way quadrant, or a mandala of up to 24 spokes. The copies appear as you drag, not when you let go, and every tool is covered: brushes, pen, shapes, connectors, all of it.',
+        'Drag the purple handle to put the mirror line or mandala centre wherever you want, and tilt the axes off-vertical if you need to. Buttons live in the footer, or press Alt+Y (Alt+Shift+Y to move the axis).',
+        'Fill mode: the paint-bucket button in the footer makes brush strokes come out as solid filled shapes instead of lines. Scribble a rough outline, get a filled mass — the fast way to block in a silhouette. Combine it with symmetry for filled mandalas in one gesture.',
+        'Your symmetry setup is saved with the drawing, so reopening a mandala puts the axis back where you left it.',
+        'Fixed: shapes animated with Draw In used to trace a clean, precise line and then visibly snap to their hand-drawn look on the very last frame. The reveal now draws the real sketchy strokes the whole way, so a whiteboard-style animation no longer flickers as each shape lands.',
+    ] },
     { version: '0.8.155', date: '2026-07-29', items: [
         'Fixed: the combine toolbar only appeared for a handful of shape types. Pentagons, cylinders, speech bubbles, right triangles and many others were silently left out, so selecting two of them showed nothing at all. It now works with every shape that has a fill.',
     ] },

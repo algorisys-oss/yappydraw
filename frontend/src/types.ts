@@ -756,6 +756,10 @@ export interface DrawingElement {
 
     // Draw-in animation progress (0-100, undefined = not animating)
     drawProgress?: number;
+    /** Fill mode (Alchemy-style): this freehand stroke renders as a filled silhouette.
+     *  An explicit flag, NOT inferred from backgroundColor — freehand inherits a
+     *  background from defaultElementStyles, so keying off that filled every stroke. */
+    fillSilhouette?: boolean;
 
 
     // NEW: Robust Animation System

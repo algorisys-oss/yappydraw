@@ -19,7 +19,7 @@ export class PathRenderer extends ShapeRenderer {
 
         // 2. Check for draw-in/draw-out animation
         const dp = element.drawProgress;
-        if (dp !== undefined && dp >= 0 && dp < 100) {
+        if (dp != null && dp >= 0 && dp < 100) {
             this.renderDrawProgress(context, cx, cy);
         } else {
             // Normal render path - no complex fills for paths

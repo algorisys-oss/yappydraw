@@ -118,6 +118,7 @@ export interface GlobalSettings {
     pointerStyle?: 'crosshair' | 'circle' | 'arrow';      // Canvas cursor while a drawing tool is active (default crosshair)
     penPressure?: boolean;      // Use Apple Pencil force / pointer pressure for variable stroke width (default on)
     penStabilization?: number;  // Pulled-string "lazy brush" strength 0..1 for freehand inking (0 = off, default)
+    fillShapeMode?: boolean;    // Alchemy-style: a freehand stroke commits as a filled silhouette instead of a line
     mindmapAutoLayout?: boolean;       // Auto-reflow mindmap trees on every add/collapse/delete/reparent (default on)
     mindmapLayoutDirection?: 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial' | 'balanced'; // Default direction for trees with no explicit choice
     toolbarVertical?: boolean;         // Orient the main toolbar vertically (left edge) instead of horizontally (top)
@@ -142,6 +143,17 @@ export interface SlideDocument {
     slides: Slide[];
     globalSettings?: GlobalSettings;
     gridSettings?: GridSettings;
+    /** Drawing symmetry: mode, axis centre, spokes and tilt. Saved with the document
+     *  so a mandala reopens on the axis you drew it on. The transient move-axis mode
+     *  (`editing`) is deliberately NOT persisted — reopening a file with drawing
+     *  suspended reads as a bug. */
+    symmetry?: {
+        mode: 'off' | 'vertical' | 'horizontal' | 'both' | 'radial';
+        cx: number;
+        cy: number;
+        radialCount: number;
+        angle: number;
+    };
     states?: DisplayState[];
     symbols?: import('../types').SymbolDef[];
     artboards?: import('../types').Artboard[];

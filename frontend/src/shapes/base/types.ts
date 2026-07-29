@@ -8,6 +8,10 @@ export interface RenderContext {
     element: DrawingElement;
     isDarkMode: boolean;
     layerOpacity: number;
+    /** Set while capturing a shape's sketch geometry for the drawIn reveal. Labels are
+     *  drawn straight to the renderer rather than through `rc`, so without this they'd
+     *  paint at full opacity during the capture pass. */
+    suppressText?: boolean;
 }
 
 export type RenderStyle = 'architectural' | 'sketch';

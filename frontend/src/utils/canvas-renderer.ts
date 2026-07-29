@@ -834,6 +834,14 @@ export function renderLayersAndElements(
             if (el.isClipMask) return false;
             if (layer.isMaster) return true;
 
+            // A stroke that hasn't been committed yet carries its whole extent in
+            // `points`; width/height stay 0 until normalizePencil runs on pointer-up.
+            // Culling it by that 0×0 box hides it completely — which is what made live
+            // symmetry copies of a pen stroke invisible until the pointer was released
+            // (the stroke being drawn is exempt above, its mirrored copies were not).
+            if (el.points && el.points.length > 0
+                && Math.abs(el.width) < 1 && Math.abs(el.height) < 1) return true;
+
             // Fast viewport check first (WASM batch or JS fallback)
             if (wasmVisibleSet) {
                 if (!wasmVisibleSet.has(idx)) return false;

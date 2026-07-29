@@ -18,6 +18,11 @@ export function buildSlideDocument(name = 'Untitled'): SlideDocument {
         slides: JSON.parse(JSON.stringify(store.slides)),
         globalSettings: JSON.parse(JSON.stringify(store.globalSettings)),
         gridSettings: JSON.parse(JSON.stringify(store.gridSettings)),
+        // `editing` is intentionally dropped — see SlideDocument.symmetry.
+        symmetry: {
+            mode: store.symmetry.mode, cx: store.symmetry.cx, cy: store.symmetry.cy,
+            radialCount: store.symmetry.radialCount, angle: store.symmetry.angle,
+        },
         states: JSON.parse(JSON.stringify(store.states)),
         symbols: JSON.parse(JSON.stringify(store.symbols)),
         graphicStyles: JSON.parse(JSON.stringify(store.graphicStyles)),

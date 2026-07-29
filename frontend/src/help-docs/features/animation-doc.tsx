@@ -600,6 +600,26 @@ tableLightningSplit(tableElementId, 1500);`}
                     </p>
                 </div>
 
+                <div class="tip-box">
+                    <h5>drawIn in Sketch style</h5>
+                    <p>
+                        In <strong>Sketch</strong> render style the reveal traces the shape's actual hand-drawn
+                        strokes, so it finishes on exactly the shape you'd see with no animation — there's no
+                        switch from a clean line to a sketchy one at the end. Edges draw one after another in
+                        the order a hand would draw them, and the two passes that give a sketch stroke its
+                        wobble reveal together rather than tracing the shape twice.
+                    </p>
+                    <p>
+                        Keep a fixed <strong>seed</strong> on the element (the default) — a shape with a random
+                        seed re-rolls its wobble each frame and the reveal will shimmer. In
+                        <strong> Architectural</strong> style the reveal traces the clean geometric outline, as before.
+                    </p>
+                    <p>
+                        Shapes that don't build their sketch geometry through the sketch engine fall back to the
+                        geometric-outline reveal automatically, so nothing ever fails to animate.
+                    </p>
+                </div>
+
                 <h3>Stagger Distribution Modes</h3>
                 <table class="api-table">
                     <thead>

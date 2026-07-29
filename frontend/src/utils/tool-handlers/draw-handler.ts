@@ -8,7 +8,7 @@
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, addElement, updateElement, deleteElements, setStore, setSelectedTool } from '../../store/app-store';
+import { store, addElement, updateElement, deleteElements, setStore, setSelectedTool, finishLiveSymmetry, cancelLiveSymmetry } from '../../store/app-store';
 import { snapPoint } from '../snap-helpers';
 import { constrainToAngle } from '../angle-constrain';
 import { generateId } from '../id-generator';
@@ -528,6 +528,7 @@ export function drawOnUp(
             if (currentEl && Math.abs(currentEl.width) < MIN_DRAG && Math.abs(currentEl.height) < MIN_DRAG) {
                 // UI shapes get default dimensions instead of being deleted
                 if (!getUIShapeDef(el.type)) {
+                    cancelLiveSymmetry(); // discard the mirror copies too
                     deleteElements([pState.currentId]);
                     pState.currentId = null;
                     helpers.draw();
@@ -548,6 +549,7 @@ export function drawOnUp(
             const ghost = store.elements.find(e => e.id === pState.currentId);
             const isBound = !!(ghost && (ghost.startBinding || ghost.endBinding));
             if (ghost && !isBound && Math.abs(ghost.width) < GHOST_MIN && Math.abs(ghost.height) < GHOST_MIN) {
+                cancelLiveSymmetry(); // discard the mirror copies too
                 deleteElements([pState.currentId]);
                 pState.currentId = null;
                 helpers.draw();
@@ -583,6 +585,23 @@ export function drawOnUp(
                 }
             }
         }
+
+        // Fill mode (Alchemy-style): a freehand stroke commits as a filled silhouette
+        // in its own colour. Applied before the symmetry sync so the copies inherit it.
+        if (store.globalSettings.fillShapeMode
+            && ['fineliner', 'inkbrush', 'marker'].includes(el.type)) {
+            const filled = store.elements.find(e => e.id === pState.currentId);
+            if (filled) updateElement(pState.currentId!, {
+                fillSilhouette: true,
+                backgroundColor: filled.strokeColor,
+                fillStyle: 'solid',
+            });
+        }
+
+        // Live symmetry — final sync of the mirrored copies against the normalized
+        // element, then stop tracking. Placed after every discard branch above so
+        // stray clicks and ghosts are never replicated.
+        finishLiveSymmetry(pState.currentId!);
 
         // Switch back to selection tool after drawing (except for continuous tools or locked tools)
         if (!CONTINUOUS_TOOLS.includes(store.selectedTool) && !store.toolLocked) {

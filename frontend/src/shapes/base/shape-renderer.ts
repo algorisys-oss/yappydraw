@@ -2,8 +2,17 @@ import type { RenderContext } from "./types";
 import { RenderPipeline } from "./render-pipeline";
 import { globalTime } from "../../utils/animation/animation-engine";
 import type { IRenderer } from "../../rendering/IRenderer";
+import { computeElementHash } from "../../utils/rough-cache";
+import {
+    createCaptureRc, createNullPaintRenderer, strokeTraced, tracedFor, EMPTY_TRACE,
+    type TracedPath,
+} from "../../utils/animation/rough-stroke-trace";
+import type { Drawable } from "roughjs/bin/core";
 
 export abstract class ShapeRenderer {
+    /** Re-entrancy guard for the drawIn geometry capture (see tracedSketchStroke). */
+    private static capturing = false;
+
     /**
      * Main entry point for rendering an element.
      * Handles universal transformations and delegates to specialized methods.
@@ -23,7 +32,7 @@ export abstract class ShapeRenderer {
         try {
             // 2. Check for draw-in/draw-out animation
             const dp = element.drawProgress;
-            if (dp !== undefined && dp >= 0 && dp < 100) {
+            if (dp != null && dp >= 0 && dp < 100) {
                 this.renderDrawProgress(context, cx, cy);
             } else {
                 // Normal render path
@@ -84,12 +93,25 @@ export abstract class ShapeRenderer {
             renderer.lineCap = 'round';
             renderer.lineJoin = 'round';
 
-            // Set lineDash to [drawLen, pathLength] to reveal stroke progressively
-            const drawLen = pathLength * strokeProgress;
-            renderer.setLineDash([drawLen, pathLength]);
-            renderer.lineDashOffset = 0;
+            // Sketch style: reveal the shape's OWN RoughJS strokes, so the reveal ends
+            // on exactly what the finished shape renders. Tracing the geometric outline
+            // instead (the architectural path below) draws a clean line that pops into a
+            // hand-drawn one the moment progress hits 100%.
+            const traced = el.renderStyle !== 'architectural'
+                ? this.tracedSketchStroke(context, cx, cy)
+                : null;
 
-            this.traceDrawStroke(renderer, el);
+            if (traced && traced.total > 0) {
+                strokeTraced(renderer, traced, strokeProgress);
+            } else {
+                // Architectural, or a shape whose sketch pass never reaches `rc`.
+                // Set lineDash to [drawLen, pathLength] to reveal stroke progressively
+                const drawLen = pathLength * strokeProgress;
+                renderer.setLineDash([drawLen, pathLength]);
+                renderer.lineDashOffset = 0;
+
+                this.traceDrawStroke(renderer, el);
+            }
             renderer.restore();
         }
 
@@ -124,6 +146,43 @@ export abstract class ShapeRenderer {
             RenderPipeline.renderText(context, cx, cy);
             renderer.restore();
         }
+    }
+
+    /**
+     * Capture the RoughJS strokes this shape's sketch pass would emit, flattened to
+     * polylines and memoised on the element's geometry hash.
+     *
+     * Runs the renderer's real `renderSketch()` against a capture `rc` (generates
+     * Drawables, paints nothing) and a null-paint IRenderer (swallows direct strokes
+     * from shapes like freehand that don't route through `rc`). Returns an empty trace
+     * for shapes that produce no RoughJS geometry at all — the caller then falls back
+     * to the geometric-outline reveal.
+     */
+    private tracedSketchStroke(context: RenderContext, cx: number, cy: number): TracedPath {
+        // No renderSketch() reaches renderDrawProgress today, but a future one that did
+        // would recurse forever. Bail to the outline fallback instead.
+        if (ShapeRenderer.capturing) return EMPTY_TRACE;
+
+        return tracedFor(computeElementHash(context.element), () => {
+            const sink: Drawable[] = [];
+            const captureContext: RenderContext = {
+                ...context,
+                rc: createCaptureRc(context.rc, sink),
+                renderer: createNullPaintRenderer(context.renderer),
+                suppressText: true,
+            };
+
+            // Contain any state the sketch pass leaves behind (transforms, styles).
+            captureContext.renderer.save();
+            ShapeRenderer.capturing = true;
+            try {
+                this.renderSketch(captureContext, cx, cy);
+            } finally {
+                ShapeRenderer.capturing = false;
+                captureContext.renderer.restore();
+            }
+            return sink;
+        });
     }
 
     /**

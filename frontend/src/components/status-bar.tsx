@@ -1,8 +1,8 @@
 import { type Component, Show, For, createSignal } from "solid-js";
 import { isMultiPageDocType } from '../types/slide-types';
-import { store, setViewState, undo, redo, togglePresentationMode, resetRotation, pageNoun } from "../store/app-store";
+import { store, setViewState, undo, redo, togglePresentationMode, resetRotation, pageNoun, toggleSymmetryAxis, toggleSymmetryEditing, updateGlobalSettings } from "../store/app-store";
 import { drawingId } from "./menu";
-import { Plus, Minus, Undo2, Redo2, Play } from "lucide-solid";
+import { Plus, Minus, Undo2, Redo2, Play, FlipHorizontal, FlipVertical, Crosshair, PaintBucket } from "lucide-solid";
 import { screenToWorld } from "../utils/viewport-transforms";
 import pkg from '../../../package.json';
 import WhatsNewDialog, { hasUnseenWhatsNew, openWhatsNew } from "./whats-new-dialog";
@@ -181,6 +181,52 @@ const StatusBar: Component = () => {
                 </div>
             </Show>
 
+            {/* Symmetry: vertical / horizontal mirror axes + move-axis (Krita-style) */}
+            <div class="status-section status-toggle-group">
+                <button
+                    class="status-toggle"
+                    classList={{ 'is-active': store.symmetry.mode === 'vertical' || store.symmetry.mode === 'both' }}
+                    onClick={() => toggleSymmetryAxis('vertical')}
+                    title="Vertical symmetry — mirror left/right (Alt+Y toggles symmetry)"
+                    aria-label="Toggle vertical symmetry"
+                    aria-pressed={store.symmetry.mode === 'vertical' || store.symmetry.mode === 'both'}
+                >
+                    <FlipHorizontal size={14} />
+                </button>
+                <button
+                    class="status-toggle"
+                    classList={{ 'is-active': store.symmetry.mode === 'horizontal' || store.symmetry.mode === 'both' }}
+                    onClick={() => toggleSymmetryAxis('horizontal')}
+                    title="Horizontal symmetry — mirror up/down (Alt+Y toggles symmetry)"
+                    aria-label="Toggle horizontal symmetry"
+                    aria-pressed={store.symmetry.mode === 'horizontal' || store.symmetry.mode === 'both'}
+                >
+                    <FlipVertical size={14} />
+                </button>
+                <Show when={store.symmetry.mode !== 'off'}>
+                    <button
+                        class="status-toggle"
+                        classList={{ 'is-active': store.symmetry.editing }}
+                        onClick={() => toggleSymmetryEditing()}
+                        title="Move symmetry axis — drag the handle to reposition (Alt+Shift+Y)"
+                        aria-label="Toggle move symmetry axis"
+                        aria-pressed={store.symmetry.editing}
+                    >
+                        <Crosshair size={14} />
+                    </button>
+                </Show>
+                <button
+                    class="status-toggle"
+                    classList={{ 'is-active': !!store.globalSettings.fillShapeMode }}
+                    onClick={() => updateGlobalSettings({ fillShapeMode: !store.globalSettings.fillShapeMode })}
+                    title="Fill mode — freehand strokes fill their silhouette"
+                    aria-label="Toggle fill mode"
+                    aria-pressed={!!store.globalSettings.fillShapeMode}
+                >
+                    <PaintBucket size={14} />
+                </button>
+            </div>
+
             {/* Contextual Modifier Hints */}
             <div class="status-section status-hints">
                 <For each={getContextHints(store.selectedTool, store.selection.length > 0)}>
@@ -306,7 +352,7 @@ const StatusBar: Component = () => {
 
             {/* Attribution */}
             <div class="status-section status-attribution" style={{ 'border-right': 'none' }}>
-                Developed with <span class="status-heart">❤️</span> by{' '}
+                <span class="status-heart">❤️</span> by{' '}
                 <a href="https://www.algorisys.com" target="_blank" rel="noopener noreferrer">
                     Algorisys Technologies
                 </a>

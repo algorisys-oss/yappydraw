@@ -46,6 +46,10 @@ import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
 import { generateId } from "../utils/id-generator"; // New Import
+import {
+    buildSymmetryOps, defaultSymmetryState, MIN_RADIAL_COUNT, MAX_RADIAL_COUNT,
+    type SymmetryMode, type SymmetryOp,
+} from "../utils/symmetry";
 import { refreshBoundLine } from "../utils/binding-logic";
 import { abortDsAlgorithm } from "../utils/ds-operations";
 import { getImage } from "../utils/image-cache";
@@ -239,7 +243,18 @@ interface AppState {
     minimapVisible: boolean;
     showRulers: boolean;
     guides: Guide[];
-    symmetry: { enabled: boolean; axis: 'vertical' | 'horizontal'; pos: number };
+    symmetry: {
+        mode: SymmetryMode;
+        /** Symmetry centre / axis crossing point, in world coordinates. */
+        cx: number;
+        cy: number;
+        /** Spokes for radial (mandala) symmetry. */
+        radialCount: number;
+        /** Axis rotation in radians (tilts the mirror lines / offsets radial spokes). */
+        angle: number;
+        /** Edit mode: canvas drags reposition the axis instead of drawing. */
+        editing: boolean;
+    };
     zenMode: boolean;
     appMode: AppMode;
     showCommandPalette: boolean;
@@ -462,6 +477,7 @@ const initialState: AppState = {
         pointerStyle: readPointerStyle(),
         penPressure: (localStorage.getItem('penPressure') ?? '1') !== '0',
         penStabilization: (() => { const v = parseFloat(localStorage.getItem('penStabilization') ?? '0'); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0; })(),
+        fillShapeMode: (localStorage.getItem('fillShapeMode') ?? '0') !== '0',
         // Default OFF for now — the balanced auto-reflow needs more work (lays out
         // vertically in practice). Re-enable via Settings → Mindmap. Existing explicit
         // choices in localStorage are still respected.
@@ -534,7 +550,7 @@ const initialState: AppState = {
     minimapVisible: false,
     showRulers: (() => { try { return localStorage.getItem('showRulers') === '1'; } catch { return false; } })(),
     guides: [],
-    symmetry: { enabled: false, axis: 'vertical', pos: 0 },
+    symmetry: defaultSymmetryState(),
     zenMode: false,
     appMode: 'design',
     showCommandPalette: false,
@@ -1507,6 +1523,9 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     if (updates.pointerStyle !== undefined) {
         try { localStorage.setItem('pointerStyle', updates.pointerStyle); } catch { /* ignore */ }
     }
+    if (updates.fillShapeMode !== undefined) {
+        try { localStorage.setItem('fillShapeMode', updates.fillShapeMode ? '1' : '0'); } catch { /* ignore */ }
+    }
     if (updates.penStabilization !== undefined) {
         try { localStorage.setItem('penStabilization', String(updates.penStabilization)); } catch { /* ignore */ }
     }
@@ -2415,6 +2434,12 @@ export const loadDocument = (doc: any) => {
         setStore("patterns", JSON.parse(JSON.stringify(doc.patterns || [])));
         repairLibraryIds(); // heal duplicate ids from docs made before the id fix
         setStore("gridSettings", JSON.parse(JSON.stringify(gridSettings)));
+        // Symmetry travels with the document (axis position is drawing-specific).
+        // Older files have none — fall back to the pristine defaults rather than
+        // leaving the previous document's axis in place.
+        setStore('symmetry', doc.symmetry
+            ? { ...defaultSymmetryState(), ...JSON.parse(JSON.stringify(doc.symmetry)), editing: false }
+            : defaultSymmetryState());
 
         // Migrate old showMindmapToolbar -> showQuickToolbar
         const gs = doc.globalSettings || initialState.globalSettings;
@@ -6610,36 +6635,219 @@ export const mirrorCopy = (axis: 'horizontal' | 'vertical') => {
     showToast(`Mirrored ${axis === 'horizontal' ? '↔' : '↕'}`, 'success');
 };
 
-// ── Symmetry guide (a persistent reflection axis) ────────────────────────────
-// `axis: 'vertical'` is a vertical guide line at world x=`pos` (left↔right);
-// `horizontal` is at world y=`pos`. Pure construction aid — it never auto-mirrors
-// while drawing; use mirrorAcrossSymmetry() to reflect the selection across it.
-export const toggleSymmetryGuide = (enabled?: boolean, pos?: number) => {
-    setStore('symmetry', s => ({
-        ...s,
-        enabled: enabled ?? !s.enabled,
-        pos: pos ?? s.pos,
-    }));
+// ── Symmetry (live mirror / quadrant / mandala drawing) ──────────────────────
+// Interface mirrors HappyPaint's guides-store so the two apps stay learnable as
+// one: same modes, same setter names, same radialCount / angle / editing fields.
+// Unlike the old guide, this one DOES auto-mirror while you draw — every drawing
+// tool replicates its committed element through the active transforms
+// (applyLiveSymmetry, called from the tool handlers' commit paths).
+
+/** Last non-off mode, so a quick on/off toggle can restore what you had. */
+let lastSymmetryMode: SymmetryMode = 'vertical';
+
+export const setSymmetryMode = (mode: SymmetryMode) => {
+    if (mode !== 'off') lastSymmetryMode = mode;
+    setStore('symmetry', 'mode', mode);
 };
-export const setSymmetryAxis = (axis: 'vertical' | 'horizontal') => setStore('symmetry', 'axis', axis);
-export const setSymmetryPos = (pos: number) => setStore('symmetry', 'pos', Math.round(pos));
+
+/** Quick on/off: off ⇄ the last-used mode (defaults to vertical). */
+export const toggleSymmetry = () =>
+    setSymmetryMode(store.symmetry.mode === 'off' ? lastSymmetryMode : 'off');
 
 /**
- * Mirror the selection across the symmetry guide — the "draw one half, mirror it"
- * move. A vertical guide reflects left↔right (axis 'horizontal' in reflectClone),
- * a horizontal guide reflects up↕down. Adds the reflected clones to the canvas.
+ * Toggle one mirror axis independently (Krita-style). vertical + horizontal
+ * combine into the 4-way 'both' quadrant; clearing both turns symmetry off.
+ * Radial is treated as "neither axis" when an axis button is used.
+ */
+export const toggleSymmetryAxis = (axis: 'vertical' | 'horizontal') => {
+    const m = store.symmetry.mode;
+    let vert = m === 'vertical' || m === 'both';
+    let horiz = m === 'horizontal' || m === 'both';
+    if (axis === 'vertical') vert = !vert;
+    else horiz = !horiz;
+    setSymmetryMode(vert && horiz ? 'both' : vert ? 'vertical' : horiz ? 'horizontal' : 'off');
+};
+
+export const setRadialCount = (n: number) =>
+    setStore('symmetry', 'radialCount', Math.min(MAX_RADIAL_COUNT, Math.max(MIN_RADIAL_COUNT, Math.round(n))));
+
+export const setSymmetryEditing = (v: boolean) => setStore('symmetry', 'editing', v);
+export const toggleSymmetryEditing = () => setStore('symmetry', 'editing', v => !v);
+
+/** Set the axis rotation, given in degrees (−90..90). */
+export const setSymmetryAngleDeg = (deg: number) => {
+    const d = Math.min(90, Math.max(-90, deg));
+    setStore('symmetry', 'angle', (d * Math.PI) / 180);
+};
+
+/** Reposition the symmetry centre (world coordinates). */
+export const setSymmetryCenter = (cx: number, cy: number) =>
+    setStore('symmetry', { cx: Math.round(cx), cy: Math.round(cy) });
+
+/**
+ * Replicate a freshly drawn element through the active symmetry transforms.
+ *
+ * Called from every drawing tool's commit path. The drawn element IS the
+ * identity instance, so only the non-identity ops produce clones. All instances
+ * share a group id, so the result moves, styles and undoes as one mark.
+ *
+ * A no-op when symmetry is off, while the axis is being repositioned, or for an
+ * element that no longer exists (a tool may have discarded it as a stray click).
+ */
+/**
+ * Live symmetry — replicate the element being drawn through the active mirror /
+ * quadrant / mandala transforms, and keep the copies in step as the stroke grows.
+ *
+ * The copies are real elements from the first move onward, not an overlay preview,
+ * so what you see mid-stroke is exactly what you get on release. `syncLiveSymmetry`
+ * is called on every pointer move: it creates the instances the first time and
+ * re-derives their geometry from the source after that.
+ *
+ * Instances keep the SOURCE's seed rather than a fresh random one — a true mirror
+ * of the sketch wobble, and it stops the copies re-rolling their roughness on every
+ * move (which reads as shimmering while you draw).
+ */
+let liveSymmetry: { sourceId: string; groupId: string; ids: string[] } | null = null;
+
+/** Build one symmetry instance of `src` under `op`, with a fixed id and group. */
+const symmetryInstance = (
+    src: DrawingElement, op: SymmetryOp, cx: number, cy: number, id: string, groupId: string,
+): DrawingElement => {
+    const base: DrawingElement = {
+        ...src,
+        id,
+        points: src.points
+            ? ((src.points.length > 0 && typeof src.points[0] === 'number')
+                ? [...(src.points as number[])]
+                : (src.points as any[]).map(p => ({ ...p })))
+            : undefined,
+        roundness: src.roundness ? { ...src.roundness } : null,
+        crop: src.crop ? { ...src.crop } : null,
+        boundElements: null,
+        // src already carries groupId after the first sync — don't stack duplicates.
+        groupIds: [...new Set([...(src.groupIds ?? []), groupId])],
+    } as DrawingElement;
+
+    if (op.kind === 'rotate') return placeRotated(base, src, cx, cy, op.theta, true);
+    // A reflection across the line at angle φ is the horizontal-axis mirror followed
+    // by a rotation of 2φ about the centre. Composing the two existing helpers keeps
+    // flip flags, negated rotation and local point reflection correct for free.
+    const mirrored = reflectClone(base, src, 'vertical', cy);
+    return placeRotated(mirrored, mirrored, cx, cy, 2 * op.phi, true);
+};
+
+/**
+ * Create or refresh the live copies of the element being drawn. Safe to call on
+ * every pointer move; a no-op when symmetry is off or the axis is being moved.
+ */
+export const syncLiveSymmetry = (elementId: string): void => {
+    const { mode, cx, cy, radialCount, angle, editing } = store.symmetry;
+    if (mode === 'off' || editing) return;
+
+    const ops = buildSymmetryOps(mode, radialCount, angle);
+    if (ops.length === 0) return;
+
+    const src = store.elements.find(e => e.id === elementId);
+    if (!src) return;
+
+    // A change of mode or target mid-stroke restarts the instance set.
+    if (liveSymmetry && (liveSymmetry.sourceId !== elementId || liveSymmetry.ids.length !== ops.length)) {
+        cancelLiveSymmetry();
+    }
+
+    if (!liveSymmetry) {
+        const groupId = generateId('group');
+        const batch = new Set<string>();
+        const ids = ops.map(() => generateId(src.type, batch));
+        const clones = ops.map((op, i) => symmetryInstance(src, op, cx, cy, ids[i], groupId));
+        setStore('elements', els => [...els, ...clones]);
+        // The drawn element joins the group too, so the whole mark is one object.
+        updateElement(elementId, { groupIds: [...(src.groupIds ?? []), groupId] }, false);
+        liveSymmetry = { sourceId: elementId, groupId, ids };
+        bumpDirtyRevision();
+        return;
+    }
+
+    const { groupId, ids } = liveSymmetry;
+    setStore('elements', els => els.map(el => {
+        const i = ids.indexOf(el.id);
+        return i === -1 ? el : symmetryInstance(src, ops[i], cx, cy, ids[i], groupId);
+    }));
+    bumpDirtyRevision();
+};
+
+/** Drop the live copies — the stroke was discarded before it committed. */
+export const cancelLiveSymmetry = (): void => {
+    if (!liveSymmetry) return;
+    const ids = new Set(liveSymmetry.ids);
+    liveSymmetry = null;
+    setStore('elements', els => els.filter(e => !ids.has(e.id)));
+    bumpDirtyRevision();
+};
+
+/** Final sync on release, then stop tracking. Returns the instance ids. */
+export const finishLiveSymmetry = (elementId: string): string[] => {
+    syncLiveSymmetry(elementId);
+    const ids = liveSymmetry?.ids ?? [];
+    liveSymmetry = null;
+    return ids;
+};
+
+/**
+ * One-shot replication for tools that commit without a continuous drag (pen path,
+ * polyline): create the instances and immediately stop tracking.
+ */
+export const applyLiveSymmetry = (elementId: string): string[] => {
+    cancelLiveSymmetry();
+    return finishLiveSymmetry(elementId);
+};
+
+/**
+ * Mirror the current selection across the symmetry axis — the "draw one half,
+ * mirror it" move, for marks made before symmetry was switched on. Uses the
+ * mode's primary axis; radial mode mirrors across its base spoke.
  */
 export const mirrorAcrossSymmetry = () => {
     if (store.selection.length === 0) return;
-    const { axis, pos } = store.symmetry;
-    // A vertical guide line mirrors along the X axis (horizontal reflection).
-    const reflectAxis: 'horizontal' | 'vertical' = axis === 'vertical' ? 'horizontal' : 'vertical';
+    const { mode, cx, cy, angle } = store.symmetry;
+    if (mode === 'off') { showToast('Symmetry is off', 'info'); return; }
+
+    // 'vertical' mirrors left↔right (reflectClone's 'horizontal' axis about x=cx).
+    const vertical = mode === 'vertical' || mode === 'both';
     const selIds = [...store.selection];
     pushToHistory();
-    const newIds = cloneSelection(selIds, (clone, src) => reflectClone(clone, src, reflectAxis, pos));
+    const newIds = cloneSelection(selIds, (clone, src) => {
+        const mirrored = vertical
+            ? reflectClone(clone, src, 'horizontal', cx)
+            : reflectClone(clone, src, 'vertical', cy);
+        return angle === 0 ? mirrored : placeRotated(mirrored, mirrored, cx, cy, 2 * angle, true);
+    });
     setStore('selection', [...selIds, ...newIds]);
     bumpDirtyRevision();
-    showToast('Mirrored across guide', 'success');
+    showToast('Mirrored across axis', 'success');
+};
+
+// ── Back-compat adapters ─────────────────────────────────────────────────────
+// The pre-symmetry-modes API (enabled / axis / pos) is part of api.ts's public
+// surface, so it keeps working on top of the new state.
+
+/** @deprecated use {@link setSymmetryMode} / {@link toggleSymmetry}. */
+export const toggleSymmetryGuide = (enabled?: boolean, pos?: number) => {
+    const on = enabled ?? store.symmetry.mode === 'off';
+    if (pos !== undefined) {
+        if (store.symmetry.mode === 'horizontal') setSymmetryCenter(store.symmetry.cx, pos);
+        else setSymmetryCenter(pos, store.symmetry.cy);
+    }
+    setSymmetryMode(on ? (lastSymmetryMode === 'off' ? 'vertical' : lastSymmetryMode) : 'off');
+};
+
+/** @deprecated use {@link setSymmetryMode}. */
+export const setSymmetryAxis = (axis: 'vertical' | 'horizontal') => setSymmetryMode(axis);
+
+/** @deprecated use {@link setSymmetryCenter}. */
+export const setSymmetryPos = (pos: number) => {
+    if (store.symmetry.mode === 'horizontal') setSymmetryCenter(store.symmetry.cx, pos);
+    else setSymmetryCenter(pos, store.symmetry.cy);
 };
 
 /**

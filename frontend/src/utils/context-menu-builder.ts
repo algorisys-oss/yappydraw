@@ -393,8 +393,8 @@ export function getContextMenuItems(
                 { separator: true },
                 { label: 'Mirror Copy →', icon: '⇆', onClick: () => mirrorCopy('horizontal') },
                 { label: 'Mirror Copy ↓', icon: '⇅', onClick: () => mirrorCopy('vertical') },
-                ...(store.symmetry.enabled
-                    ? [{ label: 'Mirror Across Symmetry Guide', icon: '⋈', onClick: () => mirrorAcrossSymmetry() }]
+                ...(store.symmetry.mode !== 'off'
+                    ? [{ label: 'Mirror Across Symmetry Axis', icon: '⋈', onClick: () => mirrorAcrossSymmetry() }]
                     : []),
             ]
         });

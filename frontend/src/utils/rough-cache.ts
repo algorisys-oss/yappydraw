@@ -17,10 +17,26 @@ let currentIndex = 0;
 let isHit = false;
 
 // Methods on RoughCanvas/RoughGenerator that produce Drawables
-const DRAW_METHODS = new Set([
+export const ROUGH_DRAW_METHODS = new Set([
     'rectangle', 'ellipse', 'circle', 'polygon',
     'path', 'line', 'arc', 'linearPath', 'curve',
 ]);
+const DRAW_METHODS = ROUGH_DRAW_METHODS;
+
+/**
+ * Produce a Drawable for `method` without drawing it — WASM sketch engine first,
+ * RoughJS generator as fallback. Shared by the cache proxy and the drawIn stroke
+ * capture (utils/animation/rough-stroke-trace) so both see identical geometry.
+ */
+export function generateDrawable(rc: RoughCanvas, method: string, args: any[]): Drawable {
+    if (isWasmEnabled('sketchEngine') && isWasmSketchMethod(method)) {
+        // Merge options with RoughJS defaults (last arg is options)
+        const resolvedOpts = (rc.generator as any)._o(args[args.length - 1]);
+        const wasmDrawable = wasmGenerateDrawable(method, args, resolvedOpts);
+        if (wasmDrawable) return wasmDrawable;
+    }
+    return (rc.generator as any)[method](...args);
+}
 
 // ── Lifecycle ────────────────────────────────────────────────────
 
@@ -74,21 +90,8 @@ export function createCachedRc(rc: RoughCanvas): RoughCanvas {
                         return drawable;
                     }
 
-                    // Cache miss — try WASM sketch engine first
-                    if (isWasmEnabled('sketchEngine') && isWasmSketchMethod(prop)) {
-                        // Merge options with RoughJS defaults (last arg is options)
-                        const resolvedOpts = (target.generator as any)._o(args[args.length - 1]);
-                        const wasmDrawable = wasmGenerateDrawable(prop, args, resolvedOpts);
-                        if (wasmDrawable) {
-                            currentDrawables.push(wasmDrawable);
-                            currentIndex++;
-                            target.draw(wasmDrawable);
-                            return wasmDrawable;
-                        }
-                    }
-
-                    // Fallback — generate via RoughJS generator
-                    const drawable: Drawable = (target.generator as any)[prop](...args);
+                    // Cache miss — generate (WASM sketch engine, else RoughJS), store, draw
+                    const drawable = generateDrawable(target, prop, args);
                     currentDrawables.push(drawable);
                     currentIndex++;
                     target.draw(drawable);
@@ -148,8 +151,12 @@ export function computeElementHash(el: DrawingElement): string {
     if (el.frontSkewX !== undefined) h += `|fsx${el.frontSkewX}`;
     if (el.frontSkewY !== undefined) h += `|fsy${el.frontSkewY}`;
 
-    // Draw progress (changes during draw-in animation)
-    if (el.drawProgress !== undefined) h += `|dprog${el.drawProgress}`;
+    // Draw progress: hashed as a flag, NOT a value. A mid-reveal render paints traced
+    // polylines directly and issues no `rc` calls at all, so it must not share a key
+    // with the finished shape (it would cache an empty drawable list under it). But
+    // hashing the number would miss on every frame of the reveal, which is the cost
+    // this cache exists to avoid — and no renderer varies its RoughJS geometry by it.
+    if (el.drawProgress != null && el.drawProgress < 100) h += `|dprog`;
 
     // BPMN properties
     if (el.bpmnEventType) h += `|bet${el.bpmnEventType}`;

@@ -1,7 +1,16 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
 import { draggablePanel } from '../utils/draggable-panel';
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry } from "../store/app-store";
 import { resolveDash, parseDashInput, dashToString } from "../utils/stroke-dash";
+
+/** Symmetry modes, in the order HappyPaint presents them. */
+const SYMMETRY_MODES = [
+    { id: 'off', label: 'Off', title: 'No symmetry' },
+    { id: 'vertical', label: '⇼', title: 'Vertical axis — mirror left ↔ right' },
+    { id: 'horizontal', label: '⇵', title: 'Horizontal axis — mirror up ↕ down' },
+    { id: 'both', label: '✛', title: 'Both axes — 4-way quadrant' },
+    { id: 'radial', label: '✳', title: 'Radial — N-spoke mandala' },
+];
 import { pageNoun, setPageSize, propertyPanelTarget } from "../store/app-store";
 import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, canTurntable, spinTurntable360 } from "../store/app-store";
 import { WARP_PRESETS } from "../utils/envelope-warp";
@@ -2250,6 +2259,74 @@ const PropertyPanel: Component = () => {
                                         </div>
                                     </div>
                                 </Show>
+                                <Show when={targetType() === 'canvas'}>
+                                    <div class="property-group">
+                                        <div class="group-title">SYMMETRY</div>
+                                        {/* Live drawing symmetry — every drawing tool replicates
+                                            what you draw through these transforms. */}
+                                        <div style={{ display: 'flex', gap: '4px', 'margin-bottom': '6px' }}>
+                                            <For each={SYMMETRY_MODES}>{(m) => (
+                                                <button
+                                                    style={{
+                                                        flex: '1', 'font-size': '11px', padding: '4px 2px', cursor: 'pointer',
+                                                        border: '1px solid var(--border-color, #ccc)', 'border-radius': '4px',
+                                                        background: store.symmetry.mode === m.id ? '#b14cff' : 'transparent',
+                                                        color: store.symmetry.mode === m.id ? '#fff' : 'inherit',
+                                                    }}
+                                                    title={m.title}
+                                                    onClick={() => setSymmetryMode(m.id as any)}
+                                                >{m.label}</button>
+                                            )}</For>
+                                        </div>
+
+                                        <Show when={store.symmetry.mode === 'radial'}>
+                                            <div class="property-row">
+                                                <label>Spokes</label>
+                                                <input
+                                                    type="range" min="2" max="24" step="1"
+                                                    value={store.symmetry.radialCount}
+                                                    onInput={(e) => setRadialCount(parseInt(e.currentTarget.value, 10))}
+                                                />
+                                                <span style={{ 'min-width': '22px', 'font-size': '11px' }}>{store.symmetry.radialCount}</span>
+                                            </div>
+                                        </Show>
+
+                                        <Show when={store.symmetry.mode !== 'off'}>
+                                            <div class="property-row">
+                                                <label>Angle</label>
+                                                <input
+                                                    type="range" min="-90" max="90" step="1"
+                                                    value={Math.round((store.symmetry.angle * 180) / Math.PI)}
+                                                    onInput={(e) => setSymmetryAngleDeg(parseInt(e.currentTarget.value, 10))}
+                                                />
+                                                <span style={{ 'min-width': '30px', 'font-size': '11px' }}>
+                                                    {Math.round((store.symmetry.angle * 180) / Math.PI)}°
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                                <button
+                                                    style={{
+                                                        flex: '1', 'font-size': '11px', padding: '4px', cursor: 'pointer',
+                                                        border: '1px solid var(--border-color, #ccc)', 'border-radius': '4px',
+                                                        background: store.symmetry.editing ? '#b14cff' : 'transparent',
+                                                        color: store.symmetry.editing ? '#fff' : 'inherit',
+                                                    }}
+                                                    title="Drag the canvas handle to reposition the axis (Alt+Shift+Y)"
+                                                    onClick={() => toggleSymmetryEditing()}
+                                                >{store.symmetry.editing ? 'Done moving' : 'Move axis'}</button>
+                                                <button
+                                                    style={{
+                                                        flex: '1', 'font-size': '11px', padding: '4px', cursor: 'pointer',
+                                                        border: '1px solid var(--border-color, #ccc)', 'border-radius': '4px', background: 'transparent',
+                                                    }}
+                                                    title="Mirror the current selection across the axis"
+                                                    onClick={() => mirrorAcrossSymmetry()}
+                                                >Mirror selection</button>
+                                            </div>
+                                        </Show>
+                                    </div>
+                                </Show>
+
                                 <Show when={targetType() === 'canvas' && !isPagedDocType(store.docType)}>
                                     <div class="property-group">
                                         <div class="group-title">CANVAS THEME</div>

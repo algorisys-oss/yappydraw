@@ -204,3 +204,35 @@
     background: var(--primary-color, #3b82f6);
     vertical-align: middle;
 }
+/* Footer toggles: symmetry axes, move-axis, fill mode. */
+.status-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.status-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    opacity: 0.65;
+    cursor: pointer;
+}
+
+.status-toggle:hover {
+    opacity: 1;
+    background: rgba(127, 127, 127, 0.18);
+}
+
+.status-toggle.is-active {
+    opacity: 1;
+    background: #b14cff;
+    color: #fff;
+}

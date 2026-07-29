@@ -22,7 +22,7 @@ export class FreehandRenderer extends ShapeRenderer {
         // invisible and then pops in at the end. definePath()/estimatePathLength() below
         // trace the freehand polyline, so the base reveal works unchanged.
         const dp = element.drawProgress;
-        if (dp !== undefined && dp >= 0 && dp < 100) {
+        if (dp != null && dp >= 0 && dp < 100) {
             this.renderDrawProgress(context, cx, cy);
         } else if (element.renderStyle === 'architectural') {
             this.renderArchitectural(context, cx, cy);
@@ -59,6 +59,22 @@ export class FreehandRenderer extends ShapeRenderer {
         renderer.save();
         renderer.strokeStyle = strokeColor;
         renderer.fillStyle = strokeColor;
+
+        // Fill mode (Alchemy-style silhouette): close the stroke's path and fill it,
+        // so the mark reads as a solid shape rather than a line. The stroke is still
+        // drawn on top, which keeps thin necks and the stroke's own taper readable.
+        const fill = el.backgroundColor && el.backgroundColor !== 'transparent' && el.backgroundColor !== 'none'
+            ? el.backgroundColor : strokeColor;
+        if (el.fillSilhouette && absPoints.length >= 3) {
+            renderer.save();
+            renderer.fillStyle = RenderPipeline.adjustColor(fill, isDarkMode);
+            renderer.beginPath();
+            renderer.moveTo(absPoints[0].x, absPoints[0].y);
+            for (let i = 1; i < absPoints.length; i++) renderer.lineTo(absPoints[i].x, absPoints[i].y);
+            renderer.closePath();
+            renderer.fill();
+            renderer.restore();
+        }
 
         if (el.type === 'fineliner') {
             this.renderFineliner(renderer, absPoints, el.strokeWidth);

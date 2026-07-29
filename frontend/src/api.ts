@@ -18,6 +18,8 @@ import {
     addPatternSwatchFromSelection, savePatternSwatchFromElement, applyPatternSwatch, updatePatternSwatch, renamePatternSwatch, deletePatternSwatch,
     createSymbol, saveSelectionToAssetLibrary, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
+    setSymmetryMode, toggleSymmetry, toggleSymmetryAxis, setRadialCount,
+    setSymmetryAngleDeg, setSymmetryCenter, setSymmetryEditing, toggleSymmetryEditing,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
     setBlueprint, toggleBlueprint, blueprintFor,
@@ -2361,14 +2363,48 @@ export const YappyAPI = {
     mirrorCopy(axis: 'horizontal' | 'vertical') { mirrorCopy(axis); },
     /** Transform Again: clone the selection and replay the last move/duplicate transform (step-and-repeat). */
     transformAgain() { transformAgain(); },
-    /** Show/hide the symmetry guide; optional world `pos` for the axis. */
-    toggleSymmetryGuide(enabled?: boolean, pos?: number) { toggleSymmetryGuide(enabled, pos); },
-    /** Set the symmetry guide axis ('vertical' = left↔right mirror line). */
-    setSymmetryAxis(axis: 'vertical' | 'horizontal') { setSymmetryAxis(axis); },
-    /** Move the symmetry guide to world coordinate `pos`. */
-    setSymmetryPos(pos: number) { setSymmetryPos(pos); },
-    /** Mirror the selection across the symmetry guide (reflected clones). */
+    // ── Symmetry (live mirror / quadrant / mandala drawing) ──
+    // While a mode is active, EVERY drawing tool replicates what you draw through
+    // the symmetry transforms; the copies are grouped with the original.
+    /**
+     * Set the symmetry mode.
+     * `'vertical'` mirrors left↔right, `'horizontal'` up↕down, `'both'` is the
+     * 4-way quadrant, `'radial'` is an N-spoke mandala.
+     */
+    setSymmetryMode(mode: 'off' | 'vertical' | 'horizontal' | 'both' | 'radial') { setSymmetryMode(mode); },
+    /** Quick on/off — restores the last-used mode (defaults to vertical). */
+    toggleSymmetry() { toggleSymmetry(); },
+    /** Toggle one mirror axis; vertical + horizontal combine into 'both'. */
+    toggleSymmetryAxis(axis: 'vertical' | 'horizontal') { toggleSymmetryAxis(axis); },
+    /** Spokes for radial (mandala) symmetry, clamped to 2..24. */
+    setRadialCount(n: number) { setRadialCount(n); },
+    /** Tilt the mirror lines / offset the radial spokes, in degrees (−90..90). */
+    setSymmetryAngleDeg(deg: number) { setSymmetryAngleDeg(deg); },
+    /** Move the symmetry centre (world coordinates). */
+    setSymmetryCenter(cx: number, cy: number) { setSymmetryCenter(cx, cy); },
+    /** Edit mode: show the centre handle and suspend replication while dragging it. */
+    setSymmetryEditing(v: boolean) { setSymmetryEditing(v); },
+    /** Toggle the "move axis" editing mode. */
+    toggleSymmetryEditing() { toggleSymmetryEditing(); },
+    /**
+     * Fill mode (Alchemy-style): freehand strokes commit as a filled silhouette in
+     * their own colour instead of a line. Persisted across sessions.
+     */
+    setFillShapeMode(on: boolean) { updateGlobalSettings({ fillShapeMode: on }); },
+    /** Toggle fill mode. */
+    toggleFillShapeMode() { updateGlobalSettings({ fillShapeMode: !store.globalSettings.fillShapeMode }); },
+    /** Is fill mode on? */
+    getFillShapeMode() { return !!store.globalSettings.fillShapeMode; },
+
+    /** Mirror the CURRENT SELECTION across the symmetry axis (for marks drawn before it was on). */
     mirrorAcrossSymmetry() { mirrorAcrossSymmetry(); },
+
+    /** @deprecated use {@link setSymmetryMode} / {@link toggleSymmetry}. */
+    toggleSymmetryGuide(enabled?: boolean, pos?: number) { toggleSymmetryGuide(enabled, pos); },
+    /** @deprecated use {@link setSymmetryMode}. */
+    setSymmetryAxis(axis: 'vertical' | 'horizontal') { setSymmetryAxis(axis); },
+    /** @deprecated use {@link setSymmetryCenter}. */
+    setSymmetryPos(pos: number) { setSymmetryPos(pos); },
 
     // UI Panels
     toggleCommandPalette(visible?: boolean) { toggleCommandPalette(visible); },

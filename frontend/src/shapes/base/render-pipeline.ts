@@ -757,6 +757,7 @@ export class RenderPipeline {
     static renderText(context: RenderContext, cx: number, cy: number) {
         const { renderer, element: el, isDarkMode } = context;
         if (el.isEditing) return; // Don't render text if we're currently editing it
+        if (context.suppressText) return; // drawIn geometry capture — see RenderContext
 
         // Rich text path — render per-span formatting
         if (el.richContainerText && el.richContainerText.length > 0) {

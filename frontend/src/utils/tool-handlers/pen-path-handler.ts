@@ -16,7 +16,7 @@
 import type { DrawingElement, PathAnchor } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, addElement, updateElement, setStore, setSelectedTool, pushToHistory } from '../../store/app-store';
+import { store, addElement, updateElement, setStore, setSelectedTool, pushToHistory, applyLiveSymmetry } from '../../store/app-store';
 import { snapPoint } from '../snap-helpers';
 import { generateId } from '../id-generator';
 
@@ -183,6 +183,7 @@ export function penFinalize(pState: PointerState): void {
         return;
     }
     writePenElement(pState);
+    applyLiveSymmetry(id); // live mirror / quadrant / mandala copies
     setStore('selection', [id]);
     resetPen(pState);
     setSelectedTool('selection');
