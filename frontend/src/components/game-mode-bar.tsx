@@ -15,7 +15,6 @@ import { store } from '../store/app-store';
 import { isPanelOpen } from '../store/dock-layout';
 import { showToast } from './toast';
 import { drawingId } from './menu';
-import { exportSceneAsHtml } from '../utils/export-game';
 import { GameViewSwitcher, type GameView } from './game-view-switcher';
 import './game-mode-bar.css';
 
@@ -41,6 +40,10 @@ const play = () => {
 const exportGame = async () => {
     try {
         showToast('Generating game HTML…', 'loading', 0);
+        // Lazy: export-game pulls in assets/player-assets.ts, which embeds the whole
+        // player bundle as a 2.4 MB string. Statically importing it here put that
+        // string in the eager chunk for every cold load.
+        const { exportSceneAsHtml } = await import('../utils/export-game');
         await exportSceneAsHtml(drawingId());
         showToast('Game exported — a self-contained playable HTML file', 'success');
     } catch (e) {

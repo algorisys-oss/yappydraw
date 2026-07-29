@@ -103,9 +103,16 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
+        // NOTE: jspdf/pptxgenjs are deliberately NOT listed here. A manualChunks
+        // entry forces those modules into a chunk that is reachable from the entry,
+        // which put ~744 kB of export-only vendor code on the cold-load critical path
+        // even after exportToPdf/exportToPptx switched to dynamic imports. Left to
+        // Rollup, they land in a chunk pulled in only when an export actually runs.
         manualChunks: {
-          'vendor-rendering': ['roughjs', 'lucide-solid'],
-          'vendor-export': ['jspdf', 'pptxgenjs'],
+          // lucide-solid is NOT listed: naming it forces the ENTIRE icon package into
+          // the chunk, defeating tree-shaking of the ~40 icons actually imported at
+          // startup. The Elements panel dynamic-imports the full package separately.
+          'vendor-rendering': ['roughjs'],
           'solid-framework': ['solid-js']
         }
       }

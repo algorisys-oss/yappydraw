@@ -19,7 +19,6 @@ import {
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
-import { exportSceneAsHtml } from "../utils/export-game";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
 import { draggablePanel } from "../utils/draggable-panel";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
@@ -464,6 +463,10 @@ const Menu: Component = () => {
     const handleExportHtml = async () => {
         try {
             showToast('Generating HTML...', 'loading', 0);
+        // Lazy: export-game pulls in assets/player-assets.ts, which embeds the whole
+        // player bundle as a 2.4 MB string. Statically importing it here put that
+        // string in the eager chunk for every cold load.
+            const { exportSceneAsHtml } = await import('../utils/export-game');
             await exportSceneAsHtml(drawingId());
             showToast('HTML Exported successfully!', 'success');
             setIsLoadExportOpen(false);

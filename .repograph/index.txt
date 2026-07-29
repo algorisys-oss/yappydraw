@@ -162,7 +162,7 @@ frontend/src/components/font-picker.tsx | typescript | 147 | Component:1 FontOpt
 frontend/src/components/game-graph.css | - | 133 |
 frontend/src/components/game-graph.tsx | typescript | 355 | Component:9 Behavior:15 GameGraph:32 triggersFor:46 actionsFor:47 posOf:55 targetPosOf:60 flowColor:61 onWheel:73 onSurfaceDown:85 toSurface:91 onSurfaceMove:96 onSurfaceUp:102 startFlowWire:109 resolveFlowWire:114 startWire:135 resolveWire:140 startNodeDrag:162 moveNodeDrag:169 endNodeDrag:174 writeOwner:181 behaviorsOf:185 addNode:187 deleteNode:196 bhv:199 patchBehavior:200 setTriggerKind:202 patchTrigger:203 toggleCondition:204 patchCondition:205 addActionTo:206 setActionKind:207 patchActionAt:208 removeActionAt:209 play:211 onKey:219 a:246 a:253 a:260 a:267 meta:275 owner:276
 frontend/src/components/game-mode-bar.css | - | 48 |
-frontend/src/components/game-mode-bar.tsx | typescript | 62 | Component:12 GameView:19 anyEditorOpen:22 currentView:26 play:33 exportGame:41 GameModeBar:52
+frontend/src/components/game-mode-bar.tsx | typescript | 65 | Component:12 GameView:18 anyEditorOpen:21 currentView:25 play:32 exportGame:40 GameModeBar:55
 frontend/src/components/game-overlay.css | - | 110 |
 frontend/src/components/game-overlay.tsx | typescript | 115 | Component:11 GameButton:19 GameOverlay:23 padVisible:28 ended:32 toWorld:34 onDown:36 onMove:41 onUp:45
 frontend/src/components/game-script-dialog.css | - | 139 |
@@ -174,7 +174,7 @@ frontend/src/components/google-fonts-dialog.tsx | typescript | 133 | Component:1
 frontend/src/components/graphic-styles-panel.css | - | 87 |
 frontend/src/components/graphic-styles-panel.tsx | typescript | 88 | Component:1 draw:17 GraphicStylesPanel:43 startRename:47 commitRename:48
 frontend/src/components/help-dialog.css | - | 184 |
-frontend/src/components/help-dialog.tsx | typescript | 337 | ShortcutEntry:6 ShortcutCategory:11 parseKeys:202 Props:221 HelpDialog:226 handleKeyDown:229
+frontend/src/components/help-dialog.tsx | typescript | 339 | ShortcutEntry:6 ShortcutCategory:11 parseKeys:204 Props:223 HelpDialog:228 handleKeyDown:231
 frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 38 | Component:1 HistoryPanel:12
 frontend/src/components/infra-tool-group.tsx | typescript | 137 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:76 activeTool:83 isActive:84 getDropdownPosition:86
@@ -193,7 +193,7 @@ frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 d
 frontend/src/components/measure-overlay.css | - | 83 |
 frontend/src/components/measure-overlay.tsx | typescript | 128 | MeasureOverlay:16 toWorld:21 onDown:23 onMove:30 onUp:40 onKey:45 seg:54 metrics:69 unit:77 distLabel:79
 frontend/src/components/menu.css | - | 340 |
-frontend/src/components/menu.tsx | typescript | 1481 | Component:1 SaveIntent:86 handleSaveRequest:88 isUnnamedDrawing:106 quickSaveToGallery:111 proceed:129 Menu:144 handleUnsavedCancel:166 handleUnsavedDiscard:171 handleUnsavedSave:178 propPanelOffset:190 onPaletteEscape:200 performSave:211 is:287 handleLoad:323 handleResetView:343 loadTemplateAction:348 handleTemplateSelect:388 handleOpenJson:397 handleLoadJsonText:448 handleExportHtml:464 handleExportExcalidraw:476 handleExportRocket:497 handleDeployToRocket:530 onLeftMouseDown:581 onRightMouseDown:596 onMouseMove:610 onMouseUp:625 handleResize:634
+frontend/src/components/menu.tsx | typescript | 1484 | Component:1 SaveIntent:85 handleSaveRequest:87 isUnnamedDrawing:105 quickSaveToGallery:110 proceed:128 Menu:143 handleUnsavedCancel:165 handleUnsavedDiscard:170 handleUnsavedSave:177 propPanelOffset:189 onPaletteEscape:199 performSave:210 is:286 handleLoad:322 handleResetView:342 loadTemplateAction:347 handleTemplateSelect:387 handleOpenJson:396 handleLoadJsonText:447 handleExportHtml:463 handleExportExcalidraw:479 handleExportRocket:500 handleDeployToRocket:533 onLeftMouseDown:584 onRightMouseDown:599 onMouseMove:613 onMouseUp:628 handleResize:637
 frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
 frontend/src/components/mindmap-tool-group.tsx | typescript | 135 | Component:1 MindmapToolGroup:16 handler:23 getActiveMindmapTool:34 handleToolClick:48 as:56 as:61 handleRightClick:68 toggleMenu:74 as:76 activeTool:81 isActive:82 getDropdownPosition:84
@@ -330,7 +330,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 335 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 339 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -621,7 +621,7 @@ frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19
 frontend/src/utils/excalidraw-io.ts | typescript | 269 | ExcalidrawFile:23 pointPairs:52 anchorsToPairs:64 baseExc:70 ToExcalidrawResult:101 toExcalidraw:103 FromExcalidrawResult:177 fromExcalidraw:189
 frontend/src/utils/export-game.ts | typescript | 47 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
-frontend/src/utils/export.ts | typescript | 1475 | ShapeGeometry:14 paintDimensions:29 Bounds:34 ensureExportImages:39 elementAABB:52 elementsBounds:76 overlapsRect:88 renderElWithEffects:98 buildAppearanceSvgGroup:137 buildUmlClassNode:196 umlArrowheadGlyph:287 connectorCurvePath:312 connectorPathEl:340 geometryToDs:357 renderPagedDocToCanvas:402
+frontend/src/utils/export.ts | typescript | 1480 | ShapeGeometry:17 paintDimensions:32 Bounds:37 ensureExportImages:42 elementAABB:55 elementsBounds:79 overlapsRect:91 renderElWithEffects:101 buildAppearanceSvgGroup:140 buildUmlClassNode:199 umlArrowheadGlyph:290 connectorCurvePath:315 connectorPathEl:343 geometryToDs:360 renderPagedDocToCanvas:405
 frontend/src/utils/extrude.ts | typescript | 231 | Poly:12 Ring:12 MultiPoly:17 hasExtrude:19 isExtrudeTilted:25 extrudeOwnsFront:31 tilted:36 darken:44 lighten:59 insetRing:68 baseColor:80 extrudeGeometry:89 drawBody:106 tracePolys:132 drawImageFront:148 drawFront:171 drawBevelFront:185 renderExtrudeBody:221
 frontend/src/utils/geometry-scale.ts | typescript | 69 | scalePoints:13 scalePathAnchors:33 scalePathSubpaths:47 scaleEraseStrokes:53
 frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
@@ -703,7 +703,7 @@ frontend/src/utils/text-to-outlines.ts | typescript | 160 | OutlineResult:94
 frontend/src/utils/text-utils.ts | typescript | 352 | TextMetrics:5 VerticalTextLayout:186
 frontend/src/utils/timelapse-manager.ts | typescript | 297 | TimelapseManifest:28 VideoFormat:30 newRecordingId:48 toBlobAsync:53 exportTimelapse:65 renderFrame:120 setupTimelapse:166
 frontend/src/utils/tool-handlers/canvas-event-handlers.ts | typescript | 317 | StockPhoto:15 CanvasEventContext:22 handleDragOver:30 handleDrop:39 applyAssetAtClientPoint:96 any:154 as:154 WheelContext:192 handleUmlSectionScroll:199 handleWheel:270
-frontend/src/utils/tool-handlers/draw-handler.ts | typescript | 652 | drawOnDown:76 drawOnMove:312 drawOnUp:413 normalizeOrganicBranch:627
+frontend/src/utils/tool-handlers/draw-handler.ts | typescript | 672 | drawOnDown:76 drawOnMove:312 drawOnUp:433 normalizeOrganicBranch:647
 frontend/src/utils/tool-handlers/minor-handlers.ts | typescript | 1003 | triggerOpenBoxReveal:26 presentationOnDown:154 presentationOnMove:235 presentationOnUp:267 panOnDown:298 panOnMove:306 panOnUp:320 laserOnDown:330 laserOnMove:340 laserOnUp:366 textOnDown:387 textOnMove:414 textOnUp:435 richTextOnDown:496 richTextOnMove:524 richTextOnUp:545 inkOnDown:603 appendEraseStroke:651 splitFreehandStroke:685 getEraserRadius:762 eraseAtPoint:768 eraserOnDown:804 eraserOnMove:817 eraserOnUp:825 connectorHandleOnDown:832 connectorHandleOnUp:913 handleAutoScroll:978
 frontend/src/utils/tool-handlers/pen-handler.ts | typescript | 55 | penOnMove:14
 frontend/src/utils/tool-handlers/pen-path-handler.ts | typescript | 206 | snap:23 constrainHandleVec:34 writePenElement:47 resetPen:79 penOnDown:90 penOnMove:144 penOnUp:167 penFinalize:176 penUndo:194
@@ -805,6 +805,7 @@ tests/boot-resilience.spec.ts | typescript | 123 | splashVisible:13
 tests/bpmn.spec.ts | typescript | 327 | markers:152
 tests/brand-kit.spec.ts | typescript | 97 | Window:6
 tests/builtin-panel-drag.spec.ts | typescript | 31 | drag:13
+tests/bundle-lazy-load.spec.ts | typescript | 151 | boot:20
 tests/canva-ai.spec.ts | typescript | 159 | Window:6
 tests/canva-next.spec.ts | typescript | 273 | Window:6
 tests/clipping-mask.spec.ts | typescript | 70 |
@@ -924,6 +925,7 @@ tests/scene-playback.spec.ts | typescript | 91 | shot:75
 tests/select-and-constrain.spec.ts | typescript | 69 |
 tests/sequence-diagram.spec.ts | typescript | 75 |
 tests/shape-builder.spec.ts | typescript | 72 |
+tests/shift-aspect-constrain.spec.ts | typescript | 77 | boot:11 dragWith:23
 tests/slice.spec.ts | typescript | 14 |
 tests/slides.spec.ts | typescript | 243 | to:13
 tests/slingshot-repro.spec.ts | typescript | 85 | Window:5 shoot:44

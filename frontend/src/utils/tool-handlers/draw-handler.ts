@@ -325,6 +325,10 @@ export function drawOnMove(
     // over grid snap (which would break the clean angle); connectors that bind below
     // still win. Curved/orthogonal tools (elbow/organicBranch) are left alone.
     const ANGLE_TOOLS = ['line', 'arrow', 'bezier'];
+    // Tools whose drag defines a box, so Shift means "keep it square" (see below).
+    // NORMALIZABLE_SHAPES is exactly the set that treats width/height as a bounding
+    // box, which is the same condition — reused so a new shape gets this for free.
+    const ASPECT_TOOLS = NORMALIZABLE_SHAPES;
     const angleConstrained = constrainAngle && ANGLE_TOOLS.includes(store.selectedTool);
     if (angleConstrained) {
         const c = constrainToAngle(pState.startX, pState.startY, x, y, 15);
@@ -358,9 +362,25 @@ export function drawOnMove(
         finalY = snapped.y;
     }
 
+    let dx = finalX - pState.startX;
+    let dy = finalY - pState.startY;
+
+    // Aspect constraint (Shift): a shape tool draws a SQUARE / perfect circle rather
+    // than a free rectangle — the sibling of the 15° angle snap above, and what the
+    // status bar's "Shift · Constrain" hint has been promising for shape tools all
+    // along. Takes the larger drag axis so the shape follows the cursor's intent, and
+    // keeps each axis's sign so it still draws in any of the four directions.
+    if (constrainAngle && !angleConstrained && ASPECT_TOOLS.includes(store.selectedTool)) {
+        const side = Math.max(Math.abs(dx), Math.abs(dy));
+        dx = Math.sign(dx || 1) * side;
+        dy = Math.sign(dy || 1) * side;
+        finalX = pState.startX + dx;
+        finalY = pState.startY + dy;
+    }
+
     const updates: Partial<DrawingElement> = {
-        width: finalX - pState.startX,
-        height: finalY - pState.startY
+        width: dx,
+        height: dy
     };
 
     // For organicBranch, provide temporary points and controlPoints for live preview

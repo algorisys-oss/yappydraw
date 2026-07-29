@@ -4,8 +4,11 @@ import { renderElement } from "./render-element";
 import { resolveDash } from "./stroke-dash";
 import { renderSlideBackground } from "./canvas-renderer";
 import rough from 'roughjs/bin/rough';
-import { jsPDF } from "jspdf";
-import PptxGenJS from "pptxgenjs";
+// jspdf + pptxgenjs are ~744 kB and are reached ONLY by exportToPdf / exportToPptx,
+// but this module is statically imported by api.ts, the export dialog, doc-thumbnails
+// and others for plain PNG/SVG export — so importing them at module level put the whole
+// vendor-export chunk on the cold-load critical path. Loaded inside the two functions
+// that need them instead; the other exports are unaffected.
 import { resolveFontFamily, wrapText, getMeasurementRenderer, measureContainerText } from "./text-utils";
 import { calculateUmlClassLayout, calculateUml2SectionLayout } from "./uml-layout-utils";
 import type { DrawingElement } from "../types";
@@ -1244,6 +1247,7 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
     await ensureExportImages();
     const allElements = store.elements;
     if (allElements.length === 0) return;
+    const { jsPDF } = await import("jspdf");
 
     const isSlides = isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected;
 
@@ -1363,6 +1367,7 @@ export const exportToPptx = async (scale: number, background: boolean, onlySelec
     const allElements = store.elements;
     if (allElements.length === 0) return;
 
+    const { default: PptxGenJS } = await import("pptxgenjs");
     const pptx = new PptxGenJS();
 
     const isSlides = isPagedDocType(store.docType) && store.slides.length > 0 && !onlySelected;

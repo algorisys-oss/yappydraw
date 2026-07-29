@@ -55,6 +55,8 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
         shortcuts: [
             { label: 'Undo', keys: 'Ctrl+Z' },
             { label: 'Redo', keys: 'Ctrl+Y' },
+            { label: 'Draw a Square / Perfect Circle (hold while drawing)', keys: 'Shift+Drag' },
+            { label: 'Snap a Line / Arrow to 15° (hold while drawing)', keys: 'Shift+Drag' },
             { label: 'Edit Text in Shape', keys: 'Double-click' },
             { label: 'Commit Text, Keep Shape Selected', keys: 'Ctrl+Enter' },
             { label: 'Commit Text, Exit Edit', keys: 'Esc' },

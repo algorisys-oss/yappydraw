@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.157', date: '2026-07-29', items: [
+        'Yappy now loads about three times lighter. It was downloading a PDF library, a PowerPoint library and an entire icon set before you could draw a single line — none of which are needed until you actually export something. Cold-load code is down 62%, so the app is usable much sooner, especially on a slow connection or a first visit.',
+        'Holding Shift while you drag now draws a perfect square or circle. The hint in the status bar had been promising this for shape tools for a while, but only lines and arrows were actually listening.',
+    ] },
     { version: '0.8.156', date: '2026-07-29', items: [
         'Symmetry drawing is here. Turn it on and whatever you draw is mirrored live — left/right, up/down, a 4-way quadrant, or a mandala of up to 24 spokes. The copies appear as you drag, not when you let go, and every tool is covered: brushes, pen, shapes, connectors, all of it.',
         'Drag the purple handle to put the mirror line or mandala centre wherever you want, and tilt the axes off-vertical if you need to. Buttons live in the footer, or press Alt+Y (Alt+Shift+Y to move the axis).',
