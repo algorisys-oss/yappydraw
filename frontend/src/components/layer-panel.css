@@ -1,7 +1,9 @@
 .layer-panel {
     position: absolute;
     right: 0;
-    bottom: 28px;
+    /* Above the status bar — hardcoding 28px meant it drifted the moment the shell's
+       bottom region changed. --statusbar-h comes from utils/dock-layout. */
+    bottom: var(--statusbar-h, 28px);
     width: 280px;
     background: var(--bg-panel);
     border-left: 1px solid var(--border-color);

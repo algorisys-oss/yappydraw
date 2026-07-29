@@ -3,6 +3,7 @@ import { isPagedDocType } from '../types/slide-types';
 import type { Component } from "solid-js";
 import Canvas from "./canvas";
 import { loadDocument, setStore, store, zoomToFit, advancePresentation, retreatPresentation, setActiveSlide } from "../store/app-store";
+import { setPanelOpen } from "../store/dock-layout";
 import { registerShapes } from "../shapes/register-shapes";
 import { PresentationControls } from "./presentation-controls";
 import type { SlideDocument } from "../types/slide-types";
@@ -37,7 +38,7 @@ const PlayerApp: Component = () => {
                 // Force presentation mode settings
                 setStore("appMode", "presentation");
                 setStore("showMainToolbar", false);
-                setStore("showPropertyPanel", false);
+                setPanelOpen('properties', false);
                 setStore("showLayerPanel", false);
                 setStore("showSlideNavigator", false); // Hidden by default in player
                 setStore("showSlideToolbar", true); // Show controls

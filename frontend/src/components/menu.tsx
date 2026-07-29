@@ -6,7 +6,6 @@ import {
     togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleComicPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleKeyframePanel, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
     toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript,
-    isPropertyPanelVisible
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import { isPanelOpen } from "../store/dock-layout"; // History/Swatches migrated to the dock (Phase D)
@@ -15,12 +14,13 @@ import {
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
     Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, PersonStanding, Gamepad2, Workflow, ChevronDown, Code, Network
-, Clapperboard
+, Clapperboard, SlidersHorizontal, HelpCircle
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
 import { ColorPalettePicker, isPalettePinned } from "./p3-color-picker";
 import { draggablePanel } from "../utils/draggable-panel";
+import { ToolOptionsBar } from "./tool-options-bar";
 import { sequenceAnimator } from "../utils/animation/sequence-animator";
 import { isGlobalPlaying, isGlobalPaused, animationEngine } from "../utils/animation/animation-engine";
 import { clickOutside } from "../utils/click-outside";
@@ -182,11 +182,6 @@ const Menu: Component = () => {
         setIsLoadExportOpen(true);
     };
     const [isPalettePickerOpen, setIsPalettePickerOpen] = createSignal(isPalettePinned());
-    // The Properties panel docks to the right edge (~280px). Shift the fixed top-right
-    // palette + theme controls left of it while it's open so they don't overlap its header.
-    // Keyed off actual visibility, not store.showPropertyPanel: the panel renders nothing
-    // without a target, and shifting then reads as the buttons sliding for no reason.
-    const propPanelOffset = () => (isPropertyPanelVisible() && !store.isPropertyPanelMinimized) ? 290 : 0;
     let palettePickerRef: HTMLDivElement | undefined;
 
     createEffect(() => {
@@ -573,73 +568,16 @@ const Menu: Component = () => {
         }
     };
 
-    const [leftPos, setLeftPos] = createSignal({ x: 0, y: 0 });
-    const [leftDragging, setLeftDragging] = createSignal(false);
-    const [leftDragStart, setLeftDragStart] = createSignal({ x: 0, y: 0 });
-
-    const [rightPos, setRightPos] = createSignal({ x: 0, y: 0 });
-    const [rightDragging, setRightDragging] = createSignal(false);
-    const [rightDragStart, setRightDragStart] = createSignal({ x: 0, y: 0 });
-
-    const onLeftMouseDown = (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-        if (target.closest('.menu-container') || target.classList.contains('app-title') || target.classList.contains('drag-handle')) {
-            // Don't drag if clicking buttons inside
-            if (target.tagName === 'BUTTON' || target.closest('button')) return;
-
-            setLeftDragging(true);
-            setLeftDragStart({
-                x: e.clientX - leftPos().x,
-                y: e.clientY - leftPos().y
-            });
-            e.preventDefault();
-        }
-    };
-
-    const onRightMouseDown = (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-        if (target.closest('.menu-container') || target.classList.contains('drag-handle')) {
-            if (target.tagName === 'BUTTON' || target.closest('button')) return;
-
-            setRightDragging(true);
-            setRightDragStart({
-                x: e.clientX - rightPos().x,
-                y: e.clientY - rightPos().y
-            });
-            e.preventDefault();
-        }
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-        if (leftDragging()) {
-            setLeftPos({
-                x: e.clientX - leftDragStart().x,
-                y: e.clientY - leftDragStart().y
-            });
-        }
-        if (rightDragging()) {
-            setRightPos({
-                x: e.clientX - rightDragStart().x,
-                y: e.clientY - rightDragStart().y
-            });
-        }
-    };
-
-    const onMouseUp = () => {
-        setLeftDragging(false);
-        setRightDragging(false);
-    };
+    /* The header clusters used to be draggable pills floating over the canvas, each carrying
+       its own x/y offset, drag handle and window-level mousemove/mouseup listeners. The top bar
+       is a real docked region now, so they are laid out BY the bar (flex slots) and there is
+       nothing left to drag — the whole leftPos/rightPos drag rig is gone. */
 
     onMount(() => {
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
-
         const handleResize = () => setIsMobile(window.innerWidth <= 768);
         window.addEventListener('resize', handleResize);
 
         onCleanup(() => {
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onMouseUp);
             window.removeEventListener('resize', handleResize);
         });
 
@@ -801,25 +739,20 @@ const Menu: Component = () => {
                 />
             </Suspense>
 
+            {/* ── The shell top bar ────────────────────────────────────────────────────
+                A real header region, not a strip of pills floating over the drawing: the bar
+                is the element, and the logo/menu, the contextual tool options and the
+                view controls are its three flex slots. Each cluster used to be its own
+                `position: fixed` overlay with a hand-tuned `top`/`right` (and a drag offset
+                on top of that), which is why they needed --dock-right arithmetic to dodge the
+                Properties panel and why they fell UNDER the bar's own background.
+
+                Menu's dialogs deliberately stay OUTSIDE this element — nesting them would trap
+                every one of them in the bar's stacking context. */}
             <Show when={!store.zenMode}>
-                <>
-                    <div
-                        style={{
-                            position: 'fixed',
-                            top: '12px',
-                            left: '12px',
-                            "z-index": 10060,
-                            transform: `translate(${leftPos().x}px, ${leftPos().y}px)`
-                        }}
-                    >
-                        <div
-                            class="menu-container"
-                            style={{ position: 'relative' }}
-                            onMouseDown={onLeftMouseDown}
-                        >
-                            <div class="drag-handle sm">
-                                <div class="drag-dots"></div>
-                            </div>
+                <div class="shell-topbar">
+                    <div class="topbar-slot topbar-left">
+                        <div class="menu-container" style={{ position: 'relative' }}>
                             <div class="text-logo" title="YappyDraw — beta">
                                 <span class="text-logo-yappy">Yappy</span><span class="text-logo-draw">Draw</span>
                                 <span class="beta-badge" title="YappyDraw is in beta — expect rapid changes">Beta</span>
@@ -1053,7 +986,7 @@ const Menu: Component = () => {
                                         <Layout size={16} />
                                         <span class="label">Properties Panel</span>
                                         <div class="menu-item-right">
-                                            <Show when={store.showPropertyPanel}><Check size={14} class="check-icon" /></Show>
+                                            <Show when={isPanelOpen('properties')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+Enter</span>
                                         </div>
                                     </div>
@@ -1271,21 +1204,17 @@ const Menu: Component = () => {
                         </div>
                     </div>
 
+                    {/* Centre slot: contextual options for the active tool. It is the only
+                        elastic slot, so it absorbs the leftover width and scrolls internally
+                        rather than pushing the view controls off the right edge. */}
+                    <div class="topbar-slot topbar-center">
+                        <ToolOptionsBar />
+                    </div>
+
+                    <div class="topbar-slot topbar-right">
                     {/* Desktop: full utility toolbar */}
                     <Show when={store.showUtilityToolbar && !isMobile()}>
-                        <div
-                            style={{
-                                position: 'fixed',
-                                top: '12px',
-                                right: '108px',
-                                "z-index": 10000,
-                                transform: `translate(${rightPos().x}px, ${rightPos().y}px)`
-                            }}
-                        >
-                            <div class="menu-container" onMouseDown={onRightMouseDown}>
-                                <div class="drag-handle sm">
-                                    <div class="drag-dots"></div>
-                                </div>
+                            <div class="menu-container">
                                 <button
                                     class="menu-btn"
                                     onClick={() => sequenceAnimator.playAll('programmatic')}
@@ -1311,16 +1240,45 @@ const Menu: Component = () => {
                                     <Square size={16} color="#ef4444" fill="#ef4444" />
                                 </button>
                             </div>
-                        </div>
                     </Show>
 
-                    {/* Desktop: standalone palette picker, always visible at top-right */}
+                    {/* Desktop: Settings, Properties and Help. These used to be a `position: fixed`
+                        circle-button cluster pinned to the bottom-left corner, floating over the
+                        drawing and — on a tall document or with the animation timeline open —
+                        sitting on top of the very canvas they were meant to sit beside. They are
+                        view controls, so they belong with the other view controls. */}
                     <Show when={!isMobile()}>
-                        <div
-                            ref={palettePickerRef}
-                            style={{ position: 'fixed', top: '12px', right: `${60 + propPanelOffset()}px`, "z-index": 10000, transition: 'right 0.15s ease' }}
-                        >
-                            <div class="menu-container" style={{ position: 'relative' }}>
+                            {/* The class hooks are load-bearing: the onboarding tour spotlights
+                                `.topbar-view-controls`, `.topbar-properties-btn` and `.help-btn`. */}
+                            <div class="menu-container topbar-view-controls">
+                                <button
+                                    class="menu-btn"
+                                    onClick={() => setShowSettings(true)}
+                                    title="Global Settings"
+                                >
+                                    <Settings size={16} />
+                                </button>
+                                <button
+                                    class="menu-btn topbar-properties-btn"
+                                    classList={{ active: isPanelOpen('properties') }}
+                                    onClick={() => togglePropertyPanel()}
+                                    title="Toggle Properties (Alt+Enter)"
+                                >
+                                    <SlidersHorizontal size={16} />
+                                </button>
+                                <button
+                                    class="menu-btn help-btn"
+                                    onClick={() => setShowHelp(true)}
+                                    title="Shortcuts & Help (?)"
+                                >
+                                    <HelpCircle size={16} />
+                                </button>
+                            </div>
+                    </Show>
+
+                    {/* Desktop: standalone palette picker */}
+                    <Show when={!isMobile()}>
+                            <div class="menu-container" ref={palettePickerRef} style={{ position: 'relative' }}>
                                 <button
                                     class={`menu-btn ${isPalettePickerOpen() ? 'active' : ''}`}
                                     onClick={() => setIsPalettePickerOpen(!isPalettePickerOpen())}
@@ -1349,9 +1307,15 @@ const Menu: Component = () => {
                                         class="menu-dropdown"
                                         ref={draggablePanel('.palette-drag-handle')}
                                         style={{
+                                            /* Stays `position: fixed` because draggablePanel
+                                               repositions it in viewport coordinates. Plain
+                                               `right: 12px` is correct again now that the bar
+                                               spans the full width and ends at the window edge
+                                               — the old --dock-right arithmetic existed only to
+                                               dodge the then-overlapping Properties panel. */
                                             position: 'fixed',
-                                            top: '54px',
-                                            right: `${12 + propPanelOffset()}px`,
+                                            top: 'calc(var(--topbar-h, 52px) + 2px)',
+                                            right: '12px',
                                             left: 'auto',
                                             bottom: 'auto',
                                             margin: 0,
@@ -1364,12 +1328,10 @@ const Menu: Component = () => {
                                     </div>
                                 </Show>
                             </div>
-                        </div>
                     </Show>
 
-                    {/* Desktop: standalone theme toggle, always visible at top-right */}
+                    {/* Desktop: standalone theme toggle */}
                     <Show when={!isMobile()}>
-                        <div style={{ position: 'fixed', top: '12px', right: `${12 + propPanelOffset()}px`, "z-index": 10000, transition: 'right 0.15s ease' }}>
                             <div class="menu-container">
                                 <button
                                     class="menu-btn"
@@ -1382,19 +1344,10 @@ const Menu: Component = () => {
                                                 : <Sun size={16} />}
                                 </button>
                             </div>
-                        </div>
                     </Show>
 
-                    {/* Mobile: collapsed utility menu button at top-right */}
+                    {/* Mobile: collapsed utility menu button */}
                     <Show when={isMobile()}>
-                        <div
-                            style={{
-                                position: 'fixed',
-                                top: '12px',
-                                right: '12px',
-                                "z-index": 10000
-                            }}
-                        >
                             <div class="menu-container" style={{ position: 'relative' }}>
                                 <button
                                     class={`menu-btn ${isUtilityMenuOpen() ? 'active' : ''}`}
@@ -1418,6 +1371,19 @@ const Menu: Component = () => {
                                             <span class="label">Stop</span>
                                         </button>
                                         <div class="menu-separator"></div>
+                                        <button class="menu-item" onClick={() => { setShowSettings(true); setIsUtilityMenuOpen(false); }}>
+                                            <Settings size={16} />
+                                            <span class="label">Settings</span>
+                                        </button>
+                                        <button class="menu-item" onClick={() => { togglePropertyPanel(); setIsUtilityMenuOpen(false); }}>
+                                            <SlidersHorizontal size={16} />
+                                            <span class="label">Properties</span>
+                                        </button>
+                                        <button class="menu-item" onClick={() => { setShowHelp(true); setIsUtilityMenuOpen(false); }}>
+                                            <HelpCircle size={16} />
+                                            <span class="label">Shortcuts &amp; Help</span>
+                                        </button>
+                                        <div class="menu-separator"></div>
                                         <button class="menu-item" onClick={() => { toggleTheme(); setIsUtilityMenuOpen(false); }}>
                                             {store.theme === 'light' ? <Moon size={16} />
                                                 : store.theme === 'dark' ? <Focus size={16} />
@@ -1428,9 +1394,14 @@ const Menu: Component = () => {
                                     </div>
                                 </Show>
                             </div>
-                        </div>
+                    </Show>
+                    </div>
+                </div>
 
-                        {/* Mobile: floating undo/redo above bottom toolbar */}
+                {/* Mobile: floating undo/redo above the bottom toolbar. Anchored to the BOTTOM
+                    of the screen, so it is the one cluster that is not part of the top bar and
+                    stays a fixed overlay. */}
+                <Show when={isMobile()}>
                         <div
                             style={{
                                 position: 'fixed',
@@ -1474,8 +1445,7 @@ const Menu: Component = () => {
                                 <Redo2 size={18} />
                             </button>
                         </div>
-                    </Show>
-                </>
+                </Show>
             </Show>
         </>
     );

@@ -1,7 +1,10 @@
 .vt-panel {
     position: fixed;
-    top: 90px;
-    right: 16px;
+    /* Anchored inside the drawing area. Anchored to the window, a right-side panel on a
+       narrow viewport reached back under the left tool dock and had its labels clipped. */
+    top: calc(16px + var(--dock-top, 0px));
+    right: calc(16px + var(--dock-right, 0px));
+    max-height: calc(100vh - var(--dock-top, 0px) - var(--dock-bottom, 0px) - 32px);
     z-index: 9000;
     width: 200px;
     height: 460px;

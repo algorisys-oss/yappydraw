@@ -22,6 +22,7 @@ import { openRepeatDialog } from "../components/repeat-dialog";
 import { setIsDSLImportOpen, quickSaveToGallery } from "../components/menu";
 import { setShowDrawingsGallery } from "../components/drawings-gallery-signal";
 import type { ToolType } from "../types";
+import { canvasCenterClient } from './dock-layout';
 
 export interface Command {
     id: string;
@@ -334,8 +335,9 @@ export const getCommands = (): Command[] => {
         { id: 'action-repeat', label: 'Repeat (Radial / Grid)…', category: 'Actions', action: () => openRepeatDialog() },
         { id: 'action-symmetry-toggle', label: 'Toggle Symmetry', category: 'Actions', shortcut: 'Alt+Y', action: () => {
             const s = store.viewState;
-            const cx = (window.innerWidth / 2 - s.panX) / s.scale;
-            const cy = (window.innerHeight / 2 - s.panY) / s.scale;
+            const c = canvasCenterClient(); // drawing-area centre, not window centre
+            const cx = (c.x - s.panX) / s.scale;
+            const cy = (c.y - s.panY) / s.scale;
             if (store.symmetry.mode === 'off') setSymmetryCenter(cx, cy);
             toggleSymmetry();
         } },

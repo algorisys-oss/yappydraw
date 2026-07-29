@@ -1,0 +1,48 @@
+/* Contextual tool options — the centre slot of the shell top bar. Empty for tools with no
+   options, so the bar never fills with placeholders. */
+.tool-options-bar {
+    /* Was absolutely positioned with hard-coded 296px/130px gutters, because the logo pill
+       and the view controls were separately fixed-positioned and therefore not in this
+       flow — the gutters were a manual re-creation of a layout the bar can just do. They
+       are real siblings now, so plain flex handles it and the gutters are gone. */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    color: var(--text-primary);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.tool-options-bar::-webkit-scrollbar { height: 0; }
+
+.tob-title { font-weight: 600; color: #6366f1; }
+.tob-label { color: var(--text-secondary); }
+.tob-count { color: var(--text-secondary); min-width: 68px; }
+.tob-hint { color: var(--text-secondary); font-size: 11px; }
+.tob-sep { width: 1px; height: 16px; background: var(--border-color); }
+
+.tool-options-bar button {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6366f1;
+    background: transparent;
+    border: 1px solid #6366f1;
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+}
+
+.tool-options-bar button:hover:not(:disabled) { background: rgba(99, 102, 241, 0.1); }
+.tool-options-bar button.is-on { background: #6366f1; color: #fff; }
+
+.tool-options-bar button:disabled {
+    opacity: 0.4;
+    cursor: default;
+    /* Muted rather than hidden: the operations stay visible so you can see what the
+       tool offers before selecting anything — the whole reason this bar exists. */
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+.tob-close { border: none !important; color: var(--text-secondary) !important; font-size: 13px !important; }

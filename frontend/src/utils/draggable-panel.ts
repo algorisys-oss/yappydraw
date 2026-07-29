@@ -1,3 +1,5 @@
+import { dockInsets } from './dock-layout';
+
 /**
  * Make a floating panel draggable by a handle (its header). Uses event
  * delegation — the pointerdown listener lives on the panel and a drag only
@@ -22,8 +24,14 @@ export function makeDraggable(panel: HTMLElement, handleSelector: string): void 
         panel.style.left = `${ox}px`; panel.style.top = `${oy}px`;
         panel.style.right = 'auto'; panel.style.bottom = 'auto';
         const move = (ev: PointerEvent) => {
-            const nx = Math.max(0, Math.min(window.innerWidth - Math.min(w, 60), ox + ev.clientX - sx));
-            const ny = Math.max(0, Math.min(window.innerHeight - 24, oy + ev.clientY - sy));
+            // Clamp to the DRAWING AREA, not the window: with a docked toolbar or an
+            // open property panel, clamping to 0..innerWidth lets a panel be dragged
+            // underneath docked chrome, where part of it is unreachable.
+            const i = dockInsets();
+            const minX = i.left, maxX = window.innerWidth - i.right - Math.min(w, 60);
+            const minY = i.top, maxY = window.innerHeight - i.bottom - 24;
+            const nx = Math.max(minX, Math.min(maxX, ox + ev.clientX - sx));
+            const ny = Math.max(minY, Math.min(maxY, oy + ev.clientY - sy));
             panel.style.left = `${nx}px`; panel.style.top = `${ny}px`;
         };
         const up = () => {

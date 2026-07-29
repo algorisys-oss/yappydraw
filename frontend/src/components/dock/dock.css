@@ -2,7 +2,10 @@
 
 .dock-zone {
     position: fixed;
-    top: 56px; /* clear the top toolbar / top-left menu (Phase B: proper canvas insets) */
+    /* Below the shell top bar and above the status bar — the regions are real now
+       (utils/dock-layout.ts), so this no longer needs a hardcoded guess. */
+    top: calc(var(--topbar-h, 52px) + var(--toolbar-top, 0px));
+    bottom: var(--statusbar-h, 0px);
     bottom: 0;
     z-index: 40; /* above canvas, below dialogs/command palette */
     background: var(--bg-primary, #fff);
@@ -12,8 +15,8 @@
     display: flex;
     flex-direction: column;
 }
-.dock-zone-left { left: 0; border-left: none; }
-.dock-zone-right { right: 0; border-right: none; }
+.dock-zone-left { left: var(--toolbar-left, 0px); border-left: none; }
+.dock-zone-right { right: var(--toolbar-right, 0px); border-right: none; }
 
 .dock-zone-scroll {
     flex: 1;

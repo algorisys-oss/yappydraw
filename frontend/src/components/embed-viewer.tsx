@@ -3,6 +3,7 @@ import { isPagedDocType } from '../types/slide-types';
 import type { Component } from "solid-js";
 import Canvas from "./canvas";
 import { loadDocument, setStore, store, zoomToFit, zoomToFitSlide, setCanvasBackgroundColor } from "../store/app-store";
+import { setPanelOpen } from "../store/dock-layout";
 import { registerShapes } from "../shapes/register-shapes";
 import { storage } from "../storage/file-system-storage";
 import { isSlideDocument, migrateToSlideFormat } from "../utils/migration";
@@ -83,7 +84,7 @@ const EmbedViewer: Component = () => {
             setStore("appMode", "embed");
             setStore("readOnly", true);
             setStore("showMainToolbar", false);
-            setStore("showPropertyPanel", false);
+            setPanelOpen('properties', false);
             setStore("showLayerPanel", false);
             setStore("showSlideNavigator", false);
             setStore("showSlideToolbar", false);

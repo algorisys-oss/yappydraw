@@ -32,8 +32,57 @@
     padding: 24px;
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
+    gap: 12px;
     padding-bottom: 0px;
+}
+
+/* ── Shortcut search ────────────────────────────────────────────────────── */
+.help-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    max-width: 280px;
+    margin-left: auto;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-input, var(--bg-secondary));
+    color: var(--text-secondary);
+}
+
+.help-search input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.help-search-clear {
+    display: flex;
+    align-items: center;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+}
+
+.help-search-clear:hover { color: var(--text-primary); }
+
+.help-empty {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 8px 0 0;
+}
+
+@media (max-width: 640px) {
+    .help-modal-header { flex-wrap: wrap; }
+    .help-search { max-width: none; order: 3; flex-basis: 100%; }
 }
 
 .help-modal-header h2 {

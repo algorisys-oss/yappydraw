@@ -20,6 +20,7 @@ import { ColorDropHud } from './components/color-drop-hud';
 import Canvas from './components/canvas';
 import { RulerOverlay } from './components/ruler-overlay';
 import { RepeatDialog } from './components/repeat-dialog';
+import { canvasCenterClient } from './utils/dock-layout';
 import { SymmetryOverlay } from './components/symmetry-overlay';
 import { NodeToolOverlay } from './components/node-tool-overlay';
 import { MeshOverlay } from './components/mesh-overlay';
@@ -56,7 +57,6 @@ import { generateId } from './utils/id-generator';
 import { screenToWorld } from './utils/viewport-transforms';
 import { parseOutline } from './utils/mindmap-layout';
 import { updateElement, deleteArtboard, swapFillStroke, selectAll, toggleShapeBuilder } from './store/app-store';
-const PropertyPanel = lazy(() => import('./components/property-panel'));
 const CropBar = lazy(() => import('./components/crop-bar'));
 const DockContainer = lazy(() => import('./components/dock/dock-container'));
 const SceneTimeline = lazy(() => import('./components/scene-timeline'));
@@ -77,14 +77,13 @@ const DsOpsPanel = lazy(() => import('./components/ds-ops-panel'));
 import { WelcomeScreen } from './components/welcome-screen';
 import { OnboardingTour, maybeAutoStartTour } from './components/onboarding-tour';
 import Menu, {
-  handleNew, setShowHelp, setShowSettings,
+  handleNew, setShowHelp,
   isDialogOpen, isSaveOpen, isLoadExportOpen, showHelp,
   setIsLoadExportOpen, setLoadExportInitialTab,
   isAIPromptOpen, setIsAIPromptOpen, quickSaveToGallery
 } from './components/menu';
 import StatusBar from './components/status-bar';
 import { initAPI } from './api';
-import { SlidersHorizontal, Settings } from 'lucide-solid';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
 import { insertFrame, insertKeyframe, insertBlankKeyframe, clearKeyframe, removeFrames, stepFrame, gotoFrame } from './store/anim-ops';
@@ -489,8 +488,11 @@ const App: Component = () => {
             toggleSymmetryEditing();
           } else {
             const s = store.viewState;
-            const cx = (window.innerWidth / 2 - s.panX) / s.scale;
-            const cy = (window.innerHeight / 2 - s.panY) / s.scale;
+            // Centre of the DRAWING AREA, not the window — with a docked toolbar the
+            // two differ, and the axis would land off to one side.
+            const c = canvasCenterClient();
+            const cx = (c.x - s.panX) / s.scale;
+            const cy = (c.y - s.panY) / s.scale;
             if (store.symmetry.mode === 'off') setSymmetryCenter(cx, cy);
             toggleSymmetry();
           }
@@ -525,7 +527,7 @@ const App: Component = () => {
           toggleElementsPanel();
         } else if (key === '\\' || code === 'Backslash') {
           e.preventDefault();
-          const anyVisible = store.showPropertyPanel || isPanelOpen('layers');
+          const anyVisible = isPanelOpen('properties') || isPanelOpen('layers');
           togglePropertyPanel(!anyVisible);
           toggleLayerPanel(!anyVisible);
         } else if (key === '[' || code === 'BracketLeft') {
@@ -1385,8 +1387,9 @@ const App: Component = () => {
             <Toolbar />
           </Show>
           <Show when={!store.zenMode}>
+            {/* Properties renders inside DockContainer now (panel-registry: 'properties'),
+                so it no longer mounts here as a separate floating overlay. */}
             <DockContainer />
-            <PropertyPanel />
             {/* Frame timeline (Animation mode) replaces the seconds-based playheads —
                 mounting both would mean two competing time drivers. */}
             <Show when={store.docType !== 'animation'}>
@@ -1417,6 +1420,8 @@ const App: Component = () => {
         </Show>
         <CropBar />
         <RepeatDialog />
+        {/* The shell header region is rendered by <Menu /> now — it owns the bar's three
+            slots (logo/menu, tool options, view controls) as real layout children. */}
         <SymmetryOverlay />
         <NodeToolOverlay />
         <MeshOverlay />
@@ -1459,34 +1464,10 @@ const App: Component = () => {
           <WelcomeScreen />
         </Show>
 
-        {/* Floating utility cluster — bottom-left on desktop/tablet; on phones it
-            relocates to a top-right rail (see .floating-tools-cluster in index.css)
-            so the bottom-docked toolbar can't swallow its taps. */}
+        {/* Settings / Properties / Help moved into the shell top bar's view controls
+            (components/menu.tsx). They were a fixed cluster of circle buttons in the
+            bottom-left corner, floating over the drawing rather than beside it. */}
         <Show when={store.appMode !== 'presentation'}>
-          <div class="floating-tools-cluster">
-            <button
-              class="floating-settings-btn"
-              onClick={() => setShowSettings(true)}
-              title="Global Settings"
-            >
-              <Settings size={20} />
-            </button>
-            <button
-              class="floating-settings-btn"
-              classList={{ 'active': store.showPropertyPanel }}
-              onClick={() => togglePropertyPanel()}
-              title="Toggle Properties (Alt+Enter)"
-            >
-              <SlidersHorizontal size={20} />
-            </button>
-            <button
-              class="floating-settings-btn help-btn"
-              onClick={() => setShowHelp(true)}
-              title="Shortcuts & Help (?)"
-            >
-              ?
-            </button>
-          </div>
           <SlideControlToolbar />
           <QuickToolbar />
         </Show>

@@ -24,6 +24,7 @@ const BehaviorsPanel = lazy(() => import("../behaviors-panel"));
 const StickFigurePanel = lazy(() => import("../stick-figure-panel"));
 const VectorToolsPanel = lazy(() => import("../vector-tools-panel"));
 const LayerPanel = lazy(() => import("../layer-panel"));
+const PropertyPanel = lazy(() => import("../property-panel"));
 
 export interface PanelDef {
     id: string;
@@ -49,6 +50,7 @@ export const PANEL_REGISTRY: PanelDef[] = [
     { id: 'comic', title: 'Comic Studio', component: DockComicPanel },
     { id: 'vectorTools', title: 'Vector Tools', component: VectorToolsPanel },
     { id: 'layers', title: 'Layers', component: LayerPanel },
+    { id: 'properties', title: 'Properties', component: PropertyPanel },
 ];
 
 export function panelDef(id: string): PanelDef | undefined {

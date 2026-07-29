@@ -1,6 +1,6 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, setSelectedTool, setSelectedDsType, setStore, setToolLocked } from "../store/app-store";
+import { store, setSelectedTool, setSelectedDsType, setToolLocked, showPropertiesPanel } from "../store/app-store";
 import type { ElementType } from "../types";
 import {
     LayoutList, Layers, ArrowRightLeft, Link, GitFork, Hash, ChevronDown
@@ -66,8 +66,7 @@ const DsToolGroup: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
-        setStore("showPropertyPanel", true);
-        setStore("isPropertyPanelMinimized", false);
+        showPropertiesPanel();
     };
 
     const toggleMenu = () => {

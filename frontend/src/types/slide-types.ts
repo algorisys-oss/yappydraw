@@ -121,6 +121,7 @@ export interface GlobalSettings {
     fillShapeMode?: boolean;    // Alchemy-style: a freehand stroke commits as a filled silhouette instead of a line
     mindmapAutoLayout?: boolean;       // Auto-reflow mindmap trees on every add/collapse/delete/reparent (default on)
     mindmapLayoutDirection?: 'horizontal-right' | 'horizontal-left' | 'vertical-down' | 'vertical-up' | 'radial' | 'balanced'; // Default direction for trees with no explicit choice
+    toolbarDock?: 'left' | 'right' | 'top' | 'bottom' | 'float'; // Dock the main toolbar to a window edge (reserving space) or leave it floating over the canvas
     toolbarVertical?: boolean;         // Orient the main toolbar vertically (left edge) instead of horizontally (top)
     toolbarWrap?: number;              // Wrap toolbar icons into a grid of this pixel width (0/undefined = single line)
     timelapseAutoRecord?: boolean;     // Automatically capture a process time-lapse for every session (default off)

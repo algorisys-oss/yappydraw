@@ -1,6 +1,6 @@
 import { type Component, createSignal, Show, For, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, setSelectedTool, setSelectedPenType, setStore } from "../store/app-store";
+import { store, setSelectedTool, setSelectedPenType, showPropertiesPanel } from "../store/app-store";
 import type { ElementType } from "../types";
 import { PenLine, Brush, ChevronDown } from "lucide-solid";
 import "./pen-tool-group.css";
@@ -65,9 +65,7 @@ const PenToolGroup: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
-        store.showPropertyPanel ? () => { } : setSelectedTool(store.selectedTool); // Dummy for context, actual trigger:
-        setStore("showPropertyPanel", true);
-        setStore("isPropertyPanelMinimized", false);
+        showPropertiesPanel();
     };
 
     const toggleMenu = () => {

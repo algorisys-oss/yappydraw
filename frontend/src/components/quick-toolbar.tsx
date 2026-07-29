@@ -18,6 +18,7 @@ import { getImageFilterPreset } from "../config/image-filter-presets";
 import { fontCapabilities } from "../config/properties";
 import { plainTextToSpans, spansToPlainText } from "../utils/rich-text-utils";
 import { worldToScreen } from "../utils/viewport-transforms";
+import { dockInsets } from "../utils/dock-layout";
 import "./quick-toolbar.css";
 
 // ============ Sub-Components ============
@@ -605,9 +606,12 @@ const ToolbarContainer: Component<{
                         const toolbarWidth = containerRef?.offsetWidth ?? 300;
                         const base = worldToScreen(elX + elW / 2, 0, store.viewState).x - toolbarWidth / 2;
 
-                        // Collision avoidance with Property Panel
-                        if (store.showPropertyPanel && !store.isPropertyPanelMinimized) {
-                            const panelStart = window.innerWidth - 280;
+                        // Collision avoidance with the right dock (Properties and friends).
+                        // Reads the live dock inset rather than a hard-coded 280: the user can
+                        // resize the zone, and can dock other panels there too.
+                        const rightDock = dockInsets().right;
+                        if (rightDock > 0) {
+                            const panelStart = window.innerWidth - rightDock;
                             const padding = 20;
                             if (base + toolbarWidth > panelStart - padding) {
                                 return panelStart - toolbarWidth - padding;

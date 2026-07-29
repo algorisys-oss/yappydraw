@@ -13,6 +13,14 @@ process.env.YAPPY_URL ||= 'http://localhost:5173';
 export default defineConfig({
     testDir: './tests',
     fullyParallel: false,
+    /**
+     * Cap the workers. `fullyParallel: false` only serialises tests WITHIN a file —
+     * Playwright still runs spec *files* across CPU/2 workers, and they all hammer the
+     * single dev server below. That contention produced failures that passed every time
+     * on a re-run in isolation, which costs a diagnostic cycle each time to rule out.
+     * Two workers keeps most of the speed-up without the false signal.
+     */
+    workers: process.env.PW_WORKERS ? Number(process.env.PW_WORKERS) : 2,
     timeout: 30_000,
     use: {
         baseURL: process.env.YAPPY_URL,

@@ -90,6 +90,31 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+/* Inside the shell top bar the clusters are NOT floating pills — the bar is the surface.
+   Strip the panel background, border, radius and shadow so the header reads as one
+   continuous strip instead of three cards sitting on a fourth. (`.menu-container` is still
+   the pill it always was anywhere else, e.g. the mobile overlays.) */
+.shell-topbar .menu-container {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+}
+.shell-topbar .menu-container:hover { box-shadow: none; }
+
+/* Separate the view-control clusters from each other now that no border does it. */
+.topbar-right > .menu-container + .menu-container {
+    border-left: 1px solid var(--border-color);
+    padding-left: 8px;
+    margin-left: 4px;
+}
+
+/* Anchor dropdowns to their button rather than to a hand-tuned 60px from the old pill. */
+.shell-topbar .menu-dropdown {
+    top: calc(100% + 10px);
+}
+
 .drag-handle {
     width: 12px;
     height: 32px;

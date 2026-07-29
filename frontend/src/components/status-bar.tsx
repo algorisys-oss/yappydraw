@@ -4,6 +4,7 @@ import { store, setViewState, undo, redo, togglePresentationMode, resetRotation,
 import { drawingId } from "./menu";
 import { Plus, Minus, Undo2, Redo2, Play, FlipHorizontal, FlipVertical, Crosshair, PaintBucket } from "lucide-solid";
 import { screenToWorld } from "../utils/viewport-transforms";
+import { canvasCenterClient } from "../utils/dock-layout";
 import pkg from '../../../package.json';
 import WhatsNewDialog, { hasUnseenWhatsNew, openWhatsNew } from "./whats-new-dialog";
 import "./status-bar.css";
@@ -121,8 +122,11 @@ const StatusBar: Component = () => {
     };
 
     const zoomToCenter = (newScale: number) => {
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
+        // Zoom about the middle of the DRAWING AREA. With a docked toolbar the window
+        // centre sits off-centre in the canvas, so zooming would drift sideways.
+        const c = canvasCenterClient();
+        const centerX = c.x;
+        const centerY = c.y;
         const { x: worldX, y: worldY } = screenToWorld(centerX, centerY, store.viewState);
         const newPanX = centerX - worldX * newScale;
         const newPanY = centerY - worldY * newScale;

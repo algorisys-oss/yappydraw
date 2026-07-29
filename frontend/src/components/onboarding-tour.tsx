@@ -50,23 +50,25 @@ export const tourSteps: TourStep[] = [
     {
         id: 'properties',
         title: 'Properties',
-        content: "Select anything to fine-tune it here — fill, stroke, size, text, effects, animation and more. Toggle it with Alt+Enter.",
-        target: '.property-panel-container',
-        position: 'left',
+        content: "Select anything to fine-tune it here — fill, stroke, size, text, effects, animation and more. Toggle it with Alt+Enter, and dock, float or collapse it like any other panel.",
+        // The BUTTON, not the panel: Properties is a dock panel now, so the panel element only
+        // exists while it happens to be open — spotlighting it would silently no-op mid-tour.
+        target: '.topbar-properties-btn',
+        position: 'bottom',
     },
     {
         id: 'utilities',
         title: 'Settings & Help',
-        content: 'Global settings, the Properties toggle, and Help live in this cluster. Open Help (?) for keyboard shortcuts and docs.',
-        target: '.floating-tools-cluster',
-        position: 'top',
+        content: 'Global settings, the Properties toggle, and Help live up here in the top bar. Open Help for keyboard shortcuts and docs — both it and Settings are searchable.',
+        target: '.topbar-view-controls',
+        position: 'bottom',
     },
     {
         id: 'finish',
         title: "You're all set 🎨",
         content: "That's the tour! Reopen it anytime from Help (?) → “Take the tour”. Have fun creating.",
         target: '.help-btn',
-        position: 'top',
+        position: 'bottom',
     },
 ];
 

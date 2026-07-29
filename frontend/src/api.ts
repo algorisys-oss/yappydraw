@@ -1557,9 +1557,11 @@ export const YappyAPI = {
         return [...store.elements];
     },
 
-    /** Whether a dockable panel is currently open, e.g. 'symbols', 'layers', 'behaviors',
-     *  'recolor', 'patterns', 'history'. Panel visibility lives in the persisted dock
-     *  layout — the legacy `state.showXPanel` booleans are dead flags and always false. */
+    /** Whether a dockable panel is currently open, e.g. 'properties', 'symbols', 'layers',
+     *  'behaviors', 'recolor', 'patterns', 'history'. Panel visibility lives in the persisted
+     *  dock layout — the legacy `state.showXPanel` booleans are dead flags and always false.
+     *  ('properties' joined the dock in 0.8.162; `state.showPropertyPanel` no longer exists,
+     *  so read it here or via `togglePropertyPanel`.) */
     isPanelOpen(id: string): boolean {
         return isPanelOpen(id);
     },
@@ -2412,6 +2414,8 @@ export const YappyAPI = {
 
     // UI Panels
     toggleCommandPalette(visible?: boolean) { toggleCommandPalette(visible); },
+    /** Show/hide the Properties panel. It is a dock panel since 0.8.162 — opening it puts it
+     *  back wherever the user last docked or floated it, defaulting to the right edge. */
     togglePropertyPanel(visible?: boolean) { togglePropertyPanel(visible); },
     togglePresentationMode(visible?: boolean) { togglePresentationMode(visible); },
     toggleLayerPanel(visible?: boolean) { toggleLayerPanel(visible); },

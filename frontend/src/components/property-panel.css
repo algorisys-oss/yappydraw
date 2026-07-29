@@ -1,49 +1,21 @@
-.property-panel-container {
-    width: 280px;
-    background: var(--bg-panel);
-    border-left: 1px solid var(--border-color);
-    height: calc(100vh - 28px);
+/* The Properties panel is a DOCK PANEL now (registry id 'properties'). The container,
+   its 280px width, its right-edge pinning and its "minimized to a 48px square" chrome all
+   moved to the dock system — `.dock-zone` / `.dock-floating` / `PanelChrome`'s collapse in
+   components/dock/dock.css. What is left here styles only the panel's BODY. */
+
+/* Properties is a full-height inspector, not a small stackable palette: give it the whole
+   dock zone and let `.property-content` own the scrolling. That also keeps the component's
+   scroll-position preservation working across selection changes — it reads scrollTop off
+   that element, which only means anything if that element is the scroller. */
+.dock-panel[data-panel-id="properties"] {
+    flex: 1;
+    min-height: 0;
+}
+.dock-panel[data-panel-id="properties"] > .dock-panel-body {
+    flex: 1;
+    min-height: 0;
     display: flex;
-    flex-direction: column;
-    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
-    z-index: 50;
-    pointer-events: auto;
-    position: absolute;
-    right: 0;
-    top: 0;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, width 0.3s ease;
     overflow: hidden;
-    /* Prevent container from overflowing */
-    user-select: none;
-}
-
-.property-panel-container.minimized {
-    height: 48px;
-    overflow: hidden;
-    width: 48px;
-    /* Square when minimized */
-    border-radius: 8px;
-    margin: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border: 1px solid var(--border-color);
-}
-
-.property-panel-container.minimized .property-panel {
-    align-items: center;
-    justify-content: center;
-}
-
-.property-panel-container.minimized .panel-header {
-    cursor: move;
-    padding: 0;
-    border: none;
-    height: 100%;
-    width: 100%;
-    justify-content: center;
-}
-
-.property-panel-container.minimized .header-actions {
-    display: none;
 }
 
 .property-header {
@@ -101,48 +73,70 @@
     margin: 0 4px;
 }
 
-/* Inner panel container - fills height and handles scroll */
+/* Inner panel container - fills the dock panel and handles scroll */
 .property-panel {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
 }
 
-.panel-header {
-    cursor: move;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border-color);
+/* Context strip: what the panel is currently editing, plus the actions that act on THAT
+   (duplicate/delete) rather than on the panel. Panel-level actions — close, collapse,
+   dock, float — belong to PanelChrome's title bar and are deliberately not repeated. */
+.property-context-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
     background: var(--bg-secondary);
     flex-shrink: 0;
 }
 
-.burger-menu {
-    color: var(--text-primary) !important;
-    transition: transform 0.2s ease;
-}
-
-.burger-menu:hover {
-    transform: scale(1.1);
-}
-
-.property-panel-container.minimized .burger-menu {
-    width: 100%;
-    height: 100%;
-    border-radius: 8px;
-}
-
-.panel-header h3 {
-    margin: 0;
-    font-size: 14px;
+.property-context-name {
+    font-size: 12px;
     font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.property-context-spacer {
+    flex: 1;
+}
+
+.property-context-row button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.property-context-row button:hover {
+    background: var(--btn-hover);
     color: var(--text-primary);
 }
 
+.property-context-row button.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger-color);
+}
+
+/* Shown in place of the content when nothing is selected. */
+.panel-content {
+    padding: 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
 .property-content {
+    flex: 1;
     overflow-y: overlay;
     /* Use overlay if supported to prevent width shift, fallback to auto */
     padding: 16px;
@@ -539,22 +533,11 @@ input[type="text"] {
     background: var(--btn-hover);
 }
 
-/* Mobile Responsive Styles */
+/* Mobile Responsive Styles.
+   The bottom-sheet geometry (full width, 42vh, lifted clear of the phone toolbar and the
+   status bar) is no longer duplicated here: the dock owns it for EVERY panel now, in
+   dock.css's `@media (max-width: 600px)` block. Only the content density is panel-specific. */
 @media (max-width: 768px) {
-    .property-panel-container {
-        width: 100%;
-        height: auto;
-        max-height: 45vh;
-        bottom: 0;
-        top: auto;
-        right: 0;
-        left: 0;
-        border-left: none;
-        border-top: 1px solid var(--border-color);
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-        border-radius: 12px 12px 0 0;
-    }
-
     .property-content {
         padding: 12px;
         padding-bottom: 20px;
@@ -568,18 +551,6 @@ input[type="text"] {
 
     .property-group {
         margin-bottom: 16px;
-    }
-}
-
-/* Phones only: the tool toolbar force-docks to the bottom band (toolbar.css
-   @media max-width:600px), so lift the property bottom-sheet clear of it and the
-   status bar. Tablets (601–768px) keep the toolbar up top, so their sheet stays
-   at bottom:0 via the rule above. Declared after it to win the cascade. */
-@media (max-width: 600px) {
-    .property-panel-container {
-        bottom: calc(84px + env(safe-area-inset-bottom, 0px));
-        max-height: 42vh;
-        z-index: 10001; /* above the floating buttons, below the bottom toolbar (10002) */
     }
 }
 

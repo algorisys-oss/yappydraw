@@ -1,5 +1,5 @@
-import { type Component, Show, createEffect, onCleanup, createSignal } from "solid-js";
-import { X } from "lucide-solid";
+import { type Component, Show, For, createEffect, onCleanup, createSignal } from "solid-js";
+import { X, Search, SlidersHorizontal, PenLine, Palette, Network, Clapperboard, Cloud } from "lucide-solid";
 import { store, updateDefaultStyles, resetDefaultStyles, updateGlobalSettings, setDefaultTool } from "../store/app-store";
 import { features } from "../config/features";
 import { cloudStorageManager } from "../storage/cloud";
@@ -23,7 +23,67 @@ const fontOptions = [
     { label: 'JetBrains Mono', value: 'code' },
 ];
 
+/**
+ * Settings used to be one 400px column that you scrolled through — seven unrelated sections
+ * (from stroke stabilization to cloud auth) stacked in a single run, with no way to see what
+ * the dialog contained without reading all of it. It is a two-pane dialog now: pick a category
+ * on the left, see only that category on the right.
+ *
+ * Text and Shape defaults share the 'defaults' category deliberately — from the user's side
+ * they are one question ("what do new things look like?"), and splitting them made the rail
+ * longer without making anything easier to find.
+ */
+const CATEGORIES = [
+    { id: 'general', label: 'General', icon: SlidersHorizontal },
+    { id: 'input', label: 'Pen & Input', icon: PenLine },
+    { id: 'defaults', label: 'Defaults', icon: Palette },
+    { id: 'mindmap', label: 'Mindmap', icon: Network },
+    { id: 'timelapse', label: 'Time-lapse', icon: Clapperboard },
+    { id: 'cloud', label: 'Cloud Storage', icon: Cloud, flag: 'enableCloudStorage' as const },
+];
+
 const SettingsDialog: Component<SettingsDialogProps> = (props) => {
+    const [activeCat, setActiveCat] = createSignal('general');
+    const [query, setQuery] = createSignal('');
+    const [hasMatches, setHasMatches] = createSignal(true);
+    let bodyRef: HTMLDivElement | undefined;
+
+    const categories = () => CATEGORIES.filter(c => !c.flag || features[c.flag]);
+
+    /**
+     * Show/hide sections and rows from the DOM rather than by gating each of the ~35 rows on a
+     * signal. Search has to reach every control's LABEL, and those labels only exist as markup;
+     * duplicating them into a searchable table would be a second copy to keep in sync, and the
+     * one that goes stale is always the copy. Walking the rendered rows means a control is
+     * findable by the exact text the user is looking at.
+     */
+    createEffect(() => {
+        const q = query().trim().toLowerCase();
+        const cat = activeCat();
+        // Track isOpen: the body only exists while the dialog is mounted, so without this the
+        // effect settles on the closed state (bodyRef undefined) and never runs again — every
+        // section would render at once, which is exactly the scroll this replaced.
+        if (!props.isOpen || !bodyRef) return;
+        let anyHit = 0;
+        for (const sec of Array.from(bodyRef.querySelectorAll<HTMLElement>('.settings-section'))) {
+            let visibleRows = 0;
+            const rows = Array.from(sec.querySelectorAll<HTMLElement>('.settings-row'));
+            for (const row of rows) {
+                const hit = !q || (row.textContent ?? '').toLowerCase().includes(q);
+                row.style.display = hit ? '' : 'none';
+                if (hit) visibleRows++;
+            }
+            // Searching looks across ALL categories — restricting it to the open one would make
+            // the box feel broken for exactly the setting the user could not find.
+            const inCat = q ? visibleRows > 0 : sec.dataset.cat === cat;
+            // A section with no rows of its own (Cloud renders a sign-in block, not rows) still
+            // belongs to its category, so fall back to the category match.
+            sec.style.display = (rows.length === 0 ? sec.dataset.cat === cat && !q : inCat) ? '' : 'none';
+            anyHit += visibleRows;
+        }
+        setHasMatches(anyHit > 0);
+    });
+
     createEffect(() => {
         if (props.isOpen) {
             const handleKeyDown = (e: KeyboardEvent) => {
@@ -45,12 +105,45 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                 <div class="settings-modal" onClick={(e) => e.stopPropagation()}>
                     <div class="settings-header">
                         <h3>Settings</h3>
+                        <div class="settings-search">
+                            <Search size={14} />
+                            <input
+                                type="text"
+                                placeholder="Search settings…"
+                                value={query()}
+                                onInput={(e) => setQuery(e.currentTarget.value)}
+                            />
+                            <Show when={query()}>
+                                <button class="settings-search-clear" onClick={() => setQuery('')} title="Clear">
+                                    <X size={13} />
+                                </button>
+                            </Show>
+                        </div>
                         <button class="close-btn" onClick={props.onClose}>
                             <X size={20} />
                         </button>
                     </div>
 
-                    <div class="settings-section">
+                    <div class="settings-panes">
+                        {/* Category rail. Hidden while searching — search spans every category,
+                            so highlighting one of them would be a lie about what is on screen. */}
+                        <Show when={!query().trim()}>
+                            <nav class="settings-rail">
+                                <For each={categories()}>{(c) => (
+                                    <button
+                                        class="settings-rail-item"
+                                        classList={{ active: activeCat() === c.id }}
+                                        onClick={() => setActiveCat(c.id)}
+                                    >
+                                        <c.icon size={15} />
+                                        <span>{c.label}</span>
+                                    </button>
+                                )}</For>
+                            </nav>
+                        </Show>
+
+                        <div class="settings-body" ref={bodyRef}>
+                    <div class="settings-section" data-cat="general">
                         <p class="settings-section-title">General</p>
 
                         <div class="settings-row">
@@ -108,7 +201,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
                     </div>
 
-                    <div class="settings-section">
+                    <div class="settings-section" data-cat="input">
                         <p class="settings-section-title">Pen &amp; Input</p>
 
                         <div class="settings-row">
@@ -215,7 +308,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
                     </div>
 
-                    <div class="settings-section">
+                    <div class="settings-section" data-cat="mindmap">
                         <p class="settings-section-title">Mindmap</p>
 
                         <div class="settings-row">
@@ -248,7 +341,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
                     </div>
 
-                    <div class="settings-section">
+                    <div class="settings-section" data-cat="timelapse">
                         <p class="settings-section-title">Time-lapse</p>
 
                         <div class="settings-row">
@@ -292,7 +385,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
                     </div>
 
-                    <div class="settings-section">
+                    <div class="settings-section" data-cat="defaults">
                         <p class="settings-section-title">Text Defaults</p>
 
                         <div class="settings-row">
@@ -319,7 +412,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
                     </div>
 
-                    <div class="settings-section">
+                    <div class="settings-section" data-cat="defaults">
                         <p class="settings-section-title">Shape Defaults</p>
 
                         <div class="settings-row">
@@ -373,11 +466,17 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                     </div>
 
                     <Show when={features.enableCloudStorage}>
-                        <div class="settings-section">
+                        <div class="settings-section" data-cat="cloud">
                             <p class="settings-section-title">Cloud Storage</p>
                             <CloudSettingsContent />
                         </div>
                     </Show>
+
+                            <Show when={query().trim() && !hasMatches()}>
+                                <p class="settings-empty">No setting matches “{query().trim()}”.</p>
+                            </Show>
+                        </div>
+                    </div>
 
                     <div class="settings-footer">
                         <button class="settings-reset-btn" onClick={() => resetDefaultStyles()}>

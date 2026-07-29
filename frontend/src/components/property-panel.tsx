@@ -1,6 +1,5 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { draggablePanel } from '../utils/draggable-panel';
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, togglePropertyPanel, minimizePropertyPanel, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry } from "../store/app-store";
 import { resolveDash, parseDashInput, dashToString } from "../utils/stroke-dash";
 
 /** Symmetry modes, in the order HappyPaint presents them. */
@@ -31,7 +30,7 @@ import {
     AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
     AlignHorizontalSpaceAround, AlignVerticalSpaceAround, Crosshair,
     Plus, ArrowDown, LayoutGrid, LayoutList, Target, Network,
-    X, Play, Square, Menu
+    Play, Square
 } from "lucide-solid";
 import "./property-panel.css";
 import { properties, fontCapabilities, type PropertyConfig } from "../config/properties";
@@ -2132,58 +2131,41 @@ const PropertyPanel: Component = () => {
     });
 
     return (
-        <Show when={store.showPropertyPanel && (activeTarget() || store.isPropertyPanelMinimized)}>
-            <div
-                class="property-panel-container"
-                classList={{ minimized: store.isPropertyPanelMinimized }}
-                ref={draggablePanel('.panel-header')}
-            >
-                <Show when={activeTarget() || store.isPropertyPanelMinimized} fallback={<div class="property-panel empty"><div class="panel-header"><h3>Properties</h3></div><div class="panel-content">No Selection</div></div>}>
-                    <div class="property-panel">
-                        <div class="panel-header">
-                            <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
-                                <button
-                                    class="minimize-btn burger-menu"
-                                    onClick={() => minimizePropertyPanel()}
-                                    title={store.isPropertyPanelMinimized ? "Expand" : "Collapse"}
-                                >
-                                    <Menu size={18} />
-                                </button>
-                                <Show when={!store.isPropertyPanelMinimized}>
-                                    <div style={{ display: 'flex', 'flex-direction': 'column', gap: '2px' }}>
-                                        <h3 style={{ 'line-height': '1' }}>{targetType() === 'element' ? 'Properties' : targetType() === 'canvas' ? 'Canvas' : targetType() === 'slide' ? `${pageNoun()} ${store.activeSlideIndex + 1}` : targetType() === 'multi' ? `Selection (${store.selection.length})` : targetType() === 'defaults' ? 'Defaults' : 'Properties'}</h3>
-                                        <div
-                                            class="mode-badge"
-                                            classList={{ [store.appMode]: true }}
-                                            style={{ 'width': 'fit-content' }}
-                                        >
-                                            {store.appMode}
-                                        </div>
-                                    </div>
-                                </Show>
-                            </div>
+        /* Body only. The dock system's PanelChrome owns the title bar, close, collapse
+           and the dock/float controls (components/dock/dock-container.tsx), so this
+           component no longer brings its own container, header or open/closed gate —
+           that is the contract every registered panel follows (cf. layer-panel.tsx).
 
-                            <div class="header-actions">
-                                <Show when={isElementOrMulti() && !store.isPropertyPanelMinimized}>
-                                    <Show when={isElement()}>
-                                        <button onClick={() => duplicateElement(targetElementId())} title="Duplicate">
-                                            <Copy size={16} />
-                                        </button>
-                                    </Show>
-                                    <button class="delete-btn" onClick={handleDelete} title="Delete">
-                                        <Trash2 size={16} />
-                                    </button>
-                                    <div class="vertical-separator"></div>
-                                </Show>
+           Duplicate and Delete moved DOWN here: they act on the selected element, not on
+           the panel, so they belong with the element's properties rather than in panel
+           chrome. */
+        <div class="property-panel">
+            <Show when={activeTarget()} fallback={<div class="panel-content">No Selection</div>}>
+                <div class="property-context-row">
+                    <span class="property-context-name">
+                        {targetType() === 'element' ? 'Properties'
+                            : targetType() === 'canvas' ? 'Canvas'
+                            : targetType() === 'slide' ? `${pageNoun()} ${store.activeSlideIndex + 1}`
+                            : targetType() === 'multi' ? `Selection (${store.selection.length})`
+                            : targetType() === 'defaults' ? 'Defaults' : 'Properties'}
+                    </span>
+                    <div class="mode-badge" classList={{ [store.appMode]: true }}>{store.appMode}</div>
+                    <span class="property-context-spacer" />
+                    <Show when={isElementOrMulti()}>
+                        <Show when={isElement()}>
+                            <button onClick={() => duplicateElement(targetElementId())} title="Duplicate">
+                                <Copy size={16} />
+                            </button>
+                        </Show>
+                        <button class="delete-btn" onClick={handleDelete} title="Delete">
+                            <Trash2 size={16} />
+                        </button>
+                    </Show>
+                </div>
 
-                                <button class="close-btn" onClick={() => togglePropertyPanel(false)} title="Close">
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        </div>
-
-                        <Show when={!store.isPropertyPanelMinimized}>
-                            <div class="property-content" ref={contentRef} onScroll={handleContentScroll}>
+                    {/* No collapse gate here: PanelChrome's Collapse button unmounts the whole
+                        body, so a second "minimized" flag inside it would be dead state. */}
+                    <div class="property-content" ref={contentRef} onScroll={handleContentScroll}>
                                 <Show when={isMulti()}>
                                     <AlignmentControls />
                                     <div class="multi-select-summary">
@@ -2651,11 +2633,8 @@ const PropertyPanel: Component = () => {
                                     </div>
                                 </Show>
                             </div>
-                        </Show>
-                    </div>
-                </Show>
-            </div>
-        </Show>
+            </Show>
+        </div>
     );
 };
 

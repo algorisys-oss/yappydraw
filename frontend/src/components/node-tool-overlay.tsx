@@ -1,10 +1,8 @@
 import { Show, For, createSignal, createMemo, onMount, onCleanup } from 'solid-js';
-import {
-    store, toggleNodeTool, pushToHistory, convertToPath,
-} from '../store/app-store';
+import { store, toggleNodeTool, pushToHistory } from '../store/app-store';
 import {
     selectedPathNodes, setNodeSelection, toggleNodeInSelection, clearNodeSelection,
-    isNodeSelected, moveSelectedNodes, setSelectedNodesKind, deleteSelectedNodes,
+    isNodeSelected, moveSelectedNodes, deleteSelectedNodes,
     allNodesOfSelection, selectedNodeHandles, moveNodeHandle,
     type NodeRef, type HandleRef,
 } from '../utils/node-editing';
@@ -75,7 +73,7 @@ export const NodeToolOverlay = () => {
     const onDown = (e: PointerEvent) => {
         if (!active() || e.button !== 0) return;
         const target = e.target as HTMLElement;
-        if (target.closest('.node-tool-bar')) return; // let the buttons handle themselves
+        if (target.closest('.tool-options-bar')) return; // let the buttons handle themselves
 
         // Handles sit on top of anchors — they're what you reach for to bend a curve,
         // and they're often right next to their own anchor.
@@ -209,13 +207,7 @@ export const NodeToolOverlay = () => {
         });
     });
 
-    /** Non-path shapes in the selection, offered a one-click conversion. */
-    const convertible = createMemo(() => {
-        store.dirtyRevision;
-        return store.selection.filter(id => store.elements.find(e => e.id === id)?.type !== 'path');
-    });
 
-    const count = () => store.nodeSelection.length;
 
     return (
         <Show when={active()}>
@@ -259,37 +251,9 @@ export const NodeToolOverlay = () => {
                 }} />
             )}</Show>
 
-            {/* Operations — the whole point of the mode: these were invisible before. */}
-            <div class="node-tool-bar">
-                <span class="node-tool-title">Nodes</span>
-
-                <Show when={convertible().length > 0}>
-                    <button onClick={() => convertToPath([...convertible()])}
-                        title="Convert the selected shape(s) to an editable path">
-                        Convert to Path
-                    </button>
-                    <span class="node-tool-sep" />
-                </Show>
-
-                <span class="node-tool-count">{count()} selected</span>
-                <button disabled={store.selection.length === 0}
-                    onClick={() => setNodeSelection(allNodesOfSelection())}
-                    title="Select every node (Ctrl+A)">All</button>
-                <button disabled={count() === 0} onClick={() => clearNodeSelection()}
-                    title="Deselect nodes (Esc)">None</button>
-
-                <span class="node-tool-sep" />
-                <button disabled={count() === 0} onClick={() => setSelectedNodesKind('corner')}
-                    title="Make the selected nodes corners">Corner</button>
-                <button disabled={count() === 0} onClick={() => setSelectedNodesKind('smooth')}
-                    title="Make the selected nodes smooth">Smooth</button>
-                <button disabled={count() === 0} onClick={() => deleteSelectedNodes()}
-                    title="Delete the selected nodes (Del)">Delete</button>
-
-                <span class="node-tool-sep" />
-                <span class="node-tool-hint">Alt-click a segment to add a node · drag a handle to bend (Alt = cusp)</span>
-                <button class="node-tool-close" onClick={() => toggleNodeTool(false)} title="Exit (Esc)">✕</button>
-            </div>
+            {/* The operations live in the shell's contextual tool-options bar
+                (components/tool-options-bar.tsx) rather than in another floating
+                panel — that bar is what the docking work was for. */}
         </Show>
     );
 };

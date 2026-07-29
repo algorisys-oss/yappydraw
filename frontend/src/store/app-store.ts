@@ -3,7 +3,7 @@ import { createStore, reconcile } from "solid-js/store";
 // Dockable-panel system (Phase D): migrated panels are toggled through the dock store so the
 // existing toolbar/menu/hotkey/API entry points keep working. dock-layout has no app-store import,
 // so this one-way edge introduces no cycle.
-import { setPanelOpen, isPanelOpen } from "./dock-layout";
+import { setPanelOpen, isPanelOpen, panelState, toggleCollapse as toggleDockCollapse } from "./dock-layout";
 import type { DrawingElement, ViewState, ToolType, Layer, GridSettings, AppMode, ElementType, Guide } from "../types";
 import { createDefaultSlide, createSlideDocument, DEFAULT_SLIDE_TRANSITION } from '../types/slide-types';
 import type { Slide, GlobalSettings, SlideTransition, DocType } from '../types/slide-types';
@@ -46,6 +46,7 @@ import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
 import { slideBuildManager } from '../utils/animation/slide-build-manager';
 import { generateId } from "../utils/id-generator"; // New Import
+import { canvasCenterClient } from "../utils/dock-layout";
 import {
     buildSymmetryOps, defaultSymmetryState, MIN_RADIAL_COUNT, MAX_RADIAL_COUNT,
     type SymmetryMode, type SymmetryOp,
@@ -146,7 +147,6 @@ interface AppState {
      *  the Procreate-style second-finger contact. */
     penConstrain: boolean;
     // Panel Visibility
-    showPropertyPanel: boolean;
     showLayerPanel: boolean;
     showSymbolsPanel: boolean;
     /** Graphic Styles panel visibility (transient, not persisted). */
@@ -242,7 +242,6 @@ interface AppState {
     alignToKeyObject: boolean;
     /** Eyedropper mode: next canvas click copies that object's style to these targets. */
     eyedropper: { active: boolean; targets: string[] };
-    isPropertyPanelMinimized: boolean;
     isLayerPanelMinimized: boolean;
     minimapVisible: boolean;
     showRulers: boolean;
@@ -487,6 +486,10 @@ const initialState: AppState = {
         // choices in localStorage are still respected.
         mindmapAutoLayout: (localStorage.getItem('mindmapAutoLayout') ?? '0') !== '0',
         mindmapLayoutDirection: (localStorage.getItem('mindmapLayoutDirection') as GlobalSettings['mindmapLayoutDirection']) || 'horizontal-right',
+        // Docked LEFT by default (Illustrator/Inkscape): the toolbar reserves its own
+        // column so it never covers the drawing surface. 'float' restores the old
+        // overlay behaviour.
+        toolbarDock: (localStorage.getItem('toolbarDock') as any) || 'left',
         toolbarVertical: (localStorage.getItem('toolbarVertical') ?? '0') !== '0',
         toolbarWrap: parseInt(localStorage.getItem('toolbarWrap') ?? '0', 10) || 0,
         timelapseAutoRecord: (localStorage.getItem('timelapseAutoRecord') ?? '0') !== '0',
@@ -504,7 +507,6 @@ const initialState: AppState = {
     redoStackLength: 0,
     isDirty: false,
     penConstrain: false,
-    showPropertyPanel: false,
     showLayerPanel: false,
     showSymbolsPanel: false, // dead flag — Symbols panel state now lives in the persisted dock layout (use isPanelOpen('symbols'))
     showGraphicStylesPanel: false,
@@ -551,7 +553,6 @@ const initialState: AppState = {
     compoundEdit: null,
     alignToKeyObject: false,
     eyedropper: { active: false, targets: [] },
-    isPropertyPanelMinimized: false,
     isLayerPanelMinimized: false,
     minimapVisible: false,
     showRulers: (() => { try { return localStorage.getItem('showRulers') === '1'; } catch { return false; } })(),
@@ -1114,10 +1115,7 @@ export const toggleCollapseSelection = () => {
 
 export const setShowCanvasProperties = (visible: boolean) => {
     setStore("showCanvasProperties", visible);
-    if (visible) {
-        setStore("showPropertyPanel", true);
-        setStore("isPropertyPanelMinimized", false);
-    }
+    if (visible) showPropertiesPanel();
 };
 
 /**
@@ -1528,6 +1526,9 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.pointerStyle !== undefined) {
         try { localStorage.setItem('pointerStyle', updates.pointerStyle); } catch { /* ignore */ }
+    }
+    if (updates.toolbarDock !== undefined) {
+        try { localStorage.setItem('toolbarDock', updates.toolbarDock); } catch { /* ignore */ }
     }
     if (updates.fillShapeMode !== undefined) {
         try { localStorage.setItem('fillShapeMode', updates.fillShapeMode ? '1' : '0'); } catch { /* ignore */ }
@@ -4592,28 +4593,45 @@ export const propertyPanelTarget = () => {
     return { type: 'defaults' as const, data: null };
 };
 
-/** Whether the Properties panel is actually on screen (flag set AND something to show). */
-export const isPropertyPanelVisible = () =>
-    store.showPropertyPanel && (store.isPropertyPanelMinimized || propertyPanelTarget() !== null);
+/**
+ * Whether the Properties panel is on screen. Since the panel migrated onto the dock
+ * (`components/dock/`), its placement — docked/floating/hidden, collapsed — lives in the
+ * persisted dock layout, not in app state. This is simply "is the dock showing it".
+ */
+export const isPropertyPanelVisible = () => isPanelOpen('properties');
+
+/**
+ * Open the Properties panel, expanding it if the user had collapsed it to its title bar.
+ * The many "act on this shape now" entry points (tool-group right-click, mindmap/UML/BPMN
+ * inserts, `setShowCanvasProperties`) call this rather than poking panel state directly.
+ *
+ * Defaults to DOCKED (right edge), not floating: Properties is a persistent inspector, and
+ * a floating one would sit over the drawing it describes.
+ */
+export const showPropertiesPanel = () => {
+    setPanelOpen('properties', true, 'docked');
+    if (panelState('properties').collapsed) toggleDockCollapse('properties');
+};
 
 export const togglePropertyPanel = (visible?: boolean) => {
-    // If currently minimized and we are toggling on (or toggling), expand it
-    if (store.isPropertyPanelMinimized && (visible === undefined || visible === true)) {
-        setStore("isPropertyPanelMinimized", false);
-        setStore("showPropertyPanel", true);
-    } else {
-        const next = visible ?? !store.showPropertyPanel;
-        if (next && propertyPanelTarget() === null) {
-            // Nothing selected and no tool defaults to show: the panel would render nothing and
-            // the toggle would look like a no-op. Fall back to Canvas properties so there is
-            // always something to see. Cleared on close, and by clicking empty canvas
-            // (selection-handler) so a later deselect doesn't resurrect it.
-            setStore("showCanvasProperties", true);
-        } else if (!next) {
-            setStore("showCanvasProperties", false);
-        }
-        setStore("showPropertyPanel", next);
+    // A collapsed-but-open panel counts as "off" for toggling: Alt+Enter on it should give
+    // the user their properties back, not hide a panel they can't currently read.
+    if (panelState('properties').collapsed && (visible === undefined || visible === true)) {
+        showPropertiesPanel();
+        return;
     }
+    const next = visible ?? !isPanelOpen('properties');
+    if (next && propertyPanelTarget() === null) {
+        // Nothing selected and no tool defaults to show: the panel would render nothing and
+        // the toggle would look like a no-op. Fall back to Canvas properties so there is
+        // always something to see. Cleared on close, and by clicking empty canvas
+        // (selection-handler) so a later deselect doesn't resurrect it.
+        setStore("showCanvasProperties", true);
+    } else if (!next) {
+        setStore("showCanvasProperties", false);
+    }
+    if (next) showPropertiesPanel();
+    else setPanelOpen('properties', false);
 };
 
 export const toggleLayerPanel = (visible?: boolean) => {
@@ -4646,10 +4664,6 @@ export const toggleUtilityToolbar = (visible?: boolean) => {
 
 export const toggleCanvasToolbar = (visible?: boolean) => {
     setStore('showCanvasToolbar', (v) => visible ?? !v);
-};
-
-export const minimizePropertyPanel = (minimized?: boolean) => {
-    setStore('isPropertyPanelMinimized', (v) => minimized ?? !v);
 };
 
 export const minimizeLayerPanel = (minimized?: boolean) => {
@@ -6661,8 +6675,22 @@ export const mirrorCopy = (axis: 'horizontal' | 'vertical') => {
 let lastSymmetryMode: SymmetryMode = 'vertical';
 
 export const setSymmetryMode = (mode: SymmetryMode) => {
+    const wasOff = store.symmetry.mode === 'off';
     if (mode !== 'off') lastSymmetryMode = mode;
     setStore('symmetry', 'mode', mode);
+    // Turning symmetry ON drops the axis in the middle of what you can actually see.
+    // Without this the centre keeps whatever world coordinate it last had — (0,0) on a
+    // fresh document — so the axes render off-screen and symmetry looks broken. Alt+Y
+    // always did this; the toolbar and panel buttons did not.
+    if (wasOff && mode !== 'off') centerSymmetryOnView();
+};
+
+/** Put the symmetry centre at the middle of the visible drawing area. */
+export const centerSymmetryOnView = () => {
+    if (typeof window === 'undefined') return;
+    const s = store.viewState;
+    const c = canvasCenterClient();
+    setSymmetryCenter((c.x - (s.panX || 0)) / (s.scale || 1), (c.y - (s.panY || 0)) / (s.scale || 1));
 };
 
 /** Quick on/off: off ⇄ the last-used mode (defaults to vertical). */

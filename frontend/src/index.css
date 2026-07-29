@@ -490,69 +490,12 @@ button:focus-visible {
   cursor: grabbing;
 }
 
-/* Floating utility cluster (Settings / Properties toggle / Help).
-   --anim-timeline-h (set by the Animation-mode timeline panel) lifts the
-   cluster above that bottom-docked panel instead of floating on top of it. */
-.floating-tools-cluster {
-  position: fixed;
-  bottom: calc(34px + var(--anim-timeline-h, 0px));
-  left: 12px;
-  display: flex;
-  gap: 8px;
-  z-index: 1000;
-  transition: bottom 0.15s ease;
-}
-
-.floating-settings-btn {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  box-sizing: border-box;
-  border-radius: 50%;
-  border: none;
-  background: var(--bg-panel, #ffffff);
-  color: var(--text-secondary, #4b5563);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.floating-settings-btn.help-btn {
-  font-weight: bold;
-  font-size: 16px;
-}
-
-.floating-settings-btn:hover {
-  transform: scale(1.1);
-}
-
-.floating-settings-btn.active {
-  background: #3b82f6 !important;
-  color: #ffffff !important;
-}
-
-/* Phones: the tool toolbar force-docks to the bottom band (toolbar.css
-   @media max-width:600px). Move the cluster to a vertical rail at the top-right,
-   clear of the bottom toolbar / status bar / property bottom-sheet, and enlarge
-   the buttons for touch. */
-@media (max-width: 600px) {
-  .floating-tools-cluster {
-    bottom: auto;
-    left: auto;
-    top: calc(66px + env(safe-area-inset-top, 0px));
-    right: 10px;
-    flex-direction: column;
-    gap: 8px;
-    z-index: 10003; /* above the bottom toolbar (10002) */
-  }
-  .floating-settings-btn {
-    width: 42px;
-    height: 42px;
-  }
-}
+/* Settings / Properties / Help used to be a fixed cluster of circle buttons in the
+   bottom-left corner (.floating-tools-cluster / .floating-settings-btn), with a phone
+   variant that relocated to a top-right rail so the bottom toolbar couldn't swallow its
+   taps. They are ordinary `.menu-btn`s in the shell top bar's view controls now — beside
+   the drawing rather than floating on top of it — so none of that positioning is needed.
+   On phones they fold into the top bar's ⋮ overflow menu instead of a second rail. */
 
 /* Zen mode exit button */
 .zen-exit-btn {
@@ -626,3 +569,49 @@ button:focus-visible {
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* ── Shell top bar ──────────────────────────────────────────────────────────
+   The header region of the application shell. Spans between the side docks and
+   reserves --dock-top, so the canvas starts beneath it instead of having a floating
+   pill laid over the drawing. Its contents (logo/menu on the left, view controls on
+   the right, contextual tool options in the middle) position themselves against
+   --topbar-h. */
+.shell-topbar {
+  position: fixed;
+  /* Full width: the top bar is the OUTER frame of the shell, above the side docks —
+     not a strip between them. Same for the status bar; the docks live between the two. */
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--topbar-h, 52px);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 10050;
+  /* A real header: it LAYS OUT its contents rather than having them floated on top of it
+     at hand-tuned offsets, and it swallows its own clicks instead of passing them to the
+     canvas underneath (the canvas viewport already excludes this band via --dock-top). */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.topbar-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0; /* so the centre slot can shrink and scroll instead of overflowing the bar */
+}
+
+/* The two end slots are sized by their contents; only the centre one is elastic, so a long
+   options row scrolls internally rather than pushing the view controls off the right edge. */
+.topbar-left, .topbar-right { flex: 0 0 auto; }
+.topbar-center { flex: 1 1 auto; overflow: hidden; }
+.topbar-right { margin-left: auto; }
+
+/* Z-INDEX CONTRACT for the top bar: the bar paints an OPAQUE background, so anything that
+   belongs *in* it must stack above 10050. Its contents (logo/menu pill, utility toolbar,
+   palette picker, theme toggle in menu.tsx; `.menu-container` in menu.css) therefore all sit
+   at 10060. They used to be at 10000 — below the bar — which left the palette and theme
+   buttons painted over and invisible once the header became a real docked region. If you add
+   another control to this band, give it 10060 too. */

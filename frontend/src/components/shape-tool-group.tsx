@@ -1,6 +1,6 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, setSelectedTool, setSelectedShapeType, setStore, setToolLocked } from "../store/app-store";
+import { store, setSelectedTool, setSelectedShapeType, setToolLocked, showPropertiesPanel } from "../store/app-store";
 import type { ElementType } from "../types";
 import {
     Square, Circle, Diamond,
@@ -152,8 +152,7 @@ const ShapeToolGroup: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
-        setStore("showPropertyPanel", true);
-        setStore("isPropertyPanelMinimized", false);
+        showPropertiesPanel();
     };
 
     const toggleMenu = () => {

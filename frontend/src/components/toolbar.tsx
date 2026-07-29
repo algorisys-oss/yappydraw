@@ -1,5 +1,5 @@
 import { type Component, For, Show, createSignal, onMount, onCleanup } from "solid-js";
-import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleStickFigurePanel, toggleShapeBuilder } from "../store/app-store";
+import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleStickFigurePanel, toggleShapeBuilder, showPropertiesPanel } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import { addImagePlaceholder } from "../utils/image-actions";
 import type { ToolType } from "../types";
@@ -119,6 +119,9 @@ const Toolbar: Component = () => {
     // Wrap width (px): when > 0 the toolbar flows its icons into a grid of that width,
     // so the user can drag it to e.g. 2-per-row. 0 = off (single line).
     const wrapWidth = () => store.globalSettings.toolbarWrap ?? 0;
+    /** Docked edge, or 'float' for the legacy overlay bar. Mobile always floats — there
+     *  isn't room to give an edge away. */
+    const docked = () => (isMobile() ? 'float' : (store.globalSettings.toolbarDock ?? 'left'));
 
     // Pointer events (not mouse) so the toolbar can be dragged/resized with a
     // finger or stylus on a tablet — synthesized mouse events are unreliable for
@@ -261,8 +264,7 @@ const Toolbar: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
-        setStore("showPropertyPanel", true);
-        setStore("isPropertyPanelMinimized", false);
+        showPropertiesPanel();
     };
 
     const handleImageUpload = (e: Event) => {
@@ -359,10 +361,17 @@ const Toolbar: Component = () => {
         <div
             ref={el => containerRef = el}
             class="toolbar-container"
-            classList={{ dragging: isDragging(), resizing: isResizing(), vertical: !isMobile() && !!store.globalSettings.toolbarVertical, wrap: !isMobile() && wrapWidth() > 0 }}
+            classList={{
+                dragging: isDragging(), resizing: isResizing(),
+                // A docked bar owns an edge; floating keeps the old drag/wrap behaviour.
+                docked: docked() !== 'float',
+                [`dock-${docked()}`]: docked() !== 'float',
+                vertical: !isMobile() && docked() === 'float' && !!store.globalSettings.toolbarVertical,
+                wrap: !isMobile() && docked() === 'float' && wrapWidth() > 0,
+            }}
             onContextMenu={(e) => e.preventDefault()}
-            onPointerDown={isMobile() ? undefined : onPointerDown}
-            style={isMobile() ? {} : {
+            onPointerDown={isMobile() || docked() !== 'float' ? undefined : onPointerDown}
+            style={isMobile() || docked() !== 'float' ? {} : {
                 // Centre on the anchored axis: X for the top (horizontal) bar, Y for the left
                 // (vertical) bar. In wrap mode the bar grows downward, so drop the vertical
                 // centering (it would clip a tall grid off the top) — CSS pins it to the top.

@@ -294,3 +294,75 @@
     border-left: 1px solid #e5e7eb;
     padding-left: 8px;
 }
+/* ── Docked mode ────────────────────────────────────────────────────────────
+   A docked toolbar owns its edge: it is pinned edge-to-edge, its own drag/resize
+   grips are hidden (there is nothing to drag), and the canvas is inset by the same
+   amount (see utils/dock-layout.ts) so the two never overlap. */
+.toolbar-container.docked {
+    --dock-size: 46px;
+    position: fixed;
+    /* Clear the floating bar's anchoring (left:50% / top:12px) so the edge rules below
+       are the only thing positioning a docked bar. */
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    margin: 0;
+    transform: none !important;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    gap: 5px;
+    padding: 6px 0;
+    background: var(--bg-panel);
+    z-index: 10002;
+}
+
+.toolbar-container.docked .drag-handle,
+.toolbar-container.docked .toolbar-resize-handle {
+    display: none;
+}
+
+/* Vertical edges: a single column, scrolling if the tool set outgrows the window. */
+.toolbar-container.docked.dock-left,
+.toolbar-container.docked.dock-right {
+    /* Between the two full-width bars: the side docks are the shell's left/right frame,
+       the top bar and status bar are its top/bottom. */
+    top: var(--topbar-h, 52px);
+    bottom: var(--statusbar-h, 28px);
+    width: var(--dock-size);
+    flex-flow: column nowrap;
+    align-items: center;
+    align-content: flex-start;
+    justify-content: flex-start;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.toolbar-container.docked.dock-left { left: 0; border-right: 1px solid var(--border-color); }
+.toolbar-container.docked.dock-right { right: 0; border-left: 1px solid var(--border-color); }
+
+/* Horizontal edges: a single row. */
+.toolbar-container.docked.dock-top,
+.toolbar-container.docked.dock-bottom {
+    left: 0;
+    right: 0;
+    height: var(--dock-size);
+    width: auto;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 6px;
+}
+
+.toolbar-container.docked.dock-top { top: var(--topbar-h, 52px); border-bottom: 1px solid var(--border-color); }
+.toolbar-container.docked.dock-bottom { bottom: 0; border-top: 1px solid var(--border-color); }
+
+/* Slim scrollbar so a long tool column doesn't eat into the 46px. */
+.toolbar-container.docked::-webkit-scrollbar { width: 4px; height: 4px; }
+.toolbar-container.docked::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
+}

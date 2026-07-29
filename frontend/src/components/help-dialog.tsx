@@ -1,5 +1,5 @@
-import { Show, For, onCleanup, createEffect } from "solid-js";
-import { X, ExternalLink, Github, Youtube, Bug, LayoutTemplate, Compass } from "lucide-solid";
+import { Show, For, onCleanup, createEffect, createSignal, createMemo } from "solid-js";
+import { X, Search, ExternalLink, Github, Youtube, Bug, LayoutTemplate, Compass } from "lucide-solid";
 import "./help-dialog.css";
 import { startTour } from "./onboarding-tour";
 
@@ -229,6 +229,29 @@ interface Props {
 }
 
 export default function HelpDialog(props: Props) {
+    const [query, setQuery] = createSignal('');
+
+    /**
+     * People come to this dialog with one question — "what's the shortcut for X" — and used to
+     * answer it by reading seven columns. Match on the LABEL and on the KEYS, so it works in
+     * both directions: "duplicate" finds Ctrl+D, and "ctrl+d" finds Duplicate. Categories that
+     * match nothing drop out entirely rather than leaving empty headings behind.
+     */
+    const filtered = createMemo(() => {
+        const q = query().trim().toLowerCase();
+        if (!q) return SHORTCUT_DATA;
+        return SHORTCUT_DATA
+            .map(cat => ({
+                ...cat,
+                shortcuts: cat.shortcuts.filter(sc =>
+                    sc.label.toLowerCase().includes(q) || sc.keys.toLowerCase().includes(q)),
+            }))
+            .filter(cat => cat.shortcuts.length > 0);
+    });
+
+    // Reopening should not resume someone else's half-typed search.
+    createEffect(() => { if (!props.isOpen) setQuery(''); });
+
     createEffect(() => {
         if (props.isOpen) {
             const handleKeyDown = (e: KeyboardEvent) => {
@@ -248,12 +271,27 @@ export default function HelpDialog(props: Props) {
                 <div class="help-modal-content" onClick={(e) => e.stopPropagation()}>
                     <div class="help-modal-header">
                         <h2>Help</h2>
+                        <div class="help-search">
+                            <Search size={15} />
+                            <input
+                                type="text"
+                                placeholder="Search shortcuts…"
+                                value={query()}
+                                onInput={(e) => setQuery(e.currentTarget.value)}
+                            />
+                            <Show when={query()}>
+                                <button class="help-search-clear" onClick={() => setQuery('')} title="Clear">
+                                    <X size={14} />
+                                </button>
+                            </Show>
+                        </div>
                         <button class="help-close-btn" onClick={props.onClose}>
                             <X size={24} />
                         </button>
                     </div>
 
                     <div class="help-modal-body">
+                        <Show when={!query().trim()}>
                         <div class="social-links">
                             <button
                                 type="button"
@@ -300,11 +338,15 @@ export default function HelpDialog(props: Props) {
                                 YouTube
                             </a>
                         </div>
+                        </Show>
 
                         <div class="shortcuts-section">
                             <h3>Keyboard shortcuts</h3>
+                            <Show when={filtered().length === 0}>
+                                <p class="help-empty">No shortcut matches “{query().trim()}”.</p>
+                            </Show>
                             <div class="shortcuts-grid">
-                                <For each={SHORTCUT_DATA}>
+                                <For each={filtered()}>
                                     {(category) => (
                                         <div class="shortcut-column">
                                             <h4>{category.title}</h4>

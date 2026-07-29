@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.162', date: '2026-07-29', items: [
+        'The Properties panel is now a proper dockable panel like Layers or History. Drag its title bar to the left or right edge to dock it there, drop it anywhere else to float it, drag the edge to resize, or collapse it to just its title — and it comes back the way you left it next time.',
+        'Settings is no longer one long scroll. Pick a category on the left — General, Pen & Input, Defaults, Mindmap, Time-lapse, Cloud Storage — or just type in the new search box, which looks across all of them at once.',
+        'Help searches too. Type what you want to do and it finds the shortcut, or type the keys and it tells you what they do — "duplicate" and "ctrl+d" both land on the same row.',
+        'Settings, the Properties toggle and Help moved out of the bottom-left corner and up into the top bar, so they are no longer floating on top of your drawing.',
+        'Fixed: the colour palette and theme buttons at the top right had become invisible — the header bar was being drawn over them.',
+    ] },
     { version: '0.8.161', date: '2026-07-30', items: [
         'Fixed: when you made a node smooth, the curve handles appeared but you could not actually grab them. You can now drag a handle to bend the curve, and on a smooth node the opposite handle follows so the curve stays smooth. Hold Alt while dragging to break that and turn it into a sharp corner instead.',
     ] },

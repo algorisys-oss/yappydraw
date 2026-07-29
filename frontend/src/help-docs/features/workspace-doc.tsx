@@ -49,7 +49,7 @@ const WorkspaceDoc: Component = () => {
             <section class="doc-section">
                 <h2>Properties panel</h2>
                 <p>
-                    Press <strong>Alt+Enter</strong> (or the sliders button in the bottom-left cluster) to toggle the
+                    Press <strong>Alt+Enter</strong> (or the sliders button in the top bar) to toggle the
                     <strong> Properties</strong> panel, which docks to the right edge. It shows the controls for whatever
                     is selected — fill, stroke, size, text, effects, animation — or the defaults for the active drawing
                     tool when nothing is selected.
@@ -65,6 +65,14 @@ const WorkspaceDoc: Component = () => {
                     switch. Open it deliberately with Alt+Enter, the sliders button, or by
                     <strong> right-clicking a tool group</strong> in the toolbar (which opens the panel on that tool's
                     defaults) — and once it's open it stays docked while you work.
+                </p>
+                <p>
+                    Properties is a <strong>dockable panel</strong> like Layers, History or Swatches, so it is not
+                    stuck on the right. Drag its title bar to the left or right edge to dock it there, drop it
+                    anywhere else to float it, drag the zone's inner edge to resize, and use the title-bar buttons to
+                    dock left / dock right / float / collapse to the title bar / close. Your arrangement is saved and
+                    comes back next time. <em>Duplicate</em> and <em>Delete</em> sit just below the title bar, with the
+                    object's properties, because they act on the selection rather than on the panel.
                 </p>
             </section>
 
@@ -239,7 +247,21 @@ Yappy.setStrokeDash([], ids);         // clear (revert to the Stroke Style prese
             <section class="doc-section">
                 <h2>Settings — Pen &amp; Input</h2>
                 <p>
-                    Open <strong>Settings</strong> from the gear button in the bottom-left cluster or the menu.
+                    Open <strong>Settings</strong> from the gear button in the top bar (next to the Properties
+                    toggle and Help) or from the menu.
+                    It is organised into categories — <strong>General</strong>, <strong>Pen &amp; Input</strong>,
+                    <strong>Defaults</strong> (text and shape), <strong>Mindmap</strong>,
+                    <strong>Time-lapse</strong> and <strong>Cloud Storage</strong> — pick one on the left to see just
+                    its settings. If you know what you want but not where it lives, type in the
+                    <strong> search box</strong> at the top: it looks across every category at once and shows only the
+                    matching controls.
+                </p>
+                <p class="tip-box">
+                    The <strong>Help</strong> dialog (<strong>?</strong>) searches too — its box filters the keyboard
+                    shortcuts by name <em>or</em> by keys, so &ldquo;duplicate&rdquo; and &ldquo;ctrl+d&rdquo; both
+                    find the same row.
+                </p>
+                <p>
                     Two options control how the canvas greets you:
                 </p>
                 <ul>

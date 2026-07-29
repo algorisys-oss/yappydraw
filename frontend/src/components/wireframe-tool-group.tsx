@@ -1,6 +1,6 @@
 import { type Component, createSignal, Show, createEffect, onCleanup, For } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, setSelectedTool, setSelectedWireframeType, setStore, setToolLocked } from "../store/app-store";
+import { store, setSelectedTool, setSelectedWireframeType, setToolLocked, showPropertiesPanel } from "../store/app-store";
 import type { ElementType } from "../types";
 import { UI_SHAPE_DEFS, type UIShapeCategory } from "../config/ui-shape-defs";
 import {
@@ -135,8 +135,7 @@ const WireframeToolGroup: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
-        setStore("showPropertyPanel", true);
-        setStore("isPropertyPanelMinimized", false);
+        showPropertiesPanel();
     };
 
     const toggleMenu = () => {

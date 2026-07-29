@@ -1,6 +1,6 @@
 import { type Component, createSignal, Show, createEffect, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
-import { store, setSelectedTool, setSelectedStatusType, setStore, setToolLocked } from "../store/app-store";
+import { store, setSelectedTool, setSelectedStatusType, setToolLocked, showPropertiesPanel } from "../store/app-store";
 import type { ElementType } from "../types";
 import {
     ChevronDown
@@ -94,8 +94,7 @@ const StatusToolGroup: Component = () => {
 
     const handleRightClick = (e: MouseEvent) => {
         e.preventDefault();
-        setStore("showPropertyPanel", true);
-        setStore("isPropertyPanelMinimized", false);
+        showPropertiesPanel();
     };
 
     const toggleMenu = () => {

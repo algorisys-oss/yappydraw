@@ -12,6 +12,7 @@ import rough from 'roughjs'; // Hand-drawn style
 import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, applyEyedropperFrom, cancelEyedropper, deleteElements, setPenConstrain, syncLiveSymmetry } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
+import { canvasViewport, publishDockVars, dockInsets } from "../utils/dock-layout";
 import { screenToWorld } from "../utils/viewport-transforms";
 import { isPalmTouch } from "../utils/input/palm-rejection";
 import { allFingerTouches, pickFingerTouches, twoFingerMetrics } from "../utils/input/touch-geometry";
@@ -271,8 +272,19 @@ const Canvas: Component = () => {
 
     const handleResize = () => {
         if (canvasRef) {
-            canvasRef.width = window.innerWidth;
-            canvasRef.height = window.innerHeight;
+            // The canvas is the window MINUS docked chrome — a docked toolbar reserves
+            // its edge rather than covering the drawing surface. Pointer->world needs no
+            // change: getWorldCoordinates already subtracts the canvas bounding rect.
+            publishDockVars(); // keep the CSS vars in step with the canvas
+            const vp = canvasViewport();
+            // MARGIN, not left/top: the canvas is `position: static` inside
+            // .canvas-drop-zone, so offsets are ignored but margins shift it.
+            canvasRef.style.marginLeft = `${vp.x}px`;
+            canvasRef.style.marginTop = `${vp.y}px`;
+            canvasRef.width = vp.width;
+            canvasRef.height = vp.height;
+            canvasRef.style.width = `${vp.width}px`;
+            canvasRef.style.height = `${vp.height}px`;
 
             // Re-fit the slide to the new window size
             // (important after entering/exiting fullscreen and window resizes)
@@ -2194,6 +2206,21 @@ const Canvas: Component = () => {
         window.addEventListener("resize", handleResize);
         document.addEventListener("fullscreenchange", handleResize);
         handleResize();
+        // Re-lay-out when the toolbar docks/undocks or changes edge: the reserved space
+        // changes, so the canvas has to give it back or take it.
+        createEffect(() => {
+            // Any change to a docked region resizes the canvas.
+            store.globalSettings.toolbarDock;
+            store.zenMode;
+            store.appMode;
+            // Panel docking (open/closed, which zone, zone width) now lives in the dock store,
+            // so track it by CALLING the inset computation rather than by naming store fields: it walks
+            // every panel's mode/zone and both widths, which is exactly the dependency set.
+            // Reading `dockLayout.panels` alone would not work — Solid stores track granularly,
+            // and the nested writes (`panels[id].mode`) never touch the `panels` key itself.
+            dockInsets();
+            handleResize();
+        });
 
         // Expose table cell navigation interface for global keyboard handler (app.tsx)
         (window as any).__tableCellNav = {

@@ -1,5 +1,8 @@
 .status-bar {
     position: fixed;
+    /* Full width: the status bar is the OUTER frame of the shell, below the side docks.
+       NOT offset by --dock-bottom either — this bar IS the bottom chrome and contributes
+       that inset, so honouring it would push the bar up by its own height. */
     bottom: 0;
     left: 0;
     width: 100%;
