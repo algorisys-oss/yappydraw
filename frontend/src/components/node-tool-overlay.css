@@ -108,3 +108,18 @@
     color: var(--text-secondary, #666) !important;
     font-size: 13px !important;
 }
+
+/* Bézier handles of the selected nodes. Round grips on a thin leader, so they read as
+   "curvature control" and never get mistaken for an anchor (squares/circles above). */
+.node-handle-line {
+    stroke: #6366f1;
+    stroke-width: 1;
+    opacity: 0.55;
+}
+
+.node-handle {
+    fill: #fff;
+    stroke: #6366f1;
+    stroke-width: 1.5;
+    rx: 1.5;
+}

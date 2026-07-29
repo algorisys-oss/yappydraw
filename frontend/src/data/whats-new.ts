@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.161', date: '2026-07-30', items: [
+        'Fixed: when you made a node smooth, the curve handles appeared but you could not actually grab them. You can now drag a handle to bend the curve, and on a smooth node the opposite handle follows so the curve stays smooth. Hold Alt while dragging to break that and turn it into a sharp corner instead.',
+    ] },
     { version: '0.8.160', date: '2026-07-30', items: [
         'Fixed: with the Node tool open, Ctrl+A and Backspace were being grabbed even while you were typing in a text box or a dialog. They now leave your typing alone, and Ctrl+A goes back to selecting all objects when you have no path selected.',
     ] },

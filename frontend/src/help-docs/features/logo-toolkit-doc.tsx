@@ -256,6 +256,8 @@ export const LogoToolkitDoc: Component = () => {
                         <tr><td><strong>Delete</strong> (or <span class="kbd">Del</span>)</td><td>removes every selected node</td></tr>
                         <tr><td><span class="kbd">Alt</span>-click a segment</td><td>inserts a node at that point</td></tr>
                         <tr><td>Drag a segment between two nodes</td><td>bends it into a curve</td></tr>
+                        <tr><td>Drag a smooth node's <strong>handle</strong></td><td>bends the curve; the opposite handle mirrors</td></tr>
+                        <tr><td><span class="kbd">Alt</span>-drag a handle</td><td>breaks the mirror — gives a smooth node a cusp</td></tr>
                     </tbody>
                 </table>
                 <p class="tip-box">

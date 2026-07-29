@@ -189,3 +189,73 @@ export const selectedPathNodes = (): { ref: NodeRef; x: number; y: number; kind:
     }
     return out;
 };
+
+/** A Bézier handle: which side of which anchor. */
+export interface HandleRef { ref: NodeRef; which: 'in' | 'out' }
+
+/**
+ * Handles of the *selected* anchors, in world space, with the anchor they belong to.
+ *
+ * Only selected anchors, deliberately: showing every handle on a busy path is noise,
+ * and it is what Inkscape's node tool does.
+ */
+export const selectedNodeHandles = (): {
+    h: HandleRef; x: number; y: number; ax: number; ay: number;
+}[] => {
+    const out: { h: HandleRef; x: number; y: number; ax: number; ay: number }[] = [];
+    for (const ref of store.nodeSelection) {
+        const el = store.elements.find(e => e.id === ref.id);
+        if (!el) continue;
+        const sp = editableSubpaths(el)[ref.sub];
+        const a = sp?.anchors[ref.i];
+        if (!a) continue;
+        const ax = el.x + a.x, ay = el.y + a.y;
+        if (a.inX !== undefined || a.inY !== undefined) {
+            out.push({ h: { ref, which: 'in' }, x: ax + (a.inX ?? 0), y: ay + (a.inY ?? 0), ax, ay });
+        }
+        if (a.outX !== undefined || a.outY !== undefined) {
+            out.push({ h: { ref, which: 'out' }, x: ax + (a.outX ?? 0), y: ay + (a.outY ?? 0), ax, ay });
+        }
+    }
+    return out;
+};
+
+/**
+ * Drag one Bézier handle to a world point.
+ *
+ * On a `smooth` anchor the opposite handle is mirrored — kept opposite in direction and
+ * unchanged in length — which is what makes the node smooth. Hold to break that (pass
+ * `mirror: false`) and the two sides move independently, as a cusp would.
+ */
+export const moveNodeHandle = (
+    h: HandleRef, wx: number, wy: number, mirror = true, record = false,
+): boolean => {
+    const el = store.elements.find(e => e.id === h.ref.id);
+    if (!el) return false;
+    const subs = editableSubpaths(el);
+    const sp = subs[h.ref.sub];
+    const a = sp?.anchors[h.ref.i];
+    if (!a) return false;
+
+    if (record) pushToHistory();
+
+    const dx = wx - (el.x + a.x);
+    const dy = wy - (el.y + a.y);
+    if (h.which === 'in') { a.inX = dx; a.inY = dy; } else { a.outX = dx; a.outY = dy; }
+
+    if (mirror && a.kind === 'smooth') {
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len, uy = dy / len;
+        if (h.which === 'in') {
+            const outLen = Math.hypot(a.outX ?? 0, a.outY ?? 0) || len;
+            a.outX = -ux * outLen; a.outY = -uy * outLen;
+        } else {
+            const inLen = Math.hypot(a.inX ?? 0, a.inY ?? 0) || len;
+            a.inX = -ux * inLen; a.inY = -uy * inLen;
+        }
+    }
+
+    writeEditableSubpaths(h.ref.id, el.x, el.y, subs);
+    bumpDirtyRevision();
+    return true;
+};

@@ -79,7 +79,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 4479 | Theme:3 HarmonyType:66 PlayOptions:71 PlaySpec:71 PlayTargets:71 TexPart:72 AxesOptions:79 AxesSpec:79 PlotFn:79 VectorFieldOptions:79 VectorFn:79 DimensionMeasure:86 ElementOptions:158 normalizeElementType:371 plotRuns:402 ElementType:613 as:613 Window:4468
+frontend/src/api.ts | typescript | 4481 | Theme:3 HarmonyType:66 PlayOptions:71 PlaySpec:71 PlayTargets:71 TexPart:72 AxesOptions:79 AxesSpec:79 PlotFn:79 VectorFieldOptions:79 VectorFn:79 DimensionMeasure:86 ElementOptions:158 normalizeElementType:371 plotRuns:402 ElementType:613 as:613 Window:4470
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1506 | Component:1 App:97 moves:122 onPenMove:123 hidePen:127 handleKeyUp:166 handleKeyDown:176 as:770 handleFullscreenChange:891 handleBeforeUnload:897 handlePaste:901 handleGlobalDragEnter:1003 handleGlobalDragOver:1018 showDropFallbackPrompt:1037 cleanup:1067 outsideClick:1095 isImageFile:1107 first:1108 must:1121 extractDropData:1123 processExtractedDrop:1178 handleGlobalDrop:1295 handleDocumentDrop:1341
 frontend/src/assets/solid.svg | - | 1 |
@@ -206,8 +206,8 @@ frontend/src/components/new-animation-signal.ts | typescript | 4 |
 frontend/src/components/new-game-dialog.css | - | 55 |
 frontend/src/components/new-game-dialog.tsx | typescript | 100 | Component:11 Choice:23 slingshotScript:25 flappyScript:26 loadCodeGame:27 NewGameDialog:50 pick:53
 frontend/src/components/new-game-signal.ts | typescript | 4 |
-frontend/src/components/node-tool-overlay.css | - | 110 |
-frontend/src/components/node-tool-overlay.tsx | typescript | 245 | NodeRef:8 NodeToolOverlay:26 active:33 toWorld:34 toScreen:35 nodeAt:45 onDown:55 onMove:94 onUp:124 onKey:131 count:180 p:187 sel:188 hot:189
+frontend/src/components/node-tool-overlay.css | - | 125 |
+frontend/src/components/node-tool-overlay.tsx | typescript | 295 | NodeRef:9 NodeToolOverlay:27 active:37 toWorld:38 toScreen:39 handleAt:55 nodeAt:65 onDown:75 onMove:126 onUp:162 onKey:169 count:218 p:225 sel:226 hot:227 a:241 p:242
 frontend/src/components/onboarding-tour.css | - | 158 |
 frontend/src/components/onboarding-tour.tsx | typescript | 254 | Component:13 TourStep:19 startTour:79 markTourSeen:90 endTour:95 hasSeenTour:100 maybeAutoStartTour:114 OnboardingTour:129 step:133 total:134 isLast:135 isFirst:136 next:138 prev:139 skip:140 clampToViewport:142 updatePosition:147 onResize:179 onKey:180
 frontend/src/components/p3-color-picker.tsx | typescript | 351 | Component:1 setPalettePinned:15 ColorPalettePicker:20 activePalette:25 applyAsset:27 onSwatchPointerDown:82 onSwatchPointerMove:87 onSwatchPointerUp:99 handleDragStart:110
@@ -332,7 +332,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 350 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 353 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -407,7 +407,7 @@ frontend/src/help-docs/features/effects-doc.tsx | typescript | 277 | EffectsDoc:
 frontend/src/help-docs/features/elements-search-doc.tsx | typescript | 119 | chips:5 ElementsSearchDoc:11 chips:41
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 204 | EmbeddingDoc:3
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 639 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27 to:458
-frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 494 | LogoToolkitDoc:9 the:167 across:255
+frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 496 | LogoToolkitDoc:9 the:167 across:255
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 408 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161
 frontend/src/help-docs/features/plotting-doc.tsx | typescript | 335 | graphs:4 PlottingDoc:9 graphs:17
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 296 | StickAnimationDoc:10
@@ -655,7 +655,7 @@ frontend/src/utils/measure-readout.ts | typescript | 70 | LineReadout:10 measure
 frontend/src/utils/mesh-gradient.ts | typescript | 295 | RGB:18 parseHex:21 rgbToHex:34 isValidMesh:42 defaultMesh:56 rasterizeMesh:202
 frontend/src/utils/migration.ts | typescript | 305 | normalizeElement:10 as:14 migrateElements:163 isSlideDocument:222 migrateToSlideFormat:229
 frontend/src/utils/mindmap-layout.ts | typescript | 416 | MindmapNode:3 LayoutDirection:16 OutlineNode:19 parseOutline:32 MindmapLayoutEngine:96{constructor:100} getBranchInfo:373
-frontend/src/utils/node-editing.ts | typescript | 191 | EditSub:16 NodeRef:19 editSelected:51
+frontend/src/utils/node-editing.ts | typescript | 261 | EditSub:16 NodeRef:19 editSelected:51 HandleRef:194
 frontend/src/utils/object-context-actions.ts | typescript | 491 | copyToClipboard:9 cutToClipboard:27 getViewportCenter:33 pasteImageFromBlob:39 done:43 pasteAsTextElement:120 pasteYappyElements:233 tryPasteYappyJson:295 pasteFromClipboard:310 flipSelected:347 lockSelected:422 getStyleSnapshot:432 copyStyle:479 pasteStyle:485
 frontend/src/utils/object-snapping.ts | typescript | 131 | SnappingGuide:6 SnappedResult:12
 frontend/src/utils/onion-skin.ts | typescript | 93 | OnionRenderOpts:29 renderOnionSkins:43
@@ -893,7 +893,7 @@ tests/mindmap-inherit.spec.ts | typescript | 78 |
 tests/mono-logo.spec.ts | typescript | 256 | two:5 sleep:66 setCur:79 ease:80 moveToClient:81 moveTo:82 clickFx:83 findBtn:84 cue:94 ensureTool:103 estW:104 realW:107 centre:108 panel:111 line:112 the:126 mk:132 tline:218
 tests/mp4-record-check.spec.ts | typescript | 33 |
 tests/next-batch.spec.ts | typescript | 75 |
-tests/node-tool.spec.ts | typescript | 272 | boot:13 armRectPath:26 nodes:37 kinds:137
+tests/node-tool.spec.ts | typescript | 333 | boot:13 armRectPath:26 nodes:37 kinds:137
 tests/offline-check.spec.ts | typescript | 87 | Window:6
 tests/onboarding-tour.spec.ts | typescript | 37 |
 tests/outline-artboards-batch4.spec.ts | typescript | 81 | countFill:51

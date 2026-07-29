@@ -38,7 +38,7 @@ import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
 import { toExcalidraw, fromExcalidraw } from "./utils/excalidraw-io";
 import {
-    setNodeSelection, allNodesOfSelection, selectedPathNodes,
+    setNodeSelection, allNodesOfSelection, selectedPathNodes, selectedNodeHandles,
     moveSelectedNodes, setSelectedNodesKind, deleteSelectedNodes,
 } from "./utils/node-editing";
 import { PAGE_SIZE_PRESETS, getPagePreset } from "./config/page-size-presets";
@@ -3750,6 +3750,8 @@ export const YappyAPI = {
     allNodesOfSelection() { return allNodesOfSelection(); },
     /** The selected paths' anchors in world space — `{ ref, x, y, kind }`. */
     getPathNodes() { return selectedPathNodes(); },
+    /** Bezier handles of the selected nodes, world space — `{ h, x, y, ax, ay }`. */
+    getNodeHandles() { return selectedNodeHandles(); },
     /** Move every selected anchor by the same delta (element-origin units). */
     moveSelectedNodes(dx: number, dy: number) { return moveSelectedNodes(dx, dy, true); },
     /** Make every selected anchor a corner or a smooth node. */

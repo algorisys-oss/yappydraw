@@ -5,7 +5,8 @@ import {
 import {
     selectedPathNodes, setNodeSelection, toggleNodeInSelection, clearNodeSelection,
     isNodeSelected, moveSelectedNodes, setSelectedNodesKind, deleteSelectedNodes,
-    allNodesOfSelection, type NodeRef,
+    allNodesOfSelection, selectedNodeHandles, moveNodeHandle,
+    type NodeRef, type HandleRef,
 } from '../utils/node-editing';
 import { insertPathAnchorAt } from '../utils/tool-handlers/selection-handler';
 import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
@@ -28,6 +29,9 @@ export const NodeToolOverlay = () => {
     const [hover, setHover] = createSignal<NodeRef | null>(null);
     // Drag state lives outside the signal graph: it changes every pointermove.
     let drag: { last: { x: number; y: number } } | null = null;
+    // Dragging a Bézier handle is its own gesture: it reshapes ONE anchor's curvature
+    // rather than moving the selection.
+    let handleDrag: { h: HandleRef; mirror: boolean } | null = null;
     let marqueeAdditive = false;
 
     const active = () => store.nodeToolActive;
@@ -41,6 +45,22 @@ export const NodeToolOverlay = () => {
     });
 
     const HIT = 9; // screen px
+
+    /** Handles of the selected anchors, world space. Drawn and hit-tested above nodes. */
+    const handles = createMemo(() => {
+        store.dirtyRevision;
+        return active() ? selectedNodeHandles() : [];
+    });
+
+    const handleAt = (sx: number, sy: number): HandleRef | null => {
+        let best: { h: HandleRef; d: number } | null = null;
+        for (const hd of handles()) {
+            const p = toScreen(hd.x, hd.y);
+            const d = Math.hypot(p.x - sx, p.y - sy);
+            if (d <= HIT && (!best || d < best.d)) best = { h: hd.h, d };
+        }
+        return best?.h ?? null;
+    };
 
     const nodeAt = (sx: number, sy: number): NodeRef | null => {
         let best: { ref: NodeRef; d: number } | null = null;
@@ -56,6 +76,18 @@ export const NodeToolOverlay = () => {
         if (!active() || e.button !== 0) return;
         const target = e.target as HTMLElement;
         if (target.closest('.node-tool-bar')) return; // let the buttons handle themselves
+
+        // Handles sit on top of anchors — they're what you reach for to bend a curve,
+        // and they're often right next to their own anchor.
+        const hHit = handleAt(e.clientX, e.clientY);
+        if (hHit) {
+            e.preventDefault();
+            e.stopPropagation();
+            pushToHistory();
+            // Alt breaks the mirror, so a smooth node can be given a cusp.
+            handleDrag = { h: hHit, mirror: !e.altKey };
+            return;
+        }
 
         const hit = nodeAt(e.clientX, e.clientY);
         if (hit) {
@@ -94,6 +126,12 @@ export const NodeToolOverlay = () => {
     const onMove = (e: PointerEvent) => {
         if (!active()) return;
 
+        if (handleDrag) {
+            const w = toWorld(e);
+            moveNodeHandle(handleDrag.h, w.x, w.y, handleDrag.mirror, false);
+            return;
+        }
+
         if (drag) {
             const w = toWorld(e);
             moveSelectedNodes(w.x - drag.last.x, w.y - drag.last.y, false);
@@ -121,7 +159,7 @@ export const NodeToolOverlay = () => {
         setHover(nodeAt(e.clientX, e.clientY));
     };
 
-    const onUp = () => { drag = null; setMarquee(null); };
+    const onUp = () => { drag = null; handleDrag = null; setMarquee(null); };
 
     onMount(() => {
         window.addEventListener('pointerdown', onDown, true); // capture: beat the canvas
@@ -197,6 +235,18 @@ export const NodeToolOverlay = () => {
                             width={sel() ? 11 : 9} height={sel() ? 11 : 9}
                             class="node-dot" classList={{ selected: sel(), hover: hot() }} />;
                 }}</For>
+
+                {/* Bézier handles of the selected anchors — leader line + grip. */}
+                <For each={handles()}>{(hd) => {
+                    const a = () => toScreen(hd.ax, hd.ay);
+                    const p = () => toScreen(hd.x, hd.y);
+                    return (
+                        <>
+                            <line x1={a().x} y1={a().y} x2={p().x} y2={p().y} class="node-handle-line" />
+                            <rect x={p().x - 3.5} y={p().y - 3.5} width="7" height="7" class="node-handle" />
+                        </>
+                    );
+                }}</For>
             </svg>
 
             {/* Rubber band */}
@@ -237,7 +287,7 @@ export const NodeToolOverlay = () => {
                     title="Delete the selected nodes (Del)">Delete</button>
 
                 <span class="node-tool-sep" />
-                <span class="node-tool-hint">Alt-click a segment to add a node · drag to bend</span>
+                <span class="node-tool-hint">Alt-click a segment to add a node · drag a handle to bend (Alt = cusp)</span>
                 <button class="node-tool-close" onClick={() => toggleNodeTool(false)} title="Exit (Esc)">✕</button>
             </div>
         </Show>
