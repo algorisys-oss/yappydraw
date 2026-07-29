@@ -49,6 +49,42 @@
     top: 12px;
     left: 12px;
 }
+/* Wrap mode: the drag grip must not compete for a cell in the icon grid.
+   In the flow it is a 40x12 box that eats one slot of the first row, so the first
+   two icons land 44px to the right of every row below them and the whole grid reads
+   as ragged. Giving it its own full-width row turns it into a header strip and lets
+   every icon column line up. */
+.toolbar-container.wrap .drag-handle {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 12px;
+    padding: 0;
+    /* Centre the dots over the grid rather than over the first cell. */
+    justify-content: center;
+}
+.toolbar-container.wrap .drag-dots {
+    width: 18px;
+    height: 4px;
+}
+
+/* Every grid cell is the same box, so columns line up no matter which tools are
+   plain buttons and which are groups with a submenu chevron. */
+.toolbar-container.wrap > .toolbar-btn,
+.toolbar-container.wrap > .pen-tool-group,
+.toolbar-container.wrap > .connector-tool-group {
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    box-sizing: border-box;
+}
+
+/* Breathing room so the grid doesn't collide with the resize grip in the corner. */
+.toolbar-container.wrap {
+    gap: 6px;
+    padding: 6px;
+    padding-bottom: 14px;
+}
+
 .toolbar-container.resizing {
     cursor: nwse-resize;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);

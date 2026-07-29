@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.158', date: '2026-07-29', items: [
+        'The toolbar looks tidy again when you stack it vertically or drag it narrow. The icons now sit in even columns, and each one is centred in its button — tools with a little dropdown arrow used to get pushed against the right edge.',
+    ] },
     { version: '0.8.157', date: '2026-07-29', items: [
         'Yappy now loads about three times lighter. It was downloading a PDF library, a PowerPoint library and an entire icon set before you could draw a single line — none of which are needed until you actually export something. Cold-load code is down 62%, so the app is usable much sooner, especially on a slow connection or a first visit.',
         'Holding Shift while you drag now draws a perfect square or circle. The hint in the status bar had been promising this for shape tools for a while, but only lines and arrows were actually listening.',

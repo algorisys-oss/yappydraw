@@ -6,11 +6,26 @@
     justify-content: center;
 }
 
+/* The icon must sit dead-centre in the button's fixed 28px box. The submenu chevron
+   used to be an inline sibling, so it stole horizontal space and pushed the icon
+   against the right edge (most visible on the active pen/brush button). It is placed
+   absolutely in the top-right corner instead — the hotkey badge already owns
+   bottom-right — so every tool icon centres identically whether or not it is a group. */
 .tool-icon-wrapper {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.tool-icon-wrapper > .submenu-indicator {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    margin: 0;
+    pointer-events: none;
 }
 
 .dropdown-indicator {

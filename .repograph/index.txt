@@ -216,7 +216,7 @@ frontend/src/components/patterns-panel.css | - | 88 |
 frontend/src/components/patterns-panel.tsx | typescript | 95 | Component:1 isCustom:18 draw:20 PatternsPanel:50 startRename:54 commitRename:55
 frontend/src/components/pen-options-bar.css | - | 65 |
 frontend/src/components/pen-options-bar.tsx | typescript | 34 | Component:1 PenOptionsBar:11 selectedPath:12 visible:16
-frontend/src/components/pen-tool-group.css | - | 104 |
+frontend/src/components/pen-tool-group.css | - | 119 |
 frontend/src/components/pen-tool-group.tsx | typescript | 134 | Component:1 PenType:8 PenToolGroup:35 handler:42 getCurrentPenTool:52 isPenToolActive:56 handleSelectPen:60 handleRightClick:66 toggleMenu:73 getDropdownPosition:80
 frontend/src/components/perspective-grid-overlay.css | - | 31 |
 frontend/src/components/perspective-grid-overlay.tsx | typescript | 84 | PerspectiveGridOverlay:12 active:14 g:15 toWorld:16 w2s:17 grab:19 onMove:20 onUp:27 onKey:32 lines:38 hasSel:58
@@ -294,7 +294,7 @@ frontend/src/components/timelapse-player.css | - | 165 |
 frontend/src/components/timelapse-player.tsx | typescript | 173 | Component:1 TimelapsePlayer:18 reset:28 load:37 close:87 togglePlay:89 doExport:95
 frontend/src/components/toast.css | - | 120 |
 frontend/src/components/toast.tsx | typescript | 55 | ToastType:5 showToast:15 hideToast:31 Toast:36
-frontend/src/components/toolbar.css | - | 260 |
+frontend/src/components/toolbar.css | - | 296 |
 frontend/src/components/toolbar.tsx | typescript | 609 | Component:1 VideoProvider:26 Toolbar:79 clampIntoView:86 wrapWidth:121 onResizeDown:126 toggleBrainstormMode:137 onPointerDown:143 onPointerMove:156 onPointerUp:170 handleResize:189 handleToolClick:204 handleVideoInsert:214 handleRightClick:262 handleImageUpload:268 type:469 Icon:470
 frontend/src/components/touch-type-overlay.css | - | 58 |
 frontend/src/components/touch-type-overlay.tsx | typescript | 308 | TouchTypeOverlay:30 target:40 active:49 toWorld:50 selArr:51 curT:52 stop:53 twoPts:54 glyphBoxes:58 hitGlyph:94 applyAll:115 bumpScale:116 bumpRot:117 setColorLive:118 snapColor:119 setFont:120 firstSel:121 glyphColor:122 glyphFont:123 onFontFile:127 startGesture:135 onDown:148 onMove:189 onUp:212 onKey:245 selScreens:262 controlPos:263 marqueeRect:264
@@ -330,7 +330,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 339 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 342 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -962,6 +962,7 @@ tests/text-outlines.spec.ts | typescript | 53 |
 tests/tier1-effects.spec.ts | typescript | 109 | darkMarks:72
 tests/timelapse-check.spec.ts | typescript | 39 |
 tests/timelapse-top-cut.spec.ts | typescript | 58 |
+tests/toolbar-grid-align.spec.ts | typescript | 103 | setup:12 metrics:30
 tests/toolbar-persist.spec.ts | typescript | 16 |
 tests/toolbar-pos.spec.ts | typescript | 12 |
 tests/touch-type.spec.ts | typescript | 16 |
