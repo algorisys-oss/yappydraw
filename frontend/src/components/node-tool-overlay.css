@@ -1,0 +1,110 @@
+/* Node tool. Follows the sibling vector-mode overlays (reshape/curve): a fixed
+   full-screen layer under the panels, with a floating bar for the operations. */
+
+.node-tool-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    pointer-events: none; /* the window-level capture handler does the hit-testing */
+    overflow: visible;
+}
+
+/* Corner nodes are squares, smooth nodes circles — the same shorthand Inkscape and
+   Illustrator use, so the node TYPE is readable without selecting anything. */
+.node-dot {
+    fill: var(--bg-panel, #fff);
+    stroke: #6366f1;
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+}
+
+.node-dot.hover {
+    stroke-width: 2.5;
+}
+
+.node-dot.selected {
+    fill: #6366f1;
+    stroke: #fff;
+    stroke-width: 2;
+}
+
+.node-marquee {
+    position: fixed;
+    z-index: 40;
+    border: 1px dashed #6366f1;
+    background: rgba(99, 102, 241, 0.10);
+    pointer-events: none;
+}
+
+.node-tool-bar {
+    position: fixed;
+    /* Below the transform/angle HUD, which also floats top-centre — at 64px the HUD
+       sat on top of the bar and hid the Smooth and Delete buttons. */
+    top: 112px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 41;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    color: var(--text-primary, #111);
+    background: var(--bg-panel, #fff);
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    pointer-events: auto;
+}
+
+.node-tool-title {
+    font-weight: 600;
+    color: #6366f1;
+}
+
+.node-tool-count {
+    color: var(--text-secondary, #666);
+    min-width: 68px;
+}
+
+.node-tool-sep {
+    width: 1px;
+    height: 16px;
+    background: var(--border-color, #ddd);
+}
+
+.node-tool-hint {
+    color: var(--text-secondary, #666);
+    font-size: 11px;
+}
+
+.node-tool-bar button {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6366f1;
+    background: transparent;
+    border: 1px solid #6366f1;
+    border-radius: 6px;
+    padding: 2px 8px;
+    cursor: pointer;
+}
+
+.node-tool-bar button:hover:not(:disabled) {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.node-tool-bar button:disabled {
+    opacity: 0.4;
+    cursor: default;
+    /* Muted rather than hidden: the operations stay visible so you can see what the
+       mode offers before selecting anything — the whole reason this bar exists. */
+    border-color: var(--border-color, #ddd);
+    color: var(--text-secondary, #666);
+}
+
+.node-tool-close {
+    border: none !important;
+    color: var(--text-secondary, #666) !important;
+    font-size: 13px !important;
+}

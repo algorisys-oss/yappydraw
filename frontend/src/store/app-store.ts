@@ -207,6 +207,10 @@ interface AppState {
     curveToolActive: boolean;
     /** Reshape tool mode: drag a path/segment to bend it while pinning endpoints (transient). */
     reshapeToolActive: boolean;
+    /** Node tool: show every anchor of the selected path(s) and edit them directly. */
+    nodeToolActive: boolean;
+    /** Anchors picked in the Node tool, across any number of paths. */
+    nodeSelection: { id: string; sub: number; i: number }[];
     /** Blob brush mode: paint filled strokes that union into one shape (transient). */
     blobBrushActive: boolean;
     /** Path eraser mode: drag along a path to erase a span of it (transient). */
@@ -530,6 +534,8 @@ const initialState: AppState = {
     typeOnPathActive: false,
     curveToolActive: false,
     reshapeToolActive: false,
+    nodeToolActive: false,
+    nodeSelection: [],
     blobBrushActive: false,
     pathEraserActive: false,
     puppetWarpActive: false,
@@ -5431,6 +5437,7 @@ export const toggleTypeOnPath = (active?: boolean) => setStore('typeOnPathActive
 export const exitAllToolModes = () => {
     const flags = ['cutToolActive', 'shapeBuilderActive', 'livePaintActive', 'widthToolActive', 'curveToolActive',
         'touchTypeActive', 'typeOnPathActive', 'sliceToolActive', 'symbolismActive', 'reshapeToolActive',
+        'nodeToolActive',
         'blobBrushActive', 'pathEraserActive', 'puppetWarpActive', 'measureActive'] as const;
     for (const f of flags) if ((store as any)[f]) setStore(f as any, false);
     if (store.sprayerActive) { setStore('sprayerActive', false); setStore('sprayerSymbolId', null); }
@@ -5541,6 +5548,14 @@ export const clearCharTransforms = (id: string) => {
     bumpDirtyRevision();
 };
 export const toggleReshapeTool = (active?: boolean) => setStore('reshapeToolActive', v => active ?? !v);
+
+/** Node tool. Leaving the mode drops the anchor selection so it can't leak into the
+ *  next activation (or into the Selection tool's own handles). */
+export const toggleNodeTool = (active?: boolean) => {
+    const next = active ?? !store.nodeToolActive;
+    setStore('nodeToolActive', next);
+    if (!next) setStore('nodeSelection', []);
+};
 export const toggleBlobBrush = (active?: boolean) => setStore('blobBrushActive', v => active ?? !v);
 export const togglePathEraser = (active?: boolean) => setStore('pathEraserActive', v => active ?? !v);
 export const togglePuppetWarp = (active?: boolean) => setStore('puppetWarpActive', v => active ?? !v);

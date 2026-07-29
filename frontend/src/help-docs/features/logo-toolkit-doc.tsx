@@ -226,6 +226,50 @@ export const LogoToolkitDoc: Component = () => {
                 </p>
             </section>
 
+            {/* Node tool */}
+            <section class="doc-section">
+                <h2>Editing Nodes</h2>
+                <p>
+                    Open <strong>Vector Tools → Path → Nodes</strong> to edit a path's points directly. Every
+                    anchor appears on the selected path: <strong>squares are corners, circles are smooth
+                    nodes</strong>, so you can read a path's shape at a glance.
+                </p>
+                <p>
+                    Selected a rectangle or an ellipse instead of a path? The bar offers
+                    <strong> Convert to Path</strong> — one click and it becomes curve-editable.
+                </p>
+
+                <h3>Selecting nodes</h3>
+                <p>
+                    Click a node to select it, <span class="kbd">Shift</span>-click to add or remove one, or
+                    <strong> drag a box</strong> across the canvas to rubber-band several at once.
+                    <span class="kbd">Ctrl</span>+<span class="kbd">A</span> selects them all;
+                    <span class="kbd">Esc</span> clears the selection, and pressing it again leaves the mode.
+                </p>
+
+                <h3>Editing</h3>
+                <table class="api-table">
+                    <thead><tr><th>Do this</th><th>Get that</th></tr></thead>
+                    <tbody>
+                        <tr><td>Drag any selected node</td><td>moves <em>every</em> selected node together</td></tr>
+                        <tr><td><strong>Corner</strong> / <strong>Smooth</strong></td><td>changes the node type across the whole selection</td></tr>
+                        <tr><td><strong>Delete</strong> (or <span class="kbd">Del</span>)</td><td>removes every selected node</td></tr>
+                        <tr><td><span class="kbd">Alt</span>-click a segment</td><td>inserts a node at that point</td></tr>
+                        <tr><td>Drag a segment between two nodes</td><td>bends it into a curve</td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    Turning a rectangle into a curvy blob is: Convert to Path → <span class="kbd">Ctrl</span>+
+                    <span class="kbd">A</span> → <strong>Smooth</strong>. A path is never reduced below two
+                    nodes, so Delete can't leave you with nothing.
+                </p>
+                <p>
+                    A whole multi-node drag is a single undo step. <strong>Nodes</strong> sits alongside
+                    <em> Curvature</em> (draw a curve through points you click) and <em>Reshape</em> (bend a
+                    path without touching individual nodes) — three different jobs.
+                </p>
+            </section>
+
             {/* Fill mode */}
             <section class="doc-section">
                 <h2>Fill Mode</h2>

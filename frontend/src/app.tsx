@@ -21,6 +21,7 @@ import Canvas from './components/canvas';
 import { RulerOverlay } from './components/ruler-overlay';
 import { RepeatDialog } from './components/repeat-dialog';
 import { SymmetryOverlay } from './components/symmetry-overlay';
+import { NodeToolOverlay } from './components/node-tool-overlay';
 import { MeshOverlay } from './components/mesh-overlay';
 import { ArtboardOverlay } from './components/artboard-overlay';
 import { MeasureOverlay } from './components/measure-overlay';
@@ -1417,6 +1418,7 @@ const App: Component = () => {
         <CropBar />
         <RepeatDialog />
         <SymmetryOverlay />
+        <NodeToolOverlay />
         <MeshOverlay />
         <ArtboardOverlay />
         <MeasureOverlay />

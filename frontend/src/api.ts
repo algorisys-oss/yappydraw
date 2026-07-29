@@ -25,7 +25,7 @@ import {
     setBlueprint, toggleBlueprint, blueprintFor,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -37,6 +37,10 @@ import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/
 import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
 import { toExcalidraw, fromExcalidraw } from "./utils/excalidraw-io";
+import {
+    setNodeSelection, allNodesOfSelection, selectedPathNodes,
+    moveSelectedNodes, setSelectedNodesKind, deleteSelectedNodes,
+} from "./utils/node-editing";
 import { PAGE_SIZE_PRESETS, getPagePreset } from "./config/page-size-presets";
 import { CANVAS_THEMES } from "./config/canvas-themes";
 import { magicResize } from "./utils/magic-resize";
@@ -3737,6 +3741,21 @@ export const YappyAPI = {
     createCurvature(points: { x: number; y: number }[], closed = false) { return commitCurvature(points, closed); },
     /** Reshape tool — drag a path to bend it while pinning the endpoints. */
     toggleReshapeTool(active?: boolean) { toggleReshapeTool(active); },
+    // ── Node tool (Vector Tools → Path → Nodes) ──
+    /** Show every anchor of the selected path(s) and edit them directly. */
+    toggleNodeTool(active?: boolean) { toggleNodeTool(active); },
+    /** Replace the anchor selection. Refs are `{ id, sub, i }`. */
+    setNodeSelection(refs: { id: string; sub: number; i: number }[]) { setNodeSelection(refs); },
+    /** Every anchor of every path in the current element selection. */
+    allNodesOfSelection() { return allNodesOfSelection(); },
+    /** The selected paths' anchors in world space — `{ ref, x, y, kind }`. */
+    getPathNodes() { return selectedPathNodes(); },
+    /** Move every selected anchor by the same delta (element-origin units). */
+    moveSelectedNodes(dx: number, dy: number) { return moveSelectedNodes(dx, dy, true); },
+    /** Make every selected anchor a corner or a smooth node. */
+    setSelectedNodesKind(kind: 'corner' | 'smooth') { return setSelectedNodesKind(kind); },
+    /** Delete every selected anchor (a subpath is never taken below 2). */
+    deleteSelectedNodes() { return deleteSelectedNodes(); },
     /** Blob brush — paint filled strokes that union into one shape. */
     toggleBlobBrush(active?: boolean) { toggleBlobBrush(active); },
     /** Commit a blob stroke from world points (radius = half-thickness); merges same-colour overlaps. */

@@ -4,15 +4,13 @@ import {
     toggleShapeBuilder, toggleLivePaint, toggleCutTool, toggleWidthTool, toggleCurveTool,
     toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid,
     toggleSymbolSprayer, toggleSymbolism, toggleSliceTool, selectSimilar,
-    setTextVertical, toggleTouchType, toggleTypeOnPath, applyDistort, exitAllToolModes,
-} from '../store/app-store';
+    setTextVertical, toggleTouchType, toggleTypeOnPath, applyDistort, exitAllToolModes, toggleNodeTool,} from '../store/app-store';
 import { YappyAPI } from '../api';
 import {
     Combine, PaintBucket, Spline, Waypoints, Scissors, PenLine, Brush, Eraser,
     Frame, Grid3x3, SprayCan, Sparkles, Crop, Wand2,
     Type, AlignVerticalJustifyCenter, TextCursor, Tornado, Grid2x2, Target, Sun, Waves, PlusCircle,
-    Grip, CloudDrizzle,
-} from 'lucide-solid';
+    Grip, CloudDrizzle, Move3d} from 'lucide-solid';
 import './vector-tools-panel.css';
 
 /**
@@ -52,8 +50,9 @@ const VectorToolsPanel: Component = () => {
         },
         {
             name: 'Path', tools: [
+                { label: 'Nodes', icon: Waypoints, active: () => store.nodeToolActive, run: modeRun(() => store.nodeToolActive, () => toggleNodeTool(true)) },
                 { label: 'Curvature', icon: Spline, active: () => store.curveToolActive, run: modeRun(() => store.curveToolActive, () => toggleCurveTool(true)) },
-                { label: 'Reshape', icon: Waypoints, active: () => store.reshapeToolActive, run: modeRun(() => store.reshapeToolActive, () => toggleReshapeTool(true)) },
+                { label: 'Reshape', icon: Move3d, active: () => store.reshapeToolActive, run: modeRun(() => store.reshapeToolActive, () => toggleReshapeTool(true)) },
                 { label: 'Knife / Scissors', icon: Scissors, active: () => store.cutToolActive, run: modeRun(() => store.cutToolActive, () => toggleCutTool(true)) },
                 { label: 'Width', icon: PenLine, active: () => store.widthToolActive, run: modeRun(() => store.widthToolActive, () => toggleWidthTool(true)) },
             ],

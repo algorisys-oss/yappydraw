@@ -55,6 +55,9 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
         shortcuts: [
             { label: 'Undo', keys: 'Ctrl+Z' },
             { label: 'Redo', keys: 'Ctrl+Y' },
+            { label: 'Node tool: select all nodes', keys: 'Ctrl+A' },
+            { label: 'Node tool: delete selected nodes', keys: 'Del' },
+            { label: 'Node tool: add a node on a segment', keys: 'Alt+Click' },
             { label: 'Draw a Square / Perfect Circle (hold while drawing)', keys: 'Shift+Drag' },
             { label: 'Snap a Line / Arrow to 15° (hold while drawing)', keys: 'Shift+Drag' },
             { label: 'Edit Text in Shape', keys: 'Double-click' },

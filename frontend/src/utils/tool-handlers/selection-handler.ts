@@ -1731,10 +1731,10 @@ function handlePolypointDrag(
 // ── Compound-path editing helpers (work for both legacy single-subpath paths and
 //    multi-subpath compound paths). Anchors are addressed by (subpath, index). ──
 
-type EditSub = { anchors: any[]; closed: boolean };
+export type EditSub = { anchors: any[]; closed: boolean };
 
 /** Deep-copy a path's subpaths for editing. Legacy `pathAnchors` → one subpath. */
-function editableSubpaths(el: DrawingElement): EditSub[] {
+export function editableSubpaths(el: DrawingElement): EditSub[] {
     if (el.pathSubpaths && el.pathSubpaths.length) {
         return el.pathSubpaths.map(sp => ({ closed: sp.closed, anchors: sp.anchors.map(a => ({ ...a })) }));
     }
@@ -1750,7 +1750,7 @@ function editableSubpaths(el: DrawingElement): EditSub[] {
  * positions stay invariant. Writes `pathSubpaths` when >1 subpath remains, else collapses
  * to the node-editable legacy `pathAnchors`/`pathClosed`.
  */
-function writeEditableSubpaths(id: string, baseX: number, baseY: number, subs: EditSub[]): void {
+export function writeEditableSubpaths(id: string, baseX: number, baseY: number, subs: EditSub[]): void {
     const kept = subs.filter(sp => sp.anchors.length >= 2);
     if (kept.length === 0) return;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
