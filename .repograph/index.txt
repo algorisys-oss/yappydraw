@@ -207,7 +207,7 @@ frontend/src/components/new-game-dialog.css | - | 55 |
 frontend/src/components/new-game-dialog.tsx | typescript | 100 | Component:11 Choice:23 slingshotScript:25 flappyScript:26 loadCodeGame:27 NewGameDialog:50 pick:53
 frontend/src/components/new-game-signal.ts | typescript | 4 |
 frontend/src/components/node-tool-overlay.css | - | 110 |
-frontend/src/components/node-tool-overlay.tsx | typescript | 228 | NodeRef:8 NodeToolOverlay:26 active:33 toWorld:34 toScreen:35 nodeAt:45 onDown:55 onMove:94 onUp:124 onKey:131 count:163 p:170 sel:171 hot:172
+frontend/src/components/node-tool-overlay.tsx | typescript | 245 | NodeRef:8 NodeToolOverlay:26 active:33 toWorld:34 toScreen:35 nodeAt:45 onDown:55 onMove:94 onUp:124 onKey:131 count:180 p:187 sel:188 hot:189
 frontend/src/components/onboarding-tour.css | - | 158 |
 frontend/src/components/onboarding-tour.tsx | typescript | 254 | Component:13 TourStep:19 startTour:79 markTourSeen:90 endTour:95 hasSeenTour:100 maybeAutoStartTour:114 OnboardingTour:129 step:133 total:134 isLast:135 isFirst:136 next:138 prev:139 skip:140 clampToViewport:142 updatePosition:147 onResize:179 onKey:180
 frontend/src/components/p3-color-picker.tsx | typescript | 351 | Component:1 setPalettePinned:15 ColorPalettePicker:20 activePalette:25 applyAsset:27 onSwatchPointerDown:82 onSwatchPointerMove:87 onSwatchPointerUp:99 handleDragStart:110
@@ -332,7 +332,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 347 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 350 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -893,7 +893,7 @@ tests/mindmap-inherit.spec.ts | typescript | 78 |
 tests/mono-logo.spec.ts | typescript | 256 | two:5 sleep:66 setCur:79 ease:80 moveToClient:81 moveTo:82 clickFx:83 findBtn:84 cue:94 ensureTool:103 estW:104 realW:107 centre:108 panel:111 line:112 the:126 mk:132 tline:218
 tests/mp4-record-check.spec.ts | typescript | 33 |
 tests/next-batch.spec.ts | typescript | 75 |
-tests/node-tool.spec.ts | typescript | 220 | boot:13 armRectPath:26 nodes:37 kinds:137
+tests/node-tool.spec.ts | typescript | 272 | boot:13 armRectPath:26 nodes:37 kinds:137
 tests/offline-check.spec.ts | typescript | 87 | Window:6
 tests/onboarding-tour.spec.ts | typescript | 37 |
 tests/outline-artboards-batch4.spec.ts | typescript | 81 | countFill:51

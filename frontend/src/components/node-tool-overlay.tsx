@@ -130,6 +130,17 @@ export const NodeToolOverlay = () => {
         window.addEventListener('pointercancel', onUp);
         const onKey = (e: KeyboardEvent) => {
             if (!store.nodeToolActive) return;
+            // Same exemption the global hotkey handler uses: focus inside a field, a
+            // font picker or any dialog means the keys belong to that widget. This is a
+            // CAPTURE-phase listener, so without the check it would steal Ctrl+A and
+            // Backspace from every text input on the page while the mode is on.
+            const t = e.target as HTMLElement | null;
+            if (t && (
+                t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' ||
+                t.isContentEditable ||
+                !!t.closest?.('.fp-trigger, .fp-popup, .gf-modal, [role="dialog"]')
+            )) return;
+
             if (e.key === 'Escape') {
                 e.preventDefault();
                 // Esc clears a node selection first, and only then leaves the mode.
@@ -140,8 +151,14 @@ export const NodeToolOverlay = () => {
                 e.stopPropagation(); // don't let the canvas delete the whole element
                 deleteSelectedNodes();
             } else if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+                // Ctrl+A means "all NODES of the selected path" here, as it does in
+                // Inkscape's node tool. With no path selected there are no nodes to
+                // take, so fall through and let it select all elements as usual.
+                const all = allNodesOfSelection();
+                if (all.length === 0) return;
                 e.preventDefault();
-                setNodeSelection(allNodesOfSelection());
+                e.stopPropagation();
+                setNodeSelection(all);
             }
         };
         window.addEventListener('keydown', onKey, true);

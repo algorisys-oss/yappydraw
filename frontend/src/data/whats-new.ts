@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.160', date: '2026-07-30', items: [
+        'Fixed: with the Node tool open, Ctrl+A and Backspace were being grabbed even while you were typing in a text box or a dialog. They now leave your typing alone, and Ctrl+A goes back to selecting all objects when you have no path selected.',
+    ] },
     { version: '0.8.159', date: '2026-07-29', items: [
         'There is a proper Node tool now — Vector Tools → Path → Nodes. Every point on a path shows up so you can see and grab it: squares are corners, circles are smooth. Yappy could always edit paths, but it was hidden behind Alt-click and Ctrl-click with nothing telling you so.',
         'You can work on several points at once. Click, Shift-click, or drag a box around a few of them, then move them all together, make them all corners or all smooth, or delete them in one go. Before, everything worked on a single point at a time.',
