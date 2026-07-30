@@ -13,6 +13,14 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.163', date: '2026-07-30', items: [
+        'A symbol can now contain itself, and Yappy draws the nesting — a picture inside the picture inside the picture. Edit a symbol in place, drop another copy of the same symbol inside it, scale and rotate that copy, and press Done: nudge it for a receding corridor, shrink and turn it for a spiral, or put two inside for a branching tree. Use the ⟳ button on the symbol card to turn it on or off and to set how many levels deep to go.',
+        'Fixed: the symmetry axis was drawn in the wrong place. Your strokes were always mirroring correctly — the dashed line was sitting about 46 pixels to the left of the line they were actually mirroring about, which made symmetry look like it was ignoring the axis. Dragging the axis to a new spot was off by the same amount. Artboard frames and the rulers and guides were all shifted the same way, and are now exact.',
+        'Fixed: the ruler down the left edge was the wrong shape and mostly cut off.',
+        'Fill mode now shows the fill while you are still drawing, instead of switching to it the moment you lift the pen. With symmetry on, every mirrored copy fills as you go too, so you can judge the shape you are making.',
+        'The button at the top of the toolbar now moves the toolbar: click it to step through left edge, top, right edge, bottom, then floating. It used to do nothing at all.',
+        'Fixed: the symmetry and Fill buttons became invisible when you pointed at whichever one was switched on.',
+    ] },
     { version: '0.8.162', date: '2026-07-29', items: [
         'The Properties panel is now a proper dockable panel like Layers or History. Drag its title bar to the left or right edge to dock it there, drop it anywhere else to float it, drag the edge to resize, or collapse it to just its title — and it comes back the way you left it next time.',
         'Settings is no longer one long scroll. Pick a category on the left — General, Pen & Input, Defaults, Mindmap, Time-lapse, Cloud Storage — or just type in the new search box, which looks across all of them at once.',

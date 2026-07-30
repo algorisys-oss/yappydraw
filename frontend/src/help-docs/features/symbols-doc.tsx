@@ -102,6 +102,59 @@ Y.placeInstance(symId, 420, 100);`}</code></pre>
                 </p>
             </section>
 
+            {/* ─── RECURSIVE SYMBOLS ──────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Recursive symbols (Droste &amp; spirals)</h2>
+                <p>
+                    A symbol may contain an instance of <em>itself</em>. Because every instance is drawn from the master,
+                    that one nested copy repeats — a picture inside the picture inside the picture. The transform you give
+                    the nested instance is what you see repeated: nudge it and you get a receding corridor; shrink and
+                    rotate it and you get a logarithmic spiral; place two and you get a branching fractal tree.
+                </p>
+                <p>
+                    Build one by <strong>editing the symbol in place</strong> (double-click an instance), then placing
+                    another instance of the same symbol inside — position, scale and rotate it, and press <em>Done</em>.
+                    Recursive drawing switches on automatically, and the card in the <strong>Symbols</strong> panel gets a
+                    <strong> ⟳</strong> badge with a <strong>Depth</strong> field.
+                </p>
+                <p>
+                    Recursion is <strong>off by default</strong>. Without it, a symbol reached inside itself draws the grey
+                    “cyclic” placeholder — the safe behaviour every older document was authored against. Use the
+                    <strong> ⟳</strong> button on the symbol card to turn it on or off; the button only appears on symbols
+                    that actually contain themselves.
+                </p>
+                <p class="tip-box">
+                    <strong>Where it stops.</strong> Three limits, whichever comes first: <strong>Depth</strong> (levels of
+                    nesting, default 64), a level that has become <strong>smaller than a pixel</strong> on screen, and an
+                    internal cap on total nested draws per object. The sub-pixel rule is the one that usually ends a
+                    shrinking spiral, and it is scale-aware — zoom in and more levels appear on their own. A symbol that
+                    contains <em>two</em> copies of itself doubles the work at every level, so it will hit the draw cap and
+                    stop drawing its smallest twigs; keep the nested copy small if you want depth.
+                </p>
+                <p class="tip-box">
+                    <strong>Known limitations.</strong> <em>Detach</em> (and saving to the asset library, which has to
+                    flatten) expands nesting only 8 levels deep — a detached spiral will be shorter than the one you see
+                    on canvas. Keep the symbol linked if the full depth matters. <em>Export to HTML</em> uses a
+                    separately-built player, which draws the nested level as the grey placeholder until that player is
+                    rebuilt. PNG export (and the canvas itself) shows the full nesting.
+                </p>
+                <pre><code>{`const Y = window.Yappy; Y.clear();
+
+// a box, made into a symbol
+const box = Y.createRectangle(100, 100, 200, 200, { backgroundColor: '#2563eb', fillStyle: 'solid' });
+const sym = Y.createSymbol('Droste', [box]);
+
+// a smaller, rotated instance of the SAME symbol + a frame become the new master
+const inner = Y.placeInstance(sym, 130, 130);
+Y.updateElement(inner, { width: 150, height: 150, angle: 0.12 });
+const frame = Y.createRectangle(100, 100, 200, 200, { backgroundColor: 'transparent' });
+Y.redefineSymbol(sym, [inner, frame]);
+
+Y.symbolSelfReferences(sym);        // true
+Y.setSymbolRecursive(sym, true, 40); // draw the nesting, at most 40 levels
+Y.setSymbolRecursive(sym);           // omit the flag to toggle it back off`}</code></pre>
+            </section>
+
             {/* ─── ASSET LIBRARY ──────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Asset library (reuse across documents)</h2>

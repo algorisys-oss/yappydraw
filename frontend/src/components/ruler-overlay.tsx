@@ -1,5 +1,9 @@
-import { createEffect, createSignal, For, onCleanup, onMount } from 'solid-js';
+import { createEffect, For, onCleanup, onMount } from 'solid-js';
 import { store, addGuide, updateGuide, removeGuide } from '../store/app-store';
+import {
+    canvasOrigin, canvasSize,
+    worldToWindowAxisX, worldToWindowAxisY, windowToWorldAxisX, windowToWorldAxisY,
+} from '../utils/overlay-transform';
 
 // Thickness of each ruler strip in CSS pixels.
 export const RULER_SIZE = 22;
@@ -31,7 +35,9 @@ export const RulerOverlay = () => {
     let hRef: HTMLCanvasElement | undefined;
     let vRef: HTMLCanvasElement | undefined;
 
-    const [size, setSize] = createSignal({ w: window.innerWidth, h: window.innerHeight });
+    // The strips span the CANVAS, not the window — a ruler that measures the canvas has to start
+    // where the canvas starts, or its zero is somewhere under the toolbar.
+    const size = () => { const s = canvasSize(); return { w: s.w, h: s.h }; };
     let drag: DragState | null = null;
 
     const theme = () => (store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus' ? 'dark' : 'light');
@@ -39,21 +45,28 @@ export const RulerOverlay = () => {
         ? { bg: '#23262b', border: '#3a3f47', tick: '#5b6672', text: '#9aa0a8' }
         : { bg: '#f6f7f9', border: '#d7dbe0', tick: '#b3b9c0', text: '#6b7280' };
 
-    // World coordinate ⇄ screen (canvas-local) px. The drawing canvas fills the
-    // viewport (origin 0,0), so screen px ≈ clientX/Y; rotation is ignored —
-    // rulers read the un-rotated axis-aligned grid.
-    const worldToScreenX = (wx: number) => wx * store.viewState.scale + store.viewState.panX;
-    const worldToScreenY = (wy: number) => wy * store.viewState.scale + store.viewState.panY;
-    const screenToWorldX = (sx: number) => (sx - store.viewState.panX) / store.viewState.scale;
-    const screenToWorldY = (sy: number) => (sy - store.viewState.panY) / store.viewState.scale;
+    // World ⇄ WINDOW px. The old comment here said "the drawing canvas fills the viewport
+    // (origin 0,0), so screen px ≈ clientX/Y" — true once, but the shell's docked toolbar and top
+    // bar moved the canvas origin, which put every tick, label and guide 46px/52px off the
+    // geometry it measures. Axis-aligned on purpose: rulers read the un-rotated grid.
+    const worldToScreenX = (wx: number) => worldToWindowAxisX(wx);
+    const worldToScreenY = (wy: number) => worldToWindowAxisY(wy);
+    const screenToWorldX = (sx: number) => windowToWorldAxisX(sx);
+    const screenToWorldY = (sy: number) => windowToWorldAxisY(sy);
 
     const drawRuler = (canvas: HTMLCanvasElement, horizontal: boolean) => {
         const dpr = window.devicePixelRatio || 1;
         const lengthCss = horizontal ? size().w : size().h;
-        canvas.width = Math.max(1, Math.round(lengthCss * dpr));
-        canvas.height = Math.max(1, Math.round(RULER_SIZE * dpr));
-        canvas.style.width = `${lengthCss}px`;
-        canvas.style.height = `${RULER_SIZE}px`;
+        // The box has to be oriented, not just the drawing. This used to set
+        // `width = lengthCss; height = RULER_SIZE` for BOTH strips, so the vertical ruler was
+        // laid out as a long horizontal bar: it painted its 22×N content into an N×22 bitmap,
+        // and everything below the first 22px was clipped away.
+        const wCss = horizontal ? lengthCss : RULER_SIZE;
+        const hCss = horizontal ? RULER_SIZE : lengthCss;
+        canvas.width = Math.max(1, Math.round(wCss * dpr));
+        canvas.height = Math.max(1, Math.round(hCss * dpr));
+        canvas.style.width = `${wCss}px`;
+        canvas.style.height = `${hCss}px`;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
@@ -62,7 +75,7 @@ export const RulerOverlay = () => {
         const p = palette();
         const { scale } = store.viewState;
 
-        ctx.clearRect(0, 0, lengthCss, RULER_SIZE);
+        ctx.clearRect(0, 0, wCss, hCss);
         ctx.fillStyle = p.bg;
         ctx.fillRect(0, 0, horizontal ? lengthCss : RULER_SIZE, horizontal ? RULER_SIZE : lengthCss);
 
@@ -136,7 +149,9 @@ export const RulerOverlay = () => {
         const d = drag;
         drag = null;
         // Released back onto the originating ruler strip → cancel/delete.
-        const onRuler = d.axis === 'h' ? e.clientY < RULER_SIZE : e.clientX < RULER_SIZE;
+        // The strips sit at the canvas origin, so "back onto the ruler" is measured from there.
+        const o = canvasOrigin();
+        const onRuler = d.axis === 'h' ? e.clientY - o.y < RULER_SIZE : e.clientX - o.x < RULER_SIZE;
         if (onRuler) removeGuide(d.id);
     };
 
@@ -154,13 +169,12 @@ export const RulerOverlay = () => {
     };
 
     onMount(() => {
-        const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight });
-        window.addEventListener('resize', onResize);
+        // No resize listener here: `size()` derives from canvasSize(), which is driven by the
+        // shared tick in overlay-transform, so a resize redraws through the effect below.
         window.addEventListener('pointermove', onWindowPointerMove);
         window.addEventListener('pointerup', onWindowPointerUp);
         window.addEventListener('pointercancel', onWindowPointerUp);
         onCleanup(() => {
-            window.removeEventListener('resize', onResize);
             window.removeEventListener('pointermove', onWindowPointerMove);
             window.removeEventListener('pointerup', onWindowPointerUp);
             window.removeEventListener('pointercancel', onWindowPointerUp);
@@ -182,12 +196,16 @@ export const RulerOverlay = () => {
                                 onPointerDown={(e) => startMove(g.id, g.axis, e)}
                                 onDblClick={(e) => { e.stopPropagation(); removeGuide(g.id); }}
                                 style={g.axis === 'h' ? {
-                                    position: 'fixed', left: `${RULER_SIZE}px`, right: '0',
+                                    position: 'fixed',
+                                    left: `${canvasOrigin().x + RULER_SIZE}px`,
+                                    width: `${Math.max(0, size().w - RULER_SIZE)}px`,
                                     top: `${screen() - 3}px`, height: '7px',
                                     cursor: 'row-resize', 'pointer-events': 'auto',
                                     display: 'flex', 'align-items': 'center',
                                 } : {
-                                    position: 'fixed', top: `${RULER_SIZE}px`, bottom: '0',
+                                    position: 'fixed',
+                                    top: `${canvasOrigin().y + RULER_SIZE}px`,
+                                    height: `${Math.max(0, size().h - RULER_SIZE)}px`,
                                     left: `${screen() - 3}px`, width: '7px',
                                     cursor: 'col-resize', 'pointer-events': 'auto',
                                     display: 'flex', 'justify-content': 'center',
@@ -203,12 +221,12 @@ export const RulerOverlay = () => {
                 </For>
             </div>
 
-            {/* Top (horizontal) ruler */}
+            {/* Top (horizontal) ruler — anchored to the canvas, not the window. */}
             <canvas
                 ref={hRef}
                 onPointerDown={(e) => startCreate('h', e)}
                 style={{
-                    position: 'fixed', top: '0', left: '0',
+                    position: 'fixed', top: `${canvasOrigin().y}px`, left: `${canvasOrigin().x}px`,
                     'z-index': 39, cursor: 'row-resize', 'touch-action': 'none',
                 }}
             />
@@ -217,13 +235,13 @@ export const RulerOverlay = () => {
                 ref={vRef}
                 onPointerDown={(e) => startCreate('v', e)}
                 style={{
-                    position: 'fixed', top: '0', left: '0',
+                    position: 'fixed', top: `${canvasOrigin().y}px`, left: `${canvasOrigin().x}px`,
                     'z-index': 39, cursor: 'col-resize', 'touch-action': 'none',
                 }}
             />
             {/* Corner box */}
             <div style={{
-                position: 'fixed', top: '0', left: '0',
+                position: 'fixed', top: `${canvasOrigin().y}px`, left: `${canvasOrigin().x}px`,
                 width: `${RULER_SIZE}px`, height: `${RULER_SIZE}px`,
                 background: palette().bg,
                 'border-right': `1px solid ${palette().border}`,

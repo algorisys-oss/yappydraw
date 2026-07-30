@@ -18,6 +18,16 @@
     transition: box-shadow 0.2s, background 0.2s;
 }
 
+/* Floating only: clear the shell header. The 12px above predates `.shell-topbar`, which is
+   52px tall at z-index 10050 — above this bar's 10002 — so a floating toolbar anchored at 12px
+   is painted over by the header AND has its clicks eaten by the header's buttons. `--dock-top`
+   rather than `--topbar-h` because it is 0 in Zen/Presentation, where there is no header to
+   clear. Scoped to :not(.docked) so the four docked edges, which set their own top/bottom,
+   are untouched. */
+.toolbar-container:not(.docked) {
+    top: calc(12px + var(--dock-top, 0px));
+}
+
 .toolbar-container.dragging {
     cursor: grabbing;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);

@@ -157,6 +157,18 @@ export function drawOnDown(
         newElement.presentationDrawn = true;
     }
 
+    // Fill mode (Alchemy-style) is decided HERE, not on release. It used to be stamped on in
+    // endDrawing, so the whole stroke was drawn as a line and only snapped to a filled
+    // silhouette after you let go — and with symmetry on, every mirrored copy snapped at the
+    // same moment, so the mark you were composing was never the mark you got. Setting it up
+    // front makes the live stroke render filled from the first move, and the live symmetry
+    // copies inherit it for free (they are spread from the source element on every sync).
+    if (store.globalSettings.fillShapeMode && FREEHAND_TOOLS.includes(tool)) {
+        newElement.fillSilhouette = true;
+        newElement.backgroundColor = newElement.strokeColor;
+        newElement.fillStyle = 'solid';
+    }
+
     // Apply specific defaults for Sticky Note
     if (actualType === 'stickyNote') {
         newElement.backgroundColor = '#fef08a';
@@ -606,8 +618,9 @@ export function drawOnUp(
             }
         }
 
-        // Fill mode (Alchemy-style): a freehand stroke commits as a filled silhouette
-        // in its own colour. Applied before the symmetry sync so the copies inherit it.
+        // Fill mode is now set up in startDrawing so it previews live; this stays as a
+        // fallback for freehand elements that reach here without going through that path,
+        // and to re-derive the fill from the FINAL stroke colour if it changed mid-stroke.
         if (store.globalSettings.fillShapeMode
             && ['fineliner', 'inkbrush', 'marker'].includes(el.type)) {
             const filled = store.elements.find(e => e.id === pState.currentId);

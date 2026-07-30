@@ -25,7 +25,23 @@ export type ElementType = 'rectangle' | 'circle' | 'line' | 'arrow' | 'text' | '
  *  `kind` absent = 'graphic' (a static symbol, the original behavior). A 'movieclip'
  *  carries its own frame `timeline` (Animation mode) whose keyframes reference ids
  *  inside `elements`; instances play it independently of the document timeline. */
-export interface SymbolDef { id: string; name: string; width: number; height: number; elements: DrawingElement[]; kind?: 'graphic' | 'movieclip'; timeline?: import('./types/anim-types').AnimTimeline; }
+export interface SymbolDef {
+    id: string; name: string; width: number; height: number; elements: DrawingElement[];
+    kind?: 'graphic' | 'movieclip';
+    timeline?: import('./types/anim-types').AnimTimeline;
+    /**
+     * Opt in to RECURSIVE rendering: the definition may contain an instance of itself, and the
+     * renderer draws that nesting instead of bailing out. Each level re-applies the same
+     * transform the nested instance carries, so composing it N times traces an iterated
+     * function system — translate alone gives a receding chain, translate+rotate+scale gives a
+     * logarithmic spiral. Off by default: without it a self-referencing symbol renders as the
+     * grey "cyclic" placeholder, which is the safe behaviour every existing document expects.
+     */
+    recursive?: boolean;
+    /** Hard cap on nesting levels. The renderer also stops once a level is sub-pixel, which is
+     *  usually what ends it first; this bounds the non-contracting case (scale >= 1). */
+    recursionDepth?: number;
+}
 
 /** A named rectangular export region on the infinite canvas. */
 export interface Artboard { id: string; name: string; x: number; y: number; width: number; height: number; background?: string; }

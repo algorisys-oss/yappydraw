@@ -276,15 +276,21 @@ export const LogoToolkitDoc: Component = () => {
             <section class="doc-section">
                 <h2>Fill Mode</h2>
                 <p>
-                    The <strong>paint-bucket button in the footer</strong> toggles fill mode. With it on, a
-                    freehand stroke (Pencil, Ink Brush, Marker) commits as a <strong>solid filled
-                    silhouette</strong> in its own colour instead of a line — the Alchemy-style way of blocking
-                    in shapes fast, where you scribble a rough outline and get a filled mass.
+                    The <strong>paint-bucket button in the footer</strong> toggles fill mode (also on the tool
+                    options bar as <strong>Fill</strong>). With it on, a freehand stroke (Pencil, Ink Brush,
+                    Marker) draws as a <strong>solid filled silhouette</strong> in its own colour instead of a
+                    line — the Alchemy-style way of blocking in shapes fast, where you scribble a rough outline
+                    and get a filled mass.
+                </p>
+                <p>
+                    The fill appears <strong>as you draw</strong>, not when you let go: the silhouette closes
+                    itself across the gap between where you started and where the pointer is now, so you can see
+                    the mass you are making and adjust mid-stroke. With symmetry on, every mirrored copy fills
+                    live too — the quick route to a symmetrical silhouette or a mandala of solid petals.
                 </p>
                 <p>
                     The stroke is still drawn on top of the fill, so thin necks and the brush's taper stay
-                    readable. It combines with symmetry: every mirrored copy is filled too, which is the quick
-                    route to a symmetrical silhouette or a mandala of solid petals.
+                    readable.
                 </p>
                 <p>
                     The setting persists across sessions and is saved with the document, alongside the

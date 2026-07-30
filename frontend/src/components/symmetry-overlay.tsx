@@ -1,6 +1,7 @@
 import { onMount, onCleanup, Show, For, createMemo } from 'solid-js';
 import { store, setSymmetryCenter } from '../store/app-store';
 import { symmetryAxisAngles } from '../utils/symmetry';
+import { worldToWindow, windowToWorld } from '../utils/overlay-transform';
 
 /**
  * Symmetry overlay — the mirror / quadrant / mandala axes you draw against,
@@ -13,14 +14,13 @@ import { symmetryAxisAngles } from '../utils/symmetry';
 export const SymmetryOverlay = () => {
     let dragging = false;
 
-    const worldToScreenX = (wx: number) => wx * store.viewState.scale + store.viewState.panX;
-    const worldToScreenY = (wy: number) => wy * store.viewState.scale + store.viewState.panY;
-    const screenToWorldX = (sx: number) => (sx - store.viewState.panX) / store.viewState.scale;
-    const screenToWorldY = (sy: number) => (sy - store.viewState.panY) / store.viewState.scale;
-
+    // World↔window via the shared overlay transform: this layer is window-fixed, while
+    // `viewport-transforms` speaks canvas-local px. See utils/overlay-transform.ts — getting that
+    // offset wrong is what drew the axis 46px left of the line strokes actually mirrored about.
     const onMove = (e: PointerEvent) => {
         if (!dragging) return;
-        setSymmetryCenter(screenToWorldX(e.clientX), screenToWorldY(e.clientY));
+        const w = windowToWorld(e.clientX, e.clientY);
+        setSymmetryCenter(w.x, w.y);
     };
     const onUp = () => { dragging = false; };
 
@@ -38,8 +38,8 @@ export const SymmetryOverlay = () => {
     const color = '#b14cff';
     const active = () => store.symmetry.mode !== 'off';
 
-    const cx = () => worldToScreenX(store.symmetry.cx);
-    const cy = () => worldToScreenY(store.symmetry.cy);
+    const cx = () => worldToWindow(store.symmetry.cx, store.symmetry.cy).x;
+    const cy = () => worldToWindow(store.symmetry.cx, store.symmetry.cy).y;
 
     /** Axis angles to draw (world and screen share orientation, so no conversion). */
     const angles = createMemo(() =>
@@ -82,6 +82,10 @@ export const SymmetryOverlay = () => {
                             top: `${cy() - 9}px`,
                             width: '18px',
                             height: '18px',
+                            // Without border-box the 2px border sits OUTSIDE the 18px, making the
+                            // handle 22px wide — so its visual centre landed 2px off the axis it
+                            // is supposed to mark (and drags started from 2px off).
+                            'box-sizing': 'border-box',
                             'border-radius': '50%',
                             background: color,
                             border: '2px solid #fff',

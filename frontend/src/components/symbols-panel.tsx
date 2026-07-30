@@ -2,7 +2,7 @@ import { type Component, For, Show, createSignal, onMount, createEffect } from '
 import {
     store, placeInstance, renameSymbol, deleteSymbol,
     redefineSymbol, createSymbol, selectInstancesOf, toggleSymbolSprayer,
-    saveSelectionToAssetLibrary,
+    saveSelectionToAssetLibrary, setSymbolRecursive, symbolSelfReferences,
 } from '../store/app-store';
 import { renderElement } from '../utils/render-element';
 import { screenToWorld } from '../utils/viewport-transforms';
@@ -11,10 +11,12 @@ import { listAssets, getAssetElements, renameAsset, deleteAsset, type AssetMeta 
 import { showToast } from './toast';
 import rough from 'roughjs';
 import type { SymbolDef } from '../types';
-import { Plus, Trash2, RefreshCw, SprayCan, Film, Library, Download } from 'lucide-solid';
+import { Plus, Trash2, RefreshCw, SprayCan, Film, Library, Download, Repeat } from 'lucide-solid';
 import './symbols-panel.css';
 
 const THUMB = 56; // px
+/** Mirrors MAX_RECURSION_DEPTH in symbol-instance-renderer — the depth used when unset. */
+const DEFAULT_RECURSION_DEPTH = 64;
 
 /** Count live instances of a symbol on the canvas. */
 const instanceCount = (symbolId: string) =>
@@ -260,6 +262,9 @@ const SymbolsPanel: Component = () => {
                                             <Show when={sym.kind === 'movieclip'}>
                                                 <span class="sp-kind" title="Movie clip — has its own frame timeline"><Film size={11} /></span>
                                             </Show>
+                                            <Show when={sym.recursive}>
+                                                <span class="sp-recur-badge" title="Recursive — draws its own nested instances"><Repeat size={11} /></span>
+                                            </Show>
                                         </div>
                                         <Show
                                             when={editingId() === sym.id}
@@ -296,10 +301,40 @@ const SymbolsPanel: Component = () => {
                                             >
                                                 <RefreshCw size={13} />
                                             </button>
+                                            {/* Only offered where it can do something: a symbol that doesn't
+                                                contain itself has no nesting to draw either way. */}
+                                            <Show when={symbolSelfReferences(sym.id)}>
+                                                <button
+                                                    class="sp-act sp-recur"
+                                                    classList={{ 'sp-on': !!sym.recursive }}
+                                                    title={sym.recursive
+                                                        ? 'Recursive nesting is ON — click to draw the cyclic placeholder instead'
+                                                        : 'Draw this symbol inside itself (Droste / spiral) instead of the cyclic placeholder'}
+                                                    onClick={() => setSymbolRecursive(sym.id)}
+                                                >
+                                                    <Repeat size={13} />
+                                                </button>
+                                            </Show>
                                             <button class="sp-act sp-danger" title="Delete symbol" onClick={() => remove(sym)}>
                                                 <Trash2 size={13} />
                                             </button>
                                         </div>
+                                        <Show when={sym.recursive}>
+                                            <label class="sp-depth" title="Maximum nesting levels. Drawing also stops once a level is smaller than a pixel, which is usually what ends a shrinking spiral first.">
+                                                Depth
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max={DEFAULT_RECURSION_DEPTH}
+                                                    value={sym.recursionDepth ?? DEFAULT_RECURSION_DEPTH}
+                                                    onChange={(e) => {
+                                                        const n = parseInt(e.currentTarget.value, 10);
+                                                        if (!Number.isFinite(n)) return;
+                                                        setSymbolRecursive(sym.id, true, Math.min(DEFAULT_RECURSION_DEPTH, n));
+                                                    }}
+                                                />
+                                            </label>
+                                        </Show>
                                     </div>
                                 )}
                             </For>

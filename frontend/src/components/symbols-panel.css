@@ -153,6 +153,43 @@
     border-radius: 8px;
 }
 
+/* Recursive badge (top-right of the thumb, mirrors .sp-kind top-left) */
+.sp-recur-badge {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: #fff;
+    background: #0ea5e9;
+    border-radius: 8px;
+}
+
+/* Depth field, revealed under the actions row only while recursion is on */
+.sp-depth {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 3px;
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+.sp-depth input {
+    width: 38px;
+    padding: 1px 2px;
+    font-size: 10px;
+    text-align: center;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 3px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+}
+
 .sp-name {
     width: 100%;
     margin-top: 4px;
@@ -220,6 +257,12 @@
 .sp-act:disabled {
     opacity: 0.35;
     cursor: default;
+}
+
+/* An engaged toggle (recursion on) — tinted so the card shows its state at rest */
+.sp-act.sp-on {
+    color: #0ea5e9;
+    background: color-mix(in srgb, #0ea5e9 16%, transparent);
 }
 
 /* Delete: tinted with the theme's danger colour at rest (adapts light/dark —

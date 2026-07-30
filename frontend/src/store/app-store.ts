@@ -3317,16 +3317,28 @@ export const saveSelectionToAssetLibrary = async (ids: string[], name?: string):
 export const placeInstance = (symbolId: string, x?: number, y?: number): string | null => {
     const sym = store.symbols.find(s => s.id === symbolId);
     if (!sym) return null;
-    // A symbol can't contain itself (the edit-in-place session would bake the
-    // instance into the definition and recurse forever).
-    if (store.symbolEdit?.symbolId === symbolId) { showToast('A symbol cannot be placed inside itself', 'error'); return null; }
+    // Placing a symbol inside its own edit-in-place session bakes an instance of it into its own
+    // definition — which used to be refused outright, because the renderer would then recurse
+    // forever. It is now a bounded, supported effect (SymbolDef.recursive), so allow it and turn
+    // recursion on: the alternative is that the deliberate act of nesting a symbol in itself
+    // renders as the grey "cyclic" placeholder, which just reads as broken.
+    const selfNesting = store.symbolEdit?.symbolId === symbolId;
     const inst: DrawingElement = {
         ...store.defaultElementStyles,
         id: generateId('symi' as any), type: 'symbolInstance', symbolId,
         x: x ?? 60, y: y ?? 60, width: sym.width, height: sym.height, angle: 0, seed: 1,
         roundness: null, locked: false, link: null, layerId: store.activeLayerId,
+        // Join the edit group, or exitSymbolEdit — which collects the session by groupId —
+        // would silently drop the nested instance on Done. Same trick as anim-ops uses for
+        // elements born inside a movie-clip session.
+        ...(selfNesting && { groupIds: [store.symbolEdit!.groupId] }),
     } as DrawingElement;
     pushToHistory();
+    if (selfNesting && !sym.recursive) {
+        // Same history entry as the placement — one user action, one undo.
+        setStore('symbols', s => s.id === symbolId, () => ({ recursive: true }));
+        showToast('Recursive symbol — nesting will be drawn. Adjust Depth in the Symbols panel.', 'info');
+    }
     setStore('elements', list => [...list, inst]);
     setStore('selection', [inst.id]);
     bumpDirtyRevision();
@@ -3489,6 +3501,41 @@ export const selectInstancesOf = (symbolId: string) => {
 };
 
 /** Rename a symbol definition. */
+/**
+ * Turn recursive rendering on/off for a symbol (see SymbolDef.recursive).
+ *
+ * This only changes how the symbol RENDERS. Nothing stops a definition from containing an
+ * instance of itself today — the renderer simply refuses to descend and draws the grey cyclic
+ * placeholder. Flipping this on tells it to descend, bounded by a sub-pixel cutoff and a depth
+ * cap, which is what turns the placeholder into the Droste/spiral effect.
+ */
+export const setSymbolRecursive = (symbolId: string, recursive?: boolean, depth?: number) => {
+    const sym = store.symbols.find(s => s.id === symbolId);
+    if (!sym) return;
+    const next = recursive ?? !sym.recursive;
+    pushToHistory();
+    setStore('symbols', s => s.id === symbolId, () => ({
+        recursive: next,
+        ...(depth !== undefined ? { recursionDepth: Math.max(1, Math.round(depth)) } : {}),
+    }));
+    bumpDirtyRevision();
+};
+
+/** Whether a symbol's definition contains an instance of itself (directly or via another
+ *  symbol). Used to surface the recursive toggle only where it can actually do something. */
+export const symbolSelfReferences = (symbolId: string, seen = new Set<string>()): boolean => {
+    if (seen.has(symbolId)) return false;
+    seen.add(symbolId);
+    const sym = store.symbols.find(s => s.id === symbolId);
+    if (!sym) return false;
+    for (const el of sym.elements) {
+        if (el.type !== 'symbolInstance' || !el.symbolId) continue;
+        if (el.symbolId === symbolId) return true;
+        if (symbolSelfReferences(el.symbolId, seen)) return true;
+    }
+    return false;
+};
+
 export const renameSymbol = (symbolId: string, name: string) => {
     const n = name.trim();
     if (!n) return;

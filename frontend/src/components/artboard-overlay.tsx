@@ -1,6 +1,7 @@
 import { Show, For, createMemo, onMount, onCleanup } from 'solid-js';
 import { isPagedDocType } from '../types/slide-types';
 import { store, pushToHistory, updateArtboardLive, setActiveArtboard, deleteArtboard } from '../store/app-store';
+import { worldToWindowAxisX, worldToWindowAxisY } from '../utils/overlay-transform';
 import './artboard-overlay.css';
 
 /**
@@ -9,8 +10,9 @@ import './artboard-overlay.css';
  * handles. Pure overlay — only the chip and handles take pointer events, so the
  * canvas underneath stays drawable. Hidden in slides mode.
  *
- * Uses the simple pan/scale transform (matching SymmetryOverlay); canvas
- * rotation is not accounted for (artboards stay axis-aligned in world space).
+ * Positions via the shared overlay transform (utils/overlay-transform), which adds the canvas
+ * origin this fixed layer needs; canvas rotation is not accounted for (artboards stay
+ * axis-aligned in world space).
  */
 const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const;
 type HandleKey = typeof HANDLES[number];
@@ -21,8 +23,13 @@ export const ArtboardOverlay = () => {
     const setActiveId = setActiveArtboard;
 
     const scale = () => store.viewState.scale;
-    const w2sx = (wx: number) => wx * store.viewState.scale + store.viewState.panX;
-    const w2sy = (wy: number) => wy * store.viewState.scale + store.viewState.panY;
+    // Window coordinates, because `.artboard-overlay` is `position: fixed; inset: 0` while the
+    // canvas starts at the dock insets — the bare `world * scale + pan` this used to inline drew
+    // every chip, frame and handle 46px left and 52px above its artboard. Axis-aligned variants:
+    // an artboard frame is a left/top/width/height box and can't express a rotated view anyway.
+    // Drags are unaffected either way — they work in pointer DELTAS, which are frame-independent.
+    const w2sx = (wx: number) => worldToWindowAxisX(wx);
+    const w2sy = (wy: number) => worldToWindowAxisY(wy);
 
     let drag: null | { id: string; mode: 'move' | HandleKey; cx: number; cy: number; pending: boolean; r: { x: number; y: number; width: number; height: number } } = null;
 

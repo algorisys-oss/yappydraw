@@ -18,6 +18,23 @@ const WorkspaceDoc: Component = () => {
                 </p>
             </header>
 
+            {/* ─── TOOLBAR POSITION ───────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Where the toolbar lives</h2>
+                <p>
+                    The tool column is docked to the <strong>left edge</strong> by default, and the canvas starts after
+                    it rather than underneath. The button at the top of the column moves it: each click steps to the
+                    next position — <strong>left → top → right → bottom → floating</strong> — and its icon shows where
+                    the bar currently sits. A docked bar reserves its edge; <strong>floating</strong> puts it back to a
+                    draggable overlay you can park anywhere (drag the grip, or drag its resize grip to wrap the icons
+                    into a compact grid).
+                </p>
+                <p class="tip-box">
+                    The position sticks between sessions. Scripted: <code>Yappy.getState().globalSettings.toolbarDock</code>
+                    reports it.
+                </p>
+            </section>
+
             {/* ─── GUIDED TOUR ────────────────────────────────────────── */}
             <section class="doc-section">
                 <h2>Guided tour</h2>

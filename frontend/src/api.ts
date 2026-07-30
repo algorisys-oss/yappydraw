@@ -16,7 +16,7 @@ import {
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection, addTextureOverlay,
     addPatternSwatchFromSelection, savePatternSwatchFromElement, applyPatternSwatch, updatePatternSwatch, renamePatternSwatch, deletePatternSwatch,
-    createSymbol, saveSelectionToAssetLibrary, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
+    createSymbol, saveSelectionToAssetLibrary, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, setSymbolRecursive, symbolSelfReferences, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     setSymmetryMode, toggleSymmetry, toggleSymmetryAxis, setRadialCount,
     setSymmetryAngleDeg, setSymmetryCenter, setSymmetryEditing, toggleSymmetryEditing,
@@ -1905,8 +1905,21 @@ export const YappyAPI = {
     renameSymbol(symbolId: string, name: string) { renameSymbol(symbolId, name); },
     /** Delete a symbol definition; by default its instances are detached into editable copies first. */
     deleteSymbol(symbolId: string, detachInstances = true) { deleteSymbol(symbolId, detachInstances); },
+    /**
+     * Let a symbol that contains an instance of itself actually draw that nesting (Droste /
+     * spiral) instead of the grey cyclic placeholder. Omit `recursive` to toggle.
+     *
+     * Each level re-applies the transform the nested instance carries, so a translate gives a
+     * receding chain and translate+rotate+scale traces a logarithmic spiral. Drawing stops at
+     * whichever comes first: `depth` levels (default 64), a level smaller than a pixel on
+     * screen, or the renderer's per-element draw budget — the last of which is what keeps a
+     * symbol containing *two* of itself (a fractal tree, O(2^depth)) from hanging the frame.
+     */
+    setSymbolRecursive(symbolId: string, recursive?: boolean, depth?: number) { setSymbolRecursive(symbolId, recursive, depth); },
+    /** Whether a symbol's definition contains an instance of itself, directly or through another symbol. */
+    symbolSelfReferences(symbolId: string) { return symbolSelfReferences(symbolId); },
     /** List the document's symbol definitions, each with a live instance count. */
-    listSymbols() { return store.symbols.map(s => ({ id: s.id, name: s.name, width: s.width, height: s.height, instances: store.elements.filter(e => e.type === 'symbolInstance' && e.symbolId === s.id).length })); },
+    listSymbols() { return store.symbols.map(s => ({ id: s.id, name: s.name, width: s.width, height: s.height, instances: store.elements.filter(e => e.type === 'symbolInstance' && e.symbolId === s.id).length, recursive: !!s.recursive, recursionDepth: s.recursionDepth })); },
     /** Show/hide the Symbols panel. */
     toggleSymbolsPanel(visible?: boolean) { toggleSymbolsPanel(visible); },
     /** Show/hide the undo-History panel. */

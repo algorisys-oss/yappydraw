@@ -3,7 +3,7 @@ import { store, setSelectedTool, addElement, setStore, togglePenStabilization, u
 import { generateId } from "../utils/id-generator";
 import { addImagePlaceholder } from "../utils/image-actions";
 import type { ToolType } from "../types";
-import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, RotateCw, Command, Shapes, PersonStanding, Brush, Combine } from "lucide-solid";
+import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, Command, Shapes, PersonStanding, Brush, Combine, PanelLeft, PanelTop, PanelRight, PanelBottom, Move } from "lucide-solid";
 import { isPanelOpen } from "../store/dock-layout";
 
 const BRUSH_TOOLS: ToolType[] = ['fineliner', 'inkbrush', 'marker'];
@@ -122,6 +122,39 @@ const Toolbar: Component = () => {
     /** Docked edge, or 'float' for the legacy overlay bar. Mobile always floats — there
      *  isn't room to give an edge away. */
     const docked = () => (isMobile() ? 'float' : (store.globalSettings.toolbarDock ?? 'left'));
+
+    /**
+     * Where the toolbar sits, cycled by the single button below.
+     *
+     * This replaces a `toolbarVertical` flip that had quietly become a no-op: that flag is
+     * only read when the bar is FLOATING, and since docking landed the bar defaults to the
+     * left edge with nothing in the UI able to un-dock it — so the button changed a
+     * localStorage value and nothing else. Cycling the dock edge is what the control now
+     * looks like it should do, and it also gives `toolbarDock` the UI it never had.
+     * 'float' stays in the cycle as the way back to the draggable overlay bar (whose own
+     * orientation is still `toolbarVertical`).
+     */
+    const DOCK_CYCLE = ['left', 'top', 'right', 'bottom', 'float'] as const;
+    const DOCK_LABEL: Record<string, string> = {
+        left: 'left edge', top: 'top edge', right: 'right edge', bottom: 'bottom edge', float: 'floating',
+    };
+    /** Phrased as the action, since "move to the floating" doesn't read as English. */
+    const DOCK_ACTION: Record<string, string> = {
+        left: 'dock it to the left edge', top: 'dock it to the top edge',
+        right: 'dock it to the right edge', bottom: 'dock it to the bottom edge',
+        float: 'let it float over the canvas',
+    };
+    const nextDock = () => DOCK_CYCLE[(DOCK_CYCLE.indexOf(docked() as any) + 1) % DOCK_CYCLE.length];
+    const cycleDock = () => updateGlobalSettings({ toolbarDock: nextDock() });
+    /** Mirrors the current edge, so the button reads as state rather than as an action. */
+    const DockIcon = () => {
+        const d = docked();
+        return d === 'top' ? <PanelTop size={16} />
+            : d === 'right' ? <PanelRight size={16} />
+            : d === 'bottom' ? <PanelBottom size={16} />
+            : d === 'float' ? <Move size={16} />
+            : <PanelLeft size={16} />;
+    };
 
     // Pointer events (not mouse) so the toolbar can be dragged/resized with a
     // finger or stylus on a tablet — synthesized mouse events are unreliable for
@@ -455,14 +488,14 @@ const Toolbar: Component = () => {
                 {brainstormMode() ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
             </button>
 
-            {/* Orientation toggle: horizontal (top) ↔ vertical (left) */}
+            {/* Toolbar position: cycles left → top → right → bottom → floating */}
             <Show when={!isMobile()}>
                 <button
                     class="toolbar-btn"
-                    onClick={() => updateGlobalSettings({ toolbarVertical: !store.globalSettings.toolbarVertical })}
-                    title={store.globalSettings.toolbarVertical ? 'Horizontal toolbar' : 'Vertical toolbar'}
+                    onClick={cycleDock}
+                    title={`Toolbar: ${DOCK_LABEL[docked()]} — click to ${DOCK_ACTION[nextDock()]}`}
                 >
-                    <RotateCw size={16} />
+                    <DockIcon />
                 </button>
             </Show>
 

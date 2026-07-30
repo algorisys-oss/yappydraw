@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.163](0.8.163.md) — Recursive symbols (Droste/spiral/fractal); symmetry axes, artboard frames and rulers were all drawn 46/52px off the geometry they annotate; Fill mode previews while you draw
 - [0.8.162](0.8.162.md) — Properties becomes a dock panel, the top bar becomes a real header, Settings/Help get navigation + search; fixes the invisible palette/theme buttons
 - [0.8.155](0.8.155.md) — Combine toolbar now recognises every shape type with area, not a hardcoded list of 19
 - [0.8.154](0.8.154.md) — One-click boolean ops (contextual toolbar + Ctrl+Alt shortcuts, Shape Builder promoted); fixes the exponent-parsing NaN that made edited shapes unselectable and uncombinable
