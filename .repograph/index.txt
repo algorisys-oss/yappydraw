@@ -850,6 +850,7 @@ tests/eyedropper.spec.ts | typescript | 37 |
 tests/flappy.spec.ts | typescript | 36 | Window:3
 tests/flare.spec.ts | typescript | 15 |
 tests/flowchart.spec.ts | typescript | 67 |
+tests/font-metrics.spec.ts | typescript | 146 | primary:41 boot:46 quote:58 measure:83 quote:88 measure:116
 tests/font-picker-check.spec.ts | typescript | 132 | Window:6
 tests/free-transform-numeric.spec.ts | typescript | 62 |
 tests/free-transform-pivot.spec.ts | typescript | 72 |
