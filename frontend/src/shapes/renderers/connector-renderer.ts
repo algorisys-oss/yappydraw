@@ -3,6 +3,7 @@ import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { normalizePoints, cubicBezier } from "../../utils/render-element";
+import { connectorGeometry } from "../../utils/connector-geometry";
 import { resolveFontFamily } from "../../utils/text-utils";
 import { drawTextAlongPath, getElementTextPath } from "../../utils/text-on-path";
 
@@ -213,43 +214,18 @@ export class ConnectorRenderer extends ShapeRenderer {
 
         this.renderFlow(context);
 
-        // Draw arrowheads
-        const pts = normalizePoints(el.points);
-        let start, end;
-        if (pts.length >= 2) {
-            start = { x: el.x + pts[0].x, y: el.y + pts[0].y };
-            end = { x: el.x + pts[pts.length - 1].x, y: el.y + pts[pts.length - 1].y };
-        } else {
-            start = { x: el.x, y: el.y };
-            end = { x: el.x + el.width, y: el.y + el.height };
+        // Draw arrowheads.
+        // One shared derivation for every curveType. This branch used to inline its own,
+        // and — alone among the six copies — omitted the default-control-point fallback:
+        // with no authored `controlPoints` it took `cp1 = cp2 = start`, so the start head
+        // was rotated by `atan2(0, 0)` (due east) and the end head by the bounding-box
+        // chord. See docs/arrowhead-orientation-spec.md.
+        const g = connectorGeometry(el);
+        if (el.startArrowhead) {
+            this.drawArrowheadArchitectural(renderer, g.start.x, g.start.y, g.startAngle, el.startArrowhead, el.startArrowheadSize || 28);
         }
-
-        let angle: number;
-        if (el.curveType === 'bezier') {
-            const cp1 = el.controlPoints?.[0] || { x: start.x, y: start.y };
-            const cp2 = el.controlPoints?.[1] || cp1;
-            if (el.startArrowhead) {
-                const startAngle = Math.atan2(start.y - cp1.y, start.x - cp1.x);
-                this.drawArrowheadArchitectural(renderer, start.x, start.y, startAngle, el.startArrowhead, el.startArrowheadSize || 28);
-            }
-            if (el.endArrowhead) {
-                const endAngle = Math.atan2(end.y - cp2.y, end.x - cp2.x);
-                this.drawArrowheadArchitectural(renderer, end.x, end.y, endAngle, el.endArrowhead, el.endArrowheadSize || 28);
-            }
-        } else if (el.curveType === 'elbow' && pts.length >= 2) {
-            const p0 = { x: el.x + pts[0].x, y: el.y + pts[0].y };
-            const p1 = { x: el.x + pts[1].x, y: el.y + pts[1].y };
-            const startAngle = Math.atan2(p0.y - p1.y, p0.x - p1.x);
-            if (el.startArrowhead) this.drawArrowheadArchitectural(renderer, p0.x, p0.y, startAngle, el.startArrowhead, el.startArrowheadSize || 28);
-
-            const pn_1 = { x: el.x + pts[pts.length - 1].x, y: el.y + pts[pts.length - 1].y };
-            const pn_2 = { x: el.x + pts[pts.length - 2].x, y: el.y + pts[pts.length - 2].y };
-            const endAngle = Math.atan2(pn_1.y - pn_2.y, pn_1.x - pn_2.x);
-            if (el.endArrowhead) this.drawArrowheadArchitectural(renderer, pn_1.x, pn_1.y, endAngle, el.endArrowhead, el.endArrowheadSize || 28);
-        } else {
-            angle = Math.atan2(end.y - start.y, end.x - start.x);
-            if (el.startArrowhead) this.drawArrowheadArchitectural(renderer, start.x, start.y, angle + Math.PI, el.startArrowhead, el.startArrowheadSize || 28);
-            if (el.endArrowhead) this.drawArrowheadArchitectural(renderer, end.x, end.y, angle, el.endArrowhead, el.endArrowheadSize || 28);
+        if (el.endArrowhead) {
+            this.drawArrowheadArchitectural(renderer, g.end.x, g.end.y, g.endAngle, el.endArrowhead, el.endArrowheadSize || 28);
         }
 
         renderer.restore();
@@ -276,46 +252,12 @@ export class ConnectorRenderer extends ShapeRenderer {
     private renderBezier(context: RenderContext, options: any) {
         options = { ...options, fill: undefined }; // Connectors should never have background fill
         const { rc, element: el } = context;
-        const endX = el.x + el.width;
-        const endY = el.y + el.height;
-        const pts = normalizePoints(el.points);
 
-        let start = { x: el.x, y: el.y };
-        let end = { x: endX, y: endY };
-        if (pts.length >= 2) {
-            start = { x: el.x + pts[0].x, y: el.y + pts[0].y };
-            end = { x: el.x + pts[pts.length - 1].x, y: el.y + pts[pts.length - 1].y };
-        }
-
-        if (el.controlPoints && el.controlPoints.length > 0) {
-            const cp1 = el.controlPoints[0];
-            if (el.controlPoints.length > 1) {
-                const cp2 = el.controlPoints[1];
-                const path = `M ${start.x} ${start.y} C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${end.x} ${end.y}`;
-                rc.path(path, options);
-                if (el.startArrowhead) this.drawArrowhead(rc, start.x, start.y, Math.atan2(start.y - cp1.y, start.x - cp1.x), el.startArrowhead, options, el.startArrowheadSize || 28);
-                if (el.endArrowhead) this.drawArrowhead(rc, end.x, end.y, Math.atan2(end.y - cp2.y, end.x - cp2.x), el.endArrowhead, options, el.endArrowheadSize || 28);
-            } else {
-                const path = `M ${start.x} ${start.y} Q ${cp1.x} ${cp1.y}, ${end.x} ${end.y}`;
-                rc.path(path, options);
-                if (el.startArrowhead) this.drawArrowhead(rc, start.x, start.y, Math.atan2(start.y - cp1.y, start.x - cp1.x), el.startArrowhead, options, el.startArrowheadSize || 28);
-                if (el.endArrowhead) this.drawArrowhead(rc, end.x, end.y, Math.atan2(end.y - cp1.y, end.x - cp1.x), el.endArrowhead, options, el.endArrowheadSize || 28);
-            }
-        } else {
-            const w = el.width, h = el.height;
-            let cp1, cp2;
-            if (Math.abs(w) > Math.abs(h)) {
-                cp1 = { x: start.x + w / 2, y: start.y };
-                cp2 = { x: end.x - w / 2, y: end.y };
-            } else {
-                cp1 = { x: start.x, y: start.y + h / 2 };
-                cp2 = { x: end.x, y: end.y - h / 2 };
-            }
-            const path = `M ${start.x} ${start.y} C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${end.x} ${end.y}`;
-            rc.path(path, options);
-            if (el.startArrowhead) this.drawArrowhead(rc, start.x, start.y, Math.atan2(start.y - cp1.y, start.x - cp1.x), el.startArrowhead, options, el.startArrowheadSize || 28);
-            if (el.endArrowhead) this.drawArrowhead(rc, end.x, end.y, Math.atan2(end.y - cp2.y, end.x - cp2.x), el.endArrowhead, options, el.endArrowheadSize || 28);
-        }
+        // Path and angles from the same derivation — see connector-geometry.ts.
+        const g = connectorGeometry(el);
+        rc.path(g.d!, options);
+        if (el.startArrowhead) this.drawArrowhead(rc, g.start.x, g.start.y, g.startAngle, el.startArrowhead, options, el.startArrowheadSize || 28);
+        if (el.endArrowhead) this.drawArrowhead(rc, g.end.x, g.end.y, g.endAngle, el.endArrowhead, options, el.endArrowheadSize || 28);
     }
 
     private renderElbow(context: RenderContext, options: any) {
@@ -350,39 +292,26 @@ export class ConnectorRenderer extends ShapeRenderer {
             renderer.restore();
         }
 
-        const cleanPoints = drawPoints.filter((p, i, self) =>
-            i === 0 || Math.abs(p[0] - self[i - 1][0]) > 0.1 || Math.abs(p[1] - self[i - 1][1]) > 0.1
-        );
-
-        if (el.startArrowhead && cleanPoints.length >= 2) {
-            const angle = Math.atan2(cleanPoints[0][1] - cleanPoints[1][1], cleanPoints[0][0] - cleanPoints[1][0]);
-            this.drawArrowhead(rc, cleanPoints[0][0], cleanPoints[0][1], angle, el.startArrowhead, options, el.startArrowheadSize || 28);
+        // Angles from the shared helper, which does the same consecutive-duplicate cleanup
+        // this used to do inline (and which renderArchitectural's elbow branch skipped).
+        const g = connectorGeometry(el);
+        if (el.startArrowhead) {
+            this.drawArrowhead(rc, g.start.x, g.start.y, g.startAngle, el.startArrowhead, options, el.startArrowheadSize || 28);
         }
-        if (el.endArrowhead && cleanPoints.length >= 2) {
-            const n = cleanPoints.length;
-            const angle = Math.atan2(cleanPoints[n - 1][1] - cleanPoints[n - 2][1], cleanPoints[n - 1][0] - cleanPoints[n - 2][0]);
-            this.drawArrowhead(rc, cleanPoints[n - 1][0], cleanPoints[n - 1][1], angle, el.endArrowhead, options, el.endArrowheadSize || 28);
+        if (el.endArrowhead) {
+            this.drawArrowhead(rc, g.end.x, g.end.y, g.endAngle, el.endArrowhead, options, el.endArrowheadSize || 28);
         }
     }
 
     private renderStraight(context: RenderContext, options: any) {
         options = { ...options, fill: undefined }; // Connectors should never have background fill
         const { rc, element: el } = context;
-        const pts = normalizePoints(el.points);
-        let start, end;
-        if (pts.length >= 2) {
-            start = { x: el.x + pts[0].x, y: el.y + pts[0].y };
-            end = { x: el.x + pts[pts.length - 1].x, y: el.y + pts[pts.length - 1].y };
-        } else {
-            start = { x: el.x, y: el.y };
-            end = { x: el.x + el.width, y: el.y + el.height };
-        }
+        const g = connectorGeometry(el);
 
-        rc.line(start.x, start.y, end.x, end.y, options);
-        const angle = Math.atan2(end.y - start.y, end.x - start.x);
-
-        if (el.startArrowhead) this.drawArrowhead(rc, start.x, start.y, angle + Math.PI, el.startArrowhead, options, el.startArrowheadSize || 28);
-        if (el.endArrowhead) this.drawArrowhead(rc, end.x, end.y, angle, el.endArrowhead, options, el.endArrowheadSize || 28);
+        rc.line(g.start.x, g.start.y, g.end.x, g.end.y, options);
+        // Both angles are already outward, so the start head no longer needs `+ π`.
+        if (el.startArrowhead) this.drawArrowhead(rc, g.start.x, g.start.y, g.startAngle, el.startArrowhead, options, el.startArrowheadSize || 28);
+        if (el.endArrowhead) this.drawArrowhead(rc, g.end.x, g.end.y, g.endAngle, el.endArrowhead, options, el.endArrowheadSize || 28);
     }
 
     private drawArrowhead(rc: any, x: number, y: number, angle: number, type: string, options: any, headLen: number = 28) {
@@ -628,28 +557,14 @@ export class ConnectorRenderer extends ShapeRenderer {
         }
 
         if (el.curveType === 'bezier') {
-            const w = el.width, h = el.height;
-            let cp1, cp2;
-            if (el.controlPoints && el.controlPoints.length > 0) {
-                cp1 = el.controlPoints[0];
-                if (el.controlPoints.length > 1) {
-                    cp2 = el.controlPoints[1];
-                    renderer.moveTo(start.x, start.y);
-                    renderer.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
-                } else {
-                    renderer.moveTo(start.x, start.y);
-                    renderer.quadraticCurveTo(cp1.x, cp1.y, end.x, end.y);
-                }
+            // Same control points the arrowhead angles are derived from, so the stroke this
+            // defines and the heads that terminate it cannot describe different curves.
+            const g = connectorGeometry(el);
+            renderer.moveTo(g.start.x, g.start.y);
+            if (g.quadratic) {
+                renderer.quadraticCurveTo(g.cp1!.x, g.cp1!.y, g.end.x, g.end.y);
             } else {
-                if (Math.abs(w) > Math.abs(h)) {
-                    cp1 = { x: start.x + w / 2, y: start.y };
-                    cp2 = { x: end.x - w / 2, y: end.y };
-                } else {
-                    cp1 = { x: start.x, y: start.y + h / 2 };
-                    cp2 = { x: end.x, y: end.y - h / 2 };
-                }
-                renderer.moveTo(start.x, start.y);
-                renderer.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+                renderer.bezierCurveTo(g.cp1!.x, g.cp1!.y, g.cp2!.x, g.cp2!.y, g.end.x, g.end.y);
             }
         } else if (el.curveType === 'elbow') {
             const drawPoints = (pts && pts.length > 0)

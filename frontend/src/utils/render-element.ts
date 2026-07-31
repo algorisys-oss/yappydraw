@@ -7,18 +7,9 @@ import { renderWithEraseMask } from "../shapes/base/erase-mask";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { buildWidthRibbon } from "./variable-width";
 
-// Helper to normalize points (supports both old Point[] and new packed number[])
-export const normalizePoints = (points: any[] | number[] | undefined): { x: number; y: number }[] => {
-    if (!points || points.length === 0) return [];
-    if (typeof points[0] === 'number') {
-        const result: { x: number; y: number }[] = [];
-        for (let i = 0; i < points.length - 1; i += 2) {
-            result.push({ x: points[i] as number, y: points[i + 1] as number });
-        }
-        return result;
-    }
-    return points as { x: number; y: number }[];
-};
+// Lives in ./points now (a leaf module, so geometry can be imported without the shape
+// registry behind this file). Re-exported here so existing importers are unaffected.
+export { normalizePoints } from "./points";
 
 // Helper: Calculate cubic bezier point at t (Still used in canvas.tsx)
 export const cubicBezier = (p0: number, p1: number, p2: number, p3: number, t: number) => {

@@ -336,6 +336,35 @@ Yappy.createArrow(80, 300, 320, 300, {
                     names above (or <code>null</code> for none) to build one-way or bidirectional arrows.
                     Restyle later with <code>Yappy.updateElement(id, {`{ ... }`})</code>.
                 </p>
+
+                <h3>Connecting two shapes, and the shape of the line</h3>
+                <p>
+                    <code>Yappy.connect(sourceId, targetId, opts?)</code> binds a connector between two
+                    elements so it follows them when they move. It defaults to
+                    <strong> <code>curveType: 'bezier'</code></strong> — a gentle S-curve that leaves and
+                    arrives square to the boxes. For UML and org-chart style diagrams, where a straight
+                    line is the conventional form, ask for one explicitly:
+                </p>
+                <pre class="code-block"><code>{`const a = Yappy.createRectangle(400, 100, 160, 60);
+const b = Yappy.createRectangle(150, 400, 160, 60);
+
+Yappy.connect(a, b);                                  // bezier (the default)
+Yappy.connect(a, b, { curveType: 'straight' });        // straight line
+Yappy.connect(a, b, { curveType: 'elbow' });           // right-angle jog
+
+// UML relationships read from the arrowhead
+Yappy.connect(a, b, { curveType: 'straight', endArrowhead: 'triangle' });      // generalization
+Yappy.connect(a, b, { curveType: 'straight', startArrowhead: 'diamond' });     // aggregation`}</code></pre>
+                <p>
+                    In the text DSL the same choice is <code>{`a -> b { curveType: straight }`}</code>;
+                    plain <code>{`->`}</code> and <code>{`--`}</code> use the bezier default, and
+                    <code> {`~>`}</code> asks for a curve explicitly.
+                </p>
+                <p class="tip-box">
+                    Arrowheads follow the <strong>tangent of the line they sit on</strong>, not the
+                    straight line between its endpoints — so on a curved connector the head stays square
+                    to the curve where it meets the shape, in every drawing style and in exported SVG.
+                </p>
             </section>
         </div>
     );

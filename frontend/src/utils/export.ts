@@ -15,6 +15,7 @@ import type { DrawingElement } from "../types";
 import { buildFilterString } from "./image-filter-utils";
 import { layoutRichText } from "./rich-text-utils";
 import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
+import { connectorGeometry } from "./connector-geometry";
 import { svgFillPaint, svgPatternDef } from "./svg-paint";
 import { SvgRenderer } from "../rendering/SvgRenderer";
 import { getImage, preloadImages } from "./image-cache";
@@ -306,38 +307,13 @@ function umlArrowheadGlyph(
     return poly;
 }
 
-/**
- * Stroke path `d` for a curved/elbow connector, mirroring the on-canvas
- * connector-renderer so exported SVG shows the actual curve instead of a straight
- * chord. Returns null for a straight connector (caller draws a plain line). Uses the
- * same default control points as the canvas: cp offset along the dominant axis.
+/*
+ * `connectorCurvePath` used to live here, re-implementing the canvas's curve maths — which
+ * is how the arrowheads came to be rotated to the bounding-box chord instead of the path's
+ * tangent (docs/arrowhead-orientation-spec.md). The arrow branch below now takes both the
+ * path and the angles from the shared `connectorGeometry` helper, so export and canvas
+ * cannot disagree.
  */
-function connectorCurvePath(el: DrawingElement): string | null {
-    if (el.curveType !== 'bezier' && el.curveType !== 'elbow') return null;
-    const start = { x: el.x, y: el.y };
-    const end = { x: el.x + el.width, y: el.y + el.height };
-
-    if (el.curveType === 'elbow') {
-        const w = el.width, h = el.height;
-        const mid = Math.abs(w) > Math.abs(h)
-            ? `L ${start.x + w / 2} ${start.y} L ${start.x + w / 2} ${end.y} `
-            : `L ${start.x} ${start.y + h / 2} L ${end.x} ${start.y + h / 2} `;
-        return `M ${start.x} ${start.y} ${mid}L ${end.x} ${end.y}`;
-    }
-
-    const cps = el.controlPoints;
-    if (cps && cps.length > 1) {
-        return `M ${start.x} ${start.y} C ${cps[0].x} ${cps[0].y}, ${cps[1].x} ${cps[1].y}, ${end.x} ${end.y}`;
-    }
-    if (cps && cps.length === 1) {
-        return `M ${start.x} ${start.y} Q ${cps[0].x} ${cps[0].y}, ${end.x} ${end.y}`;
-    }
-    const w = el.width, h = el.height;
-    const [cp1, cp2] = Math.abs(w) > Math.abs(h)
-        ? [{ x: start.x + w / 2, y: start.y }, { x: end.x - w / 2, y: end.y }]
-        : [{ x: start.x, y: start.y + h / 2 }, { x: end.x, y: end.y - h / 2 }];
-    return `M ${start.x} ${start.y} C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${end.x} ${end.y}`;
-}
 
 /** Plain SVG <path> for a connector stroke `d`, styled from the element. */
 function connectorPathEl(el: DrawingElement, d: string): SVGPathElement {
@@ -792,16 +768,23 @@ export const exportToSvg = (onlySelected: boolean) => {
                 [el.x, dcy]
             ], options);
         } else if (el.type === 'line' || el.type === 'arrow') {
-            const endX = el.x + el.width;
-            const endY = el.y + el.height;
+            // Endpoints come from the shared helper so a rerouted connector (el.points) is
+            // honoured rather than being flattened back onto the bounding box.
+            const geom = connectorGeometry(el);
+            const startX = geom.start.x, startY = geom.start.y;
+            const endX = geom.end.x, endY = geom.end.y;
 
-            const curveD = connectorCurvePath(el);
+            const curveD = geom.d;
 
             if (el.type === 'arrow') {
                 const arrowG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                arrowG.appendChild(curveD ? connectorPathEl(el, curveD) : rc.line(el.x, el.y, endX, endY, options));
+                arrowG.appendChild(curveD ? connectorPathEl(el, curveD) : rc.line(startX, startY, endX, endY, options));
 
-                const angle = Math.atan2(el.height, el.width);
+                // The tangent of the path at each end, NOT the bounding-box chord. These
+                // differ by up to 45° on a default-control-point curve, which is the whole
+                // of docs/arrowhead-orientation-spec.md.
+                const startAngle = geom.startAngle;
+                const angle = geom.endAngle;
                 const startHeadLen = el.startArrowheadSize || 28;
                 const endHeadLen = el.endArrowheadSize || 28;
 
@@ -809,13 +792,16 @@ export const exportToSvg = (onlySelected: boolean) => {
                 const headWidth = el.strokeWidth || 2;
 
                 if (el.startArrowhead) {
+                    // `startAngle` is already the OUTWARD direction at the start, so there is
+                    // no `+ π` here any more — that term existed only to flip the single
+                    // chord angle around for this end.
                     if (UML_ARROWHEADS.has(el.startArrowhead)) {
-                        arrowG.appendChild(umlArrowheadGlyph(el.x, el.y, angle + Math.PI, startHeadLen, el.startArrowhead, headStroke, headWidth));
+                        arrowG.appendChild(umlArrowheadGlyph(startX, startY, startAngle, startHeadLen, el.startArrowhead, headStroke, headWidth));
                     } else {
-                        const p1 = { x: el.x - startHeadLen * Math.cos(angle + Math.PI - Math.PI / 6), y: el.y - startHeadLen * Math.sin(angle + Math.PI - Math.PI / 6) };
-                        const p2 = { x: el.x - startHeadLen * Math.cos(angle + Math.PI + Math.PI / 6), y: el.y - startHeadLen * Math.sin(angle + Math.PI + Math.PI / 6) };
-                        arrowG.appendChild(rc.line(el.x, el.y, p1.x, p1.y, options));
-                        arrowG.appendChild(rc.line(el.x, el.y, p2.x, p2.y, options));
+                        const p1 = { x: startX - startHeadLen * Math.cos(startAngle - Math.PI / 6), y: startY - startHeadLen * Math.sin(startAngle - Math.PI / 6) };
+                        const p2 = { x: startX - startHeadLen * Math.cos(startAngle + Math.PI / 6), y: startY - startHeadLen * Math.sin(startAngle + Math.PI / 6) };
+                        arrowG.appendChild(rc.line(startX, startY, p1.x, p1.y, options));
+                        arrowG.appendChild(rc.line(startX, startY, p2.x, p2.y, options));
                     }
                 }
 
@@ -831,7 +817,7 @@ export const exportToSvg = (onlySelected: boolean) => {
                 }
                 node = arrowG;
             } else {
-                node = curveD ? connectorPathEl(el, curveD) : rc.line(el.x, el.y, endX, endY, options);
+                node = curveD ? connectorPathEl(el, curveD) : rc.line(startX, startY, endX, endY, options);
             }
         } else if ((el.type === 'text' || el.type === 'richtext') && (el.text || (el.richText && el.richText.length > 0))) {
             const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');

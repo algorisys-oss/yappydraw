@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.165', date: '2026-07-31', items: [
+        'Arrowheads on curved connectors now point the way the line actually goes. The head was being angled at the straight line between the connector\'s two corners rather than at the curve it sits on, so on anything but a perfectly straight or perfectly stacked connector it was turned the wrong way — by as much as 45° in exported SVG. Diagrams where a parent connects down to children spread left and right were the worst affected.',
+        'In the clean (architectural) drawing style the problem was bigger still: arrowheads at the start of a curved connector pointed straight to the right no matter which way the line ran. Both ends now follow the curve.',
+        'Fixed: exporting a connector whose midpoint you had dragged ignored the reroute and drew it straight between the two ends. The exported shape now matches what you see on the canvas.',
+    ] },
     { version: '0.8.164', date: '2026-07-31', items: [
         'Yappy works on a phone again. The toolbar had turned into an invisible panel covering the whole screen — the tool icons floated in the middle of an empty page and tapping the canvas did nothing at all, because that invisible panel was catching every tap. The tools are back to a single row along the bottom, and the drawing area between the top bar and the tools is yours again.',
         'The tools no longer run off the right edge of the screen, and the buttons are finger-sized rather than the tiny mouse-sized ones you were getting.',

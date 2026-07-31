@@ -334,7 +334,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 375 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 380 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -421,7 +421,7 @@ frontend/src/help-docs/help-page.css | - | 411 |
 frontend/src/help-docs/help-page.tsx | typescript | 424 | Component:6 ShapeDoc:11 Tools:133 vertical:137 chips:170 a:206 graphs:264 curve:265 frame:273 getShapeFromHash:317 HelpPage:323 handleHashChange:329 navigateToShape:340 filteredShapes:345 currentDoc:356 handleBackToApp:358
 frontend/src/help-docs/shapes/basic-shapes-doc.tsx | typescript | 333 | BasicShapesDoc:8 strings:306
 frontend/src/help-docs/shapes/bpmn-doc.tsx | typescript | 577 | BpmnDoc:8
-frontend/src/help-docs/shapes/connectors-doc.tsx | typescript | 344 | ConnectorsDoc:8
+frontend/src/help-docs/shapes/connectors-doc.tsx | typescript | 373 | ConnectorsDoc:8
 frontend/src/help-docs/shapes/drawing-tools-doc.tsx | typescript | 450 | DrawingToolsDoc:8
 frontend/src/help-docs/shapes/flowchart-doc.tsx | typescript | 295 | FlowchartDoc:8 call:64 call:164
 frontend/src/help-docs/shapes/geometric-shapes-doc.tsx | typescript | 306 | GeometricShapesDoc:8 string:272 string:275
@@ -477,7 +477,7 @@ frontend/src/shapes/renderers/circle-renderer.ts | typescript | 74 | CircleRende
 frontend/src/shapes/renderers/cloud-infra-renderer.ts | typescript | 456 | CloudInfraRenderer:7{renderArchitectural:8 renderSketch:268 roundRect:405 getHexPath:421 getShieldPath:435 definePath:450}
 frontend/src/shapes/renderers/code-block-renderer.ts | typescript | 179 | CodeBlockRenderer:7{renderArchitectural:8 renderSketch:12 renderCommon:16 definePath:176}
 frontend/src/shapes/renderers/connection-rel-renderer.ts | typescript | 559 | ConnectionRelRenderer:7{renderArchitectural:8 renderSketch:379 roundRect:504 getPuzzlePath:518 getMagnetPath:536 definePath:553}
-frontend/src/shapes/renderers/connector-renderer.ts | typescript | 712 | ConnectorRenderer:9{render:15}
+frontend/src/shapes/renderers/connector-renderer.ts | typescript | 627 | ConnectorRenderer:10{render:16}
 frontend/src/shapes/renderers/container-renderer.ts | typescript | 105 | ContainerRenderer:6{renderArchitectural:7 renderSketch:60 getRoundedRectPath:89 definePath:95}
 frontend/src/shapes/renderers/data-metrics-renderer.ts | typescript | 1558 | PieSlice:9 GanttTask:16 JourneyTask:23 QuadrantData:28 XYChartData:36 DataMetricsRenderer:43{renderArchitectural:44 renderSketch:335 renderDataPieArchitectural:505}
 frontend/src/shapes/renderers/data-structure-renderer.ts | typescript | 1066 | DataStructureRenderer:12{renderArchitectural:13 renderSketch:17 renderCommon:21 parseValues:39 getItemAlpha:44 getHighlightState:67 getCellStyle:101 drawRoundedRect:108 drawTitle:121 getColors:137 hexToRgba:160 fillBackground:168 renderArray:218 renderStack:340 renderQueue:472 renderLinkedList:599}
@@ -606,6 +606,8 @@ frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:
 frontend/src/utils/color-harmony.ts | typescript | 83 | HarmonyType:10 generateTints:19 generateHarmony:29 loadImage:41 extractImagePalette:56
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 460 | Command:27
+frontend/src/utils/connector-geometry.test.ts | typescript | 153 | deg:4 sameAngle:6 arrow:13
+frontend/src/utils/connector-geometry.ts | typescript | 169 | Pt:31 ConnectorGeometry:33 outwardAngle:68 dedupe:78 connectorGeometry:92 defaultControlPoints:158 synthesiseElbow:165
 frontend/src/utils/connector-obstacles.ts | typescript | 132 | Seg:14 Bounds:34
 frontend/src/utils/connector-routing.test.ts | typescript | 212 | node:7 conn:12
 frontend/src/utils/connector-routing.ts | typescript | 203 | Pt:26 Side:27 sideFacing:41 sidePoint:60 oppositePoint:77 projectOntoSide:93 Member:108 allocatePort:121
@@ -626,7 +628,7 @@ frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19
 frontend/src/utils/excalidraw-io.ts | typescript | 269 | ExcalidrawFile:23 pointPairs:52 anchorsToPairs:64 baseExc:70 ToExcalidrawResult:101 toExcalidraw:103 FromExcalidrawResult:177 fromExcalidraw:189
 frontend/src/utils/export-game.ts | typescript | 47 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
-frontend/src/utils/export.ts | typescript | 1480 | ShapeGeometry:17 paintDimensions:32 Bounds:37 ensureExportImages:42 elementAABB:55 elementsBounds:79 overlapsRect:91 renderElWithEffects:101 buildAppearanceSvgGroup:140 buildUmlClassNode:199 umlArrowheadGlyph:290 connectorCurvePath:315 connectorPathEl:343 geometryToDs:360 renderPagedDocToCanvas:405
+frontend/src/utils/export.ts | typescript | 1466 | ShapeGeometry:17 paintDimensions:33 Bounds:38 ensureExportImages:43 elementAABB:56 elementsBounds:80 overlapsRect:92 renderElWithEffects:102 buildAppearanceSvgGroup:141 buildUmlClassNode:200 umlArrowheadGlyph:291 connectorPathEl:319 geometryToDs:336 renderPagedDocToCanvas:381
 frontend/src/utils/extrude.ts | typescript | 231 | Poly:12 Ring:12 MultiPoly:17 hasExtrude:19 isExtrudeTilted:25 extrudeOwnsFront:31 tilted:36 darken:44 lighten:59 insetRing:68 baseColor:80 extrudeGeometry:89 drawBody:106 tracePolys:132 drawImageFront:148 drawFront:171 drawBevelFront:185 renderExtrudeBody:221
 frontend/src/utils/geometry-scale.ts | typescript | 69 | scalePoints:13 scalePathAnchors:33 scalePathSubpaths:47 scaleEraseStrokes:53
 frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
@@ -676,10 +678,11 @@ frontend/src/utils/point-snapping.test.ts | typescript | 84 | el:4
 frontend/src/utils/point-snapping.ts | typescript | 108 | SnapPoint:15 SnapElement:17 PointSnapResult:25 bboxAnchors:35 pathAnchorsOf:46 getPointSnap:63
 frontend/src/utils/pointer-helpers.ts | typescript | 57 | PointerHelpers:15 PointerSignals:33
 frontend/src/utils/pointer-state.ts | typescript | 209 | PointerState:7 createPointerState:130
+frontend/src/utils/points.ts | typescript | 20 |
 frontend/src/utils/pool-containment.ts | typescript | 179 | getPoolLabelWidth:11 getLaneLabelWidth:14 getPoolLabelHeight:17 getLaneLabelHeight:20 computeLaneSizes:26 LaneRect:50 getPoolLaneRect:58 hitTestPoolLane:102 assignToPoolLane:145 unassignFromPool:149 shiftLaneIndicesOnRemove:154 shiftLaneIndicesOnInsert:168
 frontend/src/utils/pwa.ts | typescript | 45 | initPWA:20 applyPwaUpdate:43
 frontend/src/utils/recording-manager.ts | typescript | 559 | VideoFormat:9 stopCanvasGif:50 liveCaptureRect:64 startCanvasGif:91 recordCanvasGif:204 makePageFrameRenderer:216 exportPageVideo:315 exportPageGif:368 setupRecording:420
-frontend/src/utils/render-element.ts | typescript | 227 | cubicBezier:24 cubicBezierAngle:30 renderNullGizmo:103 renderVariableWidthStroke:192 adjustColor:223
+frontend/src/utils/render-element.ts | typescript | 218 | cubicBezier:15 cubicBezierAngle:21 renderNullGizmo:94 renderVariableWidthStroke:183 adjustColor:214
 frontend/src/utils/reparent.ts | typescript | 186 | confirmAndReparent:17
 frontend/src/utils/revolve.ts | typescript | 85 | Ring:11 hasRevolve:14 baseColor:18 shade:23 horizontalSpan:32 renderRevolve:51
 frontend/src/utils/rich-text-utils.ts | typescript | 499 | spansToHtml:16 htmlToSpans:144 mergeAdjacentSpans:287 sameFormatting:302 spansToPlainText:318 plainTextToSpans:325 RichTextSegment:333 RichTextLayout:341 Token:348 buildSpanFontString:358 getLineHeight:369 layoutRichText:377 measureRichTextHeight:488
@@ -796,6 +799,7 @@ tests/api.spec.ts | typescript | 155 |
 tests/appearance-stack.spec.ts | typescript | 102 | count:83
 tests/arcade-visual.spec.ts | typescript | 59 | Window:7
 tests/arcade.spec.ts | typescript | 197 | Window:6
+tests/arrowhead-orientation.spec.ts | typescript | 151 | deg:17 norm:18 glyphAngle:21 analyse:29 boot:61 buildTree:70
 tests/artboard-delete.spec.ts | typescript | 55 | G:23
 tests/artboard-overlay.spec.ts | typescript | 52 |
 tests/artboards.spec.ts | typescript | 28 |

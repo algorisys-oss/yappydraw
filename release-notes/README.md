@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.165](0.8.165.md) — Arrowheads follow the curve they're on: exported heads were rotated to the bounding-box chord (up to 45° off) and architectural canvas heads pointed due east; one shared connector-geometry helper replaces six hand-copied derivations
 - [0.8.164](0.8.164.md) — The mobile shell works again: the phone toolbar had become a full-screen invisible panel that ate every tap; plus overflow, 28px touch targets, chrome painted over the canvas, and a dead 601–699px band
 - [0.8.163](0.8.163.md) — Recursive symbols (Droste/spiral/fractal); symmetry axes, artboard frames and rulers were all drawn 46/52px off the geometry they annotate; Fill mode previews while you draw
 - [0.8.162](0.8.162.md) — Properties becomes a dock panel, the top bar becomes a real header, Settings/Help get navigation + search; fixes the invisible palette/theme buttons
