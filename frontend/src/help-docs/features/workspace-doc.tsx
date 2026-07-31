@@ -33,6 +33,20 @@ const WorkspaceDoc: Component = () => {
                     The position sticks between sessions. Scripted: <code>Yappy.getState().globalSettings.toolbarDock</code>
                     reports it.
                 </p>
+                <h3>On a phone</h3>
+                <p>
+                    Below <strong>600px</strong> wide the position control is hidden and the tools become a
+                    single <strong>full-width strip</strong> pinned just above the status bar, with larger
+                    touch targets. Swipe the strip <strong>sideways</strong> to reach the tools that don't
+                    fit. There is no docking, dragging or wrapping at this size — an edge is too much of the
+                    screen to give away — but the strip, the header and the status bar all
+                    <em> reserve</em> their space, so the canvas between them is entirely yours to draw on.
+                    <strong> Undo</strong> and <strong>redo</strong> float just above the strip.
+                </p>
+                <p>
+                    Between <strong>601px</strong> and roughly a tablet width you get the normal docked column
+                    plus the compact header — the toolbar keeps its edge and the canvas still starts after it.
+                </p>
             </section>
 
             {/* ─── GUIDED TOUR ────────────────────────────────────────── */}

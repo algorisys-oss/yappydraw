@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.164', date: '2026-07-31', items: [
+        'Yappy works on a phone again. The toolbar had turned into an invisible panel covering the whole screen — the tool icons floated in the middle of an empty page and tapping the canvas did nothing at all, because that invisible panel was catching every tap. The tools are back to a single row along the bottom, and the drawing area between the top bar and the tools is yours again.',
+        'The tools no longer run off the right edge of the screen, and the buttons are finger-sized rather than the tiny mouse-sized ones you were getting.',
+        'Fixed: the top bar and the bottom toolbar were being drawn on top of your drawing rather than beside it, so anything you put near the top or bottom of the canvas was covered up and untappable.',
+        'Fixed: undo and redo were sitting on top of the tools, so you could not reach either one.',
+        'On a narrow tablet (around 600–700px wide) the tool column was overlapping the drawing instead of sitting next to it.',
+    ] },
     { version: '0.8.163', date: '2026-07-30', items: [
         'A symbol can now contain itself, and Yappy draws the nesting — a picture inside the picture inside the picture. Edit a symbol in place, drop another copy of the same symbol inside it, scale and rotate that copy, and press Done: nudge it for a receding corridor, shrink and turn it for a spiral, or put two inside for a branching tree. Use the ⟳ button on the symbol card to turn it on or off and to set how many levels deep to go.',
         'Fixed: the symmetry axis was drawn in the wrong place. Your strokes were always mirroring correctly — the dashed line was sitting about 46 pixels to the left of the line they were actually mirroring about, which made symmetry look like it was ignoring the axis. Dragging the axis to a new spot was off by the same amount. Artboard frames and the rulers and guides were all shifted the same way, and are now exact.',

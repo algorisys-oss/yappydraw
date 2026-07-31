@@ -5,6 +5,7 @@ import { addImagePlaceholder } from "../utils/image-actions";
 import type { ToolType } from "../types";
 import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, Command, Shapes, PersonStanding, Brush, Combine, PanelLeft, PanelTop, PanelRight, PanelBottom, Move } from "lucide-solid";
 import { isPanelOpen } from "../store/dock-layout";
+import { isPhoneWidth } from "../utils/dock-layout";
 
 const BRUSH_TOOLS: ToolType[] = ['fineliner', 'inkbrush', 'marker'];
 import PenToolGroup from "./pen-tool-group";
@@ -108,10 +109,10 @@ const Toolbar: Component = () => {
     const [isDragging, setIsDragging] = createSignal(false);
     const [dragStart, setDragStart] = createSignal({ x: 0, y: 0 });
     // Below this width the toolbar force-docks to the bottom (phones). Tablets
-    // (>= this) get the movable / orientable / resizable floating toolbar. Must
-    // match the @media breakpoint in toolbar.css.
-    const PHONE_MAX_WIDTH = 600;
-    const [isMobile, setIsMobile] = createSignal(window.innerWidth <= PHONE_MAX_WIDTH);
+    // (> this) get the movable / orientable / resizable floating toolbar. Imported
+    // rather than redeclared so this, the insets in utils/dock-layout, and the
+    // @media breakpoint in toolbar.css all name the same number.
+    const [isMobile, setIsMobile] = createSignal(isPhoneWidth());
     const [brainstormMode, setBrainstormMode] = createSignal(localStorage.getItem(BRAINSTORM_KEY) !== 'false');
     const [isResizing, setIsResizing] = createSignal(false);
     const [resizeStart, setResizeStart] = createSignal({ x: 0, y: 0, w: 0 });
@@ -222,7 +223,7 @@ const Toolbar: Component = () => {
         window.addEventListener('pointerup', onPointerUp);
         window.addEventListener('pointercancel', onPointerUp);
 
-        const handleResize = () => { setIsMobile(window.innerWidth <= PHONE_MAX_WIDTH); clampIntoView(); };
+        const handleResize = () => { setIsMobile(isPhoneWidth()); clampIntoView(); };
         window.addEventListener('resize', handleResize);
 
         // Expose global trigger for keyboard shortcut

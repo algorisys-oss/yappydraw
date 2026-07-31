@@ -193,7 +193,7 @@ frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 d
 frontend/src/components/measure-overlay.css | - | 83 |
 frontend/src/components/measure-overlay.tsx | typescript | 128 | MeasureOverlay:16 toWorld:21 onDown:23 onMove:30 onUp:40 onKey:45 seg:54 metrics:69 unit:77 distLabel:79
 frontend/src/components/menu.css | - | 365 |
-frontend/src/components/menu.tsx | typescript | 1454 | Component:1 SaveIntent:85 handleSaveRequest:87 isUnnamedDrawing:105 quickSaveToGallery:110 proceed:128 Menu:143 handleUnsavedCancel:165 handleUnsavedDiscard:170 handleUnsavedSave:177 onPaletteEscape:194 performSave:205 is:281 handleLoad:317 handleResetView:337 loadTemplateAction:342 handleTemplateSelect:382 handleOpenJson:391 handleLoadJsonText:442 handleExportHtml:458 handleExportExcalidraw:474 handleExportRocket:495 handleDeployToRocket:528 handleResize:577 hooks:1251
+frontend/src/components/menu.tsx | typescript | 1460 | Component:1 SaveIntent:85 handleSaveRequest:87 isUnnamedDrawing:105 quickSaveToGallery:110 proceed:128 Menu:143 handleUnsavedCancel:165 handleUnsavedDiscard:170 handleUnsavedSave:177 onPaletteEscape:194 performSave:205 is:281 handleLoad:317 handleResetView:337 loadTemplateAction:342 handleTemplateSelect:382 handleOpenJson:391 handleLoadJsonText:442 handleExportHtml:458 handleExportExcalidraw:474 handleExportRocket:495 handleDeployToRocket:528 handleResize:577 hooks:1251
 frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
 frontend/src/components/mindmap-tool-group.tsx | typescript | 134 | Component:1 MindmapToolGroup:16 handler:23 getActiveMindmapTool:34 handleToolClick:48 as:56 as:61 handleRightClick:68 toggleMenu:73 as:75 activeTool:80 isActive:81 getDropdownPosition:83
@@ -298,8 +298,8 @@ frontend/src/components/toast.css | - | 120 |
 frontend/src/components/toast.tsx | typescript | 55 | ToastType:5 showToast:15 hideToast:31 Toast:36
 frontend/src/components/tool-options-bar.css | - | 96 |
 frontend/src/components/tool-options-bar.tsx | typescript | 100 | Component:1 ToolOptionsBar:34 nodeCount:35 convertible:36 isFreehand:38
-frontend/src/components/toolbar.css | - | 378 |
-frontend/src/components/toolbar.tsx | typescript | 651 | Component:1 VideoProvider:26 Toolbar:79 clampIntoView:86 wrapWidth:121 docked:124 nextDock:147 cycleDock:148 DockIcon:150 onResizeDown:162 toggleBrainstormMode:173 onPointerDown:179 onPointerMove:192 onPointerUp:206 handleResize:225 handleToolClick:240 handleVideoInsert:250 handleRightClick:298 handleImageUpload:303 type:511 Icon:512
+frontend/src/components/toolbar.css | - | 396 |
+frontend/src/components/toolbar.tsx | typescript | 652 | Component:1 VideoProvider:27 Toolbar:80 clampIntoView:87 wrapWidth:122 docked:125 nextDock:148 cycleDock:149 DockIcon:151 onResizeDown:163 toggleBrainstormMode:174 onPointerDown:180 onPointerMove:193 onPointerUp:207 handleResize:226 handleToolClick:241 handleVideoInsert:251 handleRightClick:299 handleImageUpload:304 type:512 Icon:513
 frontend/src/components/touch-type-overlay.css | - | 58 |
 frontend/src/components/touch-type-overlay.tsx | typescript | 308 | TouchTypeOverlay:30 target:40 active:49 toWorld:50 selArr:51 curT:52 stop:53 twoPts:54 glyphBoxes:58 hitGlyph:94 applyAll:115 bumpScale:116 bumpRot:117 setColorLive:118 snapColor:119 setFont:120 firstSel:121 glyphColor:122 glyphFont:123 onFontFile:127 startGesture:135 onDown:148 onMove:189 onUp:212 onKey:245 selScreens:262 controlPos:263 marqueeRect:264
 frontend/src/components/transform-hud.css | - | 53 |
@@ -334,7 +334,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 368 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 375 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -415,7 +415,7 @@ frontend/src/help-docs/features/plotting-doc.tsx | typescript | 335 | graphs:4 P
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 296 | StickAnimationDoc:10
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 386 | StickLibraryDoc:9 your:253
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 249 | SymbolsDoc:9
-frontend/src/help-docs/features/workspace-doc.tsx | typescript | 399 | WorkspaceDoc:9 and:107 a:112 in:272
+frontend/src/help-docs/features/workspace-doc.tsx | typescript | 413 | WorkspaceDoc:9 and:121 a:126 in:286
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 660 | YslTutorialDoc:8 members:564 Subject:579
 frontend/src/help-docs/help-page.css | - | 411 |
 frontend/src/help-docs/help-page.tsx | typescript | 424 | Component:6 ShapeDoc:11 Tools:133 vertical:137 chips:170 a:206 graphs:264 curve:265 frame:273 getShapeFromHash:317 HelpPage:323 handleHashChange:329 navigateToShape:340 filteredShapes:345 currentDoc:356 handleBackToApp:358
@@ -616,7 +616,7 @@ frontend/src/utils/dimension-geometry.test.ts | typescript | 93 | DimensionAnnot
 frontend/src/utils/dimension-geometry.ts | typescript | 111 | MeasurementUnit:16 DimensionMeasure:18 DimensionAnnotation:20 DimBox:30 Pt:32 DimensionGeometry:34 dimensionGeometry:55 dimensionLabel:107
 frontend/src/utils/dimension-renderer.ts | typescript | 115 | DimBox:9 DimensionAnnotation:9 Pt:9 effectiveBox:15 arrowhead:26 renderDimensions:37
 frontend/src/utils/dimension-svg.ts | typescript | 84 | DimensionAnnotation:10 Pt:10 arrowhead:28 appendDimensionSvg:36
-frontend/src/utils/dock-layout.ts | typescript | 125 | Insets:31 Rect:32 dockInsets:35 canvasViewport:72 canvasCenterClient:89 publishDockVars:102
+frontend/src/utils/dock-layout.ts | typescript | 171 | isPhoneWidth:53 statusBarHeight:58 Insets:63 Rect:64 dockInsets:67 canvasViewport:118 canvasCenterClient:135 publishDockVars:148
 frontend/src/utils/document-io.ts | typescript | 68 | buildSlideDocument:12 normalizeDocument:47 gzipString:52 gunzipBytes:58 decodeDocumentBytes:64
 frontend/src/utils/draggable-panel.ts | typescript | 54 | makeDraggable:13 draggablePanel:49
 frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperationParams:23 getOperationsForType:79 parseValues:87 bstInsert:99 bstRemove:138 nodeAt:154 bstDeleteAt:159 moveSubtreeUp:192 collectRelative:211 clearSubtree:219 relToAbs:227 simpleHash:247 hashTablePut:259 hashTableRemove:270 animateDsOperation:287 executeDsOperation:350 abortDsAlgorithm:544 isDsAlgorithmRunning:551 setDsAnimationSpeed:555 getDsAnimationSpeed:559 clearDsHighlights:563 animateDsStep:580 compareValues:604 bubbleSort:613 selectionSort:662 insertionSort:714 linearSearch:765 binarySearch:796 bfsTraversal:853 dfsInorderTraversal:882 dfsPreorderTraversal:912 executeDsSortSearch:944
@@ -894,6 +894,7 @@ tests/mesh-drag.spec.ts | typescript | 57 | S:13 w2s:33
 tests/mesh-overlay.spec.ts | typescript | 55 | w2s:27 near:31
 tests/mesh-smooth.spec.ts | typescript | 40 | S:9 sample:22
 tests/mindmap-inherit.spec.ts | typescript | 78 |
+tests/mobile-shell.spec.ts | typescript | 139 | boot:19 geom:28 px:29 box:30
 tests/mono-logo.spec.ts | typescript | 256 | two:5 sleep:66 setCur:79 ease:80 moveToClient:81 moveTo:82 clickFx:83 findBtn:84 cue:94 ensureTool:103 estW:104 realW:107 centre:108 panel:111 line:112 the:126 mk:132 tline:218
 tests/mp4-record-check.spec.ts | typescript | 33 |
 tests/next-batch.spec.ts | typescript | 75 |

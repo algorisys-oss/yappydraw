@@ -1400,12 +1400,18 @@ const Menu: Component = () => {
 
                 {/* Mobile: floating undo/redo above the bottom toolbar. Anchored to the BOTTOM
                     of the screen, so it is the one cluster that is not part of the top bar and
-                    stays a fixed overlay. */}
+                    stays a fixed overlay.
+
+                    Offset by --dock-bottom rather than a hand-tuned 60px: on a phone the bottom
+                    chrome is the status bar PLUS the full-width toolbar strip (~93px), so a flat
+                    60px landed these two buttons on top of the tools. The var is published by
+                    utils/dock-layout and is correct in both layouts — on a 601-768px tablet, where
+                    the toolbar has taken a side edge instead, it is just the status bar. */}
                 <Show when={isMobile()}>
                         <div
                             style={{
                                 position: 'fixed',
-                                bottom: 'calc(60px + env(safe-area-inset-bottom, 0px))',
+                                bottom: 'calc(var(--dock-bottom, 60px) + 12px + env(safe-area-inset-bottom, 0px))',
                                 right: '12px',
                                 "z-index": 10060,
                                 display: 'flex',

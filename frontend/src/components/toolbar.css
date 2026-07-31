@@ -189,13 +189,27 @@
 }
 
 /* Phones: move toolbar to bottom, full width. Must match PHONE_MAX_WIDTH in
-   toolbar.tsx — tablets (>600px) keep the floating movable toolbar. */
+   utils/dock-layout.ts — tablets (>600px) keep the floating movable toolbar. */
 @media (max-width: 600px) {
-    .toolbar-container {
+    /* `:not(.docked)` — NOT a stylistic flourish. The floating-toolbar rule above is
+       `.toolbar-container:not(.docked)` (specificity 0-2-0); a bare `.toolbar-container`
+       here is 0-1-0 and LOSES to it, media query or not. So `top: auto` never applied,
+       the bar kept `top: calc(12px + var(--dock-top))` alongside this `bottom`, and with
+       both edges pinned and `height: auto` it stretched into a full-height, full-width
+       opaque slab: icons stranded in the vertical centre of the screen and every tap on
+       the canvas swallowed by an invisible panel. Mobile always floats (see `docked()`
+       in toolbar.tsx), so this selector matches exactly the same element. */
+    .toolbar-container:not(.docked) {
         top: auto;
-        bottom: 36px;
+        /* Sit directly on the status bar; --statusbar-h is published by dock-layout and
+           already accounts for the taller mobile bar, so the two can't drift apart. */
+        bottom: var(--statusbar-h, 36px);
         left: 0;
         right: 0;
+        /* There is no global border-box reset, so `width: 100%` + the 12px side padding
+           below made the bar 24px WIDER than the viewport — the last tool sat off-screen
+           and the page scrolled sideways. */
+        box-sizing: border-box;
         width: 100%;
         max-width: 100%;
         transform: none;
@@ -223,7 +237,11 @@
         display: none;
     }
 
-    .toolbar-btn {
+    /* Scoped to the container (0-2-0) so it beats the base `.toolbar-btn { width: 28px }`
+       (0-1-0) that is DECLARED BELOW THIS BLOCK. An unscoped `.toolbar-btn` here ties on
+       specificity and loses on source order, which is why phones were getting 28px
+       fingertip targets despite this rule existing. */
+    .toolbar-container .toolbar-btn {
         width: 40px;
         height: 40px;
         flex-shrink: 0;
