@@ -69,7 +69,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Constrain move to an axis (H / V / 45°)', keys: 'Shift+Drag element' },
             { label: 'Constrain angle to 15° (draw line / rotate / measure)', keys: 'Shift+Drag' },
             { label: 'Measure to neighbour (gaps + artboard edges)', keys: 'Alt+Hover' },
-            { label: 'Select All', keys: 'Ctrl+A' },
+            { label: 'Select All (switches to the Selection tool)', keys: 'Ctrl+A' },
             { label: 'Copy / Paste', keys: 'Ctrl+C / Ctrl+V' },
             { label: 'Cut', keys: 'Ctrl+X' },
             { label: 'Bring to Front', keys: 'Ctrl+]' },

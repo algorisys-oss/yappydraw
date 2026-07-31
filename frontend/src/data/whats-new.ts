@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.168', date: '2026-07-31', items: [
+        'Select All (Ctrl+A) now hands you the Selection tool. If you were drawing with a brush, selecting everything used to draw a box around your work that you could not do anything with — clicking a shape did not pick it up, dragging just painted another stroke, and none of the handles responded. Worse, the selection stayed on screen while you carried on drawing and quietly went out of date, because the strokes you drew afterwards were never added to it. Press your tool\'s shortcut (7 for the freehand brush) to go back to drawing.',
+        'The lasso keeps its tool, since it already selects, and Select All on an empty canvas leaves your brush alone.',
+    ] },
     { version: '0.8.167', date: '2026-07-31', items: [
         'Boxes are now sized correctly the very first time you open Yappy and build a diagram. The handwriting fonts had not always finished arriving at the moment Yappy measured your text to decide how big each box should be, so it measured against a stand-in font and came out a few percent off. That size is saved with the drawing, so it stayed wrong — opening the same diagram again later gave you slightly different boxes than the first time.',
         'If you drive Yappy from a script or from another page, you can now wait for the fonts before you start creating text, so automated diagrams come out the same size every run.',

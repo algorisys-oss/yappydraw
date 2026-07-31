@@ -64,3 +64,41 @@ describe("App Store Tool Isolation", async () => {
         expect(store.defaultElementStyles.strokeColor).toBe("#00ff00");
     });
 });
+
+describe("selectAll arms the selection tool", async () => {
+    const { store, setStore, setSelectedTool, selectAll } = await import("./app-store");
+
+    const seed = (n: number) => setStore("elements", Array.from({ length: n }, (_, i) => ({
+        id: `el-${i}`, type: "rectangle", x: i * 10, y: 0, width: 10, height: 10,
+    })) as any);
+
+    it("switches away from a drawing tool so the selection is manipulable", () => {
+        seed(3);
+        setSelectedTool("inkbrush");
+
+        selectAll();
+
+        expect(store.selection).toEqual(["el-0", "el-1", "el-2"]);
+        expect(store.selectedTool).toBe("selection");
+    });
+
+    it("keeps the lasso tool — it is already selection-capable", () => {
+        seed(2);
+        setSelectedTool("lasso");
+
+        selectAll();
+
+        expect(store.selection).toEqual(["el-0", "el-1"]);
+        expect(store.selectedTool).toBe("lasso");
+    });
+
+    it("leaves the active tool alone when there is nothing to select", () => {
+        setStore("elements", []);
+        setSelectedTool("inkbrush");
+
+        selectAll();
+
+        expect(store.selection).toEqual([]);
+        expect(store.selectedTool).toBe("inkbrush");
+    });
+});

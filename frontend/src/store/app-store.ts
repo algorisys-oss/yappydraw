@@ -1129,6 +1129,18 @@ export const selectAll = () => {
         const vis = evaluateTimelineAt(store.animCurrentFrame, store.animTimeline, []).visible;
         els = els.filter(e => vis.has(e.id));
     }
+    if (els.length === 0) { setStore('selection', []); return; }
+    // Select-all is a pure "act on existing objects" command, so it must leave the user
+    // able to act: dragging, resizing, marquee, control points and connector handles are
+    // all gated on the selection tool (canvas.tsx pointer handlers, selection-renderer).
+    // With a brush/shape tool still armed the selection is inert — it can't be grabbed,
+    // it sits on the canvas while you keep drawing, and continuous tools never reassign
+    // it, so it silently goes stale. Same convention as finishing a pen path/polyline or
+    // placing an image. `lasso` is left alone — it is already selection-capable.
+    if (store.selectedTool !== 'selection' && store.selectedTool !== 'lasso') {
+        setSelectedTool('selection');
+    }
+    // After the tool switch: setSelectedTool clears the selection for drawing tools.
     setStore('selection', els.map(el => el.id));
 };
 

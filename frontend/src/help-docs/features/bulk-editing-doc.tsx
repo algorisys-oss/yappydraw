@@ -102,7 +102,7 @@ const BulkEditingDoc: Component = () => {
             <h2>Tips</h2>
             <ul>
                 <li>Hold <strong>Shift</strong> and click to add/remove elements from the current selection.</li>
-                <li>Use <strong>Ctrl+A</strong> to select all elements, then use the property panel to change shared properties.</li>
+                <li>Use <strong>Ctrl+A</strong> to select all elements, then use the property panel to change shared properties. If a drawing tool was active, Ctrl+A switches you to the Selection tool so the selection can be dragged, resized and edited straight away — press your tool's shortcut (<strong>7</strong> for the freehand brush) to go back to drawing.</li>
                 <li>The "Mixed" indicator tells you at a glance which properties vary across your selection.</li>
                 <li>You can combine Select by Type with manual Shift+click to refine your selection before bulk editing.</li>
             </ul>
