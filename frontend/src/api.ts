@@ -48,6 +48,7 @@ import { templateRegistry, getTemplateById, getTemplatesByCategory, searchTempla
 import { saveCurrentAsTemplate, deleteUserTemplate } from "./templates/user-templates";
 import { listBrandKits, saveBrandKit, deleteBrandKit, createBrandKit, extractBrandColorsFromDocument, applyBrandKit } from "./brand/brand-kits";
 import { importSvgToCanvas } from "./utils/svg-import";
+import { fontsReady as awaitFontsReady, fontsAreLoaded } from "./utils/font-loading";
 // Type-only import: the element-search module statically pulls in the bundled
 // illustration library (~229 KB) + template data, so it must stay OUT of the eager
 // api.ts graph. `searchElements` below loads it on demand (same lazy chunk the
@@ -1580,6 +1581,23 @@ export const YappyAPI = {
             setStore("elements", []);
             setStore("selection", []);
         }
+    },
+
+    /**
+     * Resolves once the built-in webfonts are usable for text measurement.
+     *
+     * Await this before creating text-bearing elements in an automated context. Auto-sized
+     * elements bake the measured width into the saved document, and `document.fonts.ready`
+     * is NOT sufficient on its own — it resolves while `document.fonts.check()` is still
+     * false for a family that has never been rendered. See utils/font-loading.ts.
+     */
+    fontsReady(): Promise<void> {
+        return awaitFontsReady();
+    },
+
+    /** Whether every built-in font is available to `measureText` right now. */
+    fontsLoaded(): boolean {
+        return fontsAreLoaded();
     },
 
     setSelected(ids: string[]) {

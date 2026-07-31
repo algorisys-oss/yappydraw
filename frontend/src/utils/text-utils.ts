@@ -20,6 +20,9 @@ const fontFamilyMap: Record<string, string> = {
     'code': 'JetBrains Mono, monospace',
 };
 
+/** The built-in family stacks, for the boot-time font preload (utils/font-loading.ts). */
+export const getBuiltInFontStacks = (): string[] => Object.values(fontFamilyMap);
+
 /**
  * Custom (runtime-registered) font families live on a globalThis-backed map so a
  * registration is visible to EVERY module instance — even if a bundler/dev-server

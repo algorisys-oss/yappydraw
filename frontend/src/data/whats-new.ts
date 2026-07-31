@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.167', date: '2026-07-31', items: [
+        'Boxes are now sized correctly the very first time you open Yappy and build a diagram. The handwriting fonts had not always finished arriving at the moment Yappy measured your text to decide how big each box should be, so it measured against a stand-in font and came out a few percent off. That size is saved with the drawing, so it stayed wrong — opening the same diagram again later gave you slightly different boxes than the first time.',
+        'If you drive Yappy from a script or from another page, you can now wait for the fonts before you start creating text, so automated diagrams come out the same size every run.',
+    ] },
     { version: '0.8.166', date: '2026-07-31', items: [
         'Connectors now leave a shape straight out of the edge they are attached to. If the other shape was well off to one side, the line used to head sideways out of the bottom of the box instead of downwards — hugging the box and slipping past its corner, which left the arrowhead lying flat against the edge instead of standing on it. Diagrams with long connections across a hierarchy were the ones that looked wrong.',
         'Fixed: a label on a connector was being squeezed to the width of the connector, which is nothing at all for a straight up-and-down line. "one at a time" came out as four words stacked on top of each other down the line. Labels now stay on one line, centred on the connector, and only break where you put a line break yourself.',

@@ -6,6 +6,13 @@ import App from './app.tsx'
 import { loadDocument, setStore } from './store/app-store'
 import { isSlideDocument, migrateToSlideFormat } from './utils/migration'
 import { storage } from './storage/file-system-storage'
+import { preloadAppFonts } from './utils/font-loading'
+
+// Kick the webfonts off before anything can measure text with them. Auto-sized elements
+// write the measured width into the SAVED document, so a measurement taken against the
+// fallback font is a permanent error, not a transient one. Fire-and-forget: it must never
+// delay or break boot (see utils/font-loading.ts).
+preloadAppFonts()
 
 // Lazy load pages to reduce initial bundle
 const HelpPage = lazy(() => import('./help-docs/help-page'))

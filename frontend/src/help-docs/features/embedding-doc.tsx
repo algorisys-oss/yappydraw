@@ -112,8 +112,28 @@ Yappy.getEmbedHtml('my-drawing', { width: 1024, height: 768 })`}</code></pre>
                 iframe's window. Nothing to configure:
             </p>
             <pre><code>{`const y = document.querySelector('#yappy').contentWindow.Yappy;
+await y.fontsReady();                    // see "Wait for fonts" below
 y.importDSL('graph TD; A-->B; B-->C');   // build a diagram from text
 const svg = y.exportSVG();               // read it back`}</code></pre>
+
+            <h3>Wait for fonts before creating text</h3>
+            <p>
+                Text-bearing shapes are <strong>auto-sized from the measured text at creation</strong>, and the
+                measurement is written into the saved document. If the webfonts have not arrived yet, that
+                measurement is taken against the fallback font and the wrong size is baked in permanently — it
+                does not correct itself on the next render. Await <code>Yappy.fontsReady()</code> before the
+                first call that creates text:
+            </p>
+            <pre><code>{`await y.fontsReady();        // resolves when the built-in fonts are measurable
+y.importDSL(source);         // now every auto-sized box is sized correctly
+
+y.fontsLoaded();             // → boolean, the same state without waiting`}</code></pre>
+            <p class="tip-box">
+                Do <strong>not</strong> substitute <code>document.fonts.ready</code>. It resolves — and{' '}
+                <code>document.fonts.status</code> reads <code>"loaded"</code> — while a font that has never
+                been rendered is still unavailable, because <code>ready</code> only settles the faces that were
+                actually <em>requested</em>. <code>fontsReady()</code> requests them first, then waits.
+            </p>
 
             <h3>Cross-origin — postMessage bridge</h3>
             <p>
@@ -144,6 +164,7 @@ VITE_EMBED_ALLOWED_ORIGINS="https://app.example.com,https://wiki.example.com"
   });
 
   await yappy.ready();                          // waits for the bridge
+  await yappy.call('fontsReady');                // waits for the webfonts
   await yappy.call('importDSL', 'graph TD; A-->B; B-->C');
   const svg = await yappy.call('exportSVG');    // every Yappy.* method works
 </script>`}</code></pre>

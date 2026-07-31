@@ -79,7 +79,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 4498 | Theme:3 HarmonyType:66 PlayOptions:71 PlaySpec:71 PlayTargets:71 TexPart:72 AxesOptions:79 AxesSpec:79 PlotFn:79 VectorFieldOptions:79 VectorFn:79 DimensionMeasure:86 ElementOptions:158 normalizeElementType:371 plotRuns:402 ElementType:613 as:613 Window:4487
+frontend/src/api.ts | typescript | 4516 | Theme:3 HarmonyType:67 PlayOptions:72 PlaySpec:72 PlayTargets:72 TexPart:73 AxesOptions:80 AxesSpec:80 PlotFn:80 VectorFieldOptions:80 VectorFn:80 DimensionMeasure:87 ElementOptions:159 normalizeElementType:372 plotRuns:403 ElementType:614 as:614 Window:4505
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1487 | Component:1 App:96 moves:121 onPenMove:122 hidePen:126 handleKeyUp:165 handleKeyDown:175 as:772 handleFullscreenChange:893 handleBeforeUnload:899 handlePaste:903 handleGlobalDragEnter:1005 handleGlobalDragOver:1020 showDropFallbackPrompt:1039 cleanup:1069 outsideClick:1097 isImageFile:1109 first:1110 must:1123 extractDropData:1125 processExtractedDrop:1180 handleGlobalDrop:1297 handleDocumentDrop:1343
 frontend/src/assets/solid.svg | - | 1 |
@@ -334,7 +334,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 384 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 388 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -407,7 +407,7 @@ frontend/src/help-docs/features/bulk-editing-doc.tsx | typescript | 152 | BulkEd
 frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 299 | DesignStudioDoc:9 at:123
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 277 | EffectsDoc:10 Tools:270
 frontend/src/help-docs/features/elements-search-doc.tsx | typescript | 119 | chips:5 ElementsSearchDoc:11 chips:41
-frontend/src/help-docs/features/embedding-doc.tsx | typescript | 204 | EmbeddingDoc:3
+frontend/src/help-docs/features/embedding-doc.tsx | typescript | 225 | EmbeddingDoc:3
 frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 639 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27 to:458
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 502 | LogoToolkitDoc:9 the:167 across:255
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 408 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161
@@ -433,7 +433,7 @@ frontend/src/help-docs/shapes/uml-doc.tsx | typescript | 455 | UmlDoc:8 diagrams
 frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 327 | VectorPathsDoc:9
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 297 | WireframingDoc:8
 frontend/src/index.css | - | 617 |
-frontend/src/index.tsx | typescript | 173 | Router:21 handleHashChange:25 isEmbedRoute:80 isHelpRoute:81 isExamplesRoute:82 LoadingFallback:84 RouteError:95 dismissSplash:145
+frontend/src/index.tsx | typescript | 180 | Router:28 handleHashChange:32 isEmbedRoute:87 isHelpRoute:88 isExamplesRoute:89 LoadingFallback:91 RouteError:102 dismissSplash:152
 frontend/src/library/comic/cast-style.test.ts | typescript | 71 |
 frontend/src/library/comic/cast-style.ts | typescript | 96 | CastStyle:23 CastHairOptions:57 assignCastHair:70 scriptCast:90
 frontend/src/library/comic/index.ts | typescript | 484 | PanelLayout:11 Utterance:11 ComicPanelOptions:23 ComicStripOptions:63 buildFigureElements:87 measureBubble:129 planComicPanel:154 createComicPanel:259 IdFactory:301 buildPanelElements:307 createComicStrip:402
@@ -630,6 +630,7 @@ frontend/src/utils/export-game.ts | typescript | 47 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
 frontend/src/utils/export.ts | typescript | 1482 | ShapeGeometry:17 paintDimensions:33 Bounds:38 ensureExportImages:43 elementAABB:56 elementsBounds:80 overlapsRect:92 renderElWithEffects:102 buildAppearanceSvgGroup:141 buildUmlClassNode:200 umlArrowheadGlyph:291 connectorPathEl:319 geometryToDs:336 renderPagedDocToCanvas:381
 frontend/src/utils/extrude.ts | typescript | 231 | Poly:12 Ring:12 MultiPoly:17 hasExtrude:19 isExtrudeTilted:25 extrudeOwnsFront:31 tilted:36 darken:44 lighten:59 insetRing:68 baseColor:80 extrudeGeometry:89 drawBody:106 tracePolys:132 drawImageFront:148 drawFront:171 drawBevelFront:185 renderExtrudeBody:221
+frontend/src/utils/font-loading.ts | typescript | 81 | primaryFamily:34 preloadAppFonts:44 fontsReady:70 fontsAreLoaded:75
 frontend/src/utils/geometry-scale.ts | typescript | 69 | scalePoints:13 scalePathAnchors:33 scalePathSubpaths:47 scaleEraseStrokes:53
 frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
 frontend/src/utils/geometry.ts | typescript | 433 | isPointInPolygon:5 distanceToSegment:19 cubicBezier:59 cubicBezierAngle:64 getBezierPoints:98 isPointOnBezier:111 isPointOnPolyline:117 isPointInEllipse:128 isPointNearEllipseStroke:142 rotatePoint:177 with:356
@@ -710,7 +711,7 @@ frontend/src/utils/table-utils.ts | typescript | 1207 | CellRect:8 defaultTableD
 frontend/src/utils/tex.ts | typescript | 150 | TexPart:28 TexRenderOptions:39 MathJaxBits:44 loadMathJax:56 charOf:94 annotate:112 renderTex:139
 frontend/src/utils/text-on-path.ts | typescript | 251 | PathPoint:18 TextPathOptions:20 ArcTable:33 buildArcTable:35 locateAtDistance:45 drawTextAlongPath:70 isClosedShapeForText:137 ellipseOutline:141 regularPolygonOutline:150 getOutlinePath:160 sampleBezier:186 getElementTextPath:203
 frontend/src/utils/text-to-outlines.ts | typescript | 160 | OutlineResult:94
-frontend/src/utils/text-utils.ts | typescript | 352 | TextMetrics:5 VerticalTextLayout:186
+frontend/src/utils/text-utils.ts | typescript | 355 | TextMetrics:5 VerticalTextLayout:189
 frontend/src/utils/timelapse-manager.ts | typescript | 297 | TimelapseManifest:28 VideoFormat:30 newRecordingId:48 toBlobAsync:53 exportTimelapse:65 renderFrame:120 setupTimelapse:166
 frontend/src/utils/tool-handlers/canvas-event-handlers.ts | typescript | 317 | StockPhoto:15 CanvasEventContext:22 handleDragOver:30 handleDrop:39 applyAssetAtClientPoint:96 any:154 as:154 WheelContext:192 handleUmlSectionScroll:199 handleWheel:270
 frontend/src/utils/tool-handlers/draw-handler.ts | typescript | 685 | drawOnDown:76 drawOnMove:324 drawOnUp:445 normalizeOrganicBranch:660
@@ -782,7 +783,7 @@ scripts/generate_slides.py | python | 150 |
 scripts/generate_slides_v2.py | python | 363 | generate_elements:184 create_slides_structure:299
 scripts/generate_slides_v3.py | python | 478 | generate_elements:287 create_slides_structure:408
 scripts/publish-oss.sh | shell | 203 | info:40 warn:41 error:42
-scripts/render-dsl.mjs | javascript | 161 | parseArgs:34 opts:35 fail:54 isUp:74 waitUntilUp:81 main:90
+scripts/render-dsl.mjs | javascript | 166 | parseArgs:34 opts:35 fail:54 isUp:74 waitUntilUp:81 main:90
 scripts/repograph-refresh.sh | shell | 26 |
 scripts/test_relative_path.ts | typescript | 58 |
 tests/_mesh.spec.ts | typescript | 49 | w2s:34 key:43
