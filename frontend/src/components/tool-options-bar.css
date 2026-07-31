@@ -22,7 +22,7 @@
 .tob-hint { color: var(--text-secondary); font-size: 11px; }
 .tob-sep { width: 1px; height: 16px; background: var(--border-color); }
 
-.tool-options-bar button {
+.tool-options-bar > button {
     font-size: 11px;
     font-weight: 600;
     /* Indigo-600, not indigo-500: #6366f1 on white is 4.47:1, a hair under AA for 11px text,
@@ -41,19 +41,19 @@
    element's own surface, so the darker indigo is hardcoded rather than themed (there is no
    surrounding surface for it to respond to). Dark mode gets the mirror-image treatment
    below, where the tint composites over a dark panel instead of a white one. */
-.tool-options-bar button:hover:not(:disabled) {
+.tool-options-bar > button:hover:not(:disabled) {
     background: rgba(99, 102, 241, 0.12);
     color: #3730a3;
 }
 
-.tool-options-bar button.is-on { background: #4f46e5; color: #fff; }
+.tool-options-bar > button.is-on { background: #4f46e5; color: #fff; }
 
 /* Hover on an ACTIVE button. This rule is REQUIRED, not a nicety: the plain :hover selector
    above is (0,3,1) and outscores `button.is-on` at (0,2,1), so it replaced the solid indigo
    fill while `.is-on`'s `color: #fff` survived — white on a 10% tint, 1.13:1, i.e. the glyph
    disappeared exactly when you pointed at it. Deepening the fill keeps the "pressed" reading
    and takes white to ~6.5:1. */
-.tool-options-bar button.is-on:hover:not(:disabled) {
+.tool-options-bar > button.is-on:hover:not(:disabled) {
     background: #4338ca;
     color: #fff;
 }
@@ -63,28 +63,28 @@
    `:not(.is-on)` is load-bearing — this rule ties `button.is-on` on specificity and would win
    on source order, repainting the ACTIVE button's label indigo-300 on its own indigo fill
    (2.24:1). That is the bug fixed just above, reintroduced from the other direction. */
-[data-theme="dark"] .tool-options-bar button:not(.is-on),
-[data-theme="focus"] .tool-options-bar button:not(.is-on) {
+[data-theme="dark"] .tool-options-bar > button:not(.is-on),
+[data-theme="focus"] .tool-options-bar > button:not(.is-on) {
     color: #a5b4fc;
     border-color: #818cf8;
 }
 
 /* The same tint over a dark panel needs the label LIGHTER, not darker. */
-[data-theme="dark"] .tool-options-bar button:hover:not(:disabled),
-[data-theme="focus"] .tool-options-bar button:hover:not(:disabled) {
+[data-theme="dark"] .tool-options-bar > button:hover:not(:disabled),
+[data-theme="focus"] .tool-options-bar > button:hover:not(:disabled) {
     background: rgba(129, 140, 248, 0.22);
     color: #c7d2fe;
 }
 
 /* And hover on a dark surface should brighten rather than deepen, so the active button goes
    to indigo-400 with dark ink on it. */
-[data-theme="dark"] .tool-options-bar button.is-on:hover:not(:disabled),
-[data-theme="focus"] .tool-options-bar button.is-on:hover:not(:disabled) {
+[data-theme="dark"] .tool-options-bar > button.is-on:hover:not(:disabled),
+[data-theme="focus"] .tool-options-bar > button.is-on:hover:not(:disabled) {
     background: #a5b4fc;
     color: #1e1b4b;
 }
 
-.tool-options-bar button:disabled {
+.tool-options-bar > button:disabled {
     opacity: 0.4;
     cursor: default;
     /* Muted rather than hidden: the operations stay visible so you can see what the
@@ -94,3 +94,12 @@
 }
 
 .tob-close { border: none !important; color: var(--text-secondary) !important; font-size: 13px !important; }
+
+/* The shared quick controls (see components/quick-controls.tsx) — same widgets the floating
+   quick toolbar uses, here bound to the active tool's defaults. Wrapped in their own box so
+   the `> button` rules above, which style the bar's indigo pill buttons, leave them alone. */
+.tob-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}

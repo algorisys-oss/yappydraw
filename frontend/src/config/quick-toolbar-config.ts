@@ -231,6 +231,41 @@ const familyConfigs: Record<ElementFamily, QuickPropertyDef[]> = {
     video: videoProperties,
 };
 
+/**
+ * Property keys that only mean something against an *existing* element, so they must not
+ * appear in the tool-options bar (which edits `defaultElementStyles` — the settings the
+ * next drawn element inherits). `curvedText` needs a shape whose outline the text can flow
+ * along; the image filters need pixels.
+ */
+const INSTANCE_ONLY_KEYS = new Set([
+    'curvedText', 'filterPreset', 'filterBrightness', 'filterContrast', 'filterSaturate',
+]);
+
+/**
+ * Tools whose `curveType` the draw handler *overrides* at creation
+ * (`draw-handler.ts` — bezier/organicBranch force `bezier`, elbow forces `elbow`).
+ * Offering the control for them would be a lie: the choice is discarded.
+ */
+const CURVE_TYPE_FORCED: (ElementType | 'lasso' | 'crop')[] = ['bezier', 'elbow', 'organicBranch', 'polyline'];
+
+/**
+ * The options to show for the *active tool*, bound to `defaultElementStyles`.
+ *
+ * Same family definitions the selection-side quick toolbar uses, minus anything that
+ * cannot honestly be a default. Deriving from the family (rather than a hand-kept tool
+ * list) means a newly added shape type gets its options for free, which is the reason
+ * `getElementFamily` treats "not a known tool/connector/text/drawing/image" as `shape`.
+ */
+export function getToolDefaultProperties(tool: ElementType | 'lasso' | 'crop'): QuickPropertyDef[] {
+    if (TOOL_TYPES.includes(tool)) return [];
+    const props = getQuickPropertiesForType(tool as ElementType);
+    return props.filter(p => {
+        if (INSTANCE_ONLY_KEYS.has(p.key)) return false;
+        if (p.key === 'curveType' && CURVE_TYPE_FORCED.includes(tool)) return false;
+        return true;
+    });
+}
+
 /** Get the quick property definitions for a given element type */
 export function getQuickPropertiesForType(type: ElementType): QuickPropertyDef[] {
     const family = getElementFamily(type);

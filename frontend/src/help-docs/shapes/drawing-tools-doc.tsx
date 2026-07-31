@@ -223,6 +223,59 @@ export const DrawingToolsDoc: Component = () => {
                 </ul>
             </section>
 
+            {/* Tool options bar */}
+            <section class="doc-section">
+                <h2>Tool options (top bar)</h2>
+                <p>
+                    The middle of the top bar shows the options for whichever tool is active, and
+                    changes as you switch tools. What you set there applies to the <strong>next</strong>
+                    thing you draw — it is the tool's own setting, not an edit to anything already on
+                    the canvas. To restyle something you have already drawn, select it and use the
+                    floating quick toolbar or the Properties panel.
+                </p>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Tool</th>
+                            <th>Options</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Shapes</strong></td>
+                            <td>Stroke colour, fill colour, stroke style, opacity, corner roundness
+                                (on shapes that have corners), and the font, size and alignment used
+                                for text typed inside the shape.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Connectors</strong><br />(line, arrow)</td>
+                            <td>Stroke colour, line width, stroke style, line type (straight / curved /
+                                elbow) and the arrowhead at each end.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Text</strong></td>
+                            <td>Colour, font, size, bold, italic and alignment.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Brushes</strong><br />(Fineliner, Ink Brush, Marker)</td>
+                            <td>Stroke colour and width, plus Fill mode and Symmetry.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Node tool</strong></td>
+                            <td>Takes over the bar entirely with its node operations, and hands it
+                                back to the active tool on exit.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>
+                    Each tool remembers its own settings, so a red brush and a black rectangle stay
+                    that way as you switch between them. The Bezier, Elbow, Polyline and Organic
+                    Branch tools do not show a line type — those tools <em>are</em> a line type, and
+                    the setting would be ignored. A tool with nothing to offer (Selection, Pan,
+                    Eraser) leaves the bar empty rather than showing placeholders.
+                </p>
+            </section>
+
             {/* Keyboard Shortcuts */}
             <section class="doc-section">
                 <h2>Keyboard Shortcuts</h2>

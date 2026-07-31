@@ -1,12 +1,14 @@
-import { Show, For, type Component } from 'solid-js';
+import { Show, For, createSignal, createMemo, createEffect, type Component } from 'solid-js';
 import {
     store, setSymmetryMode, toggleSymmetryEditing, updateGlobalSettings,
-    toggleNodeTool, convertToPath,
+    toggleNodeTool, convertToPath, updateDefaultStyles,
 } from '../store/app-store';
 import {
     setNodeSelection, clearNodeSelection, setSelectedNodesKind,
     deleteSelectedNodes, allNodesOfSelection,
 } from '../utils/node-editing';
+import { getElementFamily, getToolDefaultProperties } from '../config/quick-toolbar-config';
+import { QuickControl } from './quick-controls';
 import './tool-options-bar.css';
 
 /**
@@ -31,11 +33,34 @@ const SYMMETRY_MODES = [
     { id: 'radial', label: '✳', title: 'Radial mandala' },
 ] as const;
 
+/** What to call the active tool's option group. */
+const FAMILY_TITLE: Record<string, string> = {
+    shape: 'Shape', connector: 'Line', text: 'Text', drawing: 'Brush',
+};
+
 export const ToolOptionsBar: Component = () => {
     const nodeCount = () => store.nodeSelection.length;
     const convertible = () => store.selection.filter(
         id => store.elements.find(e => e.id === id)?.type !== 'path');
     const isFreehand = () => FREEHAND.includes(store.selectedTool);
+
+    // Which popover (if any) is open. Keyed by property, like the quick toolbar.
+    const [openKey, setOpenKey] = createSignal<string | null>(null);
+
+    /**
+     * The active tool's defaults — what the NEXT element drawn will inherit, since
+     * `draw-handler` spreads `defaultElementStyles` into every new element. Nothing here
+     * touches the current selection: picking a drawing tool clears it (`setSelectedTool`),
+     * so there is never one to act on, and editing a selection is the property panel's and
+     * the floating quick toolbar's job.
+     */
+    const family = () => getElementFamily(store.selectedTool as any);
+    const toolProps = createMemo(() => getToolDefaultProperties(store.selectedTool as any));
+    const showToolProps = () => !store.nodeToolActive && toolProps().length > 0;
+
+    // A popover left open across a tool change would be editing a property the new tool
+    // may not even show.
+    createEffect(() => { store.selectedTool; setOpenKey(null); });
 
     return (
         <div class="tool-options-bar">
@@ -69,9 +94,30 @@ export const ToolOptionsBar: Component = () => {
                 <button class="tob-close" onClick={() => toggleNodeTool(false)} title="Exit (Esc)">✕</button>
             </Show>
 
-            {/* ── Drawing tools ─────────────────────────────────────────── */}
+            {/* ── The active tool's defaults ────────────────────────────── */}
+            <Show when={showToolProps()}>
+                <span class="tob-title">{FAMILY_TITLE[family()!] ?? 'Tool'}</span>
+                {/* Wrapper, not bare children: `.tool-options-bar > button` styles the bar's
+                    own indigo pill buttons, and these are the shared quick controls with
+                    their own look. Nesting them keeps the two vocabularies apart. */}
+                <div class="tob-controls">
+                    <For each={toolProps()}>{(def) => (
+                        <QuickControl
+                            def={def}
+                            float
+                            value={() => (store.defaultElementStyles as any)[def.key]}
+                            fontFamily={() => store.defaultElementStyles.fontFamily}
+                            openKey={openKey}
+                            setOpenKey={setOpenKey}
+                            onCommit={(key, val) => updateDefaultStyles({ [key]: val } as any)}
+                        />
+                    )}</For>
+                </div>
+            </Show>
+
+            {/* ── Freehand extras ───────────────────────────────────────── */}
             <Show when={!store.nodeToolActive && isFreehand()}>
-                <span class="tob-title">Brush</span>
+                <span class="tob-sep" />
                 <button
                     classList={{ 'is-on': !!store.globalSettings.fillShapeMode }}
                     onClick={() => updateGlobalSettings({ fillShapeMode: !store.globalSettings.fillShapeMode })}

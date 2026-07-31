@@ -230,8 +230,9 @@ frontend/src/components/property-panel.css | - | 803 |
 frontend/src/components/property-panel.tsx | typescript | 2641 | Component:1 PropertyConfig:36 isMixed:61 templates:84 handleClickOutside:86 handlePresent:141 StickFaceActions:231 calls:245 SlideActions:321 handlePreviewTransition:322 AlignmentControls:338 gapVal:340 el:383 r2:384 apply:385 applyAngle:389 num:393 any:432 el:442 hasStroke:443 preview:444 set:445 hasOptions:477 activePaletteId:482 activePalette:483 paletteSwatches:485 swatches:487 ap:587 fills:588 strokes:589 commit:590 editFill:596 editStroke:597 move:598 patValue:613 onPatChange:614 sg:661 stops:662 setSG:663 editStop:664 mesh:692 ids:693 row:712 col:713 pat:748 ids:749 transparentBg:753 isCustom:754 isTexture:757 el:855 id:856 set:857 snap:858 feather:859 glowOn:860 glowBlur:861 glowColor:862 warp:899 ids:900 bend:902 preset:903 reapply:904 ex:934 ids:935 Row:939 TurntableEditor:976 els:977 capable:978 ids:979 isGroup:980 rep:981 tt:982 Row:986 fx:1050 ids:1051 num:1056 scalePct:1057 Row:1059 updateStops:1129 handleBarMouseDown:1134 +33 more
 frontend/src/components/puppet-warp-overlay.css | - | 36 |
 frontend/src/components/puppet-warp-overlay.tsx | typescript | 110 | PuppetWarpOverlay:12 target:19 warpable:20 active:21 notice:23 toWorld:24 pinWorld:27 hitPin:33 onDown:42 onMove:63 onUp:70 onKey:76 pinDots:81
-frontend/src/components/quick-toolbar.css | - | 537 |
-frontend/src/components/quick-toolbar.tsx | typescript | 840 | Component:7 QuickPropertyDef:16 getIcon:65 handleDocClick:114 isTransparent:131 handleDocClick:179 activeOption:195 isActive:235 toggle:241 an:265 clamp:277 beginEdit:279 commit:284 a:307 is:327 handleDocClick:352 activeLabel:368 categories:372 QuickToolbar:425 selectedElement:429 handler:518 handlePropertyChange:532 handlePropertyStart:577 release:584 x:599 y:628 value:665 isDisabled:708
+frontend/src/components/quick-controls.tsx | typescript | 579 | Component:16 QuickPropertyDef:22 getIcon:65 stop:123 handleDocClick:165 isTransparent:182 handleDocClick:233 activeOption:249 isActive:290 toggle:296 an:320 clamp:332 beginEdit:334 commit:339 a:362 is:382 handleDocClick:409 activeLabel:425 categories:429 toggleOpen:501 isOpen:502 isDisabled:533
+frontend/src/components/quick-toolbar.css | - | 546 |
+frontend/src/components/quick-toolbar.tsx | typescript | 354 | Component:7 QuickPropertyDef:12 QuickToolbar:24 selectedElement:28 handler:117 handlePropertyChange:131 handlePropertyStart:176 release:183 x:198 y:227
 frontend/src/components/recolor-panel.css | - | 61 |
 frontend/src/components/recolor-panel.tsx | typescript | 89 | Component:1 RecolorPanel:15 swatches:22 beginEdit:24 pickLive:30 endEdit:37 valHex:38
 frontend/src/components/recording-overlay.css | - | 100 |
@@ -296,8 +297,8 @@ frontend/src/components/timelapse-player.css | - | 165 |
 frontend/src/components/timelapse-player.tsx | typescript | 173 | Component:1 TimelapsePlayer:18 reset:28 load:37 close:87 togglePlay:89 doExport:95
 frontend/src/components/toast.css | - | 120 |
 frontend/src/components/toast.tsx | typescript | 55 | ToastType:5 showToast:15 hideToast:31 Toast:36
-frontend/src/components/tool-options-bar.css | - | 96 |
-frontend/src/components/tool-options-bar.tsx | typescript | 100 | Component:1 ToolOptionsBar:34 nodeCount:35 convertible:36 isFreehand:38
+frontend/src/components/tool-options-bar.css | - | 105 |
+frontend/src/components/tool-options-bar.tsx | typescript | 146 | Component:1 ToolOptionsBar:41 nodeCount:42 convertible:43 isFreehand:45 family:57 showToolProps:59
 frontend/src/components/toolbar.css | - | 396 |
 frontend/src/components/toolbar.tsx | typescript | 652 | Component:1 VideoProvider:27 Toolbar:80 clampIntoView:87 wrapWidth:122 docked:125 nextDock:148 cycleDock:149 DockIcon:151 onResizeDown:163 toggleBrainstormMode:174 onPointerDown:180 onPointerMove:193 onPointerUp:207 handleResize:226 handleToolClick:241 handleVideoInsert:251 handleRightClick:299 handleImageUpload:304 type:512 Icon:513
 frontend/src/components/touch-type-overlay.css | - | 58 |
@@ -331,10 +332,11 @@ frontend/src/config/image-filter-presets.ts | typescript | 45 | ImageFilterPrese
 frontend/src/config/openbox-presets.ts | typescript | 305 | OpenBoxPreset:8 getOpenBoxPreset:289 getOpenBoxPresetsByCategory:296 getOpenBoxCategories:303
 frontend/src/config/page-size-presets.ts | typescript | 50 | PageSizePreset:5
 frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
-frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
+frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 with:20 and:27 for:34
+frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 392 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 397 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -422,7 +424,7 @@ frontend/src/help-docs/help-page.tsx | typescript | 424 | Component:6 ShapeDoc:1
 frontend/src/help-docs/shapes/basic-shapes-doc.tsx | typescript | 333 | BasicShapesDoc:8 strings:306
 frontend/src/help-docs/shapes/bpmn-doc.tsx | typescript | 577 | BpmnDoc:8
 frontend/src/help-docs/shapes/connectors-doc.tsx | typescript | 373 | ConnectorsDoc:8
-frontend/src/help-docs/shapes/drawing-tools-doc.tsx | typescript | 450 | DrawingToolsDoc:8
+frontend/src/help-docs/shapes/drawing-tools-doc.tsx | typescript | 503 | DrawingToolsDoc:8
 frontend/src/help-docs/shapes/flowchart-doc.tsx | typescript | 295 | FlowchartDoc:8 call:64 call:164
 frontend/src/help-docs/shapes/geometric-shapes-doc.tsx | typescript | 306 | GeometricShapesDoc:8 string:272 string:275
 frontend/src/help-docs/shapes/infrastructure-doc.tsx | typescript | 429 | InfrastructureDoc:8
@@ -981,7 +983,7 @@ tests/tier1-effects.spec.ts | typescript | 109 | darkMarks:72
 tests/timelapse-check.spec.ts | typescript | 39 |
 tests/timelapse-top-cut.spec.ts | typescript | 58 |
 tests/tool-options-bar-contrast.spec.ts | typescript | 97 | ratio:65
-tests/tool-options-bar.spec.ts | typescript | 165 | boot:11 section:25
+tests/tool-options-bar.spec.ts | typescript | 271 | boot:11 section:25 titles:169 pick:171
 tests/toolbar-dock.spec.ts | typescript | 378 | boot:14 rects:29 centreWorld:76 q:131 state:310 read:341 px:345
 tests/toolbar-grid-align.spec.ts | typescript | 116 | setup:20 metrics:42
 tests/toolbar-persist.spec.ts | typescript | 16 |

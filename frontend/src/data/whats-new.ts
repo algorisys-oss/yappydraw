@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.169', date: '2026-08-01', items: [
+        'The middle of the top bar now shows options for whatever tool you have picked, instead of being empty for most of them. Pick a shape and you get stroke and fill colour, line style, opacity, corner roundness and the font for text you type inside it. Pick a line or arrow and you get its width, whether it runs straight, curved or in right angles, and the arrowhead on each end. Pick the text tool and you get font, size, bold, italic and alignment. The brushes gained colour and width next to the Fill and Symmetry buttons they already had.',
+        'What you set there applies to the next thing you draw — it is the tool\'s own setting, not a change to anything already on the canvas. Each tool remembers its own, so a red brush and a black rectangle stay that way as you switch between them. To restyle something already drawn, select it and use the floating toolbar or the Properties panel.',
+        'Tools that would ignore a setting do not show it: the Bezier, Elbow, Polyline and Organic Branch tools have no line-type picker, because those tools are a line type.',
+    ] },
     { version: '0.8.168', date: '2026-07-31', items: [
         'Select All (Ctrl+A) now hands you the Selection tool. If you were drawing with a brush, selecting everything used to draw a box around your work that you could not do anything with — clicking a shape did not pick it up, dragging just painted another stroke, and none of the handles responded. Worse, the selection stayed on screen while you carried on drawing and quietly went out of date, because the strokes you drew afterwards were never added to it. Press your tool\'s shortcut (7 for the freehand brush) to go back to drawing.',
         'The lasso keeps its tool, since it already selects, and Select All on an empty canvas leaves your brush alone.',

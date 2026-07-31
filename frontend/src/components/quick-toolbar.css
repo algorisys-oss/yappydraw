@@ -535,3 +535,12 @@
         height: 28px;
     }
 }
+
+/* ============ Portalled popovers (tool-options bar) ============ */
+/* `float` popovers render at <body>, outside the top bar's stacking context, so their
+   10002 would land below the header band. The top bar paints an opaque background at
+   10050 and its contents sit at 10060 (see the Z-INDEX CONTRACT in index.css) — a popover
+   opened from the tool-options bar has to clear both or it opens behind the header. */
+.qt-floating {
+    z-index: 10070;
+}
