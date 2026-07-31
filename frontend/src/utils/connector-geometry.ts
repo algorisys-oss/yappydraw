@@ -49,6 +49,36 @@ export interface ConnectorGeometry {
     points: Pt[] | null;
     /** SVG path data for the stroke; null ⇒ a straight chord, the caller draws a line. */
     d: string | null;
+    /** Where a label sits: the midpoint OF THE PATH, which for a curve is not the midpoint
+     *  of its bounding box. Mirrors what the canvas label renderer has always computed. */
+    mid: Pt;
+}
+
+/** Cubic Bézier coordinate at `t` (kept local so this module stays a leaf). */
+const cubicAt = (p0: number, p1: number, p2: number, p3: number, t: number) => {
+    const k = 1 - t;
+    return k * k * k * p0 + 3 * k * k * t * p1 + 3 * k * t * t * p2 + t * t * t * p3;
+};
+
+/** Point half way along a polyline, measured by arc length. */
+function polylineMidpoint(pts: Pt[]): Pt {
+    let total = 0;
+    const segs = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+        const len = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+        segs.push({ a: pts[i], b: pts[i + 1], len });
+        total += len;
+    }
+    const half = total / 2;
+    let acc = 0;
+    for (const s of segs) {
+        if (acc + s.len >= half) {
+            const t = s.len ? (half - acc) / s.len : 0;
+            return { x: s.a.x + (s.b.x - s.a.x) * t, y: s.a.y + (s.b.y - s.a.y) * t };
+        }
+        acc += s.len;
+    }
+    return pts[0];
 }
 
 /** Below this, two points are the same point and the direction between them is meaningless. */
@@ -99,7 +129,8 @@ export function connectorGeometry(el: any): ConnectorGeometry {
         ? { x: el.x + pts[pts.length - 1].x, y: el.y + pts[pts.length - 1].y }
         : { x: el.x + el.width, y: el.y + el.height };
 
-    const base = { start, end, cp1: null, cp2: null, quadratic: false, points: null, d: null };
+    const chordMid: Pt = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+    const base = { start, end, cp1: null, cp2: null, quadratic: false, points: null, d: null, mid: chordMid };
 
     // ── Elbow: a polyline through the waypoints, or a synthesised mid-jog ────────────
     if (el.curveType === 'elbow') {
@@ -108,9 +139,23 @@ export function connectorGeometry(el: any): ConnectorGeometry {
             : synthesiseElbow(start, end, el.width, el.height);
         const clean = verts.length >= 2 ? verts : [start, end];
         const n = clean.length;
+        // A standalone polyline (neither end bound) labels at its bounding-box centre; a
+        // connected elbow labels half way along the path. Matches the canvas renderer.
+        const standalone = !el.startBinding && !el.endBinding;
+        let mid: Pt;
+        if (standalone && pts.length >= 2) {
+            const xs = clean.map(p => p.x), ys = clean.map(p => p.y);
+            mid = {
+                x: (Math.min(...xs) + Math.max(...xs)) / 2,
+                y: (Math.min(...ys) + Math.max(...ys)) / 2,
+            };
+        } else {
+            mid = polylineMidpoint(clean);
+        }
         return {
             ...base,
             points: clean,
+            mid,
             d: `M ${fmt(clean[0].x)} ${fmt(clean[0].y)} ` +
                 clean.slice(1).map(p => `L ${fmt(p.x)} ${fmt(p.y)}`).join(' '),
             // Angles come from the first and last non-degenerate segment.
@@ -131,16 +176,23 @@ export function connectorGeometry(el: any): ConnectorGeometry {
             cp1 = cps[0]; cp2 = cps[0]; quadratic = true;
             d = `M ${fmt(start.x)} ${fmt(start.y)} Q ${fmt(cp1.x)} ${fmt(cp1.y)}, ${fmt(end.x)} ${fmt(end.y)}`;
         } else {
-            // The default control points every unstyled connector gets: offset half the
-            // dominant axis, which makes the curve leave and arrive exactly axis-aligned.
-            // This is the branch the arrowhead bug lived in — the true tangent here is
-            // always horizontal or vertical, never the diagonal chord.
-            [cp1, cp2] = defaultControlPoints(start, end, el.width, el.height);
+            // The default control points every unstyled connector gets. Direction from the
+            // edge each end is anchored to, magnitude from the chord's dominant axis — see
+            // defaultControlPoints. This is also the branch the arrowhead bug lived in: the
+            // true tangent here is always horizontal or vertical, never the diagonal chord.
+            [cp1, cp2] = defaultControlPoints(
+                start, end, el.width, el.height,
+                anchorEdge(el.startBinding), anchorEdge(el.endBinding),
+            );
             d = `M ${fmt(start.x)} ${fmt(start.y)} C ${fmt(cp1.x)} ${fmt(cp1.y)}, ${fmt(cp2.x)} ${fmt(cp2.y)}, ${fmt(end.x)} ${fmt(end.y)}`;
         }
 
         return {
             ...base, cp1, cp2, quadratic, d,
+            mid: {
+                x: cubicAt(start.x, cp1.x, cp2.x, end.x, 0.5),
+                y: cubicAt(start.y, cp1.y, cp2.y, end.y, 0.5),
+            },
             startAngle: outwardAngle(start, [cp1, cp2, end]),
             endAngle: outwardAngle(end, [cp2, cp1, start]),
         };
@@ -154,11 +206,84 @@ export function connectorGeometry(el: any): ConnectorGeometry {
     };
 }
 
-/** Default cubic control points: half the dominant axis, axis-aligned at both ends. */
-export function defaultControlPoints(start: Pt, end: Pt, width: number, height: number): [Pt, Pt] {
-    return Math.abs(width) > Math.abs(height)
+/** The four box edges a bound endpoint can sit on. */
+export type AnchorEdge = 'top' | 'bottom' | 'left' | 'right';
+
+/** Outward unit normal of each edge, in screen coordinates (y grows downward). */
+const EDGE_NORMAL: Record<AnchorEdge, Pt> = {
+    top: { x: 0, y: -1 },
+    bottom: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+    right: { x: 1, y: 0 },
+};
+
+/**
+ * Which edge of its bound node this endpoint is anchored to, if any.
+ *
+ * `api.connect()` records `anchorFractionX/Y` — the endpoint's position across the node's
+ * bounding box — and its `intersect()` puts a box endpoint exactly on a boundary, so the
+ * relevant fraction lands on exactly 0 or 1.
+ *
+ * Returns null (⇒ caller falls back to the chord rule) for: an unbound end, a *corner*
+ * anchor where two edges meet and there is no single normal, and non-box shapes such as
+ * circles and diamonds, whose anchors sit at neither 0 nor 1.
+ */
+export function anchorEdge(binding: any): AnchorEdge | null {
+    if (!binding) return null;
+    const { anchorFractionX: fx, anchorFractionY: fy } = binding;
+    if (typeof fx !== 'number' || typeof fy !== 'number') return null;
+    const at = (v: number, t: number) => Math.abs(v - t) < 1e-6;
+    const hits: AnchorEdge[] = [];
+    if (at(fy, 0)) hits.push('top');
+    if (at(fy, 1)) hits.push('bottom');
+    if (at(fx, 0)) hits.push('left');
+    if (at(fx, 1)) hits.push('right');
+    return hits.length === 1 ? hits[0] : null;
+}
+
+/**
+ * Default cubic control points.
+ *
+ * The offset MAGNITUDE is half the dominant axis of the chord, as it has always been. The
+ * offset DIRECTION, though, comes from the edge each endpoint is anchored to — not from the
+ * chord's dominant axis.
+ *
+ * Those two rules agree most of the time, which is why the difference went unnoticed: a
+ * tree-down layout anchors top/bottom *and* is vertically dominant. They diverge exactly on
+ * the wide cross-hierarchy edges, where a node is far enough sideways that |dx| > |dy| while
+ * the anchor is still on a horizontal edge. The old rule then sent the curve out of a bottom
+ * edge heading *sideways* — hugging the box and sliding past its corner — and since the
+ * arrowhead faithfully follows the curve, the glyph ended up lying flat against the edge.
+ * See docs/connector-anchor-direction-spec.md; 97 of 653 edge-anchored endpoints in the
+ * kata corpus left or arrived exactly parallel to their own edge.
+ *
+ * Keeping the magnitude is what makes this surgical: where the dominant axis already agreed
+ * with the edge normal the control point is bit-for-bit unchanged, so the ~85% of connectors
+ * that looked right re-render identically.
+ */
+export function defaultControlPoints(
+    start: Pt, end: Pt, width: number, height: number,
+    startEdge: AnchorEdge | null = null, endEdge: AnchorEdge | null = null,
+): [Pt, Pt] {
+    const horizontal = Math.abs(width) > Math.abs(height);
+    const k = (horizontal ? Math.abs(width) : Math.abs(height)) / 2;
+
+    // The chord rule, kept for unbound ends, corner anchors and non-box shapes.
+    const [fbStart, fbEnd]: [Pt, Pt] = horizontal
         ? [{ x: start.x + width / 2, y: start.y }, { x: end.x - width / 2, y: end.y }]
         : [{ x: start.x, y: start.y + height / 2 }, { x: end.x, y: end.y - height / 2 }];
+
+    // Both control points sit on the far side of their endpoint from the box, so each is
+    // offset along its own edge's OUTWARD normal.
+    const along = (p: Pt, e: AnchorEdge): Pt => ({
+        x: p.x + EDGE_NORMAL[e].x * k,
+        y: p.y + EDGE_NORMAL[e].y * k,
+    });
+
+    return [
+        startEdge ? along(start, startEdge) : fbStart,
+        endEdge ? along(end, endEdge) : fbEnd,
+    ];
 }
 
 /** The three-segment jog an elbow falls back to when it carries no waypoints. */

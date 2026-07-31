@@ -1085,9 +1085,20 @@ export const exportToSvg = (onlySelected: boolean) => {
             const fontFamily = resolveFontFamily(el.fontFamily);
             const textColor = el.textColor || el.strokeColor;
             const textAlign = el.textAlign || 'center';
-            const cx = el.x + el.width / 2;
-            const cy = el.y + el.height / 2;
-            const maxWidth = el.width - 20;
+
+            /* A connector is not a container: its "box" is the chord's bounding rect, which
+               is a degenerate stand-in for the shape holding the text. Wrapping a label to
+               `el.width` therefore breaks it to the chord's dx — ZERO, or negative after the
+               -20 padding, for a vertical connector — so `a -> b "one at a time"` exported as
+               four stacked single-word lines dropped down the line. The canvas renderer never
+               wrapped connector labels (it splits on \n only), so this was another export-only
+               divergence. Labels also belong on the PATH midpoint, not the bounding-box
+               centre; for a curve the two differ. See docs/connector-anchor-direction-spec.md. */
+            const isConnector = el.type === 'line' || el.type === 'arrow' || el.type === 'bezier';
+            const connGeom = isConnector ? connectorGeometry(el) : null;
+            const cx = connGeom ? connGeom.mid.x : el.x + el.width / 2;
+            const cy = connGeom ? connGeom.mid.y : el.y + el.height / 2;
+            const maxWidth = connGeom ? Infinity : el.width - 20;
 
             if (el.richContainerText && el.richContainerText.length > 0) {
                 // Rich text path
@@ -1145,10 +1156,15 @@ export const exportToSvg = (onlySelected: boolean) => {
                     else lines.push(...wrapText(measureRenderer, para, maxWidth));
                 });
 
+                // Connector labels are always centred on the path (the canvas renderer hard-codes
+                // `textAlign = 'center'`); `el.x`/`el.width` here are the chord's corner and dx,
+                // which do not describe a text box to align inside.
                 let textAnchor = 'middle';
                 let xPos = cx;
-                if (textAlign === 'left') { textAnchor = 'start'; xPos = el.x + 10; }
-                else if (textAlign === 'right') { textAnchor = 'end'; xPos = el.x + el.width - 10; }
+                if (!isConnector) {
+                    if (textAlign === 'left') { textAnchor = 'start'; xPos = el.x + 10; }
+                    else if (textAlign === 'right') { textAnchor = 'end'; xPos = el.x + el.width - 10; }
+                }
 
                 const totalHeight = lines.length * lineHeight;
                 const startY = cy - totalHeight / 2 + lineHeight / 2;

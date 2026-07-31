@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.166', date: '2026-07-31', items: [
+        'Connectors now leave a shape straight out of the edge they are attached to. If the other shape was well off to one side, the line used to head sideways out of the bottom of the box instead of downwards — hugging the box and slipping past its corner, which left the arrowhead lying flat against the edge instead of standing on it. Diagrams with long connections across a hierarchy were the ones that looked wrong.',
+        'Fixed: a label on a connector was being squeezed to the width of the connector, which is nothing at all for a straight up-and-down line. "one at a time" came out as four words stacked on top of each other down the line. Labels now stay on one line, centred on the connector, and only break where you put a line break yourself.',
+    ] },
     { version: '0.8.165', date: '2026-07-31', items: [
         'Arrowheads on curved connectors now point the way the line actually goes. The head was being angled at the straight line between the connector\'s two corners rather than at the curve it sits on, so on anything but a perfectly straight or perfectly stacked connector it was turned the wrong way — by as much as 45° in exported SVG. Diagrams where a parent connects down to children spread left and right were the worst affected.',
         'In the clean (architectural) drawing style the problem was bigger still: arrowheads at the start of a curved connector pointed straight to the right no matter which way the line ran. Both ends now follow the curve.',

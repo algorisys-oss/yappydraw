@@ -72,86 +72,10 @@ export class ConnectorRenderer extends ShapeRenderer {
             }
         }
 
-        const pts = normalizePoints(el.points);
-        let midX: number, midY: number;
-
-        if (el.curveType === 'bezier') {
-            let start, end;
-            if (pts.length >= 2) {
-                start = { x: el.x + pts[0].x, y: el.y + pts[0].y };
-                end = { x: el.x + pts[pts.length - 1].x, y: el.y + pts[pts.length - 1].y };
-            } else {
-                start = { x: el.x, y: el.y };
-                end = { x: el.x + el.width, y: el.y + el.height };
-            }
-            let cp1, cp2;
-            if (el.controlPoints && el.controlPoints.length > 0) {
-                cp1 = el.controlPoints[0];
-                cp2 = el.controlPoints.length > 1 ? el.controlPoints[1] : cp1;
-            } else {
-                const w = el.width, h = el.height;
-                if (Math.abs(w) > Math.abs(h)) {
-                    cp1 = { x: start.x + w / 2, y: start.y };
-                    cp2 = { x: end.x - w / 2, y: end.y };
-                } else {
-                    cp1 = { x: start.x, y: start.y + h / 2 };
-                    cp2 = { x: end.x, y: end.y - h / 2 };
-                }
-            }
-            midX = cubicBezier(start.x, cp1.x, cp2.x, end.x, 0.5);
-            midY = cubicBezier(start.y, cp1.y, cp2.y, end.y, 0.5);
-        } else if (el.curveType === 'elbow' && pts.length >= 2) {
-            const isPolyline = !el.startBinding && !el.endBinding;
-            if (isPolyline) {
-                // Standalone polyline: center text at bounding box center
-                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                for (const p of pts) {
-                    const px = el.x + p.x, py = el.y + p.y;
-                    if (px < minX) minX = px;
-                    if (py < minY) minY = py;
-                    if (px > maxX) maxX = px;
-                    if (py > maxY) maxY = py;
-                }
-                midX = (minX + maxX) / 2;
-                midY = (minY + maxY) / 2;
-            } else {
-                // Connected elbow: walk segments to find the midpoint by path length
-                const segs: { x1: number; y1: number; x2: number; y2: number; len: number }[] = [];
-                let totalLen = 0;
-                for (let i = 0; i < pts.length - 1; i++) {
-                    const x1 = el.x + pts[i].x, y1 = el.y + pts[i].y;
-                    const x2 = el.x + pts[i + 1].x, y2 = el.y + pts[i + 1].y;
-                    const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-                    segs.push({ x1, y1, x2, y2, len });
-                    totalLen += len;
-                }
-                const halfLen = totalLen / 2;
-                let acc = 0;
-                midX = el.x + pts[0].x;
-                midY = el.y + pts[0].y;
-                for (const seg of segs) {
-                    if (acc + seg.len >= halfLen) {
-                        const t = (halfLen - acc) / seg.len;
-                        midX = seg.x1 + (seg.x2 - seg.x1) * t;
-                        midY = seg.y1 + (seg.y2 - seg.y1) * t;
-                        break;
-                    }
-                    acc += seg.len;
-                }
-            }
-        } else {
-            // Straight line
-            let start, end;
-            if (pts.length >= 2) {
-                start = { x: el.x + pts[0].x, y: el.y + pts[0].y };
-                end = { x: el.x + pts[pts.length - 1].x, y: el.y + pts[pts.length - 1].y };
-            } else {
-                start = { x: el.x, y: el.y };
-                end = { x: el.x + el.width, y: el.y + el.height };
-            }
-            midX = (start.x + end.x) / 2;
-            midY = (start.y + end.y) / 2;
-        }
+        // Label anchor: the midpoint OF THE PATH, from the same shared derivation as the
+        // stroke and the arrowheads. This was the last inline copy of the control-point
+        // maths in this file (see connector-geometry.ts).
+        const { x: midX, y: midY } = connectorGeometry(el).mid;
 
         // Draw text with background for readability
         const fontSize = el.fontSize || 14;

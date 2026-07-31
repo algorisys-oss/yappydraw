@@ -334,7 +334,7 @@ frontend/src/config/properties.ts | typescript | 1894 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.ts | typescript | 244 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getQuickPropertiesForType:235
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 380 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 384 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -477,7 +477,7 @@ frontend/src/shapes/renderers/circle-renderer.ts | typescript | 74 | CircleRende
 frontend/src/shapes/renderers/cloud-infra-renderer.ts | typescript | 456 | CloudInfraRenderer:7{renderArchitectural:8 renderSketch:268 roundRect:405 getHexPath:421 getShieldPath:435 definePath:450}
 frontend/src/shapes/renderers/code-block-renderer.ts | typescript | 179 | CodeBlockRenderer:7{renderArchitectural:8 renderSketch:12 renderCommon:16 definePath:176}
 frontend/src/shapes/renderers/connection-rel-renderer.ts | typescript | 559 | ConnectionRelRenderer:7{renderArchitectural:8 renderSketch:379 roundRect:504 getPuzzlePath:518 getMagnetPath:536 definePath:553}
-frontend/src/shapes/renderers/connector-renderer.ts | typescript | 627 | ConnectorRenderer:10{render:16}
+frontend/src/shapes/renderers/connector-renderer.ts | typescript | 551 | ConnectorRenderer:10{render:16}
 frontend/src/shapes/renderers/container-renderer.ts | typescript | 105 | ContainerRenderer:6{renderArchitectural:7 renderSketch:60 getRoundedRectPath:89 definePath:95}
 frontend/src/shapes/renderers/data-metrics-renderer.ts | typescript | 1558 | PieSlice:9 GanttTask:16 JourneyTask:23 QuadrantData:28 XYChartData:36 DataMetricsRenderer:43{renderArchitectural:44 renderSketch:335 renderDataPieArchitectural:505}
 frontend/src/shapes/renderers/data-structure-renderer.ts | typescript | 1066 | DataStructureRenderer:12{renderArchitectural:13 renderSketch:17 renderCommon:21 parseValues:39 getItemAlpha:44 getHighlightState:67 getCellStyle:101 drawRoundedRect:108 drawTitle:121 getColors:137 hexToRgba:160 fillBackground:168 renderArray:218 renderStack:340 renderQueue:472 renderLinkedList:599}
@@ -606,8 +606,8 @@ frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:
 frontend/src/utils/color-harmony.ts | typescript | 83 | HarmonyType:10 generateTints:19 generateHarmony:29 loadImage:41 extractImagePalette:56
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
 frontend/src/utils/command-registry.ts | typescript | 460 | Command:27
-frontend/src/utils/connector-geometry.test.ts | typescript | 153 | deg:4 sameAngle:6 arrow:13
-frontend/src/utils/connector-geometry.ts | typescript | 169 | Pt:31 ConnectorGeometry:33 outwardAngle:68 dedupe:78 connectorGeometry:92 defaultControlPoints:158 synthesiseElbow:165
+frontend/src/utils/connector-geometry.test.ts | typescript | 264 | deg:4 sameAngle:6 arrow:13 bind:60 departure:68 arrivalAway:69
+frontend/src/utils/connector-geometry.ts | typescript | 294 | Pt:31 ConnectorGeometry:33 polylineMidpoint:64 outwardAngle:98 dedupe:108 connectorGeometry:122 AnchorEdge:210 anchorEdge:231 defaultControlPoints:264 synthesiseElbow:290
 frontend/src/utils/connector-obstacles.ts | typescript | 132 | Seg:14 Bounds:34
 frontend/src/utils/connector-routing.test.ts | typescript | 212 | node:7 conn:12
 frontend/src/utils/connector-routing.ts | typescript | 203 | Pt:26 Side:27 sideFacing:41 sidePoint:60 oppositePoint:77 projectOntoSide:93 Member:108 allocatePort:121
@@ -628,7 +628,7 @@ frontend/src/utils/eval-expr.ts | typescript | 94 | evaluateNumericExpression:19
 frontend/src/utils/excalidraw-io.ts | typescript | 269 | ExcalidrawFile:23 pointPairs:52 anchorsToPairs:64 baseExc:70 ToExcalidrawResult:101 toExcalidraw:103 FromExcalidrawResult:177 fromExcalidraw:189
 frontend/src/utils/export-game.ts | typescript | 47 | exportSceneAsHtml:20
 frontend/src/utils/export-to-html.ts | typescript | 129 | blobUrlToBase64:7 embedImages:26 exportToHtml:47
-frontend/src/utils/export.ts | typescript | 1466 | ShapeGeometry:17 paintDimensions:33 Bounds:38 ensureExportImages:43 elementAABB:56 elementsBounds:80 overlapsRect:92 renderElWithEffects:102 buildAppearanceSvgGroup:141 buildUmlClassNode:200 umlArrowheadGlyph:291 connectorPathEl:319 geometryToDs:336 renderPagedDocToCanvas:381
+frontend/src/utils/export.ts | typescript | 1482 | ShapeGeometry:17 paintDimensions:33 Bounds:38 ensureExportImages:43 elementAABB:56 elementsBounds:80 overlapsRect:92 renderElWithEffects:102 buildAppearanceSvgGroup:141 buildUmlClassNode:200 umlArrowheadGlyph:291 connectorPathEl:319 geometryToDs:336 renderPagedDocToCanvas:381
 frontend/src/utils/extrude.ts | typescript | 231 | Poly:12 Ring:12 MultiPoly:17 hasExtrude:19 isExtrudeTilted:25 extrudeOwnsFront:31 tilted:36 darken:44 lighten:59 insetRing:68 baseColor:80 extrudeGeometry:89 drawBody:106 tracePolys:132 drawImageFront:148 drawFront:171 drawBevelFront:185 renderExtrudeBody:221
 frontend/src/utils/geometry-scale.ts | typescript | 69 | scalePoints:13 scalePathAnchors:33 scalePathSubpaths:47 scaleEraseStrokes:53
 frontend/src/utils/geometry-to-ds.ts | typescript | 42 | geometryToDs:9
@@ -826,6 +826,7 @@ tests/composition-evaluator.spec.ts | typescript | 47 | composition:4
 tests/compound-edit.spec.ts | typescript | 66 | widthOf:18
 tests/compound-shapes.spec.ts | typescript | 85 | state:31
 tests/comprehensive-features.spec.ts | typescript | 251 |
+tests/connector-anchor-direction.spec.ts | typescript | 176 | deg:16 norm:17 cubicOf:21 edgeNormalAt:30 boot:41 buildCrossEdge:54 box:62
 tests/contrast.spec.ts | typescript | 308 | Page:1 relLuminance:16 contrast:20 sample:27 Surface:198
 tests/curvature.spec.ts | typescript | 35 |
 tests/data-structures.spec.ts | typescript | 189 |

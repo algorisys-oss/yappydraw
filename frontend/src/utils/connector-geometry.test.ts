@@ -53,6 +53,117 @@ describe("connectorGeometry — bezier with default control points", () => {
     });
 });
 
+describe("connectorGeometry — departure follows the anchored edge, not the chord", () => {
+    // docs/connector-anchor-direction-spec.md. The departure direction at the start is
+    // `cp1 − start`; at the end the away-direction is `cp2 − end`. Both must equal the
+    // outward normal of the edge the endpoint is anchored to.
+    const bind = (fx: number, fy: number) => ({ elementId: 'n', focus: 0, gap: 5, anchorFractionX: fx, anchorFractionY: fy });
+    const EDGE = {
+        top: { b: bind(0.5, 0), normal: -90 },
+        bottom: { b: bind(0.5, 1), normal: 90 },
+        left: { b: bind(0, 0.5), normal: 180 },
+        right: { b: bind(1, 0.5), normal: 0 },
+    } as const;
+
+    const departure = (g: any) => deg(Math.atan2(g.cp1.y - g.start.y, g.cp1.x - g.start.x));
+    const arrivalAway = (g: any) => deg(Math.atan2(g.cp2.y - g.end.y, g.cp2.x - g.end.x));
+
+    it("every edge × every chord quadrant leaves along that edge's normal", () => {
+        for (const [name, e] of Object.entries(EDGE)) {
+            for (const [w, h] of [[500, 400], [-500, 400], [500, -400], [-500, -400],
+                                  [400, 500], [-400, 500], [400, -500], [-400, -500]]) {
+                const g = connectorGeometry(arrow({ width: w, height: h, startBinding: e.b }));
+                expect(sameAngle(departure(g) * Math.PI / 180, e.normal),
+                    `${name} edge, chord ${w}x${h}: departed ${departure(g)}° want ${e.normal}°`).toBe(true);
+            }
+        }
+    });
+
+    it("the reported case: horizontally dominant, but anchored on a bottom edge", () => {
+        // Abstract Factory's Button → MacButton spans dx = −507, dy = +442, so the chord is
+        // horizontally dominant while the anchor is on Button's bottom edge. The old rule
+        // sent the curve out sideways, exactly parallel to the edge it was leaving.
+        const g = connectorGeometry(arrow({
+            width: -507, height: 442,
+            startBinding: EDGE.bottom.b, endBinding: EDGE.top.b,
+        }));
+        expect(sameAngle(departure(g) * Math.PI / 180, 90)).toBe(true);      // down, off the bottom edge
+        expect(sameAngle(arrivalAway(g) * Math.PI / 180, -90)).toBe(true);   // up, off the top edge
+        // …and the arrowheads follow, since they come from the same control points.
+        expect(sameAngle(g.startAngle, -90)).toBe(true);
+        expect(sameAngle(g.endAngle, 90)).toBe(true);
+    });
+
+    it("keeps the offset magnitude, so already-correct curves are byte-identical", () => {
+        // Vertically dominant + top/bottom anchors is the case the two rules agreed on.
+        const opts = { width: 120, height: 400 };
+        const before = connectorGeometry(arrow(opts));
+        const after = connectorGeometry(arrow({
+            ...opts, startBinding: EDGE.bottom.b, endBinding: EDGE.top.b,
+        }));
+        expect(after.cp1).toEqual(before.cp1!);
+        expect(after.cp2).toEqual(before.cp2!);
+        expect(after.d).toBe(before.d!);
+    });
+
+    it("the two ends are independent — bottom edge out, left edge in", () => {
+        const g = connectorGeometry(arrow({
+            width: 600, height: 200, startBinding: EDGE.bottom.b, endBinding: EDGE.left.b,
+        }));
+        expect(sameAngle(departure(g) * Math.PI / 180, 90)).toBe(true);
+        expect(sameAngle(arrivalAway(g) * Math.PI / 180, 180)).toBe(true);
+    });
+
+    it("unbound ends, corner anchors and non-box anchors keep the chord rule", () => {
+        const plain = connectorGeometry(arrow({ width: 500, height: 400 }));
+        // Corner: two fractions at an extreme at once — no single normal.
+        const corner = connectorGeometry(arrow({
+            width: 500, height: 400, startBinding: bind(0, 0), endBinding: bind(1, 1),
+        }));
+        // A circle/diamond anchor lands at neither 0 nor 1.
+        const round = connectorGeometry(arrow({
+            width: 500, height: 400, startBinding: bind(0.15, 0.22), endBinding: bind(0.8, 0.7),
+        }));
+        expect(corner.d).toBe(plain.d!);
+        expect(round.d).toBe(plain.d!);
+    });
+
+    it("a binding without anchor fractions falls back rather than throwing", () => {
+        const g = connectorGeometry(arrow({
+            width: 500, height: 400, startBinding: { elementId: 'n', focus: 0, gap: 5 },
+        }));
+        expect(g.d).toBe(connectorGeometry(arrow({ width: 500, height: 400 })).d!);
+    });
+});
+
+describe("connectorGeometry — label midpoint", () => {
+    it("a bezier labels at the curve midpoint, not the bounding-box centre", () => {
+        const g = connectorGeometry(arrow({
+            width: 0, height: 400,
+            controlPoints: [{ x: 200, y: 100 }, { x: 200, y: 300 }],
+        }));
+        // Symmetric control points either side push the curve out to x = 150 at t = 0.5,
+        // while the bounding box centre is x = 0.
+        expect(Math.round(g.mid.x)).toBe(150);
+        expect(Math.round(g.mid.y)).toBe(200);
+    });
+
+    it("a straight connector labels at the chord midpoint", () => {
+        const g = connectorGeometry(arrow({ width: 100, height: 200, curveType: 'straight' }));
+        expect(g.mid).toEqual({ x: 50, y: 100 });
+    });
+
+    it("a connected elbow labels half way along the path", () => {
+        const g = connectorGeometry(arrow({
+            width: 200, height: 0, curveType: 'elbow',
+            points: [0, 0, 100, 0, 100, 100, 200, 100],
+            startBinding: { elementId: 'a' }, endBinding: { elementId: 'b' },
+        }));
+        // Total length 300; half way is 50px down the middle segment.
+        expect(g.mid).toEqual({ x: 100, y: 50 });
+    });
+});
+
 describe("connectorGeometry — bezier with authored control points", () => {
     it("two control points: angles measured against cp1 and cp2", () => {
         const g = connectorGeometry(arrow({
