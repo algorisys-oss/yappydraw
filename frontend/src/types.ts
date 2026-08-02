@@ -51,8 +51,12 @@ export interface Artboard { id: string; name: string; x: number; y: number; widt
 export interface GraphicStyle { id: string; name: string; style: Partial<DrawingElement>; }
 
 /** A document-level named colour. Objects that link to it (via fillSwatchId /
- *  strokeSwatchId) update automatically when the swatch's colour changes. */
-export interface Swatch { id: string; name: string; color: string; group?: string; }
+ *  strokeSwatchId) update automatically when the swatch's colour changes.
+ *
+ *  `darkColor` is the optional dark-theme counterpart. Nothing on the canvas uses
+ *  it (the canvas renders one theme at a time); it exists so a themeable SVG
+ *  export can emit a light/dark pair per swatch and let the viewer's theme pick. */
+export interface Swatch { id: string; name: string; color: string; darkColor?: string; group?: string; }
 
 /** A reusable, document-level pattern swatch — a named `PatternFill` that can be
  *  applied to any shape from the Patterns panel. */

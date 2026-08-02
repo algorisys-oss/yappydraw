@@ -25,8 +25,8 @@ import { getTextEffectPreset } from "../config/text-effect-presets";
 import type { DrawingElement } from "../types";
 import {
     Copy, ChevronsDown, ChevronDown, ChevronUp, ChevronsUp, Trash2, Palette,
-    AlignLeft, AlignCenterHorizontal, AlignRight,
     AlignStartVertical, AlignCenterVertical, AlignEndVertical,
+    AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal,
     AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
     AlignHorizontalSpaceAround, AlignVerticalSpaceAround, Crosshair,
     Plus, ArrowDown, LayoutGrid, LayoutList, Target, Network,
@@ -342,15 +342,18 @@ const AlignmentControls: Component = () => {
         <div class="property-group">
             <div class="group-title">ALIGNMENT</div>
             <div class="alignment-row">
-                <button class="icon-btn" onClick={() => alignSelectedElements('left')} title="Align Left"><AlignLeft size={18} /></button>
-                <button class="icon-btn" onClick={() => alignSelectedElements('center')} title="Align Horizontal Center"><AlignCenterHorizontal size={18} /></button>
-                <button class="icon-btn" onClick={() => alignSelectedElements('right')} title="Align Right"><AlignRight size={18} /></button>
+                {/* Icon axis matters: lucide names an align icon after the axis of its guide
+                    line, so horizontal alignment (moves X) uses the *-Vertical icons and
+                    vertical alignment (moves Y) uses the *-Horizontal ones. */}
+                <button class="icon-btn" onClick={() => alignSelectedElements('left')} title="Align Left"><AlignStartVertical size={18} /></button>
+                <button class="icon-btn" onClick={() => alignSelectedElements('center')} title="Align Horizontal Center"><AlignCenterVertical size={18} /></button>
+                <button class="icon-btn" onClick={() => alignSelectedElements('right')} title="Align Right"><AlignEndVertical size={18} /></button>
                 <button class="icon-btn" onClick={() => distributeSelectedElements('horizontal')} title="Distribute Horizontal Centers"><AlignHorizontalDistributeCenter size={18} /></button>
             </div>
             <div class="alignment-row">
-                <button class="icon-btn" onClick={() => alignSelectedElements('top')} title="Align Top"><AlignStartVertical size={18} /></button>
-                <button class="icon-btn" onClick={() => alignSelectedElements('middle')} title="Align Vertical Center"><AlignCenterVertical size={18} /></button>
-                <button class="icon-btn" onClick={() => alignSelectedElements('bottom')} title="Align Bottom"><AlignEndVertical size={18} /></button>
+                <button class="icon-btn" onClick={() => alignSelectedElements('top')} title="Align Top"><AlignStartHorizontal size={18} /></button>
+                <button class="icon-btn" onClick={() => alignSelectedElements('middle')} title="Align Vertical Center"><AlignCenterHorizontal size={18} /></button>
+                <button class="icon-btn" onClick={() => alignSelectedElements('bottom')} title="Align Bottom"><AlignEndHorizontal size={18} /></button>
                 <button class="icon-btn" onClick={() => distributeSelectedElements('vertical')} title="Distribute Vertical Centers"><AlignVerticalDistributeCenter size={18} /></button>
             </div>
             <div class="alignment-row" style={{ gap: '6px', 'align-items': 'center', 'margin-top': '4px' }}>

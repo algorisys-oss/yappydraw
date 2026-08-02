@@ -113,6 +113,11 @@ columns: 3
                             <td>Number</td>
                             <td>Column count for grid layout</td>
                         </tr>
+                        <tr>
+                            <td><code>targetWidth</code></td>
+                            <td>Number (px)</td>
+                            <td>Lay out to fit this width — fewer columns, more rows. Nothing is scaled down, so content that cannot fit stays wide. <code>grid</code> and <code>byte-grid</code> only.</td>
+                        </tr>
                     </tbody>
                 </table>
             </section>
@@ -356,6 +361,7 @@ a    -> b     { startArrowhead: none, endArrowhead: arrow }`}</code></pre>
                         <tr><td><code>mindmap-down-curved</code></td><td>Mind maps</td><td>Top-down, curved branch connectors + per-branch colour</td></tr>
                         <tr><td><code>mindmap-down-straight</code></td><td>Mind maps</td><td>Top-down, straight connectors + per-branch colour</td></tr>
                         <tr><td><code>grid</code></td><td>Showcases, catalogs</td><td>Row-major grid with configurable columns</td></tr>
+                        <tr><td><code>byte-grid</code></td><td>Bit and byte diagrams</td><td>A run of cells grouped into named spans — a float's sign/exponent/mantissa, a header's magic bytes. One node per span, sized by <code>properties.bits</code> / <code>bytes</code> / <code>cells</code>, with an optional hex or decimal offset gutter. JSON form only: the text syntax has no way to declare a span size</td></tr>
                         <tr><td><code>sequence</code></td><td>Sequence diagrams</td><td>Lifelines left-to-right, messages vertical</td></tr>
                         <tr><td><code>manual</code></td><td>Free placement</td><td>Uses explicit x/y positions or auto-grid fallback</td></tr>
                     </tbody>
@@ -583,6 +589,62 @@ Yappy.importMermaid(\`graph TD
             </section>
 
             {/* Headless / CLI export */}
+            {/* Palettes */}
+            <section class="doc-section">
+                <h2>Colour Palettes</h2>
+                <p>
+                    Declare named colour roles once, then refer to them from any style with{' '}
+                    <code>@name</code>. Each role becomes a document swatch and every element using
+                    it is <strong>linked</strong> to that swatch, so recolouring the role (in the
+                    Swatches panel, or via <code>Yappy.updateSwatchColor</code>) updates the whole
+                    diagram at once.
+                </p>
+                <pre><code>{`{
+  "version": 1,
+  "palette": {
+    "danger": "#ef4444",
+    "live":   { "light": "#2563eb", "dark": "#60a5fa" }
+  },
+  "layout": { "strategy": "grid", "columns": 2 },
+  "nodes": [
+    { "id": "a", "shape": "rectangle", "label": "freed",
+      "style": { "backgroundColor": "@danger" } },
+    { "id": "b", "shape": "rectangle", "label": "allocated",
+      "style": { "backgroundColor": "@live", "strokeColor": "@danger" } }
+  ],
+  "edges": []
+}`}</code></pre>
+                <p>
+                    Roles work on <code>backgroundColor</code> and <code>strokeColor</code> (both
+                    linked), and on <code>textColor</code>, <code>textHighlightColor</code>,{' '}
+                    <code>shadowColor</code> and <code>innerBorderColor</code> (resolved, but not
+                    linked, since elements have no swatch field for those). The object form's{' '}
+                    <code>dark</code> colour is used by the themeable SVG export below. An unknown
+                    role is left as-is with a console warning rather than failing the render.
+                </p>
+            </section>
+
+            {/* Reproducible renders */}
+            <section class="doc-section">
+                <h2>Reproducible Renders</h2>
+                <p>
+                    Sketch style feeds each element's <code>seed</code> into rough.js, so the same
+                    source normally draws slightly different lines every time. Set{' '}
+                    <code>meta.seed</code> and every element's seed becomes a pure function of the
+                    diagram seed and the element's id, which makes a render byte-identical run to
+                    run. That is what lets a build cache, diff, or review generated SVG.
+                </p>
+                <pre><code>{`{ "version": 1, "meta": { "seed": 2026 }, ... }
+
+// pin one element regardless of the diagram seed:
+{ "id": "a", "shape": "rectangle", "style": { "seed": 424242 } }`}</code></pre>
+                <p>
+                    Seeds are keyed by node id, so adding or reordering a node does not reshuffle
+                    its siblings' geometry. Leave <code>meta.seed</code> unset for the normal
+                    interactive behaviour of a fresh random seed per element.
+                </p>
+            </section>
+
             <section class="doc-section">
                 <h2>Headless SVG Export (CLI)</h2>
                 <p>
@@ -594,6 +656,52 @@ Yappy.importMermaid(\`graph TD
 
 # against an already-running instance, or to stdout:
 npm run render:dsl -- diagram.mmd --url http://localhost:5173 -o -`}</code></pre>
+                <p>
+                    Pass several sources with <code>-d</code> to render them all in{' '}
+                    <strong>one</strong> browser session. Booting Chromium and warming the webfonts
+                    costs far more than drawing a diagram, so a batch is dramatically faster than
+                    one invocation per file:
+                </p>
+                <pre><code>{`npm run render:dsl -- src/*.ysl -d dist/ --theme variables
+
+# or read the list from a file (JSON array, or one path per line):
+npm run render:dsl -- --manifest diagrams.txt -d dist/ --keep-going`}</code></pre>
+                <p>
+                    Other flags: <code>--var-prefix</code> renames the CSS custom properties,{' '}
+                    <code>--keep-going</code> continues past a bad source instead of stopping, and{' '}
+                    <code>--selected</code> exports only the selection. Exit codes are{' '}
+                    <code>0</code> success, <code>1</code> usage or IO error, <code>2</code> render
+                    failure.
+                </p>
+            </section>
+
+            {/* Themeable export */}
+            <section class="doc-section">
+                <h2>Themeable SVG Export</h2>
+                <p>
+                    A normal SVG export bakes literal colours, so a diagram exported from a light
+                    canvas stays light forever — including when embedded in a dark page. Export
+                    with <code>theme: 'variables'</code> and any <em>swatch-linked</em> colour
+                    becomes a CSS custom property instead, keeping the hex as its fallback:
+                </p>
+                <pre><code>{`Yappy.exportSVG(false, { theme: 'variables' });
+
+// in the output:
+//   fill="var(--yd-danger, #ef4444)"
+//
+//   :root { --yd-danger: #ef4444; --yd-live: #2563eb; }
+//   @media (prefers-color-scheme: dark) {
+//     :root { --yd-live: #60a5fa; }
+//   }`}</code></pre>
+                <p>
+                    Swatches with a <code>darkColor</code> (set from a palette's <code>dark</code>{' '}
+                    value) get the <code>prefers-color-scheme</code> override, which is what makes
+                    one file work on both a light and a dark page. A themed export leaves the
+                    background <strong>transparent</strong>, since the embedding page owns it. Pass{' '}
+                    <code>{`{ varPrefix: 'bx' }`}</code> to rename the properties. Both render
+                    styles are supported. Colours that are not linked to a swatch are exported
+                    literally, so only what you named is themeable.
+                </p>
             </section>
 
             {/* Full Example */}

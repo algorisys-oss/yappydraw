@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.170](0.8.170.md) — Bullet lists survive the editor: nested items were dropped outright (browsers nest a `<ul>` as a *sibling* of its `<li>`), items after a nested list merged into the previous bullet, and wrapped items grew a second marker; plus the Properties panel's align icons, which named the wrong axis
 - [0.8.169](0.8.169.md) — Tool options in the top bar for shapes, connectors and text (previously Node tool + brushes only), sharing the quick toolbar's widgets via a new `quick-controls.tsx`; controls the draw handler would discard are deliberately withheld
 - [0.8.168](0.8.168.md) — Ctrl+A left the drawing tool armed, so select-all produced an inert selection that couldn't be dragged, resized or handled — and went stale as you kept painting; also unbroke `app-store.test.ts`, which had been failing to import (389 → 393 tests)
 - [0.8.167](0.8.167.md) — The first diagram imported into a fresh page was measured against the fallback font and baked a 3.7% size error into the saved document; `document.fonts.ready` resolves while the font is still missing. New `Yappy.fontsReady()` / `fontsLoaded()`

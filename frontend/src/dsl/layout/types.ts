@@ -16,4 +16,6 @@ export interface LayoutConfig {
     vSpacing: number;
     columns?: number;
     origin: { x: number; y: number };
+    /** Width to lay out for, in px. Undefined means natural width. See layout/width.ts. */
+    targetWidth?: number;
 }

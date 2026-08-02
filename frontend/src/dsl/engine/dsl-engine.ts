@@ -11,7 +11,11 @@ import type { NodePosition } from '../layout/types';
 import { resolveShapeType } from '../shape-aliases';
 import { getShapeDefaults } from '../shape-defaults';
 import { mergeNodeStyle, mergeEdgeStyle, mapStyleToOptions } from './render-helpers';
+import { resolveSeed } from './seed';
+import { bindPalette, applyPalette, type PaletteBinding } from './palette';
 import { computeLayout } from '../layout/layout-manager';
+import { resolveTargetWidth } from '../layout/width';
+import { expandByteGrid } from '../layout/strategies/byte-grid-layout';
 import {
     getSequenceEvents,
     computeSequenceTimeline,
@@ -48,6 +52,19 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
         setStore("activeSlideIndex", 0);
     }
 
+    // The width this render lays out for, if any. Read once here and passed down,
+    // so the source's `layout.targetWidth` and the render option resolve in one
+    // place rather than each strategy deciding which wins.
+    const targetWidth = resolveTargetWidth(diagram, options);
+
+    // byte-grid declares one node per SPAN ("exponent, 8 bits"). Expand those into
+    // one node per cell, with explicit coordinates, before anything else looks at
+    // the node list. The result is a manual-layout diagram, so every stage after
+    // this point is unchanged.
+    if (diagram.layout?.strategy === 'byte-grid') {
+        diagram = expandByteGrid(diagram, targetWidth);
+    }
+
     // Mind-map layouts get their Miro-style look (pill nodes, per-branch colour,
     // curved links) applied here so it follows from `layout: mindmap-*` alone.
     // Runs before auto-sizing so any style-driven sizing is picked up.
@@ -56,6 +73,10 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
     // Pre-compute text-fitted sizes on nodes that lack explicit dimensions.
     // This ensures the layout engine spaces nodes correctly based on label length.
     applyAutoSizing(diagram.nodes);
+
+    // Declared colour roles become document swatches before any element is made,
+    // so nodes can be linked to them as they are created.
+    const palette = bindPalette(diagram.palette);
 
     const allNodes = flattenNodes(diagram.nodes);
     const hasPools = diagram.pools && diagram.pools.length > 0;
@@ -82,7 +103,7 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
         // Render pool-assigned nodes at their lane positions
         for (const node of poolNodes) {
             const pos = poolLayout.nodePositions.get(node.id);
-            const elementId = renderNode(node, pos, diagram, options);
+            const elementId = renderNode(node, pos, diagram, options, palette);
             if (elementId) {
                 nodeIdMap.set(node.id, elementId);
                 elementCount++;
@@ -104,10 +125,10 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
 
         // Render free nodes (no pool) using regular layout
         if (freeNodes.length > 0) {
-            const positions = computeLayout(diagram);
+            const positions = computeLayout(diagram, targetWidth);
             for (const node of freeNodes) {
                 const pos = positions.get(node.id);
-                const elementId = renderNode(node, pos, diagram, options);
+                const elementId = renderNode(node, pos, diagram, options, palette);
                 if (elementId) {
                     nodeIdMap.set(node.id, elementId);
                     elementCount++;
@@ -116,10 +137,10 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
         }
     } else {
         // ─── Regular rendering (no pools) ─────────────────
-        const positions = computeLayout(diagram);
+        const positions = computeLayout(diagram, targetWidth);
         for (const node of allNodes) {
             const pos = positions.get(node.id);
-            const elementId = renderNode(node, pos, diagram, options);
+            const elementId = renderNode(node, pos, diagram, options, palette);
             if (elementId) {
                 nodeIdMap.set(node.id, elementId);
                 elementCount++;
@@ -146,7 +167,7 @@ export function renderDiagram(diagram: DSLDiagram, options?: RenderOptions): Ren
                 continue;
             }
 
-            const edgeElementId = renderEdge(edge, sourceCanvasId, targetCanvasId, diagram, anchorMap.get(edge));
+            const edgeElementId = renderEdge(edge, sourceCanvasId, targetCanvasId, diagram, anchorMap.get(edge), palette);
             if (edgeElementId) {
                 const edgeKey = edge.id ?? `${edge.from}->${edge.to}`;
                 edgeIdMap.set(edgeKey, edgeElementId);
@@ -177,7 +198,8 @@ function renderNode(
     node: DSLNode,
     pos: NodePosition | undefined,
     diagram: DSLDiagram,
-    options?: RenderOptions
+    options?: RenderOptions,
+    palette?: PaletteBinding
 ): string | null {
     const resolvedType = resolveShapeType(node.shape) as ElementType;
     const defaults = getShapeDefaults(resolvedType);
@@ -190,10 +212,17 @@ function renderNode(
     const mergedStyle = mergeNodeStyle(node.style, node.shape, diagram.defaults);
     const styleOpts = mapStyleToOptions(mergedStyle);
 
+    // Resolve `@role` colour references and collect the swatch links they imply,
+    // so the element is linked at creation rather than recoloured afterwards.
+    const swatchLinks = palette ? applyPalette(styleOpts, palette) : {};
+
     // Build element options
     const isDataStructure = resolvedType.startsWith('ds');
+    const seed = resolveSeed(diagram.meta?.seed, `node:${node.id}`, styleOpts.seed);
     const elementOpts: Record<string, any> = {
         ...styleOpts,
+        ...swatchLinks,
+        ...(seed !== undefined ? { seed } : {}),
         ...(node.label ? { containerText: node.label } : {}),
         ...(node.tag ? { tag: node.tag } : {}),
     };
@@ -328,13 +357,21 @@ function renderEdge(
     sourceCanvasId: string,
     targetCanvasId: string,
     diagram: DSLDiagram,
-    anchors?: EdgeAnchors
+    anchors?: EdgeAnchors,
+    palette?: PaletteBinding
 ): string | null {
     const mergedStyle = mergeEdgeStyle(edge.style, diagram.defaults);
     const styleOpts = mapStyleToOptions(mergedStyle);
+    const swatchLinks = palette ? applyPalette(styleOpts, palette) : {};
+
+    // Same key the caller uses for `edgeIdMap`, so a seeded edge stays pinned to
+    // its logical identity rather than to its position in the edge list.
+    const seed = resolveSeed(diagram.meta?.seed, `edge:${edge.id ?? `${edge.from}->${edge.to}`}`, styleOpts.seed);
 
     const connectOpts: Record<string, any> = {
         ...styleOpts,
+        ...swatchLinks,
+        ...(seed !== undefined ? { seed } : {}),
         type: edge.type ?? 'arrow',
         curveType: edge.curveType ?? 'bezier',
     };

@@ -43,6 +43,7 @@ export function parseJsonDSL(input: string): ParseResult {
         groups: raw.groups,
         pools: raw.pools,
         defaults: raw.defaults,
+        palette: raw.palette,
     };
 
     // Set default strategy if missing

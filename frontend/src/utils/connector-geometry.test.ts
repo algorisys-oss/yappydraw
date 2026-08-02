@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { connectorGeometry } from "./connector-geometry";
+import { connectorGeometry, defaultControlPoints } from "./connector-geometry";
 
 const deg = (r: number) => Math.round((r * 180 / Math.PI) * 1000) / 1000;
 /** Compare angles modulo 360 so ±180 doesn't spuriously fail. */
@@ -260,5 +260,46 @@ describe("connectorGeometry — elbow", () => {
         expect(g.d).toContain('L');
         expect(sameAngle(g.startAngle, -90)).toBe(true);
         expect(sameAngle(g.endAngle, 90)).toBe(true);
+    });
+});
+
+describe('defaultControlPoints magnitude', () => {
+    /**
+     * A callout sitting far to the side but close vertically. The control points leave
+     * through horizontal edges, so their offset must come from the VERTICAL span, which is
+     * the axis they move in. The old rule used half the dominant (horizontal) span and
+     * produced a bulge nearly twice the gap it was crossing, which looped the curve back
+     * through the shape it pointed at.
+     */
+    it('scales a vertical offset by the vertical span, not the dominant one', () => {
+        const start = { x: 0, y: 0 };
+        const end = { x: 200, y: 40 };
+        const [cp1, cp2] = defaultControlPoints(start, end, 200, 40, 'bottom', 'top');
+
+        // Vertical span is 40, so each control point moves 20px, not 100px.
+        expect(cp1.y).toBe(20);
+        expect(cp2.y).toBe(20);
+        expect(cp1.x).toBe(0);
+        expect(cp2.x).toBe(200);
+    });
+
+    it('leaves the aligned case unchanged', () => {
+        // Vertically dominant AND anchored top/bottom: the two rules agree, so this must
+        // render bit-for-bit as it did before.
+        const [cp1, cp2] = defaultControlPoints({ x: 0, y: 0 }, { x: 40, y: 200 }, 40, 200, 'bottom', 'top');
+        expect(cp1.y).toBe(100);
+        expect(cp2.y).toBe(100);
+    });
+
+    it('never exceeds the previous magnitude', () => {
+        // The cap means no connector can get larger than it used to be, so this change can
+        // only tighten curves.
+        const [cp1] = defaultControlPoints({ x: 0, y: 0 }, { x: 300, y: 10 }, 300, 10, 'bottom', 'top');
+        expect(cp1.y).toBeLessThanOrEqual(150);
+    });
+
+    it('gives a short hop a floor so it still curves', () => {
+        const [cp1] = defaultControlPoints({ x: 0, y: 0 }, { x: 100, y: 4 }, 100, 4, 'bottom', 'top');
+        expect(cp1.y).toBe(12);
     });
 });

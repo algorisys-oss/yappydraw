@@ -247,8 +247,15 @@ await Y.restoreVersion(id);`}</code></pre>
                 <p>
                     Rich-text elements (the <strong>Rich Text</strong> tool) get a mini toolbar while editing:
                     bold/italic/underline/strikethrough, text color, font, and <strong>bullet / numbered
-                    lists</strong> — Enter adds the next item, Tab indents nested levels. Pasting a bulleted
-                    outline from another app converts to list formatting automatically.
+                    lists</strong> — Enter adds the next item. Pasting a bulleted outline from another app
+                    converts to list formatting automatically, <strong>including indented sub-levels</strong>:
+                    each level is drawn one indent deeper with its own marker, and the canvas matches the
+                    editor line for line.
+                </p>
+                <p>
+                    <strong>Known limitations.</strong> There is no indent shortcut inside the editor — Tab
+                    leaves the text box and commits, so nested levels come from pasted content. Exported
+                    SVG/PNG keeps the list indentation but does not draw the bullet/number markers.
                 </p>
             </section>
 

@@ -11,7 +11,11 @@ import rough from 'roughjs/bin/rough';
 // that need them instead; the other exports are unaffected.
 import { resolveFontFamily, wrapText, getMeasurementRenderer, measureContainerText } from "./text-utils";
 import { calculateUmlClassLayout, calculateUml2SectionLayout } from "./uml-layout-utils";
-import type { DrawingElement } from "../types";
+import type { DrawingElement, Swatch } from "../types";
+import {
+    DEFAULT_VAR_PREFIX, elementColorVars, applyColorVars, buildThemeStyleSheet,
+    type SvgThemeOptions,
+} from "./svg-theme";
 import { buildFilterString } from "./image-filter-utils";
 import { layoutRichText } from "./rich-text-utils";
 import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
@@ -668,7 +672,7 @@ export const copyCanvasAsPng = async (scale: number) => {
     }, 'image/png');
 };
 
-export const exportToSvg = (onlySelected: boolean) => {
+export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) => {
     let elements = store.elements.filter(el => !el.isNullObject); // null objects are authoring gizmos (adjustment layers render their filter in export)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
@@ -695,11 +699,20 @@ export const exportToSvg = (onlySelected: boolean) => {
     const width = maxX - minX + padding * 2;
     const height = maxY - minY + padding * 2;
 
+    // Themed exports reference swatch colours as CSS variables so one file works
+    // on a light page and a dark one. See utils/svg-theme.
+    const themed = themeOpts?.theme === 'variables';
+    const varPrefix = themeOpts?.varPrefix ?? DEFAULT_VAR_PREFIX;
+    const swatchById = new Map(store.swatches.map(sw => [sw.id, sw]));
+    const usedSwatches = new Map<string, Swatch>();
+
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', `${width}`);
     svg.setAttribute('height', `${height}`);
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    svg.style.backgroundColor = '#ffffff'; // Optional: white bg
+    // A themed export stays transparent: the page it is embedded in owns the
+    // background, and a baked white one defeats the point of theming.
+    if (!themed) svg.style.backgroundColor = '#ffffff';
 
     // Embed Google Fonts for accurate text rendering in standalone SVG
     const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
@@ -1225,6 +1238,14 @@ export const exportToSvg = (onlySelected: boolean) => {
                     node.setAttribute('transform', transforms.join(' '));
                 }
             }
+            if (themed) {
+                const colorVars = elementColorVars(el, swatchById, varPrefix);
+                if (colorVars.size > 0) {
+                    applyColorVars(node, colorVars);
+                    if (el.fillSwatchId && swatchById.has(el.fillSwatchId)) usedSwatches.set(el.fillSwatchId, swatchById.get(el.fillSwatchId)!);
+                    if (el.strokeSwatchId && swatchById.has(el.strokeSwatchId)) usedSwatches.set(el.strokeSwatchId, swatchById.get(el.strokeSwatchId)!);
+                }
+            }
             g.appendChild(node);
         }
     });
@@ -1232,6 +1253,12 @@ export const exportToSvg = (onlySelected: boolean) => {
     // Bake dimension annotations into the vector output (opt-in).
     if (store.globalSettings.exportIncludeDimensions) {
         appendDimensionSvg(g, store.dimensionAnnotations, elements, store.globalSettings.measurementUnit ?? 'px');
+    }
+
+    if (themed && usedSwatches.size > 0) {
+        const themeStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+        themeStyle.textContent = buildThemeStyleSheet([...usedSwatches.values()], varPrefix);
+        defs.appendChild(themeStyle);
     }
 
     const s = new XMLSerializer();

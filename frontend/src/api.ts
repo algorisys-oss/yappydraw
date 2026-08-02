@@ -36,6 +36,7 @@ import {
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
+import type { SvgThemeOptions } from "./utils/svg-theme";
 import { toExcalidraw, fromExcalidraw } from "./utils/excalidraw-io";
 import {
     setNodeSelection, allNodesOfSelection, selectedPathNodes, selectedNodeHandles,
@@ -1682,9 +1683,18 @@ export const YappyAPI = {
         flipSelected(direction, axisValue);
     },
 
-    /** Serialize the drawing (or selection) to an SVG string. Also triggers a download. */
-    exportSVG(onlySelected = false): string | undefined {
-        return exportToSvg(onlySelected);
+    /**
+     * Serialize the drawing (or selection) to an SVG string. Also triggers a download.
+     *
+     * Pass `{ theme: 'variables' }` to export swatch-linked colours as CSS custom
+     * properties (`fill="var(--yd-danger, #ef4444)"`) with a
+     * `prefers-color-scheme: dark` override for any swatch that has a `darkColor`.
+     * The literal hex stays as the fallback, so the file still renders standalone.
+     * A themed export leaves the background transparent, since the embedding page
+     * owns it. `varPrefix` overrides the default `yd` prefix.
+     */
+    exportSVG(onlySelected = false, options?: SvgThemeOptions): string | undefined {
+        return exportToSvg(onlySelected, options);
     },
 
     /**
@@ -1976,7 +1986,7 @@ export const YappyAPI = {
     /** Delete a swatch (links on objects are dropped). */
     deleteSwatch(swatchId: string) { deleteSwatch(swatchId); },
     /** List global swatches. */
-    listSwatches() { return store.swatches.map(s => ({ id: s.id, name: s.name, color: s.color, group: s.group })); },
+    listSwatches() { return store.swatches.map(s => ({ id: s.id, name: s.name, color: s.color, darkColor: s.darkColor, group: s.group })); },
     /** Set the print bleed margin (px) around artboards; >0 shows crop marks. */
     setBleed(px: number) { setBleed(px); },
     getBleed() { return store.globalSettings.bleed ?? 0; },
@@ -4238,7 +4248,10 @@ export const YappyAPI = {
     /**
      * Parse and render a DSL diagram from JSON string.
      * @param input - JSON DSL string
-     * @param options - Render options (clearCanvas, offsetX/Y, zoomToFit)
+     * @param options - Render options (clearCanvas, offsetX/Y, zoomToFit, targetWidth).
+     *   `targetWidth` lays the diagram out to fit that many px, reflowing rather
+     *   than scaling, and overrides the source's `layout.targetWidth` — so one
+     *   source renders at several breakpoints unedited.
      * @returns RenderResult with id maps, or null on parse error
      */
     importDSL(input: string, options?: RenderOptions): RenderResult | null {

@@ -984,8 +984,6 @@ export class RenderPipeline {
 
             const baselineY = lineY + lineHeight / 2;
 
-            // Track if we've drawn a list marker for this line
-            let listMarkerDrawn = false;
             const INDENT_SIZE = 20;
 
             for (const seg of lineSegments) {
@@ -996,8 +994,10 @@ export class RenderPipeline {
                 renderer.textBaseline = 'middle';
                 renderer.textAlign = 'left';
 
-                // Draw list marker (bullet or number) before first segment of list item
-                if (!listMarkerDrawn && span.listType && span.listType !== 'none') {
+                // Draw list marker (bullet or number) beside the item's first segment.
+                // Word-wrapped continuation lines don't carry the flag, so they get no
+                // second bullet.
+                if (seg.listMarker && span.listType && span.listType !== 'none') {
                     const listLevel = span.listLevel || 0;
                     const indent = listLevel * INDENT_SIZE;
                     const markerX = xOffset + indent;
@@ -1011,7 +1011,6 @@ export class RenderPipeline {
                         const number = `${span.listIndex || 1}.`;
                         renderer.fillText(number, markerX, baselineY);
                     }
-                    listMarkerDrawn = true;
                 }
 
                 renderer.fillText(seg.text, xOffset + seg.x, baselineY);

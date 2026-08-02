@@ -4,12 +4,21 @@
  */
 
 import type { DSLDiagram, DSLNode, ParseError } from '../types';
+import { CELL_REF, spanLength } from '../layout/strategies/byte-grid-layout';
 
+// Must stay in step with DSLLayoutStrategy in ../types. The mindmap-radial and
+// mindmap-down-* strategies were reachable from the text parser and the layout
+// manager but rejected here, so a JSON diagram could not ask for them.
 const VALID_STRATEGIES = [
     'tree-down', 'tree-right', 'tree-up', 'tree-left',
     'grid', 'force', 'swimlane', 'sequence',
-    'radial', 'mindmap-right', 'manual',
+    'radial', 'mindmap-right', 'mindmap-radial',
+    'mindmap-down-curved', 'mindmap-down-straight',
+    'byte-grid', 'manual',
 ];
+
+/** byte-grid nodes describe a SPAN of cells, not a shape; the strategy draws the cells. */
+const SHAPELESS_STRATEGIES = ['byte-grid'];
 
 const VALID_EDGE_TYPES = ['arrow', 'line', 'organicBranch'];
 const VALID_CURVE_TYPES = ['straight', 'bezier', 'elbow'];
@@ -35,6 +44,7 @@ export function validateDiagram(diagram: DSLDiagram): ParseError[] {
     if (!diagram.nodes || !Array.isArray(diagram.nodes)) {
         errors.push({ line: 0, message: 'Missing or invalid "nodes" array.' });
     } else {
+        const shapeOptional = SHAPELESS_STRATEGIES.includes(diagram.layout?.strategy ?? '');
         const nodeIds = new Set<string>();
         diagram.nodes.forEach((node, i) => {
             const ctx = `nodes[${i}]`;
@@ -45,7 +55,7 @@ export function validateDiagram(diagram: DSLDiagram): ParseError[] {
             } else {
                 nodeIds.add(node.id);
             }
-            if (!node.shape) {
+            if (!node.shape && !shapeOptional) {
                 errors.push({ line: 0, message: `${ctx}: Missing required "shape" field.` });
             }
             validateNodeChildren(node, ctx, nodeIds, errors);
@@ -53,17 +63,36 @@ export function validateDiagram(diagram: DSLDiagram): ParseError[] {
 
         // edges — validate references
         if (diagram.edges && Array.isArray(diagram.edges)) {
+            // byte-grid cells are generated during expansion, so an author names
+            // one as `span#3`. Check it here, where the span sizes are still
+            // visible: a reference to cell 40 of an 8-cell span should be an
+            // error, not an arrow that silently goes nowhere.
+            const cellProblem = (ref: string): string | null => {
+                const match = CELL_REF.exec(ref);
+                if (!match) return null;
+                const [, spanId, index] = match;
+                const span = diagram.nodes.find(n => n.id === spanId);
+                if (!span) return `references unknown span "${spanId}"`;
+                const size = spanLength(span);
+                if (size === null) return `"${spanId}" is not a byte-grid span, so it has no cells`;
+                if (Number(index) >= size) return `"${spanId}" has ${size} cells, so #${index} is out of range`;
+                return null;
+            };
+            const known = (ref: string) => nodeIds.has(ref) || (CELL_REF.test(ref) && !cellProblem(ref));
+
             diagram.edges.forEach((edge, i) => {
                 const ctx = `edges[${i}]`;
                 if (!edge.from) {
                     errors.push({ line: 0, message: `${ctx}: Missing required "from" field.` });
-                } else if (!nodeIds.has(edge.from)) {
-                    errors.push({ line: 0, message: `${ctx}: "from" references unknown node "${edge.from}".` });
+                } else if (!known(edge.from)) {
+                    const detail = cellProblem(edge.from);
+                    errors.push({ line: 0, message: `${ctx}: "from" ${detail ?? `references unknown node "${edge.from}"`}.` });
                 }
                 if (!edge.to) {
                     errors.push({ line: 0, message: `${ctx}: Missing required "to" field.` });
-                } else if (!nodeIds.has(edge.to)) {
-                    errors.push({ line: 0, message: `${ctx}: "to" references unknown node "${edge.to}".` });
+                } else if (!known(edge.to)) {
+                    const detail = cellProblem(edge.to);
+                    errors.push({ line: 0, message: `${ctx}: "to" ${detail ?? `references unknown node "${edge.to}"`}.` });
                 }
                 if (edge.type && !VALID_EDGE_TYPES.includes(edge.type)) {
                     errors.push({ line: 0, message: `${ctx}: Invalid edge type "${edge.type}". Valid: ${VALID_EDGE_TYPES.join(', ')}` });

@@ -21,6 +21,18 @@ export interface DSLDiagram {
     pools?: DSLPool[];
     defaults?: DSLStyleDefaults;
     /**
+     * Named colour roles for this diagram. Declare a colour once, then refer to
+     * it from any style as `@name`:
+     *
+     *     palette: { danger: '#ef4444', live: { light: '#2563eb', dark: '#60a5fa' } }
+     *     nodes:   [{ id: 'a', shape: 'rectangle', style: { backgroundColor: '@danger' } }]
+     *
+     * Each role becomes a document swatch, so elements that use it are linked to
+     * it: recolour the role and they all follow. The themeable SVG export emits
+     * one CSS variable per role, which is what makes a light/dark export work.
+     */
+    palette?: DSLPalette;
+    /**
      * Sequence-diagram timeline. Present only when `layout.strategy === 'sequence'`
      * and the source described richer structure than bare messages (notes,
      * combined fragments, activations, autonumber). When set, the engine renders
@@ -34,7 +46,24 @@ export interface DSLDiagramMeta {
     title?: string;
     description?: string;
     sourceFormat?: 'mermaid' | 'plantuml' | 'yappy-dsl' | string;
+    /**
+     * Makes the render reproducible. Each element's rough.js seed becomes a pure
+     * function of this value and the element's DSL id, so the same source yields
+     * the same geometry every time. Leave unset for the interactive behaviour of
+     * a fresh random seed per element. A node's own `style.seed` still wins.
+     */
+    seed?: number;
 }
+
+// ─── Palette ─────────────────────────────────────────────────────
+
+/**
+ * One colour role. The string form is a single colour; the object form carries a
+ * dark-theme counterpart used by the themeable SVG export.
+ */
+export type DSLPaletteRole = string | { light: string; dark?: string };
+
+export type DSLPalette = Record<string, DSLPaletteRole>;
 
 // ─── Layout ──────────────────────────────────────────────────────
 
@@ -52,6 +81,7 @@ export type DSLLayoutStrategy =
     | 'mindmap-radial'          // dual-side: children alternate left/right of a central node
     | 'mindmap-down-curved'     // top-down tree, curved branch connectors
     | 'mindmap-down-straight'   // top-down tree, straight connectors
+    | 'byte-grid'               // linear run of bit/byte cells, grouped into named spans
     | 'manual';
 
 export interface DSLLayoutConfig {
@@ -60,6 +90,33 @@ export interface DSLLayoutConfig {
     vSpacing?: number;
     columns?: number;
     origin?: { x: number; y: number };
+    /**
+     * Lay out to fit this many px wide (e.g. 375 for a phone). Reflows — fewer
+     * columns, more rows — rather than scaling anything down, and is a budget
+     * rather than a promise: content that cannot fit stays wide. Honoured by
+     * `byte-grid` and `grid`; other strategies render at natural width.
+     * A `targetWidth` render option overrides this, so one source renders at
+     * several breakpoints unedited.
+     */
+    targetWidth?: number;
+
+    // ── byte-grid only ──────────────────────────────────────────
+    /** Cell edge length in px (default 44). Cells are square. */
+    cellSize?: number;
+    /** Vertical room between cell rows, where span labels sit (default 34). */
+    rowGap?: number;
+    /** Offset column down the left: 'none' (default), 'hex', or 'dec'. */
+    gutter?: 'none' | 'hex' | 'dec';
+    /** Width of that offset column in px (default 76). */
+    gutterWidth?: number;
+    /** What one cell represents. Inferred from whether spans use `bits` or `bytes`. */
+    unit?: 'bit' | 'byte';
+    /** Font size for span labels and gutter offsets (default 15). */
+    labelFontSize?: number;
+    /** Font size for cell face values (default: scales with cellSize). */
+    cellFontSize?: number;
+    /** Ink for span labels and gutter offsets (default #1e293b). */
+    labelColor?: string;
 }
 
 // ─── Nodes ───────────────────────────────────────────────────────
@@ -94,6 +151,8 @@ export interface DSLNodeStyle {
     roughness?: number;
     borderRadius?: number;
     renderStyle?: 'sketch' | 'architectural';
+    /** Pin this element's sketch geometry. Overrides any seed derived from `meta.seed`. */
+    seed?: number;
 
     // Text
     fontFamily?: FontFamily;
@@ -159,6 +218,8 @@ export interface DSLEdgeStyle {
     strokeWidth?: number;
     strokeStyle?: StrokeStyle;
     opacity?: number;
+    /** Pin this edge's sketch geometry. Overrides any seed derived from `meta.seed`. */
+    seed?: number;
 }
 
 // ─── Sequence Timeline ──────────────────────────────────────────
@@ -295,6 +356,8 @@ export interface RenderOptions {
     offsetX?: number;
     offsetY?: number;
     zoomToFit?: boolean;
+    /** Lay out for this width in px, overriding `layout.targetWidth`. See DSLLayoutConfig. */
+    targetWidth?: number;
 }
 
 export interface RenderResult {

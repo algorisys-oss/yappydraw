@@ -66,7 +66,7 @@ export function mapStyleToOptions(style: Record<string, any>): Record<string, an
     const PASSTHROUGH_KEYS = [
         // Core fill & stroke
         'strokeColor', 'backgroundColor', 'fillStyle', 'strokeWidth',
-        'strokeStyle', 'opacity', 'roughness', 'borderRadius', 'renderStyle',
+        'strokeStyle', 'opacity', 'roughness', 'borderRadius', 'renderStyle', 'seed',
         // Text
         'fontFamily', 'fontSize', 'fontWeight', 'fontStyle',
         'textAlign', 'verticalAlign', 'textColor',

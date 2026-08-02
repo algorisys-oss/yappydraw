@@ -5176,6 +5176,33 @@ export const createSwatch = (color?: string, name?: string, group?: string): str
     return id;
 };
 
+/**
+ * Create-or-update a swatch by name, without a toast and without touching the
+ * active drawing colour.
+ *
+ * `createSwatch` is the interactive path: it announces itself and makes the new
+ * colour current, which is right when a person clicks "+" and wrong when an
+ * importer declares a palette of eight roles up front. Returns the swatch id
+ * either way, so callers can link elements to it.
+ */
+export const ensureSwatch = (name: string, color: string, darkColor?: string, group?: string): string => {
+    const existing = store.swatches.find(s => s.name === name);
+    if (existing) {
+        if (existing.color !== color || existing.darkColor !== darkColor) {
+            setStore('swatches', s => s.id === existing.id, () => ({ color, darkColor }));
+            // Keep linked elements in step, same contract as updateSwatchColor.
+            setStore('elements', (e: DrawingElement) => e.fillSwatchId === existing.id, () => ({ backgroundColor: color }));
+            setStore('elements', (e: DrawingElement) => e.strokeSwatchId === existing.id, () => ({ strokeColor: color }));
+            bumpDirtyRevision();
+        }
+        return existing.id;
+    }
+    const id = generateId('swatch' as any);
+    setStore('swatches', list => [...list, { id, name, color, darkColor, group } as Swatch]);
+    bumpDirtyRevision();
+    return id;
+};
+
 /** Apply a swatch to the given elements' fill or stroke (linking them to it),
  *  and set it as the active brush/default colour for new shapes. */
 export const applySwatch = (swatchId: string, target: 'fill' | 'stroke' = 'fill', ids?: string[]) => {

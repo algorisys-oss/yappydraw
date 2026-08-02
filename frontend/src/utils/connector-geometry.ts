@@ -210,6 +210,14 @@ export function connectorGeometry(el: any): ConnectorGeometry {
 export type AnchorEdge = 'top' | 'bottom' | 'left' | 'right';
 
 /** Outward unit normal of each edge, in screen coordinates (y grows downward). */
+/**
+ * Smallest control-point offset, in px.
+ *
+ * Below this a cubic is visually a straight line and the arrowhead angle starts chasing
+ * floating point noise, so short connectors get this much curve regardless.
+ */
+const MIN_CONTROL_OFFSET = 12;
+
 const EDGE_NORMAL: Record<AnchorEdge, Pt> = {
     top: { x: 0, y: -1 },
     bottom: { x: 0, y: 1 },
@@ -275,10 +283,23 @@ export function defaultControlPoints(
 
     // Both control points sit on the far side of their endpoint from the box, so each is
     // offset along its own edge's OUTWARD normal.
-    const along = (p: Pt, e: AnchorEdge): Pt => ({
-        x: p.x + EDGE_NORMAL[e].x * k,
-        y: p.y + EDGE_NORMAL[e].y * k,
-    });
+    //
+    // The magnitude is measured along the axis the control point actually MOVES in, not
+    // along the chord's dominant axis. Those agree whenever the anchor edge faces the way
+    // the chord runs, which is the common case and re-renders unchanged. They diverge when
+    // a connector is far sideways but close vertically: the old rule then pushed the
+    // control point out by half the horizontal span, so a 40px vertical gap got a 75px
+    // vertical bulge. The curve ballooned, and on a short hop it looped back through the
+    // shape it was pointing at, which is how an arrowhead ended up arriving from inside the
+    // target. Measuring along the normal's own axis keeps a short hop short.
+    const along = (p: Pt, e: AnchorEdge): Pt => {
+        const n = EDGE_NORMAL[e];
+        const span = n.x !== 0 ? Math.abs(width) : Math.abs(height);
+        // A floor, so a connector between touching shapes still leaves as a curve rather
+        // than a spike; capped by the old rule so nothing gets LARGER than it used to be.
+        const magnitude = Math.min(k, Math.max(MIN_CONTROL_OFFSET, span / 2));
+        return { x: p.x + n.x * magnitude, y: p.y + n.y * magnitude };
+    };
 
     return [
         startEdge ? along(start, startEdge) : fbStart,

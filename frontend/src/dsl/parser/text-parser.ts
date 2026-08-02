@@ -402,6 +402,9 @@ function parseFrontmatterLine(
         case 'columns':
             layoutConfig.columns = parseInt(value, 10);
             break;
+        case 'targetwidth':
+            layoutConfig.targetWidth = parseInt(value, 10);
+            break;
         default:
             warnings.push({ line: lineNum, message: `Unknown frontmatter key: "${key}"` });
     }

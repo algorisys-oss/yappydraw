@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.170', date: '2026-08-02', items: [
+        'Bulleted and numbered lists now look the same on the canvas as they did while you were typing them. Indented sub-points used to disappear altogether when you clicked away, the point after an indented block would get stuck onto the end of the one above it, and a long point that ran onto a second line picked up a second bullet. Pasting an outline from another app brings its sub-levels across correctly now, each indented one step with its own marker.',
+        'Editing the same list twice no longer adds a blank line each time you go back into it.',
+        'The alignment buttons in the Properties panel now show the right pictures. The behaviour was always correct — the top row aligns left, centre and right; the bottom row aligns top, middle and bottom — but the icons were drawn for the opposite axis, so the buttons looked like they did the other thing.',
+        'Note: there is no keyboard shortcut for indenting inside the text editor — Tab finishes editing — so sub-levels come from pasted content. Exported SVG and PNG still keep the indentation but leave the bullet symbols out.',
+    ] },
     { version: '0.8.169', date: '2026-08-01', items: [
         'The middle of the top bar now shows options for whatever tool you have picked, instead of being empty for most of them. Pick a shape and you get stroke and fill colour, line style, opacity, corner roundness and the font for text you type inside it. Pick a line or arrow and you get its width, whether it runs straight, curved or in right angles, and the arrowhead on each end. Pick the text tool and you get font, size, bold, italic and alignment. The brushes gained colour and width next to the Fill and Symmetry buttons they already had.',
         'What you set there applies to the next thing you draw — it is the tool\'s own setting, not a change to anything already on the canvas. Each tool remembers its own, so a red brush and a black rectangle stay that way as you switch between them. To restyle something already drawn, select it and use the floating toolbar or the Properties panel.',

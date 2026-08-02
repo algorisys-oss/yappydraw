@@ -9,6 +9,7 @@ import { resolveShapeType } from '../shape-aliases';
 import { getShapeDefaults } from '../shape-defaults';
 import { computeTreeLayout } from './strategies/tree-layout';
 import { computeSequenceLayout } from './strategies/sequence-layout';
+import { fitColumns, EXPORT_MARGIN } from './width';
 
 /**
  * Flatten nested children into a single node list.
@@ -26,8 +27,11 @@ function flattenNodes(nodes: DSLNode[]): DSLNode[] {
 
 /**
  * Compute positions for all nodes in a diagram.
+ *
+ * `targetWidth` (px) asks for a layout that fits that width. Strategies that can
+ * reflow do; the rest keep their natural width. See layout/width.ts.
  */
-export function computeLayout(diagram: DSLDiagram): LayoutPositionMap {
+export function computeLayout(diagram: DSLDiagram, targetWidth?: number): LayoutPositionMap {
     const strategy = diagram.layout?.strategy ?? 'manual';
     const allNodes = flattenNodes(diagram.nodes);
     const edges = diagram.edges ?? [];
@@ -37,6 +41,7 @@ export function computeLayout(diagram: DSLDiagram): LayoutPositionMap {
         vSpacing: diagram.layout?.vSpacing ?? 80,
         columns: diagram.layout?.columns,
         origin: diagram.layout?.origin ?? { x: 100, y: 100 },
+        targetWidth,
     };
 
     switch (strategy) {
@@ -97,17 +102,17 @@ function computeManualLayout(nodes: DSLNode[], config: LayoutConfig): LayoutPosi
  */
 function computeGridLayout(nodes: DSLNode[], config: LayoutConfig): LayoutPositionMap {
     const positions: LayoutPositionMap = new Map();
-    const cols = config.columns ?? Math.max(1, Math.ceil(Math.sqrt(nodes.length)));
+    const preferredCols = config.columns ?? Math.max(1, Math.ceil(Math.sqrt(nodes.length)));
+    const cols = fitGridColumns(nodes, preferredCols, config);
     let col = 0;
     let colX = config.origin.x;
     let rowY = config.origin.y;
     let maxRowHeight = 0;
 
     for (const node of nodes) {
+        const w = nodeWidth(node);
         const type = resolveShapeType(node.shape) as ElementType;
-        const defaults = getShapeDefaults(type);
-        const w = node.width ?? defaults.width;
-        const h = node.height ?? defaults.height;
+        const h = node.height ?? getShapeDefaults(type).height;
         positions.set(node.id, { x: colX, y: rowY, width: w, height: h });
         maxRowHeight = Math.max(maxRowHeight, h);
         col++;
@@ -121,4 +126,22 @@ function computeGridLayout(nodes: DSLNode[], config: LayoutConfig): LayoutPositi
     }
 
     return positions;
+}
+
+function nodeWidth(node: DSLNode): number {
+    const type = resolveShapeType(node.shape) as ElementType;
+    return node.width ?? getShapeDefaults(type).width;
+}
+
+/**
+ * Column count for a grid under a width budget.
+ *
+ * Measured against the widest node, since one oversized member sets how wide any
+ * row containing it can get, and a grid whose rows are wider than the target on
+ * a bad draw has not honoured the target at all.
+ */
+function fitGridColumns(nodes: DSLNode[], preferred: number, config: LayoutConfig): number {
+    if (!config.targetWidth || nodes.length === 0) return preferred;
+    const widest = Math.max(...nodes.map(nodeWidth));
+    return fitColumns(config.targetWidth - EXPORT_MARGIN, widest, config.hSpacing, preferred, 'free');
 }
