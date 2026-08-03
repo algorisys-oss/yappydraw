@@ -253,9 +253,14 @@ await Y.restoreVersion(id);`}</code></pre>
                     editor line for line.
                 </p>
                 <p>
+                    Lists survive export: PNG/JPG/PDF render through the canvas, and <strong>SVG</strong>
+                    now writes the bullet or number into the item's gutter with the same indent per level,
+                    so an exported list reads exactly like the one on canvas.
+                </p>
+                <p>
                     <strong>Known limitations.</strong> There is no indent shortcut inside the editor — Tab
-                    leaves the text box and commits, so nested levels come from pasted content. Exported
-                    SVG/PNG keeps the list indentation but does not draw the bullet/number markers.
+                    leaves the text box and commits, so nested levels come from pasted content. Lists are
+                    available on rich-text elements only; text typed inside a shape is plain.
                 </p>
             </section>
 

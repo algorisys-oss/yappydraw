@@ -17,7 +17,7 @@ import {
     type SvgThemeOptions,
 } from "./svg-theme";
 import { buildFilterString } from "./image-filter-utils";
-import { layoutRichText } from "./rich-text-utils";
+import { layoutRichText, type RichTextSegment } from "./rich-text-utils";
 import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
 import { connectorGeometry } from "./connector-geometry";
 import { svgFillPaint, svgPatternDef } from "./svg-paint";
@@ -32,6 +32,37 @@ import { renderDimensions } from "./dimension-renderer";
 import { appendDimensionSvg } from "./dimension-svg";
 
 const SVGNS = 'http://www.w3.org/2000/svg';
+
+/** One indent step per list nesting level — the canvas renderers' INDENT_SIZE. */
+const LIST_INDENT_SIZE = 20;
+
+/**
+ * The bullet / number that sits in a list item's gutter, as a `<tspan>`.
+ *
+ * The canvas renderers (`text-renderer.ts`, `render-pipeline.ts`) draw it beside the
+ * item's *first* segment — `seg.listMarker`, which word-wrapped continuation lines
+ * never carry — at `xOffset + level * INDENT_SIZE`, in that span's own font. SVG export
+ * emitted a tspan per segment but never the marker, so an exported list kept the indent
+ * `layoutRichText` reserved for it and lost every bullet. Returns null for non-markers
+ * so callers can just append the result.
+ */
+const listMarkerTspan = (
+    seg: RichTextSegment,
+    xOffset: number,
+    fallback: { color: string; fontFamily: DrawingElement['fontFamily']; fontSize: number },
+): SVGTSpanElement | null => {
+    const span = seg.span;
+    if (!seg.listMarker || !span.listType || span.listType === 'none') return null;
+    const tspan = document.createElementNS(SVGNS, 'tspan') as SVGTSpanElement;
+    tspan.textContent = span.listType === 'ordered' ? `${span.listIndex || 1}.` : '•';
+    tspan.setAttribute('x', `${xOffset + (span.listLevel || 0) * LIST_INDENT_SIZE}`);
+    tspan.setAttribute('fill', span.color || fallback.color);
+    tspan.setAttribute('font-family', resolveFontFamily(span.fontFamily || fallback.fontFamily));
+    tspan.setAttribute('font-size', `${span.fontSize || fallback.fontSize}px`);
+    if (span.bold) tspan.setAttribute('font-weight', 'bold');
+    if (span.italic) tspan.setAttribute('font-style', 'italic');
+    return tspan;
+};
 
 /** Bake dimension annotations onto a world-space export ctx — opt-in via Settings. */
 function paintDimensions(ctx: CanvasRenderingContext2D, elements: DrawingElement[], scale: number) {
@@ -870,6 +901,8 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
                     textEl.setAttribute('y', `${baselineY}`);
 
                     for (const seg of lineSegments) {
+                        const marker = listMarkerTspan(seg, xOffset, { color: textColor, fontFamily: el.fontFamily, fontSize });
+                        if (marker) textEl.appendChild(marker);
                         const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
                         tspan.textContent = seg.text;
                         tspan.setAttribute('x', `${xOffset + seg.x}`);
@@ -1140,6 +1173,8 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
                     textEl.setAttribute('y', `${baselineY}`);
 
                     for (const seg of lineSegments) {
+                        const marker = listMarkerTspan(seg, xOffset, { color: textColor, fontFamily: el.fontFamily, fontSize });
+                        if (marker) textEl.appendChild(marker);
                         const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
                         tspan.textContent = seg.text;
                         tspan.setAttribute('x', `${xOffset + seg.x}`);

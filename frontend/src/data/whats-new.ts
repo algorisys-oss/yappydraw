@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.174', date: '2026-08-03', items: [
+        'Bulleted and numbered lists now keep their bullets when you export to SVG. The words were coming out indented with nothing in front of them, so a list read like oddly-spaced prose. PNG, JPG and PDF were always fine.',
+    ] },
     { version: '0.8.173', date: '2026-08-03', items: [
         'Help caught up with the last two updates. The shortcuts list now shows all the point-editing gestures, the onion-skinning page says that ghost frames cannot be selected, and the Vector Paths page documents how to drive point editing from a script — which was possible all along but written down nowhere.',
     ] },
