@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.172', date: '2026-08-03', items: [
+        'While you are editing the points on a shape, you can now just click another shape to start editing that one. Before, clicking it did nothing — you had to turn the point editor off, pick the other shape, and turn it back on. Shift-click to work on two shapes at once.',
+        'Clicking an empty part of the canvas now lets go in two steps: the first click unselects the points you had picked, and a second one lets go of the shape. Missing a point by a few pixels no longer loses your place.',
+        'If nothing is selected yet, dragging a box in the point editor picks shapes, so you can get started without switching tools.',
+    ] },
     { version: '0.8.171', date: '2026-08-03', items: [
         'Editing the points on a path now works where you click. The little square handles were being drawn about 46 pixels to the left and 52 above the shape they belonged to, and — because the same wrong position was used to decide what you had clicked — you had to click to the right of a handle to actually grab it. They sit on the shape now.',
         'While you are editing points, the shape no longer shows its resize and rotate handles on top of them. Those were drawn in the same places as the corner points, could not be clicked, and made it very hard to tell which square was which.',

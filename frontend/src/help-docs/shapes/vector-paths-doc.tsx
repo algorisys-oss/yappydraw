@@ -111,14 +111,22 @@ export const VectorPathsDoc: Component = () => {
                 </p>
                 <p>
                     Select a path first — the tool draws anchors for the <strong>selected</strong> path, so with
-                    nothing selected there's nothing to edit.
+                    nothing selected there's nothing to edit. You don't have to leave the tool to move on:
+                    <strong> click another shape</strong> and it becomes the one you're editing,
+                    <strong> Shift-click</strong> to edit several paths at once, and with nothing selected a
+                    <strong> drag picks shapes</strong> rather than anchors. Clicking empty space lets go in two
+                    stages — the first click drops the selected anchors, a second drops the path — so missing an
+                    anchor by a few pixels doesn't cost you your place.
                 </p>
                 <table class="api-table">
                     <thead>
                         <tr><th>Gesture</th><th>Result</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td><strong>Drag on empty space</strong></td><td>Marquee-select every anchor inside the box</td></tr>
+                        <tr><td><strong>Click another shape</strong></td><td>Switch to editing that path — no need to leave the tool</td></tr>
+                        <tr><td><span class="kbd">Shift</span> + click a shape</td><td>Add it, so several paths edit at once</td></tr>
+                        <tr><td><strong>Drag on empty space</strong></td><td>Marquee-select every anchor inside the box (or shapes, if no path is loaded)</td></tr>
+                        <tr><td><strong>Click empty space</strong></td><td>Drop the selected anchors; click again to drop the path</td></tr>
                         <tr><td><span class="kbd">Shift</span> + marquee</td><td>Add those anchors to the selection</td></tr>
                         <tr><td><strong>Drag a selected anchor</strong></td><td>Move <em>all</em> selected anchors together</td></tr>
                         <tr><td><strong>Drag a handle</strong></td><td>Reshape that one anchor's curvature</td></tr>

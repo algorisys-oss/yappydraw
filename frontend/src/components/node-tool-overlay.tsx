@@ -1,5 +1,7 @@
 import { Show, For, createSignal, createMemo, onMount, onCleanup } from 'solid-js';
-import { store, toggleNodeTool, pushToHistory } from '../store/app-store';
+import { store, setStore, toggleNodeTool, pushToHistory, isLayerVisible, isLayerLocked } from '../store/app-store';
+import { hitTestElement } from '../utils/hit-testing';
+import type { DrawingElement } from '../types';
 import {
     selectedPathNodes, setNodeSelection, toggleNodeInSelection, clearNodeSelection,
     isNodeSelected, moveSelectedNodes, deleteSelectedNodes,
@@ -31,6 +33,10 @@ export const NodeToolOverlay = () => {
     // rather than moving the selection.
     let handleDrag: { h: HandleRef; mirror: boolean } | null = null;
     let marqueeAdditive = false;
+    /** This band picks SHAPES, not anchors — set when there was nothing to node-edit. */
+    let marqueePicksElements = false;
+    /** A click (not a drag) on empty space with no anchors selected clears the object. */
+    let emptyPressDeselects = false;
 
     const active = () => store.nodeToolActive;
     // World ⇄ WINDOW, not world ⇄ canvas-local. `.node-tool-layer` is `position: fixed;
@@ -70,6 +76,23 @@ export const NodeToolOverlay = () => {
             if (d <= HIT && (!best || d < best.d)) best = { h: hd.h, d };
         }
         return best?.h ?? null;
+    };
+
+    /**
+     * Topmost interactable element under a window point, or null. Mirrors the canvas's own
+     * narrow-phase: reverse z-order, skipping locked elements and hidden/locked layers so
+     * the Node tool can't reach what the Selection tool wouldn't.
+     */
+    const elementAt = (sx: number, sy: number): DrawingElement | null => {
+        const w = windowToWorld(sx, sy);
+        const threshold = 8 / store.viewState.scale;
+        const map = new Map(store.elements.map(el => [el.id, el]));
+        for (let i = store.elements.length - 1; i >= 0; i--) {
+            const el = store.elements[i];
+            if (el.locked || !isLayerVisible(el.layerId) || isLayerLocked(el.layerId)) continue;
+            if (hitTestElement(el, w.x, w.y, threshold, store.elements, map)) return el;
+        }
+        return null;
     };
 
     const nodeAt = (sx: number, sy: number): NodeRef | null => {
@@ -125,10 +148,38 @@ export const NodeToolOverlay = () => {
             }
         }
 
-        // Empty space: rubber-band over anchors.
+        // Clicked a DIFFERENT shape: make it the one being edited, without leaving the
+        // tool. Every branch here stopPropagation()s, so the canvas never saw the click —
+        // switching shapes meant exiting the Node tool, selecting, and re-entering. This
+        // is Inkscape's `NodeTool::select_point`: an item under the cursor is selected
+        // (Shift toggles it in, so several paths can be node-edited at once).
+        const el = elementAt(e.clientX, e.clientY);
+        if (el && !(store.selection.length === 1 && store.selection[0] === el.id)) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.shiftKey) {
+                // Add to the edit set; anchors already picked on other paths survive.
+                if (!store.selection.includes(el.id)) setStore('selection', [...store.selection, el.id]);
+            } else if (!store.selection.includes(el.id)) {
+                clearNodeSelection();
+                setStore('selection', [el.id]);
+            }
+            return;
+        }
+
         e.preventDefault();
         e.stopPropagation();
+
+        // Empty space (or the shape already being edited): rubber-band. What the band
+        // catches depends on whether there is anything to node-edit — Inkscape's
+        // `select_area` makes the same split on `_multipath->empty()`. With no anchors on
+        // screen a drag can only sensibly mean "pick a shape".
         marqueeAdditive = e.shiftKey;
+        marqueePicksElements = nodes().length === 0;
+        // Two-stage deselect, again from Inkscape: the first click on empty space drops
+        // the node selection, and only a second one drops the object. Missing an anchor
+        // by a few px shouldn't cost you the path you were working on.
+        emptyPressDeselects = !el && !marqueeAdditive && store.nodeSelection.length === 0;
         if (!marqueeAdditive) clearNodeSelection();
         setMarquee({ x0: e.clientX, y0: e.clientY, x1: e.clientX, y1: e.clientY });
     };
@@ -153,8 +204,26 @@ export const NodeToolOverlay = () => {
         if (m) {
             const next = { ...m, x1: e.clientX, y1: e.clientY };
             setMarquee(next);
+            // A drag is not a click — whatever happens now, don't also deselect on release.
+            if (Math.abs(next.x1 - next.x0) > 2 || Math.abs(next.y1 - next.y0) > 2) {
+                emptyPressDeselects = false;
+            }
             const lo = { x: Math.min(next.x0, next.x1), y: Math.min(next.y0, next.y1) };
             const hi = { x: Math.max(next.x0, next.x1), y: Math.max(next.y0, next.y1) };
+
+            // Nothing to node-edit → the band picks shapes instead (Inkscape's split).
+            if (marqueePicksElements) {
+                const a = windowToWorld(lo.x, lo.y), b = windowToWorld(hi.x, hi.y);
+                const ids = store.elements.filter(el => {
+                    if (el.locked || !isLayerVisible(el.layerId) || isLayerLocked(el.layerId)) return false;
+                    const ex1 = Math.min(el.x, el.x + el.width), ex2 = Math.max(el.x, el.x + el.width);
+                    const ey1 = Math.min(el.y, el.y + el.height), ey2 = Math.max(el.y, el.y + el.height);
+                    return a.x < ex2 && b.x > ex1 && a.y < ey2 && b.y > ey1;
+                }).map(el => el.id);
+                setStore('selection', ids);
+                return;
+            }
+
             const inside = nodes().filter(n => {
                 const p = toScreen(n.x, n.y);
                 return p.x >= lo.x && p.x <= hi.x && p.y >= lo.y && p.y <= hi.y;
@@ -169,7 +238,14 @@ export const NodeToolOverlay = () => {
         setHover(nodeAt(e.clientX, e.clientY));
     };
 
-    const onUp = () => { drag = null; handleDrag = null; setMarquee(null); };
+    const onUp = () => {
+        // Second stage of the empty-space deselect: this press hit nothing, had no anchors
+        // to drop, and never became a drag — so it means "let go of the path too".
+        if (emptyPressDeselects && store.selection.length > 0) setStore('selection', []);
+        emptyPressDeselects = false;
+        marqueePicksElements = false;
+        drag = null; handleDrag = null; setMarquee(null);
+    };
 
     onMount(() => {
         window.addEventListener('pointerdown', onDown, true); // capture: beat the canvas

@@ -207,7 +207,7 @@ frontend/src/components/new-game-dialog.css | - | 55 |
 frontend/src/components/new-game-dialog.tsx | typescript | 100 | Component:11 Choice:23 slingshotScript:25 flappyScript:26 loadCodeGame:27 NewGameDialog:50 pick:53
 frontend/src/components/new-game-signal.ts | typescript | 4 |
 frontend/src/components/node-tool-overlay.css | - | 125 |
-frontend/src/components/node-tool-overlay.tsx | typescript | 271 | NodeRef:7 NodeToolOverlay:25 active:35 toWorld:48 toScreen:49 handleAt:65 nodeAt:75 onDown:85 onMove:136 onUp:172 onKey:179 p:229 sel:230 hot:231 a:245 p:246
+frontend/src/components/node-tool-overlay.tsx | typescript | 347 | NodeRef:9 NodeToolOverlay:27 active:41 toWorld:54 toScreen:55 handleAt:71 elementAt:86 nodeAt:98 onDown:108 onMove:187 onUp:241 onKey:255 p:305 sel:306 hot:307 a:321 p:322
 frontend/src/components/onboarding-tour.css | - | 158 |
 frontend/src/components/onboarding-tour.tsx | typescript | 256 | Component:13 TourStep:19 startTour:81 markTourSeen:92 endTour:97 hasSeenTour:102 maybeAutoStartTour:116 OnboardingTour:131 step:135 total:136 isLast:137 isFirst:138 next:140 prev:141 skip:142 clampToViewport:144 updatePosition:149 onResize:181 onKey:182
 frontend/src/components/p3-color-picker.tsx | typescript | 351 | Component:1 setPalettePinned:15 ColorPalettePicker:20 activePalette:25 applyAsset:27 onSwatchPointerDown:82 onSwatchPointerMove:87 onSwatchPointerUp:99 handleDragStart:110
@@ -336,7 +336,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 413 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 418 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -436,7 +436,7 @@ frontend/src/help-docs/shapes/mindmap-doc.tsx | typescript | 395 | MindmapDoc:8
 frontend/src/help-docs/shapes/sketchnote-doc.tsx | typescript | 520 | SketchnoteDoc:8 a:33 the:45
 frontend/src/help-docs/shapes/table-doc.tsx | typescript | 748 | TableDoc:7 with:428 with:437
 frontend/src/help-docs/shapes/uml-doc.tsx | typescript | 455 | UmlDoc:8 diagrams:14 with:34 or:49 box:95
-frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 362 | VectorPathsDoc:9
+frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 370 | VectorPathsDoc:9
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 297 | WireframingDoc:8
 frontend/src/index.css | - | 617 |
 frontend/src/index.tsx | typescript | 180 | Router:28 handleHashChange:32 isEmbedRoute:87 isHelpRoute:88 isExamplesRoute:89 LoadingFallback:91 RouteError:102 dismissSplash:152
@@ -919,6 +919,7 @@ tests/mobile-shell.spec.ts | typescript | 139 | boot:19 geom:28 px:29 box:30
 tests/mono-logo.spec.ts | typescript | 256 | two:5 sleep:66 setCur:79 ease:80 moveToClient:81 moveTo:82 clickFx:83 findBtn:84 cue:94 ensureTool:103 estW:104 realW:107 centre:108 panel:111 line:112 the:126 mk:132 tline:218
 tests/mp4-record-check.spec.ts | typescript | 33 |
 tests/next-batch.spec.ts | typescript | 75 |
+tests/node-tool-switch-shape.spec.ts | typescript | 127 | boot:14 twoPaths:25 at:36 selection:43 nodeCount:44
 tests/node-tool.spec.ts | typescript | 339 | boot:13 armRectPath:26 nodes:37 kinds:138
 tests/offline-check.spec.ts | typescript | 87 | Window:6
 tests/onboarding-tour.spec.ts | typescript | 37 |
