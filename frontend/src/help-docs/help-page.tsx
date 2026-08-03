@@ -92,7 +92,7 @@ const shapeDocuments: ShapeDoc[] = [
         icon: '✒️',
         category: 'Drawing',
         description: 'Pen tool, the Node tool (Direct Selection), Convert to Path, Pathfinder booleans, Outline Stroke, Offset Path, and holes',
-        keywords: 'direct selection direct select white arrow node tool nodes anchor anchors anchor point control point handle handles bezier bézier edit points edit path reshape path marquee select nodes N key pen tool P corner smooth convert anchor insert point delete point subpath compound path hole donut pathfinder boolean unite subtract intersect exclude divide trim merge crop outline stroke offset path simplify convert to path',
+        keywords: 'direct selection direct select white arrow node tool nodes anchor anchors anchor point control point handle handles bezier bézier edit points edit path reshape path marquee select nodes N key pen tool P corner smooth convert anchor insert point delete point subpath compound path hole donut pathfinder boolean unite subtract intersect exclude divide trim merge crop outline stroke offset path simplify convert to path switch shape while editing shift click add path noderef toggleNodeTool setNodeSelection allNodesOfSelection getPathNodes getNodeHandles moveSelectedNodes setSelectedNodesKind deleteSelectedNodes scripting api',
         content: VectorPathsDoc
     },
     // Diagrams

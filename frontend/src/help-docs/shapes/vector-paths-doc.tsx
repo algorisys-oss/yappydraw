@@ -337,11 +337,46 @@ Yappy.simplifyPath([pathId]);
 // Smooth anchors (strength 0..1, iterations). No ids -> current selection.
 Yappy.smoothPath([pathId], 0.5, 2);`}</code></pre>
 
+                <h3>Node editing</h3>
+                <p>
+                    The Node tool is scriptable as well as clickable. An anchor is addressed by a
+                    <strong> NodeRef</strong> — <code>{'{ id, sub, i }'}</code>: the element id, which subpath
+                    (0 for a simple path), and the anchor's index within it. Operations act on the current
+                    <em> anchor</em> selection, which is separate from the element selection.
+                </p>
+                <pre class="code-block"><code>{`const Y = window.Yappy;
+
+Y.select(pathId);
+Y.toggleNodeTool(true);              // show the anchors
+
+// Take every anchor of the selected path(s), then round them all off.
+Y.setNodeSelection(Y.allNodesOfSelection());
+Y.setSelectedNodesKind('smooth');
+
+// Nudge just the anchors you pick (element-origin units).
+Y.setNodeSelection([{ id: pathId, sub: 0, i: 2 }]);
+Y.moveSelectedNodes(0, -20);
+
+// Read positions in WORLD space, e.g. to drive your own layout.
+Y.getPathNodes();    // [{ ref, x, y, kind }, ...]
+Y.getNodeHandles();  // [{ h, x, y, ax, ay }, ...] for the selected anchors
+
+Y.deleteSelectedNodes();             // a subpath is never taken below 2 anchors
+Y.toggleNodeTool(false);`}</code></pre>
+
                 <table class="api-table">
                     <thead>
                         <tr><th>Method</th><th>Purpose</th></tr>
                     </thead>
                     <tbody>
+                        <tr><td><code>toggleNodeTool(active?)</code></td><td>Show/hide the anchors of the selected path(s)</td></tr>
+                        <tr><td><code>setNodeSelection(refs)</code></td><td>Replace the anchor selection; refs are <code>{'{ id, sub, i }'}</code></td></tr>
+                        <tr><td><code>allNodesOfSelection()</code></td><td>Every anchor of every path in the element selection</td></tr>
+                        <tr><td><code>getPathNodes()</code></td><td>Selected paths' anchors in world space — <code>{'{ ref, x, y, kind }'}</code></td></tr>
+                        <tr><td><code>getNodeHandles()</code></td><td>Bézier handles of the selected anchors — <code>{'{ h, x, y, ax, ay }'}</code></td></tr>
+                        <tr><td><code>moveSelectedNodes(dx, dy)</code></td><td>Move every selected anchor by the same delta</td></tr>
+                        <tr><td><code>setSelectedNodesKind(kind)</code></td><td><code>'corner'</code> or <code>'smooth'</code> for the selection</td></tr>
+                        <tr><td><code>deleteSelectedNodes()</code></td><td>Delete the selected anchors</td></tr>
                         <tr><td><code>createPath(anchors, opts?)</code></td><td>New single-subpath path; <code>opts.closed</code> fills it</td></tr>
                         <tr><td><code>createMultiPath(subpaths, opts?)</code></td><td>Multi-subpath path (holes / islands, even-odd)</td></tr>
                         <tr><td><code>getPath(id)</code></td><td>Read anchors + <code>closed</code>, or <code>subpaths</code></td></tr>

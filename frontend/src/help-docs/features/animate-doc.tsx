@@ -129,6 +129,11 @@ const AnimateDoc: Component = () => {
                         motion speed. Even spacing = constant speed; tightening spacing = ease-in.</li>
                     <li>Ghosts appear only while <strong>paused</strong> (playback hides them) and they're
                         never exported.</li>
+                    <li><strong>You can't select or grab a ghost.</strong> They're a reference image, not
+                        objects on this frame — clicking one, or dragging a selection box across one, only
+                        ever picks up what's actually on the current frame. (Before 0.8.171 a selection box
+                        did reach them, so a drag could quietly grab a pose the playhead wasn't even on.) To
+                        edit what a ghost shows, scrub to its frame.</li>
                     <li>They work in both sketch and architectural render styles, and ghost tweened
                         positions too — so you can check a tween's arc frame by frame.</li>
                 </ul>

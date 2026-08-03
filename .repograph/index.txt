@@ -174,7 +174,7 @@ frontend/src/components/google-fonts-dialog.tsx | typescript | 133 | Component:1
 frontend/src/components/graphic-styles-panel.css | - | 87 |
 frontend/src/components/graphic-styles-panel.tsx | typescript | 88 | Component:1 draw:17 GraphicStylesPanel:43 startRename:47 commitRename:48
 frontend/src/components/help-dialog.css | - | 233 |
-frontend/src/components/help-dialog.tsx | typescript | 405 | ShortcutEntry:6 ShortcutCategory:11 parseKeys:209 Props:228 HelpDialog:233 handleKeyDown:259
+frontend/src/components/help-dialog.tsx | typescript | 410 | ShortcutEntry:6 ShortcutCategory:11 parseKeys:214 Props:233 HelpDialog:238 handleKeyDown:264
 frontend/src/components/history-panel.css | - | 68 |
 frontend/src/components/history-panel.tsx | typescript | 38 | Component:1 HistoryPanel:12
 frontend/src/components/infra-tool-group.tsx | typescript | 136 | Component:1 InfraToolGroup:22 handler:29 getActiveTool:39 handleToolClick:48 as:56 as:62 handleRightClick:70 toggleMenu:75 activeTool:82 isActive:83 getDropdownPosition:85
@@ -336,7 +336,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 418 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 421 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -405,7 +405,7 @@ frontend/src/game/game-templates.ts | typescript | 287 | GameTemplate:3
 frontend/src/game/graph-layout.ts | typescript | 160 | GraphNode:14 GraphWire:22 FlowTarget:25 FlowWire:33 buildGraphNodes:45 deriveWires:68 flowTargetsOf:90 deriveFlowTargets:110 deriveFlowWires:124 wirePath:142 messageColor:156
 frontend/src/game/sound-engine.ts | typescript | 137 | ac:14 Route:33 tone:41 sweep:57 noise:74 Sfx:91 playSfx:93 sfxInto:97 startMusic:116 stopMusic:128 setMuted:132
 frontend/src/gifenc.d.ts | typescript | 25 | quantize:3 GIFEncoder:24
-frontend/src/help-docs/features/animate-doc.tsx | typescript | 367 | frame:2 AnimateDoc:9 in:15
+frontend/src/help-docs/features/animate-doc.tsx | typescript | 372 | frame:2 AnimateDoc:9 in:15
 frontend/src/help-docs/features/animation-doc.tsx | typescript | 1462 | AnimationDoc:8 to:945
 frontend/src/help-docs/features/arcade-doc.tsx | typescript | 304 | ArcadeDoc:8 a:124
 frontend/src/help-docs/features/artboards-doc.tsx | typescript | 148 | ArtboardsDoc:9
@@ -436,7 +436,7 @@ frontend/src/help-docs/shapes/mindmap-doc.tsx | typescript | 395 | MindmapDoc:8
 frontend/src/help-docs/shapes/sketchnote-doc.tsx | typescript | 520 | SketchnoteDoc:8 a:33 the:45
 frontend/src/help-docs/shapes/table-doc.tsx | typescript | 748 | TableDoc:7 with:428 with:437
 frontend/src/help-docs/shapes/uml-doc.tsx | typescript | 455 | UmlDoc:8 diagrams:14 with:34 or:49 box:95
-frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 370 | VectorPathsDoc:9
+frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 405 | VectorPathsDoc:9
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 297 | WireframingDoc:8
 frontend/src/index.css | - | 617 |
 frontend/src/index.tsx | typescript | 180 | Router:28 handleHashChange:32 isEmbedRoute:87 isHelpRoute:88 isExamplesRoute:89 LoadingFallback:91 RouteError:102 dismissSplash:152
@@ -919,6 +919,7 @@ tests/mobile-shell.spec.ts | typescript | 139 | boot:19 geom:28 px:29 box:30
 tests/mono-logo.spec.ts | typescript | 256 | two:5 sleep:66 setCur:79 ease:80 moveToClient:81 moveTo:82 clickFx:83 findBtn:84 cue:94 ensureTool:103 estW:104 realW:107 centre:108 panel:111 line:112 the:126 mk:132 tline:218
 tests/mp4-record-check.spec.ts | typescript | 33 |
 tests/next-batch.spec.ts | typescript | 75 |
+tests/node-api-doc-accuracy.spec.ts | typescript | 58 |
 tests/node-tool-switch-shape.spec.ts | typescript | 127 | boot:14 twoPaths:25 at:36 selection:43 nodeCount:44
 tests/node-tool.spec.ts | typescript | 339 | boot:13 armRectPath:26 nodes:37 kinds:138
 tests/offline-check.spec.ts | typescript | 87 | Window:6
