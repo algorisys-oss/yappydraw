@@ -6,7 +6,7 @@
  */
 
 import { batch } from 'solid-js';
-import { store, setStore, pushToHistory, bumpDirtyRevision, getClipEditStash, addSlide, setActiveSlide, deleteSlide, cloneAnimTimeline } from './app-store';
+import { store, setStore, pushToHistory, bumpDirtyRevision, getClipEditStash, addSlide, setActiveSlide, deleteSlide, cloneAnimTimeline, setSelectedTool } from './app-store';
 import { reconcile } from 'solid-js/store';
 import { createDefaultAnimTimeline } from '../types/anim-types';
 import { generateId } from '../utils/id-generator';
@@ -99,6 +99,35 @@ export const insertKeyframe = (layerId: string, frame: number): string[] => {
         setStore('animTimeline', res.timeline);
     });
     return res.newElementIds;
+};
+
+/**
+ * F6 *from the UI* — insert the keyframe, then hand the user the copies ready to move.
+ *
+ * The whole point of F6 is "duplicate the previous cel so you can nudge it", and the
+ * tutorial says exactly that: *press F6 … drag the copy to the floor*. That was
+ * impossible as shipped — the copies landed unselected with whatever tool was armed, and
+ * Yappy's default tool is the Ink Brush, so the usual state after F6 was a brush and
+ * nothing selected. Animate gets away with not switching because ITS default tool is
+ * Selection; ours isn't, so the same rule produces a different outcome.
+ *
+ * F7 deliberately does NOT do this: a blank keyframe means you are about to draw, so the
+ * drawing tool you picked stays armed.
+ *
+ * Kept separate from `insertKeyframe` so the scripting API (`Yappy.insertKeyframe`)
+ * stays a pure timeline edit that doesn't reach over and change the user's tool.
+ */
+export const insertKeyframeAndSelect = (layerId: string, frame: number): string[] => {
+    const ids = insertKeyframe(layerId, frame);
+    if (ids.length === 0) return ids;
+    // Order matters: setSelectedTool clears the selection when it switches to a drawing
+    // tool, so the tool has to settle BEFORE the selection is written. `lasso` is already
+    // selection-capable and is left alone — same convention as selectAll().
+    if (store.selectedTool !== 'selection' && store.selectedTool !== 'lasso') {
+        setSelectedTool('selection');
+    }
+    setStore('selection', ids);
+    return ids;
 };
 
 /** F7 — Insert Blank Keyframe. */

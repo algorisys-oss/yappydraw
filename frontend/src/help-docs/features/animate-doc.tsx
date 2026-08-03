@@ -49,12 +49,22 @@ const AnimateDoc: Component = () => {
                         blank keyframe · shaded bar = the span the keyframe holds for · <strong>arrow</strong> =
                         a motion tween · red column = the playhead.</li>
                     <li><strong>Click</strong> a cell to move the playhead + select that frame · drag the
-                        ruler to <strong>scrub</strong> · drag a keyframe dot to move it · right-click for
-                        every frame command.</li>
+                        ruler to <strong>scrub</strong> · drag a keyframe dot to move it · right-click
+                        (or <strong>touch &amp; hold</strong> on a tablet) for every frame command.</li>
                     <li><strong>F5</strong> Insert Frame (lengthen the span) · <strong>F6</strong> Insert
                         Keyframe (duplicates the previous cel, so you can nudge it) · <strong>F7</strong>
                         Insert Blank Keyframe · <strong>Shift+F5</strong> Remove Frame ·
                         <strong> Shift+F6</strong> Clear Keyframe.</li>
+                    <li><strong>After F6 the copy is selected and the Select tool is armed</strong>, so you
+                        can drag it straight away — that's the whole point of the key. <strong>F7</strong>
+                        deliberately leaves your drawing tool alone, because a blank keyframe means you're
+                        about to draw. (Scripting is unaffected: <code>Yappy.insertKeyframe()</code> is a
+                        pure timeline edit and never changes your tool.)</li>
+                    <li><strong>On an iPad or tablet</strong> there are no F-keys — <strong>touch and hold</strong>
+                        a frame for about half a second to open the same menu, with Insert Keyframe, Insert
+                        Blank Keyframe, motion/shape tweens, frame labels, frame actions, Clear Keyframe and
+                        Remove Frame. A hold that turns into a drag scrubs instead, so it never fires by
+                        accident.</li>
                     <li><strong>Enter</strong> play/pause · <strong>,</strong> / <strong>.</strong> step one
                         frame · <strong>Home</strong> / <strong>End</strong> jump to start/end. Frame rate and
                         length are editable in the timeline header.</li>

@@ -71,6 +71,11 @@ export interface ElementOverlayOptions {
     /** Id of the path currently being built by the pen tool — its anchors/handles are
      *  drawn live (like Illustrator) even though it isn't selected yet. */
     penBuildingId?: string | null;
+    /** Node tool is on. Its overlay owns the pointer outright (node-tool-overlay's
+     *  capture-phase handler stopPropagation()s every branch), so the transform chrome
+     *  below is not merely redundant — it is inert decoration sitting on top of the
+     *  anchors you are trying to grab. Draw the outline, nothing else. */
+    nodeToolActive?: boolean;
 }
 
 /**
@@ -193,6 +198,14 @@ export function renderElementOverlays(
                 ctx.restore();
             }
         }
+
+        // Node tool: stop after the outline. Everything below — the 8 resize handles, the
+        // rotate handle, the quick-delete ⊗ and the quick-connect buttons — is drawn at the
+        // bounding box, which is exactly where a path's corner anchors also are. Since the
+        // node overlay swallows the pointer, none of it can be clicked; it just buries the
+        // anchors under identical-looking blue squares. Illustrator and Inkscape both drop
+        // the transform chrome in Direct-Selection / node mode for this reason.
+        if (opts.nodeToolActive) { ctx.restore(); return; }
 
         // Handles (Only if single selection)
         if (selectionLength === 1) {

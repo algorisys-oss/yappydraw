@@ -170,6 +170,8 @@ export interface RenderElementsParams {
     canInteractWithElement: (el: DrawingElement) => boolean;
     appMode?: string;
     focusBranchIds?: Set<string> | null;
+    /** Node tool is on: selected elements show anchors only, no transform chrome. */
+    nodeToolActive?: boolean;
 }
 
 export interface SelectionOverlayParams {
@@ -190,6 +192,8 @@ export interface SelectionOverlayParams {
     reparentDropTarget?: string | null;
     poolLaneDropTarget?: { poolId: string; laneIndex: number } | null;
     tableColumnDrop?: { elementId: string; sourceCol: number; targetCol: number } | null;
+    /** Node tool is on — suppress multi-selection transform chrome. */
+    nodeToolActive?: boolean;
 }
 
 export interface ConnectionAnchorParams {
@@ -754,7 +758,7 @@ export function renderLayersAndElements(
         elements, layers, slides, docType, activeSlideIndex,
         selection, selectedTool, animatedStates, viewportBounds: vp,
         scale, isDarkMode, currentDrawingId, hoveredConnector, editingId, appMode,
-        focusBranchIds
+        focusBranchIds, nodeToolActive
     } = params;
 
     const cachedRc = createCachedRc(rc);
@@ -1015,6 +1019,7 @@ export function renderLayersAndElements(
                 selectedTool,
                 hoveredConnector,
                 appMode,
+                nodeToolActive,
                 penBuildingId: selectedTool === 'path' ? currentDrawingId : null
             });
         });
@@ -1057,8 +1062,10 @@ export function renderSelectionOverlays(
     const { elements, selection, scale, selectionBox, suggestedBinding, snappingGuides, spacingGuides, pointSnap, measureGuides, measureUnit, tableCellSelection } = params;
 
     // Multi-selection bounding box + floating quick-delete button (skip the
-    // delete button in read-only modes where the tap can't delete).
-    if (selection.length > 1) {
+    // delete button in read-only modes where the tap can't delete, and in the node
+    // tool, where the pointer belongs to the anchor overlay and the ⊗ would delete
+    // whole shapes rather than the nodes you are editing).
+    if (selection.length > 1 && !params.nodeToolActive) {
         const box = getSelectionBoundingBox(elements, selection);
         if (box) renderMultiSelectionBox(ctx, box, scale);
         if (params.appMode !== 'presentation' && params.appMode !== 'embed') {

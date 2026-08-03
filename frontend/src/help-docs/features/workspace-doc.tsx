@@ -13,8 +13,8 @@ const WorkspaceDoc: Component = () => {
                 <h1>Workspace &amp; Productivity</h1>
                 <p class="doc-intro">
                     The everyday helpers: the floating <strong>smart toolbar</strong>, <strong>align &amp;
-                    distribute</strong>, a scrubbing <strong>history</strong> panel, and <strong>export</strong>
-                    (including true-vector SVG).
+                    distribute</strong>, <strong>rulers &amp; guides</strong>, a scrubbing <strong>history</strong>
+                    panel, and <strong>export</strong> (including true-vector SVG).
                 </p>
             </header>
 
@@ -188,6 +188,66 @@ Yappy.setStrokeDash([], ids);         // clear (revert to the Stroke Style prese
                     Appearance-stack strokes (Appearance panel) have their own compact <em>dash</em> field, so each
                     stacked stroke can carry a different custom pattern.
                 </p>
+            </section>
+
+            {/* ─── RULERS & GUIDES ────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Rulers &amp; guides</h2>
+                <p>
+                    <strong>Show them with <span class="kbd">Alt</span>+<span class="kbd">R</span></strong> — or
+                    ☰ → <strong>View</strong> → <strong>Rulers &amp; Guides</strong> (a tick shows when they're on),
+                    or the Command Palette (<span class="kbd">Ctrl</span>+<span class="kbd">K</span>) →
+                    <em> Toggle Rulers &amp; Guides</em>. Two strips appear along the <strong>top</strong> and
+                    <strong> left</strong> edges of the canvas, plus a small corner box. The setting is remembered
+                    per browser, so they come back next time you open Yappy.
+                </p>
+                <h3>Reading the rulers</h3>
+                <p>
+                    The top strip measures <strong>X</strong>, the left strip measures <strong>Y</strong>, both in
+                    canvas units. Tick spacing follows the zoom automatically — it picks a round
+                    <strong> 1 / 2 / 5 × 10ⁿ</strong> step so major ticks stay roughly evenly spaced and the labels
+                    stay readable whether you're at 10% or 800%. The strips start at the <em>canvas</em> origin (not
+                    the window), so zero on the ruler is zero on the canvas no matter which edge the toolbar is
+                    docked to. Rulers read the <strong>un-rotated</strong> grid — they're always axis-aligned.
+                </p>
+                <h3>Pulling out guides</h3>
+                <p>
+                    <strong>Drag down off the top ruler</strong> to pull out a <strong>horizontal</strong> guide;
+                    <strong> drag right off the left ruler</strong> for a <strong>vertical</strong> one. The guide
+                    follows your pointer and drops where you release. Afterwards, <strong>drag any guide</strong> to
+                    move it — hovering one shows a move cursor, and its tooltip reports its exact position
+                    (<code>X = …</code> / <code>Y = …</code>).
+                </p>
+                <p>
+                    To remove a guide, <strong>double-click it</strong>, or <strong>drag it back onto the ruler</strong>
+                    it came from. To clear the lot at once, use the Command Palette
+                    (<span class="kbd">Ctrl</span>+<span class="kbd">K</span>) → <em>Clear All Guides</em>.
+                </p>
+                <h3>Turning shapes into guides</h3>
+                <p>
+                    Select one or more shapes → Command Palette (<span class="kbd">Ctrl</span>+<span class="kbd">K</span>)
+                    → <em>Convert Shapes to Guides</em>. Each shape drops a horizontal <em>and</em> a vertical guide at
+                    every edge of its bounding box, then the shape itself is removed — so a rectangle becomes a
+                    four-line frame you can lay out against. This is Illustrator's <kbd>⌘5</kbd>; pair it with
+                    <em> Split Into Grid</em> to build a whole guide scaffold in two commands (see the Effects doc).
+                </p>
+                <p class="tip-box">
+                    <strong>Two things to know.</strong> Guides are <em>visual references</em> — nothing snaps to them
+                    yet. For snapping, use <strong>Snap to Grid</strong>
+                    (<span class="kbd">Shift</span>+<span class="kbd">;</span>) and the automatic alignment guides that
+                    appear while you drag. And guides live for the <em>session</em>: they aren't saved into the
+                    document, so they're gone after a reload (the rulers themselves do stay on).
+                </p>
+                <pre class="code-block"><code>{`const Y = window.Yappy;
+
+Y.toggleRulers();            // flip the rulers + guide system
+Y.toggleRulers(true);        // force them on
+
+const id = Y.addGuide('h', 200);  // horizontal guide at world y = 200
+Y.addGuide('v', 120);             // vertical guide at world x = 120
+Y.updateGuide(id, 260);           // move it
+Y.removeGuide(id);                // drop that one
+Y.clearGuides();                  // drop them all`}</code></pre>
             </section>
 
             {/* ─── MEASURE ────────────────────────────────────────────── */}
@@ -398,6 +458,11 @@ Y.transformAgain();                                   // repeat the last move/sc
                         <tr><td><code>transformAgain()</code></td><td>Re-apply the last transform.</td></tr>
                         <tr><td><code>setElementTransform(id, &#123;x,y,width,height,angle&#125;)</code></td><td>Numeric position / size / rotation (angle in radians).</td></tr>
                         <tr><td><code>setStrokeDash(pattern?, ids?)</code></td><td>Custom dash pattern (on/off px array); empty/omitted clears it.</td></tr>
+                        <tr><td><code>toggleRulers(visible?)</code></td><td>Show/hide the edge rulers + guide system (Alt+R).</td></tr>
+                        <tr><td><code>addGuide(axis, pos)</code></td><td>Add a guide — <code>'h'</code> at world y, <code>'v'</code> at world x. Returns its id.</td></tr>
+                        <tr><td><code>updateGuide(id, pos)</code></td><td>Move a guide to a new world coordinate.</td></tr>
+                        <tr><td><code>removeGuide(id)</code></td><td>Remove one guide.</td></tr>
+                        <tr><td><code>clearGuides()</code></td><td>Remove every guide.</td></tr>
                         <tr><td><code>loadDocument(doc)</code></td><td>Replace the document with a saved JSON snapshot.</td></tr>
                     </tbody>
                 </table>

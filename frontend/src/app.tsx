@@ -11,7 +11,8 @@ import {
   bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
   setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation,
-  transformAgain, recordTransform, convertTextToOutlines, toggleSymmetry, setSymmetryCenter, toggleSymmetryEditing
+  transformAgain, recordTransform, convertTextToOutlines, toggleSymmetry, setSymmetryCenter, toggleSymmetryEditing,
+  toggleNodeTool, exitAllToolModes
 } from './store/app-store';
 import { showToast } from './components/toast';
 import { initPWA } from './utils/pwa';
@@ -86,7 +87,7 @@ import StatusBar from './components/status-bar';
 import { initAPI } from './api';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
-import { insertFrame, insertKeyframe, insertBlankKeyframe, clearKeyframe, removeFrames, stepFrame, gotoFrame } from './store/anim-ops';
+import { insertFrame, insertKeyframeAndSelect, insertBlankKeyframe, clearKeyframe, removeFrames, stepFrame, gotoFrame } from './store/anim-ops';
 import { createSymbol, simplifyPath } from './store/app-store';
 import { toggleAnimPlayback } from './utils/animation/anim-playback';
 import { initAutoSave, forceAutoSave, loadAutoSave } from './storage/auto-save';
@@ -194,7 +195,7 @@ const App: Component = () => {
         const layerId = store.animFrameSelection?.layerId ?? store.activeLayerId;
         const frame = store.animFrameSelection?.frames[0] ?? store.animCurrentFrame;
         if (e.key === 'F5') { if (e.shiftKey) removeFrames(layerId, frame); else insertFrame(layerId, frame); }
-        else if (e.key === 'F6') { if (e.shiftKey) clearKeyframe(layerId, frame); else insertKeyframe(layerId, frame); }
+        else if (e.key === 'F6') { if (e.shiftKey) clearKeyframe(layerId, frame); else insertKeyframeAndSelect(layerId, frame); }
         else if (e.key === 'F7') insertBlankKeyframe(layerId, frame);
         // F8 = Convert to Symbol (movie clip; Shift+F8 = static graphic)
         else if (store.selection.length > 0) createSymbol([...store.selection], undefined, e.shiftKey ? 'graphic' : 'movieclip');
@@ -885,6 +886,19 @@ const App: Component = () => {
           else if (key === 'b') setSelectedTool('bezier');
           else if (key === 'h') setSelectedTool('pan');
           else if (key === 'm') setSelectedTool('cloud'); // Mindmap: central topic / drop a root
+          else if (key === 'n') {
+            // Node tool (Illustrator's Direct Selection). Inkscape's `N`, not
+            // Illustrator's `A` — `A` is already the Arrow tool above, and a shape
+            // shortcut people use every day outranks matching one app's muscle memory.
+            const was = store.nodeToolActive;
+            exitAllToolModes();
+            if (!was) {
+              toggleNodeTool(true);
+              // The overlay only draws anchors for a SELECTED path, so switching in with
+              // nothing selected looks like the key did nothing. Say what's missing.
+              if (store.selection.length === 0) showToast('Node tool: select a path to edit its anchors', 'info');
+            }
+          }
           else if (key === '/') { e.preventDefault(); toggleCommandPalette(true, 'Shapes'); }
         }
       }

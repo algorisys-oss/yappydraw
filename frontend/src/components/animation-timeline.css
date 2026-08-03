@@ -1,11 +1,18 @@
 /* Animate-class frame timeline — bottom-fixed primary chrome for docType 'animation'. */
 .atl-panel {
     position: fixed;
-    left: 0;
-    right: 0;
-    /* Sits ABOVE the status bar (28px, z-index 100) — the status bar keeps its
-       zoom/undo controls visible and can't cover the bottom layer row. */
-    bottom: 28px;
+    /* Clear the tool column. `left/right: 0` pinned this to the WINDOW, so with the
+       toolbar docked left (the default) the panel ran under it: the layer-name column and
+       the start of the frame ruler sat behind the tool icons, unreadable and unclickable.
+       Offset by the toolbar's own edge — not --dock-left/right, which also include docked
+       panel widths; the timeline is stage-width chrome and should still run beneath a
+       docked Properties/Layers panel the way it does in Animate. */
+    left: var(--toolbar-left, 0px);
+    right: var(--toolbar-right, 0px);
+    /* Sits ABOVE the status bar (z-index 100) — the status bar keeps its zoom/undo
+       controls visible and can't cover the bottom layer row. --statusbar-h already grows
+       on mobile, and --toolbar-bottom clears the toolbar when IT is the bottom dock. */
+    bottom: calc(var(--statusbar-h, 28px) + var(--toolbar-bottom, 0px));
     z-index: 55;
     display: flex;
     flex-direction: column;
@@ -15,9 +22,8 @@
     color: var(--text-primary);
     user-select: none;
 }
-@media (max-width: 768px) {
-    .atl-panel { bottom: 36px; } /* the status bar is taller on phones */
-}
+/* No mobile `bottom` override any more: --statusbar-h is already 36px at ≤768px, so the
+   calc above tracks it. The old hardcoded 28/36 pair had to be kept in sync by hand. */
 
 /* Drag handle along the panel's top edge — resize the timeline. */
 .atl-resize {
@@ -148,9 +154,14 @@
     padding: 0 6px 0 10px;
     font-size: 10px;
     font-weight: 700;
+    /* Amber #b45309 is 6.4:1 on white but only 3.3:1 on the dark panel — under AA for
+       text, and this is a 10px label. Each theme gets the tone that works against its
+       own background. */
     color: #b45309;
     border-bottom: 1px solid var(--border-color);
 }
+[data-theme="dark"] .atl-audio-head,
+[data-theme="focus"] .atl-audio-head { color: #fbbf24; }
 
 .atl-layer-row {
     display: flex;
@@ -180,6 +191,11 @@
     color: var(--text-primary);
     font-size: 12px;
 }
+/* These are 12–13px line icons, not text. --text-secondary (#6b7280 on white,
+   #9ca3af on #1e1e1e) technically clears AA as a colour pair, but a one-pixel stroke
+   at that weight reads as barely-there in both themes — the "+" that adds a layer was
+   the one people couldn't find. Drive them from --text-primary and dim with opacity
+   instead, so the resting state is legible and hover goes to full strength. */
 .atl-icon {
     display: inline-flex;
     align-items: center;
@@ -189,12 +205,37 @@
     border: none;
     border-radius: 5px;
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--text-primary);
+    opacity: 0.75;
     cursor: pointer;
     flex: 0 0 auto;
+    transition: opacity 0.12s, background 0.12s, color 0.12s;
 }
-.atl-icon:hover { background: var(--bg-secondary); color: var(--text-primary); }
-.atl-danger:hover { color: #ef4444; }
+.atl-icon:hover,
+.atl-icon:focus-visible {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    opacity: 1;
+}
+/* The two "add" buttons (new layer, add sound) carry a standing affordance — they are
+   the only creative actions in the column, and a bare glyph on a panel background is
+   not discoverable as a button. */
+.atl-layers-head .atl-icon,
+.atl-audio-head .atl-icon {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    opacity: 1;
+}
+.atl-layers-head .atl-icon:hover,
+.atl-audio-head .atl-icon:hover {
+    border-color: var(--accent-color, #6366f1);
+    color: var(--accent-color, #6366f1);
+}
+/* #ef4444 is only 3.76:1 on white — fine for a graphic, thin for a 12px glyph. Deepen
+   it on light, keep the brighter tone on dark where it sits at 4.4:1. */
+.atl-danger:hover { color: #dc2626; opacity: 1; }
+[data-theme="dark"] .atl-danger:hover,
+[data-theme="focus"] .atl-danger:hover { color: #ef4444; }
 
 /* Ease-curve editor popover (floats above the panel header, right side) */
 .atl-ease {

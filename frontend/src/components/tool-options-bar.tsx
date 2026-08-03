@@ -90,7 +90,18 @@ export const ToolOptionsBar: Component = () => {
                     title="Delete the selected nodes (Del)">Delete</button>
 
                 <span class="tob-sep" />
-                <span class="tob-hint">Alt-click a segment to add a node · drag a handle to bend (Alt = cusp)</span>
+                {/* The hint has to describe the state you are actually in. It used to always
+                    read "Alt-click a segment to add a node", which is nonsense when the
+                    selection is a rectangle: rectangles carry no anchors, so the overlay draws
+                    nothing and the tool looks broken. Only a `path` has nodes — say so, and
+                    point at the Convert to Path button sitting right there. */}
+                <span class="tob-hint">
+                    {store.selection.length === 0
+                        ? 'Select a shape to edit — only paths carry anchors'
+                        : convertible().length === store.selection.length
+                            ? 'No anchors: this is not an editable path yet — press Convert to Path'
+                            : 'Alt-click a segment to add a node · drag a handle to bend (Alt = cusp)'}
+                </span>
                 <button class="tob-close" onClick={() => toggleNodeTool(false)} title="Exit (Esc)">✕</button>
             </Show>
 

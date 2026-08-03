@@ -552,6 +552,7 @@ const Canvas: Component = () => {
             canInteractWithElement,
             appMode: store.appMode,
             focusBranchIds,
+            nodeToolActive: store.nodeToolActive,
         });
 
         // Persistent dimension annotations (Phase 5): a world-space overlay that reads
@@ -563,6 +564,7 @@ const Canvas: Component = () => {
         // 6. Overlays
         renderSelectionOverlays(ctx, {
             elements: store.elements, selection: store.selection, scale,
+            nodeToolActive: store.nodeToolActive,
             selectionBox: selectionBox(), lassoPoints: lassoPoints(),
             suggestedBinding: suggestedBinding(),
             snappingGuides: snappingGuides(), spacingGuides: spacingGuides(),

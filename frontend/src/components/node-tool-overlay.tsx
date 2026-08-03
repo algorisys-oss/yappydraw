@@ -7,7 +7,7 @@ import {
     type NodeRef, type HandleRef,
 } from '../utils/node-editing';
 import { insertPathAnchorAt } from '../utils/tool-handlers/selection-handler';
-import { screenToWorld, worldToScreen } from '../utils/viewport-transforms';
+import { worldToWindow, windowToWorld } from '../utils/overlay-transform';
 import './node-tool-overlay.css';
 
 /**
@@ -33,8 +33,20 @@ export const NodeToolOverlay = () => {
     let marqueeAdditive = false;
 
     const active = () => store.nodeToolActive;
-    const toWorld = (e: PointerEvent) => screenToWorld(e.clientX, e.clientY, store.viewState as any);
-    const toScreen = (x: number, y: number) => worldToScreen(x, y, store.viewState as any);
+    // World ⇄ WINDOW, not world ⇄ canvas-local. `.node-tool-layer` is `position: fixed;
+    // inset: 0`, so it is in window space, but these used viewport-transforms directly —
+    // which speaks canvas-local px. Every anchor was therefore drawn (--dock-left,
+    // --dock-top) away from the path it belonged to: 46px left and 52px up in the default
+    // layout, a whole square's width at low zoom. Worse, `nodeAt()` compares clientX/Y
+    // against these, so the hit targets were displaced by the same amount — you had to
+    // click 46px right of an anchor to grab it, which is what made the tool feel broken.
+    //
+    // Same bug the rulers, symmetry axes and artboard frames had in 0.8.163, and the same
+    // cure: overlay-transform owns the origin. It also supplies the rotation centre, which
+    // the old `store.viewState as any` cast silently left at 0 — so a rotated view was
+    // wrong too, about the top-left corner instead of the canvas centre.
+    const toWorld = (e: PointerEvent) => windowToWorld(e.clientX, e.clientY);
+    const toScreen = (x: number, y: number) => worldToWindow(x, y);
 
     /** Anchors of every selected path, in world space. Recomputed as geometry changes. */
     const nodes = createMemo(() => {

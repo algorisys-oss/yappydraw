@@ -13,6 +13,16 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.171', date: '2026-08-03', items: [
+        'Editing the points on a path now works where you click. The little square handles were being drawn about 46 pixels to the left and 52 above the shape they belonged to, and — because the same wrong position was used to decide what you had clicked — you had to click to the right of a handle to actually grab it. They sit on the shape now.',
+        'While you are editing points, the shape no longer shows its resize and rotate handles on top of them. Those were drawn in the same places as the corner points, could not be clicked, and made it very hard to tell which square was which.',
+        'Press N to switch to point editing (Illustrator calls this Direct Selection, Inkscape calls it the Node tool). It is also in the command palette under either name. Select a shape and press Convert to Path first if it is not a path yet — the bar now tells you so instead of showing a tip you cannot act on.',
+        'Adding a keyframe with F6 now hands you the copy it just made, with the Select tool ready, so you can drag it straight away. Before, you were left holding whatever brush you had and nothing was selected. F7 (a blank keyframe) still leaves your drawing tool alone, since you are about to draw.',
+        'On an iPad or tablet, touch and hold a frame in the timeline to get the menu a right-click gives on a computer — insert a keyframe, add a tween, label a frame, clear or remove it. Without a keyboard there was previously no way to do any of that.',
+        'Dragging a selection box in an animation no longer picks up the faded ghosts of neighbouring frames when onion skinning is on. It also stops selecting locked shapes and shapes on hidden layers.',
+        'The animation timeline no longer runs underneath the tool column, so the layer names and the start of the frame ruler are readable again. Its buttons — the + that adds a layer, and the eye, lock and delete icons on each row — are easier to see in both light and dark mode.',
+        'The documentation can be opened in a new tab, so looking something up no longer replaces the drawing you had open. Searching the help for "ruler" now finds the rulers and guides page, which has been written properly.',
+    ] },
     { version: '0.8.170', date: '2026-08-02', items: [
         'Bulleted and numbered lists now look the same on the canvas as they did while you were typing them. Indented sub-points used to disappear altogether when you clicked away, the point after an indented block would get stuck onto the end of the one above it, and a long point that ran onto a second line picked up a second bullet. Pasting an outline from another app brings its sub-levels across correctly now, each indented one step with its own marker.',
         'Editing the same list twice no longer adds a blank line each time you go back into it.',

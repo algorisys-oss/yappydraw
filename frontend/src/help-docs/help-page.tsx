@@ -91,7 +91,8 @@ const shapeDocuments: ShapeDoc[] = [
         name: 'Vector Paths',
         icon: '✒️',
         category: 'Drawing',
-        description: 'Pen tool, node editing, Convert to Path, Pathfinder booleans, Outline Stroke, Offset Path, and holes',
+        description: 'Pen tool, the Node tool (Direct Selection), Convert to Path, Pathfinder booleans, Outline Stroke, Offset Path, and holes',
+        keywords: 'direct selection direct select white arrow node tool nodes anchor anchors anchor point control point handle handles bezier bézier edit points edit path reshape path marquee select nodes N key pen tool P corner smooth convert anchor insert point delete point subpath compound path hole donut pathfinder boolean unite subtract intersect exclude divide trim merge crop outline stroke offset path simplify convert to path',
         content: VectorPathsDoc
     },
     // Diagrams
@@ -211,7 +212,8 @@ const shapeDocuments: ShapeDoc[] = [
         name: 'Workspace & Productivity',
         icon: '🛠',
         category: 'Features',
-        description: 'Smart toolbar, align & distribute, blend, measure tool, history panel, and vector SVG export',
+        description: 'Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export',
+        keywords: 'ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw',
         content: WorkspaceDoc
     },
     {
@@ -391,13 +393,26 @@ export const HelpPage: Component = () => {
                                     <h3 class="category-title">{category}</h3>
                                     <ul class="shape-list">
                                         <For each={filteredShapes().filter(s => s.category === category)}>
+                                            {/* A real <a href> per doc, so every page in this list can be
+                                                Ctrl/⌘-clicked, middle-clicked, bookmarked or copied as a
+                                                link. It was a bare <li onClick>, which the browser has no
+                                                way to open in a second tab. Plain left-clicks still route
+                                                in-page; modified clicks fall through to the browser. */}
                                             {(shape) => (
-                                                <li
-                                                    class={`shape-item ${selectedShape() === shape.id ? 'active' : ''}`}
-                                                    onClick={() => navigateToShape(shape.id)}
-                                                >
-                                                    <span class="shape-icon">{shape.icon}</span>
-                                                    <span class="shape-name">{shape.name}</span>
+                                                <li>
+                                                    <a
+                                                        class={`shape-item ${selectedShape() === shape.id ? 'active' : ''}`}
+                                                        href={`#/help/${shape.id}`}
+                                                        title={`${shape.name} — Ctrl/⌘-click to open in a new tab`}
+                                                        onClick={(e) => {
+                                                            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                                                            e.preventDefault();
+                                                            navigateToShape(shape.id);
+                                                        }}
+                                                    >
+                                                        <span class="shape-icon">{shape.icon}</span>
+                                                        <span class="shape-name">{shape.name}</span>
+                                                    </a>
                                                 </li>
                                             )}
                                         </For>

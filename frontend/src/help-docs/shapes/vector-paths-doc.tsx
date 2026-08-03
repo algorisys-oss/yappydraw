@@ -98,6 +98,41 @@ export const VectorPathsDoc: Component = () => {
                     keeps the two apart, so a deliberate drag never accidentally flips the point.
                 </p>
 
+                <h3>The Node tool (Illustrator's “Direct Selection”)</h3>
+                <p>
+                    Everything above edits <em>one</em> anchor at a time. Press <span class="kbd">N</span> — or
+                    Command Palette (<span class="kbd">Ctrl</span>+<span class="kbd">K</span>) →
+                    <em> Node Tool / Direct Selection</em>, or the Vector Tools palette →
+                    <strong> Nodes</strong> — to switch into the dedicated <strong>Node tool</strong>, which edits
+                    <strong> many anchors at once</strong>. It's the same thing Illustrator calls
+                    <em> Direct Selection</em> (the white arrow) and Inkscape calls the <em>Node tool</em>; Yappy
+                    uses Inkscape's <span class="kbd">N</span> because <span class="kbd">A</span> is already the
+                    Arrow tool.
+                </p>
+                <p>
+                    Select a path first — the tool draws anchors for the <strong>selected</strong> path, so with
+                    nothing selected there's nothing to edit.
+                </p>
+                <table class="api-table">
+                    <thead>
+                        <tr><th>Gesture</th><th>Result</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Drag on empty space</strong></td><td>Marquee-select every anchor inside the box</td></tr>
+                        <tr><td><span class="kbd">Shift</span> + marquee</td><td>Add those anchors to the selection</td></tr>
+                        <tr><td><strong>Drag a selected anchor</strong></td><td>Move <em>all</em> selected anchors together</td></tr>
+                        <tr><td><strong>Drag a handle</strong></td><td>Reshape that one anchor's curvature</td></tr>
+                        <tr><td><span class="kbd">Ctrl</span>/<span class="kbd">⌘</span>+<span class="kbd">A</span></td><td>Select every node of the selected path (as in Inkscape)</td></tr>
+                        <tr><td><span class="kbd">Del</span> / <span class="kbd">Backspace</span></td><td>Delete the selected nodes (not the whole shape)</td></tr>
+                        <tr><td><span class="kbd">Esc</span></td><td>Clear the node selection; press again to leave the tool</td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    Pressing <span class="kbd">N</span> again leaves the tool, as does the <strong>✕</strong> in the
+                    tool-options bar. Scripted: <code>Yappy.toggleNodeTool(true)</code> /
+                    <code> Yappy.toggleNodeTool(false)</code>.
+                </p>
+
                 <p class="tip-box">
                     Move, resize, rotate, align, snapping, and undo/redo all work on paths exactly as they do
                     for other shapes.

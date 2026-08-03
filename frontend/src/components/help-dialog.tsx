@@ -55,6 +55,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
         shortcuts: [
             { label: 'Undo', keys: 'Ctrl+Z' },
             { label: 'Redo', keys: 'Ctrl+Y' },
+            { label: 'Node tool / Direct Selection (toggle)', keys: 'N' },
             { label: 'Node tool: select all nodes', keys: 'Ctrl+A' },
             { label: 'Node tool: delete selected nodes', keys: 'Del' },
             { label: 'Node tool: add a node on a segment', keys: 'Alt+Click' },
@@ -151,7 +152,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
         title: 'Animation Timeline (animation docs)',
         shortcuts: [
             { label: 'Insert Frame (lengthen span)', keys: 'F5' },
-            { label: 'Insert Keyframe (duplicate cel)', keys: 'F6' },
+            { label: 'Insert Keyframe (duplicate cel, copy selected & ready to drag)', keys: 'F6' },
             { label: 'Insert Blank Keyframe', keys: 'F7' },
             { label: 'Remove Frame', keys: 'Shift+F5' },
             { label: 'Clear Keyframe', keys: 'Shift+F6' },
@@ -189,6 +190,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Delete Selection (no keyboard)', keys: 'Tap the ✕ button by the selection' },
             { label: 'Context Menu (Delete / Duplicate…)', keys: 'Touch & hold (long-press)' },
             { label: 'Select All (no keyboard)', keys: 'Long-press empty canvas → Select all' },
+            { label: 'Frame menu — Insert Keyframe, tweens, frame actions (no keyboard)', keys: 'Touch & hold a frame in the timeline' },
             { label: 'Layer actions (lock/dup/delete)', keys: 'Drag a layer row left (mouse or touch)' },
             { label: 'Multi-select layers', keys: 'Drag layer rows right → Group / Delete' },
             { label: 'Reorder layers', keys: 'Drag the ⋮⋮ grip handle' },
@@ -301,10 +303,19 @@ export default function HelpDialog(props: Props) {
                                 <Compass size={16} />
                                 Take the tour
                             </button>
+                            {/* A real link, so Ctrl/⌘-click, middle-click and "Open link in new
+                                tab" all work. The handler used to preventDefault() on EVERY
+                                click, which swallowed those gestures and forced the docs to
+                                replace the drawing you had open. Only a plain left-click is
+                                handled in-app now; a modified click falls through to the
+                                browser and opens a second tab. */}
                             <a
                                 href="#/help"
                                 class="social-btn"
+                                title="Open the documentation (Ctrl/⌘-click or middle-click for a new tab)"
                                 onClick={(e) => {
+                                    if (e.defaultPrevented) return;
+                                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
                                     e.preventDefault();
                                     props.onClose();
                                     window.location.hash = '#/help';
@@ -312,6 +323,16 @@ export default function HelpDialog(props: Props) {
                             >
                                 <ExternalLink size={16} />
                                 Documentation
+                            </a>
+                            <a
+                                href="#/help"
+                                class="social-btn"
+                                target="_blank"
+                                rel="noopener"
+                                title="Open the documentation in a new tab, keeping your drawing open here"
+                            >
+                                <ExternalLink size={16} />
+                                Docs in new tab
                             </a>
                             <a
                                 href="#/examples"

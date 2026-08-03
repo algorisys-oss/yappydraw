@@ -16,7 +16,7 @@ import { Play, Pause, Square, Repeat, X, Plus, Eye, EyeOff, Lock, LockOpen, Tras
 import { store, setStore, setActiveLayer, updateLayer, addLayer, deleteLayer, setIsExportOpen, updateElement } from '../store/app-store';
 import {
     gotoFrame, stepFrame, setAnimFps, setAnimFrameCount, ensureAnimRows,
-    insertFrame, insertKeyframe, insertBlankKeyframe, clearKeyframe, removeFrames,
+    insertFrame, insertKeyframeAndSelect, insertBlankKeyframe, clearKeyframe, removeFrames,
     moveKeyframe, setTween, setFrameLabel, setFrameEase, setFrameGuide, setFrameAction,
     addAudioClip, removeAudioClip, moveAudioClip, setCameraKeyFromView, clearCameraKey,
     addAnimScene, setActiveAnimScene, deleteAnimScene,
@@ -320,6 +320,10 @@ const AnimationTimeline: Component = () => {
         const h0 = hit(e);
         e.preventDefault();
         gridCanvas.setPointerCapture(e.pointerId);
+        // Touch/pen only — starts the hold that opens the frame menu. Armed before the
+        // per-branch drag handlers below so it covers the ruler and audio rows too, and
+        // cancelled by its own move/up listeners the moment the press turns into a drag.
+        armLongPress(e);
 
         // Audio row: drag a sound block to move its start frame.
         if (h0.onAudio) {
@@ -391,18 +395,60 @@ const AnimationTimeline: Component = () => {
         }
     };
 
-    const onGridContextMenu = (e: MouseEvent) => {
-        e.preventDefault();
-        const h0 = hit(e);
+    /**
+     * Open the frame (or audio) menu for a point on the grid. Shared by the mouse
+     * right-click and the touch long-press below, so a tablet gets byte-identical
+     * behaviour rather than a reduced second implementation.
+     */
+    const openGridMenuAt = (clientX: number, clientY: number, h0: ReturnType<typeof hit>) => {
         if (h0.onAudio) {
-            setAudioMenu({ x: e.clientX, y: e.clientY, frame: h0.frame, clipId: audioClipAt(h0.frame)?.id ?? null });
+            setAudioMenu({ x: clientX, y: clientY, frame: h0.frame, clipId: audioClipAt(h0.frame)?.id ?? null });
             return;
         }
         if (!h0.layerId) return;
         setActiveLayer(h0.layerId);
         gotoFrame(h0.frame);
         setStore('animFrameSelection', { layerId: h0.layerId, frames: [h0.frame] });
-        setCtxMenu({ x: e.clientX, y: e.clientY, layerId: h0.layerId, frame: h0.frame });
+        setCtxMenu({ x: clientX, y: clientY, layerId: h0.layerId, frame: h0.frame });
+    };
+
+    const onGridContextMenu = (e: MouseEvent) => {
+        e.preventDefault();
+        openGridMenuAt(e.clientX, e.clientY, hit(e));
+    };
+
+    // ── Long-press → the frame menu (touch / pen) ────────────────────────────
+    // iPad and Android don't reliably fire `contextmenu` on a touch or pen long-press
+    // (canvas.tsx carries the same note and hand-rolls the same detector). The grid only
+    // bound onContextMenu, so on a keyboard-less tablet the ENTIRE frame vocabulary —
+    // Insert Keyframe, Insert Blank Keyframe, motion/shape tweens, frame labels, frame
+    // actions, Clear Keyframe, Remove Frame — had no route at all: no F-keys, no menu.
+    // Detect the hold ourselves. Mouse is excluded; it already has a real right-click.
+    const LONG_PRESS_MS = 500;
+    const LONG_PRESS_SLOP = 10; // client px — a scrub drag must not fire the menu
+    let lpTimer: number | null = null;
+
+    const armLongPress = (e: PointerEvent) => {
+        if (e.pointerType === 'mouse' || !gridCanvas) return;
+        const ox = e.clientX, oy = e.clientY;
+        const h0 = hit(e);
+        const teardown = () => {
+            if (lpTimer !== null) { clearTimeout(lpTimer); lpTimer = null; }
+            gridCanvas?.removeEventListener('pointermove', onMove);
+            gridCanvas?.removeEventListener('pointerup', teardown);
+            gridCanvas?.removeEventListener('pointercancel', teardown);
+        };
+        const onMove = (ev: PointerEvent) => {
+            if (Math.hypot(ev.clientX - ox, ev.clientY - oy) > LONG_PRESS_SLOP) teardown();
+        };
+        if (lpTimer !== null) clearTimeout(lpTimer);
+        lpTimer = window.setTimeout(() => {
+            teardown();
+            openGridMenuAt(ox, oy, h0);
+        }, LONG_PRESS_MS);
+        gridCanvas.addEventListener('pointermove', onMove);
+        gridCanvas.addEventListener('pointerup', teardown);
+        gridCanvas.addEventListener('pointercancel', teardown);
     };
 
     /** Create a motion tween; nudge toward one-object-per-layer (Animate's rule). */
@@ -427,7 +473,8 @@ const AnimationTimeline: Component = () => {
         const hasTween = !!activeKf?.tween;
         return [
             { label: 'Insert Frame', shortcut: 'F5', onClick: () => insertFrame(m.layerId, m.frame) },
-            { label: 'Insert Keyframe', shortcut: 'F6', onClick: () => insertKeyframe(m.layerId, m.frame) },
+            // Same behaviour as the F6 key — this menu IS the F6 route on a tablet.
+            { label: 'Insert Keyframe', shortcut: 'F6', onClick: () => insertKeyframeAndSelect(m.layerId, m.frame) },
             { label: 'Insert Blank Keyframe', shortcut: 'F7', onClick: () => insertBlankKeyframe(m.layerId, m.frame) },
             { separator: true },
             hasTween

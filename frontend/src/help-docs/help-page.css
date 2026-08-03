@@ -126,6 +126,10 @@
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s;
+    /* It is an <a> now (so it can be opened in a new tab) — keep it looking like the
+       list row it was, not like a blue underlined link. */
+    color: inherit;
+    text-decoration: none;
 }
 
 .shape-item:hover {

@@ -2487,12 +2487,23 @@ export function selectionOnUp(
     }
 
     if (pState.isSelecting) {
+        // Both area-selects sweep every element, so they need the same gate the
+        // narrow-phase hit test uses. Without it they reach things you cannot see or
+        // touch: locked elements, elements on hidden/locked layers, and — in Animation
+        // mode — the cels of OTHER frames, which aren't on the stage at all. The last one
+        // is the visible one: with onion skinning on, the neighbouring frames' ghosts sit
+        // right there under the marquee, so a drag would grab them and the selection
+        // bounds would stretch across a pose the playhead isn't even on.
+        const selectable = (el: DrawingElement) =>
+            helpers.canInteractWithElement(el) && isLayerVisible(el.layerId);
+
         if (store.selectedTool === 'lasso') {
             // Lasso selection: point-in-polygon test on element centers
             const pts = pState.lassoPoints;
             if (pts.length >= 3) {
                 const selectedIds: string[] = [];
                 store.elements.forEach(el => {
+                    if (!selectable(el)) return;
                     const cx = el.x + el.width / 2;
                     const cy = el.y + el.height / 2;
                     if (isPointInPolygon({ x: cx, y: cy }, pts)) {
@@ -2525,6 +2536,7 @@ export function selectionOnUp(
                 const bh = box.h;
 
                 store.elements.forEach(el => {
+                    if (!selectable(el)) return;
                     const elX = el.x;
                     const elY = el.y;
                     const elW = el.width;

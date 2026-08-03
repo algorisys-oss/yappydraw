@@ -14,6 +14,7 @@ import {
     toggleShapeBuilder, toggleLivePaint, makeLivePaint, releaseLivePaint, selectSimilar, applyDistort,
     toggleCutTool, toggleWidthTool, clearWidthProfile, toggleSymbolSprayer, setTextVertical,
     toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid, toggleSliceTool, toggleTouchType, toggleSymbolism,
+    toggleNodeTool, exitAllToolModes,
     applyFeather, applyGlow, applyScribble, setExtrude, toggleRevolve, setTransformEffect
 } from "../store/app-store";
 import { togglePanel, resetDockLayout } from "../store/dock-layout";
@@ -368,6 +369,20 @@ export const getCommands = (): Command[] => {
         { id: 'view-minimap', label: 'Toggle Minimap', category: 'View', action: () => toggleMinimap(), shortcut: 'Alt+M' },
         { id: 'view-rulers', label: 'Toggle Rulers & Guides', category: 'View', action: () => toggleRulers(), shortcut: 'Alt+R' },
         { id: 'view-clear-guides', label: 'Clear All Guides', category: 'View', action: () => clearGuides() },
+        // Illustrator calls this Direct Selection, Inkscape calls it the Node tool — both
+        // names are in the label so either search term finds it. Exclusive activation,
+        // same as the Vector Tools palette button it mirrors.
+        {
+            id: 'view-node-tool',
+            label: 'Node Tool / Direct Selection (edit anchor points)',
+            category: 'View',
+            action: () => {
+                const was = store.nodeToolActive;
+                exitAllToolModes();
+                if (!was) toggleNodeTool(true);
+            },
+            shortcut: 'N',
+        },
         { id: 'view-zoom-in', label: 'Zoom In', category: 'View', action: () => {
             const s = store.viewState;
             const newScale = Math.min(s.scale * 1.1, 10);

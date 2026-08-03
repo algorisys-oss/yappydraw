@@ -168,4 +168,7 @@ export function publishDockVars(): void {
     r.setProperty('--toolbar-left', `${bar('left')}px`);
     r.setProperty('--toolbar-right', `${bar('right')}px`);
     r.setProperty('--toolbar-top', `${bar('top')}px`);
+    // 'bottom' is a real dock position too (the position button cycles through it), so
+    // bottom-anchored chrome needs it for the same reason the other three exist.
+    r.setProperty('--toolbar-bottom', `${bar('bottom')}px`);
 }
