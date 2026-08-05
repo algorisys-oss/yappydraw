@@ -159,10 +159,20 @@ export const LogoToolkitDoc: Component = () => {
                     <tbody>
                         <tr><td>Editable</td><td>Drag anchors and Bézier handles like any path; counters stay as holes.</td></tr>
                         <tr><td>Colour</td><td>The path inherits the text colour as a solid fill (no stroke).</td></tr>
-                        <tr><td>Fonts</td><td>Works with the bundled font families (the ones in the font picker). Italic text outlines upright in this version.</td></tr>
+                        <tr><td>Fonts</td><td>Works with the bundled families <strong>and any font you add from a file</strong> (<em>＋ Add font…</em>, .ttf / .otf / .woff). Italic text outlines upright in this version.</td></tr>
                         <tr><td>Layout</td><td>Honours font size, weight, alignment, and hard line breaks. (No soft-wrap — break lines yourself for multi-line marks.)</td></tr>
                     </tbody>
                 </table>
+                <p class="tip-box">
+                    <strong>Google fonts can't be outlined.</strong> A font added by name from the Google
+                    Fonts browser arrives as a web font — the browser renders it, but hands us nothing we
+                    can read the glyph shapes out of (it's WOFF2, which is Brotli-compressed and can't be
+                    parsed client-side). To outline a Google font, download the family from
+                    <em> fonts.google.com</em> and add the .ttf with <strong>＋ Add font…</strong>; the
+                    outline then comes from the real typeface. Earlier versions quietly substituted a
+                    default sans-serif here, which produced the right letters in the wrong face — it now
+                    tells you instead and leaves your text alone.
+                </p>
                 <p class="tip-box">
                     <strong>Monogram recipe:</strong> type the letters → <em>Create Outlines</em> →
                     reposition / overlap the glyphs → select all → <em>Pathfinder → Unite</em> for a single

@@ -10,6 +10,7 @@ import { Maximize2 } from "lucide-solid";
 import { store, setSelectedTool, updateElement } from "../store/app-store";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { measureContainerText, measureWrappedTextHeight, resolveFontFamily, getMeasurementContext, getFontString } from "../utils/text-utils";
+import { fontShorthand } from "../utils/font-variants";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
 import { normalizePoints } from "../utils/render-element";
@@ -303,8 +304,10 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 }
 
                 const fontFamily = resolveFontFamily(el.fontFamily);
-                const fontWeight = el.fontWeight || 'normal';
-                const fontStyle = el.fontStyle || 'normal';
+                // `el.fontWeight || 'normal'` produced "true normal 16px …" from the old
+                // boolean — an invalid shorthand, so the editing textarea silently fell back
+                // to the browser default and didn't match the canvas behind it.
+                const fontSpec = (px: number) => fontShorthand(el.fontWeight, el.fontStyle, px, fontFamily);
 
                 // For text elements and shapes, use element height for vertical centering
                 const isConnectorType = el.type === 'organicBranch' || el.type === 'line' || el.type === 'arrow';
@@ -513,7 +516,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                 width: '100%',
                                 height: useTopLeftAnchor ? '100%' : undefined,
                                 'box-sizing': 'border-box',
-                                font: `${fontStyle} ${fontWeight} ${fontSizeVal * scale}px ${fontFamily}`,
+                                font: fontSpec(fontSizeVal * scale),
                                 'letter-spacing': `${(el.letterSpacing || 0) * scale}px`,
                                 color: RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus'),
                                 background: 'transparent',

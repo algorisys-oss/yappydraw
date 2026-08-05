@@ -10,6 +10,7 @@ import rough from 'roughjs/bin/rough';
 // vendor-export chunk on the cold-load critical path. Loaded inside the two functions
 // that need them instead; the other exports are unaffected.
 import { resolveFontFamily, wrapText, getMeasurementRenderer, measureContainerText } from "./text-utils";
+import { fontShorthand, normalizeFontWeight, normalizeFontStyle } from "./font-variants";
 import { calculateUmlClassLayout, calculateUml2SectionLayout } from "./uml-layout-utils";
 import type { DrawingElement, Swatch } from "../types";
 import {
@@ -922,11 +923,14 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
                 }
             } else {
                 // Plain text path (original)
-                const fontWeight = (el.fontWeight === true || el.fontWeight === 'bold') ? 'bold' : 'normal';
-                const fontStyleStr = (el.fontStyle === true || el.fontStyle === 'italic') ? 'italic' : 'normal';
+                // The numeric weight goes straight into SVG's `font-weight`, which takes the
+                // 100–900 axis natively. The old `'bold' : 'normal'` collapsed every weight
+                // to one of two, so a Light or SemiBold wordmark exported as Regular.
+                const fontWeight = String(normalizeFontWeight(el.fontWeight));
+                const fontStyleStr = normalizeFontStyle(el.fontStyle);
                 const lineHeight = fontSize * 1.2;
                 const measureRenderer = getMeasurementRenderer();
-                measureRenderer.font = `${fontStyleStr === 'italic' ? 'italic ' : ''}${fontWeight === 'bold' ? 'bold ' : ''}${fontSize}px ${fontFamily}`;
+                measureRenderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
                 const availableWidth = Math.max(el.width - padding * 2, 20);
                 const paragraphs = el.text!.split('\n');
                 const lines: string[] = [];

@@ -4,6 +4,7 @@ import { getShapeGeometry } from "../../utils/shape-geometry";
 import type { RenderContext } from "../base/types";
 import type { DrawingElement } from "../../types";
 import type { IRenderer } from "../../rendering/IRenderer";
+import { fontShorthand } from "../../utils/font-variants";
 
 export class BpmnRenderer extends ShapeRenderer {
     protected renderArchitectural(context: RenderContext, cx: number, cy: number): void {
@@ -858,8 +859,8 @@ export class BpmnRenderer extends ShapeRenderer {
         const laneCount = el.bpmnLaneCount ?? 1;
         const labels = el.isEditing ? [] : (el.bpmnLaneLabels ?? []);
         const textColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor, isDarkMode);
-        const font = `${el.fontWeight || 'normal'} ${el.fontSize || 14}px ${el.fontFamily || 'sans-serif'}`;
-        const smallFont = `${el.fontWeight || 'normal'} ${Math.max((el.fontSize || 14) * 0.85, 10)}px ${el.fontFamily || 'sans-serif'}`;
+        const font = fontShorthand(el.fontWeight, el.fontStyle, el.fontSize || 14, el.fontFamily || 'sans-serif');
+        const smallFont = fontShorthand(el.fontWeight, el.fontStyle, Math.max((el.fontSize || 14) * 0.85, 10), el.fontFamily || 'sans-serif');
 
         // Fill background
         if (backgroundColor) {
@@ -1099,8 +1100,8 @@ export class BpmnRenderer extends ShapeRenderer {
         const laneCount = el.bpmnLaneCount ?? 1;
         const labels = el.isEditing ? [] : (el.bpmnLaneLabels ?? []);
         const textColor = RenderPipeline.adjustColor(el.textColor || el.strokeColor, isDarkMode);
-        const font = `${el.fontWeight || 'normal'} ${el.fontSize || 14}px ${el.fontFamily || 'sans-serif'}`;
-        const smallFont = `${el.fontWeight || 'normal'} ${Math.max((el.fontSize || 14) * 0.85, 10)}px ${el.fontFamily || 'sans-serif'}`;
+        const font = fontShorthand(el.fontWeight, el.fontStyle, el.fontSize || 14, el.fontFamily || 'sans-serif');
+        const smallFont = fontShorthand(el.fontWeight, el.fontStyle, Math.max((el.fontSize || 14) * 0.85, 10), el.fontFamily || 'sans-serif');
 
         // Outer rectangle
         rc.rectangle(x, y, w, h, options);

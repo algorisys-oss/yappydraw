@@ -49,7 +49,7 @@ import { SymbolEditBanner } from './components/symbol-edit-banner';
 import Toolbar from './components/toolbar';
 import {
   copyToClipboard, cutToClipboard,
-  copyStyle, pasteStyle, lockSelected, flipSelected,
+  copyStyle, pasteStyle, lockSelected, unlockAllElements, flipSelected,
   pasteImageFromBlob, pasteAsTextElement, remapElementBindings,
   pasteYappyElements
 } from './utils/object-context-actions';
@@ -644,6 +644,13 @@ const App: Component = () => {
             const isLocked = store.selection.some(id => store.elements.find(e => e.id === id)?.locked);
             lockSelected(!isLocked);
           }
+        } else if (key === '2' && e.altKey) {
+          // Ctrl+Alt+2 = Unlock All (Illustrator's Object ▸ Unlock All). The lock toggle
+          // above acts on the selection, and a locked element can never be selected — hit
+          // testing skips it — so without this there is no way back from locking something.
+          e.preventDefault();
+          const n = unlockAllElements();
+          showToast(n ? `Unlocked ${n} object${n === 1 ? '' : 's'}` : 'Nothing is locked', n ? 'success' : 'info');
         } else if (key === 'o' && e.shiftKey) {
           // Create Outlines — convert selected text into editable vector paths.
           e.preventDefault();

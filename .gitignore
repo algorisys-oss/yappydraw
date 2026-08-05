@@ -43,3 +43,6 @@ frontend/src/wasm/build/
 
 # Local demo render artifacts (videos/PNG) — NOT tracked (too large); regenerate via tests/*-logo|poster|variations.spec.ts
 media/
+.playwright-mcp/
+knife-scissors-check.png
+*-check.png

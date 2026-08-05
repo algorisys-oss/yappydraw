@@ -14,6 +14,7 @@
 
 import { store, setStore, pushToHistory, bumpDirtyRevision } from '../store/app-store';
 import { editableSubpaths, writeEditableSubpaths, type EditSub } from './tool-handlers/selection-handler';
+import { setAnchorHandle } from './anchor-handle';
 
 /** One anchor, addressed across the whole document. */
 export interface NodeRef { id: string; sub: number; i: number }
@@ -224,8 +225,15 @@ export const selectedNodeHandles = (): {
  * Drag one Bézier handle to a world point.
  *
  * On a `smooth` anchor the opposite handle is mirrored — kept opposite in direction and
- * unchanged in length — which is what makes the node smooth. Hold to break that (pass
+ * unchanged in length — which is what makes the node smooth. Hold Alt to break that (pass
  * `mirror: false`) and the two sides move independently, as a cusp would.
+ *
+ * Breaking is *permanent*, not just for the duration of the drag: the anchor is demoted to
+ * `corner`. Otherwise it stays `smooth`, and the very next drag without Alt re-mirrors and
+ * snaps the handle you just broke back into line — the break would never survive being let
+ * go of. Illustrator's Convert Anchor Point does the same demotion. Geometry is untouched
+ * (`anchorsToPathData` emits a curve from the handles regardless of `kind`), so only the
+ * mirroring rule and the node's shape in the overlay change.
  */
 export const moveNodeHandle = (
     h: HandleRef, wx: number, wy: number, mirror = true, record = false,
@@ -239,21 +247,7 @@ export const moveNodeHandle = (
 
     if (record) pushToHistory();
 
-    const dx = wx - (el.x + a.x);
-    const dy = wy - (el.y + a.y);
-    if (h.which === 'in') { a.inX = dx; a.inY = dy; } else { a.outX = dx; a.outY = dy; }
-
-    if (mirror && a.kind === 'smooth') {
-        const len = Math.hypot(dx, dy) || 1;
-        const ux = dx / len, uy = dy / len;
-        if (h.which === 'in') {
-            const outLen = Math.hypot(a.outX ?? 0, a.outY ?? 0) || len;
-            a.outX = -ux * outLen; a.outY = -uy * outLen;
-        } else {
-            const inLen = Math.hypot(a.inX ?? 0, a.inY ?? 0) || len;
-            a.inX = -ux * inLen; a.inY = -uy * inLen;
-        }
-    }
+    setAnchorHandle(a, h.which, wx - (el.x + a.x), wy - (el.y + a.y), { breakPair: !mirror });
 
     writeEditableSubpaths(h.ref.id, el.x, el.y, subs);
     bumpDirtyRevision();

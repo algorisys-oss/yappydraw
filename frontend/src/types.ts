@@ -443,7 +443,14 @@ export interface DrawingElement {
     rawText?: string;
     fontSize?: number;
     fontFamily?: FontFamily;
-    fontWeight?: boolean | string;
+    /**
+     * Weight on the CSS 100–900 axis. `boolean`/`string` are the legacy encodings (the old
+     * Bold toggle wrote `true`, templates and the API write `'bold'`) and are still accepted
+     * from saved documents — read it through `normalizeFontWeight`, never raw. `400` is
+     * truthy, so `el.fontWeight ? …` reports a plain Regular as bold.
+     */
+    fontWeight?: number | boolean | string;
+    /** 'normal' | 'italic'. `boolean` is the legacy encoding; read via `normalizeFontStyle`. */
     fontStyle?: boolean | string;
     textAlign?: TextAlign;
     verticalAlign?: VerticalAlign;

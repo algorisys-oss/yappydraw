@@ -3,6 +3,7 @@ import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import { normalizePoints } from "../../utils/render-element";
 import { drawTextAlongPath } from "../../utils/text-on-path";
+import { fontShorthand } from "../../utils/font-variants";
 import type { IRenderer } from "../../rendering/IRenderer";
 
 export class PathRenderer extends ShapeRenderer {
@@ -204,9 +205,7 @@ export class PathRenderer extends ShapeRenderer {
             renderer.save();
             const fontSize = el.fontSize || 16;
             const fontFamily = el.fontFamily || 'sans-serif';
-            const fontWeight = el.fontWeight === 'bold' ? 'bold ' : '';
-            const fontStyle = el.fontStyle === 'italic' ? 'italic ' : '';
-            renderer.font = `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
+            renderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
             renderer.fillStyle = el.textColor || color;
 
             if (el.curvedText) {

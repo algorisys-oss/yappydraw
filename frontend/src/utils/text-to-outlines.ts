@@ -4,12 +4,25 @@
  * with cubic Bézier handles; counters (the holes in o/a/e/etc.) become separate
  * subpaths so the even-odd fill rule punches them out automatically.
  *
- * Fonts are bundled as TTF binaries under `public/fonts/outline/` (curated OFL
- * families matching the in-app font picker) and parsed lazily with opentype.js.
- * Italic text outlines upright (no italic binaries bundled in this pass).
+ * Getting the actual font binary is the whole job, and there are three cases:
+ *
+ *   • **Built-ins** — bundled TTFs under `public/fonts/outline/` (curated OFL families
+ *     matching the in-app font picker), fetched and parsed lazily.
+ *   • **Fonts the user added from a file** — the binary is already in hand, sitting in
+ *     the font's `dataUrl`. Parsed directly.
+ *   • **Google fonts added by name** — we have a CSS `@font-face` and a rendered
+ *     typeface, but no binary we can read. Google serves WOFF2 to any modern browser
+ *     and opentype.js cannot parse WOFF2, so these **cannot** be outlined.
+ *
+ * That last case used to fall through to `?? FONT_FILES['sans-serif']`, which meant
+ * outlining a logo set in a Google font silently produced the right letters in the
+ * WRONG typeface — worse than failing, because it looks like it worked. It now fails
+ * loudly with the one thing that fixes it (add the .ttf/.otf via "Add font…").
  */
 
 import opentype from 'opentype.js';
+import { customFonts } from './custom-fonts';
+import { normalizeFontWeight } from './font-variants';
 import type { PathSubpath, PathAnchor, DrawingElement } from '../types';
 
 // fontFamily key → bundled TTF file(s). Mirrors `fontFamilyMap` in text-utils.ts.
@@ -24,20 +37,87 @@ const FONT_FILES: Record<string, { regular: string; bold?: string }> = {
     'code':       { regular: 'code-400.ttf', bold: 'code-700.ttf' },
 };
 
-// Parsed fonts are cached by file name (a promise so concurrent loads dedupe).
+/**
+ * Thrown when a font's outlines genuinely can't be reached. Carries a message meant for
+ * the user rather than a stack trace — the caller surfaces it as a toast, because the
+ * only useful response is "add the font file", which they have to do themselves.
+ */
+export class FontOutlineUnavailableError extends Error {
+    constructor(message: string) { super(message); this.name = 'FontOutlineUnavailableError'; }
+}
+
+/** Decode a `data:` URL's base64 payload into an ArrayBuffer. */
+function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
+    const comma = dataUrl.indexOf(',');
+    if (comma < 0) throw new FontOutlineUnavailableError('That font file could not be read.');
+    const bin = atob(dataUrl.slice(comma + 1));
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+}
+
+/**
+ * WOFF2 starts with the tag `wOF2`. opentype.js (1.x) handles TTF, OTF and WOFF but not
+ * WOFF2 — its Brotli-compressed tables would need a decompressor the browser doesn't
+ * expose (`DecompressionStream` does gzip and deflate, not Brotli). Detecting it here
+ * turns an inscrutable parser error into a sentence that says what to do about it.
+ */
+function isWoff2(buf: ArrayBuffer): boolean {
+    if (buf.byteLength < 4) return false;
+    const b = new Uint8Array(buf, 0, 4);
+    return b[0] === 0x77 && b[1] === 0x4F && b[2] === 0x46 && b[3] === 0x32; // 'wOF2'
+}
+
+function parseFontBuffer(buf: ArrayBuffer, label: string): opentype.Font {
+    if (isWoff2(buf)) {
+        throw new FontOutlineUnavailableError(
+            `“${label}” is a WOFF2 file, which can't be converted to outlines. Add the same font as a .ttf or .otf to outline it.`,
+        );
+    }
+    return opentype.parse(buf);
+}
+
+// Parsed fonts are cached by source id (a promise so concurrent loads dedupe).
 const fontCache = new Map<string, Promise<opentype.Font>>();
 
 const loadFont = (familyKey: string, bold: boolean): Promise<opentype.Font> => {
-    const entry = FONT_FILES[familyKey] ?? FONT_FILES['sans-serif'];
+    // A font the user added themselves. `file` fonts carry their own binary; `google`
+    // fonts are a stylesheet reference and have nothing we can read.
+    const custom = customFonts().find(f => f.key === familyKey);
+    if (custom) {
+        if (custom.kind === 'google' || !custom.dataUrl) {
+            return Promise.reject(new FontOutlineUnavailableError(
+                `“${custom.label}” is a Google font, which is loaded as a web font and has no file to read. ` +
+                `Download it and add it with “＋ Add font…” (.ttf or .otf) to outline it.`,
+            ));
+        }
+        const id = `custom:${custom.key}`;
+        let p = fontCache.get(id);
+        if (!p) {
+            p = Promise.resolve().then(() => parseFontBuffer(dataUrlToArrayBuffer(custom.dataUrl!), custom.label));
+            fontCache.set(id, p);
+        }
+        return p;
+    }
+
+    const entry = FONT_FILES[familyKey];
+    if (!entry) {
+        // An unknown key — a font from a document made elsewhere, or one that was removed.
+        // Silently substituting sans-serif here is what made this feature untrustworthy.
+        return Promise.reject(new FontOutlineUnavailableError(
+            `The font “${familyKey}” isn't available to outline. Add it with “＋ Add font…” (.ttf or .otf).`,
+        ));
+    }
     const file = (bold && entry.bold) ? entry.bold : entry.regular;
-    let p = fontCache.get(file);
+    const id = `builtin:${file}`;
+    let p = fontCache.get(id);
     if (!p) {
         const base = (import.meta as any).env?.BASE_URL ?? '/';
         const url = `${base}fonts/outline/${file}`;
         p = fetch(url)
             .then(r => { if (!r.ok) throw new Error(`Font fetch failed: ${file} (${r.status})`); return r.arrayBuffer(); })
-            .then(buf => opentype.parse(buf));
-        fontCache.set(file, p);
+            .then(buf => parseFontBuffer(buf, familyKey));
+        fontCache.set(id, p);
     }
     return p;
 };
@@ -109,7 +189,9 @@ export const textElementToOutline = async (el: DrawingElement): Promise<OutlineR
     if (!text.trim()) return null;
 
     const fontSize = el.fontSize || 20;
-    const bold = !!el.fontWeight;
+    // The built-ins bundle a Regular and a Bold binary, so anything from SemiBold up gets the
+    // bold file. (`!!el.fontWeight` would have called a numeric 400 bold — 400 is truthy.)
+    const bold = normalizeFontWeight(el.fontWeight) >= 600;
     const font = await loadFont(el.fontFamily || 'hand-drawn', bold);
 
     const lineHeight = fontSize * 1.2;

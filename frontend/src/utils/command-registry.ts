@@ -18,7 +18,8 @@ import {
     applyFeather, applyGlow, applyScribble, setExtrude, toggleRevolve, setTransformEffect
 } from "../store/app-store";
 import { togglePanel, resetDockLayout } from "../store/dock-layout";
-import { flipSelected, lockSelected } from "./object-context-actions";
+import { flipSelected, lockSelected, unlockAllElements } from "./object-context-actions";
+import { showToast } from "../components/toast";
 import { openRepeatDialog } from "../components/repeat-dialog";
 import { setIsDSLImportOpen, quickSaveToGallery } from "../components/menu";
 import { setShowDrawingsGallery } from "../components/drawings-gallery-signal";
@@ -353,6 +354,12 @@ export const getCommands = (): Command[] => {
             const isLocked = store.selection.some(id => store.elements.find(e => e.id === id)?.locked);
             lockSelected(!isLocked);
         }, shortcut: 'Ctrl+Shift+L' },
+        // Lock/Unlock above acts on the selection, and a locked object can never be in it —
+        // so this is the only command that can free one. Illustrator's Object ▸ Unlock All.
+        { id: 'action-unlock-all', label: 'Unlock All Objects', category: 'Actions', action: () => {
+            const n = unlockAllElements();
+            showToast(n ? `Unlocked ${n} object${n === 1 ? '' : 's'}` : 'Nothing is locked', n ? 'success' : 'info');
+        }, shortcut: 'Ctrl+Alt+2' },
 
         // View
         { id: 'view-grid', label: 'Toggle Grid', category: 'View', action: () => toggleGrid(), shortcut: 'Shift+\'' },

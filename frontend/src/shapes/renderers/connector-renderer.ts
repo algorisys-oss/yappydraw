@@ -5,6 +5,7 @@ import type { IRenderer } from "../../rendering/IRenderer";
 import { normalizePoints, cubicBezier } from "../../utils/render-element";
 import { connectorGeometry } from "../../utils/connector-geometry";
 import { resolveFontFamily } from "../../utils/text-utils";
+import { fontShorthand } from "../../utils/font-variants";
 import { drawTextAlongPath, getElementTextPath } from "../../utils/text-on-path";
 
 export class ConnectorRenderer extends ShapeRenderer {
@@ -59,7 +60,7 @@ export class ConnectorRenderer extends ShapeRenderer {
                 const fontSize = el.fontSize || 14;
                 const fontFamily = resolveFontFamily(el.fontFamily);
                 renderer.save();
-                renderer.font = `${el.fontWeight || 'normal'} ${el.fontStyle || 'normal'} ${fontSize}px ${fontFamily}`;
+                renderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
                 renderer.fillStyle = RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', isDarkMode);
                 drawTextAlongPath(renderer, text, path.points, fontSize, {
                     closed: path.closed,
@@ -81,7 +82,7 @@ export class ConnectorRenderer extends ShapeRenderer {
         const fontSize = el.fontSize || 14;
         const fontFamily = resolveFontFamily(el.fontFamily);
         renderer.save();
-        renderer.font = `${el.fontWeight || 'normal'} ${el.fontStyle || 'normal'} ${fontSize}px ${fontFamily}`;
+        renderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
         renderer.letterSpacing = el.letterSpacing ? `${el.letterSpacing}px` : '0px';
         renderer.textAlign = 'center';
         renderer.textBaseline = 'middle';

@@ -74,11 +74,20 @@ export interface PathPoint {
     angle: number; // radians
 }
 
-interface PathCommand {
+export interface PathCommand {
     type: 'M' | 'L' | 'Q' | 'C' | 'Z';
     points: { x: number; y: number }[]; // Control points and end point
     start: { x: number; y: number }; // Start point of this segment
     length: number; // Approximate length for normalization
+    /**
+     * Which subpath (contour) this command belongs to — 0 for the first, incremented at
+     * every `M`. `M` itself emits no command, so without this the contour boundaries of a
+     * multi-`M` path are simply not in the output, and anything that walks the commands
+     * as one continuous run silently welds the contours together. That is exactly what
+     * flattening for the Knife / Pathfinder did: a donut or a piece of outlined text came
+     * back as a single ring that jumped between contours.
+     */
+    subpath: number;
 }
 
 export class PathUtils {
@@ -183,6 +192,14 @@ export class PathUtils {
         let startX = 0; // For Z command
         let startY = 0;
 
+        // Contour index, bumped on every `M` after the first. Stamped onto each command so
+        // callers can regroup the flat command list back into the contours it came from —
+        // `M` produces no command of its own, so this is the only record that a break
+        // happened. `seenMove` keeps a leading `M` (which every path has) from counting.
+        let sub = 0;
+        let seenMove = false;
+        const push = (cmd: Omit<PathCommand, 'subpath'>) => { commands.push({ ...cmd, subpath: sub }); };
+
         let i = 0;
         while (i < tokens.length) {
             const type = tokens[i];
@@ -196,15 +213,19 @@ export class PathUtils {
                     currentY = y;
                     startX = x;
                     startY = y;
-                    // Move doesn't create a segment unless needed for multi-part paths, 
-                    // but for animation we usually start at 0 progress.
+                    // Move doesn't create a segment unless needed for multi-part paths,
+                    // but for animation we usually start at 0 progress. It does start a new
+                    // contour though, which the `subpath` stamp on the following commands is
+                    // what records.
+                    if (seenMove) sub++;
+                    seenMove = true;
                     break;
                 }
                 case 'L': {
                     const x = parseFloat(tokens[i++]);
                     const y = parseFloat(tokens[i++]);
                     const length = Math.hypot(x - currentX, y - currentY);
-                    commands.push({
+                    push({
                         type: 'L',
                         start: { x: currentX, y: currentY },
                         points: [{ x, y }],
@@ -220,7 +241,7 @@ export class PathUtils {
                     const x = parseFloat(tokens[i++]);
                     const y = parseFloat(tokens[i++]);
                     const length = this.estimateBezierLength(currentX, currentY, cx, cy, x, y);
-                    commands.push({
+                    push({
                         type: 'Q',
                         start: { x: currentX, y: currentY },
                         points: [{ x: cx, y: cy }, { x, y }],
@@ -238,7 +259,7 @@ export class PathUtils {
                     const x = parseFloat(tokens[i++]);
                     const y = parseFloat(tokens[i++]);
                     const length = this.estimateCubicBezierLength(currentX, currentY, c1x, c1y, c2x, c2y, x, y);
-                    commands.push({
+                    push({
                         type: 'C',
                         start: { x: currentX, y: currentY },
                         points: [{ x: c1x, y: c1y }, { x: c2x, y: c2y }, { x, y }],
@@ -268,11 +289,11 @@ export class PathUtils {
                         // Degenerate arc → straight line (SVG spec behaviour).
                         const length = Math.hypot(x - currentX, y - currentY);
                         if (length > 0) {
-                            commands.push({ type: 'L', start: { x: currentX, y: currentY }, points: [{ x, y }], length });
+                            push({ type: 'L', start: { x: currentX, y: currentY }, points: [{ x, y }], length });
                         }
                     } else {
                         for (const seg of cubics) {
-                            commands.push({
+                            push({
                                 type: 'C',
                                 start: { x: currentX, y: currentY },
                                 points: [seg.c1, seg.c2, seg.end],
@@ -291,7 +312,7 @@ export class PathUtils {
                 case 'Z': {
                     const length = Math.hypot(startX - currentX, startY - currentY);
                     if (length > 0) {
-                        commands.push({
+                        push({
                             type: 'L',
                             start: { x: currentX, y: currentY },
                             points: [{ x: startX, y: startY }],

@@ -4,7 +4,18 @@ import { ChevronDown, Check } from "lucide-solid";
 import { resolveFontFamily } from "../utils/text-utils";
 import "./font-picker.css";
 
-export interface FontOption { label: string; value: string | number }
+export interface FontOption {
+    label: string;
+    value: string | number;
+    /**
+     * Font key to render this row's preview with, when it differs from `value`.
+     *
+     * The list shows *families*, so a row's value is a family name ("Montserrat") — which is
+     * not something `resolveFontFamily` can look up. The preview therefore uses the family's
+     * representative variant key (its Regular) instead.
+     */
+    previewValue?: string;
+}
 
 export interface FontPickerProps {
     options: FontOption[];
@@ -97,7 +108,7 @@ const FontPicker: Component<FontPickerProps> = (props) => {
         <>
             <button ref={el => triggerRef = el} type="button" class="fp-trigger"
                 title="Font family"
-                style={{ 'font-family': props.value === '__mixed__' ? undefined : resolveFontFamily(props.value) }}
+                style={{ 'font-family': props.value === '__mixed__' ? undefined : resolveFontFamily(current()?.previewValue ?? props.value) }}
                 onClick={() => open() ? setOpen(false) : openPopup()}
                 onKeyDown={(e) => {
                     if (!open() && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ')) {
@@ -124,7 +135,7 @@ const FontPicker: Component<FontPickerProps> = (props) => {
                                 {(opt, i) => (
                                     <button type="button" class="fp-item"
                                         classList={{ selected: String(opt.value) === props.value, focused: focusIdx() === i() }}
-                                        style={{ 'font-family': resolveFontFamily(String(opt.value)) }}
+                                        style={{ 'font-family': resolveFontFamily(opt.previewValue ?? String(opt.value)) }}
                                         onMouseEnter={() => setFocusIdx(i())}
                                         onClick={() => pick(opt.value)}>
                                         <span class="fp-item-label">{opt.label}</span>

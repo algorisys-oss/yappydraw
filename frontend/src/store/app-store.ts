@@ -23,8 +23,9 @@ import { catmullRomAnchors } from "../utils/curve-fit";
 import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
 import { shapeToPath } from "../utils/shape-to-path";
 import { normalizePoints } from "../utils/render-element";
-import { textElementToOutline } from "../utils/text-to-outlines";
+import { textElementToOutline, FontOutlineUnavailableError } from "../utils/text-to-outlines";
 import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
+import { closestPointOnSubpaths, cutSubpathAt } from "../utils/path-cut";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
@@ -6291,32 +6292,70 @@ export const knifeCut = (p0: { x: number; y: number }, p1: { x: number; y: numbe
 };
 
 /**
- * Scissors — split a path at the anchor nearest `point`. A closed path opens there (one
- * open path); an open path splits into two. Non-path shapes are converted first.
+ * Scissors — split a path **exactly where you clicked**. A closed path opens there (one open
+ * path); an open path splits into two. Non-path shapes are converted first.
+ *
+ * This used to split at the nearest existing *anchor*, which is why cuts didn't land where
+ * you aimed: clicking halfway along a curve jumped the cut to whichever anchor was closest,
+ * so a four-anchor path could only be cut in four places. Now the click is projected onto
+ * the outline itself and the segment is subdivided there with de Casteljau, which is exact —
+ * the two halves reproduce the original curve, so the shape doesn't shift when it's cut.
  */
 export const splitPathAt = (id: string, point: { x: number; y: number }): string[] => {
     const el = store.elements.find(e => e.id === id);
     if (!el) return [];
-    let anchors: { x: number; y: number; [k: string]: any }[] | undefined;
-    let closed = false;
-    if (el.type === 'path' && el.pathAnchors?.length) { anchors = el.pathAnchors as any; closed = !!el.pathClosed; }
-    else { const r = shapeToPath(el); if (!r) { showToast('Scissors: cannot split this shape', 'info'); return []; } anchors = r.anchors as any; closed = r.closed; }
-    if (!anchors || anchors.length < 3) { showToast('Scissors: path too short', 'info'); return []; }
-    // anchors are element-local (origin at el.x,el.y); compare in local space
-    const lx = point.x - el.x, ly = point.y - el.y;
-    let best = 0, bestD = Infinity;
-    anchors.forEach((a, i) => { const d = (a.x - lx) ** 2 + (a.y - ly) ** 2; if (d < bestD) { bestD = d; best = i; } });
 
-    const mk = (subAnchors: any[]): DrawingElement | null => {
+    // Every subpath, not just the legacy single-anchor-list one — a compound path (an 'O',
+    // outlined text, a donut) has its rings in `pathSubpaths` and was previously invisible
+    // to the Scissors, which fell through to re-deriving a single outline from the bbox.
+    let subs: { anchors: PathAnchor[]; closed: boolean }[] = getPathSubpaths(el);
+    if (subs.length === 0) {
+        const r = shapeToPath(el);
+        if (!r) { showToast('Scissors: cannot split this shape', 'info'); return []; }
+        subs = [r];
+    }
+    if (!subs.some(s => s.anchors.length >= 2)) { showToast('Scissors: path too short', 'info'); return []; }
+
+    // Anchors live in the element's UN-rotated local frame, so a click on a rotated path has
+    // to come back through the rotation before it can be compared with them.
+    let px = point.x, py = point.y;
+    if (el.angle) {
+        const ur = rotatePoint(px, py, el.x + el.width / 2, el.y + el.height / 2, -el.angle);
+        px = ur.x; py = ur.y;
+    }
+    const hit = closestPointOnSubpaths(subs, px - el.x, py - el.y);
+    if (!hit) { showToast('Scissors: nothing to split', 'info'); return []; }
+
+    const target = subs[hit.sub];
+    const pieces = cutSubpathAt(target.anchors, target.closed, hit.seg, hit.t);
+    if (!pieces) { showToast('Scissors: cut an edge, not an end point', 'info'); return []; }
+
+    // `generateId` is "highest existing + 1", so every piece must be minted against the same
+    // batch set — the pieces don't reach the store until the very end, so without it each
+    // call sees the same maximum and they all come out with the SAME id. (The old two-piece
+    // split had this too; a compound path can now yield more than two, which makes it worse.)
+    const batchIds = new Set<string>();
+    const mk = (subAnchors: PathAnchor[], closed = false): DrawingElement | null => {
         if (subAnchors.length < 2) return null;
-        const xs = subAnchors.map(a => a.x), ys = subAnchors.map(a => a.y);
-        const minX = Math.min(...xs), minY = Math.min(...ys);
+        // Bound the handle tips too, not just the anchors. A curve bulges outside the hull of
+        // its anchor points, so an anchors-only bbox clipped the very curve that was cut.
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const a of subAnchors) {
+            for (const [hx, hy] of [
+                [a.x, a.y],
+                [a.x + (a.outX ?? 0), a.y + (a.outY ?? 0)],
+                [a.x + (a.inX ?? 0), a.y + (a.inY ?? 0)],
+            ]) {
+                minX = Math.min(minX, hx); minY = Math.min(minY, hy);
+                maxX = Math.max(maxX, hx); maxY = Math.max(maxY, hy);
+            }
+        }
         return {
-            ...el, id: generateId('path'), type: 'path',
+            ...el, id: generateId('path', batchIds), type: 'path',
             x: el.x + minX, y: el.y + minY,
-            width: Math.max(1, Math.max(...xs) - minX), height: Math.max(1, Math.max(...ys) - minY),
+            width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY),
             pathAnchors: subAnchors.map(a => ({ ...a, x: a.x - minX, y: a.y - minY })),
-            pathClosed: false, pathSubpaths: undefined, points: undefined, controlPoints: undefined,
+            pathClosed: closed, pathSubpaths: undefined, points: undefined, controlPoints: undefined,
             // The pieces are a different length/identity, so width-profile t's and live-paint
             // links no longer apply — drop them rather than mis-applying.
             widthProfile: undefined, livePaintGroupId: undefined, livePaintFillFor: undefined, livePaintFaceKey: undefined,
@@ -6324,13 +6363,15 @@ export const splitPathAt = (id: string, point: { x: number; y: number }): string
     };
 
     const created: DrawingElement[] = [];
-    if (closed) {
-        const rotated = [...anchors.slice(best), ...anchors.slice(0, best), anchors[best]];
-        const p = mk(rotated); if (p) created.push(p);
-    } else {
-        const a = mk(anchors.slice(0, best + 1)); const b = mk(anchors.slice(best));
-        if (a) created.push(a); if (b) created.push(b);
+    for (const piece of pieces) { const p = mk(piece); if (p) created.push(p); }
+    // Cutting one ring of a compound path leaves the others alone rather than discarding
+    // them — the counter of an 'O' should survive cutting its outer ring.
+    for (let i = 0; i < subs.length; i++) {
+        if (i === hit.sub) continue;
+        const p = mk(subs[i].anchors, subs[i].closed);
+        if (p) created.push(p);
     }
+
     if (!created.length) { showToast('Scissors: nothing to split', 'info'); return []; }
     pushToHistory();
     replaceElementsPreservingOrder([id], created);
@@ -8251,15 +8292,27 @@ export const convertTextToOutlines = async (ids: string[]): Promise<string[]> =>
     if (texts.length === 0) { showToast('Select a text element to outline', 'info'); return []; }
 
     const results: { srcId: string; res: Awaited<ReturnType<typeof textElementToOutline>> }[] = [];
+    // Why an element couldn't be outlined is almost always "that font has no file we can
+    // read", and the fix is something only the user can do (add the .ttf). Keep the reason
+    // so it can be shown, instead of collapsing everything into "Could not outline text".
+    const reasons: string[] = [];
     for (const el of texts) {
         try {
             const res = await textElementToOutline(el);
             if (res) results.push({ srcId: el.id, res });
         } catch (e) {
             console.error('[outline] failed for', el.id, e);
+            const msg = e instanceof FontOutlineUnavailableError ? e.message : null;
+            if (msg && !reasons.includes(msg)) reasons.push(msg);
         }
     }
-    if (results.length === 0) { showToast('Could not outline text', 'error'); return []; }
+    if (results.length === 0) {
+        showToast(reasons[0] ?? 'Could not outline text', 'error');
+        return [];
+    }
+    // Partial success: some text outlined, some didn't. Say so — otherwise the success
+    // toast reads as though everything worked and the untouched elements look like a bug.
+    if (reasons.length) showToast(reasons[0], 'info');
 
     pushToHistory();
     const newIds: string[] = [];

@@ -1854,8 +1854,9 @@ const Canvas: Component = () => {
 
         if (pState.isPenBuilding) {
             // Clock-Method constrain: Shift, the Procreate second-finger contact, or
-            // the on-screen toggle snaps the dragged handle to 45°/90°.
-            penPathMove(x, y, pState, pHelpers, pSignals, e.shiftKey || pState.secondaryContact || store.penConstrain);
+            // the on-screen toggle snaps the dragged handle to 45°/90°. Alt breaks the
+            // handle pair so the anchor becomes a cusp mid-draw.
+            penPathMove(x, y, pState, pHelpers, pSignals, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey);
             requestAnimationFrame(draw);
             return;
         }

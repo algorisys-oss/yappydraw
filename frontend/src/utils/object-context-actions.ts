@@ -4,6 +4,7 @@ import {
 } from "../store/app-store";
 import { normalizePoints } from "./render-element";
 import { generateId } from "./id-generator";
+import { hitTestElement } from "./hit-testing";
 import type { DrawingElement } from "../types";
 
 export const copyToClipboard = async () => {
@@ -424,6 +425,50 @@ export const lockSelected = (locked: boolean) => {
         updateElement(id, { locked });
     });
 };
+
+/**
+ * Unlocking, without needing to select first.
+ *
+ * Locking is a one-way door otherwise: hit testing skips locked elements
+ * (`canInteractWithElement`), so a locked object can never enter `store.selection`, and
+ * Lock/Unlock reads the selection — the command that would free it can never see it. The
+ * only way out was Select All (which *does* include locked elements) followed by
+ * Ctrl+Shift+L, which nobody discovers. These are the two ways out Illustrator gives you:
+ * Object ▸ Unlock All, and picking a specific locked object out of the Layers panel.
+ *
+ * Both select what they unlock — you almost always locked it to get it out of the way of
+ * something else, and are unlocking it because you now want to work on it.
+ */
+
+/** Locked elements under a world point, topmost first. Powers the right-click affordance. */
+export const lockedElementsAt = (
+    worldX: number, worldY: number, tolerance = 4,
+): DrawingElement[] => {
+    const map = new Map(store.elements.map(e => [e.id, e]));
+    const hits: DrawingElement[] = [];
+    for (let i = store.elements.length - 1; i >= 0; i--) {
+        const el = store.elements[i];
+        if (el.locked && hitTestElement(el, worldX, worldY, tolerance, store.elements, map)) hits.push(el);
+    }
+    return hits;
+};
+
+/** Unlock specific elements by id and select them. Returns how many were actually unlocked. */
+export const unlockElements = (ids: string[]): number => {
+    const locked = store.elements.filter(e => ids.includes(e.id) && e.locked);
+    if (locked.length === 0) return 0;
+    pushToHistory();
+    locked.forEach(el => updateElement(el.id, { locked: false }));
+    setStore('selection', locked.map(el => el.id));
+    return locked.length;
+};
+
+/** Unlock every locked element on the canvas and select them. Returns how many. */
+export const unlockAllElements = (): number =>
+    unlockElements(store.elements.filter(e => e.locked).map(e => e.id));
+
+/** How many elements are currently locked — for labelling the menu item. */
+export const lockedElementCount = (): number => store.elements.filter(e => e.locked).length;
 
 // Style Copy/Paste
 let clipboardStyle: any = null;

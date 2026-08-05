@@ -13,6 +13,16 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.175', date: '2026-08-05', items: [
+        'Fonts are now picked the way they are in Illustrator: one list of font families, and a second list underneath for the style — Light, Regular, SemiBold, Bold Italic and so on. Adding a family used to put every one of its files in the list as if they were unrelated fonts, so "Montserrat" appeared four times. Weights other than plain Regular and Bold now work at all, so Light and Black are finally reachable.',
+        'Changing family keeps the style you were using. Going from Montserrat SemiBold to a family whose heaviest weight is Bold lands you on Bold, rather than dropping you back to Regular.',
+        'Hold Alt while dragging a curve handle to break it away from its partner. A smooth point keeps its two handles in line with each other, which is what you want most of the time — but not for a teardrop, a petal tip, or the sharp join in a script letter. Now one side can curve while the other runs straight in. It works while you are drawing with the Pen and while you are editing a finished shape, and the break stays put after you let Alt go.',
+        'The Scissors now cuts where you click, including halfway along a curve. It used to jump to the nearest corner point, so a circle drawn the usual way could only be cut in four places — clicking a quarter of the way round moved the cut about 76 pixels from where you aimed. The two halves still trace exactly the same curve, so nothing shifts when you cut.',
+        'The Knife follows the shape properly. Cutting a shape with a hole in it — a ring, a letter O, text you have converted to outlines — used to fill the hole in or come apart completely. Curved edges also came back visibly faceted; they are now accurate to a fraction of a pixel at any size.',
+        'Locked objects can be unlocked again. Once you locked something you could no longer click it, which meant you could no longer reach the Unlock command either. Right-click the object and choose Unlock, or press Ctrl+Alt+2 for Unlock All — the menu tells you how many are locked. Unlocking selects what it freed so you can get straight on with it.',
+        'Convert text to shapes (Ctrl+Shift+O) now uses the font you actually chose. If you had added your own font, it quietly converted the text in a default sans-serif instead — the right letters in the wrong typeface, which is worse than failing, because it looks like it worked. Fonts you add from a .ttf or .otf file now convert properly. Fonts added by name from Google Fonts cannot be converted at all and now say so, and leave your text alone; download the family and add the file to use it.',
+        'Bold now works on connector labels and BPMN shapes, where it had quietly never done anything. Light and SemiBold text also exports to SVG at the right weight instead of coming out Regular.',
+    ] },
     { version: '0.8.174', date: '2026-08-03', items: [
         'Bulleted and numbered lists now keep their bullets when you export to SVG. The words were coming out indented with nothing in front of them, so a list read like oddly-spaced prose. PNG, JPG and PDF were always fine.',
     ] },

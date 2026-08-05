@@ -1,6 +1,7 @@
 import type { DrawingElement } from "../types";
 import type { IRenderer } from "../rendering/IRenderer";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
+import { fontShorthand } from "./font-variants";
 
 export interface TextMetrics {
     textWidth: number;
@@ -57,11 +58,9 @@ export const reverseFontFamily = (cssFont: string): string | undefined => {
 };
 
 export const getFontString = (el: Partial<DrawingElement>) => {
-    const fontSize = el.fontSize || 28;
-    const fontFamily = resolveFontFamily(el.fontFamily);
-    const fontWeight = el.fontWeight ? (typeof el.fontWeight === 'string' ? el.fontWeight + ' ' : 'bold ') : '';
-    const fontStyle = el.fontStyle ? (typeof el.fontStyle === 'string' ? el.fontStyle + ' ' : 'italic ') : '';
-    return `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
+    // Weight is a number on the 100–900 axis now, so the old truthiness test would report a
+    // plain Regular (400) as bold. `fontShorthand` handles every encoding the field has had.
+    return fontShorthand(el.fontWeight, el.fontStyle, el.fontSize || 28, resolveFontFamily(el.fontFamily));
 };
 
 // Singleton context for text measurements to avoid DOM overhead in render loops

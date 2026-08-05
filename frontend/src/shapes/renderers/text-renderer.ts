@@ -4,6 +4,7 @@ import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
 import type { DrawingElement } from "../../types";
 import { resolveFontFamily, wrapText, measureVerticalText } from "../../utils/text-utils";
+import { fontShorthand } from "../../utils/font-variants";
 import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils";
 
 export class TextRenderer extends ShapeRenderer {
@@ -20,8 +21,9 @@ export class TextRenderer extends ShapeRenderer {
 
         const fontSize = el.fontSize || 20;
         const fontFamily = resolveFontFamily(el.fontFamily);
-        const fontWeight = (el.fontWeight === true || el.fontWeight === 'bold') ? 'bold ' : '';
-        const fontStyle = (el.fontStyle === true || el.fontStyle === 'italic') ? 'italic ' : '';
+        // Built via fontShorthand rather than an inline `=== 'bold'` test, which missed every
+        // weight on the axis except 700 — Light, Medium and Black all rendered as Regular.
+        const fontSpec = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
 
         renderer.save();
 
@@ -49,7 +51,7 @@ export class TextRenderer extends ShapeRenderer {
             return;
         }
 
-        renderer.font = `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
+        renderer.font = fontSpec;
         // Letter spacing (tracking) — set once so it applies to measurement, wrapping
         // and drawing across the normal / vertical / per-glyph paths below. Restored by
         // the renderer.save()/restore() pair wrapping this method.

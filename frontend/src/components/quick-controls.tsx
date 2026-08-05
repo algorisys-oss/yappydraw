@@ -21,6 +21,7 @@ import {
 } from "lucide-solid";
 import { QUICK_COLORS, type QuickPropertyDef, type PresetOption } from "../config/quick-toolbar-config";
 import { fontCapabilities } from "../config/properties";
+import { normalizeFontWeight, normalizeFontStyle } from "../utils/font-variants";
 import "./quick-toolbar.css";
 
 /** Inline SVG icons for stroke styles */
@@ -288,15 +289,18 @@ export const IconToggleControl: Component<{
     onChange: (val: any) => void;
 }> = (props) => {
     const isActive = () => {
-        if (props.propKey === 'fontWeight') return props.value === 'bold' || props.value === true;
-        if (props.propKey === 'fontStyle') return props.value === 'italic' || props.value === true;
+        // Weight is a number on the 100–900 axis; the Bold *button* is a two-state view of
+        // it, so "on" means anything from SemiBold up rather than exactly 700 — otherwise
+        // picking ExtraBold in the Font Style dropdown would leave the Bold button unlit.
+        if (props.propKey === 'fontWeight') return normalizeFontWeight(props.value) >= 600;
+        if (props.propKey === 'fontStyle') return normalizeFontStyle(props.value) === 'italic';
         return !!props.value;
     };
 
     const toggle = () => {
         if (props.disabled) return;
         if (props.propKey === 'fontWeight') {
-            props.onChange(isActive() ? 'normal' : 'bold');
+            props.onChange(isActive() ? 400 : 700);
         } else if (props.propKey === 'fontStyle') {
             props.onChange(isActive() ? 'normal' : 'italic');
         } else {

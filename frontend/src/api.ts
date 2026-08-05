@@ -134,7 +134,7 @@ import {
 } from "./utils/animation/pixel-effect-animator";
 import {
     copyToClipboard, cutToClipboard, pasteFromClipboard,
-    copyStyle, pasteStyle, flipSelected, pasteYappyElements
+    copyStyle, pasteStyle, flipSelected, unlockAllElements, pasteYappyElements
 } from "./utils/object-context-actions";
 import { listAssets, getAssetElements, renameAsset, deleteAsset } from "./storage/asset-library";
 import { isPanelOpen } from "./store/dock-layout";
@@ -172,6 +172,13 @@ interface ElementOptions {
     roundness?: { type: number } | null;
     fontFamily?: FontFamily;
     fontSize?: number;
+    /**
+     * Weight on the CSS 100–900 axis: 300 Light, 400 Regular, 600 SemiBold, 700 Bold,
+     * 900 Black. `true` and `'bold'` are the older encodings and still mean 700.
+     */
+    fontWeight?: number | boolean | string;
+    /** `'italic'` or `'normal'`. `true` is the older encoding for italic. */
+    fontStyle?: boolean | string;
     letterSpacing?: number;
     textAlign?: TextAlign;
     verticalAlign?: VerticalAlign;
@@ -1684,6 +1691,28 @@ export const YappyAPI = {
     },
 
     /**
+     * Lock or unlock elements by id. A locked element is skipped by hit testing, so it
+     * can't be clicked, dragged, or selected — which also means it can't be reached by
+     * anything that works off the selection. `unlockAll()` is the way back.
+     *
+     *   Y.setLocked([bg], true);   // pin a background image out of the way
+     *   Y.unlockAll();             // free everything again (Ctrl+Alt+2 in the UI)
+     */
+    setLocked(ids: string[], locked: boolean) {
+        ids.forEach(id => updateElement(id, { locked }));
+    },
+
+    /** Unlock every locked element and select them. Returns how many were unlocked. */
+    unlockAll(): number {
+        return unlockAllElements();
+    },
+
+    /** Ids of every currently locked element. */
+    getLocked(): string[] {
+        return store.elements.filter(e => e.locked).map(e => e.id);
+    },
+
+    /**
      * Serialize the drawing (or selection) to an SVG string. Also triggers a download.
      *
      * Pass `{ theme: 'variables' }` to export swatch-linked colours as CSS custom
@@ -2337,7 +2366,15 @@ export const YappyAPI = {
     finishCompoundEdit(save = true) { exitCompoundEdit(save); },
     /** Convert shapes to editable vector paths (in place). Returns the converted ids. */
     convertToPath(ids: string[]) { return convertToPath(ids); },
-    /** Text → Outlines: replace text elements with editable vector glyph paths (async). Returns a promise of new path ids. */
+    /**
+     * Text → Outlines: replace text elements with editable vector glyph paths (async).
+     * Returns a promise of the new path ids.
+     *
+     * Works for the bundled families and for any font added from a file (`＋ Add font…`).
+     * Fonts added *by name* from Google Fonts cannot be outlined — they arrive as WOFF2 web
+     * fonts with no readable glyph data — and resolve to `[]` with an explanatory toast
+     * rather than silently substituting a different typeface.
+     */
     convertTextToOutlines(ids: string[]) { return convertTextToOutlines(ids); },
     /** Outline Stroke: replace each element with a filled path of its stroke outline. Returns new ids. */
     outlineStroke(ids: string[]) { return outlineStroke(ids); },

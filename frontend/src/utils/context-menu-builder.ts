@@ -34,7 +34,8 @@ import {
 } from '../store/app-store';
 import {
     copyToClipboard, cutToClipboard, pasteFromClipboard,
-    copyStyle, pasteStyle, lockSelected, flipSelected
+    copyStyle, pasteStyle, lockSelected, flipSelected,
+    lockedElementsAt, unlockElements, unlockAllElements, lockedElementCount
 } from './object-context-actions';
 import {
     getTransformOptions, getShapeIcon, getShapeTooltip,
@@ -177,6 +178,58 @@ function buildSelectBySamePropertyMenu(): MenuItem[] {
         }
     }
 
+    return items;
+}
+
+/**
+ * "Unlock" entries for the canvas context menu.
+ *
+ * A locked element can't be clicked (hit testing skips it), so it can't be selected, so the
+ * Lock/Unlock command — which acts on the selection — can never reach it. Right-click is
+ * the way back in: it works on a world point rather than on the selection, so it can offer
+ * the locked thing directly under the cursor even though nothing can select it.
+ *
+ * Returns [] when nothing is locked, so the menu is unchanged for everyone else.
+ */
+function buildUnlockMenuItems(worldX?: number, worldY?: number): MenuItem[] {
+    const totalLocked = lockedElementCount();
+    if (totalLocked === 0) return [];
+
+    const items: MenuItem[] = [];
+    const under = (worldX !== undefined && worldY !== undefined)
+        ? lockedElementsAt(worldX, worldY)
+        : [];
+
+    // A short name for the menu row: its text if it has any, else the shape kind.
+    const nameOf = (el: DrawingElement): string => {
+        const t = (el.text ?? el.rawText ?? '').trim().replace(/\s+/g, ' ');
+        return t ? `“${t.length > 24 ? t.slice(0, 24) + '…' : t}”` : el.type;
+    };
+
+    if (under.length === 1) {
+        items.push({
+            label: `Unlock ${nameOf(under[0])}`, icon: '🔓',
+            onClick: () => unlockElements([under[0].id]),
+        });
+    } else if (under.length > 1) {
+        // Overlapping locked objects: name them individually so you can free just the one
+        // you meant, topmost first (the order you'd have clicked them in).
+        items.push({
+            label: `Unlock (${under.length} here)`, icon: '🔓',
+            submenu: [
+                ...under.map(el => ({ label: `Unlock ${nameOf(el)}`, onClick: () => unlockElements([el.id]) })),
+                { separator: true } as MenuItem,
+                { label: 'Unlock all of these', onClick: () => unlockElements(under.map(el => el.id)) },
+            ],
+        });
+    }
+
+    // Always offered while anything is locked — the escape hatch for an object you can't
+    // find, or one that has been moved off-screen.
+    items.push({
+        label: `Unlock All (${totalLocked})`, icon: '🔓', shortcut: 'Ctrl+Alt+2',
+        onClick: () => unlockAllElements(),
+    });
     return items;
 }
 
@@ -1501,6 +1554,9 @@ export function getContextMenuItems(
                 shortcut: 'Ctrl+Shift+L',
                 onClick: () => lockSelected(!isLocked)
             },
+            // Something else on the canvas is locked — right-clicking a *selected* object is
+            // still the most likely moment to notice and want it back.
+            ...buildUnlockMenuItems(worldX, worldY),
             {
                 label: 'Flip Horizontal', shortcut: 'Shift+H',
                 onClick: () => flipSelected('horizontal')
@@ -1561,6 +1617,9 @@ export function getContextMenuItems(
             { separator: true },
             { label: 'Select all', shortcut: 'Ctrl+A', onClick: selectAll },
             { label: 'Select by Type', submenu: buildSelectByTypeMenu() },
+            // Right-clicking a locked object hits this branch, not the selection one —
+            // nothing is selected, because a locked object cannot be.
+            ...(() => { const u = buildUnlockMenuItems(worldX, worldY); return u.length ? [{ separator: true } as MenuItem, ...u] : []; })(),
             {
                 label: 'Insert', icon: '➕', submenu: (() => {
                     const cx = worldX ?? 0, cy = worldY ?? 0;

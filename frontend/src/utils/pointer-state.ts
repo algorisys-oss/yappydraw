@@ -70,6 +70,12 @@ export interface PointerState {
     penAnchors: import('../types').PathAnchor[]; // committed anchors, relative to startX/startY
     penActiveIdx: number;                         // index of the anchor being dragged (curving), or -1
     penDragging: boolean;                         // pointer is down on the active anchor
+    /**
+     * Alt was held at some point while curving the active anchor, so its two handles are
+     * broken apart. Sticky for the rest of the drag: releasing Alt mid-gesture must not
+     * re-mirror and undo the cusp you were shaping (Illustrator behaves the same way).
+     */
+    penHandleBroken: boolean;
     // Touch/pen tap-to-toggle: an anchor pressed (no modifier) by finger/stylus.
     // A pure tap (lift without dragging past slop) toggles smooth↔corner; a real
     // drag clears this and moves the node. History is deferred until the first
@@ -168,6 +174,7 @@ export function createPointerState(): PointerState {
         penAnchors: [],
         penActiveIdx: -1,
         penDragging: false,
+        penHandleBroken: false,
         isPolylineBuilding: false,
         polylinePoints: [],
         lassoPoints: [],

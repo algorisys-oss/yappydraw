@@ -30,6 +30,7 @@ import { getGroupsSortedByPriority, isPointInGroupBounds } from '../group-utils'
 import { normalizePoints } from '../render-element';
 import { connectorHandleOnDown } from './minor-handlers';
 import { constrainHandleVec } from './pen-path-handler';
+import { setAnchorHandle } from '../anchor-handle';
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestColEdge, hitTestRowEdge, hitTestTableCell, sortTableData, reorderColumns } from '../table-utils';
 import { measureWrappedTextHeight } from '../text-utils';
 import { hitTestPoolLane, assignToPoolLane, unassignFromPool } from '../pool-containment';
@@ -1540,7 +1541,9 @@ function handleResize(
     } else if (pState.draggingHandle && pState.draggingHandle.startsWith('path-')) {
         // Clock-Method constrain: Shift, the Procreate second-finger contact, or the
         // on-screen pen-constrain toggle snaps handles to 45°/90° while editing.
-        handlePathNodeDrag(x, y, id, pState, e.shiftKey || pState.secondaryContact || store.penConstrain);
+        // Alt breaks the handle pair (Alt on an *anchor* is already convert/insert, so
+        // this only claims Alt over the in/out handles themselves — no collision).
+        handlePathNodeDrag(x, y, id, pState, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey);
     } else {
         // APPLY RESIZE (Single or Group)
         applyResize(id, el, isMulti, newX, newY, newWidth, newHeight, pState, helpers);
@@ -1775,7 +1778,7 @@ export function writeEditableSubpaths(id: string, baseX: number, baseY: number, 
     }
 }
 
-function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerState, constrain = false): void {
+function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerState, constrain = false, breakMirror = false): void {
     const el = store.elements.find(e => e.id === id);
     if (!el) return;
     const m = pState.draggingHandle!.match(/^path-(anchor|in|out)-(\d+)-(\d+)$/);
@@ -1816,13 +1819,7 @@ function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerSta
         let hx = tx - (el.x + a.x);
         let hy = ty - (el.y + a.y);
         if (constrain) { const c = constrainHandleVec(hx, hy); hx = c.x; hy = c.y; }
-        if (kind === 'out') {
-            a.outX = hx; a.outY = hy;
-            if (a.kind === 'smooth') { a.inX = -hx; a.inY = -hy; }
-        } else {
-            a.inX = hx; a.inY = hy;
-            if (a.kind === 'smooth') { a.outX = -hx; a.outY = -hy; }
-        }
+        setAnchorHandle(a, kind, hx, hy, { breakPair: breakMirror });
     }
 
     writeEditableSubpaths(id, el.x, el.y, subs);

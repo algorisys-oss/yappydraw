@@ -135,6 +135,58 @@ Yappy.selectSimilar(undefined, 'both');`}</code></pre>
                 </p>
             </section>
 
+            {/* Lock / Unlock */}
+            <section class="doc-section">
+                <h2>🔒 Locking objects — and getting them back</h2>
+                <p>
+                    Select something and press <span class="kbd">Ctrl+Shift+L</span> (or right-click →
+                    <strong> Lock</strong>) to pin it in place. A locked object still draws, but the canvas
+                    stops seeing it: you can't click it, drag it, resize it, or catch it in a marquee. That's
+                    the point — it's how you stop a background photo or a finished layout element from
+                    getting nudged while you work on top of it.
+                </p>
+                <p>
+                    Which raises the obvious question: if you can't select it, how do you unlock it? Three ways:
+                </p>
+                <table class="api-table">
+                    <thead><tr><th>Way in</th><th>How</th><th>When</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Right-click the object</strong></td>
+                            <td>Right-click straight on it → <em>Unlock “…”</em></td>
+                            <td>You can see it and want just that one. The right-click menu works from the
+                                point under your cursor rather than from the selection, so it can reach a
+                                locked object even though nothing can select one. Several locked objects
+                                stacked up? They're listed individually, topmost first.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Unlock All</strong></td>
+                            <td><span class="kbd">Ctrl+Alt+2</span>, or right-click → <em>Unlock All (n)</em></td>
+                            <td>You've lost track of what's locked, or it's scrolled off-screen. The count in
+                                the menu tells you how many are out there.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Layer lock</strong></td>
+                            <td>The padlock in the Layers panel (<span class="kbd">Alt+L</span>)</td>
+                            <td>Locking a whole <em>layer</em> is separate from locking individual objects, and
+                                is undone from the same padlock you locked it with.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>
+                    Unlocking always <strong>selects</strong> what it freed, so you can get straight on with
+                    whatever you unlocked it for.
+                </p>
+                <pre class="code-block"><code>{`Yappy.setLocked([bgId], true);   // pin a background out of the way
+Yappy.getLocked();               // → ['img-2']  (ids of everything locked)
+Yappy.unlockAll();               // → 1          (frees them and selects them)`}</code></pre>
+                <p class="tip-box">
+                    <strong>Note:</strong> <span class="kbd">Ctrl+Shift+L</span> toggles lock on the
+                    <em> selection</em>, so it can lock but never unlock — a locked object isn't in any
+                    selection. Use <span class="kbd">Ctrl+Alt+2</span> or the right-click menu instead.
+                </p>
+            </section>
+
             {/* Distort & Transform */}
             <section class="doc-section">
                 <h2>〰️ Distort &amp; Transform (Liquify)</h2>
@@ -231,18 +283,29 @@ Yappy.bakeWarp();                    // make it permanent geometry`}</code></pre
                     <li><strong>Knife</strong> — <em>drag a line</em> across one or more shapes. Every shape
                         the line crosses is sliced into separate, fully-closed pieces. With nothing selected
                         it cuts all crossed shapes; with a selection it only cuts those.</li>
-                    <li><strong>Scissors</strong> — <em>click once on a path</em>. The path is split at the
-                        nearest anchor: a closed shape opens there into a single open path; an open path
-                        splits into two. Non-path shapes are converted to a path first.</li>
+                    <li><strong>Scissors</strong> — <em>click once on a path</em>, and it cuts
+                        <strong> exactly where you clicked</strong>, including in the middle of a curve.
+                        A closed shape opens there into a single open path; an open path splits into two.
+                        Non-path shapes are converted to a path first, and cutting one ring of a compound
+                        path (the counter of an <em>o</em>, the hole in a donut) leaves the other rings
+                        alone.</li>
                 </ul>
                 <p>Press <span class="kbd">Esc</span> to exit the tool.</p>
+                <p class="tip-box">
+                    <strong>Cutting doesn't move the shape.</strong> The Scissors subdivides the curve at
+                    the cut point rather than approximating it, so the two halves trace exactly the outline
+                    the original did — you can cut a circle at any point and the pieces still sit on a
+                    perfect circle. The Knife's pieces come back as straight-edged paths (its overlap maths
+                    works on polygons), but they follow the true curve to within a quarter of a unit, so
+                    the join is invisible at normal zoom. Shapes with holes keep their holes.
+                </p>
                 <pre class="code-block"><code>{`// slice a rectangle in half with a vertical knife line
 const r = Yappy.createRectangle(100, 100, 200, 120, { backgroundColor: '#3b82f6' });
 Yappy.knife({ x: 200, y: 60 }, { x: 200, y: 260 }, [r]);  // → two pieces
 
-// open a closed path at a point (Scissors)
-const box = Yappy.createRectangle(100, 100, 120, 120, {});
-Yappy.splitPath(box, { x: 100, y: 100 });   // opens at the nearest corner`}</code></pre>
+// cut a circle open at its 45° point — not at whichever anchor happens to be nearest
+const circle = Yappy.createPath(circleAnchors, { closed: true });
+Yappy.splitPath(circle, { x: 370.7, y: 229.3 });   // opens exactly there`}</code></pre>
             </section>
 
             {/* Generative shapes */}
@@ -466,6 +529,22 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                         can try fonts back-to-back and close with <strong>Done</strong>, <span class="kbd">Esc</span>,
                         or ✕ when happy. Added fonts load immediately, persist across reloads, and work like any
                         built-in font.</li>
+                    <li><strong>Font Family and Font Style are two dropdowns</strong>, as in Illustrator. Font files
+                        are named <code>Family-Weight</code> (<code>Montserrat-Light</code>,
+                        <code>Montserrat-SemiBoldItalic</code>), so adding a whole family used to fill the list with
+                        entries that looked like unrelated typefaces. They are now grouped: <strong>Font</strong>
+                        lists each family once, and <strong>Style</strong> beneath it lists that family's weights and
+                        italics (<em>Light, Regular, SemiBold, Bold Italic…</em>). Switching family keeps the style
+                        you were in wherever the new family has it — Montserrat SemiBold → a family whose heaviest is
+                        Bold lands on Bold rather than resetting to Regular. The <strong>Style</strong> row only
+                        appears when the family actually has more than one style. The <strong>Bold</strong> and
+                        <strong>Italic</strong> buttons still work and are a two-state view of the same thing: Bold
+                        lights up for anything SemiBold or heavier.</li>
+                    <li><strong>Weight is the full 100–900 axis</strong> (<code>fontWeight: 300</code> for Light,
+                        <code>600</code> for SemiBold, …), not just on/off bold, so Light and Black are reachable from
+                        the API as well as the Style dropdown. The old <code>fontWeight: true</code> and
+                        <code>'bold'</code> still work and mean 700 — documents made before this keep rendering
+                        exactly as they did.</li>
                     <li><strong>Letter spacing</strong>: the <strong>Letter Spacing</strong> property (Text group)
                         tightens or loosens tracking on text elements, <strong>shape labels</strong> and
                         <strong>connector labels</strong> alike, applied through measurement, wrapping, in-place
@@ -507,17 +586,40 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                     the stylus (the Procreate-style constrain modifier).
                 </p>
                 <p>
+                    <strong>Breaking a handle (cusps).</strong> A smooth anchor keeps its two handles in
+                    line with each other — move one and the other swings to stay opposite. Hold
+                    <span class="kbd">Alt</span> while dragging a handle to <strong>break that pairing</strong>:
+                    the handle you are dragging moves on its own and the other stays put, so one side of the
+                    anchor can curve while the other runs straight into it. That's how you get a teardrop, a
+                    petal tip, or the sharp join in a script letterform.
+                </p>
+                <p>
+                    It works in both places you touch a handle — while <em>drawing</em> with the Pen (hold
+                    <span class="kbd">Alt</span> partway through the drag that pulls the handles out), and when
+                    <em>editing</em> an existing anchor with the Selection or Node tool. The break is permanent,
+                    not just for that drag: the anchor becomes a <em>corner</em>, so letting go of
+                    <span class="kbd">Alt</span> won't snap the two sides back into line. To pair them up again,
+                    <span class="kbd">Alt</span>-click the anchor to convert it back to smooth.
+                </p>
+                <p>
                     <strong>Editing anchors</strong> (Selection tool, with the path selected):
                 </p>
                 <table class="api-table">
                     <thead><tr><th>Action</th><th>Desktop</th><th>Tablet / touch</th></tr></thead>
                     <tbody>
                         <tr><td>Smooth ↔ Corner</td><td><span class="kbd">Alt</span>-click the anchor</td><td><strong>Tap</strong> the anchor, or long-press → <em>Make Smooth/Corner</em></td></tr>
+                        <tr><td>Break the handle pair (cusp)</td><td><span class="kbd">Alt</span>-drag the <em>handle</em></td><td>Long-press the anchor → <em>Make Corner</em>, then drag each handle</td></tr>
                         <tr><td>Delete anchor</td><td><span class="kbd">Ctrl/⌘</span>-click the anchor</td><td>Long-press the anchor → <em>Delete Anchor</em></td></tr>
                         <tr><td>Insert anchor</td><td><span class="kbd">Alt</span>-click the path outline</td><td>Long-press the outline → <em>Insert Point Here</em></td></tr>
                         <tr><td>Constrain handles 90°/45°</td><td>Hold <span class="kbd">Shift</span> while dragging</td><td><strong>90°/45°</strong> toggle, or second-finger contact</td></tr>
                     </tbody>
                 </table>
+                <p class="doc-note">
+                    <strong>Alt on an anchor vs. Alt on a handle.</strong> They do different things, and which
+                    one you get depends on what is under the cursor: on the <em>anchor dot</em>,
+                    <span class="kbd">Alt</span>-click converts smooth ↔ corner; on the <em>handle</em> at the
+                    end of a control arm, <span class="kbd">Alt</span>-drag breaks the pair.
+                </p>
             </section>
 
             <section class="doc-section">

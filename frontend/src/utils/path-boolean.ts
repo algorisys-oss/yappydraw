@@ -11,7 +11,7 @@
 import polygonClipping from 'polygon-clipping';
 import type { DrawingElement, PathAnchor, PathSubpath } from '../types';
 import { getShapeGeometry } from './shape-geometry';
-import { PathUtils } from './math/path-utils';
+import { PathUtils, type PathCommand } from './math/path-utils';
 import { catmullRomAnchors } from './curve-fit';
 
 export type BooleanOp = 'union' | 'subtract' | 'intersect' | 'exclude';
@@ -19,6 +19,82 @@ export type BooleanOp = 'union' | 'subtract' | 'intersect' | 'exclude';
 export type Ring = [number, number][];
 export type Poly = Ring[];
 type MultiPoly = Poly[];
+
+/**
+ * How far a flattened polyline may stray from the true curve, in world units.
+ *
+ * Polygon clipping can only work on polygons, so every curve has to become line segments
+ * somewhere — the only question is how many. A *tolerance* (rather than a fixed sample
+ * count) puts the segments where the curvature is: a near-straight span gets two points, a
+ * tight corner gets as many as it needs. At a quarter of a unit the deviation is under half
+ * a screen pixel until you zoom past 2×, and a plain circle costs roughly 40 points instead
+ * of the 64 the old fixed sampling spent regardless of its size.
+ */
+const FLATTEN_TOLERANCE = 0.25;
+
+/** Hard cap on the recursion, so a pathological (NaN, cusp, huge) curve can't hang the app. */
+const FLATTEN_MAX_DEPTH = 16;
+
+/**
+ * Adaptively flatten a cubic into `out`, appending everything after p0 (the caller has
+ * already emitted the start point). Subdivides while the control points sit farther than
+ * the tolerance from the chord — the standard flatness test.
+ */
+function flattenCubic(
+    p0: { x: number; y: number }, p1: { x: number; y: number },
+    p2: { x: number; y: number }, p3: { x: number; y: number },
+    out: { x: number; y: number }[], depth = 0,
+): void {
+    if (depth >= FLATTEN_MAX_DEPTH) { out.push(p3); return; }
+
+    // Distance of the two control points from the chord p0→p3.
+    const dx = p3.x - p0.x, dy = p3.y - p0.y;
+    const chord = Math.hypot(dx, dy);
+    let d1: number, d2: number;
+    if (chord < 1e-12) {
+        // Degenerate chord (a loop back to the start): fall back to raw control distances,
+        // else the flatness test reads "flat" for a curve that is anything but.
+        d1 = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+        d2 = Math.hypot(p2.x - p0.x, p2.y - p0.y);
+    } else {
+        d1 = Math.abs((p1.x - p0.x) * dy - (p1.y - p0.y) * dx) / chord;
+        d2 = Math.abs((p2.x - p0.x) * dy - (p2.y - p0.y) * dx) / chord;
+    }
+    if (Math.max(d1, d2) <= FLATTEN_TOLERANCE) { out.push(p3); return; }
+
+    // de Casteljau at t = 0.5.
+    const mid = (a: { x: number; y: number }, b: { x: number; y: number }) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+    const a1 = mid(p0, p1), b1 = mid(p1, p2), c1 = mid(p2, p3);
+    const a2 = mid(a1, b1), b2 = mid(b1, c1);
+    const m = mid(a2, b2);
+    flattenCubic(p0, a1, a2, m, out, depth + 1);
+    flattenCubic(m, b2, c1, p3, out, depth + 1);
+}
+
+/**
+ * Flatten one contour's worth of parsed path commands into a point list, in the command's
+ * own coordinate frame. Quadratics are lifted to cubics so there is one flattener to trust.
+ */
+function flattenCommands(cmds: PathCommand[]): { x: number; y: number }[] {
+    if (!cmds.length) return [];
+    const out: { x: number; y: number }[] = [cmds[0].start];
+    for (const c of cmds) {
+        if (c.type === 'L') {
+            out.push(c.points[0]);
+        } else if (c.type === 'C') {
+            flattenCubic(c.start, c.points[0], c.points[1], c.points[2], out);
+        } else if (c.type === 'Q') {
+            const [q, end] = c.points;
+            const c1 = { x: c.start.x + (2 / 3) * (q.x - c.start.x), y: c.start.y + (2 / 3) * (q.y - c.start.y) };
+            const c2 = { x: end.x + (2 / 3) * (q.x - end.x), y: end.y + (2 / 3) * (q.y - end.y) };
+            flattenCubic(c.start, c1, c2, end, out);
+        } else if (c.type === 'Z') {
+            // ringFromPoints closes the ring itself; an explicit duplicate would only add a
+            // zero-length edge for the clipper to trip over.
+        }
+    }
+    return out;
+}
 
 function ringFromPoints(pts: { x: number; y: number }[]): Ring {
     const r: Ring = pts.map(p => [p.x, p.y]);
@@ -43,9 +119,17 @@ function geometryToRings(geo: any, cx: number, cy: number, angle = 0): Ring[] {
         return [[W(x, y), W(x + w, y), W(x + w, y + h), W(x, y + h), W(x, y)]];
     }
     if (geo.type === 'ellipse') {
-        const N = 64; const r: Ring = [];
-        for (let i = 0; i <= N; i++) { const a = (i / N) * Math.PI * 2; r.push(W(geo.cx + Math.cos(a) * geo.rx, geo.cy + Math.sin(a) * geo.ry)); }
-        return [r];
+        // Segment count from the same tolerance the curves use, rather than a flat 64. An
+        // inscribed N-gon of radius r deviates by r(1 − cos(π/N)), so a big circle needs more
+        // segments than a small one to look equally round — at a fixed 64 a 1000-unit circle
+        // was over a unit off the true curve, which is exactly the kind of visible drift that
+        // makes a cut piece not line up with the shape it came from.
+        const r = Math.max(Math.abs(geo.rx), Math.abs(geo.ry));
+        const ratio = Math.max(0, Math.min(1, 1 - FLATTEN_TOLERANCE / Math.max(r, 1e-6)));
+        const N = Math.max(16, Math.min(512, Math.ceil(Math.PI / Math.acos(ratio))));
+        const ring: Ring = [];
+        for (let i = 0; i <= N; i++) { const a = (i / N) * Math.PI * 2; ring.push(W(geo.cx + Math.cos(a) * geo.rx, geo.cy + Math.sin(a) * geo.ry)); }
+        return [ring];
     }
     if (geo.type === 'points') {
         return [ringFromPoints(geo.points.map((p: any) => WP(p)))];
@@ -53,9 +137,26 @@ function geometryToRings(geo: any, cx: number, cy: number, angle = 0): Ring[] {
     if (geo.type === 'path') {
         const cmds = PathUtils.parsePath(geo.path);
         if (!cmds.length) return [];
-        const N = 96; const pts: { x: number; y: number }[] = [];
-        for (let i = 0; i <= N; i++) { const p = PathUtils.getPointOnPath(cmds, i / N); pts.push(WP(p)); }
-        return [ringFromPoints(pts)];
+        // One ring per contour, each flattened adaptively.
+        //
+        // This used to take 96 samples at uniform `t` across the path's TOTAL arc length and
+        // call the result a single ring. Two things were wrong with that. A multi-contour
+        // path (a donut, an 'O', outlined text) has no contour boundaries in the sample
+        // stream, so every contour was welded into one ring — knifing outlined text produced
+        // nonsense. And 96 samples spread over the whole path is a budget, not a tolerance:
+        // a detailed path got a handful of samples per curve and came back visibly faceted,
+        // which is what "the knife doesn't follow the shape" looks like.
+        const byContour = new Map<number, PathCommand[]>();
+        for (const c of cmds) {
+            const list = byContour.get(c.subpath);
+            if (list) list.push(c); else byContour.set(c.subpath, [c]);
+        }
+        const rings: Ring[] = [];
+        for (const list of byContour.values()) {
+            const pts = flattenCommands(list);
+            if (pts.length >= 3) rings.push(ringFromPoints(pts.map(WP)));
+        }
+        return rings;
     }
     if (geo.type === 'multi') {
         return geo.shapes.flatMap((s: any) => geometryToRings(s, cx, cy, angle));
@@ -63,12 +164,78 @@ function geometryToRings(geo: any, cx: number, cy: number, angle = 0): Ring[] {
     return [];
 }
 
-/** A single element as a MultiPolygon (each ring a disjoint polygon), rotation included. */
+/** Signed area of a ring (shoelace). Sign gives the winding direction. */
+function ringArea(ring: Ring): number {
+    let a = 0;
+    for (let i = 0, n = ring.length; i < n; i++) {
+        const [x1, y1] = ring[i], [x2, y2] = ring[(i + 1) % n];
+        a += x1 * y2 - x2 * y1;
+    }
+    return a / 2;
+}
+
+/** Is `p` inside `ring`? Ray casting; used only to nest holes inside their outer ring. */
+function pointInRing(p: [number, number], ring: Ring): boolean {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [xi, yi] = ring[i], [xj, yj] = ring[j];
+        if ((yi > p[1]) !== (yj > p[1]) && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+}
+
+/**
+ * A single element as a MultiPolygon, rotation included.
+ *
+ * Rings are **nested**: a ring contained by an odd number of others is a hole and is
+ * attached to its immediate parent, matching the even-odd rule the renderer fills with.
+ * This used to be `rings.map(r => [r])` — every ring its own solid polygon — so a shape
+ * with counters lost them the moment it went through any polygon operation. Knifing a
+ * donut filled in the middle; knifing outlined text filled every 'o' and 'e'.
+ */
 export function elementToMultiPolygon(el: DrawingElement): MultiPoly {
     const geo = getShapeGeometry(el);
     const cx = el.x + el.width / 2;
     const cy = el.y + el.height / 2;
-    return geometryToRings(geo, cx, cy, el.angle || 0).filter(r => r.length >= 4).map(r => [r]);
+    const rings = geometryToRings(geo, cx, cy, el.angle || 0).filter(r => r.length >= 4);
+    if (rings.length <= 1) return rings.map(r => [r]);
+
+    // Largest first, so a ring's parent is always already placed when we get to it.
+    const order = rings.map((r, i) => ({ r, i, area: Math.abs(ringArea(r)) }))
+        .sort((a, b) => b.area - a.area);
+
+    const polys: Poly[] = [];
+    const polyIndexOf = new Map<number, number>();   // ring index → index in `polys`
+    const depthOf = new Map<number, number>();       // ring index → nesting depth
+
+    for (const { r, i } of order) {
+        // A representative interior point: ray casting on a vertex is ambiguous, so use the
+        // midpoint of the first edge, which lies on the boundary but not on a vertex of any
+        // *other* ring except by coincidence.
+        const probe: [number, number] = [(r[0][0] + r[1][0]) / 2, (r[0][1] + r[1][1]) / 2];
+
+        // Deepest already-placed ring that contains this one is its parent.
+        let parent = -1, parentDepth = -1;
+        for (const { i: j } of order) {
+            if (j === i || !depthOf.has(j)) continue;
+            const d = depthOf.get(j)!;
+            if (d > parentDepth && pointInRing(probe, rings[j])) { parent = j; parentDepth = d; }
+        }
+
+        const depth = parent === -1 ? 0 : parentDepth + 1;
+        depthOf.set(i, depth);
+
+        if (depth % 2 === 1 && parent !== -1) {
+            // Odd depth → a hole in its parent's polygon.
+            polys[polyIndexOf.get(parent)!].push(r);
+            polyIndexOf.set(i, polyIndexOf.get(parent)!);
+        } else {
+            // Even depth → solid: either an outer ring, or an island sitting inside a hole.
+            polyIndexOf.set(i, polys.length);
+            polys.push([r]);
+        }
+    }
+    return polys;
 }
 
 /** Outer-ring of a result polygon → corner anchors (relative to its own bbox). */

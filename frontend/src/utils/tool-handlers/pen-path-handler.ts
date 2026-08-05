@@ -3,6 +3,7 @@
  * Multi-click tool that builds an editable vector `path` element:
  *   • click              → add a corner anchor
  *   • click-drag         → add a smooth anchor (drag sets symmetric Bézier handles)
+ *   • Alt while dragging → break the pair: the out handle moves alone, leaving a cusp
  *   • click first anchor → close the path
  *   • Enter / Esc / double-click → finish an open path
  *   • Backspace          → remove the last anchor
@@ -19,6 +20,7 @@ import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
 import { store, addElement, updateElement, setStore, setSelectedTool, pushToHistory, applyLiveSymmetry } from '../../store/app-store';
 import { snapPoint } from '../snap-helpers';
 import { generateId } from '../id-generator';
+import { setAnchorHandle } from '../anchor-handle';
 
 function snap(x: number, y: number): { x: number; y: number } {
     if (store.gridSettings.snapToGrid) return snapPoint(x, y, store.gridSettings.gridSize);
@@ -82,6 +84,7 @@ function resetPen(pState: PointerState): void {
     pState.penAnchors = [];
     pState.penActiveIdx = -1;
     pState.penDragging = false;
+    pState.penHandleBroken = false;
     pState.currentId = null;
 }
 
@@ -100,6 +103,7 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
         pState.penAnchors = [{ x: 0, y: 0, kind: 'corner' }];
         pState.penActiveIdx = 0;
         pState.penDragging = true;
+        pState.penHandleBroken = false;
 
         const newElement = {
             ...store.defaultElementStyles,
@@ -136,12 +140,13 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
     pState.penAnchors.push({ x: relX, y: relY, kind: 'corner' });
     pState.penActiveIdx = pState.penAnchors.length - 1;
     pState.penDragging = true;
+    pState.penHandleBroken = false; // each anchor starts its own drag un-broken
     writePenElement(pState);
 }
 
 // ─── Pointer Move ────────────────────────────────────────────────────
 
-export function penOnMove(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, signals: PointerSignals, constrain = false): void {
+export function penOnMove(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, signals: PointerSignals, constrain = false, breakHandle = false): void {
     if (!pState.isPenBuilding || !pState.currentId) return;
     signals.setSuggestedBinding(null);
     const { x: px, y: py } = snap(x, y);
@@ -154,7 +159,17 @@ export function penOnMove(x: number, y: number, pState: PointerState, _helpers: 
         let ox = relX - a.x;
         let oy = relY - a.y;
         if (constrain) { const c = constrainHandleVec(ox, oy); ox = c.x; oy = c.y; }
-        pState.penAnchors[pState.penActiveIdx] = { ...a, outX: ox, outY: oy, inX: -ox, inY: -oy, kind: 'smooth' };
+        // Alt breaks the pair mid-drag: the out handle keeps following the cursor while
+        // the in handle stays wherever it had got to, giving the cusp Illustrator's
+        // Alt-drag produces. Sticky (see `penHandleBroken`) so letting Alt go doesn't
+        // snap the incoming side back into line.
+        if (breakHandle) pState.penHandleBroken = true;
+        // A fresh anchor arrives as `corner` with no handles; dragging it is what makes it
+        // smooth, so promote first and let setAnchorHandle apply the pairing rule. When the
+        // pair is broken it stays a corner, which is exactly the cusp we want.
+        const next = { ...a, kind: pState.penHandleBroken ? a.kind : ('smooth' as const) };
+        setAnchorHandle(next, 'out', ox, oy, { breakPair: pState.penHandleBroken, symmetric: true });
+        pState.penAnchors[pState.penActiveIdx] = next;
         writePenElement(pState);
     } else {
         // Rubber-band: preview a segment from the last anchor to the cursor.
@@ -168,6 +183,7 @@ export function penOnUp(pState: PointerState): void {
     if (!pState.isPenBuilding) return;
     pState.penDragging = false;
     pState.penActiveIdx = -1;
+    pState.penHandleBroken = false;
     writePenElement(pState); // drop the drag preview; keep committed anchors
 }
 

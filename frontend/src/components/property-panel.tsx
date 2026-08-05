@@ -16,6 +16,7 @@ import { WARP_PRESETS } from "../utils/envelope-warp";
 import { replaceImageOn } from "../utils/image-actions";
 import { slideTransitionManager } from "../utils/animation";
 import { customFontOptions, addCustomFontFromFile } from "../utils/custom-fonts";
+import { groupFontFamilies, pickVariant, resolveActiveVariant, parseFontVariant, normalizeFontWeight, normalizeFontStyle } from "../utils/font-variants";
 import GoogleFontsDialog from "./google-fonts-dialog";
 import FontPicker from "./font-picker";
 import type { Slide } from "../types/slide-types";
@@ -1882,6 +1883,57 @@ const PropertyPanel: Component = () => {
                     const isNum = prop.options?.some(o => typeof o.value === 'number');
                     handleChange(prop.key, isNum ? Number(val) : val, target?.type, target?.type === 'element' ? target?.data?.id : undefined);
                 };
+
+                // ── Font family + style, as two dropdowns (Illustrator's split) ──────────
+                //
+                // Every font added from a file used to be its own top-level row, so
+                // Montserrat-Light / -Regular / -Bold read as three unrelated typefaces.
+                // These group them: the picker lists families, and a second dropdown lists
+                // that family's styles.
+                const familyGroups = createMemo(() =>
+                    groupFontFamilies(
+                        filteredOptions().map(o => ({ value: String(o.value), label: String(o.label) })),
+                        new Map(Object.entries(fontCapabilities)),
+                    ));
+
+                /** Current weight/slant, however they happen to be encoded on the element. */
+                const currentWeight = () => normalizeFontWeight(getPropertyValue({ ...prop, key: 'fontWeight' } as PropertyConfig) as any);
+                const currentItalic = () => normalizeFontStyle(getPropertyValue({ ...prop, key: 'fontStyle' } as PropertyConfig) as any) === 'italic';
+
+                /** The group owning the currently-selected font key. */
+                const currentGroup = () => {
+                    const v = String(selectVal() ?? prop.defaultValue ?? '');
+                    return familyGroups().find(g => g.variants.some(x => x.value === v)) ?? null;
+                };
+
+                const familyOptions = () => familyGroups().map(g => ({
+                    // The row's value is the family name; the preview needs a real font key.
+                    value: g.family, label: g.family, previewValue: g.defaultValue,
+                }));
+
+                /** Apply a variant: the font key, plus the weight/slant it represents. */
+                const applyVariant = (v: { value: string; weight: number; italic: boolean }) => {
+                    const target = activeTarget();
+                    const id = target?.type === 'element' ? target?.data?.id : undefined;
+                    handleChange('fontFamily', v.value, target?.type, id);
+                    handleChange('fontWeight', v.weight, target?.type, id);
+                    handleChange('fontStyle', v.italic ? 'italic' : 'normal', target?.type, id);
+                };
+
+                // Switching family keeps the style you were using where the new family has
+                // it — going from Montserrat SemiBold to a family whose heaviest is Bold
+                // should land on Bold, not silently reset to Regular. The style being carried
+                // over is read from the *current variant*, since for a real-file family the
+                // font key is what says which style you are in, not the weight field.
+                const pickFamily = (familyName: string) => {
+                    const g = familyGroups().find(x => x.family === familyName);
+                    if (!g) return;
+                    const from = currentGroup();
+                    const cur = from
+                        ? resolveActiveVariant(from, String(selectVal() ?? ''), currentWeight(), currentItalic())
+                        : { weight: currentWeight(), italic: currentItalic() };
+                    applyVariant(pickVariant(g, cur.weight, cur.italic));
+                };
                 return (
                     <div class="control-row">
                         <label>{prop.label}</label>
@@ -1906,9 +1958,9 @@ const PropertyPanel: Component = () => {
                                 select popup can spill off-screen, so fonts get a custom
                                 viewport-clamped, searchable dropdown. */}
                             <FontPicker
-                                options={filteredOptions() as { label: string; value: string | number }[]}
-                                value={isMixed(selectVal()) ? '__mixed__' : String(selectVal() ?? prop.defaultValue ?? '')}
-                                onPick={applyVal}
+                                options={familyOptions()}
+                                value={isMixed(selectVal()) ? '__mixed__' : (currentGroup()?.family ?? String(selectVal() ?? prop.defaultValue ?? ''))}
+                                onPick={pickFamily}
                                 onGoogleFonts={() => setGoogleFontsOpen(true)}
                                 onAddFont={() => fontFileInput?.click()}
                             />
@@ -1918,10 +1970,60 @@ const PropertyPanel: Component = () => {
                                     const input = e.currentTarget; const file = input.files?.[0]; input.value = '';
                                     if (!file) return;
                                     const font = await addCustomFontFromFile(file);
-                                    applyVal(font.key);
+                                    // Apply the file itself, not its family's Regular — you picked
+                                    // *this* file, and it may well be the Bold you were after.
+                                    const v = parseFontVariant(font.label);
+                                    applyVariant({ value: font.key, weight: v.weight, italic: v.italic });
                                 }} />
                         </Show>
                     </div>
+                );
+            }
+            case 'font-style': {
+                // The Font Style half of the split. Only worth showing when the family has
+                // more than one style — a single-file family would otherwise render a
+                // dropdown with one unchangeable row.
+                // The families come from the `fontFamily` property's own option list, not from
+                // this row's (`fontStyleVariant` carries no options of its own) — otherwise
+                // every built-in family is invisible here and the Style row silently vanishes
+                // whenever a built-in is selected.
+                const groups = createMemo(() => {
+                    const builtinOptions = properties.find(p => p.key === 'fontFamily')?.options ?? [];
+                    return groupFontFamilies(
+                        [...builtinOptions.map(o => ({ value: String(o.value), label: String(o.label) })),
+                         ...customFontOptions().map(o => ({ value: String(o.value), label: String(o.label) }))],
+                        new Map(Object.entries(fontCapabilities)),
+                    );
+                });
+                const famProp = { ...prop, key: 'fontFamily' } as PropertyConfig;
+                const curKey = () => String(getPropertyValue(famProp) ?? 'hand-drawn');
+                const group = () => groups().find(g => g.variants.some(v => v.value === curKey())) ?? null;
+                const weight = () => normalizeFontWeight(getPropertyValue({ ...prop, key: 'fontWeight' } as PropertyConfig) as any);
+                const italic = () => normalizeFontStyle(getPropertyValue({ ...prop, key: 'fontStyle' } as PropertyConfig) as any) === 'italic';
+                const activeStyle = () => {
+                    const g = group();
+                    return g ? resolveActiveVariant(g, curKey(), weight(), italic()).styleLabel : '';
+                };
+                const apply = (label: string) => {
+                    const v = group()?.variants.find(x => x.styleLabel === label);
+                    if (!v) return;
+                    const target = activeTarget();
+                    const id = target?.type === 'element' ? target?.data?.id : undefined;
+                    handleChange('fontFamily', v.value, target?.type, id);
+                    handleChange('fontWeight', v.weight, target?.type, id);
+                    handleChange('fontStyle', v.italic ? 'italic' : 'normal', target?.type, id);
+                };
+                return (
+                    <Show when={(group()?.variants.length ?? 0) > 1}>
+                        <div class="control-row">
+                            <label>{prop.label}</label>
+                            <select value={activeStyle()} onChange={(e) => apply(e.currentTarget.value)}>
+                                <For each={group()!.variants}>
+                                    {(v) => <option value={v.styleLabel}>{v.styleLabel}</option>}
+                                </For>
+                            </select>
+                        </div>
+                    </Show>
                 );
             }
             case 'toggle': {
