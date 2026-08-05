@@ -18,24 +18,98 @@
  * outlining a logo set in a Google font silently produced the right letters in the
  * WRONG typeface — worse than failing, because it looks like it worked. It now fails
  * loudly with the one thing that fixes it (add the .ttf/.otf via "Add font…").
+ *
+ * **Italics** come from real italic faces where one is bundled — a true italic is a
+ * different design, not a sloped roman, so shearing the upright would give the wrong
+ * letterforms (in a serif the `a` changes shape entirely). Where a family has no italic
+ * face at all, the upright is sheared by the same amount the browser uses, so the outline
+ * still matches the text it replaced on canvas.
  */
 
 import opentype from 'opentype.js';
 import { customFonts } from './custom-fonts';
-import { normalizeFontWeight } from './font-variants';
+import { normalizeFontWeight, normalizeFontStyle, parseFontVariant } from './font-variants';
 import type { PathSubpath, PathAnchor, DrawingElement } from '../types';
 
-// fontFamily key → bundled TTF file(s). Mirrors `fontFamilyMap` in text-utils.ts.
-const FONT_FILES: Record<string, { regular: string; bold?: string }> = {
-    'hand-drawn': { regular: 'hand-drawn-400.ttf' },
-    'marker':     { regular: 'marker-400.ttf' },
-    'caveat':     { regular: 'caveat-400.ttf', bold: 'caveat-700.ttf' },
-    'sans-serif': { regular: 'sans-serif-400.ttf', bold: 'sans-serif-700.ttf' },
-    'poppins':    { regular: 'poppins-400.ttf', bold: 'poppins-700.ttf' },
-    'serif':      { regular: 'serif-400.ttf', bold: 'serif-700.ttf' },
-    'monospace':  { regular: 'monospace-400.ttf', bold: 'monospace-700.ttf' },
-    'code':       { regular: 'code-400.ttf', bold: 'code-700.ttf' },
+/**
+ * fontFamily key → the bundled binaries for that family, by slant and weight.
+ * Mirrors `fontFamilyMap` in text-utils.ts. Files are fetched lazily, only when something is
+ * actually outlined, and are excluded from the PWA precache for that reason.
+ */
+interface FamilyFiles {
+    upright: Partial<Record<400 | 700, string>>;
+    italic?: Partial<Record<400 | 700, string>>;
+}
+const FONT_FILES: Record<string, FamilyFiles> = {
+    'hand-drawn': { upright: { 400: 'hand-drawn-400.ttf' } },
+    'marker':     { upright: { 400: 'marker-400.ttf' } },
+    'caveat':     { upright: { 400: 'caveat-400.ttf', 700: 'caveat-700.ttf' } },
+    'sans-serif': {
+        upright: { 400: 'sans-serif-400.ttf', 700: 'sans-serif-700.ttf' },
+        // Inter ships italic only as a variable font; opentype.js reads its default
+        // instance (400), so Bold Italic falls back to this face — see resolveFace.
+        italic: { 400: 'sans-serif-italic-400.ttf' },
+    },
+    'poppins': {
+        upright: { 400: 'poppins-400.ttf', 700: 'poppins-700.ttf' },
+        italic: { 400: 'poppins-italic-400.woff', 700: 'poppins-italic-700.woff' },
+    },
+    'serif': {
+        upright: { 400: 'serif-400.ttf', 700: 'serif-700.ttf' },
+        // Merriweather's bold-italic WOFF is not parseable by opentype.js ("Data error"),
+        // so it is deliberately not bundled; Bold Italic uses the 400 italic face.
+        italic: { 400: 'serif-italic-400.woff' },
+    },
+    'monospace': {
+        upright: { 400: 'monospace-400.ttf', 700: 'monospace-700.ttf' },
+        italic: { 400: 'monospace-italic-400.woff', 700: 'monospace-italic-700.woff' },
+    },
+    'code': {
+        upright: { 400: 'code-400.ttf', 700: 'code-700.ttf' },
+        italic: { 400: 'code-italic-400.woff', 700: 'code-italic-700.woff' },
+    },
 };
+
+/**
+ * Slant used when a family has no italic face at all and one has to be faked.
+ *
+ * 0.2 is the horizontal shift per unit of height that Chrome's synthetic oblique applies
+ * (~11.3°). Matching the browser matters more than picking a "nicer" angle: the canvas is
+ * already showing a sheared upright for these families, so outlining with the same shear is
+ * what makes the vector match the text it replaced.
+ */
+const SYNTHETIC_ITALIC_SLANT = 0.2;
+
+/** Snap a CSS weight onto the two weights the bundled families actually ship. */
+const bucketWeight = (w: number): 400 | 700 => (w >= 600 ? 700 : 400);
+
+interface ResolvedFace {
+    file: string;
+    /** Non-zero when the face is upright and the slant has to be faked. */
+    slant: number;
+}
+
+/**
+ * Pick the binary for a wanted weight + slant, following CSS's own font-matching order:
+ * **slant first, then weight**.
+ *
+ * That order is what keeps letterforms right. A true italic is not a sheared roman — in a
+ * serif the `a` changes shape entirely — so for a Bold Italic in a family that has italic
+ * only at 400, the 400 italic is a much closer match to what the canvas draws than a sheared
+ * Bold would be. Only when a family has no italic face *anywhere* is the upright sheared.
+ */
+function resolveFace(files: FamilyFiles, weight: number, italic: boolean): ResolvedFace | null {
+    const w = bucketWeight(weight);
+    if (italic && files.italic) {
+        const exact = files.italic[w];
+        if (exact) return { file: exact, slant: 0 };
+        const other = files.italic[400] ?? files.italic[700];
+        if (other) return { file: other, slant: 0 };
+    }
+    const upright = files.upright[w] ?? files.upright[400] ?? files.upright[700];
+    if (!upright) return null;
+    return { file: upright, slant: italic ? SYNTHETIC_ITALIC_SLANT : 0 };
+}
 
 /**
  * Thrown when a font's outlines genuinely can't be reached. Carries a message meant for
@@ -80,16 +154,22 @@ function parseFontBuffer(buf: ArrayBuffer, label: string): opentype.Font {
 // Parsed fonts are cached by source id (a promise so concurrent loads dedupe).
 const fontCache = new Map<string, Promise<opentype.Font>>();
 
-const loadFont = (familyKey: string, bold: boolean): Promise<opentype.Font> => {
+/** A face ready to draw with, plus any slant that still has to be applied to its outlines. */
+interface LoadedFace {
+    font: opentype.Font;
+    slant: number;
+}
+
+const loadFont = async (familyKey: string, weight: number, italic: boolean): Promise<LoadedFace> => {
     // A font the user added themselves. `file` fonts carry their own binary; `google`
     // fonts are a stylesheet reference and have nothing we can read.
     const custom = customFonts().find(f => f.key === familyKey);
     if (custom) {
         if (custom.kind === 'google' || !custom.dataUrl) {
-            return Promise.reject(new FontOutlineUnavailableError(
+            throw new FontOutlineUnavailableError(
                 `“${custom.label}” is a Google font, which is loaded as a web font and has no file to read. ` +
                 `Download it and add it with “＋ Add font…” (.ttf or .otf) to outline it.`,
-            ));
+            );
         }
         const id = `custom:${custom.key}`;
         let p = fontCache.get(id);
@@ -97,30 +177,55 @@ const loadFont = (familyKey: string, bold: boolean): Promise<opentype.Font> => {
             p = Promise.resolve().then(() => parseFontBuffer(dataUrlToArrayBuffer(custom.dataUrl!), custom.label));
             fontCache.set(id, p);
         }
-        return p;
+        // A user's font key names one specific file. If that file is itself the italic (its
+        // name says so, which is also how the Font Style dropdown groups it) the shapes are
+        // already slanted; if the element asks for italic on an upright file, the canvas is
+        // faking the slant and so must we.
+        const fileIsItalic = parseFontVariant(custom.label).italic;
+        return { font: await p, slant: (italic && !fileIsItalic) ? SYNTHETIC_ITALIC_SLANT : 0 };
     }
 
     const entry = FONT_FILES[familyKey];
     if (!entry) {
         // An unknown key — a font from a document made elsewhere, or one that was removed.
         // Silently substituting sans-serif here is what made this feature untrustworthy.
-        return Promise.reject(new FontOutlineUnavailableError(
+        throw new FontOutlineUnavailableError(
             `The font “${familyKey}” isn't available to outline. Add it with “＋ Add font…” (.ttf or .otf).`,
-        ));
+        );
     }
-    const file = (bold && entry.bold) ? entry.bold : entry.regular;
-    const id = `builtin:${file}`;
+    const face = resolveFace(entry, weight, italic);
+    if (!face) {
+        throw new FontOutlineUnavailableError(`The font “${familyKey}” has no outline data bundled.`);
+    }
+    const id = `builtin:${face.file}`;
     let p = fontCache.get(id);
     if (!p) {
         const base = (import.meta as any).env?.BASE_URL ?? '/';
-        const url = `${base}fonts/outline/${file}`;
+        const url = `${base}fonts/outline/${face.file}`;
         p = fetch(url)
-            .then(r => { if (!r.ok) throw new Error(`Font fetch failed: ${file} (${r.status})`); return r.arrayBuffer(); })
+            .then(r => { if (!r.ok) throw new Error(`Font fetch failed: ${face.file} (${r.status})`); return r.arrayBuffer(); })
             .then(buf => parseFontBuffer(buf, familyKey));
         fontCache.set(id, p);
     }
-    return p;
+    return { font: await p, slant: face.slant };
 };
+
+/**
+ * Lean a line's glyph commands about its own baseline.
+ *
+ * Per *line*, not once for the whole block: a shear is measured from a reference line, and
+ * using a single one for a multi-line text would slide each successive line further sideways
+ * instead of slanting each of them the same way.
+ */
+function shearCommands(cmds: opentype.PathCommand[], baselineY: number, slant: number): void {
+    if (!slant) return;
+    const lean = (x: number, y: number) => x - (y - baselineY) * slant;
+    for (const c of cmds as any[]) {
+        if (c.x !== undefined) c.x = lean(c.x, c.y);
+        if (c.x1 !== undefined) c.x1 = lean(c.x1, c.y1);
+        if (c.x2 !== undefined) c.x2 = lean(c.x2, c.y2);
+    }
+}
 
 /** Convert an opentype Path's command list into PathSubpaths (one per contour). */
 const commandsToSubpaths = (cmds: opentype.PathCommand[]): PathSubpath[] => {
@@ -189,10 +294,11 @@ export const textElementToOutline = async (el: DrawingElement): Promise<OutlineR
     if (!text.trim()) return null;
 
     const fontSize = el.fontSize || 20;
-    // The built-ins bundle a Regular and a Bold binary, so anything from SemiBold up gets the
-    // bold file. (`!!el.fontWeight` would have called a numeric 400 bold — 400 is truthy.)
-    const bold = normalizeFontWeight(el.fontWeight) >= 600;
-    const font = await loadFont(el.fontFamily || 'hand-drawn', bold);
+    const { font, slant } = await loadFont(
+        el.fontFamily || 'hand-drawn',
+        normalizeFontWeight(el.fontWeight),
+        normalizeFontStyle(el.fontStyle) === 'italic',
+    );
 
     const lineHeight = fontSize * 1.2;
     const padding = 4;
@@ -218,7 +324,11 @@ export const textElementToOutline = async (el: DrawingElement): Promise<OutlineR
         else if (textAlign === 'right') leftX = el.width - padding - adv;
         else leftX = padding;
         const baselineY = verticalPadding + i * lineHeight + ascentPx; // canvas 'hanging' ≈ top
-        cmds.push(...font.getPath(line, leftX, baselineY, fontSize).commands);
+        const lineCmds = font.getPath(line, leftX, baselineY, fontSize).commands;
+        // Only non-zero when the family has no italic face and the canvas is faking the
+        // slant too — done per line, about that line's own baseline.
+        shearCommands(lineCmds, baselineY, slant);
+        cmds.push(...lineCmds);
     });
     if (cmds.length === 0) return null;
 

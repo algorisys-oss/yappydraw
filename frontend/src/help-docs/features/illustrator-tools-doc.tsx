@@ -292,12 +292,15 @@ Yappy.bakeWarp();                    // make it permanent geometry`}</code></pre
                 </ul>
                 <p>Press <span class="kbd">Esc</span> to exit the tool.</p>
                 <p class="tip-box">
-                    <strong>Cutting doesn't move the shape.</strong> The Scissors subdivides the curve at
-                    the cut point rather than approximating it, so the two halves trace exactly the outline
-                    the original did — you can cut a circle at any point and the pieces still sit on a
-                    perfect circle. The Knife's pieces come back as straight-edged paths (its overlap maths
-                    works on polygons), but they follow the true curve to within a quarter of a unit, so
-                    the join is invisible at normal zoom. Shapes with holes keep their holes.
+                    <strong>Cutting doesn't move the shape, and the pieces are still curves.</strong> The
+                    Scissors subdivides the curve at the cut point rather than approximating it, so the two
+                    halves trace exactly the outline the original did — cut a circle anywhere and the pieces
+                    still sit on a perfect circle. The Knife has to work on polygons internally, so its
+                    pieces are re-fitted to curves on the way out: cut a circle in half and you get two
+                    corner points at the ends of the straight cut and a handful of <em>smooth</em> points
+                    along the arc, rather than the dozens of corner points the overlap maths produced. Real
+                    corners — the shape's own, and the cut edge itself — stay sharp, so a knifed rectangle
+                    keeps square corners and flat sides. Shapes with holes keep their holes.
                 </p>
                 <pre class="code-block"><code>{`// slice a rectangle in half with a vertical knife line
 const r = Yappy.createRectangle(100, 100, 200, 120, { backgroundColor: '#3b82f6' });

@@ -159,7 +159,8 @@ export const LogoToolkitDoc: Component = () => {
                     <tbody>
                         <tr><td>Editable</td><td>Drag anchors and Bézier handles like any path; counters stay as holes.</td></tr>
                         <tr><td>Colour</td><td>The path inherits the text colour as a solid fill (no stroke).</td></tr>
-                        <tr><td>Fonts</td><td>Works with the bundled families <strong>and any font you add from a file</strong> (<em>＋ Add font…</em>, .ttf / .otf / .woff). Italic text outlines upright in this version.</td></tr>
+                        <tr><td>Fonts</td><td>Works with the bundled families <strong>and any font you add from a file</strong> (<em>＋ Add font…</em>, .ttf / .otf / .woff).</td></tr>
+                        <tr><td>Italics</td><td>Outlined from the family's real italic face where there is one (Inter, Poppins, Merriweather, Source Code Pro, JetBrains Mono) — a true italic is a different design, not a sloped roman. Families with no italic face (Virgil, Marker, Caveat) are slanted by the same amount the browser uses, so the vector matches the text it replaced.</td></tr>
                         <tr><td>Layout</td><td>Honours font size, weight, alignment, and hard line breaks. (No soft-wrap — break lines yourself for multi-line marks.)</td></tr>
                     </tbody>
                 </table>

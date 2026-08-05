@@ -336,7 +336,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 434 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 439 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -414,8 +414,8 @@ frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 311 | Desig
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 277 | EffectsDoc:10 Tools:270
 frontend/src/help-docs/features/elements-search-doc.tsx | typescript | 119 | chips:5 ElementsSearchDoc:11 chips:41
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 225 | EmbeddingDoc:3
-frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 741 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27 to:521
-frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 512 | LogoToolkitDoc:9 the:177 across:265
+frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 744 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:27 to:524
+frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 513 | LogoToolkitDoc:9 the:178 across:266
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 408 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161
 frontend/src/help-docs/features/plotting-doc.tsx | typescript | 335 | graphs:4 PlottingDoc:9 graphs:17
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 296 | StickAnimationDoc:10
@@ -535,7 +535,7 @@ frontend/src/storage/version-history.ts | typescript | 117 | VersionMeta:20 read
 frontend/src/store/anim-keyframe-select.test.ts | typescript | 134 | stubNode:23 setupAnimation:54
 frontend/src/store/anim-ops.ts | typescript | 411 | timeline:24 structuralEval:35 animVisibleIds:47 animPlacementFrames:50 gotoFrame:56 stepFrame:70 apply:77 insertFrame:84 insertKeyframe:88 insertKeyframeAndSelect:120 insertBlankKeyframe:134 applyRemove:138 clearKeyframe:152 removeFrames:156 moveKeyframe:160 setTween:164 setFrameEase:169 setFrameGuide:177 setFrameLabel:183 addAudioClip:195 removeAudioClip:205 moveAudioClip:208 setCameraKey:216 clearCameraKey:226 setCameraKeyFromView:232 setAnimFps:251 setAnimFrameCount:261 addAnimScene:278 setActiveAnimScene:299 deleteAnimScene:322 stashedSceneElementIds:348 ensureAnimRows:373 reconcileTimelineElements:384
 frontend/src/store/app-store.test.ts | typescript | 104 | seed:71
-frontend/src/store/app-store.ts | typescript | 9011 | LayoutDirection:19 OutlineNode:19 BooleanOp:20 Poly:20 ShapeFace:20 DistortKind:21 AssetMeta:40 WarpPreset:45 SymmetryMode:53 SymmetryOp:53 Theme:60 ResolvedTheme:61 DefaultToolChoice:94 PointerStyle:105 AppState:115 HistorySnapshot:654 BP:1814 AlignmentType:4999 DistributionType:4999 CharPatch:5614 CharPatchArg:5617 SelBBox:6619 LastTransform:7081 RegionPathfinderOp:7471 SelectSimilarMatch:7604 buildPathFromPoly:8349 polysOriginMin:8384 syncCompoundOperands:8391 buildCompoundPath:8402 WorldSub:8628 rdpAnchors:8631 normalizeWorldSubs:8659 makePathFromWorldSubs:8674 elementToWorldSubs:8695 startInkCleanupIfNeeded:8950
+frontend/src/store/app-store.ts | typescript | 9023 | LayoutDirection:19 OutlineNode:19 BooleanOp:20 Poly:20 ShapeFace:20 DistortKind:21 AssetMeta:40 WarpPreset:45 SymmetryMode:53 SymmetryOp:53 Theme:60 ResolvedTheme:61 DefaultToolChoice:94 PointerStyle:105 AppState:115 HistorySnapshot:654 BP:1814 AlignmentType:4999 DistributionType:4999 CharPatch:5614 CharPatchArg:5617 SelBBox:6624 LastTransform:7086 RegionPathfinderOp:7476 SelectSimilarMatch:7609 buildPathFromPoly:8354 polysOriginMin:8396 syncCompoundOperands:8403 buildCompoundPath:8414 WorldSub:8640 rdpAnchors:8643 normalizeWorldSubs:8671 makePathFromWorldSubs:8686 elementToWorldSubs:8707 startInkCleanupIfNeeded:8962
 frontend/src/store/dock-layout.ts | typescript | 155 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:60 hidePanel:71 setPanelOpen:81 dockPanel:88 dockPanelAt:98
 frontend/src/templates/data/animations.test.ts | typescript | 108 | validate:10
 frontend/src/templates/data/animations.ts | typescript | 269 | any:26 as:26 buildBouncingBallDoc:62 buildRocketLaunchDoc:109 buildYappyIntroDoc:177
@@ -622,6 +622,8 @@ frontend/src/utils/connector-routing.test.ts | typescript | 212 | node:7 conn:12
 frontend/src/utils/connector-routing.ts | typescript | 203 | Pt:26 Side:27 sideFacing:41 sidePoint:60 oppositePoint:77 projectOntoSide:93 Member:108 allocatePort:121
 frontend/src/utils/context-menu-builder.ts | typescript | 1860 | MergedCellRegion:59 buildSelectByTypeMenu:75 buildSelectBySamePropertyMenu:154 buildUnlockMenuItems:194 getContextMenuItems:236 buildFormatMenuItems:1691 buildBorderMenuItems:1786
 frontend/src/utils/curve-fit.ts | typescript | 38 | Pt:10 catmullRomAnchors:13
+frontend/src/utils/curve-refit.test.ts | typescript | 168 | Pt:2 cubicAt:27 circleError:40
+frontend/src/utils/curve-refit.ts | typescript | 252 | Pt:22 RefitOptions:24 turnDeg:54 pickEvenlyByTurn:75 thinRun:97 thinClosed:114 refitClosedRing:140
 frontend/src/utils/custom-fonts.ts | typescript | 176 | CustomFont:18 loadGoogleLink:34 activate:47 persist:67 initCustomFonts:77 addCustomFontFromFile:104 addGoogleFont:119 removeCustomFont:132 customFontOptions:139
 frontend/src/utils/dimension-geometry.test.ts | typescript | 93 | DimensionAnnotation:2
 frontend/src/utils/dimension-geometry.ts | typescript | 111 | MeasurementUnit:16 DimensionMeasure:18 DimensionAnnotation:20 DimBox:30 Pt:32 DimensionGeometry:34 dimensionGeometry:55 dimensionLabel:107
@@ -679,7 +681,7 @@ frontend/src/utils/object-snapping.ts | typescript | 131 | SnappingGuide:6 Snapp
 frontend/src/utils/onion-skin.ts | typescript | 93 | OnionRenderOpts:29 renderOnionSkins:43
 frontend/src/utils/overlay-transform.ts | typescript | 124 | Viewport:18 ensureObserver:44 canvasOrigin:63 canvasSize:73 overlayViewport:83 worldToWindow:96 windowToWorld:103 worldToWindowAxisX:113 worldToWindowAxisY:116 windowToWorldAxisX:119 windowToWorldAxisY:122
 frontend/src/utils/path-boolean-flatten.test.ts | typescript | 131 | squareAnchors:6 pathEl:13 radialError:75 radialError:114
-frontend/src/utils/path-boolean.ts | typescript | 536 | PathCommand:14 BooleanOp:17 Ring:19 Poly:20 MultiPoly:21 flattenCubic:43 flattenCommands:78 ringFromPoints:99 geometryToRings:109 ringArea:168 pointInRing:178 elementToMultiPolygon:196 ringToPathAnchors:242 cleanRing:257 polyToPathSubpaths:271 polyToSmoothSubpaths:292 runBooleanOp:319 ShapeFace:345 multiPolyArea:351 pointInMultiPoly:364 computeShapeFaces:385 splitMultiPolyByLine:418 chaikinRing:437 simplifyRing:458 smoothPoly:486 diskRing:491 polysIntersect:498 unionPolys:507 subtractPolys:519 unionFaces:529
+frontend/src/utils/path-boolean.ts | typescript | 573 | PathCommand:14 BooleanOp:18 Ring:20 Poly:21 MultiPoly:22 flattenCubic:44 flattenCommands:79 ringFromPoints:100 geometryToRings:110 ringArea:169 pointInRing:179 elementToMultiPolygon:197 ringToPathAnchors:243 cleanRing:258 polyToPathSubpaths:272 polyToRefitSubpaths:304 polyToSmoothSubpaths:329 runBooleanOp:356 ShapeFace:382 multiPolyArea:388 pointInMultiPoly:401 computeShapeFaces:422 splitMultiPolyByLine:455 chaikinRing:474 simplifyRing:495 smoothPoly:523 diskRing:528 polysIntersect:535 unionPolys:544 subtractPolys:556 unionFaces:566
 frontend/src/utils/path-cut.test.ts | typescript | 197 | CutSubpath:2
 frontend/src/utils/path-cut.ts | typescript | 195 | CutSubpath:17 PathLocation:23 controlPoints:38 cubicAt:48 closestPointOnSubpaths:70
 frontend/src/utils/path-distort.ts | typescript | 104 | Pt:10 DistortKind:11 distortRing:47 distortPoly:99
@@ -726,7 +728,7 @@ frontend/src/utils/symmetry.ts | typescript | 161 | SymmetryMode:18 SymmetryTran
 frontend/src/utils/table-utils.ts | typescript | 1207 | CellRect:8 defaultTableData:22 resizeTableData:29 defaultColWidths:48 defaultRowHeights:55 computeCellRects:62 hitTestTableCell:112 hitTestColEdge:130 hitTestRowEdge:161 reorderColumns:190 insertTableRow:209 deleteTableRow:226 insertTableColumn:242 deleteTableColumn:262 deleteTableColumns:282 getFullColumnSelection:303 sortTableData:317 wrapText:343 measureColumnOptimalWidth:419 parseClipboardTableData:458 unmergeCells:643 normalizeCellSelection:659 isMultiCellSelection:673 adjustMergedCellsOnRowInsert:684 adjustMergedCellsOnRowDelete:701 adjustMergedCellsOnColInsert:724 adjustMergedCellsOnColDelete:741 getCellFormat:773 setCellFormat:785 setCellFormatRange:814 formatCellValue:838 formatNumber:865 formatCurrency:883 formatPercentage:894 formatDate:903 parseFormattedValue:960 getCellBorders:993 setCellBorders:1005 setBorderForRange:1035 getBorderWidth:1110 getNextCell:1150 isPrintableKey:1205
 frontend/src/utils/tex.ts | typescript | 150 | TexPart:28 TexRenderOptions:39 MathJaxBits:44 loadMathJax:56 charOf:94 annotate:112 renderTex:139
 frontend/src/utils/text-on-path.ts | typescript | 251 | PathPoint:18 TextPathOptions:20 ArcTable:33 buildArcTable:35 locateAtDistance:45 drawTextAlongPath:70 isClosedShapeForText:137 ellipseOutline:141 regularPolygonOutline:150 getOutlinePath:160 sampleBezier:186 getElementTextPath:203
-frontend/src/utils/text-to-outlines.ts | typescript | 242 | FontOutlineUnavailableError:45{constructor:46} dataUrlToArrayBuffer:50 isWoff2:65 parseFontBuffer:71 OutlineResult:174
+frontend/src/utils/text-to-outlines.ts | typescript | 352 | FamilyFiles:39 ResolvedFace:86 resolveFace:101 FontOutlineUnavailableError:119{constructor:120} dataUrlToArrayBuffer:124 isWoff2:139 parseFontBuffer:145 LoadedFace:158 shearCommands:220 OutlineResult:279
 frontend/src/utils/text-utils.ts | typescript | 354 | TextMetrics:6 VerticalTextLayout:188
 frontend/src/utils/timelapse-manager.ts | typescript | 297 | TimelapseManifest:28 VideoFormat:30 newRecordingId:48 toBlobAsync:53 exportTimelapse:65 renderFrame:120 setupTimelapse:166
 frontend/src/utils/tool-handlers/canvas-event-handlers.ts | typescript | 317 | StockPhoto:15 CanvasEventContext:22 handleDragOver:30 handleDrop:39 applyAssetAtClientPoint:96 any:154 as:154 WheelContext:192 handleUmlSectionScroll:199 handleWheel:270

@@ -23,7 +23,17 @@ export default defineConfig({
     // hard-refresh). injectRegister:false because we register via registerSW().
     registerType: 'prompt',
     injectRegister: false,
-    includeAssets: ['favicon.svg', 'logo.png', 'fonts/outline/*.ttf'],
+    // NOTE: `fonts/outline/*.ttf` used to be listed here. `includeAssets` force-adds files to
+    // the precache regardless of `globPatterns`/`globIgnores`, so it beat every attempt to
+    // exclude them from the workbox block below — worth remembering, because the failure is
+    // silent: the build succeeds and the files are simply still there.
+    // They are the Create Outlines glyph binaries, several MB, fetched lazily and only when
+    // someone actually converts text to vectors. Precaching them cost every visitor that
+    // download up front for a feature most never touch. Trade-off accepted: converting text
+    // to outlines now needs the network the first time (it is cached normally afterwards).
+    // These are NOT the fonts the app renders with — those come from CSS — so display and
+    // offline drawing are unaffected.
+    includeAssets: ['favicon.svg', 'logo.png'],
     manifest: {
       name: 'Yappy — Draw, Diagram & Design',
       short_name: 'Yappy',
@@ -43,6 +53,21 @@ export default defineConfig({
       // whole app shell is cached and cold-loads offline.
       maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       globPatterns: ['**/*.{js,css,html,svg,png,ttf,wasm}'],
+      // The Create Outlines glyph binaries (fonts/outline/) are several MB and are fetched
+      // lazily — only when someone actually converts text to vectors, and then cached by
+      // the browser like any other request. Precaching them made every visitor download
+      // megabytes of font data up front for a feature most never touch. They are NOT the
+      // fonts the app renders with (those come from CSS), so nothing here affects display.
+      // Filtered here rather than with `globIgnores`, which vite-plugin-pwa does not pass
+      // through — every pattern tried left all 15 files in the manifest. A manifestTransform
+      // runs on the final entry list, so it cannot be silently ignored, and the assertion is
+      // visible: grep the built sw.js for `fonts/outline` and expect nothing.
+      manifestTransforms: [
+        (entries) => ({
+          manifest: entries.filter(e => !e.url.includes('fonts/outline/')),
+          warnings: [],
+        }),
+      ],
       navigateFallback: 'index.html',
       // The OAuth popup returns to /oauth-callback.html?state=…&code=…&iss=…
       // As a *navigation* request with a query string, workbox can't match it

@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.176', date: '2026-08-05', items: [
+        'Converting italic text to shapes now keeps the italic. It used to come out upright, which quietly undid the styling. Where the font has a real italic — Inter, Poppins, Merriweather, Source Code Pro, JetBrains Mono — the shapes come from it, so you get the true italic letterforms rather than an upright one leaned over. Fonts with no italic of their own (Virgil, Marker, Caveat) are leaned by exactly the amount the screen was already showing, so the shapes match the text they replaced.',
+        'Pieces cut with the Knife are curves again, not dozens of straight-line points. Slicing a circle in half used to give you a half-disc made of about twenty corner points along the arc — it looked right, but you could not edit it as the curve it plainly was. Now each half comes back as five points: two at the ends of the straight cut, three along the arc. Corners stay sharp, so a cut rectangle keeps its square corners and flat sides, and the cut edge itself stays a straight line.',
+        'The app no longer downloads several megabytes of font data up front for the text-to-shapes feature. Those files are now fetched only if you actually convert some text.',
+    ] },
     { version: '0.8.175', date: '2026-08-05', items: [
         'Fonts are now picked the way they are in Illustrator: one list of font families, and a second list underneath for the style — Light, Regular, SemiBold, Bold Italic and so on. Adding a family used to put every one of its files in the list as if they were unrelated fonts, so "Montserrat" appeared four times. Weights other than plain Regular and Bold now work at all, so Light and Black are finally reachable.',
         'Changing family keeps the style you were using. Going from Montserrat SemiBold to a family whose heaviest weight is Bold lands you on Bold, rather than dropping you back to Regular.',

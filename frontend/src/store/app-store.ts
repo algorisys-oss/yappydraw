@@ -17,7 +17,7 @@ import { evaluateTimelineAt } from "../utils/animation/frame-timeline-evaluator"
 import type { DimensionAnnotation, DimensionMeasure } from "../utils/dimension-geometry";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
-import { runBooleanOp, polyToPathSubpaths, polyToSmoothSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
+import { runBooleanOp, polyToPathSubpaths, polyToSmoothSubpaths, polyToRefitSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
 import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
@@ -6279,7 +6279,12 @@ export const knifeCut = (p0: { x: number; y: number }, p1: { x: number; y: numbe
             opacity: el.opacity, roughness: el.roughness, layerId: el.layerId,
         };
         for (const poly of [...pos, ...neg]) {
-            const path = buildPathFromPoly(poly, style, undefined, batchIds);
+            // Refit curves on the way out. The overlap maths has to work on polygons, so the
+            // pieces arrive as dense corner anchors sitting on the arc — accurate, but not
+            // editable as the curve the shape plainly is, and dozens of points where the
+            // original had four. The refit keeps the cut edge (and the shape's own corners)
+            // sharp, so only the genuinely-curved runs become curves again.
+            const path = buildPathFromPoly(poly, style, undefined, batchIds, true);
             if (path) created.push(path);
         }
     }
@@ -8346,9 +8351,16 @@ export const convertTextToOutlines = async (ids: string[]): Promise<string[]> =>
  * a multi-subpath `pathSubpaths` path (even-odd fill). World coords are normalized to the
  * polygon's bbox.
  */
-function buildPathFromPoly(poly: Poly, style: Partial<DrawingElement>, smoothEps?: number, batchIds?: Set<string>): DrawingElement | null {
-    // smoothEps > 0 → curved (Bézier) edge via Catmull-Rom (Blob Brush); else straight corners.
-    const norm = (smoothEps && smoothEps > 0) ? polyToSmoothSubpaths(poly, smoothEps) : polyToPathSubpaths(poly);
+function buildPathFromPoly(poly: Poly, style: Partial<DrawingElement>, smoothEps?: number, batchIds?: Set<string>, refit = false): DrawingElement | null {
+    // Three ways to turn a result polygon into anchors:
+    //   smoothEps > 0 → smooth EVERY vertex via Catmull-Rom (Blob Brush, where the input is a
+    //                   hand-drawn stroke and there are no corners worth keeping).
+    //   refit         → curves again, but with real corners kept sharp (Knife). Straight
+    //                   edges — including the cut itself — stay straight.
+    //   otherwise     → plain corner anchors, the literal polygon.
+    const norm = (smoothEps && smoothEps > 0) ? polyToSmoothSubpaths(poly, smoothEps)
+        : refit ? polyToRefitSubpaths(poly)
+        : polyToPathSubpaths(poly);
     if (!norm) return null;
     const single = norm.subpaths.length === 1;
     return {

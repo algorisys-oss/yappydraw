@@ -13,6 +13,7 @@ import type { DrawingElement, PathAnchor, PathSubpath } from '../types';
 import { getShapeGeometry } from './shape-geometry';
 import { PathUtils, type PathCommand } from './math/path-utils';
 import { catmullRomAnchors } from './curve-fit';
+import { refitClosedRing } from './curve-refit';
 
 export type BooleanOp = 'union' | 'subtract' | 'intersect' | 'exclude';
 
@@ -289,6 +290,42 @@ export function polyToPathSubpaths(poly: Poly): { subpaths: PathSubpath[]; minX:
  * noise) then a closed Catmull-Rom spline is fitted through the survivors. Bézier handles are
  * included in the bbox so they aren't clipped.
  */
+/**
+ * A result polygon → subpaths that are **curves again**, with the shape's real corners kept
+ * sharp (see `curve-refit.ts`).
+ *
+ * Clipping can only return straight-edged rings, so a knifed circle comes back as ~40 corner
+ * anchors on the arc: accurate, but not editable as the curve it obviously is. This refits
+ * each ring, so a cut across a circle yields two corner anchors at the ends of the straight
+ * cut and a handful of smooth ones along the arc. Distinct from `polyToSmoothSubpaths`, which
+ * smooths *everything* (right for the Blob Brush, wrong here — it would bow the straight edge
+ * the knife just made).
+ */
+export function polyToRefitSubpaths(poly: Poly): { subpaths: PathSubpath[]; minX: number; minY: number; width: number; height: number } | null {
+    const ringAnchors: PathAnchor[][] = [];
+    for (const ring of poly) {
+        const cleaned = cleanRing(ring);
+        if (!cleaned) continue;
+        const anchors = refitClosedRing(cleaned.map(([x, y]) => ({ x, y })));
+        if (anchors.length >= 3) ringAnchors.push(anchors);
+    }
+    if (ringAnchors.length === 0) return null;
+
+    // Bound the handle tips too — a curve bulges outside the hull of its anchor points.
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const anchors of ringAnchors) for (const a of anchors) {
+        const xs = [a.x, a.x + (a.outX ?? 0), a.x + (a.inX ?? 0)];
+        const ys = [a.y, a.y + (a.outY ?? 0), a.y + (a.inY ?? 0)];
+        minX = Math.min(minX, ...xs); maxX = Math.max(maxX, ...xs);
+        minY = Math.min(minY, ...ys); maxY = Math.max(maxY, ...ys);
+    }
+    const subpaths: PathSubpath[] = ringAnchors.map(anchors => ({
+        anchors: anchors.map(a => ({ ...a, x: a.x - minX, y: a.y - minY })),
+        closed: true,
+    }));
+    return { subpaths, minX, minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };
+}
+
 export function polyToSmoothSubpaths(poly: Poly, simplifyEps = 0): { subpaths: PathSubpath[]; minX: number; minY: number; width: number; height: number } | null {
     const ringAnchors: PathAnchor[][] = [];
     for (const ring of poly) {
