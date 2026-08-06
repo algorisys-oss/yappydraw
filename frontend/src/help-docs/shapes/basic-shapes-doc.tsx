@@ -255,6 +255,13 @@ export const BasicShapesDoc: Component = () => {
                     the API. Code blocks and UML attribute/method sections stay left-aligned, and table cells keep their
                     own per-cell alignment.
                 </p>
+                <p>
+                    While you type, the editor sits exactly where the label is drawn — same position, same line breaks,
+                    same vertical alignment — so nothing shifts when you start or finish editing. Shapes that can't use
+                    their full width for text (a circle, a diamond, a banner) wrap inside their inscribed area, and the
+                    editor wraps there too. Press <span class="kbd">Esc</span> or <span class="kbd">Ctrl</span> +
+                    <span class="kbd">Enter</span> to commit, <span class="kbd">Enter</span> for a new line.
+                </p>
             </section>
 
             {/* Keyboard Shortcuts */}

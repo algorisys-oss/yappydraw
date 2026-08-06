@@ -3,7 +3,7 @@ import type { DrawingElement } from "../../types";
 import { getShapeGeometry } from "../../utils/shape-geometry";
 import { geometryToDs } from "../../utils/geometry-to-ds";
 import { resolveDash } from "../../utils/stroke-dash";
-import { getFontString, measureContainerText } from "../../utils/text-utils";
+import { getFontString, measureContainerText, containerTextAvailableWidth } from "../../utils/text-utils";
 import { layoutRichText, buildSpanFontString } from "../../utils/rich-text-utils";
 import type { RenderContext } from "./types";
 import { getUIShapeDef } from "../../config/ui-shape-defs";
@@ -800,20 +800,18 @@ export class RenderPipeline {
 
         renderer.save();
 
-        let maxWidth = el.width - 20;
+        // Shared with the editing overlay so the label doesn't re-wrap on double-click.
+        const maxWidth = containerTextAvailableWidth(el);
         let startYOffset = 0;
 
         // Specialized offsets for different shapes
         if (el.type === 'doubleBanner') {
-            maxWidth = el.width * 0.65;
             startYOffset = - (el.height * 0.1);
         } else if (el.type === 'starPerson') {
             startYOffset = el.height * 0.15;
         } else if (el.type === 'lightbulb') {
-            maxWidth = el.width * 0.7;
             startYOffset = - (el.height * 0.1);
         } else if (el.type === 'signpost') {
-            maxWidth = el.width * 0.8;
             startYOffset = - (el.height * 0.15);
         } else {
             const uiDef = getUIShapeDef(el.type);

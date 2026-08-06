@@ -14,6 +14,12 @@ only via fast-forward/merge from `dev` (or a feature branch) as part of the
 "ship it" release flow. Before starting new work, make sure you're on `dev` or a
 feature branch — not `main`.
 
+**Always end on `dev`.** Syncing `main` is the last step of a release, not a
+place to stay: `git checkout main` for the merge/push, then switch straight back
+to `dev`. Leaving the checkout on `main` is how the next change accidentally gets
+committed there. `dev` should also be fast-forwarded to `main` as part of the
+release, so it never falls behind (it silently drifted 21 commits behind once).
+
 ## Navigating this codebase (read this first)
 
 Before grepping or reading broadly, use the repo map at `.repograph/index.txt`
@@ -70,5 +76,7 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
 4. **Refresh the repo map** (`npm run repograph`) and verify the build passes (`npm run build`).
 5. **Commit and tag** — commit on the working branch, then create an annotated tag for the version: `git tag -a v<version> -m "v<version> — <short headline>"` (e.g. `v0.8.124`). One tag per shipped version, `v`-prefixed, matching `package.json`.
 6. **Keep `main` in sync and push** — make sure local `main` and the remote (`origin`) `main` are in sync and **push**, including the tag: `git push origin main --tags` (fast-forward/merge as appropriate). Push the working branch too.
-7. **Publish to the OSS repo** with `./scripts/publish-oss.sh --push` (publishes a cleaned client-only copy to the `algorisys-oss/yappydraw` remote). Use a dry-run first if anything looks off.
+7. **Fast-forward `dev` to `main` and push it** — `dev` is the branch the next change starts from, so it must not be left behind the release (`git checkout dev && git merge --ff-only main && git push origin dev`).
+8. **Publish to the OSS repo** with `./scripts/publish-oss.sh --push` (publishes a cleaned client-only copy to the `algorisys-oss/yappydraw` remote). Use a dry-run first if anything looks off.
+9. **Return to `dev`** — finish the release with `dev` checked out, never `main`. Confirm with `git branch --show-current` before reporting the release done; the working tree should also be clean.
 

@@ -11,7 +11,9 @@ import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { resolveFontFamily } from "../utils/text-utils";
 import { spansToHtml, htmlToSpans, spansToPlainText } from "../utils/rich-text-utils";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
-import { worldToScreen } from "../utils/viewport-transforms";
+// WINDOW px, not canvas-local — this overlay lives outside `.canvas-drop-zone`, and the
+// canvas is inset by the docked chrome. See text-editing-overlay.tsx for the full note.
+import { worldToWindow } from "../utils/overlay-transform";
 import type { RichTextSpan } from "../types";
 import "./rich-text-editing-overlay.css";
 
@@ -164,7 +166,7 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                 const elH = baseState ? baseState.height : el.height;
                 const { scale } = store.viewState;
 
-                const _p = worldToScreen(elX + elW / 2, elY + elH / 2, store.viewState);
+                const _p = worldToWindow(elX + elW / 2, elY + elH / 2);
                 const centerX = _p.x;
                 const centerY = _p.y;
                 const fontSizeVal = el.fontSize || (el.type === 'text' ? 20 : 28);
@@ -175,7 +177,8 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
 
                 return (
                     <div class="rt-overlay-wrapper" style={{
-                        position: 'absolute',
+                        // `fixed`: centerX/centerY are WINDOW px (see worldToWindow above).
+                        position: 'fixed',
                         top: `${centerY}px`,
                         left: `${centerX}px`,
                         transform: 'translate(-50%, -50%)',

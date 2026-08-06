@@ -115,6 +115,40 @@ export const wrapText = (
 const _textMetricsCache = new Map<string, TextMetrics>();
 const TEXT_METRICS_CACHE_MAX = 500;
 
+/**
+ * Fraction of the available width a shape can actually put text in. Shapes that are
+ * inefficient with space (a circle's inscribed rectangle, a banner's front panel) wrap
+ * narrower than their bounding box.
+ *
+ * Exported because three places have to agree on it: the wrapper below, `fitShapeToText`,
+ * and the on-canvas editing overlay — which wrapped at the full width and so re-flowed the
+ * label the instant you double-clicked a circle.
+ */
+export const inscribedTextFactor = (type?: string): number =>
+    type === 'circle' || type === 'diamond' ? 0.707    // sqrt(2)/2 approx
+        : type === 'doubleBanner' ? 0.65               // stay within the front panel
+            : type === 'lightbulb' ? 0.7               // in bulb
+                : type === 'signpost' ? 0.8            // on board
+                    : type === 'burstBlob' ? 0.6       // inner radius
+                        : 1;
+
+/**
+ * The `availableWidth` the container-text renderer measures with — the shape's box minus
+ * its text margin, with the few shapes that paint text on a sub-panel narrowed first.
+ * Mirrors `RenderPipeline.renderContainerText`.
+ */
+export const containerTextAvailableWidth = (el: Partial<DrawingElement>): number => {
+    const w = el.width || 0;
+    if (el.type === 'doubleBanner') return w * 0.65;
+    if (el.type === 'lightbulb') return w * 0.7;
+    if (el.type === 'signpost') return w * 0.8;
+    return w - 20;
+};
+
+/** The width container text actually wraps at — what an editing overlay must match. */
+export const containerTextWrapWidth = (el: Partial<DrawingElement>): number =>
+    containerTextAvailableWidth(el) * inscribedTextFactor(el.type);
+
 export const measureContainerText = (
     ctx: IRenderer,
     el: Partial<DrawingElement>,
@@ -137,18 +171,7 @@ export const measureContainerText = (
 
     // For shapes that are inefficient with space (circle, diamond),
     // we use a smaller inscribed area for wrapping
-    let wrapWidth = availableWidth;
-    if (el.type === 'circle' || el.type === 'diamond') {
-        wrapWidth = availableWidth * 0.707; // sqrt(2)/2 approx
-    } else if (el.type === 'doubleBanner') {
-        wrapWidth = availableWidth * 0.65; // Stay within the front panel
-    } else if (el.type === 'lightbulb') {
-        wrapWidth = availableWidth * 0.7; // In bulb
-    } else if (el.type === 'signpost') {
-        wrapWidth = availableWidth * 0.8; // On board
-    } else if (el.type === 'burstBlob') {
-        wrapWidth = availableWidth * 0.6; // Inner radius
-    }
+    const wrapWidth = availableWidth * inscribedTextFactor(el.type);
 
     const paragraphs = text.split('\n');
     const lines: string[] = [];
@@ -289,11 +312,7 @@ export const fitShapeToText = (
 
     let metrics = measureContainerText(ctx, el, text, targetWrapWidth);
 
-    const scaleFactor = (el.type === 'circle' || el.type === 'diamond') ? 0.707 :
-        (el.type === 'doubleBanner' ? 0.65 :
-            (el.type === 'lightbulb' ? 0.7 :
-                (el.type === 'signpost' ? 0.8 :
-                    (el.type === 'burstBlob' ? 0.6 : 1))));
+    const scaleFactor = inscribedTextFactor(el.type);
 
     let finalWidth = (metrics.textWidth / scaleFactor) + padding;
     let finalHeight = (metrics.textHeight / scaleFactor) + padding;

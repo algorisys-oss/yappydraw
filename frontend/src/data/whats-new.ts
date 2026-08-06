@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.177', date: '2026-08-06', items: [
+        'Double-clicking a shape to edit its label no longer moves the text. The editing box used to open offset from the shape — up and to the left, outside the box you clicked — so you were typing in one place and watching the result appear in another. It now sits exactly over the label, at any zoom level.',
+        'Text keeps its line breaks and its alignment while you edit it. Labels in circles, diamonds and banners used to re-flow onto fewer lines the moment you started typing and then jump back on commit, and a label aligned to the top or bottom of its shape would leap to the middle. What you edit is now what you get.',
+    ] },
     { version: '0.8.176', date: '2026-08-05', items: [
         'Converting italic text to shapes now keeps the italic. It used to come out upright, which quietly undid the styling. Where the font has a real italic — Inter, Poppins, Merriweather, Source Code Pro, JetBrains Mono — the shapes come from it, so you get the true italic letterforms rather than an upright one leaned over. Fonts with no italic of their own (Virgil, Marker, Caveat) are leaned by exactly the amount the screen was already showing, so the shapes match the text they replaced.',
         'Pieces cut with the Knife are curves again, not dozens of straight-line points. Slicing a circle in half used to give you a half-disc made of about twenty corner points along the arc — it looked right, but you could not edit it as the curve it plainly was. Now each half comes back as five points: two at the ends of the straight cut, three along the arc. Corners stay sharp, so a cut rectangle keeps its square corners and flat sides, and the cut edge itself stays a straight line.',

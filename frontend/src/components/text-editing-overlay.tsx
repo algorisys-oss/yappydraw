@@ -9,13 +9,20 @@ import { type Component, createEffect, Show } from "solid-js";
 import { Maximize2 } from "lucide-solid";
 import { store, setSelectedTool, updateElement } from "../store/app-store";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
-import { measureContainerText, measureWrappedTextHeight, resolveFontFamily, getMeasurementContext, getFontString } from "../utils/text-utils";
+import { measureContainerText, measureWrappedTextHeight, resolveFontFamily, getMeasurementContext, getFontString, containerTextAvailableWidth, containerTextWrapWidth } from "../utils/text-utils";
 import { fontShorthand } from "../utils/font-variants";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
 import { normalizePoints } from "../utils/render-element";
 import { getUIShapeDef } from "../config/ui-shape-defs";
-import { worldToScreen } from "../utils/viewport-transforms";
+// World → WINDOW px, not canvas-local. This overlay is a sibling of `.canvas-drop-zone`,
+// so its `position` box is the document, while `worldToScreen` speaks canvas-local px
+// (clientX/Y minus the canvas rect). The canvas is inset by the docked chrome
+// (`marginLeft/Top` = --dock-left/--dock-top), so the editing textarea opened 46px left
+// and 52px above the text it was editing in the default layout — the label jumped out of
+// the shape the moment you double-clicked it. Same bug the rulers, symmetry axes and node
+// tool had; same cure: overlay-transform owns the origin (and the rotation centre).
+import { worldToWindow } from "../utils/overlay-transform";
 import type { TableEditingCell } from "../utils/tool-handlers/text-editing-handler";
 
 interface TextEditingOverlayProps {
@@ -156,7 +163,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 const { scale } = store.viewState;
 
                 // Calculate Center based on Editing Property
-                const _center = worldToScreen(elX + elW / 2, elY + elH / 2, store.viewState);
+                const _center = worldToWindow(elX + elW / 2, elY + elH / 2);
                 let centerX = _center.x;
                 let centerY = _center.y;
                 let textAlign = el.textAlign || 'center';
@@ -174,7 +181,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                     const cell = props.tableEditingCell();
                     if (cell) {
                         isTableCell = true;
-                        const _p = worldToScreen(cell.cellX, cell.cellY, store.viewState);
+                        const _p = worldToWindow(cell.cellX, cell.cellY);
                         centerX = _p.x;
                         centerY = _p.y;
                         textareaWidth = cell.cellW * scale;
@@ -194,7 +201,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         const t = 0.5, k = 0.5;
                         const midX = k*k*k*start.x + 3*k*k*t*cp1.x + 3*k*t*t*cp2.x + t*t*t*end.x;
                         const midY = k*k*k*start.y + 3*k*k*t*cp1.y + 3*k*t*t*cp2.y + t*t*t*end.y;
-                        const _p = worldToScreen(midX, midY - 15, store.viewState); // -15 offset up like renderer's textOffset
+                        const _p = worldToWindow(midX, midY - 15); // -15 offset up like renderer's textOffset
                         centerX = _p.x;
                         centerY = _p.y;
                         textareaWidth = Math.max(200, Math.abs(elW) * scale);
@@ -211,7 +218,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         // Quadratic bezier midpoint
                         const midX = 0.25 * startPt.x + 0.5 * cp.x + 0.25 * endPt.x;
                         const midY = 0.25 * startPt.y + 0.5 * cp.y + 0.25 * endPt.y;
-                        const _p = worldToScreen(midX, midY, store.viewState);
+                        const _p = worldToWindow(midX, midY);
                         centerX = _p.x;
                         centerY = _p.y;
                     } else {
@@ -220,7 +227,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         const t = 0.5, k = 0.5;
                         const midX = k*k*k*startPt.x + 3*k*k*t*cp.x + 3*k*t*t*cp2.x + t*t*t*endPt.x;
                         const midY = k*k*k*startPt.y + 3*k*k*t*cp.y + 3*k*t*t*cp2.y + t*t*t*endPt.y;
-                        const _p = worldToScreen(midX, midY, store.viewState);
+                        const _p = worldToWindow(midX, midY);
                         centerX = _p.x;
                         centerY = _p.y;
                     }
@@ -245,7 +252,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
 
                     if (prop === 'containerText') {
                         // Header section — anchor to top of element, height = headerHeight
-                        const _p = worldToScreen(elX, elY, store.viewState);
+                        const _p = worldToWindow(elX, elY);
                         centerX = _p.x;
                         centerY = _p.y;
                         umlSectionHeight = headerHeight * scale;
@@ -261,13 +268,13 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                         }
 
                         if (prop === 'attributesText') {
-                            const _p = worldToScreen(elX, elY + headerHeight, store.viewState);
+                            const _p = worldToWindow(elX, elY + headerHeight);
                             centerX = _p.x;
                             centerY = _p.y;
                             umlSectionHeight = attrHeight * scale;
                         } else if (prop === 'methodsText') {
                             const methodOffsetY = headerHeight + attrHeight;
-                            const _p = worldToScreen(elX, elY + methodOffsetY, store.viewState);
+                            const _p = worldToWindow(elX, elY + methodOffsetY);
                             centerX = _p.x;
                             centerY = _p.y;
                             umlSectionHeight = (elH - methodOffsetY) * scale;
@@ -286,7 +293,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
 
                     if (prop === 'containerText') {
                         // Header section — anchor to top of element, height = headerHeight
-                        const _p = worldToScreen(elX, elY, store.viewState);
+                        const _p = worldToWindow(elX, elY);
                         centerX = _p.x;
                         centerY = _p.y;
                         umlSectionHeight = headerHeight * scale;
@@ -295,7 +302,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                                (prop === 'attributesText' && (el.type === 'umlEnum' || el.type === 'umlState'))) {
                         textAlign = 'left';
                         fontSizeVal = fontSizeVal * 0.9;
-                        const _p = worldToScreen(elX, elY + headerHeight, store.viewState);
+                        const _p = worldToWindow(elX, elY + headerHeight);
                         centerX = _p.x;
                         centerY = _p.y;
                         umlSectionHeight = (elH - headerHeight) * scale;
@@ -352,15 +359,17 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                     }
                 }
 
-                // For container shapes: compute vertical padding matching render-pipeline.ts
+                // For container shapes: reproduce render-pipeline.ts's text box exactly, so
+                // double-clicking doesn't move or re-wrap the label.
                 // Canvas formula: startY = cy - textHeight/2 + lineHeight/2 + startYOffset
+                let containerShiftX = 0;
                 if (isContainerShape) {
                     const rawCtx = props.canvasRef ? props.canvasRef.getContext("2d") : null;
                     const renderer = rawCtx ? new CanvasRenderer(rawCtx) : null;
+                    const box = { ...el, width: elW, height: elH };
                     if (renderer) {
-                        const maxWidth = elW - 20;
                         const text = props.editText() || ' ';
-                        const metrics = measureContainerText(renderer, el, text, maxWidth);
+                        const metrics = measureContainerText(renderer, el, text, containerTextAvailableWidth(box));
 
                         // Shape-specific Y offset (matching render-pipeline.ts)
                         let startYOffset = 0;
@@ -373,20 +382,39 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                             if (uiDef?.textYOffset) startYOffset = uiDef.textYOffset(el);
                         }
 
-                        textPaddingTop = Math.max(0, (elH / 2 - metrics.textHeight / 2 + startYOffset) * scale);
+                        // The renderer honours verticalAlign here too — the editor only ever
+                        // centred, so a top/bottom-aligned label jumped to the middle on
+                        // double-click. 10px is the renderer's `padding`.
+                        const vAlign = el.verticalAlign || 'middle';
+                        let topWorld: number;
+                        if (vAlign === 'top') topWorld = 10 + startYOffset;
+                        else if (vAlign === 'bottom') topWorld = elH - metrics.textHeight - 10 + startYOffset;
+                        else topWorld = elH / 2 - metrics.textHeight / 2 + startYOffset;
+                        // …plus the renderer's hand-drawn baseline nudge and the user's
+                        // draggable-label offset, both of which the editor used to ignore.
+                        topWorld += (el.fontFamily === 'hand-drawn' ? 2 : 0) + (el.textOffsetY || 0);
+
+                        textPaddingTop = Math.max(0, topWorld * scale);
                     }
-                    textPaddingH = 10 * scale; // match canvas 10px horizontal margin
+                    // Horizontal: centred text wraps in the shape's INSCRIBED width (a circle
+                    // can't use its full box), so pad to that or the editor re-flows the label
+                    // onto fewer lines than the canvas drew. Left/right-aligned text is drawn
+                    // 10px from the edge, so it keeps the 10px margin.
+                    textPaddingH = textAlign === 'center'
+                        ? Math.max(0, (elW - containerTextWrapWidth(box)) / 2) * scale
+                        : 10 * scale;
+                    containerShiftX = (el.textOffsetX || 0) * scale;
                 }
 
                 // Anchor at element top-left for text and shapes to avoid
                 // translate(-50%,-50%) depending on rendered content size
                 // UML sections override posTop/posLeft with centerY/centerX (section-specific position)
                 const posTop = isUmlSection ? centerY
-                    : useTopLeftAnchor ? worldToScreen(elX, elY, store.viewState).y
+                    : useTopLeftAnchor ? worldToWindow(elX, elY).y
                     : isTableCell ? centerY : centerY;
-                const posLeft = isUmlSection ? centerX
-                    : useTopLeftAnchor ? worldToScreen(elX, elY, store.viewState).x
-                    : isTableCell ? centerX : centerX;
+                const posLeft = (isUmlSection ? centerX
+                    : useTopLeftAnchor ? worldToWindow(elX, elY).x
+                    : isTableCell ? centerX : centerX) + containerShiftX;
                 const posTransform = useTopLeftAnchor
                     ? 'none'
                     : isTableCell ? 'none' : 'translate(-50%, -50%)';
@@ -394,7 +422,8 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 return (
                     <div
                         style={{
-                            position: 'absolute',
+                            // `fixed`, because posTop/posLeft are WINDOW px (see worldToWindow above).
+                            position: 'fixed',
                             top: `${posTop}px`,
                             left: `${posLeft}px`,
                             transform: posTransform,
