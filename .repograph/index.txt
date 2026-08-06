@@ -805,6 +805,7 @@ scripts/publish-oss.sh | shell | 203 | info:40 warn:41 error:42
 scripts/render-dsl.mjs | javascript | 279 | parseArgs:50 opts:51 parseWidths:83 readManifest:93 fail:108 isUp:137 waitUntilUp:144 main:153
 scripts/repograph-refresh.sh | shell | 26 |
 scripts/test_relative_path.ts | typescript | 58 |
+tests/_canvas-coords.ts | typescript | 102 | canvasOrigin:33 toViewport:58 addOrigin:69 worldMouse:82
 tests/_mesh.spec.ts | typescript | 49 | w2s:34 key:43
 tests/adjustment-export.spec.ts | typescript | 23 |
 tests/adjustment-layer.spec.ts | typescript | 51 |
@@ -821,7 +822,7 @@ tests/arcade-visual.spec.ts | typescript | 59 | Window:7
 tests/arcade.spec.ts | typescript | 197 | Window:6
 tests/arrowhead-orientation.spec.ts | typescript | 151 | deg:17 norm:18 glyphAngle:21 analyse:29 boot:61 buildTree:70
 tests/artboard-delete.spec.ts | typescript | 55 | G:23
-tests/artboard-overlay.spec.ts | typescript | 52 |
+tests/artboard-overlay.spec.ts | typescript | 57 |
 tests/artboards.spec.ts | typescript | 28 |
 tests/behaviors-builder.spec.ts | typescript | 339 | Window:6 buildPong:19
 tests/behaviors-header-fit.spec.ts | typescript | 31 | Window:4
@@ -930,22 +931,22 @@ tests/mp4-record-check.spec.ts | typescript | 33 |
 tests/next-batch.spec.ts | typescript | 75 |
 tests/node-api-doc-accuracy.spec.ts | typescript | 58 |
 tests/node-tool-switch-shape.spec.ts | typescript | 127 | boot:14 twoPaths:25 at:36 selection:43 nodeCount:44
-tests/node-tool.spec.ts | typescript | 339 | boot:13 armRectPath:26 nodes:37 kinds:138
+tests/node-tool.spec.ts | typescript | 358 | boot:14 armRectPath:27 nodes:38 handles:39 atNode:48 kinds:154
 tests/offline-check.spec.ts | typescript | 87 | Window:6
 tests/onboarding-tour.spec.ts | typescript | 37 |
 tests/outline-artboards-batch4.spec.ts | typescript | 81 | countFill:51
 tests/overlay-alignment.spec.ts | typescript | 177 | boot:17 measure:32 W:36
 tests/page-video-export-check.spec.ts | typescript | 22 |
-tests/panel-drag.spec.ts | typescript | 35 |
+tests/panel-drag.spec.ts | typescript | 61 | box:35
 tests/paste-guard.spec.ts | typescript | 36 | Window:4
 tests/path-eraser.spec.ts | typescript | 18 |
 tests/path-exponent-parse.spec.ts | typescript | 66 |
-tests/path-intersection-snap.spec.ts | typescript | 51 |
+tests/path-intersection-snap.spec.ts | typescript | 55 |
 tests/pen-features.spec.ts | typescript | 147 |
 tests/persistence-and-gradient.spec.ts | typescript | 71 |
 tests/perspective-grid.spec.ts | typescript | 24 |
 tests/platformer-repro.spec.ts | typescript | 54 | Window:4
-tests/point-snapping.spec.ts | typescript | 54 |
+tests/point-snapping.spec.ts | typescript | 59 |
 tests/productivity-features.spec.ts | typescript | 116 |
 tests/propeak-1.spec.ts | typescript | 281 | sleep:51 setCur:68 ease:70 moveToClient:71 moveTo:75 clickFx:76 findBtn:85 cue:92 ensureTool:105 place:112 think:115 estW:119 tctr:120 line:124 typeAt:126 swoosh:133 at:134 refURL:155
 tests/propeak-2.spec.ts | typescript | 233 | two:6 sleep:49 setCur:66 ease:68 moveToClient:69 moveTo:73 clickFx:74 findBtn:83 cue:93 ensureTool:105 place:112 think:115 estW:116 tctr:117 centre:121 pR:137
@@ -965,7 +966,7 @@ tests/rocket-workflow-export.spec.ts | typescript | 228 |
 tests/scene-and-plot-api.spec.ts | typescript | 222 | graphs:6 el:124
 tests/scene-duration.spec.ts | typescript | 40 |
 tests/scene-playback.spec.ts | typescript | 91 | shot:75
-tests/select-and-constrain.spec.ts | typescript | 69 |
+tests/select-and-constrain.spec.ts | typescript | 75 |
 tests/sequence-diagram.spec.ts | typescript | 75 |
 tests/shape-builder.spec.ts | typescript | 72 |
 tests/shift-aspect-constrain.spec.ts | typescript | 77 | boot:11 dragWith:23
@@ -973,7 +974,7 @@ tests/slice.spec.ts | typescript | 14 |
 tests/slides.spec.ts | typescript | 244 | to:14
 tests/slingshot-repro.spec.ts | typescript | 85 | Window:5 shoot:44
 tests/smooth-path.spec.ts | typescript | 35 | dev:27
-tests/snapping.spec.ts | typescript | 126 |
+tests/snapping.spec.ts | typescript | 143 |
 tests/solid-block.spec.ts | typescript | 38 |
 tests/spacing-guides.spec.ts | typescript | 106 | w2v:16
 tests/stick-anim-demo-check.spec.ts | typescript | 46 | Window:6
@@ -1001,7 +1002,7 @@ tests/symmetry-live-draw.spec.ts | typescript | 209 | boot:12 drag:27 elements:3
 tests/table-advanced.spec.ts | typescript | 240 |
 tests/table.spec.ts | typescript | 311 |
 tests/tex-and-fields.spec.ts | typescript | 298 | at:86 at:227
-tests/text-autosize.spec.ts | typescript | 79 | of:15
+tests/text-autosize.spec.ts | typescript | 81 | of:16
 tests/text-effects.spec.ts | typescript | 74 | Window:6
 tests/text-outlines.spec.ts | typescript | 53 |
 tests/tier1-effects.spec.ts | typescript | 109 | darkMarks:72
@@ -1016,7 +1017,7 @@ tests/toolbar-pos.spec.ts | typescript | 20 |
 tests/touch-type.spec.ts | typescript | 16 |
 tests/types/motion-types.spec.ts | typescript | 90 |
 tests/ui-panels.spec.ts | typescript | 249 |
-tests/uml-tools.spec.ts | typescript | 170 |
+tests/uml-tools.spec.ts | typescript | 185 |
 tests/upa-texture-simplify-library.spec.ts | typescript | 285 | of:115
 tests/vector-tools-panel.spec.ts | typescript | 76 | count:45
 tests/vertical-type.spec.ts | typescript | 25 | resizes:4 snap:10
