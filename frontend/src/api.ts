@@ -31,7 +31,7 @@ import {
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
     saveActiveSlide, updateGlobalSettings, togglePenStabilization, bumpDirtyRevision, setElementTransform, setStrokeDash,
     enterCropMode, exitCropMode, updateCropRect, setCropAspect,
-    setDefaultTool as setDefaultToolAction
+    setDefaultTool as setDefaultToolAction, DEFAULT_TOOL_FALLBACK
 } from "./store/app-store";
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
@@ -2261,11 +2261,11 @@ export const YappyAPI = {
     setSmartShape(enabled: boolean) { updateGlobalSettings({ smartShape: enabled }); },
     isSmartShapeEnabled() { return store.globalSettings.smartShape !== false; },
     /**
-     * Tool the app opens with: 'inkbrush' (default) | 'fineliner' | 'selection'.
+     * Tool the app opens with: 'selection' (default) | 'inkbrush' | 'fineliner'.
      * Also switches to it immediately, so the toolbar matches.
      */
     setDefaultTool(tool: 'inkbrush' | 'fineliner' | 'selection') { setDefaultToolAction(tool); },
-    getDefaultTool() { return store.globalSettings.defaultTool ?? 'inkbrush'; },
+    getDefaultTool() { return store.globalSettings.defaultTool ?? DEFAULT_TOOL_FALLBACK; },
     /** Canvas cursor while a drawing tool is active: 'crosshair' (default) | 'circle' | 'arrow'. */
     setPointerStyle(style: 'crosshair' | 'circle' | 'arrow') { updateGlobalSettings({ pointerStyle: style }); },
     getPointerStyle() { return store.globalSettings.pointerStyle ?? 'crosshair'; },
@@ -2283,6 +2283,16 @@ export const YappyAPI = {
     /** Display unit for all measurement readouts (HUD / Measure / dimensions): 'px' | 'mm' | 'in'. */
     setMeasurementUnit(unit: 'px' | 'mm' | 'in') { updateGlobalSettings({ measurementUnit: unit }); try { localStorage.setItem('measurementUnit', unit); } catch { /* ignore */ } },
     getMeasurementUnit() { return store.globalSettings.measurementUnit ?? 'px'; },
+
+    /**
+     * The live W×H / X,Y badge under the selection (the "dimensions" HUD). **Default off** —
+     * it sits on top of the artwork and the quick-connect handle. Also toggled from the
+     * Proportions button in the top bar. Not to be confused with `addDimension`, which places
+     * a permanent measurement annotation, or `setExportIncludeDimensions` below.
+     */
+    setShowDimensions(on: boolean) { updateGlobalSettings({ showDimensions: on }); },
+    getShowDimensions() { return store.globalSettings.showDimensions === true; },
+    toggleShowDimensions() { updateGlobalSettings({ showDimensions: !store.globalSettings.showDimensions }); return store.globalSettings.showDimensions === true; },
 
     /** Opt-in: bake dimension annotations into PNG/JPG/SVG/PDF exports (default off). */
     setExportIncludeDimensions(on: boolean) { updateGlobalSettings({ exportIncludeDimensions: on }); try { localStorage.setItem('exportIncludeDimensions', on ? '1' : '0'); } catch { /* ignore */ } },

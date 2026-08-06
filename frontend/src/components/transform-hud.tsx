@@ -1,6 +1,9 @@
 import { Show } from 'solid-js';
 import { store } from '../store/app-store';
-import { worldToScreen } from '../utils/viewport-transforms';
+// WINDOW px: `.transform-hud-layer` is `position: fixed; inset: 0`, so it is in window
+// space, while `worldToScreen` speaks canvas-local px. The two differ by the docked
+// chrome's inset, which put the badge 46px left and 52px above the selection it labels.
+import { worldToWindow } from '../utils/overlay-transform';
 import { getSelectionBoundingBox } from '../utils/handle-detection';
 import { pxToUnit } from '../utils/units';
 import './transform-hud.css';
@@ -15,7 +18,8 @@ import './transform-hud.css';
  * - Multi selection: the union bounding box's W × H and position (no meaningful angle).
  *
  * Passive UI chrome — `pointer-events: none`, so it never blocks canvas interaction.
- * Hidden in presentation mode and while the Measure tool is active (avoids overlap).
+ * OFF by default — toggle it from the ruler button in the top bar (globalSettings.showDimensions).
+ * Also hidden in presentation mode and while the Measure tool is active (avoids overlap).
  */
 
 /** Compact number format: at most 1 decimal, trailing `.0` dropped. */
@@ -27,12 +31,14 @@ const fmt = (n: number) => {
 export const TransformHud = () => {
     const info = () => {
         if (store.selection.length === 0) return null;
+        // Off unless asked for — the badge sits on top of the artwork and the quick-connect
+        // handle, so it is opt-in via the ruler button in the top bar.
+        if (!store.globalSettings.showDimensions) return null;
         if (store.appMode === 'presentation' || store.measureActive) return null;
 
         const bbox = getSelectionBoundingBox(store.elements, store.selection);
         if (!bbox) return null;
 
-        const vp = store.viewState as any;
         const single0 = store.selection.length === 1
             ? store.elements.find(e => e.id === store.selection[0]) ?? null
             : null;
@@ -52,7 +58,7 @@ export const TransformHud = () => {
                 { x: bbox.x + bbox.width, y: bbox.y + bbox.height }, { x: bbox.x, y: bbox.y + bbox.height },
             ];
         }
-        const corners = worldCorners.map(p => worldToScreen(p.x, p.y, vp));
+        const corners = worldCorners.map(p => worldToWindow(p.x, p.y));
         const xs = corners.map(c => c.x);
         const ys = corners.map(c => c.y);
         const cx = (Math.min(...xs) + Math.max(...xs)) / 2;

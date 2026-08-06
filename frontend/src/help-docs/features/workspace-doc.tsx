@@ -33,6 +33,24 @@ const WorkspaceDoc: Component = () => {
                     The position sticks between sessions. Scripted: <code>Yappy.getState().globalSettings.toolbarDock</code>
                     reports it.
                 </p>
+                <h3>The top bar's view controls</h3>
+                <p>
+                    The tool column holds things you <em>draw</em> with. Everything else lives in the cluster at the
+                    right of the top bar: <strong>Pan</strong> (<span class="kbd">H</span>),
+                    <strong> Commands &amp; Tools</strong>
+                    (<span class="kbd">Ctrl</span>/<span class="kbd">Cmd</span>+<span class="kbd">K</span>),
+                    the <strong>Vector Tools</strong> palette, <strong>Shape Builder</strong>
+                    (<span class="kbd">Shift</span>+<span class="kbd">M</span>), <strong>Settings</strong>,
+                    <strong> Properties</strong> (<span class="kbd">Alt</span>+<span class="kbd">Enter</span>),
+                    <strong> Show Dimensions</strong>, and <strong>Help</strong> — then the colour palette and the
+                    theme toggle. Buttons that are toggles light up while they're on; Pan is a tool, so clicking it
+                    again returns you to Select.
+                </p>
+                <p>
+                    The full row needs about <strong>700px</strong> of width. Below that it collapses into the
+                    hamburger menu, where the same entries sit beside <em>Rulers &amp; Guides</em>. Every iPad —
+                    mini through Pro, portrait or landscape — gets the full bar.
+                </p>
                 <h3>On a phone</h3>
                 <p>
                     Below <strong>600px</strong> wide the position control is hidden and the tools become a
@@ -168,6 +186,25 @@ const WorkspaceDoc: Component = () => {
                 <pre><code>{`Yappy.setElementTransform(id, { x: 120, y: 80 });      // move
 Yappy.setElementTransform(id, { width: 240, height: 160 }); // resize
 Yappy.setElementTransform(id, { angle: Math.PI / 4 });      // rotate 45° (radians)`}</code></pre>
+
+                <h3>The dimension badge</h3>
+                <p>
+                    There is also a small badge that follows the selection and reads its live
+                    <strong> W × H</strong>, position and rotation as you drag — handy while resizing, in the
+                    way the rest of the time, since it sits right under the object on top of your artwork. It is
+                    <strong> off by default</strong>. Turn it on with the <strong>Proportions</strong> button in the
+                    top bar (next to Settings and Properties), or from <em>Menu → View → Show Dimensions</em> on a
+                    phone. The choice sticks between sessions. It reads in your chosen measurement unit, and hides
+                    itself in presentation mode and while the Measure tool is active.
+                </p>
+                <pre><code>{`Yappy.setShowDimensions(true);    // show the badge
+Yappy.toggleShowDimensions();     // flip it, returns the new state
+Yappy.getShowDimensions();        // -> boolean`}</code></pre>
+                <p class="tip-box">
+                    Not the same as <strong>Measure</strong>/<code>addDimension()</code>, which places a
+                    <em> permanent</em> annotation on the canvas, or <code>setExportIncludeDimensions()</code>, which
+                    bakes those annotations into an export.
+                </p>
             </section>
 
             {/* ─── CUSTOM STROKE DASHES ───────────────────────────────── */}
@@ -357,10 +394,11 @@ Y.clearGuides();                  // drop them all`}</code></pre>
                 </p>
                 <ul>
                     <li>
-                        <strong>Default Tool</strong> — which tool is active when Yappy opens:
-                        <strong> Ink Brush</strong> (the default), <strong>Fineliner</strong> or <strong>Select</strong>.
-                        Changing it switches you to that tool right away, so the toolbar matches, and it sticks for
-                        next time.
+                        <strong>Default Tool</strong> — which tool is active when Yappy opens, and when you
+                        start a new drawing: <strong>Select</strong> (the default, so your first click on the
+                        canvas picks things up rather than drawing on them), <strong>Ink Brush</strong> or
+                        <strong> Fineliner</strong>. Changing it switches you to that tool right away, so the
+                        toolbar matches, and it sticks for next time.
                     </li>
                     <li>
                         <strong>Canvas Pointer</strong> — the cursor shown over the canvas while a drawing tool is

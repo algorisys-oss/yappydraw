@@ -93,12 +93,31 @@ try {
 const DEFAULT_TOOL_CHOICES = ['inkbrush', 'fineliner', 'selection'] as const;
 export type DefaultToolChoice = (typeof DEFAULT_TOOL_CHOICES)[number];
 
+/**
+ * Selection, not a pen. Opening on the ink brush means the first click on the canvas *draws* —
+ * so anyone reloading a diagram to move a box instead left a stray stroke on it, and had to
+ * find the undo. Selection is the safe opening state: it does nothing until you aim it.
+ * Users who prefer a pen still get one — this is only the fallback when they've expressed no
+ * preference (Settings → Pen & Input → Default Tool, persisted in localStorage).
+ */
+export const DEFAULT_TOOL_FALLBACK: DefaultToolChoice = 'selection';
+
 export const readDefaultTool = (): DefaultToolChoice => {
     try {
         const v = localStorage.getItem('defaultTool') as DefaultToolChoice | null;
         if (v && (DEFAULT_TOOL_CHOICES as readonly string[]).includes(v)) return v;
     } catch { /* ignore */ }
-    return 'inkbrush';
+    return DEFAULT_TOOL_FALLBACK;
+};
+
+/**
+ * The live W x H badge under the selection. **Off unless asked for**: it sits on top of the
+ * artwork and the quick-connect handle, so it earns its place during a resize and is clutter
+ * the rest of the time. An app-level preference like the ones below — read from localStorage
+ * only, never from a loaded document (see loadDocument).
+ */
+export const readShowDimensions = (): boolean => {
+    try { return (localStorage.getItem('showDimensions') ?? '0') !== '0'; } catch { return false; }
 };
 
 const POINTER_STYLES = ['crosshair', 'circle', 'arrow'] as const;
@@ -472,6 +491,7 @@ const initialState: AppState = {
         reducedMotion: false,
         renderStyle: 'architectural',
         showQuickToolbar: true, // Default to showing the toolbar
+        showDimensions: readShowDimensions(),
         // P3 by default, falling back to sRGB where the browser can't render it
         // (see defaultPaletteId — an unparseable canvas fillStyle is silently
         // ignored, so an unsupported palette draws in the wrong colour).
@@ -1534,6 +1554,9 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     if (updates.penPressure !== undefined) {
         try { localStorage.setItem('penPressure', updates.penPressure ? '1' : '0'); } catch { /* ignore */ }
     }
+    if (updates.showDimensions !== undefined) {
+        try { localStorage.setItem('showDimensions', updates.showDimensions ? '1' : '0'); } catch { /* ignore */ }
+    }
     if (updates.defaultTool !== undefined) {
         try { localStorage.setItem('defaultTool', updates.defaultTool); } catch { /* ignore */ }
     }
@@ -2475,6 +2498,11 @@ export const loadDocument = (doc: any) => {
             gs.toolbarVertical = lsBool('toolbarVertical', gs.toolbarVertical);
             const tw = localStorage.getItem('toolbarWrap'); if (tw !== null) (gs as any).toolbarWrap = tw === 'true' ? true : tw === 'false' ? false : Number(tw);
             gs.smartShape = lsBool('smartShape', gs.smartShape);
+            // Read ONLY from localStorage, never from the document. `lsBool`'s fallback is the
+            // document's own value, and a doc autosaved while the badge was on would then turn
+            // it back on for good — the setting is an app-level preference (like defaultTool),
+            // not a property of the drawing. Absent preference = OFF.
+            gs.showDimensions = readShowDimensions();
             gs.defaultTool = readDefaultTool();
             gs.pointerStyle = readPointerStyle();
             gs.penPressure = lsBool('penPressure', gs.penPressure);
@@ -2736,6 +2764,11 @@ export const resetToNewDocument = (docType: DocType = 'slides', pageSize?: { wid
     setStore("welcomeDismissed", true);
     setStore("showSlideToolbar", true);
     setStore("showUtilityToolbar", false);
+    // A new document starts in the same tool a fresh load would — otherwise "New sketch"
+    // inherits whatever tool the previous drawing ended in, and the first click on the
+    // blank canvas draws with it.
+    setStore("selectedTool", readDefaultTool());
+    setStore("toolLocked", false);
     // Default to 100% zoom for new documents, centered on the first slide.
     // Design pages are often taller/wider than the window (stories, posters,
     // A4) — fit the page in view instead so the user sees the whole frame.

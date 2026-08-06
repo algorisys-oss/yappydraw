@@ -1,6 +1,6 @@
 import { type Component, Show, For, createEffect, onCleanup, createSignal } from "solid-js";
 import { X, Search, SlidersHorizontal, PenLine, Palette, Network, Clapperboard, Cloud } from "lucide-solid";
-import { store, updateDefaultStyles, resetDefaultStyles, updateGlobalSettings, setDefaultTool } from "../store/app-store";
+import { store, updateDefaultStyles, resetDefaultStyles, updateGlobalSettings, setDefaultTool, DEFAULT_TOOL_FALLBACK } from "../store/app-store";
 import { features } from "../config/features";
 import { cloudStorageManager } from "../storage/cloud";
 import type { AuthState } from "../storage/cloud/types";
@@ -207,12 +207,12 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         <div class="settings-row">
                             <label title="Which tool is active when Yappy opens. Switches to it now, too.">Default Tool</label>
                             <select
-                                value={store.globalSettings.defaultTool ?? 'inkbrush'}
+                                value={store.globalSettings.defaultTool ?? DEFAULT_TOOL_FALLBACK}
                                 onChange={(e) => setDefaultTool(e.currentTarget.value as 'inkbrush' | 'fineliner' | 'selection')}
                             >
+                                <option value="selection">Select</option>
                                 <option value="inkbrush">Ink Brush</option>
                                 <option value="fineliner">Fineliner</option>
-                                <option value="selection">Select</option>
                             </select>
                         </div>
 

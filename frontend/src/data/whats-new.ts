@@ -13,6 +13,14 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.178', date: '2026-08-06', items: [
+        'Pan, Commands & Tools, the Vector Tools palette and Shape Builder have moved to the top bar, next to Settings. They were sitting in the left column among the pens and shapes, which is meant to be the things you draw with. Pan lights up while it is active; click it again to go back to Select. On a narrow screen all four are in the menu.',
+        'On an iPad the top bar now shows all its buttons. In portrait it was collapsing to the phone layout — just the menu button — while the tool column stayed full size, so half the app was in one layout and half in the other.',
+        'The size badge on a selection is now off by default, and it lands where it should. Every selected object used to carry a "150 × 120" label that sat on top of the artwork with no way to switch it off — and it was drawn offset from the object it described. Turn it on when you want it with the new Proportions button in the top bar, next to Settings; the choice is remembered.',
+        'Yappy now opens with the Select tool, and new sketches start there too. It used to open with the Ink Brush, so the first click on a drawing you had just reopened left a stray stroke on it. If you would rather start with a pen, Settings → Pen & Input → Default Tool still remembers your choice.',
+        'Select everything and change the font in one go. Press Ctrl+A, pick a Font in the Properties panel, and every label and text box takes it — the drawings, images and other objects in the selection are simply skipped. The text controls used to vanish entirely as soon as the selection contained anything that was not text, which made this impossible.',
+        'The Bold and Italic tick boxes now show whether your text is actually bold or italic. They were ticked on ordinary text, so the first click seemed to do nothing — it was switching them off.',
+    ] },
     { version: '0.8.177', date: '2026-08-06', items: [
         'Double-clicking a shape to edit its label no longer moves the text. The editing box used to open offset from the shape — up and to the left, outside the box you clicked — so you were typing in one place and watching the result appear in another. It now sits exactly over the label, at any zoom level.',
         'Text keeps its line breaks and its alignment while you edit it. Labels in circles, diamonds and banners used to re-flow onto fewer lines the moment you started typing and then jump back on commit, and a label aligned to the top or bottom of its shape would leap to the middle. What you edit is now what you get.',

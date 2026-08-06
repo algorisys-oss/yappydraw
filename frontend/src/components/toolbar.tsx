@@ -1,9 +1,9 @@
 import { type Component, For, Show, createSignal, onMount, onCleanup } from "solid-js";
-import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleStickFigurePanel, toggleShapeBuilder, showPropertiesPanel } from "../store/app-store";
+import { store, setSelectedTool, addElement, setStore, togglePenStabilization, updateGlobalSettings, toggleStickFigurePanel, showPropertiesPanel } from "../store/app-store";
 import { generateId } from "../utils/id-generator";
 import { addImagePlaceholder } from "../utils/image-actions";
 import type { ToolType } from "../types";
-import { MousePointer2, Eraser, Hand, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, Command, Shapes, PersonStanding, Brush, Combine, PanelLeft, PanelTop, PanelRight, PanelBottom, Move } from "lucide-solid";
+import { MousePointer2, Eraser, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, PersonStanding, Brush, PanelLeft, PanelTop, PanelRight, PanelBottom, Move } from "lucide-solid";
 import { isPanelOpen } from "../store/dock-layout";
 import { isPhoneWidth } from "../utils/dock-layout";
 
@@ -28,9 +28,11 @@ import { getEmbedURL, fetchPoster, type VideoProvider } from "../utils/video-uti
 import { getImage } from "../utils/image-cache";
 import "./toolbar.css";
 
-// Navigation tools (rendered before grouped tools)
+// Navigation tools (rendered before grouped tools).
+// Pan lives in the top bar's view-control cluster (components/menu.tsx) — it moves the
+// *view*, not the drawing, which is the same reason Commands / Vector Tools / Shape Builder
+// went up there. Selection stays: it is what you come back to between drawing tools.
 const navTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string }[] = [
-    { type: 'pan', icon: Hand, label: 'Pan Tool (H)' },
     { type: 'selection', icon: MousePointer2, label: 'Selection (V or 1)', hotkey: '1' },
 ];
 
@@ -434,41 +436,11 @@ const Toolbar: Component = () => {
                 style={{ display: 'none' }}
             />
 
-            {/* Command palette — the touch-friendly gateway to every tool & action
-                (Magic Wand, Distort, Shape Builder, Live Paint, Knife, Width…). Essential
-                on tablets, where the right-click menu and Ctrl+K aren't available. */}
-            <button
-                class="toolbar-btn command-palette-btn"
-                onClick={() => toggleCommandPalette(true)}
-                title="Commands & Tools (Ctrl/Cmd+K)"
-                aria-label="Open command palette"
-            >
-                <Command size={16} />
-            </button>
-
-            {/* Vector Tools palette — one-tap access to Shape Builder, Live Paint, Puppet Warp,
-                Perspective Grid, Blob Brush, Curvature, Reshape, Symbolism, etc. */}
-            <button
-                class={`toolbar-btn ${isPanelOpen('vectorTools') ? 'active' : ''}`}
-                onClick={() => toggleVectorToolsPanel()}
-                title="Vector Tools palette"
-                aria-label="Toggle vector tools palette"
-            >
-                <Shapes size={16} />
-            </button>
-
-            {/* Shape Builder — promoted out of the Vector Tools list. For logo and
-                illustration work this is the tool you reach for most: drag across
-                overlapping regions to merge them, Alt+drag to delete one. */}
-            <button
-                class={`toolbar-btn ${store.shapeBuilderActive ? 'active' : ''}`}
-                onClick={() => toggleShapeBuilder()}
-                title="Shape Builder (Shift+M) — drag across regions to merge, Alt+drag to delete"
-                aria-label="Toggle Shape Builder"
-                aria-pressed={store.shapeBuilderActive}
-            >
-                <Combine size={16} />
-            </button>
+            {/* Command palette, Vector Tools and Shape Builder moved to the top bar's
+                view-control cluster (components/menu.tsx). None of them draws anything —
+                they open an action list, a palette, and a mode — so they were the odd ones
+                out in a column of drawing tools. On a phone the top cluster isn't rendered;
+                the same three are reachable from the hamburger menu. */}
 
             {/* Stick-figure library — drawify-style editable people, drag onto the canvas */}
             <button
@@ -528,7 +500,7 @@ const Toolbar: Component = () => {
             ) : (
                 /* ── Full Mode: all tool groups ── */
                 <>
-                    {/* Pan, Selection */}
+                    {/* Selection (Pan is in the top bar) */}
                     <For each={navTools}>
                         {(tool) => (
                             <button

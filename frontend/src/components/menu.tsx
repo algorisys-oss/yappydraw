@@ -5,16 +5,21 @@ import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleComicPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleKeyframePanel, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
-    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript,
+    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleShapeBuilder, setSelectedTool,
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import { isPanelOpen } from "../store/dock-layout"; // History/Swatches migrated to the dock (Phase D)
+/**
+ * Narrowest viewport that fits the top bar's full icon row (measured: 628px needed, plus
+ * headroom). Below this the clusters collapse into the hamburger menu.
+ */
+const TOPBAR_FULL_MIN_WIDTH = 700;
 import {
     Menu as MenuIcon, FolderOpen, FilePlus, Trash2, Maximize,
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
     Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, PersonStanding, Gamepad2, Workflow, ChevronDown, Code, Network
-, Clapperboard, SlidersHorizontal, HelpCircle
+, Clapperboard, SlidersHorizontal, HelpCircle, Proportions, Command, Combine, Hand
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
@@ -142,7 +147,23 @@ export const handleNew = (docType: import('../types/slide-types').DocType = 'sli
 
 const Menu: Component = () => {
     const [isMenuOpen, setIsMenuOpen] = createSignal(false);
-    const [isMobile, setIsMobile] = createSignal(window.innerWidth <= 768);
+    /**
+     * PHONE, not "mobile". This gates the top bar's icon clusters (view controls, palette,
+     * theme) — collapse them into the hamburger and they cost an extra tap.
+     *
+     * It was `<= 768`, which is *exactly* an iPad portrait: a tablet got the desktop tool
+     * column but the phone top bar, and once Pan / Commands / Vector Tools / Shape Builder
+     * moved out of that column they were reachable only through the menu on the one device
+     * where the toolbar is driven by touch. Every iPad — mini (744) through Pro (1024) — is
+     * now on the full bar.
+     *
+     * The number is `TOPBAR_FULL_MIN_WIDTH`, not `PHONE_MAX_WIDTH`: the bar is a `nowrap`
+     * flex row with `overflow: visible`, so anything that doesn't fit is *clipped*, not
+     * scrollable. Measured, the full row needs 628px, and at 601 the theme toggle hung 14px
+     * off the right edge. 700 keeps a margin for a longer document title and leaves the
+     * awkward 601-699 band on the collapsed menu.
+     */
+    const [isMobile, setIsMobile] = createSignal(window.innerWidth < TOPBAR_FULL_MIN_WIDTH);
     const [isUtilityMenuOpen, setIsUtilityMenuOpen] = createSignal(false);
     let fileInputRef: HTMLInputElement | undefined;
 
@@ -574,7 +595,7 @@ const Menu: Component = () => {
        nothing left to drag — the whole leftPos/rightPos drag rig is gone. */
 
     onMount(() => {
-        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        const handleResize = () => setIsMobile(window.innerWidth < TOPBAR_FULL_MIN_WIDTH);
         window.addEventListener('resize', handleResize);
 
         onCleanup(() => {
@@ -1097,6 +1118,46 @@ const Menu: Component = () => {
                                             <span class="shortcut">Alt+R</span>
                                         </div>
                                     </div>
+                                    {/* These four mirror the top-bar cluster, which isn't rendered
+                                        on a phone — without them the buttons moved out of the tool
+                                        column would be unreachable there. */}
+                                    <div class="menu-item" onClick={() => { updateGlobalSettings({ showDimensions: !store.globalSettings.showDimensions }); setIsMenuOpen(false); }}>
+                                        <Proportions size={16} />
+                                        <span class="label">Show Dimensions</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.globalSettings.showDimensions}><Check size={14} class="check-icon" /></Show>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { setSelectedTool(store.selectedTool === 'pan' ? 'selection' : 'pan'); setIsMenuOpen(false); }}>
+                                        <Hand size={16} />
+                                        <span class="label">Pan Tool</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.selectedTool === 'pan'}><Check size={14} class="check-icon" /></Show>
+                                            <span class="shortcut">H</span>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { toggleCommandPalette(true); setIsMenuOpen(false); }}>
+                                        <Command size={16} />
+                                        <span class="label">Commands & Tools</span>
+                                        <div class="menu-item-right">
+                                            <span class="shortcut">Ctrl+K</span>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { toggleVectorToolsPanel(); setIsMenuOpen(false); }}>
+                                        <Shapes size={16} />
+                                        <span class="label">Vector Tools</span>
+                                        <div class="menu-item-right">
+                                            <Show when={isPanelOpen('vectorTools')}><Check size={14} class="check-icon" /></Show>
+                                        </div>
+                                    </div>
+                                    <div class="menu-item" onClick={() => { toggleShapeBuilder(); setIsMenuOpen(false); }}>
+                                        <Combine size={16} />
+                                        <span class="label">Shape Builder</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.shapeBuilderActive}><Check size={14} class="check-icon" /></Show>
+                                            <span class="shortcut">Shift+M</span>
+                                        </div>
+                                    </div>
                                     <div class="menu-item" onClick={() => { toggleKeyframePanel(); setIsMenuOpen(false); }}>
                                         <Key size={16} />
                                         <span class="label">Keyframes</span>
@@ -1251,6 +1312,53 @@ const Menu: Component = () => {
                             {/* The class hooks are load-bearing: the onboarding tour spotlights
                                 `.topbar-view-controls`, `.topbar-properties-btn` and `.help-btn`. */}
                             <div class="menu-container topbar-view-controls">
+                                {/* Command palette, Vector Tools and Shape Builder used to sit in
+                                    the left tool column, among the DRAWING tools. They aren't
+                                    drawing tools — one opens a searchable action list, one opens a
+                                    palette, one enters a mode — so they belong with the other
+                                    view/action controls up here, and the tool column stays a column
+                                    of things you draw with. */}
+                                {/* Pan moves the VIEW, not the drawing — the same reason the
+                                    three below are here rather than in the tool column. It is a
+                                    tool, so it lights up while it's the active one, and clicking
+                                    it again drops back to Select. */}
+                                <button
+                                    class="menu-btn"
+                                    classList={{ active: store.selectedTool === 'pan' }}
+                                    onClick={() => setSelectedTool(store.selectedTool === 'pan' ? 'selection' : 'pan')}
+                                    title="Pan Tool (H) — drag to move the canvas"
+                                    aria-label="Toggle Pan tool"
+                                    aria-pressed={store.selectedTool === 'pan'}
+                                >
+                                    <Hand size={16} />
+                                </button>
+                                <button
+                                    class="menu-btn command-palette-btn"
+                                    onClick={() => toggleCommandPalette(true)}
+                                    title="Commands & Tools (Ctrl/Cmd+K)"
+                                    aria-label="Open command palette"
+                                >
+                                    <Command size={16} />
+                                </button>
+                                <button
+                                    class="menu-btn"
+                                    classList={{ active: isPanelOpen('vectorTools') }}
+                                    onClick={() => toggleVectorToolsPanel()}
+                                    title="Vector Tools palette"
+                                    aria-label="Toggle vector tools palette"
+                                >
+                                    <Shapes size={16} />
+                                </button>
+                                <button
+                                    class="menu-btn"
+                                    classList={{ active: store.shapeBuilderActive }}
+                                    onClick={() => toggleShapeBuilder()}
+                                    title="Shape Builder (Shift+M) — drag across regions to merge, Alt+drag to delete"
+                                    aria-label="Toggle Shape Builder"
+                                    aria-pressed={store.shapeBuilderActive}
+                                >
+                                    <Combine size={16} />
+                                </button>
                                 <button
                                     class="menu-btn"
                                     onClick={() => setShowSettings(true)}
@@ -1265,6 +1373,17 @@ const Menu: Component = () => {
                                     title="Toggle Properties (Alt+Enter)"
                                 >
                                     <SlidersHorizontal size={16} />
+                                </button>
+                                {/* The live W x H badge under the selection. Off by default —
+                                    it sits on top of the artwork — so it needs a visible way
+                                    back on, next to the other view controls. */}
+                                <button
+                                    class="menu-btn topbar-dimensions-btn"
+                                    classList={{ active: !!store.globalSettings.showDimensions }}
+                                    onClick={() => updateGlobalSettings({ showDimensions: !store.globalSettings.showDimensions })}
+                                    title={store.globalSettings.showDimensions ? 'Hide Dimensions' : 'Show Dimensions'}
+                                >
+                                    <Proportions size={16} />
                                 </button>
                                 <button
                                     class="menu-btn help-btn"

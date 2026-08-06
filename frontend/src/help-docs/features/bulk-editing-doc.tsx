@@ -12,12 +12,13 @@ const BulkEditingDoc: Component = () => {
             <h2>Multi-Select Property Editing</h2>
             <p>
                 When you select multiple shapes (Shift+click or drag a selection box), the Property Panel
-                shows all properties that are <strong>common to every selected element type</strong>.
+                shows every property that <strong>at least one selected element supports</strong>.
             </p>
             <ul>
-                <li>If all selected elements share the same value for a property, that value is displayed normally.</li>
+                <li>Editing a property applies it to the selected elements that <strong>can</strong> take it, and leaves the rest alone. So <strong>Ctrl+A</strong> then picking a Font restyles every label and text box in one go — the freehand strokes, images and other objects in the selection are simply skipped.</li>
+                <li>The value shown, and the "Mixed" check, also consider only those elements — a stroke with no font of its own won't make the Font row read as mixed.</li>
+                <li>If all the relevant elements share the same value, that value is displayed normally.</li>
                 <li>If values differ, a <strong>"Mixed"</strong> indicator appears (badge, italic label, placeholder, or indeterminate checkbox).</li>
-                <li>Changing any property applies the new value to <strong>all selected elements</strong> at once.</li>
             </ul>
             <p>
                 The panel header shows <strong>Selection (N)</strong> with the count, and a summary of selected

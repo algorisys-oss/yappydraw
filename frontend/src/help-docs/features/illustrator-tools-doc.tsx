@@ -21,9 +21,11 @@ export const IllustratorToolsDoc: Component = () => {
                 </p>
                 <p class="tip-box">
                     <strong>Where are these tools?</strong> Open the <strong>Vector Tools palette</strong> — click the
-                    <strong> ⊞ grid button</strong> in the toolbar (next to the <span class="kbd">⌘</span> button) for a
+                    <strong> shapes button</strong> in the <strong>top bar</strong> (next to the
+                    <span class="kbd">⌘</span> Commands button, left of Settings) for a
                     one-tap floating palette grouped by Build / Path / Paint / Warp / Symbol; the active tool
-                    highlights. Everything is also in the <strong>Command Palette</strong>
+                    highlights. <strong>Shape Builder</strong> sits right beside it. On a phone the same three are
+                    under <em>Menu → View</em>. Everything is also in the <strong>Command Palette</strong>
                     (<span class="kbd">Ctrl</span>/<span class="kbd">Cmd</span>+<span class="kbd">K</span> → type a name).
                     The right-click menu works too, but only when you click directly on a filled shape — so for
                     unfilled outlines (common with Live Paint) use the palette.

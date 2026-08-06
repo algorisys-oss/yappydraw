@@ -1337,12 +1337,18 @@ const PropertyPanel: Component = () => {
                     return false;
                 }
             } else if (target.type === 'multi') {
-                // For multi-selection, show 'all' properties OR properties common to ALL selected element types
+                // Show 'all' properties, plus any property at least ONE selected element
+                // supports — edits then land on that subset (see `supportedSelection`).
+                // Requiring *every* type to support it made Ctrl+A nearly useless on a real
+                // drawing: one freehand stroke or image in the selection removed Font, Font
+                // Size and every other text control, so "select all and restyle the type"
+                // silently had no way to be expressed. The dependency check below has always
+                // used this any-of rule.
                 if ((p.applicableTo as any) !== 'all') {
                     if (Array.isArray(p.applicableTo)) {
                         const selectedTypes = store.selection.map(id => store.elements.find(e => e.id === id)?.type).filter(Boolean);
-                        const allMatch = selectedTypes.every(t => (p.applicableTo as string[]).includes(t as string));
-                        if (!allMatch) return false;
+                        const anyMatch = selectedTypes.some(t => (p.applicableTo as string[]).includes(t as string));
+                        if (!anyMatch) return false;
                     } else {
                         return false;
                     }
@@ -1407,9 +1413,29 @@ const PropertyPanel: Component = () => {
         });
     });
 
+    /**
+     * The selected ids a property may be written to — those whose element type lists it in
+     * `applicableTo`. A multi-selection now shows a property when ANY member supports it
+     * (see `activeProperties`), so every write and every value read has to narrow to that
+     * subset: without it, changing Font with a freehand stroke in the selection would stamp
+     * `fontFamily` onto the stroke, and reading it back would compare against the stroke's
+     * `undefined` and report "Mixed" forever.
+     */
+    const supportedSelection = (key: string): string[] => {
+        const p = properties.find(pp => pp.key === key);
+        if (!p || (p.applicableTo as any) === 'all' || !Array.isArray(p.applicableTo)) return [...store.selection];
+        const types = p.applicableTo as string[];
+        return store.selection.filter(id => {
+            const el = store.elements.find(e => e.id === id);
+            return !!el && types.includes(el.type as string);
+        });
+    };
+
     const handleChange = (key: string, value: any, targetType?: string, targetId?: string, history = true) => {
         const target = activeTarget();
         if (!target) return;
+        /** Multi-select writes go to the supporting subset, never the whole selection. */
+        const multiIds = () => supportedSelection(key);
 
         // If targetId is provided, ensure it matches current target
         if (targetId && target.type === 'element' && target.data.id !== targetId) {
@@ -1430,14 +1456,14 @@ const PropertyPanel: Component = () => {
         // Selecting the 'mesh' fill type seeds a default mesh grid (element targets only).
         if (key === 'fillStyle' && value === 'mesh') {
             const ids = target.type === 'element' ? [targetId || target.data.id!].filter(Boolean) as string[]
-                : target.type === 'multi' ? [...store.selection] : [];
+                : target.type === 'multi' ? multiIds() : [];
             if (ids.length) { applyMeshGradient(ids); return; }
         }
 
         // Selecting the 'pattern' fill type seeds a default pattern motif.
         if (key === 'fillStyle' && value === 'pattern') {
             const ids = target.type === 'element' ? [targetId || target.data.id!].filter(Boolean) as string[]
-                : target.type === 'multi' ? [...store.selection] : [];
+                : target.type === 'multi' ? multiIds() : [];
             if (ids.length) { applyPatternFill(ids); return; }
         }
 
@@ -1453,7 +1479,7 @@ const PropertyPanel: Component = () => {
                 }, history);
                 return;
             } else if (preset && target.type === 'multi') {
-                store.selection.forEach(id => {
+                multiIds().forEach(id => {
                     updateElement(id, {
                         gradientPreset: value,
                         gradientStops: preset.stops,
@@ -1488,7 +1514,7 @@ const PropertyPanel: Component = () => {
                 if (target.type === 'element') {
                     updateElement(targetId || target.data.id!, filterUpdates, history);
                 } else if (target.type === 'multi') {
-                    store.selection.forEach(id => updateElement(id, filterUpdates, history));
+                    multiIds().forEach(id => updateElement(id, filterUpdates, history));
                 }
                 return;
             }
@@ -1504,7 +1530,7 @@ const PropertyPanel: Component = () => {
                     return;
                 }
             } else if (target.type === 'multi') {
-                store.selection.forEach(id => {
+                multiIds().forEach(id => {
                     const el = store.elements.find(e => e.id === id);
                     if (el?.filterPreset && el.filterPreset !== 'custom') {
                         updateElement(id, { filterPreset: 'custom', [key]: finalValue }, history);
@@ -1527,7 +1553,7 @@ const PropertyPanel: Component = () => {
                 }, history);
                 return;
             } else if (preset && target.type === 'multi') {
-                store.selection.forEach(id => {
+                multiIds().forEach(id => {
                     updateElement(id, {
                         openBoxPreset: value,
                         ...preset.settings
@@ -1614,7 +1640,7 @@ const PropertyPanel: Component = () => {
             if (target.type === 'element') {
                 updateElement(targetId || target.data.id!, updates, history);
             } else if (target.type === 'multi') {
-                store.selection.forEach(id => updateElement(id, updates, history));
+                multiIds().forEach(id => updateElement(id, updates, history));
             }
             // Async poster fetch for Vimeo / direct video
             if (url) {
@@ -1633,7 +1659,7 @@ const PropertyPanel: Component = () => {
             if (target.type === 'element') {
                 setElementTransform(targetId || target.data.id!, patch);
             } else if (target.type === 'multi') {
-                store.selection.forEach(id => setElementTransform(id, patch));
+                multiIds().forEach(id => setElementTransform(id, patch));
             }
             return;
         }
@@ -1643,7 +1669,7 @@ const PropertyPanel: Component = () => {
         if (key === 'textEffect' && (target.type === 'element' || target.type === 'multi')) {
             const preset = getTextEffectPreset(finalValue);
             if (preset) {
-                const ids = target.type === 'multi' ? store.selection : [targetId || target.data!.id!];
+                const ids = target.type === 'multi' ? multiIds() : [targetId || target.data!.id!];
                 ids.forEach(id => {
                     const el = store.elements.find(e => e.id === id);
                     if (el) updateElement(id, preset.patch(el), history);
@@ -1660,7 +1686,7 @@ const PropertyPanel: Component = () => {
         if (target.type === 'element') {
             updateElement(targetId || target.data.id!, patch, history);
         } else if (target.type === 'multi') {
-            store.selection.forEach(id => {
+            multiIds().forEach(id => {
                 updateElement(id, patch, history);
             });
         } else if (target.type === 'canvas') {
@@ -1748,7 +1774,10 @@ const PropertyPanel: Component = () => {
             return (slide as any)[prop.key];
         }
         if (target.type === 'multi') {
-            const elements = store.selection
+            // Only the elements the property applies to — a freehand stroke in the selection
+            // has no `fontFamily`, and comparing against its `undefined` would show every
+            // text control as "Mixed" no matter how consistent the text elements are.
+            const elements = supportedSelection(prop.key)
                 .map(id => store.elements.find(e => e.id === id))
                 .filter(Boolean) as DrawingElement[];
             if (elements.length === 0) return undefined;
@@ -2038,16 +2067,30 @@ const PropertyPanel: Component = () => {
                     return prop.key === 'fontWeight' ? !caps.bold : !caps.italic;
                 };
                 const toggleVal = () => getPropertyValue(prop);
+                // `fontWeight` is a number on the 100–900 axis and `fontStyle` the string
+                // 'normal'/'italic' since 0.8.175 — both truthy for a plain Regular, so the
+                // old `!!value` lit Bold *and* Italic on upright body text. Mirrors
+                // IconToggleControl in quick-controls.tsx: "on" is SemiBold-and-up, so
+                // picking ExtraBold in the Style dropdown doesn't leave Bold unchecked.
+                const isFontOn = (v: any) =>
+                    prop.key === 'fontWeight' ? normalizeFontWeight(v) >= 600
+                        : prop.key === 'fontStyle' ? normalizeFontStyle(v) === 'italic'
+                            : !!v;
+                // …and write back in the same encoding, rather than a bare boolean.
+                const fontOnValue = (on: boolean) =>
+                    prop.key === 'fontWeight' ? (on ? 700 : 400)
+                        : prop.key === 'fontStyle' ? (on ? 'italic' : 'normal')
+                            : on;
                 return (
                     <div class="control-row" style={{ opacity: isDisabled() ? 0.4 : 1 }}>
                         <label>{prop.label}{isMixed(toggleVal()) ? <span class="mixed-label"> (Mixed)</span> : null}</label>
                         <input
                             type="checkbox"
-                            checked={isMixed(toggleVal()) ? false : !!toggleVal()}
+                            checked={isMixed(toggleVal()) ? false : isFontOn(toggleVal())}
                             ref={(el) => { if (isMixed(toggleVal())) el.indeterminate = true; }}
                             disabled={isDisabled()}
                             title={isDisabled() ? 'This font does not support ' + prop.label.toLowerCase() : isMixed(toggleVal()) ? 'Mixed values — click to set all' : ''}
-                            onChange={(e) => handleChange(prop.key, e.currentTarget.checked, activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined)}
+                            onChange={(e) => handleChange(prop.key, fontOnValue(e.currentTarget.checked), activeTarget()?.type, activeTarget()?.type === 'element' ? activeTarget()?.data?.id : undefined)}
                         />
                     </div>
                 );
