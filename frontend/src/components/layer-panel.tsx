@@ -1,6 +1,7 @@
 import { type Component, For, createSignal, Show } from 'solid-js';
 import { store, addLayer, setActiveLayer, updateLayer, deleteLayer, duplicateLayer, reorderLayers, toggleLayerGroupingMode, createLayerGroup, toggleLayerGroupExpansion } from '../store/app-store';
-import { X, Eye, EyeOff, Plus, Folder, FolderOpen, ChevronRight, Layers, Crown, Lock, Unlock, Copy, Trash2 } from 'lucide-solid';
+import { X, Eye, EyeOff, Plus, Folder, FolderOpen, ChevronRight, Layers, Crown, Lock, Unlock, Copy, Trash2, Box } from 'lucide-solid';
+import ObjectTree from './object-tree';
 import LayerContextMenu from './layer-context-menu';
 import './layer-panel.css';
 
@@ -8,6 +9,20 @@ const LayerPanel: Component = () => {
     const [editingId, setEditingId] = createSignal<string | null>(null);
     const [editingName, setEditingName] = createSignal('');
     const [draggedId, setDraggedId] = createSignal<string | null>(null);
+    // Which layers have their object list open. Layer-panel state, not document
+    // state: which rows you expanded isn't worth saving into the drawing.
+    const [openObjects, setOpenObjects] = createSignal<Set<string>>(new Set());
+    const objectsOpen = (id: string) => openObjects().has(id);
+    const toggleObjects = (id: string, e: Event) => {
+        e.stopPropagation();
+        setOpenObjects(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    };
+    const layerObjectCount = (id: string) => store.elements.filter(el => el.layerId === id && !el.isClipMask).length;
+
     const [dragOverId, setDragOverId] = createSignal<string | null>(null);
     const [contextMenu, setContextMenu] = createSignal<{ x: number; y: number; layerId: string } | null>(null);
     let longPressTimer: number | null = null;
@@ -406,6 +421,7 @@ const LayerPanel: Component = () => {
                             {(layer) => {
                                 const depth = () => displayLayers().depths.get(layer.id) || 0;
                                 return (
+                                    <>
                                     <div class="layer-row" classList={{ selected: selectedIds().has(layer.id) }}>
                                         {/* Swipe-left action tray (revealed behind the row on touch) */}
                                         <div class="layer-swipe-tray">
@@ -493,6 +509,14 @@ const LayerPanel: Component = () => {
                                             </div>
                                         </div>
                                         <div class="layer-actions">
+                                            <button
+                                                class="layer-action-btn"
+                                                classList={{ active: objectsOpen(layer.id) }}
+                                                onClick={(e) => toggleObjects(layer.id, e)}
+                                                title={objectsOpen(layer.id) ? 'Hide objects on this layer' : `Show objects on this layer (${layerObjectCount(layer.id)})`}
+                                            >
+                                                <Box size={13} />
+                                            </button>
                                             <button class="layer-action-btn" onClick={(e) => handleDuplicateLayer(layer.id, e)} title="Duplicate">
                                                 <Copy size={13} />
                                             </button>
@@ -502,6 +526,10 @@ const LayerPanel: Component = () => {
                                         </div>
                                     </div>
                                     </div>
+                                    <Show when={objectsOpen(layer.id)}>
+                                        <ObjectTree layerId={layer.id} />
+                                    </Show>
+                                    </>
                                 );
                             }}
                         </For>

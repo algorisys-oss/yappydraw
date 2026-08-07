@@ -25,7 +25,8 @@ import {
     setBlueprint, toggleBlueprint, blueprintFor,
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll,
+    setElementsVisible, toggleElementVisible, showAllElements, setElementName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -37,6 +38,7 @@ import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/
 import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
 import { rasterizeSelection } from "./utils/rasterize";
+import { elementLabel } from "./utils/object-label";
 import type { SvgThemeOptions } from "./utils/svg-theme";
 import { toExcalidraw, fromExcalidraw } from "./utils/excalidraw-io";
 import {
@@ -3752,6 +3754,36 @@ export const YappyAPI = {
     distributeSpacing(type: DistributionType, gap?: number) { distributeSpacing(type, gap); },
     /** Toggle align-to-key-object mode (key = last-selected element stays put). */
     toggleAlignToKey(on?: boolean) { toggleAlignToKey(on); },
+
+    // --- Object tree (per-element visibility + display name) ---
+    /**
+     * Show or hide objects. Hidden objects are skipped by rendering,
+     * hit-testing, area-select, the minimap and every export — so hiding one
+     * also removes it from the selection. Accepts element ids or group ids.
+     */
+    setElementsVisible(ids: string[], visible: boolean) { setElementsVisible(ids, visible); },
+    /** Flip one object's visibility (the object tree's eye button). */
+    toggleElementVisible(id: string) { toggleElementVisible(id); },
+    /** Un-hide every hidden object. */
+    showAllElements() { showAllElements(); },
+    /**
+     * Set an object's DISPLAY name — what the object tree shows. Pass '' to
+     * clear it and fall back to a derived label (its text, or its type).
+     * Not to be confused with `renameElement`, which changes the element's
+     * script-addressable `id`.
+     */
+    setElementName(id: string, name: string) { setElementName(id, name); },
+    /**
+     * Restack a block of objects immediately above or below another — what the
+     * object tree's drag-to-reorder does. The ids move together in their
+     * existing relative order, so a group keeps its internal stacking.
+     */
+    moveElementsNextTo(ids: string[], targetId: string, place: 'above' | 'below') { moveElementsNextTo(ids, targetId, place); },
+    /** The label the object tree shows for an element (name → text → type). */
+    elementLabel(id: string) {
+        const el = store.elements.find(e => e.id === id);
+        return el ? elementLabel(el) : '';
+    },
 
     // --- Group isolation ("enter the group") ---
     /**

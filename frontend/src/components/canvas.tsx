@@ -793,6 +793,10 @@ const Canvas: Component = () => {
 
     const canInteractWithElement = (el: DrawingElement): boolean => {
         if (el.locked) return false;
+        // Hidden in the object tree: not drawn, so it must not be clickable or
+        // marquee-able either — an invisible object you can still grab and drag
+        // is indistinguishable from a haunted canvas.
+        if (el.visible === false) return false;
         // Animation mode: elements on other frames' cels don't exist right now.
         const vis = animVisibleIds();
         if (vis && !vis.has(el.id) && el.id !== pState.currentId) return false;

@@ -32,6 +32,13 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         locked: el.locked ?? false,
         link: el.link ?? null,
         tag: el.tag ?? null,
+        // Object-tree state. Passed through only when present, so documents
+        // predating these fields stay untouched — and `visible` absent means
+        // visible everywhere it is read. THIS FUNCTION IS A WHITELIST: a field
+        // that isn't listed here is silently dropped from anything that passes
+        // through it (templates, imports), so new fields must be added.
+        ...(el.visible !== undefined && { visible: el.visible }),
+        ...(el.name !== undefined && { name: el.name }),
         ...(el.sfRole !== undefined && { sfRole: el.sfRole }),
         ...(el.stickRig !== undefined && { stickRig: el.stickRig }),
 

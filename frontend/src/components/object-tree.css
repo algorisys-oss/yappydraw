@@ -1,0 +1,92 @@
+/* Object tree — the objects inside a layer. Sits under a layer row in the
+   layer panel, so it borrows that panel's density and colours. */
+
+.object-tree {
+    background: var(--bg-secondary, #f6f7f9);
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    padding: 2px 0;
+}
+
+.ot-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 24px;
+    padding-right: 6px;
+    font-size: 11px;
+    color: var(--text-primary, #111);
+    cursor: pointer;
+    user-select: none;
+}
+
+.ot-row:hover { background: var(--bg-hover, rgba(0, 0, 0, 0.05)); }
+
+.ot-row.selected {
+    background: var(--primary-color, #3b82f6);
+    color: #fff;
+}
+
+/* Hidden objects read as inactive, the way a hidden layer does. */
+.ot-row.hidden .ot-label { opacity: 0.45; font-style: italic; }
+.ot-row.locked .ot-label { opacity: 0.7; }
+
+.ot-expander {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    flex: 0 0 14px;
+    opacity: 0.7;
+}
+
+.ot-expander svg { transition: transform 0.12s ease; }
+.ot-expander svg.ot-open { transform: rotate(90deg); }
+
+.ot-eye,
+.ot-lock {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    flex: 0 0 18px;
+    opacity: 0.55;
+}
+
+.ot-eye:hover,
+.ot-lock:hover { opacity: 1; }
+.ot-lock.is-locked { opacity: 0.9; color: var(--warning-color, #f59e0b); }
+.ot-row.selected .ot-lock.is-locked { color: #fff; }
+
+.ot-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ot-rename {
+    width: 100%;
+    font: inherit;
+    color: var(--text-primary, #111);
+    background: var(--bg-panel, #fff);
+    border: 1px solid var(--primary-color, #3b82f6);
+    border-radius: 3px;
+    padding: 0 3px;
+}
+
+.ot-empty {
+    padding: 6px 10px;
+    font-size: 11px;
+    opacity: 0.6;
+}
+
+/* Drag-to-restack. The insertion line goes on the edge you'd drop against —
+   top edge means "in front of", because the tree reads top-of-stack first. */
+.ot-row.dragging { opacity: 0.45; }
+
+.ot-row.drop-above { box-shadow: inset 0 2px 0 0 var(--primary-color, #3b82f6); }
+.ot-row.drop-below { box-shadow: inset 0 -2px 0 0 var(--primary-color, #3b82f6); }
+
+.ot-row[draggable="true"] { cursor: grab; }
+.ot-row[draggable="true"]:active { cursor: grabbing; }

@@ -447,7 +447,7 @@ function renderPagedDocToCanvas(scale: number, whiteBackground: boolean): HTMLCa
         ctx.beginPath(); ctx.rect(sX, sY, sW, sH); ctx.clip();
         renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
         for (const el of store.elements) {
-            if (el.isClipMask) continue;
+            if (el.isClipMask || !isExportable(el)) continue;
             // Include any element that OVERLAPS the page (not just those centred inside it) —
             // a shape hanging over an edge or centred off-page still renders (clipped to the page).
             if (!overlapsRect(el, sX, sY, sW, sH)) continue;
@@ -473,7 +473,7 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
         return;
     }
 
-    let elements = store.elements.filter(el => !el.isNullObject); // null objects are authoring gizmos (adjustment layers render their filter in export)
+    let elements = store.elements.filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -519,6 +519,13 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     link.click();
 };
 
+/**
+ * Hidden objects (the object tree's eye toggle) must not appear in ANY export.
+ * `visible !== false` — absent means visible, so documents predating the field
+ * export exactly as before. Every element walk in this file goes through this.
+ */
+export const isExportable = (el: DrawingElement): boolean => el.visible !== false;
+
 /** Largest canvas edge browsers reliably allocate; beyond this `toDataURL` returns a blank image. */
 const MAX_RASTER_EDGE = 16384;
 
@@ -537,7 +544,7 @@ export const rasterizeElements = async (
     await ensureExportImages();
     const idSet = new Set(ids);
     // Keep document order so the raster stacks the same way the canvas does.
-    const elements = store.elements.filter(el => idSet.has(el.id) && !el.isNullObject && !el.isClipMask);
+    const elements = store.elements.filter(el => idSet.has(el.id) && !el.isNullObject && !el.isClipMask && isExportable(el));
     if (elements.length === 0) return null;
 
     const { minX, minY, maxX, maxY } = elementsBounds(elements);
@@ -590,7 +597,7 @@ export const exportRegion = (x: number, y: number, w: number, h: number, name = 
     ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
     const rc = rough.canvas(canvas);
     for (const el of store.elements) {
-        if (el.isClipMask) continue;
+        if (el.isClipMask || !isExportable(el)) continue;
         if (el.x + el.width < x || el.x > x + w || el.y + el.height < y || el.y > y + h) continue;
         try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
     }
@@ -616,7 +623,7 @@ export const exportArtboard = (artboardId: string, scale = 1, download = true): 
     ctx.beginPath(); ctx.rect(ab.x, ab.y, ab.width, ab.height); ctx.clip();
     const rc = rough.canvas(canvas);
     for (const el of store.elements) {
-        if (el.isClipMask) continue;
+        if (el.isClipMask || !isExportable(el)) continue;
         if (el.x + el.width < ab.x || el.x > ab.x + ab.width || el.y + el.height < ab.y || el.y > ab.y + ab.height) continue; // outside the artboard
         try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
     }
@@ -650,7 +657,7 @@ export const exportPageToPng = (pageIndex: number, scale = 1, download = true, f
     const rc = rough.canvas(canvas);
     renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
     for (const el of store.elements) {
-        if (el.isClipMask) continue;
+        if (el.isClipMask || !isExportable(el)) continue;
         // Overlap (not centre) test — see renderPagedDocToCanvas.
         if (!overlapsRect(el, sX, sY, sW, sH)) continue;
         try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
@@ -679,7 +686,7 @@ export const exportToJpg = async (scale: number, onlySelected: boolean) => {
         return;
     }
 
-    let elements = store.elements.filter(el => !el.isNullObject); // null objects are authoring gizmos (adjustment layers render their filter in export)
+    let elements = store.elements.filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -763,7 +770,7 @@ export const copyCanvasAsPng = async (scale: number) => {
 };
 
 export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) => {
-    let elements = store.elements.filter(el => !el.isNullObject); // null objects are authoring gizmos (adjustment layers render their filter in export)
+    let elements = store.elements.filter(el => !el.isNullObject && isExportable(el)); // null objects are authoring gizmos (adjustment layers render their filter in export)
     if (onlySelected) {
         if (store.selection.length === 0) { showToast('Nothing selected — uncheck “Only selected” to export the whole drawing', 'info'); return; }
         elements = elements.filter(el => store.selection.includes(el.id));
@@ -1371,7 +1378,8 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
 
 export const exportToPdf = async (scale: number, background: boolean, onlySelected: boolean) => {
     await ensureExportImages();
-    const allElements = store.elements;
+    // Hidden objects never reach a PDF/PPTX page (see isExportable).
+    const allElements = store.elements.filter(isExportable);
     if (allElements.length === 0) return;
     const { jsPDF } = await import("jspdf");
 
@@ -1490,7 +1498,8 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
 
 export const exportToPptx = async (scale: number, background: boolean, onlySelected: boolean) => {
     await ensureExportImages();
-    const allElements = store.elements;
+    // Hidden objects never reach a PDF/PPTX page (see isExportable).
+    const allElements = store.elements.filter(isExportable);
     if (allElements.length === 0) return;
 
     const { default: PptxGenJS } = await import("pptxgenjs");

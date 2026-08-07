@@ -1319,6 +1319,41 @@ export const moveSelectionZIndex = (ids: string[], direction: 'forward' | 'backw
     bumpDirtyRevision();
 };
 
+/**
+ * Drop a block of objects immediately above or below another — the object
+ * tree's drag-to-reorder.
+ *
+ * `store.elements` is bottom-to-top, so "above" (nearer the viewer) means a
+ * LATER index; the tree displays reversed, which is why the panel's "up" is
+ * this function's "above". The dragged ids move as one block in their existing
+ * relative order, so dragging a group keeps its internal stacking and lands
+ * contiguous.
+ */
+export const moveElementsNextTo = (ids: string[], targetId: string, place: 'above' | 'below') => {
+    const moving = new Set(ids);
+    if (moving.size === 0 || moving.has(targetId)) return;
+    const target = store.elements.find(e => e.id === targetId);
+    if (!target) return;
+
+    // Compute first, then push history, then commit — pushing after the mutation
+    // would snapshot the NEW state and make undo a no-op.
+    const els = store.elements;
+    const block = els.filter(e => moving.has(e.id));
+    if (block.length === 0) return;
+    const rest = els.filter(e => !moving.has(e.id));
+    const at = rest.findIndex(e => e.id === targetId);
+    if (at === -1) return;
+    const insertAt = place === 'above' ? at + 1 : at;
+    const next = [...rest.slice(0, insertAt), ...block, ...rest.slice(insertAt)];
+
+    // Dropped back where it came from — most accidental drags — so no history entry.
+    if (!next.some((e, i) => e.id !== els[i]?.id)) return;
+
+    pushToHistory();
+    setStore('elements', next);
+    bumpDirtyRevision();
+};
+
 export const updateGlobalTickerState = () => {
     const hasFlow = store.elements.some(el => el.flowAnimation);
     animationEngine.setForceTicker(hasFlow);
@@ -5115,6 +5150,62 @@ if (typeof window !== 'undefined' && window.matchMedia) {
 import { calculateAlignment, calculateDistribution, calculateSpacingDistribution, type AlignmentType, type DistributionType } from "../utils/alignment";
 
 export const toggleAlignToKey = (on?: boolean) => setStore('alignToKeyObject', v => on ?? !v);
+
+// ── Object-tree state (per-element visibility + display name) ────────────────
+
+/**
+ * Show/hide elements from the object tree. Hidden elements are skipped by
+ * rendering, hit-testing, area-select, the minimap and every export — so a
+ * hidden object can no longer be selected, which is why hiding one also drops
+ * it from the selection. Group ids expand to their members.
+ */
+export const setElementsVisible = (ids: string[], visible: boolean) => {
+    if (ids.length === 0) return;
+    const targets = new Set(ids);
+    // A group id passed in place of an element id hides the whole group.
+    for (const el of store.elements) {
+        if (el.groupIds?.some(g => targets.has(g))) targets.add(el.id);
+    }
+    pushToHistory();
+    batch(() => {
+        setStore('elements', (el: DrawingElement) => targets.has(el.id), { visible } as any);
+        if (!visible) {
+            // Keeping a hidden element selected leaves transform handles floating
+            // around nothing, and the next drag moves what the user can't see.
+            setStore('selection', s => s.filter(id => !targets.has(id)));
+        }
+    });
+    bumpDirtyRevision();
+};
+
+/** Flip visibility for each id independently (the tree's eye button). */
+export const toggleElementVisible = (id: string) => {
+    const el = store.elements.find(e => e.id === id);
+    if (!el) return;
+    setElementsVisible([id], el.visible === false);
+};
+
+/** Un-hide everything — the way back when the tree isn't open. */
+export const showAllElements = () => {
+    const hidden = store.elements.filter(e => e.visible === false).map(e => e.id);
+    if (hidden.length === 0) { showToast('Nothing is hidden', 'info'); return; }
+    setElementsVisible(hidden, true);
+    showToast(`${hidden.length} object${hidden.length === 1 ? '' : 's'} shown`, 'success');
+};
+
+/**
+ * Set an element's DISPLAY name (what the object tree shows). Distinct from
+ * `renameElement`, which changes the script-addressable `id`. An empty name
+ * clears the override so the tree falls back to a derived label.
+ */
+export const setElementName = (id: string, name: string) => {
+    const trimmed = name.trim();
+    if (!store.elements.some(e => e.id === id)) return;
+    pushToHistory();
+    setStore('elements', (el: DrawingElement) => el.id === id,
+        (trimmed ? { name: trimmed } : { name: undefined }) as any);
+    bumpDirtyRevision();
+};
 
 // ── Group isolation ("enter the group") ──────────────────────────────────────
 //

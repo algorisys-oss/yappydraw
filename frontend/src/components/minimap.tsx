@@ -90,6 +90,9 @@ export const Minimap = (props: MinimapProps) => {
 
         // Render elements using the same utility as the main canvas
         store.elements.forEach(el => {
+            // Hidden in the object tree — the minimap is a picture of the canvas,
+            // so it must not show what the canvas doesn't.
+            if (el.visible === false) return;
             const layer = store.layers.find(l => l.id === el.layerId);
             if (!layer?.visible) return;
 
@@ -210,7 +213,7 @@ export const Minimap = (props: MinimapProps) => {
             store.elements.forEach(el => {
                 el.points?.length;
                 el.x; el.y; el.width; el.height;
-                el.opacity; el.layerId;
+                el.opacity; el.layerId; el.visible;
                 el.strokeColor; el.backgroundColor; el.renderStyle;
                 // Add points content tracking if needed
                 // Add points content tracking if needed

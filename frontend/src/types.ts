@@ -361,6 +361,22 @@ export interface DrawingElement {
     seed: number;
     roundness: null | { type: number };
     locked: boolean;
+    /**
+     * Hidden in the object tree. **Absent means visible** — every check must be
+     * `visible !== false`, never `visible === true`, or every element saved
+     * before this field existed disappears. (`Layer.visible` is a required
+     * boolean and the layer panel already reads it that way, for the same
+     * reason.) Hidden elements are skipped by rendering, hit-testing, area
+     * select and export alike: something you cannot see must not be selectable,
+     * and must not turn up in an exported file.
+     */
+    visible?: boolean;
+    /**
+     * Display name in the object tree. Absent → the tree shows a derived label
+     * (the text content, or the shape type). Distinct from `id`, which is the
+     * script-addressable handle that `renameElement` changes.
+     */
+    name?: string;
     link: string | null;
     tag?: string | null;
     /** Semantic part role for stick-figure-library imports:

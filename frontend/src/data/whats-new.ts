@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.183', date: '2026-08-07', items: [
+        'The Layers panel now shows what is actually on each layer. Click the box icon on a layer row to list its objects, newest on top, with groups you can open up. It is the missing half of the panel: until now it managed layers but never the things inside them, so the only way to reach one object in a busy drawing was to hunt for it on the canvas.',
+        'Each object in the list can be selected, hidden, locked, renamed, and dragged up or down to change what sits in front of what. You can pick out a single object inside a group from the list without opening the group first.',
+        'Hiding an object hides it properly: it is not drawn, cannot be clicked or caught by a selection box, does not show in the minimap, and is left out of every export — PNG, SVG, PDF, PowerPoint and the HTML player. It is not deleted; it is saved with your drawing and comes back whenever you want it.',
+        'Objects name themselves sensibly. A text box is listed by its words, everything else by what it is, so you only need to rename the ones you care about.',
+    ] },
     { version: '0.8.182', date: '2026-08-07', items: [
         'If Yappy ever tells you your saved drawings are missing, it now tells you the truth about why. A browser that will not open local storage for the page — most often because another Yappy tab has it open — used to produce an empty "My Drawings" that looked exactly like everything had been deleted. It now says your drawings cannot be read right now, that nothing has been deleted, and to close other tabs and reload. Your work was always still on disk.',
         'A save that does not reach the disk is no longer reported as a success — and, importantly, no longer throws away the crash-recovery copy of your drawing on the way. If saving fails you will see a clear message telling you to export your work to a file.',

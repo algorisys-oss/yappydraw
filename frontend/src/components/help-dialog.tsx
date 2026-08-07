@@ -83,6 +83,8 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Bring to Front', keys: 'Ctrl+Shift+]' },
             { label: 'Send to Back', keys: 'Ctrl+Shift+[' },
             { label: 'Rasterize selection (vector → bitmap)', keys: 'Right-click → Rasterize' },
+            { label: 'Object tree (objects on a layer)', keys: 'Layers panel → box icon on a layer' },
+            { label: 'Hide / lock / rename one object', keys: 'Object tree → eye / padlock / double-click' },
             { label: 'Group / Ungroup', keys: 'Ctrl+G / Ctrl+Shift+G' },
             { label: 'Enter group (select objects inside it)', keys: 'Double-click a grouped object' },
             { label: 'Leave group (one level)', keys: 'Esc' },

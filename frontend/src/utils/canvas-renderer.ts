@@ -836,6 +836,10 @@ export function renderLayersAndElements(
         }
 
         const layerElements = bucket.filter((el, idx) => {
+            // Hidden in the object tree. Checked before the "currently drawing"
+            // exemption below so nothing can re-show it, and as `!== false` so
+            // documents saved before the field existed still render.
+            if (el.visible === false) return false;
             if (el.id === currentDrawingId) return true;
             // A clip/opacity mask shape is not drawn on its own — only used to clip its target.
             if (el.isClipMask) return false;

@@ -220,6 +220,39 @@ Yappy.exitGroup();             // up one level
 Yappy.exitAllGroups();         // leave entirely`}</code></pre>
             </section>
 
+            {/* ─── OBJECT TREE ────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>The object tree — every object on a layer</h2>
+                <p>
+                    Open the <strong>Layers</strong> panel and click the <strong>box icon</strong> on a layer row to
+                    list the objects on it. The list reads top-of-stack first, exactly like the artwork, and groups
+                    appear as one row you can expand.
+                </p>
+                <ul>
+                    <li><strong>Click a row</strong> to select that object — including one object inside a group,
+                        without entering the group. Shift/Ctrl-click adds to the selection.</li>
+                    <li><strong>Eye</strong> hides an object. A hidden object isn't drawn, can't be clicked or
+                        marquee-selected, and is left out of <em>every</em> export (PNG, SVG, PDF, PPTX, the HTML
+                        player) and the minimap.</li>
+                    <li><strong>Padlock</strong> locks it against selection and editing, the same as Object ▸ Lock.</li>
+                    <li><strong>Double-click the name</strong> to rename it. Objects start with a derived label — their
+                        own text, or their type ("Rectangle", "Path") — so most never need naming.</li>
+                    <li><strong>Drag a row</strong> to restack it; drop on the upper half of a row to go in front of it,
+                        the lower half to go behind. Dragging a group moves the whole group.</li>
+                </ul>
+                <p class="tip-box">
+                    A renamed object keeps its <em>id</em>. The name is a label for you; the id is what scripts address
+                    (<code>Yappy.renameElement</code> changes that instead). Hiding is not deleting — hidden objects are
+                    saved with the document, and <code>Yappy.showAllElements()</code> brings everything back.
+                </p>
+                <pre><code>{`Yappy.setElementsVisible([id], false);  // hide (accepts group ids too)
+Yappy.toggleElementVisible(id);
+Yappy.showAllElements();
+Yappy.setElementName(id, 'Hero banner');   // '' clears it
+Yappy.elementLabel(id);                    // what the tree shows
+Yappy.moveElementsNextTo([id], targetId, 'above');`}</code></pre>
+            </section>
+
             {/* ─── ARRANGE (STACKING ORDER) ───────────────────────────── */}
             <section class="doc-section">
                 <h2>Arrange — stacking order</h2>
