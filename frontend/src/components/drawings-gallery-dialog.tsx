@@ -1,9 +1,9 @@
 import { type Component, Show, For, createSignal, createEffect } from "solid-js";
 import { Portal } from "solid-js/web";
-import { X, FolderOpen, Plus, Save, Copy, Trash2, Pencil, Check } from "lucide-solid";
+import { X, FolderOpen, Plus, Save, Copy, Trash2, Pencil, Check, AlertTriangle } from "lucide-solid";
 import {
     listDrawings, openDrawing, renameDrawing, duplicateDrawing, deleteDrawing,
-    saveCurrentToGallery, activeDrawingId, setActiveDrawingId, type DrawingMeta,
+    saveCurrentToGallery, activeDrawingId, setActiveDrawingId, galleryReadable, StorageUnavailableError, type DrawingMeta,
 } from "../storage/drawings-store";
 import { getStorageEstimate, isStoragePersisted, requestPersistentStorage } from "../storage/persistent-storage";
 import { store } from "../store/app-store";
@@ -31,10 +31,16 @@ const DrawingsGalleryDialog: Component = () => {
     const [editId, setEditId] = createSignal<string | null>(null);
     const [editName, setEditName] = createSignal('');
     const [hint, setHint] = createSignal('');
+    // "cannot read your drawings" and "you have no drawings" render identically
+    // otherwise — and the first one shown as the second reads as data loss.
+    const [unreadable, setUnreadable] = createSignal(false);
 
     const refresh = async () => {
         setLoading(true);
-        try { setItems(await listDrawings()); } finally { setLoading(false); }
+        try {
+            setItems(await listDrawings());
+            setUnreadable(!(await galleryReadable()));
+        } finally { setLoading(false); }
     };
 
     const refreshHint = async () => {
@@ -56,14 +62,25 @@ const DrawingsGalleryDialog: Component = () => {
     const handleSaveCurrent = async () => {
         if (store.elements.length === 0) { showToast('Nothing on the canvas to save', 'info'); return; }
         await requestPersistentStorage();
-        const meta = await saveCurrentToGallery();
-        showToast(`Saved "${meta.name}"`, 'success');
+        try {
+            const meta = await saveCurrentToGallery();
+            showToast(`Saved "${meta.name}"`, 'success');
+        } catch (err) {
+            // Never report a save that didn't reach disk (see StorageUnavailableError).
+            showToast(err instanceof StorageUnavailableError
+                ? 'Could not save — the browser blocked local storage. Close other Yappy tabs and reload, then export your work to a file.'
+                : 'Could not save that drawing', 'error', 8000);
+        }
         refresh(); refreshHint();
     };
 
     const handleNewDrawing = async () => {
         // Don't lose unsaved work — snapshot the live canvas into the gallery first.
-        if (store.elements.length > 0) await saveCurrentToGallery();
+        // A failed save must not silently discard the canvas we're replacing.
+        if (store.elements.length > 0) {
+            try { await saveCurrentToGallery(); }
+            catch { showToast('Could not save the current drawing — export it to a file before starting a new one', 'error', 8000); return; }
+        }
         setActiveDrawingId(null);          // next save becomes a fresh entry
         handleNew('slides');
         showToast('Started a new drawing', 'success');
@@ -116,11 +133,23 @@ const DrawingsGalleryDialog: Component = () => {
                         <div class="dg-body">
                             <Show when={!loading()} fallback={<div class="dg-empty">Loading…</div>}>
                                 <Show when={items().length > 0} fallback={
-                                    <div class="dg-empty">
-                                        <FolderOpen size={40} style={{ opacity: '0.4' }} />
-                                        <p>No saved drawings yet.</p>
-                                        <p class="dg-empty-sub">Draw something, then <strong>Save current</strong> — it'll appear here to reopen anytime.</p>
-                                    </div>
+                                    <Show when={!unreadable()} fallback={
+                                        <div class="dg-empty">
+                                            <AlertTriangle size={40} style={{ opacity: '0.6', color: '#f59e0b' }} />
+                                            <p><strong>Your drawings can't be read right now.</strong></p>
+                                            <p class="dg-empty-sub">
+                                                Nothing has been deleted — the browser wouldn't open local storage for this
+                                                page. Close any other Yappy tabs and reload. If you're in a private window,
+                                                saved drawings aren't available there.
+                                            </p>
+                                        </div>
+                                    }>
+                                        <div class="dg-empty">
+                                            <FolderOpen size={40} style={{ opacity: '0.4' }} />
+                                            <p>No saved drawings yet.</p>
+                                            <p class="dg-empty-sub">Draw something, then <strong>Save current</strong> — it'll appear here to reopen anytime.</p>
+                                        </div>
+                                    </Show>
                                 }>
                                     <div class="dg-grid">
                                         <For each={items()}>

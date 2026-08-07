@@ -17,7 +17,7 @@
  * 7-day-ITP eviction.
  */
 
-import { idbGet, idbSet, idbDelete } from './idb-kv';
+import { idbGet, idbSet, idbDelete, idbFailure } from './idb-kv';
 import { activeDrawingId, setActiveDrawingId } from './active-drawing';
 import { buildCurrentDocument, clearAutoSave } from './auto-save';
 import { captureDocThumbnail } from './doc-thumbnails';
@@ -67,6 +67,24 @@ function docIsGame(doc: SlideDocument): boolean {
         || (Array.isArray(doc.elements) && doc.elements.some((e: any) => (e.behaviors?.length ?? 0) > 0));
 }
 
+/**
+ * Thrown when a save could not be written to disk because IndexedDB was
+ * unavailable. Callers MUST surface this: the alternative is telling someone
+ * their work is saved when it is sitting in a map that dies with the tab.
+ */
+export class StorageUnavailableError extends Error {
+    constructor() {
+        super('Local storage is unavailable — the drawing was not saved to disk.');
+        this.name = 'StorageUnavailableError';
+    }
+}
+
+/** Could the gallery index be READ? False means "cannot read", not "empty". */
+export async function galleryReadable(): Promise<boolean> {
+    await idbGet<DrawingMeta[]>(INDEX_KEY);
+    return idbFailure() === null;
+}
+
 async function readIndex(): Promise<DrawingMeta[]> {
     const idx = (await idbGet<DrawingMeta[]>(INDEX_KEY)) ?? [];
     // newest first, regardless of historical write order
@@ -110,9 +128,14 @@ export async function saveDrawingDoc(
         isGame: docIsGame(doc),
     };
 
-    await idbSet(DRAWING_KEY(id), json);
+    // Both writes must actually reach disk. `idbSet` returns false when the
+    // database could not be opened and the value went to the non-durable memory
+    // fallback — reporting that as a successful save is how a drawing can appear
+    // in the gallery for one session and be gone on reload.
+    const bodyOk = await idbSet(DRAWING_KEY(id), json);
     const next = [meta, ...index.filter(d => d.id !== id)];
     await writeIndex(next);
+    if (!bodyOk) throw new StorageUnavailableError();
     return meta;
 }
 
@@ -128,6 +151,10 @@ export async function saveCurrentToGallery(opts: { name?: string; forceNew?: boo
     let thumb: string | undefined;
     try { thumb = captureDocThumbnail(); } catch { /* preview is best-effort */ }
     const id = opts.forceNew ? undefined : (activeDrawingId() ?? undefined);
+    // If the write fails, this throws BEFORE clearAutoSave() below — which is the
+    // whole point of the ordering. Previously the autosave slot was dropped
+    // unconditionally after a "save", so a save into dead storage deleted the
+    // last recoverable copy of the user's work while reporting success.
     const meta = await saveDrawingDoc(doc, { id, name, thumb });
     setActiveDrawingId(meta.id);
     // The document is now safely on disk, so it is no longer "unsaved". Without

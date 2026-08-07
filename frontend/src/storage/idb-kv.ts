@@ -16,23 +16,63 @@ const STORE = 'kv';
 let dbPromise: Promise<IDBDatabase | null> | null = null;
 const memoryFallback = new Map<string, unknown>();
 
+/**
+ * Why the last open failed, or null while storage is healthy.
+ *
+ * EVERYTHING the user keeps locally — the drawings gallery, autosave, version
+ * history — is behind this one handle. So a single failed open makes all three
+ * look *deleted*: `idbGet` falls through to an empty in-memory map, the gallery
+ * renders its "nothing saved yet" empty state, and there is no autosave or
+ * version history to fall back on either. Nothing has actually been lost — the
+ * data is still on disk — but the app said otherwise, silently.
+ *
+ * Callers use this to tell "you have no drawings" apart from "I cannot read
+ * your drawings right now", which are the same screen otherwise.
+ */
+export type IdbFailure = 'unsupported' | 'blocked' | 'error';
+let lastFailure: IdbFailure | null = null;
+
+/** Null when storage is working; otherwise why it isn't. */
+export function idbFailure(): IdbFailure | null { return lastFailure; }
+
+/** True once anything has been written to the non-durable in-memory fallback. */
+let usedMemoryFallback = false;
+export function idbUsingMemoryFallback(): boolean { return usedMemoryFallback; }
+
 function openDb(): Promise<IDBDatabase | null> {
     if (dbPromise) return dbPromise;
     dbPromise = new Promise((resolve) => {
+        // A failed open must NOT be cached. `blocked` in particular is transient —
+        // another tab holding the database open is enough to trigger it — and
+        // caching the null poisoned the whole page session: every later read
+        // returned "no data" from the memory map even though a retry would have
+        // succeeded. Clearing the promise lets the next call try again.
+        const fail = (reason: IdbFailure, detail?: unknown) => {
+            lastFailure = reason;
+            if (detail !== undefined) console.warn('[idb-kv] open failed:', reason, detail);
+            dbPromise = null;
+            resolve(null);
+        };
         try {
-            if (typeof indexedDB === 'undefined') { resolve(null); return; }
+            if (typeof indexedDB === 'undefined') { lastFailure = 'unsupported'; resolve(null); return; }
             const req = indexedDB.open(DB_NAME, 1);
             req.onupgradeneeded = () => {
                 if (!req.result.objectStoreNames.contains(STORE)) {
                     req.result.createObjectStore(STORE);
                 }
             };
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => { console.warn('[idb-kv] open failed:', req.error); resolve(null); };
-            req.onblocked = () => resolve(null);
+            req.onsuccess = () => {
+                lastFailure = null;
+                // A database that closes under us (eviction, "clear site data" in
+                // another tab) must not leave a dead handle cached.
+                req.result.onclose = () => { dbPromise = null; };
+                req.result.onversionchange = () => { req.result.close(); dbPromise = null; };
+                resolve(req.result);
+            };
+            req.onerror = () => fail('error', req.error);
+            req.onblocked = () => fail('blocked');
         } catch (e) {
-            console.warn('[idb-kv] indexedDB unavailable:', e);
-            resolve(null);
+            fail('error', e);
         }
     });
     return dbPromise;
@@ -61,11 +101,19 @@ export async function idbGet<T>(key: string): Promise<T | undefined> {
     return withStore<T>('readonly', s => s.get(key) as IDBRequest<T>);
 }
 
+/**
+ * Write a value. Returns **false when the write did not reach disk** — it went
+ * to the in-memory fallback and will be gone on reload.
+ *
+ * This used to `return true` for the memory path, so a save into a dead
+ * IndexedDB reported success and the UI said "Saved". Losing data is bad;
+ * telling someone their data is safe while losing it is worse.
+ */
 export async function idbSet(key: string, value: unknown): Promise<boolean> {
     const db = await openDb();
-    if (!db) { memoryFallback.set(key, value); return true; }
+    if (!db) { memoryFallback.set(key, value); usedMemoryFallback = true; return false; }
     const res = await withStore('readwrite', s => s.put(value, key));
-    return res !== undefined || true;
+    return res !== undefined;
 }
 
 export async function idbDelete(key: string): Promise<void> {

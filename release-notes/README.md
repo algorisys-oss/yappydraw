@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.182](0.8.182.md) — "All my saved drawings are gone": a failed IndexedDB open made the gallery, autosave and version history all look deleted at once, cached the failure for the session, reported memory-only writes as saved, and then cleared the crash-recovery slot on that false success. Plus marquee selection now takes whole groups (Illustrator/Figma)
 - [0.8.181](0.8.181.md) — The "Something went wrong" screen traced to the host sending no `Cache-Control` on index.html (stale HTML → 404 on content-hashed chunks), fixed with a `.htaccess` policy plus a one-shot self-healing reload; and the service-worker precache cut 9.6MB → 4.6MB, which every release had been re-downloading in full
 - [0.8.180](0.8.180.md) — Group isolation: double-click into a group and select/move/align its members individually (the actual reason "aligning inside a group moved everything"); align/distribute stopped exploding groups; Bring Forward/Send Backward as a block on Illustrator's Ctrl+] / Ctrl+[; Rasterize; and align-to-key made visible
 - [0.8.176](0.8.176.md) — Closes 0.8.175's two known gaps: Create Outlines now uses real italic faces (slant-first matching, browser-matching shear where a family has none), and Knife pieces are re-fitted to curves with corners and the cut edge kept sharp — 5 anchors per half-circle instead of ~20. Glyph binaries dropped from the PWA precache

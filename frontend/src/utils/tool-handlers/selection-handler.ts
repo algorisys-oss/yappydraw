@@ -2520,6 +2520,32 @@ export function selectionOnUp(
             helpers.canInteractWithElement(el) && isLayerVisible(el.layerId)
             && isInIsolatedGroup(el, store.isolatedGroupIds);
 
+        /**
+         * Grow an area-select to whole groups — the Figma/Illustrator standard, and
+         * what clicking already did here. Touching part of a group with a marquee
+         * selects the group, so the two gestures no longer disagree about what a
+         * group is (you could previously rubber-band three shapes out of a group and
+         * drag them away from their siblings).
+         *
+         * Inside an isolated group the unit is one level in, so a marquee there still
+         * picks individual members — which is the whole point of stepping inside.
+         */
+        const expandToGroups = (ids: string[]): string[] => {
+            const out = new Set<string>();
+            for (const id of ids) {
+                const el = store.elements.find(x => x.id === id);
+                const groupId = el ? unitGroupId(el, store.isolatedGroupIds) : null;
+                if (!groupId) { out.add(id); continue; }
+                for (const member of store.elements) {
+                    // Locked members / hidden layers stay out: they're unselectable by
+                    // every other route, and dragging a selection that contains one
+                    // would move something the user cannot see or grab.
+                    if (member.groupIds?.includes(groupId) && selectable(member)) out.add(member.id);
+                }
+            }
+            return [...out];
+        };
+
         if (store.selectedTool === 'lasso') {
             // Lasso selection: point-in-polygon test on element centers
             const pts = pState.lassoPoints;
@@ -2533,12 +2559,13 @@ export function selectionOnUp(
                         selectedIds.push(el.id);
                     }
                 });
+                const units = expandToGroups(selectedIds);
                 if (e.shiftKey || e.ctrlKey || e.metaKey) {
                     const existing = new Set(store.selection);
-                    selectedIds.forEach(id => existing.add(id));
+                    units.forEach(id => existing.add(id));
                     setStore('selection', Array.from(existing));
                 } else {
-                    setStore('selection', selectedIds);
+                    setStore('selection', units);
                 }
             }
             pState.lassoPoints = [];
@@ -2576,12 +2603,13 @@ export function selectionOnUp(
                     }
                 });
 
+                const units = expandToGroups(selectedIds);
                 if (e.shiftKey || e.ctrlKey || e.metaKey) {
                     const existing = new Set(store.selection);
-                    selectedIds.forEach(id => existing.add(id));
+                    units.forEach(id => existing.add(id));
                     setStore('selection', Array.from(existing));
                 } else {
-                    setStore('selection', selectedIds);
+                    setStore('selection', units);
                 }
             }
             signals.setSelectionBox(null);

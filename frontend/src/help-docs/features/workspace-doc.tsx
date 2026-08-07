@@ -161,9 +161,10 @@ const WorkspaceDoc: Component = () => {
                     therefore does nothing — there's nothing to align it against.
                 </p>
                 <p>
-                    To align objects <em>inside</em> a group, either <strong>double-click into the group</strong> (see
-                    below) or select just the members you want — a marquee or shift-click that picks up only part of a
-                    group treats those objects individually.
+                    To align objects <em>inside</em> a group, <strong>double-click into the group</strong> (see below)
+                    and select the members there. Clicking a group and dragging a selection box around one both pick up
+                    the <em>whole</em> group, as in Illustrator and Figma; a partial selection — which does align its
+                    members individually — comes from shift-clicking members inside the group, or from the API.
                 </p>
                 <h3>Align to a key object</h3>
                 <p>

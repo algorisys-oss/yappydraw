@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.182', date: '2026-08-07', items: [
+        'If Yappy ever tells you your saved drawings are missing, it now tells you the truth about why. A browser that will not open local storage for the page — most often because another Yappy tab has it open — used to produce an empty "My Drawings" that looked exactly like everything had been deleted. It now says your drawings cannot be read right now, that nothing has been deleted, and to close other tabs and reload. Your work was always still on disk.',
+        'A save that does not reach the disk is no longer reported as a success — and, importantly, no longer throws away the crash-recovery copy of your drawing on the way. If saving fails you will see a clear message telling you to export your work to a file.',
+        'Dragging a selection box over part of a group now selects the whole group, the way clicking it already did (and the way Illustrator and Figma work). To pick out one object inside a group, double-click into the group first.',
+        'A reminder worth repeating: "My Drawings" lives in your browser, and browsers can clear that storage on their own. Anything you would hate to lose is worth exporting to a file.',
+    ] },
     { version: '0.8.181', date: '2026-08-07', items: [
         'The "Something went wrong" screen should stop appearing. It was never a fault in your drawing or in the app — the web host was not telling browsers to check for a new version, so a returning visitor could load yesterday\'s page pointing at files that had since been replaced. Reloading fixed it, which is why it looked random. If it ever does happen again, Yappy now quietly reloads itself into the current version instead of showing you the screen.',
         'Yappy loads lighter. It was quietly downloading its whole self in the background — including the HTML-player exporter, the PDF and PowerPoint writers and the maths typesetter, whether or not you ever used them — and doing it again after every update. That background download is now less than half the size, and the optional parts are fetched the first time you actually use one.',

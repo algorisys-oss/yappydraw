@@ -125,7 +125,11 @@ export const quickSaveToGallery = async () => {
         showToast(`Saved “${meta.name}” to My Drawings`, 'success');
     } catch (e) {
         console.error('[menu] quick save failed:', e);
-        showToast('Could not save to My Drawings', 'error');
+        // Be specific when the browser refused local storage: "could not save" reads
+        // as a transient glitch, and the user carries on drawing over unsaved work.
+        showToast((e as Error)?.name === 'StorageUnavailableError'
+            ? 'Could not save — the browser blocked local storage. Close other Yappy tabs and reload, then export your work to a file.'
+            : 'Could not save to My Drawings', 'error', 8000);
     }
 };
 
