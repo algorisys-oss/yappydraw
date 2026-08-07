@@ -1,0 +1,51 @@
+/* Mirrors symbol-edit-banner, offset below it so both can show at once. */
+.group-isolation-banner {
+    position: fixed;
+    top: 64px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 59;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--bg-panel, #fff);
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    font-size: 12px;
+    color: var(--text-primary, #111);
+    user-select: none;
+}
+
+.group-isolation-banner > svg { color: var(--primary-color, #3b82f6); }
+
+.gib-label { font-weight: 600; }
+
+.gib-depth {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--bg-secondary, #f6f7f9);
+    color: var(--text-secondary, #888);
+    font-size: 11px;
+}
+
+.gib-count { color: var(--text-secondary, #888); }
+
+.gib-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 9px;
+    margin-left: 2px;
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 5px;
+    background: var(--bg-secondary, #f6f7f9);
+    color: var(--text-primary, #111);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.gib-btn:hover { background: var(--bg-hover, #eee); }

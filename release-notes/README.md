@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.180](0.8.180.md) — Group isolation: double-click into a group and select/move/align its members individually (the actual reason "aligning inside a group moved everything"); align/distribute stopped exploding groups; Bring Forward/Send Backward as a block on Illustrator's Ctrl+] / Ctrl+[; Rasterize; and align-to-key made visible
 - [0.8.176](0.8.176.md) — Closes 0.8.175's two known gaps: Create Outlines now uses real italic faces (slant-first matching, browser-matching shear where a family has none), and Knife pieces are re-fitted to curves with corners and the cut edge kept sharp — 5 anchors per half-circle instead of ~20. Glyph binaries dropped from the PWA precache
 - [0.8.175](0.8.175.md) — Designer review: Font Family/Style split on a real 100–900 weight axis, Alt-drag to break a Bézier handle pair, Scissors that cuts where you click (it snapped to the nearest anchor, 76 units off), Unlock All for locked objects that could never be selected, and Create Outlines using the font you chose rather than substituting sans-serif; plus bold that had never worked on connector/BPMN labels
 - [0.8.170](0.8.170.md) — Bullet lists survive the editor: nested items were dropped outright (browsers nest a `<ul>` as a *sibling* of its `<li>`), items after a nested list merged into the previous bullet, and wrapped items grew a second marker; plus the Properties panel's align icons, which named the wrong axis

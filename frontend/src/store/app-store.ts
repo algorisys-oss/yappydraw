@@ -28,6 +28,7 @@ import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { closestPointOnSubpaths, cutSubpathAt } from "../utils/path-cut";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
+import { nextIsolationGroup, unitGroupId } from "../utils/group-utils";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
 import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType, PatternSwatch, TransformEffect, Extrude3D, Turntable } from "../types";
 import { applyTurntable } from "../utils/turntable";
@@ -260,6 +261,10 @@ interface AppState {
     compoundEdit: { groupId: string; op: BooleanOp; style: Partial<DrawingElement>; original: DrawingElement } | null;
     /** Align to the key (last-selected) object instead of the selection bbox. */
     alignToKeyObject: boolean;
+    /** Group isolation path, outermost → innermost (transient, not persisted).
+     *  While non-empty, clicks select individual objects *inside* the innermost
+     *  group instead of the whole group — Illustrator's "enter the group". */
+    isolatedGroupIds: string[];
     /** Eyedropper mode: next canvas click copies that object's style to these targets. */
     eyedropper: { active: boolean; targets: string[] };
     isLayerPanelMinimized: boolean;
@@ -573,6 +578,7 @@ const initialState: AppState = {
     symbolEdit: null,
     compoundEdit: null,
     alignToKeyObject: false,
+    isolatedGroupIds: [],
     eyedropper: { active: false, targets: [] },
     isLayerPanelMinimized: false,
     minimapVisible: false,
@@ -1150,6 +1156,10 @@ export const selectAll = () => {
         const vis = evaluateTimelineAt(store.animCurrentFrame, store.animTimeline, []).visible;
         els = els.filter(e => vis.has(e.id));
     }
+    // Inside an isolated group, "all" means that group's members — selecting the
+    // whole document would silently drag you back out of the group.
+    const iso = store.isolatedGroupIds[store.isolatedGroupIds.length - 1];
+    if (iso) els = els.filter(e => e.groupIds?.includes(iso));
     if (els.length === 0) { setStore('selection', []); return; }
     // Select-all is a pure "act on existing objects" command, so it must leave the user
     // able to act: dragging, resizing, marquee, control points and connector handles are
@@ -1223,6 +1233,90 @@ export const sendToBack = (ids: string[]) => {
         const others = els.filter(el => !ids.includes(el.id));
         return [...selected, ...others];
     });
+};
+
+/**
+ * Step a whole selection one position forward/backward in the stack.
+ *
+ * Three things this gets right that a per-element `moveElementZIndex` loop did
+ * not:
+ *  1. **One history entry** for the whole move (a 5-object selection used to
+ *     need 5 undos).
+ *  2. **No leapfrogging** — selected elements keep their relative order instead
+ *     of swapping past each other and netting out to nothing.
+ *  3. **Layer-aware, group-aware steps.** Paint order is layer order first, then
+ *     array index (see the hit-test sort in selection-handler), so stepping past
+ *     an element on another layer was an invisible no-op. We step only within
+ *     each layer, and treat a group as a single unit so one press clears the
+ *     whole group rather than nudging past one member at a time.
+ */
+export const moveSelectionZIndex = (ids: string[], direction: 'forward' | 'backward') => {
+    if (ids.length === 0) return;
+    const sel = new Set(ids);
+    /** A group moves as one unit; everything else is its own unit. Inside an
+     *  isolated group, its members restack individually. */
+    const unitKeyOf = (el: DrawingElement) => unitGroupId(el, store.isolatedGroupIds) ?? el.id;
+
+    let changed = false;
+    const next = (() => {
+        const els = store.elements;
+        // Only layers holding part of the selection get restacked.
+        const affected = new Set(els.filter(el => sel.has(el.id)).map(el => el.layerId));
+        const perLayer = new Map<string | undefined, DrawingElement[]>();
+        for (const el of els) {
+            if (!affected.has(el.layerId)) continue;
+            const bucket = perLayer.get(el.layerId);
+            if (bucket) bucket.push(el); else perLayer.set(el.layerId, [el]);
+        }
+
+        const reordered = new Map<string | undefined, DrawingElement[]>();
+        for (const [layerId, items] of perLayer) {
+            // Bucket into units, keeping first-appearance order. Rebuilding from
+            // units also makes a group contiguous in the stack, which is what
+            // "the group is one object" means for z-order.
+            const units = new Map<string, DrawingElement[]>();
+            for (const el of items) {
+                const k = unitKeyOf(el);
+                const u = units.get(k);
+                if (u) u.push(el); else units.set(k, [el]);
+            }
+            const order = [...units.keys()];
+            const isSel = (k: string) => units.get(k)!.some(el => sel.has(el.id));
+
+            if (direction === 'forward') {
+                for (let i = order.length - 2; i >= 0; i--) {
+                    if (isSel(order[i]) && !isSel(order[i + 1])) {
+                        [order[i], order[i + 1]] = [order[i + 1], order[i]];
+                        changed = true;
+                    }
+                }
+            } else {
+                for (let i = 1; i < order.length; i++) {
+                    if (isSel(order[i]) && !isSel(order[i - 1])) {
+                        [order[i], order[i - 1]] = [order[i - 1], order[i]];
+                        changed = true;
+                    }
+                }
+            }
+            reordered.set(layerId, order.flatMap(k => units.get(k)!));
+        }
+
+        if (!changed) return els;
+        // Splice each rebuilt layer back into the slots its elements occupied,
+        // leaving untouched layers exactly where they were.
+        const cursors = new Map<string | undefined, number>();
+        return els.map(el => {
+            if (!affected.has(el.layerId)) return el;
+            const i = cursors.get(el.layerId) ?? 0;
+            cursors.set(el.layerId, i + 1);
+            return reordered.get(el.layerId)![i];
+        });
+    })();
+
+    if (!changed) return;
+    pushToHistory();
+    setStore("elements", next);
+    bumpDirtyRevision();
 };
 
 export const updateGlobalTickerState = () => {
@@ -2401,6 +2495,8 @@ export const loadDocument = (doc: any) => {
     // stay pointed at the old entry, or the next save overwrites and renames
     // it — which is why the gallery only ever kept the most recent drawing.
     setActiveDrawingId(null);
+    // The isolated group belongs to the outgoing document.
+    setStore('isolatedGroupIds', []);
     batch(() => {
         // Version Migration Logic
         let elements: DrawingElement[] = [];
@@ -4060,30 +4156,17 @@ export const traceImage = (ids: string[], options: { threshold?: number; simplif
     return ids2;
 };
 
+/**
+ * Restack a single element. Kept for the public API and single-element call
+ * sites; all four directions delegate to the selection-aware helpers so a lone
+ * element and a multi-selection behave identically (one history entry,
+ * layer-aware forward/backward steps).
+ */
 export const moveElementZIndex = (id: string, direction: 'front' | 'back' | 'forward' | 'backward') => {
-    const idx = store.elements.findIndex(e => e.id === id);
-    if (idx === -1) return;
-
-    pushToHistory();
-
-    setStore("elements", els => {
-        const newEls = [...els];
-        const el = newEls.splice(idx, 1)[0];
-
-        if (direction === 'front') {
-            newEls.push(el);
-        } else if (direction === 'back') {
-            newEls.unshift(el);
-        } else if (direction === 'forward') {
-            const newIdx = Math.min(newEls.length, idx + 1);
-            newEls.splice(newIdx, 0, el);
-        } else if (direction === 'backward') {
-            const newIdx = Math.max(0, idx - 1);
-            newEls.splice(newIdx, 0, el);
-        }
-
-        return newEls;
-    });
+    if (!store.elements.some(e => e.id === id)) return;
+    if (direction === 'front') bringToFront([id]);
+    else if (direction === 'back') sendToBack([id]);
+    else moveSelectionZIndex([id], direction);
 };
 
 export const setTheme = (theme: Theme) => {
@@ -5033,6 +5116,54 @@ import { calculateAlignment, calculateDistribution, calculateSpacingDistribution
 
 export const toggleAlignToKey = (on?: boolean) => setStore('alignToKeyObject', v => on ?? !v);
 
+// ── Group isolation ("enter the group") ──────────────────────────────────────
+//
+// Clicking a grouped object selects the WHOLE group, which is right until you
+// need to touch one thing inside it — you could not select, nudge or align a
+// single child. Isolation is the standard answer: double-click to step into a
+// group, work on its members individually, Esc (or a click outside) to leave.
+// The path is a stack so nested groups can be entered one level at a time.
+
+/**
+ * Step into a group. Pass a group id, or an element id to enter the group that
+ * element sits in (one level deeper than the current isolation).
+ */
+export const enterGroupIsolation = (idOrGroupId: string): boolean => {
+    const path = store.isolatedGroupIds;
+    // An element id resolves to the next group to enter; a group id is used as-is.
+    const el = store.elements.find(e => e.id === idOrGroupId);
+    const groupId = el ? nextIsolationGroup(el, path) : idOrGroupId;
+    if (!groupId) return false;
+    if (path[path.length - 1] === groupId) return true;   // already there
+    if (!store.elements.some(e => e.groupIds?.includes(groupId))) return false;
+
+    // Entering a group that isn't a child of the current one starts a fresh path.
+    const isChild = el ? path.every(g => el.groupIds?.includes(g)) : false;
+    setStore('isolatedGroupIds', isChild ? [...path, groupId] : [groupId]);
+    return true;
+};
+
+/** Leave one level of isolation (Esc). Selects the group you stepped out into. */
+export const exitGroupIsolation = () => {
+    const path = store.isolatedGroupIds;
+    if (path.length === 0) return;
+    const left = path[path.length - 1];
+    const next = path.slice(0, -1);
+    batch(() => {
+        setStore('isolatedGroupIds', next);
+        // Re-select the group as a whole, so the object you were editing stays
+        // in view as part of its parent rather than the selection vanishing.
+        const members = store.elements.filter(e => e.groupIds?.includes(left)).map(e => e.id);
+        if (members.length) setStore('selection', members);
+    });
+};
+
+/** Leave isolation entirely (click outside, tool change, document load). */
+export const exitGroupIsolationAll = () => {
+    if (store.isolatedGroupIds.length === 0) return;
+    setStore('isolatedGroupIds', []);
+};
+
 // ── Eyedropper (pick a style from any object onto the selection) ──────────────
 
 /** Arm the eyedropper: the next canvas click on an object copies its style to
@@ -5575,6 +5706,10 @@ export const exitAllToolModes = () => {
         'blobBrushActive', 'pathEraserActive', 'puppetWarpActive', 'measureActive'] as const;
     for (const f of flags) if ((store as any)[f]) setStore(f as any, false);
     if (store.sprayerActive) { setStore('sprayerActive', false); setStore('sprayerSymbolId', null); }
+    // Group isolation is a selection mode, not a tool — but "get me out of
+    // whatever mode I'm in" has to include it, or clicks keep selecting single
+    // members with no visible reason.
+    exitGroupIsolationAll();
 };
 
 /** Type on Path — flow `text` along a line/curve/freehand element (sets curvedText + containerText). */
@@ -6558,7 +6693,7 @@ export const alignSelectedElements = (type: AlignmentType, keyId?: string) => {
     // Align-to-key: with the toggle on, the key object is the last-selected
     // element (it stays put; the rest align to it).
     const key = keyId ?? (store.alignToKeyObject ? store.selection[store.selection.length - 1] : undefined);
-    const updates = calculateAlignment(store.selection, store.elements, type, key);
+    const updates = calculateAlignment(store.selection, store.elements, type, key, store.isolatedGroupIds);
     if (updates.length > 0) {
         pushToHistory();
         setStore('elements',
@@ -6614,7 +6749,7 @@ export const cycleFillStyle = () => {
 
 export const distributeSelectedElements = (type: DistributionType) => {
     if (store.selection.length < 3) return;
-    const updates = calculateDistribution(store.selection, store.elements, type);
+    const updates = calculateDistribution(store.selection, store.elements, type, store.isolatedGroupIds);
     if (updates.length > 0) {
         pushToHistory();
         setStore('elements',
@@ -6631,7 +6766,7 @@ export const distributeSelectedElements = (type: DistributionType) => {
 /** Distribute by equal edge-to-edge spacing (or a fixed `gap` px between each). */
 export const distributeSpacing = (type: DistributionType, gap?: number) => {
     if (store.selection.length < (gap !== undefined ? 2 : 3)) return;
-    const updates = calculateSpacingDistribution(store.selection, store.elements, type, gap);
+    const updates = calculateSpacingDistribution(store.selection, store.elements, type, gap, store.isolatedGroupIds);
     if (updates.length > 0) {
         pushToHistory();
         setStore('elements',

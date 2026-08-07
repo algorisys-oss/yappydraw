@@ -24,8 +24,8 @@ import {
     updateSlideTransition, updateSlideBackground, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
     setBlueprint, toggleBlueprint, blueprintFor,
     advancePresentation, retreatPresentation,
-    bringToFront, sendToBack, moveElementZIndex,
-    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
+    bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
+    alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -36,6 +36,7 @@ import {
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
+import { rasterizeSelection } from "./utils/rasterize";
 import type { SvgThemeOptions } from "./utils/svg-theme";
 import { toExcalidraw, fromExcalidraw } from "./utils/excalidraw-io";
 import {
@@ -1589,6 +1590,9 @@ export const YappyAPI = {
             setStore("elements", []);
             setStore("selection", []);
         }
+        // The isolated group's members are gone; staying "inside" it would leave
+        // clicks in single-object mode with nothing on screen to explain it.
+        exitGroupIsolationAll();
     },
 
     /**
@@ -3722,6 +3726,24 @@ export const YappyAPI = {
     bringToFront(ids: string[]) { bringToFront(ids); },
     sendToBack(ids: string[]) { sendToBack(ids); },
     moveElementZIndex(id: string, direction: 'front' | 'back' | 'forward' | 'backward') { moveElementZIndex(id, direction); },
+    /**
+     * Step a whole selection one slot forward/backward (Ctrl+] / Ctrl+[).
+     * Moves as a block — relative order kept, groups treated as one object,
+     * stepping only past siblings on the same layer, one undo for the lot.
+     */
+    moveSelectionZIndex(ids: string[], direction: 'forward' | 'backward') { moveSelectionZIndex(ids, direction); },
+
+    /**
+     * Rasterize artwork into a single image element (Object ▸ Rasterize).
+     * Replaces the sources in place — same layer, same stacking slot — unless
+     * `keepSource` is set. Resolves to the new image element's id.
+     * @param ids - elements to rasterize (default: current selection)
+     * @param options - `scale` px per unit (default 2), `background` colour
+     *                  (default transparent), `keepSource` to keep the vectors
+     */
+    rasterize(ids?: string[], options?: { scale?: number; background?: string; keepSource?: boolean }) {
+        return rasterizeSelection(ids, options);
+    },
 
     // Alignment & Distribution
     alignSelectedElements(type: AlignmentType, keyId?: string) { alignSelectedElements(type, keyId); },
@@ -3730,6 +3752,21 @@ export const YappyAPI = {
     distributeSpacing(type: DistributionType, gap?: number) { distributeSpacing(type, gap); },
     /** Toggle align-to-key-object mode (key = last-selected element stays put). */
     toggleAlignToKey(on?: boolean) { toggleAlignToKey(on); },
+
+    // --- Group isolation ("enter the group") ---
+    /**
+     * Step into a group so clicks, moves and align/distribute act on its members
+     * individually instead of the group as a whole (double-click on canvas).
+     * Pass an element id to enter the group containing it, or a group id
+     * directly. Returns false if there's nothing deeper to enter.
+     */
+    enterGroup(idOrGroupId: string) { return enterGroupIsolation(idOrGroupId); },
+    /** Leave one level of group isolation (Esc), re-selecting the group. */
+    exitGroup() { exitGroupIsolation(); },
+    /** Leave group isolation entirely. */
+    exitAllGroups() { exitGroupIsolationAll(); },
+    /** The current isolation path, outermost → innermost ([] when not inside a group). */
+    get isolatedGroups() { return [...store.isolatedGroupIds]; },
     /** Blend: create `steps` interpolated copies between two objects (default 4). */
     blend(steps = 4, ids?: string[]) { blendShapes(ids, steps); },
     /** Blend along a spine: distribute `steps` interpolated copies of two shapes along a

@@ -154,12 +154,31 @@ const WorkspaceDoc: Component = () => {
                     Select two or more objects → the <strong>Alignment</strong> group in the Properties panel. Align
                     left/centre/right and top/middle/bottom; distribute spreads three or more objects evenly.
                 </p>
+                <h3>Groups align as one object</h3>
+                <p>
+                    A group counts as a <em>single</em> object for both align and distribute: the group's bounding box
+                    is what lines up, and its members keep their internal arrangement. Selecting one group on its own
+                    therefore does nothing — there's nothing to align it against.
+                </p>
+                <p>
+                    To align objects <em>inside</em> a group, either <strong>double-click into the group</strong> (see
+                    below) or select just the members you want — a marquee or shift-click that picks up only part of a
+                    group treats those objects individually.
+                </p>
                 <h3>Align to a key object</h3>
                 <p>
-                    Toggle the <strong>crosshair</strong> button to align <em>to the key object</em> — the
-                    <strong> last-selected</strong> object stays put and everything else lines up to it (instead of to
-                    the selection's bounding box). Great for snapping a row of items to one anchor.
+                    Toggle the <strong>crosshair</strong> button (Properties panel, or the <strong>Align</strong> dock
+                    panel) to align <em>to the key object</em> — one object stays put and everything else lines up to
+                    it, instead of to the selection's bounding box. Great for snapping a row of items to one anchor.
                 </p>
+                <p>
+                    The key object is drawn with a <strong>thicker blue outline and a corner pip</strong>. By default
+                    it's the last object you added to the selection; with the mode on, <strong>click any
+                    already-selected object</strong> to make it the key (Illustrator's gesture). Scripts can name one
+                    explicitly instead:
+                </p>
+                <pre><code>{`Yappy.toggleAlignToKey(true);
+Yappy.alignSelectedElements('left', keyId);   // keyId stays put`}</code></pre>
                 <h3>Distribute spacing</h3>
                 <p>
                     The two <strong>space-around</strong> buttons distribute by <em>gap</em>, not centre: they make the
@@ -169,6 +188,91 @@ const WorkspaceDoc: Component = () => {
                 <p class="tip-box">
                     Centre distribution equalizes object <em>centres</em>; spacing distribution equalizes the
                     <em> gaps</em> — use spacing when objects are different sizes and you want even whitespace.
+                </p>
+            </section>
+
+            {/* ─── GROUP ISOLATION ────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Working inside a group</h2>
+                <p>
+                    Clicking any member of a group selects the whole group — right up until you need to touch one thing
+                    inside it. <strong>Double-click</strong> a grouped object to step <em>into</em> the group: a bar
+                    appears at the top of the canvas, and from then on clicks select individual members, which you can
+                    move, restyle, restack and align on their own.
+                </p>
+                <ul>
+                    <li><strong>Double-click again</strong> to go one level deeper into a nested group.</li>
+                    <li><strong>Esc</strong> (or <strong>Up one</strong> in the bar) steps back out one level and
+                        re-selects the group.</li>
+                    <li>Clicking <strong>outside</strong> the group — on other artwork or empty canvas — leaves
+                        isolation entirely.</li>
+                    <li>While inside, marquee-select and <span class="kbd">Ctrl</span>+<span class="kbd">A</span> are
+                        confined to that group's members.</li>
+                </ul>
+                <p class="tip-box">
+                    Text inside a group needs two double-clicks: the first enters the group, the second starts editing
+                    the text — the same as Illustrator.
+                </p>
+                <pre><code>{`Yappy.enterGroup(elementId);   // step into the group containing this element
+Yappy.isolatedGroups;          // ['group-…'] — outermost → innermost
+Yappy.exitGroup();             // up one level
+Yappy.exitAllGroups();         // leave entirely`}</code></pre>
+            </section>
+
+            {/* ─── ARRANGE (STACKING ORDER) ───────────────────────────── */}
+            <section class="doc-section">
+                <h2>Arrange — stacking order</h2>
+                <p>
+                    Right-click → <strong>Arrange</strong>, the arrow buttons in the Properties panel, or the keyboard:
+                </p>
+                <table class="doc-table">
+                    <thead><tr><th>Action</th><th>Shortcut</th></tr></thead>
+                    <tbody>
+                        <tr><td>Bring Forward (one step)</td><td><span class="kbd">Ctrl</span>+<span class="kbd">]</span></td></tr>
+                        <tr><td>Send Backward (one step)</td><td><span class="kbd">Ctrl</span>+<span class="kbd">[</span></td></tr>
+                        <tr><td>Bring to Front</td><td><span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">]</span></td></tr>
+                        <tr><td>Send to Back</td><td><span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">[</span></td></tr>
+                    </tbody>
+                </table>
+                <p>
+                    These match Illustrator and Figma. A multi-selection moves as one <strong>block</strong> — the
+                    selected objects keep their order relative to each other and the whole move is a single undo. One
+                    press also steps over an entire <strong>group</strong> rather than one member at a time.
+                </p>
+                <p class="tip-box">
+                    Stacking is per <strong>layer</strong>: paint order is layer order first, then position within the
+                    layer. Stepping forward moves an object past its neighbours <em>on its own layer</em> — to put it
+                    above artwork on a higher layer, move the object to that layer (or reorder the layers with
+                    <span class="kbd">Alt</span>+<span class="kbd">[</span> / <span class="kbd">]</span>).
+                </p>
+            </section>
+
+            {/* ─── RASTERIZE ──────────────────────────────────────────── */}
+            <section class="doc-section">
+                <h2>Rasterize — vector to bitmap</h2>
+                <p>
+                    Right-click → <strong>Rasterize</strong> (or the command palette) converts the selected artwork into
+                    a single image element. The bitmap takes the selection's place: same layer, same slot in the
+                    stacking order, so nothing jumps in front of or behind its neighbours. Rotation, opacity and
+                    effects are baked into the pixels.
+                </p>
+                <ul>
+                    <li><strong>1× / 2× / 4×</strong> — pixels per canvas unit. 2× is the retina-friendly default; 4× is for print-scale zoom.</li>
+                    <li><strong>Rasterize on White</strong> — flattens onto an opaque white backdrop instead of keeping transparency.</li>
+                    <li><strong>Rasterize a Copy</strong> — keeps the vectors and drops the bitmap directly on top, so you can go back.</li>
+                </ul>
+                <p>
+                    Only the selected objects are drawn — overlapping neighbours are never baked in. Rasterizing a whole
+                    group produces one ungrouped image; rasterizing <em>part</em> of a group leaves the image inside
+                    that group.
+                </p>
+                <pre><code>{`const id = await Yappy.rasterize();                      // selection, 2x, transparent
+await Yappy.rasterize([a, b], { scale: 4 });             // print-scale
+await Yappy.rasterize(undefined, { keepSource: true });  // keep the vectors`}</code></pre>
+                <p class="tip-box">
+                    Rasterizing is one-way — the vectors are gone once you convert (undo aside), so use
+                    <strong> Rasterize a Copy</strong> if you might still need to edit the original. Very large
+                    selections are capped at 16384px on the longest edge.
                 </p>
             </section>
 

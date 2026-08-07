@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.180', date: '2026-08-07', items: [
+        'You can work inside a group. Double-click a grouped object to step into the group — from then on clicks select individual members, so you can move, restyle, restack and align one object without pulling the whole group around. Press Esc (or click outside) to step back out. Double-click again to go deeper into a nested group.',
+        'Aligning two groups no longer destroys them. Align Left used to move every member of every group onto the same edge, collapsing the artwork. A group now lines up as one object and keeps its internal arrangement. If you select only part of a group — a marquee, or shift-click — those objects still align individually, because that is plainly what you meant.',
+        'Bring Forward and Send Backward have shortcuts: Ctrl+] and Ctrl+[, matching Illustrator and Figma. Bring to Front and Send to Back move to Ctrl+Shift+] and Ctrl+Shift+[. Stepping now moves a whole selection together in one undo, keeps the objects in their relative order, and clears a whole group in one press instead of nudging past one member at a time.',
+        'Rasterize turns vector artwork into an image. Right-click → Rasterize, at 1×, 2× or 4× — the picture takes the artwork\'s exact place in the stack, so nothing jumps in front of or behind its neighbours. Only what you selected is drawn, so an overlapping neighbour is never baked in. "Rasterize a Copy" keeps the vectors in case you need them back.',
+        'Align to key object is findable at last. The object everything lines up to is now drawn with a thicker outline — and with the mode on, you pick it by clicking any object already in the selection. The toggle also sits in the Align panel, not just in Properties.',
+    ] },
     { version: '0.8.178', date: '2026-08-06', items: [
         'Pan, Commands & Tools, the Vector Tools palette and Shape Builder have moved to the top bar, next to Settings. They were sitting in the left column among the pens and shapes, which is meant to be the things you draw with. Pan lights up while it is active; click it again to go back to Select. On a narrow screen all four are in the menu.',
         'On an iPad the top bar now shows all its buttons. In portrait it was collapsing to the phone layout — just the menu button — while the tool column stayed full size, so half the app was in one layout and half in the other.',

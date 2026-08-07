@@ -4,11 +4,11 @@
  * dockable-panel system (Phase C — a second registered panel so the dock is genuinely multi-panel).
  */
 import { type Component, Show, For } from "solid-js";
-import { store, alignSelectedElements, distributeSelectedElements } from "../../store/app-store";
+import { store, alignSelectedElements, distributeSelectedElements, toggleAlignToKey } from "../../store/app-store";
 import {
     AlignStartVertical, AlignCenterVertical, AlignEndVertical,
     AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal,
-    AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
+    AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, Crosshair,
 } from "lucide-solid";
 
 const DockAlignPanel: Component = () => {
@@ -39,6 +39,16 @@ const DockAlignPanel: Component = () => {
                     <button style={cell} title="Distribute horizontally" onClick={() => distributeSelectedElements('horizontal')}><AlignHorizontalDistributeCenter size={15} /></button>
                     <button style={cell} title="Distribute vertically" onClick={() => distributeSelectedElements('vertical')}><AlignVerticalDistributeCenter size={15} /></button>
                 </div>
+                {/* Align to key object — the mode lived only in the properties panel,
+                    so nobody found it. It belongs next to the align buttons. */}
+                <button
+                    style={{
+                        ...cell, 'margin-top': '8px', gap: '6px', 'font-size': '11px',
+                        ...(store.alignToKeyObject ? { background: 'var(--primary-color, #3b82f6)', color: '#fff' } : {}),
+                    }}
+                    title="Align to key object — click a selected object to make it the key; it stays put and the rest align to it"
+                    onClick={() => toggleAlignToKey()}
+                ><Crosshair size={14} /> Align to key</button>
             </Show>
         </div>
     );

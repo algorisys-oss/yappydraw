@@ -5,11 +5,12 @@ import { applyCompositionOverrides } from "../utils/animation/composition-evalua
 import { evaluateTimelineAt, evaluateCameraAt } from "../utils/animation/frame-timeline-evaluator";
 import { animVisibleIds, reconcileTimelineElements } from "../store/anim-ops";
 import { renderOnionSkins } from "../utils/onion-skin";
+import { unitGroupId } from "../utils/group-utils";
 import { renderDimensions } from "../utils/dimension-renderer";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, applyEyedropperFrom, cancelEyedropper, deleteElements, setPenConstrain, syncLiveSymmetry } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, deleteElements, setPenConstrain, syncLiveSymmetry } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { canvasViewport, publishDockVars, dockInsets } from "../utils/dock-layout";
@@ -565,6 +566,7 @@ const Canvas: Component = () => {
         renderSelectionOverlays(ctx, {
             elements: store.elements, selection: store.selection, scale,
             nodeToolActive: store.nodeToolActive,
+            alignToKeyObject: store.alignToKeyObject,
             selectionBox: selectionBox(), lassoPoints: lassoPoints(),
             suggestedBinding: suggestedBinding(),
             snappingGuides: snappingGuides(), spacingGuides: spacingGuides(),
@@ -2020,6 +2022,28 @@ const Canvas: Component = () => {
                     requestAnimationFrame(draw);
                     return;
                 }
+            }
+
+            // Double-click a grouped object → step INTO the group and select just
+            // that object (Illustrator's group isolation). One level per
+            // double-click, so nested groups open one at a time. Text inside a
+            // group therefore needs two double-clicks to reach the text editor:
+            // the first enters the group, the second starts editing — same as
+            // Illustrator, and the alternative (skipping straight to the text)
+            // would make objects inside groups unreachable.
+            for (let i = store.elements.length - 1; i >= 0; i--) {
+                const el = store.elements[i];
+                if (!el.groupIds || el.groupIds.length === 0) continue;
+                if (!canInteractWithElement(el) || !isLayerVisible(el.layerId)) continue;
+                if (!hitTestElement(el, wx, wy, threshold, store.elements, elementMap)) continue;
+                if (!enterGroupIsolation(el.id)) break;   // already at the innermost level
+                e.preventDefault();
+                const unitId = unitGroupId(el, store.isolatedGroupIds);
+                setStore('selection', unitId
+                    ? store.elements.filter(m => m.groupIds?.includes(unitId)).map(m => m.id)
+                    : [el.id]);
+                requestAnimationFrame(draw);
+                return;
             }
         }
 

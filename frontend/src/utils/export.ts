@@ -519,6 +519,64 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
     link.click();
 };
 
+/** Largest canvas edge browsers reliably allocate; beyond this `toDataURL` returns a blank image. */
+const MAX_RASTER_EDGE = 16384;
+
+/**
+ * Render exactly the given elements to a PNG (Object ▸ Rasterize).
+ *
+ * Unlike `exportRegion`, which paints everything overlapping a rectangle, this
+ * paints ONLY `ids` — so rasterizing a shape that overlaps other art doesn't
+ * bake the neighbours into the bitmap. Bounds are the visual bounds (rotation /
+ * stroke / shadow / effects aware) so nothing is clipped off, and the returned
+ * rect is where the bitmap belongs in world space.
+ */
+export const rasterizeElements = async (
+    ids: string[], scale = 2, background?: string,
+): Promise<{ dataURL: string; x: number; y: number; width: number; height: number; pixelWidth: number; pixelHeight: number } | null> => {
+    await ensureExportImages();
+    const idSet = new Set(ids);
+    // Keep document order so the raster stacks the same way the canvas does.
+    const elements = store.elements.filter(el => idSet.has(el.id) && !el.isNullObject && !el.isClipMask);
+    if (elements.length === 0) return null;
+
+    const { minX, minY, maxX, maxY } = elementsBounds(elements);
+    const padding = 2;                       // matches exportToPng's tight crop
+    const width = maxX - minX + padding * 2;
+    const height = maxY - minY + padding * 2;
+    if (!(width >= 1) || !(height >= 1)) return null;
+
+    // Clamp the resolution rather than handing the browser a canvas it will
+    // silently fail to allocate.
+    const safeScale = Math.max(0.05, Math.min(scale, MAX_RASTER_EDGE / Math.max(width, height)));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(width * safeScale));
+    canvas.height = Math.max(1, Math.round(height * safeScale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    if (background) {
+        ctx.fillStyle = background;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    ctx.scale(safeScale, safeScale);
+    ctx.translate(-minX + padding, -minY + padding);
+
+    const rc = rough.canvas(canvas);
+    for (const el of elements) {
+        try { renderElWithEffects(rc, ctx, el); } catch { /* skip a shape rather than lose the whole raster */ }
+    }
+
+    let dataURL: string;
+    try { dataURL = canvas.toDataURL('image/png'); } catch { return null; }
+    return {
+        dataURL, x: minX - padding, y: minY - padding, width, height,
+        pixelWidth: canvas.width, pixelHeight: canvas.height,
+    };
+};
+
 /** Export an arbitrary world-space rectangle to PNG (Slice tool). Elements are clipped to it. */
 export const exportRegion = (x: number, y: number, w: number, h: number, name = 'slice', scale = 2, download = true): string | undefined => {
     if (w < 1 || h < 1) return undefined;

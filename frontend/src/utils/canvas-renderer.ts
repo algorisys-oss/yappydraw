@@ -19,7 +19,8 @@ import { buildFilterString } from './image-filter-utils';
 import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
 import { RenderPipeline } from '../shapes/base/render-pipeline';
-import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight, drawDeleteHandle } from './selection-renderer';
+import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight, drawDeleteHandle, renderKeyObjectHighlight } from './selection-renderer';
+import { clusterSelection } from './alignment';
 import { renderSnappingGuides, renderSpacingGuides, renderMeasureGaps, renderPointSnapMarker } from './snap-renderer';
 import rough from 'roughjs';
 
@@ -194,6 +195,8 @@ export interface SelectionOverlayParams {
     tableColumnDrop?: { elementId: string; sourceCol: number; targetCol: number } | null;
     /** Node tool is on — suppress multi-selection transform chrome. */
     nodeToolActive?: boolean;
+    /** Align-to-key mode is on — mark the key object (the last-selected one). */
+    alignToKeyObject?: boolean;
 }
 
 export interface ConnectionAnchorParams {
@@ -1071,6 +1074,14 @@ export function renderSelectionOverlays(
         if (params.appMode !== 'presentation' && params.appMode !== 'embed') {
             const dp = getDeleteHandlePosition(elements, selection, scale);
             if (dp) drawDeleteHandle(ctx, dp, scale);
+        }
+        // Align-to-key: show which object everything else will align onto. The
+        // key is the last-selected element; if it sits in a group, the whole
+        // group is the key unit (that's what alignment moves).
+        if (params.alignToKeyObject) {
+            const keyId = selection[selection.length - 1];
+            const keyCluster = clusterSelection(selection, elements).find(c => c.members.some(el => el.id === keyId));
+            if (keyCluster) renderKeyObjectHighlight(ctx, keyCluster, scale);
         }
     }
 

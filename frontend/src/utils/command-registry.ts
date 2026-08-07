@@ -8,7 +8,7 @@ import {
     mirrorCopy, transformAgain, convertTextToOutlines,
     toggleSymmetry, toggleSymmetryAxis, setSymmetryMode, toggleSymmetryEditing,
     setSymmetryCenter, mirrorAcrossSymmetry,
-    moveElementZIndex, undo, redo, deleteElements, toggleTheme,
+    moveSelectionZIndex, undo, redo, deleteElements, toggleTheme,
     setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode,
     updateGlobalSettings, togglePenStabilization,
     toggleShapeBuilder, toggleLivePaint, makeLivePaint, releaseLivePaint, selectSimilar, applyDistort,
@@ -25,6 +25,7 @@ import { setIsDSLImportOpen, quickSaveToGallery } from "../components/menu";
 import { setShowDrawingsGallery } from "../components/drawings-gallery-signal";
 import type { ToolType } from "../types";
 import { canvasCenterClient } from './dock-layout';
+import { rasterizeSelection } from './rasterize';
 
 export interface Command {
     id: string;
@@ -262,10 +263,13 @@ export const getCommands = (): Command[] => {
         { id: 'action-redo', label: 'Redo', category: 'Actions', action: () => redo(), shortcut: 'Ctrl+Y' },
         { id: 'action-group', label: 'Group Selection', category: 'Actions', action: () => groupSelected(), shortcut: 'Ctrl+G' },
         { id: 'action-ungroup', label: 'Ungroup Selection', category: 'Actions', action: () => ungroupSelected(), shortcut: 'Ctrl+Shift+G' },
-        { id: 'action-front', label: 'Bring to Front', category: 'Actions', action: () => bringToFront(store.selection), shortcut: 'Ctrl+]' },
-        { id: 'action-back', label: 'Send to Back', category: 'Actions', action: () => sendToBack(store.selection), shortcut: 'Ctrl+[' },
-        { id: 'action-forward', label: 'Bring Forward', category: 'Actions', action: () => moveElementZIndex(store.selection[0], 'forward') },
-        { id: 'action-backward', label: 'Send Backward', category: 'Actions', action: () => moveElementZIndex(store.selection[0], 'backward') },
+        { id: 'action-front', label: 'Bring to Front', category: 'Actions', action: () => bringToFront(store.selection), shortcut: 'Ctrl+Shift+]' },
+        { id: 'action-back', label: 'Send to Back', category: 'Actions', action: () => sendToBack(store.selection), shortcut: 'Ctrl+Shift+[' },
+        { id: 'action-forward', label: 'Bring Forward', category: 'Actions', action: () => moveSelectionZIndex(store.selection, 'forward'), shortcut: 'Ctrl+]' },
+        { id: 'action-backward', label: 'Send Backward', category: 'Actions', action: () => moveSelectionZIndex(store.selection, 'backward'), shortcut: 'Ctrl+[' },
+        { id: 'action-rasterize', label: 'Rasterize Selection (2×)', category: 'Actions', action: () => { void rasterizeSelection([...store.selection], { scale: 2 }); } },
+        { id: 'action-rasterize-4x', label: 'Rasterize Selection (4× — print)', category: 'Actions', action: () => { void rasterizeSelection([...store.selection], { scale: 4 }); } },
+        { id: 'action-rasterize-copy', label: 'Rasterize a Copy (keeps the vector)', category: 'Actions', action: () => { void rasterizeSelection([...store.selection], { scale: 2, keepSource: true }); } },
         { id: 'action-delete', label: 'Delete Selected', category: 'Actions', action: () => deleteElements(store.selection), shortcut: 'Del' },
         { id: 'action-flip-h', label: 'Flip Horizontal', category: 'Actions', action: () => flipSelected('horizontal'), shortcut: 'Shift+H' },
         { id: 'action-flip-v', label: 'Flip Vertical', category: 'Actions', action: () => flipSelected('vertical'), shortcut: 'Shift+V' },

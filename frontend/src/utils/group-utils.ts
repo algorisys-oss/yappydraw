@@ -1,6 +1,55 @@
 import type { DrawingElement } from "../types";
 
 /**
+ * Which group an element belongs to *for selection purposes*, honouring group
+ * isolation (Illustrator's "enter the group" mode).
+ *
+ * `el.groupIds` runs innermost → outermost. Normally the selection unit is the
+ * outermost group: click any member, get the whole group. Inside an isolated
+ * group the unit is one level deeper — the child group directly under the
+ * isolated one, or the element itself once there are no more levels. That is
+ * what makes it possible to select, move and align a single object inside a
+ * group instead of shunting the whole group around.
+ *
+ * Returns null when the element itself is the unit. Elements that don't belong
+ * to the isolated group fall back to their outermost group (clicking one exits
+ * isolation, which is the caller's job).
+ */
+export function unitGroupId(el: DrawingElement, isolatedGroupIds: string[] = []): string | null {
+    const gids = el.groupIds;
+    if (!gids || gids.length === 0) return null;
+
+    const iso = isolatedGroupIds[isolatedGroupIds.length - 1];
+    if (iso) {
+        const k = gids.indexOf(iso);
+        if (k >= 0) return k > 0 ? gids[k - 1] : null;
+    }
+    return gids[gids.length - 1];
+}
+
+/**
+ * The group a double-click should step into, given the current isolation path —
+ * the outermost group when nothing is isolated, then one level deeper each
+ * time. Null when there is nothing left to enter.
+ */
+export function nextIsolationGroup(el: DrawingElement, isolatedGroupIds: string[] = []): string | null {
+    const gids = el.groupIds;
+    if (!gids || gids.length === 0) return null;
+
+    const iso = isolatedGroupIds[isolatedGroupIds.length - 1];
+    if (!iso) return gids[gids.length - 1];
+    const k = gids.indexOf(iso);
+    return k > 0 ? gids[k - 1] : null;
+}
+
+/** Is this element inside the currently isolated group? */
+export function isInIsolatedGroup(el: DrawingElement, isolatedGroupIds: string[] = []): boolean {
+    const iso = isolatedGroupIds[isolatedGroupIds.length - 1];
+    if (!iso) return true;                       // nothing isolated — everything counts
+    return !!el.groupIds?.includes(iso);
+}
+
+/**
  * Calculate the axis-aligned bounding box for all elements in a group
  */
 export function getGroupBoundingBox(groupId: string, elements: DrawingElement[]): { x: number; y: number; width: number; height: number } | null {

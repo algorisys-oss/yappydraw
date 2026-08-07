@@ -824,6 +824,36 @@ export function renderMultiSelectionBox(
 }
 
 /**
+ * Outline the KEY OBJECT of an align-to-key selection — the one thing that will
+ * stay put while everything else moves onto it.
+ *
+ * Without this the mode was invisible: the key is simply the last-selected
+ * object, so users had no way to see (or choose) which one anchored the align.
+ * Illustrator marks it with a heavier outline; we do the same, plus a small
+ * anchor pip at the corner so it reads even against a busy shape.
+ */
+export function renderKeyObjectHighlight(
+    ctx: CanvasRenderingContext2D,
+    box: { x: number; y: number; width: number; height: number },
+    scale: number
+): void {
+    const pad = 3 / scale;
+    ctx.save();
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 3 / scale;
+    ctx.setLineDash([]);
+    ctx.strokeRect(box.x - pad, box.y - pad, box.width + pad * 2, box.height + pad * 2);
+
+    // Anchor pip, top-left.
+    const r = 4 / scale;
+    ctx.fillStyle = '#3b82f6';
+    ctx.beginPath();
+    ctx.arc(box.x - pad, box.y - pad, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
+/**
  * Draw the drag-selection rectangle.
  */
 export function renderSelectionBox(

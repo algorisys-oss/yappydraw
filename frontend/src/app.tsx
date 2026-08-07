@@ -8,7 +8,7 @@ import {
   addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper, exitCompoundEdit,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
   setSelectedTool, setStore, groupSelected, ungroupSelected,
-  bringToFront, sendToBack, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
+  bringToFront, sendToBack, moveSelectionZIndex, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
   setIsExportOpen, setActiveSlide, setViewState, zoomToFit, zoomToSelection, pushToHistory,
   setActiveDsOpsElement, updateGlobalSettings, togglePenStabilization, rotateView, resetRotation,
   transformAgain, recordTransform, convertTextToOutlines, toggleSymmetry, setSymmetryCenter, toggleSymmetryEditing,
@@ -46,6 +46,7 @@ import { SliceToolOverlay } from './components/slice-tool-overlay';
 import { SymbolismOverlay } from './components/symbolism-overlay';
 import { TypeOnPathOverlay } from './components/type-on-path-overlay';
 import { SymbolEditBanner } from './components/symbol-edit-banner';
+import { GroupIsolationBanner } from './components/group-isolation-banner';
 import Toolbar from './components/toolbar';
 import {
   copyToClipboard, cutToClipboard,
@@ -589,12 +590,21 @@ const App: Component = () => {
         } else if (key === 'x' || code === 'KeyX') {
           e.preventDefault();
           await cutToClipboard();
-        } else if (key === ']') {
+        } else if (key === ']' || key === '}' || code === 'BracketRight') {
+          // Illustrator/Figma standard: Ctrl+] steps one forward, Ctrl+Shift+]
+          // jumps to the front. Match on `code` too — Shift+] emits '}' on a US
+          // layout, and the bracket keys sit elsewhere on other layouts.
           e.preventDefault();
-          if (store.selection.length > 0) bringToFront(store.selection);
-        } else if (key === '[') {
+          if (store.selection.length > 0) {
+            if (e.shiftKey) bringToFront(store.selection);
+            else moveSelectionZIndex(store.selection, 'forward');
+          }
+        } else if (key === '[' || key === '{' || code === 'BracketLeft') {
           e.preventDefault();
-          if (store.selection.length > 0) sendToBack(store.selection);
+          if (store.selection.length > 0) {
+            if (e.shiftKey) sendToBack(store.selection);
+            else moveSelectionZIndex(store.selection, 'backward');
+          }
         } else if (key === 'd' && e.shiftKey) {
           // Transform Again — replay the last move/duplicate transform on a fresh copy.
           e.preventDefault();
@@ -1467,6 +1477,7 @@ const App: Component = () => {
         <SymbolismOverlay />
         <TypeOnPathOverlay />
         <SymbolEditBanner />
+        <GroupIsolationBanner />
         <Show when={isMultiPageDocType(store.docType)}>
           <Show when={store.appMode !== 'presentation' && !store.zenMode && store.showSlideNavigator} fallback={
             <Show when={store.appMode === 'presentation' && !store.gameActive}>

@@ -9,7 +9,7 @@ import { batch } from 'solid-js';
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, updateElement, setStore, pushToHistory, isLayerVisible, toggleCollapse, addChildNode, setShowCanvasProperties, bumpDirtyRevision, deleteElements } from '../../store/app-store';
+import { store, updateElement, setStore, pushToHistory, isLayerVisible, toggleCollapse, addChildNode, setShowCanvasProperties, bumpDirtyRevision, deleteElements, exitGroupIsolationAll } from '../../store/app-store';
 import { setTransformPivot, getElementPivot, getCustomPivot } from '../transform-pivot';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition, getSelectionBoundingBox } from '../handle-detection';
@@ -26,7 +26,7 @@ import { getIntersectionPoints } from '../path-intersection';
 import { shapeToPath } from '../shape-to-path';
 import { snapAngleRad, constrainToAngle } from '../angle-constrain';
 import { calculateAllAnimatedStates } from '../animation-utils';
-import { getGroupsSortedByPriority, isPointInGroupBounds } from '../group-utils';
+import { getGroupsSortedByPriority, isPointInGroupBounds, unitGroupId, isInIsolatedGroup } from '../group-utils';
 import { normalizePoints } from '../render-element';
 import { connectorHandleOnDown } from './minor-handlers';
 import { constrainHandleVec } from './pen-path-handler';
@@ -763,12 +763,22 @@ export function selectionOnDown(
         const hitEl = store.elements.find(e => e.id === hitId);
         let idsToSelect = [hitId];
 
-        // If element is grouped, select the outermost group
-        if (hitEl && hitEl.groupIds && hitEl.groupIds.length > 0) {
-            const outermostId = hitEl.groupIds[hitEl.groupIds.length - 1];
-            idsToSelect = store.elements
-                .filter(el => el.groupIds && el.groupIds.includes(outermostId))
-                .map(el => el.id);
+        // Clicking outside the isolated group leaves isolation (Illustrator), so
+        // the click that follows selects normally rather than being trapped.
+        if (hitEl && store.isolatedGroupIds.length > 0 && !isInIsolatedGroup(hitEl, store.isolatedGroupIds)) {
+            exitGroupIsolationAll();
+        }
+
+        // Grouped elements select as their group — but only down to the level
+        // we've stepped into, so inside an isolated group a click picks the one
+        // object (or the one nested group) under the cursor.
+        if (hitEl) {
+            const unitId = unitGroupId(hitEl, store.isolatedGroupIds);
+            if (unitId) {
+                idsToSelect = store.elements
+                    .filter(el => el.groupIds && el.groupIds.includes(unitId))
+                    .map(el => el.id);
+            }
         }
 
         const isAllSelected = idsToSelect.every(id => store.selection.includes(id));
@@ -786,6 +796,14 @@ export function selectionOnDown(
         } else {
             if (!isAllSelected) {
                 setStore('selection', idsToSelect);
+            } else if (store.alignToKeyObject && store.selection.length > idsToSelect.length) {
+                // Align-to-key: clicking an already-selected object promotes it to
+                // the key (Illustrator's gesture), which here means moving it to
+                // the end of the selection — that's where alignment reads the key
+                // from. Only in key mode, so ordinary clicks don't quietly reorder
+                // a selection other features read in order.
+                const promoted = new Set(idsToSelect);
+                setStore('selection', s => [...s.filter(id => !promoted.has(id)), ...idsToSelect]);
             }
         }
 
@@ -832,6 +850,9 @@ export function selectionOnDown(
         // win when actually clicked.
         const sortedGroups = getGroupsSortedByPriority(store.elements, store.layers);
         for (const { groupId } of sortedGroups) {
+            // While isolated, empty space inside the group we're editing must not
+            // re-select the whole group — that would undo stepping into it.
+            if (store.isolatedGroupIds.includes(groupId)) continue;
             const groupElements = store.elements.filter(el => el.groupIds && el.groupIds.includes(groupId));
             const hasInteractable = groupElements.some(el => helpers.canInteractWithElement(el) && isLayerVisible(el.layerId));
             if (!hasInteractable) continue;
@@ -850,6 +871,8 @@ export function selectionOnDown(
         }
 
         if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+            // A click on genuinely empty canvas steps back out of the group.
+            if (store.isolatedGroupIds.length > 0) exitGroupIsolationAll();
             setStore('selection', []);
             setShowCanvasProperties(false);
         }
@@ -2491,8 +2514,11 @@ export function selectionOnUp(
         // is the visible one: with onion skinning on, the neighbouring frames' ghosts sit
         // right there under the marquee, so a drag would grab them and the selection
         // bounds would stretch across a pose the playhead isn't even on.
+        // Inside an isolated group, an area-select stays inside it — sweeping up
+        // the artwork you deliberately stepped into would defeat the mode.
         const selectable = (el: DrawingElement) =>
-            helpers.canInteractWithElement(el) && isLayerVisible(el.layerId);
+            helpers.canInteractWithElement(el) && isLayerVisible(el.layerId)
+            && isInIsolatedGroup(el, store.isolatedGroupIds);
 
         if (store.selectedTool === 'lasso') {
             // Lasso selection: point-in-polygon test on element centers

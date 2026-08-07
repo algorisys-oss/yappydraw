@@ -24,7 +24,7 @@ import {
     applyDistort,
     addAppearanceFill, addAppearanceStroke, clearAppearance, applyMeshGradient, clearMeshGradient, traceImage,
     mirrorCopy, transformAgain, mirrorAcrossSymmetry, setTransformEffect, expandTransformEffect, clearTransformEffect, setExtrude, clearExtrude, expandExtrude, toggleRevolve, applyFeather, applyGlow, applyScribble,
-    bringToFront, sendToBack, moveElementZIndex,
+    bringToFront, sendToBack, moveSelectionZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
     setViewState, setShowCanvasProperties, deleteElements,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
@@ -46,6 +46,7 @@ import { setTransformPivot, clearTransformPivot, getCustomPivot } from './transf
 import { openRepeatDialog } from '../components/repeat-dialog';
 import { YappyAPI } from '../api';
 import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng, exportArtboard } from './export';
+import { rasterizeSelection } from './rasterize';
 import { shapeToPath } from './shape-to-path';
 import {
     computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData,
@@ -437,6 +438,18 @@ export function getContextMenuItems(
             }
             items.push({ label: 'Path', icon: '✐', submenu: pathOps }, { separator: true });
         }
+
+        // Rasterize — vector artwork → a single bitmap, in place.
+        items.push({
+            label: 'Rasterize', icon: '▨', submenu: [
+                { label: 'Rasterize (1× — screen)', onClick: () => { void rasterizeSelection([...store.selection], { scale: 1 }); } },
+                { label: 'Rasterize (2× — retina)', onClick: () => { void rasterizeSelection([...store.selection], { scale: 2 }); } },
+                { label: 'Rasterize (4× — print)', onClick: () => { void rasterizeSelection([...store.selection], { scale: 4 }); } },
+                { separator: true },
+                { label: 'Rasterize on White (2×)', onClick: () => { void rasterizeSelection([...store.selection], { scale: 2, background: '#ffffff' }); } },
+                { label: 'Rasterize a Copy (2×)', onClick: () => { void rasterizeSelection([...store.selection], { scale: 2, keepSource: true }); } },
+            ]
+        });
 
         // Repeat & Mirror submenu (radial/grid arrays, symmetric mirror copies).
         items.push({
@@ -1418,10 +1431,10 @@ export function getContextMenuItems(
         items.push(
             {
                 label: 'Arrange', icon: '⤒', submenu: [
-                    { label: 'Bring to Front', shortcut: 'Ctrl+]', onClick: () => bringToFront(store.selection) },
-                    { label: 'Bring Forward', onClick: () => store.selection.forEach(id => moveElementZIndex(id, 'forward')) },
-                    { label: 'Send Backward', onClick: () => store.selection.forEach(id => moveElementZIndex(id, 'backward')) },
-                    { label: 'Send to Back', shortcut: 'Ctrl+[', onClick: () => sendToBack(store.selection) },
+                    { label: 'Bring to Front', shortcut: 'Ctrl+Shift+]', onClick: () => bringToFront(store.selection) },
+                    { label: 'Bring Forward', shortcut: 'Ctrl+]', onClick: () => moveSelectionZIndex(store.selection, 'forward') },
+                    { label: 'Send Backward', shortcut: 'Ctrl+[', onClick: () => moveSelectionZIndex(store.selection, 'backward') },
+                    { label: 'Send to Back', shortcut: 'Ctrl+Shift+[', onClick: () => sendToBack(store.selection) },
                 ],
             },
             {
