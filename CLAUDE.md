@@ -78,5 +78,14 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
 6. **Keep `main` in sync and push** — make sure local `main` and the remote (`origin`) `main` are in sync and **push**, including the tag: `git push origin main --tags` (fast-forward/merge as appropriate). Push the working branch too.
 7. **Fast-forward `dev` to `main` and push it** — `dev` is the branch the next change starts from, so it must not be left behind the release (`git checkout dev && git merge --ff-only main && git push origin dev`).
 8. **Publish to the OSS repo** with `./scripts/publish-oss.sh --push` (publishes a cleaned client-only copy to the `algorisys-oss/yappydraw` remote). Use a dry-run first if anything looks off.
-9. **Return to `dev`** — finish the release with `dev` checked out, never `main`. Confirm with `git branch --show-current` before reporting the release done; the working tree should also be clean.
+9. **Verify the deploy** once it has propagated — `npm run verify:deploy`. It samples
+   `sw.js` and `index.html` several times, because the live host has served **two
+   different builds from the same URL** (7 of 8 fetches returning a three-release-old
+   `sw.js`, all with `cache-status: MISS` — the origin itself was inconsistent). A single
+   fetch cannot detect that. The script also checks every chunk `index.html` references
+   actually resolves, and that the cache headers from `frontend/public/.htaccess` really
+   arrived — a 404 chunk or a stale `index.html` is precisely the "Something went wrong"
+   screen users were reporting. If it fails, re-deploy so the remote tree is **replaced,
+   not merged** (`rsync --delete`, or delete the remote `assets/` first).
+10. **Return to `dev`** — finish the release with `dev` checked out, never `main`. Confirm with `git branch --show-current` before reporting the release done; the working tree should also be clean.
 

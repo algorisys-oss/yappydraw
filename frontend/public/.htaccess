@@ -38,10 +38,32 @@
     #    however long the cache says (browsers cap SW script caching at 24h, which
     #    is still a day of serving a build we've replaced). The manifest and the
     #    workbox runtime ride along for the same reason.
-    <FilesMatch "^(sw|workbox-.*|registerSW)\.js$|^(manifest\.webmanifest|site\.webmanifest)$">
-        Header set Cache-Control "no-cache, must-revalidate, max-age=0"
-        Header unset Expires
+    #
+    #    `always set` rather than `set`, and an exact <Files> for sw.js rather than
+    #    an alternation: the first version of this block did not take effect on the
+    #    live host — sw.js came back with the server's own `public, max-age=604800`
+    #    while the .html and asset rules above worked — so this uses the form that
+    #    is applied latest and matches most plainly. scripts/verify-deploy.sh
+    #    asserts the result rather than trusting it.
+    <Files "sw.js">
+        Header always set Cache-Control "no-cache, must-revalidate, max-age=0"
+        Header always unset Expires
+    </Files>
+    <FilesMatch "^(workbox-.*|registerSW)\.js$|^(manifest\.webmanifest|site\.webmanifest)$">
+        Header always set Cache-Control "no-cache, must-revalidate, max-age=0"
+        Header always unset Expires
     </FilesMatch>
+</IfModule>
+
+# mod_expires can overwrite the Cache-Control that mod_headers just set, and it
+# runs whether or not we asked for it — a host-level `ExpiresByType
+# application/javascript "access plus 1 week"` is the likeliest explanation for
+# sw.js ignoring the block above. Turning it off for the control files puts
+# mod_headers back in charge.
+<IfModule mod_expires.c>
+    <Files "sw.js">
+        ExpiresActive Off
+    </Files>
 </IfModule>
 
 # Some LiteSpeed/Apache setups apply mod_expires on top of the above; keep it
