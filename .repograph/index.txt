@@ -44,6 +44,7 @@ examples/dsl/README.md | - | 65 |
 examples/manim-gradient-descent.js | javascript | 80 | f:21 grad:22 build:25 play:69
 examples/pixel-effects-demo.html | - | 208 |
 frontend/index.html | - | 288 |
+frontend/public/.htaccess | - | 52 |
 frontend/public/examples/3d-shapes-showcase.json | - | 286 |
 frontend/public/examples/activity-diagram.json | - | 613 |
 frontend/public/examples/animation-showcase.json | - | 566 |
@@ -338,7 +339,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 458 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 463 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -441,7 +442,7 @@ frontend/src/help-docs/shapes/uml-doc.tsx | typescript | 455 | UmlDoc:8 diagrams
 frontend/src/help-docs/shapes/vector-paths-doc.tsx | typescript | 405 | VectorPathsDoc:9
 frontend/src/help-docs/shapes/wireframing-doc.tsx | typescript | 297 | WireframingDoc:8
 frontend/src/index.css | - | 617 |
-frontend/src/index.tsx | typescript | 180 | Router:28 handleHashChange:32 isEmbedRoute:87 isHelpRoute:88 isExamplesRoute:89 LoadingFallback:91 RouteError:102 dismissSplash:152
+frontend/src/index.tsx | typescript | 197 | Router:33 handleHashChange:37 isEmbedRoute:92 isHelpRoute:93 isExamplesRoute:94 LoadingFallback:96 RouteError:113 dismissSplash:169
 frontend/src/library/comic/cast-style.test.ts | typescript | 71 |
 frontend/src/library/comic/cast-style.ts | typescript | 96 | CastStyle:23 CastHairOptions:57 assignCastHair:70 scriptCast:90
 frontend/src/library/comic/index.ts | typescript | 484 | PanelLayout:11 Utterance:11 ComicPanelOptions:23 ComicStripOptions:63 buildFigureElements:87 measureBubble:129 planComicPanel:154 createComicPanel:259 IdFactory:301 buildPanelElements:307 createComicStrip:402
@@ -721,6 +722,7 @@ frontend/src/utils/slide-utils.ts | typescript | 58 |
 frontend/src/utils/snap-helpers.ts | typescript | 28 | snapToGrid:8 snapDimension:25
 frontend/src/utils/snap-renderer.ts | typescript | 219 | MeasurementUnit:10 renderSnappingGuides:15 renderSpacingGuides:44 renderPointSnapMarker:128 renderMeasureGaps:162
 frontend/src/utils/spacing.ts | typescript | 255 | SpacingGuide:3 SpacingResult:13
+frontend/src/utils/stale-build.ts | typescript | 72 | isStaleBuildError:29 recoverFromStaleBuild:46 installStaleBuildHandler:68
 frontend/src/utils/stock-photos.ts | typescript | 156 | StockPhoto:13 searchStockPhotos:37 fetchPhotoData:99 insertStockPhoto:118
 frontend/src/utils/stroke-dash.ts | typescript | 48 | customDash:12 resolveDash:23 parseDashInput:37 dashToString:46
 frontend/src/utils/stroke-stabilizer.ts | typescript | 117 | StabSample:21 StrokeStabilizer:27{next:29 finish:34} createStrokeStabilizer:40 pushStabilizedSample:86 finishStabilizer:109
@@ -837,7 +839,7 @@ tests/blob-brush.spec.ts | typescript | 24 | paths:3
 tests/blueprint-games.spec.ts | typescript | 305 | Window:4 boot:6
 tests/blueprint-graph.spec.ts | typescript | 449 | Window:7
 tests/boolean-ops-ux.spec.ts | typescript | 276 | object:13 twoOverlappingRects:14 names:248
-tests/boot-resilience.spec.ts | typescript | 128 | splashVisible:13
+tests/boot-resilience.spec.ts | typescript | 174 | splashVisible:13
 tests/bpmn.spec.ts | typescript | 328 | markers:153
 tests/brand-kit.spec.ts | typescript | 97 | Window:6
 tests/builtin-panel-drag.spec.ts | typescript | 47 | drag:17

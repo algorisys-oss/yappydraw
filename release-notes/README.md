@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.181](0.8.181.md) — The "Something went wrong" screen traced to the host sending no `Cache-Control` on index.html (stale HTML → 404 on content-hashed chunks), fixed with a `.htaccess` policy plus a one-shot self-healing reload; and the service-worker precache cut 9.6MB → 4.6MB, which every release had been re-downloading in full
 - [0.8.180](0.8.180.md) — Group isolation: double-click into a group and select/move/align its members individually (the actual reason "aligning inside a group moved everything"); align/distribute stopped exploding groups; Bring Forward/Send Backward as a block on Illustrator's Ctrl+] / Ctrl+[; Rasterize; and align-to-key made visible
 - [0.8.176](0.8.176.md) — Closes 0.8.175's two known gaps: Create Outlines now uses real italic faces (slant-first matching, browser-matching shear where a family has none), and Knife pieces are re-fitted to curves with corners and the cut edge kept sharp — 5 anchors per half-circle instead of ~20. Glyph binaries dropped from the PWA precache
 - [0.8.175](0.8.175.md) — Designer review: Font Family/Style split on a real 100–900 weight axis, Alt-drag to break a Bézier handle pair, Scissors that cuts where you click (it snapped to the nearest anchor, 76 units off), Unlock All for locked objects that could never be selected, and Create Outlines using the font you chose rather than substituting sans-serif; plus bold that had never worked on connector/BPMN labels

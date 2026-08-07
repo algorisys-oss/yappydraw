@@ -62,11 +62,31 @@ export default defineConfig({
       // through — every pattern tried left all 15 files in the manifest. A manifestTransform
       // runs on the final entry list, so it cannot be silently ignored, and the assertion is
       // visible: grep the built sw.js for `fonts/outline` and expect nothing.
+      // Heavy chunks behind a lazy `import()` — export to HTML player / PDF / PPTX /
+      // image, MathJax, the help docs and the docs search index. Same argument as the
+      // outline fonts above, but bigger: they were 5.1MB of a 9.6MB precache, and
+      // because every filename is content-hashed, EVERY deploy invalidated all 220
+      // entries — so each release made returning visitors re-download the whole
+      // 9.6MB in the background. Shipping several times a day, that is most of the
+      // "why is it slow" report.
+      //
+      // None of these are on the boot path (verified: grep the entry chunk for their
+      // names — no static import), so excluding them costs nothing online: they are
+      // fetched on first use and then kept by the runtimeCaching rule below. The
+      // trade-off, accepted knowingly: the FIRST use of export/help/maths while
+      // offline now needs the network.
       manifestTransforms: [
-        (entries) => ({
-          manifest: entries.filter(e => !e.url.includes('fonts/outline/')),
-          warnings: [],
-        }),
+        (entries) => {
+          // `svg-*.js` here is MathJax's SVG *output renderer* (it imports TeXAtom —
+          // see utils/tex.ts, which lazy-imports mathjax-full/js/output/svg.js), not
+          // any of our own SVG code. At 1.2MB it was the second-largest thing in the
+          // precache, downloaded by everyone, used only by people who type LaTeX.
+          const LAZY_HEAVY = /(export-game|jspdf|pptxgen|html2canvas|AllPackages|BaseConfiguration|Factory-|TeXAtom|mathjax|\/svg-|-doc-|search-)/i
+          return {
+            manifest: entries.filter(e => !e.url.includes('fonts/outline/') && !LAZY_HEAVY.test(e.url)),
+            warnings: [],
+          }
+        },
       ],
       navigateFallback: 'index.html',
       // The OAuth popup returns to /oauth-callback.html?state=…&code=…&iss=…
@@ -78,6 +98,21 @@ export default defineConfig({
       // network/precache and the real static page loads.
       navigateFallbackDenylist: [/oauth-callback\.html/],
       runtimeCaching: [
+        {
+          // The lazy chunks dropped from the precache above. Cache-first is safe
+          // because every filename carries a content hash — a given URL can never
+          // change meaning — so first use fetches, and every use after that is
+          // offline-capable, without charging the download to people who never
+          // open the exporter. Precached URLs never reach here: workbox's
+          // precache route matches first.
+          urlPattern: ({ url }) => /\/assets\/.+\.(js|css)$/.test(url.pathname),
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'yappy-lazy-chunks',
+            expiration: { maxEntries: 150, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
         {
           // Google Fonts stylesheets + font files: cache-first so display
           // fonts keep rendering offline after first use.

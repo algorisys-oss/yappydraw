@@ -1,0 +1,52 @@
+# Cache policy for the static deploy (Hostinger / Apache / LiteSpeed).
+#
+# WHY THIS FILE EXISTS
+# -------------------
+# The host was serving `index.html` with NO Cache-Control header at all. With no
+# freshness directive a browser falls back to *heuristic* caching — commonly 10%
+# of the time since Last-Modified — and reuses the cached copy WITHOUT
+# revalidating. Every deploy replaces the content-hashed chunks and deletes the
+# old ones, so a returning visitor would load a stale index.html that points at
+# `/assets/index-OLDHASH.js`, get a 404 (served as an HTML error page, so the
+# module parse fails too), and land on the "Something went wrong" boundary.
+# Reloading fixed it, which is exactly what made it look random. The more often
+# we ship, the more often it happened.
+#
+# THE RULE
+# --------
+# Anything with a content hash in its name can be cached forever. Anything that
+# names those files — index.html — and anything that controls updates — sw.js,
+# workbox-*.js, the manifest — must be revalidated on every visit.
+#
+# Order matters: these blocks are applied in sequence and `Header set` replaces,
+# so the long-lived rule comes first and the must-revalidate rules override it.
+
+<IfModule mod_headers.c>
+    # 1. Content-hashed build output — safe to cache for a year.
+    <FilesMatch "\.(js|mjs|css|woff2?|ttf|otf|eot|wasm|png|jpe?g|gif|webp|avif|svg|ico|mp4|webm)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # 2. HTML entry points — never reuse without asking the server. These are the
+    #    files that name the hashed chunks; a stale one is the whole bug above.
+    <FilesMatch "\.html$">
+        Header set Cache-Control "no-cache, must-revalidate, max-age=0"
+        Header unset Expires
+    </FilesMatch>
+
+    # 3. Service worker + PWA control files. A cached sw.js delays every update by
+    #    however long the cache says (browsers cap SW script caching at 24h, which
+    #    is still a day of serving a build we've replaced). The manifest and the
+    #    workbox runtime ride along for the same reason.
+    <FilesMatch "^(sw|workbox-.*|registerSW)\.js$|^(manifest\.webmanifest|site\.webmanifest)$">
+        Header set Cache-Control "no-cache, must-revalidate, max-age=0"
+        Header unset Expires
+    </FilesMatch>
+</IfModule>
+
+# Some LiteSpeed/Apache setups apply mod_expires on top of the above; keep it
+# consistent rather than letting it re-introduce a long HTML lifetime.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/html "access plus 0 seconds"
+</IfModule>

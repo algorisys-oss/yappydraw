@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.181', date: '2026-08-07', items: [
+        'The "Something went wrong" screen should stop appearing. It was never a fault in your drawing or in the app — the web host was not telling browsers to check for a new version, so a returning visitor could load yesterday\'s page pointing at files that had since been replaced. Reloading fixed it, which is why it looked random. If it ever does happen again, Yappy now quietly reloads itself into the current version instead of showing you the screen.',
+        'Yappy loads lighter. It was quietly downloading its whole self in the background — including the HTML-player exporter, the PDF and PowerPoint writers and the maths typesetter, whether or not you ever used them — and doing it again after every update. That background download is now less than half the size, and the optional parts are fetched the first time you actually use one.',
+        'Note for offline use: the first time you export to HTML, PDF or PowerPoint, open the Help pages, or render a LaTeX equation, Yappy now needs the internet for a moment. After that they work offline as before.',
+    ] },
     { version: '0.8.180', date: '2026-08-07', items: [
         'You can work inside a group. Double-click a grouped object to step into the group — from then on clicks select individual members, so you can move, restyle, restack and align one object without pulling the whole group around. Press Esc (or click outside) to step back out. Double-click again to go deeper into a nested group.',
         'Aligning two groups no longer destroys them. Align Left used to move every member of every group onto the same edge, collapsing the artwork. A group now lines up as one object and keeps its internal arrangement. If you select only part of a group — a marquee, or shift-click — those objects still align individually, because that is plainly what you meant.',

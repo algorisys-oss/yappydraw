@@ -7,12 +7,17 @@ import { loadDocument, setStore } from './store/app-store'
 import { isSlideDocument, migrateToSlideFormat } from './utils/migration'
 import { storage } from './storage/file-system-storage'
 import { preloadAppFonts } from './utils/font-loading'
+import { recoverFromStaleBuild, installStaleBuildHandler } from './utils/stale-build'
 
 // Kick the webfonts off before anything can measure text with them. Auto-sized elements
 // write the measured width into the SAVED document, so a measurement taken against the
 // fallback font is a permanent error, not a transient one. Fire-and-forget: it must never
 // delay or break boot (see utils/font-loading.ts).
 preloadAppFonts()
+
+// Catch chunk failures from imports that happen after boot (Help, export, …),
+// which reject outside any ErrorBoundary.
+installStaleBuildHandler()
 
 // Lazy load pages to reduce initial bundle
 const HelpPage = lazy(() => import('./help-docs/help-page'))
@@ -98,13 +103,24 @@ const Router = () => {
      * deploy — would otherwise leave `LoadingFallback` on screen forever, because
      * Suspense has no concept of "this will never resolve". Reload picks up the new
      * index.html and its current chunk names.
+     *
+     * That case now heals itself: `recoverFromStaleBuild` reloads once (guarded
+     * against loops) so the user never sees this screen for a cache problem. What
+     * reaches the UI below is therefore a *real* error, and it's logged with its
+     * stack — the old screen printed only `err.message`, which was rarely enough
+     * to act on.
      */
-    const RouteError = (err: any, reset: () => void) => (
+    const RouteError = (err: any, reset: () => void) => {
+        if (recoverFromStaleBuild(err)) {
+            return <div style={{ padding: '2rem', 'text-align': 'center' }}>Updating to the latest version…</div>
+        }
+        console.error('[yappy] Route error:', err)
+        return (
         <div style={{ padding: '2rem', 'text-align': 'center', font: '14px/1.6 system-ui, sans-serif' }}>
             <p><strong>Something went wrong.</strong></p>
             <p style={{ color: '#64748b' }}>
-                If this happened right after an update it’s a stale cached version, and reloading
-                fixes it. Your saved drawings are not affected.
+                Your saved drawings are not affected. Reloading fixes most cases; if it keeps
+                happening, the details below are worth reporting.
             </p>
             <p style={{ 'margin-top': '12px' }}>
                 <button type="button" onClick={() => location.reload()}
@@ -116,11 +132,12 @@ const Router = () => {
                     Try again
                 </button>
             </p>
-            <pre style={{ 'margin-top': '16px', 'font-size': '11px', color: '#94a3b8', 'white-space': 'pre-wrap' }}>
-                {String(err?.message ?? err)}
+            <pre style={{ 'margin-top': '16px', 'font-size': '11px', color: '#94a3b8', 'white-space': 'pre-wrap', 'text-align': 'left', 'max-width': '640px', margin: '16px auto 0', 'overflow-x': 'auto' }}>
+                {String(err?.stack ?? err?.message ?? err)}
             </pre>
         </div>
-    )
+        )
+    }
 
     return (
         <ErrorBoundary fallback={RouteError}>
