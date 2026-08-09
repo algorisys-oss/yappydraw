@@ -1726,7 +1726,7 @@ const Canvas: Component = () => {
         if (store.selectedTool === 'eraser') { eraserOnDown(x, y, pState, pHelpers); return; }
         if (store.selectedTool === 'pan') { panOnDown(pState, pHelpers); return; }
         if (store.selectedTool === 'polyline' || pState.isPolylineBuilding) { polylineOnDown(x, y, pState, pHelpers); return; }
-        if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers); requestAnimationFrame(draw); return; }
+        if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers, e.shiftKey || pState.secondaryContact || store.penConstrain); requestAnimationFrame(draw); return; }
 
         drawOnDown(x, y, pState, pHelpers);
         smartShape.arm(pState.currentId); // no-op unless a pen tool + enabled

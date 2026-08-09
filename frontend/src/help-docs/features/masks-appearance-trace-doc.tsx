@@ -200,10 +200,19 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
 
                 <h3>Eyedropper</h3>
                 <p>
-                    Select the object(s) you want to restyle, then right-click → <strong>Eyedropper — pick style
-                    from…</strong> and click any other object: its full look (fill, stroke, gradient/mesh, appearance,
-                    shadow) is copied onto your selection. <strong>Esc</strong> cancels. It's a quick one-shot copy —
-                    for a look you'll reuse repeatedly, save a <strong>graphic style</strong> instead.
+                    Select the object(s) you want to restyle, press <span class="kbd">Shift</span>+<span class="kbd">I</span>
+                    (or right-click → <strong>Eyedropper — pick style from…</strong>) and click any other object: its
+                    full look (fill, stroke, gradient/mesh, appearance, shadow) is copied onto your selection.
+                    <strong> Esc</strong> cancels, and <span class="kbd">Shift</span>+<span class="kbd">I</span> again
+                    toggles it off. It's a quick one-shot copy — for a look you'll reuse repeatedly, save a
+                    <strong> graphic style</strong> instead.
+                </p>
+                <p class="doc-note">
+                    Illustrator puts the eyedropper on plain <span class="kbd">I</span>; here that key already
+                    inserts an image, so it joins the <span class="kbd">Shift</span>+letter block with the other
+                    Illustrator-class tools (Shape Builder <span class="kbd">Shift</span>+<span class="kbd">M</span>,
+                    Width <span class="kbd">Shift</span>+<span class="kbd">W</span>, Blob Brush
+                    <span class="kbd">Shift</span>+<span class="kbd">B</span>).
                 </p>
             </section>
 

@@ -472,6 +472,12 @@ export interface DrawingElement {
     verticalAlign?: VerticalAlign;
     /** Extra spacing between characters, in px (tracking). Can be negative to tighten. */
     letterSpacing?: number;
+    /** Line spacing (leading) as a MULTIPLE of the font size, CSS `line-height`-style —
+     *  1.2 when unset, which is what every text element used before this was settable.
+     *  A multiple rather than px so it survives resizing and still means something when
+     *  rich-text spans on the same line have different sizes. Read it via
+     *  `lineHeightFactorOf`/`lineHeightPx` (utils/text-line-height), never inline. */
+    lineHeight?: number;
     /** Vertical Type: stack characters top→bottom, paragraphs as left→right columns. */
     verticalText?: boolean;
     /** Touch Type: per-character transforms (single-line text). dx/dy in px, scale (1=none), rot in radians.
@@ -570,6 +576,13 @@ export interface DrawingElement {
 
     // Meta
     groupIds?: string[];
+    /** User-given names for the groups this element belongs to, keyed by the group id from
+     *  `groupIds`. A group is not an entity — it exists only as an id shared by its members —
+     *  so its name has to live on the members, and every member of a named group carries the
+     *  same entry. Kept here rather than in a document-level map so the name travels with the
+     *  elements through save/load, history, duplication and copy-paste for free. Read it with
+     *  `groupNameOf` (utils/object-label), write it with `setGroupName` (store). */
+    groupNames?: Record<string, string>;
     boundElements?: { id: string; type: 'arrow' | 'text' | 'organicBranch' }[] | null;
     isSelected?: boolean;
     layerId: string; // Reference to parent layer
@@ -662,6 +675,13 @@ export interface DrawingElement {
     starPoints?: number; // Number of points for star shapes (3-12, default: 5)
     polygonSides?: number; // Number of sides for polygon shapes (3-20, default: 6)
     borderRadius?: number; // Corner radius percentage (0-50, default: 0)
+    /** Per-corner overrides for `borderRadius`, in the SAME unit (percent of the shorter side)
+     *  so resizing keeps the shape's character. A corner left undefined follows `borderRadius`,
+     *  so setting one corner doesn't square the rest. Resolve via `utils/corner-radius`. */
+    radiusTL?: number;
+    radiusTR?: number;
+    radiusBR?: number;
+    radiusBL?: number;
     burstPoints?: number; // Number of points for burst shapes (8-32, default: 16)
     shapeRatio?: number; // 0-100 (Vertical ratio for cube, inner radius for star)
     sideRatio?: number; // 0-100 (Horizontal rotation for isometricCube)

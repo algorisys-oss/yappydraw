@@ -1,3 +1,4 @@
+import { lineHeightPx } from '../text-line-height';
 /**
  * Text Editing Handler
  * Handles double-click text editing and text commit logic.
@@ -101,14 +102,14 @@ export function commitText(ctx: TextEditingContext): void {
                 const fontSize = el.fontSize || 20;
                 const width = Math.max(measureMaxLineWidth({ ...el, text: newText }) + 8, fontSize);
                 const lineCount = Math.max(1, newText.split('\n').length);
-                const finalHeight = Math.max(lineCount * fontSize * 1.2, fontSize * 1.2);
+                const finalHeight = Math.max(lineCount * lineHeightPx(fontSize, el), lineHeightPx(fontSize, el));
                 updateElement(id, { text: newText, width, height: finalHeight }, true);
             } else {
                 const fontSize = el.fontSize || 28;
                 // Preserve existing width, recalculate height based on wrapped content
                 const existingWidth = el.width || 200;
-                const height = measureWrappedTextHeight(newText, existingWidth, fontSize, el.fontFamily, el.letterSpacing);
-                const finalHeight = Math.max(height, fontSize * 1.2);
+                const height = measureWrappedTextHeight(newText, existingWidth, fontSize, el.fontFamily, el.letterSpacing, el.lineHeight);
+                const finalHeight = Math.max(height, lineHeightPx(fontSize, el));
 
                 updateElement(id, { text: newText, height: finalHeight }, true);
             }
@@ -202,12 +203,12 @@ export function commitRichText(ctx: TextEditingContext): void {
                 // enough for rich spans), height tracks the explicit line count.
                 const width = Math.max(measureMaxLineWidth({ ...el, text: plainText }) + 8, fontSize);
                 const lineCount = Math.max(1, plainText.split('\n').length);
-                const finalHeight = Math.max(lineCount * fontSize * 1.2, fontSize * 1.2);
+                const finalHeight = Math.max(lineCount * lineHeightPx(fontSize, el), lineHeightPx(fontSize, el));
                 updateElement(id, { richText: spans, text: plainText, width, height: finalHeight }, true);
             } else {
                 const existingWidth = el.width || 200;
-                const height = measureWrappedTextHeight(plainText, existingWidth, fontSize, el.fontFamily, el.letterSpacing);
-                const finalHeight = Math.max(height, fontSize * 1.2);
+                const height = measureWrappedTextHeight(plainText, existingWidth, fontSize, el.fontFamily, el.letterSpacing, el.lineHeight);
+                const finalHeight = Math.max(height, lineHeightPx(fontSize, el));
                 updateElement(id, { richText: spans, text: plainText, height: finalHeight }, true);
             }
         } else {

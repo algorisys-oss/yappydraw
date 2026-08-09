@@ -1,4 +1,5 @@
 import { ShapeRenderer } from "../base/shape-renderer";
+import { lineHeightPx } from '../../utils/text-line-height';
 import { RenderPipeline } from "../base/render-pipeline";
 import type { RenderContext } from "../base/types";
 import type { IRenderer } from "../../rendering/IRenderer";
@@ -57,7 +58,7 @@ export class TextRenderer extends ShapeRenderer {
         // the renderer.save()/restore() pair wrapping this method.
         renderer.letterSpacing = el.letterSpacing ? `${el.letterSpacing}px` : '0px';
 
-        const lineHeight = fontSize * 1.2;
+        const lineHeight = lineHeightPx(fontSize, el);
         const padding = 4; // Small internal padding
 
         // Vertical Type — stack glyphs top→bottom; each \n-paragraph is a column, columns
@@ -235,7 +236,7 @@ export class TextRenderer extends ShapeRenderer {
         const spans = el.richText!;
         const padding = 4;
         const availableWidth = Math.max(el.width - padding * 2, 20);
-        const defaults = { fontSize: el.fontSize || 20, fontFamily: el.fontFamily || 'sans-serif' };
+        const defaults = { fontSize: el.fontSize || 20, fontFamily: el.fontFamily || 'sans-serif', lineHeight: el.lineHeight };
         const layout = layoutRichText(renderer, spans, availableWidth, defaults);
 
         const textAlign = el.textAlign || 'center';

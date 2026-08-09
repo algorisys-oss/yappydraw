@@ -389,6 +389,58 @@ export const properties: PropertyConfig[] = [
         defaultValue: 9
     },
     {
+        key: 'radiusTL',
+        label: 'Corner ↖',
+        type: 'slider',
+        min: 0,
+        max: 50,
+        step: 1,
+        group: 'style',
+        // Rectangles only: the other shapes above round their outline in ways that have no
+        // meaningful notion of four independent corners.
+        applicableTo: ['rectangle'],
+        defaultValue: 0
+    },
+    {
+        key: 'radiusTR',
+        label: 'Corner ↗',
+        type: 'slider',
+        min: 0,
+        max: 50,
+        step: 1,
+        group: 'style',
+        // Rectangles only: the other shapes above round their outline in ways that have no
+        // meaningful notion of four independent corners.
+        applicableTo: ['rectangle'],
+        defaultValue: 0
+    },
+    {
+        key: 'radiusBR',
+        label: 'Corner ↘',
+        type: 'slider',
+        min: 0,
+        max: 50,
+        step: 1,
+        group: 'style',
+        // Rectangles only: the other shapes above round their outline in ways that have no
+        // meaningful notion of four independent corners.
+        applicableTo: ['rectangle'],
+        defaultValue: 0
+    },
+    {
+        key: 'radiusBL',
+        label: 'Corner ↙',
+        type: 'slider',
+        min: 0,
+        max: 50,
+        step: 1,
+        group: 'style',
+        // Rectangles only: the other shapes above round their outline in ways that have no
+        // meaningful notion of four independent corners.
+        applicableTo: ['rectangle'],
+        defaultValue: 0
+    },
+    {
         key: 'drawInnerBorder',
         label: 'Double Border',
         type: 'toggle',
@@ -1017,6 +1069,17 @@ export const properties: PropertyConfig[] = [
         group: 'text',
         applicableTo: ['text', 'richtext', 'rectangle', 'circle', 'diamond', 'triangle', 'hexagon', 'octagon', 'parallelogram', 'star', 'cloud', 'heart', 'arrowLeft', 'arrowRight', 'arrowUp', 'arrowDown', 'line', 'arrow', 'organicBranch', 'capsule', 'stickyNote', 'callout', 'burst', 'speechBubble', 'ribbon', 'bracketLeft', 'bracketRight', 'database', 'document', 'predefinedProcess', 'internalStorage', 'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda', 'router', 'browser', 'trapezoid', 'rightTriangle', 'pentagon', 'septagon', 'starPerson', 'lightbulb', 'signpost', 'burstBlob', 'scroll', 'wavyDivider', 'doubleBanner', 'trophy', 'clock', 'gear', 'target', 'rocket', 'flag', 'key', 'magnifyingGlass', 'book', 'megaphone', 'eye', 'thoughtBubble', 'stickFigure', 'sittingPerson', 'presentingPerson', 'handPointRight', 'thumbsUp', 'faceHappy', 'faceSad', 'faceConfused', 'browserWindow', 'mobilePhone', 'ghostButton', 'inputField', 'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch', 'card', 'searchBar', 'progressBar', 'avatar', 'navbar', 'tabBar', 'badge', 'tooltip', 'slider', 'checkbox', 'checkboxChecked', 'numberedBadge', 'questionMark', 'exclamationMark', 'tag', 'pin', 'stamp', 'kubernetes', 'container', 'apiGateway', 'cdn', 'storageBlob', 'eventBus', 'microservice', 'shield', 'barChart', 'pieChart', 'trendUp', 'trendDown', 'funnel', 'gauge', 'table', 'puzzlePiece', 'chainLink', 'bridge', 'magnet', 'scale', 'seedling', 'tree', 'mountain', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'stateStart', 'stateEnd', 'stateSync', 'activationBar', 'externalEntity', 'umlClass', 'umlInterface', 'umlActor', 'umlUseCase', 'umlNote', 'umlPackage', 'umlComponent', 'umlObject', 'umlPort', 'umlHistory', 'umlAction', 'umlNode', 'umlArtifact', 'umlState', 'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface', 'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent', 'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnEventGateway', 'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity', 'bpmnDataObject', 'bpmnDataStore', 'bpmnAnnotation', 'bpmnGroup', 'bpmnPool', 'path'],
         defaultValue: 0
+    },
+    {
+        key: 'lineHeight',
+        label: 'Line Spacing',
+        type: 'number',
+        min: 0.5,
+        max: 4,
+        step: 0.05,
+        group: 'text',
+        applicableTo: ['text', 'richtext', 'rectangle', 'circle', 'diamond', 'triangle', 'hexagon', 'octagon', 'parallelogram', 'star', 'cloud', 'heart', 'arrowLeft', 'arrowRight', 'arrowUp', 'arrowDown', 'line', 'arrow', 'organicBranch', 'capsule', 'stickyNote', 'callout', 'burst', 'speechBubble', 'ribbon', 'bracketLeft', 'bracketRight', 'database', 'document', 'predefinedProcess', 'internalStorage', 'server', 'loadBalancer', 'firewall', 'user', 'messageQueue', 'lambda', 'router', 'browser', 'trapezoid', 'rightTriangle', 'pentagon', 'septagon', 'starPerson', 'lightbulb', 'signpost', 'burstBlob', 'scroll', 'wavyDivider', 'doubleBanner', 'trophy', 'clock', 'gear', 'target', 'rocket', 'flag', 'key', 'magnifyingGlass', 'book', 'megaphone', 'eye', 'thoughtBubble', 'stickFigure', 'sittingPerson', 'presentingPerson', 'handPointRight', 'thumbsUp', 'faceHappy', 'faceSad', 'faceConfused', 'browserWindow', 'mobilePhone', 'ghostButton', 'inputField', 'solidButton', 'dropdown', 'uiCheckbox', 'radioButton', 'toggleSwitch', 'card', 'searchBar', 'progressBar', 'avatar', 'navbar', 'tabBar', 'badge', 'tooltip', 'slider', 'checkbox', 'checkboxChecked', 'numberedBadge', 'questionMark', 'exclamationMark', 'tag', 'pin', 'stamp', 'kubernetes', 'container', 'apiGateway', 'cdn', 'storageBlob', 'eventBus', 'microservice', 'shield', 'barChart', 'pieChart', 'trendUp', 'trendDown', 'funnel', 'gauge', 'table', 'puzzlePiece', 'chainLink', 'bridge', 'magnet', 'scale', 'seedling', 'tree', 'mountain', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'stateStart', 'stateEnd', 'stateSync', 'activationBar', 'externalEntity', 'umlClass', 'umlInterface', 'umlActor', 'umlUseCase', 'umlNote', 'umlPackage', 'umlComponent', 'umlObject', 'umlPort', 'umlHistory', 'umlAction', 'umlNode', 'umlArtifact', 'umlState', 'umlLifeline', 'umlFragment', 'umlSignalSend', 'umlSignalReceive', 'umlProvidedInterface', 'umlRequiredInterface', 'bpmnStartEvent', 'bpmnEndEvent', 'bpmnIntermediateEvent', 'bpmnExclusiveGateway', 'bpmnParallelGateway', 'bpmnInclusiveGateway', 'bpmnEventGateway', 'bpmnTask', 'bpmnSubProcess', 'bpmnCallActivity', 'bpmnDataObject', 'bpmnDataStore', 'bpmnAnnotation', 'bpmnGroup', 'bpmnPool', 'path'],
+        defaultValue: 1.2
     },
     {
         key: 'fontFamily',

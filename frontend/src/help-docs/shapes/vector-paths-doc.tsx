@@ -36,18 +36,29 @@ export const VectorPathsDoc: Component = () => {
                         <tr><td><strong>Click</strong></td><td>Add a <em>corner</em> anchor (straight segment)</td></tr>
                         <tr><td><strong>Click + drag</strong></td><td>Add a <em>smooth</em> anchor; the drag sets the Bézier handles (curved segment)</td></tr>
                         <tr><td><strong>Click the first anchor</strong></td><td>Close the path into a filled shape</td></tr>
+                        <tr><td><span class="kbd">Shift</span> + click (between points)</td><td>Constrain the <strong>segment</strong> to 15° increments — perfectly horizontal, vertical or 45° lines</td></tr>
                         <tr><td><span class="kbd">Shift</span> + drag (while curving)</td><td><strong>Clock Method</strong> — constrain the Bézier handles to 90°/45° for clean, easily-edited curves</td></tr>
                         <tr><td><span class="kbd">Enter</span> / <span class="kbd">Esc</span> / <strong>double-click</strong></td><td>Finish the path open (not closed)</td></tr>
                         <tr><td><span class="kbd">Backspace</span></td><td>Remove the last anchor while still drawing</td></tr>
                     </tbody>
                 </table>
                 <p class="tip-box">
+                    <strong>Shift does two jobs</strong>, and which one you get depends on whether you are dragging.
+                    <strong>Between clicks</strong> it aims the next <em>segment</em>: the point snaps to the nearest
+                    <strong>15°</strong> from the previous anchor, so straight horizontals, verticals and 45°
+                    diagonals come out exact (the same increment the Line and Arrow tools use, and it overrides
+                    Snap to Grid for that click). <strong>Mid-drag</strong> it shapes the <em>handles</em> instead —
+                    see the Clock Method below. Clicking the first anchor still closes the path with
+                    <span class="kbd">Shift</span> held.
+                </p>
+                <p class="tip-box">
                     <strong>The Clock Method (90°/45°).</strong> Holding <span class="kbd">Shift</span> while you drag
                     a handle snaps it straight to 12/3/6/9 o'clock (or the diagonals) — the trick pro illustrators
                     use to keep curves smooth and predictable. No keyboard? Switch on the <strong>90°/45°</strong>
                     button in the floating <strong>Pen options bar</strong>, or rest a <strong>second finger</strong>
                     on the canvas while dragging with the stylus (the same Procreate-style constrain modifier used
-                    for proportional resize).
+                    for proportional resize). The <strong>90°/45°</strong> toggle and the second finger constrain
+                    segments too, so tablet users get the straight-line behaviour without a keyboard.
                 </p>
                 <p class="tip-box">
                     A path carries the usual <strong>stroke</strong> (color / width / style), <strong>fill</strong>

@@ -58,9 +58,27 @@ export function elementLabel(el: DrawingElement): string {
     return TYPE_LABELS[el.type] ?? titleCase(String(el.type ?? 'Object'));
 }
 
-/** Label for a group node: "Group" plus how many objects are inside it. */
-export function groupLabel(memberCount: number): string {
-    return `Group (${memberCount})`;
+/**
+ * The name given to group `groupId`, or undefined if it has none.
+ *
+ * The name is stored on the members (see `DrawingElement.groupNames`), so any member can
+ * answer — but ungrouping and regrouping can leave a stale entry behind on an element that
+ * is no longer in the group, so only members that still list `groupId` are consulted. The
+ * first non-empty answer wins; they are written together and should never disagree.
+ */
+export function groupNameOf(members: DrawingElement[], groupId: string): string | undefined {
+    for (const m of members) {
+        if (!m.groupIds?.includes(groupId)) continue;
+        const name = m.groupNames?.[groupId]?.trim();
+        if (name) return name;
+    }
+    return undefined;
+}
+
+/** Label for a group node: the user's name for it, else "Group" plus how many objects are inside. */
+export function groupLabel(memberCount: number, name?: string): string {
+    const trimmed = name?.trim();
+    return trimmed ? trimmed : `Group (${memberCount})`;
 }
 
 /** True when every member of the set is hidden (drives the group's eye icon). */

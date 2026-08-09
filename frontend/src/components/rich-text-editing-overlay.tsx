@@ -9,6 +9,7 @@ import { Maximize2, List, ListOrdered } from "lucide-solid";
 import { store, setSelectedTool } from "../store/app-store";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { resolveFontFamily } from "../utils/text-utils";
+import { lineHeightPx as lineHeightOf } from "../utils/text-line-height";
 import { spansToHtml, htmlToSpans, spansToPlainText } from "../utils/rich-text-utils";
 import { getElementPreviewBaseState } from "../utils/animation/element-animator";
 // WINDOW px, not canvas-local — this overlay lives outside `.canvas-drop-zone`, and the
@@ -44,10 +45,14 @@ const TOOLBAR_FONTS = [
     { key: 'code', label: 'JetBrains' },
 ];
 
+/** Sizes offered for a selected run. Absolute px, matching the element's own fontSize units. */
+const TOOLBAR_SIZES = [12, 16, 20, 24, 32, 40, 48, 64, 80, 96];
+
 const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) => {
     let editorRef: HTMLDivElement | undefined;
     const [showColorPicker, setShowColorPicker] = createSignal(false);
     const [showFontPicker, setShowFontPicker] = createSignal(false);
+    const [showSizePicker, setShowSizePicker] = createSignal(false);
     const [activeFormats, setActiveFormats] = createSignal<{
         bold: boolean; italic: boolean; underline: boolean; strikethrough: boolean;
         bulletList: boolean; orderedList: boolean;
@@ -85,6 +90,35 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
         syncSpans();
     };
 
+    /**
+     * Size just the selected words — the thing you need for a headline where one word is
+     * bigger than the rest, and which previously meant splitting the line into separate
+     * text objects.
+     *
+     * `execCommand('fontSize')` only speaks the legacy HTML 1–7 scale, so it is used purely
+     * as a MARKER: it handles the fiddly part (splitting partially-selected runs, spanning
+     * several nodes), and the `<font size="7">` elements it leaves behind are then rewritten
+     * into real inline `font-size` styles, which is what `htmlToSpans` reads back into
+     * `RichTextSpan.fontSize`. Size 7 is chosen because nothing else emits it.
+     *
+     * `px === null` means "back to the element's own size": the wrapper is still written so
+     * the run has one definite size, and any nested sizes inside the selection are cleared —
+     * without that, a smaller run inside the selection would keep overriding the new size.
+     */
+    const applyFontSize = (px: number | null, base: number) => {
+        editorRef?.focus();
+        document.execCommand('fontSize', false, '7');
+        editorRef?.querySelectorAll('font[size="7"]').forEach((f) => {
+            const span = document.createElement('span');
+            span.style.fontSize = `${px ?? base}px`;
+            while (f.firstChild) span.appendChild(f.firstChild);
+            span.querySelectorAll<HTMLElement>('[style*="font-size"]').forEach(n => { n.style.fontSize = ''; });
+            f.replaceWith(span);
+        });
+        updateActiveFormats();
+        syncSpans();
+    };
+
     const handleCommit = () => {
         if (!editorRef || !props.editingId()) return;
         const spans = htmlToSpans(editorRef);
@@ -112,6 +146,9 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
         }
         if (showFontPicker() && !(e.target as HTMLElement)?.closest('.rt-font-wrapper')) {
             setShowFontPicker(false);
+        }
+        if (showSizePicker() && !(e.target as HTMLElement)?.closest('.rt-font-wrapper')) {
+            setShowSizePicker(false);
         }
     };
 
@@ -268,6 +305,29 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                     </div>
                                 </Show>
                             </div>
+                            <div class="rt-font-wrapper">
+                                <button
+                                    class="rt-toolbar-btn rt-font-btn"
+                                    title="Font size for the selected text"
+                                    onClick={() => { setShowSizePicker(!showSizePicker()); setShowFontPicker(false); setShowColorPicker(false); }}
+                                >
+                                    <span class="rt-font-icon">A<sub style={{ 'font-size': '8px' }}>A</sub></span>
+                                </button>
+                                <Show when={showSizePicker()}>
+                                    <div class="rt-font-popover">
+                                        <button
+                                            class="rt-font-option"
+                                            onClick={() => { applyFontSize(null, fontSizeVal); setShowSizePicker(false); }}
+                                        >Default ({Math.round(fontSizeVal)})</button>
+                                        {TOOLBAR_SIZES.map(size => (
+                                            <button
+                                                class="rt-font-option"
+                                                onClick={() => { applyFontSize(size, fontSizeVal); setShowSizePicker(false); }}
+                                            >{size}</button>
+                                        ))}
+                                    </div>
+                                </Show>
+                            </div>
                             <Show when={props.onExpand}>
                                 <span class="rt-toolbar-divider" />
                                 <button class="rt-toolbar-btn" title="Expand Editor" onClick={() => props.onExpand?.()}>
@@ -345,7 +405,7 @@ const RichTextEditingOverlay: Component<RichTextEditingOverlayProps> = (props) =
                                 // docs/design/dark-mode.md) so editing text reads the same.
                                 color: RenderPipeline.adjustColor(el.textColor || el.strokeColor || '#000000', store.resolvedTheme === 'dark' || store.resolvedTheme === 'focus'),
                                 'text-align': textAlign,
-                                'line-height': `${fontSizeVal * scale * 1.2}px`,
+                                'line-height': `${lineHeightOf(fontSizeVal, el) * scale}px`,
                                 filter: 'none',
                             }}
                             onBlur={handleBlur}

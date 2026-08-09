@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.185](0.8.185.md) — Designer review round two: flip that takes the anchor points with it, Shift for straight pen lines, moving an anchor on a rotated shape no longer dragging the whole shape, line spacing, different font sizes inside one text box, independent corner radii, group renaming and a Shift+I eyedropper
 - [0.8.184](0.8.184.md) — The origin was serving two different builds from the same URL (7 of 8 fetches returned a three-release-old `sw.js`), which is why the precache trim kept un-shipping and is a strong candidate for the real cause of the error screen. New `npm run verify:deploy` samples and asserts; plus an `.htaccess` sw.js rule that had never taken effect
 - [0.8.183](0.8.183.md) — The object tree: every object on a layer listed in the Layers panel, with per-object select (incl. inside a group), hide, lock, rename and drag-to-restack. New optional `visible`/`name` element fields, absent-means-visible, honoured across render, hit-test, marquee, minimap and all seven export paths
 - [0.8.182](0.8.182.md) — "All my saved drawings are gone": a failed IndexedDB open made the gallery, autosave and version history all look deleted at once, cached the failure for the session, reported memory-only writes as saved, and then cleared the crash-recovery slot on that false success. Plus marquee selection now takes whole groups (Illustrator/Figma)

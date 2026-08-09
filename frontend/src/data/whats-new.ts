@@ -13,6 +13,18 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.185', date: '2026-08-09', items: [
+        'Flipping a shape now takes its anchor points with it. Flip a pen path horizontally and the outline mirrored, but the little square handles stayed where they were — so the points you could see and grab were no longer on the curve. Drawings already flipped the old way put themselves right the next time you flip them.',
+        'Hold Shift while drawing with the Pen and your line snaps to clean angles — dead horizontal, vertical, or 45° — instead of relying on a steady hand. It is the same snap the Line and Arrow tools use, and the preview shows exactly where the point will land before you click.',
+        'Moving an anchor point on a shape you have rotated no longer drags the rest of the shape along with it. The further round you had turned the shape, the worse it was; now the point you grabbed is the only thing that moves.',
+        'Text has a Line Spacing control, next to Letter Spacing. Set it once and it follows everywhere — wrapping, the box growing to fit, editing on canvas, and every export.',
+        'You can give different words in the same text box different sizes. Select the word, pick a size from the new size button in the text toolbar, and one word of a headline can be twice the height of the rest without splitting it into separate text objects.',
+        'Rectangles can round each corner on its own. One corner soft and three sharp, or a rounded diagonal pair — the shapes packaging, cards and logos actually need. Corners you do not touch keep following the main Roundness slider.',
+        'Groups can be renamed. Double-click a group in the Layers panel and call it "Front panel" instead of "Group (4)". The name stays with the artwork when you save, undo, duplicate or copy it into another drawing.',
+        'Cutting a rounded rectangle with the Knife or Scissors keeps its rounded corners instead of squaring them off. The same is true anywhere a shape becomes an editable path.',
+        'The Eyedropper has a shortcut: Shift+I. Handy when you are matching one colour across a lot of elements.',
+        'The Bend slider for Arc, Wave and the other warp presets was already there, in the Properties panel — it was just impossible to find, and dragging it could not be undone. Both fixed: applying a warp now tells you where the control is, and one drag is one undo.',
+    ] },
     { version: '0.8.183', date: '2026-08-07', items: [
         'The Layers panel now shows what is actually on each layer. Click the box icon on a layer row to list its objects, newest on top, with groups you can open up. It is the missing half of the panel: until now it managed layers but never the things inside them, so the only way to reach one object in a busy drawing was to hunt for it on the canvas.',
         'Each object in the list can be selected, hidden, locked, renamed, and dragged up or down to change what sits in front of what. You can pick out a single object inside a group from the list without opening the group first.',

@@ -246,11 +246,25 @@ await Y.restoreVersion(id);`}</code></pre>
                 <h2>Lists & rich text</h2>
                 <p>
                     Rich-text elements (the <strong>Rich Text</strong> tool) get a mini toolbar while editing:
-                    bold/italic/underline/strikethrough, text color, font, and <strong>bullet / numbered
-                    lists</strong> — Enter adds the next item. Pasting a bulleted outline from another app
+                    bold/italic/underline/strikethrough, text color, font, <strong>font size</strong>, and
+                    <strong> bullet / numbered lists</strong> — Enter adds the next item. Pasting a bulleted
+                    outline from another app
                     converts to list formatting automatically, <strong>including indented sub-levels</strong>:
                     each level is drawn one indent deeper with its own marker, and the canvas matches the
                     editor line for line.
+                </p>
+                <h3>Different sizes in the same text box</h3>
+                <p>
+                    Select the words you want and pick a size from the <strong>A<sub>A</sub></strong> button —
+                    one word of a headline can be 72 while the rest stay 32, in a single text object. It is a
+                    per-run setting, so bold, colour and font can differ across the same line too. Sizes are
+                    absolute px, matching the element's own <em>Font Size</em>.
+                </p>
+                <p>
+                    <strong>Default</strong> (top of the size list) puts the selection back to the element's own
+                    size. Note that this writes that size onto the run explicitly rather than clearing it, so a
+                    run reset this way will not follow a later change to the element's base Font Size — reset it
+                    again, or retype it, if you change the base afterwards.
                 </p>
                 <p>
                     Lists survive export: PNG/JPG/PDF render through the canvas, and <strong>SVG</strong>

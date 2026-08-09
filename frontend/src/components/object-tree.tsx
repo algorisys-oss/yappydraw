@@ -14,9 +14,9 @@ import { type Component, For, Show, createSignal, createMemo } from 'solid-js';
 import { Eye, EyeOff, Lock, Unlock, ChevronRight } from 'lucide-solid';
 import {
     store, setStore, updateElement, setElementsVisible, toggleElementVisible, setElementName,
-    moveElementsNextTo,
+    setGroupName, moveElementsNextTo,
 } from '../store/app-store';
-import { elementLabel, groupLabel, allHidden, allLocked } from '../utils/object-label';
+import { elementLabel, groupLabel, groupNameOf, allHidden, allLocked } from '../utils/object-label';
 import type { DrawingElement } from '../types';
 import './object-tree.css';
 
@@ -93,9 +93,20 @@ const ObjectTree: Component<{ layerId: string }> = (props) => {
         setStore('selection', s => additive ? [...new Set([...s, ...ids])] : ids);
     };
 
+    /** Rename handler per row — groups and objects keep their names in different places
+     *  (a group has no element of its own), so the row supplies the writer. */
+    const [renameFn, setRenameFn] = createSignal<(name: string) => void>(() => { });
+
     const commitRename = (id: string) => {
-        setElementName(id, editText());
+        const write = renameFn();
+        if (write) write(editText()); else setElementName(id, editText());
         setEditId(null);
+    };
+
+    const startRename = (id: string, label: string, write: (name: string) => void) => {
+        setRenameFn(() => write);
+        setEditId(id);
+        setEditText(label);
     };
 
     /** One row — used for both element and group nodes so they stay in step. */
@@ -105,7 +116,8 @@ const ObjectTree: Component<{ layerId: string }> = (props) => {
         expandable?: boolean; onToggleExpand?: () => void;
         onSelect: (e: MouseEvent) => void;
         onToggleHidden: () => void; onToggleLocked: () => void;
-        renamable?: boolean;
+        /** Absent = not renamable. Present = called with the typed name on commit. */
+        onRename?: (name: string) => void;
         dragIds: string[];
     }> = (r) => (
         <div
@@ -146,10 +158,11 @@ const ObjectTree: Component<{ layerId: string }> = (props) => {
 
             <span
                 class="ot-label"
+                title={r.onRename ? 'Double-click to rename' : undefined}
                 onDblClick={(e) => {
-                    if (!r.renamable) return;
+                    if (!r.onRename) return;
                     e.stopPropagation();
-                    setEditId(r.id); setEditText(r.label);
+                    startRename(r.id, r.label, r.onRename);
                 }}
             >
                 <Show when={editId() === r.id} fallback={r.label}>
@@ -186,7 +199,7 @@ const ObjectTree: Component<{ layerId: string }> = (props) => {
                         selected={store.selection.includes(el.id)}
                         hidden={el.visible === false}
                         locked={!!el.locked}
-                        renamable
+                        onRename={(name) => setElementName(el.id, name)}
                         onSelect={(e) => selectIds([el.id], e.shiftKey || e.ctrlKey || e.metaKey)}
                         onToggleHidden={() => toggleElementVisible(el.id)}
                         onToggleLocked={() => updateElement(el.id, { locked: !el.locked })}
@@ -200,10 +213,11 @@ const ObjectTree: Component<{ layerId: string }> = (props) => {
                     <>
                         <Row
                             id={g().id}
-                            label={groupLabel(g().members.length)}
+                            label={groupLabel(g().members.length, groupNameOf(g().members, g().id))}
                             depth={p.depth}
                             expandable
                             dragIds={ids()}
+                            onRename={(name) => setGroupName(g().id, name)}
                             onToggleExpand={() => toggleExpanded(g().id)}
                             selected={g().members.every(m => store.selection.includes(m.id))}
                             hidden={allHidden(g().members)}

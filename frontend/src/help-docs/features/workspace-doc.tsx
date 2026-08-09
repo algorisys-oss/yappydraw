@@ -237,9 +237,20 @@ Yappy.exitAllGroups();         // leave entirely`}</code></pre>
                     <li><strong>Padlock</strong> locks it against selection and editing, the same as Object ▸ Lock.</li>
                     <li><strong>Double-click the name</strong> to rename it. Objects start with a derived label — their
                         own text, or their type ("Rectangle", "Path") — so most never need naming.</li>
+                    <li><strong>Groups rename the same way.</strong> Double-click a group row and give it a real name —
+                        "Front panel", "Logo lockup" — instead of the default <em>Group (4)</em>. Nested groups are named
+                        independently, so an inner "Cap" can sit inside an outer "Bottle". Clear the name (empty it) and
+                        the row goes back to showing the member count.</li>
                     <li><strong>Drag a row</strong> to restack it; drop on the upper half of a row to go in front of it,
                         the lower half to go behind. Dragging a group moves the whole group.</li>
                 </ul>
+                <p class="doc-note">
+                    <strong>Where a group's name lives.</strong> A group isn't an object — it's an id its members share —
+                    so its name is stored on the members themselves. In practice that means the name travels with the
+                    artwork: it survives saving, undo, duplicating the group, and copy-pasting it into another drawing.
+                    <strong> Ungrouping discards it</strong> (there is no longer a group to name), so re-grouping gives
+                    you a fresh <em>Group (n)</em> to name again.
+                </p>
                 <p class="tip-box">
                     A renamed object keeps its <em>id</em>. The name is a label for you; the id is what scripts address
                     (<code>Yappy.renameElement</code> changes that instead). Hiding is not deleting — hidden objects are
@@ -250,7 +261,11 @@ Yappy.toggleElementVisible(id);
 Yappy.showAllElements();
 Yappy.setElementName(id, 'Hero banner');   // '' clears it
 Yappy.elementLabel(id);                    // what the tree shows
-Yappy.moveElementsNextTo([id], targetId, 'above');`}</code></pre>
+Yappy.moveElementsNextTo([id], targetId, 'above');
+
+const gid = Yappy.getElement(id).groupIds.at(-1);  // outermost group of an object
+Yappy.setGroupName(gid, 'Front panel');    // '' clears it → back to "Group (n)"
+Yappy.getGroupName(gid);`}</code></pre>
             </section>
 
             {/* ─── ARRANGE (STACKING ORDER) ───────────────────────────── */}

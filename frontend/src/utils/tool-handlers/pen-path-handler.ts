@@ -3,10 +3,15 @@
  * Multi-click tool that builds an editable vector `path` element:
  *   • click              → add a corner anchor
  *   • click-drag         → add a smooth anchor (drag sets symmetric Bézier handles)
+ *   • Shift between clicks → constrain the SEGMENT to 15° increments (straight lines)
+ *   • Shift while dragging → constrain the HANDLES to 45° (the Clock Method, below)
  *   • Alt while dragging → break the pair: the out handle moves alone, leaving a cusp
  *   • click first anchor → close the path
  *   • Enter / Esc / double-click → finish an open path
  *   • Backspace          → remove the last anchor
+ *
+ * Shift means two different things, but never at the same time: mid-drag it shapes the
+ * handles of the anchor you are pulling, and between clicks it aims the next segment.
  *
  * Internally `pState.penAnchors` are kept relative to the first anchor's world
  * position (`startX/startY`) and may be negative. On every write we re-normalize
@@ -21,6 +26,7 @@ import { store, addElement, updateElement, setStore, setSelectedTool, pushToHist
 import { snapPoint } from '../snap-helpers';
 import { generateId } from '../id-generator';
 import { setAnchorHandle } from '../anchor-handle';
+import { constrainToAngle } from '../angle-constrain';
 
 function snap(x: number, y: number): { x: number; y: number } {
     if (store.gridSettings.snapToGrid) return snapPoint(x, y, store.gridSettings.gridSize);
@@ -39,6 +45,26 @@ export function constrainHandleVec(dx: number, dy: number): { x: number; y: numb
     const step = Math.PI / 4; // 45°
     const ang = Math.round(Math.atan2(dy, dx) / step) * step;
     return { x: Math.cos(ang) * len, y: Math.sin(ang) * len };
+}
+
+/**
+ * Where the next anchor goes, in world coords.
+ *
+ * With the constraint on, the point snaps to the nearest 15° increment from the
+ * PREVIOUS anchor — the same increment, and the same precedence over grid snap, that
+ * the line/arrow tools use (`drawOnMove`), so a Shift-drawn pen segment lines up with a
+ * Shift-drawn line. 15° includes 0/45/90, so horizontal and vertical come out exact.
+ *
+ * Grid snap and a fixed angle can't both be honoured — snapping the constrained point
+ * to the grid is what would bend it back off the angle — so the angle wins, matching
+ * the line tool. Without a previous anchor there is no angle to hold, so the very first
+ * anchor still grid-snaps.
+ */
+function placeAnchor(x: number, y: number, pState: PointerState, constrain: boolean): { x: number; y: number } {
+    const prev = pState.penAnchors[pState.penAnchors.length - 1];
+    if (!constrain || !prev) return snap(x, y);
+    const c = constrainToAngle(pState.startX + prev.x, pState.startY + prev.y, x, y, 15);
+    return { x: c.x, y: c.y };
 }
 
 /**
@@ -90,7 +116,7 @@ function resetPen(pState: PointerState): void {
 
 // ─── Pointer Down ────────────────────────────────────────────────────
 
-export function penOnDown(x: number, y: number, pState: PointerState, _helpers: PointerHelpers): void {
+export function penOnDown(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, constrain = false): void {
     const { x: px, y: py } = snap(x, y);
 
     if (!pState.isPenBuilding) {
@@ -124,18 +150,23 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
     }
 
     if (!pState.currentId) return;
-    const relX = px - pState.startX;
-    const relY = py - pState.startY;
 
-    // Click near the first anchor (origin) → close the path and finish.
+    // Close test uses the UNCONSTRAINED point on purpose: holding Shift can aim the
+    // candidate anchor away from the first one, and "click the start to close" must not
+    // become unreachable just because the segment is being constrained.
     const closeThreshold = 12 / store.viewState.scale;
-    if (pState.penAnchors.length >= 2 && Math.hypot(relX, relY) < closeThreshold) {
+    if (pState.penAnchors.length >= 2 &&
+        Math.hypot(px - pState.startX, py - pState.startY) < closeThreshold) {
         writePenElement(pState, null, true);
         setStore('selection', [pState.currentId]);
         resetPen(pState);
         setSelectedTool('selection');
         return;
     }
+
+    const p = placeAnchor(x, y, pState, constrain);
+    const relX = p.x - pState.startX;
+    const relY = p.y - pState.startY;
 
     pState.penAnchors.push({ x: relX, y: relY, kind: 'corner' });
     pState.penActiveIdx = pState.penAnchors.length - 1;
@@ -172,8 +203,11 @@ export function penOnMove(x: number, y: number, pState: PointerState, _helpers: 
         pState.penAnchors[pState.penActiveIdx] = next;
         writePenElement(pState);
     } else {
-        // Rubber-band: preview a segment from the last anchor to the cursor.
-        writePenElement(pState, { x: relX, y: relY, kind: 'corner' });
+        // Rubber-band: preview a segment from the last anchor to the cursor. Constrained
+        // here as well as on the click that commits it, so the preview is honest about
+        // where the anchor will land.
+        const p = placeAnchor(x, y, pState, constrain);
+        writePenElement(pState, { x: p.x - pState.startX, y: p.y - pState.startY, kind: 'corner' });
     }
 }
 

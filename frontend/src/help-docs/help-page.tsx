@@ -92,7 +92,7 @@ const shapeDocuments: ShapeDoc[] = [
         icon: '✒️',
         category: 'Drawing',
         description: 'Pen tool, the Node tool (Direct Selection), Convert to Path, Pathfinder booleans, Outline Stroke, Offset Path, and holes',
-        keywords: 'direct selection direct select white arrow node tool nodes anchor anchors anchor point control point handle handles bezier bézier edit points edit path reshape path marquee select nodes N key pen tool P corner smooth convert anchor insert point delete point subpath compound path hole donut pathfinder boolean unite subtract intersect exclude divide trim merge crop outline stroke offset path simplify convert to path switch shape while editing shift click add path noderef toggleNodeTool setNodeSelection allNodesOfSelection getPathNodes getNodeHandles moveSelectedNodes setSelectedNodesKind deleteSelectedNodes scripting api',
+        keywords: 'direct selection direct select white arrow node tool nodes anchor anchors anchor point control point handle handles bezier bézier edit points edit path reshape path marquee select nodes N key pen tool P corner smooth convert anchor insert point delete point subpath compound path hole donut pathfinder boolean unite subtract intersect exclude divide trim merge crop outline stroke offset path simplify convert to path switch shape while editing shift click add path straight line straight lines constrain segment 15 degrees fixed angle horizontal vertical 45 clock method noderef toggleNodeTool setNodeSelection allNodesOfSelection getPathNodes getNodeHandles moveSelectedNodes setSelectedNodesKind deleteSelectedNodes scripting api',
         content: VectorPathsDoc
     },
     // Diagrams
@@ -135,7 +135,7 @@ const shapeDocuments: ShapeDoc[] = [
         icon: '🪄',
         category: 'Design',
         description: 'Combine shapes (Unite/Subtract/Intersect/Exclude), Shape Builder, Magic Wand, Liquify, Knife & Scissors, generative shapes, and the Symbol Sprayer — with API examples',
-        keywords: 'unite union subtract minus front intersect exclude boolean combine merge shapes pathfinder compound shape non-destructive keep editable contextual toolbar lens flare spiral arc rectangular grid polar grid magic wand select similar distort transform pucker bloat twirl zigzag crystallize roughen liquify knife scissors curvature reshape blob brush path eraser puppet warp perspective grid touch type vertical type slice graph chart symbolism sprayer width tool live paint shape builder pathfinder offset stroke outline type on path vector tools palette google fonts font picker add font custom font ttf otf woff letter spacing preview applied',
+        keywords: 'unite union subtract minus front intersect exclude boolean combine merge shapes pathfinder compound shape non-destructive keep editable contextual toolbar lens flare spiral arc rectangular grid polar grid magic wand select similar distort transform pucker bloat twirl zigzag crystallize roughen liquify knife scissors curvature reshape blob brush path eraser puppet warp perspective grid touch type vertical type slice graph chart symbolism sprayer width tool live paint shape builder pathfinder offset stroke outline type on path warp preset make with warp arc arch flag wave rise bulge bend slider how much it bends curve amount bend text arc text properties panel bake warp remove warp vector tools palette google fonts font picker add font custom font ttf otf woff letter spacing preview applied',
         content: IllustratorToolsDoc
     },
     {

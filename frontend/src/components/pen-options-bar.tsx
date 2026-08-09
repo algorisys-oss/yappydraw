@@ -4,9 +4,11 @@ import "./pen-options-bar.css";
 
 /**
  * Compact floating options for the vector Pen / path editing. Surfaces the
- * keyboard-free "Clock Method" constrain toggle (the on-screen stand-in for
- * holding Shift) so tablets can snap Bézier handles to 90°/45° while drawing
- * or editing. Visible while the Pen tool is active or a single path is selected.
+ * keyboard-free constrain toggle (the on-screen stand-in for holding Shift) so
+ * tablets get both of Shift's jobs: snapping Bézier handles to 90°/45° while
+ * dragging (the "Clock Method"), and constraining the segment between clicks to
+ * 15° for straight lines. Visible while the Pen tool is active or a single path
+ * is selected.
  */
 const PenOptionsBar: Component = () => {
     const selectedPath = () =>
@@ -21,7 +23,7 @@ const PenOptionsBar: Component = () => {
                 <button
                     class={`pen-opt-btn ${store.penConstrain ? 'active' : ''}`}
                     on:click={() => setPenConstrain()}
-                    title="Constrain handles to 90°/45° (Clock Method) — keyboard-free stand-in for Shift. Also: hold a second finger while dragging."
+                    title="Constrain: straight segments (15°) while drawing, and handles to 90°/45° while dragging (Clock Method) — keyboard-free stand-in for Shift. Also: hold a second finger while dragging."
                 >
                     <span class="pen-opt-icon">⊾</span>
                     <span class="pen-opt-label">90°/45°</span>

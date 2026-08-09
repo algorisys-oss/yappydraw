@@ -1,3 +1,4 @@
+import { lineHeightFactorOf } from './text-line-height';
 import type { DrawingElement } from "../types";
 import type { IRenderer } from "../rendering/IRenderer";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
@@ -158,7 +159,10 @@ export const measureContainerText = (
     const fontSize = el.fontSize || 28;
     const fontStr = getFontString(el);
     const letterSpacing = el.letterSpacing || 0;
-    const cacheKey = `${text}|${fontStr}|${availableWidth}|${el.type}|${letterSpacing}`;
+    // The factor is part of the key: without it, changing line spacing would keep
+    // returning the previously cached height and the setting would look inert.
+    const lineFactor = lineHeightFactorOf(el);
+    const cacheKey = `${text}|${fontStr}|${availableWidth}|${el.type}|${letterSpacing}|${lineFactor}`;
 
     const cached = _textMetricsCache.get(cacheKey);
     if (cached) return cached;
@@ -185,7 +189,7 @@ export const measureContainerText = (
         }
     });
 
-    const lineHeight = fontSize * 1.2;
+    const lineHeight = fontSize * lineFactor;
 
     let maxLineWidth = 0;
     lines.forEach(line => {
@@ -263,9 +267,12 @@ export const measureWrappedTextHeight = (
     width: number,
     fontSize: number,
     fontFamily?: string,
-    letterSpacing?: number
+    letterSpacing?: number,
+    /** Element's line-spacing multiple; omitted means the 1.2 default. */
+    lineHeightFactor?: number
 ): number => {
-    if (!text) return fontSize * 1.2;
+    const factor = lineHeightFactorOf({ lineHeight: lineHeightFactor });
+    if (!text) return fontSize * factor;
 
     const ctx = getMeasurementRenderer();
     const resolvedFont = resolveFontFamily(fontFamily);
@@ -288,8 +295,7 @@ export const measureWrappedTextHeight = (
     });
 
     ctx.letterSpacing = '0px'; // shared renderer — reset so it doesn't leak
-    const lineHeight = fontSize * 1.2;
-    return totalLines * lineHeight;
+    return totalLines * fontSize * factor;
 };
 
 export const fitShapeToText = (

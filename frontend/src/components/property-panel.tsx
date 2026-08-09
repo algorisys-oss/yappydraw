@@ -906,6 +906,23 @@ const WarpPresetEditor: Component<{ el: () => any }> = (props) => {
     const bend = () => Math.round((warp()?.bend ?? 0.5) * 100);
     const preset = () => (warp()?.preset ?? 'arc') as any;
     const reapply = (p: string, b: number, history: boolean) => applyWarpPreset(ids(), p as any, b, history);
+    // History for the Bend drag has to be snapshotted BEFORE the first live change:
+    // pushToHistory() captures the state as it is *now*, so pushing on `change` (after a
+    // drag's worth of live re-warps) would snapshot the value you just dragged to and make
+    // undo a no-op. Push once at the start of the interaction instead, and let every
+    // re-warp in the drag run history-free — one undo step per drag, landing on the bend
+    // you started from. `input`-not-`pointerdown` is deliberate: keyboard arrows on the
+    // slider fire input/change with no pointer event and must still be undoable.
+    let bendInteraction = false;
+    const bendLive = (v: number) => {
+        if (!bendInteraction) { pushToHistory(); bendInteraction = true; }
+        reapply(preset(), v, false);
+    };
+    const bendCommit = (v: number) => {
+        if (!bendInteraction) pushToHistory();
+        reapply(preset(), v, false);
+        bendInteraction = false;
+    };
     return (
         <Show when={ids().length === 1 && warp()?.preset}>
             <div class="property-group">
@@ -919,8 +936,8 @@ const WarpPresetEditor: Component<{ el: () => any }> = (props) => {
                 <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '6px' }}>
                     <span style={{ 'font-size': '11px', 'min-width': '54px' }}>Bend</span>
                     <input type="range" style={{ flex: '1' }} min={-100} max={100} step={1} value={bend()}
-                        onInput={e => reapply(preset(), parseInt(e.currentTarget.value) / 100, false)}
-                        onChange={e => reapply(preset(), parseInt(e.currentTarget.value) / 100, true)} />
+                        onInput={e => bendLive(parseInt(e.currentTarget.value) / 100)}
+                        onChange={e => bendCommit(parseInt(e.currentTarget.value) / 100)} />
                     <span style={{ 'font-size': '11px', 'min-width': '34px', 'text-align': 'right' }}>{bend()}%</span>
                 </div>
                 <div class="control-row" style={{ gap: '6px' }}>

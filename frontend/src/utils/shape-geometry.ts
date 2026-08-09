@@ -1,3 +1,4 @@
+import { roundRectRadii } from './corner-radius';
 import type { DrawingElement, ElementType } from "../types";
 import { isWasmEnabled } from "../wasm/feature-flags";
 import { wasmGetShapeGeometry } from "../wasm/bridge/shape-paths-bridge";
@@ -6,7 +7,7 @@ import { warpGeometry, getEffectiveGrid } from "./envelope-warp";
 import { applyTurntable } from "./turntable";
 
 export type ShapeGeometry =
-    | { type: 'rect', x: number, y: number, w: number, h: number, r?: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
+    | { type: 'rect', x: number, y: number, w: number, h: number, r?: number | [number, number, number, number], shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
     | { type: 'ellipse', cx: number, cy: number, rx: number, ry: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
     | { type: 'path', path: string, evenOdd?: boolean, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
     | { type: 'points', points: { x: number, y: number }[], isClosed?: boolean, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
@@ -134,7 +135,9 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         case 'umlArtifact':
         case 'umlObject':
         case 'umlPort':
-            return { type: 'rect', x: x, y: y, w: w, h: h, r: cornerRadius(el, 0.15) };
+            // Fills, clip masks and hit-testing all trace this — so per-corner rounding has
+            // to be visible here too, or a one-corner-rounded shape would fill as if uniform.
+            return { type: 'rect', x: x, y: y, w: w, h: h, r: roundRectRadii(el as any, 0.15) };
 
         case 'umlAction':
             return { type: 'rect', x: x, y: y, w: w, h: h, r: Math.min(Math.abs(h) / 2, Math.abs(w) / 2, 18) };

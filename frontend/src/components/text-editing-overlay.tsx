@@ -9,6 +9,7 @@ import { type Component, createEffect, Show } from "solid-js";
 import { Maximize2 } from "lucide-solid";
 import { store, setSelectedTool, updateElement } from "../store/app-store";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
+import { lineHeightPx as lineHeightOf } from "../utils/text-line-height";
 import { measureContainerText, measureWrappedTextHeight, resolveFontFamily, getMeasurementContext, getFontString, containerTextAvailableWidth, containerTextWrapWidth } from "../utils/text-utils";
 import { fontShorthand } from "../utils/font-variants";
 import { CanvasRenderer } from "../rendering/CanvasRenderer";
@@ -84,7 +85,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                     const padding = 4;
                     const newWidth = Math.max(maxW + padding * 2, fontSize);
                     const lineCount = Math.max(1, text.split('\n').length);
-                    const newHeight = Math.max(lineCount * fontSize * 1.2, fontSize * 1.2);
+                    const newHeight = Math.max(lineCount * lineHeightOf(fontSize, el), lineHeightOf(fontSize, el));
 
                     if (Math.abs(newWidth - el.width) > 1 || Math.abs(newHeight - el.height) > 1) {
                         updateElement(el.id, { width: newWidth, height: newHeight });
@@ -101,9 +102,9 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
 
                 // Fixed-width box (drag-placed): auto-grow height only.
                 const existingWidth = el.width || 200;
-                const measuredHeight = measureWrappedTextHeight(text, existingWidth, fontSize, el.fontFamily, el.letterSpacing);
+                const measuredHeight = measureWrappedTextHeight(text, existingWidth, fontSize, el.fontFamily, el.letterSpacing, el.lineHeight);
                 // Only grow, never shrink — preserve existing height to prevent text jumping
-                const newHeight = Math.max(measuredHeight, el.height, fontSize * 1.2);
+                const newHeight = Math.max(measuredHeight, el.height, lineHeightOf(fontSize, el));
 
                 // Update element height in store (no history — commit records history)
                 if (Math.abs(newHeight - el.height) > 1) {
@@ -322,8 +323,12 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                     : isUmlSection ? umlSectionHeight
                     : isConnectorType ? Math.max(40, fontSizeVal * scale * 2)
                     : elH * scale;
-                // Connector renderer uses 1.3 line-height; text/shape renderers use 1.2
-                const lineHeightPx = fontSizeVal * scale * (isConnectorType ? 1.3 : 1.2);
+                // Connectors draw their label at a fixed 1.3; everything else follows the
+                // element's own line spacing, so the caret sits on the same lines the canvas
+                // draws (a mismatch here makes text jump as you start and stop editing).
+                const lineHeightPx = isConnectorType
+                    ? fontSizeVal * scale * 1.3
+                    : lineHeightOf(fontSizeVal, el) * scale;
 
                 const isStandaloneText = el.type === 'text' || el.type === 'richtext';
                 // Container shapes: editing containerText on regular shapes (not connectors)
@@ -347,7 +352,7 @@ const TextEditingOverlay: Component<TextEditingOverlayProps> = (props) => {
                 // measureWrappedTextHeight returns N * lineHeight which matches CSS line-height spacing
                 if (isStandaloneText) {
                     const text = props.editText() || '';
-                    const wrappedHeight = measureWrappedTextHeight(text, el.width || 200, fontSizeVal, el.fontFamily, el.letterSpacing);
+                    const wrappedHeight = measureWrappedTextHeight(text, el.width || 200, fontSizeVal, el.fontFamily, el.letterSpacing, el.lineHeight);
                     const totalTextH = wrappedHeight * scale;
                     const vAlign = el.verticalAlign || 'middle';
                     if (vAlign === 'top') {

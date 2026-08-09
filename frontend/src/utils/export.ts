@@ -1,3 +1,4 @@
+import { lineHeightPx } from './text-line-height';
 import { store } from "../store/app-store";
 import { isPagedDocType } from '../types/slide-types';
 import { renderElement } from "./render-element";
@@ -375,9 +376,22 @@ function geometryToDs(geo: ShapeGeometry): { ds: string[]; evenOdd: boolean } {
         let eo = false;
         if (g.type === 'rect') {
             const { x, y, w, h, r } = g;
-            if (r && r > 0) {
-                const rr = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
-                out.push(`M ${round(x + rr)} ${round(y)} H ${round(x + w - rr)} A ${round(rr)} ${round(rr)} 0 0 1 ${round(x + w)} ${round(y + rr)} V ${round(y + h - rr)} A ${round(rr)} ${round(rr)} 0 0 1 ${round(x + w - rr)} ${round(y + h)} H ${round(x + rr)} A ${round(rr)} ${round(rr)} 0 0 1 ${round(x)} ${round(y + h - rr)} V ${round(y + rr)} A ${round(rr)} ${round(rr)} 0 0 1 ${round(x + rr)} ${round(y)} Z`);
+            // `r` is a single radius for a uniformly rounded rect, or four (TL,TR,BR,BL) when
+            // the corners are set independently. Each is capped at half the shorter side, and
+            // a zero corner simply omits its arc so the two edges meet square.
+            const cap = Math.min(Math.abs(w) / 2, Math.abs(h) / 2);
+            const [tl, tr, br, bl] = (Array.isArray(r) ? r : [r || 0, r || 0, r || 0, r || 0])
+                .map(v => Math.max(0, Math.min(v || 0, cap)));
+            if (tl || tr || br || bl) {
+                const arc = (rad: number, ex: number, ey: number) =>
+                    rad ? ` A ${round(rad)} ${round(rad)} 0 0 1 ${round(ex)} ${round(ey)}` : '';
+                out.push(
+                    `M ${round(x + tl)} ${round(y)}`
+                    + ` H ${round(x + w - tr)}` + arc(tr, x + w, y + tr)
+                    + ` V ${round(y + h - br)}` + arc(br, x + w - br, y + h)
+                    + ` H ${round(x + bl)}` + arc(bl, x, y + h - bl)
+                    + ` V ${round(y + tl)}` + arc(tl, x + tl, y)
+                    + ' Z');
             } else {
                 out.push(`M ${round(x)} ${round(y)} h ${round(w)} v ${round(h)} h ${round(-w)} Z`);
             }
@@ -941,7 +955,7 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
             if (el.richText && el.richText.length > 0) {
                 const measureRenderer = getMeasurementRenderer();
                 const availableWidth = Math.max(el.width - padding * 2, 20);
-                const defaults = { fontSize, fontFamily: el.fontFamily || 'sans-serif' };
+                const defaults = { fontSize, fontFamily: el.fontFamily || 'sans-serif', lineHeight: el.lineHeight };
                 const layout = layoutRichText(measureRenderer, el.richText, availableWidth, defaults);
                 const verticalPadding = Math.max(0, (el.height - layout.totalHeight) / 2);
 
@@ -993,7 +1007,7 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
                 // to one of two, so a Light or SemiBold wordmark exported as Regular.
                 const fontWeight = String(normalizeFontWeight(el.fontWeight));
                 const fontStyleStr = normalizeFontStyle(el.fontStyle);
-                const lineHeight = fontSize * 1.2;
+                const lineHeight = lineHeightPx(fontSize, el);
                 const measureRenderer = getMeasurementRenderer();
                 measureRenderer.font = fontShorthand(el.fontWeight, el.fontStyle, fontSize, fontFamily);
                 const availableWidth = Math.max(el.width - padding * 2, 20);
@@ -1218,7 +1232,7 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
             if (el.richContainerText && el.richContainerText.length > 0) {
                 // Rich text path
                 const measureRenderer = getMeasurementRenderer();
-                const defaults = { fontSize, fontFamily: el.fontFamily || 'hand-drawn' };
+                const defaults = { fontSize, fontFamily: el.fontFamily || 'hand-drawn', lineHeight: el.lineHeight };
                 const layout = layoutRichText(measureRenderer, el.richContainerText, maxWidth, defaults);
                 const startY = cy - layout.totalHeight / 2;
 
@@ -1263,7 +1277,7 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
                 }
             } else if (el.containerText) {
                 // Plain text path (original)
-                const lineHeight = fontSize * 1.2;
+                const lineHeight = lineHeightPx(fontSize, el);
                 const measureRenderer = getMeasurementRenderer();
                 measureRenderer.font = `${fontSize}px ${fontFamily}`;
                 const paragraphs = el.containerText.split('\n');

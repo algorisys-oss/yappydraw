@@ -5,7 +5,7 @@ import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel, toggleElementsPanel,
   toggleMinimap, toggleRulers, toggleKeyframePanel, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
-  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper, exitCompoundEdit,
+  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper, startEyedropper, exitCompoundEdit,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, moveSelectionZIndex, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
@@ -851,6 +851,13 @@ const App: Component = () => {
           // it was buried first in a 25-item Vector Tools list.
           e.preventDefault();
           toggleShapeBuilder();
+        } else if (e.shiftKey && key === 'i') {
+          // Eyedropper (Illustrator's I, which is taken here by image upload — so it joins
+          // the Shift+letter Illustrator-tool block alongside Shift+M/S/W/B/P). Picking up a
+          // style is a repeated action while matching colours across a design, and until now
+          // it was only reachable through the right-click menu.
+          e.preventDefault();
+          if (store.eyedropper?.active) cancelEyedropper(); else startEyedropper();
         } else if (e.shiftKey && key === 'x') {
           // Swap fill ⇄ stroke on the selection (Illustrator Shift+X).
           if (store.selection.length > 0) { e.preventDefault(); swapFillStroke(); }

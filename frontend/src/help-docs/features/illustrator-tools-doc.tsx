@@ -239,10 +239,41 @@ Yappy.distort('roughen', 0.08);  // light grunge`}</code></pre>
                 <p>
                     Bend a shape or text along a named envelope — Illustrator's <em>Object → Envelope Distort
                     → Make with Warp</em>. Select an object, right-click → <strong>Path → Warp Preset</strong>,
-                    and pick a style. The warp is <strong>live and re-editable</strong> (re-apply with a
-                    different bend to reshape); non-path shapes convert to a path first. Renders in both
-                    <strong> Sketch</strong> and <strong>Architectural</strong> styles. <strong>Apply / Bake
-                    Warp</strong> makes it permanent geometry.
+                    and pick a style. That first click applies a <strong>50% bend</strong>; how much it bends is
+                    then yours to set, live, from the Properties panel (below). Renders in both
+                    <strong> Sketch</strong> and <strong>Architectural</strong> styles.
+                </p>
+                <h3>Controlling how much it bends</h3>
+                <p>
+                    With the warped object selected, open the <strong>Properties</strong> panel
+                    (<span class="kbd">Alt</span>+<span class="kbd">Enter</span>, the sliders button in the top
+                    bar, or <em>Menu → Panels → Properties Panel</em>) — it grows a <strong>WARP PRESET</strong>
+                    section. This is where the bend lives; the right-click menu only starts the warp. Everything
+                    stays editable from here for as long as you haven't baked it:
+                </p>
+                <table class="api-table">
+                    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Style</strong></td><td>Switch between Arc / Arch / Flag / Wave / Rise / Bulge <em>after</em> the fact — the object re-warps from its original outline, so swapping styles never compounds.</td></tr>
+                        <tr><td><strong>Bend</strong></td><td>Drag from <strong>−100%</strong> to <strong>+100%</strong>. The shape re-warps as you drag. <strong>0%</strong> is flat (undeformed); <strong>negative</strong> bends the other way — a Wave inverts its humps, an Arc becomes a frown instead of a rainbow.</td></tr>
+                        <tr><td><strong>Bake</strong></td><td>Freeze the warp into permanent geometry. The anchors move to where the bend put them and the WARP PRESET section disappears — after this, the bend is no longer adjustable.</td></tr>
+                        <tr><td><strong>Remove</strong></td><td>Drop the warp and go back to the unbent outline.</td></tr>
+                    </tbody>
+                </table>
+                <p class="tip-box">
+                    <strong>Drag, don't re-apply.</strong> Re-picking a preset from the right-click menu always
+                    resets the bend to 50% — it's the "start a warp" action. Once a warp exists, use the
+                    <strong>Bend</strong> slider: it re-warps live as you drag, is the only way to get the values
+                    in between, and a whole drag counts as <strong>one</strong> undo step, so
+                    <span class="kbd">Ctrl</span>+<span class="kbd">Z</span> returns you to the bend you started
+                    the drag from rather than unwinding it a notch at a time.
+                </p>
+                <p class="doc-note">
+                    <strong>Text and non-path shapes convert to a path</strong> when you warp them. That is what
+                    lets the outline bend — but it means a warped headline is no longer editable text (you can't
+                    retype it), and a warped rectangle is no longer a rectangle (its corner-radius and shape
+                    properties are gone). Warp last, after the wording and styling are settled, or keep an
+                    unwarped copy on a hidden layer.
                 </p>
                 <table class="api-table">
                     <thead><tr><th>Preset</th><th>Shape</th></tr></thead>
@@ -257,8 +288,9 @@ Yappy.distort('roughen', 0.08);  // light grunge`}</code></pre>
                 </table>
                 <pre class="code-block"><code>{`const t = Yappy.createElement('text', 200, 200, 360, 120, { containerText: 'WARP', fontSize: 96 });
 Yappy.setSelected([t]);
-Yappy.applyWarpPreset('arc', 0.6);   // bend -1..1
-Yappy.applyWarpPreset('flag', -0.5); // re-warp live
+Yappy.applyWarpPreset('arc', 0.6);   // bend -1..1 (the slider's -100%..100%)
+Yappy.applyWarpPreset('arc', 0.15);  // same preset, gentler — what dragging Bend does
+Yappy.applyWarpPreset('flag', -0.5); // negative bends the other way
 Yappy.bakeWarp();                    // make it permanent geometry`}</code></pre>
                 <p class="tip-box">
                     For a fully custom envelope, use <strong>Mesh Warp</strong> (drag the orange control
@@ -293,6 +325,13 @@ Yappy.bakeWarp();                    // make it permanent geometry`}</code></pre
                         alone.</li>
                 </ul>
                 <p>Press <span class="kbd">Esc</span> to exit the tool.</p>
+                <p class="doc-note">
+                    <strong>Rounded corners survive the cut.</strong> Cutting converts the shape to a path
+                    first, and that conversion now carries the corner radius across as real arcs — so slicing
+                    a rounded rectangle (a packaging panel, a UI card) leaves the uncut corners as round as
+                    they were instead of squaring them off. The same applies anywhere else a shape becomes a
+                    path: Warp presets, Pathfinder, Convert to Path.
+                </p>
                 <p class="tip-box">
                     <strong>Cutting doesn't move the shape, and the pieces are still curves.</strong> The
                     Scissors subdivides the curve at the cut point rather than approximating it, so the two
@@ -554,6 +593,14 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                         tightens or loosens tracking on text elements, <strong>shape labels</strong> and
                         <strong>connector labels</strong> alike, applied through measurement, wrapping, in-place
                         editing and drawing (<code>Yappy.createElement(type, x, y, w, h, {'{'} letterSpacing: 2 {'}'})</code>).</li>
+                    <li><strong>Line spacing (leading)</strong>: the <strong>Line Spacing</strong> property (Text
+                        group) sets how far apart the lines sit, as a <em>multiple of the font size</em> like CSS
+                        <code>line-height</code> — <strong>1.2</strong> unless you change it, <code>1</code> for
+                        solid setting, <code>2</code> for double-spaced. A multiple rather than a pixel value, so
+                        resizing the text keeps the spacing proportional and it still means something when
+                        rich-text runs on the same line have different sizes. Applies to text elements, shape
+                        labels and rich text, and follows through wrapping, auto-height, in-place editing and
+                        SVG/PNG/PDF export (<code>Yappy.createElement(type, x, y, w, h, {'{'} lineHeight: 1.6 {'}'})</code>).</li>
                     <li><strong>Slice</strong> (Command Palette → Slice): drag a rectangle to export exactly that
                         region as a PNG (<code>Yappy.exportRegion(x,y,w,h)</code>). Artboards remain for persistent
                         named export regions.</li>
@@ -584,11 +631,26 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                     (or double-click) finishes; <span class="kbd">Backspace</span> removes the last anchor.
                 </p>
                 <p>
+                    <strong>Straight segments (15° constrain).</strong> Hold <span class="kbd">Shift</span>
+                    <em>between</em> clicks and the next point snaps to the nearest <strong>15°</strong> from the
+                    previous anchor, so perfectly horizontal, vertical and 45° segments are one click rather than a
+                    steady hand. It's the same increment the Line and Arrow tools use, and it takes precedence over
+                    Snap to Grid for that click (the grid would pull the point back off the angle). The rubber-band
+                    preview shows the constrained position, so what you see is where the anchor lands — and
+                    clicking the first anchor still closes the path with <span class="kbd">Shift</span> held.
+                </p>
+                <p>
                     <strong>Clock Method (90°/45° constrain).</strong> Hold <span class="kbd">Shift</span> while
                     dragging a handle to snap it to the nearest 45° — straight to 12/3/6/9 o'clock for clean,
                     editable curves. Don't have a keyboard? Toggle the <strong>90°/45°</strong> button in the
                     floating Pen bar, or rest a <strong>second finger</strong> on the canvas while you drag with
-                    the stylus (the Procreate-style constrain modifier).
+                    the stylus (the Procreate-style constrain modifier). Both constrain modes share that toggle,
+                    so tablet users get straight segments as well as clean handles.
+                </p>
+                <p class="doc-note">
+                    <strong>Shift means two things.</strong> Which one you get depends on whether the button is
+                    down: <em>between</em> clicks it aims the segment (15°), <em>during</em> a drag it aims the
+                    handles (45°). They never apply at once, so there is nothing to switch between.
                 </p>
                 <p>
                     <strong>Breaking a handle (cusps).</strong> A smooth anchor keeps its two handles in
@@ -617,6 +679,7 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                         <tr><td>Delete anchor</td><td><span class="kbd">Ctrl/⌘</span>-click the anchor</td><td>Long-press the anchor → <em>Delete Anchor</em></td></tr>
                         <tr><td>Insert anchor</td><td><span class="kbd">Alt</span>-click the path outline</td><td>Long-press the outline → <em>Insert Point Here</em></td></tr>
                         <tr><td>Constrain handles 90°/45°</td><td>Hold <span class="kbd">Shift</span> while dragging</td><td><strong>90°/45°</strong> toggle, or second-finger contact</td></tr>
+                        <tr><td>Constrain segment to 15° (Pen, while drawing)</td><td>Hold <span class="kbd">Shift</span> between clicks</td><td><strong>90°/45°</strong> toggle, or second-finger contact</td></tr>
                     </tbody>
                 </table>
                 <p class="doc-note">

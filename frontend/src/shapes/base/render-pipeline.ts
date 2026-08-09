@@ -941,7 +941,7 @@ export class RenderPipeline {
             }
         }
 
-        const defaults = { fontSize: el.fontSize || 28, fontFamily: el.fontFamily || 'hand-drawn' };
+        const defaults = { fontSize: el.fontSize || 28, fontFamily: el.fontFamily || 'hand-drawn', lineHeight: el.lineHeight };
         const layout = layoutRichText(renderer, spans, maxWidth, defaults);
 
         const textAlign = el.textAlign || 'center';

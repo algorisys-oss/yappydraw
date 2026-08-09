@@ -26,7 +26,7 @@ import {
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll,
-    setElementsVisible, toggleElementVisible, showAllElements, setElementName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
+    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -38,7 +38,7 @@ import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/
 import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
 import { rasterizeSelection } from "./utils/rasterize";
-import { elementLabel } from "./utils/object-label";
+import { elementLabel, groupNameOf } from "./utils/object-label";
 import type { SvgThemeOptions } from "./utils/svg-theme";
 import { toExcalidraw, fromExcalidraw } from "./utils/excalidraw-io";
 import {
@@ -182,7 +182,15 @@ interface ElementOptions {
     fontWeight?: number | boolean | string;
     /** `'italic'` or `'normal'`. `true` is the older encoding for italic. */
     fontStyle?: boolean | string;
+    /** Per-corner roundness for rectangles (percent of the shorter side, 0-50). A corner
+     *  left undefined follows `borderRadius`. */
+    radiusTL?: number;
+    radiusTR?: number;
+    radiusBR?: number;
+    radiusBL?: number;
     letterSpacing?: number;
+    /** Line spacing as a multiple of font size (CSS line-height style). Default 1.2. */
+    lineHeight?: number;
     textAlign?: TextAlign;
     verticalAlign?: VerticalAlign;
     startArrowhead?: ArrowHead;
@@ -458,7 +466,12 @@ export const YappyAPI = {
             roundness: options?.roundness ?? defaults.roundness ?? null,
             fontFamily: options?.fontFamily ?? defaults.fontFamily ?? "hand-drawn",
             fontSize: options?.fontSize ?? defaults.fontSize ?? 28,
+            radiusTL: options?.radiusTL,
+            radiusTR: options?.radiusTR,
+            radiusBR: options?.radiusBR,
+            radiusBL: options?.radiusBL,
             letterSpacing: options?.letterSpacing,
+            lineHeight: options?.lineHeight,
             textAlign: options?.textAlign ?? defaults.textAlign ?? 'center',
             verticalAlign: options?.verticalAlign ?? 'middle',
             startArrowhead: options?.startArrowhead ?? defaults.startArrowhead ?? null,
@@ -3773,6 +3786,20 @@ export const YappyAPI = {
      * script-addressable `id`.
      */
     setElementName(id: string, name: string) { setElementName(id, name); },
+    /**
+     * Name a GROUP — what the object tree shows in place of "Group (n)". Pass the
+     * group id (the value shared by its members' `groupIds`, as returned by
+     * `groupSelected`), and '' to clear the name again.
+     *
+     * A group is not an element, so the name is stored on every current member
+     * (`groupNames`, keyed by group id) and travels with them through save/load,
+     * undo, duplication and copy-paste. Read it back with `getGroupName`.
+     */
+    setGroupName(groupId: string, name: string) { setGroupName(groupId, name); },
+    /** The name given to a group, or undefined when it has none (tree shows "Group (n)"). */
+    getGroupName(groupId: string): string | undefined {
+        return groupNameOf(store.elements, groupId);
+    },
     /**
      * Restack a block of objects immediately above or below another — what the
      * object tree's drag-to-reorder does. The ids move together in their

@@ -22,7 +22,6 @@ import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
 import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
 import { shapeToPath } from "../utils/shape-to-path";
-import { normalizePoints } from "../utils/render-element";
 import { textElementToOutline, FontOutlineUnavailableError } from "../utils/text-to-outlines";
 import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { closestPointOnSubpaths, cutSubpathAt } from "../utils/path-cut";
@@ -43,6 +42,9 @@ import { isSolidColor, shiftHexHue, adjustHexLightness, adjustHexSaturation } fr
 import { getStyleSnapshot } from "../utils/object-context-actions";
 import { computeOutlineStroke, computeOffsetPath } from "../utils/path-offset";
 import { scalePoints, scalePathAnchors, scalePathSubpaths, scaleEraseStrokes } from "../utils/geometry-scale";
+import { mirrorGeometry } from "../utils/geometry-mirror";
+import { keepRotatedGeometryFixed } from "../utils/rotated-bbox";
+import { lineHeightPx } from "../utils/text-line-height";
 import { defaultWarpGrid, getWarpGrid, warpPresetGrid, silhouetteWarpGrid, type WarpPreset } from "../utils/envelope-warp";
 import { animationEngine } from "../utils/animation/animation-engine";
 import { slideTransitionManager } from "../utils/animation/slide-transition-manager";
@@ -1395,12 +1397,12 @@ const autoSizeTextUpdates = (el: DrawingElement, updates: Partial<DrawingElement
     if (merged.autoResize) {
         const width = Math.max(measureMaxLineWidth(merged) + 8, fontSize);
         const lineCount = Math.max(1, text.split('\n').length);
-        const height = Math.max(lineCount * fontSize * 1.2, fontSize * 1.2);
+        const height = Math.max(lineCount * lineHeightPx(fontSize, merged), lineHeightPx(fontSize, merged));
         return { ...updates, width, height };
     }
     // Fixed-width (drag-placed): keep width, re-flow height for the new metrics.
     const width = el.width || 200;
-    const height = Math.max(measureWrappedTextHeight(text, width, fontSize, merged.fontFamily, merged.letterSpacing), fontSize * 1.2);
+    const height = Math.max(measureWrappedTextHeight(text, width, fontSize, merged.fontFamily, merged.letterSpacing, merged.lineHeight), lineHeightPx(fontSize, merged));
     return { ...updates, height };
 };
 
@@ -2994,6 +2996,19 @@ export const ungroupSelected = () => {
         (ids) => {
             if (!ids) return ids;
             return ids.slice(0, -1);
+        }
+    );
+
+    // Drop the dissolved groups' names too. Not just tidiness: group ids come from a
+    // counter that can hand out an id a dissolved group already used, and a leftover
+    // `groupNames` entry would then attach the old name to a brand-new, unrelated group
+    // — so ungroup → regroup silently resurrected a name the user had just discarded.
+    setStore("elements",
+        (el) => !!el.groupNames && Object.keys(el.groupNames).some(gid => outerGroupIds.has(gid)),
+        (el) => {
+            const next = { ...(el.groupNames ?? {}) };
+            for (const gid of outerGroupIds) delete next[gid];
+            return { groupNames: Object.keys(next).length ? next : undefined } as any;
         }
     );
 };
@@ -5207,6 +5222,29 @@ export const setElementName = (id: string, name: string) => {
     bumpDirtyRevision();
 };
 
+/**
+ * Name a group (the object tree's rename, matching `setElementName` for objects and
+ * `renameLayer` for layers).
+ *
+ * A group has no element of its own to hang a name on — it is just an id shared by its
+ * members' `groupIds` — so the name is written to EVERY current member's `groupNames`
+ * under that id. Any member can then answer for the group (`groupNameOf`), and the name
+ * survives save/load, undo, duplication and copy-paste without a document-level map to
+ * keep in sync. An empty name clears the entry and the tree falls back to "Group (n)".
+ */
+export const setGroupName = (groupId: string, name: string) => {
+    const trimmed = name.trim();
+    const members = store.elements.filter(e => e.groupIds?.includes(groupId));
+    if (members.length === 0) return;
+    pushToHistory();
+    setStore('elements', (el: DrawingElement) => !!el.groupIds?.includes(groupId), (el: DrawingElement) => {
+        const next = { ...(el.groupNames ?? {}) };
+        if (trimmed) next[groupId] = trimmed; else delete next[groupId];
+        return { groupNames: Object.keys(next).length ? next : undefined } as any;
+    });
+    bumpDirtyRevision();
+};
+
 // ── Group isolation ("enter the group") ──────────────────────────────────────
 //
 // Clicking a grouped object selects the WHOLE group, which is right until you
@@ -6093,8 +6131,15 @@ export const normalizePathElement = (id: string) => {
         minX = Math.min(minX, ...xs); maxX = Math.max(maxX, ...xs);
         minY = Math.min(minY, ...ys); maxY = Math.max(maxY, ...ys);
     }
+    const next = {
+        x: el.x + minX, y: el.y + minY,
+        width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY),
+    };
+    // A rotated element is drawn about its centre, and re-normalizing moves that centre —
+    // so the untouched anchors would swing unless the shift is cancelled. See rotated-bbox.
+    const origin = keepRotatedGeometryFixed(el.angle || 0, el, next);
     setStore('elements', e => e.id === id, {
-        x: el.x + minX, y: el.y + minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY),
+        ...next, ...origin,
         pathAnchors: a.map(an => ({ ...an, x: an.x - minX, y: an.y - minY })),
     } as any);
     bumpDirtyRevision();
@@ -6276,7 +6321,7 @@ export const setTextVertical = (id: string, on?: boolean): boolean => {
         setStore('elements', e => e.id === id, { verticalText: true, width: Math.round(v.width), height: Math.round(v.height) } as any);
     } else {
         const w = Math.max(40, Math.round(measureMaxLineWidth(el) + 12));
-        const h = Math.max((el.fontSize || 28) * 1.2, measureWrappedTextHeight(el.text || '', w, el.fontSize || 28, el.fontFamily, el.letterSpacing));
+        const h = Math.max(lineHeightPx(el.fontSize || 28, el), measureWrappedTextHeight(el.text || '', w, el.fontSize || 28, el.fontFamily, el.letterSpacing, el.lineHeight));
         setStore('elements', e => e.id === id, { verticalText: false, width: w, height: Math.round(h) } as any);
     }
     bumpDirtyRevision();
@@ -7022,24 +7067,10 @@ export const gridRepeat = (rows: number, cols: number, opts?: { gapX?: number; g
 // world y=`value` (up↕down mirror). Shapes toggle flipX/flipY; point elements
 // reflect their local points; rotation is negated.
 const reflectClone = (clone: DrawingElement, src: DrawingElement, axis: 'horizontal' | 'vertical', value: number): DrawingElement => {
-    const ecx = src.x + src.width / 2, ecy = src.y + src.height / 2;
-    if (axis === 'horizontal') {
-        const ncx = 2 * value - ecx;
-        const out: DrawingElement = { ...clone, x: ncx - src.width / 2, angle: -(src.angle || 0) };
-        if (src.points) {
-            out.points = normalizePoints(src.points).map(p => ({ x: src.width - p.x, y: p.y })) as any;
-            out.pointsEncoding = undefined;
-        } else out.flipX = !src.flipX;
-        return out;
-    } else {
-        const ncy = 2 * value - ecy;
-        const out: DrawingElement = { ...clone, y: ncy - src.height / 2, angle: -(src.angle || 0) };
-        if (src.points) {
-            out.points = normalizePoints(src.points).map(p => ({ x: p.x, y: src.height - p.y })) as any;
-            out.pointsEncoding = undefined;
-        } else out.flipY = !src.flipY;
-        return out;
-    }
+    // Shared with Flip Horizontal/Vertical: pen paths and pencil strokes get the mirror
+    // baked into their stored geometry, because the anchor overlay and anchor hit-test
+    // read that geometry raw and know nothing about the flip flags. See geometry-mirror.
+    return { ...clone, angle: -(src.angle || 0), ...mirrorGeometry(src, axis, value) } as DrawingElement;
 };
 
 export const mirrorCopy = (axis: 'horizontal' | 'vertical') => {
@@ -7981,6 +8012,10 @@ export const applyMeshWarp = (ids: string[], rows = 3, cols = 3): string[] => ap
 export const applyWarpPreset = (ids: string[], preset: WarpPreset, bend = 0.5, history = true): string[] => {
     const targets = store.elements.filter(e => ids.includes(e.id));
     if (targets.length === 0) { if (history) showToast('Warp: select a shape', 'info'); return []; }
+    // First warp on this object? Then the user came from the right-click menu, which fixes
+    // the bend at 50% and says nothing about the slider that can change it — so point at it.
+    // Re-warping an already-warped object means they've found the panel; don't nag.
+    const isFirstWarp = !targets.some(e => (e.warp as { preset?: string } | undefined)?.preset);
     if (history) pushToHistory();
     const out: string[] = [];
     setStore('elements', list => list.map(el => {
@@ -7996,7 +8031,14 @@ export const applyWarpPreset = (ids: string[], preset: WarpPreset, bend = 0.5, h
         return { ...base, warp: { ...grid, smooth: true, preset, bend } } as DrawingElement;
     }));
     bumpDirtyRevision();
-    if (history) showToast(out.length ? `Warp: ${preset}` : 'Warp: unsupported shape', out.length ? 'success' : 'info');
+    if (history) {
+        showToast(
+            !out.length ? 'Warp: unsupported shape'
+                : isFirstWarp ? `Warp: ${preset} — adjust Bend in Properties (Alt+Enter)`
+                    : `Warp: ${preset}`,
+            out.length ? 'success' : 'info',
+        );
+    }
     return out;
 };
 

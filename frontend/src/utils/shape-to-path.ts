@@ -1,3 +1,4 @@
+import { cornerRadiiPx } from './corner-radius';
 /**
  * Convert a shape's geometry into editable vector-path anchors.
  *
@@ -85,6 +86,48 @@ export function shapeToPath(el: DrawingElement): { anchors: PathAnchor[]; closed
     }
     if (geo.type === 'rect') {
         const { x, y, w: gw, h: gh } = geo;
+        // Rounded corners have to survive the conversion. Everything that turns a shape into
+        // a path goes through here — Knife/Scissors, Warp, Pathfinder, Convert to Path — and
+        // emitting four sharp corners silently squared off every rounded rectangle the moment
+        // you cut or warped it. The radius uses the same formula as `rectangle-renderer` and
+        // `shape-geometry` (percent of the shorter side, clamped to half of it).
+        // Per-corner radii, so a shape with only one rounded corner converts as drawn.
+        const [rTL, rTR, rBR, rBL] = cornerRadiiPx({ ...(el as any), width: gw, height: gh });
+        if (rTL > 0 || rTR > 0 || rBR > 0 || rBL > 0) {
+            // Each corner becomes two anchors joined by a quarter-circle Bézier: the handles
+            // point along the edges, KAPPA·r long, which is the standard circular approximation.
+            //
+            // Only the handle a corner actually uses is written. A zero-valued handle is NOT
+            // the same as an absent one — `anchorsToPathData` emits a cubic whenever either
+            // endpoint has any handle defined, so explicit zeros would turn all four straight
+            // edges into degenerate curves and hang phantom handles off every anchor in the
+            // node editor. `kind: 'corner'` for the same reason: the arc meets the edge
+            // tangentially, but pairing the handles would mean dragging one bends the straight
+            // edge next to it.
+            const x0 = x, y0 = y, x1 = x + gw, y1 = y + gh;
+            const k = (r: number) => KAPPA * r;
+            const a = (px: number, py: number, h: Partial<PathAnchor>): PathAnchor => {
+                const p = L(px, py);
+                return { x: p.x, y: p.y, kind: 'corner', ...h };
+            };
+            // Walking clockwise from the end of the top-left arc. Each straight edge runs
+            // between an anchor with no out-handle and one with no in-handle. A corner with
+            // zero radius collapses its two anchors onto the corner point with no handles,
+            // which is exactly a sharp corner — so mixed sharp/round rectangles just work.
+            return {
+                closed: true,
+                anchors: [
+                    a(x0 + rTL, y0, rTL ? { inX: -k(rTL), inY: 0 } : {}),
+                    a(x1 - rTR, y0, rTR ? { outX: k(rTR), outY: 0 } : {}),
+                    a(x1, y0 + rTR, rTR ? { inX: 0, inY: -k(rTR) } : {}),
+                    a(x1, y1 - rBR, rBR ? { outX: 0, outY: k(rBR) } : {}),
+                    a(x1 - rBR, y1, rBR ? { inX: k(rBR), inY: 0 } : {}),
+                    a(x0 + rBL, y1, rBL ? { outX: -k(rBL), outY: 0 } : {}),
+                    a(x0, y1 - rBL, rBL ? { inX: 0, inY: k(rBL) } : {}),
+                    a(x0, y0 + rTL, rTL ? { outX: 0, outY: -k(rTL) } : {}),
+                ],
+            };
+        }
         return { closed: true, anchors: [L(x, y), L(x + gw, y), L(x + gw, y + gh), L(x, y + gh)].map(p => corner(p.x, p.y)) };
     }
     if (geo.type === 'points') {

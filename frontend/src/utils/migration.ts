@@ -74,6 +74,14 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         ...(el.dataURL !== undefined && { dataURL: el.dataURL }),
         ...(el.mimeType !== undefined && { mimeType: el.mimeType }),
         ...(el.groupIds !== undefined && { groupIds: el.groupIds }),
+        ...(el.groupNames !== undefined && { groupNames: el.groupNames }),
+        // Text run/spacing state. `letterSpacing` and the rich-text spans were missing from
+        // this whitelist, so opening a pre-slide-format drawing quietly flattened tracking and
+        // every bold/coloured/sized run in it. `lineHeight` is new and listed from the start.
+        ...(el.letterSpacing !== undefined && { letterSpacing: el.letterSpacing }),
+        ...(el.lineHeight !== undefined && { lineHeight: el.lineHeight }),
+        ...(el.richText !== undefined && { richText: el.richText }),
+        ...(el.richContainerText !== undefined && { richContainerText: el.richContainerText }),
         ...(el.symbolId !== undefined && { symbolId: el.symbolId }),
         ...(el.loopMode !== undefined && { loopMode: el.loopMode }),
         ...(el.firstFrame !== undefined && { firstFrame: el.firstFrame }),
@@ -94,6 +102,10 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         ...(el.starPoints !== undefined && { starPoints: el.starPoints }),
         ...(el.polygonSides !== undefined && { polygonSides: el.polygonSides }),
         ...(el.borderRadius !== undefined && { borderRadius: el.borderRadius }),
+        ...(el.radiusTL !== undefined && { radiusTL: el.radiusTL }),
+        ...(el.radiusTR !== undefined && { radiusTR: el.radiusTR }),
+        ...(el.radiusBR !== undefined && { radiusBR: el.radiusBR }),
+        ...(el.radiusBL !== undefined && { radiusBL: el.radiusBL }),
         ...(el.burstPoints !== undefined && { burstPoints: el.burstPoints }),
         ...(el.tailPosition !== undefined && { tailPosition: el.tailPosition }),
         ...(el.shapeRatio !== undefined && { shapeRatio: el.shapeRatio }),

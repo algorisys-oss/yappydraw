@@ -1,3 +1,4 @@
+import { lineHeightPx } from './text-line-height';
 /**
  * Rich Text Utilities
  * Conversion between DOM ↔ RichTextSpan[], layout engine for canvas rendering.
@@ -366,8 +367,9 @@ export function buildSpanFontString(
     return `${style}${weight}${fontSize}px ${fontFamily}`;
 }
 
-function getLineHeight(fontSize: number): number {
-    return fontSize * 1.2;
+/** Line box for a run. `factor` is the element's line-spacing multiple (see text-line-height). */
+function getLineHeight(fontSize: number, factor?: number): number {
+    return lineHeightPx(fontSize, { lineHeight: factor });
 }
 
 /**
@@ -378,7 +380,7 @@ export function layoutRichText(
     ctx: IRenderer,
     spans: RichTextSpan[],
     maxWidth: number,
-    elementDefaults: { fontSize?: number; fontFamily?: string }
+    elementDefaults: { fontSize?: number; fontFamily?: string; lineHeight?: number }
 ): RichTextLayout {
     const segments: RichTextSegment[] = [];
     const lineHeights: number[] = [];
@@ -417,7 +419,7 @@ export function layoutRichText(
     }
 
     const finishLine = (fromNewline: boolean) => {
-        lineHeights.push(currentLineHeight || getLineHeight(elementDefaults.fontSize || 28));
+        lineHeights.push(currentLineHeight || getLineHeight(elementDefaults.fontSize || 28, elementDefaults.lineHeight));
         currentLineIndex++;
         currentX = currentListIndent; // Reset to indent position, not 0
         currentLineHeight = 0;
@@ -433,7 +435,7 @@ export function layoutRichText(
         }
 
         const fontSize = token.span.fontSize || elementDefaults.fontSize || 28;
-        const lh = getLineHeight(fontSize);
+        const lh = getLineHeight(fontSize, elementDefaults.lineHeight);
         currentLineHeight = Math.max(currentLineHeight, lh);
 
         // Calculate indentation for list items
@@ -479,7 +481,7 @@ export function layoutRichText(
 
     // Finish last line
     if (currentX > 0 || segments.length === 0) {
-        lineHeights.push(currentLineHeight || getLineHeight(elementDefaults.fontSize || 28));
+        lineHeights.push(currentLineHeight || getLineHeight(elementDefaults.fontSize || 28, elementDefaults.lineHeight));
     }
 
     return {
@@ -496,9 +498,9 @@ export function layoutRichText(
 export function measureRichTextHeight(
     spans: RichTextSpan[],
     width: number,
-    defaults: { fontSize?: number; fontFamily?: string }
+    defaults: { fontSize?: number; fontFamily?: string; lineHeight?: number }
 ): number {
-    if (!spans || spans.length === 0) return getLineHeight(defaults.fontSize || 28);
+    if (!spans || spans.length === 0) return getLineHeight(defaults.fontSize || 28, defaults.lineHeight);
     // Use an offscreen canvas for measurement
     const canvas = document.createElement('canvas');
     const ctx = new CanvasRenderer(canvas.getContext('2d')!);

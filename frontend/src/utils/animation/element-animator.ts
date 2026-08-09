@@ -1,3 +1,4 @@
+import { lineHeightPx } from '../text-line-height';
 /**
  * Element Animator
  * Animates DrawingElement properties using the animation engine
@@ -4547,7 +4548,7 @@ function getOrSplitWords(elementId: string): string[] {
     ctx.font = getFontString(element);
     const spaceWidth = ctx.measureText(' ').width;
     const fontSize = element.fontSize || 28;
-    const lineHeight = fontSize * 1.2;
+    const lineHeight = lineHeightPx(fontSize, element);
     const wordHeight = lineHeight;
     const padding = 4; // matches text-renderer.ts
 

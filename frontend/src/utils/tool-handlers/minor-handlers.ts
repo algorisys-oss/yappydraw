@@ -1,3 +1,4 @@
+import { lineHeightPx } from '../text-line-height';
 /**
  * Minor Tool Handlers
  * Handles presentation mode, pan, laser, eraser, text, and ink tool logic.
@@ -446,7 +447,7 @@ export function textOnUp(
     }
 
     const fontSize = el.fontSize || 20; // match text-renderer default
-    const lineHeight = fontSize * 1.2;
+    const lineHeight = lineHeightPx(fontSize, el);
 
     // Click (no meaningful drag) → AUTOSIZE text: the box grows with what you type,
     // Enter adds a line, nothing wraps (Excalidraw/tldraw "click & type"). Drag →
@@ -561,7 +562,7 @@ export function richTextOnUp(
     let finalY = el.y;
 
     const fontSize = el.fontSize || 20; // match text-renderer default
-    const lineHeight = fontSize * 1.2;
+    const lineHeight = lineHeightPx(fontSize, el);
 
     // If width is too small (click rather than drag), use default width
     if (finalWidth < TEXT_MIN_DRAG_WIDTH) {

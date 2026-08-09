@@ -2,7 +2,7 @@ import {
     store, setStore, pushToHistory,
     deleteElements, updateElement, addElement
 } from "../store/app-store";
-import { normalizePoints } from "./render-element";
+import { mirrorGeometry } from "./geometry-mirror";
 import { generateId } from "./id-generator";
 import { hitTestElement } from "./hit-testing";
 import type { DrawingElement } from "../types";
@@ -376,47 +376,12 @@ export const flipSelected = (direction: 'horizontal' | 'vertical', axisValue?: n
         const el = store.elements.find(e => e.id === id);
         if (!el) return;
 
-        const updates: Record<string, any> = { seed: el.seed + 1 };
+        // Reflecting about the element's own centre is what "flip in place" means, so
+        // the single-element case is just a different axis, not a different code path.
+        const ownCentre = direction === 'horizontal' ? el.x + el.width / 2 : el.y + el.height / 2;
+        const axisWorld = reposition ? center : ownCentre;
 
-        if (direction === 'horizontal') {
-            // Reposition across the reflection axis (multi-selection or explicit axis).
-            if (reposition) {
-                const elCenterX = el.x + el.width / 2;
-                const dist = elCenterX - center;
-                updates.x = center - dist - el.width / 2;
-            }
-
-            if (el.points) {
-                // Point-based elements: flip the points directly
-                const pts = normalizePoints(el.points);
-                if (pts.length > 0) {
-                    updates.points = pts.map(p => ({ x: el.width - p.x, y: p.y }));
-                    updates.pointsEncoding = undefined;
-                }
-            } else {
-                // Shape elements: toggle flipX for canvas-level mirroring
-                updates.flipX = !el.flipX;
-            }
-        } else {
-            // Reposition across the reflection axis (multi-selection or explicit axis).
-            if (reposition) {
-                const elCenterY = el.y + el.height / 2;
-                const dist = elCenterY - center;
-                updates.y = center - dist - el.height / 2;
-            }
-
-            if (el.points) {
-                const pts = normalizePoints(el.points);
-                if (pts.length > 0) {
-                    updates.points = pts.map(p => ({ x: p.x, y: el.height - p.y }));
-                    updates.pointsEncoding = undefined;
-                }
-            } else {
-                updates.flipY = !el.flipY;
-            }
-        }
-
-        updateElement(id, updates, false);
+        updateElement(id, { seed: el.seed + 1, ...mirrorGeometry(el, direction, axisWorld) }, false);
     });
 };
 

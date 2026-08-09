@@ -1,3 +1,4 @@
+import { lineHeightPx } from '../text-line-height';
 /**
  * Selection Handler
  * Handles selection tool logic: hit testing, group selection, move, resize,
@@ -25,6 +26,7 @@ import { getPointSnap } from '../point-snapping';
 import { getIntersectionPoints } from '../path-intersection';
 import { shapeToPath } from '../shape-to-path';
 import { snapAngleRad, constrainToAngle } from '../angle-constrain';
+import { keepRotatedGeometryFixed } from '../rotated-bbox';
 import { calculateAllAnimatedStates } from '../animation-utils';
 import { getGroupsSortedByPriority, isPointInGroupBounds, unitGroupId, isInIsolatedGroup } from '../group-utils';
 import { normalizePoints } from '../render-element';
@@ -1794,6 +1796,10 @@ export function writeEditableSubpaths(id: string, baseX: number, baseY: number, 
     if (!isFinite(minX)) return;
     const normSubs = kept.map(sp => ({ closed: sp.closed, anchors: sp.anchors.map(an => ({ ...an, x: an.x - minX, y: an.y - minY })) }));
     const base = { x: baseX + minX, y: baseY + minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) };
+    // Re-normalizing moves the element's centre, and a rotated element is drawn about that
+    // centre — so without this the anchors the user did NOT touch swing to a new position.
+    const cur = store.elements.find(e => e.id === id);
+    if (cur?.angle) Object.assign(base, keepRotatedGeometryFixed(cur.angle, cur, base));
     if (normSubs.length > 1) {
         updateElement(id, { ...base, pathSubpaths: normSubs, pathAnchors: undefined, pathClosed: undefined }, false);
     } else {
@@ -2107,8 +2113,8 @@ function applyResize(
                     // (non-wrapping) renderer.
                     if (singleEl.autoResize) updates.autoResize = false;
                     // Horizontal resize: recalculate height based on wrapped text
-                    const calculatedHeight = measureWrappedTextHeight(singleEl.text, newWidth, fontSize, singleEl.fontFamily, singleEl.letterSpacing);
-                    updates.height = Math.max(calculatedHeight, fontSize * 1.2);
+                    const calculatedHeight = measureWrappedTextHeight(singleEl.text, newWidth, fontSize, singleEl.fontFamily, singleEl.letterSpacing, singleEl.lineHeight);
+                    updates.height = Math.max(calculatedHeight, lineHeightPx(fontSize, singleEl));
                 }
                 // For all other handles (corners and vertical), allow free resize
                 // Don't scale font size - keep it constant

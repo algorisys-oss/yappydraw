@@ -1,3 +1,4 @@
+import { lineHeightPx } from './text-line-height';
 /**
  * Text → Outlines — convert a text element into an editable vector `path` element
  * (the Illustrator "Create Outlines" move). Glyph contours become PathSubpaths
@@ -300,7 +301,7 @@ export const textElementToOutline = async (el: DrawingElement): Promise<OutlineR
         normalizeFontStyle(el.fontStyle) === 'italic',
     );
 
-    const lineHeight = fontSize * 1.2;
+    const lineHeight = lineHeightPx(fontSize, el);
     const padding = 4;
     const lines = text.split('\n');
     const ascentPx = (font.ascender / font.unitsPerEm) * fontSize;

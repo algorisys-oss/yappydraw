@@ -70,8 +70,13 @@ export const BasicShapesDoc: Component = () => {
                     </thead>
                     <tbody>
                         <tr>
-                            <td><strong>Border Radius</strong></td>
-                            <td>Round the corners (0 = sharp, higher = more rounded)</td>
+                            <td><strong>Roundness</strong></td>
+                            <td>Round all four corners at once (0 = sharp, higher = more rounded)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Corner ↖ ↗ ↘ ↙</strong></td>
+                            <td>Round each corner <em>independently</em> — one corner at 40 and the rest
+                                sharp, or any mix. See below.</td>
                         </tr>
                         <tr>
                             <td><strong>Fill Style</strong></td>
@@ -87,6 +92,33 @@ export const BasicShapesDoc: Component = () => {
                         </tr>
                     </tbody>
                 </table>
+
+                <h3>Independent corners</h3>
+                <p>
+                    Below <strong>Roundness</strong> sit four per-corner sliders —
+                    <strong>Corner ↖</strong>, <strong>↗</strong>, <strong>↘</strong>, <strong>↙</strong> — for
+                    the shapes packaging, UI cards and logo work actually need: one rounded corner and three
+                    sharp, a rounded diagonal pair, a tab with only its top edge softened.
+                </p>
+                <ul>
+                    <li>A corner you never touch <strong>follows Roundness</strong>, so setting one corner does
+                        not square the other three. Set a corner to <strong>0</strong> to make it explicitly
+                        sharp while the rest stay round.</li>
+                    <li>Values are a <strong>percent of the shorter side</strong>, the same unit Roundness uses —
+                        so the corners keep their proportions when you resize the rectangle, and 50 is a
+                        half-round end.</li>
+                    <li>Each corner is capped at half the shorter side, which is the point where the arcs would
+                        start crossing each other.</li>
+                </ul>
+                <p>
+                    It is the real outline, not a decoration: the fill, gradient and image clipping follow it,
+                    both <strong>Sketch</strong> and <strong>Architectural</strong> styles draw it, SVG export
+                    writes one arc per rounded corner, and <em>Convert to Path</em> / Knife / Warp keep the
+                    corners you set.
+                </p>
+                <pre class="code-block"><code>{`Yappy.createRectangle(40, 40, 240, 140, { radiusTL: 40 });               // one rounded corner
+Yappy.createRectangle(40, 40, 240, 140, { radiusTL: 40, radiusBR: 40 }); // rounded diagonal
+Yappy.createRectangle(40, 40, 240, 140, { borderRadius: 25, radiusTR: 0 });  // all but one`}</code></pre>
 
                 <div class="tip-box">
                     <h5>Tip: Quick Squares</h5>

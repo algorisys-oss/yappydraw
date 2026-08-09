@@ -342,8 +342,22 @@ export const LogoToolkitDoc: Component = () => {
                 <p>
                     <strong>Reflect across the rotation point.</strong> With a rotation point set, right-click →
                     <em>Reflect Across Point →</em> (or <em>↓</em>) mirrors the selection to the other side of it —
-                    a precise mirror-about-a-point, distinct from <em>Flip Horizontal/Vertical</em> which mirror
-                    about the shape's own centre.
+                    a precise mirror-about-a-point, distinct from <em>Flip Horizontal/Vertical</em>
+                    (<span class="kbd">Shift</span>+<span class="kbd">H</span> /
+                    <span class="kbd">Shift</span>+<span class="kbd">V</span>).
+                </p>
+                <p>
+                    <strong>What Flip mirrors about.</strong> One object flips about <em>its own centre</em>, so it
+                    turns in place. Flip <em>several</em> at once and they mirror about the centre of the whole
+                    selection — so the objects swap sides as a group rather than each spinning where it sits. Flip
+                    the group again to get back exactly where you started.
+                </p>
+                <p class="doc-note">
+                    <strong>Vector geometry flips with the shape.</strong> On a pen path or pencil stroke, Flip
+                    mirrors the stored anchors and their Bézier handles — so the anchor squares stay on the
+                    outline and the path is immediately editable (and exports) in its new orientation. Curved
+                    connectors take their control points along too. Nothing needs baking or re-drawing after a
+                    flip.
                 </p>
                 <p>
                     <strong>Envelope distort.</strong> Right-click → <em>Path → Envelope Distort</em> to wrap a
