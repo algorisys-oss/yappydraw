@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.187', date: '2026-08-10', items: [
+        'In the Shape Builder, hold Shift and drag a box over several pieces to take them all at once — much quicker than tracing a line through each one. Hold Shift and Alt together to delete them instead. The box works even when it is smaller than the piece you are pointing at, so you can grab a small detail sitting inside a big background shape.',
+    ] },
     { version: '0.8.186', date: '2026-08-10', items: [
         'The Perspective Grid now actually helps you draw. Until now it drew a horizon and two fans of lines and nothing paid any attention to them — you still had to line everything up by eye. Turn it on and your lines pull onto the perspective rays as you draw them. Hold Alt at any point to draw free-hand without switching anything off.',
         'How strongly it pulls is up to you. At full strength a wall edge lands exactly on the ray, which is what you want for buildings and interiors; turn it down and it becomes a gentle nudge you can draw straight through, which is what you want for curves and organic shapes. There is also a setting for how close you have to be before it takes hold.',

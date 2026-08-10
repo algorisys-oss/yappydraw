@@ -90,3 +90,16 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 .sb-badge-del { background: #ef4444; }
+
+/* Shift-drag marquee: a dashed rubber-band box that takes every region it touches. Same
+   blue/red pairing as the stroke, so mode reads the same whichever gesture you are using. */
+.sb-marquee {
+    fill: rgba(59, 130, 246, 0.08);
+    stroke: #3b82f6;
+    stroke-width: 1.5;
+    stroke-dasharray: 5 3;
+}
+.sb-marquee-del {
+    fill: rgba(239, 68, 68, 0.08);
+    stroke: #ef4444;
+}

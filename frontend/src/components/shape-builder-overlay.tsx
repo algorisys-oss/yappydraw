@@ -24,6 +24,9 @@ export const ShapeBuilderOverlay = () => {
     // Screen position of the pointer, for the ± badge. Tracked whether or not a drag is in
     // progress: the moment you need to know which mode you are in is BEFORE you press.
     const [cursor, setCursor] = createSignal<{ x: number; y: number } | null>(null);
+    // Shift-drag marquee (world coords), Illustrator's way of taking several regions at once
+    // when tracing a stroke through all of them would be fiddly. Null while stroking.
+    const [marquee, setMarquee] = createSignal<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
     let dragging = false;
     let faces: ShapeFace[] = [];      // decomposed faces for the current drag (empty → fallback)
     let faceLevel = false;
@@ -51,6 +54,52 @@ export const ShapeBuilderOverlay = () => {
         return [...hit];
     };
 
+    /**
+     * Faces (or shapes) a marquee rectangle takes. Two tests, because either one alone gets a
+     * common case wrong: a vertex inside the box catches every region the box crosses, and
+     * probing the box's own corners and centre catches a region so large it swallows the box
+     * whole — which is exactly what happens when you rubber-band a small detail inside a big
+     * background shape.
+     */
+    const computeTouchedRect = (r: { x0: number; y0: number; x1: number; y1: number }) => {
+        const lo = { x: Math.min(r.x0, r.x1), y: Math.min(r.y0, r.y1) };
+        const hi = { x: Math.max(r.x0, r.x1), y: Math.max(r.y0, r.y1) };
+        const inBox = (x: number, y: number) => x >= lo.x && x <= hi.x && y >= lo.y && y <= hi.y;
+        const probes = [
+            { x: (lo.x + hi.x) / 2, y: (lo.y + hi.y) / 2 },
+            { x: lo.x, y: lo.y }, { x: hi.x, y: lo.y }, { x: hi.x, y: hi.y }, { x: lo.x, y: hi.y },
+        ];
+        const hit = new Set<string>();
+        if (faceLevel) {
+            for (const f of faces) {
+                let got = false;
+                for (const poly of f.region as any) {
+                    for (const ring of poly) {
+                        for (const pt of ring) if (inBox(pt[0], pt[1])) { got = true; break; }
+                        if (got) break;
+                    }
+                    if (got) break;
+                }
+                if (!got) got = probes.some(p => pointInMultiPoly(f.region as any, p.x, p.y));
+                if (got) hit.add(f.key);
+            }
+        } else {
+            const emap = new Map<string, DrawingElement>();
+            for (const el of store.elements) emap.set(el.id, el);
+            for (const id of store.selection) {
+                const el = emap.get(id);
+                if (!el) continue;
+                // Bounding-box overlap, plus the same probes for a shape that contains the box.
+                const bx0 = Math.min(el.x, el.x + el.width), bx1 = Math.max(el.x, el.x + el.width);
+                const by0 = Math.min(el.y, el.y + el.height), by1 = Math.max(el.y, el.y + el.height);
+                const overlaps = bx0 <= hi.x && bx1 >= lo.x && by0 <= hi.y && by1 >= lo.y;
+                if (overlaps && probes.some(p => hitTestElement(el, p.x, p.y, 0, store.elements, emap))) { hit.add(id); continue; }
+                if (overlaps && bx0 >= lo.x && bx1 <= hi.x && by0 >= lo.y && by1 <= hi.y) hit.add(id);
+            }
+        }
+        return [...hit];
+    };
+
     const onDown = (e: PointerEvent) => {
         if (!active()) return;
         e.preventDefault();
@@ -58,8 +107,17 @@ export const ShapeBuilderOverlay = () => {
         faces = getShapeFaces(store.selection);   // [] when non-overlapping / too many shapes
         faceLevel = faces.length > 0;
         const w = toWorld(e);
-        setStroke([w]);
-        setTouched(computeTouched([w]));
+        // Shift decides marquee vs. freehand at press time and stays decided for the drag —
+        // letting go of Shift mid-rubber-band should not silently turn it into a stroke.
+        if (e.shiftKey) {
+            setMarquee({ x0: w.x, y0: w.y, x1: w.x, y1: w.y });
+            setStroke([]);
+            setTouched([]);
+        } else {
+            setMarquee(null);
+            setStroke([w]);
+            setTouched(computeTouched([w]));
+        }
         dragging = true;
     };
     const onMove = (e: PointerEvent) => {
@@ -70,6 +128,13 @@ export const ShapeBuilderOverlay = () => {
         setAlt(e.altKey);
         if (!dragging) return;
         const w = toWorld(e);
+        const m = marquee();
+        if (m) {
+            const next = { ...m, x1: w.x, y1: w.y };
+            setMarquee(next);
+            setTouched(computeTouchedRect(next));
+            return;
+        }
         setStroke(s => { const ns = [...s, w]; setTouched(computeTouched(ns)); return ns; });
     };
     const onUp = () => {
@@ -86,10 +151,10 @@ export const ShapeBuilderOverlay = () => {
             }
         }
         faces = []; faceLevel = false;
-        setStroke([]); setTouched([]);
+        setStroke([]); setTouched([]); setMarquee(null);
     };
     // Touch interruption (palm rejection, system gesture) — abort the drag cleanly.
-    const onCancel = () => { dragging = false; faces = []; faceLevel = false; setStroke([]); setTouched([]); };
+    const onCancel = () => { dragging = false; faces = []; faceLevel = false; setStroke([]); setTouched([]); setMarquee(null); };
 
     onMount(() => {
         window.addEventListener('pointermove', onMove);
@@ -142,6 +207,14 @@ export const ShapeBuilderOverlay = () => {
         return d;
     };
 
+    // Screen-space rect for the Shift marquee.
+    const marqueeScreen = () => {
+        const m = marquee(); if (!m) return null;
+        const a = worldToScreen(m.x0, m.y0, store.viewState as any);
+        const b = worldToScreen(m.x1, m.y1, store.viewState as any);
+        return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) };
+    };
+
     // Fallback (non-overlapping shapes): axis-aligned bbox highlight per touched element.
     const touchedBoxes = () => {
         if (faceLevel) return [];
@@ -166,6 +239,12 @@ export const ShapeBuilderOverlay = () => {
                     <Show when={stroke().length > 1}>
                         <polyline points={strokeScreen()} class={del() ? 'sb-stroke sb-stroke-del' : 'sb-stroke'} />
                     </Show>
+                    <Show when={marqueeScreen()}>
+                        {(r) => (
+                            <rect x={r().x} y={r().y} width={r().w} height={r().h}
+                                class={del() ? 'sb-marquee sb-marquee-del' : 'sb-marquee'} />
+                        )}
+                    </Show>
                 </svg>
                 {/* Mode badge pinned to the cursor: − while Alt (or the touch toggle) is
                     carving, + while merging. Illustrator puts the same glyph in the cursor
@@ -184,7 +263,9 @@ export const ShapeBuilderOverlay = () => {
                         class={`sb-mode ${delMode() ? 'sb-mode-del' : ''}`}
                         onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); setDelMode(v => !v); }}
                     >{delMode() ? '🗑 Delete' : '⬓ Merge'}</button>
-                    <span>{del() ? 'drag across regions to remove' : 'drag across regions to merge · Alt = delete'}</span>
+                    <span>{del()
+                        ? 'drag across regions to remove · Shift+drag = box'
+                        : 'drag across regions to merge · Alt = delete · Shift+drag = box'}</span>
                     <button
                         class="sb-mode sb-done"
                         onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); toggleShapeBuilder(false); }}

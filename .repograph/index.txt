@@ -257,8 +257,8 @@ frontend/src/components/scene-timeline.tsx | typescript | 206 | Component:1 clip
 frontend/src/components/scroll-back-button.tsx | typescript | 136 | Component:8 ScrollBackButtonProps:12 ScrollBackButton:16 handleScrollBack:65
 frontend/src/components/settings-dialog.css | - | 337 |
 frontend/src/components/settings-dialog.tsx | typescript | 568 | Component:1 SettingsDialogProps:10 SettingsDialog:45 categories:51 handleKeyDown:89 defaults:100 CloudSettingsContent:496 handleSignIn:509 handleSignOut:521
-frontend/src/components/shape-builder-overlay.css | - | 92 |
-frontend/src/components/shape-builder-overlay.tsx | typescript | 196 | ShapeFace:5 ShapeBuilderOverlay:18 del:23 active:31 toWorld:32 computeTouched:35 onDown:54 onMove:65 onUp:75 onCancel:92 onKey:98 onAltDown:102 onAltUp:103 onBlur:106 strokeScreen:123 touchedPath:126 touchedBoxes:146
+frontend/src/components/shape-builder-overlay.css | - | 105 |
+frontend/src/components/shape-builder-overlay.tsx | typescript | 277 | ShapeFace:5 ShapeBuilderOverlay:18 del:23 active:34 toWorld:35 computeTouched:38 computeTouchedRect:64 inBox:67 onDown:103 onMove:123 onUp:140 onCancel:157 onKey:163 onAltDown:167 onAltUp:168 onBlur:171 strokeScreen:188 touchedPath:191 marqueeScreen:211 touchedBoxes:219
 frontend/src/components/shape-tool-group.tsx | typescript | 220 | Component:1 ShapeToolGroup:101 handler:108 getActiveShapeTool:118 handleToolClick:131 as:139 as:145 handleRightClick:153 toggleMenu:158 activeTool:165 isActive:166 getDropdownPosition:168
 frontend/src/components/sidebar.tsx | typescript | 21 | Component:1
 frontend/src/components/sketchnote-tool-group.tsx | typescript | 391 | Component:1 SketchnoteToolGroup:274 handler:281 getActiveTool:291 handleToolClick:303 as:311 as:317 handleRightClick:325 toggleMenu:330 activeTool:337 isActive:338 getDropdownPosition:340
@@ -341,7 +341,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 495 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 498 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -419,7 +419,7 @@ frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 325 | Desig
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 277 | EffectsDoc:10 Tools:270
 frontend/src/help-docs/features/elements-search-doc.tsx | typescript | 119 | chips:5 ElementsSearchDoc:11 chips:41
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 225 | EmbeddingDoc:3
-frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 897 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:29 to:611
+frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 905 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:29 to:619
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 527 | LogoToolkitDoc:9 the:178 across:266
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 417 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161 tools:213
 frontend/src/help-docs/features/plotting-doc.tsx | typescript | 335 | graphs:4 PlottingDoc:9 graphs:17
@@ -1000,7 +1000,7 @@ tests/scene-duration.spec.ts | typescript | 40 |
 tests/scene-playback.spec.ts | typescript | 91 | shot:75
 tests/select-and-constrain.spec.ts | typescript | 75 |
 tests/sequence-diagram.spec.ts | typescript | 75 |
-tests/shape-builder.spec.ts | typescript | 118 |
+tests/shape-builder.spec.ts | typescript | 223 |
 tests/shift-aspect-constrain.spec.ts | typescript | 77 | boot:11 dragWith:23
 tests/slice.spec.ts | typescript | 14 |
 tests/slides.spec.ts | typescript | 244 | to:14

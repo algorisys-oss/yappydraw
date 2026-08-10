@@ -124,7 +124,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Combine: Subtract (minus front)', keys: 'Ctrl+Alt+D' },
             { label: 'Combine: Intersect (keep overlap)', keys: 'Ctrl+Alt+I' },
             { label: 'Combine: Exclude (drop overlap)', keys: 'Ctrl+Alt+X' },
-            { label: 'Shape Builder (drag to merge, Alt+drag to delete)', keys: 'Shift+M' },
+            { label: 'Shape Builder (drag to merge, Alt+drag to delete, Shift+drag = box)', keys: 'Shift+M' },
             { label: 'Eyedropper — copy a style onto the selection', keys: 'Shift+I' },
             { label: 'Math in number fields (200-50%, *2…)', keys: 'type + Enter' },
             { label: 'Focus Branch', keys: 'Shift+F' },

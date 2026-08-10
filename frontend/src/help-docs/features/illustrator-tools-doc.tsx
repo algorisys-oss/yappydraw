@@ -86,6 +86,14 @@ export const IllustratorToolsDoc: Component = () => {
                     updates the moment you press or release <kbd>Alt</kbd> — before you start the stroke,
                     not after — and the region highlight and the drag line take the same colour.
                 </p>
+                <p>
+                    <strong><kbd>Shift</kbd>+drag draws a box</strong> instead of a stroke, and takes every
+                    region the box touches — quicker than threading a line through a dozen small pieces.
+                    <kbd>Shift</kbd>+<kbd>Alt</kbd>+drag does the same in delete mode. The box also catches
+                    a region <em>larger</em> than itself, so you can rubber-band a small detail sitting
+                    inside a big background shape. Whether it is a box or a stroke is decided when you
+                    press: letting go of <kbd>Shift</kbd> mid-drag won't switch you.
+                </p>
                 <div class="code-block">
                     <pre>{`// the same operations from the API
 Yappy.pathfinder([idA, idB], 'union');        // 'subtract' | 'intersect' | 'exclude'
