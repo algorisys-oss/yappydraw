@@ -58,6 +58,9 @@ The main features are in todo.md.  Rest of the filed in docs/ folder are learnin
 It has all details, to create new shapes, behaviors, minimap, resize, connectors, properties etc.
 
 Additional Action items :
+- **Temp artifacts go in `temp/`, never the repo root.** Verification screenshots, throwaway
+  scripts, scratch output — all of it belongs in `temp/` (gitignored). The repo root is not a
+  scratchpad; stray `*.png` from a debugging session ends up in `git status` for weeks.
 - Defensive coding: Ensure everything works
 - Update docs/bugs/bug-fixes.md as when bugs are fixed
 - Record all learnings with each commits in docs/learnings.md
@@ -78,6 +81,20 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
 6. **Keep `main` in sync and push** — make sure local `main` and the remote (`origin`) `main` are in sync and **push**, including the tag: `git push origin main --tags` (fast-forward/merge as appropriate). Push the working branch too.
 7. **Fast-forward `dev` to `main` and push it** — `dev` is the branch the next change starts from, so it must not be left behind the release (`git checkout dev && git merge --ff-only main && git push origin dev`).
 8. **Publish to the OSS repo** with `./scripts/publish-oss.sh --push` (publishes a cleaned client-only copy to the `algorisys-oss/yappydraw` remote). Use a dry-run first if anything looks off.
+8b. **Upload `dist/` to the web host — MANUAL, and not covered by any npm script.**
+   Nothing in steps 1–8 puts the new build on `www.yappydraw.com`: `publish-oss.sh` pushes
+   *source* to a git remote, and `npm run deploy` targets **gh-pages**, which is a different
+   site. Skipping this and going straight to step 9 verifies the *previous* deploy and looks
+   like a pass — the tell is that the `assets/index-*.js` hash on the live site doesn't match
+   `dist/index.html`:
+   ```bash
+   curl -s https://www.yappydraw.com/index.html | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js'
+   grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' dist/index.html   # must match
+   ```
+   Upload so the remote tree is **replaced, not merged** (`rsync -av --delete dist/ …`, or
+   delete the remote `assets/` first) — an incremental upload is what produced the split-build
+   incident in #279. **Include dotfiles**, or `frontend/public/.htaccess` never arrives and the
+   cache-header checks in step 9 fail.
 9. **Verify the deploy** once it has propagated — `npm run verify:deploy`. It samples
    `sw.js` and `index.html` several times, because the live host has served **two
    different builds from the same URL** (7 of 8 fetches returning a three-release-old
@@ -87,5 +104,9 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
    arrived — a 404 chunk or a stale `index.html` is precisely the "Something went wrong"
    screen users were reporting. If it fails, re-deploy so the remote tree is **replaced,
    not merged** (`rsync --delete`, or delete the remote `assets/` first).
+   **Expect one standing failure**: `sw.js is cacheable: public, max-age=604800`. That is the
+   host overriding the `.htaccess` rule (bug #280, most likely `mod_expires` running after
+   `mod_headers`) and is not ours to fix from the repo — treat it as a known red line, not a
+   bad deploy. Every *other* check must pass.
 10. **Return to `dev`** — finish the release with `dev` checked out, never `main`. Confirm with `git branch --show-current` before reporting the release done; the working tree should also be clean.
 

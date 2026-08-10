@@ -71,3 +71,21 @@
     border-radius: 5px; cursor: pointer; color: var(--text-primary);
 }
 .vt-sub:hover { border-color: var(--primary-color); color: var(--primary-color); }
+
+/* Live Corners — radius slider + numeric entry for path anchors. */
+.vt-corner { display: flex; flex-direction: column; gap: 5px; padding: 4px 8px 6px; }
+.vt-corner-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    font-size: 11px; font-weight: 600; color: var(--text-primary);
+}
+.vt-corner-scope { font-size: 10px; font-weight: 500; color: var(--text-secondary); }
+.vt-corner-row { display: flex; align-items: center; gap: 6px; }
+.vt-corner-row input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--primary-color); }
+.vt-corner-num {
+    flex: 0 0 52px; width: 52px; padding: 3px 5px;
+    font-size: 11px; text-align: right;
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 5px; color: var(--text-primary);
+}
+.vt-corner-num:focus { outline: none; border-color: var(--primary-color); }
+.vt-corner-reset { align-self: flex-start; }

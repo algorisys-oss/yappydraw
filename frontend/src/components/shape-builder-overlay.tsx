@@ -21,6 +21,9 @@ export const ShapeBuilderOverlay = () => {
     const [alt, setAlt] = createSignal(false);
     const [delMode, setDelMode] = createSignal(false); // touch-accessible Merge/Delete toggle (no Alt key on tablets)
     const del = () => alt() || delMode();              // effective "delete" mode
+    // Screen position of the pointer, for the ± badge. Tracked whether or not a drag is in
+    // progress: the moment you need to know which mode you are in is BEFORE you press.
+    const [cursor, setCursor] = createSignal<{ x: number; y: number } | null>(null);
     let dragging = false;
     let faces: ShapeFace[] = [];      // decomposed faces for the current drag (empty → fallback)
     let faceLevel = false;
@@ -60,8 +63,12 @@ export const ShapeBuilderOverlay = () => {
         dragging = true;
     };
     const onMove = (e: PointerEvent) => {
-        if (!dragging) return;
+        // Cursor and modifier are tracked on every move, not just while dragging — the badge
+        // has to be right while you are still deciding where to start the stroke.
+        if (!active()) return;
+        setCursor({ x: e.clientX, y: e.clientY });
         setAlt(e.altKey);
+        if (!dragging) return;
         const w = toWorld(e);
         setStroke(s => { const ns = [...s, w]; setTouched(computeTouched(ns)); return ns; });
     };
@@ -89,12 +96,26 @@ export const ShapeBuilderOverlay = () => {
         window.addEventListener('pointerup', onUp);
         window.addEventListener('pointercancel', onCancel);
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && store.shapeBuilderActive) { e.preventDefault(); toggleShapeBuilder(false); } };
+        // Alt has to be watched on the keyboard as well as on pointer events: pressing or
+        // releasing it without moving the mouse changes what the next stroke will do, and
+        // reading `altKey` off pointermove alone leaves the badge lying until you twitch.
+        const onAltDown = (e: KeyboardEvent) => { if (e.key === 'Alt' || e.altKey) setAlt(true); };
+        const onAltUp = (e: KeyboardEvent) => { if (e.key === 'Alt' || !e.altKey) setAlt(false); };
+        // Alt+drag is a window-manager gesture on some desktops, which swallows the keyup;
+        // resync when focus comes back rather than staying stuck in delete mode.
+        const onBlur = () => setAlt(false);
         window.addEventListener('keydown', onKey);
+        window.addEventListener('keydown', onAltDown);
+        window.addEventListener('keyup', onAltUp);
+        window.addEventListener('blur', onBlur);
         onCleanup(() => {
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onUp);
             window.removeEventListener('pointercancel', onCancel);
             window.removeEventListener('keydown', onKey);
+            window.removeEventListener('keydown', onAltDown);
+            window.removeEventListener('keyup', onAltUp);
+            window.removeEventListener('blur', onBlur);
         });
     });
 
@@ -146,6 +167,18 @@ export const ShapeBuilderOverlay = () => {
                         <polyline points={strokeScreen()} class={del() ? 'sb-stroke sb-stroke-del' : 'sb-stroke'} />
                     </Show>
                 </svg>
+                {/* Mode badge pinned to the cursor: − while Alt (or the touch toggle) is
+                    carving, + while merging. Illustrator puts the same glyph in the cursor
+                    itself, which the web cannot do without a bitmap cursor per state. */}
+                <Show when={cursor()}>
+                    {(c) => (
+                        <div
+                            class={`sb-badge ${del() ? 'sb-badge-del' : ''}`}
+                            style={{ left: `${c().x + 14}px`, top: `${c().y + 16}px` }}
+                            aria-hidden="true"
+                        >{del() ? '−' : '+'}</div>
+                    )}
+                </Show>
                 <div class="sb-hint">
                     <button
                         class={`sb-mode ${delMode() ? 'sb-mode-del' : ''}`}

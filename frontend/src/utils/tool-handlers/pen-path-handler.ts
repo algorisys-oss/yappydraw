@@ -22,11 +22,12 @@
 import type { DrawingElement, PathAnchor } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, addElement, updateElement, setStore, setSelectedTool, pushToHistory, applyLiveSymmetry } from '../../store/app-store';
+import { store, addElement, updateElement, setStore, setSelectedTool, pushToHistory, applyLiveSymmetry, perspectiveSnapActive, setPerspectiveSnapGuide } from '../../store/app-store';
 import { snapPoint } from '../snap-helpers';
 import { generateId } from '../id-generator';
 import { setAnchorHandle } from '../anchor-handle';
 import { constrainToAngle } from '../angle-constrain';
+import { snapPointToPerspective, snapVectorToPerspective } from '../perspective-snap';
 
 function snap(x: number, y: number): { x: number; y: number } {
     if (store.gridSettings.snapToGrid) return snapPoint(x, y, store.gridSettings.gridSize);
@@ -60,11 +61,23 @@ export function constrainHandleVec(dx: number, dy: number): { x: number; y: numb
  * the line tool. Without a previous anchor there is no angle to hold, so the very first
  * anchor still grid-snaps.
  */
-function placeAnchor(x: number, y: number, pState: PointerState, constrain: boolean): { x: number; y: number } {
+function placeAnchor(x: number, y: number, pState: PointerState, constrain: boolean, suppressPerspective = false): { x: number; y: number } {
     const prev = pState.penAnchors[pState.penAnchors.length - 1];
-    if (!constrain || !prev) return snap(x, y);
-    const c = constrainToAngle(pState.startX + prev.x, pState.startY + prev.y, x, y, 15);
-    return { x: c.x, y: c.y };
+    if (constrain && prev) {
+        const c = constrainToAngle(pState.startX + prev.x, pState.startY + prev.y, x, y, 15);
+        return { x: c.x, y: c.y };
+    }
+    // Perspective soft-snap: same precedence as the 15° constraint (it beats grid snap),
+    // but it never fires on the first anchor — there is no segment to aim yet.
+    const pg = (prev && !suppressPerspective) ? perspectiveSnapActive() : null;
+    if (pg) {
+        const s = snapPointToPerspective(pg, pState.startX + prev.x, pState.startY + prev.y, x, y);
+        setPerspectiveSnapGuide(s.guide);
+        if (s.guide) return { x: s.x, y: s.y };
+    } else {
+        setPerspectiveSnapGuide(null);
+    }
+    return snap(x, y);
 }
 
 /**
@@ -105,6 +118,7 @@ function writePenElement(pState: PointerState, preview?: PathAnchor | null, clos
 }
 
 function resetPen(pState: PointerState): void {
+    setPerspectiveSnapGuide(null);
     pState.isPenBuilding = false;
     pState.isDrawing = false;
     pState.penAnchors = [];
@@ -116,7 +130,7 @@ function resetPen(pState: PointerState): void {
 
 // ─── Pointer Down ────────────────────────────────────────────────────
 
-export function penOnDown(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, constrain = false): void {
+export function penOnDown(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, constrain = false, suppressPerspective = false): void {
     const { x: px, y: py } = snap(x, y);
 
     if (!pState.isPenBuilding) {
@@ -164,7 +178,7 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
         return;
     }
 
-    const p = placeAnchor(x, y, pState, constrain);
+    const p = placeAnchor(x, y, pState, constrain, suppressPerspective);
     const relX = p.x - pState.startX;
     const relY = p.y - pState.startY;
 
@@ -177,7 +191,7 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
 
 // ─── Pointer Move ────────────────────────────────────────────────────
 
-export function penOnMove(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, signals: PointerSignals, constrain = false, breakHandle = false): void {
+export function penOnMove(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, signals: PointerSignals, constrain = false, breakHandle = false, suppressPerspective = false): void {
     if (!pState.isPenBuilding || !pState.currentId) return;
     signals.setSuggestedBinding(null);
     const { x: px, y: py } = snap(x, y);
@@ -190,6 +204,19 @@ export function penOnMove(x: number, y: number, pState: PointerState, _helpers: 
         let ox = relX - a.x;
         let oy = relY - a.y;
         if (constrain) { const c = constrainHandleVec(ox, oy); ox = c.x; oy = c.y; }
+        else if (!suppressPerspective) {
+            // Aim the handle down a perspective ray. This is the part that makes the grid
+            // useful for curves: the tangent leaving an anchor is what reads as "in
+            // perspective", and a soft pull keeps the curve drawable rather than locking it.
+            const pg = perspectiveSnapActive();
+            if (pg) {
+                const s = snapVectorToPerspective(pg, pState.startX + a.x, pState.startY + a.y, ox, oy);
+                setPerspectiveSnapGuide(s.guide);
+                if (s.guide) { ox = s.dx; oy = s.dy; }
+            } else {
+                setPerspectiveSnapGuide(null);
+            }
+        }
         // Alt breaks the pair mid-drag: the out handle keeps following the cursor while
         // the in handle stays wherever it had got to, giving the cusp Illustrator's
         // Alt-drag produces. Sticky (see `penHandleBroken`) so letting Alt go doesn't
@@ -206,7 +233,7 @@ export function penOnMove(x: number, y: number, pState: PointerState, _helpers: 
         // Rubber-band: preview a segment from the last anchor to the cursor. Constrained
         // here as well as on the click that commits it, so the preview is honest about
         // where the anchor will land.
-        const p = placeAnchor(x, y, pState, constrain);
+        const p = placeAnchor(x, y, pState, constrain, suppressPerspective);
         writePenElement(pState, { x: p.x - pState.startX, y: p.y - pState.startY, kind: 'corner' });
     }
 }

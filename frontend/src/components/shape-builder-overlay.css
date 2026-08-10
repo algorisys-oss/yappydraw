@@ -69,3 +69,24 @@
 .sb-mode-del { color: #ef4444; border-color: #ef4444; background: rgba(239, 68, 68, 0.08); }
 .sb-done { color: #ef4444; border-color: #ef4444; }
 .sb-mode:hover { filter: brightness(0.97); }
+
+/* Cursor-following mode badge: + merges, − carves. Colours match the face highlight and
+   the drag stroke, so the badge, the shading and the line always agree about the mode. */
+.sb-badge {
+    position: absolute;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    background: #3b82f6;
+    border: 1.5px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.sb-badge-del { background: #ef4444; }

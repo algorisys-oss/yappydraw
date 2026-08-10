@@ -67,6 +67,7 @@ beforeEach(() => {
     setStore("selection", []);
     setStore("gridSettings", { ...store.gridSettings, snapToGrid: false });
     setStore("viewState", { ...store.viewState, scale: 1 });
+    setStore("perspectiveGridActive", false); // an active grid would soft-snap these anchors
     pState = createPointerState();
 });
 

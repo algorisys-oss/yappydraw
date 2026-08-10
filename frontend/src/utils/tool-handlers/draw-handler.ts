@@ -8,9 +8,10 @@
 import type { DrawingElement } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, addElement, updateElement, deleteElements, setStore, setSelectedTool, finishLiveSymmetry, cancelLiveSymmetry } from '../../store/app-store';
+import { store, addElement, updateElement, deleteElements, setStore, setSelectedTool, finishLiveSymmetry, cancelLiveSymmetry, perspectiveSnapActive, perspectivePlaneActive, setPerspectiveSnapGuide } from '../../store/app-store';
 import { snapPoint } from '../snap-helpers';
 import { constrainToAngle } from '../angle-constrain';
+import { snapPointToPerspective, perspectiveQuad, orderQuadForWarp } from '../perspective-snap';
 import { generateId } from '../id-generator';
 import { defaultTableData, defaultColWidths, defaultRowHeights } from '../table-utils';
 import { getUIShapeDef } from '../../config/ui-shape-defs';
@@ -327,7 +328,8 @@ export function drawOnMove(
     pState: PointerState,
     helpers: PointerHelpers,
     signals: PointerSignals,
-    constrainAngle = false
+    constrainAngle = false,
+    suppressPerspective = false
 ): void {
     let finalX = x;
     let finalY = y;
@@ -337,6 +339,9 @@ export function drawOnMove(
     // over grid snap (which would break the clean angle); connectors that bind below
     // still win. Curved/orthogonal tools (elbow/organicBranch) are left alone.
     const ANGLE_TOOLS = ['line', 'arrow', 'bezier'];
+    // Tools whose drag is a single direction, so a perspective ray is meaningful for it.
+    // Box shapes and orthogonal elbows are deliberately absent.
+    const PERSPECTIVE_TOOLS = ANGLE_TOOLS;
     // Tools whose drag defines a box, so Shift means "keep it square" (see below).
     // NORMALIZABLE_SHAPES is exactly the set that treats width/height as a bounding
     // box, which is the same condition — reused so a new shape gets this for free.
@@ -368,7 +373,22 @@ export function drawOnMove(
         signals.setSuggestedBinding(null);
     }
 
-    if (!angleConstrained && !signals.suggestedBinding() && store.gridSettings.snapToGrid) {
+    // Perspective soft-snap: bias the segment toward the nearest vanishing-point ray (or a
+    // free vertical/horizontal, depending on the grid's mode). Sits between the two harder
+    // constraints — a binding or a Shift-held angle both win outright — and beats grid snap,
+    // which would otherwise pull the endpoint straight back off the ray. Alt suppresses it.
+    let perspectiveSnapped = false;
+    const pGrid = (!angleConstrained && !signals.suggestedBinding() && !suppressPerspective
+        && PERSPECTIVE_TOOLS.includes(store.selectedTool)) ? perspectiveSnapActive() : null;
+    if (pGrid) {
+        const s = snapPointToPerspective(pGrid, pState.startX, pState.startY, finalX, finalY);
+        setPerspectiveSnapGuide(s.guide);
+        if (s.guide) { finalX = s.x; finalY = s.y; perspectiveSnapped = true; }
+    } else {
+        setPerspectiveSnapGuide(null);
+    }
+
+    if (!angleConstrained && !signals.suggestedBinding() && !perspectiveSnapped && store.gridSettings.snapToGrid) {
         const snapped = snapPoint(x, y, store.gridSettings.gridSize);
         finalX = snapped.x;
         finalY = snapped.y;
@@ -388,6 +408,33 @@ export function drawOnMove(
         dy = Math.sign(dy || 1) * side;
         finalX = pState.startX + dx;
         finalY = pState.startY + dy;
+    }
+
+    // Drawing ON a plane: the drag gives two opposite corners and the plane's edge families
+    // determine the other two, so the shape genuinely lies on the floor/wall instead of being
+    // an upright box the artist has to foreshorten afterwards. The quad is written as a
+    // 4-corner envelope (marked projective, so the interior maps in perspective too) — the
+    // existing warp render/hit-test/export path draws it with no changes.
+    const onPlane = !suppressPerspective && ASPECT_TOOLS.includes(store.selectedTool)
+        ? perspectivePlaneActive() : null;
+    if (onPlane && pState.currentId) {
+        const quad = perspectiveQuad(onPlane, onPlane.drawPlane, { x: pState.startX, y: pState.startY }, { x: finalX, y: finalY });
+        if (quad) {
+            const ord = orderQuadForWarp(quad);
+            const xs = ord.map(p => p.x), ys = ord.map(p => p.y);
+            const minX = Math.min(...xs), minY = Math.min(...ys);
+            const w = Math.max(1, Math.max(...xs) - minX), h = Math.max(1, Math.max(...ys) - minY);
+            const cx = minX + w / 2, cy = minY + h / 2;
+            updateElement(pState.currentId, {
+                x: minX, y: minY, width: w, height: h,
+                warp: { corners: ord.map(p => ({ x: p.x - cx, y: p.y - cy })), projective: true },
+            } as Partial<DrawingElement>);
+            return;
+        }
+        // Degenerate drag (along the horizon, or no area yet): fall back to a plain box, and
+        // drop any cage an earlier frame of this same drag had already written.
+        updateElement(pState.currentId, { x: pState.startX, y: pState.startY, width: dx, height: dy, warp: undefined } as Partial<DrawingElement>);
+        return;
     }
 
     const updates: Partial<DrawingElement> = {
@@ -447,6 +494,7 @@ export function drawOnUp(
     helpers: PointerHelpers,
     signals: PointerSignals
 ): void {
+    setPerspectiveSnapGuide(null); // live-drag artifact — gone the moment the drag ends
     if (!pState.isDrawing || !pState.currentId) {
         pState.isDrawing = false;
         pState.currentId = null;

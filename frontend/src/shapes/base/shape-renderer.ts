@@ -1,5 +1,6 @@
 import type { RenderContext } from "./types";
 import { RenderPipeline } from "./render-pipeline";
+import { getShapeGeometry } from "../../utils/shape-geometry";
 import { globalTime } from "../../utils/animation/animation-engine";
 import type { IRenderer } from "../../rendering/IRenderer";
 import { computeElementHash } from "../../utils/rough-cache";
@@ -43,11 +44,15 @@ export abstract class ShapeRenderer {
                     RenderPipeline.applyComplexFills(context, cx, cy);
                 }
 
-                // 3. Delegate to specialized rendering methods based on style
-                if (element.renderStyle === 'architectural') {
-                    this.renderArchitectural(context, cx, cy);
-                } else {
-                    this.renderSketch(context, cx, cy);
+                // 3. Delegate to specialized rendering methods based on style. A warped shape
+                // short-circuits both: its outline is no longer the shape the renderer knows
+                // how to draw.
+                if (!this.renderWarpedOutline(context, cx, cy)) {
+                    if (element.renderStyle === 'architectural') {
+                        this.renderArchitectural(context, cx, cy);
+                    } else {
+                        this.renderSketch(context, cx, cy);
+                    }
                 }
             }
 
@@ -59,6 +64,55 @@ export abstract class ShapeRenderer {
             // 5. Restore transformations — always runs even if rendering throws
             RenderPipeline.restoreTransformations(renderer);
         }
+    }
+
+    /**
+     * Draw an envelope / mesh-warped shape from its warped outline. Returns false when the
+     * element isn't warped (or warps itself), so the caller falls through to the normal path.
+     *
+     * `getShapeGeometry` has applied `el.warp` since the envelope shipped — SVG/PNG export and
+     * hit-testing both go through it — but no canvas renderer consulted it, so a warped
+     * rectangle drew square on screen and only came out bent in the export. Envelope Distort
+     * hid this by converting shapes to paths first; anything that warps a primitive in place
+     * (a shape drawn on a perspective plane) did not. Intercepting once here fixes every shape
+     * in both render styles rather than patching thirty renderers.
+     *
+     * Images are excluded because they texture-map the mesh themselves (image-renderer), and
+     * text because glyphs have no outline geometry to bend here.
+     */
+    protected renderWarpedOutline(context: RenderContext, cx: number, cy: number): boolean {
+        const { renderer, rc, element: el, isDarkMode } = context;
+        if (!el.warp || el.type === 'image' || el.type === 'text' || el.type === 'richtext') return false;
+        const geo = getShapeGeometry(el) as any;
+        // warpGeometry always emits a self-contained `path`; anything else means the warp
+        // didn't apply and the shape should render normally.
+        if (!geo || geo.type !== 'path') return false;
+
+        const options = RenderPipeline.buildRenderOptions(el, isDarkMode);
+        const backgroundColor = el.backgroundColor === 'transparent' ? undefined : RenderPipeline.adjustColor(el.backgroundColor, isDarkMode);
+
+        renderer.save();
+        renderer.translate(cx, cy);   // the warped outline is in the centred-local frame
+        if (el.renderStyle === 'architectural') {
+            // A `path` geometry is a self-contained Path2D — it must go through fillPath /
+            // strokePath, because beginPath()+renderGeometry()+stroke() leaves the current
+            // path empty and would silently drop the stroke.
+            const fillVisible = options.fill && options.fill !== 'transparent' && options.fill !== 'none';
+            if (fillVisible && backgroundColor) {
+                renderer.fillStyle = backgroundColor;
+                renderer.fillPath(geo.path, geo.evenOdd ? 'evenodd' : undefined);
+            }
+            if (el.strokeColor && el.strokeColor !== 'transparent' && el.strokeColor !== 'none' && (el.strokeWidth ?? 0) > 0) {
+                RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
+                renderer.strokePath(geo.path);
+            }
+        } else {
+            rc.path(geo.path, options);
+        }
+        renderer.restore();
+
+        RenderPipeline.renderText(context, cx, cy);
+        return true;
     }
 
     /**

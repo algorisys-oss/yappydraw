@@ -24,6 +24,7 @@ import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } fr
 import { shapeToPath } from "../utils/shape-to-path";
 import { textElementToOutline, FontOutlineUnavailableError } from "../utils/text-to-outlines";
 import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
+import { maxCornerRadius } from "../utils/path-corners";
 import { closestPointOnSubpaths, cutSubpathAt } from "../utils/path-cut";
 import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
@@ -31,6 +32,7 @@ import { nextIsolationGroup, unitGroupId } from "../utils/group-utils";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
 import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType, PatternSwatch, TransformEffect, Extrude3D, Turntable } from "../types";
 import { applyTurntable } from "../utils/turntable";
+import type { PerspectiveGrid, PerspectiveGuide } from "../utils/perspective-snap";
 import { transformCopy, effectiveCopies } from "../utils/transform-effect";
 import { extrudeGeometry } from "../utils/extrude";
 import { elementPathSample, sampleAt } from "../library/stick-figures/anim/path-follow";
@@ -87,6 +89,41 @@ try {
         localStorage.setItem('theme-canonical-v1', '1');
     }
 } catch { /* ignore */ }
+
+/** Perspective-grid settings that are not derived from the viewport. */
+const PERSPECTIVE_SNAP_DEFAULTS = { mode: 2 as const, density: 12, snap: true, snapAngle: 8, snapStrength: 0.8, drawPlane: 'off' as const };
+
+const clampNum = (v: unknown, lo: number, hi: number, fallback: number): number =>
+    typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fallback;
+
+/**
+ * The grid survives reloads: re-placing two vanishing points every session is exactly
+ * the friction that made the old grid a novelty. Geometry is only seeded on first
+ * activation (it depends on the viewport), so `null` here is a valid state.
+ */
+function loadPerspectiveGrid(): PerspectiveGrid | null {
+    try {
+        if (typeof localStorage === 'undefined') return null;
+        const raw = localStorage.getItem('perspectiveGrid');
+        if (!raw) return null;
+        const p = JSON.parse(raw);
+        if (!p || typeof p.horizonY !== 'number') return null;
+        const mode = (p.mode === 1 || p.mode === 3) ? p.mode : 2;
+        return {
+            horizonY: clampNum(p.horizonY, -1e7, 1e7, 0),
+            leftVPx: clampNum(p.leftVPx, -1e7, 1e7, -600),
+            rightVPx: clampNum(p.rightVPx, -1e7, 1e7, 600),
+            mode,
+            verticalVPx: clampNum(p.verticalVPx, -1e7, 1e7, 0),
+            verticalVPy: clampNum(p.verticalVPy, -1e7, 1e7, 3000),
+            density: Math.round(clampNum(p.density, 4, 40, PERSPECTIVE_SNAP_DEFAULTS.density)),
+            snap: p.snap !== false,
+            snapAngle: clampNum(p.snapAngle, 1, 30, PERSPECTIVE_SNAP_DEFAULTS.snapAngle),
+            snapStrength: clampNum(p.snapStrength, 0, 1, PERSPECTIVE_SNAP_DEFAULTS.snapStrength),
+            drawPlane: (['left', 'right', 'floor'] as const).includes(p.drawPlane) ? p.drawPlane : 'off',
+        };
+    } catch { return null; }
+}
 
 /**
  * Tool the app opens with. Validated against the allowed set rather than cast,
@@ -247,8 +284,11 @@ interface AppState {
     /** Symbolism brush mode + which transform it applies to symbol instances (transient). */
     symbolismActive: boolean;
     symbolismMode: 'sizer' | 'spinner' | 'shifter' | 'screener' | 'stainer' | 'styler';
-    /** 2-point perspective grid geometry in WORLD coords (horizon + two vanishing points). */
-    perspectiveGrid: { horizonY: number; leftVPx: number; rightVPx: number } | null;
+    /** Perspective grid geometry in WORLD coords + its snap settings (persisted). */
+    perspectiveGrid: PerspectiveGrid | null;
+    /** The guide the pointer is currently snapping to, so the overlay can highlight it
+     *  (transient — written on pointer move, cleared on pointer up). */
+    perspectiveSnapGuide: PerspectiveGuide | null;
     /** Undo-history panel visibility (transient, not persisted). */
     showHistoryPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
@@ -570,7 +610,8 @@ const initialState: AppState = {
     pathEraserActive: false,
     puppetWarpActive: false,
     perspectiveGridActive: false,
-    perspectiveGrid: null,
+    perspectiveGrid: loadPerspectiveGrid(),
+    perspectiveSnapGuide: null,
     sliceToolActive: false,
     symbolismActive: false,
     symbolismMode: 'sizer',
@@ -5957,20 +5998,83 @@ export const toggleNodeTool = (active?: boolean) => {
 export const toggleBlobBrush = (active?: boolean) => setStore('blobBrushActive', v => active ?? !v);
 export const togglePathEraser = (active?: boolean) => setStore('pathEraserActive', v => active ?? !v);
 export const togglePuppetWarp = (active?: boolean) => setStore('puppetWarpActive', v => active ?? !v);
+/** A fresh grid centred on the current viewport. */
+const seedPerspectiveGrid = (): PerspectiveGrid => {
+    const vs = store.viewState;
+    const cx = (window.innerWidth / 2 - (vs.panX || 0)) / (vs.scale || 1);
+    const cy = (window.innerHeight / 2 - (vs.panY || 0)) / (vs.scale || 1);
+    // Narrow enough that both vanishing points land inside the canvas rather than under
+    // the toolbars, where their drag handles would be unreachable.
+    const span = Math.max(240, window.innerWidth * 0.36) / (vs.scale || 1);
+    return {
+        horizonY: cy - span * 0.15,
+        leftVPx: cx - span,
+        rightVPx: cx + span,
+        verticalVPx: cx,
+        verticalVPy: cy + span * 4,
+        ...PERSPECTIVE_SNAP_DEFAULTS,
+    };
+};
+
+// Dragging a vanishing point calls setPerspectiveGrid on every pointer move, and
+// localStorage writes are synchronous — so coalesce them instead of writing per frame.
+let perspectivePersistTimer: ReturnType<typeof setTimeout> | null = null;
+const persistPerspectiveGrid = () => {
+    if (perspectivePersistTimer) clearTimeout(perspectivePersistTimer);
+    perspectivePersistTimer = setTimeout(() => {
+        perspectivePersistTimer = null;
+        try {
+            if (store.perspectiveGrid) localStorage.setItem('perspectiveGrid', JSON.stringify(store.perspectiveGrid));
+        } catch { /* ignore */ }
+    }, 250);
+};
+
 export const togglePerspectiveGrid = (active?: boolean) => {
     const next = active ?? !store.perspectiveGridActive;
     setStore('perspectiveGridActive', next);
-    // Seed a sensible 2-point grid centred on the current viewport the first time it's shown.
-    if (next && !store.perspectiveGrid) {
-        const vs = store.viewState;
-        const cx = (window.innerWidth / 2 - (vs.panX || 0)) / (vs.scale || 1);
-        const cy = (window.innerHeight / 2 - (vs.panY || 0)) / (vs.scale || 1);
-        const span = 600 / (vs.scale || 1);
-        setStore('perspectiveGrid', { horizonY: cy - span * 0.15, leftVPx: cx - span, rightVPx: cx + span });
-    }
+    if (next && !store.perspectiveGrid) setStore('perspectiveGrid', seedPerspectiveGrid());
+    // The highlight is drawn from a snap that can no longer happen once the grid is off.
+    if (!next) setStore('perspectiveSnapGuide', null);
 };
-export const setPerspectiveGrid = (g: Partial<{ horizonY: number; leftVPx: number; rightVPx: number }>) =>
-    setStore('perspectiveGrid', (cur) => ({ ...(cur || { horizonY: 0, leftVPx: -600, rightVPx: 600 }), ...g }));
+
+export const setPerspectiveGrid = (g: Partial<PerspectiveGrid>) => {
+    setStore('perspectiveGrid', (cur) => ({ ...(cur || seedPerspectiveGrid()), ...g }));
+    persistPerspectiveGrid();
+};
+
+/** Put the vanishing points and settings back to a fresh grid on the current viewport. */
+export const resetPerspectiveGrid = () => {
+    setStore('perspectiveGrid', seedPerspectiveGrid());
+    setStore('perspectiveSnapGuide', null);
+    persistPerspectiveGrid();
+};
+
+/** Highlight the ray a drawing tool is currently snapping to (null = none). Written on
+ *  every pointer move, so it skips the store write when nothing actually moved. */
+export const setPerspectiveSnapGuide = (guide: PerspectiveGuide | null) => {
+    const cur = store.perspectiveSnapGuide;
+    if (!guide && !cur) return;
+    if (guide && cur && guide.kind === cur.kind
+        && Math.abs(guide.ax - cur.ax) < 0.01 && Math.abs(guide.ay - cur.ay) < 0.01
+        && Math.abs(guide.dx - cur.dx) < 1e-4 && Math.abs(guide.dy - cur.dy) < 1e-4) return;
+    setStore('perspectiveSnapGuide', guide);
+};
+
+/** True when a drawing tool should consult the grid: it is on, snapping is enabled, and
+ *  the caller is not holding the suppress modifier. */
+export const perspectiveSnapActive = (): PerspectiveGrid | null => {
+    const g = store.perspectiveGrid;
+    return store.perspectiveGridActive && g && g.snap && g.snapStrength > 0 ? g : null;
+};
+
+/** The grid when a box-drag should be laid on one of its planes, else null. Independent of
+ *  the line snap: an artist can want plane-drawing with the directional snap turned off. */
+export const perspectivePlaneActive = (): PerspectiveGrid | null => {
+    const g = store.perspectiveGrid;
+    // Membership, not `!== 'off'`: a grid persisted before this setting existed has no
+    // drawPlane at all, and `undefined !== 'off'` would silently turn plane-drawing on.
+    return store.perspectiveGridActive && g && (g.drawPlane === 'left' || g.drawPlane === 'right' || g.drawPlane === 'floor') ? g : null;
+};
 
 /**
  * Project the selected shapes onto a perspective plane of the 2-point grid by warping each
@@ -9051,6 +9155,100 @@ export const simplifyPath = (ids: string[]): string[] => {
     }));
     showToast(changed ? 'Simplified path' : 'Path already simple', changed ? 'success' : 'info');
     return targets.map(t => t.id);
+};
+
+/**
+ * Live Corners — set a rounding radius (px, element-local) on path anchors.
+ *
+ * Unlike Smooth, this is not a one-shot op: the radius is stored on the anchor and the
+ * fillet is built at draw time by `filletAnchors`, so it stays adjustable and the anchor
+ * you edit is still the original corner.
+ *
+ * Scope follows Illustrator's Direct Selection rule — with individual anchors selected
+ * only those round; with just the object selected, every corner does. Non-path shapes are
+ * converted first (one history entry for the whole op), except rectangles and diamonds,
+ * which have their own live `borderRadius` and would lose it by becoming paths.
+ */
+export const setPathCornerRadius = (ids: string[], radius: number, opts: { nodes?: { id: string; sub: number; i: number }[]; history?: boolean } = {}): string[] => {
+    const r = Math.max(0, Number.isFinite(radius) ? radius : 0);
+    const nativeRadius = (t: string) => t === 'rectangle' || t === 'diamond';
+    const pending = store.elements
+        .filter(e => ids.includes(e.id) && e.type !== 'path' && !nativeRadius(e.type) && !!shapeToPath(e))
+        .map(e => e.id);
+    const alreadyPaths = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
+    if (alreadyPaths.length === 0 && pending.length === 0) {
+        const hasNative = store.elements.some(e => ids.includes(e.id) && nativeRadius(e.type));
+        showToast(hasNative ? 'Corner radius: use the Corners control for rectangles' : 'Corner radius: select a path or shape', 'info');
+        return [];
+    }
+    // A slider drag calls this on every input event, so the caller pushes one history entry
+    // at pointer-down and passes `history: false` for the rest of the drag.
+    if (opts.history !== false) pushToHistory();
+    if (pending.length) convertToPath(pending, { silent: true });
+    const targets = store.elements.filter(e => ids.includes(e.id) && e.type === 'path');
+    if (targets.length === 0) return [];
+
+    // Anchor-level scope, indexed by element → subpath → anchor. Converting a shape above
+    // renumbers nothing (ids are preserved), so a node selection made before the convert
+    // still points at the right corners.
+    const nodes = opts.nodes ?? store.nodeSelection;
+    const scoped = nodes.filter(n => ids.includes(n.id));
+    const wanted = new Set(scoped.map(n => `${n.id}:${n.sub}:${n.i}`));
+
+    setStore('elements', list => list.map(el => {
+        if (!targets.find(t => t.id === el.id)) return el;
+        const subs = getPathSubpaths(el).map((sp, si) => ({
+            closed: sp.closed,
+            anchors: sp.anchors.map((a, ai) => {
+                if (wanted.size && !wanted.has(`${el.id}:${si}:${ai}`)) return a;
+                const capped = Math.min(r, maxCornerRadius(sp.anchors, sp.closed, ai));
+                // Drop the key entirely at zero — an anchor carrying `cornerRadius: 0` would
+                // make `hasLiveCorners` true forever and put every path through the fillet
+                // pass for nothing.
+                const { cornerRadius: _drop, ...rest } = a;
+                return capped > 0 ? { ...rest, cornerRadius: capped } : { ...rest } as PathAnchor;
+            }),
+        }));
+        const single = subs.length === 1;
+        return {
+            ...el,
+            pathAnchors: single ? subs[0].anchors : undefined,
+            pathClosed: single ? subs[0].closed : undefined,
+            pathSubpaths: single ? undefined : subs,
+        } as DrawingElement;
+    }));
+    return targets.map(t => t.id);
+};
+
+/**
+ * Current corner radius across the scoped anchors, for the panel to display: the shared
+ * value, or `null` when they disagree (a mixed selection shows an empty field rather than
+ * silently claiming one of the values). `max` is the largest radius the tightest corner in
+ * scope can take, which is what the slider bounds itself by.
+ */
+export const getPathCornerRadius = (ids: string[], nodes?: { id: string; sub: number; i: number }[]): { value: number | null; max: number; count: number } => {
+    const scoped = (nodes ?? store.nodeSelection).filter(n => ids.includes(n.id));
+    const wanted = new Set(scoped.map(n => `${n.id}:${n.sub}:${n.i}`));
+    const values: number[] = [];
+    let max = Infinity;
+    for (const el of store.elements) {
+        if (!ids.includes(el.id)) continue;
+        // A shape that hasn't been converted yet still has corners worth reporting — the
+        // panel needs a real maximum before the first drag, not a disabled-looking zero.
+        const subs = el.type === 'path' ? getPathSubpaths(el)
+            : (() => { const p = shapeToPath(el); return p ? [p] : []; })();
+        subs.forEach((sp, si) => sp.anchors.forEach((a, ai) => {
+            if (wanted.size && !wanted.has(`${el.id}:${si}:${ai}`)) return;
+            const cap = maxCornerRadius(sp.anchors, sp.closed, ai);
+            if (cap <= 0) return;               // endpoints and flat joints can't round
+            values.push(a.cornerRadius ?? 0);
+            max = Math.min(max, cap);
+        }));
+    }
+    if (!values.length) return { value: null, max: 0, count: 0 };
+    const first = values[0];
+    const same = values.every(v => Math.abs(v - first) < 1e-6);
+    return { value: same ? first : null, max: Number.isFinite(max) ? max : 0, count: values.length };
 };
 
 /**

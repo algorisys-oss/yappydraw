@@ -78,6 +78,13 @@ export interface PathAnchor {
     outX?: number;
     outY?: number;
     kind: 'corner' | 'smooth';
+    /**
+     * Live Corners: round this corner by `cornerRadius` PX (element-local units, the same
+     * frame as `x`/`y` — unlike a rectangle's `borderRadius`, which is a percent of the
+     * shorter side; an open path has no shorter side). Non-destructive: the fillet is built
+     * at serialization time by `filletAnchors`, so this anchor stays the one you edit.
+     */
+    cornerRadius?: number;
 }
 
 /**
@@ -635,7 +642,11 @@ export interface DrawingElement {
     warp?: { corners?: { x: number; y: number }[]; rows?: number; cols?: number; points?: { x: number; y: number }[]; smooth?: boolean;
         // Named warp preset (Arc/Arch/Flag/Wave/Rise/Bulge) + its bend amount [-1..1]. When set,
         // the control `points` are regenerated from the preset, so a bend slider stays live.
-        preset?: string; bend?: number };
+        preset?: string; bend?: number;
+        /** Map the 4-corner cage projectively (a homography) rather than bilinearly — set by
+         *  shapes drawn on a perspective plane, where bilinear puts the centre in the wrong
+         *  place. Absent on every other warp, which stays bilinear. */
+        projective?: boolean };
     /** Puppet Warp pins (centred-local coords): `base` = rest position, current = {x,y}. The
      *  warp grid is recomputed from pin displacements via RBF interpolation. */
     puppetPins?: { baseX: number; baseY: number; x: number; y: number }[];

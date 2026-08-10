@@ -1726,7 +1726,7 @@ const Canvas: Component = () => {
         if (store.selectedTool === 'eraser') { eraserOnDown(x, y, pState, pHelpers); return; }
         if (store.selectedTool === 'pan') { panOnDown(pState, pHelpers); return; }
         if (store.selectedTool === 'polyline' || pState.isPolylineBuilding) { polylineOnDown(x, y, pState, pHelpers); return; }
-        if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers, e.shiftKey || pState.secondaryContact || store.penConstrain); requestAnimationFrame(draw); return; }
+        if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey); requestAnimationFrame(draw); return; }
 
         drawOnDown(x, y, pState, pHelpers);
         smartShape.arm(pState.currentId); // no-op unless a pen tool + enabled
@@ -1862,7 +1862,7 @@ const Canvas: Component = () => {
             // Clock-Method constrain: Shift, the Procreate second-finger contact, or
             // the on-screen toggle snaps the dragged handle to 45°/90°. Alt breaks the
             // handle pair so the anchor becomes a cusp mid-draw.
-            penPathMove(x, y, pState, pHelpers, pSignals, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey);
+            penPathMove(x, y, pState, pHelpers, pSignals, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey, e.altKey);
             requestAnimationFrame(draw);
             return;
         }
@@ -1892,7 +1892,7 @@ const Canvas: Component = () => {
             penOnMove(e, pState, pHelpers, PEN_UPDATE_THROTTLE_MS);
             smartShape.note(e.clientX, e.clientY);
         } else {
-            drawOnMove(x, y, pState, pHelpers, pSignals, e.shiftKey);
+            drawOnMove(x, y, pState, pHelpers, pSignals, e.shiftKey, e.altKey);
         }
 
         // Live symmetry: keep the mirrored copies in step with the growing stroke, so

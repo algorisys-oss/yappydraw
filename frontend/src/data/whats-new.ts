@@ -13,6 +13,14 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.186', date: '2026-08-10', items: [
+        'The Perspective Grid now actually helps you draw. Until now it drew a horizon and two fans of lines and nothing paid any attention to them — you still had to line everything up by eye. Turn it on and your lines pull onto the perspective rays as you draw them. Hold Alt at any point to draw free-hand without switching anything off.',
+        'How strongly it pulls is up to you. At full strength a wall edge lands exactly on the ray, which is what you want for buildings and interiors; turn it down and it becomes a gentle nudge you can draw straight through, which is what you want for curves and organic shapes. There is also a setting for how close you have to be before it takes hold.',
+        'One-, two- and three-point perspective, with vanishing points you can drag, and it all remembers itself. Setting your grid up again every time you opened the app was the reason nobody used the old one.',
+        'You can draw straight onto a wall or the floor. Pick which plane in the grid bar and a rectangle drag lands on that surface already foreshortened — windows on a building, tiles on a floor, posters on a wall.',
+        'Any shape can have rounded corners now, not just rectangles. Pen paths, polygons, stars, traced artwork — select it and use the new Corners control in Vector Tools. Nothing is destroyed: the corner points stay exactly where they were, so you can move them afterwards and the rounding follows, and setting the radius back to zero gives you your sharp corner back. Round every corner, or select just the ones you want with the Nodes tool.',
+        'The Shape Builder now shows you what it is about to do. A + or − sits next to the cursor and changes the instant you press or release Alt — before you start dragging, rather than after, which is when you needed to know.',
+    ] },
     { version: '0.8.185', date: '2026-08-09', items: [
         'Flipping a shape now takes its anchor points with it. Flip a pen path horizontally and the outline mirrored, but the little square handles stayed where they were — so the points you could see and grab were no longer on the curve. Drawings already flipped the old way put themselves right the next time you flip them.',
         'Hold Shift while drawing with the Pen and your line snaps to clean angles — dead horizontal, vertical, or 45° — instead of relying on a steady hand. It is the same snap the Line and Arrow tools use, and the preview shows exactly where the point will land before you click.',

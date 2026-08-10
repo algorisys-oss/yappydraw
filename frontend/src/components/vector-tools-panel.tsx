@@ -4,7 +4,9 @@ import {
     toggleShapeBuilder, toggleLivePaint, toggleCutTool, toggleWidthTool, toggleCurveTool,
     toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid,
     toggleSymbolSprayer, toggleSymbolism, toggleSliceTool, selectSimilar,
-    setTextVertical, toggleTouchType, toggleTypeOnPath, applyDistort, exitAllToolModes, toggleNodeTool,} from '../store/app-store';
+    setTextVertical, toggleTouchType, toggleTypeOnPath, applyDistort, exitAllToolModes, toggleNodeTool,
+    setPathCornerRadius, getPathCornerRadius, pushToHistory,} from '../store/app-store';
+import { shapeToPath } from '../utils/shape-to-path';
 import { YappyAPI } from '../api';
 import {
     Combine, PaintBucket, Spline, Waypoints, Scissors, PenLine, Brush, Eraser,
@@ -24,6 +26,27 @@ type Tool = { label: string; icon: any; active?: () => boolean; run: () => void 
 
 const VectorToolsPanel: Component = () => {
     const [distortOpen, setDistortOpen] = createSignal(false);
+
+    // --- Live Corners -----------------------------------------------------------------
+    // Rectangles and diamonds keep their own percent-of-shorter-side `borderRadius`; this
+    // control is for everything else with corners, and converts a shape to a path on first
+    // use (which is exactly what Illustrator's corner widget does to a live shape).
+    const cornerTargets = () => store.elements.filter(el =>
+        store.selection.includes(el.id)
+        && el.type !== 'rectangle' && el.type !== 'diamond'
+        && (el.type === 'path' || !!shapeToPath(el)));
+    const cornerInfo = () => getPathCornerRadius(cornerTargets().map(e => e.id));
+    const cornerMax = () => Math.max(1, Math.round(cornerInfo().max));
+    // Scope label, so it is never a mystery which corners a drag is about to move.
+    const cornerScope = () => {
+        const n = store.nodeSelection.filter(s => store.selection.includes(s.id)).length;
+        const c = cornerInfo().count;
+        return n > 0 ? `${c} selected` : `all (${c})`;
+    };
+    const applyCorner = (v: number, first: boolean) => {
+        if (first) pushToHistory();
+        setPathCornerRadius(cornerTargets().map(e => e.id), v, { history: false });
+    };
 
     // viewport centre in world coords, for inserting generative shapes
     const center = () => {
@@ -118,6 +141,35 @@ const VectorToolsPanel: Component = () => {
                     </div>
                 )}
             </For>
+
+            {/* Live Corners — per-anchor rounding for paths and any convertible shape. */}
+            <Show when={cornerInfo().count > 0}>
+                <div class="vt-group">
+                    <div class="vt-group-name">Corners</div>
+                    <div class="vt-corner">
+                        <div class="vt-corner-head">
+                            <span>Radius</span>
+                            <span class="vt-corner-scope" title="Select anchors with the Nodes tool to round only those">{cornerScope()}</span>
+                        </div>
+                        <div class="vt-corner-row">
+                            <input
+                                type="range" min={0} max={cornerMax()} step={0.5}
+                                value={cornerInfo().value ?? 0}
+                                onPointerDown={() => pushToHistory()}
+                                onInput={(e) => applyCorner(parseFloat(e.currentTarget.value), false)}
+                            />
+                            <input
+                                class="vt-corner-num" type="number" min={0} max={cornerMax()} step={0.5}
+                                // Mixed radii show empty rather than picking one of them to display.
+                                value={cornerInfo().value === null ? '' : Math.round((cornerInfo().value ?? 0) * 10) / 10}
+                                placeholder="—"
+                                onChange={(e) => applyCorner(parseFloat(e.currentTarget.value) || 0, true)}
+                            />
+                        </div>
+                        <button class="vt-sub vt-corner-reset" onClick={() => applyCorner(0, true)}>Reset corners</button>
+                    </div>
+                </div>
+            </Show>
 
             {/* Effects — Distort & Transform flyout */}
             <div class="vt-group">

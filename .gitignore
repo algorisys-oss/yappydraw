@@ -46,3 +46,7 @@ media/
 .playwright-mcp/
 knife-scissors-check.png
 *-check.png
+
+# Scratch space for verification screenshots, throwaway scripts and scratch output.
+# Everything disposable goes here rather than at the repo root (see CLAUDE.md).
+temp/

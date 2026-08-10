@@ -5,6 +5,7 @@
  */
 
 import type { PathAnchor } from '../../types';
+import { filletAnchors, hasLiveCorners } from '../path-corners';
 
 /**
  * Serialize an editable anchor list into an SVG path `d` string.
@@ -14,9 +15,15 @@ import type { PathAnchor } from '../../types';
  * becomes a cubic `C` when either endpoint has a Bézier handle, else a line `L`. A
  * missing handle defaults to its own anchor (so a half-curved segment still works).
  * Returns `''` for fewer than 2 anchors.
+ *
+ * Anchors carrying a `cornerRadius` are filleted here, which is what makes Live Corners
+ * non-destructive: this is the one place render, fill, hit-test and export all pass
+ * through, so they cannot disagree about the rounded outline, while node editing reads
+ * the raw anchors and keeps showing the corner the user actually owns.
  */
-export function anchorsToPathData(anchors: PathAnchor[], closed = false, ox = 0, oy = 0): string {
-    if (!anchors || anchors.length < 2) return '';
+export function anchorsToPathData(anchorsIn: PathAnchor[], closed = false, ox = 0, oy = 0): string {
+    if (!anchorsIn || anchorsIn.length < 2) return '';
+    const anchors = hasLiveCorners(anchorsIn) ? filletAnchors(anchorsIn, closed) : anchorsIn;
     const ax = (a: PathAnchor) => a.x + ox;
     const ay = (a: PathAnchor) => a.y + oy;
     const outX = (a: PathAnchor) => a.x + (a.outX ?? 0) + ox;

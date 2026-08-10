@@ -80,6 +80,12 @@ export const IllustratorToolsDoc: Component = () => {
                     <kbd>Alt</kbd>+drag across a region to delete it. It&rsquo;s the quickest way to
                     carve a finished silhouette out of a pile of overlapping circles and rectangles.
                 </p>
+                <p>
+                    A <strong>badge follows the cursor</strong> so you always know which one you are about
+                    to do: a blue <strong>+</strong> for merge, a red <strong>−</strong> for delete. It
+                    updates the moment you press or release <kbd>Alt</kbd> — before you start the stroke,
+                    not after — and the region highlight and the drag line take the same colour.
+                </p>
                 <div class="code-block">
                     <pre>{`// the same operations from the API
 Yappy.pathfinder([idA, idB], 'union');        // 'subtract' | 'intersect' | 'exclude'
@@ -538,11 +544,51 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
             <section class="doc-section">
                 <h2>📐 Perspective Grid</h2>
                 <p>
-                    Turn on the <strong>Perspective Grid</strong> for a 2-point perspective drawing aid — a horizon
-                    with two vanishing points and converging guides. Drag a vanishing point or the horizon to set
-                    up the scene. With a shape selected, the <strong>Left / Floor / Right</strong> buttons project
-                    it onto that plane (foreshortened toward the vanishing points).
+                    Turn on the <strong>Perspective Grid</strong> (Vector Tools palette, or the command palette)
+                    for a perspective drawing aid — a horizon with its vanishing points and converging guides.
+                    Drag a vanishing point or the horizon to set up the scene; the grid is anchored to the
+                    drawing, so it pans and zooms with your artwork. With a shape selected, the
+                    <strong>Left / Floor / Right</strong> buttons project it onto that plane (foreshortened
+                    toward the vanishing points). <span class="kbd">Esc</span> or <strong>Done ✕</strong> exits.
                 </p>
+                <h3>Settings (the ⚙ button)</h3>
+                <ul class="doc-list">
+                    <li><strong>Mode</strong> — <strong>1-pt</strong> (one vanishing point, plus free horizontals
+                        and verticals), <strong>2-pt</strong> (left + right vanishing points, verticals stay
+                        vertical) or <strong>3-pt</strong> (a third vanishing point below the horizon, so
+                        verticals converge too). The <strong>3rd VP</strong> slider sets how far below the horizon
+                        that point sits — drag its handle directly when it is on screen.</li>
+                    <li><strong>Density</strong> — how many guides are drawn per fan (4–40). Display only;
+                        snapping does not care how many lines you can see.</li>
+                    <li><strong>Snap to perspective lines</strong> — on by default, with a
+                        <strong>Tolerance</strong> (how far off a ray you can be and still be captured) and a
+                        <strong>Strength</strong>.</li>
+                    <li><strong>Reset grid</strong> — puts the vanishing points back on the current view.</li>
+                </ul>
+                <p>
+                    Everything here is remembered between sessions, so you set the scene up once.
+                </p>
+                <h3>Soft snap</h3>
+                <p>
+                    While the grid is on, the <strong>line</strong>, <strong>arrow</strong>, <strong>curve</strong>
+                    and <strong>pen</strong> tools are pulled toward the nearest perspective ray — including the
+                    pen's Bézier <em>handles</em>, which is what lets a curve leave an anchor in perspective.
+                    The pull is deliberately <em>soft</em>: at <strong>100%</strong> strength a segment locks onto
+                    the ray, and below that it is only biased toward it, so freehand-feeling curves stay
+                    drawable. Rectangles and other box shapes are left alone (a box has no single direction to
+                    aim), and freehand pen/brush strokes are never snapped.
+                </p>
+                <p class="doc-note">
+                    <strong>Precedence.</strong> A connector snapping to a shape wins over the grid;
+                    <span class="kbd">Shift</span> gives you the plain 15° constraint instead; the grid beats
+                    grid-snap (which would otherwise drag the endpoint straight back off the ray); and
+                    <span class="kbd">Alt</span> ignores the grid entirely for that stroke.
+                </p>
+                <pre class="code-block"><code>{`Yappy.togglePerspectiveGrid(true);
+Yappy.setPerspectiveGrid({ mode: 3, density: 20, snapAngle: 10, snapStrength: 1 });
+Yappy.getPerspectiveGrid();     // current config
+Yappy.projectToPlane('right');  // foreshorten the selection onto the right wall
+Yappy.resetPerspectiveGrid();`}</code></pre>
             </section>
 
             <section class="doc-section">
@@ -688,6 +734,48 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                     <span class="kbd">Alt</span>-click converts smooth ↔ corner; on the <em>handle</em> at the
                     end of a control arm, <span class="kbd">Alt</span>-drag breaks the pair.
                 </p>
+
+                <h3>◜ Live Corners — round the corners of any path</h3>
+                <p>
+                    Rectangles have their own <strong>Roundness</strong> and four independent
+                    <strong> Corner</strong> sliders. Everything else with corners — pen paths, polygons,
+                    stars, triangles, traced artwork, anything you converted to a path — rounds through
+                    <strong> Vector Tools → Corners</strong>. Drag the <strong>Radius</strong> slider and the
+                    corners fillet live.
+                </p>
+                <ul class="doc-list">
+                    <li><strong>It is non-destructive.</strong> The radius is stored on the anchor and the
+                        rounded outline is rebuilt every time the path is drawn — so the anchor you edit is
+                        still the original sharp corner. Move it, and the rounding follows. Set the radius
+                        back to 0 (or hit <strong>Reset corners</strong>) and the corner returns exactly.</li>
+                    <li><strong>Some corners or all of them.</strong> With nothing but the object selected,
+                        every corner rounds. Select individual anchors with the <strong>Nodes</strong> tool
+                        first and only those round — the panel header tells you which scope you are in.</li>
+                    <li><strong>Radius is in pixels</strong>, not a percentage. A rectangle's roundness is a
+                        percent of its shorter side so it survives resizing; an open path has no
+                        &ldquo;shorter side&rdquo;, so paths use real units.</li>
+                    <li><strong>It clamps itself.</strong> A corner can never eat more than half of either
+                        neighbouring segment, so two rounded corners on a short edge shrink together instead
+                        of crossing over. Drag past the limit and it simply maxes out.</li>
+                    <li><strong>Corners between curves</strong> round too. The trim distance comes from the
+                        angle, so an obtuse elbow and a sharp spike with the same radius look like the same
+                        amount of rounding.</li>
+                    <li>Applying it to a non-path shape <strong>converts it to a path first</strong> (the same
+                        thing Illustrator does to a live shape). Rectangles and diamonds are left alone —
+                        they'd lose their own corner controls.</li>
+                </ul>
+                <div class="code-block">
+                    <pre>{`// Live Corners from the API
+Yappy.setPathCornerRadius(12);              // all corners of the selection
+Yappy.setPathCornerRadius(12, [pathId]);    // a specific path
+Yappy.setPathCornerRadius(0);               // un-round
+
+// only certain anchors: {id, sub, i} — sub = subpath index, i = anchor index
+Yappy.setPathCornerRadius(20, [pathId], [{ id: pathId, sub: 0, i: 1 }]);
+
+// read it back: value is null when the scoped corners disagree
+const { value, max, count } = Yappy.getPathCornerRadius();`}</pre>
+                </div>
             </section>
 
             <section class="doc-section">
@@ -791,7 +879,7 @@ const c = Yappy.addPuppetPin(r,220,190); Yappy.movePuppetPin(r,c,300,110); // pu
                         <tr><td>Blob Brush (Shift+B)</td><td>Command Palette → Blob Brush</td></tr>
                         <tr><td>Eraser / Path Eraser</td><td>Command Palette → Path Eraser (destructive)</td></tr>
                         <tr><td>Puppet Warp</td><td>Command Palette → Puppet Warp</td></tr>
-                        <tr><td>Perspective Grid (Shift+P)</td><td>Command Palette → Perspective Grid</td></tr>
+                        <tr><td>Perspective Grid</td><td>Vector Tools → Warp → Perspective Grid, or Command Palette</td></tr>
                         <tr><td>Flare</td><td>Insert → Lens Flare</td></tr>
                         <tr><td>Grain / texture overlay</td><td>Vector Tools → Insert → Noise Texture / Grunge Texture</td></tr>
                         <tr><td>Touch Type (Shift+T)</td><td>Right-click text → Touch Type</td></tr>

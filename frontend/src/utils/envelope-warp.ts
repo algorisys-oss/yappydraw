@@ -18,7 +18,14 @@
 import { PathUtils } from './math/path-utils';
 
 type Pt = { x: number; y: number };
-export interface WarpGrid { rows: number; cols: number; points: Pt[]; }
+export interface WarpGrid {
+    rows: number;
+    cols: number;
+    points: Pt[];
+    /** Map the cage projectively (a homography) instead of bilinearly. Only meaningful for a
+     *  2×2 cage — see the projective section below for why perspective needs it. */
+    projective?: boolean;
+}
 
 // ── Grid model + back-compat ──────────────────────────────────────────────
 
@@ -26,12 +33,12 @@ export interface WarpGrid { rows: number; cols: number; points: Pt[]; }
 export function getWarpGrid(warp: any): WarpGrid | null {
     if (!warp) return null;
     if (warp.points && warp.rows >= 2 && warp.cols >= 2 && warp.points.length === warp.rows * warp.cols) {
-        return { rows: warp.rows, cols: warp.cols, points: warp.points };
+        return { rows: warp.rows, cols: warp.cols, points: warp.points, projective: !!warp.projective };
     }
     // Legacy 4-corner envelope [TL, TR, BR, BL] → 2×2 grid (row-major TL,TR / BL,BR).
     if (warp.corners && warp.corners.length === 4) {
         const c = warp.corners;
-        return { rows: 2, cols: 2, points: [c[0], c[1], c[3], c[2]] };
+        return { rows: 2, cols: 2, points: [c[0], c[1], c[3], c[2]], projective: !!warp.projective };
     }
     return null;
 }
@@ -223,12 +230,75 @@ function pointInQuad(q: Pt, a: Pt, b: Pt, c: Pt, d: Pt): boolean {
     return !(hasNeg && hasPos);
 }
 
+// ── Projective (perspective) cage ─────────────────────────────────────────
+// A bilinear cage puts the middle of the quad at the average of its corners; a plane seen in
+// perspective puts it where the diagonals cross. On a trapezoid whose far edge is half the
+// near one that is a 17% error — a circle drawn on the floor comes out symmetric instead of
+// pushed toward the horizon, and every straight line through the interior bows. A homography
+// is the correct map, and it is what `warp.projective` selects. Cages without the flag keep
+// the bilinear behaviour Envelope Distort and Mesh Warp have always had.
+
+/** 3×3 row-major homography mapping the unit square onto a quad (Heckbert's closed form). */
+function squareToQuad(p00: Pt, p10: Pt, p11: Pt, p01: Pt): number[] {
+    // Heckbert's ordering: (0,0)→q0, (1,0)→q1, (1,1)→q2, (0,1)→q3.
+    const q0 = p00, q1 = p10, q2 = p11, q3 = p01;
+    const dx1 = q1.x - q2.x, dx2 = q3.x - q2.x, dx3 = q0.x - q1.x + q2.x - q3.x;
+    const dy1 = q1.y - q2.y, dy2 = q3.y - q2.y, dy3 = q0.y - q1.y + q2.y - q3.y;
+    if (Math.abs(dx3) < 1e-12 && Math.abs(dy3) < 1e-12) {
+        // Parallelogram — the projective terms vanish and it is a plain affine map.
+        return [q1.x - q0.x, q3.x - q0.x, q0.x, q1.y - q0.y, q3.y - q0.y, q0.y, 0, 0, 1];
+    }
+    const den = dx1 * dy2 - dx2 * dy1;
+    if (Math.abs(den) < 1e-12) return [1, 0, 0, 0, 1, 0, 0, 0, 1]; // degenerate cage
+    const g = (dx3 * dy2 - dx2 * dy3) / den;
+    const h = (dx1 * dy3 - dx3 * dy1) / den;
+    return [
+        q1.x - q0.x + g * q1.x, q3.x - q0.x + h * q3.x, q0.x,
+        q1.y - q0.y + g * q1.y, q3.y - q0.y + h * q3.y, q0.y,
+        g, h, 1,
+    ];
+}
+
+/** Adjugate inverse of a 3×3 (scale is irrelevant in homogeneous coordinates). */
+function invert3x3(m: number[]): number[] {
+    const [a, b, c, d, e, f, g, h, i] = m;
+    return [
+        e * i - f * h, c * h - b * i, b * f - c * e,
+        f * g - d * i, a * i - c * g, c * d - a * f,
+        d * h - e * g, b * g - a * h, a * e - b * d,
+    ];
+}
+
+function applyH(m: number[], u: number, v: number): Pt {
+    const w = m[6] * u + m[7] * v + m[8];
+    const iw = Math.abs(w) < 1e-12 ? 0 : 1 / w;
+    return { x: (m[0] * u + m[1] * v + m[2]) * iw, y: (m[3] * u + m[4] * v + m[5]) * iw };
+}
+
+// The forward map is solved once per cage and reused across the ~100 outline samples a single
+// warp costs; keyed on the grid object, which callers build once and pass down.
+const homographyCache = new WeakMap<WarpGrid, { fwd: number[]; inv: number[] }>();
+
+/** The homography for a projective 2×2 cage, or null when the cage isn't one. */
+function cageHomography(g: WarpGrid): { fwd: number[]; inv: number[] } | null {
+    if (!g.projective || g.rows !== 2 || g.cols !== 2) return null;
+    const hit = homographyCache.get(g);
+    if (hit) return hit;
+    const P = g.points; // row-major: TL, TR, BL, BR
+    const fwd = squareToQuad(P[0], P[1], P[3], P[2]);
+    const built = { fwd, inv: invert3x3(fwd) };
+    homographyCache.set(g, built);
+    return built;
+}
+
 // ── Mesh forward / inverse ────────────────────────────────────────────────
 
 /** Map a centred geometry point through the mesh. */
 export function meshWarpPoint(gx: number, gy: number, width: number, height: number, g: WarpGrid): Pt {
     const u = width === 0 ? 0.5 : (gx + width / 2) / width;
     const v = height === 0 ? 0.5 : (gy + height / 2) / height;
+    const H = cageHomography(g);
+    if (H) return applyH(H.fwd, u, v);
     const fc = Math.min(Math.max(u * (g.cols - 1), 0), g.cols - 1);
     const fr = Math.min(Math.max(v * (g.rows - 1), 0), g.rows - 1);
     const cc = Math.min(Math.floor(fc), g.cols - 2);
@@ -241,6 +311,11 @@ export function meshWarpPoint(gx: number, gy: number, width: number, height: num
 /** Inverse mesh map: recover the un-warped centred point from a warped one (hit-testing). */
 export function unmeshWarpPoint(qx: number, qy: number, width: number, height: number, g: WarpGrid): Pt {
     const q = { x: qx, y: qy };
+    const H = cageHomography(g);
+    if (H) {
+        const p = applyH(H.inv, qx, qy);
+        return { x: p.x * width - width / 2, y: p.y * height - height / 2 };
+    }
     const P = g.points;
     for (let rr = 0; rr < g.rows - 1; rr++) {
         for (let cc = 0; cc < g.cols - 1; cc++) {

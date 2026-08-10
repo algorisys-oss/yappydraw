@@ -10,7 +10,7 @@ import {
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
-    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, exitCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths,
+    setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, exitCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, setPathCornerRadius, getPathCornerRadius, makeCompoundPath, releaseCompoundPath, joinPaths,
     radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, spinTurntable360, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
@@ -26,7 +26,7 @@ import {
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll,
-    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, projectToPlane,
+    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -95,6 +95,7 @@ import { shapeMetrics } from "./utils/measure-readout";
 import { isPagedDocType } from "./types/slide-types";
 import type { AlignmentType, DistributionType } from "./utils/alignment";
 import type { LayoutDirection } from "./utils/mindmap-layout";
+import type { PerspectiveGrid } from "./utils/perspective-snap";
 import { parseOutline } from "./utils/mindmap-layout";
 import {
     animateElement,
@@ -2413,6 +2414,26 @@ export const YappyAPI = {
     simplifyPath(ids: string[]) { return simplifyPath(ids); },
     /** Smooth a path's janky curves (Laplacian; keeps anchor count). strength 0..1. */
     smoothPath(ids?: string[], strength = 0.5, iterations = 2) { return smoothPath(ids ?? [...store.selection], strength, iterations); },
+    /**
+     * Live Corners: round path corners by `radius` PX, non-destructively — the radius is
+     * stored on the anchor and the fillet is rebuilt whenever the path is drawn, so the
+     * anchors stay editable and the radius stays adjustable.
+     *
+     * Scope follows Direct Selection: with anchors selected (`nodes`, or the current node
+     * selection) only those round; otherwise every corner of each path does. Non-path
+     * shapes are converted to paths first — except rectangles and diamonds, which have
+     * their own `borderRadius` / `radiusTL…BL` and would lose it. Radii are clamped per
+     * corner to what the adjacent segments can carry, so a huge value simply maxes out.
+     * Pass 0 to un-round. Returns affected ids.
+     */
+    setPathCornerRadius(radius: number, ids?: string[], nodes?: { id: string; sub: number; i: number }[]) {
+        return setPathCornerRadius(ids ?? [...store.selection], radius, nodes ? { nodes } : {});
+    },
+    /** Current path corner radius: `value` is null when the scoped corners disagree; `max`
+     *  is the largest radius the tightest corner in scope can take. */
+    getPathCornerRadius(ids?: string[], nodes?: { id: string; sub: number; i: number }[]) {
+        return getPathCornerRadius(ids ?? [...store.selection], nodes);
+    },
 
     // ── Illustrator effects (tier 1) ────────────────────────────────────────
     /** Convert objects to a rectangle / rounded rect / ellipse sized to their bbox. */
@@ -3962,10 +3983,22 @@ export const YappyAPI = {
     movePuppetPin(id: string, idx: number, x: number, y: number) { movePuppetPin(id, idx, x, y, true); },
     /** Remove a puppet pin (omit idx to clear all pins + the warp). */
     removePuppetPin(id: string, idx?: number) { removePuppetPin(id, idx); },
-    /** Perspective Grid overlay (2-point). */
+    /** Perspective Grid overlay (1-, 2- or 3-point). */
     togglePerspectiveGrid(active?: boolean) { togglePerspectiveGrid(active); },
-    /** Set perspective grid geometry (world coords: horizonY, leftVPx, rightVPx). */
-    setPerspectiveGrid(g: { horizonY?: number; leftVPx?: number; rightVPx?: number }) { setPerspectiveGrid(g); },
+    /**
+     * Configure the perspective grid. Geometry is in world coords; the rest are settings
+     * (persisted across sessions).
+     *   mode          1 | 2 | 3 — 1-point uses `leftVPx` as the single VP
+     *   density       rays drawn per fan, 4–40 (display only; snapping is continuous)
+     *   snap          soft-snap drawing to the perspective rays
+     *   snapAngle     capture cone half-width in degrees
+     *   snapStrength  0 = off, 1 = hard lock inside the cone, in between = proportional pull
+     */
+    setPerspectiveGrid(g: Partial<PerspectiveGrid>) { setPerspectiveGrid(g); },
+    /** Current perspective grid config (null until the grid is first shown). */
+    getPerspectiveGrid(): PerspectiveGrid | null { return store.perspectiveGrid; },
+    /** Put the vanishing points and settings back to a fresh grid on the current viewport. */
+    resetPerspectiveGrid() { resetPerspectiveGrid(); },
     /** Project selected shapes onto a perspective plane ('left'|'right'|'floor'). */
     projectToPlane(plane: 'left' | 'right' | 'floor', ids?: string[]) { return projectToPlane(ids ?? [...store.selection], plane); },
     /** Eyedropper: arm picking a style onto targets (default: selection); next canvas click on an object copies its style. */
