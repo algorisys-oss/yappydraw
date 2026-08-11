@@ -10,6 +10,7 @@ import type { DrawingElement, RichTextSpan } from '../../types';
 import { store, updateElement, deleteElements, isLayerVisible } from '../../store/app-store';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
+import { animPosedElements } from '../../store/anim-ops';
 import { fitShapeToText, fitUmlClassToContent, measureContainerText, measureWrappedTextHeight, measureVerticalText, measureMaxLineWidth } from '../text-utils';
 import { CanvasRenderer } from '../../rendering/CanvasRenderer';
 import { computeCellRects, defaultColWidths, defaultRowHeights, defaultTableData, hitTestTableCell } from '../table-utils';
@@ -265,7 +266,7 @@ export function handleDoubleClick(e: MouseEvent, ctx: TextEditingContext): void 
 
             // Check for control handles (Star, Burst, Speech Bubble, Isometric Cube, Solid Block, Perspective Block)
             if (['star', 'burst', 'speechBubble', 'isometricCube', 'solidBlock', 'perspectiveBlock', 'openBox'].includes(el.type)) {
-                const hitHandle = getHandleAtPosition(x, y, store.elements, store.selection, store.viewState.scale);
+                const hitHandle = getHandleAtPosition(x, y, animPosedElements(), store.selection, store.viewState.scale);
                 if (hitHandle && hitHandle.handle.startsWith('control-')) {
                     // Hit a control handle, don't open text editor
                     return;

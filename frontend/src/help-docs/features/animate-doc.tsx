@@ -110,6 +110,22 @@ const AnimateDoc: Component = () => {
                     Frame-by-frame instead of tweens? Same flow, just skip step 6 and make more keyframes
                     (F6, nudge, repeat) — that's how the Rocket template's stars twinkle.
                 </p>
+                <h3>Editing a shape in the middle of a tween</h3>
+                <p>
+                    Park the playhead anywhere inside a tweened span, then resize, rotate or just drag the
+                    shape, and Yappy <strong>splits the span at that frame first</strong> — a new keyframe
+                    appears holding exactly the pose you were looking at, and your edit applies to that.
+                    Nothing jumps, the shape tracks your cursor one-for-one, and the keyframes at either end
+                    of the span are untouched. It's the same thing you'd get by pressing <strong>F6</strong>
+                    before editing; you just don't have to remember to.
+                </p>
+                <p>
+                    Three things worth knowing. Nothing happens on a plain <em>click</em> — selecting a shape
+                    never adds a keyframe; the split waits until you actually grab a handle or move the shape
+                    past a few pixels. It costs one extra <strong>Undo</strong> (one step for the edit, one
+                    for the keyframe). And <strong>shape</strong> tweens are left alone: a mid-morph outline
+                    has no faithful keyframe form, so move the playhead to a real keyframe to edit those.
+                </p>
             </section>
 
             <section class="doc-section">

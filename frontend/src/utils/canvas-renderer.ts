@@ -21,7 +21,7 @@ import { beginElement, endElement, computeElementHash, createCachedRc } from './
 import { RenderPipeline } from '../shapes/base/render-pipeline';
 import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight, drawDeleteHandle, renderKeyObjectHighlight } from './selection-renderer';
 import { clusterSelection } from './alignment';
-import { renderSnappingGuides, renderSpacingGuides, renderMeasureGaps, renderPointSnapMarker } from './snap-renderer';
+import { renderSnappingGuides, renderSpacingGuides, renderMeasureGaps, renderPointSnapMarker, renderSizeReadout } from './snap-renderer';
 import rough from 'roughjs';
 
 // ── Opacity masks: the mask shape's luminance becomes the content's alpha ──────────────
@@ -197,6 +197,8 @@ export interface SelectionOverlayParams {
     nodeToolActive?: boolean;
     /** Align-to-key mode is on — mark the key object (the last-selected one). */
     alignToKeyObject?: boolean;
+    /** Box currently being handle-dragged — draws the live W × H chip. */
+    sizeReadout?: { x: number; y: number; width: number; height: number; angle: number } | null;
 }
 
 export interface ConnectionAnchorParams {
@@ -1147,6 +1149,13 @@ export function renderSelectionOverlays(
         if (tableEl) {
             renderTableCellSelection(ctx, tableEl, tableCellSelection, scale);
         }
+    }
+
+    // Live W × H chip while a handle is being dragged — last, so it is never
+    // buried under a guide or a handle.
+    if (params.sizeReadout) {
+        const r = params.sizeReadout;
+        renderSizeReadout(ctx, r, r.angle, scale, measureUnit ?? 'px');
     }
 
     // Mindmap collapse/expand toggles — rendered last so they're always on top

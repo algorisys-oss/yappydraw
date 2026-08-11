@@ -257,6 +257,36 @@ export function evaluateTimelineAt(
 }
 
 /**
+ * `elements` with this frame's tween pose baked in — the SAME geometry the
+ * canvas draws (canvas-renderer merges the identical override map into
+ * `renderedEl`, and selection-renderer draws the handles off that).
+ *
+ * Hit-testing MUST consume this rather than the raw store: on any frame inside
+ * a tween span the two disagree, so the handles were drawn at the tweened pose
+ * while their hit boxes stayed at the owning keyframe's pose — the shape showed
+ * a selection outline and no handle could be grabbed.
+ *
+ * Returns the input array itself when nothing is overridden, so the (far more
+ * common) non-animation path allocates nothing per pointer event.
+ */
+export function poseElementsAtFrame(
+    frame: number,
+    timeline: AnimTimeline | null | undefined,
+    elements: readonly DrawingElement[]
+): readonly DrawingElement[] {
+    if (!timeline) return elements;
+    const { overrides } = evaluateTimelineAt(frame, timeline, elements);
+    let posed: DrawingElement[] | null = null; // copied lazily — only if something is overridden
+    for (let i = 0; i < elements.length; i++) {
+        const ov = overrides[elements[i].id];
+        if (!ov) continue;
+        if (!posed) posed = elements.slice();
+        posed[i] = { ...elements[i], ...ov } as DrawingElement;
+    }
+    return posed ?? elements;
+}
+
+/**
  * Clip-local frame for a movieclip instance, as a pure function of the root
  * playhead — deterministic so scrub/export/undo stay WYSIWYG (no runtime state).
  */

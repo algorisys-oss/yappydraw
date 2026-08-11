@@ -40,6 +40,26 @@
     opacity: 0.6;
 }
 
+/* Resting grip — the timeline has always been resizable, but an invisible 8px
+   strip is not an affordance, so the feature went unfound. */
+.atl-resize::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border-color, #d4d4d8);
+    transition: background 0.15s ease, width 0.15s ease;
+    pointer-events: none;
+}
+.atl-resize:hover::before, .atl-resize.dragging::before {
+    background: var(--accent-color, #6366f1);
+    width: 56px;
+}
+
 /* ------------------------------------------------------------- transport */
 .atl-header {
     display: flex;

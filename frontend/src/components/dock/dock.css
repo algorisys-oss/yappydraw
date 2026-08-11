@@ -38,6 +38,29 @@
 .dock-zone-resize-right { left: -3px; }
 .dock-zone-resize:hover { background: var(--primary-color, #3b82f6); opacity: 0.3; }
 
+/* Resting grip. The zone has always been resizable, but the handle was a fully
+   transparent 6px strip — you had to find it by accident, which is why "let me
+   resize the panels" kept coming in as a request for a feature that shipped
+   long ago. The grip makes the affordance visible without adding chrome. */
+.dock-zone-resize::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 28px;
+    border-radius: 2px;
+    background: var(--border-color, #e2e8f0);
+    transition: background 0.15s ease, height 0.15s ease;
+    pointer-events: none;
+}
+.dock-zone-resize:hover::before,
+.dock-zone-resize:active::before {
+    background: var(--primary-color, #3b82f6);
+    height: 44px;
+}
+
 .dock-floating {
     position: fixed;
     z-index: 45;

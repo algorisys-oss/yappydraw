@@ -3591,6 +3591,17 @@ export const YappyAPI = {
             const ev = evaluateTimelineAt(frame ?? store.animCurrentFrame, tl, store.elements);
             return { visible: [...ev.visible], overrides: ev.overrides };
         },
+        /** `state.elements` with the current frame's tween pose baked in — the geometry the
+         *  canvas is actually DRAWING, and what every hit test uses. Outside a tween span this
+         *  is the plain element list. */
+        posedElements(): DrawingElement[] { return [...animOps.animPosedElements()]; },
+        /** Split the motion span under the playhead so a direct edit has a cel to land on,
+         *  holding the exact on-screen pose (what a handle drag does automatically). Returns
+         *  oldId → newId; empty when the playhead is already on a keyframe, the span is held
+         *  or shape-tweened, or none of `ids` is in it. */
+        splitTweenAtPlayhead(ids?: string[]): Record<string, string> {
+            return Object.fromEntries(animOps.splitTweenAtPlayhead(ids ?? store.selection));
+        },
         /** Add a built-in synth sound ('coin'|'jump'|'hit'|'powerup'|'explosion'|'blip'|'win'|'lose'|'click') on the audio row. Returns the clip id. */
         addSound(sfx: string, frame?: number): string | null { return animOps.addAudioClip({ name: sfx, sfx, frame }); },
         removeSound(id: string) { animOps.removeAudioClip(id); },

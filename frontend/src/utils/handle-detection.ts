@@ -23,7 +23,7 @@ function unrotatePoint(x: number, y: number, cx: number, cy: number, angle: numb
  * Compute the axis-aligned bounding box of the current selection.
  */
 export function getSelectionBoundingBox(
-    elements: DrawingElement[],
+    elements: readonly DrawingElement[],
     selection: string[]
 ): { x: number; y: number; width: number; height: number } | null {
     if (selection.length === 0) return null;
@@ -56,7 +56,7 @@ export function getSelectionBoundingBox(
  * axis-aligned union box.
  */
 export function getDeleteHandlePosition(
-    elements: DrawingElement[],
+    elements: readonly DrawingElement[],
     selection: string[],
     scale: number
 ): { x: number; y: number } | null {
@@ -98,7 +98,7 @@ export const DELETE_HANDLE_HIT_RADIUS = 15;
 export function getHandleAtPosition(
     x: number,
     y: number,
-    elements: DrawingElement[],
+    elements: readonly DrawingElement[],
     selection: string[],
     scale: number,
     includeDeleteHandle = false

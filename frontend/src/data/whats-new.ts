@@ -13,6 +13,14 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.189', date: '2026-08-12', items: [
+        'In an animation, you can now edit a shape anywhere in the middle of a tween. Before, the shape showed its blue selection outline but the resize handles did nothing, clicking the shape itself deselected it, and dragging it made it drift slowly behind your cursor instead of following it. The handles were being drawn where the shape appears but were still being looked for back at its keyframe position, so you were reaching for something that was not there.',
+        'When you do edit mid-tween, a keyframe is created for you at that exact point, holding exactly the pose you were looking at. Nothing jumps, and the keyframes at either end of the tween are left alone. Just clicking to select never adds a keyframe.',
+        'Hold Alt and Shift while dragging a resize handle to grow or shrink a shape from its centre, keeping its proportions, so it expands evenly on all sides instead of one corner staying put.',
+        'While you drag a resize handle, the width and height now show under the shape as you go. Judging a size by eye and then checking the panel afterwards was the only way before.',
+        'The side panels and the animation timeline have always been resizable by dragging their edge, but the edge was invisible, so almost nobody found it. There is now a small grip on it.',
+        'In the Keyframes panel, the leftmost column of buttons could be seen but not clicked — the tool bar was sitting on top of them.',
+    ] },
     { version: '0.8.188', date: '2026-08-11', items: [
         'Zooming and panning work again after you load a presentation or a design template. Every way of doing it was affected — Ctrl and +/−, Ctrl with the mouse wheel, the zoom buttons in the bottom bar, the Pan tool and holding Space and dragging — because the view was being set and then instantly snapped back to fit the slide. Ordinary whiteboard and diagram documents were never affected.',
     ] },

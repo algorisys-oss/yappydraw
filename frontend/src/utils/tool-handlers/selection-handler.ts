@@ -28,6 +28,8 @@ import { shapeToPath } from '../shape-to-path';
 import { snapAngleRad, constrainToAngle } from '../angle-constrain';
 import { keepRotatedGeometryFixed } from '../rotated-bbox';
 import { calculateAllAnimatedStates } from '../animation-utils';
+import { animPosedElements, animFrameOverrides, splitTweenAtPlayhead } from '../../store/anim-ops';
+import { computeResizeBox } from '../resize-box';
 import { getGroupsSortedByPriority, isPointInGroupBounds, unitGroupId, isInIsolatedGroup } from '../group-utils';
 import { normalizePoints } from '../render-element';
 import { connectorHandleOnDown } from './minor-handlers';
@@ -41,6 +43,11 @@ import { CanvasRenderer } from '../../rendering/CanvasRenderer';
 
 // 2-section UML shape types that share scroll/divider logic
 const TWO_SECTION_UML = new Set(['umlInterface', 'umlEnum', 'umlState']);
+
+// The bbox transform handles — grabbing one of these means "resize/rotate this
+// shape", which is what makes it safe to split an animation tween span on
+// pointer-down (a plain click to select must never mutate the timeline).
+const TRANSFORM_HANDLES = new Set(['tl', 'tr', 'br', 'bl', 'tm', 'rm', 'bm', 'lm', 'rotate']);
 
 // Lazy measurement renderer for UML layout calculation
 let _measureCanvas: HTMLCanvasElement | null = null;
@@ -127,17 +134,11 @@ function cloneSubpaths(subpaths: any[] | undefined): any[] | undefined {
     return subpaths ? subpaths.map((sp: any) => ({ ...sp, anchors: sp.anchors.map((a: any) => ({ ...a })) })) : undefined;
 }
 
-function initMoveState(
-    pState: PointerState,
-    x: number,
-    y: number
-): void {
-    pushToHistory();
-    pState.isDragging = true;
-    pState.draggingHandle = null;
-    pState.startX = x;
-    pState.startY = y;
-
+/** Snapshot everything the current selection drags along with it. Split out of
+ *  `initMoveState` because an animation tween split mid-gesture replaces the
+ *  selected elements with a new cel's copies, and the drag has to re-snapshot
+ *  against those without restarting the gesture. */
+function captureMoveSet(pState: PointerState): void {
     pState.initialPositions.clear();
     const idsToMove = new Set<string>(store.selection);
 
@@ -159,6 +160,19 @@ function initMoveState(
     captureInitialPositions(pState, idsToMove);
 }
 
+function initMoveState(
+    pState: PointerState,
+    x: number,
+    y: number
+): void {
+    pushToHistory();
+    pState.isDragging = true;
+    pState.draggingHandle = null;
+    pState.startX = x;
+    pState.startY = y;
+    captureMoveSet(pState);
+}
+
 // ─── Pointer Down: Selection ────────────────────────────────────────
 
 export function selectionOnDown(
@@ -169,7 +183,26 @@ export function selectionOnDown(
     helpers: PointerHelpers,
     signals: PointerSignals
 ): void {
-    const hitHandle = getHandleAtPosition(x, y, store.elements, store.selection, store.viewState.scale, true);
+    // Hit-test the POSED elements — inside an animation tween span the canvas
+    // draws the shape (and therefore its handles) at the interpolated pose, so
+    // testing the raw store finds nothing where the user can plainly see a handle.
+    let hitHandle = getHandleAtPosition(x, y, animPosedElements(), store.selection, store.viewState.scale, true);
+
+    // Grabbing a transform handle is an unambiguous intent to edit, and mid-span
+    // the cel under the pointer belongs to the span's LEFT keyframe — editing it
+    // would make the shape slide out from under the cursor. Split the span here
+    // so the drag lands on a cel holding exactly the pose that was on screen.
+    // After this the playhead sits ON a keyframe, so store == what's drawn and
+    // every capture/drag path below needs no further awareness of animation.
+    if (hitHandle && TRANSFORM_HANDLES.has(hitHandle.handle)) {
+        const remap = splitTweenAtPlayhead(store.selection);
+        if (remap.size > 0) {
+            setStore('selection', store.selection.map(id => remap.get(id) ?? id));
+            const movedId = remap.get(hitHandle.id);
+            if (movedId) hitHandle = { ...hitHandle, id: movedId };
+        }
+    }
+
     if (hitHandle) {
         // Floating quick-delete button — delete the whole selection in one tap
         // (touch-friendly; no keyboard needed). deleteElements snapshots history
@@ -742,18 +775,29 @@ export function selectionOnDown(
     const currentTime = (window as any).yappyGlobalTime || 0;
     const shouldAnimate = store.appMode === 'presentation' || store.isPreviewing;
     const animatedStates = calculateAllAnimatedStates(store.elements, currentTime, shouldAnimate);
+    // …including Animation mode's FRAME timeline, which is a separate spine from
+    // the seconds-based one above and applies while authoring, not just while
+    // presenting. Without it a click mid-tween picks the shape at its keyframe
+    // pose rather than where it is drawn.
+    //
+    // Layer order matters and is the renderer's (canvas.tsx Object.assigns the
+    // frame overrides OVER the composition state): orbit/spin first, frame
+    // override last. The other order looks equivalent and is not — the spine
+    // above reports STATIC x/y for EVERY element when nothing is orbiting or
+    // spinning, so applying it last quietly puts the shape back at its keyframe.
+    const frameOverrides = animFrameOverrides();
 
     for (const { el, layerVisible } of sortedElements) {
         if (!layerVisible) continue;
         if (!helpers.canInteractWithElement(el)) continue;
 
         const animState = animatedStates.get(el.id);
-        const testEl = helpers.applyMasterProjection(animState ? {
+        const frameOv = frameOverrides?.[el.id];
+        const testEl = helpers.applyMasterProjection(animState || frameOv ? {
             ...el,
-            x: animState.x,
-            y: animState.y,
-            angle: animState.angle
-        } : el);
+            ...(animState ? { x: animState.x, y: animState.y, angle: animState.angle } : {}),
+            ...(frameOv ?? {}),
+        } as DrawingElement : el);
 
         if (hitTestElement(testEl, x, y, threshold, store.elements, elementMap)) {
             hitId = el.id;
@@ -904,7 +948,7 @@ export function selectionOnMove(
 ): void {
     // Cursor updates (when not dragging)
     if (!pState.isDragging) {
-        const hit = getHandleAtPosition(x, y, store.elements, store.selection, store.viewState.scale);
+        const hit = getHandleAtPosition(x, y, animPosedElements(), store.selection, store.viewState.scale);
         const prevHover = pState.hoveredConnector;
 
         if (hit) {
@@ -1292,13 +1336,34 @@ export function selectionOnMove(
             const dragDist = Math.hypot(x - pState.startX, y - pState.startY);
             if (dragDist < 3 / store.viewState.scale) return;
 
+            // Past the threshold this is a real drag rather than a click, which is
+            // what makes it safe to split an animation tween span here — a plain
+            // pointer-down on a shape body is also just "select it" and must never
+            // mutate the timeline, so unlike a handle grab this cannot happen on
+            // down. Without the split the move edits the span's LEFT keyframe and
+            // the tween re-interpolates, so the shape crawls after the cursor at
+            // (1−p) of the drag distance instead of following it.
+            //
+            // The new cel holds the pose that was already on screen, so re-snapshotting
+            // against it while KEEPING startX/startY gives exact 1:1 tracking with no
+            // jump and no dead zone. Idempotent, so no per-gesture flag is needed.
+            const remap = splitTweenAtPlayhead(store.selection);
+            if (remap.size > 0) {
+                setStore('selection', store.selection.map(sid => remap.get(sid) ?? sid));
+                captureMoveSet(pState);
+            }
+            // The selection may now point at the new cel's copies — re-resolve.
+            const moveId = store.selection[0];
+            const moveEl = store.elements.find(me => me.id === moveId);
+            if (!moveEl) return;
+
             // Alt+drag on 3D shapes: change viewAngle instead of moving
             // Once 3D mode is entered, stay in it for the entire drag (prevents
             // accidental panning if Alt key state flickers between move events)
-            const is3DShape = ['solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'isometricCube'].includes(el.type);
+            const is3DShape = ['solidBlock', 'perspectiveBlock', 'openBox', 'cylinder', 'isometricCube'].includes(moveEl.type);
             const already3DMode = pState.initial3DViewAngle !== undefined;
             if ((e.altKey || already3DMode) && is3DShape && store.selection.length === 1) {
-                handle3DViewAngle(e, x, y, id, el, pState, helpers);
+                handle3DViewAngle(e, x, y, moveId, moveEl, pState, helpers);
                 return;
             }
 
@@ -1308,14 +1373,6 @@ export function selectionOnMove(
 }
 
 // ─── Resize/Rotate logic ────────────────────────────────────────────
-
-// Local-centred sign of the FIXED anchor (corner/edge opposite the dragged handle),
-// in half-extent units. Used by rotation-aware resize to keep that anchor pinned in
-// world space while the element scales along its own (rotated) axes.
-const RESIZE_ANCHOR_SIGNS: Record<string, [number, number]> = {
-    tl: [1, 1], tr: [-1, 1], bl: [1, -1], br: [-1, -1],
-    tm: [0, 1], bm: [0, -1], lm: [1, 0], rm: [-1, 0],
-};
 
 function handleResize(
     e: PointerEvent,
@@ -1471,29 +1528,6 @@ function handleResize(
         dx = ldx; dy = ldy;
     }
 
-    let newX = pState.initialElementX;
-    let newY = pState.initialElementY;
-    let newWidth = pState.initialElementWidth;
-    let newHeight = pState.initialElementHeight;
-
-    if (pState.draggingHandle === 'tl') {
-        newX += dx; newY += dy; newWidth -= dx; newHeight -= dy;
-    } else if (pState.draggingHandle === 'tr') {
-        newY += dy; newWidth += dx; newHeight -= dy;
-    } else if (pState.draggingHandle === 'bl') {
-        newX += dx; newWidth -= dx; newHeight += dy;
-    } else if (pState.draggingHandle === 'br') {
-        newWidth += dx; newHeight += dy;
-    } else if (pState.draggingHandle === 'tm') {
-        newY += dy; newHeight -= dy;
-    } else if (pState.draggingHandle === 'bm') {
-        newHeight += dy;
-    } else if (pState.draggingHandle === 'lm') {
-        newX += dx; newWidth -= dx;
-    } else if (pState.draggingHandle === 'rm') {
-        newWidth += dx;
-    }
-
     // Apply Constraints (Proportional Resizing)
     const isMulti = store.selection.length > 1;
     const firstEl = store.elements.find(e => e.id === store.selection[0]);
@@ -1506,56 +1540,25 @@ function handleResize(
         isConstrained = false;
     }
 
-    if (isConstrained && pState.initialElementWidth !== 0 && pState.initialElementHeight !== 0) {
-        const ratio = pState.initialElementWidth / pState.initialElementHeight;
+    // Alt+Shift scales about the centre (grows equally on all sides) instead of
+    // pinning the opposite anchor. Alt+Shift rather than plain Alt because Alt on
+    // its own is already the 3D view-angle drag (below) and the path-handle break.
+    const fromCenter = e.altKey && !!isConstrained;
 
-        if (['tm', 'bm'].includes(pState.draggingHandle!)) {
-            newWidth = newHeight * ratio;
-            if (pState.draggingHandle === 'tm') {
-                newX = (pState.initialElementX + pState.initialElementWidth / 2) - newWidth / 2;
-            } else {
-                newX = (pState.initialElementX + pState.initialElementWidth / 2) - newWidth / 2;
-            }
-        } else if (['lm', 'rm'].includes(pState.draggingHandle!)) {
-            newHeight = newWidth / ratio;
-            newY = (pState.initialElementY + pState.initialElementHeight / 2) - newHeight / 2;
-        } else {
-            // Corner Handles
-            if (Math.abs(newWidth) / ratio > Math.abs(newHeight)) {
-                newHeight = newWidth / ratio;
-            } else {
-                newWidth = newHeight * ratio;
-            }
-
-            if (pState.draggingHandle === 'tl') {
-                newX = (pState.initialElementX + pState.initialElementWidth) - newWidth;
-                newY = (pState.initialElementY + pState.initialElementHeight) - newHeight;
-            } else if (pState.draggingHandle === 'tr') {
-                newY = (pState.initialElementY + pState.initialElementHeight) - newHeight;
-            } else if (pState.draggingHandle === 'bl') {
-                newX = (pState.initialElementX + pState.initialElementWidth) - newWidth;
-            }
-        }
-    }
-
-    // For a rotated single element, recompute the top-left (newX/newY) so the anchor
-    // — the corner/edge opposite the dragged handle — stays fixed in world space.
-    // anchorWorld is computed from the OLD half-extents; the new centre places the new
-    // anchor (new half-extents) back onto that fixed world point.
-    const anchorSigns = resizeAngle ? RESIZE_ANCHOR_SIGNS[pState.draggingHandle!] : undefined;
-    if (anchorSigns) {
-        const c = Math.cos(resizeAngle), s = Math.sin(resizeAngle);
-        const hw0 = pState.initialElementWidth / 2, hh0 = pState.initialElementHeight / 2;
-        const c0x = pState.initialElementX + hw0, c0y = pState.initialElementY + hh0;
-        const [ax, ay] = anchorSigns;
-        const awx = c0x + (ax * hw0) * c - (ay * hh0) * s;
-        const awy = c0y + (ax * hw0) * s + (ay * hh0) * c;
-        const hw1 = newWidth / 2, hh1 = newHeight / 2;
-        const c1x = awx - ((ax * hw1) * c - (ay * hh1) * s);
-        const c1y = awy - ((ax * hw1) * s + (ay * hh1) * c);
-        newX = c1x - hw1;
-        newY = c1y - hh1;
-    }
+    const resized = computeResizeBox({
+        handle: pState.draggingHandle!,
+        dx, dy,
+        initial: {
+            x: pState.initialElementX,
+            y: pState.initialElementY,
+            width: pState.initialElementWidth,
+            height: pState.initialElementHeight,
+        },
+        constrain: !!isConstrained,
+        fromCenter,
+        angle: resizeAngle,
+    });
+    const { x: newX, y: newY, width: newWidth, height: newHeight } = resized;
 
     if (pState.draggingHandle && pState.draggingHandle.startsWith('segment-')) {
         handleSegmentDrag(x, y, id, pState);

@@ -217,3 +217,53 @@ export function renderMeasureGaps(
     });
     ctx.restore();
 }
+
+/**
+ * Live W × H chip shown while a bbox handle is being dragged.
+ *
+ * Resizing was previously a blind gesture — nothing on the canvas reported the
+ * size until you let go and looked at the properties panel, which is what made
+ * it "difficult to judge the exact size of the object". The chip rides the
+ * bottom edge of the box being dragged (offset outward so it never sits under
+ * the pointer) and follows the element's rotation.
+ */
+export function renderSizeReadout(
+    ctx: CanvasRenderingContext2D,
+    box: { x: number; y: number; width: number; height: number },
+    angle: number,
+    scale: number,
+    unit: MeasurementUnit = 'px'
+): void {
+    const label = `${formatValue(Math.abs(box.width), unit)} × ${formatValue(Math.abs(box.height), unit)}`;
+
+    ctx.save();
+    ctx.font = `${Math.floor(11 / scale)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const pad = 5 / scale;
+    const textW = ctx.measureText(label).width + pad * 2;
+    const textH = 16 / scale;
+    const gap = 44 / scale; // clears the bm handle AND the quick-connect port at 32/scale
+
+    // Anchor below the bottom edge, in the element's own frame so a rotated box
+    // carries its readout with it.
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+    let lx = cx;
+    let ly = box.y + Math.abs(box.height) + gap + textH / 2;
+    if (angle) {
+        const c = Math.cos(angle), s = Math.sin(angle);
+        const rx = lx - cx, ry = ly - cy;
+        lx = cx + rx * c - ry * s;
+        ly = cy + rx * s + ry * c;
+    }
+
+    ctx.fillStyle = 'rgba(24, 24, 27, 0.92)';
+    ctx.beginPath();
+    ctx.roundRect(lx - textW / 2, ly - textH / 2, textW, textH, 3 / scale);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(label, lx, ly);
+    ctx.restore();
+}

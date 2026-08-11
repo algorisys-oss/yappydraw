@@ -719,6 +719,35 @@ export const bumpDirtyRevision = () => {
     setStore('dirtyRevision', store.dirtyRevision + 1);
 };
 
+// ---------------------------------------------------------------------------
+// Animation timeline writes
+// ---------------------------------------------------------------------------
+
+let animTimelineRevision = 0;
+
+/**
+ * Monotonic counter bumped on every write to `store.animTimeline`.
+ *
+ * Consumers memoize expensive per-frame evaluation (visibility, tween poses) on
+ * the pointermove path and CANNOT key that cache on the timeline's object
+ * identity: `setStore` MERGES an object into the existing proxy rather than
+ * replacing it, so `store.animTimeline` keeps the same reference across a
+ * structural edit. Those caches only ever looked correct because the frame — the
+ * other half of their key — normally changes at the same time. Edit the timeline
+ * while the playhead stays put (splitting a tween span mid-drag does exactly
+ * that) and they hand back the previous frame's answer.
+ */
+export const animTimelineRev = () => animTimelineRevision;
+
+/** THE write path for `store.animTimeline`. Always use this, never `setStore`
+ *  directly, or the per-frame caches above go stale. */
+export const setAnimTimeline = (
+    next: AnimTimeline | null | ((prev: AnimTimeline | null) => AnimTimeline | null)
+) => {
+    animTimelineRevision++;
+    setStore('animTimeline', next as any);
+};
+
 // History Stacks - include full document state
 interface HistorySnapshot {
     elements: DrawingElement[];
@@ -805,7 +834,7 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("docType", snapshot.docType);
     setStore("compositionTracks", snapshot.compositionTracks || []);
     setStore("dimensionAnnotations", snapshot.dimensionAnnotations || []);
-    setStore("animTimeline", snapshot.animTimeline ?? null);
+    setAnimTimeline(snapshot.animTimeline ?? null);
     // reconcile: plain setStore MERGES records — deleted scene keys would survive.
     setStore("animScenes", reconcile(snapshot.animScenes ?? {}));
     setStore("selection", []); // Clear selection to avoid stale IDs
@@ -2712,10 +2741,10 @@ export const loadDocument = (doc: any) => {
             const active: AnimTimeline = (firstId && scenes[firstId])
                 || (doc.animTimeline ? JSON.parse(JSON.stringify(doc.animTimeline)) : createDefaultAnimTimeline(layers.map((l: Layer) => l.id)));
             if (firstId) delete scenes[firstId];
-            setStore("animTimeline", active);
+            setAnimTimeline(active);
             setStore("animScenes", reconcile(scenes));
         } else {
-            setStore("animTimeline", null);
+            setAnimTimeline(null);
             setStore("animScenes", reconcile({}));
         }
         setStore("animCurrentFrame", 0);
@@ -3665,7 +3694,7 @@ export const enterSymbolEdit = (instanceId: string) => {
                 keyframes: r.keyframes.map(k => ({ ...k, elementIds: k.elementIds.map(id => idMap.get(id)).filter((v): v is string => !!v) })),
             })),
         };
-        setStore('animTimeline', lifted);
+        setAnimTimeline(lifted);
         setStore('animCurrentFrame', 0);
         setStore('animPlaying', false);
     }
@@ -3707,7 +3736,7 @@ export const exitSymbolEdit = (save = true) => {
                 },
             }));
         }
-        setStore('animTimeline', clipEditStash.docTimeline);
+        setAnimTimeline(clipEditStash.docTimeline);
         setStore('animCurrentFrame', 0);
         setStore('animPlaying', false);
         clipEditStash = null;
@@ -4418,7 +4447,7 @@ export const addLayer = (name?: string, parentId?: string) => {
     setStore('activeLayerId', newId);
     // Animation mode: every layer has a paired timeline row (starts as one blank cel).
     if (store.animTimeline) {
-        setStore('animTimeline', tl => tl && ({
+        setAnimTimeline(tl => tl && ({
             ...tl,
             layers: [...tl.layers, { layerId: newId, keyframes: [{ frame: 0, elementIds: [] }], endFrame: tl.frameCount - 1 }],
         }));
@@ -4445,7 +4474,7 @@ export const deleteLayer = (id: string) => {
     if (store.animTimeline) {
         pushToHistory();
         setStore('elements', store.elements.filter(el => el.layerId !== id));
-        setStore('animTimeline', tl => tl && ({ ...tl, layers: tl.layers.filter(l => l.layerId !== id) }));
+        setAnimTimeline(tl => tl && ({ ...tl, layers: tl.layers.filter(l => l.layerId !== id) }));
         setStore('layers', store.layers.filter(l => l.id !== id));
         if (store.activeLayerId === id) {
             setStore('activeLayerId', store.layers[0]?.id || 'default-layer');

@@ -120,7 +120,9 @@ const WorkspaceDoc: Component = () => {
                     stuck on the right. Drag its title bar to the left or right edge to dock it there, drop it
                     anywhere else to float it, drag the zone's inner edge to resize, and use the title-bar buttons to
                     dock left / dock right / float / collapse to the title bar / close. Your arrangement is saved and
-                    comes back next time. <em>Duplicate</em> and <em>Delete</em> sit just below the title bar, with the
+                    comes back next time. The resize edge carries a small <strong>grip</strong> — a short vertical
+                    bar on the inner edge of the docked column; grab it and drag sideways to set the width (200–560px).
+                    The animation timeline has the matching grip on its <em>top</em> edge for height. <em>Duplicate</em> and <em>Delete</em> sit just below the title bar, with the
                     object's properties, because they act on the selection rather than on the panel.
                 </p>
             </section>
@@ -340,12 +342,22 @@ await Yappy.rasterize(undefined, { keepSource: true });  // keep the vectors`}</
 Yappy.setElementTransform(id, { width: 240, height: 160 }); // resize
 Yappy.setElementTransform(id, { angle: Math.PI / 4 });      // rotate 45° (radians)`}</code></pre>
 
+                <h3>Size while you drag</h3>
+                <p>
+                    Drag any of the eight resize handles and a <strong>W × H chip</strong> appears just under
+                    the object, updating live and reading in your chosen measurement unit. It follows a rotated
+                    object's own frame, and it exists only for the duration of the drag — so there is nothing to
+                    turn on and nothing sitting on your artwork the rest of the time.
+                </p>
+
                 <h3>The dimension badge</h3>
                 <p>
-                    There is also a small badge that follows the selection and reads its live
-                    <strong> W × H</strong>, position and rotation as you drag — handy while resizing, in the
-                    way the rest of the time, since it sits right under the object on top of your artwork. It is
-                    <strong> off by default</strong>. Turn it on with the <strong>Proportions</strong> button in the
+                    If you want those numbers <em>permanently</em> while something is selected — plus position
+                    and rotation, which the drag chip doesn't show — there is also a badge that follows the
+                    selection and reads its live <strong>W × H</strong>, position and rotation. It is handy while
+                    resizing but in the way the rest of the time, since it sits right under the object on top of
+                    your artwork, so it is <strong>off by default</strong> (and it replaces the drag chip when on,
+                    rather than stacking with it). Turn it on with the <strong>Proportions</strong> button in the
                     top bar (next to Settings and Properties), or from <em>Menu → View → Show Dimensions</em> on a
                     phone. The choice sticks between sessions. It reads in your chosen measurement unit, and hides
                     itself in presentation mode and while the Measure tool is active.

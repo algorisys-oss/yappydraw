@@ -1,7 +1,17 @@
 .keyframe-panel {
     --kf-gutter: 190px;
     position: fixed;
-    left: 0; right: 0; bottom: 0;
+    /* Clear the tool column — the same fix .atl-panel already carries. `left/right: 0`
+       pinned this to the WINDOW, so with the toolbar docked left (the default) the
+       property-name gutter ran underneath it: the Position X row's stopwatch and its
+       neighbours sat behind the tool icons, so you could see them and not click them
+       (the docked toolbar wins the pointer). Offset by the toolbar's own edge, not
+       --dock-left/right, which also include docked panel widths — the dope sheet is
+       stage-width chrome and should still run beneath a docked Properties/Layers panel. */
+    left: var(--toolbar-left, 0px);
+    right: var(--toolbar-right, 0px);
+    /* Sits above the status bar, and clears the toolbar when IT is the bottom dock. */
+    bottom: calc(var(--statusbar-h, 28px) + var(--toolbar-bottom, 0px));
     height: 230px;
     background: var(--bg-panel);
     border-top: 1px solid var(--border-color);

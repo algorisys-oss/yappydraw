@@ -6,7 +6,7 @@
  */
 
 import { batch } from 'solid-js';
-import { store, setStore, pushToHistory, bumpDirtyRevision, getClipEditStash, addSlide, setActiveSlide, deleteSlide, cloneAnimTimeline, setSelectedTool } from './app-store';
+import { store, setStore, setAnimTimeline, animTimelineRev, pushToHistory, bumpDirtyRevision, getClipEditStash, addSlide, setActiveSlide, deleteSlide, cloneAnimTimeline, setSelectedTool } from './app-store';
 import { reconcile } from 'solid-js/store';
 import { createDefaultAnimTimeline } from '../types/anim-types';
 import { generateId } from '../utils/id-generator';
@@ -19,7 +19,9 @@ import {
     opAddAudio, opRemoveAudio, opMoveAudio, opSetCameraKey, opClearCameraKey,
 } from '../utils/animation/frame-timeline-ops';
 import type { AnimAudioClip } from '../types/anim-types';
-import { evaluateTimelineAt } from '../utils/animation/frame-timeline-evaluator';
+import { evaluateTimelineAt, poseElementsAtFrame, activeKeyframeIndex } from '../utils/animation/frame-timeline-evaluator';
+import type { FrameOverride } from '../utils/animation/frame-timeline-evaluator';
+import type { DrawingElement } from '../types';
 
 const timeline = (): AnimTimeline | null => store.animTimeline;
 
@@ -28,17 +30,20 @@ const timeline = (): AnimTimeline | null => store.animTimeline;
 // ---------------------------------------------------------------------------
 
 // Visibility/placement depend only on (timeline structure, frame) — element
-// props don't matter — and every timeline op replaces the object wholesale, so
-// a ref+frame cache makes the per-pointermove hit-testing path O(1).
-let structCache: { tl: AnimTimeline; frame: number; visible: Set<string>; placement: Map<string, number> } | null = null;
+// props don't matter — so a (revision, frame) cache makes the per-pointermove
+// hit-testing path O(1). The key is `animTimelineRev()`, NOT the timeline's
+// object identity: setStore merges into the existing proxy, so the reference
+// survives a structural edit (see setAnimTimeline).
+let structCache: { rev: number; frame: number; visible: Set<string>; placement: Map<string, number> } | null = null;
 
 const structuralEval = () => {
     const tl = store.animTimeline;
     if (store.docType !== 'animation' || !tl) return null;
     const frame = store.animCurrentFrame;
-    if (!structCache || structCache.tl !== tl || structCache.frame !== frame) {
+    const rev = animTimelineRev();
+    if (!structCache || structCache.rev !== rev || structCache.frame !== frame) {
         const ev = evaluateTimelineAt(frame, tl, []);
-        structCache = { tl, frame, visible: ev.visible, placement: ev.placement };
+        structCache = { rev, frame, visible: ev.visible, placement: ev.placement };
     }
     return structCache;
 };
@@ -48,6 +53,139 @@ export const animVisibleIds = (): Set<string> | null => structuralEval()?.visibl
 
 /** elementId → owning-keyframe start frame (drives movie-clip local clocks). */
 export const animPlacementFrames = (): Map<string, number> | null => structuralEval()?.placement ?? null;
+
+interface PoseCache {
+    rev: number;
+    frame: number;
+    els: readonly DrawingElement[];
+    overrides: Record<string, FrameOverride>;
+    posed: readonly DrawingElement[];
+}
+let poseCache: PoseCache | null = null;
+
+/** Shared memo behind `animPosedElements` / `animFrameOverrides`. These run on
+ *  every pointermove (cursor feedback) as well as every hit test, so they are
+ *  cached on (timeline revision, frame, elements). Element identity IS sound —
+ *  `setStore('elements', els => [...])` hands back a fresh array — but the
+ *  timeline's is not, hence the revision counter. */
+const poseEval = (): PoseCache | null => {
+    const tl = store.animTimeline;
+    if (store.docType !== 'animation' || !tl) return null;
+    const frame = store.animCurrentFrame;
+    const els = store.elements;
+    const rev = animTimelineRev();
+    if (!poseCache || poseCache.rev !== rev || poseCache.frame !== frame || poseCache.els !== els) {
+        const { overrides } = evaluateTimelineAt(frame, tl, els);
+        poseCache = { rev, frame, els, overrides, posed: poseElementsAtFrame(frame, tl, els) };
+    }
+    return poseCache;
+};
+
+/**
+ * `store.elements` with the playhead's tween pose baked in — i.e. what the
+ * canvas is actually DRAWING. Hit tests that take a plain element list must go
+ * through this: the renderer draws shapes and their handles from the tweened
+ * pose, so hit-testing the raw store made the visible handles ungrabbable on
+ * every frame inside a span. Outside animation mode this is `store.elements`
+ * itself (no allocation).
+ */
+export const animPosedElements = (): readonly DrawingElement[] => poseEval()?.posed ?? store.elements;
+
+/**
+ * The raw per-element pose overrides for this frame, or null outside animation
+ * mode. Use this rather than `animPosedElements` wherever the caller composes
+ * with ANOTHER source of pose (the seconds-based orbit/spin spine): those must
+ * be layered in the renderer's order — orbit/spin first, frame override last
+ * (see canvas.tsx, which `Object.assign`s the overrides over the composition
+ * state). Merging a posed element and then re-applying the orbit state on top
+ * silently reverts to the store pose, because that spine reports STATIC x/y for
+ * every element when nothing is actually orbiting or spinning.
+ */
+export const animFrameOverrides = (): Record<string, FrameOverride> | null => poseEval()?.overrides ?? null;
+
+/**
+ * Split the tween span under the playhead so a direct-manipulation edit has a
+ * cel to land on, holding exactly the pose that was on screen.
+ *
+ * Without this, grabbing a handle mid-span edits the span's LEFT keyframe: the
+ * tween immediately re-interpolates and the shape slides out from under the
+ * cursor instead of following it. Splitting first is Animate's behaviour and
+ * makes the drag WYSIWYG.
+ *
+ * Only motion spans are split — a shape tween's override is a morphed OUTLINE
+ * in center-relative coords, which has no faithful representation as a plain
+ * element, so those are left alone. No-op unless the playhead sits strictly
+ * inside a motion span owning one of `ids`.
+ *
+ * Returns oldId → newId so the caller can re-point the selection at the new cel.
+ */
+export const splitTweenAtPlayhead = (ids: readonly string[]): Map<string, string> => {
+    const remap = new Map<string, string>();
+    const tl0 = timeline();
+    if (store.docType !== 'animation' || !tl0 || ids.length === 0) return remap;
+
+    const frame = store.animCurrentFrame;
+    const wanted = new Set(ids);
+    const rows = tl0.layers
+        .filter(row => {
+            const ki = activeKeyframeIndex(row, frame);
+            if (ki === -1) return false;
+            const kf = row.keyframes[ki];
+            return kf.frame !== frame                      // not already a keyframe
+                && kf.tween === 'motion'                   // shape tweens can't be baked
+                && !!row.keyframes[ki + 1]                 // a span needs both ends
+                && kf.elementIds.some(id => wanted.has(id));
+        })
+        .map(row => row.layerId);
+    // Cheap exit first: a move drag calls this on EVERY pointermove (the split is
+    // idempotent — once done, the playhead is on a keyframe and nothing matches),
+    // so the O(elements) evaluate below must not run once there is nothing to do.
+    if (rows.length === 0) return remap;
+
+    // Capture the on-screen pose BEFORE any mutation — this is what the new cel
+    // has to hold. Shape-tween `points` are render-only, so they are dropped.
+    const { overrides } = evaluateTimelineAt(frame, tl0, store.elements);
+
+    for (const layerId of rows) {
+        // Re-read: every insert replaces the timeline wholesale.
+        const row = timeline()?.layers.find(l => l.layerId === layerId);
+        if (!row) continue;
+        const ki = activeKeyframeIndex(row, frame);
+        if (ki === -1) continue;
+        const sourceIds = row.keyframes[ki].elementIds;
+
+        const newIds = insertKeyframe(layerId, frame);
+        if (newIds.length === 0) continue;
+
+        // Copies share the source's contentId, which is the only reliable link
+        // back (opInsertKeyframe skips sources whose element is missing, so
+        // positional pairing is not safe).
+        const srcByContent = new Map<string, string>();
+        for (const id of sourceIds) {
+            const src = store.elements.find(e => e.id === id);
+            if (src) srcByContent.set(src.contentId ?? src.id, src.id);
+        }
+        const poseById = new Map<string, Partial<DrawingElement>>();
+        for (const newId of newIds) {
+            const copy = store.elements.find(e => e.id === newId);
+            const srcId = copy?.contentId ? srcByContent.get(copy.contentId) : undefined;
+            if (!srcId) continue;
+            remap.set(srcId, newId);
+            const ov = overrides[srcId];
+            if (ov) {
+                const { points: _morph, ...pose } = ov as Record<string, unknown>;
+                poseById.set(newId, pose as Partial<DrawingElement>);
+            }
+        }
+        if (poseById.size > 0) {
+            setStore('elements', els => els.map(e => {
+                const pose = poseById.get(e.id);
+                return pose ? { ...e, ...pose } : e;
+            }));
+        }
+    }
+    return remap;
+};
 
 // ---------------------------------------------------------------------------
 // Playhead (transient — no history)
@@ -77,7 +215,7 @@ export const stepFrame = (delta: number) => gotoFrame(store.animCurrentFrame + d
 const apply = (next: AnimTimeline | null) => {
     if (!next) return;
     pushToHistory();
-    setStore('animTimeline', next);
+    setAnimTimeline(next);
 };
 
 /** F5 — Insert Frame. */
@@ -96,7 +234,7 @@ export const insertKeyframe = (layerId: string, frame: number): string[] => {
             setStore('elements', els => els.map(e => (res.sourcePatch.has(e.id) ? { ...e, contentId: res.sourcePatch.get(e.id) } : e)));
         }
         if (res.copies.length > 0) setStore('elements', els => [...els, ...res.copies]);
-        setStore('animTimeline', res.timeline);
+        setAnimTimeline(res.timeline);
     });
     return res.newElementIds;
 };
@@ -144,7 +282,7 @@ const applyRemove = (res: { timeline: AnimTimeline; doomedIds: string[] } | null
             setStore('elements', els => els.filter(e => !doomed.has(e.id)));
             setStore('selection', sel => sel.filter(id => !doomed.has(id)));
         }
-        setStore('animTimeline', res.timeline);
+        setAnimTimeline(res.timeline);
     });
 };
 
@@ -170,7 +308,7 @@ export const setFrameEase = (layerId: string, frame: number, ease?: BezierEase, 
     const next = timeline() && opUpdateKeyframe(timeline()!, layerId, frame, { ease, easing });
     if (!next) return;
     if (recordHistory) pushToHistory();
-    setStore('animTimeline', next);
+    setAnimTimeline(next);
 };
 
 /** Attach/clear a motion-guide path on the span leaving `frame`'s keyframe. */
@@ -254,7 +392,7 @@ export const setAnimFps = (fps: number) => {
     const v = Math.min(Math.max(1, Math.round(fps)), 120);
     if (v === tl.fps) return;
     pushToHistory();
-    setStore('animTimeline', { ...tl, fps: v });
+    setAnimTimeline({ ...tl, fps: v });
 };
 
 /** Set the ruler length. Can't shrink below existing row content. */
@@ -265,7 +403,7 @@ export const setAnimFrameCount = (frameCount: number) => {
     const v = Math.max(Math.round(frameCount), maxEnd + 1, 1);
     if (v === tl.frameCount) return;
     pushToHistory();
-    setStore('animTimeline', { ...tl, frameCount: v });
+    setAnimTimeline({ ...tl, frameCount: v });
     if (store.animCurrentFrame > v - 1) setStore('animCurrentFrame', v - 1);
 };
 
@@ -288,7 +426,7 @@ export const addAnimScene = () => {
         setStore('slides', idx, 'name', `Scene ${idx + 1}`);
         // Stash a CLONE — a live proxy would alias later merges into the active node.
         if (prevSlideId) setStore('animScenes', reconcile({ ...store.animScenes, [prevSlideId]: cloneAnimTimeline(tl) }));
-        setStore('animTimeline', createDefaultAnimTimeline(store.layers.map(l => l.id), tl.fps, tl.frameCount));
+        setAnimTimeline(createDefaultAnimTimeline(store.layers.map(l => l.id), tl.fps, tl.frameCount));
         setStore('animCurrentFrame', 0);
         setStore('animPlaying', false);
         setStore('animFrameSelection', null);
@@ -310,7 +448,7 @@ export const setActiveAnimScene = (index: number) => {
         const next = scenes[target.id] ? cloneAnimTimeline(scenes[target.id]) : createDefaultAnimTimeline(store.layers.map(l => l.id), tl.fps, tl.frameCount);
         delete scenes[target.id];
         setStore('animScenes', reconcile(scenes));
-        setStore('animTimeline', next);
+        setAnimTimeline(next);
         setStore('animCurrentFrame', 0);
         setStore('animPlaying', false);
         setStore('animFrameSelection', null);
@@ -334,7 +472,7 @@ export const deleteAnimScene = (index: number) => {
             const stashed = nowActive ? scenes[nowActive.id] : undefined;
             const next = stashed ? cloneAnimTimeline(stashed) : createDefaultAnimTimeline(store.layers.map(l => l.id));
             if (nowActive) delete scenes[nowActive.id];
-            setStore('animTimeline', next);
+            setAnimTimeline(next);
             setStore('animCurrentFrame', 0);
         }
         setStore('animScenes', reconcile(scenes));
@@ -375,7 +513,7 @@ export const ensureAnimRows = () => {
     if (!tl) return;
     const missing = store.layers.filter(l => !tl.layers.some(r => r.layerId === l.id));
     if (missing.length === 0) return;
-    setStore('animTimeline', {
+    setAnimTimeline({
         ...tl,
         layers: [...tl.layers, ...missing.map(l => ({ layerId: l.id, keyframes: [{ frame: 0, elementIds: [] }], endFrame: tl.frameCount - 1 }))],
     });
@@ -406,6 +544,6 @@ export const reconcileTimelineElements = () => {
                 g?.includes(session.groupId) ? g : [...(g ?? []), session.groupId]);
         }
     }
-    setStore('animTimeline', next);
+    setAnimTimeline(next);
     bumpDirtyRevision();
 };

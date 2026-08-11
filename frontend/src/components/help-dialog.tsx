@@ -74,6 +74,8 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Transform Again (step-and-repeat)', keys: 'Ctrl+Shift+D' },
             { label: 'Constrain move to an axis (H / V / 45°)', keys: 'Shift+Drag element' },
             { label: 'Constrain angle to 15° (draw line / rotate / measure)', keys: 'Shift+Drag' },
+            { label: 'Resize proportionally (lock aspect ratio)', keys: 'Shift+Drag handle' },
+            { label: 'Resize proportionally from the centre (all sides equally)', keys: 'Alt+Shift+Drag handle' },
             { label: 'Measure to neighbour (gaps + artboard edges)', keys: 'Alt+Hover' },
             { label: 'Select All (switches to the Selection tool)', keys: 'Ctrl+A' },
             { label: 'Copy / Paste', keys: 'Ctrl+C / Ctrl+V' },

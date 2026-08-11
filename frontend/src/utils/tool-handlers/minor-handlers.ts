@@ -13,6 +13,7 @@ import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
 import { store, setViewState, addElement, updateElement, setStore, deleteElements, pushToHistory, advancePresentation, isLayerVisible, toggleCollapse, setActiveDsOpsElement, startInkCleanupIfNeeded } from '../../store/app-store';
 import { hitTestElement } from '../hit-testing';
 import { getHandleAtPosition } from '../handle-detection';
+import { animPosedElements } from '../../store/anim-ops';
 import { generateId } from '../id-generator';
 import { animateElement } from '../animation/element-animator';
 import { normalizePoints } from '../render-element';
@@ -162,7 +163,7 @@ export function presentationOnDown(
     const { x, y } = helpers.getWorldCoordinates(e.clientX, e.clientY);
 
     // Allow mindmap toggle clicks in presentation mode
-    const hitHandle = getHandleAtPosition(x, y, store.elements, store.selection, store.viewState.scale);
+    const hitHandle = getHandleAtPosition(x, y, animPosedElements(), store.selection, store.viewState.scale);
     if (hitHandle && hitHandle.handle === 'mindmap-toggle') {
         toggleCollapse(hitHandle.id);
         return true;

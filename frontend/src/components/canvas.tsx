@@ -40,7 +40,9 @@ import { penOnMove } from "../utils/tool-handlers/pen-handler";
 import { polylineOnDown, polylineOnMove, polylineOnUp, polylineFinalize, polylineUndo } from "../utils/tool-handlers/polyline-handler";
 import { penOnDown as penPathDown, penOnMove as penPathMove, penOnUp as penPathUp, penFinalize as penPathFinalize, penUndo as penPathUndo } from "../utils/tool-handlers/pen-path-handler";
 import { selectionOnDown, selectionOnMove, selectionOnUp, convertPathAnchor, deletePathAnchor, insertPathAnchorAt, canInsertPathAnchor } from "../utils/tool-handlers/selection-handler";
-import { getHandleAtPosition } from "../utils/handle-detection";
+import { getHandleAtPosition, getSelectionBoundingBox } from "../utils/handle-detection";
+import { RESIZE_ANCHOR_SIGNS } from "../utils/resize-box";
+import { animPosedElements } from "../store/anim-ops";
 import { getPathSubpaths } from "../utils/math/path-utils";
 import type { MenuItem } from "./context-menu";
 import { checkBinding as checkBindingUtil, refreshLinePoints as refreshLinePointsUtil, refreshBoundLine as refreshBoundLineUtil } from "../utils/binding-logic";
@@ -354,7 +356,7 @@ const Canvas: Component = () => {
         const el = store.elements.find(e => e.id === store.selection[0]);
         if (!el || el.type !== 'path') return null;
         const scale = store.viewState.scale;
-        const hit = getHandleAtPosition(wx, wy, store.elements, store.selection, scale);
+        const hit = getHandleAtPosition(wx, wy, animPosedElements(), store.selection, scale);
         const m = hit?.handle.match(/^path-anchor-(\d+)-(\d+)$/);
         if (m) {
             const sub = parseInt(m[1], 10), i = parseInt(m[2], 10);
@@ -563,6 +565,29 @@ const Canvas: Component = () => {
         }
 
         // 6. Overlays
+        // Live W × H chip: only while an actual bbox handle is being dragged
+        // (RESIZE_ANCHOR_SIGNS is keyed by exactly those 8 handles, so rotate,
+        // path nodes, warp points and the rest are excluded for free).
+        //
+        // Deliberately NOT gated on globalSettings.showDimensions: that badge
+        // (TransformHud) is always-on while selected, which is why it defaults
+        // off — "handy while resizing, in the way the rest of the time". This
+        // one only exists during the drag, so it can just be on. When the badge
+        // IS enabled it already reports W × H plus position and angle, so step
+        // aside rather than stacking two readouts on the same edge.
+        let sizeReadout: { x: number; y: number; width: number; height: number; angle: number } | null = null;
+        if (pState.isDragging && pState.draggingHandle && pState.draggingHandle in RESIZE_ANCHOR_SIGNS
+            && !store.globalSettings.showDimensions
+            && store.appMode !== 'presentation') {
+            if (store.selection.length > 1) {
+                const b = getSelectionBoundingBox(store.elements, store.selection);
+                if (b) sizeReadout = { ...b, angle: 0 };
+            } else {
+                const sel = store.elements.find(el => el.id === store.selection[0]);
+                if (sel) sizeReadout = { x: sel.x, y: sel.y, width: sel.width, height: sel.height, angle: sel.angle || 0 };
+            }
+        }
+
         renderSelectionOverlays(ctx, {
             elements: store.elements, selection: store.selection, scale,
             nodeToolActive: store.nodeToolActive,
@@ -578,6 +603,7 @@ const Canvas: Component = () => {
             reparentDropTarget: reparentDropTarget(),
             poolLaneDropTarget: poolLaneDropTarget(),
             tableColumnDrop: tableColumnDrop(),
+            sizeReadout,
         });
 
         renderConnectionAnchors(ctx, {
