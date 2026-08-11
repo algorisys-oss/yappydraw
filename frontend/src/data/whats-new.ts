@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.188', date: '2026-08-11', items: [
+        'Zooming and panning work again after you load a presentation or a design template. Every way of doing it was affected — Ctrl and +/−, Ctrl with the mouse wheel, the zoom buttons in the bottom bar, the Pan tool and holding Space and dragging — because the view was being set and then instantly snapped back to fit the slide. Ordinary whiteboard and diagram documents were never affected.',
+    ] },
     { version: '0.8.187', date: '2026-08-10', items: [
         'In the Shape Builder, hold Shift and drag a box over several pieces to take them all at once — much quicker than tracing a line through each one. Hold Shift and Alt together to delete them instead. The box works even when it is smaller than the piece you are pointing at, so you can grab a small detail sitting inside a big background shape.',
     ] },

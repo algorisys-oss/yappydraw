@@ -27,6 +27,9 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.188](0.8.188.md) — Loading a presentation or design template disabled zoom and pan entirely (every route at once: hotkeys, Ctrl+scroll, the status-bar buttons, the Pan tool and Space+drag). The canvas' dock/zen layout effect tracked the view state through its own redraw, so each zoom re-ran the layout, which re-fits the slide
+- [0.8.187](0.8.187.md) — Shape Builder gets its box: Shift+drag rubber-bands over several regions at once (Illustrator's binding, and the half we were missing), Shift+Alt to delete them
+- [0.8.186](0.8.186.md) — The Perspective Grid stops being a picture and starts snapping drawing to its vanishing rays, with one strength slider spanning "gentle bias" to "hard lock", plus draw-on-a-plane; and Live Corners for every editable path, non-destructively
 - [0.8.185](0.8.185.md) — Designer review round two: flip that takes the anchor points with it, Shift for straight pen lines, moving an anchor on a rotated shape no longer dragging the whole shape, line spacing, different font sizes inside one text box, independent corner radii, group renaming and a Shift+I eyedropper
 - [0.8.184](0.8.184.md) — The origin was serving two different builds from the same URL (7 of 8 fetches returned a three-release-old `sw.js`), which is why the precache trim kept un-shipping and is a strong candidate for the real cause of the error screen. New `npm run verify:deploy` samples and asserts; plus an `.htaccess` sw.js rule that had never taken effect
 - [0.8.183](0.8.183.md) — The object tree: every object on a layer listed in the Layers panel, with per-object select (incl. inside a group), hide, lock, rename and drag-to-restack. New optional `visible`/`name` element fields, absent-means-visible, honoured across render, hit-test, marquee, minimap and all seven export paths

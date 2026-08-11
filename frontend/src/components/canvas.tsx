@@ -2250,7 +2250,11 @@ const Canvas: Component = () => {
             // Reading `dockLayout.panels` alone would not work — Solid stores track granularly,
             // and the nested writes (`panels[id].mode`) never touch the `panels` key itself.
             dockInsets();
-            handleResize();
+            // UNTRACKED: handleResize() ends in draw(), which reads store.viewState (and
+            // most of the document). Tracking those would make this effect re-run on every
+            // zoom/pan — and in a paged doc handleResize() re-fits the slide, so the view
+            // snapped straight back to "fit" and zoom/pan looked completely dead (#293).
+            untrack(handleResize);
         });
 
         // Expose table cell navigation interface for global keyboard handler (app.tsx)
