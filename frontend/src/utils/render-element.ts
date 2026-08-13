@@ -6,6 +6,7 @@ import { CanvasRenderer } from "../rendering/CanvasRenderer";
 import { renderWithEraseMask } from "../shapes/base/erase-mask";
 import { RenderPipeline } from "../shapes/base/render-pipeline";
 import { buildWidthRibbon } from "./variable-width";
+import { effectiveStrokeAlign, strokeAlignOutline, applyStrokeAlignClip, strokePassElement, fillPassElement } from "./stroke-align";
 
 // Lives in ./points now (a leaf module, so geometry can be imported without the shape
 // registry behind this file). Re-exported here so existing importers are unaffected.
@@ -155,6 +156,23 @@ const renderElementCore = (
         const renderer = sharedRenderer || new CanvasRenderer(ctx);
         renderVariableWidthStroke(rc, renderer, el, isDarkMode, layerOpacity);
         if (el.appearance) RenderPipeline.renderAppearance(rc, renderer, el, layerOpacity);
+        return;
+    }
+
+    // Stroke alignment (Inside/Outside): draw the stroke at double width and clip away the
+    // half that falls on the wrong side of the outline. Done here, around the renderer's own
+    // draw call, so it works for every shape and both draw styles at once.
+    const align = effectiveStrokeAlign(el);
+    // A null outline means we can't align this shape; fall through and render centred, as before.
+    const alignOutline = align === 'center' ? null : strokeAlignOutline(el);
+    if (alignOutline) {
+        // Fill, text and shadow first, unclipped. Both alignments need this: `outside` because
+        // the inverse clip would erase them, `inside` because the clip would crop the shadow.
+        renderElementCore(rc, ctx, fillPassElement(el), isDarkMode, layerOpacity, sharedRenderer);
+        ctx.save();
+        applyStrokeAlignClip(ctx, el, align, alignOutline);
+        renderElementCore(rc, ctx, strokePassElement(el, align), isDarkMode, layerOpacity, sharedRenderer);
+        ctx.restore();
         return;
     }
 

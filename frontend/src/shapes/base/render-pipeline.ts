@@ -210,7 +210,9 @@ export class RenderPipeline {
             renderer.strokeStyle = this.adjustColor(el.strokeColor, isDarkMode);
         }
         renderer.lineWidth = el.strokeWidth;
-        renderer.lineCap = 'round';
+        // Both default to 'round' — that is the look every existing drawing was authored
+        // against, so an unset property must not silently restyle old files.
+        renderer.lineCap = (el.strokeLineCap as CanvasLineCap) || 'round';
         renderer.lineJoin = (el.strokeLineJoin as CanvasLineJoin) || 'round';
 
         renderer.setLineDash(resolveDash(el.strokeStyle, el.strokeDashArray, [8, 8], [2, 4]) ?? []);

@@ -476,6 +476,8 @@ export const getStyleSnapshot = (el: DrawingElement): Partial<DrawingElement> =>
     innerBorderColor: el.innerBorderColor,
     innerBorderDistance: el.innerBorderDistance,
     strokeLineJoin: el.strokeLineJoin,
+    strokeLineCap: el.strokeLineCap,
+    strokeAlign: el.strokeAlign,
     fillDensity: el.fillDensity,
     renderStyle: el.renderStyle,
     // Appearance stack

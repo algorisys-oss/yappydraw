@@ -1375,6 +1375,22 @@ const PropertyPanel: Component = () => {
             }
 
 
+            // Element-state check — for controls whose applicability depends on the element's
+            // state rather than its type (e.g. Stroke Align needs a CLOSED outline, which an
+            // `applicableTo` type list can't express: `path` covers both open and closed pens).
+            if (p.visibleWhen) {
+                if (target.type === 'element') {
+                    if (!p.visibleWhen(target.data as any)) return false;
+                } else if (target.type === 'multi') {
+                    // Same any-of rule as applicableTo/dependsOn above.
+                    const anySatisfies = store.selection.some(id => {
+                        const el = store.elements.find(e => e.id === id);
+                        return el ? p.visibleWhen!(el as any) : false;
+                    });
+                    if (!anySatisfies) return false;
+                }
+            }
+
             // Dependency Check
             if (p.dependsOn) {
                 const depKey = typeof p.dependsOn === 'string' ? p.dependsOn : p.dependsOn.key;

@@ -425,6 +425,29 @@ Yappy.setStrokeDash([], ids);         // clear (revert to the Stroke Style prese
                     it came from. To clear the lot at once, use the Command Palette
                     (<span class="kbd">Ctrl</span>+<span class="kbd">K</span>) → <em>Clear All Guides</em>.
                 </p>
+                <h3>Selecting several guides at once</h3>
+                <p>
+                    <strong>Click a guide</strong> to select it — it turns pink and thickens.
+                    <strong> Shift</strong> (or <span class="kbd">Ctrl</span>/<span class="kbd">⌘</span>)
+                    <strong>+click</strong> adds or removes guides from that selection, and
+                    <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">A</span>
+                    selects <em>every</em> guide. Clicking anywhere else clears the selection, as does
+                    <span class="kbd">Esc</span>.
+                </p>
+                <p>
+                    With a selection live you can manage the whole set together:
+                </p>
+                <ul>
+                    <li><strong>Drag</strong> any selected guide and the entire selection moves with it. Guides
+                        slide along their <em>own</em> axis, so a mixed horizontal/vertical set keeps its shape.</li>
+                    <li><strong>Arrow keys</strong> nudge the selection by 1px — hold <span class="kbd">Shift</span> for 10px.</li>
+                    <li><span class="kbd">Delete</span> / <span class="kbd">Backspace</span> removes every selected
+                        guide at once.</li>
+                </ul>
+                <p>
+                    Finished with a layout? <em>Lock / Unlock Guides</em> in the Command Palette freezes them —
+                    locked guides still draw, but they can't be dragged, selected, or deleted by accident.
+                </p>
                 <h3>Turning shapes into guides</h3>
                 <p>
                     Select one or more shapes → Command Palette (<span class="kbd">Ctrl</span>+<span class="kbd">K</span>)
@@ -449,7 +472,18 @@ const id = Y.addGuide('h', 200);  // horizontal guide at world y = 200
 Y.addGuide('v', 120);             // vertical guide at world x = 120
 Y.updateGuide(id, 260);           // move it
 Y.removeGuide(id);                // drop that one
-Y.clearGuides();                  // drop them all`}</code></pre>
+Y.clearGuides();                  // drop them all
+
+// Working with several guides at once
+Y.listGuides();                   // [{ id, axis, pos }, …]
+Y.selectGuides([id1, id2]);       // replace the selection
+Y.selectGuide(id3, true);         // Shift+click: toggle into the selection
+Y.selectAllGuides();              // Ctrl/Cmd+Shift+A
+Y.getSelectedGuides();            // ids of the selected guides
+Y.moveSelectedGuides(40, 0);      // v-guides take dx, h-guides take dy
+Y.removeSelectedGuides();         // delete them; returns how many went
+Y.clearGuideSelection();          // Esc
+Y.toggleGuidesLocked(true);       // freeze them in place`}</code></pre>
             </section>
 
             {/* ─── MEASURE ────────────────────────────────────────────── */}
@@ -666,6 +700,15 @@ Y.transformAgain();                                   // repeat the last move/sc
                         <tr><td><code>updateGuide(id, pos)</code></td><td>Move a guide to a new world coordinate.</td></tr>
                         <tr><td><code>removeGuide(id)</code></td><td>Remove one guide.</td></tr>
                         <tr><td><code>clearGuides()</code></td><td>Remove every guide.</td></tr>
+                        <tr><td><code>listGuides()</code></td><td>Every guide as <code>{`{ id, axis, pos }`}</code>.</td></tr>
+                        <tr><td><code>selectGuides(ids)</code></td><td>Replace the guide selection.</td></tr>
+                        <tr><td><code>selectGuide(id, additive?)</code></td><td>Select one guide; <code>additive</code> toggles it in (Shift+click).</td></tr>
+                        <tr><td><code>selectAllGuides()</code></td><td>Select every guide (Ctrl/Cmd+Shift+A).</td></tr>
+                        <tr><td><code>getSelectedGuides()</code></td><td>Ids of the selected guides.</td></tr>
+                        <tr><td><code>clearGuideSelection()</code></td><td>Clear the guide selection (Esc).</td></tr>
+                        <tr><td><code>moveSelectedGuides(dx, dy)</code></td><td>Move the selection — vertical guides take <code>dx</code>, horizontal take <code>dy</code>.</td></tr>
+                        <tr><td><code>removeSelectedGuides()</code></td><td>Delete every selected guide; returns the count.</td></tr>
+                        <tr><td><code>toggleGuidesLocked(locked?)</code></td><td>Lock/unlock guides against pointer edits.</td></tr>
                         <tr><td><code>loadDocument(doc)</code></td><td>Replace the document with a saved JSON snapshot.</td></tr>
                     </tbody>
                 </table>

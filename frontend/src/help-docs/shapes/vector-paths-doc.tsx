@@ -218,6 +218,81 @@ export const VectorPathsDoc: Component = () => {
                 </p>
             </section>
 
+            {/* Stroke appearance: align / join / cap */}
+            <section class="doc-section">
+                <h2>Stroke Alignment, Corners &amp; End Caps</h2>
+                <p>
+                    Three controls in the <strong>Properties panel</strong> decide how a stroke is actually
+                    painted around its outline. They apply to shapes <em>and</em> Pen tool paths, in both the
+                    sketch and architectural draw styles.
+                </p>
+
+                <h3>Stroke Align — Center / Inside / Outside</h3>
+                <p>
+                    By default a stroke <strong>straddles</strong> the outline: half its width falls inside the
+                    shape, half outside. That's <em>Center</em>. Switch to:
+                </p>
+                <ul>
+                    <li><strong>Inside</strong> — the whole stroke sits <em>within</em> the outline, so the shape
+                        never grows past the box you drew. A border stops eating into the space around it.</li>
+                    <li><strong>Outside</strong> — the whole stroke sits <em>outside</em> the outline, so a thick
+                        border never covers the artwork or fill it frames.</li>
+                </ul>
+                <p>
+                    This is what you want when a region has to line up <em>exactly</em> with a grid or a
+                    neighbouring shape — a 12px map border on Center silently overhangs its region by 6px.
+                </p>
+                <p class="tip-box">
+                    <strong>Closed outlines only.</strong> Inside/Outside need an interior to be meaningful, so
+                    the control is offered for closed shapes and closed Pen paths. Open paths, lines, arrows and
+                    freehand strokes stay centred.
+                </p>
+
+                <h3>Corner Style — Sharp / Round / Bevel</h3>
+                <p>
+                    How the stroke turns a corner. <strong>Miter (Sharp)</strong> extends both edges to a crisp
+                    point; <strong>Round</strong> arcs them; <strong>Bevel (Flat)</strong> cuts the corner off
+                    square. Sharp suits technical and architectural work, Round softens icons and routes, Bevel
+                    keeps very thick strokes from growing long spikes at tight angles.
+                </p>
+
+                <h3>End Cap — Butt / Round / Square</h3>
+                <p>
+                    How an <strong>open</strong> path ends — Pen paths, lines and freehand strokes.
+                    <strong> Butt (Flat)</strong> stops the line dead at its last point;
+                    <strong> Round</strong> finishes with a half-circle; <strong>Square</strong> with a flat
+                    extension. Round and Square both push the line <em>past</em> its final point by half the
+                    stroke width, so Butt is the one to use when a route must terminate exactly on a coordinate.
+                </p>
+
+                <pre class="code-block"><code>{`const Y = window.Yappy;
+
+// A region whose 12px border stays entirely inside its bounds
+Y.createRectangle(100, 100, 200, 140, {
+  strokeColor: '#1d4ed8', strokeWidth: 12,
+  backgroundColor: '#bfdbfe', fillStyle: 'solid',
+  strokeAlign: 'inside',        // 'center' (default) | 'inside' | 'outside'
+  strokeLineJoin: 'miter',      // 'round' (default) | 'miter' | 'bevel'
+});
+
+// A map route that terminates exactly on its end points
+Y.createPath([{ x: 100, y: 300 }, { x: 260, y: 340 }, { x: 400, y: 300 }], {
+  strokeColor: '#0f766e', strokeWidth: 14,
+  strokeLineCap: 'butt',        // 'round' (default) | 'butt' | 'square'
+  strokeLineJoin: 'bevel',
+});`}</code></pre>
+                <p>
+                    All three survive SVG export: corners and caps map straight onto
+                    <code> stroke-linejoin</code> / <code>stroke-linecap</code>, and alignment is reproduced with a
+                    <code> clipPath</code> (SVG has no <code>stroke-alignment</code> attribute of its own).
+                </p>
+                <p class="tip-box">
+                    <strong>Sketch style is approximate.</strong> In the hand-drawn style rough.js paints its own
+                    wobbly multi-pass strokes, so alignment is honoured to within the sketchiness rather than to
+                    the pixel. Use the architectural style when the edge has to be exact.
+                </p>
+            </section>
+
             {/* Path ops: simplify + compound */}
             <section class="doc-section">
                 <h2>Simplify &amp; Compound Paths</h2>

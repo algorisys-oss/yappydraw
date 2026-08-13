@@ -91,6 +91,10 @@ export const generateId = (type: string, batchIds?: Set<string>): string => {
     if (store.graphicStyles) scanMax(store.graphicStyles);
     if (store.patterns) scanMax(store.patterns);
     if (store.dimensionAnnotations) scanMax(store.dimensionAnnotations);
+    // Guides live in their own collection, not in `elements`. Without this every guide got
+    // `guid-1`, so `updateGuide`/`removeGuide` — which match by id — moved or deleted EVERY
+    // guide at once, and a guide selection could never address one line.
+    if (store.guides) scanMax(store.guides);
     // Live Paint group ids live on a `livePaintGroupId` tag (not an `.id` field), so they're
     // invisible to the element scan — without this a new group after reload re-uses the same
     // id and cross-wires two groups. Scan the tags too.

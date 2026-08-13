@@ -81,7 +81,7 @@ export function mapStyleToOptions(style: Record<string, any>): Record<string, an
         // Inner border
         'drawInnerBorder', 'innerBorderColor', 'innerBorderDistance',
         // Stroke & fill options
-        'strokeLineJoin', 'fillDensity',
+        'strokeLineJoin', 'strokeLineCap', 'strokeAlign', 'fillDensity',
         // Effects
         'blendMode', 'flipX', 'flipY', 'angle',
     ];

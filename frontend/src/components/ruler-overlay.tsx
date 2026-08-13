@@ -1,5 +1,9 @@
 import { createEffect, For, onCleanup, onMount } from 'solid-js';
-import { store, addGuide, updateGuide, removeGuide } from '../store/app-store';
+import {
+    store, addGuide, updateGuide, removeGuide,
+    selectGuide, setSelectedGuides, clearGuideSelection, selectAllGuides,
+    removeSelectedGuides, moveSelectedGuides,
+} from '../store/app-store';
 import {
     canvasOrigin, canvasSize,
     worldToWindowAxisX, worldToWindowAxisY, windowToWorldAxisX, windowToWorldAxisY,
@@ -23,6 +27,15 @@ interface DragState {
     axis: 'h' | 'v';
     /** True while creating a brand-new guide dragged off a ruler. */
     creating: boolean;
+    /**
+     * True when the drag moves the whole guide SELECTION as a group rather than the one
+     * guide under the pointer. Group drags work off a pointer delta (see `lastX`/`lastY`);
+     * a single-guide drag keeps snapping the guide straight to the pointer, which is what
+     * makes dragging it back onto the ruler to delete it feel exact.
+     */
+    group: boolean;
+    lastX: number;
+    lastY: number;
 }
 
 /**
@@ -140,6 +153,16 @@ export const RulerOverlay = () => {
     // ── Guide drag handling (creation + move + delete) ───────────────────────
     const onWindowPointerMove = (e: PointerEvent) => {
         if (!drag) return;
+        if (drag.group) {
+            // Move every selected guide by the pointer delta. Each guide slides along its own
+            // normal, so a mixed horizontal/vertical selection keeps its shape.
+            const dx = screenToWorldX(e.clientX) - screenToWorldX(drag.lastX);
+            const dy = screenToWorldY(e.clientY) - screenToWorldY(drag.lastY);
+            moveSelectedGuides(dx, dy);
+            drag.lastX = e.clientX;
+            drag.lastY = e.clientY;
+            return;
+        }
         if (drag.axis === 'h') updateGuide(drag.id, screenToWorldY(e.clientY));
         else updateGuide(drag.id, screenToWorldX(e.clientX));
     };
@@ -150,22 +173,82 @@ export const RulerOverlay = () => {
         drag = null;
         // Released back onto the originating ruler strip → cancel/delete.
         // The strips sit at the canvas origin, so "back onto the ruler" is measured from there.
+        // Group drags are exempt: dropping a multi-selection near the ruler should not wipe it.
+        if (d.group) return;
         const o = canvasOrigin();
         const onRuler = d.axis === 'h' ? e.clientY - o.y < RULER_SIZE : e.clientX - o.x < RULER_SIZE;
         if (onRuler) removeGuide(d.id);
     };
 
     const startCreate = (axis: 'h' | 'v', e: PointerEvent) => {
+        if (store.guidesLocked) return;
         e.preventDefault();
+        // Stop the bubble, or the deselect-on-canvas-click handler below would immediately
+        // clear the selection this drag is about to establish.
+        e.stopPropagation();
         const pos = axis === 'h' ? screenToWorldY(e.clientY) : screenToWorldX(e.clientX);
         const id = addGuide(axis, pos);
-        drag = { id, axis, creating: true };
+        // A brand-new guide becomes the selection, so the very next Delete removes it.
+        setSelectedGuides([id]);
+        drag = { id, axis, creating: true, group: false, lastX: e.clientX, lastY: e.clientY };
     };
 
     const startMove = (id: string, axis: 'h' | 'v', e: PointerEvent) => {
+        if (store.guidesLocked) return;
         e.preventDefault();
         e.stopPropagation();
-        drag = { id, axis, creating: false };
+
+        const additive = e.shiftKey || e.ctrlKey || e.metaKey;
+        if (additive) {
+            // Toggle into the selection — and don't drag, or the toggle-off click would also
+            // yank the guide it just deselected.
+            selectGuide(id, true);
+            return;
+        }
+
+        const alreadySelected = store.selectedGuideIds.includes(id);
+        // Dragging a guide that's part of a multi-selection moves the whole set; dragging an
+        // unselected one selects just it (the pre-existing single-guide behaviour).
+        if (!alreadySelected) setSelectedGuides([id]);
+        const group = alreadySelected && store.selectedGuideIds.length > 1;
+        drag = { id, axis, creating: false, group, lastX: e.clientX, lastY: e.clientY };
+    };
+
+    // A pointerdown anywhere that ISN'T a guide or a ruler drops the guide selection — the
+    // guide/ruler handlers above stopPropagation, so reaching window means "clicked elsewhere".
+    const onWindowPointerDown = () => clearGuideSelection();
+
+    // Keyboard: Delete removes the selection, Escape clears it, arrows nudge it.
+    // Scoped to "there is a guide selection" so it never steals keys from element editing
+    // or a focused text input.
+    const onKeyDown = (e: KeyboardEvent) => {
+        if (!store.showRulers) return;
+        const t = e.target as HTMLElement | null;
+        if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+
+        // Ctrl/Cmd+Shift+A → select every guide. Plain Ctrl+A stays with the elements.
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a' && store.guides.length) {
+            if (store.guidesLocked) return;
+            e.preventDefault();
+            selectAllGuides();
+            return;
+        }
+
+        if (!store.selectedGuideIds.length) return;
+
+        if (e.key === 'Escape') { e.preventDefault(); clearGuideSelection(); return; }
+        if (store.guidesLocked) return;
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            e.preventDefault();
+            e.stopPropagation();
+            removeSelectedGuides();
+            return;
+        }
+        const step = (e.shiftKey ? 10 : 1) / (store.viewState.scale || 1);
+        if (e.key === 'ArrowLeft') { e.preventDefault(); moveSelectedGuides(-step, 0); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); moveSelectedGuides(step, 0); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); moveSelectedGuides(0, -step); }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); moveSelectedGuides(0, step); }
     };
 
     onMount(() => {
@@ -174,14 +257,21 @@ export const RulerOverlay = () => {
         window.addEventListener('pointermove', onWindowPointerMove);
         window.addEventListener('pointerup', onWindowPointerUp);
         window.addEventListener('pointercancel', onWindowPointerUp);
+        window.addEventListener('pointerdown', onWindowPointerDown);
+        // Capture phase: the canvas's own Delete/Escape handlers are on window too, and the
+        // guide selection must win while it's active.
+        window.addEventListener('keydown', onKeyDown, true);
         onCleanup(() => {
             window.removeEventListener('pointermove', onWindowPointerMove);
             window.removeEventListener('pointerup', onWindowPointerUp);
             window.removeEventListener('pointercancel', onWindowPointerUp);
+            window.removeEventListener('pointerdown', onWindowPointerDown);
+            window.removeEventListener('keydown', onKeyDown, true);
         });
     });
 
     const guideColor = '#16b9c9';
+    const selectedGuideColor = '#ff4d6d';
 
     return (
         <>
@@ -190,31 +280,36 @@ export const RulerOverlay = () => {
                 <For each={store.guides}>
                     {(g) => {
                         const screen = () => g.axis === 'h' ? worldToScreenY(g.pos) : worldToScreenX(g.pos);
+                        const selected = () => store.selectedGuideIds.includes(g.id);
                         return (
                             <div
-                                title={`${g.axis === 'h' ? 'Y' : 'X'} = ${g.pos}  (drag to ruler to remove)`}
+                                title={`${g.axis === 'h' ? 'Y' : 'X'} = ${g.pos}\nClick to select · Shift+click to add · Delete to remove\n(drag to ruler to remove)`}
                                 onPointerDown={(e) => startMove(g.id, g.axis, e)}
-                                onDblClick={(e) => { e.stopPropagation(); removeGuide(g.id); }}
+                                onDblClick={(e) => { e.stopPropagation(); if (!store.guidesLocked) removeGuide(g.id); }}
                                 style={g.axis === 'h' ? {
                                     position: 'fixed',
                                     left: `${canvasOrigin().x + RULER_SIZE}px`,
                                     width: `${Math.max(0, size().w - RULER_SIZE)}px`,
                                     top: `${screen() - 3}px`, height: '7px',
-                                    cursor: 'row-resize', 'pointer-events': 'auto',
+                                    cursor: store.guidesLocked ? 'default' : 'row-resize',
+                                    'pointer-events': 'auto',
                                     display: 'flex', 'align-items': 'center',
                                 } : {
                                     position: 'fixed',
                                     top: `${canvasOrigin().y + RULER_SIZE}px`,
                                     height: `${Math.max(0, size().h - RULER_SIZE)}px`,
                                     left: `${screen() - 3}px`, width: '7px',
-                                    cursor: 'col-resize', 'pointer-events': 'auto',
+                                    cursor: store.guidesLocked ? 'default' : 'col-resize',
+                                    'pointer-events': 'auto',
                                     display: 'flex', 'justify-content': 'center',
                                 }}
                             >
-                                {/* Centered visible line inside the fat hit area. */}
+                                {/* Centered visible line inside the fat hit area. Selected guides
+                                    go thicker + accent-coloured so a multi-selection is readable
+                                    at a glance against the 1px unselected lines. */}
                                 <div style={g.axis === 'h'
-                                    ? { width: '100%', height: '1px', background: guideColor }
-                                    : { height: '100%', width: '1px', background: guideColor }} />
+                                    ? { width: '100%', height: selected() ? '2px' : '1px', background: selected() ? selectedGuideColor : guideColor }
+                                    : { height: '100%', width: selected() ? '2px' : '1px', background: selected() ? selectedGuideColor : guideColor }} />
                             </div>
                         );
                     }}

@@ -313,6 +313,10 @@ interface AppState {
     minimapVisible: boolean;
     showRulers: boolean;
     guides: Guide[];
+    /** Ids of the currently selected guides — see the "Guide selection" actions. */
+    selectedGuideIds: string[];
+    /** When true, guides render but can't be dragged, selected, or deleted by pointer. */
+    guidesLocked: boolean;
     symmetry: {
         mode: SymmetryMode;
         /** Symmetry centre / axis crossing point, in world coordinates. */
@@ -627,6 +631,8 @@ const initialState: AppState = {
     minimapVisible: false,
     showRulers: (() => { try { return localStorage.getItem('showRulers') === '1'; } catch { return false; } })(),
     guides: [],
+    selectedGuideIds: [],
+    guidesLocked: (() => { try { return localStorage.getItem('guidesLocked') === '1'; } catch { return false; } })(),
     symmetry: defaultSymmetryState(),
     zenMode: false,
     appMode: 'design',
@@ -5017,9 +5023,60 @@ export const updateGuide = (id: string, pos: number) => {
 
 export const removeGuide = (id: string) => {
     setStore('guides', g => g.filter(gd => gd.id !== id));
+    setStore('selectedGuideIds', ids => ids.filter(i => i !== id));
 };
 
-export const clearGuides = () => setStore('guides', []);
+export const clearGuides = () => { setStore('guides', []); setStore('selectedGuideIds', []); };
+
+// ── Guide selection ──────────────────────────────────────────────────────────
+// Guides are selected independently of elements: they're workspace furniture, not artwork,
+// so they have their own selection list rather than sharing `selectedElementIds` (which the
+// whole transform/align/delete machinery reads).
+
+/** Replace the guide selection outright. */
+export const setSelectedGuides = (ids: string[]) => setStore('selectedGuideIds', [...new Set(ids)]);
+
+/** Select one guide; `additive` (Shift/Ctrl-click) toggles it in the existing selection. */
+export const selectGuide = (id: string, additive = false) => {
+    if (!additive) { setStore('selectedGuideIds', [id]); return; }
+    setStore('selectedGuideIds', ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id]);
+};
+
+export const clearGuideSelection = () => {
+    if (store.selectedGuideIds.length) setStore('selectedGuideIds', []);
+};
+
+export const selectAllGuides = () => setStore('selectedGuideIds', store.guides.map(g => g.id));
+
+/** Remove every selected guide. Returns how many went. */
+export const removeSelectedGuides = (): number => {
+    const ids = new Set(store.selectedGuideIds);
+    if (!ids.size) return 0;
+    setStore('guides', g => g.filter(gd => !ids.has(gd.id)));
+    setStore('selectedGuideIds', []);
+    return ids.size;
+};
+
+/**
+ * Move every selected guide by a world-space delta. Each guide slides along its OWN normal —
+ * vertical guides take dx, horizontal guides take dy — so a mixed-axis selection drags as a
+ * rigid group instead of collapsing onto one axis.
+ */
+export const moveSelectedGuides = (dx: number, dy: number) => {
+    const ids = new Set(store.selectedGuideIds);
+    if (!ids.size) return;
+    setStore('guides', g => g.map(gd => ids.has(gd.id)
+        ? { ...gd, pos: Math.round(gd.pos + (gd.axis === 'v' ? dx : dy)) }
+        : gd));
+};
+
+/** Lock/unlock guides: locked guides render but can't be dragged or deleted by pointer. */
+export const toggleGuidesLocked = (locked?: boolean) => {
+    const next = locked ?? !store.guidesLocked;
+    setStore('guidesLocked', next);
+    if (next) setStore('selectedGuideIds', []);
+    try { localStorage.setItem('guidesLocked', next ? '1' : '0'); } catch { /* ignore */ }
+};
 
 export const toggleZenMode = (visible?: boolean) => {
     setStore('zenMode', (v) => visible ?? !v);

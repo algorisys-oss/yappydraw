@@ -6,7 +6,7 @@ import {
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
     toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
-    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleSceneTimeline, toggleKeyframePanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, toggleZenMode, toggleSlideNavigator,
+    toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleSceneTimeline, toggleKeyframePanel, createSwatch, applySwatch, updateSwatchColor, renameSwatch, deleteSwatch, setSwatchGroup, listSwatchGroups, createSwatchGroupFromSelection, setBleed, toggleMinimap, toggleRulers, addGuide, updateGuide, removeGuide, clearGuides, setSelectedGuides, selectGuide, selectAllGuides, clearGuideSelection, removeSelectedGuides, moveSelectedGuides, toggleGuidesLocked, toggleZenMode, toggleSlideNavigator,
     addDisplayState, updateDisplayState, deleteDisplayState, applyDisplayState, toggleStatePanel,
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
@@ -286,6 +286,8 @@ interface ElementOptions {
     innerBorderColor?: string;
     innerBorderDistance?: number;
     strokeLineJoin?: 'round' | 'bevel' | 'miter';
+    strokeLineCap?: 'butt' | 'round' | 'square';
+    strokeAlign?: 'center' | 'inside' | 'outside';
 
     // Interactive Behaviors
     spinEnabled?: boolean;
@@ -525,6 +527,8 @@ export const YappyAPI = {
             innerBorderColor: options?.innerBorderColor,
             innerBorderDistance: options?.innerBorderDistance,
             strokeLineJoin: options?.strokeLineJoin,
+            strokeLineCap: options?.strokeLineCap,
+            strokeAlign: options?.strokeAlign,
 
             spinEnabled: options?.spinEnabled,
             spinSpeed: options?.spinSpeed,
@@ -2558,6 +2562,24 @@ export const YappyAPI = {
     removeGuide(id: string) { removeGuide(id); },
     /** Remove all guides. */
     clearGuides() { clearGuides(); },
+    /** List every guide (`{ id, axis, pos }`). */
+    listGuides() { return store.guides.map(g => ({ ...g })); },
+    /** Ids of the currently selected guides. */
+    getSelectedGuides() { return [...store.selectedGuideIds]; },
+    /** Replace the guide selection with `ids`. */
+    selectGuides(ids: string[]) { setSelectedGuides(ids); },
+    /** Select one guide; `additive` toggles it into the existing selection (Shift+click). */
+    selectGuide(id: string, additive?: boolean) { selectGuide(id, additive); },
+    /** Select every guide (Ctrl/Cmd+Shift+A). */
+    selectAllGuides() { selectAllGuides(); },
+    /** Clear the guide selection (Escape). */
+    clearGuideSelection() { clearGuideSelection(); },
+    /** Delete every selected guide (Delete/Backspace). Returns how many were removed. */
+    removeSelectedGuides() { return removeSelectedGuides(); },
+    /** Move the selected guides — vertical guides take `dx`, horizontal guides take `dy`. */
+    moveSelectedGuides(dx: number, dy: number) { moveSelectedGuides(dx, dy); },
+    /** Lock/unlock guides. Locked guides render but can't be dragged, selected or deleted. */
+    toggleGuidesLocked(locked?: boolean) { toggleGuidesLocked(locked); },
     toggleZenMode(visible?: boolean) { toggleZenMode(visible); },
     /** Start (or replay) the first-visit onboarding tour. */
     startTour() { void import('./components/onboarding-tour').then(m => m.startTour()); },

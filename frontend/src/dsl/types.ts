@@ -189,6 +189,8 @@ export interface DSLNodeStyle {
 
     // Stroke & fill options
     strokeLineJoin?: 'round' | 'bevel' | 'miter';
+    strokeLineCap?: 'butt' | 'round' | 'square';
+    strokeAlign?: 'center' | 'inside' | 'outside';
     fillDensity?: number;
 
     // Effects

@@ -13,6 +13,16 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.190', date: '2026-08-13', items: [
+        'You can now choose where a stroke sits: inside the shape, centred on its edge, or outside it. Until now it was always centred, so half of a thick border sat inside the shape and ate into it. Pick Inside and the shape never grows past the box you drew, or Outside and the border never covers the fill. It is in the Properties panel under Stroke, and it works on shapes and on closed Pen paths.',
+        'Corner style — Sharp, Round or Bevel — now works on Pen paths, lines and freehand strokes. It was only offered on closed shapes before, so a hand-drawn route or map line could not use it.',
+        'Lines drawn with the Pen tool can now have a flat, round or square end. Round and square ends stick out slightly past your last point; pick Butt (Flat) when a line has to stop exactly on a spot.',
+        'Guides can be handled several at a time. Click one to select it, hold Shift to add more, or press Ctrl+Shift+A for all of them. Then drag them together, nudge them with the arrow keys, or delete the whole set at once. Press Esc or click the canvas to let them go.',
+        'There is also a Lock Guides command, so once a layout is set you cannot knock a guide out of place by accident.',
+        'Fixed: dragging one guide used to move every other guide with it, and deleting one deleted them all. Behind the scenes they had all been given the same name, so the app could not tell them apart.',
+        'Fixed: a shape with the new Outside border lost the text inside it.',
+        'Fixed: exporting a shape with an Outside border cut off the outer edge of the border.',
+    ] },
     { version: '0.8.189', date: '2026-08-12', items: [
         'In an animation, you can now edit a shape anywhere in the middle of a tween. Before, the shape showed its blue selection outline but the resize handles did nothing, clicking the shape itself deselected it, and dragging it made it drift slowly behind your cursor instead of following it. The handles were being drawn where the shape appears but were still being looked for back at its keyframe position, so you were reaching for something that was not there.',
         'When you do edit mid-tween, a keyframe is created for you at that exact point, holding exactly the pose you were looking at. Nothing jumps, and the keyframes at either end of the tween are left alone. Just clicking to select never adds a keyframe.',

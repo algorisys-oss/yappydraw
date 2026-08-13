@@ -4,6 +4,7 @@ import {
     duplicateArtboard, fitArtboardToArtwork, shuffleSelectionColors,
     convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     togglePropertyPanel, toggleLayerPanel, toggleMinimap, toggleRulers, clearGuides, zoomToFit, zoomToSelection, toggleVectorToolsPanel, toggleElementsPanel,
+    selectAllGuides, removeSelectedGuides, toggleGuidesLocked,
     groupSelected, ungroupSelected, bringToFront, sendToBack,
     mirrorCopy, transformAgain, convertTextToOutlines,
     toggleSymmetry, toggleSymmetryAxis, setSymmetryMode, toggleSymmetryEditing,
@@ -380,6 +381,9 @@ export const getCommands = (): Command[] => {
         { id: 'view-minimap', label: 'Toggle Minimap', category: 'View', action: () => toggleMinimap(), shortcut: 'Alt+M' },
         { id: 'view-rulers', label: 'Toggle Rulers & Guides', category: 'View', action: () => toggleRulers(), shortcut: 'Alt+R' },
         { id: 'view-clear-guides', label: 'Clear All Guides', category: 'View', action: () => clearGuides() },
+        { id: 'view-select-all-guides', label: 'Select All Guides', category: 'View', action: () => selectAllGuides(), shortcut: 'Ctrl+Shift+A' },
+        { id: 'view-delete-selected-guides', label: 'Delete Selected Guides', category: 'View', action: () => { const n = removeSelectedGuides(); showToast(n ? `Deleted ${n} guide${n === 1 ? '' : 's'}` : 'No guides selected', n ? 'success' : 'info'); } },
+        { id: 'view-lock-guides', label: 'Lock / Unlock Guides', category: 'View', action: () => { toggleGuidesLocked(); showToast(store.guidesLocked ? 'Guides locked' : 'Guides unlocked', 'info'); } },
         // Illustrator calls this Direct Selection, Inkscape calls it the Node tool — both
         // names are in the label so either search term finds it. Exclusive activation,
         // same as the Vector Tools palette button it mirrors.

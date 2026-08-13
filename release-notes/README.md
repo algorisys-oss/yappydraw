@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.190](0.8.190.md) — Strokes can sit inside, on, or outside a shape's outline, so a thick border stops eating into the shape it frames. Corner and end-cap styles now work on Pen paths, lines and freehand strokes, not just closed shapes. Guides can be selected several at a time and moved, nudged or deleted as one group — which turned up a long-standing bug where every guide shared one id, so dragging one moved all of them
 - [0.8.189](0.8.189.md) — Editing a shape in the middle of a tween works at last: the handles you can see are the handles you can grab, clicking a tweened shape selects it, and dragging it follows your cursor instead of crawling behind it — all one disagreement about where the shape actually is. Editing mid-tween splits the span for you, Animate-style. Plus Alt+Shift resize from the centre, a live W × H chip while dragging, and visible grips on the panel resize edges that were there all along
 - [0.8.188](0.8.188.md) — Loading a presentation or design template disabled zoom and pan entirely (every route at once: hotkeys, Ctrl+scroll, the status-bar buttons, the Pan tool and Space+drag). The canvas' dock/zen layout effect tracked the view state through its own redraw, so each zoom re-ran the layout, which re-fits the slide
 - [0.8.187](0.8.187.md) — Shape Builder gets its box: Shift+drag rubber-bands over several regions at once (Illustrator's binding, and the half we were missing), Shift+Alt to delete them

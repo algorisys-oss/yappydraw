@@ -1,4 +1,4 @@
-import type { ElementType } from "../types";
+import type { ElementType, DrawingElement } from "../types";
 import { COLOR_PALETTES } from "./color-palettes";
 import { PAGE_SIZE_PRESETS } from "./page-size-presets";
 import { TEXT_EFFECT_PRESETS } from "./text-effect-presets";
@@ -27,6 +27,12 @@ export interface PropertyConfig {
     defaultValue?: any;
     group: 'style' | 'stroke' | 'background' | 'text' | 'dimensions' | 'advanced' | 'canvas' | 'shadow' | 'gradient' | 'motion' | 'slide' | 'interaction' | 'filter';
     dependsOn?: string | { key: string; value: any | any[] }; // Key of property that must be truthy for this to show
+    /**
+     * Extra visibility predicate for controls whose applicability depends on the element's
+     * STATE, not just its type — which `applicableTo` (a type list) and `dependsOn` (one key
+     * matching one value) can't express. On a multi-selection, any satisfying element shows it.
+     */
+    visibleWhen?: (el: DrawingElement) => boolean;
 }
 
 /**
@@ -470,8 +476,42 @@ export const properties: PropertyConfig[] = [
             { label: 'Miter (Sharp)', value: 'miter' }
         ],
         group: 'style',
-        applicableTo: ['rectangle', 'diamond', 'triangle', 'polygon', 'star', 'burst', 'hexagon', 'octagon', 'pentagon', 'septagon', 'trapezoid', 'arrow', 'arrowLeft', 'arrowRight', 'arrowUp', 'arrowDown', 'bracketLeft', 'bracketRight', 'parallelogram', 'rightTriangle', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'cylinder', 'stateSync', 'activationBar', 'externalEntity'],
+        applicableTo: ['rectangle', 'diamond', 'triangle', 'polygon', 'star', 'burst', 'hexagon', 'octagon', 'pentagon', 'septagon', 'trapezoid', 'arrow', 'arrowLeft', 'arrowRight', 'arrowUp', 'arrowDown', 'bracketLeft', 'bracketRight', 'parallelogram', 'rightTriangle', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'cylinder', 'stateSync', 'activationBar', 'externalEntity',
+            // Pen paths, lines and freehand strokes have corners too — a map route drawn with
+            // the Pen tool needs the same Sharp/Round/Bevel control as a polygon.
+            'path', 'line', 'bezier', 'fineliner', 'inkbrush', 'marker', 'ink'],
         defaultValue: 'round'
+    },
+    {
+        key: 'strokeLineCap',
+        label: 'End Cap',
+        type: 'select',
+        options: [
+            { label: 'Round', value: 'round' },
+            { label: 'Butt (Flat)', value: 'butt' },
+            { label: 'Square', value: 'square' }
+        ],
+        group: 'stroke',
+        // Open strokes only — a closed outline has no ends for a cap to show on.
+        applicableTo: ['path', 'line', 'arrow', 'bezier', 'fineliner', 'inkbrush', 'marker', 'ink'],
+        defaultValue: 'round'
+    },
+    {
+        key: 'strokeAlign',
+        label: 'Stroke Align',
+        type: 'select',
+        options: [
+            { label: 'Center', value: 'center' },
+            { label: 'Inside', value: 'inside' },
+            { label: 'Outside', value: 'outside' }
+        ],
+        group: 'stroke',
+        // Closed outlines only — inside/outside is meaningless without an interior.
+        applicableTo: ['rectangle', 'circle', 'diamond', 'triangle', 'polygon', 'star', 'burst', 'hexagon', 'octagon', 'pentagon', 'septagon', 'trapezoid', 'parallelogram', 'rightTriangle', 'capsule', 'cloud', 'heart', 'cross', 'path', 'stickyNote', 'card', 'dfdProcess', 'dfdDataStore', 'isometricCube', 'solidBlock', 'cylinder', 'externalEntity'],
+        // `path` covers both open and closed pens, and an OPEN path has no interior to align
+        // against — the renderer falls back to centre there, so don't offer a dead control.
+        visibleWhen: (el) => el.type !== 'path' || el.pathClosed === true,
+        defaultValue: 'center'
     },
     // Stroke
     {

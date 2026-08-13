@@ -774,6 +774,19 @@ export interface DrawingElement {
     innerBorderColor?: string; // Optional color (defaults to strokeColor if null)
     innerBorderDistance?: number; // Distance from outer border (padding)
     strokeLineJoin?: 'round' | 'bevel' | 'miter'; // Corner style (default: 'round')
+    /**
+     * End-cap style for OPEN strokes (pen paths, lines, freehand). 'butt' ends the line
+     * flush at the last point; 'round'/'square' extend it by half the stroke width.
+     * Default 'round' — the look every existing drawing was authored against.
+     */
+    strokeLineCap?: 'butt' | 'round' | 'square';
+    /**
+     * Where the stroke sits relative to the outline. 'center' (default) straddles it, the
+     * way canvas strokes natively work; 'inside'/'outside' keep the stroke wholly within or
+     * wholly outside the shape, so a border never eats into the artwork it frames.
+     * Only meaningful for shapes with a closed outline — see utils/stroke-align.ts.
+     */
+    strokeAlign?: 'center' | 'inside' | 'outside';
     fillDensity?: number;
     // Shadow Properties
     shadowEnabled?: boolean;

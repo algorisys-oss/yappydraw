@@ -21,6 +21,7 @@ import {
 import { buildFilterString } from "./image-filter-utils";
 import { layoutRichText, type RichTextSegment } from "./rich-text-utils";
 import { getShapeGeometry, type ShapeGeometry } from "./shape-geometry";
+import { effectiveStrokeAlign } from "./stroke-align";
 import { connectorGeometry } from "./connector-geometry";
 import { svgFillPaint, svgPatternDef } from "./svg-paint";
 import { SvgRenderer } from "../rendering/SvgRenderer";
@@ -99,9 +100,20 @@ function elementAABB(el: DrawingElement): Bounds {
         const x = cx + dx * cos - dy * sin, y = cy + dx * sin + dy * cos;
         minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
     }
-    // Stroke half-width + shadow/glow/feather spread padding.
+    // Stroke spread + shadow/glow/feather spread padding. How far the stroke reaches past the
+    // outline depends on its alignment: centre spills half its width, `outside` a full width,
+    // `inside` none at all. Assuming half-width for every case cropped outside-aligned strokes
+    // at the edge of the exported canvas.
     const shadow = el.shadowEnabled ? (el.shadowBlur || 0) + Math.max(Math.abs(el.shadowOffsetX || 0), Math.abs(el.shadowOffsetY || 0)) : 0;
-    const pad = (el.strokeWidth || 0) / 2 + shadow + (el.glowEnabled ? (el.glowBlur || 0) : 0) + (el.featherRadius || 0);
+    const strokeSpread = (() => {
+        const w = el.strokeWidth || 0;
+        switch (effectiveStrokeAlign(el)) {
+            case 'inside': return 0;
+            case 'outside': return w;
+            default: return w / 2;
+        }
+    })();
+    const pad = strokeSpread + shadow + (el.glowEnabled ? (el.glowBlur || 0) : 0) + (el.featherRadius || 0);
     minX -= pad; minY -= pad; maxX += pad; maxY += pad;
     // 3D extrude body extends in the depth direction.
     if (el.extrude && el.extrude.depth > 0) {
@@ -1120,6 +1132,50 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
                 const fill = svgFillPaint(el, defs, el.id);
                 const strokeVisible = el.strokeColor && el.strokeColor !== 'transparent' && el.strokeColor !== 'none' && el.strokeWidth > 0;
                 const isSketch = (el.renderStyle ?? 'sketch') === 'sketch';
+                // Stroke alignment: SVG has no `stroke-alignment` attribute, so mirror the
+                // canvas trick (utils/stroke-align.ts) — double the stroke width and clip away
+                // the wrong half with a <clipPath> built from the same centred geometry.
+                const align = strokeVisible && !isSketch ? effectiveStrokeAlign(el) : 'center';
+                let strokeHost: Element = inner;
+                if (align !== 'center') {
+                    const clipId = `salign-${el.id}`;
+                    const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+                    clipPath.setAttribute('id', clipId);
+                    if (align === 'outside') {
+                        // Huge rect minus the outline, via even-odd → only the exterior clips in.
+                        const pad = Math.max(Math.abs(el.width), Math.abs(el.height)) * 4 + el.strokeWidth * 8 + 1000;
+                        const cover = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        const x0 = -Math.abs(el.width) / 2 - pad, y0 = -Math.abs(el.height) / 2 - pad;
+                        const w = Math.abs(el.width) + pad * 2, h = Math.abs(el.height) + pad * 2;
+                        cover.setAttribute('d', `M ${x0} ${y0} h ${w} v ${h} h ${-w} Z ` + ds.join(' '));
+                        cover.setAttribute('clip-rule', 'evenodd');
+                        clipPath.appendChild(cover);
+                    } else {
+                        for (const d of ds) {
+                            const cp = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            cp.setAttribute('d', d);
+                            if (evenOdd) cp.setAttribute('clip-rule', 'evenodd');
+                            clipPath.appendChild(cp);
+                        }
+                    }
+                    defs.appendChild(clipPath);
+
+                    // Fill first, unclipped — matching the canvas two-pass render, so the two
+                    // agree on which half of the stroke covers the fill edge.
+                    for (const d of ds) {
+                        const fillEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        fillEl.setAttribute('d', d);
+                        fillEl.setAttribute('fill', fill);
+                        if (evenOdd) fillEl.setAttribute('fill-rule', 'evenodd');
+                        fillEl.setAttribute('stroke', 'none');
+                        inner.appendChild(fillEl);
+                    }
+                    const clippedG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    clippedG.setAttribute('clip-path', `url(#${clipId})`);
+                    inner.appendChild(clippedG);
+                    strokeHost = clippedG;
+                }
+
                 for (const d of ds) {
                     if (isSketch) {
                         // rough.js produces a vector (sketchy) <g> from the path data.
@@ -1128,18 +1184,19 @@ export const exportToSvg = (onlySelected: boolean, themeOpts?: SvgThemeOptions) 
                     } else {
                         const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                         pathEl.setAttribute('d', d);
-                        pathEl.setAttribute('fill', fill);
+                        // When aligned, the fill was already emitted unclipped above.
+                        pathEl.setAttribute('fill', align === 'center' ? fill : 'none');
                         if (evenOdd) pathEl.setAttribute('fill-rule', 'evenodd');
                         if (strokeVisible) {
                             pathEl.setAttribute('stroke', el.strokeColor);
-                            pathEl.setAttribute('stroke-width', `${el.strokeWidth}`);
+                            pathEl.setAttribute('stroke-width', `${align === 'center' ? el.strokeWidth : el.strokeWidth * 2}`);
                             pathEl.setAttribute('stroke-linejoin', el.strokeLineJoin || 'round');
-                            pathEl.setAttribute('stroke-linecap', 'round');
+                            pathEl.setAttribute('stroke-linecap', el.strokeLineCap || 'round');
                             { const eda = resolveDash(el.strokeStyle, el.strokeDashArray, [10, 10], [2, 8]); if (eda) pathEl.setAttribute('stroke-dasharray', eda.join(' ')); }
                         } else {
                             pathEl.setAttribute('stroke', 'none');
                         }
-                        inner.appendChild(pathEl);
+                        strokeHost.appendChild(pathEl);
                     }
                 }
                 node = grp;
