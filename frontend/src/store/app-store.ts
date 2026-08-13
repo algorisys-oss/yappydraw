@@ -307,8 +307,11 @@ interface AppState {
      *  While non-empty, clicks select individual objects *inside* the innermost
      *  group instead of the whole group — Illustrator's "enter the group". */
     isolatedGroupIds: string[];
-    /** Eyedropper mode: next canvas click copies that object's style to these targets. */
-    eyedropper: { active: boolean; targets: string[] };
+    /**
+     * Eyedropper mode: the next canvas click either copies that object's style to `targets`
+     * ('style'), or reports the exact colour under the pointer to whoever armed it ('color').
+     */
+    eyedropper: { active: boolean; targets: string[]; mode: 'style' | 'color' };
     isLayerPanelMinimized: boolean;
     minimapVisible: boolean;
     showRulers: boolean;
@@ -626,7 +629,7 @@ const initialState: AppState = {
     compoundEdit: null,
     alignToKeyObject: false,
     isolatedGroupIds: [],
-    eyedropper: { active: false, targets: [] },
+    eyedropper: { active: false, targets: [], mode: 'style' as const },
     isLayerPanelMinimized: false,
     minimapVisible: false,
     showRulers: (() => { try { return localStorage.getItem('showRulers') === '1'; } catch { return false; } })(),
@@ -5427,11 +5430,66 @@ export const exitGroupIsolationAll = () => {
 export const startEyedropper = (targetIds?: string[]) => {
     const targets = targetIds ?? [...store.selection];
     if (targets.length === 0) { showToast('Eyedropper: select an object first', 'info'); return; }
-    setStore('eyedropper', { active: true, targets });
+    setStore('eyedropper', { active: true, targets, mode: 'style' });
     showToast('Eyedropper: click an object to copy its style', 'info');
 };
 
-export const cancelEyedropper = () => setStore('eyedropper', { active: false, targets: [] });
+/**
+ * The colour picker's own eyedropper. Held outside the reactive store on purpose — a Solid store
+ * is for serialisable state, not live callbacks.
+ */
+let _colorPickCb: ((hex: string) => void) | null = null;
+
+/**
+ * Arm a COLOUR pick: the next canvas click reports the exact colour under the pointer to `cb`.
+ *
+ * Deliberately not the browser's `EyeDropper` API. That samples the composited screen, and on a
+ * wide-gamut (Display-P3) monitor the framebuffer holds the colour in P3 primaries while the API
+ * still labels the result `sRGBHex` — so picking a pure red #FF0000 shape handed back #EA3323,
+ * the same colour re-encoded, and every pick came out slightly duller (bug #296). Reading the
+ * colour from the document instead is exact by construction, and works in every browser rather
+ * than only Chromium.
+ */
+export const startColorEyedropper = (cb: (hex: string) => void) => {
+    _colorPickCb = cb;
+    setStore('eyedropper', { active: true, targets: [], mode: 'color' });
+    showToast('Eyedropper: click to pick a colour (Alt = outline colour)', 'info');
+};
+
+/** Report a picked colour back to whoever armed `startColorEyedropper`, then disarm. */
+export const resolveColorEyedropper = (hex: string | null) => {
+    const cb = _colorPickCb;
+    cancelEyedropper();
+    if (cb && hex) { cb(hex); showToast(`Picked ${hex.toUpperCase()}`, 'success'); }
+};
+
+/**
+ * The exact authored colour of an element: its fill, or its stroke when `wantStroke` (Alt) or when
+ * there is no fill to speak of. Gradients report their first stop — a gradient has no one colour,
+ * and the first stop is the one the swatch UI shows for it.
+ */
+export const elementPickColor = (el: DrawingElement, wantStroke: boolean): string | null => {
+    const solid = (c?: string) => c && c !== 'transparent' && c !== 'none' ? c : null;
+    if (wantStroke) return solid(el.strokeColor);
+
+    // Raster and texture fills have no single authored colour — return null so the caller
+    // samples the rendered pixel instead. Without this an image fell through to its (default
+    // black) strokeColor, so picking any photo handed back #000000.
+    if (el.type === 'image' || el.type === 'video') return null;
+    if (el.fillStyle && ['image', 'pattern', 'mesh'].includes(el.fillStyle)) return null;
+
+    const grad = el.gradientStops?.length ? el.gradientStops : el.strokeGradient?.stops;
+    if (el.fillStyle && ['linear', 'radial', 'conic'].includes(el.fillStyle) && grad?.length) {
+        return solid([...grad].sort((a, b) => a.offset - b.offset)[0].color);
+    }
+    // An unfilled outline shape has no fill to pick, so its stroke is the sensible answer.
+    return solid(el.backgroundColor) ?? solid(el.strokeColor);
+};
+
+export const cancelEyedropper = () => {
+    _colorPickCb = null;
+    setStore('eyedropper', { active: false, targets: [], mode: 'style' });
+};
 
 // ── Graphic styles (named reusable appearances) ──────────────────────────────
 

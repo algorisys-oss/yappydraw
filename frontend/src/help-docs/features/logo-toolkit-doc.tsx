@@ -303,6 +303,20 @@ export const LogoToolkitDoc: Component = () => {
                     The stroke is still drawn on top of the fill, so thin necks and the brush's taper stay
                     readable.
                 </p>
+                <h3>Changing the colour afterwards</h3>
+                <p>
+                    A filled stroke has <em>two</em> colours: the <strong>Background</strong> is the filled
+                    body, and the <strong>Stroke</strong> is the outline drawn on top. Select the mark and
+                    change either one in the Properties panel — they are independent, so you can keep a dark
+                    outline around a light fill, or recolour the mass without touching its edge.
+                </p>
+                <p class="tip-box">
+                    The fill starts out matching the stroke colour you drew with, because that is what a
+                    silhouette should look like the moment it lands. That is only a starting value — it is a
+                    normal Background colour from then on, and nothing re-derives it from the stroke.
+                    (Before v0.8.191 the Background control was not offered for freehand marks at all, so a
+                    filled stroke was stuck on the colour it was drawn in.)
+                </p>
                 <p>
                     The setting persists across sessions and is saved with the document, alongside the
                     symmetry mode, axis position, spoke count, tilt and the move-axis state — reopen a

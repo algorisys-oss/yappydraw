@@ -26,7 +26,7 @@ import {
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll,
-    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
+    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -4066,6 +4066,20 @@ export const YappyAPI = {
     },
     /** Cancel an armed eyedropper. */
     cancelEyedropper() { cancelEyedropper(); },
+
+    /**
+     * Arm a COLOUR pick: the next canvas click reports the exact colour under the pointer.
+     * Reads the shape's authored colour from the document (falling back to the rendered pixel
+     * for images and texture fills), so the result matches the source exactly — unlike the
+     * browser's screen eyedropper, which drifts on wide-gamut displays.
+     */
+    pickColorFromCanvas(cb: (hex: string) => void) { startColorEyedropper(cb); },
+
+    /** The exact colour an eyedropper would read off an element: its fill, or its stroke when `wantStroke`. */
+    getElementPickColor(id: string, wantStroke = false) {
+        const el = store.elements.find(e => e.id === id);
+        return el ? elementPickColor(el, wantStroke) : null;
+    },
 
     // Canvas
     setCanvasBackgroundColor(color: string) { setCanvasBackgroundColor(color); },

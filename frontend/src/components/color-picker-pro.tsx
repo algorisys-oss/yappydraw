@@ -1,6 +1,7 @@
 import { type Component, createSignal, createEffect, onMount, Show, For } from 'solid-js';
-import { Pipette, Square as SquareIcon, Triangle as TriangleIcon } from 'lucide-solid';
+import { Pipette, Monitor, Square as SquareIcon, Triangle as TriangleIcon } from 'lucide-solid';
 import { readJsonArray } from '../utils/safe-storage';
+import { startColorEyedropper } from '../store/app-store';
 import './color-picker-pro.css';
 
 /**
@@ -193,7 +194,17 @@ export const ColorPickerPro: Component<Props> = (props) => {
         window.addEventListener('pointermove', run); window.addEventListener('pointerup', up);
     };
 
-    // ── Eyedropper (Chromium EyeDropper API) ──
+    // ── Eyedropper ──
+    // Default to picking from the CANVAS, which reads the shape's exact authored colour instead
+    // of sampling the screen. The browser's EyeDropper API samples the composited framebuffer,
+    // and on a wide-gamut display that hands back the colour re-encoded in P3 primaries while
+    // still calling it sRGB — #FF0000 came back as #EA3323 (bug #296). The screen picker stays
+    // available as a second button for sampling OUTSIDE the app, where it's the only option.
+    const canvasPick = () => {
+        props.onStart?.();
+        startColorEyedropper((hex) => { props.onChange(hex); commitRecent(); });
+    };
+
     const canEyedrop = typeof (window as any).EyeDropper === 'function';
     const eyedrop = async () => {
         try {
@@ -215,8 +226,17 @@ export const ColorPickerPro: Component<Props> = (props) => {
                 <button class={`cpp-mode ${mode() === 'square' ? 'active' : ''}`} title="Square (SV + hue)" onClick={() => setMode2('square')}><SquareIcon size={14} /></button>
                 <button class={`cpp-mode ${mode() === 'triangle' ? 'active' : ''}`} title="Triangle (hue ring)" onClick={() => setMode2('triangle')}><TriangleIcon size={14} /></button>
                 <div class="cpp-swatch" style={{ background: hsvToHex(h(), s(), v()) }} />
+                <button
+                    class="cpp-mode"
+                    title="Pick a colour from the canvas — exact match"
+                    onClick={canvasPick}
+                ><Pipette size={14} /></button>
                 <Show when={canEyedrop}>
-                    <button class="cpp-mode" title="Pick from screen" onClick={eyedrop}><Pipette size={14} /></button>
+                    <button
+                        class="cpp-mode"
+                        title="Pick from anywhere on screen (approximate on wide-gamut displays)"
+                        onClick={eyedrop}
+                    ><Monitor size={14} /></button>
                 </Show>
             </div>
 

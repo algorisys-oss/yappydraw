@@ -10,7 +10,7 @@ import { renderDimensions } from "../utils/dimension-renderer";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, deleteElements, setPenConstrain, syncLiveSymmetry } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, resolveColorEyedropper, elementPickColor, deleteElements, setPenConstrain, syncLiveSymmetry } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { canvasViewport, publishDockVars, dockInsets } from "../utils/dock-layout";
@@ -379,6 +379,30 @@ const Canvas: Component = () => {
             ];
         }
         return null;
+    };
+
+    /**
+     * The rendered colour at a window point, as sRGB hex — the eyedropper's fallback for things
+     * with no single authored colour (images, pattern/mesh fills, bare canvas).
+     *
+     * Reads our own backing store rather than the composited screen, so it is colour-managed:
+     * the context is sRGB, so the bytes are already sRGB and need no conversion. Returns null on
+     * a transparent pixel, so the caller can leave the colour untouched rather than picking black.
+     */
+    const samplePixelHex = (clientX: number, clientY: number): string | null => {
+        if (!canvasRef) return null;
+        const ctx = canvasRef.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D | null;
+        if (!ctx) return null;
+        const rect = canvasRef.getBoundingClientRect();
+        // The backing store is devicePixelRatio-scaled; CSS px → device px.
+        const sx = Math.round((clientX - rect.left) * (canvasRef.width / rect.width));
+        const sy = Math.round((clientY - rect.top) * (canvasRef.height / rect.height));
+        if (sx < 0 || sy < 0 || sx >= canvasRef.width || sy >= canvasRef.height) return null;
+        try {
+            const d = ctx.getImageData(sx, sy, 1, 1, { colorSpace: 'srgb' } as any).data;
+            if (d[3] === 0) return null;
+            return '#' + [d[0], d[1], d[2]].map(n => n.toString(16).padStart(2, '0')).join('');
+        } catch { return null; }
     };
 
     function draw() {
@@ -1610,6 +1634,19 @@ const Canvas: Component = () => {
             for (let i = store.elements.length - 1; i >= 0; i--) {
                 const el = store.elements[i];
                 if (hitTestElement(el, wx, wy, threshold, store.elements, emap)) { hit = el; break; }
+            }
+            if (store.eyedropper.mode === 'color') {
+                // Colour pick: read the value off the DOCUMENT, not the screen. The exact
+                // authored colour of the shape under the pointer, so what you pick is bit-for-bit
+                // what the shape is (see startColorEyedropper for why not the EyeDropper API).
+                let hex = hit ? elementPickColor(hit, e.altKey) : null;
+                // No solid colour to read (an image, a pattern/mesh fill, or empty canvas) →
+                // sample the rendered pixel instead. Our canvas context is sRGB, so this is
+                // colour-managed correctly, unlike sampling the composited screen.
+                if (!hex) hex = samplePixelHex(e.clientX, e.clientY);
+                resolveColorEyedropper(hex);
+                requestAnimationFrame(draw);
+                return;
             }
             if (hit) applyEyedropperFrom(hit.id, e.shiftKey); else cancelEyedropper();
             requestAnimationFrame(draw);

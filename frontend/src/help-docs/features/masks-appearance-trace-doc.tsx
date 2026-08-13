@@ -214,6 +214,30 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                     Width <span class="kbd">Shift</span>+<span class="kbd">W</span>, Blob Brush
                     <span class="kbd">Shift</span>+<span class="kbd">B</span>).
                 </p>
+
+                <h3>Picking a single colour</h3>
+                <p>
+                    To copy just a <em>colour</em> rather than a whole style, open any colour control's
+                    <strong> Custom Color</strong> picker and click the <strong>pipette</strong>. Then click
+                    anywhere on the canvas: the colour lands in whichever control you opened the picker from
+                    (Stroke, Background, Text). Hold <span class="kbd">Alt</span> as you click to take the
+                    shape's <strong>outline</strong> colour instead of its fill.
+                </p>
+                <p>
+                    The pick is <strong>exact</strong>. It reads the colour the shape is actually set to,
+                    rather than measuring the pixel on your screen, so what you get back is identical to the
+                    source — no drift. Where there is no single set colour it falls back to reading the
+                    rendered pixel: photos and pattern fills give the pixel you clicked, and a gradient gives
+                    its first stop.
+                </p>
+                <p class="tip-box">
+                    <strong>Picking from outside the app.</strong> The second button next to the pipette (a
+                    small monitor, on Chrome and Edge) samples anywhere on your screen — another window, a
+                    reference photo, a browser tab. That one goes through the browser and reads the screen,
+                    so on a wide-gamut (P3) display the value can come back slightly off. Use the pipette for
+                    anything already on your canvas; use the monitor button only when the colour you want
+                    isn't.
+                </p>
             </section>
 
             {/* ─── GRADIENT MESH ──────────────────────────────────────── */}

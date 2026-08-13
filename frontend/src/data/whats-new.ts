@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.191', date: '2026-08-13', items: [
+        'The eyedropper now picks the exact colour of the shape you click. Before, it came back slightly different every time — a pure red would arrive a little duller. It was measuring the pixel on your screen, and on a modern wide-colour display the screen stores that red in a different way than a drawing does, so the number it read back was never quite the number it started from. It now reads the colour straight from the shape itself, so what you pick is exactly what you clicked.',
+        'Hold Alt while you click to pick a shape\'s outline colour instead of its fill. Clicking a photo or a patterned fill picks the exact pixel you clicked, and clicking a gradient gives you its first colour.',
+        'If you need a colour from outside the app — another window, a reference photo — there is a second button next to the pipette for that. It still works the old way, so it can be slightly off on a wide-colour screen; use the pipette for anything already on your canvas.',
+        'A stroke drawn with Fill mode can now be recoloured after you draw it. Select it and use the new Background colour for the filled body, or Stroke for the outline drawn on top — they are separate. Before this there was no control for the fill at all, so it was stuck on whatever colour you drew it in, and changing the Stroke only recoloured the thin edge.',
+    ] },
     { version: '0.8.190', date: '2026-08-13', items: [
         'You can now choose where a stroke sits: inside the shape, centred on its edge, or outside it. Until now it was always centred, so half of a thick border sat inside the shape and ate into it. Pick Inside and the shape never grows past the box you drew, or Outside and the border never covers the fill. It is in the Properties panel under Stroke, and it works on shapes and on closed Pen paths.',
         'Corner style — Sharp, Round or Bevel — now works on Pen paths, lines and freehand strokes. It was only offered on closed shapes before, so a hand-drawn route or map line could not use it.',
