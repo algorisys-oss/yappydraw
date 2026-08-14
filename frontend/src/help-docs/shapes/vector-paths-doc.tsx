@@ -38,10 +38,27 @@ export const VectorPathsDoc: Component = () => {
                         <tr><td><strong>Click the first anchor</strong></td><td>Close the path into a filled shape</td></tr>
                         <tr><td><span class="kbd">Shift</span> + click (between points)</td><td>Constrain the <strong>segment</strong> to 15° increments — perfectly horizontal, vertical or 45° lines</td></tr>
                         <tr><td><span class="kbd">Shift</span> + drag (while curving)</td><td><strong>Clock Method</strong> — constrain the Bézier handles to 90°/45° for clean, easily-edited curves</td></tr>
-                        <tr><td><span class="kbd">Enter</span> / <span class="kbd">Esc</span> / <strong>double-click</strong></td><td>Finish the path open (not closed)</td></tr>
+                        <tr><td><span class="kbd">Enter</span> / <span class="kbd">Esc</span> / <strong>double-click</strong></td><td>Finish the path open (not closed) — you can pick it up again later</td></tr>
                         <tr><td><span class="kbd">Backspace</span></td><td>Remove the last anchor while still drawing</td></tr>
+                        <tr><td><strong>Click an end anchor of an open path</strong></td><td><strong>Continue that path</strong> from where you stopped</td></tr>
                     </tbody>
                 </table>
+                <p class="tip-box">
+                    <strong>Pause a path and come back to it.</strong> You do not have to finish a path in one
+                    sitting. Press <span class="kbd">Esc</span> or <span class="kbd">Enter</span> (or just switch
+                    tools) and the path stays on the canvas, open, as an ordinary object — style it, move it, save
+                    the drawing, close the app. To carry on, pick the <strong>Pen</strong> again and hover over
+                    either <em>end</em> of the path: a blue ring appears on the anchor the next click will continue
+                    from. Click it and you are back in drawing mode, rubber-band and all, with that anchor as the
+                    live end. Clicking the <em>other</em> end then <strong>closes the shape</strong>.
+                </p>
+                <p class="tip-box">
+                    Either end works. Click the <em>start</em> anchor and the path is continued backwards — Yappy
+                    reverses the point order behind the scenes (handles and all, so the curve does not change) so
+                    that new points still extend the end you clicked. Rotated paths and compound paths (ones with
+                    holes) are not resumable this way; edit those with the <strong>Node tool</strong>
+                    (<span class="kbd">N</span>) instead.
+                </p>
                 <p class="tip-box">
                     <strong>Shift does two jobs</strong>, and which one you get depends on whether you are dragging.
                     <strong>Between clicks</strong> it aims the next <em>segment</em>: the point snaps to the nearest

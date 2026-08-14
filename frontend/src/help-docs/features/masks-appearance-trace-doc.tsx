@@ -226,9 +226,17 @@ Y.addAppearanceFill({ color:'#16a34a', opacity:0.25 });`}</code></pre>
                 <p>
                     The pick is <strong>exact</strong>. It reads the colour the shape is actually set to,
                     rather than measuring the pixel on your screen, so what you get back is identical to the
-                    source — no drift. Where there is no single set colour it falls back to reading the
-                    rendered pixel: photos and pattern fills give the pixel you clicked, and a gradient gives
-                    its first stop.
+                    source — no drift. That holds even when the drawing doesn't look flat: a shape filled with
+                    a sketch <strong>hachure</strong> pattern is mostly white gaps up close, and you still get
+                    its fill colour, not the gap.
+                </p>
+                <p>
+                    Where there is no single set colour, it reads the <strong>rendered pixel you clicked</strong>
+                    instead — photos, pattern and mesh fills, bare canvas, and <strong>gradients</strong>. A
+                    gradient is a different colour at every point, so the point you aimed at is the answer:
+                    click the pale end of a gradient and you get that pale shade, click the deep end and you get
+                    the deep one. (Up to v0.8.191 every click on a gradient returned its first stop, which is
+                    why picking off a gradient seemed to hand back a slightly different, duller shade.)
                 </p>
                 <p class="tip-box">
                     <strong>Picking from outside the app.</strong> The second button next to the pipette (a

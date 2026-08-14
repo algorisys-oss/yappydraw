@@ -7,7 +7,7 @@ import { loadDocument, setStore } from './store/app-store'
 import { isSlideDocument, migrateToSlideFormat } from './utils/migration'
 import { storage } from './storage/file-system-storage'
 import { preloadAppFonts } from './utils/font-loading'
-import { recoverFromStaleBuild, installStaleBuildHandler } from './utils/stale-build'
+import { recoverFromStaleBuild, installStaleBuildHandler, forceReloadLatest } from './utils/stale-build'
 
 // Kick the webfonts off before anything can measure text with them. Auto-sized elements
 // write the measured width into the SAVED document, so a measurement taken against the
@@ -109,6 +109,11 @@ const Router = () => {
      * reaches the UI below is therefore a *real* error, and it's logged with its
      * stack — the old screen printed only `err.message`, which was rarely enough
      * to act on.
+     *
+     * The button is a HARD reload (`forceReloadLatest`), not `location.reload()`.
+     * A plain reload keeps the page's service worker, and with our `prompt`
+     * strategy that worker keeps serving the very build that just failed — which
+     * is why "Reload" looked broken and only closing the tab helped.
      */
     const RouteError = (err: any, reset: () => void) => {
         if (recoverFromStaleBuild(err)) {
@@ -123,7 +128,7 @@ const Router = () => {
                 happening, the details below are worth reporting.
             </p>
             <p style={{ 'margin-top': '12px' }}>
-                <button type="button" onClick={() => location.reload()}
+                <button type="button" onClick={() => forceReloadLatest()}
                     style={{ padding: '7px 16px', font: 'inherit', 'font-weight': '600', color: '#fff', background: '#4c8dff', border: '0', 'border-radius': '6px', cursor: 'pointer' }}>
                     Reload
                 </button>
@@ -188,9 +193,13 @@ try {
             '<div style="padding:2rem;text-align:center;font:14px/1.6 system-ui,sans-serif">' +
             '<p><strong>YappyDraw failed to start.</strong></p>' +
             '<p style="color:#64748b">Reloading usually fixes it. Your saved drawings are not affected.</p>' +
-            '<p style="margin-top:12px"><button type="button" onclick="location.reload()" ' +
+            '<p style="margin-top:12px"><button type="button" id="boot-reload" ' +
             'style="padding:7px 16px;font:inherit;font-weight:600;color:#fff;background:#4c8dff;border:0;border-radius:6px;cursor:pointer">' +
             'Reload</button></p></div>'
+        // Wired here rather than as an inline `onclick="location.reload()"`: a plain
+        // reload keeps the current service worker, so it can hand back the same broken
+        // build. forceReloadLatest drops the worker and its caches first.
+        root.querySelector('#boot-reload')?.addEventListener('click', () => forceReloadLatest())
     }
 } finally {
     dismissSplash()

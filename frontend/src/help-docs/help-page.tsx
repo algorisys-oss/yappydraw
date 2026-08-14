@@ -3,8 +3,9 @@
  * Displays documentation for all shapes with interactive navigation.
  */
 
-import { type Component, createSignal, For, Show, onMount, onCleanup, lazy, Suspense } from 'solid-js';
+import { type Component, createSignal, For, Show, onMount, onCleanup, lazy, Suspense, ErrorBoundary } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
+import { recoverFromStaleBuild, isStaleBuildError, forceReloadLatest } from '../utils/stale-build';
 import './help-page.css';
 
 // Shape documentation data
@@ -92,7 +93,7 @@ const shapeDocuments: ShapeDoc[] = [
         icon: '✒️',
         category: 'Drawing',
         description: 'Pen tool, the Node tool (Direct Selection), Convert to Path, Pathfinder booleans, Outline Stroke, Offset Path, and holes',
-        keywords: 'direct selection direct select white arrow node tool nodes anchor anchors anchor point control point handle handles bezier bézier edit points edit path reshape path marquee select nodes N key pen tool P corner smooth convert anchor insert point delete point subpath compound path hole donut pathfinder boolean unite subtract intersect exclude divide trim merge crop outline stroke offset path simplify convert to path switch shape while editing shift click add path straight line straight lines constrain segment 15 degrees fixed angle horizontal vertical 45 clock method noderef toggleNodeTool setNodeSelection allNodesOfSelection getPathNodes getNodeHandles moveSelectedNodes setSelectedNodesKind deleteSelectedNodes scripting api',
+        keywords: 'direct selection direct select white arrow node tool nodes anchor anchors anchor point control point handle handles bezier bézier edit points edit path reshape path marquee select nodes N key pen tool P corner smooth convert anchor insert point delete point subpath compound path hole donut pathfinder boolean unite subtract intersect exclude divide trim merge crop outline stroke offset path simplify convert to path switch shape while editing shift click add path straight line straight lines constrain segment 15 degrees fixed angle horizontal vertical 45 clock method noderef toggleNodeTool setNodeSelection allNodesOfSelection getPathNodes getNodeHandles moveSelectedNodes setSelectedNodesKind deleteSelectedNodes scripting api pause pen resume pen continue path continue from last anchor reopen path pick up where I left off unfinished path open path end anchor endpoint extend path close the shape later',
         content: VectorPathsDoc
     },
     // Diagrams
@@ -315,6 +316,55 @@ const shapeDocuments: ShapeDoc[] = [
 // Group shapes by category
 const categories = [...new Set(shapeDocuments.map(s => s.category))];
 
+/**
+ * Failure UI for a single doc page.
+ *
+ * Every doc is a `lazy()` chunk, and those chunks are deliberately kept OUT of the
+ * service-worker precache (vite.config.ts drops anything matching `-doc-`), so they
+ * are fetched on first open. If the build on the server has moved on since this tab
+ * loaded, that fetch 404s and the import rejects.
+ *
+ * Two things used to go wrong then, both reported as "it errors and the reload does
+ * nothing, I have to go right back out and reopen it":
+ *
+ *  1. The error escaped to the route-level boundary, so the whole Help page — nav and
+ *     all — was replaced by "Something went wrong". Now it is caught here and only the
+ *     content pane is affected; the sidebar keeps working.
+ *  2. The reload was a plain `location.reload()`, which keeps the page's service
+ *     worker. Ours uses the `prompt` strategy, so a waiting new build only activates
+ *     once every client is closed — a reload is not a close. The old worker served the
+ *     old build again and nothing changed, which is exactly why leaving the page
+ *     entirely and coming back was the only thing that worked. `forceReloadLatest`
+ *     unregisters the worker and clears its caches first, so the button does what it
+ *     says.
+ */
+const DocError: Component<{ err: any; reset: () => void; name: string }> = (props) => {
+    // A stale chunk heals itself (guarded against loops); this screen is for when the
+    // guard has already spent its one automatic recovery, or the error is a real one.
+    if (recoverFromStaleBuild(props.err)) {
+        return <div class="doc-loading">Updating to the latest version…</div>;
+    }
+    const stale = isStaleBuildError(props.err);
+    if (!stale) console.error('[yappy] Help doc failed:', props.err);
+    return (
+        <div class="doc-error">
+            <h2>Couldn’t open “{props.name}”</h2>
+            <p>
+                {stale
+                    ? 'This page belongs to a newer version of Yappy than the one your browser is running. Updating loads it.'
+                    : 'Something went wrong rendering this page. Your drawings are not affected.'}
+            </p>
+            <p class="doc-error-actions">
+                <button type="button" class="doc-error-primary" onClick={() => forceReloadLatest()}>
+                    Update &amp; reload
+                </button>
+                <button type="button" onClick={() => props.reset()}>Try again</button>
+            </p>
+            <pre>{String(props.err?.stack ?? props.err?.message ?? props.err)}</pre>
+        </div>
+    );
+};
+
 // Parse shape ID from URL hash (e.g., #/help/animation -> animation)
 const getShapeFromHash = (): string => {
     const hash = window.location.hash;
@@ -425,10 +475,18 @@ export const HelpPage: Component = () => {
 
                 {/* Main content */}
                 <main class="help-main">
-                    <Show when={currentDoc()} fallback={<p>Select a shape to view documentation</p>}>
-                        <Suspense fallback={<div class="doc-loading">Loading...</div>}>
-                            <Dynamic component={currentDoc()!.content} />
-                        </Suspense>
+                    {/* `keyed` rebuilds the subtree — and with it a FRESH ErrorBoundary — every
+                        time the selected doc changes. A Solid ErrorBoundary latches its error,
+                        so without the key one broken doc would keep showing its error screen
+                        for every doc clicked afterwards. */}
+                    <Show when={currentDoc()} keyed fallback={<p>Select a shape to view documentation</p>}>
+                        {(doc) => (
+                            <ErrorBoundary fallback={(err, reset) => <DocError err={err} reset={reset} name={doc.name} />}>
+                                <Suspense fallback={<div class="doc-loading">Loading...</div>}>
+                                    <Dynamic component={doc.content} />
+                                </Suspense>
+                            </ErrorBoundary>
+                        )}
                     </Show>
                 </main>
             </div>

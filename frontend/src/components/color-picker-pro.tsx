@@ -83,8 +83,11 @@ export const ColorPickerPro: Component<Props> = (props) => {
     const emit = () => props.onChange(hsvToHex(h(), s(), v()));
     const setMode2 = (m: 'square' | 'triangle') => { setMode(m); localStorage.setItem(MODE_KEY, m); };
 
-    const commitRecent = () => {
-        const hex = hsvToHex(h(), s(), v());
+    // `explicit` matters for the eyedroppers: they call this immediately after onChange, and
+    // the h/s/v signals only catch up when the createEffect above re-runs — so reading them
+    // here recorded the colour that was selected BEFORE the pick.
+    const commitRecent = (explicit?: string) => {
+        const hex = explicit ?? hsvToHex(h(), s(), v());
         const next = [hex, ...recents().filter(c => c.toLowerCase() !== hex.toLowerCase())].slice(0, 12);
         setRecents(next);
         try { localStorage.setItem(RECENTS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
@@ -202,14 +205,14 @@ export const ColorPickerPro: Component<Props> = (props) => {
     // available as a second button for sampling OUTSIDE the app, where it's the only option.
     const canvasPick = () => {
         props.onStart?.();
-        startColorEyedropper((hex) => { props.onChange(hex); commitRecent(); });
+        startColorEyedropper((hex) => { props.onChange(hex); commitRecent(hex); });
     };
 
     const canEyedrop = typeof (window as any).EyeDropper === 'function';
     const eyedrop = async () => {
         try {
             const res = await new (window as any).EyeDropper().open();
-            if (res?.sRGBHex) { props.onStart?.(); props.onChange(res.sRGBHex); commitRecent(); }
+            if (res?.sRGBHex) { props.onStart?.(); props.onChange(res.sRGBHex); commitRecent(res.sRGBHex); }
         } catch { /* cancelled */ }
     };
 

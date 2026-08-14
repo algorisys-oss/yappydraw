@@ -9,11 +9,24 @@
  * index.html in the first place; this is the belt to that pair of braces, and it
  * also covers hosts/proxies we don't control.
  *
- * The recovery is a single reload: reloading revalidates the top-level document,
- * so the browser picks up the current index.html and its current chunk names.
- * Guarded so a genuine, reproducible runtime error can never turn into a reload
- * loop — one automatic reload per session, and never twice inside a minute.
+ * The recovery is a *hard* reload — and it has to be. We ship a `prompt`-strategy
+ * service worker (see vite.config.ts): a newly deployed SW installs and then
+ * WAITS, because activating it mid-session would evict the running page's
+ * precache. A waiting SW only takes over once every client is gone, and a plain
+ * `location.reload()` does not count — the client survives a reload. So the old
+ * SW keeps serving the old index.html and the old entry chunk, the missing lazy
+ * chunk stays missing, and reloading changes nothing. That is exactly the
+ * reported symptom: "reload doesn't work, I have to close it and come back"
+ * (closing the tab IS what releases the client and lets the new SW activate).
+ *
+ * `hardRefresh()` releases it for them: unregister the service workers, drop the
+ * Cache Storage entries, and navigate to a cache-busted URL so index.html is
+ * genuinely refetched. Guarded so a genuine, reproducible runtime error can
+ * never turn into a reload loop — one automatic recovery per session, and never
+ * twice inside a minute.
  */
+
+import { hardRefresh } from './hard-refresh';
 
 const GUARD_KEY = 'yappy:stale-build-reload';
 const MIN_INTERVAL_MS = 60_000;
@@ -42,6 +55,11 @@ export function isStaleBuildError(err: unknown): boolean {
  * Reload once to pick up the current build. Returns false when the guard blocks
  * it, in which case the caller should show its error UI — better a visible
  * message than a reload loop.
+ *
+ * Fire-and-forget on purpose: `hardRefresh` is async (it awaits the SW
+ * unregister and the cache deletes before navigating) but callers are render
+ * paths that need a synchronous yes/no, so they get `true` and show a
+ * "updating…" placeholder while the navigation lands.
  */
 export function recoverFromStaleBuild(err: unknown): boolean {
     if (!isStaleBuildError(err)) return false;
@@ -56,8 +74,22 @@ export function recoverFromStaleBuild(err: unknown): boolean {
     }
 
     console.warn('[yappy] A chunk from a previous build is missing — reloading into the current one.', err);
-    location.reload();
+    void hardRefresh();
     return true;
+}
+
+/**
+ * The manual escape hatch behind every "Reload" button on an error screen.
+ *
+ * Same reasoning as above: `location.reload()` keeps the current service worker
+ * (and therefore the current, broken build), so the button appeared to do
+ * nothing. Clearing the guard first means the button always works, even if the
+ * automatic recovery already used its one shot this minute — the user asked for
+ * this one, so it is not a loop.
+ */
+export function forceReloadLatest(): void {
+    try { sessionStorage.removeItem(GUARD_KEY); } catch { /* ignore */ }
+    void hardRefresh();
 }
 
 /**

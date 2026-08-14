@@ -289,6 +289,9 @@ interface AppState {
     /** The guide the pointer is currently snapping to, so the overlay can highlight it
      *  (transient — written on pointer move, cleared on pointer up). */
     perspectiveSnapGuide: PerspectiveGuide | null;
+    /** World position of the open-path end anchor the Pen would resume from, so the canvas
+     *  can ring it (transient — written on pointer move while the Pen tool is idle). */
+    penResumeHint: { x: number; y: number } | null;
     /** Undo-history panel visibility (transient, not persisted). */
     showHistoryPanel: boolean;
     /** Gradient-mesh on-canvas node editing mode (transient UI flag, not persisted). */
@@ -619,6 +622,7 @@ const initialState: AppState = {
     perspectiveGridActive: false,
     perspectiveGrid: loadPerspectiveGrid(),
     perspectiveSnapGuide: null,
+    penResumeHint: null,
     sliceToolActive: false,
     symbolismActive: false,
     symbolismMode: 'sizer',
@@ -1650,6 +1654,9 @@ export const setSelectedTool = (tool: ToolType) => {
     // 2. Switch tool and reset lock
     setStore('selectedTool', tool);
     setStore('toolLocked', false);
+    // The Pen's "continue from here" ring belongs to the Pen only — leaving the tool must
+    // take it with it, or it hangs on the canvas over whatever the next tool is doing.
+    if (tool !== 'path') setStore('penResumeHint', null);
     if (tool !== 'selection' && tool !== 'lasso' && tool !== 'pan' && tool !== 'eraser') {
         setStore('selection', []);
     }
@@ -5465,12 +5472,26 @@ export const resolveColorEyedropper = (hex: string | null) => {
 
 /**
  * The exact authored colour of an element: its fill, or its stroke when `wantStroke` (Alt) or when
- * there is no fill to speak of. Gradients report their first stop — a gradient has no one colour,
- * and the first stop is the one the swatch UI shows for it.
+ * there is no fill to speak of.
+ *
+ * `renderedHex` is the colour actually on screen at the click point, when the caller has it.
+ * It only matters for gradients, and there it matters a lot: a gradient is a *different colour
+ * at every point*, so reporting one authored stop for the whole shape means clicking the blue
+ * end of a red→blue gradient hands back red. Between two shades of one hue that reads as "the
+ * picker grabbed a slightly different/duller shade" — bug #302, and the reason this parameter
+ * exists. The first stop stays as the fallback for callers with no pixel to offer (the
+ * scripting API) and for a gradient that rendered to nothing.
  */
-export const elementPickColor = (el: DrawingElement, wantStroke: boolean): string | null => {
+export const elementPickColor = (el: DrawingElement, wantStroke: boolean, renderedHex?: string | null): string | null => {
     const solid = (c?: string) => c && c !== 'transparent' && c !== 'none' ? c : null;
-    if (wantStroke) return solid(el.strokeColor);
+    const firstStop = (stops?: { offset: number; color: string }[]) =>
+        stops?.length ? solid([...stops].sort((a, b) => a.offset - b.offset)[0].color) : null;
+
+    if (wantStroke) {
+        // A gradient stroke is as position-dependent as a gradient fill.
+        if (el.strokeGradient?.stops?.length) return renderedHex ?? firstStop(el.strokeGradient.stops);
+        return solid(el.strokeColor);
+    }
 
     // Raster and texture fills have no single authored colour — return null so the caller
     // samples the rendered pixel instead. Without this an image fell through to its (default
@@ -5480,7 +5501,7 @@ export const elementPickColor = (el: DrawingElement, wantStroke: boolean): strin
 
     const grad = el.gradientStops?.length ? el.gradientStops : el.strokeGradient?.stops;
     if (el.fillStyle && ['linear', 'radial', 'conic'].includes(el.fillStyle) && grad?.length) {
-        return solid([...grad].sort((a, b) => a.offset - b.offset)[0].color);
+        return renderedHex ?? firstStop(grad);
     }
     // An unfilled outline shape has no fill to pick, so its stroke is the sensible answer.
     return solid(el.backgroundColor) ?? solid(el.strokeColor);
@@ -6202,6 +6223,15 @@ export const setPerspectiveSnapGuide = (guide: PerspectiveGuide | null) => {
         && Math.abs(guide.ax - cur.ax) < 0.01 && Math.abs(guide.ay - cur.ay) < 0.01
         && Math.abs(guide.dx - cur.dx) < 1e-4 && Math.abs(guide.dy - cur.dy) < 1e-4) return;
     setStore('perspectiveSnapGuide', guide);
+};
+
+/** Ring the open-path end anchor the Pen would continue from (null = none). Written on
+ *  every pointer move while the Pen is idle, so it skips the store write when unchanged. */
+export const setPenResumeHint = (hint: { x: number; y: number } | null) => {
+    const cur = store.penResumeHint;
+    if (!hint && !cur) return;
+    if (hint && cur && Math.abs(hint.x - cur.x) < 0.01 && Math.abs(hint.y - cur.y) < 0.01) return;
+    setStore('penResumeHint', hint);
 };
 
 /** True when a drawing tool should consult the grid: it is on, snapping is enabled, and

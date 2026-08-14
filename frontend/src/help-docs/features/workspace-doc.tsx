@@ -92,6 +92,15 @@ const WorkspaceDoc: Component = () => {
                     <strong> Reload latest</strong> button that clears the cache and reloads the newest build (handy on
                     iPad/iOS). Open it from a script with <code>window.Yappy.showWhatsNew()</code>.
                 </p>
+                <p class="doc-note">
+                    <strong>If a page says it can't load and asks you to reload</strong>, use the button it offers.
+                    It does the same full clear as <strong>Reload latest</strong> — dropping the cached copy of the
+                    old build and fetching the current one. A plain browser refresh (F5) is <em>not</em> enough:
+                    Yappy keeps a copy of itself for offline use, and that copy is only replaced once the app is
+                    fully closed, which is why refreshing sometimes appeared to do nothing while closing the tab
+                    and returning fixed it. Your drawings are never affected either way — they live in local
+                    storage, not in the cached build.
+                </p>
             </section>
 
             {/* ─── PROPERTIES PANEL ───────────────────────────────────── */}

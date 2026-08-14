@@ -110,7 +110,12 @@ export default defineConfig({
           options: {
             cacheName: 'yappy-lazy-chunks',
             expiration: { maxEntries: 150, maxAgeSeconds: 60 * 60 * 24 * 30 },
-            cacheableResponse: { statuses: [0, 200] },
+            // 200 only — NOT the usual [0, 200]. These are same-origin assets, so a
+            // legitimate response is always a real 200; status 0 here would be an
+            // opaque/failed one, and storing that in a *CacheFirst* cache with a
+            // 30-day life poisons the URL permanently — every later load is served
+            // an unparseable body and the chunk import fails for a month.
+            cacheableResponse: { statuses: [200] },
           },
         },
         {

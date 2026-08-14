@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.192', date: '2026-08-14', items: [
+        'Fixed: when a help page failed to open and asked you to reload, the Reload button did nothing — you had to leave the Help section entirely and come back. That was not a coincidence. Yappy keeps a copy of itself on your device so it works offline, and that copy is only swapped for a newer one once the app is fully closed. A refresh does not close it, so you were handed the same broken copy again. Leaving and returning did close it, which is why only that worked. The button now clears the old copy first, so it does what it says.',
+        'Fixed: one help page failing used to replace the whole Help section, sidebar and all, with an error screen. Now only that one page shows the message and the list of topics keeps working, so you can just click something else.',
+        'The Pen tool can be paused and picked up again. Press Esc or switch tools and your unfinished path simply stays on the canvas. When you come back to it, choose the Pen and hover over either end of the path — a blue ring appears on the point you would carry on from. Click it and you are drawing again from there. Click the far end instead and the shape closes.',
+        'Fixed: the colour picker\'s pipette gave the wrong colour on gradients. Wherever you clicked, it handed back the colour at the very start of the gradient — so on a gradient between two shades of the same colour it looked like the picker was grabbing a slightly different, duller shade. It now gives you the colour at the exact spot you clicked. Flat colours are unchanged and still come back exactly.',
+        'Fixed: after using the pipette, the row of recently-used colours in the picker showed the colour you had *before* the pick, not the one you just picked.',
+    ] },
     { version: '0.8.191', date: '2026-08-13', items: [
         'The eyedropper now picks the exact colour of the shape you click. Before, it came back slightly different every time — a pure red would arrive a little duller. It was measuring the pixel on your screen, and on a modern wide-colour display the screen stores that red in a different way than a drawing does, so the number it read back was never quite the number it started from. It now reads the colour straight from the shape itself, so what you pick is exactly what you clicked.',
         'Hold Alt while you click to pick a shape\'s outline colour instead of its fill. Clicking a photo or a patterned fill picks the exact pixel you clicked, and clicking a gradient gives you its first colour.',

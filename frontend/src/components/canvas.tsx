@@ -10,7 +10,7 @@ import { renderDimensions } from "../utils/dimension-renderer";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, resolveColorEyedropper, elementPickColor, deleteElements, setPenConstrain, syncLiveSymmetry } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, resolveColorEyedropper, elementPickColor, deleteElements, setPenConstrain, syncLiveSymmetry, setPenResumeHint } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { canvasViewport, publishDockVars, dockInsets } from "../utils/dock-layout";
@@ -38,7 +38,7 @@ import {
 import { drawOnDown, drawOnMove, drawOnUp } from "../utils/tool-handlers/draw-handler";
 import { penOnMove } from "../utils/tool-handlers/pen-handler";
 import { polylineOnDown, polylineOnMove, polylineOnUp, polylineFinalize, polylineUndo } from "../utils/tool-handlers/polyline-handler";
-import { penOnDown as penPathDown, penOnMove as penPathMove, penOnUp as penPathUp, penFinalize as penPathFinalize, penUndo as penPathUndo } from "../utils/tool-handlers/pen-path-handler";
+import { penOnDown as penPathDown, penOnMove as penPathMove, penOnUp as penPathUp, penFinalize as penPathFinalize, penUndo as penPathUndo, findPenResumeTarget } from "../utils/tool-handlers/pen-path-handler";
 import { selectionOnDown, selectionOnMove, selectionOnUp, convertPathAnchor, deletePathAnchor, insertPathAnchorAt, canInsertPathAnchor } from "../utils/tool-handlers/selection-handler";
 import { getHandleAtPosition, getSelectionBoundingBox } from "../utils/handle-detection";
 import { RESIZE_ANCHOR_SIGNS } from "../utils/resize-box";
@@ -638,6 +638,21 @@ const Canvas: Component = () => {
         });
 
         renderLaserTrail(ctx, pState.laserTrailData, scale, LASER_DECAY_MS);
+
+        // Pen "continue from here" ring — the end anchor of an open path under the idle
+        // Pen cursor. Sized in screen px (divided by scale) so it stays legible at any zoom.
+        const resumeHint = store.penResumeHint;
+        if (resumeHint && store.selectedTool === 'path') {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(resumeHint.x, resumeHint.y, 7 / scale, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(76, 141, 255, 0.22)';
+            ctx.fill();
+            ctx.lineWidth = 2 / scale;
+            ctx.strokeStyle = '#4c8dff';
+            ctx.stroke();
+            ctx.restore();
+        }
 
         // 7. Crop mode overlay
         if (store.cropModeElementId && store.cropRect) {
@@ -1639,11 +1654,15 @@ const Canvas: Component = () => {
                 // Colour pick: read the value off the DOCUMENT, not the screen. The exact
                 // authored colour of the shape under the pointer, so what you pick is bit-for-bit
                 // what the shape is (see startColorEyedropper for why not the EyeDropper API).
-                let hex = hit ? elementPickColor(hit, e.altKey) : null;
-                // No solid colour to read (an image, a pattern/mesh fill, or empty canvas) →
-                // sample the rendered pixel instead. Our canvas context is sRGB, so this is
+                //
+                // The rendered pixel is sampled up front and handed to elementPickColor, which
+                // prefers it for GRADIENTS — those have no single authored colour, so the pixel
+                // under the cursor is the honest answer (see the note there). It is also the
+                // fallback for anything with no authored colour at all: an image, a pattern or
+                // mesh fill, or bare canvas. Our canvas context is sRGB, so this is
                 // colour-managed correctly, unlike sampling the composited screen.
-                if (!hex) hex = samplePixelHex(e.clientX, e.clientY);
+                const rendered = samplePixelHex(e.clientX, e.clientY);
+                const hex = (hit ? elementPickColor(hit, e.altKey, rendered) : null) ?? rendered;
                 resolveColorEyedropper(hex);
                 requestAnimationFrame(draw);
                 return;
@@ -1919,6 +1938,17 @@ const Canvas: Component = () => {
             polylineOnMove(x, y, pState, pHelpers, pSignals);
             requestAnimationFrame(draw);
             return;
+        }
+
+        // Pen idle: ring the end anchor of an open path the next click would CONTINUE,
+        // so "click here to pick this path back up" is visible before committing to it.
+        // Without the ring the difference between resuming and starting a fresh path is
+        // a few invisible pixels.
+        if (store.selectedTool === 'path' && !pState.isPenBuilding) {
+            const t = findPenResumeTarget(x, y, 12 / store.viewState.scale);
+            const had = !!store.penResumeHint;
+            setPenResumeHint(t ? { x: t.x, y: t.y } : null);
+            if (t || had) requestAnimationFrame(draw);
         }
 
         if (pState.isPenBuilding) {

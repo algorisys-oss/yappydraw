@@ -413,3 +413,64 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Loading / failure states for a lazily-loaded doc page (see DocError in help-page.tsx) */
+.doc-loading {
+    padding: 2rem 0;
+    color: var(--text-secondary, #64748b);
+    font-size: 0.9375rem;
+}
+
+.doc-error {
+    max-width: 640px;
+    padding: 1.5rem 0;
+}
+
+.doc-error h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+    color: var(--text-primary, #0f172a);
+}
+
+.doc-error p {
+    margin: 0 0 1rem;
+    color: var(--text-secondary, #64748b);
+    line-height: 1.6;
+}
+
+.doc-error-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.doc-error-actions button {
+    padding: 0.45rem 1rem;
+    font: inherit;
+    font-size: 0.875rem;
+    background: var(--bg-secondary, #f1f5f9);
+    color: var(--text-primary, #1e293b);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.doc-error-actions button.doc-error-primary {
+    font-weight: 600;
+    color: #fff;
+    background: #4c8dff;
+    border-color: #4c8dff;
+}
+
+.doc-error pre {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    font-size: 0.6875rem;
+    line-height: 1.5;
+    color: var(--text-secondary, #94a3b8);
+    background: var(--bg-secondary, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 6px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+}

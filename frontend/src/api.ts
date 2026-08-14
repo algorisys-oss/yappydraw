@@ -4069,13 +4069,20 @@ export const YappyAPI = {
 
     /**
      * Arm a COLOUR pick: the next canvas click reports the exact colour under the pointer.
-     * Reads the shape's authored colour from the document (falling back to the rendered pixel
-     * for images and texture fills), so the result matches the source exactly — unlike the
-     * browser's screen eyedropper, which drifts on wide-gamut displays.
+     * Reads the shape's authored colour from the document — so the result matches the source
+     * exactly, unlike the browser's screen eyedropper, which drifts on wide-gamut displays.
+     *
+     * Falls back to the rendered pixel where there is no single authored colour: images,
+     * pattern/mesh fills, bare canvas — and gradients, where the pixel IS the right answer
+     * because a gradient is a different colour at every point.
      */
     pickColorFromCanvas(cb: (hex: string) => void) { startColorEyedropper(cb); },
 
-    /** The exact colour an eyedropper would read off an element: its fill, or its stroke when `wantStroke`. */
+    /**
+     * The exact colour an eyedropper would read off an element: its fill, or its stroke when
+     * `wantStroke`. Gradients report their first stop here — there is no click point to
+     * resolve them against; use `pickColorFromCanvas` for the colour at a specific spot.
+     */
     getElementPickColor(id: string, wantStroke = false) {
         const el = store.elements.find(e => e.id === id);
         return el ? elementPickColor(el, wantStroke) : null;

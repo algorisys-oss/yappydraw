@@ -9,6 +9,15 @@
  *   • click first anchor → close the path
  *   • Enter / Esc / double-click → finish an open path
  *   • Backspace          → remove the last anchor
+ *   • click either END of an existing open path → RESUME it (see below)
+ *
+ * Resuming an open path: finishing with Enter/Esc/tool-switch leaves the path on the
+ * canvas as an ordinary element, so "pause" needs nothing special. To pick it up again,
+ * choose the Pen and click on either end anchor: building restarts from that anchor, the
+ * rubber-band picks up where you left off, and clicking the OTHER end closes the shape.
+ * Clicking the first anchor resumes backwards — the anchor list is reversed (with each
+ * anchor's in/out handles swapped so the curve is unchanged) so that new anchors still
+ * append at the tail.
  *
  * Shift means two different things, but never at the same time: mid-drag it shapes the
  * handles of the anchor you are pulling, and between clicks it aims the next segment.
@@ -22,7 +31,8 @@
 import type { DrawingElement, PathAnchor } from '../../types';
 import type { PointerState } from '../pointer-state';
 import type { PointerHelpers, PointerSignals } from '../pointer-helpers';
-import { store, addElement, updateElement, setStore, setSelectedTool, pushToHistory, applyLiveSymmetry, perspectiveSnapActive, setPerspectiveSnapGuide } from '../../store/app-store';
+import { store, addElement, updateElement, setStore, setSelectedTool, pushToHistory, applyLiveSymmetry, perspectiveSnapActive, setPerspectiveSnapGuide, isLayerLocked, isLayerVisible, setPenResumeHint } from '../../store/app-store';
+import { showToast } from '../../components/toast';
 import { snapPoint } from '../snap-helpers';
 import { generateId } from '../id-generator';
 import { setAnchorHandle } from '../anchor-handle';
@@ -119,6 +129,7 @@ function writePenElement(pState: PointerState, preview?: PathAnchor | null, clos
 
 function resetPen(pState: PointerState): void {
     setPerspectiveSnapGuide(null);
+    setPenResumeHint(null);
     pState.isPenBuilding = false;
     pState.isDrawing = false;
     pState.penAnchors = [];
@@ -128,12 +139,113 @@ function resetPen(pState: PointerState): void {
     pState.currentId = null;
 }
 
+// ─── Resume an existing open path ────────────────────────────────────
+
+/** An open path whose end anchor is under the pointer, ready to be continued. */
+export interface PenResumeTarget {
+    id: string;
+    /** true = the LAST anchor was clicked (append forward); false = the FIRST (resume backwards). */
+    atEnd: boolean;
+    /** World position of that end anchor — used for the hover ring. */
+    x: number;
+    y: number;
+}
+
+/**
+ * Can this element be picked back up by the Pen?
+ *
+ * Deliberately conservative. A rotated path stores its anchors in unrotated local space,
+ * so appending a world-space click to one would drop the anchor in the wrong place;
+ * a compound path (`pathSubpaths`) has several ends and no single "the" end to continue.
+ * Both are refused rather than guessed at — the user can still edit them with the Node tool.
+ */
+function canResume(el: DrawingElement): boolean {
+    if (el.type !== 'path' || el.pathClosed) return false;
+    if (!el.pathAnchors || el.pathAnchors.length < 2) return false;
+    if ((el.pathSubpaths?.length ?? 0) > 1) return false;
+    if (el.angle) return false;
+    if (el.locked || el.visible === false) return false;
+    return !isLayerLocked(el.layerId) && isLayerVisible(el.layerId);
+}
+
+/**
+ * The open-path end anchor under `(x, y)`, or null. Searched topmost-first so the
+ * hit matches what the user sees, and the LAST anchor wins a tie with the first —
+ * continuing forwards is the common case.
+ */
+export function findPenResumeTarget(x: number, y: number, tol: number): PenResumeTarget | null {
+    for (let i = store.elements.length - 1; i >= 0; i--) {
+        const el = store.elements[i];
+        if (!canResume(el)) continue;
+        const anchors = el.pathAnchors!;
+        const last = anchors[anchors.length - 1];
+        const first = anchors[0];
+        const lx = el.x + last.x, ly = el.y + last.y;
+        if (Math.hypot(x - lx, y - ly) <= tol) return { id: el.id, atEnd: true, x: lx, y: ly };
+        const fx = el.x + first.x, fy = el.y + first.y;
+        if (Math.hypot(x - fx, y - fy) <= tol) return { id: el.id, atEnd: false, x: fx, y: fy };
+    }
+    return null;
+}
+
+/** Reverse an anchor list, swapping each anchor's in/out handles so the curve is identical. */
+function reverseAnchors(anchors: PathAnchor[]): PathAnchor[] {
+    return [...anchors].reverse().map(a => ({
+        ...a,
+        inX: a.outX, inY: a.outY,
+        outX: a.inX, outY: a.inY,
+    }));
+}
+
+/**
+ * Re-enter building mode on an existing open path, with the clicked end as the tail.
+ *
+ * `penAnchors` are stored relative to `startX/startY` (= the world position of anchor 0),
+ * which is also what the close test measures against — so after resuming, clicking the
+ * far end of the path closes it, exactly as it would have during the original session.
+ */
+export function penResume(target: PenResumeTarget, pState: PointerState): boolean {
+    const el = store.elements.find(e => e.id === target.id);
+    if (!el || !canResume(el)) return false;
+
+    pushToHistory();
+    const anchors = target.atEnd ? el.pathAnchors!.map(a => ({ ...a })) : reverseAnchors(el.pathAnchors!);
+    const head = anchors[0];
+
+    pState.isPenBuilding = true;
+    pState.isDrawing = true;
+    pState.currentId = el.id;
+    pState.startX = el.x + head.x;
+    pState.startY = el.y + head.y;
+    pState.penAnchors = anchors.map(a => ({ ...a, x: a.x - head.x, y: a.y - head.y }));
+    // -1 / false: the click that resumed must not curve the end anchor. Dragging it would
+    // rewrite handles the user already placed, and they only asked to continue the path.
+    pState.penActiveIdx = -1;
+    pState.penDragging = false;
+    pState.penHandleBroken = false;
+
+    setStore('selection', [el.id]);
+    setPenResumeHint(null);
+    writePenElement(pState); // re-writes the (reversed) anchor order and re-normalizes the bbox
+    return true;
+}
+
 // ─── Pointer Down ────────────────────────────────────────────────────
 
 export function penOnDown(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, constrain = false, suppressPerspective = false): void {
     const { x: px, y: py } = snap(x, y);
 
     if (!pState.isPenBuilding) {
+        // Continuing an existing open path beats starting a new one on top of its end
+        // anchor. Same 12px tolerance as the close test, so "click the end to continue"
+        // and "click the start to close" feel like one gesture.
+        const resumeTol = 12 / store.viewState.scale;
+        const resume = findPenResumeTarget(x, y, resumeTol);
+        if (resume && penResume(resume, pState)) {
+            showToast('Continuing the path — click the other end to close it', 'info');
+            return;
+        }
+
         pushToHistory();
         pState.isPenBuilding = true;
         pState.isDrawing = true;
