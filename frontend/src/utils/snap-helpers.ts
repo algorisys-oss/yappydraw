@@ -1,3 +1,4 @@
+import { latticeSnap, isAngledGrid, type GridStyle } from './grid-lattice';
 /**
  * Snap utility functions for grid alignment
  */
@@ -10,9 +11,20 @@ export const snapToGrid = (value: number, gridSize: number): number => {
 };
 
 /**
- * Snap a point (x, y) to the nearest grid intersection
+ * Snap a point (x, y) to the nearest grid intersection.
+ *
+ * `style` matters for the angled grids: on a diagonal or isometric lattice the drawable
+ * points are the intersections of two families of slanted lines, which does NOT decompose
+ * into rounding x and y independently. Omitting it keeps the square behaviour, so callers
+ * that have no grid context are unaffected.
  */
-export const snapPoint = (x: number, y: number, gridSize: number): { x: number; y: number } => {
+export const snapPoint = (
+    x: number,
+    y: number,
+    gridSize: number,
+    style?: GridStyle,
+): { x: number; y: number } => {
+    if (isAngledGrid(style)) return latticeSnap(x, y, gridSize, style!);
     return {
         x: snapToGrid(x, gridSize),
         y: snapToGrid(y, gridSize)

@@ -1508,7 +1508,7 @@ function handleResize(
 
     // Snap handle position to grid if enabled
     if (store.gridSettings.snapToGrid) {
-        const snapped = snapPoint(x, y, store.gridSettings.gridSize);
+        const snapped = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
         resizeX = snapped.x;
         resizeY = snapped.y;
     }
@@ -1834,7 +1834,7 @@ function handlePathNodeDrag(x: number, y: number, id: string, pState: PointerSta
 
     let tx = x, ty = y;
     if (store.gridSettings.snapToGrid) {
-        const s = snapPoint(x, y, store.gridSettings.gridSize);
+        const s = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
         tx = s.x; ty = s.y;
     }
     // Anchors live in the element's UN-rotated local frame, so map the world pointer back

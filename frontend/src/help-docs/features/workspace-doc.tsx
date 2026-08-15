@@ -306,6 +306,37 @@ Yappy.getGroupName(gid);`}</code></pre>
                     <span class="kbd">Alt</span>+<span class="kbd">[</span> / <span class="kbd">]</span>).
                 </p>
 
+                <h3>Grid styles — including diagonal and isometric</h3>
+                <p>
+                    The grid has four styles, in <em>Settings → Canvas → Grid Style</em> or from the
+                    Command Palette (&ldquo;Grid Style: …&rdquo;):
+                </p>
+                <table class="api-table">
+                    <thead><tr><th>Style</th><th>What you get</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Lines</strong></td><td>The square grid.</td></tr>
+                        <tr><td><strong>Dots</strong></td><td>The same square grid, marked at the intersections only.</td></tr>
+                        <tr><td><strong>Diagonal</strong></td><td>A 45° cross-hatch, for laying out angled construction.</td></tr>
+                        <tr><td><strong>Isometric</strong></td><td>30° lines both ways plus verticals — boxes, 3/4 views, and
+                            character construction.</td></tr>
+                    </tbody>
+                </table>
+                <p>
+                    <strong>Snap follows the lines you can see.</strong> On the angled styles,{' '}
+                    <strong>Snap to Grid</strong> (<span class="kbd">Shift</span>+<span class="kbd">;</span>) puts points on
+                    the <em>intersections of the slanted lines</em>, not on square coordinates — a slanted grid that still
+                    snapped to squares would drop every point between the lines. <em>Grid size</em> sets the spacing between
+                    parallel lines, measured across them.
+                </p>
+                <p class="tip-box">
+                    Zoom out far enough and an angled grid draws every second line, then every fourth, so it stays a grid
+                    instead of turning into a grey wash. That is only what&rsquo;s <em>drawn</em> — snapping always uses the
+                    full grid size, so a point placed while zoomed out is still exactly on the lattice at 100%.
+                </p>
+                <pre class="code-block"><code>{`Y.setGridStyle('isometric');   // 'lines' | 'dots' | 'diagonal' | 'isometric'
+Y.updateGridSettings({ enabled: true, snapToGrid: true, gridSize: 40 });
+Y.gridStyles;                  // the list, with labels`}</code></pre>
+
                 <h3>Moving objects between layers</h3>
                 <p>
                     Select the artwork, then right-click → <strong>Move to Layer</strong> and pick the destination. It

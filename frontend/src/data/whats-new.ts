@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.198', date: '2026-08-15', items: [
+        'The grid can now be diagonal or isometric, as well as square. Diagonal is a 45° cross-hatch; isometric is 30° lines both ways plus uprights, which is the one you want for boxes, three-quarter views and building a character on. Pick it in Settings → Canvas → Grid Style, or search "Grid Style" in the command palette.',
+        'Snapping follows whichever grid you chose. On a slanted grid your points land on the crossings of the slanted lines, rather than on the square positions underneath — a slanted grid that still snapped to squares would put everything between its own lines.',
+        'Zoom a long way out and a slanted grid draws fewer lines so it stays readable instead of turning into a grey haze. That only affects what you see: things still snap to the full grid, so anything you place while zoomed out is exactly on the grid when you zoom back in.',
+    ] },
     { version: '0.8.197', date: '2026-08-15', items: [
         'Combining shapes no longer destroys them. When you Subtract one shape from another, the result is now a shape that remembers what it was made from — so you can change your mind and switch it to Intersect, release it back into the two original shapes, or flatten it to a plain shape, all without undoing your way back. Before this it merged everything and threw the originals away, so getting the cutting shape back meant taking the result apart.',
         'If you preferred the old behaviour, the ❖ button on the Unite / Subtract strip turns it off, and Yappy now remembers that choice between sessions. Fully flattening is also always available on right-click → Pathfinder.',

@@ -40,7 +40,7 @@ import { constrainToAngle } from '../angle-constrain';
 import { snapPointToPerspective, snapVectorToPerspective } from '../perspective-snap';
 
 function snap(x: number, y: number): { x: number; y: number } {
-    if (store.gridSettings.snapToGrid) return snapPoint(x, y, store.gridSettings.gridSize);
+    if (store.gridSettings.snapToGrid) return snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
     return { x, y };
 }
 

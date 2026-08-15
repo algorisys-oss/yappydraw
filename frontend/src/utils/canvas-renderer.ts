@@ -19,6 +19,7 @@ import { buildFilterString } from './image-filter-utils';
 import { buildClipPath2D, maskFillRule } from './clip-mask';
 import { beginElement, endElement, computeElementHash, createCachedRc } from './rough-cache';
 import { RenderPipeline } from '../shapes/base/render-pipeline';
+import { gridFamilyAngles } from './grid-lattice';
 import { renderElementOverlays, renderMultiSelectionBox, renderSelectionBox, renderLassoPath, renderBindingHighlight, renderMindmapToggles, renderDropTargetHighlight, drawDeleteHandle, renderKeyObjectHighlight } from './selection-renderer';
 import { clusterSelection } from './alignment';
 import { renderSnappingGuides, renderSpacingGuides, renderMeasureGaps, renderPointSnapMarker, renderSizeReadout } from './snap-renderer';
@@ -658,7 +659,54 @@ export function renderGrid(
     const gridStartY = Math.floor((-panY / scale) / gridSize) * gridSize;
     const endY = Math.ceil((canvas.height - panY) / scale / gridSize) * gridSize;
 
-    if (gridStyle === 'lines') {
+    const angled = gridFamilyAngles(gridStyle);
+    if (angled.length) {
+        // Angled families. A family at angle θ is the lines whose signed distance along the
+        // family's NORMAL is a multiple of gridSize; the same definition the snapper uses, so
+        // the drawn intersections are exactly the points a drag lands on.
+        //
+        // Spacing is in WORLD units, so the on-screen gap tracks zoom. Three families at a few
+        // px apart stop reading as a grid — at 5% zoom they covered ~83% of the canvas, a grey
+        // wash costing ~1600 strokes a frame — so thin them by powers of two below a legible
+        // gap. Doubling keeps every drawn line a line that was there before, so the grid never
+        // appears to shift as you zoom.
+        //
+        // This is PURELY visual: snapping always uses `gridSize`, never `worldStep`. Thinning
+        // the snap too would silently coarsen the lattice as you zoomed out, so a point placed
+        // at low zoom would sit off-grid at high zoom.
+        const MIN_SCREEN_GAP = 10;
+        let worldStep = gridSize;
+        while (worldStep * scale < MIN_SCREEN_GAP) worldStep *= 2;
+
+        // Viewport corners in world space, to bound which lines can be visible.
+        const wx0 = -panX / scale, wy0 = -panY / scale;
+        const wx1 = (canvas.width - panX) / scale, wy1 = (canvas.height - panY) / scale;
+        const corners: [number, number][] = [[wx0, wy0], [wx1, wy0], [wx0, wy1], [wx1, wy1]];
+        // Half-length that always crosses the viewport, whatever the angle.
+        const reach = Math.hypot(wx1 - wx0, wy1 - wy0);
+
+        ctx.beginPath();
+        for (const a of angled) {
+            const dx = Math.cos(a), dy = Math.sin(a);
+            const nx = -dy, ny = dx;
+            let dMin = Infinity, dMax = -Infinity;
+            for (const [cx, cy] of corners) {
+                const d = cx * nx + cy * ny;
+                if (d < dMin) dMin = d;
+                if (d > dMax) dMax = d;
+            }
+            const first = Math.floor(dMin / worldStep) * worldStep;
+            for (let d = first; d <= dMax; d += worldStep) {
+                // A point on this line, then walk ±reach along it.
+                const px = nx * d, py = ny * d;
+                const x1 = (px - dx * reach) * scale + panX, y1 = (py - dy * reach) * scale + panY;
+                const x2 = (px + dx * reach) * scale + panX, y2 = (py + dy * reach) * scale + panY;
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+            }
+        }
+        ctx.stroke();
+    } else if (gridStyle === 'lines') {
         ctx.beginPath();
         for (let x = gridStartX; x <= endX; x += gridSize) {
             const screenX = x * scale + panX;

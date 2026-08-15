@@ -12,7 +12,7 @@ import {
     moveSelectionZIndex, undo, redo, deleteElements, toggleTheme,
     setActiveLayer, clearHistory, addLayer, setViewState, togglePresentationMode,
     updateGlobalSettings, togglePenStabilization,
-    toggleShapeBuilder, togglePathfinderBar, toggleLivePaint, makeLivePaint, releaseLivePaint, selectSimilar, applyDistort,
+    toggleShapeBuilder, togglePathfinderBar, setGridStyle, toggleLivePaint, makeLivePaint, releaseLivePaint, selectSimilar, applyDistort,
     toggleCutTool, toggleWidthTool, clearWidthProfile, toggleSymbolSprayer, setTextVertical,
     toggleCurveTool, toggleReshapeTool, toggleBlobBrush, togglePathEraser, togglePuppetWarp, togglePerspectiveGrid, toggleSliceTool, toggleTouchType, toggleSymbolism,
     toggleNodeTool, exitAllToolModes,
@@ -372,6 +372,10 @@ export const getCommands = (): Command[] => {
 
         // View
         { id: 'view-grid', label: 'Toggle Grid', category: 'View', action: () => toggleGrid(), shortcut: 'Shift+\'' },
+        { id: 'grid-style-lines', label: 'Grid Style: Lines (square)', category: 'View', action: () => setGridStyle('lines') },
+        { id: 'grid-style-dots', label: 'Grid Style: Dots', category: 'View', action: () => setGridStyle('dots') },
+        { id: 'grid-style-diagonal', label: 'Grid Style: Diagonal (45°)', category: 'View', action: () => setGridStyle('diagonal') },
+        { id: 'grid-style-isometric', label: 'Grid Style: Isometric (30°)', category: 'View', action: () => setGridStyle('isometric') },
         { id: 'view-snap', label: 'Toggle Snap to Grid', category: 'View', action: () => toggleSnapToGrid(), shortcut: 'Shift+;' },
         { id: 'view-zen', label: 'Toggle Zen Mode', category: 'View', action: () => toggleZenMode(), shortcut: 'Alt+Z' },
         { id: 'view-outline', label: 'Toggle Outline (Wireframe) View', category: 'View', action: () => toggleOutlineView() },

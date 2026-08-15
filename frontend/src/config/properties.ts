@@ -275,7 +275,9 @@ export const properties: PropertyConfig[] = [
         type: 'select',
         options: [
             { label: 'Lines', value: 'lines' },
-            { label: 'Dots', value: 'dots' }
+            { label: 'Dots', value: 'dots' },
+            { label: 'Diagonal (45°)', value: 'diagonal' },
+            { label: 'Isometric (30°)', value: 'isometric' }
         ],
         group: 'canvas',
         applicableTo: ['canvas'],

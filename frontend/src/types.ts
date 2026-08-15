@@ -971,7 +971,9 @@ export interface GridSettings {
     gridSize: number;       // Grid spacing in pixels (default 20)
     gridColor: string;      // Grid line color
     gridOpacity: number;    // Grid opacity (0-1)
-    style: 'lines' | 'dots'; // Grid style
+    /** Grid style. 'diagonal' (45°) and 'isometric' (30° + verticals) are angled
+     *  lattices — see utils/grid-lattice.ts, which both the renderer and the snapper use. */
+    style: 'lines' | 'dots' | 'diagonal' | 'isometric';
 }
 
 /**

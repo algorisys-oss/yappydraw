@@ -23,7 +23,7 @@ export function polylineOnDown(
     let px = x;
     let py = y;
     if (store.gridSettings.snapToGrid) {
-        const snapped = snapPoint(x, y, store.gridSettings.gridSize);
+        const snapped = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
         px = snapped.x;
         py = snapped.y;
     }
@@ -114,7 +114,7 @@ export function polylineOnMove(
     } else {
         // Grid snap only (no shape binding for polylines)
         if (store.gridSettings.snapToGrid) {
-            const snapped = snapPoint(x, y, store.gridSettings.gridSize);
+            const snapped = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
             px = snapped.x;
             py = snapped.y;
         }

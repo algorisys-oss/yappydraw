@@ -4900,7 +4900,7 @@ export const setSelectedWireframeType = (wireframeType: ElementType) => {
     setStore('selectedWireframeType', wireframeType);
 };
 
-export const setGridStyle = (style: 'lines' | 'dots') => {
+export const setGridStyle = (style: 'lines' | 'dots' | 'diagonal' | 'isometric') => {
     setStore('gridSettings', 'style', style);
 };
 

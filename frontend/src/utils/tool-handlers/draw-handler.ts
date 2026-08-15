@@ -98,7 +98,7 @@ export function drawOnDown(
     let creationX = x;
     let creationY = y;
     if (store.gridSettings.snapToGrid) {
-        const snapped = snapPoint(x, y, store.gridSettings.gridSize);
+        const snapped = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
         creationX = snapped.x;
         creationY = snapped.y;
     }
@@ -389,7 +389,7 @@ export function drawOnMove(
     }
 
     if (!angleConstrained && !signals.suggestedBinding() && !perspectiveSnapped && store.gridSettings.snapToGrid) {
-        const snapped = snapPoint(x, y, store.gridSettings.gridSize);
+        const snapped = snapPoint(x, y, store.gridSettings.gridSize, store.gridSettings.style);
         finalX = snapped.x;
         finalY = snapped.y;
     }

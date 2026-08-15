@@ -2,7 +2,7 @@ import {
     store, addElement, updateElement, deleteElements, setViewState, rotateView, resetRotation, pushToHistory, setStore, zoomToFit,
     undo, redo, withoutHistory, groupSelected, ungroupSelected, duplicateElement, toggleTheme, setTheme, type Theme,
     addLayer, deleteLayer, setActiveLayer, mergeLayerDown, flattenLayers, isolateLayer, showAllLayers,
-    updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion,
+    updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion, setGridStyle,
     isLayerVisible, isLayerLocked,
     toggleGrid, toggleSnapToGrid, toggleCommandPalette, togglePropertyPanel, togglePresentationMode,
     toggleLayerPanel, toggleHistoryPanel, jumpToHistory, toggleGraphicStylesPanel, createGraphicStyle, applyGraphicStyle, updateGraphicStyle, renameGraphicStyle, deleteGraphicStyle,
@@ -38,6 +38,7 @@ import {
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
+import { GRID_STYLES } from "./utils/grid-lattice";
 import {
     buildMandala, defaultMandalaSpec, ringOuterRadius, MANDALA_PRESETS, MANDALA_MOTIFS,
     type MandalaRing,
@@ -2190,6 +2191,15 @@ export const YappyAPI = {
     updateGridSettings(settings: any) {
         setStore("gridSettings", (s) => ({ ...s, ...settings }));
     },
+
+    /**
+     * Grid style. `'lines'` / `'dots'` are the square grid; `'diagonal'` (45° cross-hatch) and
+     * `'isometric'` (30° plus verticals) are angled lattices, and grid SNAPPING follows them —
+     * a drag lands on the drawn intersections rather than on square coordinates.
+     */
+    setGridStyle(style: 'lines' | 'dots' | 'diagonal' | 'isometric') { setGridStyle(style); },
+    /** The available grid styles, with labels. */
+    get gridStyles() { return GRID_STYLES; },
 
     updateDefaultStyles(styles: any) {
         setStore("defaultElementStyles", (s) => ({ ...s, ...styles }));
