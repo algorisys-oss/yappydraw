@@ -127,6 +127,27 @@ function writePenElement(pState: PointerState, preview?: PathAnchor | null, clos
     updateElement(pState.currentId, updates, false);
 }
 
+/**
+ * Drop building state that points at an element which no longer exists.
+ *
+ * The Pen's building state (`isPenBuilding`, `currentId`, `penAnchors`) lives in a
+ * module-level `pState`, but the element it writes to lives in the store — and the store
+ * can be rewound underneath it. A global undo mid-path restores a snapshot from before the
+ * path existed, so `currentId` names a deleted element while `isPenBuilding` stays true.
+ * Every later click then took the "continue the current path" branch and wrote to nothing:
+ * the Pen looked dead until the user pressed Escape (which reset the state as a side
+ * effect). That is the reported "Undo makes the Pen stop working for a while".
+ *
+ * Called from every entry point rather than hooked to undo specifically, so ANY removal —
+ * undo, redo, deleting the element, a script, a layer being cleared — heals on the next
+ * interaction instead of wedging the tool.
+ */
+function penDropIfOrphaned(pState: PointerState): void {
+    if (!pState.isPenBuilding || !pState.currentId) return;
+    if (store.elements.some(e => e.id === pState.currentId)) return;
+    resetPen(pState);
+}
+
 function resetPen(pState: PointerState): void {
     setPerspectiveSnapGuide(null);
     setPenResumeHint(null);
@@ -233,6 +254,7 @@ export function penResume(target: PenResumeTarget, pState: PointerState): boolea
 // ─── Pointer Down ────────────────────────────────────────────────────
 
 export function penOnDown(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, constrain = false, suppressPerspective = false): void {
+    penDropIfOrphaned(pState);   // an undo may have removed the path we were building
     const { x: px, y: py } = snap(x, y);
 
     if (!pState.isPenBuilding) {
@@ -304,6 +326,7 @@ export function penOnDown(x: number, y: number, pState: PointerState, _helpers: 
 // ─── Pointer Move ────────────────────────────────────────────────────
 
 export function penOnMove(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, signals: PointerSignals, constrain = false, breakHandle = false, suppressPerspective = false): void {
+    penDropIfOrphaned(pState);
     if (!pState.isPenBuilding || !pState.currentId) return;
     signals.setSuggestedBinding(null);
     const { x: px, y: py } = snap(x, y);
@@ -353,6 +376,7 @@ export function penOnMove(x: number, y: number, pState: PointerState, _helpers: 
 // ─── Pointer Up ──────────────────────────────────────────────────────
 
 export function penOnUp(pState: PointerState): void {
+    penDropIfOrphaned(pState);
     if (!pState.isPenBuilding) return;
     pState.penDragging = false;
     pState.penActiveIdx = -1;
@@ -363,6 +387,7 @@ export function penOnUp(pState: PointerState): void {
 // ─── Finalize (Enter / Esc / double-click) ───────────────────────────
 
 export function penFinalize(pState: PointerState): void {
+    penDropIfOrphaned(pState);
     if (!pState.isPenBuilding || !pState.currentId) return;
     const id = pState.currentId;
     if (pState.penAnchors.length < 2) {
@@ -381,6 +406,7 @@ export function penFinalize(pState: PointerState): void {
 // ─── Undo last anchor (Backspace) ────────────────────────────────────
 
 export function penUndo(pState: PointerState): void {
+    penDropIfOrphaned(pState);
     if (!pState.isPenBuilding || !pState.currentId) return;
     if (pState.penAnchors.length <= 1) {
         const id = pState.currentId;

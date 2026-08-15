@@ -17,6 +17,7 @@ import { evaluateTimelineAt } from "../utils/animation/frame-timeline-evaluator"
 import type { DimensionAnnotation, DimensionMeasure } from "../utils/dimension-geometry";
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
+import { segmentIntersection } from "../utils/path-intersection";
 import { runBooleanOp, polyToPathSubpaths, polyToSmoothSubpaths, polyToRefitSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
@@ -6894,6 +6895,68 @@ const replaceElementsPreservingOrder = (consumedIds: string[], created: DrawingE
     });
 };
 
+/**
+ * Is this element an open curve (a stroke) rather than an area?
+ *
+ * The Knife's polygon maths only makes sense for things with an inside. Asked of the
+ * geometry, not a type list, wherever possible: a `path` is open when none of its subpaths
+ * close, and connectors/lines are open by definition.
+ */
+const isOpenStrokeGeometry = (el: DrawingElement): boolean => {
+    if (el.type === 'line' || el.type === 'arrow' || el.type === 'bezier'
+        || el.type === 'elbow' || el.type === 'polyline') return true;
+    if (el.type === 'path') {
+        const subs = getPathSubpaths(el);
+        return subs.length > 0 && subs.every(s => !s.closed);
+    }
+    return false;
+};
+
+/** Where a knife stroke crosses an element's outline, in world coords. */
+const knifeCrossings = (el: DrawingElement, pa: [number, number], pb: [number, number]): { x: number; y: number }[] => {
+    const k0 = { x: pa[0], y: pa[1] }, k1 = { x: pb[0], y: pb[1] };
+    const out: { x: number; y: number }[] = [];
+    for (const sub of elementToWorldSubs(el)) {
+        const a = sub.anchors;
+        // Respect `closed`: walking an OPEN subpath as if it wrapped would invent a
+        // closing edge and report a crossing on a segment that isn't drawn.
+        const segs = sub.closed ? a.length : a.length - 1;
+        for (let i = 0; i < segs; i++) {
+            const hit = segmentIntersection(a[i], a[(i + 1) % a.length], k0, k1);
+            if (hit) out.push(hit);
+        }
+    }
+    // Nearest the start of the stroke first, so cuts happen in the order they were drawn.
+    return out.sort((m, n) => Math.hypot(m.x - k0.x, m.y - k0.y) - Math.hypot(n.x - k0.x, n.y - k0.y));
+};
+
+/** Rough distance from a point to an element's outline — used to pick which piece to cut. */
+const outlineDistance = (el: DrawingElement, pt: { x: number; y: number }): number => {
+    let best = Infinity;
+    for (const sub of elementToWorldSubs(el)) {
+        const a = sub.anchors;
+        const segs = sub.closed ? a.length : a.length - 1;
+        for (let i = 0; i < segs; i++) {
+            const p = a[i], q = a[(i + 1) % a.length];
+            const dx = q.x - p.x, dy = q.y - p.y;
+            const len2 = dx * dx + dy * dy;
+            const t = len2 > 0 ? Math.max(0, Math.min(1, ((pt.x - p.x) * dx + (pt.y - p.y) * dy) / len2)) : 0;
+            best = Math.min(best, Math.hypot(pt.x - (p.x + t * dx), pt.y - (p.y + t * dy)));
+        }
+    }
+    return best;
+};
+
+/**
+ * Knife — drag a line across artwork to divide it.
+ *
+ * Areas are divided by polygon maths; **open strokes are split at the crossings instead**.
+ * Everything used to go through `elementToMultiPolygon`, which treats a shape as its filled
+ * region: a 2-point line produced a ring below the 4-point minimum and was silently skipped,
+ * and a multi-anchor open path had its anchors closed into a ring, so cutting a drawn curve
+ * returned *filled shapes*. Open geometry now reuses the Scissors' exact de Casteljau cut, so
+ * a cut line stays a line.
+ */
 export const knifeCut = (p0: { x: number; y: number }, p1: { x: number; y: number }, ids?: string[]): string[] => {
     const pa: [number, number] = [p0.x, p0.y], pb: [number, number] = [p1.x, p1.y];
     const targets = (ids && ids.length ? store.elements.filter(e => ids.includes(e.id))
@@ -6901,7 +6964,17 @@ export const knifeCut = (p0: { x: number; y: number }, p1: { x: number; y: numbe
     const created: DrawingElement[] = [];
     const consumed: string[] = [];
     const batchIds = new Set<string>();
+
+    // Open strokes first: collect them and their crossings before anything mutates the store.
+    const openWork: { id: string; points: { x: number; y: number }[] }[] = [];
     for (const el of targets) {
+        if (!isOpenStrokeGeometry(el)) continue;
+        const points = knifeCrossings(el, pa, pb);
+        if (points.length) openWork.push({ id: el.id, points });
+    }
+
+    for (const el of targets) {
+        if (isOpenStrokeGeometry(el)) continue;
         const mp = elementToMultiPolygon(el);
         if (!mp.length) continue;
         const [pos, neg] = splitMultiPolyByLine(mp, pa, pb);
@@ -6922,12 +6995,47 @@ export const knifeCut = (p0: { x: number; y: number }, p1: { x: number; y: numbe
             if (path) created.push(path);
         }
     }
-    if (!created.length) { showToast('Knife: line did not cross a shape', 'info'); return []; }
+    if (!created.length && !openWork.length) {
+        showToast('Knife: line did not cross a shape', 'info');
+        return [];
+    }
+
+    // ONE snapshot for the whole knife stroke. `splitPathAt` normally takes its own and
+    // shows its own toast, which would give a history entry (and a toast) per crossing.
     pushToHistory();
-    replaceElementsPreservingOrder(consumed, created);
-    setStore('selection', created.map(c => c.id));
-    showToast(`Knife: ${created.length} pieces`, 'success');
-    return created.map(c => c.id);
+    const allIds: string[] = [];
+
+    if (created.length) {
+        replaceElementsPreservingOrder(consumed, created);
+        allIds.push(...created.map(c => c.id));
+    }
+
+    withoutHistory(() => {
+        for (const work of openWork) {
+            // Each cut replaces one element with several, so later crossings have to be
+            // applied to whichever piece actually carries them — hence re-resolving by
+            // outline distance rather than remembering an index.
+            let pieces = [work.id];
+            for (const pt of work.points) {
+                let bestId: string | null = null;
+                let bestD = Infinity;
+                for (const pid of pieces) {
+                    const el = store.elements.find(e => e.id === pid);
+                    if (!el) continue;
+                    const d = outlineDistance(el, pt);
+                    if (d < bestD) { bestD = d; bestId = pid; }
+                }
+                if (!bestId) continue;
+                const out = splitPathAt(bestId, pt, { history: false, toast: false });
+                if (out.length) pieces = pieces.filter(p => p !== bestId).concat(out);
+            }
+            allIds.push(...pieces);
+        }
+    });
+
+    setStore('selection', allIds);
+    showToast(`Knife: ${allIds.length} pieces`, 'success');
+    return allIds;
 };
 
 /**
@@ -6940,7 +7048,14 @@ export const knifeCut = (p0: { x: number; y: number }, p1: { x: number; y: numbe
  * the outline itself and the segment is subdivided there with de Casteljau, which is exact —
  * the two halves reproduce the original curve, so the shape doesn't shift when it's cut.
  */
-export const splitPathAt = (id: string, point: { x: number; y: number }): string[] => {
+export const splitPathAt = (
+    id: string,
+    point: { x: number; y: number },
+    opts: { history?: boolean; toast?: boolean } = {},
+): string[] => {
+    // The Knife drives this once per crossing, so it needs to opt out of the per-call
+    // snapshot and toast and take one of each for the whole stroke.
+    const say = (msg: string, kind: 'info' | 'success') => { if (opts.toast !== false) showToast(msg, kind); };
     const el = store.elements.find(e => e.id === id);
     if (!el) return [];
 
@@ -6950,10 +7065,10 @@ export const splitPathAt = (id: string, point: { x: number; y: number }): string
     let subs: { anchors: PathAnchor[]; closed: boolean }[] = getPathSubpaths(el);
     if (subs.length === 0) {
         const r = shapeToPath(el);
-        if (!r) { showToast('Scissors: cannot split this shape', 'info'); return []; }
+        if (!r) { say('Scissors: cannot split this shape', 'info'); return []; }
         subs = [r];
     }
-    if (!subs.some(s => s.anchors.length >= 2)) { showToast('Scissors: path too short', 'info'); return []; }
+    if (!subs.some(s => s.anchors.length >= 2)) { say('Scissors: path too short', 'info'); return []; }
 
     // Anchors live in the element's UN-rotated local frame, so a click on a rotated path has
     // to come back through the rotation before it can be compared with them.
@@ -6963,11 +7078,11 @@ export const splitPathAt = (id: string, point: { x: number; y: number }): string
         px = ur.x; py = ur.y;
     }
     const hit = closestPointOnSubpaths(subs, px - el.x, py - el.y);
-    if (!hit) { showToast('Scissors: nothing to split', 'info'); return []; }
+    if (!hit) { say('Scissors: nothing to split', 'info'); return []; }
 
     const target = subs[hit.sub];
     const pieces = cutSubpathAt(target.anchors, target.closed, hit.seg, hit.t);
-    if (!pieces) { showToast('Scissors: cut an edge, not an end point', 'info'); return []; }
+    if (!pieces) { say('Scissors: cut an edge, not an end point', 'info'); return []; }
 
     // `generateId` is "highest existing + 1", so every piece must be minted against the same
     // batch set — the pieces don't reach the store until the very end, so without it each
@@ -7011,11 +7126,11 @@ export const splitPathAt = (id: string, point: { x: number; y: number }): string
         if (p) created.push(p);
     }
 
-    if (!created.length) { showToast('Scissors: nothing to split', 'info'); return []; }
-    pushToHistory();
+    if (!created.length) { say('Scissors: nothing to split', 'info'); return []; }
+    if (opts.history !== false) pushToHistory();
     replaceElementsPreservingOrder([id], created);
     setStore('selection', created.map(c => c.id));
-    showToast('Scissors: split', 'success');
+    say('Scissors: split', 'success');
     return created.map(c => c.id);
 };
 

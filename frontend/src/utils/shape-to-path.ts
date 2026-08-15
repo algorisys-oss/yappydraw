@@ -63,6 +63,16 @@ export function shapeToPath(el: DrawingElement): { anchors: PathAnchor[]; closed
         return { anchors: pts.map(p => corner(p.x, p.y)), closed: false };
     }
 
+    // A line or arrow created from a bounding box carries NO `points` — its geometry is
+    // just the two endpoints, (x, y) → (x + width, y + height). `getShapeGeometry` has no
+    // case for these types, so without this they converted to nothing at all: the Knife
+    // silently skipped a line it was dragged straight across, and the Scissors answered
+    // "cannot split this shape". Keep the element's own sign convention (w/h may be
+    // negative for a line drawn right-to-left) rather than normalizing it here.
+    if (el.type === 'line' || el.type === 'arrow') {
+        return { anchors: [corner(0, 0), corner(el.width, el.height)], closed: false };
+    }
+
     const geo = getShapeGeometry(el);
     if (!geo) return null;
     const w = el.width, h = el.height;

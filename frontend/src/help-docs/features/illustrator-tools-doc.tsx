@@ -354,9 +354,14 @@ Yappy.bakeWarp();                    // make it permanent geometry`}</code></pre
                     things depending on your gesture:
                 </p>
                 <ul class="doc-list">
-                    <li><strong>Knife</strong> — <em>drag a line</em> across one or more shapes. Every shape
-                        the line crosses is sliced into separate, fully-closed pieces. With nothing selected
-                        it cuts all crossed shapes; with a selection it only cuts those.</li>
+                    <li><strong>Knife</strong> — <em>drag a line</em> across one or more objects. With nothing
+                        selected it cuts everything the line crosses; with a selection it only cuts those.
+                        <br />
+                        <strong>Filled shapes</strong> are sliced into separate, fully-closed pieces.
+                        <strong> Lines and open paths keep their nature</strong>: they're split at each
+                        crossing into shorter lines rather than being turned into filled shapes, so cutting a
+                        drawn stroke gives you two strokes. One knife drag across the same wavy line several
+                        times cuts it at every crossing, and the whole drag is a single undo step.</li>
                     <li><strong>Scissors</strong> — <em>click once on a path</em>, and it cuts
                         <strong> exactly where you clicked</strong>, including in the middle of a curve.
                         A closed shape opens there into a single open path; an open path splits into two.

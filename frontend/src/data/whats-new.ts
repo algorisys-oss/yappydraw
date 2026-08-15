@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.196', date: '2026-08-15', items: [
+        'Fixed: pressing Undo while drawing with the Pen tool stopped the Pen working. Clicks did nothing at all afterwards, and the only way out was to press Escape and start again. The Pen was still trying to add points to the path Undo had just removed. It now notices the path is gone and your next click simply starts a new one.',
+        'Fixed: cutting a line with the Knife turned it into a filled shape instead of leaving it as a line. Lines and open paths are now cut into shorter lines, and filled shapes still cut into filled pieces as before. If one knife drag crosses the same line in several places, it is cut at each of them, and the whole cut undoes in one step.',
+        'Fixed: the Knife did nothing at all to a plain straight line, and the Scissors refused to cut one, saying it could not split that shape. Both work now.',
+    ] },
     { version: '0.8.195', date: '2026-08-15', items: [
         'There is now a Mandala generator: it builds a whole mandala for you instead of you drawing every ring. Find it under Vector Tools → Insert → Mandala, on the right-click menu under Insert, or by searching "Mandala" in the command palette. Pick one of the five ready-made designs, drag the Size slider, and press Apply. You see an outline of it on the canvas the whole time you are adjusting, and Cancel leaves nothing behind.',
         'If you want to go further, Edit bands opens the design up ring by ring. Each ring repeats one shape — petal, lotus, teardrop, diamond, dot, arc, scallop, spike, or a plain circle divider — and you choose how many, how far out, how fat, and how far rotated against its neighbours. Add and remove rings freely.',
