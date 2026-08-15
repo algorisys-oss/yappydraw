@@ -21,6 +21,7 @@ import { ColorDropHud } from './components/color-drop-hud';
 import Canvas from './components/canvas';
 import { RulerOverlay } from './components/ruler-overlay';
 import { RepeatDialog } from './components/repeat-dialog';
+import { MandalaDialog } from './components/mandala-dialog';
 import { canvasCenterClient } from './utils/dock-layout';
 import { SymmetryOverlay } from './components/symmetry-overlay';
 import { NodeToolOverlay } from './components/node-tool-overlay';
@@ -1458,6 +1459,7 @@ const App: Component = () => {
         </Show>
         <CropBar />
         <RepeatDialog />
+        <MandalaDialog />
         {/* The shell header region is rendered by <Menu /> now — it owns the bar's three
             slots (logo/menu, tool options, view controls) as real layout children. */}
         <SymmetryOverlay />

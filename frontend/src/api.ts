@@ -1,6 +1,6 @@
 import {
     store, addElement, updateElement, deleteElements, setViewState, rotateView, resetRotation, pushToHistory, setStore, zoomToFit,
-    undo, redo, groupSelected, ungroupSelected, duplicateElement, toggleTheme, setTheme, type Theme,
+    undo, redo, withoutHistory, groupSelected, ungroupSelected, duplicateElement, toggleTheme, setTheme, type Theme,
     addLayer, deleteLayer, setActiveLayer, mergeLayerDown, flattenLayers, isolateLayer, showAllLayers,
     updateLayer, duplicateLayer, reorderLayers, moveElementsToLayer, createLayerGroup, toggleLayerGroupExpansion,
     isLayerVisible, isLayerLocked,
@@ -38,6 +38,10 @@ import {
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/transform-pivot";
 import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
+import {
+    buildMandala, defaultMandalaSpec, ringOuterRadius, MANDALA_PRESETS, MANDALA_MOTIFS,
+    type MandalaRing,
+} from "./utils/mandala";
 import { rasterizeSelection } from "./utils/rasterize";
 import { elementLabel, groupNameOf } from "./utils/object-label";
 import type { SvgThemeOptions } from "./utils/svg-theme";
@@ -813,6 +817,92 @@ export const YappyAPI = {
         this.setSelected(ids); groupSelected();
         return store.selection[0] ?? ids[0];
     },
+
+    /**
+     * Mandala — concentric bands of a repeated motif, as grouped editable paths.
+     *
+     * Geometry comes from `utils/mandala.ts`, so the shapes are identical to what the
+     * Mandala dialog previews. Every motif is bilaterally symmetric about its own spoke,
+     * matching what `kaleidoscope` symmetry produces by hand — so a generated mandala and
+     * hand-drawn additions to it agree.
+     *
+     * Defaults are colouring-page defaults: no fill, black stroke, 2px — big empty areas
+     * with outlines heavy enough to colour inside. Pass `options` to override.
+     *
+     * `radius` scales the whole design (presets are authored around a 200px outer radius);
+     * omit it to use the spec's own radii. Returns the group id, or null if the spec
+     * produced nothing.
+     */
+    createMandala(
+        cx: number,
+        cy: number,
+        opts?: {
+            preset?: string;
+            rings?: MandalaRing[];
+            radius?: number;
+            /** Also point live symmetry at this mandala, for hand-finishing on top. */
+            armSymmetry?: boolean;
+        },
+        options?: ElementOptions,
+    ): string | null {
+        const preset = opts?.preset
+            ? MANDALA_PRESETS.find(p => p.id === opts.preset || p.name === opts.preset)
+            : undefined;
+        const baseRings = opts?.rings ?? preset?.rings ?? defaultMandalaSpec().rings;
+        if (!baseRings.length) return null;
+
+        // Scale to the requested outer radius. Guard the degenerate spec: an all-zero
+        // design would divide by zero and emit NaN anchors, which render as nothing and
+        // are painful to debug from the canvas.
+        let rings = baseRings.map(r => ({ ...r }));
+        if (opts?.radius && opts.radius > 0) {
+            const current = ringOuterRadius({ cx, cy, rings });
+            if (current > 0) {
+                const k = opts.radius / current;
+                rings = rings.map(r => ({ ...r, rInner: r.rInner * k, rOuter: r.rOuter * k }));
+            }
+        }
+
+        const paths = buildMandala({ cx, cy, rings });
+        if (!paths.length) return null;
+
+        const style: ElementOptions = {
+            strokeColor: '#111111', strokeWidth: 2, backgroundColor: 'transparent', fillStyle: 'solid',
+            ...options,
+        };
+
+        // ONE snapshot for the whole mandala. Without the suspension each path snapshots
+        // itself, so a 122-path design needed 123 undo presses and overflowed the 50-deep
+        // stack — the mandala became un-undoable and took every earlier state with it.
+        pushToHistory();
+        const ids = withoutHistory(() => {
+            const made: string[] = [];
+            for (const p of paths) {
+                const id = this.createPath(p.anchors, { ...style, closed: p.closed });
+                if (id) made.push(id);
+            }
+            if (made.length) { this.setSelected(made); groupSelected(); }
+            return made;
+        });
+        if (!ids.length) return null;
+
+        if (opts?.armSymmetry) {
+            // Match the densest band so a hand-drawn addition lands on the same spokes.
+            const densest = rings.reduce((best, r) => (r.count > best.count ? r : best), rings[0]);
+            setSymmetryCenter(cx, cy);
+            setRadialCount(Math.max(2, Math.min(36, densest.count)));
+            setSymmetryMode('kaleidoscope');
+            // setSymmetryMode re-centres on the view when coming from 'off'; put it back.
+            setSymmetryCenter(cx, cy);
+        }
+
+        return store.selection[0] ?? ids[0];
+    },
+
+    /** The built-in mandala presets — id, name and the bands they generate. */
+    get mandalaPresets() { return MANDALA_PRESETS; },
+    /** The motif vocabulary a mandala band can use. */
+    get mandalaMotifs() { return MANDALA_MOTIFS; },
 
     /**
      * Lens Flare — a bright centre glow, radiating rays, concentric halo rings, and a few

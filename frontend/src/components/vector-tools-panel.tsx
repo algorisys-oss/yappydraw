@@ -11,8 +11,9 @@ import { YappyAPI } from '../api';
 import {
     Combine, PaintBucket, Spline, Waypoints, Scissors, PenLine, Brush, Eraser,
     Frame, Grid3x3, SprayCan, Sparkles, Crop, Wand2,
-    Type, AlignVerticalJustifyCenter, TextCursor, Tornado, Grid2x2, Target, Sun, Waves, PlusCircle,
+    Type, AlignVerticalJustifyCenter, TextCursor, Tornado, Grid2x2, Target, Sun, Waves, PlusCircle, Flower,
     Grip, CloudDrizzle, Move3d} from 'lucide-solid';
+import { openMandalaDialog } from './mandala-dialog';
 import './vector-tools-panel.css';
 
 /**
@@ -112,6 +113,7 @@ const VectorToolsPanel: Component = () => {
                 { label: 'Arc', icon: Spline, run: () => { const c = center(); YappyAPI.createArc(c.x, c.y, 100, 0, 270); } },
                 { label: 'Rectangular Grid', icon: Grid2x2, run: () => { const c = center(); YappyAPI.createRectGrid(c.x - 100, c.y - 80, 200, 160, 4, 4); } },
                 { label: 'Polar Grid', icon: Target, run: () => { const c = center(); YappyAPI.createPolarGrid(c.x, c.y, 100, 3, 8); } },
+                { label: 'Mandala…', icon: Flower, run: () => openMandalaDialog() },
                 { label: 'Lens Flare', icon: Sun, run: () => { const c = center(); const ds = store.defaultElementStyles; YappyAPI.createFlare(c.x, c.y, 90, 12, 4, { strokeColor: ds.strokeColor || undefined, backgroundColor: (ds.backgroundColor && ds.backgroundColor !== 'transparent') ? ds.backgroundColor : undefined }); } },
                 { label: 'Noise Texture', icon: Grip, run: () => YappyAPI.addTextureOverlay('noise') },
                 { label: 'Grunge Texture', icon: CloudDrizzle, run: () => YappyAPI.addTextureOverlay('grunge') },

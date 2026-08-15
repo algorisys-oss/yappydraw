@@ -128,7 +128,7 @@ const shapeDocuments: ShapeDoc[] = [
         icon: '✦',
         category: 'Design',
         description: 'Repeat & symmetry (radial / grid / mirror / mandala) and Text → Outlines for logo construction',
-        keywords: 'symmetry mirror axis vertical horizontal quadrant 4-way radial spokes sectors mandala kaleidoscope dihedral bilateral wedge petal rosette live symmetry draw one wedge move axis Alt+Y Alt+Shift+Y angle tilt mirror across symmetry axis mirror selection ring guides rings ring gap concentric circles scaffold bands colouring book coloring book colouring page coloring page line art outline repeat radial grid step and repeat transform again mirror copy shape builder compound shape text to outlines setSymmetryMode setRadialCount setSymmetryRings setSymmetryRingSpacing setSymmetryCenter radialRepeat gridRepeat',
+        keywords: 'symmetry mirror axis vertical horizontal quadrant 4-way radial spokes sectors mandala kaleidoscope dihedral bilateral wedge petal rosette mandala generator generate mandala mandala tool preset simple lotus lace star rosette motif band bands rings concentric petal teardrop diamond dot arc scallop spike divider createMandala mandalaPresets colouring book coloring book colouring page live symmetry draw one wedge move axis Alt+Y Alt+Shift+Y angle tilt mirror across symmetry axis mirror selection ring guides rings ring gap concentric circles scaffold bands colouring book coloring book colouring page coloring page line art outline repeat radial grid step and repeat transform again mirror copy shape builder compound shape text to outlines setSymmetryMode setRadialCount setSymmetryRings setSymmetryRingSpacing setSymmetryCenter radialRepeat gridRepeat',
         content: LogoToolkitDoc
     },
     {

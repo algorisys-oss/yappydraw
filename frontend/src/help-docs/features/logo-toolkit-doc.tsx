@@ -256,7 +256,61 @@ export const LogoToolkitDoc: Component = () => {
                     there while you finish detail work by hand. Set Rings to 0 to hide them.
                 </p>
 
+                <h3>The Mandala generator — a whole design at once</h3>
+                <p>
+                    Drawing every band by hand is the fun way; sometimes you just need a page.
+                    <strong> Vector Tools → Insert → Mandala…</strong> (also right-click →{' '}
+                    <em>Insert</em>, or the Command Palette → &ldquo;Mandala Generator&rdquo;) builds a
+                    complete mandala from parameters, with an outline preview on the canvas while you
+                    adjust it. Start from a preset — <em>Simple 8</em>, <em>Lotus 12</em>,{' '}
+                    <em>Lace 24</em>, <em>Star 16</em>, <em>Rosette 6</em> — then change <em>Size</em>,{' '}
+                    <em>Line weight</em>, or open <em>Edit bands</em> to work band by band.
+                </p>
+                <p>
+                    A mandala is a stack of concentric <strong>bands</strong>, each repeating one motif
+                    around the centre. Per band you set the motif (Petal, Lotus, Teardrop, Diamond,
+                    Dot, Arc, Scallop, Spike, or a plain Ring divider), how many copies, its inner and
+                    outer radius, a rotation to offset it against its neighbours, and how fat the motif
+                    sits inside its wedge. Every motif is mirror-symmetric about its own spoke — the
+                    same property Kaleidoscope gives hand-drawn work — so generated bands and anything
+                    you draw on top agree.
+                </p>
+                <p>
+                    <strong>Apply</strong> commits it as ordinary grouped paths in your current drawing
+                    style, selected and ready to move or restyle, and it undoes in a{' '}
+                    <em>single</em> step no matter how many shapes it contains. Nothing is left behind
+                    if you Cancel. Leave <em>Arm symmetry after</em> ticked and Kaleidoscope symmetry is
+                    pointed at the new mandala's centre and spoke count, so you can carry straight on
+                    by hand.
+                </p>
+                <p class="tip-box">
+                    <strong>The preview draws clean outlines even in sketch style.</strong> It is an
+                    overlay rather than real shapes — which is what keeps a slider drag from filling
+                    your undo history with scaffolding — so in <em>sketch</em> style the committed
+                    mandala gains rough.js wobble the preview didn't show. Sizes, counts and radii are
+                    exact; only the line quality differs.
+                </p>
+                <div class="code-block">
+                    <pre>{`// same generator from the API
+Yappy.createMandala(400, 400, { preset: 'lotus', radius: 220 });
+Yappy.createMandala(400, 400, { preset: 'lace', radius: 300, armSymmetry: true });
+
+// or spell the bands out
+Yappy.createMandala(400, 400, { rings: [
+  { motif: 'dot',   count: 1,  rInner: 0,   rOuter: 30, phase: 0, width: 1 },
+  { motif: 'petal', count: 12, rInner: 32,  rOuter: 120, phase: 0, width: 0.8 },
+  { motif: 'ring',  count: 1,  rInner: 120, rOuter: 128, phase: 0, width: 1 },
+]}, { strokeWidth: 3 });
+
+Yappy.mandalaPresets;   // the built-in designs
+Yappy.mandalaMotifs;    // the motif vocabulary`}</pre>
+                </div>
+
                 <h3>Drawing a mandala for a colouring page</h3>
+                <p>
+                    By hand, if you want the design to be yours rather than generated (or want to add
+                    to something the generator made):
+                </p>
                 <ol>
                     <li>Pick a drawing tool, set <strong>Symmetry → Kaleidoscope</strong> and a sector
                         count (12 and 16 are good starting points; 24–36 for dense lace).</li>

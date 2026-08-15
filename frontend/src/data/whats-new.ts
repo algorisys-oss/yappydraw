@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.195', date: '2026-08-15', items: [
+        'There is now a Mandala generator: it builds a whole mandala for you instead of you drawing every ring. Find it under Vector Tools → Insert → Mandala, on the right-click menu under Insert, or by searching "Mandala" in the command palette. Pick one of the five ready-made designs, drag the Size slider, and press Apply. You see an outline of it on the canvas the whole time you are adjusting, and Cancel leaves nothing behind.',
+        'If you want to go further, Edit bands opens the design up ring by ring. Each ring repeats one shape — petal, lotus, teardrop, diamond, dot, arc, scallop, spike, or a plain circle divider — and you choose how many, how far out, how fat, and how far rotated against its neighbours. Add and remove rings freely.',
+        'What you get is ordinary shapes, grouped: no fill and a black outline, so it is ready to print and colour, and every piece is still editable and recolourable like anything else you draw. Tick "Arm symmetry after" and Yappy lines the Kaleidoscope symmetry up with your new mandala, so you can keep drawing on it by hand straight away.',
+        'Fixed something that would have bitten hard: adding many shapes at once used to fill up the undo history one shape at a time. A large mandala is over a hundred shapes, which was more than the history holds — so it could not be undone at all, and everything you had done before it was lost from the history too. Any generated mandala now undoes in a single press, with your earlier work intact.',
+        'Fixed: generated mandalas appeared off-centre, with one edge tucked under the properties panel. They now land in the middle of the drawing area.',
+    ] },
     { version: '0.8.194', date: '2026-08-15', items: [
         'The little Unite / Subtract / Intersect / Exclude toolbar no longer pops up on its own. Selecting two things is something you do constantly — to move them, line them up, group them, change their colour, or because you dragged a box round one more than you meant — and a panel of shape-cutting buttons was appearing over your drawing every single time. It now stays out of the way until you ask for it.',
         'When you do want it, click the new Pathfinder button in the top bar, next to Shape Builder. It then behaves exactly as before, appearing whenever two or more shapes are selected, and it stays on until you switch it off again — so if you are doing a stretch of shape-combining work you turn it on once and forget about it. It is also under View, on the right-click menu, and in Settings.',

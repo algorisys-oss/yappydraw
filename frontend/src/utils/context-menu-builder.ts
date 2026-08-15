@@ -44,6 +44,7 @@ import {
 import { shiftLaneIndicesOnRemove, hitTestPoolLane } from './pool-containment';
 import { setTransformPivot, clearTransformPivot, getCustomPivot } from './transform-pivot';
 import { openRepeatDialog } from '../components/repeat-dialog';
+import { openMandalaDialog } from '../components/mandala-dialog';
 import { YappyAPI } from '../api';
 import { exportToPng, exportToSvg, exportToJpg, copyCanvasAsPng, exportArtboard } from './export';
 import { rasterizeSelection } from './rasterize';
@@ -1649,6 +1650,7 @@ export function getContextMenuItems(
                         { label: 'Arc', onClick: () => YappyAPI.createArc(cx, cy, 100, 0, 270) },
                         { label: 'Rectangular Grid', onClick: () => YappyAPI.createRectGrid(cx - 100, cy - 80, 200, 160, 4, 4) },
                         { label: 'Polar Grid', onClick: () => YappyAPI.createPolarGrid(cx, cy, 100, 3, 8) },
+                        { label: 'Mandala…', onClick: () => openMandalaDialog() },
                         { label: 'Lens Flare', onClick: () => { const ds = store.defaultElementStyles; YappyAPI.createFlare(cx, cy, 90, 12, 4, { strokeColor: ds.strokeColor || undefined, backgroundColor: (ds.backgroundColor && ds.backgroundColor !== 'transparent') ? ds.backgroundColor : undefined }); } },
                     ];
                 })(),

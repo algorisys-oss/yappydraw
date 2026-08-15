@@ -22,6 +22,7 @@ import { togglePanel, resetDockLayout } from "../store/dock-layout";
 import { flipSelected, lockSelected, unlockAllElements } from "./object-context-actions";
 import { showToast } from "../components/toast";
 import { openRepeatDialog } from "../components/repeat-dialog";
+import { openMandalaDialog } from "../components/mandala-dialog";
 import { setIsDSLImportOpen, quickSaveToGallery } from "../components/menu";
 import { setShowDrawingsGallery } from "../components/drawings-gallery-signal";
 import type { ToolType } from "../types";
@@ -341,6 +342,7 @@ export const getCommands = (): Command[] => {
         { id: 'action-mirror-h', label: 'Mirror Copy (horizontal)', category: 'Actions', action: () => mirrorCopy('horizontal') },
         { id: 'action-mirror-v', label: 'Mirror Copy (vertical)', category: 'Actions', action: () => mirrorCopy('vertical') },
         { id: 'action-repeat', label: 'Repeat (Radial / Grid)…', category: 'Actions', action: () => openRepeatDialog() },
+        { id: 'insert-mandala', label: 'Mandala Generator…', category: 'Tools', action: () => openMandalaDialog() },
         { id: 'action-symmetry-toggle', label: 'Toggle Symmetry', category: 'Actions', shortcut: 'Alt+Y', action: () => {
             const s = store.viewState;
             const c = canvasCenterClient(); // drawing-area centre, not window centre
@@ -352,6 +354,7 @@ export const getCommands = (): Command[] => {
         { id: 'action-symmetry-vertical', label: 'Symmetry: Toggle Vertical Axis', category: 'Actions', action: () => toggleSymmetryAxis('vertical') },
         { id: 'action-symmetry-horizontal', label: 'Symmetry: Toggle Horizontal Axis', category: 'Actions', action: () => toggleSymmetryAxis('horizontal') },
         { id: 'action-symmetry-radial', label: 'Symmetry: Radial (Mandala)', category: 'Actions', action: () => setSymmetryMode('radial') },
+        { id: 'action-symmetry-kaleidoscope', label: 'Symmetry: Kaleidoscope (mirrored mandala)', category: 'Actions', action: () => setSymmetryMode('kaleidoscope') },
         { id: 'action-symmetry-off', label: 'Symmetry: Off', category: 'Actions', action: () => setSymmetryMode('off') },
         { id: 'action-symmetry-move', label: 'Symmetry: Move Axis (toggle edit)', category: 'Actions', shortcut: 'Alt+Shift+Y', action: () => toggleSymmetryEditing() },
         { id: 'action-symmetry-mirror', label: 'Mirror Across Symmetry Axis', category: 'Actions', action: () => mirrorAcrossSymmetry() },

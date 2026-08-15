@@ -862,7 +862,33 @@ const restoreSnapshot = (snapshot: HistorySnapshot) => {
     setStore("selection", []); // Clear selection to avoid stale IDs
 };
 
+/**
+ * Depth of `withoutHistory` nesting. While non-zero, `pushToHistory` is a no-op.
+ *
+ * A counter rather than a boolean so nested calls can't have the inner one switch history
+ * back on for the rest of the outer one.
+ */
+let historySuspended = 0;
+
+/**
+ * Run `fn` with undo snapshots suppressed, for a bulk edit that must undo as ONE step.
+ *
+ * `addElement` snapshots before every single element, which is right for one drawn shape
+ * and catastrophic for a generator: a 122-path mandala pushed 122 entries, so undoing it
+ * needed 123 presses AND overflowed the 50-deep stack — meaning the mandala could not be
+ * undone at all and every earlier state was gone. Callers push one snapshot themselves and
+ * wrap the rest.
+ *
+ * try/finally is not optional: an exception mid-bulk would otherwise leave history
+ * suppressed for the rest of the session.
+ */
+export const withoutHistory = <T>(fn: () => T): T => {
+    historySuspended++;
+    try { return fn(); } finally { historySuspended--; }
+};
+
 export const pushToHistory = () => {
+    if (historySuspended > 0) return;
     undoStack.push(captureSnapshot());
     const maxDepth = Math.max(1, store.globalSettings.historyDepth ?? 50);
     while (undoStack.length > maxDepth) undoStack.shift();
