@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.193', date: '2026-08-15', items: [
+        'You can draw mandalas properly now. There is a new Kaleidoscope setting next to the existing Symmetry options. The old Radial setting spins whatever you draw around the centre, which gives you a pinwheel — every petal leans the same way. Kaleidoscope also flips it as it goes round, so both sides of each petal match, which is what makes a mandala look like a mandala. Draw half a petal and the whole page fills in around it while you draw.',
+        'Mandalas can have up to 36 spokes, up from 24. Colouring-book designs often want 32 or 36, and those simply were not reachable before.',
+        'New Ring guides: faint circles spaced evenly out from the centre, so you can keep each band of your mandala the same width instead of eyeballing it and watching the rings drift. Find them under Rings in the Canvas panel. They are only guides — they never print or export, and they stay on screen if you switch symmetry off to finish the fine detail by hand.',
+        'The guide lines got easier to draw over. At high spoke counts they used to pile up into a solid purple star that hid your work, especially right in the middle where the detail is finest. They now fade as they get denser and leave the centre clear.',
+        'Searching Help for "mandala", "kaleidoscope" or "colouring page" now finds the right page. It used to find nothing.',
+    ] },
     { version: '0.8.192', date: '2026-08-14', items: [
         'Fixed: when a help page failed to open and asked you to reload, the Reload button did nothing — you had to leave the Help section entirely and come back. That was not a coincidence. Yappy keeps a copy of itself on your device so it works offline, and that copy is only swapped for a newer one once the app is fully closed. A refresh does not close it, so you were handed the same broken copy again. Leaving and returning did close it, which is why only that worked. The button now clears the old copy first, so it does what it says.',
         'Fixed: one help page failing used to replace the whole Help section, sidebar and all, with an error screen. Now only that one page shows the message and the list of topics keeps working, so you can just click something else.',

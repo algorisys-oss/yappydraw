@@ -150,11 +150,15 @@ export interface SlideDocument {
      *  (`editing`) is deliberately NOT persisted — reopening a file with drawing
      *  suspended reads as a bug. */
     symmetry?: {
-        mode: 'off' | 'vertical' | 'horizontal' | 'both' | 'radial';
+        mode: 'off' | 'vertical' | 'horizontal' | 'both' | 'radial' | 'kaleidoscope';
         cx: number;
         cy: number;
         radialCount: number;
         angle: number;
+        /** Ring guides. Absent in documents saved before they existed; the loader
+         *  spreads over `defaultSymmetryState()`, so they default to off. */
+        rings?: number;
+        ringSpacing?: number;
     };
     states?: DisplayState[];
     symbols?: import('../types').SymbolDef[];

@@ -204,9 +204,16 @@ export const LogoToolkitDoc: Component = () => {
                         <tr><td><strong>Vertical</strong></td><td>Mirrors left ↔ right across a vertical axis. 2 copies.</td></tr>
                         <tr><td><strong>Horizontal</strong></td><td>Mirrors up ↕ down across a horizontal axis. 2 copies.</td></tr>
                         <tr><td><strong>Both</strong></td><td>4-way quadrant — vertical + horizontal + 180°. 4 copies.</td></tr>
-                        <tr><td><strong>Radial</strong></td><td>Mandala: 2–24 spokes evenly around the centre.</td></tr>
+                        <tr><td><strong>Radial</strong></td><td>Mandala: 2–36 spokes evenly around the centre. Rotations only, so a wedge repeats but isn't mirrored within itself.</td></tr>
+                        <tr><td><strong>Kaleidoscope</strong></td><td>Mandala with every wedge <em>also</em> mirrored: 2–36 sectors, <strong>twice</strong> that many copies. This is the bilateral symmetry traditional mandalas have — draw half a petal and the other half draws itself.</td></tr>
                     </tbody>
                 </table>
+                <p>
+                    Radial vs. Kaleidoscope is the difference between a rotated doodle and a mandala.
+                    Radial spins your wedge around the centre; kaleidoscope reflects it across each spoke
+                    on the way round, so both edges of every petal match. Sector count is the same slider
+                    for both — kaleidoscope just emits 2× the copies, and the panel shows the total.
+                </p>
 
                 <h3>Setting the axis / centre point</h3>
                 <p>
@@ -235,6 +242,32 @@ export const LogoToolkitDoc: Component = () => {
                     A stroke you abandon takes its mirror copies with it — a stray click that produces no shape
                     doesn't leave mirrored copies of nothing behind.
                 </p>
+
+                <h3>Ring guides</h3>
+                <p>
+                    <strong>Rings</strong> in the Canvas panel's Symmetry section draws concentric dashed
+                    circles around the symmetry centre, spaced by <strong>Ring gap</strong>. They're the
+                    scaffold that stops a mandala's bands from drifting: keep each round of motifs between
+                    two circles and the finished piece reads as even.
+                </p>
+                <p>
+                    Rings are guides, not elements — they never select, never print and never appear in an
+                    export. They also stay visible when you switch symmetry off, so the scaffold is still
+                    there while you finish detail work by hand. Set Rings to 0 to hide them.
+                </p>
+
+                <h3>Drawing a mandala for a colouring page</h3>
+                <ol>
+                    <li>Pick a drawing tool, set <strong>Symmetry → Kaleidoscope</strong> and a sector
+                        count (12 and 16 are good starting points; 24–36 for dense lace).</li>
+                    <li>Press <span class="kbd">Alt</span>+<span class="kbd">Shift</span>+<span class="kbd">Y</span>
+                        and drag the centre where you want it.</li>
+                    <li>Turn on <strong>Rings</strong> — say 5 rings at a 70–90 gap — to mark the bands.</li>
+                    <li>Draw one wedge, band by band, working outward. Every other sector fills in live.</li>
+                    <li>Use no fill and a heavier stroke so the shapes are big enough to colour inside.</li>
+                    <li>Export with <code>exportSVG()</code> for a print layout, or
+                        <code> exportPageToPng(0, 4)</code> for a print-resolution raster.</li>
+                </ol>
             </section>
 
             {/* Node tool */}

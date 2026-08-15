@@ -31,6 +31,7 @@ const SYMMETRY_MODES = [
     { id: 'horizontal', label: '⇵', title: 'Mirror up ↕ down' },
     { id: 'both', label: '✛', title: '4-way quadrant' },
     { id: 'radial', label: '✳', title: 'Radial mandala' },
+    { id: 'kaleidoscope', label: '❋', title: 'Kaleidoscope — mandala with each wedge mirrored' },
 ] as const;
 
 /** What to call the active tool's option group. */

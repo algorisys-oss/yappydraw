@@ -22,6 +22,7 @@ export function buildSlideDocument(name = 'Untitled'): SlideDocument {
         symmetry: {
             mode: store.symmetry.mode, cx: store.symmetry.cx, cy: store.symmetry.cy,
             radialCount: store.symmetry.radialCount, angle: store.symmetry.angle,
+            rings: store.symmetry.rings, ringSpacing: store.symmetry.ringSpacing,
         },
         states: JSON.parse(JSON.stringify(store.states)),
         symbols: JSON.parse(JSON.stringify(store.symbols)),

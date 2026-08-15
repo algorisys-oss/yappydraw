@@ -19,6 +19,7 @@ import {
     createSymbol, saveSelectionToAssetLibrary, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, setSymbolRecursive, symbolSelfReferences, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     setSymmetryMode, toggleSymmetry, toggleSymmetryAxis, setRadialCount,
+    setSymmetryRings, setSymmetryRingSpacing,
     setSymmetryAngleDeg, setSymmetryCenter, setSymmetryEditing, toggleSymmetryEditing,
     addSlide, deleteSlide, duplicateSlide, setActiveSlide, reorderSlides,
     updateSlideTransition, updateSlideBackground, detachSlideBackgroundImage, setDocType, loadDocument, resetToNewDocument, setPageSize, setGameScript, setSceneBehaviors, setGameVars, toggleBehaviorsPanel, toggleGameGraph,
@@ -2507,15 +2508,27 @@ export const YappyAPI = {
     /**
      * Set the symmetry mode.
      * `'vertical'` mirrors left↔right, `'horizontal'` up↕down, `'both'` is the
-     * 4-way quadrant, `'radial'` is an N-spoke mandala.
+     * 4-way quadrant, `'radial'` is an N-spoke mandala (rotations only), and
+     * `'kaleidoscope'` is an N-sector mandala with every wedge mirrored as well —
+     * 2N copies, the bilaterally symmetric look real mandalas have.
      */
-    setSymmetryMode(mode: 'off' | 'vertical' | 'horizontal' | 'both' | 'radial') { setSymmetryMode(mode); },
+    setSymmetryMode(mode: 'off' | 'vertical' | 'horizontal' | 'both' | 'radial' | 'kaleidoscope') { setSymmetryMode(mode); },
     /** Quick on/off — restores the last-used mode (defaults to vertical). */
     toggleSymmetry() { toggleSymmetry(); },
     /** Toggle one mirror axis; vertical + horizontal combine into 'both'. */
     toggleSymmetryAxis(axis: 'vertical' | 'horizontal') { toggleSymmetryAxis(axis); },
-    /** Spokes for radial (mandala) symmetry, clamped to 2..24. */
+    /**
+     * Spokes for radial symmetry — sectors for kaleidoscope — clamped to 2..36.
+     * Kaleidoscope draws twice this many copies.
+     */
     setRadialCount(n: number) { setRadialCount(n); },
+    /**
+     * Concentric guide circles about the symmetry centre, for spacing a mandala's
+     * rings evenly. 0..24; 0 turns them off. Guides only — they never export.
+     */
+    setSymmetryRings(n: number) { setSymmetryRings(n); },
+    /** World-unit gap between consecutive ring guides. */
+    setSymmetryRingSpacing(px: number) { setSymmetryRingSpacing(px); },
     /** Tilt the mirror lines / offset the radial spokes, in degrees (−90..90). */
     setSymmetryAngleDeg(deg: number) { setSymmetryAngleDeg(deg); },
     /** Move the symmetry centre (world coordinates). */

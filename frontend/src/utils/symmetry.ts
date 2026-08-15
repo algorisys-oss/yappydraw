@@ -9,13 +9,18 @@
  * document. Yappy is an infinite canvas, so the centre is stored in **world
  * coordinates** instead. Everything else carries over unchanged.
  *
- *   vertical   → reflect across the vertical axis (x mirrored)
- *   horizontal → reflect across the horizontal axis (y mirrored)
- *   both       → 4-way quadrant (vertical + horizontal + 180°)
- *   radial     → N rotations about the centre (mandala)
+ *   vertical     → reflect across the vertical axis (x mirrored)
+ *   horizontal   → reflect across the horizontal axis (y mirrored)
+ *   both         → 4-way quadrant (vertical + horizontal + 180°)
+ *   radial       → N rotations about the centre (mandala)
+ *   kaleidoscope → N rotations AND N mirror lines (dihedral D_n) — every wedge is
+ *                  bilaterally symmetric, which is what makes a drawn mandala read
+ *                  as a mandala rather than a rotated doodle.
+ *
+ * `kaleidoscope` is Yappy's own addition; the four above it are the HappyPaint set.
  */
 
-export type SymmetryMode = 'off' | 'vertical' | 'horizontal' | 'both' | 'radial';
+export type SymmetryMode = 'off' | 'vertical' | 'horizontal' | 'both' | 'radial' | 'kaleidoscope';
 
 /**
  * A pristine symmetry configuration. Returns a FRESH object each call: the store is
@@ -29,11 +34,27 @@ export const defaultSymmetryState = () => ({
     radialCount: 6,
     angle: 0,
     editing: false,
+    /** Concentric guide circles about the centre; 0 = none. */
+    rings: 0,
+    ringSpacing: 80,
 });
 
 /** Bounds shared by the store setters and the UI. */
 export const MIN_RADIAL_COUNT = 2;
-export const MAX_RADIAL_COUNT = 24;
+export const MAX_RADIAL_COUNT = 36;
+
+/** Ring guides never exceed this, however the count arrives. */
+export const MAX_RINGS = 24;
+
+/**
+ * Radii of the concentric guide circles, in world units, counted outward from the
+ * symmetry centre. Empty for a disabled or nonsensical configuration.
+ */
+export function ringRadii(rings: number, spacing: number): number[] {
+    const n = Math.min(MAX_RINGS, Math.floor(rings));
+    if (n < 1 || !(spacing > 0)) return [];
+    return Array.from({ length: n }, (_, i) => (i + 1) * spacing);
+}
 
 /**
  * A symmetry instance: a 2×2 linear map applied about a centre (cx, cy) in
@@ -90,6 +111,16 @@ export function buildSymmetryTransforms(
             for (let i = 0; i < n; i++) out.push(rot(angle + (i / n) * Math.PI * 2));
             return out;
         }
+        case 'kaleidoscope': {
+            // Dihedral D_n: the n rotations, plus the n mirror lines that keep the set
+            // closed. Composing rot(θ) with refl(φ) gives refl(φ + θ/2), so the mirror
+            // lines sit π/n apart starting from the base spoke — not 2π/n.
+            const n = Math.max(MIN_RADIAL_COUNT, Math.round(radialCount));
+            const out: SymmetryTransform[] = [];
+            for (let i = 0; i < n; i++) out.push(rot((i / n) * Math.PI * 2));
+            for (let i = 0; i < n; i++) out.push(refl(angle + (i / n) * Math.PI));
+            return out;
+        }
         default:
             return [I];
     }
@@ -130,6 +161,13 @@ export function buildSymmetryOps(mode: SymmetryMode, radialCount: number, angle 
             for (let i = 1; i < n; i++) out.push({ kind: 'rotate', theta: (i / n) * Math.PI * 2 });
             return out;
         }
+        case 'kaleidoscope': {
+            const n = Math.max(MIN_RADIAL_COUNT, Math.round(radialCount));
+            const out: SymmetryOp[] = [];
+            for (let i = 1; i < n; i++) out.push({ kind: 'rotate', theta: (i / n) * Math.PI * 2 });
+            for (let i = 0; i < n; i++) out.push({ kind: 'reflect', phi: angle + (i / n) * Math.PI });
+            return out;
+        }
         default:
             return [];
     }
@@ -142,6 +180,7 @@ export function symmetryInstanceCount(mode: SymmetryMode, radialCount: number): 
         case 'horizontal': return 2;
         case 'both': return 4;
         case 'radial': return Math.max(MIN_RADIAL_COUNT, Math.round(radialCount));
+        case 'kaleidoscope': return 2 * Math.max(MIN_RADIAL_COUNT, Math.round(radialCount));
         default: return 1;
     }
 }
@@ -155,6 +194,12 @@ export function symmetryAxisAngles(mode: SymmetryMode, radialCount: number, angl
         case 'radial': {
             const n = Math.max(MIN_RADIAL_COUNT, Math.round(radialCount));
             return Array.from({ length: n }, (_, i) => angle + (i / n) * Math.PI * 2);
+        }
+        case 'kaleidoscope': {
+            // The mirror lines are the wedge boundaries, and a line is two rays — so
+            // 2n rays, one per wedge you can draw into.
+            const n = Math.max(MIN_RADIAL_COUNT, Math.round(radialCount));
+            return Array.from({ length: 2 * n }, (_, i) => angle + (i / n) * Math.PI);
         }
         default: return [];
     }

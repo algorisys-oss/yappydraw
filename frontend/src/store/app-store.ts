@@ -54,7 +54,7 @@ import { slideBuildManager } from '../utils/animation/slide-build-manager';
 import { generateId } from "../utils/id-generator"; // New Import
 import { canvasCenterClient } from "../utils/dock-layout";
 import {
-    buildSymmetryOps, defaultSymmetryState, MIN_RADIAL_COUNT, MAX_RADIAL_COUNT,
+    buildSymmetryOps, defaultSymmetryState, MIN_RADIAL_COUNT, MAX_RADIAL_COUNT, MAX_RINGS,
     type SymmetryMode, type SymmetryOp,
 } from "../utils/symmetry";
 import { refreshBoundLine } from "../utils/binding-logic";
@@ -328,12 +328,16 @@ interface AppState {
         /** Symmetry centre / axis crossing point, in world coordinates. */
         cx: number;
         cy: number;
-        /** Spokes for radial (mandala) symmetry. */
+        /** Spokes for radial (mandala) symmetry; sectors for kaleidoscope. */
         radialCount: number;
         /** Axis rotation in radians (tilts the mirror lines / offsets radial spokes). */
         angle: number;
         /** Edit mode: canvas drags reposition the axis instead of drawing. */
         editing: boolean;
+        /** Concentric guide circles about the centre, for keeping mandala rings even; 0 = none. */
+        rings: number;
+        /** World-unit gap between consecutive ring guides. */
+        ringSpacing: number;
     };
     zenMode: boolean;
     appMode: AppMode;
@@ -7413,6 +7417,17 @@ export const toggleSymmetryAxis = (axis: 'vertical' | 'horizontal') => {
 
 export const setRadialCount = (n: number) =>
     setStore('symmetry', 'radialCount', Math.min(MAX_RADIAL_COUNT, Math.max(MIN_RADIAL_COUNT, Math.round(n))));
+
+/**
+ * Concentric guide circles about the symmetry centre — the scaffold that keeps a
+ * mandala's rings from drifting. Purely visual: they are not elements and never
+ * export.
+ */
+export const setSymmetryRings = (n: number) =>
+    setStore('symmetry', 'rings', Math.min(MAX_RINGS, Math.max(0, Math.floor(n))));
+
+export const setSymmetryRingSpacing = (px: number) =>
+    setStore('symmetry', 'ringSpacing', Math.max(1, Math.round(px)));
 
 export const setSymmetryEditing = (v: boolean) => setStore('symmetry', 'editing', v);
 export const toggleSymmetryEditing = () => setStore('symmetry', 'editing', v => !v);

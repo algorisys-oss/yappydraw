@@ -1,14 +1,16 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry, setSymmetryRings, setSymmetryRingSpacing } from "../store/app-store";
 import { resolveDash, parseDashInput, dashToString } from "../utils/stroke-dash";
+import { MIN_RADIAL_COUNT, MAX_RADIAL_COUNT, MAX_RINGS } from "../utils/symmetry";
 
-/** Symmetry modes, in the order HappyPaint presents them. */
+/** Symmetry modes, in the order HappyPaint presents them (kaleidoscope is ours). */
 const SYMMETRY_MODES = [
     { id: 'off', label: 'Off', title: 'No symmetry' },
     { id: 'vertical', label: '⇼', title: 'Vertical axis — mirror left ↔ right' },
     { id: 'horizontal', label: '⇵', title: 'Horizontal axis — mirror up ↕ down' },
     { id: 'both', label: '✛', title: 'Both axes — 4-way quadrant' },
     { id: 'radial', label: '✳', title: 'Radial — N-spoke mandala' },
+    { id: 'kaleidoscope', label: '❋', title: 'Kaleidoscope — N-sector mandala with every wedge mirrored' },
 ];
 import { pageNoun, setPageSize, propertyPanelTarget } from "../store/app-store";
 import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, canTurntable, spinTurntable360 } from "../store/app-store";
@@ -2442,16 +2444,21 @@ const PropertyPanel: Component = () => {
                                             )}</For>
                                         </div>
 
-                                        <Show when={store.symmetry.mode === 'radial'}>
+                                        <Show when={store.symmetry.mode === 'radial' || store.symmetry.mode === 'kaleidoscope'}>
                                             <div class="property-row">
-                                                <label>Spokes</label>
+                                                <label>{store.symmetry.mode === 'kaleidoscope' ? 'Sectors' : 'Spokes'}</label>
                                                 <input
-                                                    type="range" min="2" max="24" step="1"
+                                                    type="range" min={MIN_RADIAL_COUNT} max={MAX_RADIAL_COUNT} step="1"
                                                     value={store.symmetry.radialCount}
                                                     onInput={(e) => setRadialCount(parseInt(e.currentTarget.value, 10))}
                                                 />
                                                 <span style={{ 'min-width': '22px', 'font-size': '11px' }}>{store.symmetry.radialCount}</span>
                                             </div>
+                                            <Show when={store.symmetry.mode === 'kaleidoscope'}>
+                                                <div style={{ 'font-size': '10px', opacity: 0.7, 'margin': '-2px 0 6px' }}>
+                                                    {store.symmetry.radialCount * 2} copies — each wedge mirrored
+                                                </div>
+                                            </Show>
                                         </Show>
 
                                         <Show when={store.symmetry.mode !== 'off'}>
@@ -2485,6 +2492,32 @@ const PropertyPanel: Component = () => {
                                                     title="Mirror the current selection across the axis"
                                                     onClick={() => mirrorAcrossSymmetry()}
                                                 >Mirror selection</button>
+                                            </div>
+                                        </Show>
+
+                                        {/* Ring guides — the concentric scaffold that keeps a mandala's
+                                            bands even. Shown regardless of mode: they stay useful once
+                                            symmetry is switched off for detail work. */}
+                                        <div class="property-row" style={{ 'margin-top': '8px' }}>
+                                            <label title="Concentric guide circles about the symmetry centre">Rings</label>
+                                            <input
+                                                type="range" min="0" max={MAX_RINGS} step="1"
+                                                value={store.symmetry.rings}
+                                                onInput={(e) => setSymmetryRings(parseInt(e.currentTarget.value, 10))}
+                                            />
+                                            <span style={{ 'min-width': '22px', 'font-size': '11px' }}>
+                                                {store.symmetry.rings || 'Off'}
+                                            </span>
+                                        </div>
+                                        <Show when={store.symmetry.rings > 0}>
+                                            <div class="property-row">
+                                                <label>Ring gap</label>
+                                                <input
+                                                    type="range" min="10" max="300" step="5"
+                                                    value={store.symmetry.ringSpacing}
+                                                    onInput={(e) => setSymmetryRingSpacing(parseInt(e.currentTarget.value, 10))}
+                                                />
+                                                <span style={{ 'min-width': '30px', 'font-size': '11px' }}>{store.symmetry.ringSpacing}</span>
                                             </div>
                                         </Show>
                                     </div>
