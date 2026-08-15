@@ -544,10 +544,51 @@ Yappy.setWidthPoint(s, 0.5, 44);
 Yappy.setWidthPoint(s, 1.0, 2);
 
 Yappy.clearWidthProfile([s]);      // back to a uniform stroke`}</code></pre>
+                <h3>Width profiles — one-click stroke shapes</h3>
+                <p>
+                    Dragging width points by hand is the precise route; most of the time you want a
+                    named shape. Select a stroke and the Properties panel shows a{' '}
+                    <strong>Width Profile</strong> row of small drawn ribbons — click one and the
+                    stroke takes that shape. They&rsquo;re also on the Command Palette
+                    (&ldquo;Width Profile: …&rdquo;).
+                </p>
+                <table class="api-table">
+                    <thead><tr><th>Profile</th><th>Shape</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>Uniform</strong></td><td>A plain, even stroke (removes the profile).</td></tr>
+                        <tr><td><strong>Bulge</strong></td><td>Pointed at both ends, widest in the middle — a leaf.</td></tr>
+                        <tr><td><strong>Waist</strong></td><td>Full at both ends, pinched in the middle.</td></tr>
+                        <tr><td><strong>Taper out</strong></td><td>Full weight at the start, tapering to a point.</td></tr>
+                        <tr><td><strong>Taper in</strong></td><td>Starts at a point, growing to full weight.</td></tr>
+                        <tr><td><strong>Chisel</strong></td><td>Holds full weight, then tapers away at the end.</td></tr>
+                        <tr><td><strong>Oval</strong></td><td>Nearly even, rounded off at both ends.</td></tr>
+                    </tbody>
+                </table>
+                <p>
+                    A profile <strong>shapes</strong> a stroke without making it heavier: the widest
+                    point is the stroke weight you already set, so switching profiles never changes
+                    how heavy the artwork reads. On a mixed selection each stroke is shaped relative
+                    to <em>its own</em> weight, so a thin line and a thick one stay thin and thick.
+                    Once you nudge width points by hand the row reports <strong>Custom</strong>
+                    rather than pretending a preset is still applied.
+                </p>
+                <pre class="code-block"><code>{`Yappy.setWidthProfile('bulge');           // the selection
+Yappy.setWidthProfile('taper-out', [id]); // specific ids
+Yappy.setWidthProfile('uniform', [id]);   // back to a plain stroke
+Yappy.getWidthProfile();                  // 'bulge' | null (null = custom / mixed)
+Yappy.widthProfiles;                      // the list, with labels`}</code></pre>
                 <p class="tip-box">
                     The variable stroke renders as a filled ribbon, so it exports as true vector and prints
-                    crisply. Width applies to <strong>open paths</strong> (the calligraphy use-case); closed
-                    shapes keep their uniform stroke.
+                    crisply — and it appears in both drawing styles, since it&rsquo;s a fill. Width applies to{' '}
+                    <strong>open paths</strong> (the calligraphy use-case); closed shapes keep their uniform
+                    stroke, and picking a profile for one says so rather than storing something invisible. A
+                    line or arrow is converted to a path first.
+                </p>
+                <p class="doc-note">
+                    <strong>Width points are absolute.</strong> A profile is fitted to the stroke weight at
+                    the moment you pick it, so changing <em>Stroke width</em> afterwards won&rsquo;t rescale
+                    it — click the profile again to re-fit. (Cutting a path also drops its profile: the
+                    positions along the path no longer mean the same thing on a shorter piece.)
                 </p>
             </section>
 

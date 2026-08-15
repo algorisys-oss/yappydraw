@@ -1,7 +1,8 @@
 import { type Component, Show, createMemo, For, createSignal, createEffect, Index } from "solid-js";
-import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry, setSymmetryRings, setSymmetryRingSpacing } from "../store/app-store";
+import { store, updateElement, renameElement, deleteElements, duplicateElement, moveElementZIndex, updateDefaultStyles, updateGlobalSettings, moveElementsToLayer, setCanvasBackgroundColor, updateGridSettings, setGridStyle, alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, setMaxLayers, setEraserWidth, setCanvasTexture, pushToHistory, addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, toggleCollapse, setDocType, updateSlideTransition, updateSlideBackground, setTheme, enterCropMode, resetCrop, setCropAspect, toggleVideoPlayback, isVideoPlaying, setElementTransform, setStrokeDash, setAppearance, addAppearanceFill, addAppearanceStroke, applyMeshGradient, setMeshSize, setMeshNodeColor, clearMeshGradient, toggleMeshEdit, resetMeshNodes, setMeshSmooth, applyPatternFill, setPatternFill, clearPatternFill, savePatternSwatchFromElement, setSymmetryMode, setRadialCount, setSymmetryAngleDeg, toggleSymmetryEditing, mirrorAcrossSymmetry, setSymmetryRings, setSymmetryRingSpacing, setWidthProfilePreset, getWidthProfilePreset, canTakeWidthProfile } from "../store/app-store";
 import { resolveDash, parseDashInput, dashToString } from "../utils/stroke-dash";
 import { MIN_RADIAL_COUNT, MAX_RADIAL_COUNT, MAX_RINGS } from "../utils/symmetry";
+import { WIDTH_PROFILES } from "../utils/width-profiles";
 
 /** Symmetry modes, in the order HappyPaint presents them (kaleidoscope is ours). */
 const SYMMETRY_MODES = [
@@ -473,6 +474,74 @@ const StrokeDashControls: Component<{ elementId: string }> = (props) => {
                         {(p) => (<button class="icon-btn" style={chip} title={`Dash pattern: ${p.pattern.join(', ')}`} onClick={() => set(p.pattern)}>{p.label}</button>)}
                     </For>
                     <button class="icon-btn" style={chip} title="Clear custom dashes (use the Stroke Style preset)" onClick={() => set(undefined)}>Clear</button>
+                </div>
+            </div>
+        </Show>
+    );
+};
+
+/**
+ * Width profile picker — the shape of a stroke along its length.
+ *
+ * Shown as drawn ribbons rather than a text list, because the whole point is what the stroke
+ * will look like, and the names ("chisel", "waist") only make sense once you've seen them.
+ * Each swatch is the preset's own multiplier curve, so the picker cannot drift from what gets
+ * applied.
+ *
+ * Only appears for geometry that can actually carry a profile: the ribbon builder handles open
+ * paths only, so a closed shape would store a profile and never draw it.
+ */
+const WidthProfileControls: Component<{ elementId: string }> = (props) => {
+    const el = () => store.elements.find(e => e.id === props.elementId);
+    const eligible = () => { const e = el(); return !!e && canTakeWidthProfile(e); };
+    const hasStroke = () => { const e = el(); return !!e && e.strokeColor !== 'transparent' && (e.strokeWidth ?? 0) > 0; };
+    const current = () => getWidthProfilePreset([props.elementId]);
+
+    /** The preset's ribbon as an SVG path, in a 54×16 box. */
+    const ribbon = (def: typeof WIDTH_PROFILES[number]) => {
+        const W = 54, H = 16, mid = H / 2, maxHalf = 6;
+        const k = def.k ?? (() => 1);
+        const top: string[] = [], bottom: string[] = [];
+        for (let i = 0; i <= 18; i++) {
+            const t = i / 18;
+            const half = Math.max(0.4, k(t) * maxHalf);
+            top.push(`${(t * W).toFixed(1)},${(mid - half).toFixed(1)}`);
+            bottom.push(`${(t * W).toFixed(1)},${(mid + half).toFixed(1)}`);
+        }
+        return `M ${top.join(' L ')} L ${bottom.reverse().join(' L ')} Z`;
+    };
+
+    return (
+        <Show when={eligible() && hasStroke()}>
+            <div class="property-group">
+                <div class="group-title">WIDTH PROFILE</div>
+                <div class="control-row" style={{ gap: '4px', 'flex-wrap': 'wrap' }}>
+                    <For each={WIDTH_PROFILES}>{(def) => (
+                        <button
+                            class="icon-btn"
+                            title={`${def.label} — ${def.hint}`}
+                            aria-label={`Width profile: ${def.label}`}
+                            aria-pressed={current() === def.id}
+                            onClick={() => setWidthProfilePreset([props.elementId], def.id)}
+                            style={{
+                                padding: '2px', 'border-radius': '4px', cursor: 'pointer', 'line-height': 0,
+                                border: current() === def.id
+                                    ? '2px solid var(--accent, #3b82f6)'
+                                    : '1px solid var(--border-color, #d1d5db)',
+                                background: 'var(--bg-secondary, #fff)',
+                            }}
+                        >
+                            <svg width="54" height="16" aria-hidden="true">
+                                <path d={ribbon(def)} fill="var(--text-primary, #333)" />
+                            </svg>
+                        </button>
+                    )}</For>
+                </div>
+                <div style={{ 'font-size': '10px', opacity: 0.7, 'margin-top': '4px' }}>
+                    {current() === null
+                        ? 'Custom (edited with the Width tool)'
+                        : WIDTH_PROFILES.find(p => p.id === current())?.label}
+                    {' · shapes the stroke without making it heavier'}
                 </div>
             </div>
         </Show>
@@ -2374,6 +2443,7 @@ const PropertyPanel: Component = () => {
                                     <VideoActions elementId={targetElementId()} />
                                     <TransformControls elementId={targetElementId()} />
                                     <StrokeDashControls elementId={targetElementId()} />
+                                    <WidthProfileControls elementId={targetElementId()} />
                                 </Show>
                                 <Show when={targetType() === 'slide'}>
                                     <SlideActions />

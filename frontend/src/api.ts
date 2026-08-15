@@ -27,7 +27,7 @@ import {
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll,
-    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, setShowPathfinderBar, togglePathfinderBar, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
+    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, setShowPathfinderBar, togglePathfinderBar, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setWidthProfilePreset, getWidthProfilePreset, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -39,6 +39,7 @@ import { setTransformPivot, clearTransformPivot, getCustomPivot } from "./utils/
 import { initEmbedBridge } from "./embed-bridge";
 import { exportToSvg, exportArtboard, exportRegion, exportPageToPng } from "./utils/export";
 import { GRID_STYLES } from "./utils/grid-lattice";
+import { WIDTH_PROFILES } from "./utils/width-profiles";
 import {
     buildMandala, defaultMandalaSpec, ringOuterRadius, MANDALA_PRESETS, MANDALA_MOTIFS,
     type MandalaRing,
@@ -4073,6 +4074,23 @@ export const YappyAPI = {
     setWidthPoint(id: string, t: number, width: number) { return setWidthPoint(id, t, width); },
     /** Reset a path's variable width back to a uniform stroke. */
     clearWidthProfile(ids?: string[]) { clearWidthProfile(ids ?? [...store.selection]); },
+    /**
+     * Apply a named width profile to the selection: `'uniform' | 'bulge' | 'waist' |
+     * 'taper-out' | 'taper-in' | 'chisel' | 'oval'`.
+     *
+     * Open paths only (a closed shape has no ribbon to build), and non-path shapes are
+     * converted to a path first — the same rules as the Width tool, which writes the same
+     * field. Multipliers never exceed 1, so a profile shapes a stroke without making it
+     * heavier. Returns how many elements were changed.
+     *
+     * Widths are materialized ABSOLUTELY from each element's current `strokeWidth`, so a
+     * later weight change doesn't rescale the profile — re-apply the preset to re-fit it.
+     */
+    setWidthProfile(preset: string, ids?: string[]) { return setWidthProfilePreset(ids ?? [...store.selection], preset); },
+    /** The preset shared by the selection, `null` if they differ or were hand-edited. */
+    getWidthProfile(ids?: string[]) { return getWidthProfilePreset(ids); },
+    /** The available width profiles, with labels and hints. */
+    get widthProfiles() { return WIDTH_PROFILES.map(({ id, label, hint }) => ({ id, label, hint })); },
     /** Vertical Type — toggle stacked text orientation and resize the box to fit (top→bottom,
      *  columns right→left). */
     setTextVertical(id: string, on?: boolean) { return setTextVertical(id, on); },

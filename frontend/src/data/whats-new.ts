@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.199', date: '2026-08-15', items: [
+        'Strokes can now change thickness along their length. Select a line or a drawn path and pick a shape from the new Width Profile row in the Properties panel: even, fat in the middle and pointed at both ends, pinched in the middle, tapering from thick to thin (or thin to thick), holding full weight then tapering away, or nearly even with rounded ends. Each choice is drawn as a little swatch, so you can see what you are picking.',
+        'Choosing a profile shapes the stroke without making it heavier — the thickest part is the stroke width you already set. Select several strokes of different weights and each one keeps its own weight while taking the same shape.',
+        'You can still fine-tune by hand with the Width tool, and the row will then say Custom rather than claiming one of the presets. One click undoes a profile.',
+        'One thing to know: a profile is fitted to the stroke width at the moment you pick it, so if you change the stroke width afterwards, click the profile again to re-fit it.',
+    ] },
     { version: '0.8.198', date: '2026-08-15', items: [
         'The grid can now be diagonal or isometric, as well as square. Diagonal is a 45° cross-hatch; isometric is 30° lines both ways plus uprights, which is the one you want for boxes, three-quarter views and building a character on. Pick it in Settings → Canvas → Grid Style, or search "Grid Style" in the command palette.',
         'Snapping follows whichever grid you chose. On a slanted grid your points land on the crossings of the slanted lines, rather than on the square positions underneath — a slanted grid that still snapped to squares would put everything between its own lines.',

@@ -18,6 +18,7 @@ import type { DimensionAnnotation, DimensionMeasure } from "../utils/dimension-g
 import { showToast } from "../components/toast";
 import { MindmapLayoutEngine, type LayoutDirection, type OutlineNode, getBranchInfo } from "../utils/mindmap-layout";
 import { segmentIntersection } from "../utils/path-intersection";
+import { WIDTH_PROFILES, profileToWidthPoints, detectWidthProfile } from "../utils/width-profiles";
 import { runBooleanOp, polyToPathSubpaths, polyToSmoothSubpaths, polyToRefitSubpaths, computeShapeFaces, unionFaces, elementToMultiPolygon, splitMultiPolyByLine, pointInMultiPoly, diskRing, unionPolys, subtractPolys, polysIntersect, type BooleanOp, type Poly, type ShapeFace } from "../utils/path-boolean";
 import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
@@ -6627,6 +6628,80 @@ export const setWidthPoint = (id: string, t: number, width: number): boolean => 
     setStore('elements', e => e.id === id, { widthProfile: profile.length ? profile : undefined } as any);
     bumpDirtyRevision();
     return true;
+};
+
+/**
+ * Apply a named width profile (Uniform / Bulge / Waist / Taper / Chisel / Oval) to every
+ * eligible element in `ids`.
+ *
+ * Eligibility mirrors the Width tool exactly, because they write the same field: a non-path
+ * shape is converted to a path first, and closed paths are refused — the ribbon builder returns
+ * null for them, so a profile would be stored and never drawn.
+ *
+ * One history step for the whole call, and nothing is pushed when no element qualifies, so a
+ * mis-aimed selection can't leave an empty undo entry behind.
+ */
+export const canTakeWidthProfile = (el: DrawingElement): boolean => {
+    if (el.type === 'path') return !el.pathClosed && (el.pathAnchors?.length ?? 0) >= 2;
+    const r = shapeToPath(el);
+    return !!r && !r.closed;
+};
+
+export const setWidthProfilePreset = (ids: string[], presetId: string): number => {
+    type Conv = { id: string; anchors: PathAnchor[] } | null;
+    const work: { id: string; points: { t: number; width: number }[]; conv: Conv }[] = [];
+    let refusedClosed = 0;
+
+    for (const id of ids) {
+        const el = store.elements.find(e => e.id === id);
+        if (!el) continue;
+        let conv: Conv = null;
+        if (el.type !== 'path') {
+            const r = shapeToPath(el);
+            if (!r) continue;
+            if (r.closed) { refusedClosed++; continue; }
+            conv = { id, anchors: r.anchors };
+        } else if (el.pathClosed) { refusedClosed++; continue; }
+        // Materialized against THIS element's weight, so a mixed-weight selection keeps its
+        // relative weights instead of being flattened to one.
+        work.push({ id, points: profileToWidthPoints(presetId, el.strokeWidth || 2), conv });
+    }
+
+    if (!work.length) {
+        showToast(refusedClosed ? 'Width profile: open paths only' : 'Width profile: needs a path', 'info');
+        return 0;
+    }
+
+    pushToHistory();
+    for (const w of work) {
+        if (w.conv) {
+            setStore('elements', e => e.id === w.id,
+                { type: 'path', pathAnchors: w.conv!.anchors, pathClosed: false, points: undefined, controlPoints: undefined } as any);
+        }
+        setStore('elements', e => e.id === w.id,
+            { widthProfile: w.points.length ? w.points : undefined } as any);
+    }
+    bumpDirtyRevision();
+    const label = WIDTH_PROFILES.find(p => p.id === presetId)?.label ?? presetId;
+    showToast(`Width profile: ${label}`, 'success');
+    return work.length;
+};
+
+/**
+ * The width profile shared by a selection, or null when they disagree / are hand-edited.
+ * Drives the dropdown's displayed value.
+ */
+export const getWidthProfilePreset = (ids?: string[]): string | null => {
+    const sel = ids ?? store.selection;
+    const els = store.elements.filter(e => sel.includes(e.id));
+    if (!els.length) return null;
+    let found: string | null | undefined;
+    for (const el of els) {
+        const id = detectWidthProfile(el.widthProfile as any, el.strokeWidth || 2);
+        if (found === undefined) found = id;
+        else if (found !== id) return null;
+    }
+    return found ?? null;
 };
 
 /** Reset variable width — drop the width profile, back to a uniform stroke. */
