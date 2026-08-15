@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.194', date: '2026-08-15', items: [
+        'The little Unite / Subtract / Intersect / Exclude toolbar no longer pops up on its own. Selecting two things is something you do constantly — to move them, line them up, group them, change their colour, or because you dragged a box round one more than you meant — and a panel of shape-cutting buttons was appearing over your drawing every single time. It now stays out of the way until you ask for it.',
+        'When you do want it, click the new Pathfinder button in the top bar, next to Shape Builder. It then behaves exactly as before, appearing whenever two or more shapes are selected, and it stays on until you switch it off again — so if you are doing a stretch of shape-combining work you turn it on once and forget about it. It is also under View, on the right-click menu, and in Settings.',
+        'Nothing got harder to reach. Ctrl+Alt+U, D, I and X still combine, cut, keep-the-overlap and drop-the-overlap whether or not the toolbar is showing, and right-click → Pathfinder still has all nine operations including Divide, Trim, Merge, Crop and Outline.',
+        'If you liked the old behaviour, one click on that button brings it back permanently — Yappy remembers the choice.',
+    ] },
     { version: '0.8.193', date: '2026-08-15', items: [
         'You can draw mandalas properly now. There is a new Kaleidoscope setting next to the existing Symmetry options. The old Radial setting spins whatever you draw around the centre, which gives you a pinwheel — every petal leans the same way. Kaleidoscope also flips it as it goes round, so both sides of each petal match, which is what makes a mandala look like a mandala. Draw half a petal and the whole page fills in around it while you draw.',
         'Mandalas can have up to 36 spokes, up from 24. Colouring-book designs often want 32 or 36, and those simply were not reachable before.',

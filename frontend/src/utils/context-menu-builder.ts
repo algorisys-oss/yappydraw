@@ -373,6 +373,10 @@ export function getContextMenuItems(
             label: store.globalSettings.showQuickToolbar ? 'Hide Shape Toolbar' : 'Show Shape Toolbar',
             onClick: () => updateGlobalSettings({ showQuickToolbar: !store.globalSettings.showQuickToolbar })
         });
+        items.push({
+            label: store.globalSettings.showPathfinderBar ? 'Hide Pathfinder Strip' : 'Show Pathfinder Strip',
+            onClick: () => updateGlobalSettings({ showPathfinderBar: !store.globalSettings.showPathfinderBar })
+        });
 
         return items;
     }
@@ -1621,6 +1625,10 @@ export function getContextMenuItems(
             {
                 label: store.globalSettings.showQuickToolbar ? 'Hide Shape Toolbar' : 'Show Shape Toolbar',
                 onClick: () => updateGlobalSettings({ showQuickToolbar: !store.globalSettings.showQuickToolbar })
+            },
+            {
+                label: store.globalSettings.showPathfinderBar ? 'Hide Pathfinder Strip' : 'Show Pathfinder Strip',
+                onClick: () => updateGlobalSettings({ showPathfinderBar: !store.globalSettings.showPathfinderBar })
             }
         );
     } else {

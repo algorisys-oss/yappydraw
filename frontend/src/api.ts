@@ -27,7 +27,7 @@ import {
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll,
-    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
+    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, setShowPathfinderBar, togglePathfinderBar, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -3935,6 +3935,15 @@ export const YappyAPI = {
     toggleMeasure(active?: boolean) { toggleMeasure(active); },
     /** Toggle the Shape Builder (drag across ≥2 selected shapes to merge / Alt-drag to delete). */
     toggleShapeBuilder(active?: boolean) { toggleShapeBuilder(active); },
+    /**
+     * Show/hide the floating Pathfinder strip (Unite / Subtract / Intersect / Exclude plus
+     * the region row). Off by default: it appears on any 2+ selection, which is too routine
+     * a state to earn a permanent panel over the artwork. Remembered across sessions.
+     * The Ctrl+Alt+U/D/I/X shortcuts work regardless of this setting.
+     */
+    setShowPathfinderBar(visible: boolean) { setShowPathfinderBar(visible); },
+    /** Toggle the Pathfinder strip; returns the new state. */
+    togglePathfinderBar() { return togglePathfinderBar(); },
     /** Magic Wand — select every element sharing the reference's fill ('fill'|'stroke'|'both'). */
     /** Select › Same: match by fill/stroke/both, or fontFamily/fontSize/opacity/strokeWidth/type. */
     selectSimilar(refId?: string, match: 'fill' | 'stroke' | 'both' | 'fontFamily' | 'fontSize' | 'opacity' | 'strokeWidth' | 'type' = 'fill') { return selectSimilar(refId, match); },

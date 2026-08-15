@@ -7,10 +7,17 @@
  * memory that lets people escape it. Combining shapes is the *inner loop* of drawing a
  * logo, so it needs to be a single click where the eye already is.
  *
- * Appears above the selection whenever two or more shapes are selected (Figma's model —
- * zero travel), and hides itself whenever another tool owns the canvas. The keyboard
- * route (Ctrl+Alt+U/D/I/X, wired in app.tsx) is the same four operations for people who
- * would rather not look at all.
+ * **Opt-in.** It first shipped appearing on any 2+ selection (Figma's model — zero travel),
+ * which turned out to be wrong for this particular strip: selecting two objects is the most
+ * routine state in the app (move, align, group, recolour, or a rubber-band that grabbed one
+ * too many), while combining them is rare and destructive. So the app was covering your
+ * artwork to offer to weld it together nearly every time you selected anything. It now
+ * requires `globalSettings.showPathfinderBar`, toggled from the top-bar Pathfinder button,
+ * the Command Palette or the canvas context menu, and remembered across sessions.
+ *
+ * Still hides itself whenever another tool owns the canvas. The keyboard route
+ * (Ctrl+Alt+U/D/I/X, wired in app.tsx) is unaffected by the toggle — those four operations
+ * stay available with no panel at all, which is the point of having them.
  *
  * "Keep editable" switches from a destructive `applyPathfinder` to a non-destructive
  * `makeCompoundShape`: the sources survive and the operation can be changed or released
@@ -178,6 +185,8 @@ const GAP = 12;
 export const BooleanOpsToolbar: Component = () => {
     /** Selection bounds in world space; null when the toolbar shouldn't show. */
     const bounds = createMemo(() => {
+        // Opt-in: no strip unless it has been pinned open.
+        if (!store.globalSettings.showPathfinderBar) return null;
         if (!canRunBooleanOp()) return null;
         // Any tool that owns the canvas (Shape Builder, Live Paint, knife, warp…) gets
         // the space to itself — a floating strip over the artwork would be in the way

@@ -36,9 +36,11 @@ export const IllustratorToolsDoc: Component = () => {
             <section class="doc-section">
                 <h2>⬤ Combining shapes — Unite, Subtract, Intersect, Exclude</h2>
                 <p>
-                    Building a logo or icon is mostly <em>combining</em> shapes, so these live
-                    where your hands already are rather than behind a menu. Select two or more
-                    shapes and a small strip appears <strong>right above the selection</strong>:
+                    Building a logo or icon is mostly <em>combining</em> shapes, so these can live
+                    where your hands already are rather than behind a menu. Turn on the{' '}
+                    <strong>Pathfinder strip</strong> and a small toolbar appears{' '}
+                    <strong>right above the selection</strong> whenever two or more shapes are
+                    selected:
                 </p>
                 <table class="api-table">
                     <thead>
@@ -68,7 +70,31 @@ export const IllustratorToolsDoc: Component = () => {
                 <p>
                     Right-click → <em>Pathfinder</em> still has the region operations —{' '}
                     <strong>Divide, Trim, Merge, Crop, Outline</strong> — which are occasional,
-                    deliberate choices rather than inner-loop ones.
+                    deliberate choices rather than inner-loop ones. They&rsquo;re also on the
+                    strip&rsquo;s second row.
+                </p>
+
+                <h3>Turning the strip on and off</h3>
+                <p>
+                    The strip is <strong>off by default</strong>, because selecting two objects is
+                    something you do constantly — to move them, align them, group them, recolour
+                    them, or because a rubber-band grabbed one more than you meant. Popping a
+                    floating panel of destructive operations over your artwork every time you did
+                    that was more often in the way than useful.
+                </p>
+                <p>
+                    Switch it on with the <strong>Pathfinder</strong> button in the top bar (next to
+                    Shape Builder), <em>View → Pathfinder Strip</em>, right-click →{' '}
+                    <em>Show Pathfinder Strip</em>, or the Command Palette
+                    (<kbd>Ctrl</kbd>+<kbd>K</kbd> → &ldquo;Pathfinder Strip&rdquo;). It stays pinned
+                    across selections and across sessions, so if you&rsquo;re doing a run of boolean
+                    work you turn it on once. Also in <em>Settings → Canvas → Pathfinder Strip</em>.
+                </p>
+                <p class="tip-box">
+                    <strong>The four shortcuts work whether or not the strip is showing.</strong>{' '}
+                    <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>U</kbd>/<kbd>D</kbd>/<kbd>I</kbd>/<kbd>X</kbd>{' '}
+                    act on the current selection with no panel at all — which is the point of having
+                    them — and right-click → <em>Pathfinder</em> has every operation either way.
                 </p>
 
                 <h3>⬣ Shape Builder — combine by hand</h3>

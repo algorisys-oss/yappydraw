@@ -132,6 +132,8 @@ export interface GlobalSettings {
     bleed?: number;                    // Print bleed margin (px) drawn around artboards; >0 also shows crop marks
     measurementUnit?: 'px' | 'mm' | 'in'; // Display unit for measurement readouts (HUD/Measure/dimensions). Default px.
     exportIncludeDimensions?: boolean;    // Opt-in: bake dimension annotations into PNG/JPG/SVG/PDF exports. Default off.
+    showPathfinderBar?: boolean;          // Opt-in: floating Pathfinder strip on multi-selection. Default OFF — selecting
+                                          // two objects is routine, combining them is rare and destructive.
 }
 
 /**

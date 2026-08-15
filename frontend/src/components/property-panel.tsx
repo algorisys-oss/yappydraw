@@ -1737,6 +1737,7 @@ const PropertyPanel: Component = () => {
             else if (key === 'canvasTexture') setCanvasTexture(value);
             else if (key === 'renderStyle') updateGlobalSettings({ renderStyle: value });
             else if (key === 'showQuickToolbar') updateGlobalSettings({ showQuickToolbar: value });
+            else if (key === 'showPathfinderBar') updateGlobalSettings({ showPathfinderBar: value });
             else if (key === 'colorPalette') updateGlobalSettings({ colorPalette: value });
             else if (key === 'docType') setDocType(value);
         } else if (target.type === 'slide') {

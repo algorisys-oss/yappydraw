@@ -5,7 +5,7 @@ import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleComicPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleKeyframePanel, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
-    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleShapeBuilder, setSelectedTool,
+    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleShapeBuilder, togglePathfinderBar, setSelectedTool,
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import { isPanelOpen } from "../store/dock-layout"; // History/Swatches migrated to the dock (Phase D)
@@ -19,7 +19,7 @@ import {
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
     Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, PersonStanding, Gamepad2, Workflow, ChevronDown, Code, Network
-, Clapperboard, SlidersHorizontal, HelpCircle, Proportions, Command, Combine, Hand
+, Clapperboard, SlidersHorizontal, HelpCircle, Proportions, Command, Combine, Hand, Blend
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
@@ -1162,6 +1162,13 @@ const Menu: Component = () => {
                                             <span class="shortcut">Shift+M</span>
                                         </div>
                                     </div>
+                                    <div class="menu-item" onClick={() => { togglePathfinderBar(); setIsMenuOpen(false); }}>
+                                        <Blend size={16} />
+                                        <span class="label">Pathfinder Strip</span>
+                                        <div class="menu-item-right">
+                                            <Show when={!!store.globalSettings.showPathfinderBar}><Check size={14} class="check-icon" /></Show>
+                                        </div>
+                                    </div>
                                     <div class="menu-item" onClick={() => { toggleKeyframePanel(); setIsMenuOpen(false); }}>
                                         <Key size={16} />
                                         <span class="label">Keyframes</span>
@@ -1362,6 +1369,16 @@ const Menu: Component = () => {
                                     aria-pressed={store.shapeBuilderActive}
                                 >
                                     <Combine size={16} />
+                                </button>
+                                <button
+                                    class="menu-btn"
+                                    classList={{ active: !!store.globalSettings.showPathfinderBar }}
+                                    onClick={() => togglePathfinderBar()}
+                                    title="Pathfinder strip — pin the Unite / Subtract / Intersect / Exclude buttons open, so they appear whenever two or more shapes are selected"
+                                    aria-label="Toggle Pathfinder strip"
+                                    aria-pressed={!!store.globalSettings.showPathfinderBar}
+                                >
+                                    <Blend size={16} />
                                 </button>
                                 <button
                                     class="menu-btn"

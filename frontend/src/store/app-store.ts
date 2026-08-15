@@ -563,6 +563,11 @@ const initialState: AppState = {
         penPressure: (localStorage.getItem('penPressure') ?? '1') !== '0',
         penStabilization: (() => { const v = parseFloat(localStorage.getItem('penStabilization') ?? '0'); return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0; })(),
         fillShapeMode: (localStorage.getItem('fillShapeMode') ?? '0') !== '0',
+        // Default OFF. It used to appear on any 2+ selection, which is the most routine
+        // state in the app — so a floating strip of destructive operations covered the
+        // artwork almost every time you selected anything. Pin it open when you're
+        // actually doing boolean work.
+        showPathfinderBar: (localStorage.getItem('showPathfinderBar') ?? '0') !== '0',
         // Default OFF for now — the balanced auto-reflow needs more work (lays out
         // vertically in practice). Re-enable via Settings → Mindmap. Existing explicit
         // choices in localStorage are still respected.
@@ -1229,6 +1234,20 @@ export const toggleCollapseSelection = () => {
     for (const r of roots) relayoutMindmap(r, { animate });
 };
 
+/**
+ * Show/hide the floating Pathfinder strip. Sticky rather than modal: Pathfinder acts on a
+ * selection you already have, so making it a mode you enter and leave would add an
+ * enter/exit step to every operation. Pinned open, it survives selection changes.
+ */
+export const setShowPathfinderBar = (visible: boolean) =>
+    updateGlobalSettings({ showPathfinderBar: visible });
+
+export const togglePathfinderBar = () => {
+    const next = !store.globalSettings.showPathfinderBar;
+    updateGlobalSettings({ showPathfinderBar: next });
+    return next;
+};
+
 export const setShowCanvasProperties = (visible: boolean) => {
     setStore("showCanvasProperties", visible);
     if (visible) showPropertiesPanel();
@@ -1789,6 +1808,9 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.fillShapeMode !== undefined) {
         try { localStorage.setItem('fillShapeMode', updates.fillShapeMode ? '1' : '0'); } catch { /* ignore */ }
+    }
+    if (updates.showPathfinderBar !== undefined) {
+        try { localStorage.setItem('showPathfinderBar', updates.showPathfinderBar ? '1' : '0'); } catch { /* ignore */ }
     }
     if (updates.penStabilization !== undefined) {
         try { localStorage.setItem('penStabilization', String(updates.penStabilization)); } catch { /* ignore */ }
