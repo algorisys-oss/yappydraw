@@ -59,13 +59,22 @@ export const IllustratorToolsDoc: Component = () => {
                     same four operations are on <kbd>Ctrl</kbd>+<kbd>Alt</kbd> instead.
                 </p>
 
-                <h3>❖ Keep editable — non-destructive combining</h3>
+                <h3>❖ Keep editable — non-destructive combining (the default)</h3>
                 <p>
-                    The <strong>❖</strong> toggle at the end of the strip switches from a
-                    destructive combine to a <strong>compound shape</strong>: the originals are
-                    kept inside it, so you can change the operation or release it later instead of
-                    undoing back through your work. Illustrator hides this behind Alt-clicking a
-                    Pathfinder button; here it&rsquo;s a visible switch that remembers your choice.
+                    Combining is <strong>non-destructive by default</strong>. The result is a{' '}
+                    <strong>compound shape</strong>: a real shape you can move and style, that also
+                    remembers the shapes it was made from. So you can change the operation later
+                    (Subtract → Intersect), <em>release</em> it back into the original shapes when
+                    you want one of them again, or <em>expand</em> it to a plain path — instead of
+                    undoing back through your work.
+                </p>
+                <p>
+                    The <strong>❖</strong> toggle at the end of the strip turns that off if you
+                    want the old flattening behaviour, and your choice is remembered between
+                    sessions. Fully destructive Pathfinder is also always there on right-click →{' '}
+                    <em>Pathfinder</em>. Illustrator hides the non-destructive version behind
+                    Alt-clicking a Pathfinder button, which nobody discovers; here it&rsquo;s
+                    simply what happens.
                 </p>
                 <p>
                     Right-click → <em>Pathfinder</em> still has the region operations —{' '}

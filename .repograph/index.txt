@@ -109,7 +109,7 @@ frontend/src/components/blob-brush-overlay.tsx | typescript | 73 | BlobBrushOver
 frontend/src/components/blueprint-graph.css | - | 152 |
 frontend/src/components/blueprint-graph.tsx | typescript | 515 | Component:16 BPNode:26 pinOutY:41 pinColor:42 pinLabel:43 dataOutY:64 execInY:66 dataInY:68 execInLabel:70 BlueprintGraph:72 isSprite:82 nodeById:92 posOf:93 srcPinY:95 writeNodes:102 writeEdges:103 patchNode:104 deleteNode:105 connect:110 connectData:116 addNode:122 onWheel:148 onSurfaceDown:159 toSurface:164 onSurfaceMove:169 onSurfaceUp:174 startWire:180 resolveWire:185 startNodeDrag:209 moveNodeDrag:216 endNodeDrag:221 setEventKind:228 patchTrigger:229 setActKind:230 patchAction:231 patchCond:232 setSeqCount:234 play:240 onKey:248 from:310 isData:311 x1:312 y1:313 x2:314 y2:315 a:323
 frontend/src/components/boolean-ops-toolbar.css | - | 134 |
-frontend/src/components/boolean-ops-toolbar.tsx | typescript | 291 | Component:27 BoolOp:33 RegionOp:34 list:37 names:39 hasCombinableArea:49 combinableIds:92 runRegionOp:99 runBooleanOp:161 canRunBooleanOp:175 BooleanOpsToolbar:185
+frontend/src/components/boolean-ops-toolbar.tsx | typescript | 310 | Component:27 BoolOp:33 RegionOp:34 list:37 names:39 hasCombinableArea:49 combinableIds:92 runRegionOp:99 readKeepEditable:169 setKeepEditable:173 runBooleanOp:180 canRunBooleanOp:194 BooleanOpsToolbar:204
 frontend/src/components/bpmn-tool-group.tsx | typescript | 248 | Component:1 BpmnToolGroup:137 handler:144 getActiveTool:154 handleToolClick:163 as:171 as:177 handleRightClick:185 toggleMenu:190 activeTool:197 isActive:198 getDropdownPosition:200
 frontend/src/components/brand-kit-panel.css | - | 88 |
 frontend/src/components/brand-kit-panel.tsx | typescript | 171 | Component:1 BrandKitPanel:36 mutate:52 handleNew:62 handleDelete:69 handleLogoUpload:78 handleInsertLogo:87
@@ -342,7 +342,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 557 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 563 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -420,14 +420,14 @@ frontend/src/help-docs/features/design-studio-doc.tsx | typescript | 325 | Desig
 frontend/src/help-docs/features/effects-doc.tsx | typescript | 277 | EffectsDoc:10 Tools:270
 frontend/src/help-docs/features/elements-search-doc.tsx | typescript | 119 | chips:5 ElementsSearchDoc:11 chips:41
 frontend/src/help-docs/features/embedding-doc.tsx | typescript | 225 | EmbeddingDoc:3
-frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 936 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:29 to:650
+frontend/src/help-docs/features/illustrator-tools-doc.tsx | typescript | 945 | Tools:2 IllustratorToolsDoc:10 Tools:14 a:29 to:659
 frontend/src/help-docs/features/logo-toolkit-doc.tsx | typescript | 628 | LogoToolkitDoc:9 the:178 across:353
 frontend/src/help-docs/features/masks-appearance-trace-doc.tsx | typescript | 449 | MasksAppearanceTraceDoc:8 tools:14 dropdown:161 tools:213
 frontend/src/help-docs/features/plotting-doc.tsx | typescript | 335 | graphs:4 PlottingDoc:9 graphs:17
 frontend/src/help-docs/features/stick-animation-doc.tsx | typescript | 296 | StickAnimationDoc:10
 frontend/src/help-docs/features/stick-library-doc.tsx | typescript | 386 | StickLibraryDoc:9 your:253
 frontend/src/help-docs/features/symbols-doc.tsx | typescript | 249 | SymbolsDoc:9
-frontend/src/help-docs/features/workspace-doc.tsx | typescript | 733 | WorkspaceDoc:9 and:150 a:155 in:591
+frontend/src/help-docs/features/workspace-doc.tsx | typescript | 747 | WorkspaceDoc:9 and:150 a:155 in:605
 frontend/src/help-docs/features/ysl-tutorial-doc.tsx | typescript | 768 | YslTutorialDoc:8 members:570 Subject:585 of:633
 frontend/src/help-docs/help-page.css | - | 476 |
 frontend/src/help-docs/help-page.tsx | typescript | 498 | Component:6 ShapeDoc:12 Tools:136 vertical:140 chips:173 a:209 graphs:268 curve:269 frame:277 getShapeFromHash:370 HelpPage:376 handleHashChange:382 navigateToShape:393 filteredShapes:398 currentDoc:409 handleBackToApp:411
@@ -629,7 +629,7 @@ frontend/src/utils/connector-geometry.ts | typescript | 315 | Pt:31 ConnectorGeo
 frontend/src/utils/connector-obstacles.ts | typescript | 132 | Seg:14 Bounds:34
 frontend/src/utils/connector-routing.test.ts | typescript | 212 | node:7 conn:12
 frontend/src/utils/connector-routing.ts | typescript | 203 | Pt:26 Side:27 sideFacing:41 sidePoint:60 oppositePoint:77 projectOntoSide:93 Member:108 allocatePort:121
-frontend/src/utils/context-menu-builder.ts | typescript | 1883 | MergedCellRegion:61 buildSelectByTypeMenu:77 buildSelectBySamePropertyMenu:156 buildUnlockMenuItems:196 getContextMenuItems:238 buildFormatMenuItems:1714 buildBorderMenuItems:1809
+frontend/src/utils/context-menu-builder.ts | typescript | 1910 | MergedCellRegion:61 buildSelectByTypeMenu:77 buildSelectBySamePropertyMenu:156 buildUnlockMenuItems:196 getContextMenuItems:238 buildFormatMenuItems:1741 buildBorderMenuItems:1836
 frontend/src/utils/corner-radius.test.ts | typescript | 116 | rect:15
 frontend/src/utils/corner-radius.ts | typescript | 79 | CornerRadii:17 RadiusSource:19 hasPerCornerRadius:33 uniformRadiusPx:41 cornerRadiiPx:51 roundRectRadii:61 roundedRectPath:71
 frontend/src/utils/curve-fit.ts | typescript | 38 | Pt:10 catmullRomAnchors:13
@@ -873,7 +873,7 @@ tests/blend.spec.ts | typescript | 41 | S:10 hex:37
 tests/blob-brush.spec.ts | typescript | 24 | paths:3
 tests/blueprint-games.spec.ts | typescript | 305 | Window:4 boot:6
 tests/blueprint-graph.spec.ts | typescript | 449 | Window:7
-tests/boolean-ops-ux.spec.ts | typescript | 327 | object:18 twoOverlappingRects:19 names:299
+tests/boolean-ops-ux.spec.ts | typescript | 333 | object:18 twoOverlappingRects:19 names:305
 tests/boot-resilience.spec.ts | typescript | 174 | splashVisible:13
 tests/bpmn.spec.ts | typescript | 328 | markers:153
 tests/brand-kit.spec.ts | typescript | 97 | Window:6
@@ -913,6 +913,7 @@ tests/excalidraw-io.spec.ts | typescript | 112 | Window:4
 tests/export-dimensions.spec.ts | typescript | 35 |
 tests/export_shortcut.spec.ts | typescript | 33 |
 tests/eyedropper.spec.ts | typescript | 37 |
+tests/feedback-friction.spec.ts | typescript | 143 | boot:11
 tests/flappy.spec.ts | typescript | 36 | Window:3
 tests/flare.spec.ts | typescript | 15 |
 tests/flowchart.spec.ts | typescript | 67 |

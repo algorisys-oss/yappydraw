@@ -305,6 +305,20 @@ Yappy.getGroupName(gid);`}</code></pre>
                     above artwork on a higher layer, move the object to that layer (or reorder the layers with
                     <span class="kbd">Alt</span>+<span class="kbd">[</span> / <span class="kbd">]</span>).
                 </p>
+
+                <h3>Moving objects between layers</h3>
+                <p>
+                    Select the artwork, then right-click → <strong>Move to Layer</strong> and pick the destination. It
+                    works on a whole selection at once, and a tick marks the layer the selection is already on (or every
+                    such layer, when a mixed selection spans several). Group layers are containers rather than places
+                    artwork lives, so they aren&rsquo;t offered, and neither are locked layers — for the same reason you
+                    can&rsquo;t draw into one. The entry is hidden entirely when there is nowhere else to move to.
+                </p>
+                <p>
+                    To move a <strong>layer itself</strong> up or down the stack, drag its row in the Layers panel, or
+                    press <span class="kbd">Alt</span>+<span class="kbd">[</span> /{' '}
+                    <span class="kbd">Alt</span>+<span class="kbd">]</span> to move the active layer.
+                </p>
             </section>
 
             {/* ─── RASTERIZE ──────────────────────────────────────────── */}

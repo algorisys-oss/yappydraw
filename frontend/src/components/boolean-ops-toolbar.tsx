@@ -153,8 +153,27 @@ const OpIcon: Component<{ op: BoolOp }> = (props) => {
     );
 };
 
-/** Persisted across appearances so the choice doesn't reset on every selection. */
-const [keepEditable, setKeepEditable] = createSignal(false);
+/**
+ * Non-destructive by default.
+ *
+ * This started off, so Subtract flattened your shapes and threw the sources away — and the
+ * reported consequence was exactly that: "if I keep the subtracting object aside and want to
+ * reuse it later, I have to break/separate the object first". Keeping the operation live is
+ * the safer default in a vector editor: the result is still a real shape, but the op can be
+ * changed, released back into its sources, or expanded whenever you want. Truly destructive
+ * Pathfinder is still one click away on the right-click menu.
+ *
+ * Persisted in localStorage, which is what the toggle's tooltip has always promised — it
+ * previously only survived until reload.
+ */
+const readKeepEditable = (): boolean => {
+    try { return (localStorage.getItem('booleanKeepEditable') ?? '1') !== '0'; } catch { return true; }
+};
+const [keepEditable, setKeepEditableRaw] = createSignal(readKeepEditable());
+const setKeepEditable = (next: boolean | ((v: boolean) => boolean)) => {
+    setKeepEditableRaw(next as never);
+    try { localStorage.setItem('booleanKeepEditable', keepEditable() ? '1' : '0'); } catch { /* ignore */ }
+};
 export const booleanKeepEditable = keepEditable;
 
 /** Run a boolean op on the current selection — shared with the keyboard shortcuts. */

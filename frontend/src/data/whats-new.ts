@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.197', date: '2026-08-15', items: [
+        'Combining shapes no longer destroys them. When you Subtract one shape from another, the result is now a shape that remembers what it was made from — so you can change your mind and switch it to Intersect, release it back into the two original shapes, or flatten it to a plain shape, all without undoing your way back. Before this it merged everything and threw the originals away, so getting the cutting shape back meant taking the result apart.',
+        'If you preferred the old behaviour, the ❖ button on the Unite / Subtract strip turns it off, and Yappy now remembers that choice between sessions. Fully flattening is also always available on right-click → Pathfinder.',
+        'You can move objects between layers: select them, right-click, and choose Move to Layer. A tick shows which layer they are on now. Locked layers and group headings are not offered.',
+        'Also documented, because both already worked and neither was written down anywhere: you can reorder layers by dragging a row in the Layers panel, or with Alt+[ and Alt+] to move the layer you are on.',
+    ] },
     { version: '0.8.196', date: '2026-08-15', items: [
         'Fixed: pressing Undo while drawing with the Pen tool stopped the Pen working. Clicks did nothing at all afterwards, and the only way out was to press Escape and start again. The Pen was still trying to add points to the path Undo had just removed. It now notices the path is gone and your next click simply starts a new one.',
         'Fixed: cutting a line with the Knife turned it into a filled shape instead of leaving it as a line. Lines and open paths are now cut into shorter lines, and filled shapes still cut into filled pieces as before. If one knife drag crosses the same line in several places, it is cut at each of them, and the whole cut undoes in one step.',

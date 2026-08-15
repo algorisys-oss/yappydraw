@@ -26,7 +26,7 @@ import {
     mirrorCopy, transformAgain, mirrorAcrossSymmetry, setTransformEffect, expandTransformEffect, clearTransformEffect, setExtrude, clearExtrude, expandExtrude, toggleRevolve, applyFeather, applyGlow, applyScribble,
     bringToFront, sendToBack, moveSelectionZIndex,
     toggleGrid, toggleSnapToGrid, toggleZenMode,
-    setViewState, setShowCanvasProperties, deleteElements,
+    setViewState, setShowCanvasProperties, deleteElements, moveElementsToLayer,
     togglePropertyPanel, toggleCollapse, setParent, clearParent,
     addChildNode, addSiblingNode, reorderMindmap, applyMindmapStyling, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, makeCompoundPath, releaseCompoundPath, joinPaths, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, addDimension, removeDimensionsForTarget,
     zoomToFit, zoomToFitSlide, updateGlobalSettings, detachSlideBackgroundImage, updateSlideBackground,
@@ -1450,6 +1450,33 @@ export function getContextMenuItems(
             },
             { separator: true }
         );
+
+        // Move to Layer — `moveElementsToLayer` existed but had no UI anywhere, so moving a
+        // shape between layers meant scripting it. Group layers are containers, not somewhere
+        // elements live, so they're excluded; a locked layer is refused for the same reason
+        // you can't draw into one.
+        {
+            const destinations = store.layers.filter(l => !l.isGroup && !l.locked);
+            const currentIds = new Set(
+                store.elements.filter(e => store.selection.includes(e.id)).map(e => e.layerId));
+            if (destinations.length > 1) {
+                const ids = [...store.selection];
+                items.push({
+                    label: 'Move to Layer', icon: '≡',
+                    submenu: destinations
+                        // Background first, matching the panel's own top-to-bottom order.
+                        .slice()
+                        .sort((a, b) => b.order - a.order)
+                        .map(l => ({
+                            // A tick on the layer the selection is already on — and on every one
+                            // of them when a mixed selection spans several.
+                            label: `${currentIds.has(l.id) ? '✓ ' : ''}${l.name}`,
+                            onClick: () => moveElementsToLayer(ids, l.id),
+                        })),
+                });
+                items.push({ separator: true });
+            }
+        }
 
         // Styling
         if (selectionCount >= 1) {
