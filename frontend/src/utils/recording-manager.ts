@@ -15,6 +15,14 @@ import { projectMasterPosition } from "./slide-utils";
 import { calculateAllAnimatedStates } from "./animation-utils";
 import { applyCompositionOverrides } from "./animation/composition-evaluator";
 import { evaluateTimelineAt, evaluateCameraAt } from "./animation/frame-timeline-evaluator";
+import { playbackRange } from "./animation/frame-timeline-ops";
+import type { AnimTimeline } from "../types/anim-types";
+
+/** Seconds of one pass over the exported frame range. */
+const animPassSeconds = (tl: AnimTimeline): number => {
+    const [lo, hi] = playbackRange(tl);
+    return (hi - lo + 1) / tl.fps;
+};
 import { effectiveTime } from "./animation/animation-engine";
 import { worldToScreen } from "./viewport-transforms";
 import { isPagedDocType } from "../types/slide-types";
@@ -250,7 +258,9 @@ function makePageFrameRenderer(maxSide: number, forGif = false) {
         if (baseT === null) baseT = tMs;
         if (store.docType === 'animation' && store.animTimeline) {
             const tl = store.animTimeline;
-            const f = Math.floor(((tMs - baseT) / 1000) * tl.fps) % tl.frameCount;
+            // Export covers the marked in/out range (the whole ruler when none).
+            const [lo, hi] = playbackRange(tl);
+            const f = lo + (Math.floor(((tMs - baseT) / 1000) * tl.fps) % (hi - lo + 1));
             if (store.animCurrentFrame !== f) setStore('animCurrentFrame', f);
             const ev = evaluateTimelineAt(f, tl, store.elements);
             animVisible = ev.visible;
@@ -313,9 +323,9 @@ const downloadBlob = (blob: Blob, filename: string) => {
  * current zoom/pan — which is what "export my animated post as MP4" means.
  */
 export async function exportPageVideo(opts: { seconds?: number; format?: VideoFormat; name?: string } = {}): Promise<boolean> {
-    // Animation docs default to one full timeline pass (frameCount / fps).
+    // Animation docs default to one full pass of the marked range (or the ruler).
     const animDefault = store.docType === 'animation' && store.animTimeline
-        ? store.animTimeline.frameCount / store.animTimeline.fps : 5;
+        ? animPassSeconds(store.animTimeline) : 5;
     const seconds = Math.max(1, Math.min(120, opts.seconds ?? animDefault));
     const format = opts.format ?? 'mp4';
     if (pageVideoExporting()) { showToast('A video export is already running', 'info'); return false; }
@@ -368,7 +378,7 @@ export async function exportPageVideo(opts: { seconds?: number; format?: VideoFo
 export async function exportPageGif(opts: { seconds?: number; fps?: number; name?: string } = {}): Promise<boolean> {
     // Animation docs default to one full timeline pass at the timeline's rate.
     const tl = store.docType === 'animation' ? store.animTimeline : null;
-    const seconds = Math.max(1, Math.min(30, opts.seconds ?? (tl ? tl.frameCount / tl.fps : 5)));
+    const seconds = Math.max(1, Math.min(30, opts.seconds ?? (tl ? animPassSeconds(tl) : 5)));
     const fps = Math.max(5, Math.min(30, opts.fps ?? (tl ? tl.fps : 12)));
     if (pageVideoExporting()) { showToast('A video export is already running', 'info'); return false; }
     const fr = makePageFrameRenderer(960, true);

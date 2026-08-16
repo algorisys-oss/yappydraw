@@ -9,6 +9,7 @@
 import { store, setStore } from '../../store/app-store';
 import { gotoFrame, setActiveAnimScene } from '../../store/anim-ops';
 import { scheduleTimelineAudio, type AudioPlaybackHandle } from './anim-audio';
+import { playbackRange } from './frame-timeline-ops';
 import type { AnimTimeline, FrameAction } from '../../types/anim-types';
 
 let rafId: number | null = null;
@@ -63,20 +64,24 @@ const tick = () => {
     const raw = startFrame + Math.floor(elapsed * tl.fps);
     const prev = store.animCurrentFrame;
 
+    // Playback covers the marked in/out range, or the whole ruler when none is set.
+    const [lo, hi] = playbackRange(tl);
+    const len = hi - lo + 1;
+
     let f: number;
     let ended = false;
     if (store.animLoop) {
-        f = raw % tl.frameCount;
+        f = lo + (((raw - lo) % len) + len) % len;
         // Loop wrap: reschedule the audio row for the new pass.
         if (f < prev && tl.audio?.length) {
             audioHandle?.stop();
-            audioHandle = scheduleTimelineAudio(tl.audio, 0, tl.fps);
+            audioHandle = scheduleTimelineAudio(tl.audio, lo, tl.fps);
         }
-    } else if (raw >= tl.frameCount - 1) {
-        f = tl.frameCount - 1;
+    } else if (raw >= hi) {
+        f = hi;
         ended = true;
     } else {
-        f = raw;
+        f = Math.max(lo, raw);
     }
 
     // Frame actions fire when PLAYBACK crosses their keyframe (never on scrub).
@@ -114,8 +119,12 @@ const tick = () => {
 export const playAnimation = () => {
     const tl = store.animTimeline;
     if (!tl || store.animPlaying) return;
-    // Play from the playhead; restart when parked on the last frame (non-loop end).
-    startFrame = store.animCurrentFrame >= tl.frameCount - 1 ? 0 : store.animCurrentFrame;
+    // Play from the playhead; restart from the range start when parked on (or
+    // outside) its end — a playhead left before mark-in would otherwise run the
+    // frames the user just excluded.
+    const [lo, hi] = playbackRange(tl);
+    const cur = store.animCurrentFrame;
+    startFrame = cur >= hi || cur < lo ? lo : cur;
     startWallMs = performance.now();
     setStore('animPlaying', true);
     if (tl.audio?.length) audioHandle = scheduleTimelineAudio(tl.audio, startFrame, tl.fps);
@@ -129,10 +138,10 @@ export const pauseAnimation = () => {
     audioHandle = null;
 };
 
-/** Stop = pause + rewind to frame 0 (Animate's Stop button). */
+/** Stop = pause + rewind to the range start (Animate's Stop button). */
 export const stopAnimation = () => {
     pauseAnimation();
-    gotoFrame(0);
+    gotoFrame(store.animTimeline ? playbackRange(store.animTimeline)[0] : 0);
 };
 
 export const toggleAnimPlayback = () => (store.animPlaying ? pauseAnimation() : playAnimation());

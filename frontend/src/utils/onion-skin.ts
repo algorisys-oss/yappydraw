@@ -13,8 +13,9 @@
 import rough from 'roughjs';
 import type { RoughCanvas } from 'roughjs/bin/canvas';
 import type { DrawingElement } from '../types';
-import type { AnimTimeline } from '../types/anim-types';
+import type { AnimTimeline, PegTransform } from '../types/anim-types';
 import { evaluateTimelineAt } from './animation/frame-timeline-evaluator';
+import { pegAt } from './animation/frame-timeline-ops';
 import { renderLayersAndElements } from './canvas-renderer';
 
 let ghostCanvas: HTMLCanvasElement | null = null;
@@ -25,6 +26,24 @@ const FUTURE_TINT = 'rgba(34, 197, 94, 0.9)'; // green
 
 /** Ghost opacity by distance from the playhead: 0.32, 0.22, 0.15, … ≥ 0.08. */
 const ghostAlpha = (dist: number) => Math.max(0.08, 0.32 - 0.1 * (dist - 1));
+
+/** Bounding-box centre of a set of elements — the pivot an out-of-pegs rotate
+ *  or scale turns about. Uses the stored box, so a tweened ghost pivots a few
+ *  pixels off its drawn position; invisible at ghost opacities. */
+const centreOf = (els: readonly DrawingElement[]): { x: number; y: number } => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const e of els) {
+        const x0 = Math.min(e.x, e.x + (e.width ?? 0));
+        const x1 = Math.max(e.x, e.x + (e.width ?? 0));
+        const y0 = Math.min(e.y, e.y + (e.height ?? 0));
+        const y1 = Math.max(e.y, e.y + (e.height ?? 0));
+        if (x0 < minX) minX = x0;
+        if (x1 > maxX) maxX = x1;
+        if (y0 < minY) minY = y0;
+        if (y1 > maxY) maxY = y1;
+    }
+    return Number.isFinite(minX) ? { x: (minX + maxX) / 2, y: (minY + maxY) / 2 } : { x: 0, y: 0 };
+};
 
 export interface OnionRenderOpts {
     canvas: HTMLCanvasElement;
@@ -71,12 +90,44 @@ export function renderOnionSkins(ctx: CanvasRenderingContext2D, opts: OnionRende
         gctx.setTransform(1, 0, 0, 1, 0, 0);
         gctx.globalCompositeOperation = 'source-over';
         gctx.clearRect(0, 0, ghostCanvas.width, ghostCanvas.height);
-        gctx.setTransform(worldTransform);
-        renderLayersAndElements(gctx, ghostRc!, {
-            ...opts.renderOpts,
-            elements: elements.filter(e => ev.visible.has(e.id)),
-            animatedStates: ghostStates,
-        } as Parameters<typeof renderLayersAndElements>[2]);
+
+        const visible = elements.filter(e => ev.visible.has(e.id));
+        const drawSet = (els: DrawingElement[], peg: PegTransform | null) => {
+            if (els.length === 0) return;
+            gctx.save();
+            gctx.setTransform(worldTransform);
+            if (peg) {
+                // Rotate/scale about the cel's own centre so the ghost pivots where
+                // the drawing is, not around the world origin.
+                const c = centreOf(els);
+                gctx.translate(c.x + peg.x, c.y + peg.y);
+                gctx.rotate(peg.angle);
+                gctx.scale(peg.scale, peg.scale);
+                gctx.translate(-c.x, -c.y);
+            }
+            renderLayersAndElements(gctx, ghostRc!, {
+                ...opts.renderOpts,
+                elements: els,
+                animatedStates: ghostStates,
+            } as Parameters<typeof renderLayersAndElements>[2]);
+            gctx.restore();
+        };
+
+        // Out of pegs: a cel can be shifted for THIS ghost only. Pegged layers are
+        // drawn in their own pass, which costs their exact stacking against the
+        // un-pegged ones — a fair trade for a display aid that exists to be moved
+        // out of place anyway.
+        const pegged = new Map<string, PegTransform>();
+        for (const row of timeline.layers) {
+            const p = pegAt(timeline, row.layerId, frame);
+            if (p && (p.x !== 0 || p.y !== 0 || p.angle !== 0 || p.scale !== 1)) pegged.set(row.layerId, p);
+        }
+        if (pegged.size === 0) {
+            drawSet(visible, null);
+        } else {
+            drawSet(visible.filter(e => !pegged.has(e.layerId ?? '')), null);
+            for (const [layerId, peg] of pegged) drawSet(visible.filter(e => e.layerId === layerId), peg);
+        }
 
         // Tint everything drawn (and only what was drawn).
         gctx.setTransform(1, 0, 0, 1, 0, 0);

@@ -3,7 +3,9 @@ import { isPagedDocType } from '../types/slide-types';
 import { calculateAllAnimatedStates } from "../utils/animation-utils";
 import { applyCompositionOverrides } from "../utils/animation/composition-evaluator";
 import { evaluateTimelineAt, evaluateCameraAt } from "../utils/animation/frame-timeline-evaluator";
-import { animVisibleIds, reconcileTimelineElements } from "../store/anim-ops";
+import { animVisibleIds, reconcileTimelineElements, setPeg } from "../store/anim-ops";
+import { pegAt } from "../utils/animation/frame-timeline-ops";
+import { IDENTITY_PEG } from "../types/anim-types";
 import { renderOnionSkins } from "../utils/onion-skin";
 import { unitGroupId } from "../utils/group-utils";
 import { renderDimensions } from "../utils/dimension-renderer";
@@ -1636,6 +1638,35 @@ const Canvas: Component = () => {
         // stranded cooldown self-heals so single-finger select/marquee can't
         // get permanently stuck.
         if (isTouchBlockedByGesture(e.pointerType)) return;
+
+        // Out of pegs armed: the drag moves that cel's onion GHOST — never the
+        // drawing, never the selection. Consumes the gesture entirely.
+        // Plain drag = slide, Alt = rotate, Shift = scale.
+        if (store.animPegEdit && store.docType === 'animation' && store.animTimeline) {
+            e.preventDefault();
+            const { layerId, frame } = store.animPegEdit;
+            const base = pegAt(store.animTimeline, layerId, frame) ?? IDENTITY_PEG;
+            const mode = e.altKey ? 'rotate' : e.shiftKey ? 'scale' : 'move';
+            const start = getWorldCoordinates(e.clientX, e.clientY);
+            pushToHistory(); // one entry per gesture; the stream below skips history
+            const move = (ev: PointerEvent) => {
+                const p = getWorldCoordinates(ev.clientX, ev.clientY);
+                const dx = p.x - start.x;
+                const dy = p.y - start.y;
+                const next =
+                    mode === 'move' ? { ...base, x: base.x + dx, y: base.y + dy }
+                        : mode === 'rotate' ? { ...base, angle: base.angle + dx * 0.005 }
+                            : { ...base, scale: Math.max(0.1, Math.min(10, base.scale * (1 + dx * 0.004))) };
+                setPeg(layerId, frame, next, false);
+            };
+            const up = () => {
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', up);
+            };
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', up);
+            return;
+        }
 
         // Eyedropper armed: the next click copies the clicked object's style to
         // the armed targets (then disarms). Consumes the click.

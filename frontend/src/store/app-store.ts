@@ -1,4 +1,4 @@
-import { batch } from "solid-js";
+import { batch, createSignal } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 // Dockable-panel system (Phase D): migrated panels are toggled through the dock store so the
 // existing toolbar/menu/hotkey/API entry points keep working. dock-layout has no app-store import,
@@ -453,10 +453,15 @@ interface AppState {
     animLoop: boolean;
     /** Onion-skin ghost settings (transient, not persisted). */
     animOnion: OnionSettings;
-    /** Frames selected in the timeline grid (drives the Frame properties section). */
-    animFrameSelection: { layerId: string; frames: number[] } | null;
+    /** Frames selected in the timeline grid — a RECTANGLE of (rows × frames), so
+     *  every frame op is a loop over rows. `layerIds[0]` is the anchor row and
+     *  drives the Frame properties section. */
+    animFrameSelection: { layerIds: string[]; frames: number[] } | null;
     /** The bottom timeline panel is open (auto-true when entering an animation doc). */
     showAnimTimeline: boolean;
+    /** Which cel's onion ghost is being dragged "out of pegs" (transient). While
+     *  set, a canvas drag moves that GHOST instead of drawing or selecting. */
+    animPegEdit: { layerId: string; frame: number } | null;
 
     // Video Playback
     activeVideoElementIds: string[];
@@ -725,6 +730,7 @@ const initialState: AppState = {
     animOnion: { enabled: false, before: 2, after: 2 },
     animFrameSelection: null,
     showAnimTimeline: false,
+    animPegEdit: null,
 
     activeVideoElementIds: [],
     dirtyRevision: 0,
@@ -747,7 +753,7 @@ export const bumpDirtyRevision = () => {
 // Animation timeline writes
 // ---------------------------------------------------------------------------
 
-let animTimelineRevision = 0;
+const [animTimelineRevision, bumpAnimTimelineRevision] = createSignal(0);
 
 /**
  * Monotonic counter bumped on every write to `store.animTimeline`.
@@ -760,15 +766,20 @@ let animTimelineRevision = 0;
  * other half of their key — normally changes at the same time. Edit the timeline
  * while the playhead stays put (splitting a tween span mid-drag does exactly
  * that) and they hand back the previous frame's answer.
+ *
+ * It is a SIGNAL, not a plain counter, for the same reason: a reactive consumer
+ * that wants to re-run on any timeline edit (the timeline panel's canvas redraw)
+ * has nothing else to track — reading `store.animTimeline` tracks a reference
+ * that never changes.
  */
-export const animTimelineRev = () => animTimelineRevision;
+export const animTimelineRev = animTimelineRevision;
 
 /** THE write path for `store.animTimeline`. Always use this, never `setStore`
  *  directly, or the per-frame caches above go stale. */
 export const setAnimTimeline = (
     next: AnimTimeline | null | ((prev: AnimTimeline | null) => AnimTimeline | null)
 ) => {
-    animTimelineRevision++;
+    bumpAnimTimelineRevision(v => v + 1);
     setStore('animTimeline', next as any);
 };
 

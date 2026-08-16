@@ -17,7 +17,13 @@ import {
     opInsertFrame, opInsertKeyframe, opInsertBlankKeyframe, opClearKeyframe,
     opRemoveFrames, opMoveKeyframe, opUpdateKeyframe, opReconcile,
     opAddAudio, opRemoveAudio, opMoveAudio, opSetCameraKey, opClearCameraKey,
+    opCopyFrames, opPasteFrames, opRemoveFrameRange,
+    opSetCelDuration, opSplitFrames, opInsertInbetween,
+    opSetMarker, opRemoveMarker, opSetMarkRange, findCelFrame, findMarkerFrame,
+    opSetPeg, opClearAllPegs,
 } from '../utils/animation/frame-timeline-ops';
+import type { PegTransform } from '../types/anim-types';
+import type { FrameClipboard } from '../utils/animation/frame-timeline-ops';
 import type { AnimAudioClip } from '../types/anim-types';
 import { evaluateTimelineAt, poseElementsAtFrame, activeKeyframeIndex } from '../utils/animation/frame-timeline-evaluator';
 import type { FrameOverride } from '../utils/animation/frame-timeline-evaluator';
@@ -207,6 +213,30 @@ export const gotoFrame = (frame: number) => {
 
 export const stepFrame = (delta: number) => gotoFrame(store.animCurrentFrame + delta);
 
+/** Rows a flip walks: the selected rows, else the active layer, else everything. */
+const flipRows = (tl: AnimTimeline): string[] => {
+    const sel = store.animFrameSelection?.layerIds;
+    if (sel?.length) return [...sel];
+    if (store.activeLayerId) return [store.activeLayerId];
+    return tl.layers.map(l => l.layerId);
+};
+
+/** Flip to the next/previous CEL — drawing to drawing, not frame to frame. */
+export const stepCel = (dir: 1 | -1) => {
+    const tl = timeline();
+    if (!tl) return;
+    const f = findCelFrame(tl, flipRows(tl), store.animCurrentFrame, dir);
+    if (f !== null) gotoFrame(f);
+};
+
+/** Flip to the next/previous ruler marker. */
+export const stepMarker = (dir: 1 | -1) => {
+    const tl = timeline();
+    if (!tl) return;
+    const f = findMarkerFrame(tl, store.animCurrentFrame, dir);
+    if (f !== null) gotoFrame(f);
+};
+
 // ---------------------------------------------------------------------------
 // Frame / keyframe edits (each pushes one history snapshot)
 // ---------------------------------------------------------------------------
@@ -222,6 +252,15 @@ const apply = (next: AnimTimeline | null) => {
 export const insertFrame = (layerId: string, frame: number) =>
     apply(timeline() && opInsertFrame(timeline()!, layerId, frame));
 
+/** Grow a cel that was just created at `frame` to the document's default
+ *  exposure (`newCelFrames`) by inserting the extra held frames after it. */
+const withNewCelDuration = (tl: AnimTimeline, layerId: string, frame: number): AnimTimeline => {
+    const d = Math.max(1, Math.round(tl.newCelFrames ?? 1));
+    let next = tl;
+    for (let i = 1; i < d; i++) next = opInsertFrame(next, layerId, frame) ?? next;
+    return next;
+};
+
 /** F6 — Insert Keyframe (duplicates the previous cel). Returns the new element ids. */
 export const insertKeyframe = (layerId: string, frame: number): string[] => {
     const tl = timeline();
@@ -234,7 +273,7 @@ export const insertKeyframe = (layerId: string, frame: number): string[] => {
             setStore('elements', els => els.map(e => (res.sourcePatch.has(e.id) ? { ...e, contentId: res.sourcePatch.get(e.id) } : e)));
         }
         if (res.copies.length > 0) setStore('elements', els => [...els, ...res.copies]);
-        setAnimTimeline(res.timeline);
+        setAnimTimeline(withNewCelDuration(res.timeline, layerId, frame));
     });
     return res.newElementIds;
 };
@@ -269,8 +308,11 @@ export const insertKeyframeAndSelect = (layerId: string, frame: number): string[
 };
 
 /** F7 — Insert Blank Keyframe. */
-export const insertBlankKeyframe = (layerId: string, frame: number) =>
-    apply(timeline() && opInsertBlankKeyframe(timeline()!, layerId, frame));
+export const insertBlankKeyframe = (layerId: string, frame: number) => {
+    const tl = timeline();
+    const next = tl && opInsertBlankKeyframe(tl, layerId, frame);
+    apply(next && withNewCelDuration(next, layerId, frame));
+};
 
 /** Apply an op that also deletes the removed cel's exclusive content. */
 const applyRemove = (res: { timeline: AnimTimeline; doomedIds: string[] } | null) => {
@@ -326,6 +368,155 @@ export const setFrameAction = (layerId: string, frame: number, action: import('.
     apply(timeline() && opUpdateKeyframe(timeline()!, layerId, frame, { action: action ?? undefined }));
 
 // ---------------------------------------------------------------------------
+// Timing tools — exposure, split-on-N, in-betweens
+// ---------------------------------------------------------------------------
+
+/** Set the exposure of the selected cel(s) to `duration` frames. */
+export const setCelDuration = (duration: number): boolean => {
+    const tl = timeline();
+    const r = selRange();
+    if (!tl || !r) return false;
+    const next = opSetCelDuration(tl, r.layerIds, r.from, duration);
+    if (!next) return false;
+    apply(next);
+    return true;
+};
+
+/** Re-expose the selection as cels of `every` frames ("shoot this on twos"). */
+export const splitFrames = (every: number): boolean => {
+    const tl = timeline();
+    const r = selRange();
+    if (!tl || !r) return false;
+    const res = opSplitFrames(tl, r.layerIds, r.from, r.to, every, store.elements, generateId);
+    if (!res) return false;
+    pushToHistory();
+    batch(() => {
+        if (res.sourcePatch.size > 0) {
+            setStore('elements', els => els.map(e => (res.sourcePatch.has(e.id) ? { ...e, contentId: res.sourcePatch.get(e.id) } : e)));
+        }
+        if (res.copies.length > 0) setStore('elements', els => [...els, ...res.copies]);
+        setAnimTimeline(res.timeline);
+    });
+    return true;
+};
+
+/** Drop a blank cel halfway through the selected span. */
+export const insertInbetween = (): boolean => {
+    const tl = timeline();
+    const r = selRange();
+    if (!tl || !r) return false;
+    const next = opInsertInbetween(tl, r.layerIds, r.from);
+    if (!next) return false;
+    apply(next);
+    return true;
+};
+
+/** Default exposure for cels created by F6/F7 (1 = one frame each). */
+export const setNewCelFrames = (frames: number) => {
+    const tl = timeline();
+    if (!tl) return;
+    const v = Math.min(Math.max(1, Math.round(frames)), 60);
+    if (v === (tl.newCelFrames ?? 1)) return;
+    pushToHistory();
+    setAnimTimeline({ ...tl, newCelFrames: v });
+};
+
+// ---------------------------------------------------------------------------
+// Frame clipboard — copy / cut / paste / duplicate a block of cels
+// ---------------------------------------------------------------------------
+
+/** In-process, deliberately NOT the system clipboard: a cel carries element
+ *  snapshots with no sane text serialisation, and taking over Ctrl+C in a
+ *  drawing app would break element copy/paste. */
+let frameClipboard: FrameClipboard | null = null;
+
+export const hasFrameClipboard = () => frameClipboard !== null;
+
+/** The selection as a rectangle, or null when nothing is selected. */
+const selRange = () => {
+    const sel = store.animFrameSelection;
+    if (!sel || sel.frames.length === 0 || sel.layerIds.length === 0) return null;
+    return { layerIds: sel.layerIds, from: Math.min(...sel.frames), to: Math.max(...sel.frames) };
+};
+
+const frameList = (from: number, to: number): number[] => {
+    const out: number[] = [];
+    for (let f = from; f <= to; f++) out.push(f);
+    return out;
+};
+
+/** Row ids in timeline display order (top row = topmost layer, like the grid). */
+const displayOrder = (): string[] => [...store.layers].sort((a, b) => b.order - a.order).map(l => l.id);
+
+/** `count` consecutive rows starting at `anchor` — where a multi-row paste lands. */
+const targetRows = (anchor: string, count: number): string[] => {
+    const order = displayOrder();
+    const i = order.indexOf(anchor);
+    return i === -1 ? [anchor] : order.slice(i, i + count);
+};
+
+/** Copy the selected block of cels. Returns false when there's nothing to copy. */
+export const copyFrames = (): boolean => {
+    const tl = timeline();
+    const r = selRange();
+    if (!tl || !r) return false;
+    const clip = opCopyFrames(tl, r.layerIds, r.from, r.to, store.elements);
+    if (!clip) return false;
+    frameClipboard = clip;
+    return true;
+};
+
+/** Delete the selected frames, pulling later cels left. */
+export const deleteFrames = (): boolean => {
+    const tl = timeline();
+    const r = selRange();
+    if (!tl || !r) return false;
+    const res = opRemoveFrameRange(tl, r.layerIds, r.from, r.to);
+    if (!res) return false;
+    applyRemove(res);
+    setStore('animFrameSelection', { layerIds: [...r.layerIds], frames: [r.from] });
+    return true;
+};
+
+export const cutFrames = (): boolean => copyFrames() && deleteFrames();
+
+/**
+ * Paste the clipboard block at `at` (default: the playhead), overwriting the
+ * destination range. Without explicit `layerIds` a multi-row block spreads down
+ * from the anchor row.
+ */
+export const pasteFrames = (at?: number, layerIds?: readonly string[]): boolean => {
+    const tl = timeline();
+    const clip = frameClipboard;
+    if (!tl || !clip) return false;
+    const anchor = store.animFrameSelection?.layerIds[0] ?? store.activeLayerId;
+    const targets = layerIds ?? (anchor ? targetRows(anchor, clip.rows.length) : []);
+    if (targets.length === 0) return false;
+    const frame = at ?? store.animCurrentFrame;
+    const res = opPasteFrames(tl, targets, frame, clip, generateId);
+    if (!res) return false;
+    pushToHistory();
+    batch(() => {
+        if (res.doomedIds.length > 0) {
+            const doomed = new Set(res.doomedIds);
+            setStore('elements', els => els.filter(e => !doomed.has(e.id)));
+            setStore('selection', sel => sel.filter(id => !doomed.has(id)));
+        }
+        if (res.copies.length > 0) setStore('elements', els => [...els, ...res.copies]);
+        setAnimTimeline(res.timeline);
+        setStore('animFrameSelection', { layerIds: [...targets], frames: frameList(frame, frame + clip.length - 1) });
+    });
+    return true;
+};
+
+/** Copy the selection and drop the copy immediately after it. */
+export const duplicateFrames = (): boolean => {
+    const r = selRange();
+    if (!r || !copyFrames()) return false;
+    return pasteFrames(r.to + 1, r.layerIds);
+};
+
+// ---------------------------------------------------------------------------
 // Audio row
 // ---------------------------------------------------------------------------
 
@@ -345,6 +536,56 @@ export const removeAudioClip = (id: string) =>
 
 export const moveAudioClip = (id: string, frame: number) =>
     apply(timeline() && opMoveAudio(timeline()!, id, frame));
+
+// ---------------------------------------------------------------------------
+// Out of pegs — moving a cel's onion ghost without moving the drawing
+// ---------------------------------------------------------------------------
+
+/**
+ * Set the peg on the cel holding `frame`. `recordHistory: false` supports drag
+ * gestures — the caller pushes ONE entry at gesture start and streams updates.
+ */
+export const setPeg = (layerId: string, frame: number, peg: PegTransform | null, recordHistory = true) => {
+    const next = timeline() && opSetPeg(timeline()!, layerId, frame, peg);
+    if (!next) return;
+    if (recordHistory) pushToHistory();
+    setAnimTimeline(next);
+};
+
+/** Start dragging this cel's ghost. Turns the onion on — with no ghosts on
+ *  screen there is nothing to peg, so the mode would look broken. */
+export const startPegEdit = (layerId: string, frame: number) => {
+    if (!timeline()) return;
+    if (!store.animOnion.enabled) setStore('animOnion', 'enabled', true);
+    setStore('animPegEdit', { layerId, frame });
+};
+
+export const endPegEdit = () => setStore('animPegEdit', null);
+
+/** Drop every out-of-pegs offset in the document. */
+export const resetAllPegs = () => apply(timeline() && opClearAllPegs(timeline()!));
+
+// ---------------------------------------------------------------------------
+// Ruler markers + the playback/export range
+// ---------------------------------------------------------------------------
+
+/** Add or replace the marker at `frame` (default: the playhead). */
+export const setMarker = (name: string, frame?: number, color?: string) => {
+    const tl = timeline();
+    if (!tl) return;
+    apply(opSetMarker(tl, {
+        frame: Math.min(Math.max(0, Math.round(frame ?? store.animCurrentFrame)), tl.frameCount - 1),
+        name,
+        ...(color && { color }),
+    }));
+};
+
+export const removeMarker = (frame?: number) =>
+    apply(timeline() && opRemoveMarker(timeline()!, frame ?? store.animCurrentFrame));
+
+/** Set the inclusive playback/export range; both null clears it. */
+export const setMarkRange = (markIn: number | null, markOut: number | null) =>
+    apply(timeline() && opSetMarkRange(timeline()!, markIn, markOut));
 
 // ---------------------------------------------------------------------------
 // Camera keys

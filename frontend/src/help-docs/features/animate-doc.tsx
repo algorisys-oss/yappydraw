@@ -66,8 +66,21 @@ const AnimateDoc: Component = () => {
                         Remove Frame. A hold that turns into a drag scrubs instead, so it never fires by
                         accident.</li>
                     <li><strong>Enter</strong> play/pause · <strong>,</strong> / <strong>.</strong> step one
-                        frame · <strong>Home</strong> / <strong>End</strong> jump to start/end. Frame rate and
-                        length are editable in the timeline header.</li>
+                        frame · <strong>Alt+,</strong> / <strong>Alt+.</strong> flip <em>cel to cel</em>
+                        (drawing to drawing, the way you flip paper) · <strong>Alt+Shift+,</strong> /
+                        <strong> Alt+Shift+.</strong> jump marker to marker · <strong>Home</strong> /
+                        <strong> End</strong> jump to start/end. The <strong>«</strong> and <strong>»</strong>
+                        buttons either side of the frame counter flip cels too. Frame rate and length are
+                        editable in the timeline header.</li>
+                    <li><strong>Selecting a block.</strong> Click a cell to select it; <strong>drag</strong>
+                        across cells and rows to paint a rectangular block. Because dragging a keyframe dot
+                        <em> moves</em> it, hold <strong>Shift</strong> to start a block on a cel — Shift also
+                        extends the block from the corner you already had.</li>
+                    <li><strong>Zoom.</strong> The frame cells scale: use the zoom cluster in the header
+                        (out · <strong>1:1</strong> · in · fit) or hold <strong>Ctrl</strong> and roll the
+                        mouse wheel over the grid. The <strong>#</strong> button switches the ruler between
+                        frame numbers and <strong>seconds.frames</strong>, which is what you want when
+                        timing an animatic to dialogue.</li>
                     <li>The panel grows with your layers up to a height cap, then scrolls — <strong>drag its
                         top edge</strong> to resize (remembered between sessions). Frames scroll horizontally
                         and the playhead auto-scrolls into view.</li>
@@ -77,6 +90,61 @@ const AnimateDoc: Component = () => {
                     fresh empty cel), adjust, repeat — with <strong>Onion</strong> turned on to see ghosts
                     of neighboring frames (red = before, green = after; the counts are adjustable).
                 </p>
+            </section>
+
+            <section class="doc-section">
+                <h2>Blocks of cels — copy, paste, and re-timing</h2>
+                <p>
+                    Select a block of frames (see above), then right-click it. Everything in this section
+                    works on the whole block, across layers.
+                </p>
+                <ul>
+                    <li><strong>Copy Frames</strong> (Ctrl+Alt+C) · <strong>Cut Frames</strong> (Ctrl+Alt+X) ·
+                        <strong> Paste Frames</strong> (Ctrl+Alt+V) · <strong>Duplicate Frames</strong>
+                        (Ctrl+Alt+D, drops the copy straight after the selection) ·
+                        <strong> Delete Frames</strong> (removes the cells, pulling later cels left).</li>
+                    <li>The frame clipboard is <strong>separate from the normal clipboard</strong> — Ctrl+C
+                        and Ctrl+V still copy and paste <em>drawings</em>, which is what you want far more
+                        often while animating. That's why the frame versions add Alt.</li>
+                    <li><strong>Pasting overwrites</strong> the destination range rather than pushing it
+                        along; use F5 first if you want to make room. A pasted cel owns <strong>its own
+                            copies</strong> of the drawings — draw on it and the cel you copied from is
+                        untouched.</li>
+                    <li><strong>Cel Duration</strong> sets how long the selected cel is exposed (1, 2, 3, 4,
+                        6, 8, 12 frames or a typed value). Everything after it slides to fit.</li>
+                    <li><strong>Split Frames → on 2s</strong> re-exposes the selected stretch as cels of that
+                        length — the "shoot this on twos" tool. A cel with a drawing in it is copied into
+                        each new cel so you can then change them independently; a blank cel splits into
+                        blank cels.</li>
+                    <li><strong>Insert In-between</strong> drops a blank cel halfway through the selected
+                        span, ready for the in-between drawing.</li>
+                    <li>The <strong>/cel</strong> field in the header is the default exposure for
+                        <em> new</em> cels. Set it to 2 and every F6/F7 gives you a two-frame cel, so
+                        drawing a sequence stays on twos without pressing F5 between drawings. It's saved
+                        with the document, not as a personal preference, so a file keeps the timing
+                        convention it was drawn on.</li>
+                </ul>
+            </section>
+
+            <section class="doc-section">
+                <h2>Markers, and playing just part of the shot</h2>
+                <p>
+                    <strong>Double-click the ruler</strong> to drop a named marker there; right-click the
+                    ruler to rename it, recolour it, or delete it. Markers are for the key beats of a shot —
+                    a contact pose, a word of dialogue, an accent.
+                </p>
+                <ul>
+                    <li>A marker belongs to the <strong>ruler</strong>, so it stays on its frame when you
+                        retime the cels underneath it. A <strong>frame label</strong> (in the frame
+                        properties bar) belongs to a cel and travels with it. Both exist; pick by what you
+                        want to happen when the timing changes.</li>
+                    <li><strong>Alt+Shift+,</strong> / <strong>Alt+Shift+.</strong> jump from marker to
+                        marker.</li>
+                    <li>Right-click the ruler → <strong>Mark In here</strong> / <strong>Mark Out here</strong>
+                        to limit work to one stretch. The excluded frames grey out, and playback, looping,
+                        Stop (which rewinds to the in-point) and <strong>video/GIF export</strong> all honour
+                        the range. <strong>Clear Play Range</strong> puts it back.</li>
+                </ul>
             </section>
 
             <section class="doc-section">
@@ -152,6 +220,33 @@ const AnimateDoc: Component = () => {
                         edit what a ghost shows, scrub to its frame.</li>
                     <li>They work in both sketch and architectural render styles, and ghost tweened
                         positions too — so you can check a tween's arc frame by frame.</li>
+                </ul>
+            </section>
+
+            <section class="doc-section">
+                <h2>Out of pegs — move the ghost, not the drawing</h2>
+                <p>
+                    Classical animators slide the paper off the peg bar so the previous drawing sits where
+                    it helps them draw the next one — under your hand, at the angle you want, without
+                    changing what's on the page. That's this.
+                </p>
+                <ul>
+                    <li>Right-click a cel → <strong>Edit Out of Pegs…</strong>. Onion skinning switches on
+                        (with no ghosts there'd be nothing to move), and a <strong>pegs ✓</strong> badge
+                        appears in the header.</li>
+                    <li>Now <strong>drag on the canvas</strong> to slide that cel's ghost.
+                        <strong> Alt+drag</strong> rotates it, <strong>Shift+drag</strong> scales it — both
+                        about the cel's own centre. Press <strong>Esc</strong> (or click the badge) to
+                        finish.</li>
+                    <li>The drawing itself <strong>never moves</strong>. The offset applies only where that
+                        cel is drawn as a ghost: playback, export, hit-testing and the HTML player are all
+                        completely unaware of it.</li>
+                    <li>A pegged cel shows a small orange <strong>p</strong> in the timeline.
+                        <strong> Reset Out of Pegs</strong> clears that one cel;
+                        <strong> Reset All Out of Pegs</strong> clears the document.</li>
+                    <li>Use it for a head turn: peg the previous ghost onto the volume you're drawing over,
+                        draw the new pose in place, then reset. Because the drawing didn't move, the flip
+                        plays back correctly the moment you're done.</li>
                 </ul>
             </section>
 
@@ -366,7 +461,27 @@ Yappy.updateElement(copy, { x: 500 });
 Yappy.anim.setTween('motion', undefined, 0);    // tween the span leaving frame 1
 Yappy.anim.setFrameEasing('easeInOutQuad', undefined, 0);
 Yappy.anim.play();                              // …pause(), stop(), gotoFrame(f)
-Yappy.createSymbol('Ball', [id], 'movieclip');  // F8`}</code></pre>
+Yappy.createSymbol('Ball', [id], 'movieclip');  // F8
+
+// Blocks of cels
+Yappy.anim.selectFrames(['layer-1'], 0, 7);     // a rectangle of (rows × frames)
+Yappy.anim.copyFrames();                        // …cutFrames(), duplicateFrames(), deleteFrames()
+Yappy.anim.pasteFrames(24);                     // overwrites frames 24…
+Yappy.anim.splitFrames(2);                      // re-expose the selection on twos
+Yappy.anim.setCelDuration(4);                   // hold the selected cel for 4 frames
+Yappy.anim.insertInbetween();
+Yappy.anim.setNewCelFrames(2);                  // every new cel is 2 frames long
+
+// Flipping, markers, play range
+Yappy.anim.stepCel(1);                          // next drawing (not next frame)
+Yappy.anim.setMarker('contact', 12, '#ef4444');
+Yappy.anim.stepMarker(1);
+Yappy.anim.setMarkRange(4, 20);                 // playback + export cover 4…20
+Yappy.anim.playRange();                         // → [4, 20]
+
+// Out of pegs (ghost-only; the drawing never moves)
+Yappy.anim.setPeg({ x: 40, y: -10, angle: 0.1, scale: 1 });
+Yappy.anim.resetAllPegs();`}</code></pre>
             </section>
 
             <section class="doc-section">

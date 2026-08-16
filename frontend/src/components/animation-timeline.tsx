@@ -12,15 +12,20 @@
  */
 
 import { type Component, For, Show, createEffect, createSignal, onCleanup } from 'solid-js';
-import { Play, Pause, Square, Repeat, X, Plus, Eye, EyeOff, Lock, LockOpen, Trash2, Download } from 'lucide-solid';
-import { store, setStore, setActiveLayer, updateLayer, addLayer, deleteLayer, setIsExportOpen, updateElement } from '../store/app-store';
+import { Play, Pause, Square, Repeat, X, Plus, Eye, EyeOff, Lock, LockOpen, Trash2, Download, ZoomIn, ZoomOut, Maximize2 } from 'lucide-solid';
+import { store, setStore, setActiveLayer, updateLayer, addLayer, deleteLayer, setIsExportOpen, updateElement, animTimelineRev } from '../store/app-store';
 import {
     gotoFrame, stepFrame, setAnimFps, setAnimFrameCount, ensureAnimRows,
     insertFrame, insertKeyframeAndSelect, insertBlankKeyframe, clearKeyframe, removeFrames,
     moveKeyframe, setTween, setFrameLabel, setFrameEase, setFrameGuide, setFrameAction,
     addAudioClip, removeAudioClip, moveAudioClip, setCameraKeyFromView, clearCameraKey,
     addAnimScene, setActiveAnimScene, deleteAnimScene,
+    copyFrames, cutFrames, pasteFrames, duplicateFrames, deleteFrames, hasFrameClipboard,
+    setCelDuration, splitFrames, insertInbetween, setNewCelFrames,
+    setMarker, removeMarker, setMarkRange, stepCel,
+    setPeg, startPegEdit, endPegEdit, resetAllPegs,
 } from '../store/anim-ops';
+import { playbackRange, pegAt } from '../utils/animation/frame-timeline-ops';
 import { SFX, playSfx } from '../game/sound-engine';
 import { pushToHistory } from '../store/app-store';
 import type { EasingName } from '../utils/animation/animation-types';
@@ -34,7 +39,9 @@ import { showToast } from './toast';
 import { CLIP_LIST } from '../library/stick-figures/anim/clips';
 import './animation-timeline.css';
 
-const CELL_W = 12;
+/** Frame-cell widths the zoom steps through. 12 is the default (the old constant). */
+const ZOOM_STEPS = [3, 4, 6, 8, 10, 12, 16, 21, 28, 36, 48];
+const DEFAULT_CELL_W = 12;
 const ROW_H = 26;
 const RULER_H = 22;
 const AUDIO_H = 20; // the audio row, between the ruler and the layer rows
@@ -51,12 +58,83 @@ const AnimationTimeline: Component = () => {
     let panelRef: HTMLDivElement | undefined;
     const [ctxMenu, setCtxMenu] = createSignal<{ x: number; y: number; layerId: string; frame: number } | null>(null);
     const [audioMenu, setAudioMenu] = createSignal<{ x: number; y: number; frame: number; clipId: string | null } | null>(null);
+    const [rulerMenu, setRulerMenu] = createSignal<{ x: number; y: number; frame: number } | null>(null);
     const [dragAudio, setDragAudio] = createSignal<{ id: string; to: number } | null>(null);
     const [dragKf, setDragKf] = createSignal<{ layerId: string; from: number; to: number } | null>(null);
     const [renamingId, setRenamingId] = createSignal<string | null>(null);
     /** User-resizable body height (drag the panel's top edge; persisted). */
     const [bodyMax, setBodyMax] = createSignal<number>(Number(localStorage.getItem('animTimelineHeight')) || 230);
     const [resizing, setResizing] = createSignal(false);
+    /** Horizontal zoom: px per frame cell (persisted, like the panel height). */
+    const [cellW, setCellWRaw] = createSignal<number>(Number(localStorage.getItem('animTimelineCellW')) || DEFAULT_CELL_W);
+    /** Ruler numbers as frame indices or as seconds.frames (animatic work wants time). */
+    const [rulerMetric, setRulerMetricRaw] = createSignal<'frames' | 'seconds'>(
+        localStorage.getItem('animTimelineMetric') === 'seconds' ? 'seconds' : 'frames');
+
+    const setCellW = (w: number) => {
+        const v = Math.min(ZOOM_STEPS[ZOOM_STEPS.length - 1], Math.max(ZOOM_STEPS[0], Math.round(w)));
+        setCellWRaw(v);
+        try { localStorage.setItem('animTimelineCellW', String(v)); } catch { /* ignore */ }
+    };
+    const setRulerMetric = (m: 'frames' | 'seconds') => {
+        setRulerMetricRaw(m);
+        try { localStorage.setItem('animTimelineMetric', m); } catch { /* ignore */ }
+    };
+
+    /** Step one notch, keeping the playhead where it is on screen. */
+    const zoomBy = (dir: 1 | -1) => {
+        const cur = cellW();
+        const next = dir > 0
+            ? ZOOM_STEPS.find(s => s > cur) ?? cur
+            : [...ZOOM_STEPS].reverse().find(s => s < cur) ?? cur;
+        if (next === cur) return;
+        const anchor = gridWrap ? (store.animCurrentFrame * cur - gridWrap.scrollLeft) : 0;
+        setCellW(next);
+        if (gridWrap) requestAnimationFrame(() => {
+            gridWrap!.scrollLeft = Math.max(0, store.animCurrentFrame * next - anchor);
+        });
+    };
+
+    /** Fit the whole timeline in the visible strip. */
+    const zoomToFit = () => {
+        const t = tl();
+        if (!t || !gridWrap) return;
+        setCellW(Math.floor((gridWrap.clientWidth - 6) / Math.max(1, t.frameCount)));
+        requestAnimationFrame(() => { if (gridWrap) gridWrap.scrollLeft = 0; });
+    };
+
+    /** Back to the default scale, scrolled to the playhead. */
+    const zoomReset = () => {
+        setCellW(DEFAULT_CELL_W);
+        requestAnimationFrame(() => {
+            if (gridWrap) gridWrap.scrollLeft = Math.max(0, store.animCurrentFrame * DEFAULT_CELL_W - gridWrap.clientWidth / 2);
+        });
+    };
+
+    /** Ctrl/⌘+wheel over the grid zooms; a plain wheel keeps scrolling the strip. */
+    const onGridWheel = (e: WheelEvent) => {
+        if (!e.ctrlKey && !e.metaKey) return;
+        e.preventDefault();
+        zoomBy(e.deltaY < 0 ? 1 : -1);
+    };
+
+    /** Frames between ruler numbers — chosen so labels stay ~44px apart. */
+    const labelEvery = (): number => {
+        const t = tl();
+        if (!t) return 5;
+        const min = Math.max(1, Math.ceil(44 / cellW()));
+        const steps = rulerMetric() === 'seconds'
+            ? [t.fps, t.fps * 2, t.fps * 5, t.fps * 10, t.fps * 30]
+            : [1, 2, 5, 10, 20, 30, 60, 120, 300];
+        return steps.find(n => n >= min) ?? steps[steps.length - 1];
+    };
+
+    /** Ruler caption for a frame: 1-based index, or seconds.frames. */
+    const rulerLabel = (f: number): string => {
+        const t = tl();
+        if (!t || rulerMetric() === 'frames') return String(f + 1);
+        return `${Math.floor(f / t.fps)}.${String(f % t.fps).padStart(2, '0')}`;
+    };
 
     const onResizeDown = (e: PointerEvent) => {
         e.preventDefault();
@@ -99,11 +177,13 @@ const AnimationTimeline: Component = () => {
             rulerText: '#9ca3af', span: 'rgba(99,102,241,0.16)', spanEdge: 'rgba(99,102,241,0.4)',
             dot: '#e5e7eb', hollow: '#9ca3af', tween: '#a5b4fc', tweenShape: '#4ade80', playhead: '#ef4444',
             sel: 'rgba(99,102,241,0.30)', label: '#fbbf24', off: 'rgba(255,255,255,0.03)',
+            dim: 'rgba(0,0,0,0.45)',
         } : {
             bg: '#fafafa', line: 'rgba(0,0,0,0.07)', line5: 'rgba(0,0,0,0.16)',
             rulerText: '#6b7280', span: 'rgba(99,102,241,0.12)', spanEdge: 'rgba(99,102,241,0.35)',
             dot: '#1f2937', hollow: '#6b7280', tween: '#6366f1', tweenShape: '#16a34a', playhead: '#dc2626',
             sel: 'rgba(99,102,241,0.25)', label: '#d97706', off: 'rgba(0,0,0,0.03)',
+            dim: 'rgba(0,0,0,0.16)',
         };
     };
 
@@ -112,7 +192,7 @@ const AnimationTimeline: Component = () => {
         if (!t || !gridCanvas) return;
         const layers = displayLayers();
         const c = colors();
-        const w = t.frameCount * CELL_W + 2;
+        const w = t.frameCount * cellW() + 2;
         const h = RULER_H + AUDIO_H + layers.length * ROW_H;
         const dpr = window.devicePixelRatio || 1;
         if (gridCanvas.width !== w * dpr || gridCanvas.height !== h * dpr) {
@@ -138,8 +218,8 @@ const AnimationTimeline: Component = () => {
             for (const clip of (t.audio ?? [])) {
                 const f = dragA?.id === clip.id ? dragA.to : clip.frame;
                 const durSec = clip.durationSec ?? (clip.sfx ? (SFX_DUR[clip.sfx] ?? 0.2) : 0.5);
-                const bw = Math.max(CELL_W * 1.5, durSec * t.fps * CELL_W);
-                const bx = f * CELL_W;
+                const bw = Math.max(cellW() * 1.5, durSec * t.fps * cellW());
+                const bx = f * cellW();
                 ctx.fillStyle = 'rgba(245, 158, 11, 0.35)';
                 ctx.fillRect(bx, ay + 2, bw, AUDIO_H - 4);
                 ctx.strokeStyle = '#f59e0b';
@@ -164,23 +244,23 @@ const AnimationTimeline: Component = () => {
             if (!row) return;
 
             // Selection highlight
-            if (sel && sel.layerId === layer.id) {
+            if (sel && sel.layerIds.includes(layer.id)) {
                 ctx.fillStyle = c.sel;
-                for (const f of sel.frames) ctx.fillRect(f * CELL_W, y, CELL_W, ROW_H);
+                for (const f of sel.frames) ctx.fillRect(f * cellW(), y, cellW(), ROW_H);
             }
 
             row.keyframes.forEach((kf, ki) => {
                 const kfFrame = drag && drag.layerId === layer.id && drag.from === kf.frame ? drag.to : kf.frame;
                 const next = row.keyframes[ki + 1];
                 const spanEnd = (next ? next.frame - 1 : row.endFrame);
-                const x = kfFrame * CELL_W;
+                const x = kfFrame * cellW();
                 // Span shading (from the kf's real frame span, not the drag ghost)
                 if (spanEnd >= kf.frame) {
                     ctx.fillStyle = c.span;
-                    ctx.fillRect(kf.frame * CELL_W, y + 2, (spanEnd - kf.frame + 1) * CELL_W, ROW_H - 4);
+                    ctx.fillRect(kf.frame * cellW(), y + 2, (spanEnd - kf.frame + 1) * cellW(), ROW_H - 4);
                     // End tick
                     ctx.fillStyle = c.spanEdge;
-                    ctx.fillRect((spanEnd + 1) * CELL_W - 2, y + 4, 2, ROW_H - 8);
+                    ctx.fillRect((spanEnd + 1) * cellW() - 2, y + 4, 2, ROW_H - 8);
                 }
                 // Tween arrow across the span (indigo = motion, green = shape morph)
                 if (kf.tween && next) {
@@ -188,20 +268,21 @@ const AnimationTimeline: Component = () => {
                     ctx.strokeStyle = kf.tween === 'shape' ? c.tweenShape : c.tween;
                     ctx.lineWidth = 1.5;
                     ctx.beginPath();
-                    ctx.moveTo(kf.frame * CELL_W + CELL_W, y0);
-                    ctx.lineTo(next.frame * CELL_W - 3, y0);
+                    ctx.moveTo(kf.frame * cellW() + cellW(), y0);
+                    ctx.lineTo(next.frame * cellW() - 3, y0);
                     ctx.stroke();
                     ctx.beginPath();
-                    ctx.moveTo(next.frame * CELL_W - 7, y0 - 3.5);
-                    ctx.lineTo(next.frame * CELL_W - 3, y0);
-                    ctx.lineTo(next.frame * CELL_W - 7, y0 + 3.5);
+                    ctx.moveTo(next.frame * cellW() - 7, y0 - 3.5);
+                    ctx.lineTo(next.frame * cellW() - 3, y0);
+                    ctx.lineTo(next.frame * cellW() - 7, y0 + 3.5);
                     ctx.stroke();
                 }
                 // Keyframe dot: filled = has content, hollow = blank cel
-                const cx = x + CELL_W / 2;
+                const cx = x + cellW() / 2;
                 const cy = y + ROW_H / 2;
                 ctx.beginPath();
-                ctx.arc(cx, cy, 3.4, 0, Math.PI * 2);
+                // Shrink with the zoom so dots don't merge into a bar when zoomed out.
+                ctx.arc(cx, cy, Math.max(1.5, Math.min(3.4, cellW() / 2 - 0.6)), 0, Math.PI * 2);
                 if (kf.elementIds.length > 0) { ctx.fillStyle = c.dot; ctx.fill(); }
                 else { ctx.strokeStyle = c.hollow; ctx.lineWidth = 1.4; ctx.stroke(); }
                 // Frame action glyph (Animate's little "a" above the dot)
@@ -209,7 +290,14 @@ const AnimationTimeline: Component = () => {
                     ctx.fillStyle = c.label;
                     ctx.font = 'bold 9px sans-serif';
                     ctx.textAlign = 'center';
-                    ctx.fillText('a', x + CELL_W / 2, y + 8);
+                    ctx.fillText('a', x + cellW() / 2, y + 8);
+                }
+                // Out-of-pegs badge: this cel's ghost is displaced
+                if (kf.peg) {
+                    ctx.fillStyle = '#f97316';
+                    ctx.font = 'bold 9px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('p', x + cellW() / 2, y + ROW_H - 2);
                 }
                 // Label flag
                 if (kf.label) {
@@ -225,18 +313,24 @@ const AnimationTimeline: Component = () => {
         // Vertical gridlines + ruler
         ctx.font = '9px sans-serif';
         ctx.textAlign = 'center';
+        const every = labelEvery();
+        const cw = cellW();
+        // Zoomed right out, per-frame lines are a grey wash — drop them and keep
+        // only the numbered ones.
+        const minorLines = cw >= 6;
         for (let f = 0; f <= t.frameCount; f++) {
-            const x = f * CELL_W;
-            const fifth = f % 5 === 0;
-            ctx.strokeStyle = fifth ? c.line5 : c.line;
+            const major = f % every === 0;
+            if (!major && !minorLines) continue;
+            const x = f * cw;
+            ctx.strokeStyle = major ? c.line5 : c.line;
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(x + 0.5, fifth ? 4 : RULER_H - 5);
+            ctx.moveTo(x + 0.5, major ? 4 : RULER_H - 5);
             ctx.lineTo(x + 0.5, h);
             ctx.stroke();
-            if (fifth && f < t.frameCount) {
+            if (major && f < t.frameCount) {
                 ctx.fillStyle = c.rulerText;
-                ctx.fillText(String(f + 1), x + CELL_W / 2, 11);
+                ctx.fillText(rulerLabel(f), x + cw / 2, 11);
             }
         }
         // Ruler baseline
@@ -246,18 +340,47 @@ const AnimationTimeline: Component = () => {
         ctx.lineTo(w, RULER_H - 0.5);
         ctx.stroke();
 
+        // Mark in/out: grey out the frames playback and export skip, and bracket
+        // the range on the ruler (green in, red out).
+        const [rlo, rhi] = playbackRange(t);
+        if (rlo > 0 || rhi < t.frameCount - 1) {
+            ctx.fillStyle = c.dim;
+            if (rlo > 0) ctx.fillRect(0, RULER_H, rlo * cw, h - RULER_H);
+            if (rhi < t.frameCount - 1) ctx.fillRect((rhi + 1) * cw, RULER_H, (t.frameCount - rhi - 1) * cw, h - RULER_H);
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(rlo * cw, 0, 2, RULER_H);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(Math.max(0, (rhi + 1) * cw - 2), 0, 2, RULER_H);
+        }
+
+        // Ruler markers — flags that stay put when cels are retimed.
+        ctx.textAlign = 'left';
+        ctx.font = '9px sans-serif';
+        for (const mk of (t.markers ?? [])) {
+            const x = mk.frame * cw;
+            ctx.fillStyle = mk.color ?? '#f59e0b';
+            ctx.fillRect(x, 0, 1.5, RULER_H);
+            ctx.beginPath();
+            ctx.moveTo(x + 1.5, 0.5);
+            ctx.lineTo(x + 8.5, 4);
+            ctx.lineTo(x + 1.5, 7.5);
+            ctx.closePath();
+            ctx.fill();
+            if (mk.name) ctx.fillText(mk.name, x + 10, 8);
+        }
+
         // Playhead
-        const px = store.animCurrentFrame * CELL_W;
+        const px = store.animCurrentFrame * cellW();
         ctx.fillStyle = c.playhead;
         ctx.globalAlpha = 0.14;
-        ctx.fillRect(px, RULER_H, CELL_W, h - RULER_H);
+        ctx.fillRect(px, RULER_H, cellW(), h - RULER_H);
         ctx.globalAlpha = 1;
-        ctx.fillRect(px, 0, CELL_W, RULER_H);
+        ctx.fillRect(px, 0, cellW(), RULER_H);
         ctx.beginPath();
         ctx.moveTo(px + 0.5, 0);
         ctx.lineTo(px + 0.5, h);
-        ctx.moveTo(px + CELL_W - 0.5, 0);
-        ctx.lineTo(px + CELL_W - 0.5, h);
+        ctx.moveTo(px + cellW() - 0.5, 0);
+        ctx.lineTo(px + cellW() - 0.5, h);
         ctx.strokeStyle = c.playhead;
         ctx.stroke();
     };
@@ -266,6 +389,12 @@ const AnimationTimeline: Component = () => {
         if (!open()) return;
         // Reactive deps: timeline edits, playhead, selection, drag ghost, layers, theme
         tl();
+        // …and the revision counter, because `tl()` alone is NOT enough: setStore
+        // merges into the existing proxy, so the object reference survives every
+        // structural edit (see setAnimTimeline). Edits used to redraw only because
+        // they happened to move the playhead or the selection too — changing just
+        // the frame count left the canvas at its old width.
+        animTimelineRev();
         store.animCurrentFrame;
         store.animFrameSelection;
         dragKf();
@@ -273,6 +402,8 @@ const AnimationTimeline: Component = () => {
         store.layers.forEach(l => { l.visible; l.order; });
         store.layers.length;
         store.resolvedTheme;
+        cellW();
+        rulerMetric();
         requestAnimationFrame(drawGrid);
     });
 
@@ -280,8 +411,8 @@ const AnimationTimeline: Component = () => {
     createEffect(() => {
         const f = store.animCurrentFrame;
         if (!open() || !gridWrap) return;
-        const x = f * CELL_W;
-        if (x < gridWrap.scrollLeft || x > gridWrap.scrollLeft + gridWrap.clientWidth - CELL_W * 2) {
+        const x = f * cellW();
+        if (x < gridWrap.scrollLeft || x > gridWrap.scrollLeft + gridWrap.clientWidth - cellW() * 2) {
             gridWrap.scrollLeft = Math.max(0, x - gridWrap.clientWidth / 2);
         }
     });
@@ -292,7 +423,7 @@ const AnimationTimeline: Component = () => {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const t = tl()!;
-        const frame = Math.min(Math.max(0, Math.floor(x / CELL_W)), t.frameCount - 1);
+        const frame = Math.min(Math.max(0, Math.floor(x / cellW())), t.frameCount - 1);
         if (y < RULER_H) return { frame, layerId: null, onRuler: true, onAudio: false };
         if (y < RULER_H + AUDIO_H) return { frame, layerId: null, onRuler: false, onAudio: true };
         const li = Math.floor((y - RULER_H - AUDIO_H) / ROW_H);
@@ -311,6 +442,22 @@ const AnimationTimeline: Component = () => {
             if (frame >= clip.frame && frame <= clip.frame + span) return clip;
         }
         return null;
+    };
+
+    const layerIndex = (layerId: string | undefined) =>
+        layerId ? displayLayers().findIndex(l => l.id === layerId) : -1;
+
+    /** Select the rectangle spanned by two (row, frame) corners. */
+    const selectRect = (rowA: number, frameA: number, rowB: number, frameB: number) => {
+        const rows = displayLayers();
+        const a = Math.max(0, Math.min(rowA, rowB));
+        const b = Math.min(rows.length - 1, Math.max(rowA, rowB));
+        if (a > b) return;
+        const f0 = Math.max(0, Math.min(frameA, frameB));
+        const f1 = Math.max(frameA, frameB);
+        const frames: number[] = [];
+        for (let f = f0; f <= f1; f++) frames.push(f);
+        setStore('animFrameSelection', { layerIds: rows.slice(a, b + 1).map(l => l.id), frames });
     };
 
     const onGridPointerDown = (e: PointerEvent) => {
@@ -359,21 +506,20 @@ const AnimationTimeline: Component = () => {
         setActiveLayer(h0.layerId);
         pauseAnimation();
         gotoFrame(h0.frame);
-        // Shift-click extends the frame range on the same layer.
-        const prev = store.animFrameSelection;
-        if (e.shiftKey && prev && prev.layerId === h0.layerId && prev.frames.length > 0) {
-            const a = Math.min(prev.frames[0], h0.frame);
-            const b = Math.max(prev.frames[0], h0.frame);
-            const frames: number[] = [];
-            for (let f = a; f <= b; f++) frames.push(f);
-            setStore('animFrameSelection', { layerId: h0.layerId, frames });
-        } else {
-            setStore('animFrameSelection', { layerId: h0.layerId, frames: [h0.frame] });
-        }
 
-        // Dragging a keyframe dot moves it (applied once on release).
+        // Shift keeps the existing corner and extends to here (across rows too);
+        // a plain press starts a new rectangle at the pressed cell.
+        const prev = store.animFrameSelection;
+        const extending = e.shiftKey && !!prev && prev.frames.length > 0;
+        const anchorIdx = extending ? layerIndex(prev!.layerIds[0]) : layerIndex(h0.layerId);
+        const anchorFrame = extending ? prev!.frames[0] : h0.frame;
+        selectRect(anchorIdx, anchorFrame, layerIndex(h0.layerId), h0.frame);
+
+        // Dragging a keyframe dot moves it (applied once on release) — UNLESS Shift
+        // is held, which always means "select". Without that escape hatch a block
+        // could never START on a cel, and most cels begin with a keyframe.
         const row = rowFor(h0.layerId);
-        if (row?.keyframes.some(k => k.frame === h0.frame)) {
+        if (!e.shiftKey && row?.keyframes.some(k => k.frame === h0.frame)) {
             const move = (ev: PointerEvent) => {
                 const f = hit(ev).frame;
                 if (f !== h0.frame) setDragKf({ layerId: h0.layerId!, from: h0.frame, to: f });
@@ -386,13 +532,27 @@ const AnimationTimeline: Component = () => {
                 setDragKf(null);
                 if (d) {
                     moveKeyframe(d.layerId, d.from, d.to);
-                    setStore('animFrameSelection', { layerId: d.layerId, frames: [d.to] });
+                    setStore('animFrameSelection', { layerIds: [d.layerId], frames: [d.to] });
                     gotoFrame(d.to);
                 }
             };
             gridCanvas.addEventListener('pointermove', move);
             gridCanvas.addEventListener('pointerup', up);
+            return;
         }
+
+        // Empty cell: drag paints a rectangular frame selection across rows/frames.
+        const move = (ev: PointerEvent) => {
+            const hh = hit(ev);
+            if (hh.onRuler || hh.onAudio || !hh.layerId) return;
+            selectRect(anchorIdx, anchorFrame, layerIndex(hh.layerId), hh.frame);
+        };
+        const up = () => {
+            gridCanvas!.removeEventListener('pointermove', move);
+            gridCanvas!.removeEventListener('pointerup', up);
+        };
+        gridCanvas.addEventListener('pointermove', move);
+        gridCanvas.addEventListener('pointerup', up);
     };
 
     /**
@@ -401,6 +561,10 @@ const AnimationTimeline: Component = () => {
      * behaviour rather than a reduced second implementation.
      */
     const openGridMenuAt = (clientX: number, clientY: number, h0: ReturnType<typeof hit>) => {
+        if (h0.onRuler) {
+            setRulerMenu({ x: clientX, y: clientY, frame: h0.frame });
+            return;
+        }
         if (h0.onAudio) {
             setAudioMenu({ x: clientX, y: clientY, frame: h0.frame, clipId: audioClipAt(h0.frame)?.id ?? null });
             return;
@@ -408,7 +572,11 @@ const AnimationTimeline: Component = () => {
         if (!h0.layerId) return;
         setActiveLayer(h0.layerId);
         gotoFrame(h0.frame);
-        setStore('animFrameSelection', { layerId: h0.layerId, frames: [h0.frame] });
+        // Right-clicking INSIDE an existing block keeps it — otherwise every frame
+        // op in the menu would act on the single cell you just collapsed it to.
+        const sel = store.animFrameSelection;
+        const inside = !!sel && sel.layerIds.includes(h0.layerId) && sel.frames.includes(h0.frame);
+        if (!inside) setStore('animFrameSelection', { layerIds: [h0.layerId], frames: [h0.frame] });
         setCtxMenu({ x: clientX, y: clientY, layerId: h0.layerId, frame: h0.frame });
     };
 
@@ -449,6 +617,16 @@ const AnimationTimeline: Component = () => {
         gridCanvas.addEventListener('pointermove', onMove);
         gridCanvas.addEventListener('pointerup', teardown);
         gridCanvas.addEventListener('pointercancel', teardown);
+    };
+
+    /** Is the out-of-pegs drag currently aimed at the cel holding this frame? */
+    const pegEditingHere = (layerId: string, frame: number): boolean => {
+        const pe = store.animPegEdit;
+        if (!pe || pe.layerId !== layerId) return false;
+        const row = rowFor(layerId);
+        if (!row) return false;
+        const a = activeKeyframeIndex(row, pe.frame);
+        return a !== -1 && a === activeKeyframeIndex(row, frame);
     };
 
     /** Create a motion tween; nudge toward one-object-per-layer (Animate's rule). */
@@ -506,8 +684,48 @@ const AnimationTimeline: Component = () => {
                 ]
             },
             { separator: true },
+            {
+                label: pegEditingHere(m.layerId, m.frame) ? 'Stop Editing Out of Pegs' : 'Edit Out of Pegs…',
+                onClick: () => {
+                    if (pegEditingHere(m.layerId, m.frame)) { endPegEdit(); return; }
+                    startPegEdit(m.layerId, m.frame);
+                    showToast('Out of pegs: drag the canvas to slide this cel\'s ghost · Alt = rotate · Shift = scale · Esc to finish', 'info');
+                },
+            },
+            { label: 'Reset Out of Pegs', disabled: !pegAt(tl()!, m.layerId, m.frame), onClick: () => setPeg(m.layerId, m.frame, null) },
+            { label: 'Reset All Out of Pegs', onClick: () => resetAllPegs() },
+            { separator: true },
+            {
+                label: 'Cel Duration', submenu: [
+                    ...[1, 2, 3, 4, 6, 8, 12].map(n => ({
+                        label: n === 1 ? '1 frame (ones)' : n === 2 ? '2 frames (twos)' : n === 3 ? '3 frames (threes)' : `${n} frames`,
+                        onClick: () => setCelDuration(n),
+                    })),
+                    { separator: true } as MenuItem,
+                    {
+                        label: 'Custom…', onClick: () => {
+                            const v = prompt('Cel duration in frames:', '2');
+                            if (v !== null) setCelDuration(Math.max(1, Number(v) || 1));
+                        }
+                    },
+                ]
+            },
+            {
+                label: 'Split Frames', submenu: [1, 2, 3, 4, 6].map(n => ({
+                    label: n === 1 ? 'on 1s (every frame)' : `on ${n}s`,
+                    onClick: () => { if (!splitFrames(n)) showToast('Select a range of frames to split', 'info'); },
+                })),
+            },
+            { label: 'Insert In-between', onClick: () => { if (!insertInbetween()) showToast('No room for an in-between in this cel', 'info'); } },
+            { separator: true },
+            { label: 'Copy Frames', shortcut: 'Ctrl+Alt+C', onClick: () => { if (!copyFrames()) showToast('Nothing to copy', 'info'); } },
+            { label: 'Cut Frames', shortcut: 'Ctrl+Alt+X', onClick: () => cutFrames() },
+            { label: 'Paste Frames', shortcut: 'Ctrl+Alt+V', disabled: !hasFrameClipboard(), onClick: () => pasteFrames(m.frame) },
+            { label: 'Duplicate Frames', shortcut: 'Ctrl+Alt+D', onClick: () => duplicateFrames() },
+            { separator: true },
             { label: 'Clear Keyframe', shortcut: 'Shift+F6', disabled: !isKf, onClick: () => clearKeyframe(m.layerId, m.frame) },
             { label: 'Remove Frame', shortcut: 'Shift+F5', onClick: () => removeFrames(m.layerId, m.frame) },
+            { label: 'Delete Frames', onClick: () => deleteFrames() },
         ];
     };
 
@@ -582,16 +800,62 @@ const AnimationTimeline: Component = () => {
         ];
     };
 
+    // ---------------------------------------------------------- ruler markers
+    const markerAt = (frame: number) => tl()?.markers?.find(m => m.frame === frame) ?? null;
+
+    /** Prompt for a name and drop (or rename) the marker on `frame`. */
+    const promptMarker = (frame: number) => {
+        const existing = markerAt(frame);
+        const name = prompt('Marker name', existing?.name ?? `Marker ${(tl()?.markers?.length ?? 0) + 1}`);
+        if (name === null) return;
+        if (!name.trim()) { if (existing) removeMarker(frame); return; }
+        setMarker(name.trim(), frame, existing?.color);
+    };
+
+    /** Double-clicking the ruler drops a marker there (Callipeg's double-tap). */
+    const onGridDblClick = (e: MouseEvent) => {
+        const h0 = hit(e);
+        if (!h0.onRuler) return;
+        e.preventDefault();
+        promptMarker(h0.frame);
+    };
+
+    const MARKER_COLORS = ['#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+
+    const rulerMenuItems = (): MenuItem[] => {
+        const m = rulerMenu();
+        if (!m) return [];
+        const t = tl()!;
+        const existing = markerAt(m.frame);
+        const ranged = t.markIn !== undefined || t.markOut !== undefined;
+        return [
+            { label: existing ? 'Rename Marker…' : 'Add Marker…', onClick: () => promptMarker(m.frame) },
+            ...(existing ? [
+                {
+                    label: 'Marker Colour', submenu: MARKER_COLORS.map(col => ({
+                        label: col, checked: (existing.color ?? MARKER_COLORS[0]) === col,
+                        onClick: () => setMarker(existing.name, m.frame, col),
+                    })),
+                } as MenuItem,
+                { label: 'Delete Marker', onClick: () => removeMarker(m.frame) } as MenuItem,
+            ] : []),
+            { separator: true },
+            { label: 'Mark In here', onClick: () => setMarkRange(m.frame, null) },
+            { label: 'Mark Out here', onClick: () => setMarkRange(null, m.frame) },
+            { label: 'Clear Play Range', disabled: !ranged, onClick: () => setMarkRange(null, null) },
+        ];
+    };
+
     // ------------------------------------------------- frame properties bar
     /** The keyframe governing the selected frame (its span contains it). */
     const selectedKf = () => {
         const sel = store.animFrameSelection;
-        if (!sel || sel.frames.length === 0) return null;
-        const row = rowFor(sel.layerId);
+        if (!sel || sel.frames.length === 0 || sel.layerIds.length === 0) return null;
+        const row = rowFor(sel.layerIds[0]);
         if (!row) return null;
         const ki = activeKeyframeIndex(row, sel.frames[0]);
         if (ki === -1) return null;
-        return { layerId: sel.layerId, kf: row.keyframes[ki], exact: row.keyframes[ki].frame === sel.frames[0] };
+        return { layerId: sel.layerIds[0], kf: row.keyframes[ki], exact: row.keyframes[ki].frame === sel.frames[0] };
     };
 
     const EASINGS: EasingName[] = ['linear', 'easeInQuad', 'easeOutQuad', 'easeInOutQuad',
@@ -716,10 +980,12 @@ const AnimationTimeline: Component = () => {
                         onClick={() => (store.animPlaying ? pauseAnimation() : playAnimation())}>
                         <Show when={store.animPlaying} fallback={<Play size={13} />}><Pause size={13} /></Show>
                     </button>
-                    <span class="atl-frame" title="Current frame / total — step with , and .">
-                        <button class="atl-step" onClick={() => stepFrame(-1)}>‹</button>
+                    <span class="atl-frame" title="Current frame / total — step with , and .  ·  flip cel to cel with Alt+, / Alt+.">
+                        <button class="atl-step" title="Previous cel (Alt+,)" onClick={() => stepCel(-1)}>«</button>
+                        <button class="atl-step" title="Previous frame (,)" onClick={() => stepFrame(-1)}>‹</button>
                         {store.animCurrentFrame + 1} / {tl()!.frameCount}
-                        <button class="atl-step" onClick={() => stepFrame(1)}>›</button>
+                        <button class="atl-step" title="Next frame (.)" onClick={() => stepFrame(1)}>›</button>
+                        <button class="atl-step" title="Next cel (Alt+.)" onClick={() => stepCel(1)}>»</button>
                     </span>
                     <label class="atl-num" title="Frames per second">
                         <input type="number" min="1" max="120" value={tl()!.fps}
@@ -729,6 +995,22 @@ const AnimationTimeline: Component = () => {
                         <input type="number" min="1" max="9999" value={tl()!.frameCount}
                             onChange={(e) => setAnimFrameCount(Number(e.currentTarget.value))} /> frames
                     </label>
+                    <label class="atl-num" title="Default exposure for new cels (F6/F7) — set 2 to shoot on twos">
+                        <input type="number" min="1" max="60" value={tl()!.newCelFrames ?? 1}
+                            onChange={(e) => setNewCelFrames(Number(e.currentTarget.value))} /> /cel
+                    </label>
+                    <span class="atl-zoom">
+                        <button class="atl-btn" title="Zoom the timeline out (Ctrl + mouse wheel over the grid)"
+                            onClick={() => zoomBy(-1)}><ZoomOut size={12} /></button>
+                        <button class="atl-btn" title="Reset the timeline zoom" onClick={zoomReset}>1:1</button>
+                        <button class="atl-btn" title="Zoom the timeline in (Ctrl + mouse wheel over the grid)"
+                            onClick={() => zoomBy(1)}><ZoomIn size={12} /></button>
+                        <button class="atl-btn" title="Fit the whole timeline in view" onClick={zoomToFit}><Maximize2 size={12} /></button>
+                        <button class="atl-btn" title={rulerMetric() === 'frames' ? 'Ruler shows frames — click for seconds' : 'Ruler shows seconds.frames — click for frames'}
+                            onClick={() => setRulerMetric(rulerMetric() === 'frames' ? 'seconds' : 'frames')}>
+                            {rulerMetric() === 'frames' ? '#' : '⏱'}
+                        </button>
+                    </span>
                     <button class="atl-btn" classList={{ active: store.animLoop }} title="Loop playback"
                         onClick={() => setStore('animLoop', v => !v)}><Repeat size={12} /></button>
                     <button class="atl-btn" classList={{ active: store.animOnion.enabled }} title="Onion skin"
@@ -747,6 +1029,10 @@ const AnimationTimeline: Component = () => {
                             <input type="number" min="0" max="10" value={store.animOnion.after}
                                 onChange={(e) => setStore('animOnion', 'after', Math.max(0, Math.min(10, Number(e.currentTarget.value))))} />
                         </label>
+                    </Show>
+                    <Show when={store.animPegEdit}>
+                        <button class="atl-btn active" title="Dragging the canvas moves this cel's onion ghost · Alt = rotate · Shift = scale. Click (or press Esc) to finish."
+                            onClick={endPegEdit}>pegs ✓</button>
                     </Show>
                     <div class="atl-spacer" />
                     {/* Stick-figure pose (bones/IK): pin clip + cycle phase on this cel;
@@ -878,6 +1164,8 @@ const AnimationTimeline: Component = () => {
                     <div class="atl-gridwrap" ref={gridWrap}>
                         <canvas ref={gridCanvas} class="atl-grid"
                             onPointerDown={onGridPointerDown}
+                            onWheel={onGridWheel}
+                            onDblClick={onGridDblClick}
                             onContextMenu={onGridContextMenu} />
                     </div>
                 </div>
@@ -888,6 +1176,9 @@ const AnimationTimeline: Component = () => {
             </Show>
             <Show when={audioMenu()}>
                 <ContextMenu x={audioMenu()!.x} y={audioMenu()!.y} items={audioMenuItems()} onClose={() => setAudioMenu(null)} />
+            </Show>
+            <Show when={rulerMenu()}>
+                <ContextMenu x={rulerMenu()!.x} y={rulerMenu()!.y} items={rulerMenuItems()} onClose={() => setRulerMenu(null)} />
             </Show>
         </Show>
     );

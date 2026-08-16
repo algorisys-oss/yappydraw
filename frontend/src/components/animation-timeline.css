@@ -304,3 +304,22 @@
     cursor: pointer;
     touch-action: none;
 }
+
+/* Zoom + ruler-metric cluster. One segmented control rather than five separate
+   pills — as pills they pushed the frame-properties section onto a second row. */
+.atl-zoom {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    overflow: hidden;
+    background: var(--bg-secondary);
+    flex: 0 0 auto;
+}
+.atl-zoom .atl-btn {
+    border: none;
+    border-radius: 0;
+    padding: 4px 6px;
+    background: transparent;
+}
+.atl-zoom .atl-btn + .atl-btn { border-left: 1px solid var(--border-color); }

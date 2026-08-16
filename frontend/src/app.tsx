@@ -89,7 +89,7 @@ import StatusBar from './components/status-bar';
 import { initAPI } from './api';
 import { registerShapes } from './shapes/register-shapes';
 import { addSlide } from './store/app-store';
-import { insertFrame, insertKeyframeAndSelect, insertBlankKeyframe, clearKeyframe, removeFrames, stepFrame, gotoFrame } from './store/anim-ops';
+import { insertFrame, insertKeyframeAndSelect, insertBlankKeyframe, clearKeyframe, removeFrames, stepFrame, gotoFrame, copyFrames, cutFrames, pasteFrames, duplicateFrames, stepCel, stepMarker, endPegEdit } from './store/anim-ops';
 import { createSymbol, simplifyPath } from './store/app-store';
 import { toggleAnimPlayback } from './utils/animation/anim-playback';
 import { initAutoSave, forceAutoSave, loadAutoSave } from './storage/auto-save';
@@ -188,13 +188,30 @@ const App: Component = () => {
         return;
       }
 
+      // Animation mode: the FRAME clipboard. Ctrl+Alt rather than plain Ctrl —
+      // Ctrl+C/V must keep copying ELEMENTS, which is what you want far more
+      // often while drawing. `e.code` because Alt rewrites `e.key` on several
+      // keyboard layouts (Alt+C is ç on a Mac).
+      if (store.docType === 'animation' && store.animTimeline && (e.ctrlKey || e.metaKey) && e.altKey) {
+        const frameOp =
+          e.code === 'KeyC' ? copyFrames :
+            e.code === 'KeyX' ? cutFrames :
+              e.code === 'KeyV' ? () => pasteFrames() :
+                e.code === 'KeyD' ? duplicateFrames : null;
+        if (frameOp) {
+          e.preventDefault();
+          frameOp();
+          return;
+        }
+      }
+
       // Animation mode: the F-keys belong to the frame timeline (Animate muscle
       // memory — F5 span, F6 keyframe, F7 blank; Shift removes/clears). Guarded
       // BEFORE the Present handler so F5 never leaves the timeline (or reloads
       // the browser).
       if (store.docType === 'animation' && store.animTimeline && (e.key === 'F5' || e.key === 'F6' || e.key === 'F7' || e.key === 'F8')) {
         e.preventDefault();
-        const layerId = store.animFrameSelection?.layerId ?? store.activeLayerId;
+        const layerId = store.animFrameSelection?.layerIds[0] ?? store.activeLayerId;
         const frame = store.animFrameSelection?.frames[0] ?? store.animCurrentFrame;
         if (e.key === 'F5') { if (e.shiftKey) removeFrames(layerId, frame); else insertFrame(layerId, frame); }
         else if (e.key === 'F6') { if (e.shiftKey) clearKeyframe(layerId, frame); else insertKeyframeAndSelect(layerId, frame); }
@@ -351,6 +368,14 @@ const App: Component = () => {
         return;
       }
 
+      // Escape leaves out-of-pegs editing before anything else looks at Escape —
+      // otherwise the canvas stays hijacked and the user can't draw.
+      if (e.key === 'Escape' && store.animPegEdit) {
+        e.preventDefault();
+        endPegEdit();
+        return;
+      }
+
       // 2 animation. Frame-timeline transport (Animate muscle memory):
       // Enter = play/pause, , / . = step a frame, Home/End = jump to start/end.
       if (store.docType === 'animation' && store.animTimeline && !isCtrlOrMeta && !e.altKey && !e.shiftKey) {
@@ -359,6 +384,14 @@ const App: Component = () => {
         if (code === 'Period') { e.preventDefault(); stepFrame(1); return; }
         if (e.key === 'Home') { e.preventDefault(); gotoFrame(0); return; }
         if (e.key === 'End') { e.preventDefault(); gotoFrame(store.animTimeline.frameCount - 1); return; }
+      }
+
+      // 2b. Flipping. Alt+, / Alt+. walk CEL to CEL — traditional flipping moves
+      // drawing to drawing, not frame to frame — and adding Shift walks marker to
+      // marker. Alt is required because Shift+, / Shift+. already rotate the canvas.
+      if (store.docType === 'animation' && store.animTimeline && e.altKey && !isCtrlOrMeta) {
+        if (code === 'Comma') { e.preventDefault(); if (e.shiftKey) stepMarker(-1); else stepCel(-1); return; }
+        if (code === 'Period') { e.preventDefault(); if (e.shiftKey) stepMarker(1); else stepCel(1); return; }
       }
 
       // 2a. CANVAS (VIEW) ROTATION — Shift+, / Shift+. spin the canvas about its

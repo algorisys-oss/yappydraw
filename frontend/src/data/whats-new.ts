@@ -13,6 +13,16 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.201', date: '2026-08-16', items: [
+        'Animation: you can now copy, cut, paste and duplicate whole blocks of frames, across layers. Drag across the timeline to select a block (hold Shift to start the block on a drawing), then Ctrl+Alt+C and Ctrl+Alt+V. Ctrl+C and Ctrl+V still copy drawings, as before. A pasted frame gets its own copy of the drawing, so working on it never changes the frame you copied it from.',
+        'New timing tools on the right-click menu: set how long a drawing is held, split a stretch of the timeline onto twos (or threes, or every frame), and drop an in-between into the middle of a hold. There is also a "/cel" box in the timeline header — set it to 2 and every new drawing you make is held for two frames, so a sequence stays on twos without you doing anything.',
+        'The timeline zooms. Use the buttons in the header, or hold Ctrl and roll the mouse wheel over it. There is a Fit button for seeing the whole thing at once, and a button that switches the ruler from frame numbers to seconds, which is what you want when timing to dialogue.',
+        'You can flip drawing to drawing with Alt+, and Alt+. — the way you flip paper — instead of stepping one frame at a time. Double-click the ruler to drop a named marker on a key pose, and jump between markers with Alt+Shift+, and Alt+Shift+. Markers stay where you put them even if you retime the drawings underneath.',
+        'Right-click the ruler to mark in and out, and everything outside that range greys out. Playback, looping and video/GIF export then cover just that stretch, so you can work on one piece of a long shot.',
+        'Out of pegs: you can now slide, turn or resize an onion-skin ghost without moving the drawing itself — the digital version of sliding the paper under your hand to draw over it. Right-click a frame, choose Edit Out of Pegs, then drag on the canvas (Alt to rotate, Shift to resize) and press Esc when you are done. Your artwork is never touched, and playback and export never see it.',
+        'Fixed: typing a new length into the timeline\'s frames box changed the length but left the ruler drawn at its old size, so clicking past the old end did nothing.',
+        'Fixed: Clear Play Range did not clear the play range.',
+    ] },
     { version: '0.8.200', date: '2026-08-16', items: [
         'Shift+S now turns stroke stabilization on and off, which is what the keyboard shortcuts list has always said it does. It was not working: pressing Shift+S quietly changed your stroke style instead. Stabilization itself was fine all along — the shortcut simply never reached it, so the only way to turn it on was through Settings.',
         'Stabilization is the "lazy brush": the line trails slightly behind your cursor, which smooths out the shake and makes long curves and freehand lettering much easier with a mouse.',

@@ -22,6 +22,22 @@ export type FrameAction =
     | { kind: 'goto'; frame: number; play?: boolean }
     | { kind: 'nextScene' };
 
+/**
+ * "Out of pegs" — a transform applied to a cel ONLY when it is drawn as an onion
+ * ghost. It is the digital version of sliding the paper under your hand: you move
+ * the ghost to where it helps you draw, and the actual drawing never moves. It is
+ * therefore invisible to playback, to export and to hit-testing, by construction —
+ * nothing outside the onion renderer ever reads it.
+ */
+export interface PegTransform {
+    x: number;                  // world-space offset
+    y: number;
+    angle: number;              // radians, about the cel's centre
+    scale: number;              // 1 = unscaled
+}
+
+export const IDENTITY_PEG: PegTransform = { x: 0, y: 0, angle: 0, scale: 1 };
+
 /** One keyframe cell on a layer's frame row. */
 export interface AnimKeyframe {
     frame: number;              // 0-based frame index; sorted ascending per layer
@@ -37,6 +53,8 @@ export interface AnimKeyframe {
     guideOrient?: boolean;
     /** Playback control that fires when the playhead REACHES this keyframe. */
     action?: FrameAction;
+    /** Out-of-pegs offset for this cel's ONION GHOST only (never the drawing). */
+    peg?: PegTransform;
 }
 
 /** Frame data for one timeline row — paired 1:1 with an existing Layer by id. */
@@ -72,6 +90,15 @@ export interface AnimCameraKey {
     ease?: BezierEase;
 }
 
+/** A named point on the RULER. Distinct from `AnimKeyframe.label`, which belongs
+ *  to a cel and travels with it when the cel is retimed: a marker stays at its
+ *  frame and marks the shot (a key pose, a beat, a word of dialogue). */
+export interface AnimMarker {
+    frame: number;
+    name: string;
+    color?: string;             // ruler flag colour (default amber)
+}
+
 /** The document's frame timeline (docType 'animation'; persisted in SlideDocument.animTimeline). */
 export interface AnimTimeline {
     fps: number;                // playback rate (frames per second)
@@ -79,6 +106,15 @@ export interface AnimTimeline {
     layers: AnimLayer[];        // one row per Layer; render order comes from Layer.order
     audio?: AnimAudioClip[];    // the audio row's sounds (sorted by frame)
     camera?: AnimCameraKey[];   // camera keyframes (sorted by frame)
+    markers?: AnimMarker[];     // ruler markers (sorted by frame)
+    /** Playback/export range, inclusive. Absent = the whole timeline. Set from
+     *  the ruler ("mark in / mark out") to work on one stretch of the shot. */
+    markIn?: number;
+    markOut?: number;
+    /** Default exposure of a cel created by F6/F7, in frames (2 = shoot on twos).
+     *  A document convention, not a user preference — a file handed to someone
+     *  else keeps the timing it was drawn on. Absent/1 = one frame per cel. */
+    newCelFrames?: number;
 }
 
 /** Onion-skin ghost settings (transient UI state, not persisted). */

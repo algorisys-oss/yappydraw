@@ -92,6 +92,7 @@ import {
 } from "./utils/plot";
 import { evaluateCompositionAt, resolveParentedPoses, resolveNestedOverrides } from "./utils/animation/composition-evaluator";
 import { evaluateTimelineAt } from "./utils/animation/frame-timeline-evaluator";
+import { playbackRange, pegAt } from "./utils/animation/frame-timeline-ops";
 import * as animOps from "./store/anim-ops";
 import * as animPlayback from "./utils/animation/anim-playback";
 import { buildSlideDocument } from "./utils/document-io";
@@ -3738,6 +3739,56 @@ export const YappyAPI = {
         splitTweenAtPlayhead(ids?: string[]): Record<string, string> {
             return Object.fromEntries(animOps.splitTweenAtPlayhead(ids ?? store.selection));
         },
+        /** Select a rectangle of cels in the grid — the block every frame op below acts on. */
+        selectFrames(layerIds: string[], from: number, to?: number) {
+            const a = Math.min(from, to ?? from);
+            const b = Math.max(from, to ?? from);
+            const frames: number[] = [];
+            for (let f = a; f <= b; f++) frames.push(f);
+            setStore('animFrameSelection', layerIds.length ? { layerIds: [...layerIds], frames } : null);
+        },
+        /** The selected block of cels, or null. */
+        frameSelection() { return store.animFrameSelection; },
+        /** Copy the selected cels onto the frame clipboard (element snapshots and all). */
+        copyFrames(): boolean { return animOps.copyFrames(); },
+        cutFrames(): boolean { return animOps.cutFrames(); },
+        /** Paste the clipboard at `frame` (default playhead), OVERWRITING that range. */
+        pasteFrames(frame?: number, layerIds?: string[]): boolean { return animOps.pasteFrames(frame, layerIds); },
+        /** Copy the selection and drop the copy immediately after it. */
+        duplicateFrames(): boolean { return animOps.duplicateFrames(); },
+        /** Delete the selected frames, pulling later cels left. */
+        deleteFrames(): boolean { return animOps.deleteFrames(); },
+        /** Set the exposure of the selected cel(s), in frames. */
+        setCelDuration(frames: number): boolean { return animOps.setCelDuration(frames); },
+        /** Re-expose the selection as cels of `every` frames ("shoot this on twos"). */
+        splitFrames(every: number): boolean { return animOps.splitFrames(every); },
+        /** Drop a blank cel halfway through the selected span. */
+        insertInbetween(): boolean { return animOps.insertInbetween(); },
+        /** Default exposure of cels created by F6/F7 (2 = shoot on twos). A document setting. */
+        setNewCelFrames(frames: number) { animOps.setNewCelFrames(frames); },
+        /** Flip cel to cel (dir 1 = forward) — drawing to drawing, not frame to frame. */
+        stepCel(dir: 1 | -1) { animOps.stepCel(dir); },
+        stepMarker(dir: 1 | -1) { animOps.stepMarker(dir); },
+        /** Ruler markers — named points that stay put when cels are retimed. */
+        setMarker(name: string, frame?: number, color?: string) { animOps.setMarker(name, frame, color); },
+        removeMarker(frame?: number) { animOps.removeMarker(frame); },
+        markers() { return store.animTimeline?.markers ?? []; },
+        /** Inclusive playback/export range; pass (null, null) to clear it. */
+        setMarkRange(markIn: number | null, markOut: number | null) { animOps.setMarkRange(markIn, markOut); },
+        /** The frames playback and export actually cover: [in, out]. */
+        playRange(): [number, number] | null { return store.animTimeline ? playbackRange(store.animTimeline) : null; },
+        /** Out of pegs — offset a cel's ONION GHOST without moving the drawing (null clears). */
+        setPeg(peg: import('./types/anim-types').PegTransform | null, layerId?: string, frame?: number) {
+            animOps.setPeg(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame, peg);
+        },
+        peg(layerId?: string, frame?: number) {
+            const tl = store.animTimeline;
+            return tl ? pegAt(tl, layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame) : null;
+        },
+        /** Arm the canvas so a drag slides that cel's ghost (Alt rotates, Shift scales). */
+        startPegEdit(layerId?: string, frame?: number) { animOps.startPegEdit(layerId ?? store.activeLayerId, frame ?? store.animCurrentFrame); },
+        endPegEdit() { animOps.endPegEdit(); },
+        resetAllPegs() { animOps.resetAllPegs(); },
         /** Add a built-in synth sound ('coin'|'jump'|'hit'|'powerup'|'explosion'|'blip'|'win'|'lose'|'click') on the audio row. Returns the clip id. */
         addSound(sfx: string, frame?: number): string | null { return animOps.addAudioClip({ name: sfx, sfx, frame }); },
         removeSound(id: string) { animOps.removeAudioClip(id); },

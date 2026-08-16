@@ -183,7 +183,15 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { label: 'Convert to Movie Clip / Graphic', keys: 'F8 / Shift+F8' },
             { label: 'Play / Pause', keys: 'Enter' },
             { label: 'Step Frame Back / Forward', keys: ', / .' },
+            { label: 'Flip Cel to Cel (drawing to drawing)', keys: 'Alt+, / Alt+.' },
+            { label: 'Jump Marker to Marker', keys: 'Alt+Shift+, / Alt+Shift+.' },
             { label: 'Jump to First / Last Frame', keys: 'Home / End' },
+            { label: 'Copy / Cut Frames', keys: 'Ctrl+Alt+C / Ctrl+Alt+X' },
+            { label: 'Paste / Duplicate Frames', keys: 'Ctrl+Alt+V / Ctrl+Alt+D' },
+            { label: 'Select a Block of Cels (Shift to start on a keyframe)', keys: 'Drag / Shift+Drag' },
+            { label: 'Zoom the Timeline', keys: 'Ctrl+Wheel' },
+            { label: 'Add a Ruler Marker', keys: 'Double-click the ruler' },
+            { label: 'Leave Out-of-Pegs Editing', keys: 'Esc' },
         ]
     },
     {
