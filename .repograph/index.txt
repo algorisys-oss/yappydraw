@@ -82,7 +82,7 @@ frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildV
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
 frontend/src/api.ts | typescript | 4899 | Theme:3 MandalaRing:45 HarmonyType:78 PlayOptions:83 PlaySpec:83 PlayTargets:83 TexPart:84 AxesOptions:91 AxesSpec:91 PlotFn:91 VectorFieldOptions:91 VectorFn:91 DimensionMeasure:98 ElementOptions:171 normalizeElementType:401 plotRuns:432 ElementType:650 as:650 Window:4888
 frontend/src/app.css | - | 27 |
-frontend/src/app.tsx | typescript | 1528 | Component:1 App:99 moves:124 onPenMove:125 hidePen:129 handleKeyUp:168 handleKeyDown:178 as:791 handleFullscreenChange:932 handleBeforeUnload:938 handlePaste:942 handleGlobalDragEnter:1044 handleGlobalDragOver:1059 showDropFallbackPrompt:1078 cleanup:1108 outsideClick:1136 isImageFile:1148 first:1149 must:1162 extractDropData:1164 processExtractedDrop:1219 handleGlobalDrop:1336 handleDocumentDrop:1382
+frontend/src/app.tsx | typescript | 1532 | Component:1 App:99 moves:124 onPenMove:125 hidePen:129 handleKeyUp:168 handleKeyDown:178 as:795 handleFullscreenChange:936 handleBeforeUnload:942 handlePaste:946 handleGlobalDragEnter:1048 handleGlobalDragOver:1063 showDropFallbackPrompt:1082 cleanup:1112 outsideClick:1140 isImageFile:1152 first:1153 must:1166 extractDropData:1168 processExtractedDrop:1223 handleGlobalDrop:1340 handleDocumentDrop:1386
 frontend/src/assets/solid.svg | - | 1 |
 frontend/src/brand/brand-kits.ts | typescript | 229 | listBrandKits:38 persist:42 saveBrandKit:48 deleteBrandKit:55 createBrandKit:62 parseColor:76 luminance:94 extractBrandColorsFromDocument:108 ApplyBrandOptions:147 applyBrandKit:155
 frontend/src/brand/font-pairing.ts | typescript | 80 | PairFont:12 FontPairing:19 resolvePairFont:46 applyFontPairing:56
@@ -342,7 +342,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 574 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 578 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -944,7 +944,7 @@ tests/group-isolation.spec.ts | typescript | 172 | makeGroup:23 get:37 get:62 ge
 tests/help-doc-recovery.spec.ts | typescript | 53 |
 tests/help-docs.spec.ts | typescript | 23 |
 tests/history-panel.spec.ts | typescript | 44 | survives:21
-tests/hotkeys.spec.ts | typescript | 227 |
+tests/hotkeys.spec.ts | typescript | 248 |
 tests/html-player-check.spec.ts | typescript | 113 | Page:1 Window:7 inkedPixels:11 exportDoc:26
 tests/idb-storage.spec.ts | typescript | 97 | Window:6
 tests/image-and-swatches.spec.ts | typescript | 324 | snap:108 snap:157 geom:253

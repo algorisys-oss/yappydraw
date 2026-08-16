@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.200', date: '2026-08-16', items: [
+        'Shift+S now turns stroke stabilization on and off, which is what the keyboard shortcuts list has always said it does. It was not working: pressing Shift+S quietly changed your stroke style instead. Stabilization itself was fine all along — the shortcut simply never reached it, so the only way to turn it on was through Settings.',
+        'Stabilization is the "lazy brush": the line trails slightly behind your cursor, which smooths out the shake and makes long curves and freehand lettering much easier with a mouse.',
+    ] },
     { version: '0.8.199', date: '2026-08-15', items: [
         'Strokes can now change thickness along their length. Select a line or a drawn path and pick a shape from the new Width Profile row in the Properties panel: even, fat in the middle and pointed at both ends, pinched in the middle, tapering from thick to thin (or thin to thick), holding full weight then tapering away, or nearly even with rounded ends. Each choice is drawn as a little swatch, so you can see what you are picking.',
         'Choosing a profile shapes the stroke without making it heavier — the thickest part is the stroke width you already set. Select several strokes of different weights and each one keeps its own weight while taking the same shape.',

@@ -712,7 +712,11 @@ const App: Component = () => {
         }
 
         // Tool Cycling and Single Key Shortcuts
-        if (key === 's') {
+        // `key` is lowercased, so a bare letter branch also matches its Shift form and shadows
+        // any `e.shiftKey && key === ...` branch further down this same chain. Shift+S (toggle
+        // stroke stabilization, further down) silently cycled the stroke style instead until
+        // this guard was added. Same hazard 'f' avoids by putting its Shift variant first.
+        if (key === 's' && !e.shiftKey) {
           e.preventDefault();
           cycleStrokeStyle();
         } else if (key === 'f' && e.shiftKey) {
