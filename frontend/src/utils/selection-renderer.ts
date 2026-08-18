@@ -669,14 +669,16 @@ export function renderElementOverlays(
             }
         }
 
-        // --- Editable vector path: anchors + Bézier handles (selected paths) ---
-        // Only when a SINGLE path is selected — node hit-testing/dragging is gated on
-        // `selection.length === 1` (see handle-detection.ts), so drawing the squares for
-        // a multi-selection (e.g. a grouped/baked stick figure = many path parts) shows
-        // handles that can't be grabbed. Match the two so squares appear iff editable.
-        if (el.type === 'path' && selectedTool === 'selection' && selectionLength === 1) {
-            renderPathAnchors(ctx, el, scale, false);
-        }
+        // --- Editable vector path: anchors are the NODE TOOL's business, not Select's ---
+        // Selecting a path used to paint every anchor and Bézier handle right here, under
+        // the plain Selection tool. On a simple curve that looked helpful; on anything real
+        // — an outlined word, an imported icon — it buried the artwork under hundreds of
+        // squares you had no intention of touching (reported externally: "unnecessary nodes
+        // that are distracting when you are not looking to adjust them"). Every other vector
+        // editor splits these: Illustrator V vs A, Inkscape S vs N. So does Yappy — the Node
+        // tool (`N`, or double-click a path) owns anchors, and Select stays a transform tool.
+        // The matching hit-test block in handle-detection.ts went with it, so the invisible
+        // anchor targets can no longer swallow a corner-resize drag either.
 
         // --- Connector Handles ---
         // Only when a SINGLE element is selected. Like the path-anchor block above,

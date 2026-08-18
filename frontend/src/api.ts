@@ -2511,6 +2511,11 @@ export const YappyAPI = {
      * Fonts added *by name* from Google Fonts cannot be outlined — they arrive as WOFF2 web
      * fonts with no readable glyph data — and resolve to `[]` with an explanatory toast
      * rather than silently substituting a different typeface.
+     *
+     * The resulting path is always `renderStyle: 'architectural'`, whatever the source text
+     * was: sketch style would re-draw the glyph contours through rough.js and hand back
+     * visibly different letterforms than the text it replaced. Set it back to `'sketch'` on
+     * the returned element for a deliberately hand-drawn wordmark.
      */
     convertTextToOutlines(ids: string[]) { return convertTextToOutlines(ids); },
     /** Outline Stroke: replace each element with a filled path of its stroke outline. Returns new ids. */
@@ -4175,7 +4180,8 @@ export const YappyAPI = {
     /** Reshape tool — drag a path to bend it while pinning the endpoints. */
     toggleReshapeTool(active?: boolean) { toggleReshapeTool(active); },
     // ── Node tool (Vector Tools → Path → Nodes) ──
-    /** Show every anchor of the selected path(s) and edit them directly. */
+    /** Show every anchor of the selected path(s) and edit them directly. The Selection tool
+     *  deliberately shows none — anchors belong to this tool (`N`, or double-click a path). */
     toggleNodeTool(active?: boolean) { toggleNodeTool(active); },
     /** Replace the anchor selection. Refs are `{ id, sub, i }`. */
     setNodeSelection(refs: { id: string; sub: number; i: number }[]) { setNodeSelection(refs); },

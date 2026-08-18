@@ -12,7 +12,7 @@ import { renderDimensions } from "../utils/dimension-renderer";
 import { projectMasterPosition } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
-import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, resolveColorEyedropper, elementPickColor, deleteElements, setPenConstrain, syncLiveSymmetry, setPenResumeHint } from "../store/app-store";
+import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, resolveColorEyedropper, elementPickColor, deleteElements, setPenConstrain, syncLiveSymmetry, setPenResumeHint, toggleNodeTool, exitAllToolModes } from "../store/app-store";
 import { copyToClipboard } from "../utils/object-context-actions";
 import { normalizePoints } from "../utils/render-element";
 import { canvasViewport, publishDockVars, dockInsets } from "../utils/dock-layout";
@@ -42,7 +42,7 @@ import { penOnMove } from "../utils/tool-handlers/pen-handler";
 import { polylineOnDown, polylineOnMove, polylineOnUp, polylineFinalize, polylineUndo } from "../utils/tool-handlers/polyline-handler";
 import { penOnDown as penPathDown, penOnMove as penPathMove, penOnUp as penPathUp, penFinalize as penPathFinalize, penUndo as penPathUndo, findPenResumeTarget } from "../utils/tool-handlers/pen-path-handler";
 import { selectionOnDown, selectionOnMove, selectionOnUp, convertPathAnchor, deletePathAnchor, insertPathAnchorAt, canInsertPathAnchor } from "../utils/tool-handlers/selection-handler";
-import { getHandleAtPosition, getSelectionBoundingBox } from "../utils/handle-detection";
+import { getSelectionBoundingBox, getPathHandleAtPosition } from "../utils/handle-detection";
 import { RESIZE_ANCHOR_SIGNS } from "../utils/resize-box";
 import { animPosedElements } from "../store/anim-ops";
 import { getPathSubpaths } from "../utils/math/path-utils";
@@ -358,8 +358,13 @@ const Canvas: Component = () => {
         const el = store.elements.find(e => e.id === store.selection[0]);
         if (!el || el.type !== 'path') return null;
         const scale = store.viewState.scale;
-        const hit = getHandleAtPosition(wx, wy, animPosedElements(), store.selection, scale);
-        const m = hit?.handle.match(/^path-anchor-(\d+)-(\d+)$/);
+        // Anchors are hit-tested explicitly: `getHandleAtPosition` stopped returning them
+        // when the Selection tool gave up node editing. A long-press / right-click is
+        // deliberate and shows nothing until invoked, so it keeps the node ops without
+        // putting a single square back on the canvas.
+        const posed = animPosedElements().find(e => e.id === el.id) ?? el;
+        const handle = getPathHandleAtPosition(posed, wx, wy, scale);
+        const m = handle?.match(/^path-anchor-(\d+)-(\d+)$/);
         if (m) {
             const sub = parseInt(m[1], 10), i = parseInt(m[2], 10);
             const anchor = getPathSubpaths(el)[sub]?.anchors[i];
@@ -2170,6 +2175,24 @@ const Canvas: Component = () => {
                 setStore('selection', unitId
                     ? store.elements.filter(m => m.groupIds?.includes(unitId)).map(m => m.id)
                     : [el.id]);
+                requestAnimationFrame(draw);
+                return;
+            }
+
+            // Double-click a vector path → hand it to the Node tool. Select no longer
+            // draws anchors (they buried complex artwork), so this is the gesture that
+            // gets you to them without knowing the `N` shortcut — the same double-click
+            // that opens a group or a symbol, applied to the thing a path contains:
+            // its nodes. Illustrator/Inkscape both do this.
+            for (let i = store.elements.length - 1; i >= 0; i--) {
+                const el = store.elements[i];
+                if (el.type !== 'path') continue;
+                if (!canInteractWithElement(el) || !isLayerVisible(el.layerId)) continue;
+                if (!hitTestElement(el, wx, wy, threshold, store.elements, elementMap)) continue;
+                e.preventDefault();
+                setStore('selection', [el.id]);
+                exitAllToolModes();
+                toggleNodeTool(true);
                 requestAnimationFrame(draw);
                 return;
             }

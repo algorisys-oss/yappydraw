@@ -8,7 +8,7 @@ import {
     allNodesOfSelection, selectedNodeHandles, moveNodeHandle,
     type NodeRef, type HandleRef,
 } from '../utils/node-editing';
-import { insertPathAnchorAt } from '../utils/tool-handlers/selection-handler';
+import { insertPathAnchorAt, convertPathAnchor, deletePathAnchor } from '../utils/tool-handlers/selection-handler';
 import { worldToWindow, windowToWorld } from '../utils/overlay-transform';
 import './node-tool-overlay.css';
 
@@ -126,6 +126,19 @@ export const NodeToolOverlay = () => {
         if (hit) {
             e.preventDefault();
             e.stopPropagation();
+            // Alt-click converts corner ↔ smooth, Ctrl/⌘-click deletes — the two modifier
+            // gestures the Selection tool used to own before node editing moved here. They
+            // are documented, muscle memory for Illustrator users, and were the only way to
+            // convert a node without going through the options bar.
+            if (e.altKey) {
+                convertPathAnchor(hit.id, hit.sub, hit.i);
+                return;
+            }
+            if (e.ctrlKey || e.metaKey) {
+                deletePathAnchor(hit.id, hit.sub, hit.i);
+                clearNodeSelection();
+                return;
+            }
             if (e.shiftKey) {
                 toggleNodeInSelection(hit);
             } else if (!isNodeSelected(hit)) {

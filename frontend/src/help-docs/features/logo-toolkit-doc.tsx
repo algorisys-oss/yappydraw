@@ -157,7 +157,8 @@ export const LogoToolkitDoc: Component = () => {
                         <tr><th>Note</th><th>Detail</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td>Editable</td><td>Drag anchors and Bézier handles like any path; counters stay as holes.</td></tr>
+                        <tr><td>Editable</td><td>Press <span class="kbd">N</span> (or double-click the path) for the Node tool, then drag anchors and Bézier handles; counters stay as holes.</td></tr>
+                        <tr><td>Style</td><td>The outline always renders <strong>clean</strong>, even in a sketch-style document. Text is drawn by the font renderer, which sketch never roughens — so a roughened outline would hand back visibly different letterforms than the text you converted. Switch the path to <em>Sketch</em> in the Style control if you want a hand-drawn wordmark.</td></tr>
                         <tr><td>Colour</td><td>The path inherits the text colour as a solid fill (no stroke).</td></tr>
                         <tr><td>Fonts</td><td>Works with the bundled families <strong>and any font you add from a file</strong> (<em>＋ Add font…</em>, .ttf / .otf / .woff).</td></tr>
                         <tr><td>Italics</td><td>Outlined from the family's real italic face where there is one (Inter, Poppins, Merriweather, Source Code Pro, JetBrains Mono) — a true italic is a different design, not a sloped roman. Families with no italic face (Virgil, Marker, Caveat) are slanted by the same amount the browser uses, so the vector matches the text it replaced.</td></tr>

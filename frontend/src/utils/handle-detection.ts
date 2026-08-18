@@ -20,6 +20,50 @@ function unrotatePoint(x: number, y: number, cx: number, cy: number, angle: numb
 }
 
 /**
+ * Hit-test a path's anchors / Bézier handles directly, returning the same
+ * `path-anchor-{sub}-{i}` / `path-in-…` / `path-out-…` handle ids the drag code parses.
+ *
+ * Deliberately NOT part of `getHandleAtPosition`: the Selection tool no longer edits nodes
+ * (see the note at 1c below), and an invisible anchor target that outranks corner-resize is
+ * worse than none. Callers that want anchors ask for them by name — today the right-click /
+ * long-press menu on a path, which is invisible until invoked and so adds no clutter.
+ */
+export function getPathHandleAtPosition(
+    el: DrawingElement,
+    x: number,
+    y: number,
+    scale: number
+): string | null {
+    if (el.type !== 'path') return null;
+    const r = 12 / scale / 2 + 2 / scale;
+    // Anchors are stored un-rotated; test the pointer in the element's local frame.
+    const lp = el.angle ? unrotatePoint(x, y, el.x + el.width / 2, el.y + el.height / 2, el.angle) : { x, y };
+    const px = lp.x, py = lp.y;
+    const subs = getPathSubpaths(el);
+    for (let su = 0; su < subs.length; su++) {
+        const anchors = subs[su].anchors;
+        for (let i = 0; i < anchors.length; i++) {
+            const a = anchors[i];
+            const ax = el.x + a.x, ay = el.y + a.y;
+            // Handles win over anchors — they sit off the curve, so a hit there is unambiguous.
+            if (a.outX !== undefined && a.outY !== undefined &&
+                Math.abs(px - (ax + a.outX)) <= r && Math.abs(py - (ay + a.outY)) <= r) {
+                return `path-out-${su}-${i}`;
+            }
+            if (a.inX !== undefined && a.inY !== undefined &&
+                Math.abs(px - (ax + a.inX)) <= r && Math.abs(py - (ay + a.inY)) <= r) {
+                return `path-in-${su}-${i}`;
+            }
+            if (Math.abs(px - ax) <= r && Math.abs(py - ay) <= r) {
+                return `path-anchor-${su}-${i}`;
+            }
+        }
+    }
+    return null;
+}
+
+
+/**
  * Compute the axis-aligned bounding box of the current selection.
  */
 export function getSelectionBoundingBox(
@@ -206,37 +250,15 @@ export function getHandleAtPosition(
         }
     }
 
-    // 1c. Editable vector path: anchors + Bézier handles on the single selected path.
-    //     Checked BEFORE the bbox resize handles so an extreme anchor (which sits on a
-    //     corner handle) is node-edited rather than resized. Handles win over anchors.
-    if (selection.length === 1) {
-        const el = elements.find(e => e.id === selection[0]);
-        if (el && el.type === 'path') {
-            const subs = getPathSubpaths(el);
-            const r = handleSize / 2 + 2 / scale;
-            // Anchors are stored un-rotated; test the pointer in the element's local frame.
-            const lp = el.angle ? unrotatePoint(x, y, el.x + el.width / 2, el.y + el.height / 2, el.angle) : { x, y };
-            const px = lp.x, py = lp.y;
-            for (let su = 0; su < subs.length; su++) {
-                const anchors = subs[su].anchors;
-                for (let i = 0; i < anchors.length; i++) {
-                    const a = anchors[i];
-                    const ax = el.x + a.x, ay = el.y + a.y;
-                    if (a.outX !== undefined && a.outY !== undefined &&
-                        Math.abs(px - (ax + a.outX)) <= r && Math.abs(py - (ay + a.outY)) <= r) {
-                        return { id: el.id, handle: `path-out-${su}-${i}` };
-                    }
-                    if (a.inX !== undefined && a.inY !== undefined &&
-                        Math.abs(px - (ax + a.inX)) <= r && Math.abs(py - (ay + a.inY)) <= r) {
-                        return { id: el.id, handle: `path-in-${su}-${i}` };
-                    }
-                    if (Math.abs(px - ax) <= r && Math.abs(py - ay) <= r) {
-                        return { id: el.id, handle: `path-anchor-${su}-${i}` };
-                    }
-                }
-            }
-        }
-    }
+    // 1c. Path anchors are NOT hit-tested here any more — the Node tool owns them.
+    //     This block used to return `path-anchor-*` / `path-in-*` / `path-out-*` for the
+    //     single selected path, BEFORE the bbox resize handles, so that an extreme anchor
+    //     beat the corner grip it sits under. Once the Selection tool stopped drawing
+    //     anchors (see selection-renderer.ts) those targets were invisible, and an
+    //     invisible target that outranks corner-resize is strictly worse than none: on an
+    //     outlined word or an imported icon, grabbing the bounding box to scale it would
+    //     silently drag one glyph node instead. Anchor editing lives in the Node tool
+    //     (`N`, or double-click a path), which does its own hit-testing in its overlay.
 
     // 2. Mindmap Toggle Handles (Priority over element selection)
     for (let i = elements.length - 1; i >= 0; i--) {

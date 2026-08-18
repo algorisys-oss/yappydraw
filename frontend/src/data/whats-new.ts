@@ -13,6 +13,13 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.202', date: '2026-08-18', items: [
+        'Turning text into outlines now gives you exactly the letters you were looking at. If your drawing style was set to Sketch, the outlined word came back roughened — chewed serifs, lumpy bowls — even though you had changed nothing. Text itself is never drawn roughly, so the conversion was quietly restyling your type. Outlines are now always drawn cleanly; switch the new shape to Sketch yourself if you want a hand-drawn wordmark.',
+        'The Select tool no longer covers a shape in little square nodes. Selecting a path used to show every anchor point, which is fine on a simple curve and unusable on an outlined word or an imported icon. Select is now for moving, resizing and rotating; nodes belong to the Node tool.',
+        'To edit nodes, double-click the shape (or press N) — the same double-click that opens a group or a symbol. Press Esc or N to come back out.',
+        'This also fixes a quiet annoyance: on shapes whose nodes sat on the corners of the selection box, grabbing a corner to resize would drag a single node instead of scaling the shape.',
+        'Inside the Node tool you can now Alt+click a node to switch it between corner and smooth, and Ctrl+click one to delete it. You can still right-click a path without leaving the Select tool for Make Smooth, Delete Anchor and Insert Point Here.',
+    ] },
     { version: '0.8.201', date: '2026-08-16', items: [
         'Animation: you can now copy, cut, paste and duplicate whole blocks of frames, across layers. Drag across the timeline to select a block (hold Shift to start the block on a drawing), then Ctrl+Alt+C and Ctrl+Alt+V. Ctrl+C and Ctrl+V still copy drawings, as before. A pasted frame gets its own copy of the drawing, so working on it never changes the frame you copied it from.',
         'New timing tools on the right-click menu: set how long a drawing is held, split a stretch of the timeline onto twos (or threes, or every frame), and drop an in-between into the middle of a hold. There is also a "/cel" box in the timeline header — set it to 2 and every new drawing you make is held for two frames, so a sequence stays on twos without you doing anything.',

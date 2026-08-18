@@ -798,13 +798,15 @@ Yappy.resetPerspectiveGrid();`}</code></pre>
                 <p>
                     It works in both places you touch a handle — while <em>drawing</em> with the Pen (hold
                     <span class="kbd">Alt</span> partway through the drag that pulls the handles out), and when
-                    <em>editing</em> an existing anchor with the Selection or Node tool. The break is permanent,
+                    <em>editing</em> an existing anchor with the Node tool (<span class="kbd">N</span>, or
+                    double-click the path). The break is permanent,
                     not just for that drag: the anchor becomes a <em>corner</em>, so letting go of
                     <span class="kbd">Alt</span> won't snap the two sides back into line. To pair them up again,
                     <span class="kbd">Alt</span>-click the anchor to convert it back to smooth.
                 </p>
                 <p>
-                    <strong>Editing anchors</strong> (Selection tool, with the path selected):
+                    <strong>Editing anchors</strong> (<strong>Node tool</strong> — press <span class="kbd">N</span>
+                    or double-click the path; the Select tool moves and resizes, it no longer shows anchors):
                 </p>
                 <table class="api-table">
                     <thead><tr><th>Action</th><th>Desktop</th><th>Tablet / touch</th></tr></thead>

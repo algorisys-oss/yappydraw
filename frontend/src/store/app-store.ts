@@ -9180,6 +9180,17 @@ export const convertTextToOutlines = async (ids: string[]): Promise<string[]> =>
             text: undefined, rawText: undefined, richText: undefined, containerText: undefined,
             backgroundColor: fill, fillStyle: 'solid',
             strokeColor: 'transparent', strokeWidth: 0,
+            // Render the outline CLEANLY, whatever style the document is in.
+            //
+            // Text is drawn with fillText — rough.js never touches it — but a `path` in
+            // sketch style goes through `rc.path()`, which re-draws every glyph contour as
+            // a wobbly hand-drawn line. So "Create Outlines" appeared to mangle the
+            // letterforms: the same word, unchanged, suddenly had chewed serifs and
+            // polygonal bowls (reported externally, with before/after screenshots).
+            // Outlining must be visually lossless — the whole point is that it hands you
+            // the SAME letters as editable geometry. Sketch remains one click away in the
+            // Style control for anyone who wants a roughened wordmark.
+            renderStyle: 'architectural',
         } as DrawingElement;
     }));
     setStore('selection', newIds);

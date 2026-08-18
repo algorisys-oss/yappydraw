@@ -88,8 +88,19 @@ export const VectorPathsDoc: Component = () => {
             <section class="doc-section">
                 <h2>Editing Nodes</h2>
                 <p>
-                    Select a path with the <strong>Select</strong> tool to reveal its anchors (squares) and
-                    Bézier handles (circles). Drag to reshape; use the modifiers below to restructure.
+                    Nodes belong to the <strong>Node tool</strong>, not the Select tool — the same split every
+                    other vector editor makes (Illustrator <span class="kbd">V</span> vs <span class="kbd">A</span>,
+                    Inkscape <span class="kbd">S</span> vs <span class="kbd">N</span>). Press <span class="kbd">N</span>,
+                    or simply <strong>double-click the path</strong>, to reveal its anchors (squares) and Bézier
+                    handles (circles). Drag to reshape; use the modifiers below to restructure.
+                </p>
+                <p class="tip-box">
+                    <strong>Why the Select tool shows no anchors.</strong> It used to. On a four-point curve that
+                    was handy; on an outlined word or an imported icon it buried the artwork under hundreds of
+                    squares you had no intention of touching — and the anchors sitting on the bounding box quietly
+                    stole the corner-resize drag. Select is now purely a move / resize / rotate tool. You can still
+                    <strong> right-click (or long-press) a path</strong> without leaving it to reach
+                    <em> Make Smooth / Corner</em>, <em>Delete Anchor</em> and <em>Insert Point Here</em>.
                 </p>
                 <table class="api-table">
                     <thead>
@@ -128,7 +139,8 @@ export const VectorPathsDoc: Component = () => {
 
                 <h3>The Node tool (Illustrator's “Direct Selection”)</h3>
                 <p>
-                    Everything above edits <em>one</em> anchor at a time. Press <span class="kbd">N</span> — or
+                    Everything above edits <em>one</em> anchor at a time. Press <span class="kbd">N</span> —
+                    double-click a path, or
                     Command Palette (<span class="kbd">Ctrl</span>+<span class="kbd">K</span>) →
                     <em> Node Tool / Direct Selection</em>, or the Vector Tools palette →
                     <strong> Nodes</strong> — to switch into the dedicated <strong>Node tool</strong>, which edits
