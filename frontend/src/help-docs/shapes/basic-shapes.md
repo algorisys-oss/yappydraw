@@ -35,7 +35,7 @@ process steps, UI components, or any bounded element.
 | **Corner ↖ ↗ ↘ ↙** | Round each corner *independently* — one corner at 40 and the rest sharp, or any mix. See below. |
 | **Fill Style** | Solid, hachure, cross-hatch, or none |
 | **Stroke Style** | Solid, dashed, or dotted border |
-| **Roughness** | Hand-drawn appearance (0 = clean, higher = sketchy) |
+| **Roughness** | Hand-drawn appearance (0 = clean, higher = sketchy). Starts at **0** — turn it up once you have picked the Sketch drawing style |
 
 ### Independent corners
 

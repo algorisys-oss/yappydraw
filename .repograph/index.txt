@@ -342,7 +342,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 607 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 613 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -507,8 +507,9 @@ frontend/src/rendering/index.ts | typescript | 2 |
 frontend/src/routes.test.ts | typescript | 103 |
 frontend/src/routes.ts | typescript | 150 | RouteKey:28 Route:38
 frontend/src/shapes/base/erase-mask.ts | typescript | 203 | CoreRender:23 acquirePool:41 readLocalPoints:56 paddedWorldAABB:68 applyEraseStrokes:87 renderWithEraseMask:141
-frontend/src/shapes/base/render-pipeline.ts | typescript | 1046 | parseColorRgba:19 hslToRgb:37 RenderPipeline:52{adjustColor:64 shadeColor:89 applyTransformations:138 restoreTransformations:198 applyStrokeStyle:205 buildStrokeGradient:225 buildRenderOptions:254 applyComplexFills:298 applyImageFill:368 applyHatchFill:427 drawHatchLines:458 applyMeshFill:492 applyPatternFill:527 applyGradient:553}
-frontend/src/shapes/base/shape-renderer.ts | typescript | 393 | TracedPath:9 ShapeRenderer:13{render:21 if:60}
+frontend/src/shapes/base/render-pipeline.ts | typescript | 1056 | parseColorRgba:19 hslToRgb:37 RenderPipeline:52{adjustColor:64 shadeColor:89 applyTransformations:138 restoreTransformations:198 applyStrokeStyle:205 buildStrokeGradient:225 buildRenderOptions:254 applyComplexFills:308 applyImageFill:378 applyHatchFill:437 drawHatchLines:468 applyMeshFill:502 applyPatternFill:537 applyGradient:563}
+frontend/src/shapes/base/shape-renderer.ts | typescript | 405 | TracedPath:9 ShapeRenderer:13{render:21}
+frontend/src/shapes/base/sketch-corners.test.ts | typescript | 101 | element:21 points:43 worstCornerError:54 controlPoints:88
 frontend/src/shapes/base/types.ts | typescript | 17 | RenderContext:5 RenderStyle:17
 frontend/src/shapes/register-shapes.ts | typescript | 151 | registerShapes:36
 frontend/src/shapes/renderers/bpmn-renderer.ts | typescript | 1344 | BpmnRenderer:9{renderArchitectural:10 renderSketch:226 definePath:337 applyNonInterruptingDash:345 getIconColor:352 renderEventIcon:357 renderGatewayMarker:521 renderTaskMarker:583 renderLoopMarker:706 renderSubProcessMarker:785 getPoolLabelWidth:813 getLaneLabelWidth:816 getPoolLabelHeight:819 getLaneLabelHeight:822 computeLaneSizes:829 renderPoolArchitectural:852 renderPoolHorizontalArch:886 renderPoolVerticalArch:992 renderPoolSketch:1094 renderPoolHorizontalSketch:1119 renderPoolVerticalSketch:1213 drawGear:1304 roundRect:1326 getRoundRectPath:1341}

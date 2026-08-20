@@ -288,6 +288,16 @@ export class RenderPipeline {
             roughness: el.roughness ?? 1,
             seed: el.seed || 1,
             disableMultiStroke: el.roughness === 0,
+            // Pin every segment to its real vertex. RoughJS otherwise jitters the
+            // ENDPOINTS of each edge independently, so adjacent edges stop sharing
+            // a corner: one overshoots, the next starts short, and because each
+            // edge is stroked twice the step is drawn twice. Measured on a
+            // 130x102 parallelogram at sloppiness 1, a corner landed 0.85px from
+            // where it should be — small in world units, and multiplied by the
+            // zoom, since the wobble is generated in world space. `preserveVertices`
+            // keeps the wobble in the MIDDLE of each edge, which is where the
+            // hand-drawn look actually comes from, and closes the corners.
+            preserveVertices: true,
             strokeLineDash: resolveDash(el.strokeStyle, el.strokeDashArray, [8, 8], [2, 4]),
         };
     }
@@ -682,7 +692,7 @@ export class RenderPipeline {
                     renderer.drawImage(buf, -el.width / 2, -el.height / 2, el.width, el.height);
                 }
             } else if (sketch) {
-                for (const d of ds) rc.path(d, { fill: f.color, fillStyle: 'solid', stroke: 'none', roughness: el.roughness ?? 1, seed: el.seed || 1 });
+                for (const d of ds) rc.path(d, { fill: f.color, fillStyle: 'solid', stroke: 'none', roughness: el.roughness ?? 1, seed: el.seed || 1, preserveVertices: true });
             } else {
                 renderer.fillStyle = f.color;
                 for (const d of ds) renderer.fillPath(d, evenOdd ? 'evenodd' : undefined);
@@ -693,7 +703,7 @@ export class RenderPipeline {
             renderer.save();
             renderer.globalAlpha = renderer.globalAlpha * (s.opacity ?? 1);
             if (sketch) {
-                for (const d of ds) rc.path(d, { stroke: s.color, strokeWidth: s.width, fill: 'none', roughness: el.roughness ?? 1, seed: el.seed || 1, strokeLineDash: dash(s) });
+                for (const d of ds) rc.path(d, { stroke: s.color, strokeWidth: s.width, fill: 'none', roughness: el.roughness ?? 1, seed: el.seed || 1, strokeLineDash: dash(s), preserveVertices: true });
             } else {
                 renderer.strokeStyle = s.color;
                 renderer.lineWidth = s.width;

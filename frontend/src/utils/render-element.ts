@@ -208,7 +208,7 @@ const renderVariableWidthStroke = (rc: RoughCanvas, renderer: IRenderer, el: Dra
         // rough.js shares the same ctx (and thus the transform applied above).
         rc.polygon(ribbon.map(p => [p.x, p.y] as [number, number]), {
             fill: color, fillStyle: 'solid', stroke: color, strokeWidth: 1,
-            roughness: el.roughness ?? 1, seed: el.seed || 1,
+            roughness: el.roughness ?? 1, seed: el.seed || 1, preserveVertices: true,
         });
     } else {
         renderer.beginPath();

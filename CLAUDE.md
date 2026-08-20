@@ -81,29 +81,23 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
 6. **Keep `main` in sync and push** — make sure local `main` and the remote (`origin`) `main` are in sync and **push**, including the tag: `git push origin main --tags` (fast-forward/merge as appropriate). Push the working branch too.
 7. **Fast-forward `dev` to `main` and push it** — `dev` is the branch the next change starts from, so it must not be left behind the release (`git checkout dev && git merge --ff-only main && git push origin dev`).
 8. **Publish to the OSS repo** with `./scripts/publish-oss.sh --push` (publishes a cleaned client-only copy to the `algorisys-oss/yappydraw` remote). Use a dry-run first if anything looks off.
-8b. **Upload `dist/` to the web host — MANUAL, and not covered by any npm script.**
-   Nothing in steps 1–8 puts the new build on `www.yappydraw.com`: `publish-oss.sh` pushes
-   *source* to a git remote, and `npm run deploy` targets **gh-pages**, which is a different
-   site. Skipping this and going straight to step 9 verifies the *previous* deploy and looks
-   like a pass — the tell is that the `assets/index-*.js` hash on the live site doesn't match
-   `dist/index.html`:
-   ```bash
-   curl -s https://www.yappydraw.com/index.html | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js'
-   grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' dist/index.html   # must match
-   ```
-   Upload so the remote tree is **replaced, not merged** (`rsync -av --delete dist/ …`, or
-   delete the remote `assets/` first) — an incremental upload is what produced the split-build
-   incident in #279. **Include dotfiles**, or `frontend/public/.htaccess` never arrives and the
-   cache-header checks in step 9 fail.
-9. **Verify the deploy** once it has propagated — `npm run verify:deploy`. It samples
-   `sw.js` and `index.html` several times, because the live host has served **two
-   different builds from the same URL** (7 of 8 fetches returning a three-release-old
-   `sw.js`, all with `cache-status: MISS` — the origin itself was inconsistent). A single
-   fetch cannot detect that. The script also checks every chunk `index.html` references
-   actually resolves, and that the cache headers from `frontend/public/.htaccess` really
-   arrived — a 404 chunk or a stale `index.html` is precisely the "Something went wrong"
-   screen users were reporting. If it fails, re-deploy so the remote tree is **replaced,
-   not merged** (`rsync --delete`, or delete the remote `assets/` first).
+   **This is where shipping ends.** Hostinger picks the build up from here; there is no
+   manual upload step any more. Do not hand back a `dist/` to copy somewhere.
+   *(Superseded: releases up to v0.8.203 required uploading `dist/` by hand with
+   `rsync -av --delete` — that is what the split-build incident #279 and the missing-dotfile
+   `.htaccess` failures came from. If the automatic deploy is ever switched off, that is the
+   procedure to restore, and `git log -S"rsync -av --delete" -- CLAUDE.md` finds it.)*
+9. **Verify once it has propagated** — `npm run verify:deploy`. Not a gate on shipping, and
+   not immediate: give the deploy time to land first. Worth running because it is the only
+   thing that checks what a *browser* gets rather than what git holds. It samples `sw.js` and
+   `index.html` several times, because the live host has served **two different builds from
+   the same URL** (7 of 8 fetches returning a three-release-old `sw.js`, all with
+   `cache-status: MISS` — the origin itself was inconsistent), and a single fetch cannot
+   detect that. It also checks every chunk `index.html` references actually resolves, that the
+   cache headers from `frontend/public/.htaccess` arrived, and that the prerendered pages
+   (`/help/`, `/help/uml/`, `/learn/`) return 200 with self-referencing canonicals — those are
+   separate directories in the deploy, and a partial one leaves the whole documentation site
+   404ing while the editor looks perfectly fine.
    **Expect one standing failure**: `sw.js is cacheable: public, max-age=604800`. That is the
    host overriding the `.htaccess` rule (bug #280, most likely `mod_expires` running after
    `mod_headers`) and is not ours to fix from the repo — treat it as a known red line, not a

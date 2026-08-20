@@ -470,7 +470,7 @@ export const YappyAPI = {
             strokeWidth: options?.strokeWidth ?? defaults.strokeWidth ?? 4,
             strokeStyle: options?.strokeStyle ?? defaults.strokeStyle ?? 'solid',
             opacity: options?.opacity ?? defaults.opacity ?? 100,
-            roughness: options?.roughness ?? defaults.roughness ?? 1,
+            roughness: options?.roughness ?? defaults.roughness ?? 0,
             angle: options?.angle ?? 0,
             renderStyle: defaults.renderStyle ?? 'sketch',
             seed: options?.seed ?? Math.floor(Math.random() * 2 ** 31),

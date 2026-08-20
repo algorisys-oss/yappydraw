@@ -51,7 +51,19 @@ export abstract class ShapeRenderer {
                     if (element.renderStyle === 'architectural') {
                         this.renderArchitectural(context, cx, cy);
                     } else {
+                        // Round caps and joins for the sketch pass. RoughJS strokes each
+                        // edge as its OWN line, so with the canvas default (butt caps,
+                        // no join) two thick edges meeting at a corner leave a wedge of
+                        // background showing on the outside of the turn — visible as a
+                        // square nib at any real stroke width. Rounding the ends closes
+                        // it, and reads as a pen rather than a cut ribbon. Paired with
+                        // `preserveVertices` in buildRenderOptions, which is what puts
+                        // the two ends in the same place to begin with.
+                        renderer.save();
+                        renderer.lineCap = 'round';
+                        renderer.lineJoin = 'round';
                         this.renderSketch(context, cx, cy);
+                        renderer.restore();
                     }
                 }
             }
