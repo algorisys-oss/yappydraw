@@ -37,6 +37,9 @@
     color: #475569;
     font-size: 0.875rem;
     cursor: pointer;
+    /* The prerendered pages use a real <a> here (no JS to intercept a click);
+       the in-app page uses a <button>. One rule has to suit both. */
+    text-decoration: none;
     transition: all 0.2s;
 }
 
@@ -473,4 +476,29 @@
     border-radius: 6px;
     white-space: pre-wrap;
     overflow-x: auto;
+}
+
+/* Footer of the PRERENDERED pages (see prerender/page.ts). The in-app help page
+   has the whole app around it and does not render one — these links exist so a
+   static document is not a dead end for a reader or a crawler. */
+.doc-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    justify-content: center;
+    margin: 3rem auto 0;
+    max-width: 900px;
+    padding: 1.5rem 1rem 0;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.8125rem;
+}
+
+.doc-footer a {
+    color: #64748b;
+    text-decoration: none;
+}
+
+.doc-footer a:hover {
+    color: #4c8dff;
+    text-decoration: underline;
 }

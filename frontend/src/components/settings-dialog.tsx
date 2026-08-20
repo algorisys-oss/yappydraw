@@ -5,6 +5,9 @@ import { features } from "../config/features";
 import { cloudStorageManager } from "../storage/cloud";
 import type { AuthState } from "../storage/cloud/types";
 import { showToast } from "./toast";
+import {
+    t, currentLocale, setLocale, readyLocales, pseudoLocaleAvailable, PSEUDO_LOCALE,
+} from "../i18n";
 import "./settings-dialog.css";
 
 interface SettingsDialogProps {
@@ -49,6 +52,17 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
     let bodyRef: HTMLDivElement | undefined;
 
     const categories = () => CATEGORIES.filter(c => !c.flag || features[c.flag]);
+
+    /**
+     * Locales offered in the picker: those past the coverage gate, plus the
+     * pseudo-locale in dev builds. Native names, not English ones — someone
+     * looking for their own language is scanning for "Deutsch", not "German".
+     */
+    const languageOptions = () => {
+        const opts = readyLocales().map(l => ({ value: l.code, label: l.nativeName }));
+        if (pseudoLocaleAvailable()) opts.push({ value: PSEUDO_LOCALE, label: t("settings.pseudoLocale") });
+        return opts;
+    };
 
     /**
      * Show/hide sections and rows from the DOM rather than by gating each of the ~35 rows on a
@@ -145,6 +159,25 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         <div class="settings-body" ref={bodyRef}>
                     <div class="settings-section" data-cat="general">
                         <p class="settings-section-title">General</p>
+
+                        {/* Hidden until there is a real choice to make. `readyLocales()`
+                            only lists locales past the 95% coverage gate, so today this
+                            is English alone in a production build (and English + the
+                            pseudo-locale in dev). The row appears on its own as
+                            translations land — see docs/i18n-seo-plan.md §7 phase 4. */}
+                        <Show when={languageOptions().length > 1}>
+                            <div class="settings-row">
+                                <label title={t("settings.languageTitle")}>{t("settings.language")}</label>
+                                <select
+                                    value={currentLocale()}
+                                    onChange={(e) => { void setLocale(e.currentTarget.value); }}
+                                >
+                                    <For each={languageOptions()}>
+                                        {(opt) => <option value={opt.value}>{opt.label}</option>}
+                                    </For>
+                                </select>
+                            </div>
+                        </Show>
 
                         <div class="settings-row">
                             <label>Quick Toolbar</label>

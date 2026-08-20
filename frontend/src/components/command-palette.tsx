@@ -1,6 +1,7 @@
 import { type Component, createSignal, createEffect, For, Show } from "solid-js";
 import { store, toggleCommandPalette } from "../store/app-store";
 import { searchCommands } from "../utils/command-registry";
+import { t } from "../i18n";
 import "./command-palette.css";
 
 const CommandPalette: Component = () => {
@@ -42,8 +43,8 @@ const CommandPalette: Component = () => {
 
     const placeholder = () => {
         const f = filter();
-        if (f === 'Shapes') return "Search shapes and tools... (type to filter)";
-        return "Type a command or search...";
+        if (f === 'Shapes') return t("commandPalette.placeholderShapes");
+        return t("commandPalette.placeholder");
     };
 
     return (
@@ -75,7 +76,7 @@ const CommandPalette: Component = () => {
                                     onMouseEnter={() => setSelectedIndex(index())}
                                 >
                                     <div class="command-palette-item-info">
-                                        <span class="command-palette-item-category">{item.category}</span>
+                                        <span class="command-palette-item-category">{t(`commandCategory.${item.category}`)}</span>
                                         <span class="command-palette-item-label">{item.label}</span>
                                     </div>
                                     <Show when={item.shortcut}>
@@ -85,15 +86,15 @@ const CommandPalette: Component = () => {
                             )}
                         </For>
                         <Show when={results().length === 0}>
-                            <div class="command-palette-no-results">No commands found</div>
+                            <div class="command-palette-no-results">{t("commandPalette.noResults")}</div>
                         </Show>
                     </div>
                     <div class="command-palette-footer">
-                        <span>↑↓ to navigate</span>
-                        <span>↵ to select</span>
-                        <span>esc to close</span>
+                        <span>{t("commandPalette.hintNavigate")}</span>
+                        <span>{t("commandPalette.hintSelect")}</span>
+                        <span>{t("commandPalette.hintClose")}</span>
                         <Show when={!filter()}>
-                            <span>/ for shapes</span>
+                            <span>{t("commandPalette.hintShapes")}</span>
                         </Show>
                     </div>
                 </div>

@@ -3,6 +3,7 @@ import { store, setStore } from '../store/app-store';
 import { YappyMascot } from './mascot';
 import { listDrawings, openDrawing, type DrawingMeta } from '../storage/drawings-store';
 import { setShowDrawingsGallery } from './drawings-gallery-signal';
+import { t, type WelcomeFeatureKey } from '../i18n';
 
 /**
  * Welcome screen — shown on an empty canvas. A single bold call to action over a
@@ -36,24 +37,18 @@ export const WelcomeScreen: Component = () => {
     });
     const openRecent = async (d: DrawingMeta) => { await openDrawing(d.id); };
 
-    const features = [
-        '100+ shapes, icons & connectors',
-        'Sketch & architectural styles',
-        'UML, BPMN & flowcharts',
-        'Cloud infrastructure diagrams',
-        'Data-structure visualizations',
-        'Mindmaps & wireframes',
-        'Freehand drawing & smart shapes',
-        'P3 wide-gamut colors',
-        'Gradient & pattern fills',
-        '40+ animation presets',
-        'Keyframe & morph animations',
-        'Slides, transitions & builds',
-        'Design studio & templates',
-        'No-code game builder',
-        'Export PNG · SVG · PDF · HTML',
-        '100% local & private',
+    /**
+     * Display order for the capability list; the text itself lives in the
+     * dictionary. A FUNCTION, not a const array: a const would be evaluated once
+     * when the component is created and would still be showing English after a
+     * language switch. Reading `t` inside the accessor is what makes it update.
+     */
+    const FEATURE_ORDER: WelcomeFeatureKey[] = [
+        'shapes', 'styles', 'diagrams', 'cloud', 'dataStructures', 'mindmaps',
+        'freehand', 'color', 'fills', 'animationPresets', 'keyframes', 'slides',
+        'designStudio', 'games', 'export', 'privacy',
     ];
+    const features = () => FEATURE_ORDER.map((key) => t(`welcomeFeatures.${key}`));
 
     return (
         <Show when={isVisible()}>
@@ -78,7 +73,7 @@ export const WelcomeScreen: Component = () => {
                     'letter-spacing': '-0.01em',
                     opacity: '0', animation: 'wsFadeUp 0.5s ease-out 0.05s forwards',
                 }}>
-                    Click a tool to start creating
+                    {t('welcome.headline')}
                 </h1>
 
                 <p style={{
@@ -86,7 +81,7 @@ export const WelcomeScreen: Component = () => {
                     color: 'var(--text-secondary, #6b7280)',
                     opacity: '0', animation: 'wsFadeIn 0.6s ease-out 0.25s forwards',
                 }}>
-                    Everything stays on your machine — nothing is sent to the cloud.
+                    {t('welcome.privacyNote')}
                 </p>
 
                 {/* Muted, organized feature list */}
@@ -98,7 +93,7 @@ export const WelcomeScreen: Component = () => {
                         'gap': '7px 40px', 'text-align': 'left',
                         opacity: '0', animation: 'wsFadeUp 0.6s ease-out 0.4s forwards',
                     }}>
-                        <For each={features}>
+                        <For each={features()}>
                             {(f) => (
                                 <div style={{ display: 'flex', 'align-items': 'center', gap: '9px', 'font-size': '0.85rem', color: 'var(--text-secondary, #6b7280)' }}>
                                     <span style={{ width: '4px', height: '4px', 'border-radius': '50%', background: 'var(--text-secondary, #9ca3af)', opacity: '0.6', 'flex-shrink': '0' }} />
@@ -119,16 +114,16 @@ export const WelcomeScreen: Component = () => {
                             display: 'flex', 'align-items': 'center', 'justify-content': 'center', gap: '10px',
                             'margin-bottom': '12px', 'font-size': '0.8rem', color: 'var(--text-secondary, #6b7280)',
                         }}>
-                            <span style={{ 'font-weight': '600' }}>Jump back in</span>
+                            <span style={{ 'font-weight': '600' }}>{t('welcome.jumpBackIn')}</span>
                             <button onClick={() => setShowDrawingsGallery(true)} style={{
                                 'font-size': '0.78rem', color: 'var(--accent-color, #6366f1)', background: 'transparent',
                                 border: 'none', cursor: 'pointer', 'font-weight': '600',
-                            }}>My Drawings →</button>
+                            }}>{t('welcome.myDrawings')}</button>
                         </div>
                         <div style={{ display: 'flex', 'flex-wrap': 'wrap', gap: '12px', 'justify-content': 'center' }}>
                             <For each={recents()}>
                                 {(d) => (
-                                    <button onClick={() => openRecent(d)} title={`Open "${d.name}"`} style={{
+                                    <button onClick={() => openRecent(d)} title={t('welcome.openDrawing', { name: d.name })} style={{
                                         width: '120px', padding: '0', border: '1px solid var(--border-color, #e5e7eb)',
                                         'border-radius': '10px', overflow: 'hidden', background: 'var(--bg-secondary, #f9fafb)',
                                         cursor: 'pointer', 'text-align': 'left', 'font-family': 'inherit',
@@ -138,7 +133,7 @@ export const WelcomeScreen: Component = () => {
                                             display: 'flex', 'align-items': 'center', 'justify-content': 'center',
                                             'border-bottom': '1px solid var(--border-color, #e5e7eb)',
                                         }}>
-                                            <Show when={d.thumb} fallback={<span style={{ color: 'var(--text-secondary, #9ca3af)', 'font-size': '0.7rem' }}>No preview</span>}>
+                                            <Show when={d.thumb} fallback={<span style={{ color: 'var(--text-secondary, #9ca3af)', 'font-size': '0.7rem' }}>{t('welcome.noPreview')}</span>}>
                                                 <img src={d.thumb} alt="" loading="lazy" style={{ width: '100%', height: '100%', 'object-fit': 'contain' }} />
                                             </Show>
                                         </div>
@@ -158,8 +153,10 @@ export const WelcomeScreen: Component = () => {
                     color: 'var(--text-secondary, #9ca3af)', opacity: '0',
                     animation: 'wsFadeIn 0.6s ease-out 0.6s forwards',
                 }}>
-                    <strong style={{ color: 'var(--text-secondary, #6b7280)' }}>Ctrl+K</strong> command palette
-                    &nbsp;·&nbsp; <strong style={{ color: 'var(--text-secondary, #6b7280)' }}>?</strong> help &amp; shortcuts
+                    {/* Ctrl+K and ? are key bindings, so they stay literal — only the
+                        descriptions around them are translated (plan §3.3). */}
+                    <strong style={{ color: 'var(--text-secondary, #6b7280)' }}>Ctrl+K</strong> {t('welcome.commandPaletteHint')}
+                    &nbsp;·&nbsp; <strong style={{ color: 'var(--text-secondary, #6b7280)' }}>?</strong> {t('welcome.helpHint')}
                 </p>
             </div>
         </Show>

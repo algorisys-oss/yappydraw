@@ -3,125 +3,31 @@
  * Displays categorized templates demonstrating YappyDraw capabilities.
  */
 
-import { type Component, createSignal, For, Show, onMount, onCleanup } from 'solid-js';
+import { type Component, createSignal, createEffect, For, Show } from 'solid-js';
+import { parsePath, pathFor } from '../routes';
+import { currentPath, navigate } from '../navigation';
+import { exampleTemplates, exampleCategories as categories, type ExampleTemplate } from './templates';
 import './examples-page.css';
 
-// Example template data
-interface ExampleTemplate {
-    id: string;
-    name: string;
-    icon: string;
-    category: string;
-    description: string;
-    fileName: string;
-    thumbnail?: string;
-}
 
-// Registry of example templates - organized by category
-const exampleTemplates: ExampleTemplate[] = [
-    // Featured - New v1.6 Features
-    {
-        id: '3d-shapes-showcase',
-        name: '3D Shapes & Open Box',
-        icon: '📦',
-        category: 'Featured',
-        description: 'Interactive 3D shapes with click-to-reveal, gradients, and multiple lid styles',
-        fileName: '3d-shapes-showcase.json'
-    },
-    {
-        id: 'animation-showcase',
-        name: 'Animation Showcase',
-        icon: '✨',
-        category: 'Featured',
-        description: 'Stagger animations, fade effects, bounce, and gradient presets',
-        fileName: 'animation-showcase.json'
-    },
-    {
-        id: 'mind-map-demo',
-        name: 'Mind Map',
-        icon: '🧠',
-        category: 'Featured',
-        description: 'Hierarchical mind maps with Tab/Enter/Space shortcuts',
-        fileName: 'mind-map-demo.json'
-    },
-    // Diagrams
-    {
-        id: 'flow-chart',
-        name: 'Flow Chart',
-        icon: '📋',
-        category: 'Diagrams',
-        description: 'Classic process flow with decision points and connectors',
-        fileName: 'flow-chart.json'
-    },
-    {
-        id: 'sequence-diagram',
-        name: 'Sequence Diagram',
-        icon: '🔄',
-        category: 'Diagrams',
-        description: 'UML sequence diagram showing message flows between actors',
-        fileName: 'sequence-diagram.json'
-    },
-    {
-        id: 'activity-diagram',
-        name: 'Activity Diagram',
-        icon: '⚡',
-        category: 'Diagrams',
-        description: 'UML activity diagram with swim lanes and parallel flows',
-        fileName: 'activity-diagram.json'
-    },
-    // Architecture
-    {
-        id: 'cloud-architecture',
-        name: 'Cloud Architecture',
-        icon: '☁️',
-        category: 'Architecture',
-        description: 'Cloud infrastructure diagram with services and connections',
-        fileName: 'cloud-architecture-demo.json'
-    },
-    {
-        id: 'six-thinking-hats',
-        name: 'Six Thinking Hats',
-        icon: '🎩',
-        category: 'Architecture',
-        description: 'Decision-making framework visualization',
-        fileName: 'six-thinking-hats.json'
-    },
-];
-
-// Group templates by category
-const categories = [...new Set(exampleTemplates.map(t => t.category))];
-
-// Parse template ID from URL hash (e.g., #/examples/flow-chart -> flow-chart)
-const getTemplateFromHash = (): string | null => {
-    const hash = window.location.hash;
-    const match = hash.match(/#\/?examples\/([^/]+)/);
-    return match ? match[1] : null;
+/** Which template the URL asks for — `/examples/flow-chart/` → `flow-chart`. */
+const templateFromPath = (): string | null => {
+    const route = parsePath(currentPath());
+    return route?.key === 'example' ? route.param ?? null : null;
 };
 
 export const ExamplesPage: Component = () => {
-    const [selectedTemplate, setSelectedTemplate] = createSignal<string | null>(getTemplateFromHash());
+    const [selectedTemplate, setSelectedTemplate] = createSignal<string | null>(templateFromPath());
     const [searchQuery, setSearchQuery] = createSignal('');
     const [loading, setLoading] = createSignal(false);
     const [previewData, setPreviewData] = createSignal<any>(null);
 
-    // Listen for hash changes (browser back/forward)
-    onMount(() => {
-        const handleHashChange = () => {
-            const newTemplate = getTemplateFromHash();
-            setSelectedTemplate(newTemplate);
-            if (newTemplate) {
-                loadPreview(newTemplate);
-            }
-        };
-        window.addEventListener('hashchange', handleHashChange);
-
-        // Load initial preview if template is in URL
-        const initial = getTemplateFromHash();
-        if (initial) {
-            loadPreview(initial);
-        }
-
-        onCleanup(() => window.removeEventListener('hashchange', handleHashChange));
+    // The path decides which template is open — including on first render and on
+    // back/forward, which used to need their own listener.
+    createEffect(() => {
+        const next = templateFromPath();
+        setSelectedTemplate(next);
+        if (next) loadPreview(next);
     });
 
     const loadPreview = async (templateId: string) => {
@@ -154,15 +60,17 @@ export const ExamplesPage: Component = () => {
 
     // Navigate to a template preview
     const navigateToTemplate = (templateId: string) => {
-        window.location.hash = `#/examples/${templateId}`;
+        navigate(pathFor('example', templateId));
         setSelectedTemplate(templateId);
         loadPreview(templateId);
     };
 
     // Open template in the editor
     const openInEditor = (template: ExampleTemplate) => {
-        // Navigate to main app with load parameter in hash
-        window.location.hash = `#load=${encodeURIComponent(template.fileName)}`;
+        // Path first, THEN the hash: `pushState` writes a whole URL, so setting
+        // the path afterwards would drop the `load=` parameter it carries.
+        navigate(pathFor('home'));
+        window.location.hash = `load=${encodeURIComponent(template.fileName)}`;
     };
 
     const filteredTemplates = () => {
@@ -178,7 +86,7 @@ export const ExamplesPage: Component = () => {
     const currentTemplate = () => exampleTemplates.find(t => t.id === selectedTemplate());
 
     const handleBackToApp = () => {
-        window.location.hash = '';
+        navigate(pathFor('home'));
     };
 
     return (

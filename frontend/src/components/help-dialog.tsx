@@ -2,241 +2,251 @@ import { Show, For, onCleanup, createEffect, createSignal, createMemo } from "so
 import { X, Search, ExternalLink, Github, Youtube, Bug, LayoutTemplate, Compass } from "lucide-solid";
 import "./help-dialog.css";
 import { startTour } from "./onboarding-tour";
+import { t, type HotkeyKey, type HotkeyCategoryKey } from "../i18n";
+import { pathFor } from "../routes";
+import { navigate } from "../navigation";
 
 interface ShortcutEntry {
-    label: string;
+    /** Dictionary key under `hotkeys.` — the description is translated, the combo is not. */
+    key: HotkeyKey;
     keys: string; // e.g. "Ctrl+Z", "V or 1", "Shift+Drag"
 }
 
 interface ShortcutCategory {
-    title: string;
+    titleKey: HotkeyCategoryKey;
     shortcuts: ShortcutEntry[];
+}
+
+/** A category with its text resolved for the active locale. */
+interface LocalizedCategory {
+    title: string;
+    shortcuts: { label: string; keys: string }[];
 }
 
 // NOTE: when adding a touch/pen affordance, also document it in the
 // "Touch & Pen Gestures" category below so the help dialog stays in sync.
 const SHORTCUT_DATA: ShortcutCategory[] = [
     {
-        title: 'File',
+        titleKey: 'file',
         shortcuts: [
-            { label: 'Save to My Drawings', keys: 'Ctrl+S' },
-            { label: 'Open Drawing (Export/Load dialog)', keys: 'Ctrl+Alt+O' },
-            { label: 'Save Drawing (Export/Save dialog)', keys: 'Ctrl+Alt+S' },
-            { label: 'Export / Share', keys: 'Ctrl+Shift+E' },
-            { label: 'Record Time-lapse (toggle)', keys: 'Ctrl+Shift+T' },
-            { label: 'Command Palette', keys: 'Ctrl+K' },
-            { label: 'Quick Tool Finder', keys: '/' },
-            { label: 'New Sketch', keys: 'Alt+N' },
+            { key: 'file-saveToMyDrawings', keys: 'Ctrl+S' },
+            { key: 'file-openDrawing', keys: 'Ctrl+Alt+O' },
+            { key: 'file-saveDrawing', keys: 'Ctrl+Alt+S' },
+            { key: 'file-exportShare', keys: 'Ctrl+Shift+E' },
+            { key: 'file-recordTimeLapse', keys: 'Ctrl+Shift+T' },
+            { key: 'file-commandPalette', keys: 'Ctrl+K' },
+            { key: 'file-quickToolFinder', keys: '/' },
+            { key: 'file-newSketch', keys: 'Alt+N' },
         ]
     },
     {
-        title: 'Tools',
+        titleKey: 'tools',
         shortcuts: [
-            { label: 'Selection', keys: 'V or 1' },
-            { label: 'Rectangle', keys: 'R or 2' },
-            { label: 'Diamond', keys: 'D or 3' },
-            { label: 'Ellipse', keys: 'O or 4' },
-            { label: 'Arrow', keys: 'A or 5' },
-            { label: 'Line', keys: 'L or 6' },
-            { label: 'Pen', keys: 'P or 7' },
-            { label: 'Text', keys: 'T or 8' },
-            { label: 'Insert Image', keys: 'I or 9' },
-            { label: 'Insert Video', keys: 'Toolbar button' },
-            { label: 'Eraser (drag over part of any shape to partially erase; width is adjustable in the panel)', keys: 'E or 0' },
-            { label: 'Bezier Curve', keys: 'B' },
-            { label: 'Pan Mode', keys: 'H' },
-            { label: 'Laser Pointer', keys: 'Shift+P' },
-            { label: 'Ink Overlay', keys: 'Alt+I' },
-            { label: 'Lock Tool (stay active)', keys: 'Double-click' },
+            { key: 'tools-selection', keys: 'V or 1' },
+            { key: 'tools-rectangle', keys: 'R or 2' },
+            { key: 'tools-diamond', keys: 'D or 3' },
+            { key: 'tools-ellipse', keys: 'O or 4' },
+            { key: 'tools-arrow', keys: 'A or 5' },
+            { key: 'tools-line', keys: 'L or 6' },
+            { key: 'tools-pen', keys: 'P or 7' },
+            { key: 'tools-text', keys: 'T or 8' },
+            { key: 'tools-insertImage', keys: 'I or 9' },
+            { key: 'tools-insertVideo', keys: 'Toolbar button' },
+            { key: 'tools-eraser', keys: 'E or 0' },
+            { key: 'tools-bezierCurve', keys: 'B' },
+            { key: 'tools-panMode', keys: 'H' },
+            { key: 'tools-laserPointer', keys: 'Shift+P' },
+            { key: 'tools-inkOverlay', keys: 'Alt+I' },
+            { key: 'tools-lockTool', keys: 'Double-click' },
         ]
     },
     {
-        title: 'Editor',
+        titleKey: 'editor',
         shortcuts: [
-            { label: 'Undo', keys: 'Ctrl+Z' },
-            { label: 'Redo', keys: 'Ctrl+Y' },
-            { label: 'Node tool / Direct Selection (toggle)', keys: 'N' },
-            { label: 'Node tool: open it on a path (Select tool shows no anchors)', keys: 'Double-click a path' },
-            { label: 'Node tool: convert a node corner ↔ smooth', keys: 'Alt+Click a node' },
-            { label: 'Node tool: delete one node', keys: 'Ctrl+Click a node' },
-            { label: 'Node tool: select all nodes', keys: 'Ctrl+A' },
-            { label: 'Node tool: delete selected nodes', keys: 'Del' },
-            { label: 'Node tool: add a node on a segment', keys: 'Alt+Click' },
-            { label: 'Node tool: edit a different shape (stay in the tool)', keys: 'Click the shape' },
-            { label: 'Node tool: edit several shapes at once', keys: 'Shift+Click a shape' },
-            { label: 'Node tool: drop the nodes, then the shape', keys: 'Click empty space (twice)' },
-            { label: 'Node tool: pick shapes when none is loaded', keys: 'Drag on empty space' },
-            { label: 'Node tool: leave the tool', keys: 'Esc or N' },
-            { label: 'Draw a Square / Perfect Circle (hold while drawing)', keys: 'Shift+Drag' },
-            { label: 'Snap a Line / Arrow to 15° (hold while drawing)', keys: 'Shift+Drag' },
-            { label: 'Edit Text in Shape', keys: 'Double-click' },
-            { label: 'Commit Text, Keep Shape Selected', keys: 'Ctrl+Enter' },
-            { label: 'Commit Text, Exit Edit', keys: 'Esc' },
-            { label: 'Delete', keys: 'Del' },
-            { label: 'Duplicate', keys: 'Ctrl+D' },
-            { label: 'Transform Again (step-and-repeat)', keys: 'Ctrl+Shift+D' },
-            { label: 'Constrain move to an axis (H / V / 45°)', keys: 'Shift+Drag element' },
-            { label: 'Constrain angle to 15° (draw line / rotate / measure)', keys: 'Shift+Drag' },
-            { label: 'Resize proportionally (lock aspect ratio)', keys: 'Shift+Drag handle' },
-            { label: 'Resize proportionally from the centre (all sides equally)', keys: 'Alt+Shift+Drag handle' },
-            { label: 'Measure to neighbour (gaps + artboard edges)', keys: 'Alt+Hover' },
-            { label: 'Select All (switches to the Selection tool)', keys: 'Ctrl+A' },
-            { label: 'Copy / Paste', keys: 'Ctrl+C / Ctrl+V' },
-            { label: 'Cut', keys: 'Ctrl+X' },
-            { label: 'Bring Forward (one step)', keys: 'Ctrl+]' },
-            { label: 'Send Backward (one step)', keys: 'Ctrl+[' },
-            { label: 'Bring to Front', keys: 'Ctrl+Shift+]' },
-            { label: 'Send to Back', keys: 'Ctrl+Shift+[' },
-            { label: 'Rasterize selection (vector → bitmap)', keys: 'Right-click → Rasterize' },
-            { label: 'Object tree (objects on a layer)', keys: 'Layers panel → box icon on a layer' },
-            { label: 'Hide / lock / rename one object', keys: 'Object tree → eye / padlock / double-click' },
-            { label: 'Group / Ungroup', keys: 'Ctrl+G / Ctrl+Shift+G' },
-            { label: 'Enter group (select objects inside it)', keys: 'Double-click a grouped object' },
-            { label: 'Leave group (one level)', keys: 'Esc' },
-            { label: 'Copy / Paste Style', keys: 'Ctrl+Alt+C / V' },
-            { label: 'Palette: Set Stroke Color', keys: 'Click swatch' },
-            { label: 'Palette: Set Fill Color', keys: 'Shift+Click swatch' },
-            { label: 'Palette: Close (when pinned)', keys: 'Esc' },
-            { label: 'Select by Type', keys: 'Right-click → Select by Type' },
-            { label: 'Select by Same Property', keys: 'Right-click → Select by Same Property' },
-            { label: 'Flip Horizontal', keys: 'Shift+H' },
-            { label: 'Flip Vertical', keys: 'Shift+V' },
-            { label: 'Mirror Copy / Repeat (Radial·Grid)', keys: 'Right-click → Repeat & Mirror' },
-            { label: 'Create Outlines (text → vector)', keys: 'Ctrl+Shift+O' },
-            { label: 'Simplify Path (auto-converts shapes/strokes)', keys: 'Ctrl+L' },
-            { label: 'Smooth Path', keys: 'Right-click → Path → Smooth' },
-            { label: 'Lock / Unlock selected', keys: 'Ctrl+Shift+L' },
-            { label: 'Unlock All Objects (locked ones can’t be selected)', keys: 'Ctrl+Alt+2' },
-            { label: 'Unlock Aspect Ratio', keys: 'Shift+Drag' },
-            { label: 'Pen / Vector Path: add point / drag to curve', keys: 'P or Toolbar (pen-nib)' },
-            { label: 'Pen: straight segment — constrain to 15° steps', keys: 'Shift+Click' },
-            { label: 'Pen: constrain handles 90°/45° (Clock Method)', keys: 'Shift+Drag handle' },
-            { label: 'Pen / node: break the handle pair (cusp)', keys: 'Alt+Drag handle' },
-            { label: 'Path node: convert corner ↔ smooth', keys: 'Alt+Click anchor' },
-            { label: 'Path: insert a point on a segment', keys: 'Alt+Click segment' },
-            { label: 'Path node: delete', keys: 'Ctrl+Click anchor' },
-            { label: 'Mindmap Tool (central topic)', keys: 'M' },
-            { label: 'Add Child Node (+ edit)', keys: 'Tab' },
-            { label: 'Add Sibling Node (+ edit)', keys: 'Enter' },
-            { label: 'Edit Node Text', keys: 'F2' },
-            { label: 'Toggle Collapse (tap) · Hold to Pan', keys: 'Space' },
-            { label: 'Navigate Mindmap', keys: 'Arrow Keys' },
-            { label: 'Nudge Element', keys: 'Arrow' },
-            { label: 'Nudge — coarse (10px) / fine (0.1px)', keys: 'Shift+Arrow / Ctrl+Arrow' },
-            { label: 'Star/Polygon point count', keys: 'Up/Down (when selected)' },
-            { label: 'Swap Fill / Stroke', keys: 'Shift+X' },
-            { label: 'Combine: Unite selected shapes', keys: 'Ctrl+Alt+U' },
-            { label: 'Combine: Subtract (minus front)', keys: 'Ctrl+Alt+D' },
-            { label: 'Combine: Intersect (keep overlap)', keys: 'Ctrl+Alt+I' },
-            { label: 'Combine: Exclude (drop overlap)', keys: 'Ctrl+Alt+X' },
-            { label: 'Shape Builder (drag to merge, Alt+drag to delete, Shift+drag = box)', keys: 'Shift+M' },
-            { label: 'Eyedropper — copy a style onto the selection', keys: 'Shift+I' },
-            { label: 'Math in number fields (200-50%, *2…)', keys: 'type + Enter' },
-            { label: 'Focus Branch', keys: 'Shift+F' },
+            { key: 'editor-undo', keys: 'Ctrl+Z' },
+            { key: 'editor-redo', keys: 'Ctrl+Y' },
+            { key: 'editor-nodeToolDirectSelection', keys: 'N' },
+            { key: 'editor-nodeToolOpenItOnAPath', keys: 'Double-click a path' },
+            { key: 'editor-nodeToolConvertANodeCornerSmooth', keys: 'Alt+Click a node' },
+            { key: 'editor-nodeToolDeleteOneNode', keys: 'Ctrl+Click a node' },
+            { key: 'editor-nodeToolSelectAllNodes', keys: 'Ctrl+A' },
+            { key: 'editor-nodeToolDeleteSelectedNodes', keys: 'Del' },
+            { key: 'editor-nodeToolAddANodeOnA', keys: 'Alt+Click' },
+            { key: 'editor-nodeToolEditADifferentShape', keys: 'Click the shape' },
+            { key: 'editor-nodeToolEditSeveralShapesAtOnce', keys: 'Shift+Click a shape' },
+            { key: 'editor-nodeToolDropTheNodesThenThe', keys: 'Click empty space (twice)' },
+            { key: 'editor-nodeToolPickShapesWhenNoneIs', keys: 'Drag on empty space' },
+            { key: 'editor-nodeToolLeaveTheTool', keys: 'Esc or N' },
+            { key: 'editor-drawASquarePerfectCircle', keys: 'Shift+Drag' },
+            { key: 'editor-snapALineArrowTo15', keys: 'Shift+Drag' },
+            { key: 'editor-editTextInShape', keys: 'Double-click' },
+            { key: 'editor-commitTextKeepShapeSelected', keys: 'Ctrl+Enter' },
+            { key: 'editor-commitTextExitEdit', keys: 'Esc' },
+            { key: 'editor-delete', keys: 'Del' },
+            { key: 'editor-duplicate', keys: 'Ctrl+D' },
+            { key: 'editor-transformAgain', keys: 'Ctrl+Shift+D' },
+            { key: 'editor-constrainMoveToAnAxis', keys: 'Shift+Drag element' },
+            { key: 'editor-constrainAngleTo15', keys: 'Shift+Drag' },
+            { key: 'editor-resizeProportionally', keys: 'Shift+Drag handle' },
+            { key: 'editor-resizeProportionallyFromTheCentre', keys: 'Alt+Shift+Drag handle' },
+            { key: 'editor-measureToNeighbour', keys: 'Alt+Hover' },
+            { key: 'editor-selectAll', keys: 'Ctrl+A' },
+            { key: 'editor-copyPaste', keys: 'Ctrl+C / Ctrl+V' },
+            { key: 'editor-cut', keys: 'Ctrl+X' },
+            { key: 'editor-bringForward', keys: 'Ctrl+]' },
+            { key: 'editor-sendBackward', keys: 'Ctrl+[' },
+            { key: 'editor-bringToFront', keys: 'Ctrl+Shift+]' },
+            { key: 'editor-sendToBack', keys: 'Ctrl+Shift+[' },
+            { key: 'editor-rasterizeSelection', keys: 'Right-click → Rasterize' },
+            { key: 'editor-objectTree', keys: 'Layers panel → box icon on a layer' },
+            { key: 'editor-hideLockRenameOneObject', keys: 'Object tree → eye / padlock / double-click' },
+            { key: 'editor-groupUngroup', keys: 'Ctrl+G / Ctrl+Shift+G' },
+            { key: 'editor-enterGroup', keys: 'Double-click a grouped object' },
+            { key: 'editor-leaveGroup', keys: 'Esc' },
+            { key: 'editor-copyPasteStyle', keys: 'Ctrl+Alt+C / V' },
+            { key: 'editor-paletteSetStrokeColor', keys: 'Click swatch' },
+            { key: 'editor-paletteSetFillColor', keys: 'Shift+Click swatch' },
+            { key: 'editor-paletteClose', keys: 'Esc' },
+            { key: 'editor-selectByType', keys: 'Right-click → Select by Type' },
+            { key: 'editor-selectBySameProperty', keys: 'Right-click → Select by Same Property' },
+            { key: 'editor-flipHorizontal', keys: 'Shift+H' },
+            { key: 'editor-flipVertical', keys: 'Shift+V' },
+            { key: 'editor-mirrorCopyRepeat', keys: 'Right-click → Repeat & Mirror' },
+            { key: 'editor-createOutlines', keys: 'Ctrl+Shift+O' },
+            { key: 'editor-simplifyPath', keys: 'Ctrl+L' },
+            { key: 'editor-smoothPath', keys: 'Right-click → Path → Smooth' },
+            { key: 'editor-lockUnlockSelected', keys: 'Ctrl+Shift+L' },
+            { key: 'editor-unlockAllObjects', keys: 'Ctrl+Alt+2' },
+            { key: 'editor-unlockAspectRatio', keys: 'Shift+Drag' },
+            { key: 'editor-penVectorPathAddPointDragTo', keys: 'P or Toolbar (pen-nib)' },
+            { key: 'editor-penStraightSegmentConstrainTo15Steps', keys: 'Shift+Click' },
+            { key: 'editor-penConstrainHandles9045', keys: 'Shift+Drag handle' },
+            { key: 'editor-penNodeBreakTheHandlePair', keys: 'Alt+Drag handle' },
+            { key: 'editor-pathNodeConvertCornerSmooth', keys: 'Alt+Click anchor' },
+            { key: 'editor-pathInsertAPointOnASegment', keys: 'Alt+Click segment' },
+            { key: 'editor-pathNodeDelete', keys: 'Ctrl+Click anchor' },
+            { key: 'editor-mindmapTool', keys: 'M' },
+            { key: 'editor-addChildNode', keys: 'Tab' },
+            { key: 'editor-addSiblingNode', keys: 'Enter' },
+            { key: 'editor-editNodeText', keys: 'F2' },
+            { key: 'editor-toggleCollapseHoldToPan', keys: 'Space' },
+            { key: 'editor-navigateMindmap', keys: 'Arrow Keys' },
+            { key: 'editor-nudgeElement', keys: 'Arrow' },
+            { key: 'editor-nudgeCoarseFine', keys: 'Shift+Arrow / Ctrl+Arrow' },
+            { key: 'editor-starPolygonPointCount', keys: 'Up/Down (when selected)' },
+            { key: 'editor-swapFillStroke', keys: 'Shift+X' },
+            { key: 'editor-combineUniteSelectedShapes', keys: 'Ctrl+Alt+U' },
+            { key: 'editor-combineSubtract', keys: 'Ctrl+Alt+D' },
+            { key: 'editor-combineIntersect', keys: 'Ctrl+Alt+I' },
+            { key: 'editor-combineExclude', keys: 'Ctrl+Alt+X' },
+            { key: 'editor-shapeBuilder', keys: 'Shift+M' },
+            { key: 'editor-eyedropperCopyAStyleOntoTheSelection', keys: 'Shift+I' },
+            { key: 'editor-mathInNumberFields', keys: 'type + Enter' },
+            { key: 'editor-focusBranch', keys: 'Shift+F' },
         ]
     },
     {
-        title: 'View & Zoom',
+        titleKey: 'viewZoom',
         shortcuts: [
-            { label: 'Zoom In', keys: 'Ctrl+=' },
-            { label: 'Zoom Out', keys: 'Ctrl+-' },
-            { label: 'Reset Zoom (100%)', keys: 'Ctrl+0' },
-            { label: 'Zoom to Fit', keys: 'Ctrl+1' },
-            { label: 'Zoom to Selection', keys: 'Ctrl+2' },
-            { label: 'Rotate Canvas Left / Right (the , and . keys)', keys: 'Shift+, / Shift+.' },
-            { label: 'Reset Canvas Rotation', keys: 'Shift+0' },
-            { label: 'Toggle Properties', keys: 'Alt+Enter' },
-            { label: 'Toggle Elements (search icons, illustrations, shapes, photos)', keys: 'Alt+E' },
-            { label: 'Toggle Layers', keys: 'Alt+L' },
-            { label: 'Toggle Symbols Panel', keys: 'Alt+B' },
-            { label: 'Toggle History Panel', keys: 'Alt+H' },
-            { label: 'Toggle Graphic Styles', keys: 'Alt+G' },
-            { label: 'Toggle Swatches', keys: 'Alt+W' },
-            { label: 'Toggle Patterns', keys: 'Alt+P' },
-            { label: 'Toggle Minimap', keys: 'Alt+M' },
-            { label: 'Toggle Rulers & Guides', keys: 'Alt+R' },
-            { label: 'Select a Guide (click) / Add to Selection', keys: 'Shift+Click' },
-            { label: 'Select All Guides', keys: 'Ctrl+Shift+A' },
-            { label: 'Delete Selected Guides', keys: 'Delete' },
-            { label: 'Nudge Selected Guides (Shift = 10px)', keys: 'Arrow Keys' },
-            { label: 'Clear Guide Selection', keys: 'Escape' },
-            { label: 'Toggle Keyframes Timeline', keys: 'Alt+K' },
-            { label: 'Toggle Symmetry (mirror / mandala drawing)', keys: 'Alt+Y' },
-            { label: 'Move Symmetry Axis (drag the centre handle)', keys: 'Alt+Shift+Y' },
-            { label: 'Toggle Panels', keys: 'Alt+\\' },
-            { label: 'Zen Mode', keys: 'Alt+Z' },
-            { label: 'Toggle Grid', keys: "Shift+'" },
-            { label: 'Snap to Grid', keys: 'Shift+;' },
-            { label: 'Smart Shapes (hold pen to correct)', keys: 'Shift+Q' },
-            { label: 'Stroke Stabilization (lazy brush)', keys: 'Shift+S' },
-            { label: 'Help Dialog', keys: 'Shift+?' },
-            { label: 'Present from Start', keys: 'F5' },
-            { label: 'Present from Current', keys: 'Shift+F5' },
-            { label: 'Exit Presentation', keys: 'Esc' },
+            { key: 'viewZoom-zoomIn', keys: 'Ctrl+=' },
+            { key: 'viewZoom-zoomOut', keys: 'Ctrl+-' },
+            { key: 'viewZoom-resetZoom', keys: 'Ctrl+0' },
+            { key: 'viewZoom-zoomToFit', keys: 'Ctrl+1' },
+            { key: 'viewZoom-zoomToSelection', keys: 'Ctrl+2' },
+            { key: 'viewZoom-rotateCanvasLeftRight', keys: 'Shift+, / Shift+.' },
+            { key: 'viewZoom-resetCanvasRotation', keys: 'Shift+0' },
+            { key: 'viewZoom-toggleProperties', keys: 'Alt+Enter' },
+            { key: 'viewZoom-toggleElements', keys: 'Alt+E' },
+            { key: 'viewZoom-toggleLayers', keys: 'Alt+L' },
+            { key: 'viewZoom-toggleSymbolsPanel', keys: 'Alt+B' },
+            { key: 'viewZoom-toggleHistoryPanel', keys: 'Alt+H' },
+            { key: 'viewZoom-toggleGraphicStyles', keys: 'Alt+G' },
+            { key: 'viewZoom-toggleSwatches', keys: 'Alt+W' },
+            { key: 'viewZoom-togglePatterns', keys: 'Alt+P' },
+            { key: 'viewZoom-toggleMinimap', keys: 'Alt+M' },
+            { key: 'viewZoom-toggleRulersGuides', keys: 'Alt+R' },
+            { key: 'viewZoom-selectAGuideAddToSelection', keys: 'Shift+Click' },
+            { key: 'viewZoom-selectAllGuides', keys: 'Ctrl+Shift+A' },
+            { key: 'viewZoom-deleteSelectedGuides', keys: 'Delete' },
+            { key: 'viewZoom-nudgeSelectedGuides', keys: 'Arrow Keys' },
+            { key: 'viewZoom-clearGuideSelection', keys: 'Escape' },
+            { key: 'viewZoom-toggleKeyframesTimeline', keys: 'Alt+K' },
+            { key: 'viewZoom-toggleSymmetry', keys: 'Alt+Y' },
+            { key: 'viewZoom-moveSymmetryAxis', keys: 'Alt+Shift+Y' },
+            { key: 'viewZoom-togglePanels', keys: 'Alt+\\' },
+            { key: 'viewZoom-zenMode', keys: 'Alt+Z' },
+            { key: 'viewZoom-toggleGrid', keys: "Shift+'" },
+            { key: 'viewZoom-snapToGrid', keys: 'Shift+;' },
+            { key: 'viewZoom-smartShapes', keys: 'Shift+Q' },
+            { key: 'viewZoom-strokeStabilization', keys: 'Shift+S' },
+            { key: 'viewZoom-helpDialog', keys: 'Shift+?' },
+            { key: 'viewZoom-presentFromStart', keys: 'F5' },
+            { key: 'viewZoom-presentFromCurrent', keys: 'Shift+F5' },
+            { key: 'viewZoom-exitPresentation', keys: 'Esc' },
         ]
     },
     {
-        title: 'Animation Timeline (animation docs)',
+        titleKey: 'animationTimeline',
         shortcuts: [
-            { label: 'Insert Frame (lengthen span)', keys: 'F5' },
-            { label: 'Insert Keyframe (duplicate cel, copy selected & ready to drag)', keys: 'F6' },
-            { label: 'Insert Blank Keyframe', keys: 'F7' },
-            { label: 'Remove Frame', keys: 'Shift+F5' },
-            { label: 'Clear Keyframe', keys: 'Shift+F6' },
-            { label: 'Convert to Movie Clip / Graphic', keys: 'F8 / Shift+F8' },
-            { label: 'Play / Pause', keys: 'Enter' },
-            { label: 'Step Frame Back / Forward', keys: ', / .' },
-            { label: 'Flip Cel to Cel (drawing to drawing)', keys: 'Alt+, / Alt+.' },
-            { label: 'Jump Marker to Marker', keys: 'Alt+Shift+, / Alt+Shift+.' },
-            { label: 'Jump to First / Last Frame', keys: 'Home / End' },
-            { label: 'Copy / Cut Frames', keys: 'Ctrl+Alt+C / Ctrl+Alt+X' },
-            { label: 'Paste / Duplicate Frames', keys: 'Ctrl+Alt+V / Ctrl+Alt+D' },
-            { label: 'Select a Block of Cels (Shift to start on a keyframe)', keys: 'Drag / Shift+Drag' },
-            { label: 'Zoom the Timeline', keys: 'Ctrl+Wheel' },
-            { label: 'Add a Ruler Marker', keys: 'Double-click the ruler' },
-            { label: 'Leave Out-of-Pegs Editing', keys: 'Esc' },
+            { key: 'animationTimeline-insertFrame', keys: 'F5' },
+            { key: 'animationTimeline-insertKeyframe', keys: 'F6' },
+            { key: 'animationTimeline-insertBlankKeyframe', keys: 'F7' },
+            { key: 'animationTimeline-removeFrame', keys: 'Shift+F5' },
+            { key: 'animationTimeline-clearKeyframe', keys: 'Shift+F6' },
+            { key: 'animationTimeline-convertToMovieClipGraphic', keys: 'F8 / Shift+F8' },
+            { key: 'animationTimeline-playPause', keys: 'Enter' },
+            { key: 'animationTimeline-stepFrameBackForward', keys: ', / .' },
+            { key: 'animationTimeline-flipCelToCel', keys: 'Alt+, / Alt+.' },
+            { key: 'animationTimeline-jumpMarkerToMarker', keys: 'Alt+Shift+, / Alt+Shift+.' },
+            { key: 'animationTimeline-jumpToFirstLastFrame', keys: 'Home / End' },
+            { key: 'animationTimeline-copyCutFrames', keys: 'Ctrl+Alt+C / Ctrl+Alt+X' },
+            { key: 'animationTimeline-pasteDuplicateFrames', keys: 'Ctrl+Alt+V / Ctrl+Alt+D' },
+            { key: 'animationTimeline-selectABlockOfCels', keys: 'Drag / Shift+Drag' },
+            { key: 'animationTimeline-zoomTheTimeline', keys: 'Ctrl+Wheel' },
+            { key: 'animationTimeline-addARulerMarker', keys: 'Double-click the ruler' },
+            { key: 'animationTimeline-leaveOutOfPegsEditing', keys: 'Esc' },
         ]
     },
     {
-        title: 'Layers & Slides',
+        titleKey: 'layersSlides',
         shortcuts: [
-            { label: 'Switch Layer', keys: 'Alt+1-9' },
-            { label: 'New Layer', keys: 'Ctrl+Shift+N' },
-            { label: 'Reorder Layer', keys: 'Alt+[ / Alt+]' },
-            { label: 'New Slide / Page', keys: 'Ctrl+M' },
-            { label: 'Next State / Slide', keys: 'Alt+Right' },
-            { label: 'Prev State / Slide', keys: 'Alt+Left' },
-            { label: 'Cycle Stroke Style', keys: 'S' },
-            { label: 'Cycle Fill Style', keys: 'F' },
+            { key: 'layersSlides-switchLayer', keys: 'Alt+1-9' },
+            { key: 'layersSlides-newLayer', keys: 'Ctrl+Shift+N' },
+            { key: 'layersSlides-reorderLayer', keys: 'Alt+[ / Alt+]' },
+            { key: 'layersSlides-newSlidePage', keys: 'Ctrl+M' },
+            { key: 'layersSlides-nextStateSlide', keys: 'Alt+Right' },
+            { key: 'layersSlides-prevStateSlide', keys: 'Alt+Left' },
+            { key: 'layersSlides-cycleStrokeStyle', keys: 'S' },
+            { key: 'layersSlides-cycleFillStyle', keys: 'F' },
         ]
     },
     {
-        title: 'Touch & Pen Gestures',
+        titleKey: 'touchPen',
         shortcuts: [
-            { label: 'Pan / Zoom Canvas', keys: 'Two-finger drag / pinch' },
-            { label: 'Rotate Canvas', keys: 'Two-finger twist' },
-            { label: 'Undo', keys: 'Two-finger tap' },
-            { label: 'Keep Undoing', keys: 'Two-finger hold' },
-            { label: 'Redo', keys: 'Three-finger tap' },
-            { label: 'Copy Selection', keys: 'Three-finger swipe down' },
-            { label: 'Delete Selection', keys: 'Three-finger scrub (back & forth)' },
-            { label: 'Toggle Zen Mode', keys: 'Four-finger tap' },
-            { label: 'Zoom to Fit', keys: 'Quick pinch-in flick' },
-            { label: 'Delete Selection (no keyboard)', keys: 'Tap the ✕ button by the selection' },
-            { label: 'Context Menu (Delete / Duplicate…)', keys: 'Touch & hold (long-press)' },
-            { label: 'Select All (no keyboard)', keys: 'Long-press empty canvas → Select all' },
-            { label: 'Frame menu — Insert Keyframe, tweens, frame actions (no keyboard)', keys: 'Touch & hold a frame in the timeline' },
-            { label: 'Layer actions (lock/dup/delete)', keys: 'Drag a layer row left (mouse or touch)' },
-            { label: 'Multi-select layers', keys: 'Drag layer rows right → Group / Delete' },
-            { label: 'Reorder layers', keys: 'Drag the ⋮⋮ grip handle' },
-            { label: 'Proportional Resize (stylus)', keys: 'Add a finger while dragging a handle' },
-            { label: 'Pen node: convert smooth ↔ corner', keys: 'Tap an anchor' },
-            { label: 'Pen node: delete / convert (menu)', keys: 'Long-press an anchor' },
-            { label: 'Pen: insert point on a path', keys: 'Long-press the outline' },
-            { label: 'Pen: constrain handles 90°/45°', keys: '90°/45° toggle / second finger' },
-            { label: 'Pen: straight segment (15° steps)', keys: '90°/45° toggle / second finger' },
-            { label: 'Set Shape Fill (ColorDrop)', keys: 'Drag palette swatch onto shape' },
-            { label: 'Smart Shapes (hold pen to correct)', keys: 'Draw + hold' },
+            { key: 'touchPen-panZoomCanvas', keys: 'Two-finger drag / pinch' },
+            { key: 'touchPen-rotateCanvas', keys: 'Two-finger twist' },
+            { key: 'touchPen-undo', keys: 'Two-finger tap' },
+            { key: 'touchPen-keepUndoing', keys: 'Two-finger hold' },
+            { key: 'touchPen-redo', keys: 'Three-finger tap' },
+            { key: 'touchPen-copySelection', keys: 'Three-finger swipe down' },
+            { key: 'touchPen-deleteSelection', keys: 'Three-finger scrub (back & forth)' },
+            { key: 'touchPen-toggleZenMode', keys: 'Four-finger tap' },
+            { key: 'touchPen-zoomToFit', keys: 'Quick pinch-in flick' },
+            { key: 'touchPen-deleteSelection-2', keys: 'Tap the ✕ button by the selection' },
+            { key: 'touchPen-contextMenu', keys: 'Touch & hold (long-press)' },
+            { key: 'touchPen-selectAll', keys: 'Long-press empty canvas → Select all' },
+            { key: 'touchPen-frameMenuInsertKeyframeTweensFrameActions', keys: 'Touch & hold a frame in the timeline' },
+            { key: 'touchPen-layerActions', keys: 'Drag a layer row left (mouse or touch)' },
+            { key: 'touchPen-multiSelectLayers', keys: 'Drag layer rows right → Group / Delete' },
+            { key: 'touchPen-reorderLayers', keys: 'Drag the ⋮⋮ grip handle' },
+            { key: 'touchPen-proportionalResize', keys: 'Add a finger while dragging a handle' },
+            { key: 'touchPen-penNodeConvertSmoothCorner', keys: 'Tap an anchor' },
+            { key: 'touchPen-penNodeDeleteConvert', keys: 'Long-press an anchor' },
+            { key: 'touchPen-penInsertPointOnAPath', keys: 'Long-press the outline' },
+            { key: 'touchPen-penConstrainHandles9045', keys: '90°/45° toggle / second finger' },
+            { key: 'touchPen-penStraightSegment', keys: '90°/45° toggle / second finger' },
+            { key: 'touchPen-setShapeFill', keys: 'Drag palette swatch onto shape' },
+            { key: 'touchPen-smartShapes', keys: 'Draw + hold' },
         ]
     },
 ];
@@ -275,10 +285,25 @@ export default function HelpDialog(props: Props) {
      * both directions: "duplicate" finds Ctrl+D, and "ctrl+d" finds Duplicate. Categories that
      * match nothing drop out entirely rather than leaving empty headings behind.
      */
+    /**
+     * Resolve every label once per locale change. SHORTCUT_DATA is a module-level
+     * const, so it cannot hold translated text — it would be captured at import
+     * and never updated. Reading `t` inside a memo is what makes the dialog
+     * re-render when the language changes.
+     */
+    const localized = createMemo<LocalizedCategory[]>(() =>
+        SHORTCUT_DATA.map(cat => ({
+            title: t(`hotkeyCategory.${cat.titleKey}`),
+            shortcuts: cat.shortcuts.map(sc => ({ label: t(`hotkeys.${sc.key}`), keys: sc.keys })),
+        })));
+
     const filtered = createMemo(() => {
         const q = query().trim().toLowerCase();
-        if (!q) return SHORTCUT_DATA;
-        return SHORTCUT_DATA
+        if (!q) return localized();
+        // Matches the TRANSLATED label, which is the text actually on screen and
+        // therefore the text the user will type. Filtering the English source
+        // would make search silently useless in every other locale.
+        return localized()
             .map(cat => ({
                 ...cat,
                 shortcuts: cat.shortcuts.filter(sc =>
@@ -308,17 +333,17 @@ export default function HelpDialog(props: Props) {
             <div class="help-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget && !window.getSelection()?.toString()) props.onClose(); }}>
                 <div class="help-modal-content" onClick={(e) => e.stopPropagation()}>
                     <div class="help-modal-header">
-                        <h2>Help</h2>
+                        <h2>{t("helpDialog.title")}</h2>
                         <div class="help-search">
                             <Search size={15} />
                             <input
                                 type="text"
-                                placeholder="Search shortcuts…"
+                                placeholder={t("helpDialog.searchPlaceholder")}
                                 value={query()}
                                 onInput={(e) => setQuery(e.currentTarget.value)}
                             />
                             <Show when={query()}>
-                                <button class="help-search-clear" onClick={() => setQuery('')} title="Clear">
+                                <button class="help-search-clear" onClick={() => setQuery('')} title={t("helpDialog.clearSearch")}>
                                     <X size={14} />
                                 </button>
                             </Show>
@@ -337,7 +362,7 @@ export default function HelpDialog(props: Props) {
                                 onClick={() => { props.onClose(); startTour(); }}
                             >
                                 <Compass size={16} />
-                                Take the tour
+                                {t("helpDialog.takeTheTour")}
                             </button>
                             {/* A real link, so Ctrl/⌘-click, middle-click and "Open link in new
                                 tab" all work. The handler used to preventDefault() on EVERY
@@ -346,41 +371,42 @@ export default function HelpDialog(props: Props) {
                                 handled in-app now; a modified click falls through to the
                                 browser and opens a second tab. */}
                             <a
-                                href="#/help"
+                                href={pathFor('help')}
                                 class="social-btn"
-                                title="Open the documentation (Ctrl/⌘-click or middle-click for a new tab)"
+                                title={t("helpDialog.documentationTitle")}
                                 onClick={(e) => {
                                     if (e.defaultPrevented) return;
                                     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
                                     e.preventDefault();
                                     props.onClose();
-                                    window.location.hash = '#/help';
+                                    navigate(pathFor('help'));
                                 }}
                             >
                                 <ExternalLink size={16} />
-                                Documentation
+                                {t("helpDialog.documentation")}
                             </a>
                             <a
-                                href="#/help"
+                                href={pathFor('help')}
                                 class="social-btn"
                                 target="_blank"
                                 rel="noopener"
-                                title="Open the documentation in a new tab, keeping your drawing open here"
+                                title={t("helpDialog.docsNewTabTitle")}
                             >
                                 <ExternalLink size={16} />
-                                Docs in new tab
+                                {t("helpDialog.docsNewTab")}
                             </a>
                             <a
-                                href="#/examples"
+                                href={pathFor('examples')}
                                 class="social-btn"
                                 onClick={(e) => {
+                                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
                                     e.preventDefault();
                                     props.onClose();
-                                    window.location.hash = '#/examples';
+                                    navigate(pathFor('examples'));
                                 }}
                             >
                                 <LayoutTemplate size={16} />
-                                Examples
+                                {t("helpDialog.examples")}
                             </a>
                             <a href="https://github.com/algorisys-oss/" target="_blank" rel="noopener noreferrer" class="social-btn">
                                 <Github size={16} />
@@ -388,7 +414,7 @@ export default function HelpDialog(props: Props) {
                             </a>
                             <a href="#" class="social-btn">
                                 <Bug size={16} />
-                                Found an issue?
+                                {t("helpDialog.foundAnIssue")}
                             </a>
                             <a href="#" class="social-btn">
                                 <Youtube size={16} />
@@ -398,9 +424,9 @@ export default function HelpDialog(props: Props) {
                         </Show>
 
                         <div class="shortcuts-section">
-                            <h3>Keyboard shortcuts</h3>
+                            <h3>{t("helpDialog.shortcutsHeading")}</h3>
                             <Show when={filtered().length === 0}>
-                                <p class="help-empty">No shortcut matches “{query().trim()}”.</p>
+                                <p class="help-empty">{t("helpDialog.noMatch", { query: query().trim() })}</p>
                             </Show>
                             <div class="shortcuts-grid">
                                 <For each={filtered()}>

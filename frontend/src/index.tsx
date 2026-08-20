@@ -8,6 +8,23 @@ import { isSlideDocument, migrateToSlideFormat } from './utils/migration'
 import { storage } from './storage/file-system-storage'
 import { preloadAppFonts } from './utils/font-loading'
 import { recoverFromStaleBuild, installStaleBuildHandler, forceReloadLatest } from './utils/stale-build'
+import { initI18n } from './i18n'
+import { parsePath } from './routes'
+import { currentPath, migrateLegacyHash } from './navigation'
+
+// Old `#/help/uml` links become `/help/uml/` BEFORE the first render, so a
+// bookmark from before the migration never flashes the wrong page on its way to
+// the right one (plan §S1). Embeds and the editor's own `#load=` / `#doc=`
+// parameters are deliberately left alone.
+migrateLegacyHash()
+
+// Pick the user's language. Deliberately NOT awaited, and that is not a
+// shortcut: English is compiled into the entry chunk and is already the active
+// dictionary, so there is nothing to wait for. `initI18n` sets <html lang>/<dir>
+// synchronously and, if a translated locale is selected, swaps the dictionary
+// when it arrives — `t` is a signal, so the UI re-renders itself. Awaiting here
+// would block first paint on a fetch to show text we already have.
+void initI18n()
 
 // Kick the webfonts off before anything can measure text with them. Auto-sized elements
 // write the measured width into the SAVED document, so a measurement taken against the
@@ -29,19 +46,27 @@ const root = document.getElementById('root')
 // Track if we're currently loading an example to prevent double-loading
 let isLoadingExample = false
 
-// Simple hash-based router
+/**
+ * Path router, with the editor's hash parameters riding along.
+ *
+ * Public pages are real URLs (`/help/uml/`) so they can be prerendered and
+ * indexed — see routes.ts. The hash is still read, but only for things that are
+ * NOT pages: `#/embed/…` (other people's iframes), `#load=` and `#doc=` (which
+ * drawing the editor has open).
+ */
 const Router = () => {
-    const [route, setRoute] = createSignal(window.location.hash)
+    const [hash, setHash] = createSignal(window.location.hash)
+    const route = () => parsePath(currentPath())
 
     onMount(() => {
-        const handleHashChange = () => setRoute(window.location.hash)
+        const handleHashChange = () => setHash(window.location.hash)
         window.addEventListener('hashchange', handleHashChange)
         return () => window.removeEventListener('hashchange', handleHashChange)
     })
 
     // Watch for route changes and load examples from hash parameter
     createEffect(() => {
-        const currentRoute = route()
+        const currentRoute = hash()
         // Check for #load=filename pattern (from Examples page)
         if (currentRoute.startsWith('#load=') && !isLoadingExample) {
             const fileName = decodeURIComponent(currentRoute.substring(6))
@@ -89,9 +114,9 @@ const Router = () => {
         }
     })
 
-    const isEmbedRoute = () => route().startsWith('#/embed/')
-    const isHelpRoute = () => route().startsWith('#/help') || route() === '#help'
-    const isExamplesRoute = () => route().startsWith('#/examples') || route() === '#examples'
+    const isEmbedRoute = () => hash().startsWith('#/embed/')
+    const isHelpRoute = () => route()?.key === 'help' || route()?.key === 'helpDoc'
+    const isExamplesRoute = () => route()?.key === 'examples' || route()?.key === 'example'
 
     const LoadingFallback = () => (
         <div style={{ padding: '2rem', 'text-align': 'center' }}>Loading...</div>

@@ -13,6 +13,14 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.203', date: '2026-08-20', items: [
+        'Yappy speaks four languages. Pick English, Español, Deutsch or 日本語 in Settings → Language and the interface changes immediately — no reload — and stays that way next time. The command palette, all 188 keyboard shortcuts, the welcome screen, the toolbar and the status bar are fully translated; the rest of the panels are still English and are being worked through.',
+        'Text inside your drawings is never translated. Only the interface changes.',
+        'The documentation is now on the web, one page per topic. Every help page has its own address — you can link someone straight to the BPMN page or the Vector Paths page, and it opens as a normal web page rather than loading the whole editor first.',
+        'A BPMN 2.0 page you could not previously open: it had been written and kept up to date, but was never added to the Help sidebar. It is there now, with all 15 shapes, the event and task markers and the pool lanes.',
+        '"If You Can Draw It, You Can Build It" — a full guide to drawing technical diagrams (architecture, flowcharts, sequence, DFD, component and ER) is now published under Learn.',
+        'Old help and example links still work. Anything you had bookmarked or shared takes you to the same page at its new address.',
+    ] },
     { version: '0.8.202', date: '2026-08-18', items: [
         'Turning text into outlines now gives you exactly the letters you were looking at. If your drawing style was set to Sketch, the outlined word came back roughened — chewed serifs, lumpy bowls — even though you had changed nothing. Text itself is never drawn roughly, so the conversion was quietly restyling your type. Outlines are now always drawn cleanly; switch the new shape to Sketch yourself if you want a hand-drawn wordmark.',
         'The Select tool no longer covers a shape in little square nodes. Selecting a path used to show every anchor point, which is fine on a simple curve and unusable on an outlined word or an imported icon. Select is now for moving, resizing and rotating; nodes belong to the Node tool.',

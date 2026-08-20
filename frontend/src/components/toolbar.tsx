@@ -6,6 +6,7 @@ import type { ToolType } from "../types";
 import { MousePointer2, Eraser, Image as ImageIcon, Video, Zap, Highlighter, Lasso, Crop, Pen, PenTool, Minus, MoveUpRight, Square, Diamond, Circle, Type, PanelLeftClose, PanelLeftOpen, Spline, PersonStanding, Brush, PanelLeft, PanelTop, PanelRight, PanelBottom, Move } from "lucide-solid";
 import { isPanelOpen } from "../store/dock-layout";
 import { isPhoneWidth } from "../utils/dock-layout";
+import { t, type ToolbarToolKey, type DockPositionKey, type DockActionKey } from "../i18n";
 
 const BRUSH_TOOLS: ToolType[] = ['fineliner', 'inkbrush', 'marker'];
 import PenToolGroup from "./pen-tool-group";
@@ -32,24 +33,49 @@ import "./toolbar.css";
 // Pan lives in the top bar's view-control cluster (components/menu.tsx) — it moves the
 // *view*, not the drawing, which is the same reason Commands / Vector Tools / Shape Builder
 // went up there. Selection stays: it is what you come back to between drawing tools.
-const navTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string }[] = [
-    { type: 'selection', icon: MousePointer2, label: 'Selection (V or 1)', hotkey: '1' },
+/**
+ * A toolbar entry's tooltip, assembled at render time.
+ *
+ * `labelKey` is prose and comes from the dictionary; `hint` is the key binding
+ * and stays here as a literal, so translation can never reach the letter that
+ * is actually bound (plan §3.3). `helpKey` is the optional trailing
+ * explanation after an em dash.
+ */
+interface ToolEntry {
+    type: ToolType;
+    icon: Component<{ size?: number; color?: string }>;
+    labelKey: ToolbarToolKey;
+    hint?: string;
+    helpKey?: ToolbarToolKey;
+    hotkey?: string;
+    setSubType?: () => void;
+    penGroup?: boolean;
+}
+
+/** `Rectangle` + `2` → `Rectangle (2)`; with a helpKey, `… — explanation`. */
+const toolTitle = (tool: ToolEntry): string => {
+    const base = tool.hint ? `${t(`toolbarTool.${tool.labelKey}`)} (${tool.hint})` : t(`toolbarTool.${tool.labelKey}`);
+    return tool.helpKey ? `${base} — ${t(`toolbarTool.${tool.helpKey}`)}` : base;
+};
+
+const navTools: ToolEntry[] = [
+    { type: 'selection', icon: MousePointer2, labelKey: 'selection', hint: 'V or 1', hotkey: '1' },
 ];
 
 // Lasso & Crop tools (rendered after connector/line toolgroup)
-const selectUtilTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string }[] = [
-    { type: 'path', icon: PenTool, label: 'Pen / Vector Path (P) — click to add points, drag to curve', hotkey: 'P' },
-    { type: 'lasso', icon: Lasso, label: 'Lasso Select (Shift+L)' },
-    { type: 'crop', icon: Crop, label: 'Crop Image (Shift+C)' },
+const selectUtilTools: ToolEntry[] = [
+    { type: 'path', icon: PenTool, labelKey: 'path', hint: 'P', helpKey: 'pathHelp', hotkey: 'P' },
+    { type: 'lasso', icon: Lasso, labelKey: 'lasso', hint: 'Shift+L' },
+    { type: 'crop', icon: Crop, labelKey: 'crop', hint: 'Shift+C' },
 ];
 
 // Utility tools (rendered after grouped tools)
-const utilityTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string }[] = [
-    { type: 'image', icon: ImageIcon, label: 'Insert Image (I or 9)', hotkey: '9' },
-    { type: 'video' as ToolType, icon: Video, label: 'Insert Video' },
-    { type: 'eraser', icon: Eraser, label: 'Eraser (E or 0)', hotkey: '0' },
-    { type: 'laser', icon: Zap, label: 'Laser Pointer (Shift+P)' },
-    { type: 'ink', icon: Highlighter, label: 'Ink Overlay (Alt+I)' },
+const utilityTools: ToolEntry[] = [
+    { type: 'image', icon: ImageIcon, labelKey: 'insertImage', hint: 'I or 9', hotkey: '9' },
+    { type: 'video' as ToolType, icon: Video, labelKey: 'insertVideo' },
+    { type: 'eraser', icon: Eraser, labelKey: 'eraser', hint: 'E or 0', hotkey: '0' },
+    { type: 'laser', icon: Zap, labelKey: 'laser', hint: 'Shift+P' },
+    { type: 'ink', icon: Highlighter, labelKey: 'ink', hint: 'Alt+I' },
 ];
 
 // Icon per pen so the brainstorm toolbar's single pen button shows which pen is
@@ -63,18 +89,18 @@ const PEN_ICONS: Record<string, Component<{ size?: number; color?: string }>> = 
 // Brainstorm mode: minimal flat toolbar for quick ideation.
 // `penGroup` marks the one button that stands in for the whole pen group — it
 // tracks whichever pen is selected rather than naming a fixed tool type.
-const brainstormTools: { type: ToolType; icon: Component<{ size?: number; color?: string }>; label: string; hotkey?: string; setSubType?: () => void; penGroup?: boolean }[] = [
-    { type: 'selection', icon: MousePointer2, label: 'Selection (V)', hotkey: '1' },
-    { type: 'fineliner', icon: Pen, label: 'Brush / Fine Liner (7)', hotkey: '7', penGroup: true },
-    { type: 'line', icon: Minus, label: 'Line' },
-    { type: 'arrow', icon: MoveUpRight, label: 'Arrow (5)', hotkey: '5' },
-    { type: 'rectangle', icon: Square, label: 'Rectangle (2)', hotkey: '2' },
-    { type: 'diamond', icon: Diamond, label: 'Diamond (3)', hotkey: '3' },
-    { type: 'circle', icon: Circle, label: 'Ellipse (4)', hotkey: '4' },
-    { type: 'path', icon: PenTool, label: 'Pen / Vector Path (P) — click to add points, drag to curve', hotkey: 'P' },
-    { type: 'text', icon: Type, label: 'Text (8)', hotkey: '8' },
-    { type: 'image', icon: ImageIcon, label: 'Image (9)', hotkey: '9' },
-    { type: 'eraser', icon: Eraser, label: 'Eraser (0)', hotkey: '0' },
+const brainstormTools: ToolEntry[] = [
+    { type: 'selection', icon: MousePointer2, labelKey: 'selection', hint: 'V', hotkey: '1' },
+    { type: 'fineliner', icon: Pen, labelKey: 'fineliner', hint: '7', hotkey: '7', penGroup: true },
+    { type: 'line', icon: Minus, labelKey: 'line' },
+    { type: 'arrow', icon: MoveUpRight, labelKey: 'arrow', hint: '5', hotkey: '5' },
+    { type: 'rectangle', icon: Square, labelKey: 'rectangle', hint: '2', hotkey: '2' },
+    { type: 'diamond', icon: Diamond, labelKey: 'diamond', hint: '3', hotkey: '3' },
+    { type: 'circle', icon: Circle, labelKey: 'circle', hint: '4', hotkey: '4' },
+    { type: 'path', icon: PenTool, labelKey: 'path', hint: 'P', helpKey: 'pathHelp', hotkey: 'P' },
+    { type: 'text', icon: Type, labelKey: 'text', hint: '8', hotkey: '8' },
+    { type: 'image', icon: ImageIcon, labelKey: 'image', hint: '9', hotkey: '9' },
+    { type: 'eraser', icon: Eraser, labelKey: 'eraser', hint: '0', hotkey: '0' },
 ];
 
 const BRAINSTORM_KEY = 'yappy-brainstorm-mode';
@@ -138,15 +164,11 @@ const Toolbar: Component = () => {
      * orientation is still `toolbarVertical`).
      */
     const DOCK_CYCLE = ['left', 'top', 'right', 'bottom', 'float'] as const;
-    const DOCK_LABEL: Record<string, string> = {
-        left: 'left edge', top: 'top edge', right: 'right edge', bottom: 'bottom edge', float: 'floating',
-    };
-    /** Phrased as the action, since "move to the floating" doesn't read as English. */
-    const DOCK_ACTION: Record<string, string> = {
-        left: 'dock it to the left edge', top: 'dock it to the top edge',
-        right: 'dock it to the right edge', bottom: 'dock it to the bottom edge',
-        float: 'let it float over the canvas',
-    };
+    // Position names and the phrasing of the action both live in the dictionary
+    // (`dockPosition.*` / `dockAction.*`); word order inside the tooltip is the
+    // translator's to change, which is why it is one interpolated sentence.
+    const dockWhere = (d: string) => t(`dockPosition.${d as DockPositionKey}`);
+    const dockAction = (d: string) => t(`dockAction.${d as DockActionKey}`);
     const nextDock = () => DOCK_CYCLE[(DOCK_CYCLE.indexOf(docked() as any) + 1) % DOCK_CYCLE.length];
     const cycleDock = () => updateGlobalSettings({ toolbarDock: nextDock() });
     /** Mirrors the current edge, so the button reads as state rather than as an action. */
@@ -424,7 +446,7 @@ const Toolbar: Component = () => {
                 ...(wrapWidth() > 0 ? { 'max-width': `${wrapWidth()}px` } : {})
             }}
         >
-            <div class="drag-handle" title="Drag to move toolbar">
+            <div class="drag-handle" title={t('toolbar.dragToMove')}>
                 <div class="drag-dots"></div>
             </div>
             <input
@@ -446,7 +468,7 @@ const Toolbar: Component = () => {
             <button
                 class={`toolbar-btn ${isPanelOpen('stickFigure') ? 'active' : ''}`}
                 onClick={() => toggleStickFigurePanel()}
-                title="Stick Figures library"
+                title={t('toolbar.stickFigures')}
                 aria-label="Toggle stick figures panel"
             >
                 <PersonStanding size={16} />
@@ -456,7 +478,7 @@ const Toolbar: Component = () => {
             <button
                 class="toolbar-btn brainstorm-toggle"
                 onClick={toggleBrainstormMode}
-                title={brainstormMode() ? 'Full Toolbar' : 'Brainstorm Mode'}
+                title={brainstormMode() ? t('toolbar.fullToolbar') : t('toolbar.brainstormMode')}
             >
                 {brainstormMode() ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
             </button>
@@ -466,7 +488,7 @@ const Toolbar: Component = () => {
                 <button
                     class="toolbar-btn"
                     onClick={cycleDock}
-                    title={`Toolbar: ${DOCK_LABEL[docked()]} — click to ${DOCK_ACTION[nextDock()]}`}
+                    title={t('toolbar.dockTooltip', { where: dockWhere(docked()), action: dockAction(nextDock()) })}
                 >
                     <DockIcon />
                 </button>
@@ -489,7 +511,7 @@ const Toolbar: Component = () => {
                                 onClick={() => handleToolClick(type())}
                                 onContextMenu={handleRightClick}
                                 onDblClick={handleRightClick}
-                                title={tool.label}
+                                title={toolTitle(tool)}
                             >
                                 {(() => { const I = Icon(); return <I size={16} />; })()}
                                 {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
@@ -508,7 +530,7 @@ const Toolbar: Component = () => {
                                 onClick={() => handleToolClick(tool.type)}
                                 onContextMenu={handleRightClick}
                                 onDblClick={handleRightClick}
-                                title={tool.label}
+                                title={toolTitle(tool)}
                             >
                                 <tool.icon size={16} />
                                 {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
@@ -563,7 +585,7 @@ const Toolbar: Component = () => {
                                 onClick={() => handleToolClick(tool.type)}
                                 onContextMenu={handleRightClick}
                                 onDblClick={handleRightClick}
-                                title={tool.label}
+                                title={toolTitle(tool)}
                             >
                                 <tool.icon size={16} />
                                 {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
@@ -579,7 +601,7 @@ const Toolbar: Component = () => {
                                 onClick={() => handleToolClick(tool.type)}
                                 onContextMenu={handleRightClick}
                                 onDblClick={handleRightClick}
-                                title={tool.label}
+                                title={toolTitle(tool)}
                             >
                                 <tool.icon size={16} />
                                 {tool.hotkey && <span class="hotkey-badge">{tool.hotkey}</span>}
@@ -593,7 +615,9 @@ const Toolbar: Component = () => {
                             class={`toolbar-btn ${(store.globalSettings.penStabilization ?? 0) > 0 ? 'active' : ''}`}
                             onClick={() => togglePenStabilization()}
                             onContextMenu={handleRightClick}
-                            title={`Stroke Stabilization ${(store.globalSettings.penStabilization ?? 0) > 0 ? `(on, ${Math.round((store.globalSettings.penStabilization ?? 0) * 100)}%)` : '(off)'} — Shift+S`}
+                            title={(store.globalSettings.penStabilization ?? 0) > 0
+                        ? t('toolbar.stabilizationOn', { percent: Math.round((store.globalSettings.penStabilization ?? 0) * 100) })
+                        : t('toolbar.stabilizationOff')}
                         >
                             <Spline size={16} />
                         </button>
@@ -612,7 +636,7 @@ const Toolbar: Component = () => {
             <Show when={!isMobile()}>
                 <div
                     class="toolbar-resize-handle"
-                    title="Drag to resize (icons per row) · double-click to reset"
+                    title={t('toolbar.resizeHandle')}
                     onPointerDown={onResizeDown}
                     onDblClick={() => updateGlobalSettings({ toolbarWrap: 0 })}
                 />

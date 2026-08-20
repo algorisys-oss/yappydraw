@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import solid from 'vite-plugin-solid'
 import { VitePWA } from 'vite-plugin-pwa'
 import { assemblyScriptPlugin } from './frontend/src/wasm/vite-plugin-as'
+import { helpMarkdownPlugin } from './frontend/src/help-docs/vite-plugin-help-md'
 import { createRequire } from 'node:module'
 
 // Read MathJax's real version rather than hardcoding it, so the `PACKAGE_VERSION`
@@ -11,7 +12,7 @@ const mathjaxVersion: string = createRequire(import.meta.url)('mathjax-full/pack
 export default defineConfig({
   root: 'frontend',
   envDir: '..',  // .env files are in the project root, not in frontend/
-  plugins: [solid(), assemblyScriptPlugin(), VitePWA({
+  plugins: [solid(), assemblyScriptPlugin(), helpMarkdownPlugin(), VitePWA({
     // 'prompt' (NOT 'autoUpdate'): autoUpdate emits skipWaiting()+clientsClaim()
     // in the SW, so a freshly-deployed SW activates and evicts the old precache
     // *while the previous page is still fetching its old content-hashed chunks*.
@@ -81,7 +82,10 @@ export default defineConfig({
           // see utils/tex.ts, which lazy-imports mathjax-full/js/output/svg.js), not
           // any of our own SVG code. At 1.2MB it was the second-largest thing in the
           // precache, downloaded by everyone, used only by people who type LaTeX.
-          const LAZY_HEAVY = /(export-game|jspdf|pptxgen|html2canvas|AllPackages|BaseConfiguration|Factory-|TeXAtom|mathjax|\/svg-|-doc-|search-)/i
+          // `helpdoc-` replaced `-doc-` when the help documents moved from
+          // `*-doc.tsx` to Markdown; the prefix is assigned in the rollup output
+          // config below, so it no longer depends on a document's filename.
+          const LAZY_HEAVY = /(export-game|jspdf|pptxgen|html2canvas|AllPackages|BaseConfiguration|Factory-|TeXAtom|mathjax|\/svg-|helpdoc-|search-)/i
           return {
             manifest: entries.filter(e => !e.url.includes('fonts/outline/') && !LAZY_HEAVY.test(e.url)),
             warnings: [],
@@ -179,6 +183,18 @@ export default defineConfig({
           // startup. The Elements panel dynamic-imports the full package separately.
           'vendor-rendering': ['roughjs'],
           'solid-framework': ['solid-js']
+        },
+        // Help documents get a `helpdoc-` prefix so the precache filter above can
+        // recognise them by name. They used to be `*-doc.tsx`, which the filter
+        // matched as `-doc-`; converting them to Markdown renamed every chunk to
+        // `<slug>-<hash>.js` and quietly put all 31 back into the precache
+        // (+586 KiB for every visitor). Naming them here makes the exclusion
+        // independent of what a document happens to be called.
+        chunkFileNames: (chunk) => {
+          const id = chunk.facadeModuleId ?? ''
+          return id.includes('/help-docs/') && /\.md(\?|$)/.test(id)
+            ? 'assets/helpdoc-[name]-[hash].js'
+            : 'assets/[name]-[hash].js'
         }
       }
     }

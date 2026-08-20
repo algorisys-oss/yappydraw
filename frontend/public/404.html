@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Page not found — YappyDraw</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font: 16px/1.6 Inter, system-ui, -apple-system, sans-serif;
+      color: #0f172a;
+      background: #f8fafc;
+      padding: 2rem;
+    }
+    main { max-width: 34rem; text-align: center; }
+    h1 { font-size: 1.6rem; margin: 0 0 .5rem; }
+    p { color: #475569; margin: 0 0 1.5rem; }
+    .links { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
+    a {
+      display: inline-block;
+      padding: .55rem 1.1rem;
+      border-radius: .5rem;
+      text-decoration: none;
+      font-weight: 600;
+      color: #fff;
+      background: #4c8dff;
+    }
+    a.secondary { color: #1e293b; background: #e2e8f0; }
+    @media (prefers-color-scheme: dark) {
+      body { color: #e2e8f0; background: #0f172a; }
+      p { color: #94a3b8; }
+      a.secondary { color: #e2e8f0; background: #1e293b; }
+    }
+  </style>
+  <script>
+    // Static hosts without rewrite rules (GitHub Pages) answer every unknown
+    // path with this file. `/examples/<id>/` is the one section that is NOT
+    // prerendered, so it is handed to the SPA rather than shown as an error;
+    // the app's own boot shim turns the hash back into the path, so the address
+    // bar ends up where the visitor asked. Apache serves that case from
+    // .htaccess and never reaches this file. Everything else really is missing.
+    (function () {
+      var m = /^\/examples\/([^/]+)\/?$/.exec(location.pathname);
+      if (!m) return;
+      location.replace('/#/examples/' + m[1]);
+    })();
+  </script>
+</head>
+
+<body>
+  <main>
+    <h1>That page isn’t here</h1>
+    <p>
+      The link may be old, or the page may have moved. Your saved drawings are
+      untouched — they live in this browser, not on that URL.
+    </p>
+    <div class="links">
+      <a href="/">Open YappyDraw</a>
+      <a class="secondary" href="/help/">Documentation</a>
+      <a class="secondary" href="/examples/">Examples</a>
+    </div>
+  </main>
+</body>
+
+</html>

@@ -72,3 +72,44 @@
     ExpiresActive On
     ExpiresByType text/html "access plus 0 seconds"
 </IfModule>
+
+# ---------------------------------------------------------------------------
+# URL routing (plan §S1 / §S5)
+#
+# The public pages are real paths now — `/help/uml/`, `/learn/…` — and most of
+# them exist on disk as prerendered `index.html` files, which Apache serves
+# directly. The rules below cover the two cases that are NOT on disk:
+#
+#   1. `/examples/<id>/`, which stays client-rendered (a generated page per
+#      template would be thin content — see the plan's §6/D2).
+#   2. Nothing else. `/help/…` and `/learn/…` are prerendered in full, so an
+#      unknown one under those prefixes is a genuine 404 and is served as one.
+#
+# Anything else is a genuine 404 and is served as one. A "soft 404" — returning
+# the home page with a 200 at a wrong URL — is worse than a real 404, because
+# Google indexes it as a duplicate of the home page.
+# ---------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # One canonical host. The site answers on BOTH yappydraw.com and
+    # www.yappydraw.com with identical content and no redirect, which splits
+    # every ranking signal in two and contradicts the canonical tag (the apex).
+    # If the host ever stops serving the apex directly, remove this block first.
+    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    RewriteCond %{HTTPS} on
+    RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
+    # A real file or directory always wins — prerendered pages, assets, sw.js.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # The one client-rendered section falls back to the SPA.
+    RewriteRule ^examples/.+$ /index.html [L]
+</IfModule>
+
+# Everything else. 404.html boots the app for a known section and shows a real
+# not-found page otherwise, so the status code and the content agree.
+ErrorDocument 404 /404.html

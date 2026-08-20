@@ -1,5 +1,6 @@
 import { type Component, Show, For, createSignal } from "solid-js";
 import { isMultiPageDocType } from '../types/slide-types';
+import { t, plural } from '../i18n';
 import { store, setViewState, undo, redo, togglePresentationMode, resetRotation, pageNoun, toggleSymmetryAxis, toggleSymmetryEditing, updateGlobalSettings } from "../store/app-store";
 import { drawingId } from "./menu";
 import { Plus, Minus, Undo2, Redo2, Play, FlipHorizontal, FlipVertical, Crosshair, PaintBucket } from "lucide-solid";
@@ -32,81 +33,57 @@ function getContextHints(tool: string, hasSelection: boolean): Hint[] {
     if (tool === 'selection' || tool === 'lasso') {
         if (hasSelection) {
             const hints: Hint[] = [
-                { key: 'Ctrl+D', action: 'Duplicate' },
-                { key: 'Shift+Drag', action: 'Constrain' },
-                { key: 'Del', action: 'Delete' },
-                { key: 'Ctrl+C', action: 'Copy' },
+                { key: 'Ctrl+D', action: t('hintAction.duplicate') },
+                { key: 'Shift+Drag', action: t('hintAction.constrain') },
+                { key: 'Del', action: t('hintAction.delete') },
+                { key: 'Ctrl+C', action: t('hintAction.copy') },
             ];
             // Add mindmap-specific hints when a mindmap node is selected
             if (store.selection.length === 1) {
                 const sel = store.elements.find(e => e.id === store.selection[0]);
                 if (isMindmapNode(sel)) {
-                    hints.push({ key: 'Alt+Drag', action: 'Move tree' });
-                    hints.push({ key: 'Tab', action: 'Add child' });
-                    hints.push({ key: 'Enter', action: 'Add sibling' });
+                    hints.push({ key: 'Alt+Drag', action: t('hintAction.moveTree') });
+                    hints.push({ key: 'Tab', action: t('hintAction.addChild') });
+                    hints.push({ key: 'Enter', action: t('hintAction.addSibling') });
                 }
             }
             return hints;
         }
         return tool === 'lasso'
-            ? [{ key: 'Drag', action: 'Lasso select' }, { key: 'Space+Drag', action: 'Pan' }]
-            : [{ key: 'Click', action: 'Select' }, { key: 'Drag', action: 'Box select' }, { key: 'Space+Drag', action: 'Pan' }];
+            ? [{ key: 'Drag', action: t('hintAction.lassoSelect') }, { key: 'Space+Drag', action: t('hintAction.pan') }]
+            : [{ key: 'Click', action: t('hintAction.select') }, { key: 'Drag', action: t('hintAction.boxSelect') }, { key: 'Space+Drag', action: t('hintAction.pan') }];
     }
     if (CONNECTOR_TOOLS.includes(tool)) {
-        return [{ key: 'Drag', action: 'Connect' }, { key: 'Shift', action: 'Constrain angle' }];
+        return [{ key: 'Drag', action: t('hintAction.connect') }, { key: 'Shift', action: t('hintAction.constrainAngle') }];
     }
     if (tool === 'mindmap') {
-        return [{ key: 'Click', action: 'Place mindmap' }, { key: 'Alt+Drag', action: 'Move root node' }];
+        return [{ key: 'Click', action: t('hintAction.placeMindmap') }, { key: 'Alt+Drag', action: t('hintAction.moveRootNode') }];
     }
     if (SHAPE_TOOLS.includes(tool)) {
-        return [{ key: 'Drag', action: 'Draw shape' }, { key: 'Shift', action: 'Constrain' }];
+        return [{ key: 'Drag', action: t('hintAction.drawShape') }, { key: 'Shift', action: t('hintAction.constrain') }];
     }
     if (DRAWING_TOOLS.includes(tool)) {
-        return [{ key: 'Drag', action: 'Draw' }, { key: 'Shift', action: 'Straight line' }];
+        return [{ key: 'Drag', action: t('hintAction.draw') }, { key: 'Shift', action: t('hintAction.straightLine') }];
     }
-    if (tool === 'text') return [{ key: 'Click', action: 'Place text' }];
-    if (tool === 'pan') return [{ key: 'Drag', action: 'Pan' }, { key: 'Ctrl+Scroll', action: 'Zoom' }];
-    if (tool === 'eraser') return [{ key: 'Click/Drag', action: 'Erase' }];
-    if (tool === 'table') return [{ key: 'Drag', action: 'Draw table' }];
-    if (tool === 'image') return [{ key: 'Click', action: 'Place image' }];
-    if (tool === 'video') return [{ key: 'Click', action: 'Insert video' }];
+    if (tool === 'text') return [{ key: 'Click', action: t('hintAction.placeText') }];
+    if (tool === 'pan') return [{ key: 'Drag', action: t('hintAction.pan') }, { key: 'Ctrl+Scroll', action: t('hintAction.zoom') }];
+    if (tool === 'eraser') return [{ key: 'Click/Drag', action: t('hintAction.erase') }];
+    if (tool === 'table') return [{ key: 'Drag', action: t('hintAction.drawTable') }];
+    if (tool === 'image') return [{ key: 'Click', action: t('hintAction.placeImage') }];
+    if (tool === 'video') return [{ key: 'Click', action: t('hintAction.insertVideo') }];
     return [];
 }
 
-const TOOL_LABELS: Record<string, string> = {
-    selection: 'Select',
-    lasso: 'Lasso',
-    pan: 'Pan',
-    rectangle: 'Rectangle',
-    circle: 'Circle',
-    diamond: 'Diamond',
-    line: 'Line',
-    arrow: 'Arrow',
-    bezier: 'Bezier',
-    polyline: 'Polyline',
-    text: 'Text',
-    image: 'Image',
-    eraser: 'Eraser',
-    fineliner: 'Pencil',
-    inkbrush: 'Ink Brush',
-    marker: 'Marker',
-    ink: 'Ink Overlay',
-    laser: 'Laser',
-    shape: 'Shape',
-    infra: 'Infrastructure',
-    math: 'Math',
-    sketchnote: 'Sketchnote',
-    people: 'People',
-    status: 'Status',
-    cloudInfra: 'Cloud Infra',
-    dataMetrics: 'Data/Metrics',
-    connectionRel: 'Connection',
-    wireframe: 'Wireframe',
-    technical: 'Technical',
-    uml: 'UML',
-    mindmap: 'Mindmap',
-    table: 'Table',
-};
+/**
+ * Which dictionary key names each tool in the status bar. The text lives in
+ * `toolLabel.*`; this table is only the tool → key mapping, so it can stay a
+ * module-level const without freezing English into it.
+ */
+const TOOL_LABEL_KEYS = [
+        'selection', 'lasso', 'pan', 'rectangle', 'circle', 'diamond', 'line', 'arrow', 'bezier', 'polyline', 'text', 'image', 'eraser', 'fineliner', 'inkbrush', 'marker', 'ink', 'laser', 'shape', 'infra', 'math', 'sketchnote', 'people', 'status', 'cloudInfra', 'dataMetrics', 'connectionRel', 'wireframe', 'technical', 'uml', 'mindmap', 'table',
+] as const;
+type ToolLabelKey = (typeof TOOL_LABEL_KEYS)[number];
+const isToolLabelKey = (v: string): v is ToolLabelKey => (TOOL_LABEL_KEYS as readonly string[]).includes(v);
 
 const StatusBar: Component = () => {
     const [hasNews, setHasNews] = createSignal(hasUnseenWhatsNew(pkg.version));
@@ -140,7 +117,8 @@ const StatusBar: Component = () => {
     // Canvas rotation, in whole degrees, for the compass dial/readout.
     const rotationDeg = () => Math.round((store.viewState.rotation || 0) * 180 / Math.PI);
 
-    const toolLabel = () => TOOL_LABELS[store.selectedTool] || store.selectedTool;
+    const toolLabel = () =>
+        isToolLabelKey(store.selectedTool) ? t(`toolLabel.${store.selectedTool}`) : store.selectedTool;
 
     return (
         <div class="status-bar">
@@ -157,10 +135,12 @@ const StatusBar: Component = () => {
                             'margin-right': '4px',
                             'flex-shrink': '0',
                         }}
-                        title="Unsaved changes"
+                        title={t('statusBar.unsavedChanges')}
                     />
                 </Show>
-                <span>{drawingId()}</span>
+                {/* Translate the DEFAULT name for display only — never the stored
+                    value, which saved files and auto-save both depend on. */}
+                <span>{drawingId() === 'Untitled' ? t('statusBar.untitled') : drawingId()}</span>
             </div>
 
             {/* Current Tool */}
@@ -191,7 +171,7 @@ const StatusBar: Component = () => {
                     class="status-toggle"
                     classList={{ 'is-active': store.symmetry.mode === 'vertical' || store.symmetry.mode === 'both' }}
                     onClick={() => toggleSymmetryAxis('vertical')}
-                    title="Vertical symmetry — mirror left/right (Alt+Y toggles symmetry)"
+                    title={t('statusBar.symmetryVertical')}
                     aria-label="Toggle vertical symmetry"
                     aria-pressed={store.symmetry.mode === 'vertical' || store.symmetry.mode === 'both'}
                 >
@@ -201,7 +181,7 @@ const StatusBar: Component = () => {
                     class="status-toggle"
                     classList={{ 'is-active': store.symmetry.mode === 'horizontal' || store.symmetry.mode === 'both' }}
                     onClick={() => toggleSymmetryAxis('horizontal')}
-                    title="Horizontal symmetry — mirror up/down (Alt+Y toggles symmetry)"
+                    title={t('statusBar.symmetryHorizontal')}
                     aria-label="Toggle horizontal symmetry"
                     aria-pressed={store.symmetry.mode === 'horizontal' || store.symmetry.mode === 'both'}
                 >
@@ -212,7 +192,7 @@ const StatusBar: Component = () => {
                         class="status-toggle"
                         classList={{ 'is-active': store.symmetry.editing }}
                         onClick={() => toggleSymmetryEditing()}
-                        title="Move symmetry axis — drag the handle to reposition (Alt+Shift+Y)"
+                        title={t('statusBar.symmetryAxis')}
                         aria-label="Toggle move symmetry axis"
                         aria-pressed={store.symmetry.editing}
                     >
@@ -223,7 +203,7 @@ const StatusBar: Component = () => {
                     class="status-toggle"
                     classList={{ 'is-active': !!store.globalSettings.fillShapeMode }}
                     onClick={() => updateGlobalSettings({ fillShapeMode: !store.globalSettings.fillShapeMode })}
-                    title="Fill mode — freehand strokes fill their silhouette"
+                    title={t('statusBar.fillMode')}
                     aria-label="Toggle fill mode"
                     aria-pressed={!!store.globalSettings.fillShapeMode}
                 >
@@ -247,7 +227,10 @@ const StatusBar: Component = () => {
 
             {/* Element Count */}
             <div class="status-section">
-                <span>{store.elements.length} elements</span>
+                <span>{plural(store.elements.length, {
+                    one: t('statusBarCount.one'),
+                    other: t('statusBarCount.other'),
+                })}</span>
             </div>
 
             {/* Slide Info (slides mode only) */}
@@ -259,13 +242,13 @@ const StatusBar: Component = () => {
 
             {/* Zoom Controls */}
             <div class="status-section" style={{ gap: '2px' }}>
-                <button class="status-btn" onClick={handleZoomOut} title="Zoom Out (Ctrl+-)">
+                <button class="status-btn" onClick={handleZoomOut} title={t('statusBar.zoomOut')}>
                     <Minus size={14} />
                 </button>
-                <button class="status-btn text-btn" onClick={resetZoom} title="Reset Zoom (Ctrl+0)">
+                <button class="status-btn text-btn" onClick={resetZoom} title={t('statusBar.resetZoom')}>
                     {Math.round(store.viewState.scale * 100)}%
                 </button>
-                <button class="status-btn" onClick={handleZoomIn} title="Zoom In (Ctrl+=)">
+                <button class="status-btn" onClick={handleZoomIn} title={t('statusBar.zoomIn')}>
                     <Plus size={14} />
                 </button>
             </div>
@@ -299,7 +282,7 @@ const StatusBar: Component = () => {
                     class="status-btn"
                     onClick={undo}
                     disabled={store.undoStackLength === 0}
-                    title="Undo (Ctrl+Z)"
+                    title={t('statusBar.undo')}
                 >
                     <Undo2 size={14} />
                 </button>
@@ -307,7 +290,7 @@ const StatusBar: Component = () => {
                     class="status-btn"
                     onClick={redo}
                     disabled={store.redoStackLength === 0}
-                    title="Redo (Ctrl+Y)"
+                    title={t('statusBar.redo')}
                 >
                     <Redo2 size={14} />
                 </button>
@@ -318,7 +301,7 @@ const StatusBar: Component = () => {
                 <button
                     class="status-btn present-btn"
                     onClick={() => togglePresentationMode(true, 0)}
-                    title="Present from beginning (F5)"
+                    title={t('statusBar.present')}
                 >
                     <Play size={14} />
                 </button>
@@ -331,7 +314,7 @@ const StatusBar: Component = () => {
                 <button
                     class="status-btn version-btn"
                     style={{ "font-size": "inherit", "font-family": "inherit", width: "auto", padding: "0 4px" }}
-                    title="What's new"
+                    title={t('statusBar.whatsNew')}
                     aria-label="What's new"
                     onClick={() => { openWhatsNew(); setHasNews(false); }}
                 >
@@ -346,17 +329,17 @@ const StatusBar: Component = () => {
             {/* Legal */}
             <div class="status-section status-attribution">
                 <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer">
-                    Privacy
+                    {t('statusBar.privacy')}
                 </a>
                 <span style={{ opacity: 0.4 }}>|</span>
                 <a href="/terms-of-service.html" target="_blank" rel="noopener noreferrer">
-                    Terms
+                    {t('statusBar.terms')}
                 </a>
             </div>
 
             {/* Attribution */}
             <div class="status-section status-attribution" style={{ 'border-right': 'none' }}>
-                <span class="status-heart">❤️</span> by{' '}
+                <span class="status-heart">❤️</span> {t('statusBar.madeBy')}{' '}
                 <a href="https://www.algorisys.com" target="_blank" rel="noopener noreferrer">
                     Algorisys Technologies
                 </a>
