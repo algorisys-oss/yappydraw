@@ -316,12 +316,55 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         }
 
         case 'cloud': {
-            const r1 = w * 0.2, r2 = w * 0.25, r3 = w * 0.2, r4 = w * 0.3;
-            return { type: 'path', path: `M ${x + r1} 0 A ${r1} ${r1} 0 0 1 ${x + (w * 0.3)} ${y + r2} A ${r2} ${r2} 0 0 1 ${x + (w * 0.7)} ${y + r2} A ${r3} ${r3} 0 0 1 ${x + w - r3} 0 A ${r4} ${r4} 0 0 1 ${x + (w * 0.6)} ${y + h - (r4 * 0.5)} A ${r4} ${r4} 0 0 1 ${x + (w * 0.3)} ${y + h - (r4 * 0.5)} A ${r4} ${r4} 0 0 1 ${x + r1} 0 Z` };
+            // Scallops around the outline, each arc sized from the CHORD between its
+            // two neighbours. The old version derived every radius from the width
+            // alone (`w * 0.2`), so dragging the cloud wide made the radii huge next
+            // to the height: SVG then clamped the arcs and the shape collapsed into a
+            // spiked bowtie. Anchoring the radii to the chord means the bumps follow
+            // whatever box the user drags, at any aspect ratio.
+            const cxr = w / 2, cyr = h / 2;
+
+            // Bumps sit on an ellipse, bigger across the top than along the bottom —
+            // a cloud is lumpy above and flatter below. Angles measured clockwise
+            // from the left, y down.
+            const ring: { a: number; r: number }[] = [
+                { a: 180, r: 0.98 }, { a: 215, r: 1.00 }, { a: 250, r: 0.94 },
+                { a: 285, r: 1.00 }, { a: 320, r: 0.95 }, { a: 0, r: 0.98 },
+                { a: 40, r: 0.80 }, { a: 75, r: 0.86 }, { a: 105, r: 0.86 },
+                { a: 140, r: 0.80 },
+            ];
+            const pts = ring.map(({ a, r }) => {
+                const rad = (a * Math.PI) / 180;
+                return { x: cxr * r * Math.cos(rad), y: cyr * r * Math.sin(rad) };
+            });
+
+            let d = `M ${pts[0].x} ${pts[0].y}`;
+            for (let i = 0; i < pts.length; i++) {
+                const from = pts[i];
+                const to = pts[(i + 1) % pts.length];
+                const chord = Math.hypot(to.x - from.x, to.y - from.y);
+                // Just over half the chord — the smallest radius that still bulges
+                // outward, so the arc is always drawable and never over-inflates.
+                const r = Math.max(0.5, chord * 0.62);
+                d += ` A ${r} ${r} 0 0 1 ${to.x} ${to.y}`;
+            }
+            return { type: 'path', path: `${d} Z` };
         }
 
         case 'heart':
-            return { type: 'path', path: `M ${0} ${y + (h * 0.3)} C ${0} ${y + (h * 0.15)} ${x + (w * 0.3)} ${y} ${x + (w * 0.5)} ${y + (h * 0.15)} C ${x + (w * 0.7)} ${y} ${x + w} ${y + (h * 0.15)} ${x + w} ${y + (h * 0.35)} C ${x + w} ${y + (h * 0.6)} ${0} ${y + (h * 0.8)} ${0} ${y + h} C ${0} ${y + (h * 0.8)} ${x} ${y + (h * 0.6)} ${x} ${y + (h * 0.35)} C ${x} ${y + (h * 0.15)} ${x + (w * 0.3)} ${y} ${x + (w * 0.5)} ${y + (h * 0.15)} Z` };
+            // Starts and ends at the NOTCH between the two lobes. It used to start
+            // 30% down the middle, draw the left lobe, then draw it a second time at
+            // the end — so `Z` closed with a straight line from the notch back down
+            // to the start point, drawing a spike through the top of the heart.
+            return {
+                type: 'path',
+                path:
+                    `M ${0} ${y + (h * 0.15)}` +
+                    ` C ${x + (w * 0.7)} ${y} ${x + w} ${y + (h * 0.15)} ${x + w} ${y + (h * 0.35)}` +
+                    ` C ${x + w} ${y + (h * 0.6)} ${0} ${y + (h * 0.8)} ${0} ${y + h}` +
+                    ` C ${0} ${y + (h * 0.8)} ${x} ${y + (h * 0.6)} ${x} ${y + (h * 0.35)}` +
+                    ` C ${x} ${y + (h * 0.15)} ${x + (w * 0.3)} ${y} ${0} ${y + (h * 0.15)} Z`,
+            };
 
         case 'polygon': {
             const sides = el.polygonSides || 6;
@@ -415,7 +458,14 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
             return { type: 'multi', shapes: [{ type: 'points', points: [{ x: x, y: y }, { x: x + w, y: y + h }] }, { type: 'points', points: [{ x: x + w, y: y }, { x: x, y: y + h }] }] };
 
         case 'checkmark':
-            return { type: 'points', points: [{ x: x, y: y + (h * 0.5) }, { x: x + (w * 0.4), y: mh }, { x: x + w, y: y }] };
+            // OPEN — a tick is two strokes, not a triangle. Closing it joined the
+            // top-right tip back to the left end and drew the third side, which is
+            // what shipped: a checkmark that rendered as a triangle.
+            return {
+                type: 'points',
+                isClosed: false,
+                points: [{ x: x, y: y + (h * 0.5) }, { x: x + (w * 0.4), y: mh }, { x: x + w, y: y }],
+            };
 
         case 'wavyDivider': {
             let p = `M ${x} 0`;

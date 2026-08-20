@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.206', date: '2026-08-20', items: [
+        'The cloud keeps its shape at any size. Dragged wide and short it used to fall apart into a spiky bowtie — every one of its curves was sized from the width alone, so there was no room for them once the height got small.',
+        'The checkmark is a checkmark. It was drawing as a triangle: the three points were right, but the shape was being closed, so the tip got joined back to the tail.',
+        'The heart no longer has a spike through the dip at the top. It was drawing its left lobe twice, and closing the shape ran a straight line back through the middle.',
+        'The Properties panel now follows the tool you picked. Choose the Polygon tool and Polygon Sides is right there before you draw anything; choose Star and you get Star Points. It used to show slide settings instead, so the control you wanted was only findable after drawing a shape and selecting it. Select, Pan, Lasso and Crop still show slide and canvas settings, since they do not draw anything.',
+    ] },
     { version: '0.8.205', date: '2026-08-20', items: [
         'Sketch shapes now close their corners. Zoom in on a hand-drawn box and the edges used to miss each other — one overshooting the corner, the next starting short, with a little square nib of background showing through. The wobble belongs in the middle of a line, not at its ends, so that is where it stays now.',
         'Thick sketch strokes join like a pen rather than a cut ribbon, so a heavy outline no longer shows a notch at every turn.',

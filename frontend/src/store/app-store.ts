@@ -4944,17 +4944,10 @@ export const propertyPanelTarget = () => {
         return { type: 'multi' as const, data: null };
     }
 
-    // Only show Canvas properties if explicitly requested
+    // Only show Canvas properties if explicitly requested — an explicit ask beats
+    // anything inferred below.
     if (store.showCanvasProperties) {
         return { type: 'canvas' as const, data: null };
-    }
-
-    // Slide context - when in slide mode with no selection
-    if (isPagedDocType(store.docType)) {
-        const activeSlide = store.slides[store.activeSlideIndex];
-        if (activeSlide) {
-            return { type: 'slide' as const, data: activeSlide as Slide };
-        }
     }
 
     // Eraser tool: show only the eraser-specific controls (width).
@@ -4962,12 +4955,34 @@ export const propertyPanelTarget = () => {
         return { type: 'eraser' as const, data: null };
     }
 
-    // Show defaults for the current tool
+    // A DRAWING tool is active: show that tool's defaults, filtered to what the
+    // tool can actually draw.
+    //
+    // This used to sit below the slide check, which made it unreachable in a
+    // slides or design document — the default doc type. So picking the Polygon
+    // tool showed slide Transition and Background, and "Polygon Sides" could not
+    // be found at all until you had drawn a polygon and selected it. Reported as
+    // "it took me a lot of time to find the polygon sides while making polygons".
+    //
+    // Slide properties are still one click away: the Selection tool with nothing
+    // selected falls through to them, below.
+    // Tools that SELECT or navigate rather than draw fall through with the
+    // Selection tool: they create nothing, so they have no defaults to set.
+    const NON_DRAWING = ['selection', 'pan', 'lasso', 'crop'];
     const tool = store.selectedTool;
-    if (tool === 'selection' || tool === 'pan') {
-        return null;
+    if (tool && !NON_DRAWING.includes(tool)) {
+        return { type: 'defaults' as const, data: null };
     }
-    return { type: 'defaults' as const, data: null };
+
+    // Slide context — the selection tool, with nothing selected.
+    if (isPagedDocType(store.docType)) {
+        const activeSlide = store.slides[store.activeSlideIndex];
+        if (activeSlide) {
+            return { type: 'slide' as const, data: activeSlide as Slide };
+        }
+    }
+
+    return null;
 };
 
 /**

@@ -342,7 +342,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 613 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 619 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -574,7 +574,7 @@ frontend/src/store/anim-pegs.test.ts | typescript | 134 | stubNode:16 kfs:46 set
 frontend/src/store/anim-timing.test.ts | typescript | 172 | stubNode:17 row:46 setup:48 select:70
 frontend/src/store/anim-tween-split.test.ts | typescript | 200 | stubNode:21 setupTween:52 form:57
 frontend/src/store/app-store.test.ts | typescript | 104 | seed:71
-frontend/src/store/app-store.ts | typescript | 9971 | LayoutDirection:19 OutlineNode:19 BooleanOp:22 Poly:22 ShapeFace:22 DistortKind:23 AssetMeta:44 WarpPreset:52 SymmetryMode:60 SymmetryOp:60 Theme:67 ResolvedTheme:68 loadPerspectiveGrid:106 DefaultToolChoice:136 PointerStyle:166 AppState:176 HistorySnapshot:787 BP:2119 AlignmentType:5367 DistributionType:5367 CharPatch:6182 CharPatchArg:6185 SelBBox:7459 LastTransform:7918 RegionPathfinderOp:8308 SelectSimilarMatch:8441 buildPathFromPoly:9208 polysOriginMin:9250 syncCompoundOperands:9257 buildCompoundPath:9268 WorldSub:9494 rdpAnchors:9497 normalizeWorldSubs:9525 makePathFromWorldSubs:9540 elementToWorldSubs:9561 startInkCleanupIfNeeded:9910
+frontend/src/store/app-store.ts | typescript | 9986 | LayoutDirection:19 OutlineNode:19 BooleanOp:22 Poly:22 ShapeFace:22 DistortKind:23 AssetMeta:44 WarpPreset:52 SymmetryMode:60 SymmetryOp:60 Theme:67 ResolvedTheme:68 loadPerspectiveGrid:106 DefaultToolChoice:136 PointerStyle:166 AppState:176 HistorySnapshot:787 BP:2119 AlignmentType:5382 DistributionType:5382 CharPatch:6197 CharPatchArg:6200 SelBBox:7474 LastTransform:7933 RegionPathfinderOp:8323 SelectSimilarMatch:8456 buildPathFromPoly:9223 polysOriginMin:9265 syncCompoundOperands:9272 buildCompoundPath:9283 WorldSub:9509 rdpAnchors:9512 normalizeWorldSubs:9540 makePathFromWorldSubs:9555 elementToWorldSubs:9576 startInkCleanupIfNeeded:9925
 frontend/src/store/dock-layout.ts | typescript | 155 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:60 hidePanel:71 setPanelOpen:81 dockPanel:88 dockPanelAt:98
 frontend/src/store/path-corner-radius.test.ts | typescript | 116 | squarePath:21 radii:34
 frontend/src/templates/data/animations.test.ts | typescript | 108 | validate:10
@@ -775,7 +775,8 @@ frontend/src/utils/routing.ts | typescript | 350 | Seg:12 Node:228
 frontend/src/utils/safe-storage.ts | typescript | 48 | readJson:16 readJsonArray:35 writeJson:41
 frontend/src/utils/select-tool-path-nodes.test.ts | typescript | 104 | recordingCtx:22
 frontend/src/utils/selection-renderer.ts | typescript | 1066 | isLabelDraggable:24 drawDeleteHandle:37 ElementOverlayOptions:60 renderPathAnchors:87 renderElementOverlays:137
-frontend/src/utils/shape-geometry.ts | typescript | 1856 | ShapeGeometry:9 LidConfig:816 LidWithPosition:981
+frontend/src/utils/shape-geometry-fixes.test.ts | typescript | 137 | shape:14 arcs:34 numbersIn:49
+frontend/src/utils/shape-geometry.ts | typescript | 1906 | ShapeGeometry:9 LidConfig:866 LidWithPosition:1031
 frontend/src/utils/shape-recognition.test.ts | typescript | 227 | Pt:2 rng:16 tracePolyline:25 traceEllipse:45 rate:153
 frontend/src/utils/shape-recognition.ts | typescript | 334 | Pt:31 RecognizedShape:33 dist:90 perpDist:94 segDist:101 rdp:111 meanEdgeDist:135 reduceCorners:156 subsample:176 minTurnDeg:188 recognizeStrokeShape:208
 frontend/src/utils/shape-to-path-radius.test.ts | typescript | 114 | rect:14 nearly:18

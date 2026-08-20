@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.206](0.8.206.md) — A cloud dragged wide collapsed into a spiked bowtie (every radius was derived from the width alone), the checkmark drew as a triangle, and the heart had a spike through its notch. Plus the Properties panel now follows the tool you picked, so Polygon Sides is findable before you draw a polygon
 - [0.8.205](0.8.205.md) — Sketch corners meet: RoughJS was jittering the ENDS of every edge (0.85px at the default sloppiness, multiplied by the zoom because the geometry is generated in world space), and butt caps left a wedge at thick corners. Sloppiness also stops defaulting to 1 on a drawing style that ignores it
 - [0.8.204](0.8.204.md) — Ungroup was missing from the right-click menu whenever you pressed on the artwork itself. The path-editing menu added in 0.8.202 replaced the element menu instead of joining it, so Make Smooth / Delete Anchor / Insert Point Here came at the cost of Group, Ungroup, Pathfinder, Arrange and Copy — with no keyboard fallback on a tablet. Both menus now show, path actions first
 - [0.8.203](0.8.203.md) — Yappy speaks four languages (Español, Deutsch, 日本語), and every public page is a real URL with real HTML behind it instead of a fragment after a `#` that no search engine could read. 35 static pages, a 38-URL sitemap, and a BPMN document that had been written, maintained and never registered, so nobody could open it
