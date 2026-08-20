@@ -56,6 +56,7 @@ import {
 } from "../utils/canvas-renderer";
 import { Minimap } from "./minimap";
 import { getContextMenuItems } from "../utils/context-menu-builder";
+import { mergePathMenu } from "../utils/path-menu-merge";
 import PathEditorOverlay from "./path-editor-overlay";
 import PenOptionsBar from "./pen-options-bar";
 import { commitText as commitTextHandler, commitRichText as commitRichTextHandler, handleDoubleClick as handleDoubleClickHandler, type TextEditingContext } from "../utils/tool-handlers/text-editing-handler";
@@ -2690,7 +2691,14 @@ const Canvas: Component = () => {
                 <ContextMenu
                     x={contextMenuPos().x}
                     y={contextMenuPos().y}
-                    items={anchorMenuItems() ?? (() => { const w = getWorldCoordinates(contextMenuPos().x, contextMenuPos().y); return getContextMenuItems(draw, w.x, w.y, tableCellSelectionSignal(), () => setTableCellSelection(null)); })()}
+                    items={(() => {
+                        const w = getWorldCoordinates(contextMenuPos().x, contextMenuPos().y);
+                        const generic = getContextMenuItems(draw, w.x, w.y, tableCellSelectionSignal(), () => setTableCellSelection(null));
+                        // Path actions lead, the element menu follows — they must not
+                        // replace it, or Ungroup/Pathfinder/Arrange go missing whenever
+                        // the press lands on a path (no Ctrl+Shift+G on a tablet).
+                        return mergePathMenu(anchorMenuItems(), generic);
+                    })()}
                     onClose={() => { setContextMenuOpen(false); setAnchorMenuItems(null); }}
                 />
             </Show>

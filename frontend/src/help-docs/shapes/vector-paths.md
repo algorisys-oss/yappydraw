@@ -53,7 +53,7 @@ A path carries the usual **stroke** (color / width / style), **fill** (solid or 
 Nodes belong to the **Node tool**, not the Select tool — the same split every other vector editor makes (Illustrator <kbd>V</kbd> vs <kbd>A</kbd>, Inkscape <kbd>S</kbd> vs <kbd>N</kbd>). Press <kbd>N</kbd>, or simply **double-click the path**, to reveal its anchors (squares) and Bézier handles (circles). Drag to reshape; use the modifiers below to restructure.
 
 :::tip
-**Why the Select tool shows no anchors.** It used to. On a four-point curve that was handy; on an outlined word or an imported icon it buried the artwork under hundreds of squares you had no intention of touching — and the anchors sitting on the bounding box quietly stole the corner-resize drag. Select is now purely a move / resize / rotate tool. You can still **right-click (or long-press) a path** without leaving it to reach *Make Smooth / Corner*, *Delete Anchor* and *Insert Point Here*.
+**Why the Select tool shows no anchors.** It used to. On a four-point curve that was handy; on an outlined word or an imported icon it buried the artwork under hundreds of squares you had no intention of touching — and the anchors sitting on the bounding box quietly stole the corner-resize drag. Select is now purely a move / resize / rotate tool. You can still **right-click (or long-press) a path** without leaving it to reach *Make Smooth / Corner*, *Delete Anchor* and *Insert Point Here* — those appear at the top of the usual right-click menu, so *Group / Ungroup*, *Pathfinder* and the rest are still right there underneath.
 :::
 
 | Gesture | Result |

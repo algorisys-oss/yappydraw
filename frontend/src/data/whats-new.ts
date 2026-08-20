@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.204', date: '2026-08-20', items: [
+        'Right-clicking a shape gives you the full menu again. If you right-clicked (or long-pressed) directly on a path — the letters of an outlined word, the lines of an imported icon — you only got the four node commands: Make Smooth, Delete Anchor, Insert Point Here, Constrain Handles. Group, Ungroup, Pathfinder, Arrange, Copy and the rest had quietly been replaced, and pressing slightly off the shape brought them back, which is why it looked like Ungroup was missing only sometimes.',
+        'The node commands are still there — they now sit at the top of the usual menu, with everything else underneath. On a tablet this matters most: there is no Ctrl+Shift+G to fall back on, so a group you could only reach by pressing on its artwork could not be ungrouped at all.',
+    ] },
     { version: '0.8.203', date: '2026-08-20', items: [
         'Yappy speaks four languages. Pick English, Español, Deutsch or 日本語 in Settings → Language and the interface changes immediately — no reload — and stays that way next time. The command palette, all 188 keyboard shortcuts, the welcome screen, the toolbar and the status bar are fully translated; the rest of the panels are still English and are being worked through.',
         'Text inside your drawings is never translated. Only the interface changes.',
