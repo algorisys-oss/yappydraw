@@ -128,7 +128,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                 onInput={(e) => setQuery(e.currentTarget.value)}
                             />
                             <Show when={query()}>
-                                <button class="settings-search-clear" onClick={() => setQuery('')} title="Clear">
+                                <button class="settings-search-clear" onClick={() => setQuery('')} title={t("settings.clear")}>
                                     <X size={13} />
                                 </button>
                             </Show>
@@ -158,7 +158,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
 
                         <div class="settings-body" ref={bodyRef}>
                     <div class="settings-section" data-cat="general">
-                        <p class="settings-section-title">General</p>
+                        <p class="settings-section-title">{t("settings.sectionGeneral")}</p>
 
                         {/* Hidden until there is a real choice to make. `readyLocales()`
                             only lists locales past the 95% coverage gate, so today this
@@ -180,7 +180,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </Show>
 
                         <div class="settings-row">
-                            <label>Quick Toolbar</label>
+                            <label>{t("settings.quickToolbar")}</label>
                             <label class="settings-toggle">
                                 <input
                                     type="checkbox"
@@ -192,18 +192,18 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label>Drawing Style</label>
+                            <label>{t("settings.drawingStyle")}</label>
                             <select
                                 value={store.globalSettings.renderStyle ?? 'sketch'}
                                 onChange={(e) => updateGlobalSettings({ renderStyle: e.currentTarget.value as any })}
                             >
-                                <option value="sketch">Sketch</option>
-                                <option value="architectural">Architectural</option>
+                                <option value="sketch">{t("settings.styleSketch")}</option>
+                                <option value="architectural">{t("settings.styleArchitectural")}</option>
                             </select>
                         </div>
 
                         <div class="settings-row">
-                            <label title="Unit shown by the transform badge, Measure tool, and dimension annotations">Measurement Units</label>
+                            <label title={t("settings.measurementUnitsTitle")}>{t("settings.measurementUnits")}</label>
                             <select
                                 value={store.globalSettings.measurementUnit ?? 'px'}
                                 onChange={(e) => {
@@ -212,14 +212,14 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                     try { localStorage.setItem('measurementUnit', u); } catch { /* ignore */ }
                                 }}
                             >
-                                <option value="px">Pixels (px)</option>
-                                <option value="mm">Millimetres (mm)</option>
-                                <option value="in">Inches (in)</option>
+                                <option value="px">{t("settings.unitPx")}</option>
+                                <option value="mm">{t("settings.unitMm")}</option>
+                                <option value="in">{t("settings.unitIn")}</option>
                             </select>
                         </div>
 
                         <div class="settings-row">
-                            <label title="Bake dimension annotations into exported PNG / JPG / SVG / PDF files">Include Dimensions in Exports</label>
+                            <label title={t("settings.includeDimensionsTitle")}>{t("settings.includeDimensions")}</label>
                             <label class="settings-toggle">
                                 <input
                                     type="checkbox"
@@ -235,34 +235,34 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                     </div>
 
                     <div class="settings-section" data-cat="input">
-                        <p class="settings-section-title">Pen &amp; Input</p>
+                        <p class="settings-section-title">{t("settings.sectionInput")}</p>
 
                         <div class="settings-row">
-                            <label title="Which tool is active when Yappy opens. Switches to it now, too.">Default Tool</label>
+                            <label title={t("settings.defaultToolTitle")}>{t("settings.defaultTool")}</label>
                             <select
                                 value={store.globalSettings.defaultTool ?? DEFAULT_TOOL_FALLBACK}
                                 onChange={(e) => setDefaultTool(e.currentTarget.value as 'inkbrush' | 'fineliner' | 'selection')}
                             >
-                                <option value="selection">Select</option>
-                                <option value="inkbrush">Ink Brush</option>
-                                <option value="fineliner">Fineliner</option>
+                                <option value="selection">{t("settings.toolSelect")}</option>
+                                <option value="inkbrush">{t("settings.toolInkBrush")}</option>
+                                <option value="fineliner">{t("settings.toolFineliner")}</option>
                             </select>
                         </div>
 
                         <div class="settings-row">
-                            <label title="Cursor shown over the canvas while a drawing tool is active. Select and Pan keep their own cursors.">Canvas Pointer</label>
+                            <label title={t("settings.canvasPointerTitle")}>{t("settings.canvasPointer")}</label>
                             <select
                                 value={store.globalSettings.pointerStyle ?? 'crosshair'}
                                 onChange={(e) => updateGlobalSettings({ pointerStyle: e.currentTarget.value as 'crosshair' | 'circle' | 'arrow' })}
                             >
-                                <option value="crosshair">Crosshair (+)</option>
-                                <option value="circle">Concentric circle</option>
-                                <option value="arrow">Arrow</option>
+                                <option value="crosshair">{t("settings.pointerCrosshair")}</option>
+                                <option value="circle">{t("settings.pointerCircle")}</option>
+                                <option value="arrow">{t("settings.pointerArrow")}</option>
                             </select>
                         </div>
 
                         <div class="settings-row">
-                            <label title="Hold a pen stroke still for a moment to snap it to a clean shape">Smart Shapes (hold to correct)</label>
+                            <label title={t("settings.smartShapesTitle")}>{t("settings.smartShapes")}</label>
                             <label class="settings-toggle">
                                 <input
                                     type="checkbox"
@@ -274,7 +274,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label title="Use Apple Pencil / stylus pressure for variable stroke width on the brush pen">Pressure Sensitivity</label>
+                            <label title={t("settings.pressureTitle")}>{t("settings.pressure")}</label>
                             <label class="settings-toggle">
                                 <input
                                     type="checkbox"
@@ -286,8 +286,8 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label title="Pulled-string 'lazy brush' for cleaner freehand inking. Higher = smoother and heavier, with more lag. 0% = off.">
-                                Stroke Stabilization
+                            <label title={t("settings.stabilizationTitle")}>
+                                {t("settings.stabilization")}
                             </label>
                             <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
                                 <input
@@ -305,8 +305,8 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label title={`Maximum number of undo steps kept in history. Higher = more peace of mind, more memory. ${HISTORY_DEPTH_MIN}–${HISTORY_DEPTH_MAX}, default ${HISTORY_DEPTH_DEFAULT}.`}>
-                                Undo History Depth
+                            <label title={t("settings.historyDepthTitle", { min: HISTORY_DEPTH_MIN, max: HISTORY_DEPTH_MAX, def: HISTORY_DEPTH_DEFAULT })}>
+                                {t("settings.historyDepth")}
                             </label>
                             <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
                                 {/* min/max come from the same constants the store clamps with. Typed
@@ -327,13 +327,13 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                                         e.currentTarget.value = String(store.globalSettings.historyDepth ?? HISTORY_DEPTH_DEFAULT);
                                     }}
                                 />
-                                <span style={{ color: 'var(--text-secondary, #888)', 'font-size': '12px' }}>steps</span>
+                                <span style={{ color: 'var(--text-secondary, #888)', 'font-size': '12px' }}>{t("settings.historyDepthSteps")}</span>
                             </div>
                         </div>
 
                         <div class="settings-row">
-                            <label title="Print bleed margin (px) drawn around each artboard. Set >0 to also show crop / registration marks. 0 = off.">
-                                Print Bleed
+                            <label title={t("settings.printBleedTitle")}>
+                                {t("settings.printBleed")}
                             </label>
                             <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
                                 <input
@@ -351,11 +351,11 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                     </div>
 
                     <div class="settings-section" data-cat="mindmap">
-                        <p class="settings-section-title">Mindmap</p>
+                        <p class="settings-section-title">{t("settings.sectionMindmap")}</p>
 
                         <div class="settings-row">
-                            <label title="Automatically arrange mindmap nodes into a tidy layout as you add, collapse, delete, or reparent. Turn off to position nodes manually.">
-                                Auto Layout (reflow &amp; animate)
+                            <label title={t("settings.autoLayoutTitle")}>
+                                {t("settings.autoLayout")}
                             </label>
                             <label class="settings-toggle">
                                 <input
@@ -368,27 +368,27 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label title="Default arrangement for new mindmaps (trees you haven't given an explicit layout).">Default Layout</label>
+                            <label title={t("settings.defaultLayoutTitle")}>{t("settings.defaultLayout")}</label>
                             <select
                                 value={store.globalSettings.mindmapLayoutDirection ?? 'balanced'}
                                 onChange={(e) => updateGlobalSettings({ mindmapLayoutDirection: e.currentTarget.value as any })}
                             >
-                                <option value="balanced">Balanced</option>
-                                <option value="horizontal-right">Horizontal (Right)</option>
-                                <option value="horizontal-left">Horizontal (Left)</option>
-                                <option value="vertical-down">Vertical (Down)</option>
-                                <option value="vertical-up">Vertical (Up)</option>
-                                <option value="radial">Radial</option>
+                                <option value="balanced">{t("settings.layoutBalanced")}</option>
+                                <option value="horizontal-right">{t("settings.layoutHorizontalRight")}</option>
+                                <option value="horizontal-left">{t("settings.layoutHorizontalLeft")}</option>
+                                <option value="vertical-down">{t("settings.layoutVerticalDown")}</option>
+                                <option value="vertical-up">{t("settings.layoutVerticalUp")}</option>
+                                <option value="radial">{t("settings.layoutRadial")}</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="settings-section" data-cat="timelapse">
-                        <p class="settings-section-title">Time-lapse</p>
+                        <p class="settings-section-title">{t("settings.sectionTimelapse")}</p>
 
                         <div class="settings-row">
-                            <label title="Automatically capture a Procreate-style process recording for every session. Toggle a recording any time with Ctrl+Shift+T.">
-                                Auto-record sessions
+                            <label title={t("settings.autoRecordTitle")}>
+                                {t("settings.autoRecord")}
                             </label>
                             <label class="settings-toggle">
                                 <input
@@ -401,7 +401,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label title="Longest-edge resolution for captured frames. Lower = smaller storage and faster capture.">Capture Resolution</label>
+                            <label title={t("settings.captureResolutionTitle")}>{t("settings.captureResolution")}</label>
                             <select
                                 value={String(store.globalSettings.timelapseCaptureWidth ?? 1024)}
                                 onChange={(e) => updateGlobalSettings({ timelapseCaptureWidth: parseInt(e.currentTarget.value, 10) })}
@@ -414,7 +414,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label title="Target length of the exported time-lapse video. Frames are time-compressed to fit.">Export Duration</label>
+                            <label title={t("settings.exportDurationTitle")}>{t("settings.exportDuration")}</label>
                             <select
                                 value={String(store.globalSettings.timelapseTargetDuration ?? 30)}
                                 onChange={(e) => updateGlobalSettings({ timelapseTargetDuration: parseInt(e.currentTarget.value, 10) })}
@@ -428,10 +428,10 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                     </div>
 
                     <div class="settings-section" data-cat="defaults">
-                        <p class="settings-section-title">Text Defaults</p>
+                        <p class="settings-section-title">{t("settings.sectionTextDefaults")}</p>
 
                         <div class="settings-row">
-                            <label>Font Family</label>
+                            <label>{t("settings.fontFamily")}</label>
                             <select
                                 value={defaults().fontFamily ?? 'hand-drawn'}
                                 onChange={(e) => updateDefaultStyles({ fontFamily: e.currentTarget.value as any })}
@@ -443,7 +443,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label>Font Size</label>
+                            <label>{t("settings.fontSize")}</label>
                             <input
                                 type="number"
                                 min={8}
@@ -455,10 +455,10 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                     </div>
 
                     <div class="settings-section" data-cat="defaults">
-                        <p class="settings-section-title">Shape Defaults</p>
+                        <p class="settings-section-title">{t("settings.sectionShapeDefaults")}</p>
 
                         <div class="settings-row">
-                            <label>Stroke Color</label>
+                            <label>{t("settings.strokeColor")}</label>
                             <div class="settings-color-group">
                                 <input
                                     type="color"
@@ -470,7 +470,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label>Background</label>
+                            <label>{t("settings.background")}</label>
                             <div class="settings-color-group">
                                 <input
                                     type="color"
@@ -482,7 +482,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label>Stroke Width</label>
+                            <label>{t("settings.strokeWidth")}</label>
                             <input
                                 type="number"
                                 min={1}
@@ -493,7 +493,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label>Opacity</label>
+                            <label>{t("settings.opacity")}</label>
                             <div class="settings-range-group">
                                 <input
                                     type="range"
@@ -509,7 +509,7 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
 
                     <Show when={features.enableCloudStorage}>
                         <div class="settings-section" data-cat="cloud">
-                            <p class="settings-section-title">Cloud Storage</p>
+                            <p class="settings-section-title">{t("settings.sectionCloud")}</p>
                             <CloudSettingsContent />
                         </div>
                     </Show>
@@ -572,11 +572,11 @@ function CloudSettingsContent() {
     return (
         <>
             <div class="settings-row">
-                <label>Provider</label>
+                <label>{t("settings.provider")}</label>
                 <span style={{ "font-size": "0.85rem", color: "var(--text-secondary)" }}>Google Drive</span>
             </div>
             <div class="settings-row">
-                <label>Account</label>
+                <label>{t("settings.account")}</label>
                 <Show
                     when={authState().isAuthenticated}
                     fallback={

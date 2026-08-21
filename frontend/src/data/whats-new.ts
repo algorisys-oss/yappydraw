@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.214', date: '2026-08-21', items: [
+        'Settings is now in your language. If you use Yappy in Español, Deutsch or 日本語, the whole Settings dialog — every section, label, dropdown and the longer explanations behind each tooltip — reads in that language instead of English.',
+        'That includes the explanations that actually matter: what stroke stabilization does, what print bleed is for, when mindmap auto-layout gets in your way. Those were the strings most worth translating and the ones still in English.',
+    ] },
     { version: '0.8.212', date: '2026-08-21', items: [
         'Teaching Mode is now translated. It arrived in English only — in Español, Deutsch and 日本語 the menu entry and its tooltip stayed in English while everything around them had been translated. They read properly in all four languages now.',
     ] },

@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.214](0.8.214.md) — The Settings dialog is translated: 63 strings across all four locales, the ratchet down 1628 → 1565 and that file 76 → 13. Done as real translations rather than English placeholders, because ~63 untranslated keys would have dropped de/es/ja under the 95% coverage gate and pulled three shipped languages out of the picker
 - [0.8.213](0.8.213.md) — i18n Phase 3's two missing prerequisites: `parts()`, so a sentence with an inline link stays one translatable string instead of three fragments in frozen English word order, and `scripts/i18n-translate.mjs`, the batch translation step the plan specified and nobody had built. Resumable across ~681 keys per locale, with a cached glossary and a dry-run that costs nothing
 - [0.8.212](0.8.212.md) — Teaching Mode had shipped three hardcoded English strings past the i18n ratchet built to catch them, because nothing ran it: the guard sat green in the package scripts across four releases while the count climbed. Strings extracted and genuinely translated into all four locales, and the ratchet now blocks on commit
 - [0.8.211](0.8.211.md) — The two HIGH Dependabot alerts that had appeared on every push turned out to be unreachable: `image-size` is a Node-only path that pptxgenjs already excludes from browser builds, absent from all 160 shipped bundles, with no upstream patch and a three-major downgrade as npm's only remedy. Dismissed with the evidence, and recorded in a new dependency-audit doc so it is not re-investigated
