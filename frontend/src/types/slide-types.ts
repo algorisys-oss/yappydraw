@@ -134,6 +134,14 @@ export interface GlobalSettings {
     exportIncludeDimensions?: boolean;    // Opt-in: bake dimension annotations into PNG/JPG/SVG/PDF exports. Default off.
     showPathfinderBar?: boolean;          // Opt-in: floating Pathfinder strip on multi-selection. Default OFF — selecting
                                           // two objects is routine, combining them is rare and destructive.
+    /**
+     * Teaching mode: strip the app back to the common drawing tools for instructor-led
+     * sessions. Forces the minimal toolbar and hides the professional vector surface
+     * (Vector Tools, Shape Builder, Pathfinder, the Pen/path tool, dimension badges).
+     * An app-level preference like `showDimensions` — read from localStorage only, never
+     * from a loaded document, so opening someone else's file cannot flip it. Default OFF.
+     */
+    teachingMode?: boolean;
 }
 
 /**

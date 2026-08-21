@@ -162,6 +162,41 @@ export const readShowDimensions = (): boolean => {
     try { return (localStorage.getItem('showDimensions') ?? '0') !== '0'; } catch { return false; }
 };
 
+/**
+ * Teaching mode — the app stripped back to the common drawing tools for instructor-led
+ * sessions. Like `readShowDimensions`, an app-level preference read from localStorage
+ * only and never from a loaded document: a mode that turned itself on because of a file
+ * someone sent you would be baffling. Default OFF.
+ */
+export const readTeachingMode = (): boolean => {
+    try { return (localStorage.getItem('teachingMode') ?? '0') !== '0'; } catch { return false; }
+};
+
+/**
+ * What stays reachable in Teaching mode — a WHITELIST, deliberately.
+ *
+ * `ToolType` is `ElementType | 'lasso' | 'crop'`, so it spans every UML / BPMN / wireframe /
+ * cloud-infra shape in the library — hundreds of entries, with more added most releases. A
+ * blacklist would silently spring a leak every time a tool was added; a whitelist means a new
+ * tool is off in Teaching mode until someone deliberately puts it on this list.
+ *
+ * The set is the minimal toolbar's tools plus the ones the app itself switches to behind your
+ * back (`pan` while space is held, `crop` after placing an image) — blocking those would break
+ * ordinary interactions rather than simplify them. `path` is absent on purpose: the vector Pen
+ * is exactly the professional surface this mode exists to hide.
+ */
+export const TEACHING_MODE_TOOLS: readonly ToolType[] = [
+    'selection', 'pan', 'lasso', 'crop', 'eraser',
+    'fineliner', 'inkbrush', 'marker', 'laser', 'ink',
+    'line', 'arrow', 'rectangle', 'diamond', 'circle', 'text', 'image',
+];
+
+const TEACHING_MODE_TOOL_SET = new Set<string>(TEACHING_MODE_TOOLS);
+
+/** Is `tool` reachable right now? Always true outside Teaching mode. */
+export const isToolAllowed = (tool: ToolType): boolean =>
+    !store.globalSettings.teachingMode || TEACHING_MODE_TOOL_SET.has(tool as string);
+
 const POINTER_STYLES = ['crosshair', 'circle', 'arrow'] as const;
 export type PointerStyle = (typeof POINTER_STYLES)[number];
 
@@ -560,6 +595,7 @@ const initialState: AppState = {
         renderStyle: 'architectural',
         showQuickToolbar: true, // Default to showing the toolbar
         showDimensions: readShowDimensions(),
+        teachingMode: readTeachingMode(),
         // P3 by default, falling back to sRGB where the browser can't render it
         // (see defaultPaletteId — an unparseable canvas fillStyle is silently
         // ignored, so an unsupported palette draws in the wrong colour).
@@ -1282,8 +1318,68 @@ export const setShowPathfinderBar = (visible: boolean) =>
     updateGlobalSettings({ showPathfinderBar: visible });
 
 export const togglePathfinderBar = () => {
+    if (store.globalSettings.teachingMode) return !!store.globalSettings.showPathfinderBar;
     const next = !store.globalSettings.showPathfinderBar;
     updateGlobalSettings({ showPathfinderBar: next });
+    return next;
+};
+
+// ── Teaching mode ────────────────────────────────────────────────────────────
+
+/** Where the pro-surface preferences are parked while Teaching mode is on. */
+const TEACHING_RESTORE_KEY = 'teachingModeRestore';
+
+/**
+ * Turn Teaching mode on or off.
+ *
+ * Design note — why this SNAPSHOTS the settings it switches off rather than reading around
+ * them. `showDimensions` and `showPathfinderBar` are consulted at eleven render sites across
+ * four files; gating every one on "…and not teaching mode" is eleven chances to miss one, and
+ * a missed one is a leak in exactly the mode whose whole promise is that the clutter is gone.
+ * Forcing the settings off instead means every existing check keeps working untouched.
+ *
+ * The cost of forcing them is that leaving the mode must not eat the user's preferences, so
+ * the previous values are parked in localStorage — not just memory — and restored on the way
+ * out. localStorage because the mode survives a reload: park it in a signal and a trainer who
+ * refreshes mid-session loses the settings they had before the mode, with no way back to them.
+ *
+ * Transient state (an open Vector Tools panel, an armed Shape Builder, the Pen in hand) is
+ * simply cancelled — it is not a preference, so there is nothing to restore.
+ */
+export const toggleTeachingMode = (on?: boolean) => {
+    const next = on ?? !store.globalSettings.teachingMode;
+    if (next === !!store.globalSettings.teachingMode) return next;
+
+    if (next) {
+        // Park the pro-surface preferences before forcing them off.
+        try {
+            localStorage.setItem(TEACHING_RESTORE_KEY, JSON.stringify({
+                showDimensions: !!store.globalSettings.showDimensions,
+                showPathfinderBar: !!store.globalSettings.showPathfinderBar,
+            }));
+        } catch { /* ignore — restore just falls back to "leave them off" */ }
+        updateGlobalSettings({ teachingMode: true, showDimensions: false, showPathfinderBar: false });
+
+        // Cancel the transient professional state, so entering the mode can never leave an
+        // overlay armed that the mode has just hidden the only button for.
+        setPanelOpen('vectorTools', false);
+        setStore('shapeBuilderActive', false);
+        setStore('cutToolActive', false);
+        setStore('measureActive', false);
+        if (!isToolAllowed(store.selectedTool)) setSelectedTool('selection');
+    } else {
+        let restore: { showDimensions?: boolean; showPathfinderBar?: boolean } = {};
+        try {
+            const raw = localStorage.getItem(TEACHING_RESTORE_KEY);
+            if (raw) restore = JSON.parse(raw) || {};
+        } catch { /* ignore — absent or corrupt snapshot means "leave them off" */ }
+        try { localStorage.removeItem(TEACHING_RESTORE_KEY); } catch { /* ignore */ }
+        updateGlobalSettings({
+            teachingMode: false,
+            showDimensions: !!restore.showDimensions,
+            showPathfinderBar: !!restore.showPathfinderBar,
+        });
+    }
     return next;
 };
 
@@ -1702,6 +1798,16 @@ export const setCursorPosition = (pos: { x: number; y: number }) => {
 };
 
 export const setSelectedTool = (tool: ToolType) => {
+    // Teaching mode: one guard here covers every route to a hidden tool at once — the
+    // keyboard shortcuts (P, Shift+M and the rest are bound app-wide), the command
+    // palette, the scripting API and any menu that slipped through. Hiding buttons alone
+    // would leave the shortcuts live, and a trainee who fat-fingers P would land in the
+    // vector Pen with no visible way back out.
+    if (!isToolAllowed(tool)) {
+        showToast('That tool is off in Teaching mode — turn the mode off in View to use it', 'info');
+        return;
+    }
+
     // 0. Picking any tool exits the transient (blocking) overlay modes — otherwise their
     //    full-screen overlay keeps intercepting the canvas and the user feels stuck.
     exitAllToolModes();
@@ -1835,6 +1941,9 @@ export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
     }
     if (updates.showDimensions !== undefined) {
         try { localStorage.setItem('showDimensions', updates.showDimensions ? '1' : '0'); } catch { /* ignore */ }
+    }
+    if (updates.teachingMode !== undefined) {
+        try { localStorage.setItem('teachingMode', updates.teachingMode ? '1' : '0'); } catch { /* ignore */ }
     }
     if (updates.defaultTool !== undefined) {
         try { localStorage.setItem('defaultTool', updates.defaultTool); } catch { /* ignore */ }
@@ -2787,6 +2896,7 @@ export const loadDocument = (doc: any) => {
             // it back on for good — the setting is an app-level preference (like defaultTool),
             // not a property of the drawing. Absent preference = OFF.
             gs.showDimensions = readShowDimensions();
+            gs.teachingMode = readTeachingMode();
             gs.defaultTool = readDefaultTool();
             gs.pointerStyle = readPointerStyle();
             gs.penPressure = lsBool('penPressure', gs.penPressure);
@@ -6079,6 +6189,8 @@ export const blendShapesMorph = (ids?: string[], steps = 8): string[] => {
 
 export const toggleRecolorPanel = (visible?: boolean) => setPanelOpen('recolor', visible);
 export const toggleVectorToolsPanel = (visible?: boolean) => {
+    // Teaching mode hides the button; this stops the command palette and the API opening it anyway.
+    if (store.globalSettings.teachingMode && visible !== false) return;
     // Panel state (open/where) now lives in the persisted dock layout, not the old localStorage flag.
     setPanelOpen('vectorTools', visible);
 };
@@ -6086,6 +6198,12 @@ export const toggleVectorToolsPanel = (visible?: boolean) => {
 export const toggleMeasure = (active?: boolean) => setStore('measureActive', v => active ?? !v);
 
 export const toggleShapeBuilder = (active?: boolean) => {
+    // Same reasoning as setSelectedTool: Shift+M is bound app-wide, so hiding the button
+    // is not enough to keep the overlay out of a Teaching-mode session.
+    if (store.globalSettings.teachingMode && active !== false) {
+        showToast('Shape Builder is off in Teaching mode — turn the mode off in View to use it', 'info');
+        return;
+    }
     setStore('shapeBuilderActive', v => active ?? !v);
     // The overlay only engages with ≥2 shapes selected, so switching the tool on with a
     // smaller selection used to drop you into a mode that did nothing and said nothing.

@@ -5,7 +5,7 @@ import {
     store, deleteElements, toggleTheme, zoomToFit, zoomToFitSlide,
     togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, toggleBrandKitPanel, toggleElementsPanel, toggleStickFigurePanel, toggleComicPanel, togglePatternsPanel, toggleMeasure, toggleMinimap, toggleRulers, toggleKeyframePanel, toggleStatePanel, toggleSlideToolbar,
     toggleUtilityToolbar, loadTemplate, loadDocument, loadPresentationTemplate, loadDesignTemplate, resetToNewDocument, saveActiveSlide, setIsExportOpen,
-    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleShapeBuilder, togglePathfinderBar, setSelectedTool,
+    toggleMainToolbar, toggleSlideNavigator, toggleCanvasToolbar, undo, redo, setShowCanvasProperties, setStore, toggleBehaviorsPanel, toggleGameGraph, toggleBlueprint, toggleGameScript, updateGlobalSettings, toggleCommandPalette, toggleVectorToolsPanel, toggleShapeBuilder, togglePathfinderBar, setSelectedTool, toggleTeachingMode,
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import { isPanelOpen } from "../store/dock-layout"; // History/Swatches migrated to the dock (Phase D)
@@ -19,7 +19,7 @@ import {
     Moon, Sun, Focus, Monitor, Download, Layout, Settings,
     Layers, Check, Play, Pause, Square, Camera, Video, Palette, Undo2, Redo2, MoreVertical, FileText,
     Sparkles, Key, Ruler, Component as ComponentIcon, History, Film, CirclePlay, Grid2x2, Shapes, PersonStanding, Gamepad2, Workflow, ChevronDown, Code, Network
-, Clapperboard, SlidersHorizontal, HelpCircle, Proportions, Command, Combine, Hand, Blend
+, Clapperboard, SlidersHorizontal, HelpCircle, Proportions, Command, Combine, Hand, Blend, GraduationCap
 } from "lucide-solid";
 import { toggleTimelapse, setTimelapsePlayerOpen } from "../utils/timelapse-manager";
 import { effectiveGameScript } from "../game/behaviors-to-script";
@@ -1125,6 +1125,16 @@ const Menu: Component = () => {
                                     {/* These four mirror the top-bar cluster, which isn't rendered
                                         on a phone — without them the buttons moved out of the tool
                                         column would be unreachable there. */}
+                                    {/* Teaching mode. Stays visible while the mode is on — it is the
+                                        way back out, and the mode hides the items below it. */}
+                                    <div class="menu-item" onClick={() => { toggleTeachingMode(); setIsMenuOpen(false); }}>
+                                        <GraduationCap size={16} />
+                                        <span class="label">Teaching Mode</span>
+                                        <div class="menu-item-right">
+                                            <Show when={store.globalSettings.teachingMode}><Check size={14} class="check-icon" /></Show>
+                                        </div>
+                                    </div>
+                                    <Show when={!store.globalSettings.teachingMode}>
                                     <div class="menu-item" onClick={() => { updateGlobalSettings({ showDimensions: !store.globalSettings.showDimensions }); setIsMenuOpen(false); }}>
                                         <Proportions size={16} />
                                         <span class="label">Show Dimensions</span>
@@ -1132,6 +1142,7 @@ const Menu: Component = () => {
                                             <Show when={store.globalSettings.showDimensions}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
+                                    </Show>
                                     <div class="menu-item" onClick={() => { setSelectedTool(store.selectedTool === 'pan' ? 'selection' : 'pan'); setIsMenuOpen(false); }}>
                                         <Hand size={16} />
                                         <span class="label">Pan Tool</span>
@@ -1147,6 +1158,8 @@ const Menu: Component = () => {
                                             <span class="shortcut">Ctrl+K</span>
                                         </div>
                                     </div>
+                                    {/* The professional vector surface — hidden in Teaching mode. */}
+                                    <Show when={!store.globalSettings.teachingMode}>
                                     <div class="menu-item" onClick={() => { toggleVectorToolsPanel(); setIsMenuOpen(false); }}>
                                         <Shapes size={16} />
                                         <span class="label">Vector Tools</span>
@@ -1169,6 +1182,7 @@ const Menu: Component = () => {
                                             <Show when={!!store.globalSettings.showPathfinderBar}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
+                                    </Show>
                                     <div class="menu-item" onClick={() => { toggleKeyframePanel(); setIsMenuOpen(false); }}>
                                         <Key size={16} />
                                         <span class="label">Keyframes</span>
@@ -1351,6 +1365,9 @@ const Menu: Component = () => {
                                 >
                                     <Command size={16} />
                                 </button>
+                                {/* The professional vector cluster — hidden in Teaching mode, which
+                                    exists precisely to take it off the screen. */}
+                                <Show when={!store.globalSettings.teachingMode}>
                                 <button
                                     class="menu-btn"
                                     classList={{ active: isPanelOpen('vectorTools') }}
@@ -1380,6 +1397,7 @@ const Menu: Component = () => {
                                 >
                                     <Blend size={16} />
                                 </button>
+                                </Show>
                                 <button
                                     class="menu-btn"
                                     onClick={() => setShowSettings(true)}
@@ -1398,6 +1416,7 @@ const Menu: Component = () => {
                                 {/* The live W x H badge under the selection. Off by default —
                                     it sits on top of the artwork — so it needs a visible way
                                     back on, next to the other view controls. */}
+                                <Show when={!store.globalSettings.teachingMode}>
                                 <button
                                     class="menu-btn topbar-dimensions-btn"
                                     classList={{ active: !!store.globalSettings.showDimensions }}
@@ -1405,6 +1424,21 @@ const Menu: Component = () => {
                                     title={store.globalSettings.showDimensions ? 'Hide Dimensions' : 'Show Dimensions'}
                                 >
                                     <Proportions size={16} />
+                                </button>
+                                </Show>
+                                {/* Teaching mode: the one control that must stay reachable while the
+                                    mode is on, since it hides the cluster it sits in. */}
+                                <button
+                                    class="menu-btn topbar-teaching-btn"
+                                    classList={{ active: !!store.globalSettings.teachingMode }}
+                                    onClick={() => toggleTeachingMode()}
+                                    title={store.globalSettings.teachingMode
+                                        ? 'Teaching Mode is on — click to restore the full tool set'
+                                        : 'Teaching Mode — show only the common drawing tools'}
+                                    aria-label="Toggle Teaching Mode"
+                                    aria-pressed={!!store.globalSettings.teachingMode}
+                                >
+                                    <GraduationCap size={16} />
                                 </button>
                                 <button
                                     class="menu-btn help-btn"

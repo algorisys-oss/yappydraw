@@ -53,7 +53,7 @@ import {
   copyToClipboard, cutToClipboard,
   copyStyle, pasteStyle, lockSelected, unlockAllElements, flipSelected,
   pasteImageFromBlob, pasteAsTextElement, remapElementBindings,
-  pasteYappyElements
+  pasteYappyElements, selectPastedElements
 } from './utils/object-context-actions';
 import { parseClipboardTableData, defaultColWidths, defaultRowHeights, getNextCell, normalizeCellSelection } from './utils/table-utils';
 import { generateId } from './utils/id-generator';
@@ -1004,7 +1004,7 @@ const App: Component = () => {
             const id = await pasteImageFromBlob(imageBlobs[i], { dx: i * STAGGER, dy: i * STAGGER });
             if (id) ids.push(id);
           }
-          if (ids.length > 0) setStore('selection', ids);
+          selectPastedElements(ids);
         })();
         return;
       }
@@ -1061,6 +1061,7 @@ const App: Component = () => {
             if (outline.length > 0 && (hasHierarchy || isMindmapNode)) {
               const created = pasteMindmapOutline(selectedEl.id, outline);
               if (created.length > 0) {
+                selectPastedElements(created);
                 showToast(`Added ${created.length} node${created.length === 1 ? '' : 's'} from outline`, 'success');
                 return;
               }
@@ -1160,7 +1161,7 @@ const App: Component = () => {
             if (id) ids.push(id);
           } catch (err) { console.error('[DND fallback] FAILED:', err); }
         }
-        if (ids.length > 0) setStore('selection', ids);
+        selectPastedElements(ids);
         cleanup();
       });
 
@@ -1264,15 +1265,19 @@ const App: Component = () => {
         const { x: worldX, y: worldY } = screenToWorld(data.clientX, data.clientY, store.viewState);
         const { importSvgToCanvas } = await import('./utils/svg-import');
         let placed = 0;
+        // Collect across files: importSvgToCanvas selects only its own shapes, so with
+        // several SVGs dropped at once every file but the last would lose its selection.
+        const svgIds: string[] = [];
         for (const f of svgFiles) {
           try {
             const text = await f.text();
             const ids = importSvgToCanvas(text, { x: worldX + placed * 30, y: worldY + placed * 30 });
-            if (ids.length > 0) placed++;
+            if (ids.length > 0) { placed++; svgIds.push(...ids); }
           } catch (err) {
             console.error('[DND drop] SVG import failed:', err);
           }
         }
+        selectPastedElements(svgIds);
         if (placed > 0) return true;
         // Fall through to raster handling if vector import found nothing
       }
@@ -1360,7 +1365,7 @@ const App: Component = () => {
         }
       }
       if (ids.length > 0) {
-        setStore('selection', ids);
+        selectPastedElements(ids);
         console.log('[DND drop] SUCCESS — added', ids.length, 'image(s)');
       } else {
         console.warn('[DND drop] FAILED — no images were created');

@@ -27,7 +27,7 @@ import {
     advancePresentation, retreatPresentation,
     bringToFront, sendToBack, moveElementZIndex, moveSelectionZIndex,
     alignSelectedElements, distributeSelectedElements, distributeSpacing, toggleAlignToKey, enterGroupIsolation, exitGroupIsolation, exitGroupIsolationAll,
-    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, setShowPathfinderBar, togglePathfinderBar, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setWidthProfilePreset, getWidthProfilePreset, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
+    setElementsVisible, toggleElementVisible, showAllElements, setElementName, setGroupName, moveElementsNextTo, startEyedropper, applyEyedropperFrom, cancelEyedropper, startColorEyedropper, elementPickColor, blendShapes, blendAlongPath, blendShapesMorph, toggleRecolorPanel, getSelectionColors, recolorSelectionColor, adjustSelectionColors, toggleMeasure, toggleShapeBuilder, setShowPathfinderBar, togglePathfinderBar, toggleTeachingMode, selectSimilar, applyDistort, toggleCutTool, knifeCut, splitPathAt, toggleLivePaint, makeLivePaint, livePaintFillAt, releaseLivePaint, livePaintFaceAt, deleteLivePaintFaceAt, toggleWidthTool, setWidthPoint, clearWidthProfile, setWidthProfilePreset, getWidthProfilePreset, setTextVertical, toggleTouchType, setCharTransform, clearCharTransforms, toggleTypeOnPath, attachTextToPath, exitAllToolModes, toggleSliceTool, setChartData, toggleSymbolism, setSymbolismMode, applySymbolism, toggleCurveTool, commitCurvature, toggleReshapeTool, toggleNodeTool, toggleBlobBrush, commitBlobStroke, togglePathEraser, commitPathErase, togglePuppetWarp, addPuppetPin, movePuppetPin, removePuppetPin, togglePerspectiveGrid, setPerspectiveGrid, resetPerspectiveGrid, projectToPlane,
     setCanvasBackgroundColor, setCanvasTexture, zoomToFitSlide,
     setSelectedTool, loadTemplate, loadPresentationTemplate, loadDesignTemplate, moveSelectedElements,
     toggleMainToolbar, toggleUtilityToolbar, toggleSlideToolbar, setSlideToolbarPosition, toggleVectorToolsPanel, setShowCanvasProperties,
@@ -2057,7 +2057,9 @@ export const YappyAPI = {
     /** List saved library assets (metadata only), newest first. */
     listAssets() { return listAssets(); },
     /** Insert a library asset into the current document as plain editable elements
-     *  (fresh ids, centred in the viewport). Resolves true when it landed. */
+     *  (fresh ids, centred in the viewport). Leaves the inserted elements selected with
+     *  the Select tool armed, so they can be dragged straight away. Resolves true when
+     *  it landed. */
     async insertAsset(assetId: string) {
         const els = await getAssetElements(assetId);
         if (!els || els.length === 0) return false;
@@ -2420,6 +2422,23 @@ export const YappyAPI = {
     setShowDimensions(on: boolean) { updateGlobalSettings({ showDimensions: on }); },
     getShowDimensions() { return store.globalSettings.showDimensions === true; },
     toggleShowDimensions() { updateGlobalSettings({ showDimensions: !store.globalSettings.showDimensions }); return store.globalSettings.showDimensions === true; },
+
+    /**
+     * **Teaching mode** — the app stripped back to the common drawing tools for
+     * instructor-led sessions. Pins the toolbar to its minimal set (minus the vector Pen)
+     * and takes the professional surface off the screen: Vector Tools, Shape Builder, the
+     * Pathfinder strip and the dimension badge.
+     *
+     * The tools are genuinely switched off, not merely hidden — `setSelectedTool` refuses
+     * anything outside `TEACHING_MODE_TOOLS`, so the keyboard shortcuts, the command palette
+     * and this API all hit the same guard. Switching the mode off restores the dimension and
+     * Pathfinder preferences exactly as they were, so it is safe to flip mid-session.
+     *
+     * An app-level preference: persisted to localStorage and never read from a document.
+     */
+    setTeachingMode(on: boolean) { return toggleTeachingMode(on); },
+    getTeachingMode() { return store.globalSettings.teachingMode === true; },
+    toggleTeachingMode() { return toggleTeachingMode(); },
 
     /** Opt-in: bake dimension annotations into PNG/JPG/SVG/PDF exports (default off). */
     setExportIncludeDimensions(on: boolean) { updateGlobalSettings({ exportIncludeDimensions: on }); try { localStorage.setItem('exportIncludeDimensions', on ? '1' : '0'); } catch { /* ignore */ } },
@@ -4345,6 +4364,8 @@ export const YappyAPI = {
     pixelEffectPresets,
 
     // Clipboard & Style
+    // Note: every paste lands its result selected AND arms the Select tool (Lasso is left
+    // alone) — a pasted object is one to place, so its handles are available immediately.
     copyToClipboard,
     cutToClipboard,
     pasteFromClipboard,

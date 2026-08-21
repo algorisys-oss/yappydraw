@@ -1,11 +1,30 @@
 import {
     store, setStore, pushToHistory,
-    deleteElements, updateElement, addElement
+    deleteElements, updateElement, addElement, setSelectedTool
 } from "../store/app-store";
 import { mirrorGeometry } from "./geometry-mirror";
 import { generateId } from "./id-generator";
 import { hitTestElement } from "./hit-testing";
 import type { DrawingElement } from "../types";
+
+/**
+ * Finish a paste: select what landed, and hand the user the selection tool.
+ *
+ * A paste produces an object to PLACE, not a stroke to draw, so leaving a drawing tool
+ * armed left the result unusable — `selection-renderer` only draws resize handles under
+ * the selection tool, and a canvas drag only moves/resizes under selection or lasso. The
+ * pasted element was visible but untouchable, and the next drag drew over it. Lasso is
+ * already a selection tool, so it keeps its place.
+ */
+export const selectPastedElements = (ids: string[]) => {
+    if (ids.length === 0) return;
+    // Switch BEFORE selecting: setSelectedTool clears the selection on its way into
+    // most tools, and exiting the transient tool modes can drop it too.
+    if (store.selectedTool !== 'selection' && store.selectedTool !== 'lasso') {
+        setSelectedTool('selection');
+    }
+    setStore('selection', ids);
+};
 
 export const copyToClipboard = async () => {
     if (store.selection.length === 0) return;
@@ -155,7 +174,7 @@ export const pasteAsTextElement = (text: string): void => {
         layerId: store.activeLayerId,
     } as DrawingElement);
 
-    setStore('selection', [id]);
+    selectPastedElements([id]);
 };
 
 // ─── Remap bindings and relationships for duplicated elements ─────────
@@ -289,7 +308,7 @@ export const pasteYappyElements = (data: any): void => {
 
     // Add elements to store
     setStore('elements', els => [...els, ...newElements]);
-    setStore('selection', newElements.map(el => el.id));
+    selectPastedElements(newElements.map(el => el.id));
 };
 
 // ─── Try parsing text as Yappy JSON, returns true if handled ─────────
@@ -325,7 +344,7 @@ export const pasteFromClipboard = async () => {
                 const id = await pasteImageFromBlob(imageBlobs[i], { dx: i * PASTE_STAGGER, dy: i * PASTE_STAGGER });
                 if (id) ids.push(id);
             }
-            if (ids.length > 0) setStore('selection', ids);
+            selectPastedElements(ids);
             return;
         }
     } catch { /* clipboard.read() not supported or permission denied */ }

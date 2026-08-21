@@ -339,6 +339,42 @@ Select **two objects plus a path or line** (the spine), then right-click → **B
 The steps interpolate size / colour / rotation / opacity between the two ends (using the first object's shape). Draw the spine with the Pen, Line, or Pencil, then select all three.
 :::
 
+## Teaching mode
+
+For running a session in front of a room. The **graduation-cap button** in the top bar (or
+*Menu → View → Teaching Mode*) strips the app back to the tools people actually draw with —
+select, pen, line, arrow, rectangle, diamond, circle, text, image, eraser — and takes the
+professional vector surface off the screen:
+
+- **Vector Tools**, **Shape Builder** and the **Pathfinder** strip disappear from the top bar
+  and the menu, and their right-click entries go with them.
+- The **Pen / path tool** and the **dimension badge** are hidden.
+- The shape libraries (UML, BPMN, wireframe, cloud) are off, so the toolbar stays one short row.
+
+The tools are genuinely switched off, not just hidden — their keyboard shortcuts (<kbd>P</kbd>
+for the Pen, <kbd>Shift</kbd>+<kbd>M</kbd> for Shape Builder) do nothing while the mode is on
+and say so, rather than dropping you into a tool with no visible way back out.
+
+:::tip
+It's safe to flip mid-session. Turning the mode off restores your Dimensions and Pathfinder
+settings exactly as they were, and the mode survives a reload — so a browser refresh in front
+of the class doesn't dump you back into the full tool set.
+:::
+
+Scripting: `Yappy.setTeachingMode(true)`, `Yappy.getTeachingMode()`, `Yappy.toggleTeachingMode()`.
+
+## Paste & drop
+
+<kbd>Ctrl</kbd>+<kbd>V</kbd> pastes whatever the clipboard holds — copied Yappy objects,
+an image, or plain text (which becomes a text element). Dragging image or **SVG** files
+onto the canvas drops them where the pointer is; SVGs come in as editable vector paths
+rather than a picture.
+
+Anything that arrives this way lands **selected, with the Select tool armed** — even if you
+were mid-sketch with a brush or shape tool. A pasted object is something to place, so you get
+its handles straight away and can drag, resize or restyle it without reaching for the toolbar.
+The Lasso keeps its place, since it already selects.
+
 ## History panel
 
 Open it with **Alt+H** (or View → **History Panel**) to see the document's timeline — past states, the current state, and any redoable future states. **Click any row** to jump straight to that point (it undoes/redoes the difference for you). Each row shows its object count; the current state is highlighted and future states are dimmed.

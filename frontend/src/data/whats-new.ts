@@ -13,6 +13,14 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.207', date: '2026-08-21', items: [
+        'Teaching mode, for when you are drawing in front of a room. One checkbox — the graduation-cap button in the top bar, or Menu → View → Teaching Mode — and the app is just the tools people actually draw with: select, pen, line, arrow, rectangle, diamond, circle, text, image, eraser.',
+        'It takes the professional vector tools off the screen entirely: Vector Tools, Shape Builder, the Pathfinder strip, the Pen and the dimension badge disappear from the top bar, the menu and the right-click menu, and the shape libraries are off, so the toolbar stays one short row.',
+        'Their keyboard shortcuts go quiet too, so a stray P or Shift+M cannot drop a beginner into a tool that the mode has just hidden the way out of.',
+        'Safe to turn on and off mid-session: your Dimensions and Pathfinder settings come back exactly as you had them. It also survives a reload, so refreshing the page in front of the class does not dump you back into the full tool set.',
+        'Pasting gives you something you can actually grab. If you pasted an image — or dropped one, or pasted a copied shape — while a brush or pen was in your hand, it landed on the canvas selected but untouchable: no handles, no dragging, and your next stroke drew straight over it. Paste now hands you the Select tool along with the object, the way finishing a shape already did.',
+        'Dropping several SVG files at once now selects all of them, not just the last one.',
+    ] },
     { version: '0.8.206', date: '2026-08-20', items: [
         'The cloud keeps its shape at any size. Dragged wide and short it used to fall apart into a spiky bowtie — every one of its curves was sized from the width alone, so there was no room for them once the height got small.',
         'The checkmark is a checkmark. It was drawing as a triangle: the three points were right, but the shape was being closed, so the tip got joined back to the tail.',

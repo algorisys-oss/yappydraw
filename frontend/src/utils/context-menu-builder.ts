@@ -7,6 +7,7 @@
 import type { DrawingElement, TableCellSelection } from '../types';
 import { isPagedDocType } from '../types/slide-types';
 import type { MenuItem } from '../components/context-menu';
+import { filterTeachingMenu } from './teaching-menu-filter';
 import { WARP_PRESETS } from './envelope-warp';
 import { replaceImageOn } from './image-actions';
 import {
@@ -235,7 +236,7 @@ function buildUnlockMenuItems(worldX?: number, worldY?: number): MenuItem[] {
     return items;
 }
 
-export function getContextMenuItems(
+function buildContextMenuItems(
     redrawFn: () => void,
     worldX?: number,
     worldY?: number,
@@ -1907,4 +1908,19 @@ function buildBorderMenuItems(
     items.push({ label: 'Border Color', submenu: colorItems });
 
     return items;
+}
+
+/**
+ * The context menu for the current selection — with the professional vector entries removed
+ * while Teaching mode is on. Outside the mode this is `buildContextMenuItems` unchanged.
+ */
+export function getContextMenuItems(
+    redrawFn: () => void,
+    worldX?: number,
+    worldY?: number,
+    cellSelection?: TableCellSelection | null,
+    onClearCellSelection?: () => void
+): MenuItem[] {
+    const items = buildContextMenuItems(redrawFn, worldX, worldY, cellSelection, onClearCellSelection);
+    return store.globalSettings.teachingMode ? filterTeachingMenu(items) : items;
 }

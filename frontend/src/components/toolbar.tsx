@@ -103,6 +103,15 @@ const brainstormTools: ToolEntry[] = [
     { type: 'eraser', icon: Eraser, labelKey: 'eraser', hint: '0', hotkey: '0' },
 ];
 
+/**
+ * Teaching mode's toolbar: the Brainstorm set with the vector Pen taken out.
+ *
+ * Derived from `brainstormTools` rather than written out again, so a tool added to the
+ * minimal toolbar shows up here too instead of quietly diverging. `path` is the one
+ * exclusion — it is the vector Pen, the professional surface this mode exists to hide.
+ */
+const teachingTools: ToolEntry[] = brainstormTools.filter(t => t.type !== 'path');
+
 const BRAINSTORM_KEY = 'yappy-brainstorm-mode';
 
 const Toolbar: Component = () => {
@@ -194,6 +203,11 @@ const Toolbar: Component = () => {
         setIsResizing(true);
         setResizeStart({ x: e.clientX, y: e.clientY, w: curW });
     };
+
+    // Teaching mode pins the toolbar minimal regardless of the Brainstorm preference,
+    // which is left untouched underneath so it returns when the mode is switched off.
+    const teachingMode = () => !!store.globalSettings.teachingMode;
+    const minimalMode = () => teachingMode() || brainstormMode();
 
     const toggleBrainstormMode = () => {
         const next = !brainstormMode();
@@ -474,14 +488,17 @@ const Toolbar: Component = () => {
                 <PersonStanding size={16} />
             </button>
 
-            {/* Brainstorm / Full toggle */}
-            <button
-                class="toolbar-btn brainstorm-toggle"
-                onClick={toggleBrainstormMode}
-                title={brainstormMode() ? t('toolbar.fullToolbar') : t('toolbar.brainstormMode')}
-            >
-                {brainstormMode() ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-            </button>
+            {/* Brainstorm / Full toggle. Hidden in Teaching mode: the mode pins the toolbar
+                minimal, so the button would be a control that visibly does nothing. */}
+            <Show when={!teachingMode()}>
+                <button
+                    class="toolbar-btn brainstorm-toggle"
+                    onClick={toggleBrainstormMode}
+                    title={brainstormMode() ? t('toolbar.fullToolbar') : t('toolbar.brainstormMode')}
+                >
+                    {brainstormMode() ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+                </button>
+            </Show>
 
             {/* Toolbar position: cycles left → top → right → bottom → floating */}
             <Show when={!isMobile()}>
@@ -494,9 +511,9 @@ const Toolbar: Component = () => {
                 </button>
             </Show>
 
-            {brainstormMode() ? (
-                /* ── Brainstorm Mode: flat minimal toolbar ── */
-                <For each={brainstormTools}>
+            {minimalMode() ? (
+                /* ── Brainstorm / Teaching Mode: flat minimal toolbar ── */
+                <For each={teachingMode() ? teachingTools : brainstormTools}>
                     {(tool) => {
                         // The pen button represents whichever pen is selected, not a
                         // fixed tool. Pinned to 'fineliner' it never lit up while the
