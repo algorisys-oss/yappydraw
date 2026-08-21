@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.212', date: '2026-08-21', items: [
+        'Teaching Mode is now translated. It arrived in English only — in Español, Deutsch and 日本語 the menu entry and its tooltip stayed in English while everything around them had been translated. They read properly in all four languages now.',
+    ] },
     { version: '0.8.210', date: '2026-08-21', items: [
         'You can choose how many undo steps Yappy keeps — Settings → Pen & Input → Undo History Depth, anywhere from 10 to 500. It has always been there; it was never mentioned in the help, so there was no way to find it if you hit the 50-step default and wanted more.',
         'Each step holds a full copy of your drawing, so a higher number means deeper cover and more memory used. Changes apply straight away rather than at the next reload, and the setting is remembered per browser — opening someone else\'s drawing will not change yours.',

@@ -14,3 +14,25 @@ git diff --cached --name-only --diff-filter=ACMR | grep -qE "$SCOPE_RE" || exit 
 
 bash "$ROOT/scripts/repograph-refresh.sh" || exit 0
 git add "$ROOT/.repograph/" 2>/dev/null || true
+
+# ── i18n ratchet ─────────────────────────────────────────────────────────────
+# Unlike the map refresh above, this one BLOCKS. The ratchet existed from Phase 1a
+# and had nothing to run it (there is no CI in this repo), so it sat green in the
+# package scripts while the count silently climbed — a Teaching Mode feature added
+# three hardcoded strings in v0.8.207 and shipped across four releases before anyone
+# ran it. A guard nothing invokes is not a guard.
+#
+# It only fires on a real increase, and only when the commit touches the directory
+# it scans (frontend/src/components). The failure message names the strings and the
+# two ways out: extract them with t(), or `node scripts/i18n-lint.mjs --update` when
+# they are genuinely not user-facing. Emergency escape is the usual `--no-verify`.
+if git diff --cached --name-only --diff-filter=ACMR | grep -qE '^frontend/src/components/'; then
+    if ! node "$ROOT/scripts/i18n-lint.mjs"; then
+        echo
+        echo "pre-commit: i18n ratchet failed (see above)."
+        echo "  Extract the strings into frontend/src/i18n/locales/en.ts and use t(),"
+        echo "  or accept the new count with: node scripts/i18n-lint.mjs --update"
+        echo "  To bypass this once: git commit --no-verify"
+        exit 1
+    fi
+fi

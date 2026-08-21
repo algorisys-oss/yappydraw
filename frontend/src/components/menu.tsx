@@ -9,6 +9,7 @@ import {
 } from "../store/app-store";
 import { clearAutoSave } from "../storage/auto-save";
 import { isPanelOpen } from "../store/dock-layout"; // History/Swatches migrated to the dock (Phase D)
+import { t } from "../i18n";
 /**
  * Narrowest viewport that fits the top bar's full icon row (measured: 628px needed, plus
  * headroom). Below this the clusters collapse into the hamburger menu.
@@ -1129,7 +1130,7 @@ const Menu: Component = () => {
                                         way back out, and the mode hides the items below it. */}
                                     <div class="menu-item" onClick={() => { toggleTeachingMode(); setIsMenuOpen(false); }}>
                                         <GraduationCap size={16} />
-                                        <span class="label">Teaching Mode</span>
+                                        <span class="label">{t('menu.teachingMode')}</span>
                                         <div class="menu-item-right">
                                             <Show when={store.globalSettings.teachingMode}><Check size={14} class="check-icon" /></Show>
                                         </div>
@@ -1433,9 +1434,9 @@ const Menu: Component = () => {
                                     classList={{ active: !!store.globalSettings.teachingMode }}
                                     onClick={() => toggleTeachingMode()}
                                     title={store.globalSettings.teachingMode
-                                        ? 'Teaching Mode is on — click to restore the full tool set'
-                                        : 'Teaching Mode — show only the common drawing tools'}
-                                    aria-label="Toggle Teaching Mode"
+                                        ? t('menu.teachingModeOn')
+                                        : t('menu.teachingModeOff')}
+                                    aria-label={t('menu.teachingModeToggle')}
                                     aria-pressed={!!store.globalSettings.teachingMode}
                                 >
                                     <GraduationCap size={16} />

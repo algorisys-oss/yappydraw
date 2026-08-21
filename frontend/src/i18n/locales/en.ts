@@ -805,6 +805,17 @@ export const en = {
         stabilizationOff: 'Stroke Stabilization (off) — Shift+S',
     },
 
+    /**
+     * Top bar and the hamburger menu. Mostly un-extracted still (plan §3.2 step 4) —
+     * these are the Teaching Mode strings, added with the feature.
+     */
+    menu: {
+        teachingMode: 'Teaching Mode',
+        teachingModeOn: 'Teaching Mode is on — click to restore the full tool set',
+        teachingModeOff: 'Teaching Mode — show only the common drawing tools',
+        teachingModeToggle: 'Toggle Teaching Mode',
+    },
+
     /** Where the toolbar currently sits, for its dock tooltip. */
     dockPosition: {
         left: 'left edge',

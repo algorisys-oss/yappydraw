@@ -798,6 +798,13 @@ export const es: Dictionary = {
         stabilizationOff: 'Estabilización del trazo (desactivada) — Shift+S',
     },
 
+    menu: {
+        teachingMode: 'Modo enseñanza',
+        teachingModeOn: 'El modo enseñanza está activo — haz clic para restaurar todas las herramientas',
+        teachingModeOff: 'Modo enseñanza — mostrar solo las herramientas de dibujo habituales',
+        teachingModeToggle: 'Alternar modo enseñanza',
+    },
+
     /** Where the toolbar currently sits, for its dock tooltip. */
     dockPosition: {
         left: 'borde izquierdo',

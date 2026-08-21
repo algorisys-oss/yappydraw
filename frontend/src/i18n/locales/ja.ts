@@ -798,6 +798,13 @@ export const ja: Dictionary = {
         stabilizationOff: '手ブレ補正（オフ）— Shift+S',
     },
 
+    menu: {
+        teachingMode: '授業モード',
+        teachingModeOn: '授業モードがオンです — クリックすると全ツールに戻ります',
+        teachingModeOff: '授業モード — よく使う描画ツールだけを表示します',
+        teachingModeToggle: '授業モードの切り替え',
+    },
+
     /** Where the toolbar currently sits, for its dock tooltip. */
     dockPosition: {
         left: '左端',

@@ -798,6 +798,14 @@ export const de: Dictionary = {
         stabilizationOff: 'Strichstabilisierung (aus) — Shift+S',
     },
 
+
+    menu: {
+        teachingMode: 'Unterrichtsmodus',
+        teachingModeOn: 'Unterrichtsmodus ist aktiv — klicken, um alle Werkzeuge wiederherzustellen',
+        teachingModeOff: 'Unterrichtsmodus — nur die gängigen Zeichenwerkzeuge anzeigen',
+        teachingModeToggle: 'Unterrichtsmodus umschalten',
+    },
+
     /** Where the toolbar currently sits, for its dock tooltip. */
     dockPosition: {
         left: 'linker Rand',

@@ -197,7 +197,7 @@ frontend/src/components/math-number-input.tsx | typescript | 107 | Component:1 d
 frontend/src/components/measure-overlay.css | - | 83 |
 frontend/src/components/measure-overlay.tsx | typescript | 128 | MeasureOverlay:16 toWorld:21 onDown:23 onMove:30 onUp:40 onKey:45 seg:54 metrics:69 unit:77 distLabel:79
 frontend/src/components/menu.css | - | 365 |
-frontend/src/components/menu.tsx | typescript | 1634 | Component:1 SaveIntent:90 handleSaveRequest:92 isUnnamedDrawing:110 quickSaveToGallery:115 proceed:137 Menu:152 handleUnsavedCancel:190 handleUnsavedDiscard:195 handleUnsavedSave:202 onPaletteEscape:219 performSave:230 is:306 handleLoad:342 handleResetView:362 loadTemplateAction:367 handleTemplateSelect:407 handleOpenJson:416 handleLoadJsonText:467 handleExportHtml:483 handleExportExcalidraw:499 handleExportRocket:520 handleDeployToRocket:553 handleResize:602 hooks:1337
+frontend/src/components/menu.tsx | typescript | 1635 | Component:1 SaveIntent:91 handleSaveRequest:93 isUnnamedDrawing:111 quickSaveToGallery:116 proceed:138 Menu:153 handleUnsavedCancel:191 handleUnsavedDiscard:196 handleUnsavedSave:203 onPaletteEscape:220 performSave:231 is:307 handleLoad:343 handleResetView:363 loadTemplateAction:368 handleTemplateSelect:408 handleOpenJson:417 handleLoadJsonText:468 handleExportHtml:484 handleExportExcalidraw:500 handleExportRocket:521 handleDeployToRocket:554 handleResize:603 hooks:1338
 frontend/src/components/mesh-overlay.css | - | 47 |
 frontend/src/components/mesh-overlay.tsx | typescript | 178 | MeshOverlay:16 target:20 apply:38 normToScreen:51 screenToNorm:59 at:87 onNodeDown:105 onMove:110 openColorPicker:118 onUp:125
 frontend/src/components/mindmap-tool-group.tsx | typescript | 134 | Component:1 MindmapToolGroup:16 handler:23 getActiveMindmapTool:34 handleToolClick:48 as:56 as:61 handleRightClick:68 toggleMenu:73 as:75 activeTool:80 isActive:81 getDropdownPosition:83
@@ -342,7 +342,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 636 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 639 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -458,10 +458,10 @@ frontend/src/i18n/index.ts | typescript | 218 | Dictionary:23 FlatDictionary:34 
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
 frontend/src/i18n/locale-resolution.ts | typescript | 101 | TextDirection:13 LocaleMeta:15
-frontend/src/i18n/locales/de.ts | typescript | 823 |
-frontend/src/i18n/locales/en.ts | typescript | 836 | Dictionary:836
-frontend/src/i18n/locales/es.ts | typescript | 823 |
-frontend/src/i18n/locales/ja.ts | typescript | 823 |
+frontend/src/i18n/locales/de.ts | typescript | 831 |
+frontend/src/i18n/locales/en.ts | typescript | 847 | Dictionary:847
+frontend/src/i18n/locales/es.ts | typescript | 830 |
+frontend/src/i18n/locales/ja.ts | typescript | 830 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
 frontend/src/index.css | - | 617 |
