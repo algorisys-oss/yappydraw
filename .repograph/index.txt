@@ -44,7 +44,7 @@ examples/dsl/README.md | - | 65 |
 examples/manim-gradient-descent.js | javascript | 80 | f:21 grad:22 build:25 play:69
 examples/pixel-effects-demo.html | - | 208 |
 frontend/index.html | - | 290 |
-frontend/public/.htaccess | - | 115 |
+frontend/public/.htaccess | - | 127 |
 frontend/public/404.html | - | 72 |
 frontend/public/examples/3d-shapes-showcase.json | - | 286 |
 frontend/public/examples/activity-diagram.json | - | 613 |
@@ -342,7 +342,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 627 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 631 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -892,7 +892,7 @@ scripts/publish-oss.sh | shell | 223 | info:40 warn:41 error:42
 scripts/render-dsl.mjs | javascript | 279 | parseArgs:50 opts:51 parseWidths:83 readManifest:93 fail:108 isUp:137 waitUntilUp:144 main:153
 scripts/repograph-refresh.sh | shell | 26 |
 scripts/test_relative_path.ts | typescript | 58 |
-scripts/verify-deploy.sh | shell | 233 | ok:39 bad:40 warn:41 info:42 need:44 hash_of:47 check_single_version:54 hashes=:56
+scripts/verify-deploy.sh | shell | 237 | ok:39 bad:40 warn:41 info:42 need:44 hash_of:47 check_single_version:54 hashes=:56
 tests/_canvas-coords.ts | typescript | 102 | canvasOrigin:33 toViewport:58 addOrigin:69 worldMouse:82
 tests/_mesh.spec.ts | typescript | 49 | w2s:34 key:43
 tests/adjustment-export.spec.ts | typescript | 23 |

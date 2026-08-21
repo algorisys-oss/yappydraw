@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.209', date: '2026-08-21', items: [
+        'Links to www.yappydraw.com work again. Every address on the www form of the site was redirecting to a broken location, so anyone who typed it — or opened a www link you had shared — landed on an error rather than the app. The plain yappydraw.com address was never affected, which is why this went unnoticed: typing "www.yappydraw.com" into a browser usually jumps to an address you have already visited, so the broken one was rarely actually requested.',
+        'If you have shared a www link with someone and they told you it did not work, it will now.',
+    ] },
     { version: '0.8.207', date: '2026-08-21', items: [
         'Teaching mode, for when you are drawing in front of a room. One checkbox — the graduation-cap button in the top bar, or Menu → View → Teaching Mode — and the app is just the tools people actually draw with: select, pen, line, arrow, rectangle, diamond, circle, text, image, eraser.',
         'It takes the professional vector tools off the screen entirely: Vector Tools, Shape Builder, the Pathfinder strip, the Pen and the dimension badge disappear from the top bar, the menu and the right-click menu, and the shape libraries are off, so the toolbar stays one short row.',

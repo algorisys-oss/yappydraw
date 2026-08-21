@@ -97,8 +97,20 @@
     # www.yappydraw.com with identical content and no redirect, which splits
     # every ranking signal in two and contradicts the canonical tag (the apex).
     # If the host ever stops serving the apex directly, remove this block first.
-    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    #
+    # ORDER IS LOAD-BEARING. `%N` is a backreference to the LAST RewriteCond that
+    # matched — not to the first, and not to "the one with the group in it". With the
+    # HTTPS check written last, `%1` resolved against a condition that has no capture
+    # group at all, so it expanded to the empty string and every www URL 301'd to
+    # `https://` + the path with no host in it:
+    #     www.yappydraw.com/help/  ->  https://help/     (DNS failure)
+    #     www.yappydraw.com/       ->  https://          (unparseable)
+    # The whole www hostname was a dead link, while the apex was perfectly healthy —
+    # and browsers hide it, because typing a bare `www.example.com` usually
+    # autocompletes to an apex URL already in history, so no www request is ever made.
+    # Keep the capturing condition LAST.
     RewriteCond %{HTTPS} on
+    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
     RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
 
     # A real file or directory always wins — prerendered pages, assets, sw.js.

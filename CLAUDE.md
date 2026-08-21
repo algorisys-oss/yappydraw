@@ -100,15 +100,15 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
    404ing while the editor looks perfectly fine.
    It defaults to the **apex** host (`https://yappydraw.com`), which is what the prerendered
    pages declare as their canonical. Pass a URL to check anything else.
-   **Expect one standing failure** (as of v0.8.207): the *Alternate hostname* check —
-   `www.yappydraw.com` answers every URL with a 301 whose `Location` has lost the domain
-   (`/help/` → `https://help/`, `/` → `https://`), so the www form of the site is unreachable.
-   That is a redirect rule in the Hostinger control panel, not in `frontend/public/.htaccess`,
-   so it cannot be fixed from the repo — treat it as a known red line, not a bad deploy. Every
-   *other* check must pass.
-   *(Superseded: up to v0.8.206 the standing failure was `sw.js is cacheable: public,
-   max-age=604800` — bug #280, the host overriding the `.htaccess` rule. That is genuinely
-   fixed now; sw.js returns `no-cache, must-revalidate, max-age=0`. Don't wave through a
-   cacheable sw.js as "expected" any more.)*
+   **There is no standing failure any more — every check must pass.** Do not wave any red
+   line through as "known".
+   *(Two were retired. Up to v0.8.206 it was `sw.js is cacheable: public, max-age=604800`
+   (bug #280) — genuinely fixed on the host; sw.js now returns `no-cache, must-revalidate,
+   max-age=0`. In v0.8.207–v0.8.208 the *Alternate hostname* check failed because every
+   `www.` URL 301'd to a `Location` with no host (`/help/` → `https://help/`). That was
+   briefly recorded here as an un-fixable control-panel setting; it was **ours** — a
+   backreference bug in `frontend/public/.htaccess`, fixed in v0.8.209. The lesson worth
+   keeping: "known failure" is a label that stops people looking, so it needs evidence and
+   an expiry, not a habit.)*
 10. **Return to `dev`** — finish the release with `dev` checked out, never `main`. Confirm with `git branch --show-current` before reporting the release done; the working tree should also be clean.
 
