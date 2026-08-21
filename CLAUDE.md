@@ -98,9 +98,17 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
    (`/help/`, `/help/uml/`, `/learn/`) return 200 with self-referencing canonicals — those are
    separate directories in the deploy, and a partial one leaves the whole documentation site
    404ing while the editor looks perfectly fine.
-   **Expect one standing failure**: `sw.js is cacheable: public, max-age=604800`. That is the
-   host overriding the `.htaccess` rule (bug #280, most likely `mod_expires` running after
-   `mod_headers`) and is not ours to fix from the repo — treat it as a known red line, not a
-   bad deploy. Every *other* check must pass.
+   It defaults to the **apex** host (`https://yappydraw.com`), which is what the prerendered
+   pages declare as their canonical. Pass a URL to check anything else.
+   **Expect one standing failure** (as of v0.8.207): the *Alternate hostname* check —
+   `www.yappydraw.com` answers every URL with a 301 whose `Location` has lost the domain
+   (`/help/` → `https://help/`, `/` → `https://`), so the www form of the site is unreachable.
+   That is a redirect rule in the Hostinger control panel, not in `frontend/public/.htaccess`,
+   so it cannot be fixed from the repo — treat it as a known red line, not a bad deploy. Every
+   *other* check must pass.
+   *(Superseded: up to v0.8.206 the standing failure was `sw.js is cacheable: public,
+   max-age=604800` — bug #280, the host overriding the `.htaccess` rule. That is genuinely
+   fixed now; sw.js returns `no-cache, must-revalidate, max-age=0`. Don't wave through a
+   cacheable sw.js as "expected" any more.)*
 10. **Return to `dev`** — finish the release with `dev` checked out, never `main`. Confirm with `git branch --show-current` before reporting the release done; the working tree should also be clean.
 
