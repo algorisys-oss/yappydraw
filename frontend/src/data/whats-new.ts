@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.215', date: '2026-08-21', items: [
+        'The menu is now in your language. Every item — New, File, Export, the AI and Game sections, all the panel names, the toolbars and view toggles — reads in Español, Deutsch or 日本語 instead of English.',
+        'Tooltips in the menu are still English for now. Several of them name keyboard keys, and how a key like Del or Enter should be written in each language is a decision still being made — getting it wrong there would be worse than leaving it.',
+    ] },
     { version: '0.8.214', date: '2026-08-21', items: [
         'Settings is now in your language. If you use Yappy in Español, Deutsch or 日本語, the whole Settings dialog — every section, label, dropdown and the longer explanations behind each tooltip — reads in that language instead of English.',
         'That includes the explanations that actually matter: what stroke stabilization does, what print bleed is for, when mindmap auto-layout gets in your way. Those were the strings most worth translating and the ones still in English.',

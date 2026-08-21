@@ -792,29 +792,29 @@ const Menu: Component = () => {
                                     {/* New/Create tools grouped into one collapsible section. */}
                                     <button class="menu-item menu-group" classList={{ expanded: newMenuOpen() }} onClick={() => setNewMenuOpen(o => !o)}>
                                         <FilePlus size={16} />
-                                        <span class="label">New</span>
+                                        <span class="label">{t('menu.new')}</span>
                                         <ChevronDown size={14} class="menu-group-chevron" />
                                     </button>
                                     <Show when={newMenuOpen()}>
                                     <button class="menu-item" onClick={() => { handleNew('infinite'); setIsMenuOpen(false); }}>
                                         <Maximize size={16} />
-                                        <span class="label">New Infinite Drawing</span>
+                                        <span class="label">{t('menu.newInfinite')}</span>
                                     </button>
                                     <button class="menu-item" onClick={() => { handleNew('slides'); setIsMenuOpen(false); }}>
                                         <FilePlus size={16} />
-                                        <span class="label">New Presentation</span>
+                                        <span class="label">{t('menu.newPresentation')}</span>
                                     </button>
                                     <button class="menu-item" onClick={() => { setIsDesignSizeOpen(true); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
-                                        <span class="label">New Design…</span>
+                                        <span class="label">{t('menu.newDesign')}</span>
                                     </button>
                                     <button class="menu-item" onClick={() => { setShowNewAnimation(true); setIsMenuOpen(false); }}>
                                         <Clapperboard size={16} />
-                                        <span class="label">New Animation…</span>
+                                        <span class="label">{t('menu.newAnimation')}</span>
                                     </button>
                                     <button class="menu-item" onClick={() => { YappyAPI.createMindMap(); setIsMenuOpen(false); }}>
                                         <Network size={16} />
-                                        <span class="label">New Mind Map</span>
+                                        <span class="label">{t('menu.newMindMap')}</span>
                                     </button>
                                     <button class="menu-item menu-sub" onClick={() => {
                                         YappyAPI.createMindMap({
@@ -829,7 +829,7 @@ const Menu: Component = () => {
                                         setIsMenuOpen(false);
                                     }}>
                                         <Network size={15} />
-                                        <span class="label">Sitemap</span>
+                                        <span class="label">{t('menu.sitemap')}</span>
                                     </button>
                                     <button class="menu-item menu-sub" onClick={() => {
                                         YappyAPI.createMindMap({
@@ -842,21 +842,21 @@ const Menu: Component = () => {
                                         setIsMenuOpen(false);
                                     }}>
                                         <Sparkles size={15} />
-                                        <span class="label">Random Words</span>
+                                        <span class="label">{t('menu.randomWords')}</span>
                                     </button>
                                     <Show when={isPagedDocType(store.docType)}>
                                         <button class="menu-item" onClick={() => { setIsMagicResizeOpen(true); setIsMenuOpen(false); }}>
                                             <Maximize size={16} />
-                                            <span class="label">Magic Resize…</span>
+                                            <span class="label">{t('menu.magicResize')}</span>
                                         </button>
                                     </Show>
                                     <button class="menu-item" onClick={() => { setIsTemplateBrowserOpen(true); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
-                                        <span class="label">Templates</span>
+                                        <span class="label">{t('menu.templates')}</span>
                                     </button>
                                     <button class="menu-item" onClick={() => { setIsDSLImportOpen(true); setIsMenuOpen(false); }}>
                                         <FileText size={16} />
-                                        <span class="label">Import from Text</span>
+                                        <span class="label">{t('menu.importFromText')}</span>
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+Shift+I</span>
                                         </div>
@@ -867,45 +867,45 @@ const Menu: Component = () => {
                                         after New so document I/O sits together at the top. */}
                                     <button class="menu-item menu-group" classList={{ expanded: fileMenuOpen() }} onClick={() => setFileMenuOpen(o => !o)}>
                                         <FolderOpen size={16} />
-                                        <span class="label">File</span>
+                                        <span class="label">{t('menu.file')}</span>
                                         <ChevronDown size={14} class="menu-group-chevron" />
                                     </button>
                                     <Show when={fileMenuOpen()}>
                                     <button class="menu-item" onClick={() => { setLoadExportInitialTab('load'); setIsLoadExportOpen(true); setIsMenuOpen(false); }}>
                                         <FolderOpen size={16} />
-                                        <span class="label">Load Sketch...</span>
+                                        <span class="label">{t('menu.loadSketch')}</span>
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+Alt+O</span>
                                         </div>
                                     </button>
                                     <button class="menu-item" onClick={() => { setLoadExportInitialTab('save'); setIsLoadExportOpen(true); setIsMenuOpen(false); }}>
                                         <Download size={16} />
-                                        <span class="label">Export / Save...</span>
+                                        <span class="label">{t('menu.exportSave')}</span>
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+Alt+S</span>
                                         </div>
                                     </button>
                                     <button class="menu-item" onClick={() => { setIsExportOpen(true); setIsMenuOpen(false); }}>
                                         <Video size={16} />
-                                        <span class="label">Export</span>
+                                        <span class="label">{t('menu.export')}</span>
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+Shift+E</span>
                                         </div>
                                     </button>
                                     <button class="menu-item" onClick={() => { void quickSaveToGallery(); setIsMenuOpen(false); }}>
                                         <FolderOpen size={16} />
-                                        <span class="label">Save to My Drawings</span>
+                                        <span class="label">{t('menu.saveToMyDrawings')}</span>
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+S</span>
                                         </div>
                                     </button>
                                     <button class="menu-item" onClick={() => { setShowDrawingsGallery(true); setIsMenuOpen(false); }}>
                                         <FolderOpen size={16} />
-                                        <span class="label">My Drawings…</span>
+                                        <span class="label">{t('menu.myDrawings')}</span>
                                     </button>
                                     <button class="menu-item" onClick={() => { setIsVersionHistoryOpen(true); setIsMenuOpen(false); }}>
                                         <History size={16} />
-                                        <span class="label">Version History…</span>
+                                        <span class="label">{t('menu.versionHistory')}</span>
                                     </button>
                                     <div class="menu-item" onClick={() => { toggleTimelapse(); setIsMenuOpen(false); }}>
                                         <Film size={16} />
@@ -917,27 +917,27 @@ const Menu: Component = () => {
                                     </div>
                                     <button class="menu-item" disabled={!store.activeTimelapseId || store.timelapseRecording} onClick={() => { setTimelapsePlayerOpen(true); setIsMenuOpen(false); }}>
                                         <CirclePlay size={16} />
-                                        <span class="label">Play Time-lapse</span>
+                                        <span class="label">{t('menu.playTimelapse')}</span>
                                     </button>
                                     </Show>
                                     <div class="menu-separator"></div>
                                     {/* AI tools grouped into one collapsible section (mirrors the Game group). */}
                                     <button class="menu-item menu-group" classList={{ expanded: aiMenuOpen() }} onClick={() => setAiMenuOpen(o => !o)}>
                                         <Sparkles size={16} />
-                                        <span class="label">AI</span>
+                                        <span class="label">{t('menu.ai')}</span>
                                         <ChevronDown size={14} class="menu-group-chevron" />
                                     </button>
                                     <Show when={aiMenuOpen()}>
                                         <button class="menu-item menu-sub" onClick={() => { setIsAIPromptOpen(true); setIsMenuOpen(false); }}>
                                             <Sparkles size={15} />
-                                            <span class="label">AI Drawing</span>
+                                            <span class="label">{t('menu.aiDrawing')}</span>
                                             <div class="menu-item-right">
                                                 <span class="shortcut">Ctrl+Shift+A</span>
                                             </div>
                                         </button>
                                         <button class="menu-item menu-sub" onClick={() => { setIsAISlidesOpen(true); setIsMenuOpen(false); }}>
                                             <Sparkles size={15} />
-                                            <span class="label">AI Presentation</span>
+                                            <span class="label">{t('menu.aiPresentation')}</span>
                                         </button>
                                         <button class="menu-item menu-sub" onClick={() => {
                                             setIsMenuOpen(false);
@@ -945,7 +945,7 @@ const Menu: Component = () => {
                                             if (brief) import('../ai/design-generator').then(m => m.generateDesign(brief));
                                         }}>
                                             <Sparkles size={15} />
-                                            <span class="label">AI Design…</span>
+                                            <span class="label">{t('menu.aiDesign')}</span>
                                         </button>
                                         <button class="menu-item menu-sub" onClick={() => {
                                             setIsMenuOpen(false);
@@ -953,36 +953,36 @@ const Menu: Component = () => {
                                             if (imgPrompt) import('../ai/canva-ai').then(m => m.generateImage(imgPrompt));
                                         }}>
                                             <Sparkles size={15} />
-                                            <span class="label">AI Image…</span>
+                                            <span class="label">{t('menu.aiImage')}</span>
                                         </button>
                                     </Show>
                                     <div class="menu-separator"></div>
                                     {/* Game tools grouped into one collapsible section (Build has a Simple/Graph/Blueprint switcher inside). */}
                                     <button class="menu-item menu-group" classList={{ expanded: gameMenuOpen() }} onClick={() => setGameMenuOpen(o => !o)}>
                                         <Gamepad2 size={16} />
-                                        <span class="label">Game</span>
+                                        <span class="label">{t('menu.game')}</span>
                                         <ChevronDown size={14} class="menu-group-chevron" />
                                     </button>
                                     <Show when={gameMenuOpen()}>
                                         <button class="menu-item menu-sub" onClick={() => { setShowNewGame(true); setIsMenuOpen(false); }}>
                                             <FilePlus size={15} />
-                                            <span class="label">New Game…</span>
+                                            <span class="label">{t('menu.newGame')}</span>
                                         </button>
                                         <button class="menu-item menu-sub" onClick={() => { setShowMyGames(true); setIsMenuOpen(false); }}>
                                             <Gamepad2 size={15} />
-                                            <span class="label">My Games…</span>
+                                            <span class="label">{t('menu.myGames')}</span>
                                         </button>
                                         <button class="menu-item menu-sub" onClick={() => { toggleBehaviorsPanel(true); setIsMenuOpen(false); }}>
                                             <Gamepad2 size={15} />
-                                            <span class="label">Build</span>
+                                            <span class="label">{t('menu.build')}</span>
                                         </button>
                                         <button class="menu-item menu-sub" onClick={() => { toggleGameGraph(true); setIsMenuOpen(false); }}>
                                             <Grid2x2 size={15} />
-                                            <span class="label">Node Graph</span>
+                                            <span class="label">{t('menu.nodeGraph')}</span>
                                         </button>
                                         <button class="menu-item menu-sub" onClick={() => { toggleBlueprint(true); setIsMenuOpen(false); }}>
                                             <Workflow size={15} />
-                                            <span class="label">Blueprint</span>
+                                            <span class="label">{t('menu.blueprint')}</span>
                                         </button>
                                         <Show when={store.sceneBehaviors?.length || store.elements.some(e => e.behaviors?.length) || (store.blueprints && Object.keys(store.blueprints).length) || store.gameScript?.trim()}>
                                             <button class="menu-item menu-sub" onClick={() => {
@@ -993,24 +993,24 @@ const Menu: Component = () => {
                                                 });
                                             }}>
                                                 <CirclePlay size={15} />
-                                                <span class="label">Play Game</span>
+                                                <span class="label">{t('menu.playGame')}</span>
                                             </button>
                                         </Show>
                                         <button class="menu-item menu-sub" onClick={() => { toggleGameScript(true); setIsMenuOpen(false); }}>
                                             <Code size={15} />
-                                            <span class="label">Code</span>
+                                            <span class="label">{t('menu.code')}</span>
                                         </button>
                                     </Show>
                                     <div class="menu-separator"></div>
                                     <button class="menu-item menu-group" classList={{ expanded: panelsMenuOpen() }} onClick={() => setPanelsMenuOpen(o => !o)}>
                                         <Layout size={16} />
-                                        <span class="label">Panels</span>
+                                        <span class="label">{t('menu.panels')}</span>
                                         <ChevronDown size={14} class="menu-group-chevron" />
                                     </button>
                                     <Show when={panelsMenuOpen()}>
                                     <div class="menu-item" onClick={() => { togglePropertyPanel(); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
-                                        <span class="label">Properties Panel</span>
+                                        <span class="label">{t('menu.propertiesPanel')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('properties')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+Enter</span>
@@ -1018,7 +1018,7 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleLayerPanel(); setIsMenuOpen(false); }}>
                                         <Layers size={16} />
-                                        <span class="label">Layers Panel</span>
+                                        <span class="label">{t('menu.layersPanel')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('layers')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+L</span>
@@ -1026,7 +1026,7 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleSymbolsPanel(); setIsMenuOpen(false); }}>
                                         <ComponentIcon size={16} />
-                                        <span class="label">Symbols Panel</span>
+                                        <span class="label">{t('menu.symbolsPanel')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('symbols')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+B</span>
@@ -1034,7 +1034,7 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleHistoryPanel(); setIsMenuOpen(false); }}>
                                         <History size={16} />
-                                        <span class="label">History Panel</span>
+                                        <span class="label">{t('menu.historyPanel')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('history')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+H</span>
@@ -1042,7 +1042,7 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleGraphicStylesPanel(); setIsMenuOpen(false); }}>
                                         <Palette size={16} />
-                                        <span class="label">Graphic Styles</span>
+                                        <span class="label">{t('menu.graphicStyles')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('graphicStyles')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+G</span>
@@ -1050,35 +1050,35 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleElementsPanel(); setIsMenuOpen(false); }}>
                                         <Shapes size={16} />
-                                        <span class="label">Elements</span>
+                                        <span class="label">{t('menu.elements')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('elements')}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleStickFigurePanel(); setIsMenuOpen(false); }}>
                                         <PersonStanding size={16} />
-                                        <span class="label">Stick Figures</span>
+                                        <span class="label">{t('menu.stickFigures')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('stickFigure')}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleComicPanel(); setIsMenuOpen(false); }}>
                                         <Clapperboard size={16} />
-                                        <span class="label">Comic Studio</span>
+                                        <span class="label">{t('menu.comicStudio')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('comic')}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleBrandKitPanel(); setIsMenuOpen(false); }}>
                                         <Palette size={16} />
-                                        <span class="label">Brand Kit</span>
+                                        <span class="label">{t('menu.brandKit')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('brandKit')}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleSwatchesPanel(); setIsMenuOpen(false); }}>
                                         <Palette size={16} />
-                                        <span class="label">Swatches</span>
+                                        <span class="label">{t('menu.swatches')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('swatches')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+W</span>
@@ -1086,7 +1086,7 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { togglePatternsPanel(); setIsMenuOpen(false); }}>
                                         <Grid2x2 size={16} />
-                                        <span class="label">Patterns</span>
+                                        <span class="label">{t('menu.patterns')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('patterns')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+P</span>
@@ -1094,14 +1094,14 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleMeasure(); setIsMenuOpen(false); }}>
                                         <Ruler size={16} />
-                                        <span class="label">Measure Tool</span>
+                                        <span class="label">{t('menu.measureTool')}</span>
                                         <div class="menu-item-right">
                                             <Show when={store.measureActive}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleStatePanel(); setIsMenuOpen(false); }}>
                                         <Camera size={16} />
-                                        <span class="label">Display States</span>
+                                        <span class="label">{t('menu.displayStates')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('state')}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+S</span>
@@ -1109,7 +1109,7 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleMinimap(); setIsMenuOpen(false); }}>
                                         <Maximize size={16} />
-                                        <span class="label">Minimap</span>
+                                        <span class="label">{t('menu.minimap')}</span>
                                         <div class="menu-item-right">
                                             <Show when={store.minimapVisible}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+M</span>
@@ -1117,7 +1117,7 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleRulers(); setIsMenuOpen(false); }}>
                                         <Ruler size={16} />
-                                        <span class="label">Rulers & Guides</span>
+                                        <span class="label">{t('menu.rulersGuides')}</span>
                                         <div class="menu-item-right">
                                             <Show when={store.showRulers}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+R</span>
@@ -1138,7 +1138,7 @@ const Menu: Component = () => {
                                     <Show when={!store.globalSettings.teachingMode}>
                                     <div class="menu-item" onClick={() => { updateGlobalSettings({ showDimensions: !store.globalSettings.showDimensions }); setIsMenuOpen(false); }}>
                                         <Proportions size={16} />
-                                        <span class="label">Show Dimensions</span>
+                                        <span class="label">{t('menu.showDimensions')}</span>
                                         <div class="menu-item-right">
                                             <Show when={store.globalSettings.showDimensions}><Check size={14} class="check-icon" /></Show>
                                         </div>
@@ -1146,7 +1146,7 @@ const Menu: Component = () => {
                                     </Show>
                                     <div class="menu-item" onClick={() => { setSelectedTool(store.selectedTool === 'pan' ? 'selection' : 'pan'); setIsMenuOpen(false); }}>
                                         <Hand size={16} />
-                                        <span class="label">Pan Tool</span>
+                                        <span class="label">{t('menu.panTool')}</span>
                                         <div class="menu-item-right">
                                             <Show when={store.selectedTool === 'pan'}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">H</span>
@@ -1154,7 +1154,7 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleCommandPalette(true); setIsMenuOpen(false); }}>
                                         <Command size={16} />
-                                        <span class="label">Commands & Tools</span>
+                                        <span class="label">{t('menu.commandsTools')}</span>
                                         <div class="menu-item-right">
                                             <span class="shortcut">Ctrl+K</span>
                                         </div>
@@ -1163,14 +1163,14 @@ const Menu: Component = () => {
                                     <Show when={!store.globalSettings.teachingMode}>
                                     <div class="menu-item" onClick={() => { toggleVectorToolsPanel(); setIsMenuOpen(false); }}>
                                         <Shapes size={16} />
-                                        <span class="label">Vector Tools</span>
+                                        <span class="label">{t('menu.vectorTools')}</span>
                                         <div class="menu-item-right">
                                             <Show when={isPanelOpen('vectorTools')}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleShapeBuilder(); setIsMenuOpen(false); }}>
                                         <Combine size={16} />
-                                        <span class="label">Shape Builder</span>
+                                        <span class="label">{t('menu.shapeBuilder')}</span>
                                         <div class="menu-item-right">
                                             <Show when={store.shapeBuilderActive}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Shift+M</span>
@@ -1178,7 +1178,7 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { togglePathfinderBar(); setIsMenuOpen(false); }}>
                                         <Blend size={16} />
-                                        <span class="label">Pathfinder Strip</span>
+                                        <span class="label">{t('menu.pathfinderStrip')}</span>
                                         <div class="menu-item-right">
                                             <Show when={!!store.globalSettings.showPathfinderBar}><Check size={14} class="check-icon" /></Show>
                                         </div>
@@ -1186,7 +1186,7 @@ const Menu: Component = () => {
                                     </Show>
                                     <div class="menu-item" onClick={() => { toggleKeyframePanel(); setIsMenuOpen(false); }}>
                                         <Key size={16} />
-                                        <span class="label">Keyframes</span>
+                                        <span class="label">{t('menu.keyframes')}</span>
                                         <div class="menu-item-right">
                                             <Show when={store.showKeyframePanel}><Check size={14} class="check-icon" /></Show>
                                             <span class="shortcut">Alt+K</span>
@@ -1194,7 +1194,7 @@ const Menu: Component = () => {
                                     </div>
                                     <div class="menu-item" onClick={() => { (window as any).Yappy?.createAdjustmentLayer(); setIsMenuOpen(false); }}>
                                         <Layers size={16} />
-                                        <span class="label">Add Adjustment Layer</span>
+                                        <span class="label">{t('menu.addAdjustmentLayer')}</span>
                                     </div>
                                     <Show when={isPagedDocType(store.docType)}>
                                         <div class="menu-item" onClick={() => { toggleSlideNavigator(); setIsMenuOpen(false); }}>
@@ -1210,20 +1210,20 @@ const Menu: Component = () => {
                                     <div class="menu-separator"></div>
                                     <button class="menu-item menu-group" classList={{ expanded: toolbarsMenuOpen() }} onClick={() => setToolbarsMenuOpen(o => !o)}>
                                         <Layout size={16} />
-                                        <span class="label">Toolbars</span>
+                                        <span class="label">{t('menu.toolbars')}</span>
                                         <ChevronDown size={14} class="menu-group-chevron" />
                                     </button>
                                     <Show when={toolbarsMenuOpen()}>
                                     <div class="menu-item" onClick={() => { toggleMainToolbar(); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
-                                        <span class="label">Drawing Toolbar</span>
+                                        <span class="label">{t('menu.drawingToolbar')}</span>
                                         <div class="menu-item-right">
                                             <Show when={store.showMainToolbar}><Check size={14} class="check-icon" /></Show>
                                         </div>
                                     </div>
                                     <div class="menu-item" onClick={() => { toggleUtilityToolbar(); setIsMenuOpen(false); }}>
                                         <Layout size={16} />
-                                        <span class="label">Action Toolbar</span>
+                                        <span class="label">{t('menu.actionToolbar')}</span>
                                         <div class="menu-item-right">
                                             <Show when={store.showUtilityToolbar}><Check size={14} class="check-icon" /></Show>
                                         </div>
@@ -1240,7 +1240,7 @@ const Menu: Component = () => {
                                     <Show when={store.docType === 'infinite'}>
                                         <div class="menu-item" onClick={() => { toggleCanvasToolbar(); setIsMenuOpen(false); }}>
                                             <Play size={16} />
-                                            <span class="label">Canvas Toolbar</span>
+                                            <span class="label">{t('menu.canvasToolbar')}</span>
                                             <div class="menu-item-right">
                                                 <Show when={store.showCanvasToolbar}><Check size={14} class="check-icon" /></Show>
                                             </div>
@@ -1251,7 +1251,7 @@ const Menu: Component = () => {
                                     <div class="menu-separator"></div>
                                     <button class="menu-item menu-group" classList={{ expanded: settingsMenuOpen() }} onClick={() => setSettingsMenuOpen(o => !o)}>
                                         <Settings size={16} />
-                                        <span class="label">Settings</span>
+                                        <span class="label">{t('menu.settings')}</span>
                                         <ChevronDown size={14} class="menu-group-chevron" />
                                     </button>
                                     <Show when={settingsMenuOpen()}>
@@ -1262,15 +1262,15 @@ const Menu: Component = () => {
                                         setIsMenuOpen(false);
                                     }}>
                                         <Settings size={16} />
-                                        <span class="label">Canvas Settings</span>
+                                        <span class="label">{t('menu.canvasSettings')}</span>
                                     </div>
                                     <div class="menu-item" onClick={() => { setShowSettings(true); setIsMenuOpen(false); }}>
                                         <Settings size={16} />
-                                        <span class="label">Settings</span>
+                                        <span class="label">{t('menu.settings')}</span>
                                     </div>
                                     <div class="menu-item" onClick={() => { setShowAISettings(true); setIsMenuOpen(false); }}>
                                         <Key size={16} />
-                                        <span class="label">AI Settings</span>
+                                        <span class="label">{t('menu.aiSettings')}</span>
                                     </div>
                                     </Show>
                                     <div class="menu-separator"></div>
@@ -1535,7 +1535,7 @@ const Menu: Component = () => {
                                     <div class="menu-dropdown" style={{ right: 0, left: 'auto', width: '200px', top: '48px' }}>
                                         <button class="menu-item" onClick={() => { sequenceAnimator.playAll('programmatic'); setIsUtilityMenuOpen(false); }} disabled={isGlobalPlaying() && !isGlobalPaused()}>
                                             <Play size={16} color="#10b981" />
-                                            <span class="label">Play Animations</span>
+                                            <span class="label">{t('menu.playAnimations')}</span>
                                         </button>
                                         <button class="menu-item" onClick={() => { isGlobalPaused() ? animationEngine.resumeAll() : animationEngine.pauseAll(); setIsUtilityMenuOpen(false); }} disabled={!isGlobalPlaying() && !isGlobalPaused()}>
                                             <Pause size={16} color="#f59e0b" />
@@ -1543,20 +1543,20 @@ const Menu: Component = () => {
                                         </button>
                                         <button class="menu-item" onClick={() => { sequenceAnimator.stopAll(); setIsUtilityMenuOpen(false); }} disabled={!isGlobalPlaying() && !isGlobalPaused()}>
                                             <Square size={16} color="#ef4444" />
-                                            <span class="label">Stop</span>
+                                            <span class="label">{t('menu.stop')}</span>
                                         </button>
                                         <div class="menu-separator"></div>
                                         <button class="menu-item" onClick={() => { setShowSettings(true); setIsUtilityMenuOpen(false); }}>
                                             <Settings size={16} />
-                                            <span class="label">Settings</span>
+                                            <span class="label">{t('menu.settings')}</span>
                                         </button>
                                         <button class="menu-item" onClick={() => { togglePropertyPanel(); setIsUtilityMenuOpen(false); }}>
                                             <SlidersHorizontal size={16} />
-                                            <span class="label">Properties</span>
+                                            <span class="label">{t('menu.properties')}</span>
                                         </button>
                                         <button class="menu-item" onClick={() => { setShowHelp(true); setIsUtilityMenuOpen(false); }}>
                                             <HelpCircle size={16} />
-                                            <span class="label">Shortcuts &amp; Help</span>
+                                            <span class="label">{t('menu.shortcutsHelp')}</span>
                                         </button>
                                         <div class="menu-separator"></div>
                                         <button class="menu-item" onClick={() => { toggleTheme(); setIsUtilityMenuOpen(false); }}>
@@ -1564,7 +1564,7 @@ const Menu: Component = () => {
                                                 : store.theme === 'dark' ? <Focus size={16} />
                                                     : store.theme === 'focus' ? <Monitor size={16} />
                                                         : <Sun size={16} />}
-                                            <span class="label">Toggle Theme ({store.theme})</span>
+                                            <span class="label">{t('menu.toggleTheme', { theme: store.theme })}</span>
                                         </button>
                                     </div>
                                 </Show>

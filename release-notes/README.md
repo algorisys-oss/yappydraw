@@ -27,6 +27,7 @@ never skipped. Newest at the top of the index below.
 
 ## Index
 
+- [0.8.215](0.8.215.md) — All 68 menu labels translated (ratchet 1565 → 1496), plus a German inconsistency introduced one release earlier: `Ctrl` → `Strg` is the shipped convention and my v0.8.214 string had used `Ctrl`. The 19 menu tooltips are deliberately left, because `Delete (Del)` and `Alt+Enter` have no precedent in any locale and choosing one silently answers decision D4
 - [0.8.214](0.8.214.md) — The Settings dialog is translated: 63 strings across all four locales, the ratchet down 1628 → 1565 and that file 76 → 13. Done as real translations rather than English placeholders, because ~63 untranslated keys would have dropped de/es/ja under the 95% coverage gate and pulled three shipped languages out of the picker
 - [0.8.213](0.8.213.md) — i18n Phase 3's two missing prerequisites: `parts()`, so a sentence with an inline link stays one translatable string instead of three fragments in frozen English word order, and `scripts/i18n-translate.mjs`, the batch translation step the plan specified and nobody had built. Resumable across ~681 keys per locale, with a cached glossary and a dry-run that costs nothing
 - [0.8.212](0.8.212.md) — Teaching Mode had shipped three hardcoded English strings past the i18n ratchet built to catch them, because nothing ran it: the guard sat green in the package scripts across four releases while the count climbed. Strings extracted and genuinely translated into all four locales, and the ratchet now blocks on commit
