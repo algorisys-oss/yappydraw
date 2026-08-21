@@ -383,6 +383,24 @@ Open it with **Alt+H** (or View → **History Panel**) to see the document's tim
 A faster way to scrub than tapping Undo/Redo repeatedly — jump back several steps, inspect, and jump forward again in one click.
 :::
 
+### How many steps are kept
+
+**50** by default. Change it in **Settings → Pen & Input → Undo History Depth**, anywhere from
+**10 to 500** steps.
+
+Each step holds a complete snapshot of the drawing, so the ceiling is about memory rather than
+anything else — a long session on a large document with 500 steps retained is a lot to keep in
+the browser. Raise it if you work in long stretches and want deeper cover; lower it if you are
+on a modest machine and the document is heavy.
+
+The change takes effect **immediately**, not at the next reload: the history is trimmed to the
+new limit on your next action, so lowering it discards the oldest steps straight away. The
+setting is remembered per browser and is not stored in the drawing — opening someone else's
+file will not change it.
+
+Scripting: `Yappy.setHistoryDepth(200)` and `Yappy.getHistoryDepth()`. Values outside 10–500 are
+clamped to the nearest end rather than rejected.
+
 ## Saving to My Drawings
 
 <kbd>Ctrl</kbd>+<kbd>S</kbd> saves the current drawing to **My Drawings**, the local library in your browser. The first time you save an untitled drawing you're asked for a **name**; after that the same shortcut saves silently over that name, so you can hit it as often as you like while you work.

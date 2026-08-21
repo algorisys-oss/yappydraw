@@ -1,6 +1,6 @@
 import { type Component, Show, For, createEffect, onCleanup, createSignal } from "solid-js";
 import { X, Search, SlidersHorizontal, PenLine, Palette, Network, Clapperboard, Cloud } from "lucide-solid";
-import { store, updateDefaultStyles, resetDefaultStyles, updateGlobalSettings, setDefaultTool, DEFAULT_TOOL_FALLBACK } from "../store/app-store";
+import { store, updateDefaultStyles, resetDefaultStyles, updateGlobalSettings, setDefaultTool, DEFAULT_TOOL_FALLBACK, HISTORY_DEPTH_MIN, HISTORY_DEPTH_MAX, HISTORY_DEPTH_DEFAULT } from "../store/app-store";
 import { features } from "../config/features";
 import { cloudStorageManager } from "../storage/cloud";
 import type { AuthState } from "../storage/cloud/types";
@@ -305,18 +305,27 @@ const SettingsDialog: Component<SettingsDialogProps> = (props) => {
                         </div>
 
                         <div class="settings-row">
-                            <label title="Maximum number of undo steps kept in history. Higher = more peace of mind, more memory. Default 50.">
+                            <label title={`Maximum number of undo steps kept in history. Higher = more peace of mind, more memory. ${HISTORY_DEPTH_MIN}–${HISTORY_DEPTH_MAX}, default ${HISTORY_DEPTH_DEFAULT}.`}>
                                 Undo History Depth
                             </label>
                             <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
+                                {/* min/max come from the same constants the store clamps with. Typed
+                                    input bypasses the spinner's bounds entirely, so the value is
+                                    clamped in `updateGlobalSettings` and read back here — that is why
+                                    this is `value` off the store rather than a local signal. */}
                                 <input
                                     type="number"
-                                    min="10"
-                                    max="500"
+                                    min={HISTORY_DEPTH_MIN}
+                                    max={HISTORY_DEPTH_MAX}
                                     step="10"
                                     style={{ width: '80px' }}
-                                    value={store.globalSettings.historyDepth ?? 50}
-                                    onChange={(e) => updateGlobalSettings({ historyDepth: Math.max(1, Math.round(e.currentTarget.valueAsNumber || 50)) })}
+                                    value={store.globalSettings.historyDepth ?? HISTORY_DEPTH_DEFAULT}
+                                    onChange={(e) => {
+                                        updateGlobalSettings({ historyDepth: e.currentTarget.valueAsNumber });
+                                        // Snap the field back to what was actually stored, so a typed
+                                        // out-of-range number does not sit in the box looking accepted.
+                                        e.currentTarget.value = String(store.globalSettings.historyDepth ?? HISTORY_DEPTH_DEFAULT);
+                                    }}
                                 />
                                 <span style={{ color: 'var(--text-secondary, #888)', 'font-size': '12px' }}>steps</span>
                             </div>

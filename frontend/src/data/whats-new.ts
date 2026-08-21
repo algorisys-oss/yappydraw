@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.210', date: '2026-08-21', items: [
+        'You can choose how many undo steps Yappy keeps — Settings → Pen & Input → Undo History Depth, anywhere from 10 to 500. It has always been there; it was never mentioned in the help, so there was no way to find it if you hit the 50-step default and wanted more.',
+        'Each step holds a full copy of your drawing, so a higher number means deeper cover and more memory used. Changes apply straight away rather than at the next reload, and the setting is remembered per browser — opening someone else\'s drawing will not change yours.',
+        'The box now also keeps to the range it shows. Typing a number below 10 or above 500 used to be quietly accepted; it is now nudged to the nearest end.',
+    ] },
     { version: '0.8.209', date: '2026-08-21', items: [
         'Links to www.yappydraw.com work again. Every address on the www form of the site was redirecting to a broken location, so anyone who typed it — or opened a www link you had shared — landed on an error rather than the app. The plain yappydraw.com address was never affected, which is why this went unnoticed: typing "www.yappydraw.com" into a browser usually jumps to an address you have already visited, so the broken one was rarely actually requested.',
         'If you have shared a www link with someone and they told you it did not work, it will now.',

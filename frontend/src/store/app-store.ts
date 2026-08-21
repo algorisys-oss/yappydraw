@@ -197,6 +197,28 @@ const TEACHING_MODE_TOOL_SET = new Set<string>(TEACHING_MODE_TOOLS);
 export const isToolAllowed = (tool: ToolType): boolean =>
     !store.globalSettings.teachingMode || TEACHING_MODE_TOOL_SET.has(tool as string);
 
+/**
+ * Undo history depth — how many undo states are retained.
+ *
+ * The bounds live here rather than in the settings dialog's `min`/`max` attributes because
+ * three places set this value (the dialog, `Yappy.setHistoryDepth`, and a hand-edited
+ * localStorage entry) and they had already drifted: the input advertised a floor of 10 while
+ * its own change handler clamped to 1, so typing `3` into the field was accepted and stored.
+ * One clamp, one range, no disagreement.
+ *
+ * The ceiling is memory, not correctness — each state is a full document snapshot, so 500
+ * large drawings is already a lot to hold. `pushToHistory` trims to whatever this returns on
+ * every push, so lowering it takes effect immediately rather than at the next reload.
+ */
+export const HISTORY_DEPTH_MIN = 10;
+export const HISTORY_DEPTH_MAX = 500;
+export const HISTORY_DEPTH_DEFAULT = 50;
+
+export const clampHistoryDepth = (n: number): number => {
+    if (!Number.isFinite(n)) return HISTORY_DEPTH_DEFAULT;
+    return Math.min(HISTORY_DEPTH_MAX, Math.max(HISTORY_DEPTH_MIN, Math.round(n)));
+};
+
 const POINTER_STYLES = ['crosshair', 'circle', 'arrow'] as const;
 export type PointerStyle = (typeof POINTER_STYLES)[number];
 
@@ -625,7 +647,7 @@ const initialState: AppState = {
         timelapseAutoRecord: (localStorage.getItem('timelapseAutoRecord') ?? '0') !== '0',
         timelapseCaptureWidth: parseInt(localStorage.getItem('timelapseCaptureWidth') ?? '1024', 10) || 1024,
         timelapseTargetDuration: parseInt(localStorage.getItem('timelapseTargetDuration') ?? '30', 10) || 30,
-        historyDepth: parseInt(localStorage.getItem('historyDepth') ?? '50', 10) || 50,
+        historyDepth: clampHistoryDepth(parseInt(localStorage.getItem('historyDepth') ?? '', 10) || HISTORY_DEPTH_DEFAULT),
         bleed: parseFloat(localStorage.getItem('bleed') ?? '0') || 0,
         measurementUnit: ((localStorage.getItem('measurementUnit') as 'px' | 'mm' | 'in') || 'px'),
         exportIncludeDimensions: (localStorage.getItem('exportIncludeDimensions') ?? '0') !== '0',
@@ -939,7 +961,7 @@ export const withoutHistory = <T>(fn: () => T): T => {
 export const pushToHistory = () => {
     if (historySuspended > 0) return;
     undoStack.push(captureSnapshot());
-    const maxDepth = Math.max(1, store.globalSettings.historyDepth ?? 50);
+    const maxDepth = clampHistoryDepth(store.globalSettings.historyDepth ?? HISTORY_DEPTH_DEFAULT);
     while (undoStack.length > maxDepth) undoStack.shift();
     redoStack.length = 0;
 
@@ -1915,6 +1937,12 @@ export const resetDefaultStyles = () => {
 };
 
 export const updateGlobalSettings = (updates: Partial<GlobalSettings>) => {
+    // Normalise before anything else. This function writes the store first and persists
+    // afterwards, so clamping only at the persistence step would leave the in-memory value
+    // and localStorage disagreeing until the next reload.
+    if (updates.historyDepth !== undefined) {
+        updates = { ...updates, historyDepth: clampHistoryDepth(updates.historyDepth) };
+    }
     setStore("globalSettings", (s) => ({ ...s, ...updates }));
 
     // Sync renderStyle to default styles and all cached tool styles

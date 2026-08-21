@@ -2405,8 +2405,14 @@ export const YappyAPI = {
     setPenStabilization(strength: number) { updateGlobalSettings({ penStabilization: Math.min(1, Math.max(0, strength)) }); },
     getPenStabilization() { return store.globalSettings.penStabilization ?? 0; },
 
-    /** Max number of undo states retained (default 50). Persisted across sessions. */
-    setHistoryDepth(depth: number) { updateGlobalSettings({ historyDepth: Math.max(1, Math.round(depth)) }); },
+    /**
+     * Max number of undo states retained. Default 50, **clamped to 10–500** — the same range
+     * the Settings dialog offers, so the two cannot drift (they had: the input advertised a
+     * floor of 10 while accepting 1). Each state is a full document snapshot, so the ceiling
+     * is about memory rather than correctness. Takes effect immediately — the undo stack is
+     * trimmed on the next push, not at the next reload. Persisted across sessions.
+     */
+    setHistoryDepth(depth: number) { updateGlobalSettings({ historyDepth: depth }); return store.globalSettings.historyDepth; },
     getHistoryDepth() { return store.globalSettings.historyDepth ?? 50; },
 
     /** Display unit for all measurement readouts (HUD / Measure / dimensions): 'px' | 'mm' | 'in'. */

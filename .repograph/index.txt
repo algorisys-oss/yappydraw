@@ -80,7 +80,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 4977 | Theme:3 MandalaRing:45 HarmonyType:78 PlayOptions:83 PlaySpec:83 PlayTargets:83 TexPart:84 AxesOptions:91 AxesSpec:91 PlotFn:91 VectorFieldOptions:91 VectorFn:91 DimensionMeasure:99 ElementOptions:172 normalizeElementType:402 plotRuns:433 ElementType:651 as:651 Window:4966
+frontend/src/api.ts | typescript | 4983 | Theme:3 MandalaRing:45 HarmonyType:78 PlayOptions:83 PlaySpec:83 PlayTargets:83 TexPart:84 AxesOptions:91 AxesSpec:91 PlotFn:91 VectorFieldOptions:91 VectorFn:91 DimensionMeasure:99 ElementOptions:172 normalizeElementType:402 plotRuns:433 ElementType:651 as:651 Window:4972
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1570 | Component:1 App:99 moves:124 onPenMove:125 hidePen:129 handleKeyUp:168 handleKeyDown:178 as:828 handleFullscreenChange:969 handleBeforeUnload:975 handlePaste:979 handleGlobalDragEnter:1082 handleGlobalDragOver:1097 showDropFallbackPrompt:1116 cleanup:1146 outsideClick:1174 isImageFile:1186 first:1187 must:1200 extractDropData:1202 processExtractedDrop:1257 handleGlobalDrop:1378 handleDocumentDrop:1424
 frontend/src/assets/solid.svg | - | 1 |
@@ -257,7 +257,7 @@ frontend/src/components/scene-timeline.css | - | 73 |
 frontend/src/components/scene-timeline.tsx | typescript | 206 | Component:1 clipColor:14 clipName:15 FigTrack:17 SceneTimeline:19 reorderStep:35 move:43 up:55 resizeStep:61 move:68 up:73 dur:121 pct:122 play:124 restart:125 seekFromEvent:128 onRulerDown:134 move:137 up:138 selectFigure:143
 frontend/src/components/scroll-back-button.tsx | typescript | 136 | Component:8 ScrollBackButtonProps:12 ScrollBackButton:16 handleScrollBack:65
 frontend/src/components/settings-dialog.css | - | 337 |
-frontend/src/components/settings-dialog.tsx | typescript | 601 | Component:1 SettingsDialogProps:13 SettingsDialog:48 categories:54 languageOptions:61 handleKeyDown:103 defaults:114 CloudSettingsContent:529 handleSignIn:542 handleSignOut:554
+frontend/src/components/settings-dialog.tsx | typescript | 610 | Component:1 SettingsDialogProps:13 SettingsDialog:48 categories:54 languageOptions:61 handleKeyDown:103 defaults:114 CloudSettingsContent:538 handleSignIn:551 handleSignOut:563
 frontend/src/components/shape-builder-overlay.css | - | 105 |
 frontend/src/components/shape-builder-overlay.tsx | typescript | 277 | ShapeFace:5 ShapeBuilderOverlay:18 del:23 active:34 toWorld:35 computeTouched:38 computeTouchedRect:64 inBox:67 onDown:103 onMove:123 onUp:140 onCancel:157 onKey:163 onAltDown:167 onAltUp:168 onBlur:171 strokeScreen:188 touchedPath:191 marqueeScreen:211 touchedBoxes:219
 frontend/src/components/shape-tool-group.tsx | typescript | 220 | Component:1 ShapeToolGroup:101 handler:108 getActiveShapeTool:118 handleToolClick:131 as:139 as:145 handleRightClick:153 toggleMenu:158 activeTool:165 isActive:166 getDropdownPosition:168
@@ -342,7 +342,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 631 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 636 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -428,7 +428,7 @@ frontend/src/help-docs/features/plotting.md | - | 201 |
 frontend/src/help-docs/features/stick-animation.md | - | 162 |
 frontend/src/help-docs/features/stick-library.md | - | 237 |
 frontend/src/help-docs/features/symbols.md | - | 159 |
-frontend/src/help-docs/features/workspace.md | - | 496 |
+frontend/src/help-docs/features/workspace.md | - | 514 |
 frontend/src/help-docs/features/ysl-tutorial.md | - | 579 |
 frontend/src/help-docs/help-md.d.ts | typescript | 28 |
 frontend/src/help-docs/help-page.css | - | 504 |
@@ -574,8 +574,9 @@ frontend/src/store/anim-pegs.test.ts | typescript | 134 | stubNode:16 kfs:46 set
 frontend/src/store/anim-timing.test.ts | typescript | 172 | stubNode:17 row:46 setup:48 select:70
 frontend/src/store/anim-tween-split.test.ts | typescript | 200 | stubNode:21 setupTween:52 form:57
 frontend/src/store/app-store.test.ts | typescript | 104 | seed:71
-frontend/src/store/app-store.ts | typescript | 10104 | LayoutDirection:19 OutlineNode:19 BooleanOp:22 Poly:22 ShapeFace:22 DistortKind:23 AssetMeta:44 WarpPreset:52 SymmetryMode:60 SymmetryOp:60 Theme:67 ResolvedTheme:68 loadPerspectiveGrid:106 DefaultToolChoice:136 PointerStyle:201 AppState:211 HistorySnapshot:823 BP:2228 AlignmentType:5492 DistributionType:5492 CharPatch:6315 CharPatchArg:6318 SelBBox:7592 LastTransform:8051 RegionPathfinderOp:8441 SelectSimilarMatch:8574 buildPathFromPoly:9341 polysOriginMin:9383 syncCompoundOperands:9390 buildCompoundPath:9401 WorldSub:9627 rdpAnchors:9630 normalizeWorldSubs:9658 makePathFromWorldSubs:9673 elementToWorldSubs:9694 startInkCleanupIfNeeded:10043
+frontend/src/store/app-store.ts | typescript | 10132 | LayoutDirection:19 OutlineNode:19 BooleanOp:22 Poly:22 ShapeFace:22 DistortKind:23 AssetMeta:44 WarpPreset:52 SymmetryMode:60 SymmetryOp:60 Theme:67 ResolvedTheme:68 loadPerspectiveGrid:106 DefaultToolChoice:136 PointerStyle:223 AppState:233 HistorySnapshot:845 BP:2256 AlignmentType:5520 DistributionType:5520 CharPatch:6343 CharPatchArg:6346 SelBBox:7620 LastTransform:8079 RegionPathfinderOp:8469 SelectSimilarMatch:8602 buildPathFromPoly:9369 polysOriginMin:9411 syncCompoundOperands:9418 buildCompoundPath:9429 WorldSub:9655 rdpAnchors:9658 normalizeWorldSubs:9686 makePathFromWorldSubs:9701 elementToWorldSubs:9722 startInkCleanupIfNeeded:10071
 frontend/src/store/dock-layout.ts | typescript | 155 | DockZone:9 PanelDockState:11 DockLayout:20 load:29 persist:40 panelState:44 isPanelOpen:47 togglePanel:60 hidePanel:71 setPanelOpen:81 dockPanel:88 dockPanelAt:98
+frontend/src/store/history-depth.test.ts | typescript | 83 |
 frontend/src/store/path-corner-radius.test.ts | typescript | 116 | squarePath:21 radii:34
 frontend/src/store/teaching-mode.test.ts | typescript | 136 |
 frontend/src/templates/data/animations.test.ts | typescript | 108 | validate:10
