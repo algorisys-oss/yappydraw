@@ -452,7 +452,8 @@ frontend/src/help-docs/vite-plugin-help-md.ts | typescript | 76 | helpMarkdownPl
 frontend/src/i18n/__fixtures__/pre-i18n-hotkeys.json | - | 391 |
 frontend/src/i18n/__fixtures__/pre-i18n-labels.json | - | 324 |
 frontend/src/i18n/extraction.test.ts | typescript | 96 | in:47 shapes:47
-frontend/src/i18n/format.ts | typescript | 94 | PluralCategory:13 PluralForms:20
+frontend/src/i18n/format.test.ts | typescript | 73 |
+frontend/src/i18n/format.ts | typescript | 138 | MessagePart:15 PluralCategory:57 PluralForms:64
 frontend/src/i18n/hotkey-extraction.test.ts | typescript | 73 |
 frontend/src/i18n/index.ts | typescript | 218 | Dictionary:23 FlatDictionary:34 TranslationKey:35 ShapeKey:41 HotkeyKey:43 HotkeyCategoryKey:45 WelcomeFeatureKey:47 ToolbarToolKey:49 DockPositionKey:51 DockActionKey:53
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
@@ -888,6 +889,7 @@ scripts/help-doc-verify.mjs | javascript | 205 | ENTITY:32
 scripts/i18n-baseline.json | - | 128 |
 scripts/i18n-lint.mjs | javascript | 135 | isProse:39 walk:48 findStrings:59
 scripts/i18n-scaffold.mjs | javascript | 92 | in:6 quote:38 Dictionary:65
+scripts/i18n-translate.mjs | javascript | 271 | flag:42 has:46 readEnglish:79 languageName:127 of:147 userContent:181 save:198 parseTranslations:206
 scripts/prerender.ts | typescript | 62 | lastmodFor:30 main:43
 scripts/publish-oss.sh | shell | 223 | info:40 warn:41 error:42
 scripts/render-dsl.mjs | javascript | 279 | parseArgs:50 opts:51 parseWidths:83 readManifest:93 fail:108 isUp:137 waitUntilUp:144 main:153

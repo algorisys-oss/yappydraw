@@ -9,6 +9,50 @@
  * reading a bug.
  */
 
+/**
+ * One piece of a split message: either literal text, or a token to render yourself.
+ */
+export type MessagePart = { text: string } | { token: string };
+
+/**
+ * Split a message into literal chunks and token markers, in order.
+ *
+ * `resolveTemplate` (what `t()` uses) interpolates **strings**. That is enough until a
+ * sentence needs a token rendered as an *element* — a link, a `<strong>`, a button. The
+ * tempting workaround is to cut the sentence into three keys and concatenate them around
+ * the element, and it is wrong in a specific way: it hands the translator fragments and
+ * freezes English word order. "See our {{ privacyPolicy }} for details" puts the link near
+ * the end in English and in the middle of the clause in German, and only the translator can
+ * know that. Keeping the whole sentence in one key, and letting the component decide how to
+ * render each token, is the only shape that survives translation.
+ *
+ * Ported from yappykit's `parts()` (plan §6b) with one deliberate change: the token syntax
+ * is `{{ name }}`, not yappykit's `{name}`, because that is what `resolveTemplate` and
+ * `plural()` already use here. A verbatim port would have produced a `parts()` that silently
+ * disagreed with `t()` about what a token is — the same template working one way and not the
+ * other, with nothing to indicate why.
+ *
+ * Unknown tokens are not this function's problem: it reports every token it finds and the
+ * caller decides. Text with no tokens comes back as a single `{ text }` part, never empty.
+ *
+ * @example
+ * parts('See our {{ policy }} for details')
+ * // [{ text: 'See our ' }, { token: 'policy' }, { text: ' for details' }]
+ */
+export const parts = (template: string): MessagePart[] => {
+    const TOKEN = /\{\{\s*(\w+)\s*\}\}/g;
+    const out: MessagePart[] = [];
+    let last = 0;
+    for (const m of template.matchAll(TOKEN)) {
+        const at = m.index;
+        if (at > last) out.push({ text: template.slice(last, at) });
+        out.push({ token: m[1] });
+        last = at + m[0].length;
+    }
+    if (last < template.length) out.push({ text: template.slice(last) });
+    return out;
+};
+
 /** The plural categories `Intl.PluralRules` can return. */
 export type PluralCategory = 'zero' | 'one' | 'two' | 'few' | 'many' | 'other';
 

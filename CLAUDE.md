@@ -31,7 +31,11 @@ it to find the exact `path:line` for a symbol/file, then open only those files.
 tree so it can never break a production/static-deploy `npm install`, which it once did via
 its git-clone `prepare` hook). Install it locally with `npm run repograph:install`
 (`github:algorisys-oss/repograph`, installed with `--no-save`). The refresh no-ops if it
-isn't installed, so committed `.repograph/*` maps are still readable without it. A
+isn't installed, so committed `.repograph/*` maps are still readable without it. **Gotcha:
+because it is installed `--no-save`, ANY `npm install <pkg>` evicts it** — and the refresh then
+no-ops, so step 4 of "ship it" silently does nothing and the map ships stale. It does say
+`repograph: CLI not found ... skipping`, so read that line rather than scrolling past it;
+re-run `npm run repograph:install` after any dependency change. A
 `.githooks/pre-commit` hook auto-refreshes the map when a commit touches in-scope source
 dirs (enable per clone: `git config core.hooksPath .githooks`).
 

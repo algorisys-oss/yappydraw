@@ -1,6 +1,6 @@
 {
   "name": "yappy",
-  "version": "0.8.212",
+  "version": "0.8.213",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
@@ -23,6 +23,7 @@
     "sweetalert2": "^11.26.18"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.120.0",
     "@assemblyscript/loader": "^0.28.9",
     "@playwright/test": "^1.58.0",
     "@types/opentype.js": "^1.3.10",
