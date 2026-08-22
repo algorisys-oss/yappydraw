@@ -12,6 +12,7 @@ import type { DrawingElement, PathAnchor } from '../types';
 import { store, setStore, pushToHistory, bumpDirtyRevision } from '../store/app-store';
 import { batch } from 'solid-js';
 import { showToast } from '../components/toast';
+import { canvasCenterWorld } from './dock-layout';
 
 type Matrix = [number, number, number, number, number, number]; // a b c d e f
 
@@ -476,11 +477,22 @@ export function svgToElements(svgText: string, opts: SvgImportOptions = {}): Dra
     const natW = Math.max(1, maxX - minX), natH = Math.max(1, maxY - minY);
     const scale = opts.targetWidth ? opts.targetWidth / natW : (natW > 800 ? 800 / natW : 1);
 
-    // Default insert position: centered on the active page (or viewport origin)
+    // Default insert position: the middle of what the user can actually SEE.
+    //
+    // This used to centre on the active page, which is only the same thing when the page
+    // happens to fill the drawing area. Pan or zoom anywhere else — or just open a right
+    // dock, which shrinks the canvas without moving the page — and the drop landed off to
+    // one side or completely off-screen (bug: a stick figure dropped from the panel
+    // appeared at the right edge). Page centre stays as the fallback for SSR/tests, where
+    // there is no viewport to read.
     let ox = opts.x, oy = opts.y;
     if (ox === undefined || oy === undefined) {
+        const view = canvasCenterWorld();
         const page = store.slides[store.activeSlideIndex];
-        if (page) {
+        if (view) {
+            ox = ox ?? view.x - (natW * scale) / 2;
+            oy = oy ?? view.y - (natH * scale) / 2;
+        } else if (page) {
             ox = ox ?? page.spatialPosition.x + (page.dimensions.width - natW * scale) / 2;
             oy = oy ?? page.spatialPosition.y + (page.dimensions.height - natH * scale) / 2;
         } else {

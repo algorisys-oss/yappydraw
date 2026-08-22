@@ -2968,8 +2968,8 @@ export const YappyAPI = {
         return import("./library/elements/search").then(m => m.searchElements(query, opts));
     },
     /**
-     * Insert a hit returned by `searchElements` onto the canvas. Omit `at` to
-     * center on the active page, or pass a world point (e.g. for drag-drop).
+     * Insert a hit returned by `searchElements` onto the canvas. Omit `at` to drop it
+     * in the middle of the visible drawing area, or pass a world point (e.g. for drag-drop).
      */
     insertElement(hit: AssetHit, at?: { x: number; y: number }) {
         return hit?.insert?.(at);
@@ -3035,7 +3035,7 @@ export const YappyAPI = {
 
     // Stick-figure library (drawify-style editable figures)
     /** Insert a stick figure by id (e.g. "daily-waving") as one editable, recolourable
-     *  group. Omit x/y to center on the active page. Returns the new element ids. */
+     *  group. Omit x/y to drop it in the middle of the visible drawing area. Returns the new element ids. */
     insertStickFigure(assetId: string, opts?: { x?: number; y?: number; targetWidth?: number; face?: string; hair?: string; hairColor?: string; headFill?: boolean; trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string; top?: string; topColor?: string; neck?: string; neckColor?: string }) {
         return insertStickFigure(assetId, opts as any);
     },
@@ -3105,7 +3105,8 @@ export const YappyAPI = {
     // Animated stick figures (procedural rig)
     /** List motion clip ids/names (idle/walk/wave/talk/point/jump). */
     listStickFigureClips() { return CLIP_LIST.map(c => ({ id: c.id, name: c.name })); },
-    /** Insert an animated stick figure playing `clip`. Omit x/y to center on the page. */
+    /** Insert an animated stick figure playing `clip`. Omit x/y to drop it in the middle of
+     *  the visible drawing area. */
     insertAnimatedFigure(clip = 'walk', opts?: { x?: number; y?: number; width?: number; facing?: 1 | -1; speed?: number; face?: string; hair?: string; hairColor?: string; headFill?: boolean; trousers?: string; trouserColor?: string; shoes?: string; shoeColor?: string; top?: string; topColor?: string; neck?: string; neckColor?: string }) {
         return insertAnimatedFigure(clip, opts as any);
     },

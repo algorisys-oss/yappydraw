@@ -30,7 +30,7 @@ Open it from the toolbar (walking-person button) or the menu → **Stick Figures
 
 ## Add a figure
 
-- **Click** a thumbnail — the figure is added centered on the active page.
+- **Click** a thumbnail — the figure lands in the middle of the canvas view, wherever you happen to be looking (pan or zoom first and it follows you).
 - **Drag** a thumbnail onto the canvas — the figure drops centered on the cursor, exactly where you release.
 
 Either way it arrives selected and grouped as one editable object.
@@ -100,7 +100,7 @@ Using the same figure many times? Select it and click **Add to Symbols** in the 
 const Y = window.Yappy;
 Y.listStickFigureCategories();          // [{id:'daily', name:'Daily & Emotions'}, …]
 Y.listStickFigures('office');           // figures in a category
-const ids = Y.insertStickFigure('daily-waving');   // add centered; returns each part's id
+const ids = Y.insertStickFigure('daily-waving');   // centred in the current view; returns each part's id
 Y.insertStickFigure('service-delivery', { x: 400, y: 200, targetWidth: 160 });
 Y.recolorStickFigure({ outline: '#7c3aed', accent: '#ec4899', hair: '#2b2118' }, ids);
 

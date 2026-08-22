@@ -13,6 +13,10 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.216', date: '2026-08-22', items: [
+        'Stick figures now appear where you are looking. Clicking a figure or a motion in the Stick Figures panel used to drop it in the middle of the page — which, once you had zoomed in, panned somewhere, or simply opened a side panel, could be off to the right of the screen or out of sight altogether.',
+        'The same applies to illustrations and imported SVGs: anything added from a panel lands in the middle of your current view. Dragging a thumbnail onto the canvas still drops it exactly where you release.',
+    ] },
     { version: '0.8.215', date: '2026-08-21', items: [
         'The menu is now in your language. Every item — New, File, Export, the AI and Game sections, all the panel names, the toolbars and view toggles — reads in Español, Deutsch or 日本語 instead of English.',
         'Tooltips in the menu are still English for now. Several of them name keyboard keys, and how a key like Del or Enter should be written in each language is a decision still being made — getting it wrong there would be worse than leaving it.',

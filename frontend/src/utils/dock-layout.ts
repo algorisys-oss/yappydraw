@@ -138,6 +138,28 @@ export function canvasCenterClient(): { x: number; y: number } {
 }
 
 /**
+ * World coordinates of the drawing area's centre — "where the user is looking".
+ * The drop point for anything inserted from a panel rather than by pointing at the
+ * canvas (a stick figure, an imported SVG).
+ *
+ * Note the units: the view transform is defined in CANVAS-LOCAL pixels (the canvas
+ * element is positioned by the dock insets, and `getWorldCoordinates` subtracts its
+ * bounding rect), so the centre to un-project is `width/2`, NOT the client centre
+ * from {@link canvasCenterClient}. Un-projecting the client centre double-counts the
+ * left/top insets.
+ *
+ * Returns null when there is no window (SSR / unit tests) so callers can keep their
+ * own fallback rather than dropping everything at a bogus (−panX/scale) origin.
+ */
+export function canvasCenterWorld(): { x: number; y: number } | null {
+    if (typeof window === 'undefined') return null;
+    const r = canvasViewport();
+    const { scale, panX, panY } = store.viewState;
+    const s = scale || 1;
+    return { x: (r.width / 2 - (panX || 0)) / s, y: (r.height / 2 - (panY || 0)) / s };
+}
+
+/**
  * Mirror the insets onto :root as `--dock-left/right/top/bottom`.
  *
  * Chrome that is `position: fixed` to the window (the menu, the status bar, the corner

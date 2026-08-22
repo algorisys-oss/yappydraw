@@ -80,7 +80,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 4983 | Theme:3 MandalaRing:45 HarmonyType:78 PlayOptions:83 PlaySpec:83 PlayTargets:83 TexPart:84 AxesOptions:91 AxesSpec:91 PlotFn:91 VectorFieldOptions:91 VectorFn:91 DimensionMeasure:99 ElementOptions:172 normalizeElementType:402 plotRuns:433 ElementType:651 as:651 Window:4972
+frontend/src/api.ts | typescript | 4984 | Theme:3 MandalaRing:45 HarmonyType:78 PlayOptions:83 PlaySpec:83 PlayTargets:83 TexPart:84 AxesOptions:91 AxesSpec:91 PlotFn:91 VectorFieldOptions:91 VectorFn:91 DimensionMeasure:99 ElementOptions:172 normalizeElementType:402 plotRuns:433 ElementType:651 as:651 Window:4973
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1570 | Component:1 App:99 moves:124 onPenMove:125 hidePen:129 handleKeyUp:168 handleKeyDown:178 as:828 handleFullscreenChange:969 handleBeforeUnload:975 handlePaste:979 handleGlobalDragEnter:1082 handleGlobalDragOver:1097 showDropFallbackPrompt:1116 cleanup:1146 outsideClick:1174 isImageFile:1186 first:1187 must:1200 extractDropData:1202 processExtractedDrop:1257 handleGlobalDrop:1378 handleDocumentDrop:1424
 frontend/src/assets/solid.svg | - | 1 |
@@ -342,7 +342,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 647 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 651 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -487,7 +487,7 @@ frontend/src/library/stick-figures/builder.ts | typescript | 208 | FaceOpts:20 F
 frontend/src/library/stick-figures/face.ts | typescript | 504 | Prim:20 FaceStyle:24 HairStyle:28 FaceOpts:82 EyeKind:112 BrowKind:113 MouthKind:114 eyePrims:131 browPrims:157 mouthPrims:183 faceGeometry:214 capPath:247 hairGeometry:269 fringePrims:468 faceHairSvg:488 faceStateAttrs:501
 frontend/src/library/stick-figures/garments.test.ts | typescript | 172 |
 frontend/src/library/stick-figures/garments.ts | typescript | 523 | Prim:26 Pt:26 TrouserStyle:31 ShoeStyle:35 TopStyle:37 NeckStyle:40 GarmentOpts:102 subToPoints:124 legChains:140 distSeg:163 UpperBody:172 upperBody:191 skirtPrims:218 shoePrims:241 topPrims:337 neckPrims:385 garmentGeometry:465 garmentStateAttrs:507 garmentSvg:519
-frontend/src/library/stick-figures/index.ts | typescript | 973 | FaceOpts:18 FaceStyle:18 HairStyle:18 NeckStyle:23 ShoeStyle:23 TopStyle:23 TrouserStyle:23 StickPartRole:48 parseHex:52 roleFromFill:64 InsertStickOptions:75 prepareStickFigureElements:110 insertStickFigure:161 StickRecolor:181 recolorStickFigure:192 expandToFigures:222 placeOnHead:236 polylineOf:258 legsOfFigure:266 upperOfFigure:275 hipOfFigure:285 headOf:293 restyleStickFace:318 stickFaceStateOf:413 selectionHasStickFigure:419 toMonochromeSvg:432 FaceHairChoice:458 StickFaceState:475 readHeadState:506 mergeChoice:524 pathAnchorPoints:557 legsFromSvg:569 upperFromSvg:577 svgFragment:586 applyFaceHair:604 headStatesOf:660 linkFaceParts:678 InsertAnimatedOptions:701 insertAnimatedFigure:713 setAnimatedFigurePlaying:761 setAnimatedFigureFace:778 animatedFigureFaceState:794 rigState:801 setAnimatedFigureSpeed:823 setAnimatedFigureClip:835 attachFigureToPath:844 detachFigurePath:856 setFigurePathDuration:865 pathFollowCandidate:876 selectedFigurePath:885 setFigureSequence:891 getFigureSequence:900 flipAnimatedFigure:906 selectionHasAnimatedFigure:918 bakeAnimatedFigure:927
+frontend/src/library/stick-figures/index.ts | typescript | 982 | FaceOpts:19 FaceStyle:19 HairStyle:19 NeckStyle:24 ShoeStyle:24 TopStyle:24 TrouserStyle:24 StickPartRole:49 parseHex:53 roleFromFill:65 InsertStickOptions:76 prepareStickFigureElements:111 insertStickFigure:162 StickRecolor:182 recolorStickFigure:193 expandToFigures:223 placeOnHead:237 polylineOf:259 legsOfFigure:267 upperOfFigure:276 hipOfFigure:286 headOf:294 restyleStickFace:319 stickFaceStateOf:414 selectionHasStickFigure:420 toMonochromeSvg:433 FaceHairChoice:459 StickFaceState:476 readHeadState:507 mergeChoice:525 pathAnchorPoints:558 legsFromSvg:570 upperFromSvg:578 svgFragment:587 applyFaceHair:605 headStatesOf:661 linkFaceParts:679 InsertAnimatedOptions:702 insertAnimatedFigure:714 setAnimatedFigurePlaying:770 setAnimatedFigureFace:787 animatedFigureFaceState:803 rigState:810 setAnimatedFigureSpeed:832 setAnimatedFigureClip:844 attachFigureToPath:853 detachFigurePath:865 setFigurePathDuration:874 pathFollowCandidate:885 selectedFigurePath:894 setFigureSequence:900 getFigureSequence:909 flipAnimatedFigure:915 selectionHasAnimatedFigure:927 bakeAnimatedFigure:936
 frontend/src/library/stick-figures/poses.ts | typescript | 287 | Pose:9
 frontend/src/library/stick-figures/prefs.ts | typescript | 114 | FaceStyle:7 HairStyle:7 NeckStyle:11 ShoeStyle:11 TopStyle:11 TrouserStyle:11 load:20 save:24 toggleStickFavorite:32 pushStickRecent:41 StickColorMode:47 setStickColorMode:50 StickFacePref:62 normFacePref:88 setStickFacePref:111
 frontend/src/library/stick-figures/prims.ts | typescript | 132 | Prim:18 FacePrim:27 Pt:32 arcD:35 primToSvg:47 polyLength:69 resample:80 truncate:104 offsetOutline:117
@@ -675,7 +675,7 @@ frontend/src/utils/dimension-geometry.test.ts | typescript | 93 | DimensionAnnot
 frontend/src/utils/dimension-geometry.ts | typescript | 111 | MeasurementUnit:16 DimensionMeasure:18 DimensionAnnotation:20 DimBox:30 Pt:32 DimensionGeometry:34 dimensionGeometry:55 dimensionLabel:107
 frontend/src/utils/dimension-renderer.ts | typescript | 115 | DimBox:9 DimensionAnnotation:9 Pt:9 effectiveBox:15 arrowhead:26 renderDimensions:37
 frontend/src/utils/dimension-svg.ts | typescript | 84 | DimensionAnnotation:10 Pt:10 arrowhead:28 appendDimensionSvg:36
-frontend/src/utils/dock-layout.ts | typescript | 174 | isPhoneWidth:53 statusBarHeight:58 Insets:63 Rect:64 dockInsets:67 canvasViewport:118 canvasCenterClient:135 publishDockVars:148
+frontend/src/utils/dock-layout.ts | typescript | 196 | isPhoneWidth:53 statusBarHeight:58 Insets:63 Rect:64 dockInsets:67 canvasViewport:118 canvasCenterClient:135 canvasCenterWorld:154 publishDockVars:170
 frontend/src/utils/document-io.ts | typescript | 69 | buildSlideDocument:12 normalizeDocument:48 gzipString:53 gunzipBytes:59 decodeDocumentBytes:65
 frontend/src/utils/draggable-panel.ts | typescript | 54 | makeDraggable:13 draggablePanel:49
 frontend/src/utils/ds-operations.ts | typescript | 975 | DsOperation:12 DsOperationParams:23 getOperationsForType:79 parseValues:87 bstInsert:99 bstRemove:138 nodeAt:154 bstDeleteAt:159 moveSubtreeUp:192 collectRelative:211 clearSubtree:219 relToAbs:227 simpleHash:247 hashTablePut:259 hashTableRemove:270 animateDsOperation:287 executeDsOperation:350 abortDsAlgorithm:544 isDsAlgorithmRunning:551 setDsAnimationSpeed:555 getDsAnimationSpeed:559 clearDsHighlights:563 animateDsStep:580 compareValues:604 bubbleSort:613 selectionSort:662 insertionSort:714 linearSearch:765 binarySearch:796 bfsTraversal:853 dfsInorderTraversal:882 dfsPreorderTraversal:912 executeDsSortSearch:944
@@ -795,7 +795,7 @@ frontend/src/utils/stock-photos.ts | typescript | 156 | StockPhoto:13 searchStoc
 frontend/src/utils/stroke-align.ts | typescript | 130 | StrokeAlign:36 effectiveStrokeAlign:39 inversionBounds:57 strokeAlignOutline:68 applyStrokeAlignClip:76 strokePassElement:100 fillPassElement:122
 frontend/src/utils/stroke-dash.ts | typescript | 48 | customDash:12 resolveDash:23 parseDashInput:37 dashToString:46
 frontend/src/utils/stroke-stabilizer.ts | typescript | 117 | StabSample:21 StrokeStabilizer:27{next:29 finish:34} createStrokeStabilizer:40 pushStabilizedSample:86 finishStabilizer:109
-frontend/src/utils/svg-import.ts | typescript | 564 | Matrix:16 parseTransform:35 Sub:64 arcToCubics:73 parseSvgPathData:132 ellipseSubs:246 nodeToSubs:257 SvgStyle:302 styleOf:304 Drawable:334 CollectCtx:339 useTarget:349 collectDrawables:360 SvgImportOptions:440 svgToElements:453 importSvgToCanvas:550
+frontend/src/utils/svg-import.ts | typescript | 576 | Matrix:17 parseTransform:36 Sub:65 arcToCubics:74 parseSvgPathData:133 ellipseSubs:247 nodeToSubs:258 SvgStyle:303 styleOf:305 Drawable:335 CollectCtx:340 useTarget:350 collectDrawables:361 SvgImportOptions:441 svgToElements:454 importSvgToCanvas:562
 frontend/src/utils/svg-paint.ts | typescript | 133 | svgPatternDef:19 splitAlpha:45 svgFillPaint:65
 frontend/src/utils/svg-theme.ts | typescript | 135 | SvgThemeOptions:23 swatchVarName:31 swatchVarRef:41 elementColorVars:53 applyColorVars:81 buildThemeStyleSheet:112
 frontend/src/utils/symmetry.test.ts | typescript | 127 | SymmetryTransform:5
@@ -1085,6 +1085,7 @@ tests/spacing-guides.spec.ts | typescript | 106 | w2v:16
 tests/stick-anim-demo-check.spec.ts | typescript | 46 | Window:6
 tests/stick-animation-speed.spec.ts | typescript | 143 | Window:10
 tests/stick-face.spec.ts | typescript | 392 | Window:13
+tests/stick-figure-drop-position.spec.ts | typescript | 74 | Window:16 dropAndMeasure:32
 tests/stick-rig-smoke.spec.ts | typescript | 86 | Window:6
 tests/storage-failure.spec.ts | typescript | 102 | stubIndexedDB:26
 tests/stroke-gradient-batch3.spec.ts | typescript | 76 |

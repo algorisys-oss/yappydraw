@@ -48,7 +48,7 @@ The rig is drawn in **side profile**, so every clip is authored to read from the
 
 1. **Open the Stick Figures panel.** Click the walking-person button in the toolbar, or Menu → **Stick Figures**.
 2. **Switch to the Animated tab.** In the chip row, click **🎞 Animated**. You'll see all ten motions as preview cells.
-3. **Add a motion.** Click **Walk** (or any motion). A figure appears on the page and *immediately starts moving* — it loops on the canvas.
+3. **Add a motion.** Click **Walk** (or any motion). A figure appears in the middle of the canvas view — wherever you are currently looking — and *immediately starts moving*: it loops on the canvas.
 4. **Place & size it.** Drag the figure to position it; drag a corner handle to scale it up or down. The motion keeps playing at any size.
 5. **Use the figure controls.** With the figure selected, the panel shows an **Animated figure** section:
 

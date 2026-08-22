@@ -9,6 +9,7 @@
  */
 import { batch } from 'solid-js';
 import { svgToElements } from '../../utils/svg-import';
+import { canvasCenterWorld } from '../../utils/dock-layout';
 import { store, setStore, updateElement, pushToHistory, bumpDirtyRevision } from '../../store/app-store';
 import { generateId } from '../../utils/id-generator';
 import { getStickAsset } from './registry';
@@ -716,8 +717,16 @@ export function insertAnimatedFigure(clip = 'walk', opts: InsertAnimatedOptions 
     const height = width * RIG_ASPECT;
     let x = opts.x, y = opts.y;
     if (x === undefined || y === undefined) {
+        // Drop it in the middle of the visible drawing area, exactly like a dropped
+        // (static) figure — see the note in svgToElements. Centring on the page instead
+        // put the figure wherever the page happened to be on screen, which with a right
+        // dock open is off to the right of what the user is looking at.
+        const view = canvasCenterWorld();
         const page = store.slides[store.activeSlideIndex];
-        if (page) {
+        if (view) {
+            x = x ?? view.x - width / 2;
+            y = y ?? view.y - height / 2;
+        } else if (page) {
             x = x ?? page.spatialPosition.x + (page.dimensions.width - width) / 2;
             y = y ?? page.spatialPosition.y + (page.dimensions.height - height) / 2;
         } else { x = x ?? 200; y = y ?? 200; }
