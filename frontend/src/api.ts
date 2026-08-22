@@ -601,6 +601,29 @@ export const YappyAPI = {
         return this.createElement('star', x, y, width, height, { ...options, starPoints: points });
     },
 
+    /**
+     * Create a cylinder — a tube inscribed in the given box, so `width` is the
+     * diameter and `height` the full height of the solid (caps included). Making
+     * the box taller makes a taller pillar.
+     *
+     * @param viewAngle - Direction the axis points, in degrees. 90 (default) is
+     *   upright; 0 lays the can on its side. Anything between gives a tilted tube.
+     *   To tilt the whole shape in place, prefer the element's `rotation`.
+     * @param capRatio - Perspective of BOTH end circles: the cap's along-axis
+     *   radius as a percentage of its cross-section radius. 2 is nearly edge-on,
+     *   25 (default) is a natural 3/4 view, 100 is face-on.
+     *
+     * @example
+     * // A tall pillar seen from slightly above
+     * Yappy.createCylinder(100, 100, 90, 320, { capRatio: 18 });
+     * @example
+     * // A can lying on its side
+     * Yappy.createCylinder(100, 100, 260, 110, { viewAngle: 0 });
+     */
+    createCylinder(x: number, y: number, width: number, height: number, options?: ElementOptions & { viewAngle?: number; capRatio?: number }) {
+        return this.createElement('cylinder', x, y, width, height, options);
+    },
+
     // --- Wireframing & Sketchnotes ---
 
     createBrowserWindow(x: number, y: number, width: number, height: number, options?: ElementOptions) {

@@ -11,6 +11,7 @@ import { isElementHiddenByHierarchy } from './hierarchy';
 import { getPathSubpaths } from './math/path-utils';
 import { getCustomPivot } from './transform-pivot';
 import { getWarpGrid } from './envelope-warp';
+import { getCylinderFrame } from './shape-geometry';
 
 /**
  * Inverse-rotate a point around a center by the given angle.
@@ -380,7 +381,16 @@ export function getHandleAtPosition(
             if (Math.abs(local.x - cx) <= handleSize && Math.abs(local.y - cy) <= handleSize) {
                 return { id: el.id, handle: 'control-1' };
             }
-        } else if (el.type === 'solidBlock' || el.type === 'cylinder') {
+        } else if (el.type === 'cylinder') {
+            // Must match selection-renderer.ts: the handle sits on the far cap's centre.
+            const f = getCylinderFrame(el);
+            const cx = el.x + el.width / 2 + f.ex;
+            const cy = el.y + el.height / 2 + f.ey;
+
+            if (Math.abs(local.x - cx) <= handleSize && Math.abs(local.y - cy) <= handleSize) {
+                return { id: el.id, handle: 'control-1' };
+            }
+        } else if (el.type === 'solidBlock') {
             const depthBase = el.depth !== undefined ? el.depth : 50;
             const angle = (el.viewAngle !== undefined ? el.viewAngle : 45) * Math.PI / 180;
 

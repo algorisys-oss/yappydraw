@@ -1628,7 +1628,9 @@ export const properties: PropertyConfig[] = [
         max: 200,
         step: 5,
         group: 'dimensions',
-        applicableTo: ['solidBlock', 'perspectiveBlock', 'cylinder', 'openBox'],
+        // Not cylinder: its box bounds the whole solid, so there is no free
+        // extrusion length to set — 'capRatio' below divides the box instead.
+        applicableTo: ['solidBlock', 'perspectiveBlock', 'openBox'],
         defaultValue: 50
     },
     {
@@ -1639,8 +1641,30 @@ export const properties: PropertyConfig[] = [
         max: 360,
         step: 5,
         group: 'dimensions',
-        applicableTo: ['solidBlock', 'perspectiveBlock', 'cylinder', 'openBox'],
+        applicableTo: ['solidBlock', 'perspectiveBlock', 'openBox'],
         defaultValue: 45
+    },
+    {
+        key: 'viewAngle',
+        label: 'Axis Angle', // Direction the cylinder's axis points; 90 = upright
+        type: 'slider',
+        min: 0,
+        max: 360,
+        step: 5,
+        group: 'dimensions',
+        applicableTo: ['cylinder'],
+        defaultValue: 90
+    },
+    {
+        key: 'capRatio',
+        label: 'Cap Perspective', // Foreshortening of BOTH end circles
+        type: 'slider',
+        min: 2,
+        max: 100,
+        step: 1,
+        group: 'dimensions',
+        applicableTo: ['cylinder'],
+        defaultValue: 25
     },
     {
         key: 'openBoxPreset',

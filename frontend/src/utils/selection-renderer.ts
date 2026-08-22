@@ -12,6 +12,7 @@ import { getDescendants } from './hierarchy';
 import { getPathSubpaths } from './math/path-utils';
 import { getCustomPivot } from './transform-pivot';
 import { getWarpGrid } from './envelope-warp';
+import { getCylinderFrame } from './shape-geometry';
 import { getDeleteHandlePosition } from './handle-detection';
 
 const MINDMAP_CONNECTOR_TYPES = ['line', 'arrow', 'organicBranch', 'bezier', 'polyline'];
@@ -514,7 +515,13 @@ export function renderElementOverlays(
             const faceHeight = el.height * shapeRatio;
             cy = el.y + faceHeight;
             cx = el.x + el.width * sideRatio;
-        } else if (el.type === 'solidBlock' || el.type === 'cylinder') {
+        } else if (el.type === 'cylinder') {
+            // The handle rides the far cap's centre: swinging it sets the axis
+            // direction, pulling it out or in sets the cap perspective.
+            const f = getCylinderFrame(el);
+            cx = el.x + el.width / 2 + f.ex;
+            cy = el.y + el.height / 2 + f.ey;
+        } else if (el.type === 'solidBlock') {
             const depthBase = el.depth !== undefined ? el.depth : 50;
             const angle = (el.viewAngle !== undefined ? el.viewAngle : 45) * Math.PI / 180;
 

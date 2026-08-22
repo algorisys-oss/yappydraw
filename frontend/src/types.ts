@@ -696,8 +696,9 @@ export interface DrawingElement {
     burstPoints?: number; // Number of points for burst shapes (8-32, default: 16)
     shapeRatio?: number; // 0-100 (Vertical ratio for cube, inner radius for star)
     sideRatio?: number; // 0-100 (Horizontal rotation for isometricCube)
-    depth?: number; // 0-200 (Extrusion depth for solidBlock/perspectiveBlock/cylinder)
-    viewAngle?: number; // 0-360 (View angle for solidBlock/perspectiveBlock/cylinder)
+    depth?: number; // 0-200 (Extrusion depth for solidBlock/perspectiveBlock/openBox)
+    viewAngle?: number; // 0-360 (View angle for solidBlock/perspectiveBlock/openBox; axis direction for cylinder, 90 = upright)
+    capRatio?: number; // 2-100 (Cylinder cap perspective: the cap's along-axis radius as a % of its cross-section radius)
     openAmount?: number; // 0-100 (How open the box lid is - lid lifts up and tilts back)
     lidPosition?: 'back' | 'front' | 'left' | 'right'; // Which edge the lid hinges on
     lidStyle?: 'single' | 'split' | 'double' | 'quad' | 'flaps'; // Single lid, split (French doors), double (opposite sides), quad (4 quarters), or flaps (2 half-lids meeting at center)

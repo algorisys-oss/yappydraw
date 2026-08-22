@@ -1526,12 +1526,19 @@ const PropertyPanel: Component = () => {
      * `undefined` and report "Mixed" forever.
      */
     const supportedSelection = (key: string): string[] => {
-        const p = properties.find(pp => pp.key === key);
-        if (!p || (p.applicableTo as any) === 'all' || !Array.isArray(p.applicableTo)) return [...store.selection];
-        const types = p.applicableTo as string[];
+        // A key can have MORE THAN ONE definition — the same property is declared
+        // separately when its label, range or default differs by shape (renderStyle,
+        // and viewAngle, which is "View Angle" on a block but the axis direction on a
+        // cylinder). Taking only the first match silently dropped every type covered
+        // by the later ones, so the write never reached them.
+        const defs = properties.filter(pp => pp.key === key);
+        if (!defs.length || defs.some(d => (d.applicableTo as any) === 'all' || !Array.isArray(d.applicableTo))) {
+            return [...store.selection];
+        }
+        const types = new Set(defs.flatMap(d => d.applicableTo as string[]));
         return store.selection.filter(id => {
             const el = store.elements.find(e => e.id === id);
-            return !!el && types.includes(el.type as string);
+            return !!el && types.has(el.type as string);
         });
     };
 

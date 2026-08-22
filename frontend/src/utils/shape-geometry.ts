@@ -7,11 +7,15 @@ import { warpGeometry, getEffectiveGrid } from "./envelope-warp";
 import { applyTurntable } from "./turntable";
 
 export type ShapeGeometry =
-    | { type: 'rect', x: number, y: number, w: number, h: number, r?: number | [number, number, number, number], shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
-    | { type: 'ellipse', cx: number, cy: number, rx: number, ry: number, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
-    | { type: 'path', path: string, evenOdd?: boolean, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
-    | { type: 'points', points: { x: number, y: number }[], isClosed?: boolean, shade?: number, noStroke?: boolean, isLid?: boolean, isBackface?: boolean }
-    | { type: 'multi', shapes: ShapeGeometry[] };
+    | { type: 'rect', x: number, y: number, w: number, h: number, r?: number | [number, number, number, number], shade?: number, noStroke?: boolean, noFill?: boolean, isLid?: boolean, isBackface?: boolean }
+    | { type: 'ellipse', cx: number, cy: number, rx: number, ry: number, shade?: number, noStroke?: boolean, noFill?: boolean, isLid?: boolean, isBackface?: boolean }
+    | { type: 'path', path: string, evenOdd?: boolean, shade?: number, noStroke?: boolean, noFill?: boolean, isLid?: boolean, isBackface?: boolean }
+    | { type: 'points', points: { x: number, y: number }[], isClosed?: boolean, shade?: number, noStroke?: boolean, noFill?: boolean, isLid?: boolean, isBackface?: boolean }
+    // `outline` is the silhouette of a multi-face solid as one closed SVG path. Nothing
+    // renders it — the faces do that — but converters that need "the shape's outline"
+    // (shape-to-path, and so node editing and boolean ops) would otherwise have to guess,
+    // and picking the first path face gives them one cap instead of the whole solid.
+    | { type: 'multi', shapes: ShapeGeometry[], outline?: string };
 
 /**
  * Calculate if a polygon face is back-facing based on its winding order.
@@ -70,6 +74,136 @@ const getRoundedDiamondPath = (x: number, y: number, w: number, h: number, r: nu
         + ` L ${x + w - dx} ${cy - dy} Q ${x + w} ${cy} ${x + w - dx} ${cy + dy}`
         + ` L ${cx + dx} ${y + h - dy} Q ${cx} ${y + h} ${cx - dx} ${y + h - dy}`
         + ` L ${x + dx} ${cy + dy} Q ${x} ${cy} ${x + dx} ${cy - dy} Z`;
+};
+
+/**
+ * The cylinder's frame — one source of truth for its two caps and its barrel,
+ * shared by the geometry, the selection overlay, hit-detection and the drag
+ * handler. Those four used to re-derive the same formula independently.
+ *
+ * The model is a tube inscribed in the element box: the box bounds the WHOLE
+ * solid. Making the box taller therefore makes the pillar taller. It used to
+ * size the *cap ellipse* instead, with the barrel separately clamped to
+ * `min(w, h) * 0.5` — which is why dragging a cylinder taller collapsed it into
+ * a standing pancake, and why the `database` shape read more like a cylinder
+ * than the cylinder did.
+ *
+ * - `viewAngle` is the direction of the axis. 90° (the default) points straight
+ *   down, giving an upright pillar. Both caps move symmetrically about the box
+ *   centre, so the angle is no longer applied to the far cap alone.
+ * - `capRatio` is the foreshortening of the circular cross-section: the cap's
+ *   along-axis radius as a percentage of its perpendicular radius. 100 is
+ *   face-on, small values are nearly edge-on. It applies to BOTH caps.
+ */
+export interface CylinderFrame {
+    /** Radius of the circular cross-section (perpendicular to the axis). */
+    r: number;
+    /** The cross-section's foreshortened half-depth along the axis: r × flatness. */
+    rAlong: number;
+    /** Axis unit vector. */
+    ux: number;
+    uy: number;
+    /** Unit vector across the axis — the barrel meets each cap at ±r along it. */
+    px: number;
+    py: number;
+    /** Half the axis vector: near cap at (-ex,-ey), far cap at (+ex,+ey). */
+    ex: number;
+    ey: number;
+    /** Offset from a cap centre to where the barrel's silhouette meets it (= r × p). */
+    tx: number;
+    ty: number;
+    /** Cap foreshortening actually used, 0..1 (after clamping). */
+    flatness: number;
+    angleRad: number;
+    angleDeg: number;
+}
+
+export const CYLINDER_DEFAULT_ANGLE = 90;
+export const CYLINDER_DEFAULT_CAP = 25;
+const CYLINDER_MIN_CAP = 0.02;
+const CYLINDER_MAX_CAP = 1;
+/** Share of the box the caps give up to the barrel when the exact fit has no solution. */
+const CYLINDER_FALLBACK_BARREL = 0.25;
+
+export const getCylinderFrame = (
+    el: { width: number; height: number; viewAngle?: number; capRatio?: number },
+    capRatioOverride?: number,
+    viewAngleOverride?: number,
+): CylinderFrame => {
+    const w = Math.abs(el.width);
+    const h = Math.abs(el.height);
+    const angleDeg = viewAngleOverride ?? el.viewAngle ?? CYLINDER_DEFAULT_ANGLE;
+    const angleRad = (angleDeg * Math.PI) / 180;
+    const f = Math.max(CYLINDER_MIN_CAP, Math.min(CYLINDER_MAX_CAP,
+        (capRatioOverride ?? el.capRatio ?? CYLINDER_DEFAULT_CAP) / 100));
+
+    const ux = Math.cos(angleRad), uy = Math.sin(angleRad);   // along the axis
+    const px = -uy, py = ux;                                  // across the axis
+    const ax = Math.abs(ux), ay = Math.abs(uy);
+
+    // A cap is the cross-section circle of radius r foreshortened to r·f along the
+    // axis — i.e. an ellipse turned by the axis angle. Its axis-aligned half-extents
+    // are r·A and r·B, so requiring the WHOLE solid (two caps e apart) to fill the
+    // element box gives a 2×2 system in (r, e):
+    //     r·A + e·|cos| = w/2
+    //     r·B + e·|sin| = h/2
+    const A = Math.hypot(ay, f * ax);
+    const B = Math.hypot(ax, f * ay);
+    const det = A * ay - B * ax;
+
+    let r = 0, e = 0;
+    if (Math.abs(det) > 1e-6) {
+        r = ((w / 2) * ay - (h / 2) * ax) / det;
+        e = (A * (h / 2) - B * (w / 2)) / det;
+    }
+    // Degenerate (a diagonal axis in a square box) or a tube that simply cannot span
+    // this box at this angle: fall back to the fattest cap that fits, minus a slice
+    // for the barrel, so a cylinder never collapses into a bare ellipse.
+    if (!(r > 0) || !(e >= 0) || !isFinite(r) || !isFinite(e)) {
+        r = Math.min(A > 1e-6 ? (w / 2) / A : Infinity, B > 1e-6 ? (h / 2) / B : Infinity)
+            * (1 - CYLINDER_FALLBACK_BARREL);
+        const limits: number[] = [];
+        if (ax > 1e-6) limits.push((w / 2 - r * A) / ax);
+        if (ay > 1e-6) limits.push((h / 2 - r * B) / ay);
+        e = Math.max(0, limits.length ? Math.min(...limits) : 0);
+    }
+
+    const rAlong = r * f;
+    return {
+        r, rAlong, ux, uy, px, py,
+        ex: e * ux, ey: e * uy,
+        tx: r * px, ty: r * py,
+        flatness: f, angleRad, angleDeg,
+    };
+};
+
+
+/**
+ * Inverse of the frame's extrusion length: what `capRatio` puts the far cap's
+ * centre `dist` px from the box centre along `viewAngle`? Used by the drag
+ * handle, whose distance from the centre reads as perspective — pull it out and
+ * the caps flatten, push it in and they open up. Solved by bisection: the frame
+ * has a fallback branch, so there is no single closed form to invert.
+ */
+export const cylinderCapRatioForDistance = (
+    el: { width: number; height: number },
+    viewAngleDeg: number,
+    dist: number,
+): number => {
+    const at = (cap: number) => {
+        const f = getCylinderFrame({ ...el, viewAngle: viewAngleDeg }, cap);
+        return Math.hypot(f.ex, f.ey);
+    };
+    // Extrusion shrinks as the cap ratio grows, so the search is monotonic-down.
+    let lo = CYLINDER_MIN_CAP * 100;
+    let hi = CYLINDER_MAX_CAP * 100;
+    if (dist >= at(lo)) return lo;
+    if (dist <= at(hi)) return hi;
+    for (let i = 0; i < 24; i++) {
+        const mid = (lo + hi) / 2;
+        if (at(mid) > dist) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
 };
 
 export const getShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
@@ -1216,54 +1350,56 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         }
 
         case 'cylinder': {
-            const depthBase = el.depth !== undefined ? el.depth : 50;
-            const angleDeg = el.viewAngle !== undefined ? el.viewAngle : 45;
-            const angleRad = (angleDeg * Math.PI) / 180;
+            // A tube inscribed in the element box — see getCylinderFrame. Everything
+            // below lives in the tube's own frame: `u` runs along the axis, `p` across
+            // it, so the barrel meets each cap exactly at the cap's ±r poles. No
+            // tangent solving, and it stays correct at any axis angle.
+            const { r, rAlong, ux, uy, px, py, ex, ey, angleDeg } = getCylinderFrame(el);
 
-            const rx = w / 2;
-            const ry = h / 2;
+            const nearC = { x: -ex, y: -ey };
+            const farC = { x: ex, y: ey };
+            const at = (c: { x: number, y: number }, a: number, b: number) =>
+                ({ x: c.x + a * px + b * ux, y: c.y + a * py + b * uy });
 
-            // Scale depth with shape size (must match selection-renderer.ts and handle-detection.ts)
-            const minDim = Math.min(Math.abs(w), Math.abs(h));
-            const depth = minDim > 0 ? Math.min(depthBase, minDim * 0.5) : 0;
+            const nearA = at(nearC, r, 0), nearB = at(nearC, -r, 0);
+            const farA = at(farC, r, 0), farB = at(farC, -r, 0);
 
-            const dx = depth * Math.cos(angleRad);
-            const dy = depth * Math.sin(angleRad);
+            // SVG arc sweep flag: 1 when A→mid→B turns clockwise on screen (y down).
+            const sweepOf = (a: { x: number, y: number }, mid: { x: number, y: number }, b: { x: number, y: number }) =>
+                ((mid.x - a.x) * (b.y - mid.y) - (mid.y - a.y) * (b.x - mid.x)) > 0 ? 1 : 0;
+            // A cap is an ellipse turned by the axis angle: `rAlong` is its semi-axis
+            // along the rotated x-axis (the tube axis), `r` the one across it.
+            const arc = (a: { x: number, y: number }, mid: { x: number, y: number }, b: { x: number, y: number }, large: number) =>
+                `A ${rAlong} ${r} ${angleDeg} ${large} ${sweepOf(a, mid, b)} ${b.x} ${b.y}`;
 
-            // Front Ellipse (at center 0,0)
-            // Back Ellipse (at offset dx, dy)
-            const fCx = 0, fCy = 0;
-            const bCx = dx, bCy = dy;
+            const capPath = (c: { x: number, y: number }) => {
+                const tipA = at(c, 0, rAlong), tipB = at(c, 0, -rAlong);
+                const pA = at(c, r, 0), pB = at(c, -r, 0);
+                return `M ${pA.x} ${pA.y} ${arc(pA, tipA, pB, 0)} ${arc(pB, tipB, pA, 0)} Z`;
+            };
+            // Only the far half of the far cap is visible; the near half sits behind
+            // the barrel. Drawing the whole ellipse is what put a crossed X inside an
+            // unfilled cylinder.
+            const farVisible = `M ${farA.x} ${farA.y} ${arc(farA, at(farC, 0, rAlong), farB, 0)}`;
 
-            // Simplified Cylinder rendering:
-            // 1. Back Ellipse
-            // 2. Side Body (using two tangent lines)
-            // 3. Front Ellipse
-
-            // To find tangents correctly for arbitrary extrusion angle:
-            // The tangent points on an axis-aligned ellipse for a vector (dx, dy) are
-            // where the gradient is perpendicular to the tangent. 
-            // For x²/a² + y²/b² = 1, the tangent at (x0, y0) has slope -b²x0 / a²y0.
-            // But we actually just need the extreme points relative to the extrusion vector.
-            // A simpler way: use the angle of the extrusion vector +/- 90 degrees.
-            const tangentAngle = Math.atan2(dy * rx * rx, dx * ry * ry) + Math.PI / 2;
-            const tx = rx * Math.cos(tangentAngle);
-            const ty = ry * Math.sin(tangentAngle);
+            // The solid's silhouette, for converters (see ShapeGeometry.outline).
+            const outline = `M ${nearA.x} ${nearA.y} L ${farA.x} ${farA.y}`
+                + ` ${arc(farA, at(farC, 0, rAlong), farB, 0)} L ${nearB.x} ${nearB.y}`
+                + ` ${arc(nearB, at(nearC, 0, -rAlong), nearA, 0)} Z`;
 
             return {
-                type: 'multi', shapes: [
-                    { type: 'ellipse', cx: bCx, cy: bCy, rx: rx, ry: ry, shade: 0.6 }, // Back Face
-                    {
-                        type: 'points',
-                        points: [
-                            { x: fCx + tx, y: fCy + ty },
-                            { x: bCx + tx, y: bCy + ty },
-                            { x: bCx - tx, y: bCy - ty },
-                            { x: fCx - tx, y: fCy - ty }
-                        ],
-                        shade: 0.8 // Side Body
-                    },
-                    { type: 'ellipse', cx: fCx, cy: fCy, rx: rx, ry: ry, shade: 1.0 } // Front Face
+                type: 'multi', outline, shapes: [
+                    // Far cap fill first, so the barrel paints over its hidden half.
+                    { type: 'path', path: capPath(farC), shade: 0.6, isBackface: true, noStroke: true },
+                    // Barrel fill. Stroked separately below: the quad's end edges are
+                    // chords through the cap centres and must never be drawn — that
+                    // stray line across a squat cylinder was exactly this.
+                    { type: 'points', points: [nearA, farA, farB, nearB], shade: 0.8, noStroke: true },
+                    { type: 'path', path: farVisible, shade: 0.6, isBackface: true, noFill: true },
+                    { type: 'points', isClosed: false, points: [nearA, farA], shade: 0.8, noFill: true },
+                    { type: 'points', isClosed: false, points: [nearB, farB], shade: 0.8, noFill: true },
+                    // Near cap, fully visible.
+                    { type: 'path', path: capPath(nearC), shade: 1.0, isLid: true },
                 ]
             };
         }

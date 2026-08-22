@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.217', date: '2026-08-22', items: [
+        'The Cylinder is finally a cylinder. Dragging one taller used to make it flatter — you ended up with a big standing oval instead of a pillar, which is why the Database shape looked more like a cylinder than the cylinder did. The box you draw is now the whole solid: width is the diameter, height is the height.',
+        'Both end circles take the perspective together. There is one Cap Perspective slider, from almost edge-on to a full circle seen face-on, and it opens or closes the top and the bottom at the same time — you no longer have to fight a bottom circle that stayed put.',
+        'Axis Angle stands the cylinder up (the default), lays it on its side, or tilts it — and a tilted one is a real tilted tube now, not a squashed one. To tip a cylinder over at any angle, rotating the shape is still the easiest way.',
+        'An unfilled cylinder looks solid: the hidden half of the far circle is no longer drawn through the middle of it, and the stray line across a short, wide cylinder is gone.',
+    ] },
     { version: '0.8.216', date: '2026-08-22', items: [
         'Stick figures now appear where you are looking. Clicking a figure or a motion in the Stick Figures panel used to drop it in the middle of the page — which, once you had zoomed in, panned somewhere, or simply opened a side panel, could be off to the right of the screen or out of sight altogether.',
         'The same applies to illustrations and imported SVGs: anything added from a panel lands in the middle of your current view. Dragging a thumbnail onto the canvas still drops it exactly where you release.',

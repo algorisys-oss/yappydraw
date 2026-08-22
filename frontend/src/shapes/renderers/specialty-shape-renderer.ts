@@ -95,28 +95,39 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
                 // Check per-face: lid can have fill even when background is transparent
                 const faceColor = (s.isLid && lidColor) ? lidColor : backgroundColor;
                 const shade = s.shade || 1;
+                // An SVG-`path` face is a self-contained Path2D: renderGeometry fills it
+                // and leaves the current path empty, so it needs fillPath/strokePath
+                // rather than the beginPath()+fill()/stroke() pattern the other face
+                // types use. (Same trap as the 2D branch below.)
+                const isPathFace = s.type === 'path';
+                const fillFace = () => {
+                    if (isPathFace) renderer.fillPath(s.path, s.evenOdd ? 'evenodd' : undefined);
+                    else { renderer.beginPath(); RenderPipeline.renderGeometry(renderer, s); renderer.fill(); }
+                };
+                const strokeFace = () => {
+                    if (isPathFace) renderer.strokePath(s.path);
+                    else { renderer.beginPath(); RenderPipeline.renderGeometry(renderer, s); renderer.stroke(); }
+                };
 
-                // Apply gradient fill with per-face shading for 3D shapes
-                if (useGradient && !s.isLid) {
+                // Apply gradient fill with per-face shading for 3D shapes.
+                // `noFill` faces are stroke-only detail (hidden-line arcs, silhouette
+                // edges) — filling them would paint a chord across the shape.
+                if (s.noFill) {
+                    // stroke-only face
+                } else if (useGradient && !s.isLid) {
                     const gradient = this.createShadedGradient(renderer, el, shade);
                     if (gradient) {
                         renderer.fillStyle = gradient;
-                        renderer.beginPath();
-                        RenderPipeline.renderGeometry(renderer, s);
-                        renderer.fill();
+                        fillFace();
                     } else if (faceColor) {
                         // Fallback to solid color if gradient creation failed
                         renderer.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
-                        renderer.beginPath();
-                        RenderPipeline.renderGeometry(renderer, s);
-                        renderer.fill();
+                        fillFace();
                     }
                 } else if (faceColor) {
                     // Solid color fill with shading
                     renderer.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
-                    renderer.beginPath();
-                    RenderPipeline.renderGeometry(renderer, s);
-                    renderer.fill();
+                    fillFace();
                 }
 
                 // 2. Stroke (skip if face is marked as noStroke - used for interior faces)
@@ -137,9 +148,7 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
                         RenderPipeline.applyStrokeStyle(renderer, el, isDarkMode);
                         renderer.strokeStyle = faceStrokeColor;
                         if (s.shade) renderer.strokeStyle = RenderPipeline.shadeColor(renderer.strokeStyle as string, s.shade);
-                        renderer.beginPath();
-                        RenderPipeline.renderGeometry(renderer, s);
-                        renderer.stroke();
+                        strokeFace();
                     }
                 }
 
@@ -231,25 +240,26 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
             geometry.shapes.forEach((s: any) => {
                 const faceColor = (s.isLid && lidColor) ? lidColor : backgroundColor;
                 const shade = s.shade || 1;
+                // Stroke-only detail faces (hidden-line arcs, silhouette edges) carry no fill.
+                if (s.noFill) return;
+                // `path` faces are a self-contained Path2D — fillPath, not beginPath()+fill().
+                const fillFace = () => {
+                    if (s.type === 'path') renderer.fillPath(s.path, s.evenOdd ? 'evenodd' : undefined);
+                    else { renderer.beginPath(); RenderPipeline.renderGeometry(renderer, s); renderer.fill(); }
+                };
 
                 if (!s.isLid) {
                     const gradient = this.createShadedGradient(renderer, el, shade);
                     if (gradient) {
                         renderer.fillStyle = gradient;
-                        renderer.beginPath();
-                        RenderPipeline.renderGeometry(renderer, s);
-                        renderer.fill();
+                        fillFace();
                     } else if (faceColor) {
                         renderer.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
-                        renderer.beginPath();
-                        RenderPipeline.renderGeometry(renderer, s);
-                        renderer.fill();
+                        fillFace();
                     }
                 } else if (faceColor) {
                     renderer.fillStyle = shade !== 1 ? RenderPipeline.shadeColor(faceColor, shade) : faceColor;
-                    renderer.beginPath();
-                    RenderPipeline.renderGeometry(renderer, s);
-                    renderer.fill();
+                    fillFace();
                 }
             });
 
@@ -301,6 +311,12 @@ export class SpecialtyShapeRenderer extends ShapeRenderer {
         // For noStroke faces, only render fill (no stroke)
         if (geo.noStroke) {
             localOptions = { ...localOptions, stroke: 'none', strokeWidth: 0 };
+        }
+
+        // For noFill faces, only render stroke — these are hidden-line arcs and
+        // silhouette edges, whose "interior" is not a face of the solid.
+        if (geo.noFill) {
+            localOptions = { ...localOptions, fill: 'none' };
         }
 
         if (geo.type === 'rect') {

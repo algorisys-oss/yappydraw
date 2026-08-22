@@ -20,6 +20,7 @@ import { confirmAndReparent } from '../reparent';
 import { isPointInPolygon, rotatePoint } from '../geometry';
 import { expandToPortGroups } from '../binding-logic';
 import { getWarpGrid, defaultWarpGrid } from '../envelope-warp';
+import { cylinderCapRatioForDistance } from '../shape-geometry';
 import { getSnappingGuides } from '../object-snapping';
 import { getSpacingGuides } from '../spacing';
 import { getPointSnap } from '../point-snapping';
@@ -1637,7 +1638,16 @@ function handleControlPointDrag(
             const sideRatio = Math.round(newHRatio * 100);
 
             updateElement(el.id, { shapeRatio, sideRatio }, false);
-        } else if ((el.type === 'solidBlock' || el.type === 'cylinder') && pState.draggingHandle === 'control-1') {
+        } else if (el.type === 'cylinder' && pState.draggingHandle === 'control-1') {
+            // Angle from the centre sets the axis direction; distance sets how open
+            // the caps are (pull out → flatter, push in → rounder). Both caps follow.
+            const dx = x - (el.x + el.width / 2);
+            const dy = y - (el.y + el.height / 2);
+            let angleDeg = Math.round((Math.atan2(dy, dx) * 180) / Math.PI);
+            if (angleDeg < 0) angleDeg += 360;
+            const capRatio = Math.round(cylinderCapRatioForDistance(el, angleDeg, Math.hypot(dx, dy)));
+            updateElement(el.id, { viewAngle: angleDeg, capRatio }, false);
+        } else if (el.type === 'solidBlock' && pState.draggingHandle === 'control-1') {
             const centerX = el.x + el.width / 2;
             const centerY = el.y + el.height / 2;
             const dx = x - centerX;

@@ -5354,7 +5354,7 @@ const animatedElementSnapshots = new Map<string, Record<string, any>>();
 const ANIMATED_PROPS = [
     'x', 'y', 'width', 'height', 'opacity', 'angle',
     'strokeColor', 'backgroundColor', 'strokeWidth', 'roughness',
-    'depth', 'viewAngle', 'openAmount', 'taper', 'skewX', 'skewY',
+    'depth', 'viewAngle', 'capRatio', 'openAmount', 'taper', 'skewX', 'skewY',
     'frontTaper', 'frontSkewX', 'frontSkewY', 'shapeRatio', 'sideRatio',
     'drawProgress', 'renderScale',
     // Text properties — text animations temporarily clear/modify these during playback.

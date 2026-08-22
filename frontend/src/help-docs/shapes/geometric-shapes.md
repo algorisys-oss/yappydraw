@@ -79,7 +79,36 @@ Yappy includes several pseudo-3D shapes for creating depth in diagrams:
 | **Isometric Cube** | 3D cube in isometric projection |
 | **Solid Block** | 3D rectangular block with depth |
 | **Perspective Block** | Box with perspective vanishing point |
-| **Cylinder** | 3D cylinder (databases, storage) |
+| **Cylinder** | 3D cylinder — pillars, cans, tanks, databases |
+
+### Cylinder
+
+The cylinder is a tube drawn inside its bounding box: the **width is the diameter**
+and the **height is the whole solid**, caps included. Drag the bottom handle down and
+you get a taller pillar — the end circles keep their shape.
+
+Two extra controls appear in the property panel under **Dimensions**:
+
+| Control | What it does |
+| --- | --- |
+| **Cap Perspective** | How open **both** end circles are, from 2 (almost edge-on) to 100 (a full circle seen face-on). 25 is a natural three-quarter view. |
+| **Axis Angle** | Which way the tube runs. **90°** (the default) is upright; **0°** lays the can on its side; anything between gives a tilted tube. |
+
+The green control handle sits at the centre of the far cap. Swing it around the shape
+to set the axis angle, and pull it out or push it in to flatten or open the caps.
+
+To tip a whole cylinder over at an arbitrary angle, rotate the element (drag the
+rotation handle) rather than changing the axis angle — rotation turns the caps with it.
+
+:::tip
+For a pillar or a column, keep the width fixed and drag the height; for a coin or a
+puck, use a wide box with a low **Cap Perspective**.
+:::
+
+:::note
+Only the visible half of the far cap is drawn, so an unfilled cylinder reads as a solid
+rather than as two crossed ellipses.
+:::
 
 ## Styling Options
 
@@ -110,8 +139,12 @@ Geometric shapes are created through the global `window.Yappy` (usable as ` Yapp
 Yappy.createElement('hexagon', 80, 80, 120, 120);
 Yappy.createElement('pentagon', 220, 80, 120, 120);
 Yappy.createElement('octagon', 360, 80, 120, 120, { backgroundColor: '#ffc9c9' });
-Yappy.createElement('cylinder', 80, 240, 120, 150);   // pseudo-3D
 Yappy.createElement('isometricCube', 240, 240, 120, 120);
+
+// Cylinder: width = diameter, height = the whole solid
+Yappy.createCylinder(80, 240, 120, 320);                       // upright pillar
+Yappy.createCylinder(240, 240, 120, 320, { capRatio: 10 });    // near edge-on caps
+Yappy.createCylinder(400, 240, 300, 110, { viewAngle: 0 });    // can on its side
 
 // Star: dedicated helper takes a point count
 const star = Yappy.createStar(400, 240, 120, 120, 5, { starPoints: 5 });
@@ -124,7 +157,8 @@ const star = Yappy.createStar(400, 240, 120, 120, 5, { starPoints: 5 });
 | Polygon | `'polygon'` |
 | Parallelogram / Trapezoid | `'parallelogram'`, `'trapezoid'` |
 | Cross / Heart / Cloud / Capsule | `'cross'`, `'heart'`, `'cloud'`, `'capsule'` |
-| 3D blocks / Cylinder | `'isometricCube'`, `'solidBlock'`, `'perspectiveBlock'`, `'cylinder'` |
+| 3D blocks | `'isometricCube'`, `'solidBlock'`, `'perspectiveBlock'` |
+| Cylinder | `'cylinder'` (or `createCylinder(...)`), with `capRatio` and `viewAngle` |
 
 :::tip
 Tune a star with `opts.starPoints`, and restyle any shape afterwards with ` Yappy.updateElement(id, { backgroundColor, strokeColor, fillStyle, opacity })`.

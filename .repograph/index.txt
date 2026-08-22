@@ -80,7 +80,7 @@ frontend/src/ai/slide-system-prompt.ts | typescript | 99 | buildSlideUserPrompt:
 frontend/src/ai/slide-visual-prompt.ts | typescript | 81 |
 frontend/src/ai/system-prompt.ts | typescript | 395 | buildSystemPrompt:6 buildVisionSystemPrompt:191 build3DStyleSystemPrompt:279 build3DVisionSystemPrompt:286 buildRocketSystemPrompt:393
 frontend/src/ai/turntable-ai.ts | typescript | 199 | LLMResponse:12 ReconstructResult:21 buildTurntableSvgPrompt:24 extractSvg:44 reconstructTurntableAI:56 postImageEdit:136 reconstructTurntableAIImage:160
-frontend/src/api.ts | typescript | 4984 | Theme:3 MandalaRing:45 HarmonyType:78 PlayOptions:83 PlaySpec:83 PlayTargets:83 TexPart:84 AxesOptions:91 AxesSpec:91 PlotFn:91 VectorFieldOptions:91 VectorFn:91 DimensionMeasure:99 ElementOptions:172 normalizeElementType:402 plotRuns:433 ElementType:651 as:651 Window:4973
+frontend/src/api.ts | typescript | 5007 | Theme:3 MandalaRing:45 HarmonyType:78 PlayOptions:83 PlaySpec:83 PlayTargets:83 TexPart:84 AxesOptions:91 AxesSpec:91 PlotFn:91 VectorFieldOptions:91 VectorFn:91 DimensionMeasure:99 ElementOptions:172 normalizeElementType:402 plotRuns:433 ElementType:674 as:674 Window:4996
 frontend/src/app.css | - | 27 |
 frontend/src/app.tsx | typescript | 1570 | Component:1 App:99 moves:124 onPenMove:125 hidePen:129 handleKeyUp:168 handleKeyDown:178 as:828 handleFullscreenChange:969 handleBeforeUnload:975 handlePaste:979 handleGlobalDragEnter:1082 handleGlobalDragOver:1097 showDropFallbackPrompt:1116 cleanup:1146 outsideClick:1174 isImageFile:1186 first:1187 must:1200 extractDropData:1202 processExtractedDrop:1257 handleGlobalDrop:1378 handleDocumentDrop:1424
 frontend/src/assets/solid.svg | - | 1 |
@@ -233,7 +233,7 @@ frontend/src/components/player-app.tsx | typescript | 170 | Window:20 PlayerApp:
 frontend/src/components/presentation-capture.tsx | typescript | 113 | Component:12 elapsed:33 size:37 btn:42 toggleGif:57
 frontend/src/components/presentation-controls.tsx | typescript | 240 | Component:1 PresentationControls:8 resetHideTimeout:12 handleNext:43 handlePrev:48
 frontend/src/components/property-panel.css | - | 803 |
-frontend/src/components/property-panel.tsx | typescript | 2926 | Component:1 PropertyConfig:40 isMixed:65 templates:88 handleClickOutside:90 handlePresent:145 StickFaceActions:235 calls:249 SlideActions:325 handlePreviewTransition:326 AlignmentControls:342 gapVal:344 el:390 r2:391 apply:392 applyAngle:396 num:400 any:439 el:449 hasStroke:450 preview:451 set:452 el:495 eligible:496 hasStroke:497 current:498 ribbon:501 hasOptions:552 activePaletteId:557 activePalette:558 paletteSwatches:560 swatches:562 ap:662 fills:663 strokes:664 commit:665 editFill:671 editStroke:672 move:673 patValue:688 onPatChange:689 sg:736 stops:737 setSG:738 editStop:739 mesh:767 ids:768 row:787 col:788 pat:823 ids:824 transparentBg:828 isCustom:829 isTexture:832 el:930 id:931 set:932 snap:933 feather:934 glowOn:935 glowBlur:936 glowColor:937 warp:974 ids:975 bend:977 preset:978 reapply:979 bendLive:988 bendCommit:992 ex:1026 ids:1027 Row:1031 TurntableEditor:1068 els:1069 capable:1070 ids:1071 isGroup:1072 rep:1073 tt:1074 Row:1078 +60 more
+frontend/src/components/property-panel.tsx | typescript | 2933 | Component:1 PropertyConfig:40 isMixed:65 templates:88 handleClickOutside:90 handlePresent:145 StickFaceActions:235 calls:249 SlideActions:325 handlePreviewTransition:326 AlignmentControls:342 gapVal:344 el:390 r2:391 apply:392 applyAngle:396 num:400 any:439 el:449 hasStroke:450 preview:451 set:452 el:495 eligible:496 hasStroke:497 current:498 ribbon:501 hasOptions:552 activePaletteId:557 activePalette:558 paletteSwatches:560 swatches:562 ap:662 fills:663 strokes:664 commit:665 editFill:671 editStroke:672 move:673 patValue:688 onPatChange:689 sg:736 stops:737 setSG:738 editStop:739 mesh:767 ids:768 row:787 col:788 pat:823 ids:824 transparentBg:828 isCustom:829 isTexture:832 el:930 id:931 set:932 snap:933 feather:934 glowOn:935 glowBlur:936 glowColor:937 warp:974 ids:975 bend:977 preset:978 reapply:979 bendLive:988 bendCommit:992 ex:1026 ids:1027 Row:1031 TurntableEditor:1068 els:1069 capable:1070 ids:1071 isGroup:1072 rep:1073 tt:1074 Row:1078 +61 more
 frontend/src/components/puppet-warp-overlay.css | - | 36 |
 frontend/src/components/puppet-warp-overlay.tsx | typescript | 110 | PuppetWarpOverlay:12 target:19 warpable:20 active:21 notice:23 toWorld:24 pinWorld:27 hitPin:33 onDown:42 onMove:63 onUp:70 onKey:76 pinDots:81
 frontend/src/components/quick-controls.tsx | typescript | 583 | Component:16 QuickPropertyDef:22 getIcon:66 stop:124 handleDocClick:166 isTransparent:183 handleDocClick:234 activeOption:250 isActive:291 toggle:300 an:324 clamp:336 beginEdit:338 commit:343 a:366 is:386 handleDocClick:413 activeLabel:429 categories:433 toggleOpen:505 isOpen:506 isDisabled:537
@@ -337,12 +337,12 @@ frontend/src/config/gradient-presets.ts | typescript | 479 | GradientPreset:6 ge
 frontend/src/config/image-filter-presets.ts | typescript | 45 | ImageFilterPreset:1 getImageFilterPreset:43
 frontend/src/config/openbox-presets.ts | typescript | 305 | OpenBoxPreset:8 getOpenBoxPreset:289 getOpenBoxPresetsByCategory:296 getOpenBoxCategories:303
 frontend/src/config/page-size-presets.ts | typescript | 50 | PageSizePreset:5
-frontend/src/config/properties.ts | typescript | 2030 | PropertyConfig:18
+frontend/src/config/properties.ts | typescript | 2054 | PropertyConfig:18
 frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 with:20 and:27 for:34
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 651 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 657 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -439,8 +439,8 @@ frontend/src/help-docs/shapes/basic-shapes.md | - | 194 |
 frontend/src/help-docs/shapes/bpmn.md | - | 226 |
 frontend/src/help-docs/shapes/connectors.md | - | 184 |
 frontend/src/help-docs/shapes/drawing-tools.md | - | 224 |
-frontend/src/help-docs/shapes/flowchart.md | - | 147 |
-frontend/src/help-docs/shapes/geometric-shapes.md | - | 131 |
+frontend/src/help-docs/shapes/flowchart.md | - | 153 |
+frontend/src/help-docs/shapes/geometric-shapes.md | - | 165 |
 frontend/src/help-docs/shapes/infrastructure.md | - | 218 |
 frontend/src/help-docs/shapes/mindmap.md | - | 203 |
 frontend/src/help-docs/shapes/sketchnote.md | - | 203 |
@@ -532,7 +532,7 @@ frontend/src/shapes/renderers/people-renderer.ts | typescript | 463 | PeopleRend
 frontend/src/shapes/renderers/polygon-renderer.ts | typescript | 127 | PolygonRenderer:6{renderArchitectural:7 renderSketch:22 drawPolygon:36 getPoints:61 getRegularPolyPoints:95}
 frontend/src/shapes/renderers/rectangle-renderer.ts | typescript | 82 | CornerRadii:5 RectangleRenderer:7{renderArchitectural:8 renderSketch:27 drawRectArch:46 drawRectSketch:65 definePath:73}
 frontend/src/shapes/renderers/sketchnote-renderer.ts | typescript | 797 | SketchnoteRenderer:7{renderArchitectural:8 renderSketch:290}
-frontend/src/shapes/renderers/specialty-shape-renderer.ts | typescript | 355 | SpecialtyShapeRenderer:9{createShadedGradient:14 hasGradientFill:66 renderArchitectural:72 renderSketch:211 renderSketchGeometry:281 definePath:327 traceDrawStroke:343}
+frontend/src/shapes/renderers/specialty-shape-renderer.ts | typescript | 371 | SpecialtyShapeRenderer:9{createShadedGradient:14 hasGradientFill:66 renderArchitectural:72 renderSketch:220 renderSketchGeometry:291 definePath:343 traceDrawStroke:359}
 frontend/src/shapes/renderers/status-renderer.ts | typescript | 285 | StatusRenderer:7{renderArchitectural:8 renderSketch:144 roundRect:204 drawSymbol:218 getTagPath:229 getPinPath:243 getStampPath:256 definePath:279}
 frontend/src/shapes/renderers/stick-rig-renderer.ts | typescript | 273 | JointId:15 RigPose:15 FacePrim:19 BoxPose:22 StickRigRenderer:44{computePose:46}
 frontend/src/shapes/renderers/sticky-note-renderer.ts | typescript | 83 | StickyNoteRenderer:6{renderArchitectural:7 renderSketch:35 getPoints:46 definePath:67}
@@ -612,7 +612,7 @@ frontend/src/templates/data/presentations/tech-architecture.ts | typescript | 96
 frontend/src/templates/registry.ts | typescript | 241 | TemplateRegistry:13
 frontend/src/templates/template-preview.ts | typescript | 211 | Box:48 markFor:51 boundsOf:110 pageBackground:131 templatePreviewSvg:151 templatePreviewDataUrl:208
 frontend/src/templates/user-templates.ts | typescript | 124 | listUserTemplates:39 persist:43 saveCurrentAsTemplate:50 deleteUserTemplate:119
-frontend/src/types.ts | typescript | 1000 | ElementType:2 SymbolDef:28 Artboard:47 GraphicStyle:51 Swatch:59 PatternSwatch:63 ToolType:65 PathAnchor:73 PathSubpath:98 AppMode:103 FillStyle:104 PatternType:108 PatternFill:116 MeshGradient:140 StrokeStyle:152 FontFamily:156 TextAlign:157 VerticalAlign:158 ArrowHead:159 RichTextSpan:161 GradientStop:176 GradientType:181 BlendMode:183 Point:205 EntranceAnimation:212 ExitAnimation:248 PaintFill:274 PaintStroke:276 TransformEffect:286 Extrude3D:306 Turntable:324 DrawingElement:344 TableCellSelection:915 TableCellFormatType:923 TableCellFormat:925 TableBorderStyle:938 TableCellBorder:940 TableCellBorders:945 Layer:952 GridSettings:967 Guide:983 ViewState:989
+frontend/src/types.ts | typescript | 1001 | ElementType:2 SymbolDef:28 Artboard:47 GraphicStyle:51 Swatch:59 PatternSwatch:63 ToolType:65 PathAnchor:73 PathSubpath:98 AppMode:103 FillStyle:104 PatternType:108 PatternFill:116 MeshGradient:140 StrokeStyle:152 FontFamily:156 TextAlign:157 VerticalAlign:158 ArrowHead:159 RichTextSpan:161 GradientStop:176 GradientType:181 BlendMode:183 Point:205 EntranceAnimation:212 ExitAnimation:248 PaintFill:274 PaintStroke:276 TransformEffect:286 Extrude3D:306 Turntable:324 DrawingElement:344 TableCellSelection:916 TableCellFormatType:924 TableCellFormat:926 TableBorderStyle:939 TableCellBorder:941 TableCellBorders:946 Layer:953 GridSettings:968 Guide:984 ViewState:990
 frontend/src/types/anim-types.test.ts | typescript | 51 |
 frontend/src/types/anim-types.ts | typescript | 143 | TweenKind:15 FrameAction:20 PegTransform:32 AnimKeyframe:42 AnimLayer:61 AnimAudioClip:71 AnimCameraKey:84 AnimMarker:96 AnimTimeline:103 OnionSettings:121
 frontend/src/types/brand-types.ts | typescript | 41 | BrandColors:5 BrandFonts:13 BrandKit:20
@@ -699,7 +699,7 @@ frontend/src/utils/geometry.ts | typescript | 433 | isPointInPolygon:5 distanceT
 frontend/src/utils/grid-lattice.test.ts | typescript | 114 | onLattice:50
 frontend/src/utils/grid-lattice.ts | typescript | 85 | GridStyle:20 gridFamilyAngles:32 isAngledGrid:42 latticeSnap:54
 frontend/src/utils/group-utils.ts | typescript | 130 | unitGroupId:18 nextIsolationGroup:35 isInIsolatedGroup:46 getGroupBoundingBox:55 isPointInGroupBounds:91 getGroupsSortedByPriority:105
-frontend/src/utils/handle-detection.ts | typescript | 599 | unrotatePoint:18 getPathHandleAtPosition:31 getSelectionBoundingBox:69 getDeleteHandlePosition:102 getHandleAtPosition:142 TEXT_MOVE_ELIGIBLE:594
+frontend/src/utils/handle-detection.ts | typescript | 609 | unrotatePoint:19 getPathHandleAtPosition:32 getSelectionBoundingBox:70 getDeleteHandlePosition:103 getHandleAtPosition:143 TEXT_MOVE_ELIGIBLE:604
 frontend/src/utils/hard-refresh.ts | typescript | 44 | hardRefresh:16
 frontend/src/utils/hierarchy.ts | typescript | 68 | getDescendants:44 isDescendantOf:65
 frontend/src/utils/hit-testing.ts | typescript | 427 | unrotatePoint:27 unshearPoint:35 hitTestElement:61 hitTestGeometry:91 hitTestPathElement:347 isPointInEraseHole:379
@@ -778,13 +778,13 @@ frontend/src/utils/routing.test.ts | typescript | 135 | Seg:7 node:10 elbow:15
 frontend/src/utils/routing.ts | typescript | 350 | Seg:12 Node:228
 frontend/src/utils/safe-storage.ts | typescript | 48 | readJson:16 readJsonArray:35 writeJson:41
 frontend/src/utils/select-tool-path-nodes.test.ts | typescript | 104 | recordingCtx:22
-frontend/src/utils/selection-renderer.ts | typescript | 1066 | isLabelDraggable:24 drawDeleteHandle:37 ElementOverlayOptions:60 renderPathAnchors:87 renderElementOverlays:137
+frontend/src/utils/selection-renderer.ts | typescript | 1073 | isLabelDraggable:25 drawDeleteHandle:38 ElementOverlayOptions:61 renderPathAnchors:88 renderElementOverlays:138
 frontend/src/utils/shape-geometry-fixes.test.ts | typescript | 137 | shape:14 arcs:34 numbersIn:49
-frontend/src/utils/shape-geometry.ts | typescript | 1906 | ShapeGeometry:9 LidConfig:866 LidWithPosition:1031
+frontend/src/utils/shape-geometry.ts | typescript | 2042 | ShapeGeometry:9 LidConfig:1000 LidWithPosition:1165
 frontend/src/utils/shape-recognition.test.ts | typescript | 227 | Pt:2 rng:16 tracePolyline:25 traceEllipse:45 rate:153
 frontend/src/utils/shape-recognition.ts | typescript | 334 | Pt:31 RecognizedShape:33 dist:90 perpDist:94 segDist:101 rdp:111 meanEdgeDist:135 reduceCorners:156 subsample:176 minTurnDeg:188 recognizeStrokeShape:208
 frontend/src/utils/shape-to-path-radius.test.ts | typescript | 114 | rect:14 nearly:18
-frontend/src/utils/shape-to-path.ts | typescript | 164 | rdp:20 normalizePoints:42 shapeToPath:54
+frontend/src/utils/shape-to-path.ts | typescript | 167 | rdp:20 normalizePoints:42 shapeToPath:54
 frontend/src/utils/slide-element-factory.ts | typescript | 972 | genId:20 resolvePalette:25 textEl:44 rectEl:76 gradientRectEl:99 cardEl:125 shapeEl:156 createTitleSlideElements:183 createContentSlideElements:231 createTwoColumnElements:286 createQuoteElements:349 createSectionBreakElements:397 createClosingElements:438 createImageTextElements:480 createMetricsSlideElements:523 createTimelineSlideElements:594 createCardGridSlideElements:656 createComparisonSlideElements:787 AISlideContent:897 createSlideElements:919 offsetElements:966
 frontend/src/utils/slide-utils.ts | typescript | 58 |
 frontend/src/utils/snap-helpers.ts | typescript | 40 | GridStyle:1
@@ -818,7 +818,7 @@ frontend/src/utils/tool-handlers/pen-handler.ts | typescript | 55 | penOnMove:14
 frontend/src/utils/tool-handlers/pen-path-handler.ts | typescript | 421 | snap:42 constrainHandleVec:53 placeAnchor:74 writePenElement:98 penDropIfOrphaned:145 resetPen:151 PenResumeTarget:166 canResume:183 findPenResumeTarget:197 reverseAnchors:213 penResume:228 penOnDown:256 penOnMove:328 penOnUp:378 penFinalize:389 penUndo:408
 frontend/src/utils/tool-handlers/perspective-snap-draw.test.ts | typescript | 299 | stubNode:25 offRay:57 live:60 cage:159 worldAnchors:249 endDrag:253
 frontend/src/utils/tool-handlers/polyline-handler.ts | typescript | 209 | polylineOnDown:17 polylineOnMove:93 polylineOnUp:148 polylineFinalize:154 polylineUndo:191
-frontend/src/utils/tool-handlers/selection-handler.ts | typescript | 2855 | getMeasureRenderer:54 captureInitialPositions:64 scaleEraseStrokes:92 scalePathAnchors:115 scalePathSubpaths:128 cloneSubpaths:133 captureMoveSet:141 initMoveState:163 selectionOnDown:178 selectionOnMove:940 handleResize:1377 handleControlPointDrag:1583 handlePerspectiveBlockControl:1673 handlePolypointDrag:1742 EditSub:1765 editableSubpaths:1768 writeEditableSubpaths:1784 handlePathNodeDrag:1813 convertPathAnchor:1864 deletePathAnchor:1893 findClosestPathSegment:1910 canInsertPathAnchor:1945 insertPathAnchorAt:1953 handleSegmentDrag:1996 applyResize:2030 handle3DViewAngle:2228 handleMove:2274 selectionOnUp:2487 any:2650 as:2650
+frontend/src/utils/tool-handlers/selection-handler.ts | typescript | 2865 | getMeasureRenderer:55 captureInitialPositions:65 scaleEraseStrokes:93 scalePathAnchors:116 scalePathSubpaths:129 cloneSubpaths:134 captureMoveSet:142 initMoveState:164 selectionOnDown:179 selectionOnMove:941 handleResize:1378 handleControlPointDrag:1584 handlePerspectiveBlockControl:1683 handlePolypointDrag:1752 EditSub:1775 editableSubpaths:1778 writeEditableSubpaths:1794 handlePathNodeDrag:1823 convertPathAnchor:1874 deletePathAnchor:1903 findClosestPathSegment:1920 canInsertPathAnchor:1955 insertPathAnchorAt:1963 handleSegmentDrag:2006 applyResize:2040 handle3DViewAngle:2238 handleMove:2284 selectionOnUp:2497 any:2660 as:2660
 frontend/src/utils/tool-handlers/selection-marquee.test.ts | typescript | 196 | stubNode:38 el:68 makeSignals:74 makeHelpers:100 upEvent:115 marqueeOverEverything:121 lassoOverEverything:180
 frontend/src/utils/tool-handlers/text-editing-handler.ts | typescript | 513 | TableEditingCell:22 EditingPropertyType:31 TextEditingContext:33 commitText:54 commitRichText:190 handleDoubleClick:249
 frontend/src/utils/transform-effect.ts | typescript | 93 | effectiveCopies:21 hasTransformEffect:27 transformCopy:41 transformEffectRenderCopies:83
@@ -945,6 +945,7 @@ tests/comprehensive-features.spec.ts | typescript | 251 |
 tests/connector-anchor-direction.spec.ts | typescript | 176 | deg:16 norm:17 cubicOf:21 edgeNormalAt:30 boot:41 buildCrossEdge:54 box:62
 tests/contrast.spec.ts | typescript | 308 | Page:1 relLuminance:16 contrast:20 sample:27 Surface:198
 tests/curvature.spec.ts | typescript | 35 |
+tests/cylinder-geometry.spec.ts | typescript | 115 | cyl:12
 tests/data-structures.spec.ts | typescript | 189 |
 tests/default-style.spec.ts | typescript | 17 |
 tests/design-extras.spec.ts | typescript | 123 | Window:6

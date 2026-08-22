@@ -63,6 +63,12 @@ Example Decision Labels:
 
 Represents data storage, typically a database system. The cylinder shape mimics traditional disk storage.
 
+:::note
+This is the flowchart **Database** symbol (type `database`) — a fixed drum with no 3D
+controls. If you want a cylinder you can tilt or foreshorten (a pillar, a can, a tank),
+use the **Cylinder** shape instead; see the **Geometric Shapes** help page.
+:::
+
 ### Use Cases
 
 - Database read/write operations

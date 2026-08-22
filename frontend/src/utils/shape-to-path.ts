@@ -149,8 +149,11 @@ export function shapeToPath(el: DrawingElement): { anchors: PathAnchor[]; closed
     let path: string | undefined;
     if (geo.type === 'path') path = geo.path;
     else if (geo.type === 'multi') {
+        // A solid that publishes its silhouette gets converted as the whole solid;
+        // otherwise fall back to the first path face, which for a single-path multi
+        // IS the outline (and for a multi-face solid is only ever a guess).
         const pg = geo.shapes.find((s: any) => s.type === 'path') as any;
-        path = pg ? pg.path : undefined;
+        path = (geo as any).outline ?? (pg ? pg.path : undefined);
     }
     if (!path) return null;
     const cmds = PathUtils.parsePath(path);
