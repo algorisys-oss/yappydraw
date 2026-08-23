@@ -22,8 +22,14 @@ const categories = en.hotkeyCategory as Record<string, string>;
 
 describe("shortcut descriptions survived extraction", () => {
     it("extracted all 188", () => {
+        // The fixture is frozen — it is the pre-extraction table, and it never grows.
         expect(Object.keys(fixture.hotkeys)).toHaveLength(188);
-        expect(Object.keys(hotkeys)).toHaveLength(188);
+        // The dictionary may grow as new shortcuts ship; what it may never do is LOSE one
+        // of the 188. Pinning the count instead made every new shortcut fail this oracle,
+        // which says nothing about whether the extraction was faithful.
+        const missing = Object.keys(fixture.hotkeys).filter((k) => !(k in hotkeys));
+        expect(missing).toEqual([]);
+        expect(Object.keys(hotkeys).length).toBeGreaterThanOrEqual(188);
     });
 
     it("reproduces every description character for character", () => {

@@ -430,6 +430,23 @@ Both are per-browser preferences, remembered across sessions, and scriptable: ` 
 
 From the menu (or right-click → Export) save your work as **PNG**, **JPG**, **SVG**, **PDF** or copy it to the clipboard — the whole canvas or just the selection. **Artboards** export their region to a fixed-size PNG (see the Artboards doc).
 
+### What ends up in the file
+
+On the infinite canvas the export is a **tight crop of your artwork** — the box is the visual
+bounds of everything exported (rotation, stroke width, shadows, glow and 3D depth included),
+with 2px of padding, so the drawing fills the image rather than sitting in a corner of it.
+Paged documents (Design, Slides, Game, Animation) export at their page bounds instead.
+
+What is *excluded* is what the canvas is not showing you:
+
+- objects hidden with the eye toggle in the object tree, **and**
+- everything on a **hidden layer**.
+
+That second one matters for framing, not just for content: anything included stretches the
+crop box. If an export comes out much larger than your drawing, with the artwork pushed into
+one corner, look for an object sitting far out on the canvas — turning its layer's eye off is
+now enough to keep it out of both the pixels *and* the box.
+
 ### True-vector SVG
 
 SVG export is real **vector**: shapes become `<path>`s, text becomes ` <text>`, and gradients & gradient-mesh fills export as proper ` <linearGradient>`/`<radialGradient>`/`<pattern>` definitions — so the file stays crisp at any size and is editable in Illustrator, Inkscape or the browser. Sketch-style strokes export as vector too (via rough.js). A few highly decorative shapes fall back to an embedded raster image.

@@ -4,7 +4,7 @@ name: Vector Paths
 icon: "✒️"
 category: Drawing
 description: Pen tool, the Node tool (Direct Selection), Convert to Path, Pathfinder booleans, Outline Stroke, Offset Path, and holes
-keywords: "direct selection direct select white arrow node tool nodes anchor anchors anchor point control point handle handles bezier bézier edit points edit path reshape path marquee select nodes N key pen tool P corner smooth convert anchor insert point delete point subpath compound path hole donut pathfinder boolean unite subtract intersect exclude divide trim merge crop outline stroke offset path simplify convert to path switch shape while editing shift click add path straight line straight lines constrain segment 15 degrees fixed angle horizontal vertical 45 clock method noderef toggleNodeTool setNodeSelection allNodesOfSelection getPathNodes getNodeHandles moveSelectedNodes setSelectedNodesKind deleteSelectedNodes scripting api pause pen resume pen continue path continue from last anchor reopen path pick up where I left off unfinished path open path end anchor endpoint extend path close the shape later"
+keywords: "direct selection direct select white arrow node tool nodes anchor anchors anchor point control point handle handles bezier bézier edit points edit path reshape path marquee select nodes N key pen tool P corner smooth convert anchor insert point delete point subpath compound path hole donut pathfinder boolean unite subtract intersect exclude divide trim merge crop outline stroke offset path simplify convert to path switch shape while editing shift click add path straight line straight lines constrain segment 15 degrees fixed angle horizontal vertical 45 clock method noderef toggleNodeTool setNodeSelection allNodesOfSelection getPathNodes getNodeHandles moveSelectedNodes setSelectedNodesKind deleteSelectedNodes scripting api pause pen resume pen continue path continue from last anchor reopen path pick up where I left off unfinished path open path end anchor endpoint extend path close the shape later open stroke leave path open finish open ctrl click alt click photoshop click away drop the pen undo last point point level undo remove last anchor backspace ctrl z while drawing"
 seoTitle: "Vector path editing online — pen tool, nodes and pathfinder"
 seoDescription: "Edit vector paths in the browser: pen tool, node editing, convert to path, pathfinder booleans, outline stroke and offset path."
 ---
@@ -25,8 +25,27 @@ Pick the **Pen / Vector Path** tool (the pen-nib icon) from the toolbar, then bu
 | <kbd>Shift</kbd> + click (between points) | Constrain the **segment** to 15° increments — perfectly horizontal, vertical or 45° lines |
 | <kbd>Shift</kbd> + drag (while curving) | **Clock Method** — constrain the Bézier handles to 90°/45° for clean, easily-edited curves |
 | <kbd>Enter</kbd> / <kbd>Esc</kbd> / **double-click** | Finish the path open (not closed) — you can pick it up again later |
-| <kbd>Backspace</kbd> | Remove the last anchor while still drawing |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + click anywhere | Finish the path open **and stay on the Pen**, ready for the next curve |
+| <kbd>Backspace</kbd> or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd> | Step back one anchor while still drawing |
 | **Click an end anchor of an open path** | **Continue that path** from where you stopped |
+
+:::tip
+**Leaving a path open is a first-class result, not a fallback.** An open path is a stroke —
+a curve with no fill — and Yappy has four ways to end one: <kbd>Enter</kbd>, <kbd>Esc</kbd>,
+a double-click, or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + click anywhere on the canvas. The last one
+is the one to reach for with a stylus in your hand, and it is the only one that **keeps the
+Pen selected**, so drawing a run of separate open curves is one continuous gesture instead of
+re-picking the tool between each. A single-anchor path is discarded rather than left as a stub.
+:::
+
+:::tip
+**Undo steps back one point while you are drawing.** <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd>
+mid-path removes the most recent anchor — the same as <kbd>Backspace</kbd> — rather than
+discarding the whole path. (The path is one undo entry until you finish it, so the document
+undo would have taken all of it at once.) Undo the very first anchor and the path is dropped
+and the Pen is free. Once the path is *finished*, <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd>
+is the ordinary document undo again. The same rule applies to the **Polyline** tool.
+:::
 
 :::tip
 **Pause a path and come back to it.** You do not have to finish a path in one sitting. Press <kbd>Esc</kbd> or <kbd>Enter</kbd> (or just switch tools) and the path stays on the canvas, open, as an ordinary object — style it, move it, save the drawing, close the app. To carry on, pick the **Pen** again and hover over either *end* of the path: a blue ring appears on the anchor the next click will continue from. Click it and you are back in drawing mode, rubber-band and all, with that anchor as the live end. Clicking the *other* end then **closes the shape**.
@@ -111,12 +130,35 @@ Move, resize, rotate, align, snapping, and undo/redo all work on paths exactly a
 
 Turn any shape into an editable vector path **in place** — same position, z-order, style, and connections. Select one or more shapes, right-click, and choose **Path → Convert to Path**.
 
-- Rectangles → 4 corner anchors
+- Rectangles → 4 corner anchors (rounded corners keep their arcs)
 - Circles / ellipses → 4 smooth Bézier anchors
 - Polygons & stars → exact corner anchors
-- Complex shapes → outline sampled and simplified into anchors
+- Curved shapes (database, cloud, capsule, lightbulb, …) → the outline is converted
+  **command by command**, so arcs come through as real Bézier curves rather than being
+  sampled into a polygon. A database becomes six anchors — two straight sides and two arcs
+  — not thirty flat chords.
+- Shapes whose outline has more than one contour stay compound (their subpaths are kept).
+- **3D solids** (isometric cube, solid block, perspective block, open box, cylinder) convert
+  to their **silhouette** — the union of their faces. The interior edges that make them read
+  as 3D are shading, not outline, so they do not survive; you get one editable outline of the
+  whole solid. This also means the Node tool, Warp, Turntable, the Knife and the Pathfinder
+  now work on 3D blocks, which previously refused them outright.
 
 Once converted, every node is editable with the gestures above.
+
+:::tip
+**Decoration comes with it.** Some shapes are drawn with lines that are not part of their
+fill outline — a **database**'s cap ellipse, the bars of a **predefined process**, the rules
+of an **internal storage**. Convert to Path now hands those back as their own stroke-only
+paths alongside the body, selected together with it, instead of dropping them. That is what
+makes a converted database a usable starting point for a hand-built cylinder: you get the
+barrel *and* the rim, both node-editable. (They are separate objects rather than extra
+subpaths on the body because subpaths fill even-odd — a cap folded into the body ring would
+punch a hole in the lid.)
+
+If all you want is a tube that is narrower at one end, try the **Cylinder** shape's
+**Taper** slider first — it stays live and editable, where a converted path does not.
+:::
 
 ## Pathfinder (Boolean Operations)
 

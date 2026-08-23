@@ -40,6 +40,7 @@ import {
 import { drawOnDown, drawOnMove, drawOnUp } from "../utils/tool-handlers/draw-handler";
 import { penOnMove } from "../utils/tool-handlers/pen-handler";
 import { polylineOnDown, polylineOnMove, polylineOnUp, polylineFinalize, polylineUndo } from "../utils/tool-handlers/polyline-handler";
+import { setPointUndoHandler } from "../utils/point-undo";
 import { penOnDown as penPathDown, penOnMove as penPathMove, penOnUp as penPathUp, penFinalize as penPathFinalize, penUndo as penPathUndo, findPenResumeTarget } from "../utils/tool-handlers/pen-path-handler";
 import { selectionOnDown, selectionOnMove, selectionOnUp, convertPathAnchor, deletePathAnchor, insertPathAnchorAt, canInsertPathAnchor } from "../utils/tool-handlers/selection-handler";
 import { getSelectionBoundingBox, getPathHandleAtPosition } from "../utils/handle-detection";
@@ -1845,7 +1846,7 @@ const Canvas: Component = () => {
         if (store.selectedTool === 'eraser') { eraserOnDown(x, y, pState, pHelpers); return; }
         if (store.selectedTool === 'pan') { panOnDown(pState, pHelpers); return; }
         if (store.selectedTool === 'polyline' || pState.isPolylineBuilding) { polylineOnDown(x, y, pState, pHelpers); return; }
-        if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey); requestAnimationFrame(draw); return; }
+        if (store.selectedTool === 'path' || pState.isPenBuilding) { penPathDown(x, y, pState, pHelpers, e.shiftKey || pState.secondaryContact || store.penConstrain, e.altKey, e.ctrlKey || e.metaKey); requestAnimationFrame(draw); return; }
 
         drawOnDown(x, y, pState, pHelpers);
         smartShape.arm(pState.currentId); // no-op unless a pen tool + enabled
@@ -2333,6 +2334,20 @@ const Canvas: Component = () => {
         };
         window.addEventListener('keydown', handleCropKeys, true);
 
+        /**
+         * Ctrl/Cmd+Z while the Pen or the Polyline is building means "drop the last anchor".
+         * Claimed through the `point-undo` registry, which the global shortcut in app.tsx
+         * consults before undoing the document — see that module for why this is not another
+         * keydown listener. Redo is deliberately not claimed: there is nothing anchor-level
+         * to redo, and swallowing it would strand the user mid-path with no way back.
+         */
+        setPointUndoHandler(() => {
+            if (pState.isPolylineBuilding) { polylineUndo(pState); requestAnimationFrame(draw); return true; }
+            if (pState.isPenBuilding) { penPathUndo(pState); requestAnimationFrame(draw); return true; }
+            return false;
+        });
+        onCleanup(() => setPointUndoHandler(null));
+
         // Polyline keyboard shortcuts (Escape to finish, Backspace to undo last point)
         const handlePolylineKeys = (e: KeyboardEvent) => {
             if (!pState.isPolylineBuilding) return;
@@ -2350,7 +2365,8 @@ const Canvas: Component = () => {
         };
         window.addEventListener('keydown', handlePolylineKeys, true);
 
-        // Pen (vector path) keyboard shortcuts: Enter/Escape to finish, Backspace to undo last anchor.
+        // Pen (vector path) keyboard shortcuts: Enter/Escape to finish, Backspace to step
+        // back one anchor (Ctrl+Z does the same, via the point-undo registry above).
         const handlePenKeys = (e: KeyboardEvent) => {
             if (!pState.isPenBuilding) return;
             if (e.key === 'Escape' || e.key === 'Enter') {

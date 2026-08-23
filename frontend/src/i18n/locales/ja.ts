@@ -483,6 +483,8 @@ export const ja: Dictionary = {
         'editor-pathNodeConvertCornerSmooth': 'パスノード: コーナー ↔ スムーズに変換',
         'editor-pathInsertAPointOnASegment': 'パス: セグメント上に点を挿入',
         'editor-pathNodeDelete': 'パスノード: 削除',
+        'editor-penFinishOpenPath': 'ペン: パスを開いたまま終了し、ペンを継続',
+        'editor-penUndoLastAnchor': 'ペン／ポリライン: 描画中にアンカーを1つ戻す',
         'editor-mindmapTool': 'マインドマップツール（中心トピック）',
         'editor-addChildNode': '子ノードを追加（＋編集）',
         'editor-addSiblingNode': '兄弟ノードを追加（＋編集）',

@@ -8,7 +8,8 @@
  *   • Alt while dragging → break the pair: the out handle moves alone, leaving a cusp
  *   • click first anchor → close the path
  *   • Enter / Esc / double-click → finish an open path
- *   • Backspace          → remove the last anchor
+ *   • Ctrl/Cmd + click anywhere  → finish an open path AND stay on the Pen
+ *   • Backspace / Ctrl+Z → remove the last anchor (see `penUndo`)
  *   • click either END of an existing open path → RESUME it (see below)
  *
  * Resuming an open path: finishing with Enter/Esc/tool-switch leaves the path on the
@@ -253,9 +254,21 @@ export function penResume(target: PenResumeTarget, pState: PointerState): boolea
 
 // ─── Pointer Down ────────────────────────────────────────────────────
 
-export function penOnDown(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, constrain = false, suppressPerspective = false): void {
+export function penOnDown(x: number, y: number, pState: PointerState, _helpers: PointerHelpers, constrain = false, suppressPerspective = false, finishOpen = false): void {
     penDropIfOrphaned(pState);   // an undo may have removed the path we were building
     const { x: px, y: py } = snap(x, y);
+
+    // Ctrl/Cmd + click ends the path where it is, OPEN, without adding an anchor there —
+    // Photoshop's "click away to drop the pen". Enter/Esc/double-click already did this,
+    // but all three are keyboard-or-timing gestures and none of them is discoverable while
+    // your hand is on the stylus, so open paths read as impossible: users fell back to
+    // drawing the curve with a liner brush, which then behaves like a stroke and not a path.
+    // Unlike the other three this keeps the Pen selected, so a run of separate open curves
+    // is one continuous gesture instead of re-picking the tool between each.
+    if (finishOpen && pState.isPenBuilding) {
+        penFinalize(pState, { keepTool: true });
+        return;
+    }
 
     if (!pState.isPenBuilding) {
         // Continuing an existing open path beats starting a new one on top of its end
@@ -386,24 +399,37 @@ export function penOnUp(pState: PointerState): void {
 
 // ─── Finalize (Enter / Esc / double-click) ───────────────────────────
 
-export function penFinalize(pState: PointerState): void {
+export function penFinalize(pState: PointerState, opts: { keepTool?: boolean } = {}): void {
     penDropIfOrphaned(pState);
     if (!pState.isPenBuilding || !pState.currentId) return;
     const id = pState.currentId;
+    // `keepTool` = finished by the Ctrl/Cmd-click gesture, which exists to draw several
+    // open paths in a row; dropping back to Selection after each one is what it avoids.
+    const done = () => { if (!opts.keepTool) setSelectedTool('selection'); };
     if (pState.penAnchors.length < 2) {
         setStore('elements', els => els.filter(e => e.id !== id));
         resetPen(pState);
-        setSelectedTool('selection');
+        done();
         return;
     }
     writePenElement(pState);
     applyLiveSymmetry(id); // live mirror / quadrant / mandala copies
     setStore('selection', [id]);
     resetPen(pState);
-    setSelectedTool('selection');
+    done();
 }
 
-// ─── Undo last anchor (Backspace) ────────────────────────────────────
+// ─── Undo last anchor (Backspace / Ctrl+Z) ───────────────────────────
+
+/**
+ * Step back ONE anchor.
+ *
+ * Also bound to Ctrl/Cmd+Z while a path is being built (see `handlePenKeys`). The global
+ * undo treats the whole in-progress path as a single history entry — it was pushed once,
+ * on the first click — so pressing Ctrl+Z after five anchors threw away all five and left
+ * the Pen pointing at a deleted element. Reaching for Undo mid-path is the reflex; making
+ * it mean "drop that last point" is what everyone expects it to mean.
+ */
 
 export function penUndo(pState: PointerState): void {
     penDropIfOrphaned(pState);

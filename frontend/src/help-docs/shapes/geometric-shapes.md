@@ -5,7 +5,7 @@ icon: "⬡"
 category: Shapes
 description: Hexagon, star, polygon, and other geometric shapes
 seoTitle: "Hexagon, star, polygon — geometric shapes for diagrams"
-seoDescription: "Regular polygons, stars with adjustable inner radius, hexagons for honeycomb layouts, and the parameters behind each one."
+seoDescription: "Regular polygons, stars with adjustable inner radius, hexagons for honeycomb layouts, tapered cylinders for columns and pots, and the parameters behind each one."
 ---
 
 # Geometric Shapes
@@ -93,6 +93,7 @@ Two extra controls appear in the property panel under **Dimensions**:
 | --- | --- |
 | **Cap Perspective** | How open **both** end circles are, from 2 (almost edge-on) to 100 (a full circle seen face-on). 25 is a natural three-quarter view. |
 | **Axis Angle** | Which way the tube runs. **90°** (the default) is upright; **0°** lays the can on its side; anything between gives a tilted tube. |
+| **Taper** | Narrows **one** end into a truncated cone, −0.95 to 0.95. Negative narrows the **near** cap (the top, on an upright cylinder) for a column; positive narrows the **far** cap (the bottom) for a pot or a tumbler. **0** is a plain tube. |
 
 The green control handle sits at the centre of the far cap. Swing it around the shape
 to set the axis angle, and pull it out or push it in to flatten or open the caps.
@@ -103,6 +104,16 @@ rotation handle) rather than changing the axis angle — rotation turns the caps
 :::tip
 For a pillar or a column, keep the width fixed and drag the height; for a coin or a
 puck, use a wide box with a low **Cap Perspective**.
+:::
+
+:::tip
+**A column, a plant pot or a drinking glass are all one slider away.** Set **Taper** to
+about **−0.3** and the cylinder narrows toward the top — a stone column. Push it the other
+way, to **+0.4**, and it narrows toward the base — a pot or a tumbler. The wide end keeps
+the bounding box, so the shape still fills the width you drew, and the whole thing stays a
+live cylinder: the taper, the axis angle and the cap perspective all remain editable, and
+both draw styles (sketch and architectural) follow. You do **not** need to convert anything
+to a path to get a tapered tube.
 :::
 
 :::note
@@ -145,6 +156,8 @@ Yappy.createElement('isometricCube', 240, 240, 120, 120);
 Yappy.createCylinder(80, 240, 120, 320);                       // upright pillar
 Yappy.createCylinder(240, 240, 120, 320, { capRatio: 10 });    // near edge-on caps
 Yappy.createCylinder(400, 240, 300, 110, { viewAngle: 0 });    // can on its side
+Yappy.createCylinder(560, 240, 130, 340, { capRatio: 18, taper: -0.3 }); // column, slim at the top
+Yappy.createCylinder(720, 240, 150, 220, { capRatio: 22, taper: 0.4 });  // pot, slim at the base
 
 // Star: dedicated helper takes a point count
 const star = Yappy.createStar(400, 240, 120, 120, 5, { starPoints: 5 });
@@ -158,7 +171,7 @@ const star = Yappy.createStar(400, 240, 120, 120, 5, { starPoints: 5 });
 | Parallelogram / Trapezoid | `'parallelogram'`, `'trapezoid'` |
 | Cross / Heart / Cloud / Capsule | `'cross'`, `'heart'`, `'cloud'`, `'capsule'` |
 | 3D blocks | `'isometricCube'`, `'solidBlock'`, `'perspectiveBlock'` |
-| Cylinder | `'cylinder'` (or `createCylinder(...)`), with `capRatio` and `viewAngle` |
+| Cylinder | `'cylinder'` (or `createCylinder(...)`), with `capRatio`, `viewAngle` and `taper` |
 
 :::tip
 Tune a star with `opts.starPoints`, and restyle any shape afterwards with ` Yappy.updateElement(id, { backgroundColor, strokeColor, fillStyle, opacity })`.

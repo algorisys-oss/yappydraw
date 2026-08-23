@@ -14,6 +14,7 @@ import { getShapeGeometry } from './shape-geometry';
 import { PathUtils, type PathCommand } from './math/path-utils';
 import { catmullRomAnchors } from './curve-fit';
 import { refitClosedRing } from './curve-refit';
+import { roundedRectPath } from './corner-radius';
 
 export type BooleanOp = 'union' | 'subtract' | 'intersect' | 'exclude';
 
@@ -106,8 +107,32 @@ function ringFromPoints(pts: { x: number; y: number }[]): Ring {
     return r;
 }
 
-/** Flatten one shape's geometry into world-space rings (one polygon per ring). */
-function geometryToRings(geo: any, cx: number, cy: number, angle = 0): Ring[] {
+/**
+ * `ShapeGeometry.rect.r` → four clamped corner radii, or null when the rect is sharp.
+ * `r` is either one number for all four corners or `[TL, TR, BR, BL]`; each is clamped to
+ * half the shorter side, the same ceiling `cornerRadiiPx` applies, so an over-large radius
+ * degenerates into a stadium rather than an inside-out ring.
+ */
+function normalizeRectRadii(
+    r: number | [number, number, number, number] | undefined, w: number, h: number,
+): [number, number, number, number] | null {
+    if (r === undefined) return null;
+    const cap = Math.min(Math.abs(w), Math.abs(h)) / 2;
+    const clamp = (v: number) => Math.max(0, Math.min(cap, v || 0));
+    const out: [number, number, number, number] = typeof r === 'number'
+        ? [clamp(r), clamp(r), clamp(r), clamp(r)]
+        : [clamp(r[0]), clamp(r[1]), clamp(r[2]), clamp(r[3])];
+    return out.some(v => v > 0) ? out : null;
+}
+
+/**
+ * Flatten one shape's geometry into world-space rings (one polygon per ring).
+ *
+ * Exported for callers that want the raw rings WITHOUT `elementToMultiPolygon`'s
+ * containment/hole inference — a multi-face solid's faces overlap each other, and treating
+ * one as a hole in another is meaningless there. Those callers union the rings instead.
+ */
+export function geometryToRings(geo: any, cx: number, cy: number, angle = 0): Ring[] {
     // getShapeGeometry returns the shape's *unrotated, center-local* geometry. Apply the
     // element's rotation about its centre so polygon ops (Pathfinder, Shape Builder, Knife,
     // Distort, Live Paint) match what the user actually sees for rotated shapes.
@@ -117,6 +142,16 @@ function geometryToRings(geo: any, cx: number, cy: number, angle = 0): Ring[] {
     if (!geo) return [];
     if (geo.type === 'rect') {
         const { x, y, w, h } = geo;
+        // Rounded corners are part of the outline, not decoration on top of it. `geo.r` was
+        // simply ignored here, so every consumer of this flattener squared a rounded
+        // rectangle off: the 3D-extrude body and its bevel, Pathfinder booleans, the Shape
+        // Builder, the Knife, Distort and Live Paint all worked on a shape that was not the
+        // one on screen. Reuse the same quadratic-corner path the renderer draws, then
+        // flatten it through the `path` branch below, so the ring matches the shape exactly.
+        const radii = normalizeRectRadii(geo.r, w, h);
+        if (radii) {
+            return geometryToRings({ type: 'path', path: roundedRectPath(x, y, w, h, radii) }, cx, cy, angle);
+        }
         return [[W(x, y), W(x + w, y), W(x + w, y + h), W(x, y + h), W(x, y)]];
     }
     if (geo.type === 'ellipse') {

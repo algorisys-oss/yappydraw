@@ -23,7 +23,7 @@ import { runBooleanOp, polyToPathSubpaths, polyToSmoothSubpaths, polyToRefitSubp
 import { distortPoly, type DistortKind } from "../utils/path-distort";
 import { catmullRomAnchors } from "../utils/curve-fit";
 import { measureVerticalText, measureMaxLineWidth, measureWrappedTextHeight } from "../utils/text-utils";
-import { shapeToPath } from "../utils/shape-to-path";
+import { shapeToPath, shapeDecorationSubpaths } from "../utils/shape-to-path";
 import { textElementToOutline, FontOutlineUnavailableError } from "../utils/text-to-outlines";
 import { getPathSubpaths, PathUtils } from "../utils/math/path-utils";
 import { maxCornerRadius } from "../utils/path-corners";
@@ -8679,14 +8679,81 @@ export const convertToPath = (ids: string[], opts: { silent?: boolean } = {}): s
     // a pencil stroke). The caller owns the history entry, the selection and the toast,
     // so this must not push a second undo step or steal the selection.
     if (!opts.silent) pushToHistory();
-    setStore('elements', list => list.map(el => {
-        const r = anchorsById.get(el.id);
-        if (!r) return el;
-        return { ...el, type: 'path', pathAnchors: r.anchors, pathClosed: r.closed, points: undefined, controlPoints: undefined } as DrawingElement;
-    }));
+
+    // Stroke-only decoration the shape's renderer draws but its fill geometry doesn't carry
+    // — a database's cap, a predefined-process's bars. Emitted as SIBLING paths rather than
+    // extra subpaths of the body: subpaths fill even-odd, so a cap folded into the body ring
+    // would punch a hole in the lid. Only for the user-facing conversion; the silent one is
+    // the first half of another operation and must return exactly one element per input.
+    const decorations: DrawingElement[] = [];
+    if (!opts.silent) {
+        const batchIds = new Set<string>();
+        for (const el of store.elements) {
+            if (!anchorsById.has(el.id)) continue;
+            for (const sp of shapeDecorationSubpaths(el)) {
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                for (const a of sp.anchors) {
+                    for (const [hx, hy] of [
+                        [a.x, a.y],
+                        [a.x + (a.outX ?? 0), a.y + (a.outY ?? 0)],
+                        [a.x + (a.inX ?? 0), a.y + (a.inY ?? 0)],
+                    ]) {
+                        minX = Math.min(minX, hx); minY = Math.min(minY, hy);
+                        maxX = Math.max(maxX, hx); maxY = Math.max(maxY, hy);
+                    }
+                }
+                const dw = Math.max(1, maxX - minX), dh = Math.max(1, maxY - minY);
+                // A rotated parent turns about ITS centre; the decoration has a smaller box and
+                // therefore a different centre, so keeping the same angle is not enough —
+                // its centre has to be carried around the parent's first, or the cap lands
+                // beside the barrel instead of on it.
+                let dx = el.x + minX, dy = el.y + minY;
+                if (el.angle) {
+                    const c = rotatePoint(
+                        dx + dw / 2, dy + dh / 2,
+                        el.x + el.width / 2, el.y + el.height / 2, el.angle,
+                    );
+                    dx = c.x - dw / 2; dy = c.y - dh / 2;
+                }
+                decorations.push({
+                    ...el,
+                    id: generateId('path', batchIds),
+                    type: 'path',
+                    x: dx, y: dy, width: dw, height: dh,
+                    pathAnchors: sp.anchors.map(a => ({ ...a, x: a.x - minX, y: a.y - minY })),
+                    pathClosed: sp.closed,
+                    // Decoration is a line the renderer STROKED — filling it would paint a
+                    // disc over the lid it is supposed to outline.
+                    backgroundColor: 'transparent',
+                    text: undefined, containerText: undefined,
+                    pathSubpaths: undefined, points: undefined, controlPoints: undefined,
+                } as DrawingElement);
+            }
+        }
+    }
+
+    setStore('elements', list => {
+        const converted = list.map(el => {
+            const r = anchorsById.get(el.id);
+            if (!r) return el;
+            return {
+                ...el, type: 'path',
+                pathAnchors: r.anchors.map(a => ({ ...a })),
+                pathClosed: r.closed,
+                // A compound silhouette (a shape whose geometry has more than one contour)
+                // stays compound; a single-ring one leaves `pathSubpaths` unset so the
+                // legacy anchors remain the source of truth. Copied, not shared: the primary
+                // subpath and `pathAnchors` are the same objects coming out of `shapeToPath`,
+                // and two store paths pointing at one anchor would edit each other.
+                pathSubpaths: r.subpaths?.map(sp => ({ closed: sp.closed, anchors: sp.anchors.map(a => ({ ...a })) })),
+                points: undefined, controlPoints: undefined,
+            } as DrawingElement;
+        });
+        return decorations.length ? [...converted, ...decorations] : converted;
+    });
     const out = [...anchorsById.keys()];
     if (!opts.silent) {
-        setStore('selection', out);
+        setStore('selection', [...out, ...decorations.map(d => d.id)]);
         showToast(`Converted ${out.length} to path`, 'success');
     }
     return out;

@@ -47,6 +47,20 @@ Yappy.clearExtrude();
 ```
 
 :::tip
+**Blunt edges — the dice look.** The shape's own **corner radius** is part of its outline, so
+it carries all the way through the 3D: round a rectangle's corners in the properties panel
+(**Corner radius**, or the per-corner fields), then add a 3D Extrude and raise **Bevel**. The
+back face, the side walls and the bevel facet all follow the rounded outline, and you get a
+block with blunt edges rather than a sharp box. Bevel is a *chamfer* — a flat lit facet — so
+a small Bevel on an already-rounded outline reads best; a large one on a sharp rectangle gives
+a cut-edge gemstone look instead.
+
+The same is true the other way round: rounding is now honoured by **Pathfinder**, the **Shape
+Builder**, the **Knife**, **Distort** and **Live Paint** too, so combining rounded shapes keeps
+the curves instead of squaring them off.
+:::
+
+:::tip
 **3D text:** extrude works on a shape's *outline*, and a text element's outline is its bounding box — so for extruded *letters*, right-click → **Convert to Outlines** first, then apply 3D. (Real shapes — stars, circles, paths — extrude directly.)
 :::
 

@@ -483,6 +483,8 @@ export const de: Dictionary = {
         'editor-pathNodeConvertCornerSmooth': 'Pfadknoten: Ecke ↔ weich umwandeln',
         'editor-pathInsertAPointOnASegment': 'Pfad: einen Punkt auf einem Segment einfügen',
         'editor-pathNodeDelete': 'Pfadknoten: löschen',
+        'editor-penFinishOpenPath': 'Zeichenstift: Pfad OFFEN beenden und beim Werkzeug bleiben',
+        'editor-penUndoLastAnchor': 'Zeichenstift / Polylinie: beim Zeichnen einen Ankerpunkt zurück',
         'editor-mindmapTool': 'Mindmap-Werkzeug (zentrales Thema)',
         'editor-addChildNode': 'Unterknoten hinzufügen (+ bearbeiten)',
         'editor-addSiblingNode': 'Geschwisterknoten hinzufügen (+ bearbeiten)',

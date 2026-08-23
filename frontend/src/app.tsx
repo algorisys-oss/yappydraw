@@ -1,4 +1,5 @@
 import { type Component, onMount, onCleanup, Show, lazy, Suspense, createSignal } from 'solid-js';
+import { tryPointUndo } from './utils/point-undo';
 import { isMultiPageDocType } from './types/slide-types';
 import { isPanelOpen } from './store/dock-layout';
 import {
@@ -486,6 +487,10 @@ const App: Component = () => {
       if (isCtrlOrMeta) {
         if (key === 'z') {
           e.preventDefault();
+          // A multi-click tool that is mid-construction claims plain Ctrl+Z as "drop the
+          // last anchor" — the whole in-progress path is one history entry, so the document
+          // undo would take all of it. `tryPointUndo` is false whenever nothing is building.
+          if (!e.shiftKey && tryPointUndo()) return;
           if (e.shiftKey) redo(); else undo();
           return;
         } else if (key === 'y') {

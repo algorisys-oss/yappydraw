@@ -483,6 +483,8 @@ export const es: Dictionary = {
         'editor-pathNodeConvertCornerSmooth': 'Nodo de trazado: convertir vértice ↔ suave',
         'editor-pathInsertAPointOnASegment': 'Trazado: insertar un punto en un segmento',
         'editor-pathNodeDelete': 'Nodo de trazado: eliminar',
+        'editor-penFinishOpenPath': 'Pluma: terminar el trazado ABIERTO y seguir con la pluma',
+        'editor-penUndoLastAnchor': 'Pluma / Polilínea: retroceder un nodo mientras dibujas',
         'editor-mindmapTool': 'Herramienta mapa mental (tema central)',
         'editor-addChildNode': 'Añadir nodo hijo (+ editar)',
         'editor-addSiblingNode': 'Añadir nodo hermano (+ editar)',

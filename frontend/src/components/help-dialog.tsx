@@ -125,6 +125,8 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { key: 'editor-pathNodeConvertCornerSmooth', keys: 'Alt+Click anchor' },
             { key: 'editor-pathInsertAPointOnASegment', keys: 'Alt+Click segment' },
             { key: 'editor-pathNodeDelete', keys: 'Ctrl+Click anchor' },
+            { key: 'editor-penFinishOpenPath', keys: 'Ctrl+Click canvas' },
+            { key: 'editor-penUndoLastAnchor', keys: 'Backspace or Ctrl+Z' },
             { key: 'editor-mindmapTool', keys: 'M' },
             { key: 'editor-addChildNode', keys: 'Tab' },
             { key: 'editor-addSiblingNode', keys: 'Enter' },

@@ -490,6 +490,8 @@ export const en = {
         'editor-pathNodeConvertCornerSmooth': 'Path node: convert corner ↔ smooth',
         'editor-pathInsertAPointOnASegment': 'Path: insert a point on a segment',
         'editor-pathNodeDelete': 'Path node: delete',
+        'editor-penFinishOpenPath': 'Pen: finish the path OPEN and stay on the Pen',
+        'editor-penUndoLastAnchor': 'Pen / Polyline: step back one anchor while drawing',
         'editor-mindmapTool': 'Mindmap Tool (central topic)',
         'editor-addChildNode': 'Add Child Node (+ edit)',
         'editor-addSiblingNode': 'Add Sibling Node (+ edit)',

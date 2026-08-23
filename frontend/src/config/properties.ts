@@ -1667,6 +1667,19 @@ export const properties: PropertyConfig[] = [
         defaultValue: 25
     },
     {
+        // Own entry rather than widening the perspectiveBlock one: a cylinder tapers
+        // EITHER way (negative narrows the near cap), which a block does not.
+        key: 'taper',
+        label: 'Taper', // + narrows the far cap, − narrows the near cap
+        type: 'slider',
+        min: -0.95,
+        max: 0.95,
+        step: 0.05,
+        group: 'dimensions',
+        applicableTo: ['cylinder'],
+        defaultValue: 0
+    },
+    {
         key: 'openBoxPreset',
         label: 'Box Style Preset',
         type: 'select',

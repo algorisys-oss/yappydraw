@@ -1,5 +1,5 @@
 import { lineHeightPx } from './text-line-height';
-import { store } from "../store/app-store";
+import { store, isLayerVisible } from "../store/app-store";
 import { isPagedDocType } from '../types/slide-types';
 import { renderElement } from "./render-element";
 import { resolveDash } from "./stroke-dash";
@@ -125,15 +125,28 @@ function elementAABB(el: DrawingElement): Bounds {
     return { minX, minY, maxX, maxY };
 }
 
-/** Union AABB of a set of elements, expanding for live Transform-effect copies. */
+/**
+ * Union AABB of a set of elements, expanding for live Transform-effect copies.
+ *
+ * A non-finite box is dropped rather than unioned: `Math.min(NaN, x)` is NaN, so ONE
+ * element carrying a NaN coordinate (they come from degenerate boolean results and from
+ * hand-edited/imported documents) poisons the whole crop and the export comes out blank or
+ * absurdly large. Falls back to an empty box if nothing survives, which callers already
+ * treat as "nothing to export".
+ */
 function elementsBounds(elements: DrawingElement[]): Bounds {
     let b: Bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
-    const acc = (o: Bounds) => { b.minX = Math.min(b.minX, o.minX); b.minY = Math.min(b.minY, o.minY); b.maxX = Math.max(b.maxX, o.maxX); b.maxY = Math.max(b.maxY, o.maxY); };
+    const acc = (o: Bounds) => {
+        if (!isFinite(o.minX) || !isFinite(o.minY) || !isFinite(o.maxX) || !isFinite(o.maxY)) return;
+        b.minX = Math.min(b.minX, o.minX); b.minY = Math.min(b.minY, o.minY);
+        b.maxX = Math.max(b.maxX, o.maxX); b.maxY = Math.max(b.maxY, o.maxY);
+    };
     for (const el of elements) {
         const copies = transformEffectRenderCopies(el);
         if (copies.length) for (const c of copies) acc(elementAABB(c));
         else acc(elementAABB(el));
     }
+    if (!isFinite(b.minX)) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
     return b;
 }
 
@@ -549,8 +562,21 @@ export const exportToPng = async (scale: number, background: boolean, onlySelect
  * Hidden objects (the object tree's eye toggle) must not appear in ANY export.
  * `visible !== false` — absent means visible, so documents predating the field
  * export exactly as before. Every element walk in this file goes through this.
+ *
+ * A hidden LAYER counts too. The canvas renderer skips whole layers whose eye is off
+ * (`renderElements`), but this gate only ever looked at the element's own flag, so every
+ * export — PNG, JPG, SVG, PDF, PPTX, Rasterize, Slice — quietly put the hidden layers back:
+ * they were drawn, AND they widened the crop box that PNG/JPG/SVG size themselves from.
+ * That is how a drawing exports as a small object off in one corner of a mostly empty
+ * image — the box is being stretched by something the canvas never showed you.
+ *
+ * `isLayerVisible` is also false for a layer that does not exist, which deliberately matches
+ * the canvas: it buckets elements by `layerId` and never draws a bucket with no layer, so an
+ * element pointing at a deleted layer is invisible there too. Exporting it would be exporting
+ * something the document does not show.
  */
-export const isExportable = (el: DrawingElement): boolean => el.visible !== false;
+export const isExportable = (el: DrawingElement): boolean =>
+    el.visible !== false && isLayerVisible(el.layerId);
 
 /** Largest canvas edge browsers reliably allocate; beyond this `toDataURL` returns a blank image. */
 const MAX_RASTER_EDGE = 16384;

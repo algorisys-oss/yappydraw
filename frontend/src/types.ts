@@ -710,7 +710,9 @@ export interface DrawingElement {
     openAnimationDuration?: number; // Duration of open animation in ms
     revealAnimationType?: 'fadeIn' | 'slideUp' | 'scaleUp' | 'pop'; // Type of reveal animation
     restoreAfterReveal?: boolean; // Restore box and reveal element to initial state after animation
-    taper?: number; // 0-1 (Scaling of back face for perspectiveBlock)
+    taper?: number; // perspectiveBlock: 0-1, scaling of the back face.
+                    // cylinder: -0.95..0.95, narrows one end into a truncated cone
+                    // (+ the far cap, − the near cap; 0 = a plain tube).
 
     // Code block properties
     codeShowLineNumbers?: boolean; // Show line numbers in gutter (default true)

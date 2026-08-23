@@ -612,6 +612,10 @@ export const YappyAPI = {
      * @param capRatio - Perspective of BOTH end circles: the cap's along-axis
      *   radius as a percentage of its cross-section radius. 2 is nearly edge-on,
      *   25 (default) is a natural 3/4 view, 100 is face-on.
+     * @param taper - Narrow ONE end into a truncated cone, -0.95..0.95. Positive
+     *   shrinks the far cap (with the default upright axis, that is the bottom);
+     *   negative shrinks the near cap (the top). 0 (default) is a plain tube.
+     *   The wide end keeps the box fit, so the solid still fills `width`.
      *
      * @example
      * // A tall pillar seen from slightly above
@@ -619,8 +623,11 @@ export const YappyAPI = {
      * @example
      * // A can lying on its side
      * Yappy.createCylinder(100, 100, 260, 110, { viewAngle: 0 });
+     * @example
+     * // A column narrower at the top than at the base
+     * Yappy.createCylinder(100, 100, 120, 340, { capRatio: 18, taper: -0.3 });
      */
-    createCylinder(x: number, y: number, width: number, height: number, options?: ElementOptions & { viewAngle?: number; capRatio?: number }) {
+    createCylinder(x: number, y: number, width: number, height: number, options?: ElementOptions & { viewAngle?: number; capRatio?: number; taper?: number }) {
         return this.createElement('cylinder', x, y, width, height, options);
     },
 

@@ -94,12 +94,25 @@ const getRoundedDiamondPath = (x: number, y: number, w: number, h: number, r: nu
  * - `capRatio` is the foreshortening of the circular cross-section: the cap's
  *   along-axis radius as a percentage of its perpendicular radius. 100 is
  *   face-on, small values are nearly edge-on. It applies to BOTH caps.
+ * - `taper` narrows ONE end, turning the tube into a truncated cone: positive
+ *   shrinks the far cap (the one the handle rides), negative shrinks the near
+ *   cap. ±1 would be a point, so it is clamped just short of that. This is what
+ *   a column, a plant pot or a drinking glass needs, and building one by
+ *   converting a `database` to a path and dragging nodes is what people did
+ *   instead. The wide end keeps the box fit, so the solid still touches the
+ *   element bounds on the side that defines them.
  */
 export interface CylinderFrame {
-    /** Radius of the circular cross-section (perpendicular to the axis). */
+    /** Radius of the circular cross-section (perpendicular to the axis).
+     *  With a taper this is the WIDE end — the one the box-fit is solved for. */
     r: number;
     /** The cross-section's foreshortened half-depth along the axis: r × flatness. */
     rAlong: number;
+    /** Per-cap radii after `taper`. Both equal `r` on an untapered cylinder. */
+    rNear: number;
+    rFar: number;
+    rAlongNear: number;
+    rAlongFar: number;
     /** Axis unit vector. */
     ux: number;
     uy: number;
@@ -125,8 +138,11 @@ const CYLINDER_MAX_CAP = 1;
 /** Share of the box the caps give up to the barrel when the exact fit has no solution. */
 const CYLINDER_FALLBACK_BARREL = 0.25;
 
+/** A cap may not shrink to a literal point — a zero-radius arc has no direction. */
+const CYLINDER_MAX_TAPER = 0.95;
+
 export const getCylinderFrame = (
-    el: { width: number; height: number; viewAngle?: number; capRatio?: number },
+    el: { width: number; height: number; viewAngle?: number; capRatio?: number; taper?: number },
     capRatioOverride?: number,
     viewAngleOverride?: number,
 ): CylinderFrame => {
@@ -169,8 +185,15 @@ export const getCylinderFrame = (
     }
 
     const rAlong = r * f;
+    // `r` stays the wide end, so the box fit solved above is untouched and every existing
+    // reader (`tx/ty`, the drag handle, hit-testing) keeps the number it always had.
+    const t = Math.max(-CYLINDER_MAX_TAPER, Math.min(CYLINDER_MAX_TAPER, el.taper ?? 0));
+    const rNear = t < 0 ? r * (1 + t) : r;
+    const rFar = t > 0 ? r * (1 - t) : r;
     return {
-        r, rAlong, ux, uy, px, py,
+        r, rAlong,
+        rNear, rFar, rAlongNear: rNear * f, rAlongFar: rFar * f,
+        ux, uy, px, py,
         ex: e * ux, ey: e * uy,
         tx: r * px, ty: r * py,
         flatness: f, angleRad, angleDeg,
@@ -577,10 +600,16 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         }
 
         case 'database': {
+            // The top closes over the CREST of the cap ellipse (sweep 0), not under it.
+            // `flowchart-renderer` fills the barrel plus the whole cap, so a sweep-1 top
+            // edge described a silhouette ~eH shorter than the one on screen: gradient,
+            // pattern, image and hachure fills were clipped away across the lid, hit-testing
+            // missed the top of the shape, and Convert to Path handed back a barrel with the
+            // lid sliced off. This is the outline you actually see.
             const eH = h * 0.1;
             return {
                 type: 'path',
-                path: `M ${x} ${y + eH} L ${x} ${y + h - eH} A ${mw} ${eH} 0 0 0 ${x + w} ${y + h - eH} L ${x + w} ${y + eH} A ${mw} ${eH} 0 0 1 ${x} ${y + eH}`
+                path: `M ${x} ${y + eH} L ${x} ${y + h - eH} A ${mw} ${eH} 0 0 0 ${x + w} ${y + h - eH} L ${x + w} ${y + eH} A ${mw} ${eH} 0 0 0 ${x} ${y + eH}`
             };
         }
 
@@ -1354,43 +1383,51 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
             // below lives in the tube's own frame: `u` runs along the axis, `p` across
             // it, so the barrel meets each cap exactly at the cap's ±r poles. No
             // tangent solving, and it stays correct at any axis angle.
-            const { r, rAlong, ux, uy, px, py, ex, ey, angleDeg } = getCylinderFrame(el);
+            const { rNear, rFar, rAlongNear, rAlongFar, ux, uy, px, py, ex, ey, angleDeg } = getCylinderFrame(el);
 
             const nearC = { x: -ex, y: -ey };
             const farC = { x: ex, y: ey };
             const at = (c: { x: number, y: number }, a: number, b: number) =>
                 ({ x: c.x + a * px + b * ux, y: c.y + a * py + b * uy });
 
-            const nearA = at(nearC, r, 0), nearB = at(nearC, -r, 0);
-            const farA = at(farC, r, 0), farB = at(farC, -r, 0);
+            const nearA = at(nearC, rNear, 0), nearB = at(nearC, -rNear, 0);
+            const farA = at(farC, rFar, 0), farB = at(farC, -rFar, 0);
 
             // SVG arc sweep flag: 1 when A→mid→B turns clockwise on screen (y down).
             const sweepOf = (a: { x: number, y: number }, mid: { x: number, y: number }, b: { x: number, y: number }) =>
                 ((mid.x - a.x) * (b.y - mid.y) - (mid.y - a.y) * (b.x - mid.x)) > 0 ? 1 : 0;
             // A cap is an ellipse turned by the axis angle: `rAlong` is its semi-axis
-            // along the rotated x-axis (the tube axis), `r` the one across it.
-            const arc = (a: { x: number, y: number }, mid: { x: number, y: number }, b: { x: number, y: number }, large: number) =>
-                `A ${rAlong} ${r} ${angleDeg} ${large} ${sweepOf(a, mid, b)} ${b.x} ${b.y}`;
+            // along the rotated x-axis (the tube axis), `r` the one across it. The two
+            // caps carry their OWN radii so a tapered tube reads as a truncated cone;
+            // with `taper` at 0 both are `r` and this is the tube it always was. The
+            // barrel still meets each cap at that cap's own ±r poles, so the sides stay
+            // straight and the joints stay exact at any taper.
+            const arcVia = (rr: number, rrAlong: number) =>
+                (a: { x: number, y: number }, mid: { x: number, y: number }, b: { x: number, y: number }, large: number) =>
+                    `A ${rrAlong} ${rr} ${angleDeg} ${large} ${sweepOf(a, mid, b)} ${b.x} ${b.y}`;
+            const arcNear = arcVia(rNear, rAlongNear);
+            const arcFar = arcVia(rFar, rAlongFar);
 
-            const capPath = (c: { x: number, y: number }) => {
-                const tipA = at(c, 0, rAlong), tipB = at(c, 0, -rAlong);
-                const pA = at(c, r, 0), pB = at(c, -r, 0);
+            const capPath = (c: { x: number, y: number }, rr: number, rrAlong: number,
+                             arc: ReturnType<typeof arcVia>) => {
+                const tipA = at(c, 0, rrAlong), tipB = at(c, 0, -rrAlong);
+                const pA = at(c, rr, 0), pB = at(c, -rr, 0);
                 return `M ${pA.x} ${pA.y} ${arc(pA, tipA, pB, 0)} ${arc(pB, tipB, pA, 0)} Z`;
             };
             // Only the far half of the far cap is visible; the near half sits behind
             // the barrel. Drawing the whole ellipse is what put a crossed X inside an
             // unfilled cylinder.
-            const farVisible = `M ${farA.x} ${farA.y} ${arc(farA, at(farC, 0, rAlong), farB, 0)}`;
+            const farVisible = `M ${farA.x} ${farA.y} ${arcFar(farA, at(farC, 0, rAlongFar), farB, 0)}`;
 
             // The solid's silhouette, for converters (see ShapeGeometry.outline).
             const outline = `M ${nearA.x} ${nearA.y} L ${farA.x} ${farA.y}`
-                + ` ${arc(farA, at(farC, 0, rAlong), farB, 0)} L ${nearB.x} ${nearB.y}`
-                + ` ${arc(nearB, at(nearC, 0, -rAlong), nearA, 0)} Z`;
+                + ` ${arcFar(farA, at(farC, 0, rAlongFar), farB, 0)} L ${nearB.x} ${nearB.y}`
+                + ` ${arcNear(nearB, at(nearC, 0, -rAlongNear), nearA, 0)} Z`;
 
             return {
                 type: 'multi', outline, shapes: [
                     // Far cap fill first, so the barrel paints over its hidden half.
-                    { type: 'path', path: capPath(farC), shade: 0.6, isBackface: true, noStroke: true },
+                    { type: 'path', path: capPath(farC, rFar, rAlongFar, arcFar), shade: 0.6, isBackface: true, noStroke: true },
                     // Barrel fill. Stroked separately below: the quad's end edges are
                     // chords through the cap centres and must never be drawn — that
                     // stray line across a squat cylinder was exactly this.
@@ -1399,7 +1436,7 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
                     { type: 'points', isClosed: false, points: [nearA, farA], shade: 0.8, noFill: true },
                     { type: 'points', isClosed: false, points: [nearB, farB], shade: 0.8, noFill: true },
                     // Near cap, fully visible.
-                    { type: 'path', path: capPath(nearC), shade: 1.0, isLid: true },
+                    { type: 'path', path: capPath(nearC, rNear, rAlongNear, arcNear), shade: 1.0, isLid: true },
                 ]
             };
         }
