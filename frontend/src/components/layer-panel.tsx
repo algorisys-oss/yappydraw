@@ -23,7 +23,10 @@ const LayerPanel: Component = () => {
     };
     const layerObjectCount = (id: string) => store.elements.filter(el => el.layerId === id && !el.isClipMask).length;
 
-    const [dragOverId, setDragOverId] = createSignal<string | null>(null);
+    /** Where a release would land: which row, and on which side of it. `'root'` is the
+     *  "Move to Top Level" zone in grouping mode. */
+    type DropAt = { id: string; place: 'above' | 'below' | 'into' };
+    const [dropTarget, setDropTarget] = createSignal<DropAt | null>(null);
     const [contextMenu, setContextMenu] = createSignal<{ x: number; y: number; layerId: string } | null>(null);
     let longPressTimer: number | null = null;
 
@@ -219,32 +222,57 @@ const LayerPanel: Component = () => {
         if (el) rowEls.set(id, el); else rowEls.delete(id);
     };
 
-    /** The row under `clientY`, or null when the pointer is past the ends of the list. */
-    const rowAt = (clientY: number): string | null => {
+    /**
+     * Where a release at `clientY` would put the dragged layer.
+     *
+     * `place` is the half of the row the pointer is in: the top half inserts ABOVE that row
+     * (higher in the stack), the bottom half BELOW it. That is a more precise promise than
+     * the old "drop onto a row" — on a long list, "it will land here" is the question you are
+     * actually asking, and the indicator can answer it exactly.
+     *
+     * A group row in grouping mode keeps a third option: the outer thirds insert beside it,
+     * the middle drops INTO it. Mirrors happypaint's resolveDrop.
+     */
+    const resolveDrop = (clientY: number): { id: string; place: 'above' | 'below' | 'into' } | null => {
         for (const [id, el] of rowEls) {
             const r = el.getBoundingClientRect();
-            if (r.height > 0 && clientY >= r.top && clientY <= r.bottom) return id;
+            if (r.height <= 0 || clientY < r.top || clientY > r.bottom) continue;
+            const frac = (clientY - r.top) / r.height;
+            const layer = store.layers.find(l => l.id === id);
+            if (store.layerGroupingModeEnabled && layer?.isGroup) {
+                if (frac < 0.25) return { id, place: 'above' };
+                if (frac > 0.75) return { id, place: 'below' };
+                return { id, place: 'into' };
+            }
+            return { id, place: frac < 0.5 ? 'above' : 'below' };
         }
         return null;
     };
 
+    // Where the ghost sits. HTML5 drag-and-drop rendered a drag image for free; a pointer
+    // drag does not, and without one the only feedback is a dimmed row you may have already
+    // scrolled away from — you lose track of what you are carrying.
+    const [ghost, setGhost] = createSignal<{ x: number; y: number } | null>(null);
+
     const onDragMove = (e: PointerEvent) => {
-        const over = rowAt(e.clientY);
-        setDragOverId(over && over !== draggedId() ? over : null);
+        const hit = resolveDrop(e.clientY);
+        setDropTarget(hit && hit.id !== draggedId() ? hit : null);
+        setGhost({ x: e.clientX, y: e.clientY });
     };
 
     const onDragUp = () => {
         const sourceId = draggedId();
-        const targetId = dragOverId();
+        const drop = dropTarget();
         endDrag();
-        if (sourceId && targetId) applyDrop(sourceId, targetId);
+        if (sourceId && drop) applyDrop(sourceId, drop.id, drop.place);
     };
 
     const endDrag = () => {
         const id = draggedId();
         if (id) rowEls.get(id)?.closest('.layer-row')?.setAttribute('style', '');
         setDraggedId(null);
-        setDragOverId(null);
+        setDropTarget(null);
+        setGhost(null);
         window.removeEventListener('pointermove', onDragMove);
         window.removeEventListener('pointerup', onDragUp);
         window.removeEventListener('pointercancel', endDrag);
@@ -254,9 +282,10 @@ const LayerPanel: Component = () => {
         e.preventDefault();
         e.stopPropagation();
         setDraggedId(id);
-        setDragOverId(null);
+        setDropTarget(null);
         const row = rowEls.get(id)?.closest('.layer-row') as HTMLElement | null;
         if (row) row.style.opacity = '0.5';
+        setGhost({ x: e.clientX, y: e.clientY });
         window.addEventListener('pointermove', onDragMove);
         window.addEventListener('pointerup', onDragUp);
         window.addEventListener('pointercancel', endDrag);
@@ -264,14 +293,14 @@ const LayerPanel: Component = () => {
 
     /** Move `sourceId` to `targetId`'s place. Unchanged from the drag-and-drop version —
      *  only how the two ids are gathered has changed. */
-    const applyDrop = (sourceId: string | null, targetId: string | null) => {
+    const applyDrop = (sourceId: string | null, targetId: string | null, place: 'above' | 'below' | 'into' = 'above') => {
         if (!sourceId) return;
 
         if (targetId === null) {
             // Drop on empty area -> Move to top level
             updateLayer(sourceId, { parentId: undefined });
             setDraggedId(null);
-            setDragOverId(null);
+            setDropTarget(null);
             return;
         }
 
@@ -279,24 +308,26 @@ const LayerPanel: Component = () => {
         const targetLayer = store.layers.find(l => l.id === targetId);
 
         if (sourceId && sourceId !== targetId && sourceLayer && targetLayer) {
-            // Grouping Logic
-            if (store.layerGroupingModeEnabled && targetLayer.isGroup && sourceId !== targetId) {
-                // If dropping into a group
+            // Into a group — only when the pointer was over its middle band.
+            if (place === 'into' && store.layerGroupingModeEnabled && targetLayer.isGroup) {
                 updateLayer(sourceId, { parentId: targetId as string });
                 setDraggedId(null);
-                setDragOverId(null);
+                setDropTarget(null);
                 return;
             }
 
-            // Regular Reorder
-            const reversedList = [...store.layers].reverse();
-            const sourceIndex = reversedList.findIndex(l => l.id === sourceId);
-            const targetIndex = reversedList.findIndex(l => l.id === targetId);
+            // Insert beside the target. `reorderLayers` splices out and re-inserts, so its
+            // `to` is an index in the list AFTER the removal — computing it there directly
+            // avoids reasoning about which way the indices shift.
+            //
+            // `store.layers` runs bottom-to-top while the panel lists top-first, so "above"
+            // on screen is the HIGHER store index: insert after the target, not before it.
+            const srcIndex = store.layers.findIndex(l => l.id === sourceId);
+            const without = store.layers.filter(l => l.id !== sourceId);
+            const t = without.findIndex(l => l.id === targetId);
 
-            if (sourceIndex !== -1 && targetIndex !== -1) {
-                const normalSourceIndex = store.layers.length - 1 - sourceIndex;
-                const normalTargetIndex = store.layers.length - 1 - targetIndex;
-                reorderLayers(normalSourceIndex, normalTargetIndex);
+            if (srcIndex !== -1 && t !== -1) {
+                reorderLayers(srcIndex, place === 'above' ? t + 1 : t);
 
                 // If reordering within groups, might need to inherit parent
                 if (store.layerGroupingModeEnabled) {
@@ -306,7 +337,7 @@ const LayerPanel: Component = () => {
         }
 
         setDraggedId(null);
-        setDragOverId(null);
+        setDropTarget(null);
     };
 
     const displayLayers = () => {
@@ -477,7 +508,7 @@ const LayerPanel: Component = () => {
                                             </button>
                                         </div>
                                     <div
-                                        class={`layer-item ${layer.id === store.activeLayerId ? 'active' : ''} ${dragOverId() === layer.id ? 'drag-over' : ''} ${layer.visible === false ? 'hidden' : ''} ${layer.locked ? 'locked' : ''} ${layer.isGroup ? 'group' : ''} ${depth() > 0 ? 'nested' : ''}`}
+                                        class={`layer-item ${layer.id === store.activeLayerId ? 'active' : ''} ${dropTarget()?.id === layer.id ? `drop-${dropTarget()!.place}` : ''} ${layer.visible === false ? 'hidden' : ''} ${layer.locked ? 'locked' : ''} ${layer.isGroup ? 'group' : ''} ${depth() > 0 ? 'nested' : ''}`}
                                         classList={{ swiping: !!swipe() && swipe()!.id === layer.id }}
                                         style={{ 'padding-left': store.layerGroupingModeEnabled ? `${depth() * 24}px` : '0', transform: `translateX(${swipeOffset(layer.id)}px)` }}
                                         onPointerDown={(e) => startSwipe(layer.id, e)}
@@ -569,15 +600,36 @@ const LayerPanel: Component = () => {
                         </For>
                         <Show when={store.layerGroupingModeEnabled && draggedId()}>
                             <div
-                                class={`root-drop-zone ${dragOverId() === 'root' ? 'drag-over' : ''}`}
-                                onPointerEnter={() => { if (draggedId()) setDragOverId('root'); }}
-                                onPointerLeave={() => { if (dragOverId() === 'root') setDragOverId(null); }}
+                                class={`root-drop-zone ${dropTarget()?.id === 'root' ? 'drag-over' : ''}`}
+                                onPointerEnter={() => { if (draggedId()) setDropTarget({ id: 'root', place: 'into' }); }}
+                                onPointerLeave={() => { if (dropTarget()?.id === 'root') setDropTarget(null); }}
                                 onPointerUp={() => { const id = draggedId(); endDrag(); if (id) applyDrop(id, null); }}
                             >
                                 Move to Top Level
                             </div>
                         </Show>
                     </div>
+
+                {/* The thing you are carrying. Follows the pointer, `pointer-events: none` so
+                    it never becomes its own drop target, and offset from the cursor so it does
+                    not sit on top of the row you are aiming at. */}
+                <Show when={ghost() && draggedId()}>
+                    {(_) => {
+                        const layer = () => store.layers.find(l => l.id === draggedId());
+                        return (
+                            <div
+                                class="layer-drag-ghost"
+                                style={{ left: `${ghost()!.x + 14}px`, top: `${ghost()!.y - 14}px` }}
+                            >
+                                <span class="layer-drag-ghost-grip">⋮⋮</span>
+                                <Show when={layer()?.colorTag}>
+                                    <span class="layer-drag-ghost-tag" style={{ 'background-color': layer()!.colorTag }} />
+                                </Show>
+                                <span class="layer-drag-ghost-name">{layer()?.name ?? ''}</span>
+                            </div>
+                        );
+                    }}
+                </Show>
 
                 <Show when={contextMenu()}>
                     <LayerContextMenu

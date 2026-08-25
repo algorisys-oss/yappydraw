@@ -2891,6 +2891,16 @@ export const loadDocument = (doc: any) => {
             slide.order = i;
         });
 
+        // Same normalisation for layers, and for the same reason it exists for slides.
+        // A document saved by a build before `reorderedLayers` can carry an `order` that
+        // disagrees with its array position: the reorder moved the array and failed to
+        // renumber. The array is what the Layers panel showed its author, so taking it as
+        // the truth restores the stacking they were looking at, and repairs the document
+        // once on open rather than letting it snap the next time they drag a layer.
+        layers.forEach((layer: Layer, i: number) => {
+            layer.order = i;
+        });
+
         setStore("elements", JSON.parse(JSON.stringify(elements)));
         setStore("slides", JSON.parse(JSON.stringify(slides)));
         setStore("layers", JSON.parse(JSON.stringify(layers)));
@@ -4851,20 +4861,45 @@ export const duplicateLayer = (id: string) => {
     setStore('activeLayerId', newLayerId);
 };
 
+/**
+ * The layer array after moving `fromIndex` to `toIndex`, with `order` renumbered to match.
+ *
+ * Pure, and returns fresh objects rather than editing the ones passed in. That is the whole
+ * point: this used to renumber with `layer.order = idx` over entries taken straight from
+ * `store.layers`, which are solid-js/store proxies. Both store builds answer a direct write
+ * with `set() { return true }` — accepted and discarded — so the renumbering had never once
+ * run. The array moved and `order` did not.
+ *
+ * `order` is what actually stacks the document: `canvas-renderer` sorts by it before
+ * painting, and so do hit-testing, the animation timeline, recording and slide builds. Only
+ * the Layers panel looked right, because it reverses the array instead of reading `order` —
+ * so a reorder appeared to work everywhere except on the canvas.
+ *
+ * Kept separate from the store write so it can be tested. Under `bun test`, solid-js/store
+ * resolves to its *server* build, where a store is a plain object and the direct write would
+ * have succeeded — the environment that could have caught this is the one place the bug does
+ * not reproduce. What a test can pin is that this function leaves its input alone.
+ */
+export const reorderedLayers = (layers: readonly Layer[], fromIndex: number, toIndex: number): Layer[] => {
+    const next = [...layers];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    return next.map((layer, idx) => ({ ...layer, order: idx }));
+};
+
+/** True when both indices address a real layer. `Yappy.reorderLayers()` is public, so this
+ *  is reachable with anything; an out-of-range `from` splices nothing out and then puts
+ *  `undefined` into the array, which spreads to `{}` and leaves a layer with no id. */
+const canReorder = (layers: readonly Layer[], fromIndex: number, toIndex: number): boolean =>
+    Number.isInteger(fromIndex) && Number.isInteger(toIndex) &&
+    fromIndex >= 0 && fromIndex < layers.length &&
+    toIndex >= 0 && toIndex < layers.length;
+
 export const reorderLayers = (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
+    if (!canReorder(store.layers, fromIndex, toIndex)) return;
     pushToHistory();
-
-    const newLayers = [...store.layers];
-    const [movedLayer] = newLayers.splice(fromIndex, 1);
-    newLayers.splice(toIndex, 0, movedLayer);
-
-    // Update order values
-    newLayers.forEach((layer, idx) => {
-        layer.order = idx;
-    });
-
-    setStore('layers', newLayers);
+    setStore('layers', reorderedLayers(store.layers, fromIndex, toIndex));
 };
 
 export const setActiveLayer = (id: string) => {

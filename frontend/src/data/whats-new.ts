@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.223', date: '2026-08-25', items: [
+        'Reordering a layer now actually reorders it. Dragging a layer up or down rearranged the Layers panel and left the drawing exactly as it was — the artwork on that layer stayed above or below whatever it was before. If you have ever moved a layer and wondered why nothing changed on the canvas, this was why. Everything that depends on layer order — what covers what, what you select when shapes overlap, exports, animation and slide builds — now follows the panel.',
+        'You can see what you are dragging. Reordering a layer shows a small preview of it — its name and colour tag — following your pointer, so on a long list you are not guessing which one you picked up.',
+        'And you can see where it will land. A line appears between rows as you drag: drop on the upper half of a row to go above it, the lower half to go below. With Groups on, holding over the middle of a group drops the layer inside it, shown as a dashed outline.',
+        'If a drawing you made earlier had its layers reordered, it opens with the stacking the Layers panel had been showing you — which is the one you arranged.',
+    ] },
     { version: '0.8.222', date: '2026-08-25', items: [
         'The lock, duplicate and delete buttons in the Layers panel look right again. Swiping a layer row revealed three big coloured blocks with a thin sliver of an icon squeezed into each — the icons were being crushed rather than drawn small. They now fill their buttons properly.',
     ] },
