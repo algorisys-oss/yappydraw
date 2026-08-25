@@ -42,6 +42,10 @@ export const isPolygonBackfacing = (points: { x: number, y: number }[]): boolean
 };
 
 const getRoundedRectPath = (x: number, y: number, w: number, h: number, r: number) => {
+    // A radius wider than the box turns the rect inside out: `x + w - r` lands LEFT of
+    // `x + r`, and the shape reaches outside the bounds it was given. Clamped here rather
+    // than at each of the callers, none of which expect to have to think about it.
+    r = Math.max(0, Math.min(r, Math.min(Math.abs(w), Math.abs(h)) / 2));
     return `M ${x + r} ${y} L ${x + w - r} ${y} Q ${x + w} ${y} ${x + w} ${y + r} L ${x + w} ${y + h - r} Q ${x + w} ${y + h} ${x + w - r} ${y + h} L ${x + r} ${y + h} Q ${x} ${y + h} ${x} ${y + h - r} L ${x} ${y + r} Q ${x} ${y} ${x + r} ${y}`;
 };
 
@@ -690,11 +694,17 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         }
 
         case 'lightbulb': {
-            const bulbR = Math.min(w, h / 1.5) / 2;
             const bW = w * 0.4, bH = h * 0.25, bY = y + h - bH;
+            // The glass is a circle, so its radius has to satisfy BOTH axes and the arc's
+            // endpoints have to sit on that circle. They used to sit at the full width
+            // (`x` .. `x + w`) with a radius derived from `h / 1.5`, and when that radius
+            // was too small for the chord SVG quietly inflated it (spec F.6.6) — putting
+            // the top of the bulb a sixth of the box above the box.
+            const bulbR = Math.min(w, h - bH) / 2;
+            const bulbCy = y + bulbR;
             return {
                 type: 'multi', shapes: [
-                    { type: 'path', path: `M ${-bW / 2} ${bY} C ${-bW / 2} ${y + bulbR} ${x} ${y + (bulbR * 1.5)} ${x} ${y + bulbR} A ${bulbR} ${bulbR} 0 1 1 ${x + w} ${y + bulbR} C ${x + w} ${y + (bulbR * 1.5)} ${bW / 2} ${y + bulbR} ${bW / 2} ${bY} Z` },
+                    { type: 'path', path: `M ${-bW / 2} ${bY} C ${-bW / 2} ${bulbCy} ${-bulbR} ${bulbCy + (bulbR * 0.5)} ${-bulbR} ${bulbCy} A ${bulbR} ${bulbR} 0 1 1 ${bulbR} ${bulbCy} C ${bulbR} ${bulbCy + (bulbR * 0.5)} ${bW / 2} ${bulbCy} ${bW / 2} ${bY} Z` },
                     { type: 'rect', x: -bW / 2, y: bY, w: bW, h: bH }
                 ]
             };
@@ -716,16 +726,25 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
             const points: { x: number, y: number }[] = [];
             for (let i = 0; i < spikes * 2; i++) {
                 const r = (i % 2 === 0) ? outerR : innerR;
-                const rVar = r + (randomSeeded(seed + i) - 0.5) * (outerR * 0.1);
+                // Varies INWARD only. A spike that varied outward left the box, and the box
+                // is what every buffer-backed fill is sized from. Ragged either way.
+                const rVar = r * (1 - (randomSeeded(seed + i) * 0.1));
                 const angle = (Math.PI * i) / spikes;
-                points.push({ x: Math.cos(angle) * (w / h) * rVar, y: Math.sin(angle) * rVar });
+                // Mapped onto the element's ellipse. The old `(w / h)` was not a scale
+                // factor and stretched a wide blob straight out through the side.
+                const k = rVar / outerR;
+                points.push({ x: Math.cos(angle) * rx * k, y: Math.sin(angle) * ry * k });
             }
             return { type: 'points', points: points };
         }
 
         case 'scroll': {
             const rH = h * 0.15;
-            return { type: 'path', path: `M ${x} ${y + rH} L ${x + w} ${y + rH} L ${x + w} ${y + h - rH} L ${x} ${y + h - rH} Z M ${x} ${y + rH} C ${x - rH} ${y + rH} ${x - rH} ${y} ${x} ${y} L ${x + w} ${y} C ${x + w + rH} ${y} ${x + w + rH} ${y + rH} ${x + w} ${y + rH} M ${x} ${y + h - rH} C ${x - rH} ${y + h - rH} ${x - rH} ${y + h} ${x} ${y + h} L ${x + w} ${y + h} C ${x + w + rH} ${y + h} ${x + w + rH} ${y + h - rH} ${x + w} ${y + h - rH}` };
+            // The rolled ends curl OUTWARD from the sheet, so the sheet is inset by a curl
+            // on each side and the curls reach the box edge — rather than the sheet
+            // spanning the full width and the curls hanging off it.
+            const sl = x + rH, sr = x + w - rH;
+            return { type: 'path', path: `M ${sl} ${y + rH} L ${sr} ${y + rH} L ${sr} ${y + h - rH} L ${sl} ${y + h - rH} Z M ${sl} ${y + rH} C ${x} ${y + rH} ${x} ${y} ${sl} ${y} L ${sr} ${y} C ${x + w} ${y} ${x + w} ${y + rH} ${sr} ${y + rH} M ${sl} ${y + h - rH} C ${x} ${y + h - rH} ${x} ${y + h} ${sl} ${y + h} L ${sr} ${y + h} C ${x + w} ${y + h} ${x + w} ${y + h - rH} ${sr} ${y + h - rH}` };
         }
 
         case 'doubleBanner': {
@@ -1608,11 +1627,15 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         }
 
         case 'externalEntity': {
-            const shadowOffset = 4;
+            // The offset shadow is part of the shape, so the PAIR has to fit the box —
+            // both rects used to be full size, leaving the shadow hanging past the
+            // bottom-right corner.
+            const shadowOffset = Math.min(4, Math.min(Math.abs(w), Math.abs(h)) * 0.08);
+            const bw = Math.max(1, w - shadowOffset), bh = Math.max(1, h - shadowOffset);
             return {
                 type: 'multi', shapes: [
-                    { type: 'rect', x: x + shadowOffset, y: y + shadowOffset, w: w, h: h, r: 0 }, // Shadow
-                    { type: 'rect', x: x, y: y, w: w, h: h, r: 0 } // Main box
+                    { type: 'rect', x: x + shadowOffset, y: y + shadowOffset, w: bw, h: bh, r: 0 }, // Shadow
+                    { type: 'rect', x: x, y: y, w: bw, h: bh, r: 0 } // Main box
                 ]
             };
         }
@@ -1681,12 +1704,15 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
             const flagR = x + w;
             const flagH = h * 0.55;
             const waveDip = flagH * 0.15;
+            // The banner hangs one wave-crest below the top of the pole. It used to start
+            // at the top edge and the wave's first control point lifted it above the box.
+            const fY = y + waveDip;
             return {
                 type: 'multi', shapes: [
                     { type: 'rect', x: poleX, y: y, w: poleW, h: h },
                     {
                         type: 'path',
-                        path: `M ${flagL} ${y} C ${flagL + (flagR - flagL) * 0.33} ${y - waveDip} ${flagL + (flagR - flagL) * 0.66} ${y + waveDip} ${flagR} ${y} L ${flagR} ${y + flagH} C ${flagL + (flagR - flagL) * 0.66} ${y + flagH + waveDip} ${flagL + (flagR - flagL) * 0.33} ${y + flagH - waveDip} ${flagL} ${y + flagH} Z`
+                        path: `M ${flagL} ${fY} C ${flagL + (flagR - flagL) * 0.33} ${fY - waveDip} ${flagL + (flagR - flagL) * 0.66} ${fY + waveDip} ${flagR} ${fY} L ${flagR} ${fY + flagH} C ${flagL + (flagR - flagL) * 0.66} ${fY + flagH + waveDip} ${flagL + (flagR - flagL) * 0.33} ${fY + flagH - waveDip} ${flagL} ${fY + flagH} Z`
                     }
                 ]
             };
@@ -1845,7 +1871,9 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         }
 
         case 'handPointRight': {
-            const wristL = x;
+            // Inset by the same amount the closing curve's control point reaches back
+            // (`wristL - w * 0.02`), so that bulge lands ON the edge rather than past it.
+            const wristL = x + (w * 0.02);
             const wristR = x + w * 0.35;
             const wristT = y + h * 0.15;
             const wristB = y + h * 0.55;
@@ -2041,8 +2069,9 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         }
 
         case 'gauge': {
-            // Semi-circle approximation — use bounding rect
-            const r = Math.min(w / 2, h * 0.8);
+            // Inscribed. `h * 0.8` is not a half-height, so on a wide, short box the
+            // circle reached 30% of the height below the bottom edge.
+            const r = Math.min(w, h) / 2;
             return { type: 'ellipse', cx: 0, cy: 0, rx: r, ry: r };
         }
 
@@ -2082,18 +2111,24 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
         }
 
         case 'magnet': {
-            const armW = w * 0.28;
-            const armH = h - h * 0.35;
-            const innerR = (w - armW * 2) / 2;
-            const outerR = w / 2;
-            let mp = `M ${x} ${y}`;
-            mp += ` L ${x} ${y + armH}`;
-            mp += ` A ${outerR} ${outerR} 0 0 0 ${x + w} ${y + armH}`;
-            mp += ` L ${x + w} ${y}`;
-            mp += ` L ${x + w - armW} ${y}`;
-            mp += ` L ${x + w - armW} ${y + armH}`;
-            mp += ` A ${innerR} ${innerR} 0 0 1 ${x + armW} ${y + armH}`;
-            mp += ` L ${x + armW} ${y} Z`;
+            // The U's bend is a semicircle, so its radius sets BOTH how wide the horseshoe
+            // is and how far below the arms it reaches. Deriving it from the width alone
+            // put the bottom of the bend 15% of the box below the box on a square one, and
+            // an arc whose chord outran its radius on a wide one (SVG inflates it, spec
+            // F.6.6, which pushed it further still). Sized to fit, and the arms sit on it.
+            const outerR = Math.min(w, h * 0.9) / 2;
+            const armH = Math.max(h * 0.05, h - outerR);
+            const armW = Math.min(w * 0.28, outerR * 0.9);
+            const innerR = Math.max(1, outerR - armW);
+            const lx = -outerR, rx2 = outerR;
+            let mp = `M ${lx} ${y}`;
+            mp += ` L ${lx} ${y + armH}`;
+            mp += ` A ${outerR} ${outerR} 0 0 0 ${rx2} ${y + armH}`;
+            mp += ` L ${rx2} ${y}`;
+            mp += ` L ${rx2 - armW} ${y}`;
+            mp += ` L ${rx2 - armW} ${y + armH}`;
+            mp += ` A ${innerR} ${innerR} 0 0 1 ${lx + armW} ${y + armH}`;
+            mp += ` L ${lx + armW} ${y} Z`;
             return { type: 'path', path: mp };
         }
 

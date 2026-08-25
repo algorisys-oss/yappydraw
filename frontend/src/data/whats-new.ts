@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.220', date: '2026-08-25', items: [
+        'Nine shapes now fit the box you draw them in. The lightbulb, magnet, scroll, gauge, flag, chain link, burst blob, pointing hand and external entity were each drawing slightly outside their own frame — the gauge by nearly a third of its height. You would have seen it as a patterned fill stopping in a flat line partway across the shape, or selection handles that cut through the artwork instead of hugging it.',
+        'The burst blob fills a wide or tall frame properly now, instead of staying round and poking out of the sides.',
+        'These were found by looking rather than waiting: after the cloud fix in the last release, every shape was measured against its own frame at several proportions. Nobody had reported the other eight yet.',
+    ] },
     { version: '0.8.219', date: '2026-08-25', items: [
         'Inflate turns a flat shape into a 3D one. Draw any outline — a circle, a heart, a blob you made yourself — open Inflate in the properties panel, and it puffs up into a rounded, lit object. There is no modelling and nothing to learn: it follows the shape you drew, so a circle becomes a sphere and a cloud becomes a proper fluffy cloud.',
         'Move the light rather than paint the shading. Sliders set where the light comes from and how high it sits, how bright it is, how dark the shadow side goes, and whether the surface is glossy or matte — with a Metallic slider when you want metal instead of plastic. Rotating the object leaves the light where it was, so a group of them still looks like one scene.',
