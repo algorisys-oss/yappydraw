@@ -13,6 +13,7 @@ import { getImage } from "../../utils/image-cache";
 import { rasterizeMesh } from "../../utils/mesh-gradient";
 import { rasterizePatternBuffer } from "../../utils/pattern-fill";
 import { hasInflate, rasterizeInflate } from "../../utils/inflate";
+import { fillBufferRect } from "../../utils/geometry-extent";
 import type { IRenderer } from "../../rendering/IRenderer";
 
 // ── colour helpers (for dark-mode adjustColor) ─────────────────────────────
@@ -414,16 +415,19 @@ export class RenderPipeline {
         const opacity = el.backgroundOpacity ?? 1;
         if (opacity !== 1) renderer.globalAlpha = renderer.globalAlpha * opacity;
 
-        const w = el.width;
-        const h = el.height;
         const fit = el.backgroundImageFit || 'cover';
+        // The area to cover is what the shape DRAWS. Identical to its box for every shape
+        // that fits inside one; for the few that deliberately do not (a puzzle piece's tabs),
+        // a box-sized image leaves those parts empty.
+        const rect = fillBufferRect(geometry, el.width, el.height);
+        const w = rect.w, h = rect.h;
 
         if (fit === 'tile') {
             const pattern = renderer.createPattern(img, 'repeat');
             if (pattern) {
                 renderer.fillStyle = pattern as any;
                 renderer.beginPath();
-                renderer.rect(-w / 2, -h / 2, w, h);
+                renderer.rect(rect.x, rect.y, w, h);
                 renderer.fill();
             }
             renderer.restore();
@@ -442,7 +446,8 @@ export class RenderPipeline {
             else { dh = h; dw = h * imgAspect; }
         }
 
-        renderer.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+        // The rect is not necessarily centred on the origin, so centre within IT.
+        renderer.drawImage(img, rect.x + ((w - dw) / 2), rect.y + ((h - dh) / 2), dw, dh);
         renderer.restore();
     }
 
@@ -525,12 +530,15 @@ export class RenderPipeline {
 
         // Rasterize at a capped resolution proportional to the element; the
         // gradient is smooth, so a modest buffer upscales without visible loss.
-        const res = (n: number) => Math.max(2, Math.min(256, Math.round(n)));
-        const buf = rasterizeMesh(mesh, res(w), res(h));
-        if (!buf) return;
-
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
+
+        // Covers what the shape draws, including any part outside its declared box — see
+        // applyPatternFill. Identical to the element's box for a shape that fits.
+        const rect = fillBufferRect(geometry, w, h);
+        const res = (n: number) => Math.max(2, Math.min(256, Math.round(n)));
+        const buf = rasterizeMesh(mesh, res(rect.w), res(rect.h));
+        if (!buf) return;
 
         renderer.save();
         if (geometry.type === 'path') {
@@ -542,7 +550,7 @@ export class RenderPipeline {
         }
         const opacity = el.backgroundOpacity ?? 1;
         if (opacity !== 1) renderer.globalAlpha = renderer.globalAlpha * opacity;
-        renderer.drawImage(buf, -w / 2, -h / 2, w, h);
+        renderer.drawImage(buf, rect.x, rect.y, rect.w, rect.h);
         renderer.restore();
     }
 
@@ -562,6 +570,8 @@ export class RenderPipeline {
         const w = Math.abs(el.width), h = Math.abs(el.height);
         if (!(w > 0) || !(h > 0)) return;
 
+        // The buffer carries the rect it belongs in — its own box for nearly every shape,
+        // grown where the shape draws outside it.
         const buf = rasterizeInflate(el, isDarkMode);
         if (!buf) return;
 
@@ -578,7 +588,7 @@ export class RenderPipeline {
         }
         const opacity = el.backgroundOpacity ?? 1;
         if (opacity !== 1) renderer.globalAlpha = renderer.globalAlpha * opacity;
-        renderer.drawImage(buf, -w / 2, -h / 2, w, h);
+        renderer.drawImage(buf.canvas, buf.x, buf.y, buf.w, buf.h);
         renderer.restore();
     }
 
@@ -588,11 +598,16 @@ export class RenderPipeline {
         const w = el.width, h = el.height;
         if (w <= 0 || h <= 0) return;
 
-        const buf = rasterizePatternBuffer(pf, w, h);
-        if (!buf) return;
-
         const geometry = getShapeGeometry(el);
         if (!geometry) return;
+
+        // Sized to what the shape DRAWS, not to what it declares. A few shapes are outside
+        // their box on purpose (a puzzle piece's tabs have to reach into the next piece), and
+        // a box-sized buffer leaves those parts unfilled — bug #322 in miniature. For a shape
+        // that fits, this is exactly the element's box.
+        const rect = fillBufferRect(geometry, w, h);
+        const buf = rasterizePatternBuffer(pf, rect.w, rect.h);
+        if (!buf) return;
 
         renderer.save();
         if (geometry.type === 'path') {
@@ -604,7 +619,7 @@ export class RenderPipeline {
         }
         const opacity = el.backgroundOpacity ?? 1;
         if (opacity !== 1) renderer.globalAlpha = renderer.globalAlpha * opacity;
-        renderer.drawImage(buf, -w / 2, -h / 2, w, h);
+        renderer.drawImage(buf, rect.x, rect.y, rect.w, rect.h);
         renderer.restore();
     }
 
@@ -728,7 +743,10 @@ export class RenderPipeline {
             if (f.pattern) {
                 // Pattern appearance fill: rasterize + clip to the shape outline (both
                 // render styles identical, like the base pattern fill).
-                const buf = rasterizePatternBuffer(f.pattern, el.width, el.height);
+                // Sized to what the shape draws, as the base pattern fill is — a shape whose
+                // outline reaches past its box would otherwise lose that part of the fill.
+                const rect = fillBufferRect(geo, el.width, el.height);
+                const buf = rasterizePatternBuffer(f.pattern, rect.w, rect.h);
                 if (buf) {
                     if (geo.type === 'path') {
                         renderer.clipPath(geo.path);
@@ -737,7 +755,7 @@ export class RenderPipeline {
                         this.renderGeometry(renderer, geo);
                         renderer.clip();
                     }
-                    renderer.drawImage(buf, -el.width / 2, -el.height / 2, el.width, el.height);
+                    renderer.drawImage(buf, rect.x, rect.y, rect.w, rect.h);
                 }
             } else if (sketch) {
                 for (const d of ds) rc.path(d, { fill: f.color, fillStyle: 'solid', stroke: 'none', roughness: el.roughness ?? 1, seed: el.seed || 1, preserveVertices: true });

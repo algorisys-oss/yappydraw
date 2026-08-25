@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.221', date: '2026-08-25', items: [
+        'Patterns and images now fill a shape all the way to its edges. A few shapes reach a little outside their own frame on purpose — a puzzle piece has to, or its tabs would not slot into the piece beside it — and on those, a patterned or image fill used to stop short and leave the sticking-out parts blank.',
+        'Reordering layers works anywhere in the panel. Drag a layer by its grip and you can move through the whole list, including the gaps and past either end; let go somewhere that is not a layer and the drag is simply cancelled. The red no-entry sign is gone.',
+        'The 3D effects are in your language. Extrude, Inflate and Turntable — every slider, button and tooltip — now read in Deutsch, Español or 日本語, using the same words these effects have in Illustrator so they are recognisable if you have used them there.',
+    ] },
     { version: '0.8.220', date: '2026-08-25', items: [
         'Nine shapes now fit the box you draw them in. The lightbulb, magnet, scroll, gauge, flag, chain link, burst blob, pointing hand and external entity were each drawing slightly outside their own frame — the gauge by nearly a third of its height. You would have seen it as a patterned fill stopping in a flat line partway across the shape, or selection handles that cut through the artwork instead of hugging it.',
         'The burst blob fills a wide or tall frame properly now, instead of staying round and poking out of the sides.',

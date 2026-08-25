@@ -30,8 +30,8 @@ const LayerPanel: Component = () => {
     // ─── Procreate-style iPad swipe gestures on layer rows ──────────────
     //   swipe LEFT  → reveal an action tray (Lock / Duplicate / Delete)
     //   swipe RIGHT → toggle the row into a multi-select set (Group / Delete bar)
-    // Touch/pen only — mouse keeps native drag-reorder + the always-visible
-    // action buttons. Mirrors happypaint/layer-panel.tsx.
+    // Touch/pen only — mouse keeps drag-reorder + the always-visible action
+    // buttons. Mirrors happypaint/layer-panel.tsx.
     const SWIPE_THRESHOLD = 48; // px to commit a swipe
     const AXIS_SLOP = 10;       // px before locking horizontal vs vertical
     const TRAY_W = 132;         // revealed action-tray width (px)
@@ -89,9 +89,9 @@ const LayerPanel: Component = () => {
     };
 
     const startSwipe = (id: string, e: PointerEvent) => {
-        // Works for mouse too. Native drag-reorder is confined to the grip handle
-        // (.drag-handle is draggable, the row body is not), so a horizontal drag on
-        // the row body reaches this swipe handler instead of starting an HTML5 drag.
+        // Works for mouse too. Reorder is confined to the grip handle, whose own
+        // pointerdown stops propagation, so a horizontal drag on the row body reaches this
+        // swipe handler and a vertical drag on the grip never becomes a swipe.
         if ((e.target as HTMLElement).closest('button, input, .drag-handle, .expander')) return;
         swipeStart = { id, x: e.clientX, y: e.clientY, axis: null };
         window.addEventListener('pointermove', onSwipeMove, { passive: false });
@@ -202,35 +202,69 @@ const LayerPanel: Component = () => {
         }
     };
 
-    const handleDragStart = (id: string, e: DragEvent) => {
-        setDraggedId(id);
-        e.dataTransfer!.effectAllowed = 'move';
-        e.dataTransfer!.setData('text/plain', id);
-        // Native drag now starts from the grip handle; dim the whole row, not the grip.
-        const row = (e.currentTarget as HTMLElement).closest('.layer-row') as HTMLElement | null;
-        setTimeout(() => { if (row) row.style.opacity = '0.5'; }, 0);
+    // ─── Drag-to-reorder ────────────────────────────────────────────────
+    // Pointer events, not HTML5 drag-and-drop. That is a deliberate choice and it fixed a
+    // real bug (#323): with `DataTransfer`, ANY other listener on the way up can change the
+    // drag out from under the panel, and app.tsx's global image-drop handler did exactly
+    // that — forcing `dropEffect = 'copy'` onto a drag that had declared `effectAllowed =
+    // 'move'`, an illegal pair the browser answers by refusing the drop outright, with no
+    // `drop` event and a no-entry cursor. A pointer drag carries no shared state, so nothing
+    // can invalidate it from a distance. (happypaint's panel has always worked this way.)
+    //
+    // Rows register themselves here so a drop target can be resolved from the pointer's Y,
+    // which is also what lets the drag work over the panel's padding and header rather than
+    // only over a row's own box.
+    const rowEls = new Map<string, HTMLElement>();
+    const registerRow = (id: string, el: HTMLElement | undefined) => {
+        if (el) rowEls.set(id, el); else rowEls.delete(id);
     };
 
-    const handleDragEnd = (e: DragEvent) => {
-        const row = (e.currentTarget as HTMLElement).closest('.layer-row') as HTMLElement | null;
-        if (row) row.style.opacity = '1';
+    /** The row under `clientY`, or null when the pointer is past the ends of the list. */
+    const rowAt = (clientY: number): string | null => {
+        for (const [id, el] of rowEls) {
+            const r = el.getBoundingClientRect();
+            if (r.height > 0 && clientY >= r.top && clientY <= r.bottom) return id;
+        }
+        return null;
+    };
+
+    const onDragMove = (e: PointerEvent) => {
+        const over = rowAt(e.clientY);
+        setDragOverId(over && over !== draggedId() ? over : null);
+    };
+
+    const onDragUp = () => {
+        const sourceId = draggedId();
+        const targetId = dragOverId();
+        endDrag();
+        if (sourceId && targetId) applyDrop(sourceId, targetId);
+    };
+
+    const endDrag = () => {
+        const id = draggedId();
+        if (id) rowEls.get(id)?.closest('.layer-row')?.setAttribute('style', '');
         setDraggedId(null);
         setDragOverId(null);
+        window.removeEventListener('pointermove', onDragMove);
+        window.removeEventListener('pointerup', onDragUp);
+        window.removeEventListener('pointercancel', endDrag);
     };
 
-    const handleDragOver = (id: string, e: DragEvent) => {
+    const startDrag = (id: string, e: PointerEvent) => {
         e.preventDefault();
-        e.dataTransfer!.dropEffect = 'move';
-        setDragOverId(id);
-    };
-
-    const handleDragLeave = () => {
+        e.stopPropagation();
+        setDraggedId(id);
         setDragOverId(null);
+        const row = rowEls.get(id)?.closest('.layer-row') as HTMLElement | null;
+        if (row) row.style.opacity = '0.5';
+        window.addEventListener('pointermove', onDragMove);
+        window.addEventListener('pointerup', onDragUp);
+        window.addEventListener('pointercancel', endDrag);
     };
 
-    const handleDrop = (targetId: string | null, e: DragEvent) => {
-        e.preventDefault();
-        const sourceId = draggedId();
+    /** Move `sourceId` to `targetId`'s place. Unchanged from the drag-and-drop version —
+     *  only how the two ids are gathered has changed. */
+    const applyDrop = (sourceId: string | null, targetId: string | null) => {
         if (!sourceId) return;
 
         if (targetId === null) {
@@ -416,11 +450,11 @@ const LayerPanel: Component = () => {
                             </div>
                         </div>
                     </Show>
-                    {/* `data-internal-drag` tells app.tsx's global file/colour drop handlers
-                        to keep out: they force `dropEffect = 'copy'`, and a drag that started
-                        with `effectAllowed = 'move'` is then rejected outright by the browser —
-                        no-entry cursor, no `drop` event, no reorder. */}
-                    <div class="layer-list" data-internal-drag="layers">
+                    {/* No `data-internal-drag` here any more: reordering is a POINTER drag,
+                        which carries no DataTransfer for app.tsx's global drop handlers to
+                        interfere with. The exemption was the fix for #323; this removes the
+                        thing that needed exempting. `.slide-navigator` still needs its own. */}
+                    <div class="layer-list">
                         <For each={displayLayers().items}>
                             {(layer) => {
                                 const depth = () => displayLayers().depths.get(layer.id) || 0;
@@ -452,9 +486,7 @@ const LayerPanel: Component = () => {
                                             e.preventDefault();
                                             setContextMenu({ x: e.clientX, y: e.clientY, layerId: layer.id });
                                         }}
-                                        onDragOver={(e) => handleDragOver(layer.id, e)}
-                                        onDragLeave={handleDragLeave}
-                                        onDrop={(e) => handleDrop(layer.id, e)}
+                                        ref={(el) => registerRow(layer.id, el)}
                                     >
                                         <Show when={layer.isGroup && store.layerGroupingModeEnabled}>
                                             <div
@@ -470,9 +502,7 @@ const LayerPanel: Component = () => {
                                         <span
                                             class="drag-handle"
                                             title="Drag to reorder"
-                                            draggable={true}
-                                            onDragStart={(e) => handleDragStart(layer.id, e)}
-                                            onDragEnd={handleDragEnd}
+                                            onPointerDown={(e) => startDrag(layer.id, e)}
                                         >⋮⋮</span>
                                         <div class="layer-visibility" onClick={(e) => handleToggleVisibility(layer.id, e)}>
                                             {layer.visible !== false ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -540,12 +570,9 @@ const LayerPanel: Component = () => {
                         <Show when={store.layerGroupingModeEnabled && draggedId()}>
                             <div
                                 class={`root-drop-zone ${dragOverId() === 'root' ? 'drag-over' : ''}`}
-                                onDragOver={(e) => {
-                                    e.preventDefault();
-                                    setDragOverId('root');
-                                }}
-                                onDragLeave={() => setDragOverId(null)}
-                                onDrop={(e) => handleDrop(null, e)}
+                                onPointerEnter={() => { if (draggedId()) setDragOverId('root'); }}
+                                onPointerLeave={() => { if (dragOverId() === 'root') setDragOverId(null); }}
+                                onPointerUp={() => { const id = draggedId(); endDrag(); if (id) applyDrop(id, null); }}
                             >
                                 Move to Top Level
                             </div>

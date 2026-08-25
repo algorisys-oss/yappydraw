@@ -16,6 +16,7 @@
  */
 import type { DrawingElement, Inflate3D } from "../types";
 import { getShapeGeometry } from "./shape-geometry";
+import { fillBufferRect } from "./geometry-extent";
 import { getImage } from "./image-cache";
 
 
@@ -238,7 +239,11 @@ export function shadeHeightField(
 
 // ── Rasterisation (canvas) ───────────────────────────────────────────────────
 
-type CacheEntry = { hash: string; buf: HTMLCanvasElement };
+/** The buffer and the rect it should be drawn into — which is the element's box unless the
+ *  shape deliberately draws outside it. */
+export interface InflateBuffer { canvas: HTMLCanvasElement; x: number; y: number; w: number; h: number; }
+
+type CacheEntry = { hash: string; buf: InflateBuffer };
 const cache = new Map<string, CacheEntry>();
 // Each entry is up to 384x384x4 bytes of canvas, so this is a memory budget as much as a hit
 // rate: 24 is roughly 14 MB worst case, and more inflated objects than that on one screen is
@@ -298,7 +303,7 @@ const rgbOf = (color: string | undefined, fallback: [number, number, number]): [
  *
  * Cached per element on `inflateHash`; a cache hit is a Map lookup.
  */
-export function rasterizeInflate(el: DrawingElement, isDarkMode = false): HTMLCanvasElement | null {
+export function rasterizeInflate(el: DrawingElement, isDarkMode = false): InflateBuffer | null {
     if (!hasInflate(el)) return null;
     const w = Math.abs(el.width), h = Math.abs(el.height);
     if (!(w > 0) || !(h > 0)) return null;
@@ -314,18 +319,23 @@ export function rasterizeInflate(el: DrawingElement, isDarkMode = false): HTMLCa
     const hit = cache.get(el.id);
     if (hit && hit.hash === hash) return hit.buf;
 
-    const scale = Math.min(1, MAX_RES / Math.max(w, h));
-    const bw = Math.max(2, Math.round(w * scale));
-    const bh = Math.max(2, Math.round(h * scale));
+    // The buffer covers what the shape DRAWS. For nearly every shape that is its own box;
+    // for the few that overflow on purpose (a puzzle piece's tabs) a box-sized buffer would
+    // leave those parts flat and unlit.
+    const rect = fillBufferRect(geo, w, h);
+    const scale = Math.min(1, MAX_RES / Math.max(rect.w, rect.h));
+    const bw = Math.max(2, Math.round(rect.w * scale));
+    const bh = Math.max(2, Math.round(rect.h * scale));
 
-    // 1. Mask — the shape's own silhouette at buffer resolution.
+    // 1. Mask — the shape's own silhouette at buffer resolution. The geometry is centred on
+    //    the ELEMENT, so the buffer's origin is offset by however far the rect grew.
     const maskC = document.createElement('canvas');
     maskC.width = bw; maskC.height = bh;
     const mctx = maskC.getContext('2d', { willReadFrequently: true });
     if (!mctx) return null;
     mctx.fillStyle = '#fff';
-    mctx.translate(bw / 2, bh / 2);
-    mctx.scale(bw / w, bh / h);
+    mctx.scale(bw / rect.w, bh / rect.h);
+    mctx.translate(-rect.x, -rect.y);
     traceGeometry(mctx, geo);
     const maskPx = mctx.getImageData(0, 0, bw, bh).data;
 
@@ -358,10 +368,15 @@ export function rasterizeInflate(el: DrawingElement, isDarkMode = false): HTMLCa
         if (!ictx) return null;
         // Cover-fit, matching the image fill's default so switching the material on and off
         // does not also move the picture.
-        const ia = img!.width / img!.height, ba = bw / bh;
-        let dw = bw, dh = bh;
-        if (ia > ba) dw = bh * ia; else dh = bw / ia;
-        ictx.drawImage(img!, (bw - dw) / 2, (bh - dh) / 2, dw, dh);
+        // Cover-fit over the ELEMENT's box (scaled into the buffer), not over the buffer —
+        // otherwise growing the buffer for an overflowing shape would also shift the picture.
+        const sx = bw / rect.w, sy = bh / rect.h;
+        const ew = w * sx, eh = h * sy;
+        const ox = ((-w / 2) - rect.x) * sx, oy = ((-h / 2) - rect.y) * sy;
+        const ia = img!.width / img!.height, ba = ew / eh;
+        let dw = ew, dh = eh;
+        if (ia > ba) dw = eh * ia; else dh = ew / ia;
+        ictx.drawImage(img!, ox + ((ew - dw) / 2), oy + ((eh - dh) / 2), dw, dh);
         const ipx = ictx.getImageData(0, 0, bw, bh).data;
         sampleAlbedo = (i, out) => { const j = i * 4; out[0] = ipx[j]; out[1] = ipx[j + 1]; out[2] = ipx[j + 2]; };
     } else {
@@ -396,9 +411,10 @@ export function rasterizeInflate(el: DrawingElement, isDarkMode = false): HTMLCa
     image.data.set(px);
     octx.putImageData(image, 0, 0);
 
+    const buffer: InflateBuffer = { canvas: out, x: rect.x, y: rect.y, w: rect.w, h: rect.h };
     if (cache.size >= MAX_CACHE) cache.clear();
-    cache.set(el.id, { hash, buf: out });
-    return out;
+    cache.set(el.id, { hash, buf: buffer });
+    return buffer;
 }
 
 /** Drop cached buffers — call when elements are deleted wholesale (document load, clear). */

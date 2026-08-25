@@ -972,6 +972,78 @@ export const en = {
     dialogs: {
         newSketchConfirm: 'Start new sketch? Unsaved changes will be lost.',
     },
+
+    /**
+     * The three 3D effects in the properties panel — Extrude, Inflate, Turntable.
+     * Translated as one block on purpose: they sit next to each other, and a panel with
+     * one section in the reader's language and two in English reads as a bug.
+     *
+     * Terminology follows the localised conventions of the tools these mirror (Illustrator's
+     * Extrude & Bevel, Photoshop's Bevel & Emboss), so a user who knows the effect elsewhere
+     * recognises it here. Axis names (Yaw, Pitch) keep their aviation terms where the target
+     * language does; German and Spanish do, Japanese uses its own established katakana.
+     */
+    effects3d: {
+        extrudeTitle: '3D EXTRUDE',
+        extrudeAdd: '+ Add 3D Extrude',
+        extrudeAddTitle: 'Add a 3D extrude (shaded depth behind the shape)',
+        depth: 'Depth',
+        angle: 'Angle',
+        tiltX: 'Tilt X',
+        tiltY: 'Tilt Y',
+        bevel: 'Bevel',
+        shade: 'Shade',
+        expand: 'Expand',
+        expandTitle: 'Bake the 3D into editable face elements',
+        extrudeRemoveTitle: 'Remove the 3D extrude',
+
+        inflateTitle: 'INFLATE (3D)',
+        inflateAdd: '+ Add Inflate',
+        inflateAddTitle: 'Puff the fill into a lit, rounded 3D body',
+        bulge: 'Bulge',
+        bulgeTitle: 'How far the surface puffs out, relative to the shape',
+        softness: 'Softness',
+        softnessTitle: 'Rounder, softer form — at the cost of fine relief',
+        light: 'Light',
+        lightTitle: 'Direction the light comes from. Stays put on the page when the object rotates',
+        lightHeight: 'Height',
+        lightHeightTitle: 'How high the light sits. 90° is straight on, which flattens the shading',
+        intensity: 'Intensity',
+        ambient: 'Ambient',
+        ambientTitle: 'Fill light — how dark the unlit side goes',
+        roughness: 'Roughness',
+        roughnessTitle: '0 = tight glossy highlight, 100 = matte',
+        metallic: 'Metallic',
+        metallicTitle: 'Tints the highlight toward the fill colour',
+        highlight: 'Highlight',
+        highlightTitle: 'Colour of the specular highlight',
+        inflateMaterialHint: 'Set the fill to an image to use it as the surface material.',
+        inflateRemoveTitle: 'Remove the Inflate effect',
+
+        turntableTitle: 'TURNTABLE (3D SPIN)',
+        turntableGroupSuffix: ' — GROUP',
+        turntableAdd: '+ Add Turntable',
+        turntableAddTitle: 'Rotate in pseudo-3D, keeping editable vectors',
+        yaw: 'Yaw',
+        pitch: 'Pitch',
+        volume: 'Volume',
+        volumeFlat: 'Flat (foreshorten)',
+        volumeSymmetry: 'Symmetry (rounded)',
+        revealBackFace: 'Reveal back face (show far side on turn)',
+        persp: 'Persp',
+        spin360: '↻ Spin 360°',
+        spin360Title: 'Auto-keyframe a full 360° spin across the timeline',
+        aiRedraw: '✨ AI Redraw',
+        aiRedrawTitle: 'Vector redraw at the current angle via a vision model (any provider) — cleaner & cheaper. Inserts a new editable path; needs an AI key.',
+        aiReimagine: '✨ AI Reimagine',
+        aiReimagineTitle: 'Photo reimagine at the current angle via an OpenAI image model, then auto-traced to vector — more faithful, messier paths. Needs an OpenAI key.',
+        bake: 'Bake',
+        bakeTitle: 'Bake the current angle into an editable path',
+        turntableRemoveTitle: 'Remove the turntable (restore the flat shape)',
+
+        /** Shared by all three sections. */
+        remove: 'Remove',
+    },
 };
 
 /**

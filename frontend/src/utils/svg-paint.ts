@@ -70,20 +70,21 @@ export function svgFillPaint(el: DrawingElement, defs: SVGElement, uid: string):
     // Checked first because Inflate OWNS the fill — it replaces whatever fillStyle says,
     // and an image fill under it is the surface material rather than a fill of its own.
     if (hasInflate(el)) {
-        const w = Math.abs(el.width), h = Math.abs(el.height);
         const buf = rasterizeInflate(el);
-        if (buf && w > 0 && h > 0) {
+        if (buf && buf.w > 0 && buf.h > 0) {
             const id = `yd-inflate-${uid}`;
             const pat = document.createElementNS(SVGNS, 'pattern');
             pat.setAttribute('id', id);
             pat.setAttribute('patternUnits', 'userSpaceOnUse');
             pat.setAttribute('patternContentUnits', 'userSpaceOnUse');
-            pat.setAttribute('x', `${-w / 2}`); pat.setAttribute('y', `${-h / 2}`);
-            pat.setAttribute('width', `${w}`); pat.setAttribute('height', `${h}`);
+            // The tile is the buffer's own rect, which is the element's box unless the shape
+            // draws outside it — the same rect the canvas renderer places it in.
+            pat.setAttribute('x', `${buf.x}`); pat.setAttribute('y', `${buf.y}`);
+            pat.setAttribute('width', `${buf.w}`); pat.setAttribute('height', `${buf.h}`);
             const img = document.createElementNS(SVGNS, 'image');
-            img.setAttribute('href', buf.toDataURL('image/png'));
+            img.setAttribute('href', buf.canvas.toDataURL('image/png'));
             img.setAttribute('x', '0'); img.setAttribute('y', '0');
-            img.setAttribute('width', `${w}`); img.setAttribute('height', `${h}`);
+            img.setAttribute('width', `${buf.w}`); img.setAttribute('height', `${buf.h}`);
             img.setAttribute('preserveAspectRatio', 'none');
             pat.appendChild(img);
             defs.appendChild(pat);

@@ -14,6 +14,7 @@ const SYMMETRY_MODES = [
     { id: 'kaleidoscope', label: '❋', title: 'Kaleidoscope — N-sector mandala with every wedge mirrored' },
 ];
 import { pageNoun, setPageSize, propertyPanelTarget } from "../store/app-store";
+import { t } from "../i18n";
 import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude, setInflate, clearInflate, setTurntable, clearTurntable, bakeTurntable, canTurntable, spinTurntable360 } from "../store/app-store";
 import { WARP_PRESETS } from "../utils/envelope-warp";
 import { replaceImageOn } from "../utils/image-actions";
@@ -1039,19 +1040,19 @@ const ExtrudeEditor: Component<{ el: () => any }> = (props) => {
     return (
         <Show when={ids().length === 1}>
             <div class="property-group">
-                <div class="group-title"><span>3D EXTRUDE</span></div>
+                <div class="group-title"><span>{t('effects3d.extrudeTitle')}</span></div>
                 <Show when={ex()} fallback={
-                    <button style={btn} title="Add a 3D extrude (shaded depth behind the shape)" onClick={() => setExtrude(ids())}>+ Add 3D Extrude</button>
+                    <button style={btn} title={t('effects3d.extrudeAddTitle')} onClick={() => setExtrude(ids())}>{t('effects3d.extrudeAdd')}</button>
                 }>
-                    {Row({ label: 'Depth', min: 0, max: 120, step: 1, val: () => Math.round(ex()!.depth ?? 0), on: v => live({ depth: v }), onC: v => commit({ depth: v }) })}
-                    {Row({ label: 'Angle', min: 0, max: 360, step: 5, val: () => Math.round(ex()!.angle ?? 0), on: v => live({ angle: v }), onC: v => commit({ angle: v }), suffix: '°' })}
-                    {Row({ label: 'Tilt X', min: -70, max: 70, step: 1, val: () => Math.round(ex()!.rotX ?? 0), on: v => live({ rotX: v }), onC: v => commit({ rotX: v }), suffix: '°' })}
-                    {Row({ label: 'Tilt Y', min: -70, max: 70, step: 1, val: () => Math.round(ex()!.rotY ?? 0), on: v => live({ rotY: v }), onC: v => commit({ rotY: v }), suffix: '°' })}
-                    {Row({ label: 'Bevel', min: 0, max: 30, step: 1, val: () => Math.round(ex()!.bevel ?? 0), on: v => live({ bevel: v }), onC: v => commit({ bevel: v }) })}
-                    {Row({ label: 'Shade', min: 0, max: 90, step: 5, val: () => Math.round((ex()!.shade ?? 0.35) * 100), on: v => live({ shade: v / 100 }), onC: v => commit({ shade: v / 100 }), suffix: '%' })}
+                    {Row({ label: t('effects3d.depth'), min: 0, max: 120, step: 1, val: () => Math.round(ex()!.depth ?? 0), on: v => live({ depth: v }), onC: v => commit({ depth: v }) })}
+                    {Row({ label: t('effects3d.angle'), min: 0, max: 360, step: 5, val: () => Math.round(ex()!.angle ?? 0), on: v => live({ angle: v }), onC: v => commit({ angle: v }), suffix: '°' })}
+                    {Row({ label: t('effects3d.tiltX'), min: -70, max: 70, step: 1, val: () => Math.round(ex()!.rotX ?? 0), on: v => live({ rotX: v }), onC: v => commit({ rotX: v }), suffix: '°' })}
+                    {Row({ label: t('effects3d.tiltY'), min: -70, max: 70, step: 1, val: () => Math.round(ex()!.rotY ?? 0), on: v => live({ rotY: v }), onC: v => commit({ rotY: v }), suffix: '°' })}
+                    {Row({ label: t('effects3d.bevel'), min: 0, max: 30, step: 1, val: () => Math.round(ex()!.bevel ?? 0), on: v => live({ bevel: v }), onC: v => commit({ bevel: v }) })}
+                    {Row({ label: t('effects3d.shade'), min: 0, max: 90, step: 5, val: () => Math.round((ex()!.shade ?? 0.35) * 100), on: v => live({ shade: v / 100 }), onC: v => commit({ shade: v / 100 }), suffix: '%' })}
                     <div class="control-row" style={{ gap: '6px' }}>
-                        <button style={btn} title="Bake the 3D into editable face elements" onClick={() => expandExtrude(ids())}>Expand</button>
-                        <button style={btn} title="Remove the 3D extrude" onClick={() => clearExtrude(ids())}>Remove</button>
+                        <button style={btn} title={t('effects3d.expandTitle')} onClick={() => expandExtrude(ids())}>{t('effects3d.expand')}</button>
+                        <button style={btn} title={t('effects3d.extrudeRemoveTitle')} onClick={() => clearExtrude(ids())}>{t('effects3d.remove')}</button>
                     </div>
                 </Show>
             </div>
@@ -1079,28 +1080,28 @@ const InflateEditor: Component<{ el: () => any }> = (props) => {
     return (
         <Show when={ids().length >= 1}>
             <div class="property-group">
-                <div class="group-title"><span>INFLATE (3D)</span></div>
+                <div class="group-title"><span>{t('effects3d.inflateTitle')}</span></div>
                 <Show when={inf()} fallback={
-                    <button style={btn} title="Puff the fill into a lit, rounded 3D body" onClick={() => setInflate(ids())}>+ Add Inflate</button>
+                    <button style={btn} title={t('effects3d.inflateAddTitle')} onClick={() => setInflate(ids())}>{t('effects3d.inflateAdd')}</button>
                 }>
-                    {Row({ label: 'Bulge', title: 'How far the surface puffs out, relative to the shape', min: 0, max: 150, step: 1, val: () => Math.round((inf()!.bulge ?? 0.6) * 100), on: v => live({ bulge: v / 100 }), onC: v => commit({ bulge: v / 100 }), suffix: '%' })}
-                    {Row({ label: 'Softness', title: 'Rounder, softer form — at the cost of fine relief', min: 0, max: 100, step: 1, val: () => Math.round((inf()!.softness ?? 0.25) * 100), on: v => live({ softness: v / 100 }), onC: v => commit({ softness: v / 100 }), suffix: '%' })}
-                    {Row({ label: 'Light', title: 'Direction the light comes from. Stays put on the page when the object rotates', min: 0, max: 360, step: 5, val: () => Math.round(inf()!.lightAngle ?? 135), on: v => live({ lightAngle: v }), onC: v => commit({ lightAngle: v }), suffix: '°' })}
-                    {Row({ label: 'Height', title: 'How high the light sits. 90° is straight on, which flattens the shading', min: 0, max: 90, step: 1, val: () => Math.round(inf()!.lightHeight ?? 50), on: v => live({ lightHeight: v }), onC: v => commit({ lightHeight: v }), suffix: '°' })}
-                    {Row({ label: 'Intensity', min: 0, max: 100, step: 1, val: () => Math.round((inf()!.intensity ?? 0.75) * 100), on: v => live({ intensity: v / 100 }), onC: v => commit({ intensity: v / 100 }), suffix: '%' })}
-                    {Row({ label: 'Ambient', title: 'Fill light — how dark the unlit side goes', min: 0, max: 100, step: 1, val: () => Math.round((inf()!.ambient ?? 0.4) * 100), on: v => live({ ambient: v / 100 }), onC: v => commit({ ambient: v / 100 }), suffix: '%' })}
-                    {Row({ label: 'Roughness', title: '0 = tight glossy highlight, 100 = matte', min: 0, max: 100, step: 1, val: () => Math.round((inf()!.roughness ?? 0.35) * 100), on: v => live({ roughness: v / 100 }), onC: v => commit({ roughness: v / 100 }), suffix: '%' })}
-                    {Row({ label: 'Metallic', title: 'Tints the highlight toward the fill colour', min: 0, max: 100, step: 1, val: () => Math.round((inf()!.metallic ?? 0) * 100), on: v => live({ metallic: v / 100 }), onC: v => commit({ metallic: v / 100 }), suffix: '%' })}
+                    {Row({ label: t('effects3d.bulge'), title: t('effects3d.bulgeTitle'), min: 0, max: 150, step: 1, val: () => Math.round((inf()!.bulge ?? 0.6) * 100), on: v => live({ bulge: v / 100 }), onC: v => commit({ bulge: v / 100 }), suffix: '%' })}
+                    {Row({ label: t('effects3d.softness'), title: t('effects3d.softnessTitle'), min: 0, max: 100, step: 1, val: () => Math.round((inf()!.softness ?? 0.25) * 100), on: v => live({ softness: v / 100 }), onC: v => commit({ softness: v / 100 }), suffix: '%' })}
+                    {Row({ label: t('effects3d.light'), title: t('effects3d.lightTitle'), min: 0, max: 360, step: 5, val: () => Math.round(inf()!.lightAngle ?? 135), on: v => live({ lightAngle: v }), onC: v => commit({ lightAngle: v }), suffix: '°' })}
+                    {Row({ label: t('effects3d.lightHeight'), title: t('effects3d.lightHeightTitle'), min: 0, max: 90, step: 1, val: () => Math.round(inf()!.lightHeight ?? 50), on: v => live({ lightHeight: v }), onC: v => commit({ lightHeight: v }), suffix: '°' })}
+                    {Row({ label: t('effects3d.intensity'), min: 0, max: 100, step: 1, val: () => Math.round((inf()!.intensity ?? 0.75) * 100), on: v => live({ intensity: v / 100 }), onC: v => commit({ intensity: v / 100 }), suffix: '%' })}
+                    {Row({ label: t('effects3d.ambient'), title: t('effects3d.ambientTitle'), min: 0, max: 100, step: 1, val: () => Math.round((inf()!.ambient ?? 0.4) * 100), on: v => live({ ambient: v / 100 }), onC: v => commit({ ambient: v / 100 }), suffix: '%' })}
+                    {Row({ label: t('effects3d.roughness'), title: t('effects3d.roughnessTitle'), min: 0, max: 100, step: 1, val: () => Math.round((inf()!.roughness ?? 0.35) * 100), on: v => live({ roughness: v / 100 }), onC: v => commit({ roughness: v / 100 }), suffix: '%' })}
+                    {Row({ label: t('effects3d.metallic'), title: t('effects3d.metallicTitle'), min: 0, max: 100, step: 1, val: () => Math.round((inf()!.metallic ?? 0) * 100), on: v => live({ metallic: v / 100 }), onC: v => commit({ metallic: v / 100 }), suffix: '%' })}
                     <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '5px' }}>
-                        <span style={{ 'font-size': '11px', 'min-width': '54px' }} title="Colour of the specular highlight">Highlight</span>
+                        <span style={{ 'font-size': '11px', 'min-width': '54px' }} title={t('effects3d.highlightTitle')}>{t('effects3d.highlight')}</span>
                         <input type="color" style={{ flex: '1', height: '22px', padding: '0', cursor: 'pointer' }}
                             value={inf()!.highlight ?? '#ffffff'} onChange={e => commit({ highlight: e.currentTarget.value })} />
                     </div>
                     <div style={{ 'font-size': '10px', opacity: '0.7', 'margin-bottom': '5px' }}>
-                        Set the fill to an <b>image</b> to use it as the surface material.
+                        {t('effects3d.inflateMaterialHint')}
                     </div>
                     <div class="control-row" style={{ gap: '6px' }}>
-                        <button style={btn} title="Remove the Inflate effect" onClick={() => clearInflate(ids())}>Remove</button>
+                        <button style={btn} title={t('effects3d.inflateRemoveTitle')} onClick={() => clearInflate(ids())}>{t('effects3d.remove')}</button>
                     </div>
                 </Show>
             </div>
@@ -1135,48 +1136,48 @@ const TurntableEditor: Component = () => {
     return (
         <Show when={capable().length >= 1}>
             <div class="property-group">
-                <div class="group-title"><span>TURNTABLE (3D SPIN){isGroup() ? ' — GROUP' : ''}</span></div>
+                <div class="group-title"><span>{t('effects3d.turntableTitle')}{isGroup() ? t('effects3d.turntableGroupSuffix') : ''}</span></div>
                 <Show when={tt()} fallback={
-                    <button style={btn} title="Rotate in pseudo-3D, keeping editable vectors" onClick={() => setTurntable(ids())}>+ Add Turntable{isGroup() ? ` (${capable().length})` : ''}</button>
+                    <button style={btn} title={t('effects3d.turntableAddTitle')} onClick={() => setTurntable(ids())}>{t('effects3d.turntableAdd')}{isGroup() ? ` (${capable().length})` : ''}</button>
                 }>
-                    {Row({ label: 'Yaw', min: -180, max: 180, step: 1, val: () => Math.round(tt()!.yaw ?? 0), on: v => live({ yaw: v }), onC: v => commit({ yaw: v }), suffix: '°' })}
-                    {Row({ label: 'Pitch', min: -80, max: 80, step: 1, val: () => Math.round(tt()!.pitch ?? 0), on: v => live({ pitch: v }), onC: v => commit({ pitch: v }), suffix: '°' })}
+                    {Row({ label: t('effects3d.yaw'), min: -180, max: 180, step: 1, val: () => Math.round(tt()!.yaw ?? 0), on: v => live({ yaw: v }), onC: v => commit({ yaw: v }), suffix: '°' })}
+                    {Row({ label: t('effects3d.pitch'), min: -80, max: 80, step: 1, val: () => Math.round(tt()!.pitch ?? 0), on: v => live({ pitch: v }), onC: v => commit({ pitch: v }), suffix: '°' })}
                     <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '5px' }}>
-                        <span style={{ 'font-size': '11px', 'min-width': '54px' }}>Volume</span>
+                        <span style={{ 'font-size': '11px', 'min-width': '54px' }}>{t('effects3d.volume')}</span>
                         <select style={{ flex: '1', 'font-size': '11px' }} value={tt()!.depthModel ?? 'symmetry'}
                             onChange={e => commit({ depthModel: e.currentTarget.value as any })}>
-                            <option value="flat">Flat (foreshorten)</option>
-                            <option value="symmetry">Symmetry (rounded)</option>
+                            <option value="flat">{t('effects3d.volumeFlat')}</option>
+                            <option value="symmetry">{t('effects3d.volumeSymmetry')}</option>
                         </select>
                     </div>
                     <Show when={tt()!.depthModel === 'symmetry'}>
-                        {Row({ label: 'Depth', min: 0, max: 150, step: 5, val: () => Math.round((tt()!.depthScale ?? 0.6) * 100), on: v => live({ depthScale: v / 100 }), onC: v => commit({ depthScale: v / 100 }), suffix: '%' })}
+                        {Row({ label: t('effects3d.depth'), min: 0, max: 150, step: 5, val: () => Math.round((tt()!.depthScale ?? 0.6) * 100), on: v => live({ depthScale: v / 100 }), onC: v => commit({ depthScale: v / 100 }), suffix: '%' })}
                         <label class="control-row" style={{ gap: '6px', 'align-items': 'center', 'font-size': '11px', cursor: 'pointer', 'margin-bottom': '5px' }}>
                             <input type="checkbox" checked={!!tt()!.reveal} onChange={e => commit({ reveal: e.currentTarget.checked })} />
-                            Reveal back face (show far side on turn)
+                            {t('effects3d.revealBackFace')}
                         </label>
                     </Show>
-                    {Row({ label: 'Persp', min: 0, max: 100, step: 5, val: () => Math.round((tt()!.perspective ?? 0) * 100), on: v => live({ perspective: v / 100 }), onC: v => commit({ perspective: v / 100 }), suffix: '%' })}
+                    {Row({ label: t('effects3d.persp'), min: 0, max: 100, step: 5, val: () => Math.round((tt()!.perspective ?? 0) * 100), on: v => live({ perspective: v / 100 }), onC: v => commit({ perspective: v / 100 }), suffix: '%' })}
                     <div class="control-row" style={{ gap: '6px', 'margin-bottom': '4px' }}>
-                        <button style={{ ...btn, flex: '1' }} title="Auto-keyframe a full 360° spin across the timeline" onClick={() => spinTurntable360(ids())}>↻ Spin 360°</button>
+                        <button style={{ ...btn, flex: '1' }} title={t('effects3d.spin360Title')} onClick={() => spinTurntable360(ids())}>{t('effects3d.spin360')}</button>
                     </div>
                     <Show when={!isGroup()}>
                         <div class="control-row" style={{ gap: '6px', 'margin-bottom': '4px' }}>
                             <button style={{ ...btn, flex: '1' }}
-                                title="Vector redraw at the current angle via a vision model (any provider) — cleaner & cheaper. Inserts a new editable path; needs an AI key."
+                                title={t('effects3d.aiRedrawTitle')}
                                 onClick={async () => { const m = await import("../ai/turntable-ai"); m.reconstructTurntableAI(rep()!.id, { yaw: tt()!.yaw, pitch: tt()!.pitch }); }}>
-                                ✨ AI Redraw
+                                {t('effects3d.aiRedraw')}
                             </button>
                             <button style={{ ...btn, flex: '1' }}
-                                title="Photo reimagine at the current angle via an OpenAI image model, then auto-traced to vector — more faithful, messier paths. Needs an OpenAI key."
+                                title={t('effects3d.aiReimagineTitle')}
                                 onClick={async () => { const m = await import("../ai/turntable-ai"); m.reconstructTurntableAIImage(rep()!.id, { yaw: tt()!.yaw, pitch: tt()!.pitch }); }}>
-                                ✨ AI Reimagine
+                                {t('effects3d.aiReimagine')}
                             </button>
                         </div>
                     </Show>
                     <div class="control-row" style={{ gap: '6px' }}>
-                        <button style={btn} title="Bake the current angle into an editable path" onClick={() => bakeTurntable(ids())}>Bake</button>
-                        <button style={btn} title="Remove the turntable (restore the flat shape)" onClick={() => clearTurntable(ids())}>Remove</button>
+                        <button style={btn} title={t('effects3d.bakeTitle')} onClick={() => bakeTurntable(ids())}>{t('effects3d.bake')}</button>
+                        <button style={btn} title={t('effects3d.turntableRemoveTitle')} onClick={() => clearTurntable(ids())}>{t('effects3d.remove')}</button>
                     </div>
                 </Show>
             </div>
