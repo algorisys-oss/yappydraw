@@ -184,7 +184,7 @@ frontend/src/components/infra-tool-group.tsx | typescript | 136 | Component:1 In
 frontend/src/components/keyframe-panel.css | - | 137 |
 frontend/src/components/keyframe-panel.tsx | typescript | 562 | Component:1 PropKind:9 PropDef:10 getPath:79 animatablePropsFor:86 snapT:108 clamp:121 matchPreset:123 near:128 formatValue:136 KeyframePanel:146 dur:151 frac:152 keysFor:155 valueAt:162 upsertKey:175 moveKey:192 deleteKey:205 addKeyHere:226 elLabel:237 wouldCycle:245 setParent:257 addNull:263 isSel:273 patchSelKey:290 applyPreset:302 laneRectOf:311 timeFromLane:315 startDragKey:319 move:330 up:340 seekFromLane:349 vx:360 vy:361 startHandleDrag:362 move:368 up:379 seekFromRuler:386 onRulerDown:392 move:395 up:396 play:421 restart:422 onKeyDown:425
 frontend/src/components/layer-context-menu.tsx | typescript | 99 | Component:1 MenuItem:3 Props:5 LayerContextMenu:13 layer:14
-frontend/src/components/layer-panel.css | - | 645 |
+frontend/src/components/layer-panel.css | - | 655 |
 frontend/src/components/layer-panel.tsx | typescript | 599 | Component:1 LayerPanel:8 objectsOpen:15 toggleObjects:16 layerObjectCount:24 toggleSelected:44 clearSelection:49 onSwipeMove:51 onSwipeUp:71 endSwipeTracking:83 startSwipe:91 swipeOffset:104 groupSelectedLayers:111 deleteSelectedLayers:120 handleLayerClick:129 handleToggleVisibility:133 handleToggleLock:141 handleDeleteLayer:150 handleDuplicateLayer:157 startEditing:162 saveRename:168 cancelEditing:177 handleRenameKeyDown:182 handlePointerDown:192 handlePointerUp:198 registerRow:218 rowAt:223 onDragMove:231 onDragUp:236 endDrag:243 startDrag:253 applyDrop:267 displayLayers:312 visit:321 depth:460
 frontend/src/components/live-paint-overlay.css | - | 27 |
 frontend/src/components/live-paint-overlay.tsx | typescript | 66 | LivePaintOverlay:14 active:25 toWorld:26 onDown:28 onMove:35 onKey:51
@@ -342,7 +342,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 686 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 689 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}

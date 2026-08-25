@@ -588,12 +588,22 @@
 }
 .layer-swipe-tray .tray-btn {
     width: 44px;
+    /* `button` in index.css carries `padding: 0.6em 1.2em`, which on a 44px border-box
+       button leaves 5.6px of content — and the icon, being a flex item that may shrink,
+       collapsed into a 6px-wide sliver inside a full-height coloured block. These are
+       full-bleed touch targets, so they want no padding at all. */
+    padding: 0;
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
     cursor: pointer;
+}
+/* Belt and braces: an icon must never be squeezed by its own button, whatever padding
+   a future global rule adds. */
+.layer-swipe-tray .tray-btn svg {
+    flex-shrink: 0;
 }
 .layer-swipe-tray .tray-btn:disabled { opacity: 0.45; cursor: default; }
 .layer-swipe-tray .tray-lock { background: #475569; }

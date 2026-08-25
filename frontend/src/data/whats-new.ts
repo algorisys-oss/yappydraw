@@ -13,6 +13,9 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.222', date: '2026-08-25', items: [
+        'The lock, duplicate and delete buttons in the Layers panel look right again. Swiping a layer row revealed three big coloured blocks with a thin sliver of an icon squeezed into each — the icons were being crushed rather than drawn small. They now fill their buttons properly.',
+    ] },
     { version: '0.8.221', date: '2026-08-25', items: [
         'Patterns and images now fill a shape all the way to its edges. A few shapes reach a little outside their own frame on purpose — a puzzle piece has to, or its tabs would not slot into the piece beside it — and on those, a patterned or image fill used to stop short and leave the sticking-out parts blank.',
         'Reordering layers works anywhere in the panel. Drag a layer by its grip and you can move through the whole list, including the gaps and past either end; let go somewhere that is not a layer and the drag is simply cancelled. The red no-entry sign is gone.',
