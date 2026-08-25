@@ -1084,9 +1084,25 @@ const App: Component = () => {
     let _dragOverCount = 0;
     let _dragHasFiles = false; // Track whether current drag contains files (from dragover types)
     // _lastDragCoords removed — was unused (reserved for future fallback file picker positioning)
+    /**
+     * Drags a panel is handling itself — reordering layers, reordering slides. The
+     * global handlers below must keep their hands off these: they force
+     * `dropEffect = 'copy'`, and a drag that started with `effectAllowed = 'move'`
+     * is then an illegal combination, so the browser rejects it outright — no-entry
+     * cursor, and no `drop` event at all.
+     *
+     * That is exactly how layer reordering broke. This test named `.layer-panel`, and
+     * the layer panel had since been re-homed inside the generic dock-panel wrapper,
+     * so the selector matched nothing and the global handler swallowed every reorder.
+     * `data-internal-drag` is set by the panels themselves, so it travels with them.
+     * The type of the drag cannot be used instead: a layer drag and a colour-swatch
+     * drag both carry nothing but `text/plain`.
+     */
+    const isInternalPanelDrag = (e: DragEvent) =>
+      !!(e.target as HTMLElement)?.closest?.('[data-internal-drag], .slide-navigator, .layer-panel');
+
     const handleGlobalDragEnter = (e: DragEvent) => {
-      // Let slide navigator / layer panel handle their own drag-to-rearrange
-      if ((e.target as HTMLElement)?.closest?.('.slide-navigator, .layer-panel')) return;
+      if (isInternalPanelDrag(e)) return;
       e.preventDefault();
       ++_dragOverCount;
       if (e.dataTransfer) {
@@ -1100,8 +1116,7 @@ const App: Component = () => {
       }
     };
     const handleGlobalDragOver = (e: DragEvent) => {
-      // Let slide navigator / layer panel handle their own drag-to-rearrange
-      if ((e.target as HTMLElement)?.closest?.('.slide-navigator, .layer-panel')) return;
+      if (isInternalPanelDrag(e)) return;
       e.preventDefault();
       ++_dragOverCount;
       if (e.dataTransfer) {
@@ -1381,8 +1396,8 @@ const App: Component = () => {
     // NON-ASYNC drop handlers — extract DataTransfer synchronously, then process async.
     // Critical: the browser clears DataTransfer after the synchronous handler returns.
     const handleGlobalDrop = (e: DragEvent) => {
-      // Let slide navigator / layer panel handle their own drag-to-rearrange drops
-      if ((e.target as HTMLElement)?.closest?.('.slide-navigator, .layer-panel')) return;
+      // Let the panels handle their own drag-to-rearrange drops.
+      if (isInternalPanelDrag(e)) return;
 
       const dragCount = _dragOverCount;
       const hadDragActivity = dragCount > 0;

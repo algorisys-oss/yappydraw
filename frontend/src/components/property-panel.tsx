@@ -14,7 +14,7 @@ const SYMMETRY_MODES = [
     { id: 'kaleidoscope', label: '❋', title: 'Kaleidoscope — N-sector mandala with every wedge mirrored' },
 ];
 import { pageNoun, setPageSize, propertyPanelTarget } from "../store/app-store";
-import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, canTurntable, spinTurntable360 } from "../store/app-store";
+import { setTransformEffect, clearTransformEffect, expandTransformEffect, applyWarpPreset, bakeWarp, toggleEnvelopeWarp, setExtrude, clearExtrude, expandExtrude, setInflate, clearInflate, setTurntable, clearTurntable, bakeTurntable, canTurntable, spinTurntable360 } from "../store/app-store";
 import { WARP_PRESETS } from "../utils/envelope-warp";
 import { replaceImageOn } from "../utils/image-actions";
 import { slideTransitionManager } from "../utils/animation";
@@ -1052,6 +1052,55 @@ const ExtrudeEditor: Component<{ el: () => any }> = (props) => {
                     <div class="control-row" style={{ gap: '6px' }}>
                         <button style={btn} title="Bake the 3D into editable face elements" onClick={() => expandExtrude(ids())}>Expand</button>
                         <button style={btn} title="Remove the 3D extrude" onClick={() => clearExtrude(ids())}>Remove</button>
+                    </div>
+                </Show>
+            </div>
+        </Show>
+    );
+};
+
+/** Live Inflate editor (Illustrator's 3D and Materials ▸ Inflate) — puff the fill into a lit,
+ *  rounded body. Form on top (Bulge / Softness), then the light, then the surface. Sliders drag
+ *  live (no history) and commit on release, matching the Extrude and Turntable editors. */
+const InflateEditor: Component<{ el: () => any }> = (props) => {
+    const ids = () => (store.selection.length ? store.selection : (props.el()?.id ? [props.el().id] : []));
+    const inf = () => props.el()?.inflate as import("../types").Inflate3D | undefined;
+    const btn = { padding: '2px 8px', cursor: 'pointer', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', 'border-radius': '4px', 'font-size': '11px' } as any;
+    const live = (p: Partial<import("../types").Inflate3D>) => setInflate(ids(), p, false);
+    const commit = (p: Partial<import("../types").Inflate3D>) => setInflate(ids(), p, true);
+    const Row = (p: { label: string; title?: string; min: number; max: number; step: number; val: () => number; on: (v: number) => void; onC: (v: number) => void; suffix?: string }) => (
+        <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '5px' }} title={p.title}>
+            <span style={{ 'font-size': '11px', 'min-width': '54px' }}>{p.label}</span>
+            <input type="range" style={{ flex: '1' }} min={p.min} max={p.max} step={p.step} value={p.val()}
+                onInput={e => p.on(parseFloat(e.currentTarget.value))} onChange={e => p.onC(parseFloat(e.currentTarget.value))} />
+            <span style={{ 'font-size': '11px', 'min-width': '34px', 'text-align': 'right' }}>{p.val()}{p.suffix ?? ''}</span>
+        </div>
+    );
+    return (
+        <Show when={ids().length >= 1}>
+            <div class="property-group">
+                <div class="group-title"><span>INFLATE (3D)</span></div>
+                <Show when={inf()} fallback={
+                    <button style={btn} title="Puff the fill into a lit, rounded 3D body" onClick={() => setInflate(ids())}>+ Add Inflate</button>
+                }>
+                    {Row({ label: 'Bulge', title: 'How far the surface puffs out, relative to the shape', min: 0, max: 150, step: 1, val: () => Math.round((inf()!.bulge ?? 0.6) * 100), on: v => live({ bulge: v / 100 }), onC: v => commit({ bulge: v / 100 }), suffix: '%' })}
+                    {Row({ label: 'Softness', title: 'Rounder, softer form — at the cost of fine relief', min: 0, max: 100, step: 1, val: () => Math.round((inf()!.softness ?? 0.25) * 100), on: v => live({ softness: v / 100 }), onC: v => commit({ softness: v / 100 }), suffix: '%' })}
+                    {Row({ label: 'Light', title: 'Direction the light comes from. Stays put on the page when the object rotates', min: 0, max: 360, step: 5, val: () => Math.round(inf()!.lightAngle ?? 135), on: v => live({ lightAngle: v }), onC: v => commit({ lightAngle: v }), suffix: '°' })}
+                    {Row({ label: 'Height', title: 'How high the light sits. 90° is straight on, which flattens the shading', min: 0, max: 90, step: 1, val: () => Math.round(inf()!.lightHeight ?? 50), on: v => live({ lightHeight: v }), onC: v => commit({ lightHeight: v }), suffix: '°' })}
+                    {Row({ label: 'Intensity', min: 0, max: 100, step: 1, val: () => Math.round((inf()!.intensity ?? 0.75) * 100), on: v => live({ intensity: v / 100 }), onC: v => commit({ intensity: v / 100 }), suffix: '%' })}
+                    {Row({ label: 'Ambient', title: 'Fill light — how dark the unlit side goes', min: 0, max: 100, step: 1, val: () => Math.round((inf()!.ambient ?? 0.4) * 100), on: v => live({ ambient: v / 100 }), onC: v => commit({ ambient: v / 100 }), suffix: '%' })}
+                    {Row({ label: 'Roughness', title: '0 = tight glossy highlight, 100 = matte', min: 0, max: 100, step: 1, val: () => Math.round((inf()!.roughness ?? 0.35) * 100), on: v => live({ roughness: v / 100 }), onC: v => commit({ roughness: v / 100 }), suffix: '%' })}
+                    {Row({ label: 'Metallic', title: 'Tints the highlight toward the fill colour', min: 0, max: 100, step: 1, val: () => Math.round((inf()!.metallic ?? 0) * 100), on: v => live({ metallic: v / 100 }), onC: v => commit({ metallic: v / 100 }), suffix: '%' })}
+                    <div class="control-row" style={{ gap: '6px', 'align-items': 'center', 'margin-bottom': '5px' }}>
+                        <span style={{ 'font-size': '11px', 'min-width': '54px' }} title="Colour of the specular highlight">Highlight</span>
+                        <input type="color" style={{ flex: '1', height: '22px', padding: '0', cursor: 'pointer' }}
+                            value={inf()!.highlight ?? '#ffffff'} onChange={e => commit({ highlight: e.currentTarget.value })} />
+                    </div>
+                    <div style={{ 'font-size': '10px', opacity: '0.7', 'margin-bottom': '5px' }}>
+                        Set the fill to an <b>image</b> to use it as the surface material.
+                    </div>
+                    <div class="control-row" style={{ gap: '6px' }}>
+                        <button style={btn} title="Remove the Inflate effect" onClick={() => clearInflate(ids())}>Remove</button>
                     </div>
                 </Show>
             </div>
@@ -2839,6 +2888,11 @@ const PropertyPanel: Component = () => {
                                 {/* Live 3D Extrude editor (Add button when absent; controls when present) */}
                                 <Show when={isElement() && targetData()}>
                                     <ExtrudeEditor el={() => targetData()} />
+                                </Show>
+
+                                {/* Live Inflate editor — the fill becomes a lit 3D surface */}
+                                <Show when={isElement() && targetData()}>
+                                    <InflateEditor el={() => targetData()} />
                                 </Show>
 
                                 {/* Live Turntable editor — self-gating: shows only for turntable-

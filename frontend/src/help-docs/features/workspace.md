@@ -194,7 +194,7 @@ Y.gridStyles;                  // the list, with labels
 
 Select the artwork, then right-click → **Move to Layer** and pick the destination. It works on a whole selection at once, and a tick marks the layer the selection is already on (or every such layer, when a mixed selection spans several). Group layers are containers rather than places artwork lives, so they aren’t offered, and neither are locked layers — for the same reason you can’t draw into one. The entry is hidden entirely when there is nowhere else to move to.
 
-To move a **layer itself** up or down the stack, drag its row in the Layers panel, or press <kbd>Alt</kbd>+<kbd>[</kbd> / <kbd>Alt</kbd>+<kbd>]</kbd> to move the active layer.
+To move a **layer itself** up or down the stack, drag it by the grip (<b>⋮⋮</b>) at the left of its row in the Layers panel and drop it **onto** the row you want it to take the place of, or press <kbd>Alt</kbd>+<kbd>[</kbd> / <kbd>Alt</kbd>+<kbd>]</kbd> to move the active layer. Only the grip starts a reorder — dragging the row body sideways is the swipe gesture that reveals the lock/duplicate/delete tray instead. The rows themselves are the only drop targets, so the cursor turns to a no-entry sign over the panel header or the empty space below the list.
 
 ## Rasterize — vector to bitmap
 

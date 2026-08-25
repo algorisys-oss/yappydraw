@@ -416,7 +416,11 @@ const LayerPanel: Component = () => {
                             </div>
                         </div>
                     </Show>
-                    <div class="layer-list">
+                    {/* `data-internal-drag` tells app.tsx's global file/colour drop handlers
+                        to keep out: they force `dropEffect = 'copy'`, and a drag that started
+                        with `effectAllowed = 'move'` is then rejected outright by the browser —
+                        no-entry cursor, no `drop` event, no reorder. */}
+                    <div class="layer-list" data-internal-drag="layers">
                         <For each={displayLayers().items}>
                             {(layer) => {
                                 const depth = () => displayLayers().depths.get(layer.id) || 0;

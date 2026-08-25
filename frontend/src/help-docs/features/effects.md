@@ -4,7 +4,7 @@ name: Effects & Colour Tools
 icon: "✨"
 category: Design
 description: Convert to Shape, Split Into Grid, Convert to Guides, Feather, Outer Glow, Scribble, Smooth, crop marks & bleed, plus the Colour Guide (tints / harmonies / palette-from-image), swatch groups and the swatch info sheet — with API examples
-keywords: effects convert to shape split into grid convert to guides feather outer glow inner glow scribble smooth path crop marks bleed registration colour guide color guide tints shades harmony complementary analogous triadic split complementary tetradic monochromatic palette from image colour theme picker recolor shuffle swatch groups swatch info sheet print
+keywords: effects convert to shape split into grid convert to guides feather outer glow inner glow scribble smooth path crop marks bleed registration inflate 3d inflate puff bulge material roughness metallic specular highlight ambient light lighting shade sphere balloon colour guide color guide tints shades harmony complementary analogous triadic split complementary tetradic monochromatic palette from image colour theme picker recolor shuffle swatch groups swatch info sheet print
 ---
 
 # Effects & Colour Tools
@@ -94,6 +94,53 @@ Results vary run to run; with no key either button just reports and you fall bac
 
 :::tip
 **Best on symmetric art:** the deterministic rounded look and back-face reveal are inferred from a vertical mirror axis, so characters, bottles, and logos turn most convincingly. The reveal is a mirror of what's already there; the AI reconstruction above is the tier that actually re-imagines hidden detail from the new viewpoint.
+:::
+
+
+## Inflate (3D)
+
+Puff a flat shape into a **lit, rounded body** — Illustrator's *Effect ▸ 3D and Materials ▸ Inflate*. It is the third of Yappy's 3D effects and the only one that adds **form** rather than depth or rotation: 3D Extrude pushes the shape backwards, Turntable spins it, Inflate rounds its interior. Non-destructive, and it renders identically in **Sketch** and **Architectural** — the surface is the same, only the outline changes style.
+
+There is no 3D model behind it. The shape is treated as a height field built from its own silhouette, so the puff follows whatever outline you drew, at any size — a circle becomes a sphere, a heart becomes a cushion, a cloud becomes cumulus.
+
+**Property panel → INFLATE (3D)**: *+ Add Inflate*, then:
+
+| Control | What it does |
+| --- | --- |
+| **Bulge** | How far the surface puffs out, relative to the shape. `0%` turns the effect off. |
+| **Softness** | Rounder, softer form — at the cost of fine relief. Raise it on lumpy shapes. |
+| **Light** | The direction the light comes *from*. |
+| **Height** | How high the light sits. `90°` is straight on, which flattens the shading out. |
+| **Intensity** | Key light strength. |
+| **Ambient** | Fill light — in practice, how dark the unlit side is allowed to go. |
+| **Roughness** | `0%` is a tight glossy highlight, `100%` is matte. |
+| **Metallic** | Tints the highlight toward the fill colour, for a metal rather than a plastic. |
+| **Highlight** | Colour of the specular highlight. |
+
+**Remove** restores the flat fill.
+
+```
+const Y = window.Yappy;
+Y.setInflate();                                   // defaults
+Y.setInflate({ bulge: 0.9, roughness: 0.1 });     // fatter, glossier
+Y.setInflate({ lightAngle: 35, lightHeight: 70 });// move the light
+Y.clearInflate();
+```
+
+### Materials — shade a picture, not just a colour
+
+The surface colour is the object's **fill colour** by default. Give the object an **image fill** instead (Background → image) and that picture becomes the surface **material**: the texture is shaded as the body rather than pasted flat on it. This is the flat-artwork-to-photoreal-object trick — draw the silhouette, paint or drop in a skin, inflate, and light it.
+
+:::tip
+**The light belongs to the page, not the object.** Rotate an inflated shape and the highlight stays where it was — the light does not spin with the artwork, which is what keeps a group of inflated objects looking like one scene.
+:::
+
+:::tip
+**Give it something to sit on.** Inflate makes the body; the *contact* with the ground is the ordinary **Drop Shadow** (Shadow section, offset + blur) pointing away from your light. The two together are most of what separates a sticker from an object.
+:::
+
+:::note
+**What it is not.** Inflate is 2.5D — a shaded surface, not geometry. It has no self-occlusion, no perspective, and it cannot be rotated to show its side. It is excellent for blobs (fruit, badges, buttons, stickers, logo marks) and poor for concave forms. Illustrator's Inflate has the same ceiling. It also cannot be *expanded* into paths, because the surface is a raster — but it exports correctly to PNG, PDF and SVG (as an embedded image inside the shape).
 :::
 
 ## Transform Effect (live copies)

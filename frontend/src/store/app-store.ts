@@ -32,7 +32,7 @@ import { getShapeGeometry } from "../utils/shape-geometry";
 import { rasterizeWarpedImage } from "../utils/image-warp";
 import { nextIsolationGroup, unitGroupId } from "../utils/group-utils";
 import { traceImageData, traceImageDataColor, traceImageCenterline } from "../utils/image-trace";
-import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType, PatternSwatch, TransformEffect, Extrude3D, Turntable } from "../types";
+import type { PathAnchor, PathSubpath, PaintFill, PaintStroke, SymbolDef, Artboard, MeshGradient, GraphicStyle, Swatch, PatternFill, PatternType, PatternSwatch, TransformEffect, Extrude3D, Inflate3D, Turntable } from "../types";
 import { applyTurntable } from "../utils/turntable";
 import type { PerspectiveGrid, PerspectiveGuide } from "../utils/perspective-snap";
 import { transformCopy, effectiveCopies } from "../utils/transform-effect";
@@ -40,6 +40,7 @@ import { extrudeGeometry } from "../utils/extrude";
 import { elementPathSample, sampleAt } from "../library/stick-figures/anim/path-follow";
 import { defaultMesh, resizeMesh, meshIndex, meshPoints, constrainNodePos, parseHex, rgbToHex } from "../utils/mesh-gradient";
 import { defaultPatternFill } from "../utils/pattern-fill";
+import { DEFAULT_INFLATE, clearInflateCache } from "../utils/inflate";
 import { captureElementsToDataURL } from "../utils/pattern-capture";
 import { saveAsset, downscaleDataUrl, type AssetMeta } from "../storage/asset-library";
 import { isSolidColor, shiftHexHue, adjustHexLightness, adjustHexSaturation } from "../utils/color-adjust";
@@ -2814,6 +2815,11 @@ export const detachSlideBackgroundImage = (slideIndex: number = store.activeSlid
 };
 
 export const loadDocument = (doc: any) => {
+    // Shading buffers belong to the outgoing document's elements. Element ids repeat across
+    // documents (`rect-1` in every one of them), and while the cache key covers everything
+    // that changes what is drawn, holding a screenful of 384px canvases for artwork that no
+    // longer exists is just memory nobody asked for.
+    clearInflateCache();
     // Whatever is being loaded is NOT the gallery entry that was open.
     // `openDrawing` re-attaches straight after calling this; every other path
     // (File → New, open from disk / JSON / cloud, template restore) must not
@@ -8973,6 +8979,33 @@ export const clearExtrude = (ids: string[]) => {
     if (ids.length === 0) return;
     pushToHistory();
     setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ extrude: undefined }));
+    bumpDirtyRevision();
+};
+
+// ── Live Inflate 3D effect (Illustrator's 3D and Materials ▸ Inflate) ──
+
+/**
+ * Apply / update the live Inflate effect: the fill becomes a lit, rounded surface. `history
+ * = false` skips undo + toast so a slider can be dragged live.
+ *
+ * `bulge` is the on/off switch (`hasInflate`), so a patch that zeroes it leaves the object
+ * flat while keeping the light setup for when it is turned back up.
+ */
+export const setInflate = (ids: string[], f?: Partial<Inflate3D>, history = true) => {
+    if (ids.length === 0) { if (history) showToast('Inflate: select an object', 'info'); return; }
+    if (history) pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), (e: DrawingElement) => ({
+        inflate: { ...DEFAULT_INFLATE, ...e.inflate, ...f } as Inflate3D,
+    }));
+    bumpDirtyRevision();
+    if (history) showToast('Inflate applied', 'success');
+};
+
+/** Remove the Inflate effect, restoring the flat fill. */
+export const clearInflate = (ids: string[]) => {
+    if (ids.length === 0) return;
+    pushToHistory();
+    setStore('elements', (e: DrawingElement) => ids.includes(e.id), () => ({ inflate: undefined }));
     bumpDirtyRevision();
 };
 

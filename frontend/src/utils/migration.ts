@@ -121,6 +121,7 @@ export const normalizeElement = (el: Partial<DrawingElement> & { id: string; typ
         ...(el.appearance !== undefined && { appearance: el.appearance }),
         ...(el.transformEffect !== undefined && { transformEffect: el.transformEffect }),
         ...(el.extrude !== undefined && { extrude: el.extrude }),
+        ...(el.inflate !== undefined && { inflate: el.inflate }),
         ...(el.revolve3d !== undefined && { revolve3d: el.revolve3d }),
         ...(el.turntable !== undefined && { turntable: el.turntable }),
 

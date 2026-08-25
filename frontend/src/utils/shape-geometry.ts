@@ -131,6 +131,160 @@ export interface CylinderFrame {
     angleDeg: number;
 }
 
+// ─── Cloud ───────────────────────────────────────────────────────────────────
+
+/** Bumps sit on an ellipse, bigger across the top than along the bottom — a cloud
+ *  is lumpy above and flatter below. Angles measured clockwise from the left, y down. */
+const CLOUD_RING: { a: number; r: number }[] = [
+    { a: 180, r: 0.98 }, { a: 215, r: 1.00 }, { a: 250, r: 0.94 },
+    { a: 285, r: 1.00 }, { a: 320, r: 0.95 }, { a: 0, r: 0.98 },
+    { a: 40, r: 0.80 }, { a: 75, r: 0.86 }, { a: 105, r: 0.86 },
+    { a: 140, r: 0.80 },
+];
+
+/**
+ * Each scallop is an arc of radius `bulge` x its own chord. Just over a half is the
+ * roundest a scallop can be: at exactly a half the arc is a semicircle, and below that
+ * the arc cannot reach its own endpoints at all (SVG inflates the radius to compensate,
+ * which is how an over-wide cloud used to collapse into a spiked bowtie). Raising the
+ * factor FLATTENS the scallops, which is what a very wide or very tall box needs — see
+ * `fitCloudRing`.
+ */
+const CLOUD_BULGE = 0.62;
+
+const cloudRingPoints = (rx: number, ry: number) =>
+    CLOUD_RING.map(({ a, r }) => {
+        const rad = (a * Math.PI) / 180;
+        return { x: rx * r * Math.cos(rad), y: ry * r * Math.sin(rad) };
+    });
+
+/**
+ * Bounding box of a CLOSED chain of `A r r 0 0 1` arcs (small arc, sweep 1) through
+ * `pts`. Each arc bulges OUTSIDE the straight line between its two endpoints, so the
+ * polygon's own box understates the shape by a good fraction of every chord. This walks
+ * each arc, reconstructs its centre with the SVG endpoint-to-centre formula, and adds
+ * whichever of the four axis extremes the arc actually sweeps through.
+ */
+const arcChainExtent = (pts: { x: number, y: number }[], bulge: number) => {
+    const TAU = Math.PI * 2;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const add = (x: number, y: number) => {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+    };
+    for (let i = 0; i < pts.length; i++) {
+        const p0 = pts[i], p1 = pts[(i + 1) % pts.length];
+        add(p0.x, p0.y);
+        const hx = (p0.x - p1.x) / 2, hy = (p0.y - p1.y) / 2;
+        const half2 = (hx * hx) + (hy * hy);
+        if (half2 <= 0) continue;
+        const r = Math.sqrt(half2) * 2 * bulge;
+        // Centre offset: rx = ry = r, no rotation, largeArc 0 + sweep 1 => positive sign.
+        const k = Math.sqrt(Math.max(0, (r * r) - half2) / half2);
+        const ccx = (k * hy) + ((p0.x + p1.x) / 2);
+        const ccy = (-k * hx) + ((p0.y + p1.y) / 2);
+        const a0 = Math.atan2(p0.y - ccy, p0.x - ccx);
+        let sweep = Math.atan2(p1.y - ccy, p1.x - ccx) - a0;
+        while (sweep < 0) sweep += TAU;
+        for (let q = 0; q < 4; q++) {
+            const a = (q * Math.PI) / 2;
+            // Wrapped BOTH ways: `a - a0` runs from -pi to 2.5pi, so nudging a negative
+            // value up by one turn is not enough — a large positive one has to come down.
+            const t = (((a - a0) % TAU) + TAU) % TAU;
+            if (t <= sweep) add(ccx + (r * Math.cos(a)), ccy + (r * Math.sin(a)));
+        }
+    }
+    return { minX, minY, maxX, maxY, w: maxX - minX, h: maxY - minY };
+};
+
+/**
+ * Pull the ring in until the SCALLOPS land on the edges of an `aspect` x 1 box.
+ * Moving the ring moves the endpoints, which changes the chords, which resizes the
+ * scallops — hence the iteration. `fill` reports how much of the box the result
+ * actually reaches once scaled to fit: 1 means the iteration converged.
+ */
+const solveCloudRing = (aspect: number, bulge: number) => {
+    let rx = aspect / 2, ry = 0.5;
+    let pts = cloudRingPoints(rx, ry);
+    for (let i = 0; i < 24; i++) {
+        const e = arcChainExtent(pts, bulge);
+        if (!(e.w > 0) || !(e.h > 0)) break;
+        if (Math.abs(e.w - aspect) < aspect * 1e-4 && Math.abs(e.h - 1) < 1e-4) break;
+        rx *= aspect / e.w;
+        ry *= 1 / e.h;
+        pts = cloudRingPoints(rx, ry);
+    }
+    const e = arcChainExtent(pts, bulge);
+    // A UNIFORM scale is exact — it scales the points, the chords, the radii and so the
+    // bulges by one factor — so this last step guarantees containment even where the
+    // iteration above is still converging.
+    const fill = (e.w > 0 && e.h > 0) ? Math.min(aspect / e.w, 1 / e.h) : 1;
+    const ox = ((e.minX + e.maxX) / 2) * fill, oy = ((e.minY + e.maxY) / 2) * fill;
+    return { pts: pts.map(p => ({ x: (p.x * fill) - ox, y: (p.y * fill) - oy })), fill };
+};
+
+/** Solved rings, keyed by quantised aspect ratio. A resize drag walks through aspect
+ *  ratios continuously, so an exact key would miss on every frame; ~0.5% buckets hit
+ *  instead, and the caller's own uniform scale absorbs the difference. */
+const cloudRingCache = new Map<number, { pts: { x: number, y: number }[], bulge: number }>();
+const CLOUD_ASPECT_BUCKETS = 200; // per e-fold => e^(1/200), about 0.5%
+
+/**
+ * Cloud ring sized so the SCALLOPS — not the ring the scallops sit on — land on the
+ * edges of the `w` x `h` box, centred in it.
+ *
+ * Putting the ring itself on the box edge is the obvious thing to do and it is wrong:
+ * the bumps then hang outside the element's own bounds by up to 41% of the height. Every
+ * consumer that works off those bounds disagrees with what is drawn — the selection
+ * handles cut through the shape, and a pattern/texture fill (rasterised into a `w` x `h`
+ * buffer, then clipped to the outline) runs out of buffer partway up and ends in a dead
+ * straight line while the outline carries on above it. Solid fill needs no buffer, which
+ * is why only the patterned styles looked broken.
+ *
+ * Past about 4.5:1 no ring can fill the box at the default bulge: the chords along the
+ * long axis are then so long that their scallops alone overflow the short one, and
+ * fitting shrinks the cloud away from the ends (down to 15% of the width at 50:1). So
+ * flatten the scallops instead, by the least amount that lets the cloud reach the edges.
+ */
+const fitCloudRing = (w: number, h: number) => {
+    const bw = Math.max(1e-3, w), bh = Math.max(1e-3, h);
+    const aspect = bw / bh;
+    const key = Math.round(Math.log(aspect) * CLOUD_ASPECT_BUCKETS);
+    const qAspect = Math.exp(key / CLOUD_ASPECT_BUCKETS);
+
+    let solved = cloudRingCache.get(key);
+    if (!solved) {
+        let best = solveCloudRing(qAspect, CLOUD_BULGE);
+        let bulge = CLOUD_BULGE;
+        if (best.fill < 0.995) {
+            // Flatten until it fits, then bisect back towards the roundest one that does.
+            let lo = CLOUD_BULGE, hi = CLOUD_BULGE, found = false;
+            for (let i = 0; i < 10 && !found; i++) {
+                hi *= 1.6;
+                const candidate = solveCloudRing(qAspect, hi);
+                if (candidate.fill >= 0.995) { best = candidate; bulge = hi; found = true; }
+                else lo = hi;
+            }
+            for (let i = 0; found && i < 6; i++) {
+                const mid = (lo + hi) / 2;
+                const candidate = solveCloudRing(qAspect, mid);
+                if (candidate.fill >= 0.995) { hi = mid; best = candidate; bulge = mid; }
+                else lo = mid;
+            }
+        }
+        solved = { pts: best.pts, bulge };
+        if (cloudRingCache.size > 256) cloudRingCache.clear();
+        cloudRingCache.set(key, solved);
+    }
+
+    // The cached ring fills a `qAspect` x 1 box; shrink it into the real one. Uniform,
+    // so the scallops come with it and containment still holds.
+    const s = Math.min(aspect / qAspect, 1) * bh;
+    return { pts: solved.pts.map(p => ({ x: p.x * s, y: p.y * s })), bulge: solved.bulge };
+};
+
 export const CYLINDER_DEFAULT_ANGLE = 90;
 export const CYLINDER_DEFAULT_CAP = 25;
 const CYLINDER_MIN_CAP = 0.02;
@@ -479,31 +633,22 @@ const getBaseShapeGeometry = (el: DrawingElement): ShapeGeometry | null => {
             // to the height: SVG then clamped the arcs and the shape collapsed into a
             // spiked bowtie. Anchoring the radii to the chord means the bumps follow
             // whatever box the user drags, at any aspect ratio.
-            const cxr = w / 2, cyr = h / 2;
+            //
+            // `fitCloudRing` then pulls the ring in until the BUMPS, rather than the
+            // ring, touch the box — see its comment for why drawing outside the box
+            // broke the pattern fills but not the solid one.
+            const { pts, bulge } = fitCloudRing(w, h);
+            // Trimmed to avoid exponent notation ("1e-15"), which SVG path parsers and
+            // the path regexes in our tests both reject.
+            const n = (v: number) => (Math.abs(v) < 1e-4 ? 0 : Number(v.toFixed(3)));
 
-            // Bumps sit on an ellipse, bigger across the top than along the bottom —
-            // a cloud is lumpy above and flatter below. Angles measured clockwise
-            // from the left, y down.
-            const ring: { a: number; r: number }[] = [
-                { a: 180, r: 0.98 }, { a: 215, r: 1.00 }, { a: 250, r: 0.94 },
-                { a: 285, r: 1.00 }, { a: 320, r: 0.95 }, { a: 0, r: 0.98 },
-                { a: 40, r: 0.80 }, { a: 75, r: 0.86 }, { a: 105, r: 0.86 },
-                { a: 140, r: 0.80 },
-            ];
-            const pts = ring.map(({ a, r }) => {
-                const rad = (a * Math.PI) / 180;
-                return { x: cxr * r * Math.cos(rad), y: cyr * r * Math.sin(rad) };
-            });
-
-            let d = `M ${pts[0].x} ${pts[0].y}`;
+            let d = `M ${n(pts[0].x)} ${n(pts[0].y)}`;
             for (let i = 0; i < pts.length; i++) {
                 const from = pts[i];
                 const to = pts[(i + 1) % pts.length];
-                const chord = Math.hypot(to.x - from.x, to.y - from.y);
-                // Just over half the chord — the smallest radius that still bulges
-                // outward, so the arc is always drawable and never over-inflates.
-                const r = Math.max(0.5, chord * 0.62);
-                d += ` A ${r} ${r} 0 0 1 ${to.x} ${to.y}`;
+                // Never a literal zero: `A 0 0 …` is a straight line to SVG.
+                const r = Math.max(1e-3, Math.hypot(to.x - from.x, to.y - from.y) * bulge);
+                d += ` A ${n(r)} ${n(r)} 0 0 1 ${n(to.x)} ${n(to.y)}`;
             }
             return { type: 'path', path: `${d} Z` };
         }

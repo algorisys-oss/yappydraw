@@ -31,6 +31,20 @@ Y.exportPageToPng(0, 2);                 // export page 1 at 2x
 Export dialog → **PNG and JPG** show a **Current Page Only** option in paged documents — exact page bounds, page background included (JPG always exports on white). Leave it unchecked to export the **whole design**: every page is rendered at its full page bounds with its own background, stacked vertically (multi-page designs). PDF and PPTX export emit one file page per document page. SVG export includes the full page area and each page's background.
 :::
 
+### The page edge is a real edge
+
+Every page owns its own artwork, and artwork **stops at the paper**. Draw or drag past the edge and the overhang is simply cut off — the same neat trim you get in a paint app, and the same result the exporters produce, so what you see is what the PNG/PDF gets. Nothing spills onto the next page.
+
+Which page an object belongs to is decided by where its **centre** sits: move an object more than halfway onto the next page and it moves house, taking its clipping with it. An object dropped in the gap between two pages goes to whichever page it overlaps most.
+
+While an object is **selected or being dragged**, it draws in full — nothing gets cut off mid-move, so you can always see what you are positioning. Release it and it clips to its page again. An overhang that's currently trimmed away is still clickable where it lies on the pasteboard, which is how you grab an object to pull it back onto the page.
+
+Objects parked **beside** the pages belong to no page, and a paged document does not draw them — there is no pasteboard to keep spare artwork on. Move something fully off the pages and it disappears from view (it is still in the document, and the object tree can find it). Keep spares on an extra page instead.
+
+:::note
+Pages are frames on one shared canvas, not separate files. An object lives on exactly one page, so deleting it deletes the object — there is no per-page copy to remove. To repeat something on every page, mark its layer as a **Slide Master** (Layers panel → right-click → *Use as Slide Master*).
+:::
+
 **Page backgrounds:** drop an image onto empty canvas to set it as the active page's background. Right-click a selected image → **Set as Page Background** does the same; right-click empty canvas → **Detach Image from Background** turns the background back into a regular image element you can move, crop, and filter. `Y.detachBackgroundImage()`
 
 ## Design templates & My Templates

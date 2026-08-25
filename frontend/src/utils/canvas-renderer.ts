@@ -134,7 +134,7 @@ function renderOpacityMasked(ctx: CanvasRenderingContext2D, el: DrawingElement, 
 }
 import { getSelectionBoundingBox, getDeleteHandlePosition } from './handle-detection';
 import { getAnchorPoints } from './anchor-points';
-import { projectMasterPosition } from './slide-utils';
+import { projectMasterPosition, ownerSlideIndex } from './slide-utils';
 import { getImage } from './image-cache';
 import { computeCellRects, defaultColWidths, defaultRowHeights, normalizeCellSelection } from './table-utils';
 import { getPoolLaneRect } from './pool-containment';
@@ -980,25 +980,36 @@ export function renderLayersAndElements(
                 }
             }
 
-            // Slide isolation: only draw elements that belong to / touch the active
-            // slide. Use AABB *overlap* (not just the centre point) so an element being
-            // dragged past the page edge stays visible while any part is still on the
-            // page — previously it vanished the instant its centre crossed the edge, even
-            // though its box (and the user's cursor) were still over the page. A currently
-            // selected element always renders, so a drag never makes it disappear mid-move.
-            // (Per-slide *ownership* for save/export still uses the centre test — see
-            // getElementsOnSlide / export.ts — so this only affects on-canvas visibility.)
+            // Page isolation, and the page's edge as a real edge.
+            //
+            // A page is a frame on the shared canvas, so ONE page owns each element
+            // (ownerSlideIndex) and the element is drawn only on that page, clipped to
+            // it. Both halves matter and both were missing: visibility used to be a
+            // plain AABB overlap, so an element hanging over an edge drew on the
+            // NEIGHBOURING page too — one shape appearing on two pages, and deleting it
+            // from either "page" deleting it outright, because there only ever was one
+            // of it. And nothing clipped, so the overhang spilled across the gutter
+            // instead of stopping at the paper, which is not what the editor's own
+            // export produces (export.ts has clipped to the page bounds all along) and
+            // not what anyone who has drawn past the canvas edge in a paint app expects.
+            //
+            // The element being drawn and anything selected are exempt from BOTH rules:
+            // a drag must never make its subject vanish or get cut in half mid-move.
+            // On release it re-owns to whichever page it landed on and clips there.
+            let pageClip: { x: number, y: number, w: number, h: number } | null = null;
             if (isPagedDocType(docType) && !isMasterLayer) {
-                const activeSlide = slides[activeSlideIndex];
-                if (activeSlide) {
-                    const { x: sX, y: sY } = activeSlide.spatialPosition;
-                    const { width: sW, height: sH } = activeSlide.dimensions;
-                    const ex1 = Math.min(renderedEl.x, renderedEl.x + renderedEl.width);
-                    const ex2 = Math.max(renderedEl.x, renderedEl.x + renderedEl.width);
-                    const ey1 = Math.min(renderedEl.y, renderedEl.y + renderedEl.height);
-                    const ey2 = Math.max(renderedEl.y, renderedEl.y + renderedEl.height);
-                    const overlapsSlide = ex1 < sX + sW && ex2 > sX && ey1 < sY + sH && ey2 > sY;
-                    if (!overlapsSlide && !selection.includes(el.id)) return;
+                const exempt = el.id === currentDrawingId || selection.includes(el.id);
+                if (!exempt && slides.length > 0) {
+                    const owner = ownerSlideIndex(renderedEl, slides);
+                    // `owner < 0` is artwork off to the side of every page. It is not
+                    // drawn — and the check has to be separate, because activeSlideIndex
+                    // is briefly -1 too and `-1 === -1` would then index slides[-1].
+                    if (owner < 0 || owner !== activeSlideIndex) return;
+                    const slide = slides[owner];
+                    pageClip = {
+                        x: slide.spatialPosition.x, y: slide.spatialPosition.y,
+                        w: slide.dimensions.width, h: slide.dimensions.height,
+                    };
                 }
             }
 
@@ -1013,6 +1024,15 @@ export function renderLayersAndElements(
                         .replace(/\$\{slideNumber\}/g, slideNumber)
                         .replace(/\$\{totalSlides\}/g, totalSlides);
                 }
+            }
+
+            // Clip drawing to the owning page. The rough cache stores geometry rather
+            // than bitmaps, so the live ctx clip applies to a cache hit just the same.
+            if (pageClip) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(pageClip.x, pageClip.y, pageClip.w, pageClip.h);
+                ctx.clip();
             }
 
             if (renderedEl.isAdjustmentLayer) {
@@ -1065,6 +1085,9 @@ export function renderLayersAndElements(
                 }
                 if (clipped) ctx.restore();
             }
+
+            // Overlays (badges, link chips, handles) are UI, not artwork — never clipped.
+            if (pageClip) ctx.restore();
 
             renderElementOverlays(ctx, el, renderedEl, {
                 scale,

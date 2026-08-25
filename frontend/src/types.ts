@@ -303,6 +303,38 @@ export interface TransformEffect {
  * 0=right, 90=down), `depth` the length in px, `shade` the wall darkening (0..1). Absent =
  * flat shape (fully back-compatible). Bake with `expandExtrude`.
  */
+/**
+ * Live "Inflate" 3D effect (Illustrator's Effect ▸ 3D and Materials ▸ Inflate): puff a flat
+ * closed shape into a lit, rounded body. Non-destructive — the outline is untouched; what
+ * changes is that the fill becomes a shaded surface.
+ *
+ * There is no 3D geometry behind it. The shape is treated as a HEIGHT FIELD derived from the
+ * distance transform of its own silhouette, so the puff follows whatever outline the shape
+ * has, at any size. See `utils/inflate.ts` and `docs/inflate-3d-spec.md`.
+ */
+export interface Inflate3D {
+    /** Dome height as a multiple of the shape's inscribed radius. 0 = off (`hasInflate`). */
+    bulge: number;
+    /** 0..1 extra smoothing of the form — rounder and softer, at the cost of fine relief. */
+    softness?: number;
+    /** Degrees; the direction the light comes FROM. 0 = the right, increasing anticlockwise.
+     *  Page-space: the element's own rotation is taken out, so turning a shape does not drag
+     *  its highlight round with it. */
+    lightAngle: number;
+    /** Degrees above the page, 0..90. 90 is straight on, which flattens the shading out. */
+    lightHeight: number;
+    /** 0..1 key light strength. */
+    intensity?: number;
+    /** 0..1 fill light — in practice, how dark the unlit side is allowed to go. */
+    ambient?: number;
+    /** 0..1. 0 is a tight glossy highlight, 1 is matte. */
+    roughness?: number;
+    /** 0..1 tints the highlight toward the fill colour, for a metal rather than a plastic. */
+    metallic?: number;
+    /** Specular colour (default white). */
+    highlight?: string;
+}
+
 export interface Extrude3D {
     depth: number;
     angle: number;
@@ -626,6 +658,9 @@ export interface DrawingElement {
     transformEffect?: TransformEffect;
     // Live 3D Extrude effect — shaded depth behind the shape (see Extrude3D). Bakeable via expandExtrude.
     extrude?: Extrude3D;
+    // Live Inflate 3D effect — the fill becomes a lit, rounded surface (see Inflate3D).
+    // Absent = flat fill. Owns the fill while present; the stroke still draws normally.
+    inflate?: Inflate3D;
     // Live 3D Revolve (lathe) effect — spins the silhouette around its vertical axis into a solid.
     revolve3d?: { on?: boolean };
     // Live Turntable effect — rotate this vector path in pseudo-3D, staying editable (see Turntable).

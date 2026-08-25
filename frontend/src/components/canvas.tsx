@@ -9,7 +9,7 @@ import { IDENTITY_PEG } from "../types/anim-types";
 import { renderOnionSkins } from "../utils/onion-skin";
 import { unitGroupId } from "../utils/group-utils";
 import { renderDimensions } from "../utils/dimension-renderer";
-import { projectMasterPosition } from "../utils/slide-utils";
+import { projectMasterPosition, ownerSlideIndex } from "../utils/slide-utils";
 import { animationEngine } from "../utils/animation/animation-engine";
 import rough from 'roughjs'; // Hand-drawn style
 import { store, updateElement, setActiveLayer, zoomToFitSlide, isLayerLocked, setCursorPosition, pushToHistory, setSelectedTool, enterCropMode, exitCropMode, updateCropRect, toggleVideoPlayback, startInkCleanupIfNeeded, setViewState, setStore, undo, redo, zoomToFit, toggleZenMode, normalizeRotation, resetRotation, enterSymbolEdit, enterCompoundEdit, enterGroupIsolation, isLayerVisible, applyEyedropperFrom, cancelEyedropper, resolveColorEyedropper, elementPickColor, deleteElements, setPenConstrain, syncLiveSymmetry, setPenResumeHint, toggleNodeTool, exitAllToolModes } from "../store/app-store";
@@ -874,6 +874,17 @@ const Canvas: Component = () => {
         // Animation mode: elements on other frames' cels don't exist right now.
         const vis = animVisibleIds();
         if (vis && !vis.has(el.id) && el.id !== pState.currentId) return false;
+        // Paged docs: one page owns each element and only that page draws it (see the
+        // page clip in canvas-renderer), so another page's artwork must not be
+        // clickable here either — same reason as the `visible === false` case above.
+        // Master layers are exempt: they repeat on every page by design.
+        // The part of an OWNED element hanging past its page edge stays clickable even
+        // though it is clipped out of the drawing — it is over bare pasteboard, nothing
+        // else is there to hit, and it is how you grab an element to pull it back on.
+        if (isPagedDocType(store.docType) && store.slides.length > 0) {
+            const layer = store.layers.find(l => l.id === el.layerId);
+            if (!layer?.isMaster && ownerSlideIndex(el, store.slides) !== store.activeSlideIndex) return false;
+        }
         return !isLayerLocked(el.layerId);
     };
 

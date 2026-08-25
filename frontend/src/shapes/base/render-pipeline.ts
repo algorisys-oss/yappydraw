@@ -12,6 +12,7 @@ import { buildFilterString } from "../../utils/image-filter-utils";
 import { getImage } from "../../utils/image-cache";
 import { rasterizeMesh } from "../../utils/mesh-gradient";
 import { rasterizePatternBuffer } from "../../utils/pattern-fill";
+import { hasInflate, rasterizeInflate } from "../../utils/inflate";
 import type { IRenderer } from "../../rendering/IRenderer";
 
 // ── colour helpers (for dark-mode adjustColor) ─────────────────────────────
@@ -270,6 +271,13 @@ export class RenderPipeline {
         if (HATCH_FILL_STYLES.includes(el.fillStyle as string)) {
             fill = undefined;
         }
+        // Inflate paints the fill itself, as a shaded surface rather than a colour. Same
+        // arrangement as the complex fills above: suppress the flat one here, and
+        // applyComplexFills puts the shaded buffer down instead. The STROKE is untouched,
+        // so each render style still outlines the shape its own way.
+        if (hasInflate(el)) {
+            fill = undefined;
+        }
 
         const density = el.fillDensity || 1;
         const baseGap = 5;
@@ -315,6 +323,7 @@ export class RenderPipeline {
         const useImage = fillStyle === 'image' && !!el.backgroundImage;
         const useMesh = fillStyle === 'mesh' && !!el.meshGradient;
         const usePattern = fillStyle === 'pattern' && !!el.patternFill;
+        const useInflate = hasInflate(el);
         // Clean, shape-clipped hatch lines for the sketchy fill styles — used in BOTH
         // render modes now. Sketch mode used to leave these to RoughJS, whose unclipped
         // hatching bled past the outline (intermittent, seed-dependent); routing the
@@ -323,10 +332,19 @@ export class RenderPipeline {
         const useHatch = HATCH_FILL_STYLES.includes(fillStyle as string)
             && !!el.backgroundColor && el.backgroundColor !== 'transparent';
 
-        if (!useGradient && !useDots && !useImage && !useMesh && !usePattern && !useHatch) return;
+        if (!useGradient && !useDots && !useImage && !useMesh && !usePattern && !useHatch && !useInflate) return;
 
         renderer.save();
         renderer.translate(cx, cy);
+
+        // Inflate replaces the fill outright — a lit surface, not a colour — so it is
+        // checked before every other fill. An image fill still matters underneath it: that
+        // is the MATERIAL, and applyInflateFill shades it rather than the flat colour.
+        if (useInflate) {
+            this.applyInflateFill(renderer, el, context.isDarkMode);
+            renderer.restore();
+            return;
+        }
 
         if (useHatch) {
             this.applyHatchFill(renderer, el, fillStyle as string, context.isDarkMode);
@@ -534,6 +552,36 @@ export class RenderPipeline {
      * the shape — same strategy as image/mesh fills, so both render styles and the
      * SVG exporter get it for free. Runs in a space already translated to centre.
      */
+    /**
+     * Paints the Inflate effect: the element's silhouette shaded as a rounded, lit body
+     * (`utils/inflate.ts`), clipped to the outline. Runs in the centre-translated frame, the
+     * same as the image/mesh/pattern fills — and like them it is a raster, so both render
+     * styles, PNG export and the SVG `<pattern>` path all get it without special-casing.
+     */
+    private static applyInflateFill(renderer: IRenderer, el: DrawingElement, isDarkMode: boolean) {
+        const w = Math.abs(el.width), h = Math.abs(el.height);
+        if (!(w > 0) || !(h > 0)) return;
+
+        const buf = rasterizeInflate(el, isDarkMode);
+        if (!buf) return;
+
+        const geometry = getShapeGeometry(el);
+        if (!geometry) return;
+
+        renderer.save();
+        if (geometry.type === 'path') {
+            renderer.clipPath(geometry.path);
+        } else {
+            renderer.beginPath();
+            this.renderGeometry(renderer, geometry);
+            renderer.clip();
+        }
+        const opacity = el.backgroundOpacity ?? 1;
+        if (opacity !== 1) renderer.globalAlpha = renderer.globalAlpha * opacity;
+        renderer.drawImage(buf, -w / 2, -h / 2, w, h);
+        renderer.restore();
+    }
+
     private static applyPatternFill(renderer: IRenderer, el: DrawingElement) {
         const pf = el.patternFill;
         if (!pf) return;

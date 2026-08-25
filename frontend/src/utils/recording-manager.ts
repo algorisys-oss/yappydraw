@@ -11,7 +11,7 @@ import { showToast } from "../components/toast";
 import rough from 'roughjs';
 import { renderSlideBackground } from "./canvas-renderer";
 import { renderElement } from "./render-element";
-import { projectMasterPosition } from "./slide-utils";
+import { projectMasterPosition, ownerSlideIndex } from "./slide-utils";
 import { calculateAllAnimatedStates } from "./animation-utils";
 import { applyCompositionOverrides } from "./animation/composition-evaluator";
 import { evaluateTimelineAt, evaluateCameraAt } from "./animation/frame-timeline-evaluator";
@@ -482,6 +482,14 @@ export function setupRecording(getCanvasRef: () => HTMLCanvasElement | undefined
         const rc = rough.canvas(thumbCanvas);
         renderSlideBackground(tCtx!, rc, slide, spatialX, spatialY, sW, sH, store.theme);
 
+        // Everything below is the page's own artwork, so it stops at the paper — same
+        // as the canvas and the exporters. Without this the thumbnail drew the WHOLE
+        // element list at every page, so one shape overhanging page 1 appeared on
+        // page 2's thumbnail as well and the page strip showed content nobody put there.
+        tCtx.beginPath();
+        tCtx.rect(spatialX, spatialY, sW, sH);
+        tCtx.clip();
+
         // Render elements
         const sortedLayers = [...store.layers].sort((a, b) => a.order - b.order);
 
@@ -494,6 +502,8 @@ export function setupRecording(getCanvasRef: () => HTMLCanvasElement | undefined
                 if (layer.isMaster && slide) {
                     const projected = projectMasterPosition(el, slide, store.slides);
                     renderEl = { ...el, x: projected.x, y: projected.y };
+                } else if (ownerSlideIndex(el, store.slides) !== index) {
+                    return; // belongs to another page (or to none)
                 }
                 const layerOpacity = (layer?.opacity ?? 1);
                 renderElement(rc, tCtx, renderEl, isDarkMode, layerOpacity);

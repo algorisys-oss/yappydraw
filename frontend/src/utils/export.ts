@@ -1,6 +1,7 @@
 import { lineHeightPx } from './text-line-height';
 import { store, isLayerVisible } from "../store/app-store";
 import { isPagedDocType } from '../types/slide-types';
+import { ownerSlideIndex } from './slide-utils';
 import { renderElement } from "./render-element";
 import { resolveDash } from "./stroke-dash";
 import { renderSlideBackground } from "./canvas-renderer";
@@ -148,12 +149,6 @@ function elementsBounds(elements: DrawingElement[]): Bounds {
     }
     if (!isFinite(b.minX)) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
     return b;
-}
-
-/** AABB-overlap test — true when an element visually overlaps the page rect (rotation-padded). */
-function overlapsRect(el: DrawingElement, rx: number, ry: number, rw: number, rh: number): boolean {
-    const b = elementAABB(el);
-    return b.maxX >= rx && b.minX <= rx + rw && b.maxY >= ry && b.minY <= ry + rh;
 }
 
 /**
@@ -475,7 +470,7 @@ function renderPagedDocToCanvas(scale: number, whiteBackground: boolean): HTMLCa
 
     const rc = rough.canvas(canvas);
     let destY = 0;
-    for (const slide of sortedSlides) {
+    for (const [pageIdx, slide] of sortedSlides.entries()) {
         const { width: sW, height: sH } = slide.dimensions;
         const { x: sX, y: sY } = slide.spatialPosition;
         const destX = (maxW - sW) / 2; // centre narrower pages
@@ -487,9 +482,9 @@ function renderPagedDocToCanvas(scale: number, whiteBackground: boolean): HTMLCa
         renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
         for (const el of store.elements) {
             if (el.isClipMask || !isExportable(el)) continue;
-            // Include any element that OVERLAPS the page (not just those centred inside it) —
-            // a shape hanging over an edge or centred off-page still renders (clipped to the page).
-            if (!overlapsRect(el, sX, sY, sW, sH)) continue;
+            // One page owns each element, and only that page draws it — an overlap test
+            // put a shape hanging over an edge on the neighbouring page as well.
+            if (ownerSlideIndex(el, sortedSlides) !== pageIdx) continue;
             try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
         }
         ctx.restore();
@@ -710,8 +705,8 @@ export const exportPageToPng = (pageIndex: number, scale = 1, download = true, f
     renderSlideBackground(ctx, rc, slide, sX, sY, sW, sH, store.theme);
     for (const el of store.elements) {
         if (el.isClipMask || !isExportable(el)) continue;
-        // Overlap (not centre) test — see renderPagedDocToCanvas.
-        if (!overlapsRect(el, sX, sY, sW, sH)) continue;
+        // Ownership (not overlap) — see renderPagedDocToCanvas.
+        if (ownerSlideIndex(el, store.slides) !== pageIndex) continue;
         try { renderElWithEffects(rc, ctx, el); } catch { /* skip */ }
     }
     const ext = format === 'jpeg' ? 'jpg' : 'png';
@@ -1501,12 +1496,11 @@ export const exportToPdf = async (scale: number, background: boolean, onlySelect
             const { width: sW, height: sH } = slide.dimensions;
             const { x: sX, y: sY } = slide.spatialPosition;
 
-            // Filter elements whose center falls on this slide
-            const slideElements = allElements.filter(el => {
-                const cx = el.x + el.width / 2;
-                const cy = el.y + el.height / 2;
-                return cx >= sX && cx <= sX + sW && cy >= sY && cy <= sY + sH;
-            });
+            // One page owns each element — the same rule the editor and the PNG
+            // exporter use, so a shape straddling the gutter between two pages is not
+            // dropped from every page by a bare centre test.
+            const pageIdx = sortedSlides.indexOf(slide);
+            const slideElements = allElements.filter(el => ownerSlideIndex(el, sortedSlides) === pageIdx);
 
             // Create offscreen canvas
             const canvas = document.createElement('canvas');
@@ -1618,12 +1612,11 @@ export const exportToPptx = async (scale: number, background: boolean, onlySelec
             const { width: sW, height: sH } = slide.dimensions;
             const { x: sX, y: sY } = slide.spatialPosition;
 
-            // Filter elements whose center falls on this slide
-            const slideElements = allElements.filter(el => {
-                const cx = el.x + el.width / 2;
-                const cy = el.y + el.height / 2;
-                return cx >= sX && cx <= sX + sW && cy >= sY && cy <= sY + sH;
-            });
+            // One page owns each element — the same rule the editor and the PNG
+            // exporter use, so a shape straddling the gutter between two pages is not
+            // dropped from every page by a bare centre test.
+            const pageIdx = sortedSlides.indexOf(slide);
+            const slideElements = allElements.filter(el => ownerSlideIndex(el, sortedSlides) === pageIdx);
 
             // Render to offscreen canvas
             const canvas = document.createElement('canvas');

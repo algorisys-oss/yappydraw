@@ -11,7 +11,7 @@ import {
     applyNextState, applyPreviousState,
     addChildNode, addSiblingNode, toggleCollapseSelection, toggleCollapse,
     setParent, reorderMindmap, applyMindmapStyling, pasteMindmapOutline, applyPathfinder, applyPathfinderRegion, makeCompoundShape, setCompoundShapeOp, releaseCompoundShape, expandCompoundShape, enterCompoundEdit, exitCompoundEdit, convertToPath, convertTextToOutlines, outlineStroke, offsetPath, simplifyPath, smoothPath, setPathCornerRadius, getPathCornerRadius, makeCompoundPath, releaseCompoundPath, joinPaths,
-    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, setTurntable, clearTurntable, bakeTurntable, spinTurntable360, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
+    radialRepeat, gridRepeat, mirrorCopy, transformAgain, toggleEnvelopeWarp, applyMeshWarp, applyWarpPreset, envelopeWithTopObject, toggleMeshSmooth, bakeWarp, setTransformEffect, clearTransformEffect, expandTransformEffect, setExtrude, clearExtrude, expandExtrude, setInflate, clearInflate, setTurntable, clearTurntable, bakeTurntable, spinTurntable360, toggleRevolve, applyFeather, applyGlow, applyScribble, makeClippingMask, makeOpacityMask, releaseClippingMask,
     addAppearanceFill, addAppearanceStroke, setAppearance, clearAppearance, traceImage,
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection, addTextureOverlay,
@@ -1977,6 +1977,24 @@ export const YappyAPI = {
     clearExtrude(ids?: string[]) { clearExtrude(ids ?? [...store.selection]); },
     /** Expand the 3D Extrude into editable face elements (back / side / front), grouped. */
     expandExtrude(ids?: string[]): string[] { return expandExtrude(ids ?? [...store.selection]); },
+    /**
+     * Live Inflate effect (Illustrator's Effect ▸ 3D and Materials ▸ Inflate): puff the fill
+     * into a lit, rounded 3D body. Non-destructive — the outline is untouched, the FILL becomes
+     * a shaded surface, and the stroke still draws in whichever render style is active.
+     *
+     * The surface colour is `backgroundColor`; give the element an **image fill**
+     * (`fillStyle: 'image'` + `backgroundImage`) and that picture becomes the surface
+     * MATERIAL instead — the flat-artwork-to-photoreal-object workflow.
+     *
+     * The light lives on the page, not on the object: rotating the shape does not drag the
+     * highlight round with it.
+     * @param f `{ bulge (0..2, dome height; 0 = off), softness (0..1), lightAngle (deg, 0 =
+     *   from the right), lightHeight (0..90 deg above the page), intensity (0..1),
+     *   ambient (0..1), roughness (0 glossy..1 matte), metallic (0..1), highlight (colour) }`
+     */
+    setInflate(f?: Partial<import("./types").Inflate3D>, ids?: string[]) { setInflate(ids ?? [...store.selection], f); },
+    /** Remove the Inflate effect, restoring the flat fill. */
+    clearInflate(ids?: string[]) { clearInflate(ids ?? [...store.selection]); },
     /** Toggle the live 3D Revolve (lathe) effect — spins the shape's silhouette into a solid of revolution. */
     toggleRevolve(on?: boolean, ids?: string[]) { toggleRevolve(ids ?? [...store.selection], on); },
     /**

@@ -8,6 +8,7 @@
 import type { DrawingElement, PatternFill } from "../types";
 import { rasterizeMesh } from "./mesh-gradient";
 import { makePatternTile } from "./pattern-fill";
+import { hasInflate, rasterizeInflate } from "./inflate";
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -64,6 +65,31 @@ function splitAlpha(c: string): { color: string; opacity?: number } {
  */
 export function svgFillPaint(el: DrawingElement, defs: SVGElement, uid: string): string {
     const fs = el.fillStyle as string;
+
+    // ── Inflate (the shaded 3D surface, rasterized into a clipped pattern image) ──
+    // Checked first because Inflate OWNS the fill — it replaces whatever fillStyle says,
+    // and an image fill under it is the surface material rather than a fill of its own.
+    if (hasInflate(el)) {
+        const w = Math.abs(el.width), h = Math.abs(el.height);
+        const buf = rasterizeInflate(el);
+        if (buf && w > 0 && h > 0) {
+            const id = `yd-inflate-${uid}`;
+            const pat = document.createElementNS(SVGNS, 'pattern');
+            pat.setAttribute('id', id);
+            pat.setAttribute('patternUnits', 'userSpaceOnUse');
+            pat.setAttribute('patternContentUnits', 'userSpaceOnUse');
+            pat.setAttribute('x', `${-w / 2}`); pat.setAttribute('y', `${-h / 2}`);
+            pat.setAttribute('width', `${w}`); pat.setAttribute('height', `${h}`);
+            const img = document.createElementNS(SVGNS, 'image');
+            img.setAttribute('href', buf.toDataURL('image/png'));
+            img.setAttribute('x', '0'); img.setAttribute('y', '0');
+            img.setAttribute('width', `${w}`); img.setAttribute('height', `${h}`);
+            img.setAttribute('preserveAspectRatio', 'none');
+            pat.appendChild(img);
+            defs.appendChild(pat);
+            return `url(#${id})`;
+        }
+    }
 
     // ── Gradient fills ──────────────────────────────────────────────────────
     const isGrad = (fs === 'linear' || fs === 'radial' || fs === 'conic') && (el.gradientStops?.length ?? 0) >= 1;
