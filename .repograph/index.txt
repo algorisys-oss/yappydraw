@@ -342,7 +342,7 @@ frontend/src/config/quick-toolbar-config.test.ts | typescript | 61 | keys:10 wit
 frontend/src/config/quick-toolbar-config.ts | typescript | 279 | ElementFamily:10 QuickControlType:13 PresetOption:16 QuickPropertyDef:22 getElementFamily:49 getToolDefaultProperties:259 getQuickPropertiesForType:270
 frontend/src/config/text-effect-presets.ts | typescript | 125 | TextEffectPreset:7
 frontend/src/config/ui-shape-defs.tsx | typescript | 754 | UIShapeCategory:11 UIShapeBounds:13 UIRenderHelpers:18 UIShapeDef:27 getUIShapeDef:750
-frontend/src/data/whats-new.ts | typescript | 695 | WhatsNewEntry:9
+frontend/src/data/whats-new.ts | typescript | 700 | WhatsNewEntry:9
 frontend/src/desktop/desktop-bridge.ts | typescript | 137 | TauriGlobal:12 isTauri:17 tauri:21 Recent:32 getRecents:34 pushRecent:37 docName:44 saveDocument:48 loadFromBytes:64 openDocument:72 openPath:83 checkForUpdates:93 initDesktop:122
 frontend/src/dsl/adapters/adapter-interface.ts | typescript | 25 | AdapterResult:9 DSLAdapter:16{canParse:21 parse:24}
 frontend/src/dsl/adapters/adapter-registry.ts | typescript | 40 | AdapterRegistry:8{register:12 get:20 autoParse:25 list:35}
@@ -428,7 +428,7 @@ frontend/src/help-docs/features/plotting.md | - | 201 |
 frontend/src/help-docs/features/stick-animation.md | - | 162 |
 frontend/src/help-docs/features/stick-library.md | - | 237 |
 frontend/src/help-docs/features/symbols.md | - | 159 |
-frontend/src/help-docs/features/workspace.md | - | 535 |
+frontend/src/help-docs/features/workspace.md | - | 548 |
 frontend/src/help-docs/features/ysl-tutorial.md | - | 579 |
 frontend/src/help-docs/help-md.d.ts | typescript | 28 |
 frontend/src/help-docs/help-page.css | - | 504 |
@@ -454,14 +454,16 @@ frontend/src/i18n/__fixtures__/pre-i18n-labels.json | - | 324 |
 frontend/src/i18n/extraction.test.ts | typescript | 96 | in:47 shapes:47
 frontend/src/i18n/format.test.ts | typescript | 73 |
 frontend/src/i18n/format.ts | typescript | 138 | MessagePart:15 PluralCategory:57 PluralForms:64
+frontend/src/i18n/fr-search.test.ts | typescript | 137 | fold:27 allStrings:34 out:46 placeholders:77 walk:79 findable:104
 frontend/src/i18n/hotkey-extraction.test.ts | typescript | 79 |
-frontend/src/i18n/index.ts | typescript | 218 | Dictionary:23 FlatDictionary:34 TranslationKey:35 ShapeKey:41 HotkeyKey:43 HotkeyCategoryKey:45 WelcomeFeatureKey:47 ToolbarToolKey:49 DockPositionKey:51 DockActionKey:53
+frontend/src/i18n/index.ts | typescript | 219 | Dictionary:23 FlatDictionary:34 TranslationKey:35 ShapeKey:41 HotkeyKey:43 HotkeyCategoryKey:45 WelcomeFeatureKey:47 ToolbarToolKey:49 DockPositionKey:51 DockActionKey:53
 frontend/src/i18n/locale-registry.test.ts | typescript | 69 |
 frontend/src/i18n/locale-resolution.test.ts | typescript | 165 |
-frontend/src/i18n/locale-resolution.ts | typescript | 101 | TextDirection:13 LocaleMeta:15
+frontend/src/i18n/locale-resolution.ts | typescript | 110 | TextDirection:13 LocaleMeta:15
 frontend/src/i18n/locales/de.ts | typescript | 1027 |
 frontend/src/i18n/locales/en.ts | typescript | 1053 | Dictionary:1053
 frontend/src/i18n/locales/es.ts | typescript | 1026 |
+frontend/src/i18n/locales/fr.ts | typescript | 1047 | de:106
 frontend/src/i18n/locales/ja.ts | typescript | 1026 |
 frontend/src/i18n/pseudo.ts | typescript | 75 | name:10 accent:41 pseudoize:52 pseudoizeDictionary:66
 frontend/src/i18n/runtime.test.ts | typescript | 229 |
@@ -659,7 +661,7 @@ frontend/src/utils/color-adjust.ts | typescript | 69 | hexToHsl:12 hslToHex:29 s
 frontend/src/utils/color-drop.ts | typescript | 48 | ColorDropState:15 CommitFn:28
 frontend/src/utils/color-harmony.ts | typescript | 83 | HarmonyType:10 generateTints:19 generateHarmony:29 loadImage:41 extractImagePalette:56
 frontend/src/utils/color-utils.ts | typescript | 87 | OKLCH:5 RGB:11 oklchToP3:21 formatOKLCH:67 formatP3:74 isInP3Gamut:82
-frontend/src/utils/command-registry.ts | typescript | 511 | ShapeKey:31 Command:33
+frontend/src/utils/command-registry.ts | typescript | 536 | ShapeKey:31 Command:33
 frontend/src/utils/connector-geometry.test.ts | typescript | 305 | deg:4 sameAngle:6 arrow:13 bind:60 departure:68 arrivalAway:69
 frontend/src/utils/connector-geometry.ts | typescript | 315 | Pt:31 ConnectorGeometry:33 polylineMidpoint:64 outwardAngle:98 dedupe:108 connectorGeometry:122 AnchorEdge:210 anchorEdge:239 defaultControlPoints:272 synthesiseElbow:311
 frontend/src/utils/connector-obstacles.ts | typescript | 132 | Seg:14 Bounds:34

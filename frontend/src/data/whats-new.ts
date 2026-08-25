@@ -13,6 +13,11 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.224', date: '2026-08-25', items: [
+        'YappyDraw is now in French. Every command, shape, menu and tooltip — using the words French designers already know from Illustrator and Photoshop, so a calque is a calque and a tracé is a tracé. If your browser is set to French, it opens in French on its own; otherwise pick it under Settings ▸ General ▸ Language.',
+        'Searching the command palette ignores accents and apostrophes. Type "elements" and you get Éléments; type an ordinary apostrophe and you still find the commands whose names use the curly one. English command names keep working too, so you can follow an English tutorial with the interface in your own language.',
+        'Text inside your drawings is never translated, and keyboard shortcuts never change — they are tied to physical keys.',
+    ] },
     { version: '0.8.223', date: '2026-08-25', items: [
         'Reordering a layer now actually reorders it. Dragging a layer up or down rearranged the Layers panel and left the drawing exactly as it was — the artwork on that layer stayed above or below whatever it was before. If you have ever moved a layer and wondered why nothing changed on the canvas, this was why. Everything that depends on layer order — what covers what, what you select when shapes overlap, exports, animation and slide builds — now follows the panel.',
         'You can see what you are dragging. Reordering a layer shows a small preview of it — its name and colour tag — following your pointer, so on a long list you are not guessing which one you picked up.',

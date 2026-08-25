@@ -481,6 +481,31 @@ export const getCommands = (): Command[] => {
     return commands;
 };
 
+/**
+ * Fold a string for searching: lower-case, strip accents, unify apostrophes.
+ *
+ * A palette that only lower-cases is searchable in English and awkward in every
+ * other language we ship. Two things get in the way, and both are about what the
+ * user's KEYBOARD produces versus what the label contains:
+ *
+ *  - **Accents.** Typing `elements` should find *Éléments*, and `etoile` should
+ *    find *Étoile*. Decomposing to NFD and dropping the combining marks makes
+ *    the accented and unaccented spellings the same string.
+ *  - **Apostrophes.** French labels use the typographic apostrophe U+2019
+ *    (*Zone d’exportation*), which is correct French — but a French keyboard
+ *    types the straight U+0027, so the two never met. U+02BC is folded too: it
+ *    is a LETTER that looks identical, and it is easy to introduce by accident.
+ *
+ * Strictly widening: both sides are folded, so every match that worked before
+ * still works and only new ones are added.
+ */
+const foldForSearch = (s: string): string =>
+    s
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\u2018\u2019\u02bc\u00b4`]/g, "'");
+
 // Helper for fuzzy search or prefix search
 export const searchCommands = (query: string, categoryFilter?: string): Command[] => {
     let all = getCommands();
@@ -490,20 +515,20 @@ export const searchCommands = (query: string, categoryFilter?: string): Command[
 
     if (!query) return all.slice(0, categoryFilter ? 20 : 10); // Show more for filtered views
 
-    const q = query.toLowerCase();
+    const q = foldForSearch(query);
     return all.filter(c =>
-        c.label.toLowerCase().includes(q) ||
+        foldForSearch(c.label).includes(q) ||
         // Both the raw category id and its translated heading: the id keeps
         // English search terms working in every locale (useful for anyone
         // following English documentation), the translation is what the user
         // actually sees in the list and so is what they will type.
-        c.category.toLowerCase().includes(q) ||
-        t(`commandCategory.${c.category}`).toLowerCase().includes(q) ||
-        c.id.toLowerCase().includes(q)
+        foldForSearch(c.category).includes(q) ||
+        foldForSearch(t(`commandCategory.${c.category}`)).includes(q) ||
+        foldForSearch(c.id).includes(q)
     ).sort((a, b) => {
         // Boost exact matches or prefix matches
-        const aLabel = a.label.toLowerCase();
-        const bLabel = b.label.toLowerCase();
+        const aLabel = foldForSearch(a.label);
+        const bLabel = foldForSearch(b.label);
         if (aLabel.startsWith(q) && !bLabel.startsWith(q)) return -1;
         if (!aLabel.startsWith(q) && bLabel.startsWith(q)) return 1;
         return aLabel.localeCompare(bLabel);

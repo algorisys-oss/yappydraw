@@ -77,6 +77,7 @@ const STORAGE_KEY = 'yappy.locale';
 export const LOCALE_LOADERS: Record<string, () => Promise<Partial<Dictionary>>> = {
     de: () => import('./locales/de').then((m) => m.de),
     es: () => import('./locales/es').then((m) => m.es),
+    fr: () => import('./locales/fr').then((m) => m.fr),
     ja: () => import('./locales/ja').then((m) => m.ja),
 };
 

@@ -430,6 +430,19 @@ Two options control how the canvas greets you:
 
 Both are per-browser preferences, remembered across sessions, and scriptable: ` Yappy.setDefaultTool('fineliner')` and ` Yappy.setPointerStyle('circle')`.
 
+## Language
+
+**Settings ▸ General ▸ Language** switches the interface. Yappy ships in **English**, **Deutsch**, **Español**, **Français** and **日本語**, and picks one on first run from your browser's language preferences — so a French browser opens in French without you setting anything. Your choice overrides that and is remembered per browser.
+
+**Only the interface is translated. Text inside your drawings is never touched** — not on switching language, not on export. Neither are keyboard shortcuts: they are bound to physical keys, so <kbd>Ctrl</kbd>+<kbd>Z</kbd> is <kbd>Ctrl</kbd>+<kbd>Z</kbd> in every language.
+
+Two things worth knowing:
+
+- **The command palette searches in your language, and in English.** Accents and apostrophes are ignored while matching, so on a French keyboard `elements` finds *Éléments* and `d'exportation` finds *Zone d’exportation* — you do not have to type the typographic apostrophe the label uses. Command names in English keep working too, so you can follow an English tutorial in a French interface.
+- **Anything not yet translated stays in English** rather than going blank, string by string. Some panels — Layers among them — are still English in every language while their text is being extracted.
+
+A language is only offered once it is complete, so you will never get a half-translated interface. Translations are our own work rather than a native speaker's review; if a word is wrong in your language, [tell us](https://github.com/rajeshpillai/yappy/issues) — that is the fastest way for it to get fixed.
+
 ## Export
 
 From the menu (or right-click → Export) save your work as **PNG**, **JPG**, **SVG**, **PDF** or copy it to the clipboard — the whole canvas or just the selection. **Artboards** export their region to a fixed-size PNG (see the Artboards doc).

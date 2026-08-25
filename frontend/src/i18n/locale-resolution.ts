@@ -21,10 +21,19 @@ export interface LocaleMeta {
     nativeName: string;
     dir: TextDirection;
     /**
-     * Fraction of `en`'s keys this locale currently translates, 0–1.
-     * Maintained by `scripts/i18n-check.mjs`. A locale is only offered to users
-     * at or above `READY_THRESHOLD` — a half-translated UI is worse than an
-     * English one (plan §8).
+     * Fraction of `en`'s keys this locale currently translates, 0–1. A locale is
+     * only offered to users at or above `READY_THRESHOLD` — a half-translated UI
+     * is worse than an English one (plan §8).
+     *
+     * Maintained by hand, but not on trust: a dictionary file typed as
+     * `Dictionary` rather than `Partial<Dictionary>` cannot compile while a key
+     * is missing, so a shipped locale is complete by construction and its
+     * coverage is 1. Anything below that describes a locale that is planned
+     * rather than written — there is no partial dictionary on disk today.
+     * `locale-registry.test.ts` holds the two ends together.
+     *
+     * (An earlier version of this comment credited `scripts/i18n-check.mjs`,
+     * which does not exist and never did.)
      */
     coverage: number;
 }
@@ -43,7 +52,7 @@ export const SUPPORTED_LOCALES: readonly LocaleMeta[] = [
     { code: 'en', englishName: 'English', nativeName: 'English', dir: 'ltr', coverage: 1 },
     { code: 'es', englishName: 'Spanish', nativeName: 'Español', dir: 'ltr', coverage: 1 },
     { code: 'pt-BR', englishName: 'Portuguese (Brazil)', nativeName: 'Português (Brasil)', dir: 'ltr', coverage: 0 },
-    { code: 'fr', englishName: 'French', nativeName: 'Français', dir: 'ltr', coverage: 0 },
+    { code: 'fr', englishName: 'French', nativeName: 'Français', dir: 'ltr', coverage: 1 },
     { code: 'de', englishName: 'German', nativeName: 'Deutsch', dir: 'ltr', coverage: 1 },
     { code: 'zh-Hans', englishName: 'Chinese (Simplified)', nativeName: '简体中文', dir: 'ltr', coverage: 0 },
     { code: 'ja', englishName: 'Japanese', nativeName: '日本語', dir: 'ltr', coverage: 1 },
