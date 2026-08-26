@@ -1,0 +1,209 @@
+/* Fill & Stroke swatch pair — sized to one toolbar cell (28px) so it lines up in the
+   icon grid the resize grip makes, in every dock orientation. */
+.fs-control {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    box-sizing: border-box;
+}
+
+.fs-square {
+    position: absolute;
+    width: 17px;
+    height: 17px;
+    border-radius: 3px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+/* Fill: the solid square, in front and to the top-left. */
+.fs-fill {
+    top: 0;
+    left: 0;
+    z-index: 2;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.35));
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+/* Stroke: a ring, behind and to the bottom-right, so the part not covered by the fill
+   square is still its own hit target. */
+.fs-stroke {
+    bottom: 0;
+    right: 0;
+    z-index: 1;
+    border: 4px solid var(--text-primary, #111);
+    background: var(--bg-panel, #fff);
+}
+
+/* Every state class here is prefixed. `fs-empty` was `empty` for one revision, and
+   `file-open-dialog.css` defines a BARE `.empty { padding: 20px }` — global, because a
+   plain class in any imported stylesheet is. A 17px border-box square with 20px of
+   padding computes to 42px, so the fill swatch quietly grew to fill the whole control
+   and buried the stroke ring behind it. Same class of defect as bug #329. */
+
+/* "No paint" on the stroke ring: a hollow grey outline rather than a colour. */
+.fs-stroke.fs-empty {
+    border-color: #b9bfc6;
+}
+
+/* The channel the panel and the X key are aimed at. */
+.fs-square.active {
+    outline: 2px solid var(--accent-color, #5f3dc4);
+    outline-offset: 1px;
+}
+
+/* Both empty squares carry the "no paint" slash, drawn over whatever background they have. */
+.fs-square.fs-empty::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    background: linear-gradient(to top right,
+        transparent calc(50% - 1px), #e03131 calc(50% - 1px),
+        #e03131 calc(50% + 1px), transparent calc(50% + 1px));
+    pointer-events: none;
+    border-radius: 3px;
+}
+
+/* ── The panel ────────────────────────────────────────────────────────────── */
+.fs-popover {
+    position: fixed;
+    z-index: 10050;
+    /* border-box because the placement code in fill-stroke-control.tsx clamps against a
+       flat number: without it the 10px padding and 1px border push the rendered panel
+       22px wider than the width the clamp used, and it hangs off a phone screen. */
+    box-sizing: border-box;
+    width: 248px;
+    max-height: min(420px, calc(100vh - 24px));
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    user-select: none;
+}
+
+.fs-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+.fs-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-secondary, transparent);
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+.fs-tab.active {
+    color: var(--text-primary);
+    border-color: var(--accent-color, #5f3dc4);
+    background: var(--bg-primary);
+}
+.fs-chip {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    flex: 0 0 12px;
+}
+
+.fs-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+.fs-action {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px;
+    font-size: 11px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+.fs-action:hover {
+    background: var(--bg-hover, rgba(127, 127, 127, 0.12));
+}
+
+.fs-palette-select {
+    width: 100%;
+    padding: 4px 6px;
+    font-size: 11px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    color-scheme: light dark;
+}
+
+.fs-swatches {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+}
+.fs-swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    border-radius: 5px;
+    cursor: pointer;
+    /* Two rings so near-white swatches keep a dark edge and dark ones separate from
+       the panel — the same treatment the palette popup uses. */
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+    transition: transform 0.15s;
+}
+.fs-swatch:hover {
+    transform: scale(1.15);
+}
+.fs-swatch.selected {
+    outline: 2px solid var(--accent-color, #5f3dc4);
+    outline-offset: 1px;
+}
+
+.fs-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.03em;
+}
+
+/* Touch: the toolbar gives its buttons 40px targets on a phone (toolbar.css, the same
+   600px breakpoint as PHONE_MAX_WIDTH). Two 17px squares inside a 28px box would be the
+   smallest targets on the bar by some way, so the pair scales with them. */
+@media (max-width: 600px) {
+    .fs-control {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+    }
+    .fs-square {
+        width: 24px;
+        height: 24px;
+    }
+    .fs-stroke {
+        border-width: 5px;
+    }
+    /* A panel anchored beside a bottom-docked bar would open off the bottom of the
+       screen; full-width and clear of the strip is the phone shape for it. */
+    .fs-popover {
+        width: min(320px, calc(100vw - 24px));
+    }
+}

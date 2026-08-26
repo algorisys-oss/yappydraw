@@ -510,6 +510,7 @@ export const fr: Dictionary = {
         'editor-nudgeCoarseFine': 'Décalage — grossier (10 px) / fin (0,1 px)',
         'editor-starPolygonPointCount': 'Nombre de branches de l’étoile/du polygone',
         'editor-swapFillStroke': 'Permuter fond et contour',
+        'editor-fillStrokeSwitch': 'Fond / Contour — basculer celui que vous définissez',
         'editor-combineUniteSelectedShapes': 'Combiner : réunion des formes sélectionnées',
         'editor-combineSubtract': 'Combiner : soustraction (moins supérieur)',
         'editor-combineIntersect': 'Combiner : intersection (conserver le chevauchement)',
@@ -872,6 +873,23 @@ export const fr: Dictionary = {
         resizeHandle: 'Faites glisser pour redimensionner (icônes par rangée) · double-cliquez pour réinitialiser',
         stabilizationOn: 'Stabilisation du tracé (activée, {{ percent }} %) — Maj+S',
         stabilizationOff: 'Stabilisation du tracé (désactivée) — Maj+S',
+    },
+
+    /** Fond et contour — la paire de nuanciers au pied de la colonne d’outils. */
+    fillStroke: {
+        fill: 'Fond',
+        stroke: 'Contour',
+        none: 'Aucun',
+        mixed: 'mélangé',
+        saved: 'ENREGISTRÉS',
+        pick: 'Prélever',
+        swap: 'Permuter',
+        reset: 'Réinitialiser',
+        tooltip: 'Fond et contour — cliquez sur un carré pour définir sa couleur · X bascule · Maj+X permute',
+        noneTip: 'Supprimer ce fond ou ce contour',
+        pickTip: 'Pipette — cliquez sur un élément du plan de travail pour en prélever la couleur',
+        swapTip: 'Permuter le fond et le contour (Maj+X)',
+        resetTip: 'Revenir à un contour noir sans fond',
     },
 
     /**

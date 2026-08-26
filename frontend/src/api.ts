@@ -16,7 +16,7 @@ import {
     applyMeshGradient, setMeshSize, setMeshNodeColor, setMeshNodePosition, resetMeshNodes, setMeshSmooth, clearMeshGradient, toggleMeshEdit,
     applyPatternFill, setPatternFill, clearPatternFill, createPatternFromSelection, addTextureOverlay,
     addPatternSwatchFromSelection, savePatternSwatchFromElement, applyPatternSwatch, updatePatternSwatch, renamePatternSwatch, deletePatternSwatch,
-    createSymbol, saveSelectionToAssetLibrary, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, setSymbolRecursive, symbolSelfReferences, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
+    createSymbol, saveSelectionToAssetLibrary, placeInstance, redefineSymbol, detachInstance, enterSymbolEdit, exitSymbolEdit, renameSymbol, deleteSymbol, setSymbolRecursive, symbolSelfReferences, toggleSymbolsPanel, toggleSymbolSprayer, spraySymbolInstances, addArtboard, deleteArtboard, renameArtboard, updateArtboard, rearrangeArtboards, duplicateArtboard, fitArtboardToArtwork, toggleOutlineView, toggleTrimView, swapFillStroke, setPaintColor, currentPaintColor, resetPaintToDefaults, setActivePaint, type PaintChannel, cleanUpElements, deleteUnusedSwatches, pasteOnAllArtboards, shuffleSelectionColors, applyPaletteToSelection, convertToShape, splitIntoGrid, convertToGuides, toggleObjectCropMarks,
     toggleSymmetryGuide, setSymmetryAxis, setSymmetryPos, mirrorAcrossSymmetry,
     setSymmetryMode, toggleSymmetry, toggleSymmetryAxis, setRadialCount,
     setSymmetryRings, setSymmetryRingSpacing,
@@ -2207,8 +2207,22 @@ export const YappyAPI = {
     /** Toggle Trim View — temporarily hide everything outside the artboards. */
     toggleTrimView(on?: boolean) { toggleTrimView(on); },
     isTrimView() { return store.trimView; },
-    /** Swap fill ⇄ stroke colours on the selection (Illustrator Shift+X). */
+    /** Swap fill ⇄ stroke colours on the selection (Illustrator Shift+X). With nothing
+     *  selected it swaps the armed defaults — what the next shape will be drawn with. */
     swapFillStroke(ids?: string[]) { swapFillStroke(ids); },
+    /**
+     * Paint one channel of the selection, and arm it as the default for the next shape.
+     * `'transparent'` REMOVES the fill or stroke.
+     * @example Yappy.setPaintColor('stroke', 'transparent');   // no outline
+     */
+    setPaintColor(channel: PaintChannel, color: string, ids?: string[]) { setPaintColor(channel, color, ids); },
+    /** The colour the Fill & Stroke control shows for a channel: the selection's, else the default. */
+    getPaintColor(channel: PaintChannel) { return currentPaintColor(channel); },
+    /** Black stroke, no fill (Illustrator's D). */
+    resetPaint(ids?: string[]) { resetPaintToDefaults(ids); },
+    /** Which channel the Fill & Stroke control (and the palette's eyedropper) is aimed at. */
+    setActivePaint(channel: PaintChannel) { setActivePaint(channel); },
+    activePaint() { return store.activePaint; },
     /** Object > Path > Clean Up: delete stray points, empty text & unpainted objects. */
     cleanUp() { return cleanUpElements(); },
     /** Delete swatches not used by any element. */

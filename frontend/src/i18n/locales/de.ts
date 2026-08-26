@@ -495,6 +495,7 @@ export const de: Dictionary = {
         'editor-nudgeCoarseFine': 'Verschieben — grob (10 px) / fein (0,1 px)',
         'editor-starPolygonPointCount': 'Anzahl der Zacken von Stern/Vieleck',
         'editor-swapFillStroke': 'Fläche / Kontur tauschen',
+        'editor-fillStrokeSwitch': 'Füllung / Kontur — umschalten, welche gerade gesetzt wird',
         'editor-combineUniteSelectedShapes': 'Kombinieren: Ausgewählte Formen vereinen',
         'editor-combineSubtract': 'Kombinieren: Subtrahieren (vordere abziehen)',
         'editor-combineIntersect': 'Kombinieren: Schnittmenge (Überlappung behalten)',
@@ -862,6 +863,22 @@ export const de: Dictionary = {
         resizeHandle: 'Ziehen zum Ändern der Größe (Symbole pro Zeile) · Doppelklick zum Zurücksetzen',
         stabilizationOn: 'Strichstabilisierung (ein, {{ percent }} %) — Shift+S',
         stabilizationOff: 'Strichstabilisierung (aus) — Shift+S',
+    },
+
+    fillStroke: {
+        fill: 'Füllung',
+        stroke: 'Kontur',
+        none: 'Ohne',
+        mixed: 'gemischt',
+        saved: 'GESPEICHERT',
+        pick: 'Aufnehmen',
+        swap: 'Tauschen',
+        reset: 'Zurücksetzen',
+        tooltip: 'Füllung & Kontur — Quadrat anklicken, um die Farbe zu setzen · X wechselt · Shift+X tauscht',
+        noneTip: 'Diese Füllung bzw. Kontur entfernen',
+        pickTip: 'Pipette — auf ein Objekt der Zeichenfläche klicken, um dessen Farbe zu übernehmen',
+        swapTip: 'Füllung und Kontur tauschen (Shift+X)',
+        resetTip: 'Zurück zu schwarzer Kontur ohne Füllung',
     },
 
 

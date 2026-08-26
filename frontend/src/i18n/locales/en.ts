@@ -502,6 +502,7 @@ export const en = {
         'editor-nudgeCoarseFine': 'Nudge — coarse (10px) / fine (0.1px)',
         'editor-starPolygonPointCount': 'Star/Polygon point count',
         'editor-swapFillStroke': 'Swap Fill / Stroke',
+        'editor-fillStrokeSwitch': 'Fill / Stroke — switch which one you are setting',
         'editor-combineUniteSelectedShapes': 'Combine: Unite selected shapes',
         'editor-combineSubtract': 'Combine: Subtract (minus front)',
         'editor-combineIntersect': 'Combine: Intersect (keep overlap)',
@@ -869,6 +870,23 @@ export const en = {
         resizeHandle: 'Drag to resize (icons per row) · double-click to reset',
         stabilizationOn: 'Stroke Stabilization (on, {{ percent }}%) — Shift+S',
         stabilizationOff: 'Stroke Stabilization (off) — Shift+S',
+    },
+
+    /** Fill & Stroke — the swatch pair at the foot of the tool column. */
+    fillStroke: {
+        fill: 'Fill',
+        stroke: 'Stroke',
+        none: 'None',
+        mixed: 'mixed',
+        saved: 'SAVED',
+        pick: 'Pick',
+        swap: 'Swap',
+        reset: 'Reset',
+        tooltip: 'Fill & Stroke — click a square to set its colour · X switches · Shift+X swaps',
+        noneTip: 'Remove this fill or stroke',
+        pickTip: 'Eyedropper — click anything on the canvas to take its colour',
+        swapTip: 'Swap fill and stroke (Shift+X)',
+        resetTip: 'Back to a black stroke and no fill',
     },
 
     /**

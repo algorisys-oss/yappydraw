@@ -495,6 +495,7 @@ export const ja: Dictionary = {
         'editor-nudgeCoarseFine': '微調整 — 粗く（10px）／細かく（0.1px）',
         'editor-starPolygonPointCount': '星／多角形の頂点数',
         'editor-swapFillStroke': '塗りと線を入れ替え',
+        'editor-fillStrokeSwitch': '塗り / 線 — 設定する対象を切り替え',
         'editor-combineUniteSelectedShapes': '合成: 選択したシェイプを合体',
         'editor-combineSubtract': '合成: 前面オブジェクトで型抜き',
         'editor-combineIntersect': '合成: 交差（重なりを残す）',
@@ -862,6 +863,22 @@ export const ja: Dictionary = {
         resizeHandle: 'ドラッグでサイズ変更（1 行あたりのアイコン数）・ダブルクリックでリセット',
         stabilizationOn: '手ブレ補正（オン、{{ percent }}%）— Shift+S',
         stabilizationOff: '手ブレ補正（オフ）— Shift+S',
+    },
+
+    fillStroke: {
+        fill: '塗り',
+        stroke: '線',
+        none: 'なし',
+        mixed: '混在',
+        saved: '保存済み',
+        pick: 'スポイト',
+        swap: '入れ替え',
+        reset: 'リセット',
+        tooltip: '塗りと線 — 四角をクリックして色を設定 · X で切り替え · Shift+X で入れ替え',
+        noneTip: 'この塗りまたは線を削除',
+        pickTip: 'スポイト — キャンバス上の要素をクリックしてその色を取得',
+        swapTip: '塗りと線を入れ替える（Shift+X）',
+        resetTip: '黒い線・塗りなしに戻す',
     },
 
     menu: {

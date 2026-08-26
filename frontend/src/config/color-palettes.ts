@@ -9,6 +9,12 @@ export interface ColorPalette {
     swatches: ColorPaletteEntry[];
 }
 
+/**
+ * Every palette leads with `transparent`. It is the only way to REMOVE a fill or a
+ * stroke from the palette popup, and it used to exist in "Default" alone — so anyone
+ * left on the default P3 palette could paint a colour but never take one away, and
+ * had to go hunting in the Properties panel (reported by a user, Aug 2026).
+ */
 export const COLOR_PALETTES: ColorPalette[] = [
     {
         id: 'default',
@@ -36,6 +42,7 @@ export const COLOR_PALETTES: ColorPalette[] = [
         name: 'Architect',
         // From skills/3d-diagram-shapes.md §3 — fill colors only; borders/text remain user-chosen.
         swatches: [
+            { label: 'Transparent', value: 'transparent' },
             { label: 'Paper', value: '#F7F8F5' },
             { label: 'Floor', value: '#DCEFF7' },
             { label: 'Concept', value: '#B9DFA7' },
@@ -53,6 +60,7 @@ export const COLOR_PALETTES: ColorPalette[] = [
         name: 'P3 Wide-Gamut',
         // Keep in sync with P3_COLORS in components/p3-color-picker.tsx.
         swatches: [
+            { label: 'Transparent', value: 'transparent' },
             { label: 'P3 Red', value: 'color(display-p3 1 0 0)' },
             { label: 'P3 Green', value: 'color(display-p3 0 1 0)' },
             { label: 'P3 Blue', value: 'color(display-p3 0 0 1)' },
@@ -68,6 +76,7 @@ export const COLOR_PALETTES: ColorPalette[] = [
         id: 'pastel',
         name: 'Pastel',
         swatches: [
+            { label: 'Transparent', value: 'transparent' },
             { label: 'Mist', value: '#fef6f6' },
             { label: 'Blush', value: '#fbd5d5' },
             { label: 'Peach', value: '#ffdab9' },
@@ -86,6 +95,7 @@ export const COLOR_PALETTES: ColorPalette[] = [
         id: 'vibrant',
         name: 'Vibrant',
         swatches: [
+            { label: 'Transparent', value: 'transparent' },
             { label: 'Hot Pink', value: '#ff2e93' },
             { label: 'Crimson', value: '#e31b3c' },
             { label: 'Tangerine', value: '#ff7a00' },

@@ -104,6 +104,10 @@ When I say **"ship it"** (or "ship"), run the full release sequence:
    404ing while the editor looks perfectly fine.
    It defaults to the **apex** host (`https://yappydraw.com`), which is what the prerendered
    pages declare as their canonical. Pass a URL to check anything else.
+   It also checks that the live build **is the version in `package.json`** — until v0.8.224 it
+   did not, and passed twice in one session while describing the previous release. A failure
+   on that line right after publishing means the deploy has not propagated yet: wait and
+   re-run, and treat every check below it as describing the older build.
    **There is no standing failure any more — every check must pass.** Do not wave any red
    line through as "known".
    *(Two were retired. Up to v0.8.206 it was `sw.js is cacheable: public, max-age=604800`

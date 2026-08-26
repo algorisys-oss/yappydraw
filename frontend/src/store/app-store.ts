@@ -231,6 +231,9 @@ export const readPointerStyle = (): PointerStyle => {
     return 'crosshair';
 };
 
+/** The two things a shape is painted with. `fill` is `backgroundColor`, `stroke` is `strokeColor`. */
+export type PaintChannel = 'fill' | 'stroke';
+
 interface AppState {
     // Current Active Slide properties (for performance and compatibility)
     elements: DrawingElement[];
@@ -375,6 +378,11 @@ interface AppState {
      * ('style'), or reports the exact colour under the pointer to whoever armed it ('color').
      */
     eyedropper: { active: boolean; targets: string[]; mode: 'style' | 'color' };
+    /**
+     * Which of the two paint channels the Fill & Stroke control is aimed at (Illustrator's
+     * X). A swatch click, the palette's eyedropper and the None button all act on this one.
+     */
+    activePaint: PaintChannel;
     isLayerPanelMinimized: boolean;
     minimapVisible: boolean;
     showRulers: boolean;
@@ -709,6 +717,7 @@ const initialState: AppState = {
     alignToKeyObject: false,
     isolatedGroupIds: [],
     eyedropper: { active: false, targets: [], mode: 'style' as const },
+    activePaint: 'fill' as PaintChannel,
     isLayerPanelMinimized: false,
     minimapVisible: false,
     showRulers: (() => { try { return localStorage.getItem('showRulers') === '1'; } catch { return false; } })(),
@@ -3572,10 +3581,110 @@ export const toggleTrimView = (on?: boolean) => {
     showToast(next ? 'Trim view on' : 'Trim view off', 'info');
 };
 
-/** Swap each selected element's fill and stroke colours (Illustrator Shift+X). */
+// ── Fill & Stroke (the two paint channels, Illustrator-style) ────────────────
+
+/** Aim the Fill & Stroke control at one channel (Illustrator's X). */
+export const setActivePaint = (channel: PaintChannel) => setStore('activePaint', channel);
+
+/** Flip which channel is aimed at. */
+export const toggleActivePaint = () =>
+    setStore('activePaint', (c) => (c === 'fill' ? 'stroke' : 'fill'));
+
+/** Is this "no paint at all"? Both spellings occur in documents, and neither renders. */
+export const isNoPaint = (color?: string) => !color || color === 'transparent' || color === 'none';
+
+/**
+ * The colour to SHOW for a channel: the selection's, or the armed default when nothing is
+ * selected — which is also exactly what the next shape drawn will use. A mixed selection
+ * reports the first selected element's colour rather than nothing, so the swatch still has
+ * something to draw and clicking it still means "make them all this".
+ */
+export const currentPaintColor = (channel: PaintChannel): string => {
+    const el = store.selection.length
+        ? store.elements.find(e => store.selection.includes(e.id))
+        : undefined;
+    const src = el ?? store.defaultElementStyles;
+    const raw = channel === 'fill'
+        ? src.backgroundColor
+        // Text draws in `textColor || strokeColor`, so that is the colour to report for it.
+        : ((el && (el.type === 'text' || el.type === 'richtext') && el.textColor) || src.strokeColor);
+    return raw || (channel === 'fill' ? 'transparent' : '#000000');
+};
+
+/** Do the selected elements disagree about this channel? Worth saying, not worth blocking on. */
+export const paintColorIsMixed = (channel: PaintChannel): boolean => {
+    if (store.selection.length < 2) return false;
+    const sel = store.elements.filter(e => store.selection.includes(e.id));
+    const of = (e: DrawingElement) => channel === 'fill' ? e.backgroundColor : e.strokeColor;
+    const first = of(sel[0]);
+    return sel.some(e => of(e) !== first);
+};
+
+/**
+ * Paint one channel: apply to the selection AND arm it as the default for the next shape.
+ *
+ * Arming the default matters as much as the apply — it is what makes "pick a colour, then
+ * draw" work — and it is why this runs even with nothing selected. Pass `'transparent'` to
+ * REMOVE the fill or stroke.
+ */
+export const setPaintColor = (channel: PaintChannel, color: string, ids?: string[], history = true) => {
+    const targets = ids ?? [...store.selection];
+    if (targets.length > 0) {
+        // `history: false` is for the live drag of a colour picker, which emits on every
+        // pointermove — one undo step per frame is not an undo history.
+        if (history) pushToHistory();
+        targets.forEach(id => {
+            const el = store.elements.find(e => e.id === id);
+            if (!el) return;
+            if (channel === 'fill') {
+                // A colour with fillStyle left on 'image'/'pattern'/a gradient would not show,
+                // so painting a solid colour also means "become solid" — unless we are clearing
+                // it, where the existing fill style is worth keeping for when a colour returns.
+                updateElement(id, isNoPaint(color)
+                    ? { backgroundColor: 'transparent' }
+                    : { backgroundColor: color, fillStyle: 'solid' });
+            } else {
+                // For text the visible colour is `textColor || strokeColor`, so a baked-in
+                // textColor would override strokeColor and the font would never change.
+                updateElement(id, (el.type === 'text' || el.type === 'richtext')
+                    ? { strokeColor: color, textColor: color }
+                    : { strokeColor: color });
+            }
+        });
+    }
+    updateDefaultStyles(channel === 'fill'
+        ? (isNoPaint(color) ? { backgroundColor: 'transparent' } : { backgroundColor: color, fillStyle: 'solid' })
+        : { strokeColor: color, textColor: color });
+    bumpDirtyRevision();
+};
+
+/** Illustrator's D: black stroke, no fill. */
+export const resetPaintToDefaults = (ids?: string[]) => {
+    const targets = ids ?? [...store.selection];
+    // Snapshot once for the pair: two calls each pushing their own would make one press of
+    // Reset take two presses of undo to get back from.
+    if (targets.length > 0) pushToHistory();
+    setPaintColor('fill', 'transparent', targets, false);
+    setPaintColor('stroke', '#000000', targets, false);
+};
+
+/**
+ * Swap each selected element's fill and stroke colours (Illustrator Shift+X).
+ *
+ * With nothing selected it swaps the ARMED DEFAULTS instead of doing nothing — the same key
+ * on an empty canvas is how you set up the next shape, and returning early there made the
+ * shortcut look broken.
+ */
 export const swapFillStroke = (ids?: string[]) => {
     const targets = ids ?? [...store.selection];
-    if (targets.length === 0) return;
+    if (targets.length === 0) {
+        const d = store.defaultElementStyles;
+        const fill = d.backgroundColor || 'transparent';
+        const stroke = d.strokeColor || '#000000';
+        setPaintColor('fill', stroke, []);
+        setPaintColor('stroke', fill, []);
+        return;
+    }
     pushToHistory();
     setStore('elements', (e: DrawingElement) => targets.includes(e.id), (e) => ({
         backgroundColor: e.strokeColor,

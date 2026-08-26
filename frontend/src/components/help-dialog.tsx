@@ -137,6 +137,7 @@ const SHORTCUT_DATA: ShortcutCategory[] = [
             { key: 'editor-nudgeCoarseFine', keys: 'Shift+Arrow / Ctrl+Arrow' },
             { key: 'editor-starPolygonPointCount', keys: 'Up/Down (when selected)' },
             { key: 'editor-swapFillStroke', keys: 'Shift+X' },
+            { key: 'editor-fillStrokeSwitch', keys: 'X' },
             { key: 'editor-combineUniteSelectedShapes', keys: 'Ctrl+Alt+U' },
             { key: 'editor-combineSubtract', keys: 'Ctrl+Alt+D' },
             { key: 'editor-combineIntersect', keys: 'Ctrl+Alt+I' },

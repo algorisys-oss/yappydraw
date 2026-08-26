@@ -13,6 +13,12 @@ export interface WhatsNewEntry {
 }
 
 export const WHATS_NEW: WhatsNewEntry[] = [
+    { version: '0.8.225', date: '2026-08-26', items: [
+        'Fill and stroke colours are in the toolbar now. Two little squares at the top of the tool column show what the selected shape is painted with — or, if nothing is selected, what the next shape you draw will be painted with. Click either one to change it, without opening the Properties panel and scrolling.',
+        'Removing a fill or an outline is one click. The panel that opens has a None button, and every colour palette now starts with a checkerboard swatch that means "no colour" — before this, only the palette called Default had one, so if you were on any other palette there was no way to take a colour off at all.',
+        'Pick a colour off a picture. Drop a reference photo onto the canvas, click Pick in the fill or stroke panel, then click anywhere on the photo — that exact colour becomes your fill or your outline. The same eyedropper is now in the colour palette popup at the top of the screen.',
+        'Two shortcuts worth knowing: X switches between setting the fill and setting the outline, and Shift+X swaps the two colours over. Shift+X works with nothing selected too, so you can set up the colours before you draw.',
+    ] },
     { version: '0.8.224', date: '2026-08-25', items: [
         'YappyDraw is now in French. Every command, shape, menu and tooltip — using the words French designers already know from Illustrator and Photoshop, so a calque is a calque and a tracé is a tracé. If your browser is set to French, it opens in French on its own; otherwise pick it under Settings ▸ General ▸ Language.',
         'Searching the command palette ignores accents and apostrophes. Type "elements" and you get Éléments; type an ordinary apostrophe and you still find the commands whose names use the curly one. English command names keep working too, so you can follow an English tutorial with the interface in your own language.',

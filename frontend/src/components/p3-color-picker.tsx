@@ -1,7 +1,7 @@
 import { type Component, For, createSignal, Show } from 'solid-js';
 import { isPagedDocType } from '../types/slide-types';
-import { Pin, PinOff } from 'lucide-solid';
-import { store, updateElement, pushToHistory, updateSlideBackground, updateDefaultStyles, createSwatch, deleteSwatch } from '../store/app-store';
+import { Pin, PinOff, Pipette } from 'lucide-solid';
+import { store, updateElement, pushToHistory, updateSlideBackground, updateDefaultStyles, createSwatch, deleteSwatch, startColorEyedropper, setPaintColor } from '../store/app-store';
 import { AdvancedP3Picker } from './advanced-p3-picker';
 import { COLOR_PALETTES, getColorPalette } from '../config/color-palettes';
 import { startColorDrop, moveColorDrop, commitColorDrop } from '../utils/color-drop';
@@ -183,6 +183,33 @@ export const ColorPalettePicker: Component = () => {
                                 {(p) => <option value={p.id}>{p.name}</option>}
                             </For>
                         </select>
+                        {/* Eyedropper. Sampling a colour off a reference image dropped on the
+                            canvas is the reason people open this panel at all, and until now it
+                            only existed inside the Properties panel's picker — three panels away
+                            from the swatches. It paints whichever channel the tool column's Fill &
+                            Stroke control is aimed at (X switches). */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                startColorEyedropper((hex) => setPaintColor(store.activePaint, hex));
+                            }}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            title={`Eyedropper — click the canvas to take a colour (applies to ${store.activePaint === 'fill' ? 'fill' : 'stroke'}; X switches)`}
+                            style={{
+                                background: 'none',
+                                border: '1px solid var(--border-color)',
+                                'border-radius': '4px',
+                                padding: '3px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                'align-items': 'center',
+                                'justify-content': 'center',
+                                color: 'var(--text-secondary)',
+                                'flex-shrink': 0
+                            }}
+                        >
+                            <Pipette size={12} />
+                        </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); setPalettePinned(!isPalettePinned()); }}
                             onMouseDown={(e) => e.stopPropagation()}

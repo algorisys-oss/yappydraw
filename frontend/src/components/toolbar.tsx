@@ -25,6 +25,7 @@ import ConnectorToolGroup from "./connector-tool-group";
 import DsToolGroup from "./ds-tool-group";
 import BpmnToolGroup from "./bpmn-tool-group";
 import VideoUrlDialog from "./video-url-dialog";
+import { FillStrokeControl } from "./fill-stroke-control";
 import { getEmbedURL, fetchPoster, type VideoProvider } from "../utils/video-utils";
 import { getImage } from "../utils/image-cache";
 import "./toolbar.css";
@@ -510,6 +511,14 @@ const Toolbar: Component = () => {
                     <DockIcon />
                 </button>
             </Show>
+
+            {/* Fill & Stroke. Illustrator keeps this pair at the FOOT of the tool column; it
+                sits at the head here because this column scrolls — with 20-odd tool groups it
+                routinely overflows, and the last item in a scrolling strip is the one you have
+                to go looking for. The whole point of the control is not having to hunt for a
+                colour. Outside the mode ternary on purpose: picking a colour and taking a
+                stroke off are as basic in Brainstorm/Teaching mode as in the full tool set. */}
+            <FillStrokeControl />
 
             {minimalMode() ? (
                 /* ── Brainstorm / Teaching Mode: flat minimal toolbar ── */

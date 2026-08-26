@@ -495,6 +495,7 @@ export const es: Dictionary = {
         'editor-nudgeCoarseFine': 'Desplazar — grueso (10 px) / fino (0,1 px)',
         'editor-starPolygonPointCount': 'Número de puntas de estrella/polígono',
         'editor-swapFillStroke': 'Intercambiar relleno / trazo',
+        'editor-fillStrokeSwitch': 'Relleno / Trazo — cambiar cuál se está definiendo',
         'editor-combineUniteSelectedShapes': 'Combinar: Unir las formas seleccionadas',
         'editor-combineSubtract': 'Combinar: Restar (menos frente)',
         'editor-combineIntersect': 'Combinar: Intersecar (conservar la superposición)',
@@ -862,6 +863,22 @@ export const es: Dictionary = {
         resizeHandle: 'Arrastra para redimensionar (iconos por fila) · doble clic para restablecer',
         stabilizationOn: 'Estabilización del trazo (activada, {{ percent }} %) — Shift+S',
         stabilizationOff: 'Estabilización del trazo (desactivada) — Shift+S',
+    },
+
+    fillStroke: {
+        fill: 'Relleno',
+        stroke: 'Trazo',
+        none: 'Ninguno',
+        mixed: 'variado',
+        saved: 'GUARDADOS',
+        pick: 'Capturar',
+        swap: 'Intercambiar',
+        reset: 'Restablecer',
+        tooltip: 'Relleno y trazo — haz clic en un cuadrado para definir su color · X cambia · Shift+X intercambia',
+        noneTip: 'Quitar este relleno o trazo',
+        pickTip: 'Cuentagotas — haz clic en cualquier cosa del lienzo para tomar su color',
+        swapTip: 'Intercambiar relleno y trazo (Shift+X)',
+        resetTip: 'Volver a trazo negro y sin relleno',
     },
 
     menu: {

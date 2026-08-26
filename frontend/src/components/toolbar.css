@@ -81,7 +81,8 @@
    plain buttons and which are groups with a submenu chevron. */
 .toolbar-container.wrap > .toolbar-btn,
 .toolbar-container.wrap > .pen-tool-group,
-.toolbar-container.wrap > .connector-tool-group {
+.toolbar-container.wrap > .connector-tool-group,
+.toolbar-container.wrap > .fs-control {
     flex: 0 0 28px;
     width: 28px;
     height: 28px;

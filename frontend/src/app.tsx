@@ -6,7 +6,7 @@ import {
   undo, redo, store, deleteElements, togglePropertyPanel, toggleLayerPanel, toggleSymbolsPanel, toggleHistoryPanel, toggleGraphicStylesPanel, toggleSwatchesPanel, togglePatternsPanel, toggleElementsPanel,
   toggleMinimap, toggleRulers, toggleKeyframePanel, toggleZenMode, toggleCommandPalette, moveSelectedElements, toggleStatePanel,
   switchLayerByIndex, cycleStrokeStyle, cycleFillStyle,
-  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper, startEyedropper, exitCompoundEdit,
+  addChildNode, addSiblingNode, toggleCollapseSelection, pasteMindmapOutline, togglePresentationMode, cancelEyedropper, startEyedropper, toggleActivePaint, exitCompoundEdit,
   applyNextState, applyPreviousState, applyDisplayState, advancePresentation, retreatPresentation,
   setSelectedTool, setStore, groupSelected, ungroupSelected,
   bringToFront, sendToBack, moveSelectionZIndex, reorderLayers, toggleGrid, toggleSnapToGrid, addLayer, toggleSlideNavigator,
@@ -902,8 +902,11 @@ const App: Component = () => {
           e.preventDefault();
           if (store.eyedropper?.active) cancelEyedropper(); else startEyedropper();
         } else if (e.shiftKey && key === 'x') {
-          // Swap fill ⇄ stroke on the selection (Illustrator Shift+X).
-          if (store.selection.length > 0) { e.preventDefault(); swapFillStroke(); }
+          // Swap fill ⇄ stroke (Illustrator Shift+X). With nothing selected this swaps the
+          // armed defaults — setting up the next shape is exactly what the key is for on an
+          // empty canvas, and the old selection guard made it look broken there.
+          e.preventDefault();
+          swapFillStroke();
         } else if (e.shiftKey && key === 'n') {
           e.preventDefault();
           addLayer();
@@ -965,6 +968,14 @@ const App: Component = () => {
               // nothing selected looks like the key did nothing. Say what's missing.
               if (store.selection.length === 0) showToast('Node tool: select a path to edit its anchors', 'info');
             }
+          }
+          else if (key === 'x') {
+            // Illustrator's X: aim the Fill & Stroke swatch pair at the other channel, so the
+            // next swatch/eyedropper/None acts on it. Toasted because the toolbar can be
+            // docked off to one side, where the highlight moving is easy to miss.
+            e.preventDefault();
+            toggleActivePaint();
+            showToast(store.activePaint === 'fill' ? 'Fill active' : 'Stroke active', 'info');
           }
           else if (key === '/') { e.preventDefault(); toggleCommandPalette(true, 'Shapes'); }
         }

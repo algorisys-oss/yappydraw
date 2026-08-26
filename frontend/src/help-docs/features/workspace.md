@@ -4,7 +4,7 @@ name: Workspace & Productivity
 icon: "🛠"
 category: Features
 description: Smart toolbar, align & distribute, rulers & guides, blend, measure tool, history panel, and vector SVG export
-keywords: "ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles"
+keywords: "fill stroke fill and stroke swatch pair no fill no stroke remove stroke remove fill none transparent eyedropper pipette pick colour from image sample colour from reference reference image swap fill stroke Shift+X X key active paint channel colour palette palette popup illustrator fill stroke icon ruler rulers guide guides show rulers hide rulers turn on rulers Alt+R alt r toggle rulers and guides drag guide from ruler delete guide double-click clear all guides convert shapes to guides snap to grid tick marks measurement units origin zero canvas coordinates x y precision layout alignment toolbar dock position properties panel smart toolbar align distribute key object spacing gap transform x y width height rotation stroke dash measure tool blend morph spine history panel undo redo save my drawings settings pen input default tool pointer export png jpg svg pdf excalidraw grid style square lines dots diagonal 45 degree isometric 30 degree angled grid lattice snap to grid grid size construction angle move to layer move object between layers reorder layers layer order Alt+[ Alt+] setGridStyle gridStyles"
 ---
 
 # Workspace & Productivity
@@ -30,6 +30,37 @@ The full row needs about **700px** of width. Below that it collapses into the ha
 Below **600px** wide the position control is hidden and the tools become a single **full-width strip** pinned just above the status bar, with larger touch targets. Swipe the strip **sideways** to reach the tools that don't fit. There is no docking, dragging or wrapping at this size — an edge is too much of the screen to give away — but the strip, the header and the status bar all *reserve* their space, so the canvas between them is entirely yours to draw on. **Undo** and **redo** float just above the strip.
 
 Between **601px** and roughly a tablet width you get the normal docked column plus the compact header — the toolbar keeps its edge and the canvas still starts after it.
+
+## Fill & Stroke
+
+At the **foot of the tool column** sits the Illustrator swatch pair: a solid square for the **fill**, a ring behind it for the **stroke**. They show what the selection is painted with — or, with nothing selected, what the **next shape you draw** will be painted with. A red slash across a square means that channel is empty.
+
+**Click either square** to open the paint panel for it:
+
+- **A palette of swatches**, with the palette dropdown at the top — the same palettes the top-bar colour popup offers.
+- **None** — takes the fill or stroke away entirely. This is the one-click "no outline" that used to mean scrolling the Properties panel.
+- **Pick** — the **eyedropper**. Click anything on the canvas and its colour lands in the channel. It reads the colour out of the *document*, so what you pick is exactly what is there; over an image (a **reference photo** you pasted in, say) it samples the pixel under the cursor, which is what makes matching a palette from a reference straightforward.
+- **Swap** and **Reset** — swap fill ⇄ stroke, or go back to a black stroke with no fill.
+- A full **colour picker** with a hex field and recents.
+
+| Key | Does |
+| --- | --- |
+| <kbd>X</kbd> | Switch which channel you are setting (fill ⇄ stroke) |
+| <kbd>Shift</kbd>+<kbd>X</kbd> | Swap the two colours over |
+
+<kbd>Shift</kbd>+<kbd>X</kbd> works with **nothing selected** too — there it swaps the colours the next shape will use.
+
+:::tip
+Every palette now leads with a **checkerboard swatch** — that is `transparent`. Clicking it removes the colour, so you can clear a fill or a stroke from the top-bar palette popup as well, whichever palette you are on.
+:::
+
+```js
+Yappy.setPaintColor('stroke', 'transparent');   // remove the outline
+Yappy.setPaintColor('fill', '#e03131');         // and paint the fill red
+Yappy.getPaintColor('fill');                    // → '#e03131'
+Yappy.swapFillStroke();                         // Shift+X
+Yappy.resetPaint();                             // black stroke, no fill
+```
 
 ## Guided tour
 
